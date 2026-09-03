@@ -27,17 +27,17 @@
     "capture_tool_module_ref": "scripts/capture_page_evidence.py",
     "capture_tool_module_sha256": "57c11be3c4d5e796ffc1d2dda0078ade753f3b038e9a5211260422c6e9662796",
     "capture_tool_version": "1.3.0",
-    "serve_root": "http://127.0.0.1:49934",
+    "serve_root": "http://127.0.0.1:52869",
     "site_dir": "/Users/chriswong/Documents/Cluade/macro-main/.cursor/worktrees/mor1-integrity-repair-20260902/site",
     "site_reference_sha256": "e58ad7ab0bbf44554c22d00af30f686614199e9b4b6e890d5b6b1bec6bfb60a1",
-    "source_commit": "54e2756df871a736c2e9e80943d508219547d834",
+    "source_commit": "c5a0759e227cfb23508a3d624613ce0221d2644b",
     "source_commit_verified": true,
-    "source_tree": "c0b80494347154aac0d6dcb4372350f0a1e93953",
+    "source_tree": "6c7e24dcaa8cacce9f35963056216c9f4c5529bc",
     "worktree": "/Users/chriswong/Documents/Cluade/macro-main/.cursor/worktrees/mor1-integrity-repair-20260902",
     "worktree_head_matches_source": true
   },
   "excluded": [],
-  "generated_at": "2026-09-03T07:49:49Z",
+  "generated_at": "2026-09-03T07:52:39Z",
   "honesty": {
     "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
     "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
@@ -127,7 +127,7 @@
           "viewport": "desktop"
         },
         "panel_count": 0,
-        "payload_bytes_total": 595120,
+        "payload_bytes_total": 571456,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 14,
@@ -143,7 +143,7 @@
       "route": "reference.html",
       "route_journeys": {
         "back_forward": {
-          "before_push": "http://127.0.0.1:49934/reference.html",
+          "before_push": "http://127.0.0.1:52869/reference.html",
           "input": "",
           "ok": true,
           "url_q": null
@@ -161,14 +161,14 @@
         "reload": {
           "ok": true,
           "post_hash": "",
-          "post_href": "http://127.0.0.1:49934/reference.html",
+          "post_href": "http://127.0.0.1:52869/reference.html",
           "post_q": null,
           "pre_hash": "",
-          "pre_href": "http://127.0.0.1:49934/reference.html",
+          "pre_href": "http://127.0.0.1:52869/reference.html",
           "pre_q": null
         },
         "share": {
-          "href": "http://127.0.0.1:49934/reference.html",
+          "href": "http://127.0.0.1:52869/reference.html",
           "matches_final": true,
           "ok": true
         }
@@ -179,9 +179,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 618001,
+          "bytes": 618118,
           "captured": true,
-          "file": "284030e1b87f4fd0.png",
+          "file": "b41966c17e199d48.png",
           "force_state": null,
           "height": 2361,
           "locale": "en",
@@ -192,13 +192,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -216,14 +216,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -231,7 +231,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -274,7 +274,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "284030e1b87f4fd0ff308d9da9f83e451c4a07e31e1ba418f0c694ad0ac084fa",
+          "sha256": "b41966c17e199d48ecab4bd9b2bbcf90cbaf2289300677319a94ae6ec843d6b0",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -285,9 +285,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 536150,
+          "bytes": 540146,
           "captured": true,
-          "file": "ea81ec51be5a9618.png",
+          "file": "b501c110f72e1de8.png",
           "force_state": null,
           "height": 2457,
           "locale": "en",
@@ -298,13 +298,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -322,14 +322,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -337,7 +337,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -380,7 +380,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "ea81ec51be5a9618a419ebb4dc0471ebaf9d229eded734c804e0f68f3b21b826",
+          "sha256": "b501c110f72e1de89a723a6c3d8af754f7b9fe330951bb78cdc788d949af6aa5",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -391,9 +391,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 732242,
+          "bytes": 737626,
           "captured": true,
-          "file": "fb8c2e5a95a7b77f.png",
+          "file": "55578ff4f671d985.png",
           "force_state": null,
           "height": 2361,
           "locale": "zh",
@@ -404,13 +404,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -428,14 +428,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -443,7 +443,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -486,7 +486,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "fb8c2e5a95a7b77f08e02469c3fded80e06619d7edd0e6157db32208f2756aae",
+          "sha256": "55578ff4f671d985a1f8453f241d06523ea51bfc53fb819bae6f1c562846fa10",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -497,9 +497,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 662466,
+          "bytes": 673897,
           "captured": true,
-          "file": "5ffc834a6c6a9889.png",
+          "file": "79140bb80ef5cbd5.png",
           "force_state": null,
           "height": 2457,
           "locale": "zh",
@@ -510,13 +510,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -534,14 +534,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -549,7 +549,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -592,7 +592,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "5ffc834a6c6a988987c30283ea4bf5d343fead1648bbecc794c462b177675205",
+          "sha256": "79140bb80ef5cbd5a4f00a206df2dc5394ddea46ab870c8d99d1d104716f70b5",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -603,9 +603,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 492977,
+          "bytes": 502722,
           "captured": true,
-          "file": "6053082be55d51e5.png",
+          "file": "756a4eb45e563b65.png",
           "force_state": null,
           "height": 3884,
           "locale": "en",
@@ -616,13 +616,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -640,14 +640,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -655,7 +655,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -698,7 +698,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "6053082be55d51e57b939204b7aafa618d73d5ef03595f0cbef852a9498ca615",
+          "sha256": "756a4eb45e563b6558ccc5ae51f8cae08c967049663d90035cbb934c1f6c6fa8",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -709,9 +709,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 464248,
+          "bytes": 464878,
           "captured": true,
-          "file": "9995d9189f1761b9.png",
+          "file": "baded680e02a3abb.png",
           "force_state": null,
           "height": 3976,
           "locale": "en",
@@ -722,13 +722,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -746,14 +746,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -761,7 +761,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -804,7 +804,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "9995d9189f1761b9c58f4b3d35f6f3572cc370307bd9f7117084a7482539cd9d",
+          "sha256": "baded680e02a3abb9bf8ad4ecca55f3cff1932ef43d8e751f8b57ba75699224d",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -815,9 +815,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 610189,
+          "bytes": 613414,
           "captured": true,
-          "file": "2fa44eea28d19b36.png",
+          "file": "d2ccc282c41176f5.png",
           "force_state": null,
           "height": 3860,
           "locale": "zh",
@@ -828,13 +828,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -852,14 +852,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -867,7 +867,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -910,7 +910,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "2fa44eea28d19b364acbb1dd09fd2794933f7b9883582ad09a5eb7646bd223d0",
+          "sha256": "d2ccc282c41176f5c3fab00d99d2d6f512a1580f532aeaa1e41185feb48518f5",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -921,9 +921,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 570182,
+          "bytes": 580279,
           "captured": true,
-          "file": "d032c946ad3eb198.png",
+          "file": "88706e8e01f8b82d.png",
           "force_state": null,
           "height": 3952,
           "locale": "zh",
@@ -934,13 +934,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html",
+            "final_url": "http://127.0.0.1:52869/reference.html",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -958,14 +958,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html",
+                "post_href": "http://127.0.0.1:52869/reference.html",
                 "post_q": null,
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html",
+                "pre_href": "http://127.0.0.1:52869/reference.html",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html",
+                "href": "http://127.0.0.1:52869/reference.html",
                 "matches_final": true,
                 "ok": true
               }
@@ -973,7 +973,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html",
+            "requested_url": "http://127.0.0.1:52869/reference.html",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -1016,7 +1016,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "d032c946ad3eb198079b872f86a8d25638837bc79cce4febd178d57e9aebdc67",
+          "sha256": "88706e8e01f8b82d9d2ac246f500a762975c197bc2d23d0d8d16d86e5fd58f51",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -1107,7 +1107,7 @@
           "viewport": "desktop"
         },
         "panel_count": 0,
-        "payload_bytes_total": 115391,
+        "payload_bytes_total": 570668,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 14,
@@ -1123,7 +1123,7 @@
       "route": "reference.html#vix",
       "route_journeys": {
         "back_forward": {
-          "before_push": "http://127.0.0.1:49934/reference.html",
+          "before_push": "http://127.0.0.1:52869/reference.html",
           "input": "",
           "ok": true,
           "url_q": null
@@ -1141,14 +1141,14 @@
         "reload": {
           "ok": true,
           "post_hash": "vix",
-          "post_href": "http://127.0.0.1:49934/reference.html#vix",
+          "post_href": "http://127.0.0.1:52869/reference.html#vix",
           "post_q": null,
           "pre_hash": "vix",
-          "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+          "pre_href": "http://127.0.0.1:52869/reference.html#vix",
           "pre_q": null
         },
         "share": {
-          "href": "http://127.0.0.1:49934/reference.html#vix",
+          "href": "http://127.0.0.1:52869/reference.html#vix",
           "matches_final": true,
           "ok": true
         }
@@ -1159,9 +1159,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 673861,
+          "bytes": 680174,
           "captured": true,
-          "file": "6535ba4e32a7eae8.png",
+          "file": "c24932f79daf6458.png",
           "force_state": null,
           "height": 2991,
           "locale": "en",
@@ -1172,13 +1172,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1196,14 +1196,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1211,7 +1211,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1254,7 +1254,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "6535ba4e32a7eae85834984f14027b225758b296b02be5156eae957cbd58c6d8",
+          "sha256": "c24932f79daf64581910f5562d9173df2c1c14b86a683a6d56ed8af12985f569",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -1265,9 +1265,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 612491,
+          "bytes": 623410,
           "captured": true,
-          "file": "50dcce42dd5c14ee.png",
+          "file": "22aa3f031ac4cf54.png",
           "force_state": null,
           "height": 3089,
           "locale": "en",
@@ -1278,13 +1278,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1302,14 +1302,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1317,7 +1317,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1360,7 +1360,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "50dcce42dd5c14ee3f8bb5766ffe1d648d2647fec90078dd9cd6150b8537fbe2",
+          "sha256": "22aa3f031ac4cf54acc649990f733a7d37907b80d6418471e590408508e4626b",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -1371,9 +1371,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 817979,
+          "bytes": 822726,
           "captured": true,
-          "file": "2bc1d76efe03e26f.png",
+          "file": "e38243409db75363.png",
           "force_state": null,
           "height": 2967,
           "locale": "zh",
@@ -1384,13 +1384,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1408,14 +1408,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1423,7 +1423,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1466,7 +1466,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "2bc1d76efe03e26f49b53afc253fd56ec5bb371a7f7fe1e31f40d206aca96cad",
+          "sha256": "e38243409db7536301ca8d3e9f2a53fc6623cb99626257581969bf4af6b90894",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -1477,9 +1477,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 755823,
+          "bytes": 755804,
           "captured": true,
-          "file": "b818363f4ae94881.png",
+          "file": "b20aa88678ccad1a.png",
           "force_state": null,
           "height": 3065,
           "locale": "zh",
@@ -1490,13 +1490,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1514,14 +1514,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1529,7 +1529,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1572,7 +1572,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "b818363f4ae948818ffdf13c24b7dbe5c22c707137c04460a7c9178c0c51bd41",
+          "sha256": "b20aa88678ccad1a8b192b6285c6fd96a789cce37d092b35f16c2b141393247a",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -1583,9 +1583,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 492899,
+          "bytes": 492905,
           "captured": true,
-          "file": "65a1a8c23d0344c1.png",
+          "file": "78f7e65f3e08dd1c.png",
           "force_state": null,
           "height": 4662,
           "locale": "en",
@@ -1596,13 +1596,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1620,14 +1620,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1635,7 +1635,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1678,7 +1678,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "65a1a8c23d0344c1a1615f0f9a3ab3e87f3ada3c6e0211ccfcb8ac13b366b2da",
+          "sha256": "78f7e65f3e08dd1c2e6bfd797fd34118b8ebd78c84d494a3cdeeeccbc23d972c",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -1689,9 +1689,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 489673,
+          "bytes": 490180,
           "captured": true,
-          "file": "c28e6fa9aa112644.png",
+          "file": "a7e7a4b0fc73ec12.png",
           "force_state": null,
           "height": 4840,
           "locale": "en",
@@ -1702,13 +1702,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1726,14 +1726,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1741,7 +1741,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1784,7 +1784,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "c28e6fa9aa112644810fa54de186f0212ba6a3061b2959870c09cf8c5535b9dd",
+          "sha256": "a7e7a4b0fc73ec12e72bcdd0ac37065d3503035fcdc1cc9a6f75fadeb3326702",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -1795,9 +1795,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 612880,
+          "bytes": 610570,
           "captured": true,
-          "file": "7ada3113a7133bc0.png",
+          "file": "0b1f9768dd5aaa98.png",
           "force_state": null,
           "height": 4570,
           "locale": "zh",
@@ -1808,13 +1808,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1832,14 +1832,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1847,7 +1847,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1890,7 +1890,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "7ada3113a7133bc0e481d78fcc422003d19aedb8b9ab618671d4618718e4c193",
+          "sha256": "0b1f9768dd5aaa98135962e67c171e162794a180dd0fd935ff36d15c9e76bd39",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -1901,9 +1901,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 610258,
+          "bytes": 603866,
           "captured": true,
-          "file": "386894989058346e.png",
+          "file": "bb363372b1310831.png",
           "force_state": null,
           "height": 4664,
           "locale": "zh",
@@ -1914,13 +1914,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#vix",
+            "final_url": "http://127.0.0.1:52869/reference.html#vix",
             "focused_element_id": "vix",
             "focused_visible": true,
             "hash": "#vix",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -1938,14 +1938,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "vix",
-                "post_href": "http://127.0.0.1:49934/reference.html#vix",
+                "post_href": "http://127.0.0.1:52869/reference.html#vix",
                 "post_q": null,
                 "pre_hash": "vix",
-                "pre_href": "http://127.0.0.1:49934/reference.html#vix",
+                "pre_href": "http://127.0.0.1:52869/reference.html#vix",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#vix",
+                "href": "http://127.0.0.1:52869/reference.html#vix",
                 "matches_final": true,
                 "ok": true
               }
@@ -1953,7 +1953,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#vix",
+            "requested_url": "http://127.0.0.1:52869/reference.html#vix",
             "rf_q_value": "",
             "search": "",
             "selected_id": "vix",
@@ -1996,7 +1996,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "386894989058346e2ceb3c78fad0696fe11bb081ae7e3b4d3f431cd5016ca0fd",
+          "sha256": "bb363372b13108317d259ca7f804e22145bd46d2c491f2e531005fcf613438e5",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -2087,7 +2087,7 @@
           "viewport": "desktop"
         },
         "panel_count": 0,
-        "payload_bytes_total": 547907,
+        "payload_bytes_total": 571360,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 14,
@@ -2103,7 +2103,7 @@
       "route": "reference.html#not-a-real-entry",
       "route_journeys": {
         "back_forward": {
-          "before_push": "http://127.0.0.1:49934/reference.html",
+          "before_push": "http://127.0.0.1:52869/reference.html",
           "input": "",
           "ok": true,
           "url_q": null
@@ -2121,14 +2121,14 @@
         "reload": {
           "ok": true,
           "post_hash": "not-a-real-entry",
-          "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+          "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
           "post_q": null,
           "pre_hash": "not-a-real-entry",
-          "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+          "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
           "pre_q": null
         },
         "share": {
-          "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+          "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
           "matches_final": true,
           "ok": true
         }
@@ -2139,9 +2139,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 627579,
+          "bytes": 631754,
           "captured": true,
-          "file": "43729af34a085706.png",
+          "file": "278e5ef43fb352e1.png",
           "force_state": null,
           "height": 2517,
           "locale": "en",
@@ -2152,13 +2152,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2176,14 +2176,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2191,7 +2191,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2234,7 +2234,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "43729af34a0857064a7e417f36a9503e4503f5ce5c9fd3535420656e1d395e17",
+          "sha256": "278e5ef43fb352e1182d1886ecaeead58b400c7425e26914da94d96359fa5ebc",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -2245,9 +2245,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 554850,
+          "bytes": 552902,
           "captured": true,
-          "file": "29cd295f65092f62.png",
+          "file": "515f583a9c5f16e6.png",
           "force_state": null,
           "height": 2613,
           "locale": "en",
@@ -2258,13 +2258,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2282,14 +2282,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2297,7 +2297,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2340,7 +2340,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "29cd295f65092f62700cf6d7aef460b8b80f64bdf801f031d400584cbeb4a48b",
+          "sha256": "515f583a9c5f16e65f290933869c40e2a6328dfbe2289c4b69e05668470d90b4",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -2353,7 +2353,7 @@
           "applied_theme": "dark",
           "bytes": 753124,
           "captured": true,
-          "file": "3feb38a795b9eae8.png",
+          "file": "366915463f0da7a3.png",
           "force_state": null,
           "height": 2517,
           "locale": "zh",
@@ -2364,13 +2364,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2388,14 +2388,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2403,7 +2403,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2446,7 +2446,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "3feb38a795b9eae8328c43c62fb8ca1ae1e20a281eb1fca109568dfcf941aa91",
+          "sha256": "366915463f0da7a39cb4f0759a0cd7cbe1994161b9a6d632a0a2e7a0a7cf8799",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -2457,9 +2457,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 685178,
+          "bytes": 688955,
           "captured": true,
-          "file": "1d85e54a981ecd67.png",
+          "file": "ad7b04a47631f7ab.png",
           "force_state": null,
           "height": 2613,
           "locale": "zh",
@@ -2470,13 +2470,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2494,14 +2494,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2509,7 +2509,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2552,7 +2552,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "1d85e54a981ecd6718c076f75995c29947fa94455fecec70795d9b7e019fe5ca",
+          "sha256": "ad7b04a47631f7ab6ec3aa4164c0832b072cc201b14d714541a4b7fb62b421d8",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -2563,9 +2563,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 506739,
+          "bytes": 506887,
           "captured": true,
-          "file": "6b5974cf9fad4064.png",
+          "file": "6cbf090fc30a8f86.png",
           "force_state": null,
           "height": 4060,
           "locale": "en",
@@ -2576,13 +2576,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2600,14 +2600,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2615,7 +2615,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2658,7 +2658,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "6b5974cf9fad4064ef19776f7da3ac8abe00d45a9bbd43ef7028c87f57419416",
+          "sha256": "6cbf090fc30a8f8673a1acb7907545639c86a71817b2fc2de18796f17b1609bb",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -2669,9 +2669,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 478362,
+          "bytes": 474653,
           "captured": true,
-          "file": "383a874622cd5f33.png",
+          "file": "a95d03face57a8ed.png",
           "force_state": null,
           "height": 4152,
           "locale": "en",
@@ -2682,13 +2682,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2706,14 +2706,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2721,7 +2721,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2764,7 +2764,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "383a874622cd5f336acf79a4a8d5aa8ef17af7f42c640acd7304f62a81be0126",
+          "sha256": "a95d03face57a8ed3d9435b94b0f19dbdd2bc29a468aa63684aa239114c8e8b1",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -2775,9 +2775,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 624757,
+          "bytes": 621543,
           "captured": true,
-          "file": "2709a4541247bfcd.png",
+          "file": "a838c550a38a8606.png",
           "force_state": null,
           "height": 4016,
           "locale": "zh",
@@ -2788,13 +2788,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2812,14 +2812,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2827,7 +2827,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2870,7 +2870,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "2709a4541247bfcdf244361e61db91a4c334b6c9e86380dd9b1f62a995a74914",
+          "sha256": "a838c550a38a8606fbc2da928d2e3280fbfa4e1d7f3d3b82b64e5f9e4421d4f3",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -2881,9 +2881,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 594706,
+          "bytes": 589012,
           "captured": true,
-          "file": "a94798302f1ca9cf.png",
+          "file": "eaa6deb75f885575.png",
           "force_state": null,
           "height": 4108,
           "locale": "zh",
@@ -2894,13 +2894,13 @@
               "34"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "final_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "#not-a-real-entry",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html",
+                "before_push": "http://127.0.0.1:52869/reference.html",
                 "input": "",
                 "ok": true,
                 "url_q": null
@@ -2918,14 +2918,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "not-a-real-entry",
-                "post_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "post_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "post_q": null,
                 "pre_hash": "not-a-real-entry",
-                "pre_href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "pre_href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "pre_q": null
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+                "href": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
                 "matches_final": true,
                 "ok": true
               }
@@ -2933,7 +2933,7 @@
             "miss_visible": true,
             "pathname": "/reference.html",
             "query_q": null,
-            "requested_url": "http://127.0.0.1:49934/reference.html#not-a-real-entry",
+            "requested_url": "http://127.0.0.1:52869/reference.html#not-a-real-entry",
             "rf_q_value": "",
             "search": "",
             "selected_id": null,
@@ -2976,7 +2976,7 @@
             ],
             "visible_result_count": 34
           },
-          "sha256": "a94798302f1ca9cf0ae4e5ccb38859310e1273450f301103a1146d023dda1bca",
+          "sha256": "eaa6deb75f885575c7592f8e66a6cdc509777859e44e6b56b31d8129c16d2306",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -3083,7 +3083,7 @@
       "route": "reference.html?q=curve",
       "route_journeys": {
         "back_forward": {
-          "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+          "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
           "input": "curve",
           "ok": true,
           "url_q": "curve"
@@ -3101,14 +3101,14 @@
         "reload": {
           "ok": true,
           "post_hash": "",
-          "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+          "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
           "post_q": "curve",
           "pre_hash": "",
-          "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+          "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
           "pre_q": "curve"
         },
         "share": {
-          "href": "http://127.0.0.1:49934/reference.html?q=curve",
+          "href": "http://127.0.0.1:52869/reference.html?q=curve",
           "matches_final": true,
           "ok": true
         }
@@ -3119,9 +3119,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 300842,
+          "bytes": 300839,
           "captured": true,
-          "file": "d2eb655732cee88d.png",
+          "file": "d38525166a602f53.png",
           "force_state": null,
           "height": 1086,
           "locale": "en",
@@ -3132,13 +3132,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3156,14 +3156,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3171,7 +3171,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3182,7 +3182,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "d2eb655732cee88ddfcdc84bdf91033703f513cf205537ba91244e39a7224281",
+          "sha256": "d38525166a602f5364c2bdf7839c20a3c4dd6e83687db7924a7e022e85f84f21",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -3193,9 +3193,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 284118,
+          "bytes": 287883,
           "captured": true,
-          "file": "38b295af8d3a8ef9.png",
+          "file": "1681692e6e98c46e.png",
           "force_state": null,
           "height": 1086,
           "locale": "en",
@@ -3206,13 +3206,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3230,14 +3230,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3245,7 +3245,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3256,7 +3256,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "38b295af8d3a8ef9c432ab8457007af0b85d3a28d5e2ab67cef5e6372b1ae057",
+          "sha256": "1681692e6e98c46eb6666ce273a263edbdd5b098433419727c7556780c64be7c",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -3267,9 +3267,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 305648,
+          "bytes": 303522,
           "captured": true,
-          "file": "bb05065e85c61aad.png",
+          "file": "dea9e55d12bf82a4.png",
           "force_state": null,
           "height": 1085,
           "locale": "zh",
@@ -3280,13 +3280,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3304,14 +3304,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3319,7 +3319,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3330,7 +3330,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "bb05065e85c61aadabd5ed4cf35be50f3b5ccbbdd26765d4f578cf931e566183",
+          "sha256": "dea9e55d12bf82a4c6a171bf6070170d21f7ac6d7b2e79753c216cc15e531009",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -3341,9 +3341,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 295995,
+          "bytes": 292911,
           "captured": true,
-          "file": "3c26d8897dc6ac40.png",
+          "file": "087c87f01d5c63ea.png",
           "force_state": null,
           "height": 1085,
           "locale": "zh",
@@ -3354,13 +3354,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3378,14 +3378,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3393,7 +3393,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3404,7 +3404,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "3c26d8897dc6ac40c04d89b68a2ea188b65512428b44f09470553dc55c42165f",
+          "sha256": "087c87f01d5c63ead5e691aea5743f2de0e4a43424c4e016d4f17e9c84a546d0",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -3415,9 +3415,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 165074,
+          "bytes": 161799,
           "captured": true,
-          "file": "fd37852833acde2e.png",
+          "file": "dfcc9360a8778eb8.png",
           "force_state": null,
           "height": 844,
           "locale": "en",
@@ -3428,13 +3428,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3452,14 +3452,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3467,7 +3467,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3478,7 +3478,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "fd37852833acde2ed1f90e9cdbc9c796b03251b36d89e5b90d5b8b4856212be3",
+          "sha256": "dfcc9360a8778eb8cb87e2beaba1b906e942b7059fea2ea44829da3cf8427175",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -3489,9 +3489,9 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 142611,
+          "bytes": 146679,
           "captured": true,
-          "file": "9d173f76a5e09199.png",
+          "file": "d9b0dbff2a9d8aa3.png",
           "force_state": null,
           "height": 844,
           "locale": "en",
@@ -3502,13 +3502,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3526,14 +3526,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3541,7 +3541,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3552,7 +3552,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "9d173f76a5e091998169de09f470653b4221bce12cf8da0bbc7c5ecb64e423db",
+          "sha256": "d9b0dbff2a9d8aa348bc306b51f7fed7942f6c02a6cc35613d78a4fdb19a8dc2",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -3563,9 +3563,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 156258,
+          "bytes": 165918,
           "captured": true,
-          "file": "a2825f02d312b3e0.png",
+          "file": "cc634fff6a84f653.png",
           "force_state": null,
           "height": 844,
           "locale": "zh",
@@ -3576,13 +3576,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3600,14 +3600,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3615,7 +3615,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3626,7 +3626,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "a2825f02d312b3e0d0f326c2712a657c20fb7a9bf4f49f13c2bf5c00d4980487",
+          "sha256": "cc634fff6a84f653762e055345ff1fde303ad0afe5d12d6e67141b5b38826ca3",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -3637,9 +3637,9 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 148452,
+          "bytes": 155848,
           "captured": true,
-          "file": "a27d27a6ff7bf3d1.png",
+          "file": "25f06b790ddfd3c6.png",
           "force_state": null,
           "height": 844,
           "locale": "zh",
@@ -3650,13 +3650,13 @@
               "2"
             ],
             "count_label_visible": true,
-            "final_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "final_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "focused_element_id": null,
             "focused_visible": false,
             "hash": "",
             "journeys": {
               "back_forward": {
-                "before_push": "http://127.0.0.1:49934/reference.html?q=curve",
+                "before_push": "http://127.0.0.1:52869/reference.html?q=curve",
                 "input": "curve",
                 "ok": true,
                 "url_q": "curve"
@@ -3674,14 +3674,14 @@
               "reload": {
                 "ok": true,
                 "post_hash": "",
-                "post_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "post_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "post_q": "curve",
                 "pre_hash": "",
-                "pre_href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "pre_href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "pre_q": "curve"
               },
               "share": {
-                "href": "http://127.0.0.1:49934/reference.html?q=curve",
+                "href": "http://127.0.0.1:52869/reference.html?q=curve",
                 "matches_final": true,
                 "ok": true
               }
@@ -3689,7 +3689,7 @@
             "miss_visible": false,
             "pathname": "/reference.html",
             "query_q": "curve",
-            "requested_url": "http://127.0.0.1:49934/reference.html?q=curve",
+            "requested_url": "http://127.0.0.1:52869/reference.html?q=curve",
             "rf_q_value": "curve",
             "search": "?q=curve",
             "selected_id": null,
@@ -3700,7 +3700,7 @@
             ],
             "visible_result_count": 2
           },
-          "sha256": "a27d27a6ff7bf3d1218c3caacae467d07e6e38da3e70588c076af762264f0e93",
+          "sha256": "25f06b790ddfd3c6a91d90623ecaf27891306136cface25bc7c18a6828add54e",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -3719,7 +3719,7 @@
     "base_url": null,
     "kind": "site_dir",
     "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mor1-integrity-repair-20260902",
-    "resolved_sha_or_none": "54e2756df871a736c2e9e80943d508219547d834",
+    "resolved_sha_or_none": "c5a0759e227cfb23508a3d624613ce0221d2644b",
     "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mor1-integrity-repair-20260902 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
     "site_dir": "/Users/chriswong/Documents/Cluade/macro-main/.cursor/worktrees/mor1-integrity-repair-20260902/site"
   },
