@@ -1,11 +1,11 @@
 # Policy Turn Clock — Monthly VIX Futures Settlement Amendment
 
-Date: 2026-09-03  
-Status: **BINDING PRE-IMPLEMENTATION ARCHITECTURE REPAIR / RECORDS ONLY**  
-Parent carrier: Macro PR #6788  
-Implementation carrier: Macro issue #6787  
-Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
-Current protected procedure at repair: `mastermindx-market-intelligence/Mastermind@c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.  
+Date: 2026-09-03
+Status: **BINDING PRE-IMPLEMENTATION ARCHITECTURE REPAIR / RECORDS ONLY**
+Parent carrier: Macro PR #6788
+Implementation carrier: Macro issue #6787
+Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`
+Current protected procedure at repair: `mastermindx-market-intelligence/Mastermind@c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.
 Current Macro observation at repair: `16aac3be6a7e8790af0aee75ab1d44ac43eecfab`.
 
 ## 1. Why this amendment exists

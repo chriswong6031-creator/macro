@@ -1,13 +1,13 @@
 # Actor, Liquidity & Monthly Transition Clock — W1 Design
 
-Date: 2026-09-03  
-Status: **FORWARD-REPAIRED DESIGN / HOLD-FOR-SOL / SPEC_ONLY**  
-Parent program: Policy Transmission & Pre-Turn Command  
-Organizational owner: `WS:RATES-INFLATION-COMMAND`  
-Implementation carrier: Macro issue #6787  
-Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
-Architecture carrier: Macro PR #6788  
-Protected procedure at forward repair: `mastermindx-market-intelligence/Mastermind@da6af515c95301377fb5fd8748e374a8948a3540`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.  
+Date: 2026-09-03
+Status: **FORWARD-REPAIRED DESIGN / HOLD-FOR-SOL / SPEC_ONLY**
+Parent program: Policy Transmission & Pre-Turn Command
+Organizational owner: `WS:RATES-INFLATION-COMMAND`
+Implementation carrier: Macro issue #6787
+Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`
+Architecture carrier: Macro PR #6788
+Protected procedure at forward repair: `mastermindx-market-intelligence/Mastermind@da6af515c95301377fb5fd8748e374a8948a3540`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.
 Macro source observation at repair START: `main@9c7d23e4efc9a5fef52d51b935a635a89774055f`; action-time current main controls reconciliation.
 
 This document consolidates the binding W1 contract. The VIX-futures and executable-CI amendments in the same PR remain provenance and must agree with this design. The six-finding forward repair on operation `policy-preturn-pr6788-six-finding-forward-repair-20260903-sol-001` adds no implementation or runtime effect; it closes pre-implementation worktree, machine-consumer, design-evidence, prospective-ledger, per-source no-regress, and axis-composition gaps identified by independent review.

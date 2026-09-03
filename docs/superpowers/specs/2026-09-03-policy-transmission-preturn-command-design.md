@@ -1,10 +1,10 @@
 # Policy Transmission & Pre-Turn Command — Architecture Design
 
-Date: 2026-09-03  
-Status: **DESIGN ACCEPTED / ARCHITECTURE FROZEN / RECORDS-ONLY UNTIL IMPLEMENTATION WAVES PROVE OTHERWISE**  
-Chairman intent: anticipate macro turns before retrospective regime labels, monitor Fed/Treasury/administration reaction windows, and explain apparently contradictory cross-asset moves well enough to improve real portfolio and end-user decisions.  
-Canonical implementation carrier for the first vertical: GitHub issue #6787  
-Protected Sol procedure at freeze: `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.  
+Date: 2026-09-03
+Status: **DESIGN ACCEPTED / ARCHITECTURE FROZEN / RECORDS-ONLY UNTIL IMPLEMENTATION WAVES PROVE OTHERWISE**
+Chairman intent: anticipate macro turns before retrospective regime labels, monitor Fed/Treasury/administration reaction windows, and explain apparently contradictory cross-asset moves well enough to improve real portfolio and end-user decisions.
+Canonical implementation carrier for the first vertical: GitHub issue #6787
+Protected Sol procedure at freeze: `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.
 Macro architecture base: `931870b1feccb91b5122d92b07995e9749566aae`.
 
 ## 1. Outcome
@@ -197,7 +197,6 @@ It may say that a Treasury response window is opening because auction absorption
 ### 6.4 Monthly transition clock
 
 The monthly pattern is modeled as **support formation, support expiry, replacement and catalyst override**, not seasonality.
-
 Required independent axes:
 
 - OPEX phase and front-cycle concentration;

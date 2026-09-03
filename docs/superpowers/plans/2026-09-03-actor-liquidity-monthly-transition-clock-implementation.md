@@ -1,11 +1,11 @@
 # Actor, Liquidity & Monthly Transition Clock — W1 Implementation Plan
 
-Date: 2026-09-03  
-Status: **FORWARD-REPAIRED PLAN / HOLD-FOR-SOL / NOT STARTED**  
-Canonical implementation carrier: Macro issue #6787  
-Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
-Architecture carrier: Macro PR #6788  
-Protected procedure at repair: `mastermindx-market-intelligence/Mastermind@da6af515c95301377fb5fd8748e374a8948a3540`  
+Date: 2026-09-03
+Status: **FORWARD-REPAIRED PLAN / HOLD-FOR-SOL / NOT STARTED**
+Canonical implementation carrier: Macro issue #6787
+Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`
+Architecture carrier: Macro PR #6788
+Protected procedure at repair: `mastermindx-market-intelligence/Mastermind@da6af515c95301377fb5fd8748e374a8948a3540`
 Authority: records only until a separately assigned W1 worker posts Pickup ACK, continuity receipt when available, and separate START after every entrance gate is open.
 
 This plan implements `docs/superpowers/specs/2026-09-03-actor-liquidity-monthly-transition-clock-design.md` plus the VIX-futures and CI-owner amendments on this same architecture carrier. Where older text conflicts, the forward-repaired design and this plan control.

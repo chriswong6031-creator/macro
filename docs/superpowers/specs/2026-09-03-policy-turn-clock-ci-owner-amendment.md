@@ -1,8 +1,8 @@
 # Policy Turn Clock — CI / Runtime Owner Amendment
 
-Date: 2026-09-03  
-Status: **FORWARD-REPAIRED BINDING AMENDMENT / HOLD-FOR-SOL / SPEC_ONLY**  
-Applies to: `policy_turn_clock.v1` W1 on Macro issue #6787  
+Date: 2026-09-03
+Status: **FORWARD-REPAIRED BINDING AMENDMENT / HOLD-FOR-SOL / SPEC_ONLY**
+Applies to: `policy_turn_clock.v1` W1 on Macro issue #6787
 Architecture carrier: PR #6788
 
 This amendment binds runtime ownership and executable CI for the Actor, Liquidity & Monthly Transition Clock. It does not START W1, create a new job/workflow, publish product bytes, append evidence or authorize merge/deploy.
