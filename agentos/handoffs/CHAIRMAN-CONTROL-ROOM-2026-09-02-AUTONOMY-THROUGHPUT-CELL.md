@@ -2,7 +2,7 @@
 workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/autonomy-throughput-cell-r1-20260903
 model: sol
-ended_because: execution_handoff
+ended_because: ci_handoff
 mission: >
   Keep every Pro CEO innovation lane active while one bounded Meta-CEO throughput cell
   removes orphaned handoffs, repairs deterministic dialogue edges, preserves exact workers,
