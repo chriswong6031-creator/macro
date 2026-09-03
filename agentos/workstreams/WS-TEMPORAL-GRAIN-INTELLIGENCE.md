@@ -9,7 +9,7 @@ objective: >
   usefulness-mechanism claims are tested only under a frozen localization/risk ruler, any surviving
   structure-to-kernel relationship passes an instrument-disjoint preregistered test, and every
   result remains zero-authority unless a later independent promotion passes.
-status: active
+status: awaiting_ci
 program: market-timing-intelligence
 repos: [macro]
 owner: ceo-sol
@@ -31,25 +31,22 @@ decisions:
 waves:
   - id: W0
     title: Architecture, ownership, contracts, adversarial repair, plan and parent-state reconciliation
-    status: awaiting_ci
+    status: done
     pr: 6790
     next_action: >
-      Validate and obtain Sol exact-head acceptance of draft PR #6790, the records-only
-      W0 carrier for temporal-grain-w0-freeze-20260903-sol-001. The controlling W0
-      precedence chain is architecture freeze, design, implementation plan, then the
-      adversarial review amendment. W0 creates no empirical result, runtime, signal, data
-      plane or production capability.
+      W0 merged as db5d20c45db123a2e133d9c1a28387ec9f23a545 in PR #6790. Preserve
+      its controlling precedence chain: architecture freeze, design, implementation plan,
+      then the adversarial review amendment.
   - id: W1A
     title: Exact WMT/silver recipe capture, TradingView parity and mechanical G/A/K/D artifact attack
-    status: todo
+    status: awaiting_ci
+    pr: 6803
     depends_on: [W0]
     next_action: >
-      After W0 merge, create one top-level child carrier for
-      temporal-grain-gakd-artifact-attack-r1-20260903-sol-001, bind one capable CTO Sol
-      or Terra-class session, require PICKUP_ACK and separate START, and execute the
-      frozen plan as narrowed by the W0 adversarial review amendment. W1A reads no
-      usefulness outcome and may return only ARTIFACT, UNRESOLVED_DATA or
-      MECHANICALLY_SURVIVES.
+      Keep PR #6803 DRAFT / HOLD-FOR-SOL while exact-head hosted CI and immutable review
+      run. The code and synthetic fixture are BUILT_NOT_PROVEN; exact WMT and silver
+      packets remain independently UNRESOLVED_DATA and external. Do not mark Ready,
+      merge, capture live charts, or begin W1B without a fresh same-carrier Sol ruling.
   - id: W1B
     title: Separately preregistered localization and risk-utility mechanism diagnosis
     status: todo
@@ -109,11 +106,14 @@ artifacts:
   - research/signal_engine/temporal_scale/CHARACTERISTIC_MARKET_TIME_W0_ADVERSARIAL_REVIEW_AMENDMENT_2026-09-03.md
   - agentos/decisions/DEC-TEMPORAL-GRAIN-OWNERSHIP-AND-ZERO-AUTHORITY.md
   - agentos/handoffs/TEMPORAL-GRAIN-INTELLIGENCE-2026-09-03-W0.md
+  - agentos/handoffs/TEMPORAL-GRAIN-INTELLIGENCE-W1-R1.md
+  - scripts/research/run_temporal_scale_artifact_attack.py
+  - scripts/research/temporal_scale/artifact_attack.py
 next_action: >
-  Complete exact-head validation and Sol acceptance of draft PR #6790 after the adversarial repair.
-  Then place exactly one W1A implementation session through PREFERRED_AVENUE CTO Sol,
-  RECEIVER_BINDING_MODE CAPACITY_SELECTABLE. Current placement is WAITING_CAPACITY /
-  needs_placement; no Slack delivery, pickup, START, Executive Job or watcher exists.
+  Complete exact-head hosted CI and immutable Sol review of DRAFT / HOLD-FOR-SOL PR #6803.
+  Treat the harness as BUILT_NOT_PROVEN and PRODUCTION_INERT: exact WMT and silver packets
+  remain independently UNRESOLVED_DATA, and W1B remains held until a fresh same-carrier
+  Sol CONTINUE after reviewing immutable W1A receipts.
 ---
 
 ## Scientific prior
