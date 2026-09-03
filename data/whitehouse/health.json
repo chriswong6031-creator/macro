@@ -1,10 +1,23 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-09-02T11:17:34.131618+00:00",
-  "posts_seen": 3,
-  "seen_total": 152,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-09-02T22:38:53.545075+00:00",
+  "posts_seen": 9,
+  "seen_total": 158,
+  "evaluated": 2,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-09-02-g20-innovation-ministerial-concludes-with-consensus-statement",
+      "importance": 28,
+      "activated": false,
+      "degraded_reason": "served_by:codex"
+    },
+    {
+      "id": "tw-2026-08-31-tga-release",
+      "importance": 62,
+      "activated": true,
+      "degraded_reason": null
+    }
+  ]
 }

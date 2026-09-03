@@ -1,0 +1,318 @@
+{
+  "axes": {
+    "access": [
+      "anonymous"
+    ],
+    "force_states": [],
+    "locales": [
+      "en",
+      "zh"
+    ],
+    "themes": [
+      "dark",
+      "light"
+    ],
+    "viewports": {
+      "desktop": [
+        1440,
+        900
+      ],
+      "mobile": [
+        390,
+        844
+      ]
+    }
+  },
+  "excluded": [
+    {
+      "route": "reference.html#vix",
+      "reason": "not committed into mockups/evidence/market_reference_mor1 \u2014 gitignored source captures under data/product_experience/evidence/ are not visible to CI; only the reference.html primary library matrix was committed per the estate idiom (mockups/evidence/<name>/) to satisfy scripts/check_ui_visual_evidence.py, which requires complete desktop+mobile REST coverage for every page present in manifest.pages."
+    },
+    {
+      "route": "reference.html#not-a-real-entry",
+      "reason": "not committed into mockups/evidence/market_reference_mor1 \u2014 gitignored source captures under data/product_experience/evidence/ are not visible to CI; only the reference.html primary library matrix was committed per the estate idiom (mockups/evidence/<name>/) to satisfy scripts/check_ui_visual_evidence.py, which requires complete desktop+mobile REST coverage for every page present in manifest.pages."
+    },
+    {
+      "route": "reference.html?q=curve",
+      "reason": "not committed into mockups/evidence/market_reference_mor1 \u2014 gitignored source captures under data/product_experience/evidence/ are not visible to CI; only the reference.html primary library matrix was committed per the estate idiom (mockups/evidence/<name>/) to satisfy scripts/check_ui_visual_evidence.py, which requires complete desktop+mobile REST coverage for every page present in manifest.pages."
+    }
+  ],
+  "generated_at": "2026-09-02T14:44:10Z",
+  "honesty": {
+    "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
+    "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
+    "gaps": "states that were not captured are recorded with a reason; nothing is inferred for them"
+  },
+  "outcome": "captured",
+  "pages": [
+    {
+      "console_errors": [],
+      "failed_responses": [],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": false,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 2361,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 3884,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 0,
+        "document_height_px": 2361,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 12,
+          "h3": 0,
+          "h4": 0,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "dark",
+          "viewport": "desktop"
+        },
+        "panel_count": 0,
+        "payload_bytes_total": 557975,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 14,
+        "screenshot_completion": 1.0,
+        "section_count": 5,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 1074
+      },
+      "page_id": "reference.html",
+      "registry_route": "reference.html",
+      "route": "reference.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 610225,
+          "captured": true,
+          "file": "d91ce8e7ebbf6202.png",
+          "force_state": null,
+          "height": 2361,
+          "locale": "en",
+          "sha256": "d91ce8e7ebbf62021ae11739f7cc2e418cf7f4fbe592a79b20ca754255866644",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 533838,
+          "captured": true,
+          "file": "55d689d6a0ce65dd.png",
+          "force_state": null,
+          "height": 2457,
+          "locale": "en",
+          "sha256": "55d689d6a0ce65dd6dc87f1424f8ab2e343f8dd84c0066572f8ba4436a1c1140",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 731048,
+          "captured": true,
+          "file": "75f64e8096344422.png",
+          "force_state": null,
+          "height": 2361,
+          "locale": "zh",
+          "sha256": "75f64e8096344422b5f09954b2437bb8cf016bc56ca7cf1ea4cd687c70fa75e5",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 662655,
+          "captured": true,
+          "file": "d2b4e7d347a70c07.png",
+          "force_state": null,
+          "height": 2457,
+          "locale": "zh",
+          "sha256": "d2b4e7d347a70c0766156b8461d51159d4c07fcbb72cd1b00d535b408586276e",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 491224,
+          "captured": true,
+          "file": "73cbe865aba420de.png",
+          "force_state": null,
+          "height": 3884,
+          "locale": "en",
+          "sha256": "73cbe865aba420de879511eb2e1d85be40a6848ef6ffa2b1c3921bb93a8045a9",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 455061,
+          "captured": true,
+          "file": "9dd6351f2c13b6ba.png",
+          "force_state": null,
+          "height": 3976,
+          "locale": "en",
+          "sha256": "9dd6351f2c13b6ba9d69cdd44772560415c2c40f1a92015e229550b4bbaa569a",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 602107,
+          "captured": true,
+          "file": "875e44fcebd179d4.png",
+          "force_state": null,
+          "height": 3860,
+          "locale": "zh",
+          "sha256": "875e44fcebd179d465968e49dcc35e79e428bb0f09ba399c267b2f6e05ad86a5",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 570438,
+          "captured": true,
+          "file": "ebaec747f324c993.png",
+          "force_state": null,
+          "height": 3952,
+          "locale": "zh",
+          "sha256": "ebaec747f324c993c371e166e019be39bb5240a37a3f3500adcd32d9bfb5d2c7",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        }
+      ]
+    }
+  ],
+  "schema": "mastermind.p0_evidence.v2",
+  "selection": {
+    "explicit_routes": [
+      "reference.html"
+    ],
+    "max_pages": 30,
+    "mode": "explicit_routes",
+    "note": "--routes overrode registry selection; the --priority and --repo filters were not applied | evidence-commit narrowing: only reference.html (8-cell primary library matrix) retained for the committed receipt \u2014 deep-link target routes (reference.html#vix, reference.html#not-a-real-entry, reference.html?q=curve) dropped entirely rather than partially, because scripts/check_ui_visual_evidence.py requires full desktop+mobile REST coverage for every page listed in manifest.pages; a partial (desktop-only) page would itself fail the gate.",
+    "priority": null,
+    "registry": "data/product_experience/page_registry.json",
+    "registry_rows": 309,
+    "repo": null,
+    "selected": 1
+  },
+  "target": {
+    "base_url": null,
+    "kind": "site_dir",
+    "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mor1-build-756295e2",
+    "resolved_sha_or_none": "a0f7c916ecb189a95d821cc5cf6af01746c12dbe",
+    "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mor1-build-756295e2 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
+    "site_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/mor1-build-756295e2/site"
+  },
+  "tool": {
+    "module_ref": "scripts/capture_page_evidence.py",
+    "module_sha256": "97b4435815440fde008cd35b73c551cf704ba01ea71f18f04a2b23ebc7a0a6b7",
+    "user_agent": "mastermind-page-census/1.0 (internal product observability)",
+    "version": "1.2.0"
+  },
+  "totals": {
+    "pages": 1,
+    "states_attempted": 8,
+    "states_captured": 8
+  }
+}
