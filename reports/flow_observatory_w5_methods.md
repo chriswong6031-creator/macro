@@ -198,3 +198,94 @@ Incumbent (tau=0.5, beta=None): main-window neutral_share=0.1562 flip_rate=0.075
 - Metric 6 (coverage sensitivity) is themes-lens only per the frozen metric text ('themes lens, 100 draws') -- not computed for names or southbound, where the concept of dropping 'members' does not apply.
 - Metric 8 (concordance) is frozen as 'rank correlation of THEME orderings' -- generalized here to the names lens too (an analogous cross-sectional rank correlation across ~1,500 names), reported as its own number rather than folded into a single cross-lens figure. Southbound (n_entities=1) has no cross-section to rank at all, so concordance -- and therefore Sec 5 condition (c) -- is reported as not-applicable there rather than a silent False that would veto every southbound challenger regardless of its actual behavior.
 - Metric 7 (revision sensitivity) on the names lens (~1,500 scored tickers) seeded-subsamples to 250 entities before drawing perturbations -- a pure performance measure (running the frozen fallback on every name at full draw count measured at several minutes; batching the compute, see the metric's own docstring, brought this down but the entity count is still capped so the harness stays inside its <10min budget). The pooled median over 250*40 name/draw pairs is reported as the names-lens figure; themes (22) and southbound (1) use their full entity pool.
+
+## §6 Adjudication (Fable principal, 2026-09-03)
+
+Adjudicated against the frozen §5 decision rule of `W5_PREREG.md` (committed BEFORE this
+harness ran). Citable provenance: PR #6808 comment
+[5530582923](https://github.com/mastermindx-market-intelligence/macro/pull/6808#issuecomment-5530582923).
+Authority `context_only` throughout; no forward-return metrics; validation metadata
+untouched. Decision record: `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`.
+
+**Verbatim rulings:**
+
+1. **Themes**: method M0 stays; thresholds adopt τ=0.75, β=30 (both in the honest-neutral
+   band; flip strictly improves — not a tie).
+2. **Names**: method M0 stays; thresholds by the mechanical completion of the frozen
+   lexicographic rule — in-band min-flip, else nearest-band then min-flip — arithmetic to
+   be shown in the report.
+3. **Southbound**: M1 (winsorized) adopts SUBJECT TO a sanity bound that can only favor the
+   incumbent (state-disagreement share vs M0 > 20% → HOLD, M0 stays). Southbound thresholds
+   re-run on the adopted method's grid excluding any τ whose held-out-60 reach makes either
+   non-neutral verdict effectively unreachable (<2%); if all improving τ are excluded, τ=0.5
+   stays. Rationale: the τ=1.0 sweep winner zeroed above-norm reach across the held-out
+   window — a current-regime degeneracy.
+4. Prereg deviations 1–7 above: CONFIRMED.
+
+### Themes arithmetic
+
+Selection = min flip rate among grid points with `0.25 <= neutral_share <= 0.60` AND
+`in_reach >= 0.05` AND `out_reach >= 0.05` (§4's lexicographic objective, band-first). 18 of
+24 M0 grid points clear both gates; the minimum flip rate among them:
+
+| tau | beta | neutral_share | flip_rate |
+|---|---|---|---|
+| **0.75** | **30** | 0.549 | **0.1645** ← winner |
+| 0.5 / 0.5 / 0.6 | 25 / 30 / 20 | 0.353 / 0.444 / 0.314 | 0.1711 (next-best, 3-way tie) |
+
+0.1645 < 0.1711 — a strict improvement, not a tie, matching the ruling's own words.
+
+### Names arithmetic
+
+No M0 grid point sits genuinely in-band: the lowest `neutral_share` is 0.6078 (tau=0.3 or
+0.4, beta=15), 0.0078 ABOVE the 0.60 ceiling. Nearest-band applies:
+`band_penalty = min(|neutral_share-0.25|, |neutral_share-0.60|)`.
+
+| tau | beta | neutral_share | band_penalty | flip_rate |
+|---|---|---|---|---|
+| 0.3 | 15 | 0.6078 | 0.0078 | **0.0921** ← wins tie on flip_rate |
+| 0.4 | 15 | 0.6078 | 0.0078 | 0.1118 |
+| 0.5 | 15 | 0.6471 | 0.0471 | 0.1447 |
+
+tau=0.3 and tau=0.4 (both beta=15) tie exactly on `band_penalty` (0.0078); the tie breaks
+on the next lexicographic key, flip_rate: 0.0921 < 0.1118 → **winner: tau=0.3, beta=15**.
+
+### Southbound arithmetic
+
+**Step 1 — state disagreement (HOLD sanity bound).** M0 vs M1 5-state classification
+(VIN/VOUT=0.5/-0.5, the harness's fixed state-comparison cutoffs) over the full causal
+history, 2519 sessions where both methods emit a defined state:
+
+- disagreeing sessions: 113 / 2519 = **4.49%**
+- HOLD bound: 20% — 4.49% <= 20%, so **M1 (winsorized) is ADOPTED** for the southbound
+  aggregate path (not HELD).
+
+**Step 2 — threshold re-sweep on the adopted method (M1), excluding held-out-unreachable
+τ.** Every τ in the grid has a 0% held-out (last 60 sessions) `in_reach` — the "above norm"
+verdict never fires in the held-out tail at ANY threshold, the exact degeneracy the ruling
+names (generalized from τ=1.0's own behavior to the whole grid):
+
+| tau | main neutral_share | main flip_rate | held-out in_reach | held-out out_reach |
+|---|---|---|---|---|
+| 0.3 | 0.0801 | 0.0663 | 0.0 | 0.9167 |
+| 0.4 | 0.1155 | 0.0732 | 0.0 | 0.85 |
+| 0.5 (incumbent) | 0.1464 | 0.0732 | 0.0 | 0.8167 |
+| 0.6 | 0.1692 | 0.0692 | 0.0 | 0.7833 |
+| 0.75 | 0.2127 | 0.0675 | 0.0 | 0.7667 |
+| 1.0 | 0.2843 | 0.0708 | 0.0 | 0.7167 |
+
+All 6 candidates are excluded by the `<2%` held-out-reach sanity bound. Per the frozen
+fallback ("if all improving τ are excluded, τ=0.5 stays"), the incumbent **τ=0.5** is
+retained — numerically unchanged from before W5, even though the method switched M0→M1.
+
+### Final selection
+
+| lens | method | tau | beta | outcome |
+|---|---|---|---|---|
+| themes | M0 | 0.75 | 30 | threshold recalibration only |
+| names | M0 | 0.3 | 15 (no production tilt-gauge consumer) | threshold recalibration only |
+| southbound | **M1** | 0.5 | n/a | method switch; threshold unchanged (HELD-bound cleared, but re-sweep fell back to incumbent) |
+
+No lens produced a HOLD on the METHOD axis (southbound's own sanity bound cleared); the
+southbound THRESHOLD axis fell back to its incumbent value via the frozen all-excluded rule
+— disclosed above as the closest thing to a HOLD this adjudication produced.

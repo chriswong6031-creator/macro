@@ -101,7 +101,26 @@ def _vel_series(x: pd.Series, w: int, base: int, floor_frac: float) -> pd.Series
     return drift / (vol.replace(0, np.nan) / np.sqrt(w))
 
 
-def _kinetics(flow: pd.Series, cfg: dict) -> dict | None:
+def _winsorize_causal(x: pd.Series, window: int = 126, lo_q: float = 0.025,
+                      hi_q: float = 0.975, min_periods: int | None = None) -> pd.Series:
+    """M1 (W5-adjudicated SOUTHBOUND method, DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION):
+    clip each session's value to the [lo_q, hi_q] percentile of its OWN trailing `window`-
+    session causal history (inclusive of the current session, so this stays point-in-time).
+    During warm-up (bounds not yet defined) the value passes through unclipped. Series-only
+    mirror of ``scripts/research_flow_observatory_methods.winsorize_causal_wide`` — that
+    harness is DataFrame-vectorized for the multi-entity lenses; ``_kinetics`` here always
+    works one series at a time, so this is the same primitive at the Series shape, kept
+    exact rather than reused across the module boundary (the harness is a pure-read
+    research script, never imported by engine/)."""
+    mp = min_periods if min_periods is not None else max(20, window // 2)
+    lo = x.rolling(window, min_periods=mp).quantile(lo_q)
+    hi = x.rolling(window, min_periods=mp).quantile(hi_q)
+    wins = x.clip(lower=lo, upper=hi)
+    return wins.where(lo.notna() & hi.notna(), x)
+
+
+def _kinetics(flow: pd.Series, cfg: dict, vin: float = 0.5, vout: float = -0.5,
+             winsorize: bool = False) -> dict | None:
     """Velocity + acceleration of a per-period NET-FLOW series.
 
     Velocity at window w is the t-stat of the recent average net-flow vs its own vol (a
@@ -110,6 +129,13 @@ def _kinetics(flow: pd.Series, cfg: dict) -> dict | None:
     horizon configs above; without it the readout is pinned by the source's structural offset.
     Acceleration = the trailing slope of the primary-horizon velocity series (is the inflow
     speeding up). None when too short.
+
+    `vin`/`vout` are the state-classification cutoffs passed to :func:`_classify` — default
+    to the legacy ±0.5σ; W5-adjudicated per-lens callers pass their own calibrated value
+    (research/flow_observatory/W5_PREREG.md; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+    `winsorize=True` applies the M1 causal-winsorization primitive to the demeaned series
+    before the slope_z drift/vol are computed from it — the SOUTHBOUND aggregate path only
+    (M0-vs-M1 state disagreement measured 4.49%, under the 20% HOLD bound).
     """
     flow = pd.to_numeric(flow, errors="coerce").dropna()
     if len(flow) < cfg["min_obs"]:
@@ -121,6 +147,8 @@ def _kinetics(flow: pd.Series, cfg: dict) -> dict | None:
         flow = (flow - flow.rolling(dm, min_periods=max(20, dm // 2)).mean()).dropna()
         if len(flow) < max(cfg["horizons"][cfg["primary"]] + 2, 30):
             return None
+    if winsorize:
+        flow = _winsorize_causal(flow, 126, 0.025, 0.975)
     base = min(cfg["base"], max(8, len(flow) // 2))
     floor_frac = cfg.get("vol_floor") or 0.0
     vel: dict[str, float | None] = {}
@@ -138,13 +166,13 @@ def _kinetics(flow: pd.Series, cfg: dict) -> dict | None:
         a = indicators.rolling_slope(vser, cfg["accel_w"]).iloc[-1]
         accel = float(a) if a is not None and np.isfinite(a) else np.nan
     vmid = vel.get(cfg["primary"])
-    en, zh = _classify(vmid, accel)
+    en, zh = _classify(vmid, accel, vin, vout)
     return {"vel": vel, "vel_primary": vmid, "primary": cfg["primary"],
             "accel": round(accel, 3) if np.isfinite(accel) else None,
             "state": en, "state_zh": zh, "n": int(len(flow))}
 
 
-def _classify(vel: float | None, accel: float) -> tuple[str, str]:
+def _classify(vel: float | None, accel: float, vin: float = 0.5, vout: float = -0.5) -> tuple[str, str]:
     """Direction (velocity sign) × momentum-of-direction (acceleration sign).
 
     Vocabulary v2 (masterplan §6 — replaces the old "accelerating in"/"outflow easing"
@@ -152,13 +180,18 @@ def _classify(vel: float | None, accel: float) -> tuple[str, str]:
     t-stat against the series' own trailing norm, not a raw flow direction, so the old
     strings read as if money were actually moving when the series could be doing the
     OPPOSITE in absolute terms — the exact conflation this program exists to kill).
+
+    `vin`/`vout` default to the legacy ±0.5σ cutoff (still SOUTHBOUND's post-W5 value).
+    NAMES/THEMES callers pass `_NAMES_VIN/_VOUT` / `_THEMES_VIN/_VOUT` — the W5-adjudicated
+    per-lens thresholds (research/flow_observatory/W5_PREREG.md §4;
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
     """
     if vel is None or not np.isfinite(vel):
         return "no data", "无数据"
     a = accel if np.isfinite(accel) else 0.0
-    if vel >= 0.5:
+    if vel >= vin:
         return ("above norm, rising", "高于常态·升温") if a > 0 else ("above norm, cooling", "高于常态·降温")
-    if vel <= -0.5:
+    if vel <= vout:
         return ("below norm, worsening", "低于常态·加剧") if a < 0 else ("below norm, easing", "低于常态·趋缓")
     return ("near its norm", "接近常态")
 
@@ -254,7 +287,10 @@ def _channel(name: str, label: str, label_zh: str) -> dict | None:
     if live:
         # only compute live velocity for a current series — a frozen channel's last value
         # is years stale and a velocity chip would read as "now" when it isn't.
-        kin = _kinetics(net, _AGG)
+        # W5: the winsorized (M1) variant is adjudicated for SOUTHBOUND only (the M0-vs-M1
+        # state disagreement share cleared the HOLD bound there, 4.49% <= 20%); its threshold
+        # re-sweep still lands on the legacy 0.5/-0.5 default, so vin/vout are unchanged.
+        kin = _kinetics(net, _AGG, winsorize=(name == "southbound"))
         out["flow_1m_b"] = round(float(net.tail(21).sum()) / 1e3, 1)   # ¥millions → ¥B (~1m net)
         out["pos_days_20"] = int((net.tail(20) > 0).sum())
         if kin:
@@ -322,7 +358,9 @@ def _name_kinetics_map(wide: pd.DataFrame) -> dict[str, dict]:
     names = _name_map()
     out: dict[str, dict] = {}
     for tk in wide.columns:
-        kin = _kinetics(wide[tk], _WK)
+        # W5: names-lens state cutoff (mechanical nearest-band + min-flip on the M0 grid;
+        # DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+        kin = _kinetics(wide[tk], _WK, vin=_NAMES_VIN, vout=_NAMES_VOUT)
         if not kin or kin["vel_primary"] is None:
             continue
         out[tk] = {
@@ -355,7 +393,8 @@ def ashare_name_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = N
     from engine.flow_observatory.contract import market_read as _market_read
     return {"cadence": "daily", "as_of": str(wide.index.max().date()),
             "n": int(len(df)), "n_unscored": n_unscored, "primary": _WK["primary"],
-            "market_read": _market_read(list(kmap.values()), unscored=n_unscored),
+            "market_read": _market_read(list(kmap.values()), unscored=n_unscored,
+                                        rel_thresh=_NAMES_VIN),
             "note": "主力 net-rate (super-large + large orders); velocity = the 4-week inflow rate standardized against the name's OWN trailing norm (not against zero — main money is a structural net seller), acceleration = its trend.",
             "note_zh": "主力净占比（超大单+大单）；流速＝4周流入率相对该股自身常态的标准化值（非相对零——主力资金结构性净卖出），加速度＝其趋势。",
             "inflow": inflow, "outflow": outflow}
@@ -438,7 +477,9 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
         kin = None
         if sufficient:
             sect_flow = wide[covered].mean(axis=1)     # equal-weight SCORED-member net-rate
-            kin = _kinetics(sect_flow, _WK)
+            # W5: themes-lens state cutoff — in the honest-neutral band, flip strictly
+            # improves over the incumbent (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+            kin = _kinetics(sect_flow, _WK, vin=_THEMES_VIN, vout=_THEMES_VOUT)
             if not kin or kin["vel_primary"] is None:
                 sufficient = False
         if sufficient and kin:
@@ -585,7 +626,23 @@ def _seats_as_of() -> str | None:
 # and where fast money meets the institutional tape. Every read is descriptive context —
 # no numeric score is manufactured, confluence stays a render-time CLASS (agree/diverge),
 # and stances stay watch-family ([[signal-contract-gate]], honesty gate above).
-_VIN, _VOUT = 0.5, -0.5   # the same ±0.5σ inflow / outflow cutoffs the UI's vstate uses
+_VIN, _VOUT = 0.5, -0.5   # legacy default cutoff; ALSO southbound's post-W5 threshold —
+                          # research/flow_observatory/W5_PREREG.md §4's re-sweep excluded
+                          # every improving tau via the <2% held-out-reach sanity bound (a
+                          # current-regime degeneracy: 0% held-out "above norm" reach at
+                          # every candidate), so the incumbent 0.5 stays numerically unchanged
+                          # (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+# W5-adjudicated per-lens cutoffs (same decision record). NAMES governs individual-name
+# state labels, flow_breadth's names_in/names_out count, momentum(), and confluence() — all
+# operate over the names population. THEMES governs the curated-theme rows' state labels,
+# flow_breadth's sectors_in/sectors_out + tilt count, and market_pulse's dominant_in/out —
+# all operate over the sector/theme population. Neither touches the W4 official-sector
+# (Shenwan L1) lens (engine.flow_observatory.groups.aggregate_lens) — W5 evaluated only the
+# 22 curated baskets_china themes, names, and southbound; the official lens keeps the
+# legacy default.
+_NAMES_VIN, _NAMES_VOUT = 0.3, -0.3       # mechanical nearest-band + min-flip on the M0 grid
+_THEMES_VIN, _THEMES_VOUT = 0.75, -0.75   # in the honest-neutral band; flip strictly improves
+_THEMES_TILT_BETA = 30                     # sector-breadth tilt band (was 25)
 
 
 def flow_breadth(kmap: dict | None, sectors: dict | None = None) -> dict:
@@ -593,16 +650,16 @@ def flow_breadth(kmap: dict | None, sectors: dict | None = None) -> dict:
     −100..+100 SECTOR 'tilt' for the hero gauge — a breadth read (share of sectors drawing
     money), labeled as such, not a signal. None-safe: empty inputs give a balanced zero."""
     recs = list((kmap or {}).values())
-    n_in = sum(1 for r in recs if (r.get("vel") or 0) >= _VIN)
-    n_out = sum(1 for r in recs if (r.get("vel") or 0) <= _VOUT)
+    n_in = sum(1 for r in recs if (r.get("vel") or 0) >= _NAMES_VIN)
+    n_out = sum(1 for r in recs if (r.get("vel") or 0) <= _NAMES_VOUT)
     srows = [r for r in ((sectors or {}).get("rows") or []) if r.get("vel") is not None]
-    s_in = sum(1 for r in srows if r["vel"] >= _VIN)
-    s_out = sum(1 for r in srows if r["vel"] <= _VOUT)
+    s_in = sum(1 for r in srows if r["vel"] >= _THEMES_VIN)
+    s_out = sum(1 for r in srows if r["vel"] <= _THEMES_VOUT)
     n_sec = len(srows)
     tilt = round(100.0 * (s_in - s_out) / n_sec) if n_sec else 0
-    if tilt >= 25:
+    if tilt >= _THEMES_TILT_BETA:
         state, state_zh = "broad inflow", "普遍流入"
-    elif tilt <= -25:
+    elif tilt <= -_THEMES_TILT_BETA:
         state, state_zh = "broad outflow", "普遍流出"
     else:
         state, state_zh = "mixed", "分化"
@@ -613,9 +670,9 @@ def flow_breadth(kmap: dict | None, sectors: dict | None = None) -> dict:
 
 def momentum(kmap: dict | None, top: int = 6) -> dict | None:
     """Where flow momentum is TURNING — the actionable name-level reads:
-      accel_in : fast money still SPEEDING UP     (vel≥+.5 & accel>0)  — strongest push
-      cooling  : strong inflow now FADING          (vel≥+.5 & accel<0)  — possible exhaustion
-      easing   : heavy outflow now EASING          (vel≤−.5 & accel>0)  — possible bottoming
+      accel_in : fast money still SPEEDING UP     (vel≥NAMES_VIN & accel>0)  — strongest push
+      cooling  : strong inflow now FADING          (vel≥NAMES_VIN & accel<0)  — possible exhaustion
+      easing   : heavy outflow now EASING          (vel≤NAMES_VOUT & accel>0)  — possible bottoming
     Descriptive, watch-family; None when nothing qualifies.
 
     Each list is truncated to `top` for display, but the TRUE population count ships alongside
@@ -624,11 +681,11 @@ def momentum(kmap: dict | None, top: int = 6) -> dict | None:
     n_agree / n_diverge contract."""
     recs = [r for r in (kmap or {}).values()
             if r.get("vel") is not None and r.get("accel") is not None]
-    accel_in = sorted((r for r in recs if r["vel"] >= _VIN and r["accel"] > 0),
+    accel_in = sorted((r for r in recs if r["vel"] >= _NAMES_VIN and r["accel"] > 0),
                       key=lambda r: -r["accel"])
-    cooling = sorted((r for r in recs if r["vel"] >= _VIN and r["accel"] < 0),
+    cooling = sorted((r for r in recs if r["vel"] >= _NAMES_VIN and r["accel"] < 0),
                      key=lambda r: r["accel"])
-    easing = sorted((r for r in recs if r["vel"] <= _VOUT and r["accel"] > 0),
+    easing = sorted((r for r in recs if r["vel"] <= _NAMES_VOUT and r["accel"] > 0),
                     key=lambda r: -r["accel"])
     if not (accel_in or cooling or easing):
         return None
@@ -650,10 +707,10 @@ def confluence(kmap: dict | None, seats: dict | None, top: int = 12) -> dict | N
         rec = {k: r.get(k) for k in ("ticker", "name", "vel", "accel", "state", "state_zh")}
         rec.update(seat_dir=s["dir"], seat_yi=s["inst_net_yi"],
                    n_buy=s["n_buy"], n_sell=s["n_sell"])
-        if (v >= _VIN and s["dir"] == "buy") or (v <= _VOUT and s["dir"] == "sell"):
+        if (v >= _NAMES_VIN and s["dir"] == "buy") or (v <= _NAMES_VOUT and s["dir"] == "sell"):
             rec["cls"] = "agree"
             agree.append(rec)
-        elif (v >= _VIN and s["dir"] == "sell") or (v <= _VOUT and s["dir"] == "buy"):
+        elif (v >= _NAMES_VIN and s["dir"] == "sell") or (v <= _NAMES_VOUT and s["dir"] == "buy"):
             rec["cls"] = "diverge"
             diverge.append(rec)
     if not (agree or diverge):
@@ -680,8 +737,8 @@ def market_pulse(kmap: dict | None, sectors: dict | None,
                if c.get("key") == "southbound" and c.get("live")), None)
     return {
         "breadth": br,
-        "dominant_in": lite(din) if din and din["vel"] >= _VIN else None,
-        "dominant_out": lite(dout) if dout and dout["vel"] <= _VOUT else None,
+        "dominant_in": lite(din) if din and din["vel"] >= _THEMES_VIN else None,
+        "dominant_out": lite(dout) if dout and dout["vel"] <= _THEMES_VOUT else None,
         "sb": ({"vel": sb.get("vel_primary"), "state": sb.get("state"),
                 "state_zh": sb.get("state_zh")} if sb else None),
         "inst": {"agree": (conf or {}).get("n_agree", 0),

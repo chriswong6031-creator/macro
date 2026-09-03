@@ -20,11 +20,17 @@ commission:
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
+from engine import flow_velocity as fv
 from scripts import research_flow_observatory_methods as w5
+
+REPORT_JSON = Path(__file__).resolve().parent.parent / "reports" / "flow_observatory_w5_methods.json"
 
 
 def _flat_df(n=400, cols=("e",), seed=1, scale=1.0, start="2024-01-02"):
@@ -274,3 +280,88 @@ def test_decision_conditions_marks_concordance_not_applicable_for_a_single_entit
     assert d["c_not_applicable"] is True
     # (a) and (b) both pass and (d) has no alarm -> adoption is not blocked by (c) alone
     assert d["all_conditions_met"] is True
+
+
+# ── §5 Adjudication (PR #6808 comment 5530582923; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-
+#    SELECTION) — pin the ARITHMETIC the adjudication reads off this committed report,
+#    against the report's OWN grid data, so a re-run harness change can't silently move
+#    the adjudicated outcome without one of these tests catching it. ─────────────────────
+def _load_report() -> dict:
+    return json.loads(REPORT_JSON.read_text())
+
+
+def test_names_mechanical_threshold_selection_matches_the_adjudicated_tau_beta():
+    """Names: M0 stays (per the adjudication); its threshold is the frozen §4 procedure's
+    mechanical completion — in-band [0.25,0.60] min-flip, else nearest-band then min-flip
+    — applied to the M0 names grid. No grid point sits in-band (every neutral_share is
+    already > 0.60 on this heavily-directional lens), so nearest-band applies: tau=0.3 and
+    tau=0.4 (both beta=15) tie on band distance (0.6078 is 0.0078 outside the band either
+    way); the tie breaks on flip rate, and 0.3/15 (flip=0.0921) strictly beats 0.4/15
+    (flip=0.1118)."""
+    grid = _load_report()["metrics"]["names"]["threshold_sweep_all"]["M0"]["grid"]
+
+    def band_penalty(ns):
+        return 0.0 if 0.25 <= ns <= 0.60 else min(abs(ns - 0.25), abs(ns - 0.60))
+
+    reachable = [g for g in grid if g["main"]["in_reach"] >= 0.05 and g["main"]["out_reach"] >= 0.05]
+    assert reachable, "no candidate clears the >=5% reachability floor"
+    assert all(not (0.25 <= g["main"]["neutral_share"] <= 0.60) for g in reachable), (
+        "a genuinely in-band candidate now exists — the nearest-band fallback no longer applies")
+    winner = min(reachable, key=lambda g: (band_penalty(g["main"]["neutral_share"]), g["main"]["flip_rate"]))
+    assert (winner["tau"], winner["beta"]) == (0.3, 15)
+    assert winner["main"]["flip_rate"] == pytest.approx(0.0921)
+    runner_up = next(g for g in reachable if (g["tau"], g["beta"]) == (0.4, 15))
+    assert band_penalty(runner_up["main"]["neutral_share"]) == pytest.approx(
+        band_penalty(winner["main"]["neutral_share"]), abs=1e-9), "the tie this test exercises no longer ties"
+    assert winner["main"]["flip_rate"] < runner_up["main"]["flip_rate"]
+
+
+def test_themes_adjudicated_tau_beta_is_the_unique_in_band_min_flip_winner():
+    """Themes: tau=0.75/beta=30 sits IN the honest-neutral band [0.25,0.60] (ns=0.549) and
+    is the strict (not tied) minimum flip rate among every in-band, reachable grid point —
+    matching the adjudication's own words ('flip strictly improves — not a tie')."""
+    grid = _load_report()["metrics"]["themes"]["threshold_sweep_all"]["M0"]["grid"]
+    in_band = [g for g in grid if 0.25 <= g["main"]["neutral_share"] <= 0.60
+              and g["main"]["in_reach"] >= 0.05 and g["main"]["out_reach"] >= 0.05]
+    assert in_band, "no in-band reachable candidate — themes would fall to nearest-band too"
+    winner = min(in_band, key=lambda g: g["main"]["flip_rate"])
+    assert (winner["tau"], winner["beta"]) == (0.75, 30)
+    others = sorted(g["main"]["flip_rate"] for g in in_band if (g["tau"], g["beta"]) != (0.75, 30))
+    assert winner["main"]["flip_rate"] < others[0], "the adjudicated winner is no longer a strict min"
+
+
+def test_southbound_m0_vs_m1_state_disagreement_within_the_hold_bound():
+    """Southbound: M1 (winsorized) was adopted because the M0-vs-M1 5-state disagreement
+    share, measured over the FULL causal history using the harness's own state definitions
+    (VIN/VOUT=0.5/-0.5, fixed — the same construction Metric 1 uses), sits at 4.49% — well
+    under the 20% HOLD bound the adjudication set as a sanity check that can only favor the
+    incumbent. Recomputed here (not read off the report, which does not carry this
+    cross-candidate figure) directly from the harness's own candidate-construction
+    functions on the small (n=1) southbound series — cheap, unlike a names-lens replay."""
+    sb = w5.load_southbound()
+    cands = w5.build_candidates(sb.to_frame("southbound"), fv._AGG)
+    s0 = w5.classify_wide(cands["M0"]["vel"], cands["M0"]["accel"])["southbound"]
+    s1 = w5.classify_wide(cands["M1"]["vel"], cands["M1"]["accel"])["southbound"]
+    known = (s0 != "no data") & (s1 != "no data")
+    n = int(known.sum())
+    assert n > 2000, "southbound history looks truncated — disagreement share would be unreliable"
+    share = float((s0[known] != s1[known]).mean())
+    assert share == pytest.approx(0.0449, abs=0.001)
+    assert share <= 0.20, "disagreement exceeds the HOLD bound — M1 would have to stay HELD, M0 wins"
+
+
+def test_southbound_every_tau_is_held_out_unreachable_so_the_incumbent_stays():
+    """Southbound's own threshold re-sweep (on the adopted M1 method) excludes every tau
+    in the grid because EVERY candidate's held-out-60 broad_in reach is 0% — a
+    current-regime degeneracy (the adjudication's own words: 'the tau=1.0 sweep winner
+    zeroed above-norm reach across the held-out window'). With every candidate excluded,
+    the frozen fallback applies: tau=0.5 (the incumbent) stays — numerically unchanged
+    from before W5, even though the METHOD switched to M1."""
+    grid = _load_report()["metrics"]["southbound"]["threshold_sweep_all"]["M1"]["grid"]
+    assert {g["tau"] for g in grid} == {0.3, 0.4, 0.5, 0.6, 0.75, 1.0}
+    reachable = [g for g in grid
+                if g["held_out"]["in_reach"] >= 0.02 and g["held_out"]["out_reach"] >= 0.02]
+    assert reachable == [], (
+        "a held-out-reachable tau now exists — southbound would no longer fall back to 0.5")
+    # every held-out in_reach is exactly 0 — the specific degeneracy the adjudication names
+    assert all(g["held_out"]["in_reach"] == 0.0 for g in grid)

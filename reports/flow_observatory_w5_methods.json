@@ -1,4 +1,95 @@
 {
+  "adjudication": {
+    "authority": "context_only",
+    "decision_record": "DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION",
+    "pr_comment_url": "https://github.com/mastermindx-market-intelligence/macro/pull/6808#issuecomment-5530582923",
+    "prereg_deviations_1_7": "CONFIRMED",
+    "principal": "macro-flow-observatory-v2-w5-method-calibration-20260902-fable-001",
+    "program": "macro-flow-observatory-v2-program-20260902-sol-001",
+    "rulings": {
+      "names": {
+        "arithmetic": {
+          "band_penalty_tau0.3_beta15": 0.0078,
+          "band_penalty_tau0.4_beta15": 0.0078,
+          "flip_rate_tau0.3_beta15": 0.0921,
+          "flip_rate_tau0.4_beta15": 0.1118,
+          "note": "band_penalty = min(|neutral_share-0.25|, |neutral_share-0.60|); the tau=0.3/0.4 tie on band_penalty breaks on the lower flip_rate (0.0921 < 0.1118).",
+          "winner": {
+            "beta": 15,
+            "tau": 0.3
+          }
+        },
+        "beta": 15,
+        "method": "M0",
+        "rationale": "mechanical completion of the frozen lexicographic rule \u2014 no grid point is genuinely in-band (min neutral_share=0.6078, 0.0078 above the 0.60 ceiling), so nearest-band applies; tau=0.3 and tau=0.4 (both beta=15) tie on band distance and the tie breaks on flip rate",
+        "tau": 0.3
+      },
+      "southbound": {
+        "arithmetic": {
+          "disagreement_n_sessions_compared": 2519,
+          "excluded_taus": [
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.75,
+            1.0
+          ],
+          "fallback": "all improving tau excluded by the <2% held-out-reach sanity bound -> tau=0.5 (incumbent) stays",
+          "held_out_reach_by_tau": {
+            "0.3": {
+              "in_reach": 0.0,
+              "out_reach": 0.9167
+            },
+            "0.4": {
+              "in_reach": 0.0,
+              "out_reach": 0.85
+            },
+            "0.5": {
+              "in_reach": 0.0,
+              "out_reach": 0.8167
+            },
+            "0.6": {
+              "in_reach": 0.0,
+              "out_reach": 0.7833
+            },
+            "0.75": {
+              "in_reach": 0.0,
+              "out_reach": 0.7667
+            },
+            "1.0": {
+              "in_reach": 0.0,
+              "out_reach": 0.7167
+            }
+          },
+          "hold_bound": 0.2,
+          "m0_vs_m1_state_disagreement_share": 0.0449
+        },
+        "beta": null,
+        "method": "M1",
+        "rationale": "M0-vs-M1 state disagreement 4.49% <= the 20% HOLD bound, so M1 (winsorized) is adopted for the southbound aggregate path; its own threshold re-sweep then excludes EVERY tau (0% held-out broad_in reach at every candidate \u2014 the tau=1.0 sweep winner's own degeneracy, generalized across the whole grid), so the frozen all-excluded fallback keeps the incumbent tau=0.5",
+        "tau": 0.5
+      },
+      "themes": {
+        "arithmetic": {
+          "in_band_reachable_candidates": 18,
+          "next_best_in_band_flip_rate": 0.1711,
+          "note": "min flip rate among every grid point with 0.25<=neutral_share<=0.60 and >=5% reach both sides; 0.1645 < 0.1711 is a strict improvement.",
+          "winner": {
+            "beta": 30,
+            "flip_rate": 0.1645,
+            "neutral_share": 0.549,
+            "tau": 0.75
+          }
+        },
+        "beta": 30,
+        "method": "M0",
+        "rationale": "both in the honest-neutral band; flip strictly improves \u2014 not a tie",
+        "tau": 0.75
+      }
+    },
+    "state_count_diff_disclosure": "site/flowdata/desk.json before/after state counts posted in the PR body (honest-correction disclosure)"
+  },
   "candidates": {
     "M0": "incumbent slope_z (#3561)",
     "M1": "winsorized slope_z",
