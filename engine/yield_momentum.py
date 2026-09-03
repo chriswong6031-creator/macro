@@ -74,7 +74,8 @@ def _series_read(
             "null_reason": f"source column {column} unavailable",
         }
 
-    values = pd.to_numeric(frame[column], errors="coerce").dropna()
+    numeric = pd.to_numeric(frame[column], errors="coerce")
+    values = numeric.dropna()
     source_available_at = _date((available_at or {}).get(column))
     if values.empty:
         return {
@@ -90,6 +91,25 @@ def _series_read(
             "null_reason": f"source column {column} has no observed values",
         }
 
+    observed_as_of = _date(values.index[-1])
+    frame_as_of = _date(frame.index[-1])
+    if pd.isna(numeric.iloc[-1]):
+        return {
+            "source_column": column,
+            "status": "stale",
+            "as_of": observed_as_of,
+            "available_at": source_available_at,
+            "availability_status": "provided" if source_available_at else "not_provided_by_feature_frame",
+            "level": None,
+            "velocity_bp": {f"{h}d": None for h in HORIZONS},
+            "acceleration_bp": None,
+            "turn_watch": None,
+            "null_reason": (
+                f"source column {column} stale at frame as-of {frame_as_of}; "
+                f"last observed {observed_as_of}"
+            ),
+        }
+
     velocity = {f"{h}d": _bp_change(values, h) for h in HORIZONS}
     acceleration = None
     if len(values) > 44:
@@ -100,7 +120,7 @@ def _series_read(
     return {
         "source_column": column,
         "status": "available" if enough else "insufficient_history",
-        "as_of": _date(values.index[-1]),
+        "as_of": observed_as_of,
         "available_at": source_available_at,
         "availability_status": "provided" if source_available_at else "not_provided_by_feature_frame",
         "level": round(float(values.iloc[-1]), 3),

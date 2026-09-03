@@ -11,6 +11,7 @@ import json
 import sys
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -30,6 +31,7 @@ from engine.rates_inflation_command import (  # noqa: E402
     D3_IMPLIED_BP_HIGH,
     _NET_STATE_LABELS,
 )
+from engine.yield_momentum import build_yield_momentum  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -368,6 +370,32 @@ class TestFailOpen:
         assert result["yield_momentum"]["series"]["20y"]["status"] == "available"
         assert result["yield_momentum"]["display_only"] is True
         assert result["yield_momentum"]["authority"] is False
+
+    def test_rates_command_preserves_stale_null_state_after_rate_freshness_expires(self, tmp_path):
+        index = pd.bdate_range("2026-01-02", periods=100)
+        frame = pd.DataFrame(
+            {"us20y": [3.0 + offset / 100 for offset in range(90)] + [None] * 10},
+            index=index,
+        )
+        yield_read = build_yield_momentum(frame)
+        transmission = tmp_path / "transmission"
+        transmission.mkdir()
+        (transmission / "latest.json").write_text(json.dumps({
+            "asof": yield_read["asof"],
+            "yield_momentum": yield_read,
+        }))
+
+        result = build_board(root=tmp_path)
+
+        twenty = result["yield_momentum"]["series"]["20y"]
+        assert result["yield_momentum"]["asof"] == str(index[-1].date())
+        assert twenty["status"] == "stale"
+        assert twenty["as_of"] == str(index[-11].date())
+        assert twenty["level"] is None
+        assert set(twenty["velocity_bp"].values()) == {None}
+        assert twenty["acceleration_bp"] is None
+        assert twenty["turn_watch"] is None
+        assert twenty["null_reason"]
 
 
 # ---------------------------------------------------------------------------
