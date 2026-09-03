@@ -107,6 +107,26 @@ def test_panel_done_set_stays_in_step_with_the_engine():
     assert admin_experiments._DONE == experiments_registry._DONE
 
 
+def test_cortex_terminal_statuses_all_read_as_concluded(monkeypatch):
+    """Every metabolism TERMINAL status must map into _DONE through the cortex hook.
+    W7b-PR3 minted five terminal instrument verdicts (invalid-gate,
+    uncomputable-metric, unresolvable-query, invalid-self-reference,
+    expired-insufficient-n) that the hook's status_map did not know, so its
+    "accruing" default presented a concluded row as a live accrual forever
+    (2026-09-02 audit)."""
+    from engine.neuralweb import metabolism
+
+    for status in sorted(metabolism.TERMINAL_STATUSES):
+        row = {"id": "cortex-x", "status": status, "claim_shape": "lead_lag",
+               "horizon_d": 21,
+               "pre_committed_gate": {"metric": "hit_rate", "threshold": 0.05}}
+        monkeypatch.setattr(metabolism, "load_by_id", lambda _hid, _row=row: _row)
+        out = experiments_registry._refresh_cortex_evaluator({"id": "cortex-x"})
+        assert out["status"] in experiments_registry._DONE, (
+            f"terminal metabolism status {status!r} maps to {out['status']!r}, "
+            "outside _DONE — the panel would present a concluded row as accruing")
+
+
 # ---------------------------------------------------------------------------
 # desk-schema ledgers (ai_desk / thematic_desk / demand_chain)
 # ---------------------------------------------------------------------------

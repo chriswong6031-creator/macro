@@ -1,108 +1,108 @@
 ---
 workstream: WS:CHAIRMAN-CONTROL-ROOM
-session: sol/autonomy-throughput-cell-r0-20260902
+session: sol/autonomy-throughput-cell-r1-20260903
 model: sol
-ended_because: ci_handoff
+ended_because: execution_handoff
 mission: >
-  Preserve every current Pro CEO innovation lane while carving one bounded Meta-CEO throughput
-  cell that raises CEO-to-worker-to-CEO handoff yield, repairs orphaned deterministic edges,
-  compiles rich handoffs toward the existing Executive OS path, and closes one zero-Chairman
-  current-process canary without creating another lifecycle, queue, router, registry or control plane.
+  Keep every Pro CEO innovation lane active while one bounded Meta-CEO throughput cell
+  removes orphaned handoffs, repairs deterministic dialogue edges, preserves exact workers,
+  and closes the existing Executive-to-CLI-to-Sol autonomy spine without creating another
+  queue, lifecycle, scheduler, session registry, result store, or Control Room authority.
 state_before: >
-  Approximately twenty concurrent frontier CEO sessions were producing high-quality architecture
-  and child packets, but Chris remained the de facto transport, account allocator, orphan detector,
-  clarification router and return bus. Slack was functioning as a lossy manual queue. Portable work
-  was frequently blocked by obsolete numbered-account wording, unrelated protected-main movement,
-  missing ACK/START edges, worker literalism and sleeping principals. Existing autonomy source was
-  substantial but production-disarmed: BSC-E1 admission was protected but disabled, the connected
-  Executive read was fixture/degraded, Capacity C1 and RET1 were red on a fleet-wide BSC-E1 test
-  defect, W3C remained under same-carrier repair, and Control Room finalization waited on C1.
+  The original ATC activation record was one current-base epoch behind reality. The cell had
+  in fact ACKed, corrected its watcher blind-gap, and completed its first process canary, while
+  Capacity C1, the BSC-E1 shared fence, RET1, and W3C-P0 had all protected. The remaining
+  machine critical path had narrowed to one preserved Mac-local ORION R2 effect, then W3C
+  consumption; Capacity C2 and Control Room could advance on their existing carriers in parallel.
 changed:
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-02-AUTONOMY-THROUGHPUT-CELL.md
     what: >
-      Records the Chairman's no-freeze ruling, the Autonomy Throughput Cell operating model,
-      current funnel and collision ledger, already-issued same-carrier repair edges, machine-cutover
-      ownership, exact next actions and do-not-redo boundaries.
+      Reconciles the ATC record to current protected source, records completed predecessor
+      releases, preserves the exact Mac-local R2 effect boundary, captures current W3C and C2
+      semantic rulings, and names the exact next worker and principal actions.
 verified:
-  - claim: Current protected Mastermind and compatible Skillpack were pinned before the modifying actions
-    command: "GitHub.fetch branches/master; GitHub.fetch_file docs/sol_skills/INDEX.md at exact protected SHA"
-    result: "Mastermind master 24fa9bc4acfbffb77f09193dd50d1ee8f90bcbf8; mastermind.sol_skillpack.v1 1.0.1; bootstrap-major 1"
-  - claim: Current canonical Macro base for this records branch is d2cba57ce6fdda6bd35f2361cc1e9143e4523c00
-    command: "GitHub.fetch mastermindx-market-intelligence/macro branches/main"
-    result: "main d2cba57ce6fdda6bd35f2361cc1e9143e4523c00"
-  - claim: PR 373 is the sole current BSC-E1 historical-scope repair carrier and remains exact for the finite canary
-    command: "GitHub.fetch_pr mastermindx-market-intelligence/Mastermind 373; Slack search bsc-e1-static-fence-scope-repair-20260902-sol-001"
-    result: "OPEN/DRAFT/mergeable, head 035ada3baf3a203faec8d3a1d3828439e5c3d58d, base 24fa9bc4, exact one-file repair; later duplicate PR 374 was stopped"
-  - claim: Capacity C1 run 33611716308 failed only the inherited global BSC-E1 historical-scope assertions, not C1 behavior
-    command: "GitHub.fetch_workflow_job_logs mastermindx-market-intelligence/Mastermind job 100188175004"
-    result: "462 tests discovered; only test_ceo_request_change_is_the_only_control_plane_diff and test_ten_ceiling_paths_are_exactly_the_new_files_this_pr_adds failed"
-  - claim: The exact started C1 worker was continued on the same carrier with source preservation rather than restart or reassignment
-    command: "Slack.slack_read_thread C0BSBM78V1N/1788308125.954199"
-    result: "SOL CONTINUE-HOLD 1788340936.932619 preserves head a53d34d0 and waits for PR 373 protection before current-base reproof"
-  - claim: The connected Executive read path is not authoritative production runtime evidence
-    command: "Mastermind_Executive.executive_state"
-    result: "mode fixture; configured runtime database absent; runtime_counts null; no production dispatch claim permitted"
-  - claim: A no-freeze ATC principal continuation, compatibility profile, control-board projection, census and finite worker assignment were issued
-    command: "Read Mastermind PR 212 comments 5507150241, 5507229034, 5507379314 and Slack C0BRDFZPLHK/1788311510.473749"
-    result: "ATC active under existing program; all Pro CEO innovation continues; #373 worker assignment delivered without replacing the Fable principal"
+  - claim: Current protected Mastermind and compatible Skillpack were pinned before action
+    command: "GitHub protected-branch read plus exact-SHA docs/sol_skills/INDEX.md and required skill reads"
+    result: "Mastermind c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6; mastermind.sol_skillpack.v1 1.0.1; bootstrap-major 1"
+  - claim: Current Macro main was pinned before rebuilding this record carrier
+    command: "GitHub branch and git-commit reads"
+    result: "Macro main 74f0609b06fec4b481c0fed2f42f389fd34336a6; tree 22a1afbc27af2c18d44719f3d06d7a4ffd3a4717"
+  - claim: Capacity C1, BSC-E1 fence repair, RET1, and W3C-P0 are protected
+    command: "GitHub PR and protected-history reads"
+    result: "C1 351402f4f5d5e55e8c0f0b7f973f01c19aa98d97; BSC fence cba0424f10ad6a9a917234c6740d92b19b018642; RET1 98bc4614f02aea82530ea4c7a076e9e6c898397a; W3C-P0 793e75639911f21dae9c90a77c3a5dbf4b37cbb0"
+  - claim: The ATC Fable principal ACKed and corrected its watcher blind-gap
+    command: "Slack exact-thread read C0BRDFZPLHK/1788311510.473749"
+    result: "Fable session f3bd6989-a606-469a-817b-2668ee5406d2 ACK 1788377311.975929; ATC_R0_RESULT 1788377448.363509"
+  - claim: ORION R2 has one preserved known local effect and one direct Chairman continuation
+    command: "Slack exact-thread read C0BSBM78V1N/1788087553.985979 plus GitHub PR 406 read"
+    result: "task 01a03330-4c36-7a11-b730-44c591ed3481; worktree /Volumes/Mastermind/Mastermind-ad-ret1-mechanical-result-projection-20260829; branch and remote checkpoint 5f4cb534f77a4261ee8720a3728c431425541add; tree 999f61e828f20f9f44528d157a6ffab71afb4355; ten dirty paths; status digest d0959d81666a448e75fa94e364ee1cb3afbdd1f89c714c081055fc5d5d99498a; diff digest acb164c25a5a5c7e05bd05bfbd1befe4db0877d9380a54046d5fe8cddb72d7ee; Chairman CONTINUE 1788422202.865669"
+  - claim: W3C current head contains useful bounded primitives but does not consume them in the production runtime
+    command: "GitHub source and exact-head review of PR 357"
+    result: "head fb896f0c3996f33418e4b71c7f70a6cc7abf4851; request-changes review 5100272119; AsyncCandidateCollector and ActiveWaiterRegistry remain disconnected from runtime.py and the real wait owner"
+  - claim: Capacity C2 pure core is green and preserved but not yet the transactional capability
+    command: "GitHub source, CI, and exact-head review of PR 415"
+    result: "head 88f7312aa123a7864c73fc5dce52832a62bc4dd6; CI 33735716012 success; interim review 5100289826 holds release for the existing Runtime transaction after PR 406"
+  - claim: The ATC principal received a current-epoch continuation with the reconciled four-lane board
+    command: "Slack send/read C0BRDFZPLHK/1788311510.473749"
+    result: "SOL CONTINUE 1788428446.681319 for ORION R2, W3C 357, Capacity C2 415, and Control Room 326"
 unverified:
-  - claim: Existing Fable principal f3bd6989-a606-469a-817b-2668ee5406d2 has ACKed and STARTed the ATC principal continuation
-    what_would_verify: "A valid Fable PICKUP_ACK and separate START in C0BRDFZPLHK/1788311510.473749"
-  - claim: The ATC-C0 worker has marked PR 373 Ready and completed the expected-head squash merge
-    what_would_verify: "Worker RESULT plus GitHub readback showing PR 373 merged from head 035ada3b and protected master advanced to the exact merge"
-  - claim: Rich CEO handoffs can yet traverse the real production BSC-E1 to Executive, Capacity, CLI worker and mechanical return chain
-    what_would_verify: "Installed and armed production receipts followed by one exact canonical Job/Attempt/Worker/RuntimeBinding/ACK/RESULT/Sol-continuation canary"
+  - claim: The exact Mac-local Codex worker has resumed and committed the preserved ORION R2 dirty effect
+    what_would_verify: "Exact identity preflight followed by PICKUP_ACK, START, immutable commit/push, hosted proof, independent review, and RESULT on C0BSBM78V1N/1788087553.985979"
+  - claim: W3C can consume a protected R2 APPLIED receipt through a dedicated Executive resolver and the real Agent Relay entrypoint
+    what_would_verify: "Same-carrier PR 357 repair after PR 406 protection, exact-head proof, and one default-disarmed integration receipt"
+  - claim: Control Room exact Claude task remains available with its unpublished/local state intact
+    what_would_verify: "A material return or SESSION_LOST/RUNTIME_BINDING_RECONCILIATION_REQUIRED receipt from task c09d963b-2acb-4f81-a711-87ebaae4d862"
 unresolved:
-  - PR 373 needs one exact local Ready plus expected-head squash merge; this connected Sol surface was blocked before effect when attempting Ready.
-  - Capacity C1 PR 329 must join the protected PR 373 repair, rerun exact-head proof and receive independent review on its existing carrier.
-  - RET1 PR 352 must join the protected repair and reprove its existing four-path carrier; RET2 remains required for semantic-yield return.
-  - W3C PR 357 still owes bounded collector isolation, real default-disarmed composition and the accepted post-time RET owner.
-  - Control Room PR 326 remains serialized behind C1 on overlapping compositor paths.
-  - BSC-E1 is protected source but production-disabled; the current Executive connector remains fixture/degraded.
-  - ATC throughput metrics are derived manually until existing canonical projections can supply them without Slack archaeology.
+  - PR 406 must preserve and publish the exact known Mac-local effect under its existing task, branch, PR, and <=17-path ceiling.
+  - PR 357 must remain held until PR 406 protects and one finite path-owner ruling permits the dedicated Executive observation listener/client and the DialogueEngineV2 waiter-registration seam.
+  - PR 415 must consume the existing Executive Runtime BEGIN IMMEDIATE and AttemptRegistry.claim_job owners after PR 406 protects; the two-path pure core is not the delivered capability.
+  - PR 326 still requires exact-session re-entry, current-source integration, browser/security proof, and one immutable return on its existing carrier.
+  - BSC-E1 and the Executive/Relay/Capacity/RuntimeBinding chain remain production-disabled or uninstalled; source protection is not a live bilateral canary.
 next_actions:
-  - Consume the ATC-C0 worker ACK/START/RESULT; if identities remain exact, protect PR 373 and record its immutable merge receipt without Chairman shuttle.
-  - After PR 373 protects, issue same-carrier current-base and reproof continuations to C1 PR 329 and RET1 PR 352; do not create replacement implementations.
-  - In parallel on path-disjoint surfaces, continue W3C PR 357 through its existing branch with one bounded worker and preserve Control Room PR 326 on hold behind C1.
-  - Build an inert compilation/validation fixture mapping ATC_HANDOFF_PROFILE_V1 into existing control_plane.ceo_request and BSC-E1 fields; add no schema unless the fixture proves an irreducible missing contract.
-  - Install and arm the existing Executive/BSC-E1/Capacity/RuntimeBinding/CLI/RET chain through its accepted owners, then prove one bilateral zero-Chairman canary and project its funnel in the existing Control Room.
-  - Measure emitted-to-ACK, ACK-to-START-or-typed-blocker, START-to-RESULT and RESULT-to-Sol-edge yield; do not expand autonomous fanout until each deterministic transition sustains at least 95 percent.
+  - Deliberately place one Mac-local Codex operator into the exact existing ORION task/worktree; verify all identity and effect digests before any mutation; finish the frozen one-pass R2 repair and return one immutable source candidate.
+  - After PR 406 protects, issue one same-carrier W3C repair edge that wires the accepted async collector, exact ABA-safe waiter owner, dedicated Executive observation resolver, bounded parent discovery, and R2 APPLIED terminal receipt into the real default-disarmed Agent Relay path.
+  - Continue PR 415 on the same carrier into the existing atomic Runtime transaction, with replay/current-truth/concurrency/rollback proof and no RuntimeBinding or provider effect.
+  - Re-enter only the exact Control Room task; never create a replacement until a typed session-loss/effect receipt permits bounded reconciliation.
+  - Keep the Fable ATC watcher overlap-corrected and require a same-carrier action edge for every BLOCKED, DECISION_REQUEST, RESULT, or source movement.
+  - Once R2, W3C, C2, and Control Room source are protected, prepare one finite host/install/admin action packet and run the first zero-Chairman bilateral canary through existing owners.
 do_not_redo:
-  - Do not impose a global autonomy finish-line freeze or stop unrelated Pro CEO innovation, product, research or architecture programs.
-  - Do not replace the exact Fable principal because its continuation is presently unacknowledged; bounded portable children may be placed separately without rebinding the principal.
-  - Do not create a HandoffQueue, PacketRegistry, SessionAllocator, second dispatcher, second result store or another Control Room truth source.
-  - Do not make numbered Claude, ChatGPT, Codex or provider account labels part of portable operation identity.
-  - Do not revoke active work merely because protected main advanced on unrelated paths; reconcile only material authority, contract or owned-path collisions.
-  - Do not reopen duplicate BSC-E1 repair PR 374, duplicate C1, RET1, W3C or Control Room carriers, or retry ambiguous effects on another receiver.
-  - Do not treat Slack delivery, a QUEUED Job, green CI, merge or source protection as execution, production proof or final autonomy.
+  - Do not impose a global autonomy finish-line freeze or stop unrelated Pro CEO innovation, research, product, or architecture programs.
+  - Do not recreate C1, the BSC fence repair, RET1, W3C-P0, W3C, Capacity C2, Control Room, ORION R2, or the ATC principal on a new operation, branch, PR, task, queue, or registry.
+  - Do not clean, reset, stash, restore, reconstruct, or approximate the ORION worktree if its exact identity or digests do not match; return EFFECT_RECONCILIATION_REQUIRED.
+  - Do not release W3C merely because CI turns green while its primitives remain disconnected from the real runtime and authority owners.
+  - Do not merge Capacity C2's inert two-path contract as if it atomically commits a Worker/Attempt/Event.
+  - Do not infer worker availability, authority, routing, or terminality from account numbers, titles, newest tabs, Slack prose, silence, or path-disjoint protected-main movement.
+  - Do not treat Slack delivery, QUEUED admission, green CI, merge, or source protection as execution, production proof, or final autonomy.
 danger_areas:
-  - The throughput cell is an operating role over existing owners, not permission to persist a new lifecycle vocabulary or queue.
-  - A pre-START capacity-selectable rebind is legal only with effect NONE, no EFFECT_UNKNOWN and no competing active pickup; after START the concrete runtime is sticky.
-  - Shared GitHub identities can obscure analytical reviewer independence; record exact session and effect receipts rather than inferring worker identity from commit authorship.
-  - Slack search and watcher silence do not prove absence; fresh-read the exact carrier before every substantive reciprocal edge.
-  - The BSC-E1 test repair is fleet-wide infrastructure maintenance only and does not make BSC-E1 installed, armed or production-live.
-  - Agent OS handoff schema is fail-closed; this records PR must pass scripts/agentos.py validate before release.
-prs: [212, 326, 329, 352, 357, 373]
+  - ORION is post-START and carries a known unpublished local effect; receiver replacement is a recovery re-entry into the exact task/worktree, not a portable pre-START rebind.
+  - The 17-path ORION ceiling is exact; integrations/slack_agent_dialogue/runtime.py, W3C, observer, Wake, SessionTarget, provider delivery, ACK/source resolution, installers, and RET2 remain no-edit in that operation.
+  - W3C's active-worker and terminal-result authorities are not interchangeable. Do not weaken WP-3 or trust historical Slack RESULT prose.
+  - Active waiter suppression must be owned immediately around the real DialogueEngineV2.wait_for_reply call with tokenized compare-and-delete cleanup; a lookup callback alone is insufficient.
+  - Capacity C2 replay must reread current root, C1, Attempt/Worker, quota/occupancy, authority, and snapshot facts even when a command/Event already exists.
+  - Agent OS is durable organizational memory only; Executive OS remains runtime lifecycle truth and GitHub remains implementation/evidence truth.
+prs: [212, 326, 329, 352, 357, 381, 390, 406, 415, 6762]
 decisions:
   - DEC:AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION
   - DEC:EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT
 ---
 
-# Autonomy Throughput Cell activation checkpoint
+# Autonomy Throughput Cell current-epoch checkpoint
 
-The Chairman's ruling is additive rather than subtractive: Mastermind keeps the full frontier
-cognition mesh operating, while this cell becomes the bounded execution service that absorbs
-placement debt, orphan recovery, routine clarification and return consumption. It is attached to
-the existing Autonomy and Chairman Control Room owners; it is not a new company operating system.
+The company remains deliberately dual-speed. The frontier CEO mesh continues broad innovation and
+architecture, while the ATC cell owns the narrow execution-loss problem: portable pre-START
+placement, exact post-START continuity, orphan detection, routine clarification, reciprocal return
+consumption, and compilation into existing machine owners.
 
-The current human bridge and final machine path are intentionally compatible. A rich handoff keeps
-its product context and evidence in GitHub or Agent OS, while the closed machine subset compiles to
-the existing CEO request fields. Executive OS remains lifecycle truth, Capacity selects a concrete
-eligible substrate, RuntimeBinding/current-writer owns exact delivery, and W3C/RET owns mechanical
-return. Slack and this record provide transport and recovery visibility only.
+The first phase is complete enough to subtract from the critical path: Capacity C1, the fleet-wide
+BSC-E1 test repair, RET1, and W3C-P0 are protected. The decisive next producer is ORION R2. It must
+turn canonical Executive completion into one exact Relay-authored RESULT and one immutable,
+parent-bound APPLIED/effect-known projection receipt without voluntary provider action. Its local
+repair already exists and is bounded; the job is to preserve, finish, publish, prove, and review it,
+not to redesign it.
 
-The immediate proof is operational rather than architectural: PR 373 is the first finite child that
-must move Meta-CEO -> bounded worker -> GitHub effect receipt -> Meta-CEO continuation without Chris
-copying a packet or selecting an account. Once that fleet-wide CI defect protects, C1 and RET1 can
-advance on their existing carriers and the same throughput discipline is applied to the full
-bilateral machine canary.
+W3C follows as the real consumer. Its current branch contains the right isolation primitives but not
+the right composition. After R2 protection, the same W3C carrier must use a dedicated Executive
+observation resolver, bounded validated-parent discovery, the async collector, the exact waiter
+registry at the real wait owner, and the R2 APPLIED receipt. Capacity C2 and Control Room advance in
+parallel on their existing carriers. Only after those machine and product paths are protected should
+the program spend a Chairman action on host installation and a real zero-touch canary.

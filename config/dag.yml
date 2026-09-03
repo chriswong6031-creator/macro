@@ -2751,6 +2751,7 @@ lanes:
             - scripts.build_baskets
             - scripts.build_news
             - scripts.build_methodology
+            - scripts.build_market_reference
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_stock_seasonality_page

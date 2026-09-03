@@ -2181,6 +2181,14 @@ app.include_router(company_intelligence_router)
 from app.dossier_quote import router as dossier_quote_router  # noqa: E402
 app.include_router(dossier_quote_router)
 
+# Deliberately public, bounded batch projection of regular-session quotes for
+# the exact rendered Intelligence Hub roster (R1A-M). Same owner boundary as
+# dossier_quote above (Terminal Quote Plane stays authoritative; this route
+# owns no store/socket/scheduler) — see app/intelligence_hub_market_pulse.py's
+# module docstring for the public-access decision.
+from app.intelligence_hub_market_pulse import router as intel_hub_market_pulse_router  # noqa: E402
+app.include_router(intel_hub_market_pulse_router)
+
 # Market Memory is a read-only product projection over two existing context
 # engines (Brain macro analogues + Signal Episode Atlas).  The router enforces
 # site-full entitlement and carries an all-false authority block on every read.

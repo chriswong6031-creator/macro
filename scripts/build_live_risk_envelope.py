@@ -85,11 +85,37 @@ overlay compares against).
 
 Never fatal: any missing/unreadable input degrades to MISSING coverage the same way the
 settled builder does.
+
+R3 GAP-1 — MATERIALITY FIRING LEDGER (additive, Grey-Deer-coordinated)
+------------------------------------------------------------------------
+`_advance_transition` (the dwell/debounce state machine below) is UNCHANGED by this
+addition: every branch, condition, and returned field it already published is byte-
+identical. The only addition is that the two points where it ACCEPTS a stage change
+(a debounce-confirmed escalation or de-escalation actually adopted into
+`live_transition.stable_stage`) now also record that acceptance in an internal-only
+`_accepted` key, popped off by `build()` before the transition dict is persisted to
+`site/live/risk_envelope.json` — the published wrapper shape is unchanged.
+
+When `build()` sees an acceptance, it emits exactly one
+`engine.neuralweb.reflexes.record_firing("risk_envelope_materiality", …)` row —
+`is_context_only=True` telemetry (Article 2 perimeter: annotates the spine index,
+feeds no score/allocation/ranking surface), never a graded forward ledger and never a
+market verdict (instrument-verdict law: this is telemetry about a state READ). The
+call is wrapped in try/except and logged at debug on failure — a firing-ledger error
+must never break the envelope build. No firing on a repeated/frozen observation, a
+non-accepted (still-pending) tick, or a `precedence != "live"` supersede/settle.
+
+This DOES add a second file write (`data/reflexes/risk_envelope_materiality/
+firings.jsonl`) on the (rare — debounce-gated) fires where a transition is actually
+accepted; `tests/test_live_risk_envelope.py::TestNoLedger` fixtures never reach an
+acceptance in one shot (default `debounce_ticks=3`, cold-start ticks start at 1), so
+that guard's "only write" assertion is unaffected by this addition.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -412,6 +438,12 @@ def _advance_transition(
       candidate must never read as a de-escalation toward calm.
     * otherwise -> normal debounce, symmetric for escalation and de-escalation —
       the logic below does not special-case direction at all.
+
+    R3 GAP-1 (additive, changes no branch/condition above): the two points where
+    this function ACCEPTS a debounce-confirmed stage change also stash that fact
+    in the returned dict's `_accepted` key (`None` everywhere else) — internal-only,
+    popped off by `build()` before `live_transition` is persisted, so the published
+    artifact shape is unchanged. See the module docstring's R3 GAP-1 section.
     """
     prev = prev or {}
     prev_session = prev.get("session")
@@ -419,6 +451,7 @@ def _advance_transition(
     prev_pending = prev.get("pending") or {}
     prev_observed_built = prev.get("last_observed_built")
     last_observed_built = prev_observed_built
+    accepted: dict[str, Any] | None = None
 
     if precedence != "live":
         stable_stage, pending = settled_stage, None
@@ -428,6 +461,10 @@ def _advance_transition(
             last_observed_built = observed_built
             ticks = 1
             if ticks >= max(1, debounce_ticks):
+                accepted = {
+                    "stage_from": stable_stage, "stage_to": candidate_stage,
+                    "confirmations": ticks,
+                }
                 stable_stage, pending = candidate_stage, None
             else:
                 pending = {"stage": candidate_stage, "ticks": ticks, "needs": debounce_ticks}
@@ -451,6 +488,10 @@ def _advance_transition(
             ticks = 1
         last_observed_built = observed_built
         if ticks >= max(1, debounce_ticks):
+            accepted = {
+                "stage_from": prev_stable, "stage_to": candidate_stage,
+                "confirmations": ticks,
+            }
             stable_stage, pending = candidate_stage, None
         else:
             stable_stage = prev_stable
@@ -462,7 +503,80 @@ def _advance_transition(
         "stable_stage": stable_stage,
         "pending": pending,
         "last_observed_built": last_observed_built,
+        "_accepted": accepted,
     }
+
+
+# ── R3 GAP-1: materiality firing ledger (additive; see module docstring) ────────
+
+def _materiality_fingerprint(risk_state_doc: dict[str, Any] | None,
+                              observed_built: str | None) -> str:
+    """sha256 hex digest of the DISTINCT-observation key `_advance_transition`
+    already discriminates on (`observed_built`), combined with the spliced live
+    leg values that key stands in for (`risk_state.json["live"]` — the same RAW
+    block `build_live_sources` reads, never `display`). Explicit + deterministic:
+    `canonical_json` (sorted keys, tight separators) makes byte-identical inputs
+    hash byte-identical, and any leg value change inside `live` changes the
+    fingerprint even when `observed_built` itself is reused."""
+    payload = {
+        "observed_built": observed_built,
+        "live": (risk_state_doc or {}).get("live") or {},
+    }
+    return hashlib.sha256(canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def _emit_materiality_firing(
+    *,
+    root: Path | None,
+    accepted: dict[str, Any],
+    precedence: str,
+    live_session: str | None,
+    envelope_asof: str | None,
+    risk_state_doc: dict[str, Any] | None,
+    observed_built: str | None,
+    source_event_time: str | None,
+    recompute_time: str,
+) -> None:
+    """One `record_firing("risk_envelope_materiality", …)` row for THIS accepted
+    dwell transition (R3 GAP-1). Reads only the dwell machine's OWN decision
+    (`accepted`, already computed by `_advance_transition`) — never re-derives or
+    second-guesses it. Fields follow the frozen R3 contract's GAP-1 paragraph
+    (trigger_type, fingerprint, stage_from/to, confirmations, source_event_time,
+    recompute_time, precedence, asof) plus the base claim-shape conventions
+    `engine.neuralweb.reflexes.record_firing` documents and
+    `scripts/refresh_regime_if_stale.py`'s existing caller already follows
+    (ts/trigger_key/action_taken/scope_type/scope_key/direction/horizon_d).
+    `direction`/`horizon_d` stay 0/None — infrastructure telemetry about a state
+    read, never a directional bet (instrument-verdict law: no verdict language in
+    these fields). Caller wraps this in try/except — never raises here on
+    purpose; any failure the import/write path hits is the caller's to swallow."""
+    from engine.neuralweb.reflexes import record_firing  # noqa: PLC0415 — lazy, optional dep
+
+    fingerprint = _materiality_fingerprint(risk_state_doc, observed_built)
+    stage_from = accepted["stage_from"]
+    stage_to = accepted["stage_to"]
+    confirmations = accepted["confirmations"]
+    trigger_key = f"{live_session}:{stage_from}->{stage_to}:{fingerprint[:16]}"
+
+    record_firing("risk_envelope_materiality", {
+        "ts": recompute_time,
+        "trigger_type": "materiality_dwell",
+        "trigger_key": trigger_key,
+        "action_taken": "stage_transition_published",
+        "scope_type": "macro",
+        "scope_key": "risk_envelope",
+        "direction": 0,
+        "horizon_d": None,
+        "asof": envelope_asof,
+        "fingerprint": fingerprint,
+        "stage_from": stage_from,
+        "stage_to": stage_to,
+        "confirmations": confirmations,
+        "source_event_time": source_event_time,
+        "recompute_time": recompute_time,
+        "precedence": precedence,
+        "live_session": live_session,
+    }, root=root)
 
 
 # ── build / write ────────────────────────────────────────────────────────────────
@@ -578,6 +692,7 @@ def build(root: Path | None = None, now: datetime | None = None,
         stale_reason = "not live"
 
     prev = _read_json(out_path(root)) or {}
+    observed_built = (risk_state_doc or {}).get("built")
     live_transition = _advance_transition(
         prev.get("live_transition"),
         live_session=L,
@@ -586,8 +701,11 @@ def build(root: Path | None = None, now: datetime | None = None,
         candidate_stage=candidate_stage,
         settled_stage=settled_stage,
         debounce_ticks=debounce_ticks,
-        observed_built=(risk_state_doc or {}).get("built"),
+        observed_built=observed_built,
     )
+    # R3 GAP-1: pop the internal-only acceptance marker BEFORE `live_transition`
+    # is published — the persisted/published shape is unchanged by this addition.
+    _accepted = live_transition.pop("_accepted", None)
 
     out = dict(envelope)
     out.update({
@@ -623,6 +741,26 @@ def build(root: Path | None = None, now: datetime | None = None,
             "produced_at": produced_stamp,
         },
     })
+
+    # R3 GAP-1: one durable ledger row per ACCEPTED dwell transition. Fail-open —
+    # a firing-ledger error must never break the envelope build.
+    if _accepted is not None:
+        try:
+            _emit_materiality_firing(
+                root=root,
+                accepted=_accepted,
+                precedence=precedence,
+                live_session=L,
+                envelope_asof=envelope_session,
+                risk_state_doc=risk_state_doc,
+                observed_built=observed_built,
+                source_event_time=out["clocks"]["event_time"],
+                recompute_time=produced_stamp,
+            )
+        except Exception as e:  # noqa: BLE001 — additive telemetry, never breaks the build
+            log.debug("live_risk_envelope: materiality firing skipped (non-fatal): %s", e,
+                      exc_info=True)
+
     return out
 
 
