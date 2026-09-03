@@ -1,3 +1,47 @@
+---
+key: MARKET-ONTOLOGY-POST-TIMEOUT-COMPLETION-ARCHITECTURE-2026-09-02
+question: >
+  After the delegated Market Ontology Program-CEO runtime timed out, how should the
+  still-active complete-parity program preserve current truth, order the next product
+  rails, keep terminal principals terminal, and avoid duplicate truth/control planes?
+answer: >
+  Main Meta-CEO Sol retains parent orchestration and final acceptance. Preserve MOR-1 as
+  live but unaccepted pending a separate integrity-repair wave; freeze F11 as a private
+  Terminal/Supabase Thesis Object extending existing user/evidence owners; keep F09
+  source-first under WS-CAPITAL-STRUCTURE-INTELLIGENCE-V2; preserve K3-D, K2-C, D2C,
+  Terminal #490 and retained P1 on their existing gates; and require new bounded work to
+  remain WAITING_CAPACITY until a concrete lawful receiver exists.
+rationale: >
+  Current reconciliation proves that two former Fable principals are terminal, MOR-1
+  crossed HOLD boundaries with an evidence-manifest mismatch, the retained P1 denominator
+  is still externally source-gated, F11 can extend existing Terminal/Supabase and Evidence
+  Foundation ownership rather than mint a second thesis/evidence store, and F09 must not
+  hide missing producer truth behind UI assembly. A records-only architecture freeze keeps
+  those boundaries durable without claiming product, runtime, placement, or parity effect.
+alternatives:
+  - option: "Revive the stopped Coverage/Semantic or Premium Research Organism principal"
+    why_not: "Both principals are terminal STOP; reuse would violate terminal-child and sticky-carrier law."
+  - option: "Treat MOR-1's live merge as accepted because the public page exists"
+    why_not: "The committed evidence claim and manifest disagree, and live preservation is not retroactive ratification."
+  - option: "Store F11 private thesis state in Macro Git/public data"
+    why_not: "Terminal/Supabase already owns authenticated private User Plane state; Macro remains the Truth Plane/evaluator."
+  - option: "Build F09 maturity/covenant UI before canonical source-owner proof"
+    why_not: "SEC Company Facts is acquisition substrate, not a finished maturity/covenant producer; source and owner gates must close first."
+evidence:
+  - "Slack parent carrier C0BTG1BMY8K/1788065181.284389: Meta-CEO continuity ruling, corrective amendment, and post-timeout durable receipt."
+  - "Macro #6771 correction comment 5519068398: live MOR-1 remains UNACCEPTED / INTEGRITY_REPAIR_REQUIRED because the claimed 32-cell evidence matrix is not committed."
+  - "Macro #6778 exact records carrier: three records/research paths only; capability_delta=NONE; DRAFT/HOLD."
+  - "Mastermind protected procedure caa47c1e66fe36dc3521299c918f4b9e7b2a47ca: Skillpack v1.0.1/bootstrap-major 1 and current routing/dialogue law."
+affects:
+  - WS:MARKET-OS
+  - WS:ALPHA-INTELLIGENCE-INTEGRATION
+  - marketontology-complete-parity-fanout-20260826-sol-001
+confidence: high
+reversibility: costly
+decided_by: main-meta-ceo-sol
+decided_at: 2026-09-02
+---
+
 # DEC — Market Ontology Post-Timeout Completion Architecture
 
 **Date:** 2026-09-02 (America/New_York)  
