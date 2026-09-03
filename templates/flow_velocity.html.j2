@@ -144,13 +144,70 @@
 {% macro memberrow(m, sbt, sid, i, show=False) -%}
 {% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
-  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ nameln(m) }}</td>
+  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ nameln(m) }}{% if m.in_n_themes is defined and m.in_n_themes and m.in_n_themes >= 2 %}<span class="ovl-chip" data-tip-en="Also in {{ m.in_n_themes - 1 }} other curated theme(s) — curated themes may overlap" data-tip-zh="同时属于其他{{ m.in_n_themes - 1 }}个精选主题——精选主题可重叠" role="button" tabindex="0">{{ t('in %d themes'|format(m.in_n_themes), '属%d个主题'|format(m.in_n_themes)) }}</span>{% endif %}</td>
   <td>{% if seat %}<span class="seat {{ seat.dir }}" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
   <td class="tnum">{% if m.rate_4wk is defined and m.rate_4wk is not none %}<span class="chg {{ 'pos' if m.rate_4wk>=0 else 'neg' }}" style="opacity:.72">{{ '%+.1f'|format(m.rate_4wk) }}%</span>{% else %}<span class="chg na">—</span>{% endif %}</td>
   <td>{{ rate(m) }}</td>
   <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }} {{ vstate(m.state, m.state_zh, m.vel) }}</td>
   <td class="tnum" colspan="3"><span class="rk na">—</span></td>
 </tr>
+{%- endmacro %}
+{# W4: excluded/missing members — the drilldown's honest denominator receipt (spec
+   §3/§6 test 7). M3 repair: moved behind a native <details class="fv-disc"> (Tier-2)
+   whose summary carries only the COUNT ("53 excluded / 53只未纳入") — the full list
+   used to render as visible-by-default text (a baked-in ' show' class independent of
+   whether the sector drilldown was ever opened), leaking a dense name list above the
+   fold. The outer <tr> still rides the SAME accordion show/hide as every other
+   drilldown sub-row (no baked default — the click handler toggles it like any
+   .mrow[data-sector]); the inner <details> is a SECOND, independent disclosure the
+   reader opens deliberately once the drilldown itself is open. Official-lens entries
+   show a real display NAME (name_map-threaded, spec M3) — the ticker SLUG rides only
+   in the entry's own LENS tip, never as the primary label when a name exists. #}
+{% macro excludedrow(r, colspan=8, sector_id=none) -%}
+{% if r.excluded and r.excluded|length %}
+{# sector_id: the official lens' sector-row/member-rows use "off-{id}" (disambiguated
+   from the curated lens' bare id) — the accordion click handler toggles EVERY
+   .mrow[data-sector] sharing the CLICKED row's own data-sector value, so this row
+   must carry the SAME prefixed value the official lens uses, or it can never be
+   revealed (a real defect this fix exposed: the pre-repair baked ' show' default hid
+   this mismatch by always showing the row regardless of accordion state). #}
+<tr class="mrow fv-excl-row" data-sector="{{ sector_id if sector_id is not none else r.id }}">
+  <td colspan="{{ colspan }}" class="fv-excluded">
+    <details class="fv-disc">
+      <summary>{{ t('%d excluded'|format(r.excluded|length), '%d只未纳入'|format(r.excluded|length)) }}</summary>
+      <div class="fv-disc-body">
+        {% for e in r.excluded[:12] %}<span data-tip-en="{{ e.ticker }}" data-tip-zh="{{ e.ticker }}" role="button" tabindex="0">{{ e.name or e.ticker }}</span> <span class="l-en">({{ 'duplicate source classification' if e.reason == 'duplicate_membership' else e.reason }})</span><span class="l-zh">（{{ '来源重复分类' if e.reason == 'duplicate_membership' else ('无数据' if e.reason == 'missing' else '未评分') }}）</span>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% if r.excluded|length > 12 %} …{% endif %}
+      </div>
+    </details>
+  </td>
+</tr>
+{% endif %}
+{%- endmacro %}
+{# W4: concentration/contribution pinned drilldown line (spec §4, exact strings).
+   Shown right under the group's own row, one line, colspan across the table. M3
+   repair: no baked ' show' default (was visible whenever the row had members,
+   independent of whether the sector drilldown was ever opened) — rides the SAME
+   accordion show/hide as every other .mrow[data-sector] sub-row, collapsed until
+   drilled like the member rows themselves. #}
+{% macro concrow(r, colspan=8, sector_id=none) -%}
+{% if r.concentration and r.concentration.top1_share is not none %}
+{% set c = r.concentration %}
+{% set _dir_en = {'same':'same direction','flip':'flips','unknown':'unclear'}.get(c.without_top1_direction, 'unclear') %}
+{% set _dir_zh = {'same':'方向不变','flip':'方向反转','unknown':'不明确'}.get(c.without_top1_direction, '不明确') %}
+{# sector_id: see excludedrow's own comment above — same official-lens "off-{id}"
+   prefix requirement so the accordion click can actually reveal this row. #}
+<tr class="mrow fv-conc-row" data-sector="{{ sector_id if sector_id is not none else r.id }}">
+  <td colspan="{{ colspan }}">
+    <span class="l-en">top name = {{ '%.0f'|format(c.top1_share) }}% of gross flow · without it: {{ _dir_en }}</span>
+    <span class="l-zh">最大贡献个股占总流量{{ '%.0f'|format(c.top1_share) }}% · 剔除后：{{ _dir_zh }}</span>
+    {% if c.top3_pos or c.top3_neg %}
+    <span class="l-en"> — top: {% for cc in c.top3_pos[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}{% if c.top3_neg %}{% if c.top3_pos %} · {% endif %}bottom: {% for cc in c.top3_neg[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
+    <span class="l-zh"> — 领涨：{% for cc in c.top3_pos[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}{% if c.top3_neg %}{% if c.top3_pos %} · {% endif %}领跌：{% for cc in c.top3_neg[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
+    {% endif %}
+  </td>
+</tr>
+{% endif %}
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -531,6 +588,96 @@ html[data-lang="zh"] .rot-col.out .rot-col-h::before{background:linear-gradient(
 .rot-empty{padding:22px 16px;color:var(--muted);font-size:13px;text-align:center}
 .attn{font-size:10.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:6px;padding:2px 6px;white-space:nowrap}
 .cat{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--tile);border:1px solid var(--grid);color:var(--muted)}
+
+/* ═══════════════ W4: lenses, coverage, overlap, concentration ═══════════════ */
+/* lens tabset — the existing .tabs/.tabbtn segmented idiom (templates/discovery.html.j2),
+   reused verbatim rather than a new component: no CSS present -> JS-off renders both
+   panels stacked (spec §5 "JS-off -> both lenses render stacked"). */
+.fv-lens-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
+.fv-lens-tabs .tabbtn{padding:7px 14px;font:inherit;font-size:13px;border:1px solid var(--line, var(--grid));background:var(--panel, var(--card));color:var(--muted);border-radius:var(--r-ctl, 8px);cursor:pointer}
+.fv-lens-tabs .tabbtn.on{background:var(--panel2, var(--tile));color:var(--text, var(--ink));border-color:var(--muted)}
+/* JS-off -> no control to drive the tabs, so both lens panels render stacked with
+   their own labels (spec §5) — same "no JS = no toggle, everything shows" contract
+   as .mkt-toggle above. Under JS, the curated lens starts active; the click handler
+   below flips visibility via inline style (overrides this rule by specificity). */
+html:not(.js) .fv-lens-tabs{display:none}
+html.js #lens-official{display:none}
+/* ── coverage badge — TP-0 declared dual-theme treatment ──────────────────────────
+   Base pill (n_covered/n_members, the common case): "muted tabular numerals both
+   themes" — INTENTIONALLY SHARED, not a per-theme design decision. Both themes read
+   the identical rule below; only the underlying --muted/--tile token VALUES differ
+   per theme (already theme-aware from the :root vs html[data-theme="dark"] token
+   blocks), which is a legitimate shared mechanism, not the "same CSS renders once
+   tokens swap" failure TP-0 forbids for a MATERIAL decision — this one genuinely has
+   no material decision to make per theme. */
+.fv-cov-badge{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+/* insufficient-coverage pill — the ONE state chip in this family that needs a real
+   per-theme material call (same semantic class as W2's STALE-adjacent "behind" chip,
+   .fv-src--behind above: an amber-tinted warning surface).
+   DARK TREATMENT (existing, declared as-is): a flat amber wash mixed toward --muted
+   — reads as glow/tint against the dark card, the command-center idiom.
+   LIGHT TREATMENT (new): amber-tinted PAPER (a light amber wash mixed into --card,
+   not transparent — reads as tinted material, not an overlay) + DEEPENED
+   amber-brown ink (mixed toward --ink, never --muted — a --muted-mixed amber reads
+   washed-out on a white/paper background; --ink-mixed keeps the required contrast).
+   Token substitution alone (reusing the dark formula verbatim) was exactly the
+   failure this declares against — light gets its OWN mix target, not a re-skin. */
+html[data-theme="dark"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
+html[data-theme="dark"] .qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
+html[data-theme="light"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 12%,var(--card))}
+html[data-theme="light"] .qchip.coverage-insufficient{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 10%,var(--card))}
+/* concentration chip — informational, never a warning: no tint in EITHER theme.
+   DARK TREATMENT (existing, declared as-is): neutral hairline border, --muted ink.
+   LIGHT TREATMENT (new): SAME neutral hairline border (no tint, per spec), but ink
+   deepened toward --ink — --muted alone reads too pale against white/paper material
+   for an always-visible chip (unlike the coverage badge above, which sits on its
+   own --tile fill and can afford --muted contrast). */
+.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);white-space:nowrap;margin-left:6px;cursor:help}
+html[data-theme="dark"] .fv-conc-chip{color:var(--muted)}
+html[data-theme="light"] .fv-conc-chip{color:color-mix(in srgb,var(--ink) 55%,var(--muted));border-color:var(--line)}
+/* accruing-sparkline placeholder (N2) — informational/muted, same family as the
+   coverage badge (intentionally shared both themes; no warning semantics). */
+.fv-accruing{display:inline-block;font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--faint);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+.ovl-chip{display:inline-block;font-size:9.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:var(--r-ctl, 5px);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:help}
+/* M3/MOBILE: the concentration drilldown line and the excluded/missing disclosure
+   must WRAP (never inherit table.board's global nowrap, which forced a long
+   contributor list or a long ZH sector name into an unreadable horizontal-scroll
+   sliver on mobile — "never clip mid-token"). */
+.fv-conc-row td,.fv-excluded{white-space:normal;word-break:break-word}
+.fv-conc-row td{padding:3px 12px 8px !important;border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);background:color-mix(in srgb, var(--tile) 55%, transparent)}
+.fv-excluded{font-size:11px;color:var(--faint);padding:3px 12px 8px}
+.fv-excluded .fv-disc{margin-top:0;background:transparent;border:none;border-radius:0}
+.fv-excluded .fv-disc>summary{padding:2px 0;font-size:11px;font-weight:700;color:var(--faint)}
+.fv-excluded .fv-disc-body{padding:4px 0 0}
+.fv-lens-unavail{background:var(--card);border:1px solid var(--grid);border-radius:var(--r-card, 16px);padding:22px 20px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.fv-lens-unavail b{color:var(--ink)}
+/* MOBILE (≤640px): boards keep name, abs 4wk, vs norm, quadrant chip, and the
+   coverage badge (which lives in the Members column) — Velocity, rank Δ, and Flow
+   trend (spark) hide via CSS (display:none, never a clip/ellipsis mid-token). Column
+   order: 1 name, 2 members(coverage), 3 abs, 4 vs norm, 5 velocity, 6 quadrant,
+   7 rank Δ, 8 flow trend. */
+@media (max-width:640px){
+  /* the base table.board{min-width:780px} rule (below, in this same stylesheet) is a
+     desktop floor — without overriding it here, hiding 3 of 8 columns still leaves the
+     table forced to 780px wide, so the surviving columns sit off-screen behind a
+     horizontal scroll instead of actually becoming visible without scrolling. The
+     ID-qualified selectors below outrank the plain-class base rule on specificity
+     regardless of source order. */
+  table.board#sectortbl,table.board#officialtbl{min-width:0}
+  /* tighter padding on the surviving columns so name/members/abs/vs-norm/quadrant sit
+     closer to fitting the 390px frame — the remainder is reached via the SAME
+     .tbl-wrap{overflow-x:auto} inner scroll every board already uses (never a
+     page-level scroll — checked programmatically on every evidence capture), never a
+     clip/ellipsis mid-token. */
+  table.board#sectortbl th,table.board#sectortbl td,
+  table.board#officialtbl th,table.board#officialtbl td{padding:9px 7px}
+  table.board#sectortbl th:nth-child(5),table.board#sectortbl td:nth-child(5),
+  table.board#sectortbl th:nth-child(7),table.board#sectortbl td:nth-child(7),
+  table.board#sectortbl th:nth-child(8),table.board#sectortbl td:nth-child(8),
+  table.board#officialtbl th:nth-child(5),table.board#officialtbl td:nth-child(5),
+  table.board#officialtbl th:nth-child(7),table.board#officialtbl td:nth-child(7),
+  table.board#officialtbl th:nth-child(8),table.board#officialtbl td:nth-child(8){display:none}
+}
 
 /* ═══════════════ MOMENTUM shifts ═══════════════ */
 .fv-mom{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
@@ -934,6 +1081,17 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     {% set s = snap.ashare_sectors %}
     <div class="market-a">
       <span class="market-tag">{{ t('A-Share 沪深','A股 沪深') }}</span>
+
+      {# W4 lens tabset (spec §5): curated (overlap-allowed) themes vs the official
+         (non-overlapping) Shenwan L1 sector lens. URL hash state; JS-off renders
+         BOTH panels stacked (no CSS display:none by default — see .fv-lens-tabs
+         above, the same idiom as templates/discovery.html.j2's .tabs/.tabbtn). #}
+      <div class="fv-lens-tabs" role="tablist" aria-label="Lens">
+        <button type="button" class="tabbtn on" data-lens="curated" role="tab" aria-selected="true" id="lens-tab-curated">{{ t('Curated themes','精选主题') }}</button>
+        <button type="button" class="tabbtn" data-lens="official" role="tab" aria-selected="false" id="lens-tab-official">{{ t('Official sectors','官方行业') }}</button>
+      </div>
+
+      <div id="lens-curated" data-lens-panel role="tabpanel" aria-labelledby="lens-tab-curated">
       <div class="panel">
       <div class="tbl-wrap">
         <table class="board" id="sectortbl">
@@ -961,8 +1119,16 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           {% for r in s.rows %}
             {% set has_members = r.members and r.members|length %}
             <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
-              <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}</td>
-              <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst seats','机构席位') }}</span>{% endif %}</td>
+              <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}
+                {% if r.concentration and r.concentration.top1_share is not none and r.concentration.top1_share > 40 %}<span class="fv-conc-chip" data-tip-en="One member drives more than 40% of this theme's gross flow — see the drilldown line below" data-tip-zh="单一成分股贡献了本主题超过40%的总流量——见下方展开说明" role="button" tabindex="0">{{ t('concentrated','集中度高') }}</span>{% endif %}
+              </td>
+              <td>
+                {% if r.coverage_pct is defined and r.coverage_pct is not none %}
+                <span class="fv-cov-badge{{ ' insufficient' if r.coverage_state == 'insufficient_coverage' }}" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} members present and scored ({{ r.coverage_pct }}% coverage){{ ' — below the reporting floor' if r.coverage_state == 'insufficient_coverage' }}" data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（覆盖率{{ r.coverage_pct }}%）{{ '——低于披露门槛' if r.coverage_state == 'insufficient_coverage' }}" role="button" tabindex="0">{{ r.n_covered }}/{{ r.n_members }}</span>
+                {% else %}{{ r.n_members }}{% endif %}
+                {% if r.overlap_count %}<span class="fv-conc-chip" data-tip-en="{{ r.overlap_count }} member(s) also belong to another curated theme (themes may overlap)" data-tip-zh="{{ r.overlap_count }}只成分股同时属于其他精选主题（主题可重叠）" role="button" tabindex="0">{{ t('overlap %d'|format(r.overlap_count), '重叠%d'|format(r.overlap_count)) }}</span>{% endif %}
+                {% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst seats','机构席位') }}</span>{% endif %}
+              </td>
               {# NIT12: colored by r.abs.direction (the contract's de-minimis-aware call),
                  never the raw sign of r.abs.value — a value like -0.04% (inside the 0.1pp
                  neutral band) used to print "-0.0%" in outflow-red ink, contradicting the
@@ -971,7 +1137,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
               <td>{{ rate(r) }}</td>
               <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
               <td style="text-align:left">
-                {% if r.quadrant is defined and r.quadrant %}
+                {% if r.coverage_state == 'insufficient_coverage' %}
+                <span class="qchip q-neutral_or_unknown coverage-insufficient" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} members present and scored ({{ r.coverage_pct }}%) — below the calibrated coverage floor, so no directional read is published for this group (never a survivor-biased partial statistic)." data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（{{ r.coverage_pct }}%）——低于校准的覆盖门槛，因此本组不发布方向性判读（绝不发布幸存者偏差的片面统计）。" role="button" tabindex="0">{{ t('insufficient coverage','覆盖不足') }}</span>
+                {% elif r.quadrant is defined and r.quadrant %}
                 <span class="qchip q-{{ r.quadrant }}" data-tip-en="Velocity-state: {{ r.state }} (acceleration-folded). {{ r.n_members }} members." data-tip-zh="流速状态：{{ r.state_zh }}（含加速度）。{{ r.n_members }}只成分股。" role="button" tabindex="0">{{ t(r.quadrant_en, r.quadrant_zh) }}</span>
                 {# W3: state age — "session {n} in this state" (spec §2 pinned strings),
                    LENS carrying prior state + the started date. #}
@@ -1001,6 +1169,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
               </td>
               <td>{{ spark(r.spark) }}</td>
             </tr>
+            {{ concrow(r) }}{{ excludedrow(r) }}
             {% if has_members %}
             {% for m in r.members %}{{ memberrow(m, sbt, r.id, loop.index) }}{% endfor %}
             {% endif %}
@@ -1010,6 +1179,90 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       </div>
       </div>
       <p class="fv-stance" style="margin-top:10px">{{ t(s.note, s.note_zh) }}</p>
+      </div>
+      {# ---- official (Shenwan L1) sector lens — spec §2A/§2B ---- #}
+      <div id="lens-official" data-lens-panel role="tabpanel" aria-labelledby="lens-tab-official">
+      {% set os = snap.official_sectors %}
+      {% if os and os.available and os.rows %}
+      <div class="panel">
+      <p class="fv-stance" style="margin:0 0 10px">{{ t('Official sectors (Shenwan L1) — current membership; history accrues from %s'|format(os.seed_date or '—'), '官方行业（申万一级）——当前成分；历史自%s起累积'|format(os.seed_date or '—')) }}</p>
+      {# N2: the LENS receipt — rate/vel columns stay (same current-membership basis
+         as themes, already labeled by the line above); this one extra line pins the
+         basis explicitly for the numeric columns themselves. #}
+      <p class="fv-stance" style="margin:0 0 10px">{{ t('current-membership basis — constituents as of %s'|format(os.seed_date or '—'), '按当前成分计算——成分截至%s'|format(os.seed_date or '—')) }}</p>
+      <div class="tbl-wrap">
+        <table class="board" id="officialtbl">
+          <thead><tr>
+            <th data-c="0">{{ t('Sector','行业') }}</th>
+            <th data-c="1">{{ t('Members','成分') }}</th>
+            <th data-c="2">{{ t('abs 4wk','绝对4周') }}</th>
+            <th data-c="3">{{ t('vs norm','相对常态') }}</th>
+            <th data-c="4">{{ t('Velocity','流速') }}</th>
+            <th class="nos">{{ t('Quadrant','象限') }}</th>
+            <th data-c="6">{{ t('rank Δ','排名Δ') }}</th>
+            <th class="nos">{{ t('Flow trend','流向趋势') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in os.rows %}
+            {% set has_members = r.members and r.members|length %}
+            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="off-{{ r.id }}" aria-expanded="false">
+              <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}
+                {% if r.concentration and r.concentration.top1_share is not none and r.concentration.top1_share > 40 %}<span class="fv-conc-chip" data-tip-en="One member drives more than 40% of this sector's gross flow — see the drilldown line below" data-tip-zh="单一成分股贡献了本行业超过40%的总流量——见下方展开说明" role="button" tabindex="0">{{ t('concentrated','集中度高') }}</span>{% endif %}
+              </td>
+              <td>
+                <span class="fv-cov-badge{{ ' insufficient' if r.coverage_state == 'insufficient_coverage' }}" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} constituents present and scored ({{ r.coverage_pct }}% coverage){{ ' — below the reporting floor' if r.coverage_state == 'insufficient_coverage' }}" data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（覆盖率{{ r.coverage_pct }}%）{{ '——低于披露门槛' if r.coverage_state == 'insufficient_coverage' }}" role="button" tabindex="0">{{ r.n_covered }}/{{ r.n_members }}</span>
+              </td>
+              <td class="tnum">{% if r.abs is defined and r.abs.value is not none %}<span class="chg {{ 'pos' if r.abs.direction=='positive' else ('neg' if r.abs.direction=='negative' else 'neu') }}" style="opacity:.72">{{ '%+.1f'|format(r.abs.value) }}%</span>{% else %}<span class="chg na">·</span>{% endif %}</td>
+              <td>{{ rate(r) }}</td>
+              <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
+              <td style="text-align:left">
+                {% if r.coverage_state == 'insufficient_coverage' %}
+                <span class="qchip q-neutral_or_unknown coverage-insufficient" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} constituents present and scored ({{ r.coverage_pct }}%) — below the calibrated coverage floor; the Tushare large-order panel this desk uses does not cover most of this sector's true membership, so no directional read is published (never a survivor-biased partial statistic)." data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（{{ r.coverage_pct }}%）——低于校准的覆盖门槛；本看板所用的Tushare主力大单面板未覆盖该行业的多数真实成分，因此不发布方向性判读（绝不发布幸存者偏差的片面统计）。" role="button" tabindex="0">{{ t('insufficient coverage','覆盖不足') }}</span>
+                {% elif r.quadrant is defined and r.quadrant %}
+                <span class="qchip q-{{ r.quadrant }}" data-tip-en="Velocity-state: {{ r.state }} (acceleration-folded). {{ r.n_members }} constituents." data-tip-zh="流速状态：{{ r.state_zh }}（含加速度）。{{ r.n_members }}只成分股。" role="button" tabindex="0">{{ t(r.quadrant_en, r.quadrant_zh) }}</span>
+                {% else %}
+                {{ vstate(r.state, r.state_zh, r.vel) }}
+                {% endif %}
+              </td>
+              <td class="tnum">
+                {% if r.rank_change is defined and r.rank_change is not none %}
+                  {% if r.rank_change < 0 %}<span class="rk up">▲{{ -r.rank_change }}</span>
+                  {% elif r.rank_change > 0 %}<span class="rk down">▼{{ r.rank_change }}</span>
+                  {% else %}<span class="rk">–</span>{% endif %}
+                {% else %}
+                <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
+                {% endif %}
+              </td>
+              {# N2: the official lens applies today's membership retroactively across
+                 the whole flow panel — a sparkline drawn from that backfill would
+                 imply a composition depth the membership store has not actually
+                 accrued (spec §2A "no historical replay"). Suppressed until real
+                 accrual clears the spark window; a muted placeholder names the
+                 progress rather than rendering nothing unexplained. #}
+              <td>{% if r.spark %}{{ spark(r.spark) }}{% elif r.spark_accrual and not r.spark_accrual.ready %}<span class="fv-accruing" data-tip-en="Membership history accrues from {{ os.seed_date or '—' }} — the sparkline unlocks once {{ r.spark_accrual.window }} sessions have accrued ({{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} so far)." data-tip-zh="成分历史自{{ os.seed_date or '—' }}起累积——满{{ r.spark_accrual.window }}个交易日后解锁走势图（当前{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）。" role="button" tabindex="0"><span class="l-en">accruing — {{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} sessions</span><span class="l-zh">累积中（{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）</span></span>{% endif %}</td>
+            </tr>
+            {{ concrow(r, 8, 'off-' + r.id) }}{{ excludedrow(r, 8, 'off-' + r.id) }}
+            {% if has_members %}
+            {% for m in r.members %}{{ memberrow(m, {}, 'off-' + r.id, loop.index) }}{% endfor %}
+            {% endif %}
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="fv-stance" style="margin-top:10px">{{ t('Official (non-overlapping) Shenwan L1 sectors — never the curated theme baskets. A sector below the coverage floor renders insufficient coverage rather than a partial read: the Tushare large-order panel this desk uses does not track most small/micro-cap names, so several sectors legitimately have too little of their true membership scored to publish.', '官方（不重叠）申万一级行业——绝非精选主题篮子。低于覆盖门槛的行业会显示"覆盖不足"而非片面判读：本看板所用的Tushare主力大单面板未追踪多数中小市值个股，因此部分行业确实没有足够的真实成分被评分。') }}</p>
+      </div>
+      {% elif os and not os.available and os.reason == 'before_seed_date' %}
+      <div class="fv-lens-unavail">
+        <b>{{ t('Official sector lens unavailable','官方行业视图暂不可用') }}</b> —
+        {{ t('the requested window predates this store\'s own accrual origin (%s).'|format(os.seed_date or '—'), '所请求的时间窗口早于本数据源自身的积累起点（%s）。'|format(os.seed_date or '—')) }}
+      </div>
+      {% else %}
+      <div class="fv-lens-unavail">
+        <b>{{ t('Official sector lens unavailable','官方行业视图暂不可用') }}</b> —
+        {{ t('no lawful keyless constituent source; showing curated themes only.','缺少合规的成分数据源；仅显示精选主题。') }}
+      </div>
+      {% endif %}
+      </div>
     </div>
     {% endif %}
 
@@ -1211,6 +1464,29 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   }
   btns.forEach(function(b){b.addEventListener('click',function(){setMkt(b.getAttribute('data-mkt'));});});
   setMkt(H.getAttribute('data-market')||'a');
+  // ---- W4 lens tabset: curated themes <-> official sectors, URL hash state ----
+  (function(){
+    var tabs=document.querySelectorAll('.fv-lens-tabs .tabbtn');
+    if(!tabs.length) return;
+    var panels={curated:document.getElementById('lens-curated'), official:document.getElementById('lens-official')};
+    function setLens(name, pushHash){
+      if(!panels[name]) return;
+      tabs.forEach(function(b){
+        var on=b.getAttribute('data-lens')===name;
+        b.classList.toggle('on',on); b.setAttribute('aria-selected',on?'true':'false');
+      });
+      // 'block', never '' for the active panel: an empty inline value merely CLEARS
+      // any previous override, and #lens-official's own default CSS rule
+      // (html.js #lens-official{display:none}) would then keep it hidden even
+      // after being selected — caught rendering the evidence screenshots.
+      Object.keys(panels).forEach(function(k){ if(panels[k]) panels[k].style.display=(k===name?'block':'none'); });
+      if(pushHash){ try{ history.replaceState(null,'','#lens-'+name); }catch(e){ location.hash='lens-'+name; } }
+    }
+    tabs.forEach(function(b){ b.addEventListener('click',function(){ setLens(b.getAttribute('data-lens'), true); }); });
+    var initial='curated';
+    if(location.hash==='#lens-official') initial='official';
+    setLens(initial, false);
+  })();
   // ---- drill into a sector's lane in the full map (rotation cards + any [data-goto]) ----
   function drillSector(id){
     var row=document.querySelector('tr.sector-row[data-sector="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');

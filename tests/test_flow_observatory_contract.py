@@ -469,6 +469,60 @@ def test_validate_passes_a_consistent_payload():
     validate(_v2())   # must not raise
 
 
+# ── M1/W4 repair: validate() extended to cover official_sectors rows (quadrant/axis
+#    consistency + the coverage_state enum) — previously entirely unchecked, since
+#    contract.py was not touched in the W4 landing. ─────────────────────────────────
+def _official_row(**over):
+    from engine.flow_observatory.contract import enrich_group
+    row = dict(enrich_group(1.0, 1.1), id="801780", name="Banks", name_zh="银行",
+              group_kind="official_sector", overlap_allowed=False,
+              membership_as_of="current", n_members=42, n_covered=38, coverage_pct=90.5,
+              coverage_state="ok", excluded=[], vel=1.1, accel=0.02, rate_now=1.0,
+              rate_4wk=1.0, rate_norm=0.0, rate_rel=1.1, state="above norm, rising",
+              state_zh="高于常态·升温", spark=None, concentration=None, members=[],
+              rank=1, rank_change=None)
+    row.update(over)
+    return row
+
+
+def test_validate_passes_a_consistent_official_sectors_payload():
+    v2 = _v2()
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-03", "n": 1,
+                              "rows": [_official_row()]}
+    validate(v2)   # must not raise
+
+
+def test_validate_rejects_an_official_sectors_quadrant_axis_mismatch():
+    v2 = _v2()
+    bad = _official_row(quadrant="true_distribution")   # abs/rel both positive -> mismatch
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-03", "n": 1, "rows": [bad]}
+    with pytest.raises(ContractError):
+        validate(v2)
+
+
+def test_validate_rejects_an_unknown_coverage_state():
+    v2 = _v2()
+    bad = _official_row(coverage_state="mostly_ok")   # not in the enum
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-03", "n": 1, "rows": [bad]}
+    with pytest.raises(ContractError):
+        validate(v2)
+
+
+def test_validate_rejects_an_unknown_coverage_state_on_a_curated_theme_row_too():
+    """The coverage_state enum check is shared by BOTH lenses (M1 — minimal, but not
+    official_sectors-only where the field is equally real on ashare_sectors rows)."""
+    v2 = _v2()
+    v2["ashare_sectors"]["rows"][0]["coverage_state"] = "mostly_ok"
+    with pytest.raises(ContractError):
+        validate(v2)
+
+
+def test_validate_ignores_an_unavailable_official_sectors_lens():
+    v2 = _v2()
+    v2["official_sectors"] = {"available": False, "reason": "no_membership_data"}
+    validate(v2)   # must not raise — an unavailable lens carries no rows to check
+
+
 def test_validate_rejects_a_missing_denominator():
     v2 = _v2()
     del v2["market_read"]["themes"]["absolute_breadth"]["denominator"]
