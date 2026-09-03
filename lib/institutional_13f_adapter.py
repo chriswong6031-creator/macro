@@ -16,6 +16,32 @@ exception.  A genuine store outage or digest failure is an owner exception
 and always propagates untouched -- it is never mistaken for typed absence,
 and this module never retries any read.
 
+**Owner-semantics law (post K2-C semantic-owner repair, 2026-09-03).** A
+semantic positive (``PILOT_COMPILED``) requires BOTH of two owner-proven
+seams for the same receipt: (1) the CUSIP is bound to one exact admitted
+``SEC:`` security identity, and (2) the filer/vehicle context is bound to
+truthful manager-complex/vehicle epochs -- including resolution state,
+vehicle class and decision mode.  This module owns NEITHER seam.  A caller
+supplies both, atomically, through the single keyword-only
+``run_pilot(..., owner_semantics=...)`` channel; nothing else in this module
+may originate that truth.  In particular: a 13F row's own
+``investment_discretion`` field describes voting/investment AUTHORITY over
+one reported position, never a vehicle's trading style, and is reported
+verbatim in the per-period row blocks but feeds NO semantics anywhere; and a
+filer CIK is a filer identifier, never a resolved manager-complex identity
+-- this module mints no ``mcx_*``/``mce_*``/``veh_*``/``vie_*`` identity of
+its own.  Validation of a supplied ``owner_semantics`` payload is strict and
+fail-closed: anything missing, empty, wrong-typed, or partial makes the
+WHOLE payload unresolved (never partially trusted), and the receipt then
+carries ``state=PILOT_OWNER_SEMANTICS_UNRESOLVED`` with no K2-B recipe ever
+constructed -- refusing BEFORE construction rather than laundering
+missingness through a placeholder vehicle class.  No current repository
+producer supplies a lawful ``owner_semantics`` payload (see
+``tests/test_institutional_13f_adapter_contract.py::
+test_no_repo_producer_supplies_owner_manager_vehicle_epochs``); the CLI has
+no flag for it either, by design (frozen spec point 8) -- a human-supplied
+override would be exactly the back door this repair exists to close.
+
 See ``research/alpha_intelligence/K2C_INSTITUTIONAL_ADAPTER_PILOT_2026-08-27.md``
 for the frozen design this module implements.
 """
@@ -80,6 +106,16 @@ SOURCE_RECEIPT_MISMATCH = "source_receipt_mismatch"
 REPORT_PERIODS_NOT_INCREASING = "report_periods_not_increasing"
 POSITIVE_STATE = "PILOT_COMPILED"
 NON_POSITIVE_STATE = "PILOT_COMPILED_NON_POSITIVE"
+
+# --- Owner-semantics gate (K2-C semantic-owner repair, 2026-09-03) ----------
+# Neither of these is a typed *refusal* reason (TYPED_REFUSAL_REASONS below
+# covers only PilotRefusal, raised strictly BEFORE these two owner seams are
+# ever inspected). These describe the two independent owner bindings a
+# caller may supply via run_pilot(..., owner_semantics=...), and the one
+# terminal receipt state reached when either is missing.
+SECURITY_BINDING_UNRESOLVED = "unresolved_no_authoritative_cusip_plane"
+MANAGER_VEHICLE_BINDING_UNRESOLVED = "unresolved_no_canonical_manager_vehicle_owner"
+OWNER_SEMANTICS_UNRESOLVED_STATE = "PILOT_OWNER_SEMANTICS_UNRESOLVED"
 
 TYPED_REFUSAL_REASONS = frozenset({
     GENERATION_NOT_KNOWABLE_AT_CUTOFF,
@@ -569,43 +605,60 @@ def _original_lineage() -> dict[str, Any]:
     return {"state": "original", "predecessor_epoch_id": None, "reason": None, "append_only": True}
 
 
-def _vehicle_decision(investment_discretion: Any) -> tuple[str, str]:
-    """Map one 13F row's ``investment_discretion`` to K2-B's closed vocabulary.
+def _validate_owner_semantics(owner_semantics: Any) -> Mapping[str, Any] | None:
+    """Strictly, atomically validate one ``owner_semantics`` payload.
 
-    ``vehicleEpoch.vehicle_class`` is a CLOSED nine-value enum
-    (``contracts/institutional_intelligence/manager_intent_recipe.v1.schema.
-    json``), and K2-B's own ``vehicle_class_decision_mode_conflict`` law
-    (``lib/institutional_intelligence.py`` ``ACTIVE_CLASSES`` /
-    ``PASSIVE_CLASSES`` / ``SYSTEMATIC_CLASSES`` / ``MIXED_OR_UNKNOWN_
-    CLASSES``, lines ~40-47) partitions all nine values across exactly those
-    four buckets -- there is no ninth, neutral "unclassified" value.
+    Returns the payload UNCHANGED only when every required component is
+    present, well-typed, and each supplied K2-B epoch's own
+    ``resolution_state`` is ``"resolved"``:
 
-    SOLE investment_discretion is mapped to ``decision_mode="discretionary"``
-    on ``concentrated_discretionary_active`` (an ``ACTIVE_CLASSES`` member,
-    the only vehicle_class family compatible with "discretionary").
+    * ``provenance``: a mapping with non-empty string ``owner`` and
+      non-empty string ``reference_id``;
+    * ``security``: a mapping with non-empty string ``dataos_security_id``
+      and non-empty string ``dataos_resolution``;
+    * ``manager_complex_epoch``: a full K2-B ``managerComplexEpoch`` mapping
+      whose own ``resolution_state`` is ``"resolved"``;
+    * ``vehicle_epoch``: a full K2-B ``vehicleEpoch`` mapping whose own
+      ``resolution_state`` is ``"resolved"``.
 
-    Any non-SOLE discretion (SHARED, DEFINED, NONE, or an unrecognized/
-    absent value) is honestly UNKNOWN structure to this adapter -- a single
-    13F row's discretion field describes voting/investment AUTHORITY over
-    one reported position, never the vehicle's trading style -- so it maps
-    to ``decision_mode="unknown"``.  The schema requires decision_mode to
-    agree with vehicle_class, and the ONLY two vehicle_class values
-    compatible with "unknown"/"mixed" are ``options_income_overlay`` and
-    ``synthetic_fund_of_funds``; this adapter picks ``options_income_
-    overlay`` as the closed-vocabulary placeholder.  Neither of these two
-    values is a factual claim about this specific filer's real structure --
-    the compiler treats both identically (excluded from manager-research-
-    intent eligibility via its own ``non_discretionary_vehicle_cannot_emit_
-    manager_intent``/``MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT`` law), so
-    the choice between them has zero effect on any compiled outcome.  The
-    adapter never manufactures eligibility, and the compiled non-positive
-    state always arises from this honest ``decision_mode="unknown"`` mapping
-    through the compiler's own law, never from asserting a specific
-    structure this adapter has no evidence for.
+    Any single defect anywhere in the payload -- missing, empty,
+    wrong-typed, or partial -- returns ``None`` for the WHOLE payload; the
+    security seam and the manager/vehicle seam are never independently
+    trusted out of a partially-valid mapping, and no default is ever filled
+    in for a missing field.  This is the ONLY function in the module that
+    may treat ``owner_semantics`` as authoritative.
     """
-    if str(investment_discretion or "").strip().upper() == "SOLE":
-        return "discretionary", "concentrated_discretionary_active"
-    return "unknown", "options_income_overlay"
+    if not isinstance(owner_semantics, Mapping):
+        return None
+    provenance = owner_semantics.get("provenance")
+    if not isinstance(provenance, Mapping):
+        return None
+    owner = provenance.get("owner")
+    reference_id = provenance.get("reference_id")
+    if not isinstance(owner, str) or not owner.strip():
+        return None
+    if not isinstance(reference_id, str) or not reference_id.strip():
+        return None
+    security = owner_semantics.get("security")
+    if not isinstance(security, Mapping):
+        return None
+    dataos_security_id = security.get("dataos_security_id")
+    dataos_resolution = security.get("dataos_resolution")
+    if not isinstance(dataos_security_id, str) or not dataos_security_id.strip():
+        return None
+    if not isinstance(dataos_resolution, str) or not dataos_resolution.strip():
+        return None
+    manager_complex_epoch = owner_semantics.get("manager_complex_epoch")
+    if not isinstance(manager_complex_epoch, Mapping):
+        return None
+    if manager_complex_epoch.get("resolution_state") != "resolved":
+        return None
+    vehicle_epoch = owner_semantics.get("vehicle_epoch")
+    if not isinstance(vehicle_epoch, Mapping):
+        return None
+    if vehicle_epoch.get("resolution_state") != "resolved":
+        return None
+    return owner_semantics
 
 
 def _manager_denominator(
@@ -666,68 +719,52 @@ def build_recipe(
     previous_binding: Mapping[str, Any],
     current_binding: Mapping[str, Any],
     current_raw_reference_id: str,
-    investment_discretion: Any,
+    manager_complex_epoch: Mapping[str, Any],
+    vehicle_epoch: Mapping[str, Any],
+    security: Mapping[str, Any],
     q_prev: int,
     q_now: int,
     denominator: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Assemble one fully-specified K2-B manager-intent recipe from owner facts.
 
-    Every field here is a deterministic function of owner-read data (filer
-    CIK, catalog/raw evidence references, holdings rows).  There is no
-    parameter through which a caller could inject a compiled result -- the
-    only inputs are the owner-derived bindings and the two share quantities,
-    and :func:`run_pilot` always calls this with values it computed itself
-    from the store.
+    Every field here is either a deterministic function of owner-READ 13F
+    data (catalog/raw evidence references, holdings rows) or is carried
+    VERBATIM from the owner-SUPPLIED ``manager_complex_epoch``/
+    ``vehicle_epoch``/``security`` mappings -- the validated
+    ``owner_semantics`` seam :func:`run_pilot` gates on before this function
+    is ever called.  This function mints NO identity of its own: it no
+    longer derives ANY manager-complex/vehicle identifier string from
+    ``filer_cik`` (the prior, now-deleted defect keyed those identifiers
+    directly off the filer CIK, laundering a filer identifier into a
+    resolved manager-complex identity), and it no longer stamps
+    ``resolution_state``/``status`` itself -- those come only from the
+    owner-supplied epochs, verbatim.  ``filer_cik`` is accepted for
+    call-site symmetry with the rest of this adapter's owner-read pipeline
+    but is no longer used to construct identity of any kind.  There is
+    still no parameter through which a caller could inject a *compiled*
+    result -- the only inputs are the owner-derived bindings/epochs and the
+    two share quantities, and :func:`run_pilot` always calls this with
+    values it either computed itself from the store or received, already
+    strictly validated, through the one ``owner_semantics`` seam.
     """
-    cik = normalize_cik(filer_cik)
-    complex_id = f"mcx_filer_{cik}"
-    complex_epoch_id = f"mce_filer_{cik}_v1"
-    vehicle_id = f"veh_filer_{cik}"
-    vehicle_epoch_id = f"vie_filer_{cik}_v1"
-    decision_mode, vehicle_class = _vehicle_decision(investment_discretion)
-
-    manager_complex_epoch = {
-        "manager_complex_id": complex_id,
-        "complex_epoch_id": complex_epoch_id,
-        "interval": _open_interval(),
-        "status": "active",
-        "resolution_state": "resolved",
-        "decision_mode": decision_mode,
-        "actor_identity": {
-            "role": "institution_or_manager_complex",
-            "ontology_source": "B0_MANAGER_COMPLEX_DRAFT",
-            "raw_actor_string": f"SEC 13F filer CIK {cik}",
-            "original_ontology_version": "k2c-owner-read/1.0.0",
-            "resolution_state": "resolved",
-            "remap_lineage": _original_lineage(),
-        },
-        "lineage": _original_lineage(),
-    }
-    vehicle_epoch = {
-        "vehicle_id": vehicle_id,
-        "vehicle_epoch_id": vehicle_epoch_id,
-        "manager_complex_id": complex_id,
-        "complex_epoch_id": complex_epoch_id,
-        "interval": _open_interval(),
-        "status": "active",
-        "resolution_state": "resolved",
-        "decision_mode": decision_mode,
-        "vehicle_class": vehicle_class,
-        "lineage": _original_lineage(),
-    }
+    del filer_cik  # retained for call-site symmetry; never used to mint identity.
+    complex_id = str(manager_complex_epoch["manager_complex_id"])
+    complex_epoch_id = str(manager_complex_epoch["complex_epoch_id"])
+    vehicle_epoch_id = str(vehicle_epoch["vehicle_epoch_id"])
+    decision_mode = str(vehicle_epoch["decision_mode"])
 
     normalized_cusip = str(cusip)
     # K2-B's own semantic validator (non_discretionary_vehicle_cannot_emit_
     # manager_intent) hard-rejects a manager_research_intent observation that
     # carries a *computable* share-change delta unless its vehicle is
     # discretionary -- it is a schema-level refusal, not merely a compiled
-    # ineligible state.  A non-SOLE (non-discretionary) row is therefore
-    # submitted with an honest "unavailable" measure: the adapter still
-    # records the real observed q_prev/q_now in its own receipt fields
-    # (never hidden), but does not assert a discretionary-attributable delta
-    # the compiler's own contract forbids for this vehicle.  The compiler
-    # then produces its own typed non-positive state
+    # ineligible state.  A non-discretionary owner-supplied vehicle epoch is
+    # therefore submitted with an honest "unavailable" measure: the adapter
+    # still records the real observed q_prev/q_now in its own receipt
+    # fields (never hidden), but does not assert a discretionary-
+    # attributable delta the compiler's own contract forbids for this
+    # vehicle.  The compiler then produces its own typed non-positive state
     # (``MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT``) -- the adapter never
     # manufactures that state itself.
     measure = (
@@ -754,8 +791,8 @@ def build_recipe(
             "security": {
                 "key_type": "cusip",
                 "cusip": normalized_cusip,
-                "dataos_security_id": None,
-                "dataos_resolution": "unresolved_no_authoritative_cusip_plane",
+                "dataos_security_id": security["dataos_security_id"],
+                "dataos_resolution": security["dataos_resolution"],
             },
             "previous": deepcopy(previous_binding),
             "current": deepcopy(current_binding),
@@ -789,9 +826,9 @@ def build_recipe(
         "recipe_id": "",
         "authority": deepcopy(ALL_FALSE_AUTHORITY),
         "evidence_refs": [],  # filled by caller (run_pilot) with the 4 built refs
-        "manager_complex_epochs": [manager_complex_epoch],
+        "manager_complex_epochs": [deepcopy(dict(manager_complex_epoch))],
         "filer_epochs": [],
-        "vehicle_epochs": [vehicle_epoch],
+        "vehicle_epochs": [deepcopy(dict(vehicle_epoch))],
         "observations": [observation],
         "theme_comparisons": [],
         "campaign_transitions": [],
@@ -908,17 +945,30 @@ def _refusal_receipt(request: PilotRequest, refusal: PilotRefusal) -> dict[str, 
     }
 
 
-def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
+def run_pilot(
+    store: Any, request: PilotRequest, *, owner_semantics: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
     """Execute one deterministic, read-only, two-period owner-read pilot.
 
-    Returns a canonical-JSON receipt: either a lawful typed refusal (missing,
-    ambiguous, not-yet-knowable, or non-increasing report periods) or a
-    compiled receipt embedding the K2-B compiler's own output verbatim --
-    ``PILOT_COMPILED`` when the compiler itself reached
-    ``MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT``, else
-    ``PILOT_COMPILED_NON_POSITIVE``.  A genuine owner exception (store
-    outage, digest mismatch, corrupt object) is never caught here and always
-    propagates.
+    Returns a canonical-JSON receipt, one of three families:
+
+    * a lawful typed refusal (missing, ambiguous, not-yet-knowable, or
+      non-increasing report periods) -- unaffected by ``owner_semantics``,
+      since these are checked before any owner-semantics binding is even
+      inspected;
+    * ``PILOT_OWNER_SEMANTICS_UNRESOLVED`` -- the full two-period owner read
+      succeeded, but ``owner_semantics`` was not supplied or failed strict
+      validation (see :func:`_validate_owner_semantics`).  No K2-B recipe is
+      ever constructed on this path (``recipe``/``compiled`` are ``None``);
+    * a compiled receipt embedding the K2-B compiler's own output verbatim
+      -- ``PILOT_COMPILED`` when the compiler itself reached
+      ``MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT``, else
+      ``PILOT_COMPILED_NON_POSITIVE`` -- reached ONLY when a strictly-valid
+      ``owner_semantics`` payload is supplied, proving both the security and
+      the manager/vehicle owner seams.
+
+    A genuine owner exception (store outage, digest mismatch, corrupt
+    object) is never caught here and always propagates.
     """
     cutoff = request.cutoff
     if request.report_period_prev >= request.report_period_now:
@@ -986,7 +1036,71 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
         catalog_ref=catalog_ref_now, raw_ref=raw_ref_now,
         generation=generation_now, filing_row=filing_now, row=row_now,
     )
-    denominator = _manager_denominator(generation=generation_now, filing_row=filing_now)
+
+    # Everything above and below this line (periods, denominators, request,
+    # persistence/authority envelope) is computed identically regardless of
+    # whether the owner seam resolves -- ONLY the recipe/compile/state
+    # differ, per the frozen K2-C semantic-owner repair.
+    periods_block = {
+        "previous": _period_block(
+            generation=generation_prev, filing_row=filing_prev, row=row_prev,
+            raw_receipt=raw_receipt_prev, raw_ref=raw_ref_prev, catalog_ref=catalog_ref_prev,
+            explicit_generation_id=request.generation_id_prev is not None,
+        ),
+        "current": _period_block(
+            generation=generation_now, filing_row=filing_now, row=row_now,
+            raw_receipt=raw_receipt_now, raw_ref=raw_ref_now, catalog_ref=catalog_ref_now,
+            explicit_generation_id=request.generation_id_now is not None,
+        ),
+    }
+    denominators_block = {
+        "previous": _manager_denominator(generation=generation_prev, filing_row=filing_prev),
+        "current": _manager_denominator(generation=generation_now, filing_row=filing_now),
+    }
+    common_fields = {
+        "schema": SCHEMA,
+        "receipt_id": "",
+        "adapter_version": ADAPTER_VERSION,
+        "persistence": "none",
+        "owner_payloads_copied": False,
+        "authority": dict(ALL_FALSE_AUTHORITY),
+        "request": _request_block(request),
+        "periods": periods_block,
+        "denominators": denominators_block,
+    }
+
+    # --- The owner-semantics gate (frozen spec point 4) ---------------------
+    # BEFORE any recipe construction: a semantic positive requires BOTH the
+    # security owner seam and the manager/vehicle owner seam to be proven by
+    # their real owners. Validation is atomic and fail-closed (see
+    # _validate_owner_semantics) -- there is no partial-trust state, so
+    # "either unresolved" and "both unresolved" are the same branch here.
+    validated_owner_semantics = _validate_owner_semantics(owner_semantics)
+    if validated_owner_semantics is None:
+        body = {
+            **common_fields,
+            "state": OWNER_SEMANTICS_UNRESOLVED_STATE,
+            "compiled_observation_state": None,
+            "security_binding": {
+                "key_type": "cusip",
+                "cusip": request.cusip,
+                "dataos_security_id": None,
+                "dataos_resolution": SECURITY_BINDING_UNRESOLVED,
+            },
+            "measure": {"state": "not_compiled", "reason": "owner_semantics_unresolved"},
+            "recipe": None,
+            "compiled": None,
+            "owner_semantics": {
+                "security": {"resolved": False, "resolution": SECURITY_BINDING_UNRESOLVED},
+                "manager_vehicle": {"resolved": False, "resolution": MANAGER_VEHICLE_BINDING_UNRESOLVED},
+                "provenance": None,
+            },
+        }
+        return _finalize(body)
+
+    security = validated_owner_semantics["security"]
+    manager_complex_epoch = validated_owner_semantics["manager_complex_epoch"]
+    vehicle_epoch = validated_owner_semantics["vehicle_epoch"]
 
     recipe = build_recipe(
         filer_cik=request.filer_cik,
@@ -994,10 +1108,12 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
         previous_binding=previous_binding,
         current_binding=current_binding,
         current_raw_reference_id=raw_ref_now["reference_id"],
-        investment_discretion=row_now.get("investment_discretion"),
+        manager_complex_epoch=manager_complex_epoch,
+        vehicle_epoch=vehicle_epoch,
+        security=security,
         q_prev=q_prev,
         q_now=q_now,
-        denominator=denominator,
+        denominator=denominators_block["current"],
     )
     recipe["evidence_refs"] = [raw_ref_prev, catalog_ref_prev, raw_ref_now, catalog_ref_now]
     recipe["recipe_id"] = compute_recipe_id(recipe)
@@ -1009,10 +1125,10 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
     )
     is_eligible = observation_receipt["state"] == "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
     # The recipe's own observation measure kind (set in build_recipe from the
-    # honest _vehicle_decision mapping) is the single source of truth for
-    # whether a discretionary-attributable q_prev/q_now delta was ever
-    # submitted to the compiler -- never re-derived from is_eligible, which
-    # answers a different question (whether the compiler accepted it).
+    # owner-supplied vehicle epoch's decision_mode) is the single source of
+    # truth for whether a discretionary-attributable q_prev/q_now delta was
+    # ever submitted to the compiler -- never re-derived from is_eligible,
+    # which answers a different question (whether the compiler accepted it).
     measure_was_submitted = recipe["observations"][0]["measure"]["kind"] == "reported_share_change"
     top_measure: dict[str, Any] = (
         {"q_prev": q_prev, "q_now": q_now, "unit": "shares"}
@@ -1021,38 +1137,16 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
     )
 
     body = {
-        "schema": SCHEMA,
-        "receipt_id": "",
-        "adapter_version": ADAPTER_VERSION,
-        "persistence": "none",
-        "owner_payloads_copied": False,
-        "authority": dict(ALL_FALSE_AUTHORITY),
-        "request": _request_block(request),
+        **common_fields,
         "state": POSITIVE_STATE if is_eligible else NON_POSITIVE_STATE,
         "compiled_observation_state": observation_receipt["state"],
-        "periods": {
-            "previous": _period_block(
-                generation=generation_prev, filing_row=filing_prev, row=row_prev,
-                raw_receipt=raw_receipt_prev, raw_ref=raw_ref_prev, catalog_ref=catalog_ref_prev,
-                explicit_generation_id=request.generation_id_prev is not None,
-            ),
-            "current": _period_block(
-                generation=generation_now, filing_row=filing_now, row=row_now,
-                raw_receipt=raw_receipt_now, raw_ref=raw_ref_now, catalog_ref=catalog_ref_now,
-                explicit_generation_id=request.generation_id_now is not None,
-            ),
-        },
         "security_binding": {
             "key_type": "cusip",
             "cusip": request.cusip,
-            "dataos_security_id": None,
-            "dataos_resolution": "unresolved_no_authoritative_cusip_plane",
+            "dataos_security_id": str(security["dataos_security_id"]),
+            "dataos_resolution": str(security["dataos_resolution"]),
         },
         "measure": top_measure,
-        "denominators": {
-            "previous": _manager_denominator(generation=generation_prev, filing_row=filing_prev),
-            "current": denominator,
-        },
         "recipe": recipe,
         "compiled": compiled,
     }
@@ -1078,7 +1172,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "K2-C read-only institutional 13F owner-read pilot adapter. "
             "Reads two report-period catalog generations, cross-checks raw "
             "evidence, and compiles a deterministic K2-B manager-research-"
-            "intent receipt. Performs no writes."
+            "intent receipt. Performs no writes. This CLI has no flag for "
+            "the owner_semantics seam (by design -- a hand-injected owner "
+            "override would be a back door around the owner-proof gate), "
+            "so its real-world outcome is always the "
+            f"{OWNER_SEMANTICS_UNRESOLVED_STATE!r} terminal receipt, never "
+            "a semantic positive."
         )
     )
     parser.add_argument("--filer-cik", required=True, help="Manager filer CIK (10 digits)")

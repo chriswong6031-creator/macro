@@ -382,3 +382,141 @@ Capability state: the owner→K1→K2-B→K2-C read path is **production-proven*
 (real two-period positive + two real typed refusals). K2 closure remains Sol's
 call on the operation return.
 
+## 8. K2-C semantic-owner repair (2026-09-03) — repaired proof + limitation
+
+**Operation key:** `alpha-k2c-semantic-owner-repair-20260828-sol-001`
+**Commission:** `agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-31-k2c-semantic-owner-repair-commission.md`
+**Controlling decisions:** `agentos/decisions/DEC-ALPHA-K2C-K3D-CURRENT-DEPENDENCY-STATE-2026-08-28.md`,
+`agentos/decisions/DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP.md`.
+
+### 8.1 The defect this repair killed
+
+The §7 positive receipt above (and every other pre-repair `PILOT_COMPILED`
+receipt) was reached from a single 13F row's `investment_discretion=="SOLE"`
+alone, while the receipt's own `security_binding.dataos_security_id`
+simultaneously stayed `null`. Two independent local-authorship defects made
+that possible: `_vehicle_decision()` read a per-position AUTHORITY field
+(`investment_discretion`) as vehicle STYLE, and `build_recipe()` minted
+`mcx_filer_<CIK>` / `mce_filer_<CIK>_v1` / `veh_filer_<CIK>` /
+`vie_filer_<CIK>_v1` as `resolution_state:"resolved"` manager-complex/vehicle
+identity straight from the filer CIK. Both are now deleted. `_vehicle_decision`
+no longer exists on the module at all (`tests/test_institutional_13f_adapter_
+contract.py::test_investment_discretion_never_selects_vehicle_semantics`), and
+no `mcx_filer_`/`mce_filer_`/`veh_filer_`/`vie_filer_` string can appear in any
+receipt this module can produce
+(`::test_cik_is_not_manager_complex_identity`).
+
+### 8.2 The repaired law
+
+`run_pilot` gained one keyword-only seam,
+`owner_semantics: Mapping[str, Any] | None = None`, validated strictly and
+atomically by `_validate_owner_semantics` (any single missing/empty/wrong-typed/
+partial component invalidates the WHOLE payload — never partial trust). The
+gate runs **before any recipe construction**: when either the security seam
+or the manager/vehicle seam is unresolved, `run_pilot` now returns
+
+```json
+{
+ "state": "PILOT_OWNER_SEMANTICS_UNRESOLVED",
+ "compiled_observation_state": null,
+ "recipe": null,
+ "compiled": null,
+ "measure": {"state": "not_compiled", "reason": "owner_semantics_unresolved"},
+ "security_binding": {
+  "key_type": "cusip", "cusip": "<request cusip>",
+  "dataos_security_id": null,
+  "dataos_resolution": "unresolved_no_authoritative_cusip_plane"
+ },
+ "owner_semantics": {
+  "security": {"resolved": false, "resolution": "unresolved_no_authoritative_cusip_plane"},
+  "manager_vehicle": {"resolved": false, "resolution": "unresolved_no_canonical_manager_vehicle_owner"},
+  "provenance": null
+ }
+}
+```
+
+with every other block (`schema`, `receipt_id`, `adapter_version`,
+`persistence`, `owner_payloads_copied`, `authority`, `request`, `periods`
+(both, including the raw `investment_discretion` value, honestly reported and
+feeding no semantics), `denominators`) computed identically to the positive
+path. `build_recipe` no longer accepts `investment_discretion`; it instead
+requires owner-supplied `manager_complex_epoch`, `vehicle_epoch`, and
+`security` mappings and carries them **verbatim** (no minting, no
+`resolution_state`/`status` stamping) into the K2-B recipe. Full worked
+example (from the repaired module's own test fixture world — a SOLE-discretion
+two-period read, cutoff 2026-08-01, no `owner_semantics` supplied):
+
+```json
+{
+ "adapter_version": "1.0.0",
+ "authority": {"can_gate": false, "can_open_entry": false, "can_originate": false, "can_rank": false, "can_size": false},
+ "compiled": null,
+ "compiled_observation_state": null,
+ "measure": {"reason": "owner_semantics_unresolved", "state": "not_compiled"},
+ "owner_semantics": {
+  "manager_vehicle": {"resolution": "unresolved_no_canonical_manager_vehicle_owner", "resolved": false},
+  "provenance": null,
+  "security": {"resolution": "unresolved_no_authoritative_cusip_plane", "resolved": false}
+ },
+ "periods": {
+  "current": {"row": {"cusip": "037833100", "investment_discretion": "SOLE", "ssh_prn_amt": "140", "ssh_prn_type": "SH"}, "filing": {"accession": "0001792167-26-000002"}},
+  "previous": {"row": {"cusip": "037833100", "investment_discretion": "SOLE", "ssh_prn_amt": "100", "ssh_prn_type": "SH"}, "filing": {"accession": "0001792167-26-000001"}}
+ },
+ "persistence": "none",
+ "receipt_id": "i13fpilot_8b39157644b8f9693cd6e47b6bd1a26ed2134bf06edd90aa87221966b9d01978",
+ "recipe": null,
+ "schema": "institutional_intelligence.owner_read_receipt/v1",
+ "security_binding": {"cusip": "037833100", "dataos_resolution": "unresolved_no_authoritative_cusip_plane", "dataos_security_id": null, "key_type": "cusip"},
+ "state": "PILOT_OWNER_SEMANTICS_UNRESOLVED"
+}
+```
+
+(elided fields match §7's shape verbatim; `periods` truncated above for
+brevity — the full receipt carries every field this doc's §7 examples do).
+This is the exact receipt the §7 filer (CIK 0001792167, CUSIP 037833100)
+would now produce for the identical two-period read that used to yield
+`PILOT_COMPILED` — the repair's falsifying counter-example to §7's own
+positive.
+
+### 8.3 Owner-primitive limitation (per the commission's blocker contract)
+
+No repository code — searched across `lib/`, `engine/`, `scripts/`,
+`collectors/`, `app/` for any construction of a recipe's
+`manager_complex_epochs`/`vehicle_epochs` list — produces a lawful
+`owner_semantics` payload today; the adapter module itself is the only
+producer, and it now *requires* the seam rather than authoring it
+(`tests/test_institutional_13f_adapter_contract.py::
+test_no_repo_producer_supplies_owner_manager_vehicle_epochs`). Consistent with
+`DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP`, no owner-native CUSIP→Data OS
+`SEC:` resolution surface exists either. Consequently:
+
+- `missing_security_owner_primitive`: no repo owner resolves a 13F row's
+  `cusip` to a Data OS `SEC:` identity (`lib/dataos/identity.py` +
+  `data/reference/security_master.parquet` carry no `cusip` vendor-alias
+  space per `DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP`'s evidence).
+- `missing_manager_vehicle_owner_primitive`: no repo owner supplies a
+  resolved K2-B `managerComplexEpoch`/`vehicleEpoch` pair keyed off a 13F
+  filer/vehicle; K2-B (`lib/institutional_intelligence.py`) is a pure
+  compiler over caller-supplied epochs, never their producer.
+- The CLI (`main`/`_build_arg_parser`) carries **no** `owner_semantics` flag
+  by design (frozen spec point 8): a human-injected override would be
+  precisely the back door this repair exists to close. Its real-world
+  outcome on any input is therefore always the
+  `PILOT_OWNER_SEMANTICS_UNRESOLVED` terminal receipt shown in §8.2.
+- The ONE test-only STRUCTURAL fixture
+  (`tests/test_institutional_13f_adapter_contract.py::
+  _structural_owner_semantics`) proves the gate machinery correctly routes a
+  fully owner-resolved binding into the K2-B compiler and that compiled
+  output stays uninjectable — it is explicitly commented as NOT evidence any
+  production owner can supply these values, and is never presented as a
+  production positive.
+
+**Result:** this repair closes the false-positive bug entirely (no
+`owner_semantics` producer exists → every current real-world read is now
+`PILOT_OWNER_SEMANTICS_UNRESOLVED`, never a laundered positive), but it
+cannot itself deliver a real owner-backed semantic positive — that requires a
+separate Data OS CUSIP-identity commission and a separate institutional/K2-B
+manager-vehicle-epoch commission, per the commission's owner-primitive-blocker
+contract. K2-C therefore remains `PARTIAL / NOT SOL-ACCEPTED` for a real
+positive, while the false-positive defect itself is closed.
+

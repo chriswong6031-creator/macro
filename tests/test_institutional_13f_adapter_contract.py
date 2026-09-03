@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import re
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
@@ -40,10 +41,13 @@ from lib.institutional_13f_adapter import (
     CUSIP_GRAMMAR_INVALID,
     FILING_NOT_FOUND,
     GENERATION_NOT_KNOWABLE_AT_CUTOFF,
+    MANAGER_VEHICLE_BINDING_UNRESOLVED,
     MEASURE_UNIT_UNSUPPORTED,
     NON_POSITIVE_STATE,
+    OWNER_SEMANTICS_UNRESOLVED_STATE,
     POSITIVE_STATE,
     REPORT_PERIODS_NOT_INCREASING,
+    SECURITY_BINDING_UNRESOLVED,
     SECURITY_NOT_IN_FILING,
     SOURCE_RECEIPT_MISMATCH,
     Institutional13FAdapterError,
@@ -52,9 +56,10 @@ from lib.institutional_13f_adapter import (
     cross_check_raw_receipt,
     _catalog_generation_reference,
     _manager_denominator,
+    _open_interval,
+    _original_lineage,
     _period_binding,
     _raw_receipt_reference,
-    _vehicle_decision,
     main as adapter_main,
     resolve_generation,
     run_pilot,
@@ -291,21 +296,96 @@ def _request(**overrides) -> PilotRequest:
     return PilotRequest(**fields)
 
 
+# --- STRUCTURAL owner_semantics fixture --------------------------------------
+#
+# The ONE structural fixture permitted by the K2-C semantic-owner repair
+# commission: it exists PURELY to prove that run_pilot's owner-seam gate
+# routes a fully owner-resolved binding into the K2-B compiler, and that the
+# compiled output stays uninjectable, when BOTH owner seams are supplied.
+# It is NOT evidence that any production owner (Data OS / K2-B) can supply
+# these values today -- see test_no_repo_producer_supplies_owner_manager_
+# vehicle_epochs and DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP. Every
+# ID here is deliberately NOT filer/CIK-derived (a "structural_test_owner"
+# stem, not "filer_<CIK>"), so it can never be mistaken for the repaired
+# defect it exists to rule out.
+
+
+def _structural_owner_semantics(
+    *, decision_mode: str = "discretionary", vehicle_class: str = "concentrated_discretionary_active",
+) -> dict:
+    manager_complex_epoch = {
+        "manager_complex_id": "mcx_structural_test_owner",
+        "complex_epoch_id": "mce_structural_test_owner_v1",
+        "interval": _open_interval(),
+        "status": "active",
+        "resolution_state": "resolved",
+        "decision_mode": decision_mode,
+        "actor_identity": {
+            "role": "institution_or_manager_complex",
+            "ontology_source": "B0_MANAGER_COMPLEX_DRAFT",
+            "raw_actor_string": "STRUCTURAL TEST FIXTURE OWNER",
+            "original_ontology_version": "structural-fixture/1.0.0",
+            "resolution_state": "resolved",
+            "remap_lineage": _original_lineage(),
+        },
+        "lineage": _original_lineage(),
+    }
+    vehicle_epoch = {
+        "vehicle_id": "veh_structural_test_owner",
+        "vehicle_epoch_id": "vie_structural_test_owner_v1",
+        "manager_complex_id": "mcx_structural_test_owner",
+        "complex_epoch_id": "mce_structural_test_owner_v1",
+        "interval": _open_interval(),
+        "status": "active",
+        "resolution_state": "resolved",
+        "decision_mode": decision_mode,
+        "vehicle_class": vehicle_class,
+        "lineage": _original_lineage(),
+    }
+    return {
+        "provenance": {"owner": "structural_test_fixture", "reference_id": "structural-fixture-001"},
+        "security": {
+            "dataos_security_id": "SEC:STRUCTURAL:TEST",
+            "dataos_resolution": "alias_table_resolved",
+        },
+        "manager_complex_epoch": manager_complex_epoch,
+        "vehicle_epoch": vehicle_epoch,
+    }
+
+
 # --- (a) happy path -----------------------------------------------------
 
 
 def test_happy_path_two_period_read_compiles(tmp_path: Path) -> None:
+    """Repaired truth (K2-C semantic-owner repair, 2026-09-03).
+
+    A clean two-period world with SOLE discretion and NO owner-supplied
+    security/manager/vehicle binding can no longer reach a semantic
+    positive -- only the owner-unresolved terminal receipt. This test's
+    original adverse intent (prove the full read pipeline assembles a
+    correct, byte-bounded, persistence-honest receipt) is preserved; its
+    original oracle (``state == POSITIVE_STATE``) is now exactly the
+    defect this repair exists to kill. The positive-path oracle moves to
+    ``test_owner_resolved_structural_fixture_reaches_positive_and_
+    recompiles`` below, using the one permitted STRUCTURAL fixture.
+    """
     store = _build_world(tmp_path)
     receipt = run_pilot(store, _request())
 
     assert receipt["schema"] == "institutional_intelligence.owner_read_receipt/v1"
-    assert receipt["state"] == POSITIVE_STATE
-    assert receipt["compiled_observation_state"] == "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
-    assert receipt["measure"] == {"q_prev": 100, "q_now": 140, "unit": "shares"}
+    assert receipt["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE
+    assert receipt["state"] != POSITIVE_STATE
+    assert receipt["compiled_observation_state"] is None
+    assert receipt["recipe"] is None
+    assert receipt["compiled"] is None
+    assert receipt["measure"] == {"state": "not_compiled", "reason": "owner_semantics_unresolved"}
     assert receipt["denominators"]["current"]["state"] == "complete"
     assert receipt["denominators"]["previous"]["state"] == "complete"
     assert receipt["periods"]["current"]["filing"]["accession"] == ACCESSION_NOW
     assert receipt["periods"]["previous"]["filing"]["accession"] == ACCESSION_PREV
+    # The raw owner fact is still honestly present -- SOLE never disappears,
+    # it simply feeds no semantics anywhere any more.
+    assert receipt["periods"]["current"]["row"]["investment_discretion"] == "SOLE"
     assert receipt["persistence"] == "none"
     assert receipt["owner_payloads_copied"] is False
     assert receipt["authority"] == {
@@ -315,18 +395,50 @@ def test_happy_path_two_period_read_compiles(tmp_path: Path) -> None:
     assert receipt["security_binding"] == {
         "key_type": "cusip", "cusip": CUSIP,
         "dataos_security_id": None,
-        "dataos_resolution": "unresolved_no_authoritative_cusip_plane",
+        "dataos_resolution": SECURITY_BINDING_UNRESOLVED,
     }
-    assert receipt["compiled"]["authority"] == receipt["authority"]
+    assert receipt["owner_semantics"] == {
+        "security": {"resolved": False, "resolution": SECURITY_BINDING_UNRESOLVED},
+        "manager_vehicle": {"resolved": False, "resolution": MANAGER_VEHICLE_BINDING_UNRESOLVED},
+        "provenance": None,
+    }
     assert receipt["receipt_id"].startswith("i13fpilot_")
     assert receipt["periods"]["previous"]["pointer"]["state"] == "read"
     assert receipt["periods"]["current"]["pointer"]["state"] == "read"
+    assert len(canonical_json_bytes(receipt)) < 256 * 1024
 
-    # Finding 10: the receipt embeds the full recipe, and recompiling it
-    # independently reproduces the embedded "compiled" output exactly.
+
+def test_owner_resolved_structural_fixture_reaches_positive_and_recompiles(tmp_path: Path) -> None:
+    """STRUCTURAL fixture only -- see the module-level comment above
+    ``_structural_owner_semantics``. Proves the gate routes a fully
+    owner-resolved binding into the K2-B compiler and that compiled output
+    stays uninjectable. NOT evidence any production owner can supply these
+    values today.
+    """
+    store = _build_world(tmp_path)
+    owner_semantics = _structural_owner_semantics()
+    receipt = run_pilot(store, _request(), owner_semantics=owner_semantics)
+
+    assert receipt["state"] == POSITIVE_STATE
+    assert receipt["compiled_observation_state"] == "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
+    assert receipt["measure"] == {"q_prev": 100, "q_now": 140, "unit": "shares"}
+    assert receipt["security_binding"] == {
+        "key_type": "cusip", "cusip": CUSIP,
+        "dataos_security_id": "SEC:STRUCTURAL:TEST",
+        "dataos_resolution": "alias_table_resolved",
+    }
+    assert receipt["compiled"]["authority"] == receipt["authority"]
+
+    # Finding 10 (preserved): the receipt embeds the full recipe, and
+    # recompiling it independently reproduces the embedded "compiled"
+    # output exactly.
     recompiled = compile_recipe(receipt["recipe"], as_of=receipt["request"]["cutoff"])
     assert recompiled == receipt["compiled"]
     assert len(canonical_json_bytes(receipt)) < 256 * 1024
+
+    serialized = json.dumps(receipt)
+    for forbidden in ("mcx_filer_", "mce_filer_", "veh_filer_", "vie_filer_"):
+        assert forbidden not in serialized
 
 
 # --- (b) determinism ------------------------------------------------------
@@ -340,6 +452,15 @@ def test_determinism_same_inputs_are_byte_identical(tmp_path: Path) -> None:
     assert first == second
     assert first["receipt_id"] == second["receipt_id"]
     assert canonical_json_bytes(first) == canonical_json_bytes(second)
+
+    # Determinism also holds on the owner-resolved path (frozen spec point
+    # 7): identical store + request + owner_semantics -> byte-identical
+    # receipt and receipt_id. Fresh dicts each call rule out identity reuse.
+    first_resolved = run_pilot(store, _request(), owner_semantics=_structural_owner_semantics())
+    second_resolved = run_pilot(store, _request(), owner_semantics=_structural_owner_semantics())
+    assert first_resolved == second_resolved
+    assert first_resolved["receipt_id"] == second_resolved["receipt_id"]
+    assert canonical_json_bytes(first_resolved) == canonical_json_bytes(second_resolved)
 
 
 # --- (c) explicit generation_id binds a superseded/older generation --------
@@ -374,9 +495,14 @@ def test_explicit_generation_id_binds_the_exact_older_generation(tmp_path: Path)
     assert generation_b.current_generation_id == generation_b.generation_id
 
     # The pointer now resolves to generation B; pin generation A explicitly.
+    # STRUCTURAL owner_semantics fixture (not production evidence) supplied
+    # only so this generation-pinning assertion remains meaningful under the
+    # repaired owner-seam law -- this test's real subject is pointer/pinning
+    # behavior, orthogonal to the owner-seam repair.
     receipt = run_pilot(
         store, _request(cutoff=datetime(2026, 8, 1, tzinfo=timezone.utc),
                         generation_id_now=generation_a.generation_id),
+        owner_semantics=_structural_owner_semantics(),
     )
     assert receipt["state"] == POSITIVE_STATE
     assert receipt["periods"]["current"]["generation_id"] == generation_a.generation_id
@@ -540,10 +666,18 @@ def test_amendment_known_after_cutoff_is_invisible_then_supersedes(tmp_path: Pat
         published_at="2026-07-25T00:00:00Z", source_cutoff_at="2026-07-22T00:00:00Z",
     )
 
+    # STRUCTURAL owner_semantics fixture (not production evidence) supplied
+    # only so the amendment-lineage assertions below remain meaningful
+    # under the repaired owner-seam law -- this test's real subject is
+    # amendment-chain visibility switching on cutoff, orthogonal to the
+    # owner-seam repair.
+    owner_semantics = _structural_owner_semantics()
+
     # Before the amendment exists (generation A is the only knowable option).
     cutoff_before = datetime(2026, 7, 16, tzinfo=timezone.utc)
     receipt_before = run_pilot(
-        store, _request(cutoff=cutoff_before, generation_id_now=generation_a.generation_id)
+        store, _request(cutoff=cutoff_before, generation_id_now=generation_a.generation_id),
+        owner_semantics=owner_semantics,
     )
     assert receipt_before["state"] == POSITIVE_STATE
     assert receipt_before["periods"]["current"]["filing"]["accession"] == ACCESSION_NOW
@@ -552,7 +686,8 @@ def test_amendment_known_after_cutoff_is_invisible_then_supersedes(tmp_path: Pat
     # After the amendment is knowable: the chain tip (the restatement) is used.
     cutoff_after = datetime(2026, 8, 1, tzinfo=timezone.utc)
     receipt_after = run_pilot(
-        store, _request(cutoff=cutoff_after, generation_id_now=generation_b.generation_id)
+        store, _request(cutoff=cutoff_after, generation_id_now=generation_b.generation_id),
+        owner_semantics=owner_semantics,
     )
     assert receipt_after["state"] == POSITIVE_STATE
     assert receipt_after["periods"]["current"]["filing"]["accession"] == amendment_accession
@@ -766,8 +901,19 @@ def test_source_receipt_mismatch_is_hard_refusal(tmp_path: Path) -> None:
 
 
 def test_non_sole_discretion_compiles_non_positive_via_the_compiler(tmp_path: Path) -> None:
+    """Repaired truth: reaching the compiler's own non-positive law now
+    requires an owner-RESOLVED but non-discretionary vehicle/manager-complex
+    binding -- never a bare SHARED/NONE ``investment_discretion`` value,
+    which the adapter no longer reads for vehicle semantics at all (that is
+    exactly what ``test_investment_discretion_never_selects_vehicle_
+    semantics`` proves independently). The STRUCTURAL fixture below is used
+    only to reach the compiler's own ineligibility law honestly.
+    """
     store = _build_world(tmp_path, investment_discretion="SHARED")
-    receipt = run_pilot(store, _request())
+    owner_semantics = _structural_owner_semantics(
+        decision_mode="unknown", vehicle_class="options_income_overlay",
+    )
+    receipt = run_pilot(store, _request(), owner_semantics=owner_semantics)
 
     # (a) state distinguishes the non-positive outcome from an eligible one.
     assert receipt["state"] == NON_POSITIVE_STATE
@@ -777,12 +923,14 @@ def test_non_sole_discretion_compiles_non_positive_via_the_compiler(tmp_path: Pa
     assert "q_prev" not in receipt["measure"]
     assert "q_now" not in receipt["measure"]
     assert receipt["measure"] == {"state": "not_compiled", "reason": "non_discretionary_vehicle"}
-    # The per-period raw owner facts are still honestly present (never hidden).
+    # The per-period raw owner facts are still honestly present (never hidden),
+    # including the SHARED investment_discretion that feeds no semantics.
     assert receipt["periods"]["current"]["row"]["ssh_prn_amt"] == "140"
     assert receipt["periods"]["previous"]["row"]["ssh_prn_amt"] == "100"
+    assert receipt["periods"]["current"]["row"]["investment_discretion"] == "SHARED"
 
-    # (c) the vehicle/complex fields are an honest "we do not know the
-    # structure" placeholder, never a fabricated real-structure claim.
+    # (c) the vehicle/complex fields are exactly what the owner supplied --
+    # not a value the adapter itself chose from investment_discretion.
     vehicle = receipt["recipe"]["vehicle_epochs"][0]
     assert vehicle["decision_mode"] == "unknown"
     assert vehicle["vehicle_class"] == "options_income_overlay"
@@ -797,24 +945,18 @@ def test_non_sole_discretion_compiles_non_positive_via_the_compiler(tmp_path: Pa
     assert recompiled == receipt["compiled"]
 
 
-def test_vehicle_decision_mapping_is_honest_for_both_discretion_paths() -> None:
-    assert _vehicle_decision("SOLE") == ("discretionary", "concentrated_discretionary_active")
-    assert _vehicle_decision(" sole ") == ("discretionary", "concentrated_discretionary_active")
-    for value in ("SHARED", "DEFINED", "NONE", None, ""):
-        assert _vehicle_decision(value) == ("unknown", "options_income_overlay")
-    # Never the fabricated real-structure claim the review flagged.
-    assert _vehicle_decision("SHARED")[1] != "synthetic_fund_of_funds"
-
-
 # --- (p) callers cannot inject compiled output ------------------------------
 
 
 def test_compiled_output_is_uninjectable_and_matches_independent_recompute(tmp_path: Path) -> None:
     store = _build_world(tmp_path)
     request = _request()
-    receipt = run_pilot(store, request)
+    owner_semantics = _structural_owner_semantics()
+    receipt = run_pilot(store, request, owner_semantics=owner_semantics)
 
-    # PilotRequest exposes no field that could carry an override/compiled value.
+    # PilotRequest exposes no field that could carry an override/compiled
+    # value; owner_semantics is a keyword-only channel on run_pilot itself,
+    # never a PilotRequest field.
     field_names = {field.name for field in dataclasses.fields(PilotRequest)}
     assert field_names == {
         "filer_cik", "cusip", "report_period_prev", "report_period_now",
@@ -822,9 +964,10 @@ def test_compiled_output_is_uninjectable_and_matches_independent_recompute(tmp_p
     }
 
     # Independently rebuild the recipe from the same owner reads (using only
-    # the public step functions) and recompile it: the compiler is the only
-    # author of "compiled", so recomputing it from scratch against the same
-    # owner facts must reproduce it exactly.
+    # the public step functions) plus the SAME structural owner_semantics,
+    # and recompile it: the compiler is the only author of "compiled", so
+    # recomputing it from scratch against the same owner facts must
+    # reproduce it exactly.
     generation_prev = resolve_generation(store, report_period=PERIOD_PREV, cutoff=request.cutoff)
     generation_now = resolve_generation(store, report_period=PERIOD_NOW, cutoff=request.cutoff)
     filing_prev = select_effective_filing(
@@ -860,7 +1003,9 @@ def test_compiled_output_is_uninjectable_and_matches_independent_recompute(tmp_p
         filer_cik=FILER_CIK, cusip=CUSIP,
         previous_binding=previous_binding, current_binding=current_binding,
         current_raw_reference_id=raw_ref_now["reference_id"],
-        investment_discretion=row_now.get("investment_discretion"),
+        manager_complex_epoch=owner_semantics["manager_complex_epoch"],
+        vehicle_epoch=owner_semantics["vehicle_epoch"],
+        security=owner_semantics["security"],
         q_prev=q_prev, q_now=q_now, denominator=denominator,
     )
     recipe["evidence_refs"] = [raw_ref_prev, catalog_ref_prev, raw_ref_now, catalog_ref_now]
@@ -899,6 +1044,12 @@ def test_generation_id_pinned_but_still_too_new_is_refused(tmp_path: Path) -> No
 
 
 def test_cli_end_to_end_positive_and_refusal(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Repaired truth (frozen spec point 8): the CLI has no owner_semantics
+    channel -- deliberately, since a human-supplied override would be the
+    exact back door this repair exists to close. Its real-world outcome on
+    a clean two-period world is therefore always the owner-unresolved
+    terminal receipt, never a semantic positive.
+    """
     store = _build_world(tmp_path)
 
     receipt_path = tmp_path / "receipt.json"
@@ -913,9 +1064,11 @@ def test_cli_end_to_end_positive_and_refusal(tmp_path: Path, capsys: pytest.Capt
     ])
     assert exit_code == 0
     payload = json.loads(receipt_path.read_text(encoding="utf-8"))
-    assert payload["state"] == POSITIVE_STATE
+    assert payload["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE
+    assert payload["recipe"] is None
+    assert payload["compiled"] is None
     out = capsys.readouterr().out
-    assert "state: PILOT_COMPILED" in out
+    assert f"state: {OWNER_SEMANTICS_UNRESOLVED_STATE}" in out
 
     refusal_path = tmp_path / "refusal.json"
     exit_code_refusal = adapter_main([
@@ -1149,3 +1302,198 @@ def test_manager_denominator_partial_when_decoded_is_a_lawful_subset() -> None:
         "total_positions": 2, "included_positions": 1,
         "excluded_positions": 0, "missing_positions": 1,
     }
+
+
+# ==============================================================================
+# K2-C semantic-owner repair (2026-09-03) -- new falsifiers
+#
+# Commissioned by merged Macro #6710 / DEC-ALPHA-K2C-K3D-CURRENT-DEPENDENCY-
+# STATE-2026-08-28. A semantic positive now requires BOTH owner seams
+# (security identity AND manager/vehicle epochs) to be proven, atomically,
+# through run_pilot(..., owner_semantics=...). See the module docstring in
+# lib/institutional_13f_adapter.py for the full repaired law.
+# ==============================================================================
+
+
+def test_sole_discretion_alone_cannot_reach_a_positive(tmp_path: Path) -> None:
+    """The exact defect this repair exists to kill: a SOLE 13F row with no
+    owner-supplied security/manager/vehicle binding must never yield
+    PILOT_COMPILED or MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT.
+    """
+    store = _build_world(tmp_path)  # default investment_discretion="SOLE"
+    receipt = run_pilot(store, _request())
+
+    assert receipt["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE
+    assert receipt["state"] != POSITIVE_STATE
+    assert receipt["compiled_observation_state"] != "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
+    assert receipt["compiled_observation_state"] is None
+
+
+def test_unresolved_security_binding_kills_the_positive(tmp_path: Path) -> None:
+    store = _build_world(tmp_path)
+    receipt = run_pilot(store, _request())
+
+    assert receipt["security_binding"]["dataos_security_id"] is None
+    assert receipt["state"] != POSITIVE_STATE
+    assert receipt["recipe"] is None
+    assert receipt["compiled"] is None
+
+
+def test_cik_is_not_manager_complex_identity(tmp_path: Path) -> None:
+    """No mcx_filer_<CIK> / mce_filer_<CIK> / veh_filer_<CIK> / vie_filer_<CIK>
+    synthetic resolved identity can support a positive, on either receipt
+    family this adapter can now produce.
+    """
+    store = _build_world(tmp_path)
+    unresolved_receipt = run_pilot(store, _request())
+    resolved_receipt = run_pilot(store, _request(), owner_semantics=_structural_owner_semantics())
+
+    for receipt in (unresolved_receipt, resolved_receipt):
+        serialized = json.dumps(receipt)
+        for forbidden in ("mcx_filer_", "mce_filer_", "veh_filer_", "vie_filer_"):
+            assert forbidden not in serialized, f"{forbidden!r} leaked into the receipt"
+
+
+def test_investment_discretion_never_selects_vehicle_semantics(tmp_path: Path) -> None:
+    """SOLE, SHARED, DEFINED, NONE, and None investment_discretion ALL
+    produce the same owner-unresolved terminal state -- the field is
+    reported honestly but selects nothing. ``_vehicle_decision``, the
+    function that used to make that (illegitimate) selection, no longer
+    exists on the module at all.
+
+    An empty-string value is EXCLUDED from the constructed-store cases: the
+    owner's own catalog write path
+    (``engine.institutional_census.catalog._string``, via
+    ``prepare_catalog_generation``) refuses an empty string as invalid
+    input ("must be a bounded non-empty string") for a nullable field, so a
+    real owner-published holdings row can never literally carry
+    ``investment_discretion=""`` -- only a genuinely-absent (``None``)
+    value or a real non-empty string. That refusal is exercised directly
+    below without going through the full owner store/generation pipeline
+    (which would otherwise raise before ``run_pilot`` is ever reached),
+    proving the same "selects nothing" law without violating the "every
+    fixture store is built through the owner's own publish APIs" house rule.
+    """
+    import lib.institutional_13f_adapter as adapter_module
+
+    assert not hasattr(adapter_module, "_vehicle_decision")
+
+    discretion_values = ["SOLE", "sole ", "SHARED", "DEFINED", "NONE", None]
+    for index, discretion in enumerate(discretion_values):
+        store = _build_world(tmp_path / f"world_{index}", investment_discretion=discretion)
+        receipt = run_pilot(store, _request())
+        assert receipt["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE, discretion
+
+    # The empty-string case: since the owner's own store refuses to persist
+    # it, prove instead that build_recipe -- the ONE function that used to
+    # read investment_discretion to select vehicle semantics -- no longer
+    # even accepts an investment_discretion argument of ANY value, empty
+    # string included. There is no code path left through which "" (or
+    # anything else read from a 13F row) could select vehicle semantics.
+    import inspect
+
+    assert "investment_discretion" not in inspect.signature(build_recipe).parameters
+
+
+def _drop(mapping: dict, key: str) -> dict:
+    out = dict(mapping)
+    out.pop(key, None)
+    return out
+
+
+_OWNER_SEMANTICS_DEFECTS = [
+    pytest.param(lambda os: _drop(os, "provenance"), id="missing_provenance"),
+    pytest.param(
+        lambda os: {**os, "provenance": {**os["provenance"], "owner": ""}}, id="empty_provenance_owner",
+    ),
+    pytest.param(lambda os: _drop(os, "security"), id="missing_security"),
+    pytest.param(
+        lambda os: {**os, "security": {**os["security"], "dataos_security_id": None}},
+        id="security_id_none",
+    ),
+    pytest.param(lambda os: _drop(os, "vehicle_epoch"), id="missing_vehicle_epoch"),
+    pytest.param(
+        lambda os: {**os, "vehicle_epoch": {**os["vehicle_epoch"], "resolution_state": "unresolved"}},
+        id="vehicle_epoch_unresolved",
+    ),
+    pytest.param(
+        lambda os: {
+            **os,
+            "manager_complex_epoch": {**os["manager_complex_epoch"], "resolution_state": "unresolved"},
+        },
+        id="manager_complex_epoch_unresolved",
+    ),
+    pytest.param(lambda _os: "not-a-mapping", id="non_mapping"),
+]
+
+
+@pytest.mark.parametrize("mutate", _OWNER_SEMANTICS_DEFECTS)
+def test_owner_semantics_partial_or_unprovenanced_is_refused(tmp_path: Path, mutate) -> None:
+    """Fail-closed, atomic validation (frozen spec point 3): ANY single
+    defect anywhere in owner_semantics makes the WHOLE payload unresolved --
+    never partially trusted, and never a recipe.
+    """
+    store = _build_world(tmp_path)
+    owner_semantics = mutate(_structural_owner_semantics())
+    receipt = run_pilot(store, _request(), owner_semantics=owner_semantics)
+
+    assert receipt["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE
+    assert receipt["recipe"] is None
+    assert receipt["compiled"] is None
+    assert receipt["owner_semantics"]["security"]["resolved"] is False
+    assert receipt["owner_semantics"]["manager_vehicle"]["resolved"] is False
+    assert receipt["owner_semantics"]["provenance"] is None
+
+
+def test_no_repo_producer_supplies_owner_manager_vehicle_epochs() -> None:
+    """OWNER-BLOCKED discriminator (records a repo-fact, NOT a production
+    positive). Greps the repository for any producer of a recipe's
+    ``manager_complex_epochs``/``vehicle_epochs`` list literal -- code that
+    actually CONSTRUCTS these owner-native K2-B epoch collections, not code
+    that merely reads/validates a recipe someone else built. The only
+    producer found is this adapter's own module -- the exact module this
+    repair now forces to require its ONE owner seam
+    (``run_pilot(..., owner_semantics=...)``) instead of authoring these
+    epochs itself. That means no current canonical institutional/K2-B owner
+    can fill the seam today; this is an owner-primitive gap per the
+    commission's owner-primitive-blocker contract, NOT evidence a
+    production positive is currently reachable.
+    """
+    import inspect
+
+    import lib.institutional_13f_adapter as adapter_module
+
+    root = Path(adapter_module.__file__).resolve().parents[1]
+    search_dirs = ["lib", "engine", "scripts", "collectors", "app"]
+    pattern = re.compile(r"""["'](manager_complex_epochs|vehicle_epochs)["']\s*:\s*\[""")
+    producers: set[str] = set()
+    for directory in search_dirs:
+        base = root / directory
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*.py"):
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if pattern.search(text):
+                producers.add(str(path.relative_to(root)))
+    assert producers == {"lib/institutional_13f_adapter.py"}
+
+    # The one producer must itself now REQUIRE the missing owner seam rather
+    # than self-minting identity -- this is what turns "no producer exists"
+    # from a silent gap into a typed, provable refusal.
+    signature = inspect.signature(run_pilot)
+    assert "owner_semantics" in signature.parameters
+
+
+def test_authority_stays_false_on_every_path(tmp_path: Path) -> None:
+    store = _build_world(tmp_path)
+    all_false = {
+        "can_rank": False, "can_gate": False, "can_size": False,
+        "can_originate": False, "can_open_entry": False,
+    }
+    unresolved_receipt = run_pilot(store, _request())
+    assert unresolved_receipt["authority"] == all_false
+
+    resolved_receipt = run_pilot(store, _request(), owner_semantics=_structural_owner_semantics())
+    assert resolved_receipt["authority"] == all_false
+    assert resolved_receipt["recipe"]["authority"] == all_false
+    assert resolved_receipt["compiled"]["authority"] == all_false
