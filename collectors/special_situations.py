@@ -729,6 +729,113 @@ def _extraction_importance_slice(df: pd.DataFrame, percentile: int) -> pd.DataFr
     return eligible
 
 
+# ------------------------------------------------- F09-1 evidence-bound deal terms
+
+def _observations_path() -> Path:
+    return config.data_dir() / GROUP / "observations" / "observations.jsonl"
+
+
+def _cached_body(accession: str) -> tuple[str | None, Path | None]:
+    """The already-acquired filing text for an accession, or (None, None).
+
+    This lane reads ONLY bytes the existing source owner already fetched and cached — it opens
+    no parallel corpus, which is the rights boundary the capability is built inside.
+    """
+    cache = config.data_dir() / GROUP / "doc_cache" / f"{accession}.txt"
+    if not cache.exists():
+        return None, None
+    try:
+        return cache.read_text(errors="replace"), cache
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) -> int:
+    """Append immutable, source-bound deal-term observations for fixed-cash-eligible events.
+
+    Deterministic only: the extractor returns exact character spans of the cached filing bytes
+    and declines when the document does not clearly say something. The model lane keeps writing
+    `llm_terms`, but those are candidate/context and can no longer reach a published number.
+
+    Idempotent by construction — `observation_id` is a digest of (bytes, field, span, value,
+    revision), so a rebuild over unchanged inputs appends nothing.
+    """
+    from engine import special_arb as arb
+    from engine import special_situations as sse
+    df = _read_events()
+    if df is None or df.empty:
+        return 0
+    cats = [sse.classify(str(r.get("form_type") or ""), r.get("items"))[0] for _, r in df.iterrows()]
+    df = df.assign(_cat=cats)
+    eligible = df[df._cat.isin(list(arb.ARB_CATEGORIES))].copy()
+    if eligible.empty:
+        log.info("special_situations deal-term lane: no fixed-cash-eligible events")
+        return 0
+    if "date_filed" in eligible.columns:
+        eligible = eligible.sort_values("date_filed", ascending=False)
+    if limit is not None:
+        eligible = eligible.head(int(limit))
+
+    path = _observations_path()
+    known: set[str] = set()
+    if path.exists():
+        for line in path.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                known.add(json.loads(line).get("observation_id"))
+            except ValueError:
+                continue
+
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    fresh: list[dict] = []
+    read = 0
+    for _, r in eligible.iterrows():
+        accession = str(r.get("accession") or "")
+        cik = str(r.get("cik") or "")
+        if not accession or not cik:
+            continue
+        body, cache = _cached_body(accession)
+        if body is None and fetch_missing:
+            body = _fetch_filing_text(cik, accession)
+            _, cache = _cached_body(accession)
+        if not body:
+            continue
+        read += 1
+        acquired = None
+        if cache is not None:
+            try:
+                acquired = datetime.fromtimestamp(cache.stat().st_mtime,
+                                                  timezone.utc).isoformat(timespec="seconds")
+            except OSError:
+                acquired = None
+        src = arb.source_descriptor(
+            cik=cik, form_type=r.get("form_type"), accession=accession,
+            filing_date=r.get("date_filed") or r.get("date"),
+            source_url=_filing_text_url(cik, accession), body=body, acquired_at=acquired,
+            body_truncated=len(body) >= 40000)
+        ticker = str(r.get("ticker") or "")
+        for o in arb.extract_term_observations(
+                body, source=src, listing_currency=arb.market_currency(ticker),
+                recorded_at=now):
+            if o["observation_id"] in known:
+                continue
+            known.add(o["observation_id"])
+            fresh.append(o)
+
+    if not fresh:
+        log.info("special_situations deal-term lane: %d bodies read, 0 new observations", read)
+        return 0
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        for o in fresh:
+            fh.write(json.dumps(o, ensure_ascii=False, sort_keys=True) + "\n")
+    log.info("special_situations deal-term lane: %d bodies read, +%d observations",
+             read, len(fresh))
+    return len(fresh)
+
+
 def enrich_extraction(limit: int | None = None) -> pd.DataFrame:
     """W5 §2.4 — qual_extraction.v1 structured extraction for 8-K filings.
 

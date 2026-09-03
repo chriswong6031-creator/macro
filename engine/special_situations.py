@@ -21,12 +21,15 @@ when the same filer also filed an SC 13E-3 (affiliate take-private), per §B1.
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
+from engine import special_arb as arb
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -541,21 +544,29 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
     return rows
 
 
-def _closes_panel() -> pd.DataFrame:
-    """Daily closes (tickers as columns) for the merger-arb spread lane (P1.2). US breadth +
-    the backtest backfill (bare tickers, USD) PLUS the foreign stock-search closes — Canada
-    (.TO, CAD), intl/UK (.L GBP, .T JPY, …) and HK (.HK) — so cross-border deal targets can be
-    priced in their own currency. Columns keep their exchange suffix for the foreign sets."""
-    frames = []
+_PRICE_BASIS = {}          # artifact -> basis; every panel below is a RAW daily close
+_DEFAULT_PRICE_BASIS = "close_raw"
+
+
+def _closes_frames() -> list[tuple[str, pd.DataFrame]]:
+    """(artifact identity, frame) for every close panel the arb lane may price from.
+
+    The artifact name travels with the price so a published spread can name the file it was
+    priced from, and so two incompatible price BASES can never be silently mixed.
+    """
+    out: list[tuple[str, pd.DataFrame]] = []
     for g in ("breadth", "midcap_breadth", "smallcap_breadth"):
         p = config.data_dir() / g / "_closes_cache.parquet"
         if p.exists():
-            frames.append(pd.read_parquet(p))
+            try:
+                out.append((f"{g}/_closes_cache.parquet", pd.read_parquet(p)))
+            except Exception:  # noqa: BLE001
+                pass
     for f in ("bt_prices.parquet", "arb_prices.parquet"):   # backtest + deal-target backfills
         p = config.data_dir() / GROUP / f
         if p.exists():
             try:
-                frames.append(pd.read_parquet(p))
+                out.append((f"{GROUP}/{f}", pd.read_parquet(p)))
             except Exception:  # noqa: BLE001
                 pass
     for sub, fn in (("canada_search", "closes.parquet"), ("intl_search", "closes.parquet"),
@@ -563,12 +574,21 @@ def _closes_panel() -> pd.DataFrame:
         p = config.data_dir() / sub / fn
         if p.exists():
             try:
-                frames.append(pd.read_parquet(p))
+                out.append((f"{sub}/{fn}", pd.read_parquet(p)))
             except Exception:  # noqa: BLE001
                 pass
+    return out
+
+
+def _closes_panel(frames: list[tuple[str, pd.DataFrame]] | None = None) -> pd.DataFrame:
+    """Daily closes (tickers as columns) for the cash-deal spread lane. US breadth + the
+    backtest backfill (bare tickers, USD) PLUS the foreign stock-search closes — Canada
+    (.TO, CAD), intl/UK (.L GBP, .T JPY, ...) and HK (.HK) — so cross-border deal targets can be
+    priced in their own currency. Columns keep their exchange suffix for the foreign sets."""
+    frames = _closes_frames() if frames is None else frames
     if not frames:
         return pd.DataFrame()
-    df = pd.concat(frames, axis=1, sort=False)
+    df = pd.concat([f for _, f in frames], axis=1, sort=False)
     try:
         df.index = pd.to_datetime(df.index)
     except Exception:  # noqa: BLE001
@@ -576,62 +596,152 @@ def _closes_panel() -> pd.DataFrame:
     return df.loc[:, ~df.columns.duplicated()].sort_index()
 
 
-def _price_before(series: pd.Series, date_str: object, offset_rows: int) -> float | None:
-    """Close ~offset_rows trading days before date_str — the unaffected-price proxy."""
-    s = series.dropna()
-    if s.empty or not date_str or (isinstance(date_str, float) and pd.isna(date_str)):
-        return None
+def _panel_sources(frames: list[tuple[str, pd.DataFrame]]) -> dict[str, str]:
+    """column -> artifact that supplied it. First frame wins, matching the de-duplication in
+    `_closes_panel`, so the receipt names the file the number actually came from."""
+    out: dict[str, str] = {}
+    for name, f in frames:
+        for c in f.columns:
+            out.setdefault(str(c), name)
+    return out
+
+
+def _calendar_index(panel: pd.DataFrame) -> dict[str, pd.DatetimeIndex]:
+    """Sessions on which ANY listing sharing an exchange suffix traded.
+
+    This is the closest thing to an exchange calendar this repo owns, and it is enough to answer
+    the only question the freshness law asks: how many completed sessions is this close behind?
+    A bare "last non-null row" cannot answer it at all.
+    """
+    groups: dict[str, list[str]] = {}
+    for c in panel.columns:
+        s = str(c)
+        groups.setdefault(s.rsplit(".", 1)[-1].upper() if "." in s else "", []).append(c)
+    out: dict[str, pd.DatetimeIndex] = {}
+    for suf, cols in groups.items():
+        try:
+            out[suf] = panel.index[panel[cols].notna().any(axis=1)]
+        except Exception:  # noqa: BLE001
+            continue
+    return out
+
+
+def _observations_path() -> Path:
+    return config.data_dir() / GROUP / "observations" / "observations.jsonl"
+
+
+def _load_observations() -> dict[str, list[dict]]:
+    """Append-only deal-term observation ledger, grouped by subject CIK.
+
+    History is never rewritten: an amendment appends a NEW observation and the pure compiler
+    applies accession precedence, so a corrected price supersedes without deleting the receipt
+    that recorded the old one.
+    """
+    from engine import special_arb as arb
+    p = _observations_path()
+    if not p.exists():
+        return {}
+    out: dict[str, list[dict]] = {}
     try:
-        d = pd.Timestamp(date_str)
+        lines = p.read_text(errors="replace").splitlines()
+    except Exception as e:  # noqa: BLE001
+        log.warning("special_situations: observation ledger unreadable: %s", e)
+        return {}
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            o = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(o, dict) or o.get("schema") != arb.OBSERVATION_SCHEMA:
+            continue
+        cik = str((o.get("source") or {}).get("cik") or "").lstrip("0")
+        if cik:
+            out.setdefault(cik, []).append(o)
+    return out
+
+
+def _price_inputs(panel: pd.DataFrame, cal: dict, sources: dict, col: str, ticker: str,
+                  availability: object) -> tuple[dict | None, dict | None]:
+    """Typed live + filing-reference prices for one listing, with their real sessions.
+
+    The reference price is the last completed session STRICTLY BEFORE the first verified SEC
+    availability session — not a fixed 30-row lookback, which counts rows rather than sessions
+    and cannot be called an unaffected or announcement price at all.
+    """
+    from engine import special_arb as arb
+    s = panel[col].dropna()
+    if s.empty:
+        return None, None
+    ccy = arb.market_currency(col)
+    artifact = sources.get(str(col))
+    suf = str(col).rsplit(".", 1)[-1].upper() if "." in str(col) else ""
+    sessions = cal.get(suf)
+    last = s.index[-1]
+    behind = int((sessions > last).sum()) if sessions is not None and len(sessions) else None
+    expected = sessions[-1] if sessions is not None and len(sessions) else None
+    live = arb.price_input(
+        ticker=ticker, session=last.date().isoformat(), value=float(s.iloc[-1]), currency=ccy,
+        basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS), source_artifact=artifact,
+        sessions_behind=behind,
+        expected_session=expected.date().isoformat() if expected is not None else None,
+        calendar_id=suf or "US")
+    ref = None
+    try:
+        cut = pd.Timestamp(availability) if availability else None
     except Exception:  # noqa: BLE001
-        return None
-    pos = s.index.searchsorted(d)
-    j = int(pos) - int(offset_rows)
-    return float(s.iloc[j]) if 0 <= j < len(s) else None
+        cut = None
+    if cut is not None:
+        before = s.index[s.index < cut]
+        if len(before):
+            rs = before[-1]
+            ref = arb.price_input(
+                ticker=ticker, session=rs.date().isoformat(), value=float(s.loc[rs]),
+                currency=ccy, basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS),
+                source_artifact=artifact, calendar_id=suf or "US")
+    return live, ref
 
 
-def _enrich_arb(sits: list[dict]) -> int:
-    """Attach an `arb` block (spread / annualized / days-to-close / downside-on-break) to
-    each Acquisition / Tender Offer / Going-Private situation that carries a deal price.
-    Mutates `sits` in place; returns how many were enriched. Best-effort, never raises."""
+def _enrich_arb(sits: list[dict], *, asof: date | None = None) -> int:
+    """Attach the typed `arb` economics block to every fixed-cash-eligible situation.
+
+    Every arb-category situation now gets a block, INCLUDING the degraded ones: a deal whose
+    terms are ambiguous, whose price is stale or whose close date was never observed is
+    reported in its own visible state rather than vanishing. Returns the VERIFIED count.
+    """
     from engine import special_arb as arb
     try:
-        panel = _closes_panel()
+        frames = _closes_frames()
+        panel = _closes_panel(frames)
     except Exception as e:  # noqa: BLE001
         log.warning("special_situations arb: closes panel failed: %s", e)
-        return 0
-    if panel.empty:
-        return 0
+        frames, panel = [], pd.DataFrame()
+    sources = _panel_sources(frames)
+    cal = _calendar_index(panel) if not panel.empty else {}
+    obs_by_cik = _load_observations()
+    asof = asof or date.today()
     n = 0
     for s in sits:
         if s.get("category") not in arb.ARB_CATEGORIES:
             continue
-        terms = arb.parse_terms(s.get("deal_terms"))
-        if not terms.get("price_per_share"):
-            continue
-        # match the FULL suffixed ticker against the foreign closes first (ARX.TO / BARC.L),
-        # then the bare US form — the panel keeps suffixes for the foreign sets.
+        cik = str(s.get("cik") or "").lstrip("0")
+        compiled = arb.compile_current_terms(obs_by_cik.get(cik))
         raw = str(s.get("ticker") or "").upper()
-        col = next((c for c in (raw, raw.split(".")[0]) if c and c in panel.columns), None)
-        if not col:
-            continue
-        # last VALID close, not panel.iloc[-1]: the panel concatenates sub-panels with
-        # different date ranges, so the global last row is NaN for any ticker that doesn't
-        # trade on that exact date (this is why the risk_arb book was empty).
-        valid = panel[col].dropna()
-        if valid.empty:
-            continue
-        lp = float(valid.iloc[-1])
-        when = s.get("date_filed") or s.get("date")
-        unaff = _price_before(panel[col], when, 30)
-        m = arb.arb_metrics(terms["price_per_share"], lp,
-                            expected_close=terms.get("expected_close"),
-                            consideration=terms.get("consideration"),
-                            currency=terms.get("currency"),
-                            price_currency=arb.market_currency(col),
-                            unaffected_price=unaff)
-        if m:
-            s["arb"] = m
+        col = None
+        if not panel.empty:
+            col = next((c for c in (raw, raw.split(".")[0]) if c and c in panel.columns), None)
+        live = ref = None
+        if col:
+            live, ref = _price_inputs(panel, cal, sources, col, raw,
+                                      s.get("date_filed") or s.get("date"))
+        econ = arb.reduce_cash_deal(
+            compiled, category=s.get("category"), stage=s.get("stage"), live_price=live,
+            reference_price=ref, availability_session=s.get("date_filed") or s.get("date"),
+            asof=asof, ticker=raw)
+        s["arb"] = econ
+        if econ.get("quality_state") == arb.QUALITY_VERIFIED:
             n += 1
     return n
 
@@ -952,20 +1062,14 @@ def mastermind_emit() -> dict:
     # P5.1 historical-prior context (category x stage forward returns) on each name.
     _attach_priors(list(by_ticker.values()))
 
-    # P1.2 merger-arb book: attach spread economics + surface a risk-arb context list for
-    # the trading brain (announced CASH deals with a price). Context only, never a size.
-    # Cash-only gate: cash+stock deals have a floating stock leg whose value is unknown
-    # without a stock-leg-aware spread model; treating them as fixed-price produces absurd
-    # annualized spreads (UROY +1308%/yr, MCHX +979%/yr seen in audit).  Non-cash deals
-    # remain in by_ticker for the event catalog — they just don't enter the sorted arb book.
-    _enrich_arb(list(by_ticker.values()))
-    risk_arb = sorted(
-        ({"ticker": r.get("ticker"), "company": r.get("company"), "category": r.get("category"),
-          "source": r.get("source"), **r["arb"]}
-         for r in by_ticker.values()
-         if r.get("arb") and r["arb"].get("consideration") == "cash"),
-        key=lambda a: (a.get("annualized_pct") is not None, a.get("annualized_pct") or -1e9),
-        reverse=True)
+    # F09-1 cash-deal book: evidence-bound economics + ONE ordered projection shared with
+    # `special_sits_intel.build_context_feed()`. The cash-only, date-precision, freshness and
+    # amendment law all live in the reducer, so this consumer cannot reinterpret any of it —
+    # which is what previously let one consumer exclude a row the other ranked first.
+    rows = list(by_ticker.values())
+    _enrich_arb(rows)
+    ordered, arb_counts = arb.select_ordered_context(rows, limit=25)
+    risk_arb = [dict(arb.context_row(r), source=r.get("source")) for r in ordered]
 
     # P3.2 activist track-record book: filers with enough priced campaigns to be "tracked".
     activist_filers = {k: v for k, v in track["by_filer"].items() if v.get("status") == "tracked"}
@@ -974,7 +1078,8 @@ def mastermind_emit() -> dict:
         "schema": "special_situations.v1", "generated_at": now,
         "is_context_only": True, "disclaimer": DISCLAIMER,
         "n": len(by_ticker), "by_ticker": by_ticker,
-        "risk_arb": risk_arb, "activist_filers": activist_filers,
+        "risk_arb": risk_arb, "risk_arb_census": arb_counts,
+        "activist_filers": activist_filers,
     }
 
 

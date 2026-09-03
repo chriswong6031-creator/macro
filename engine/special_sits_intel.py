@@ -27,6 +27,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from engine import special_arb
 from engine.technicals import rsi as _wilder_rsi  # safe: technicals.py imports only lib.config
 
 log = logging.getLogger(__name__)
@@ -1054,7 +1055,8 @@ def build_context_feed(sits: list[dict],
     n_total    = len(sits)
     n_grade_a  = sum(1 for s in sits if (s.get("setup") or {}).get("grade") == "A")
     n_grade_b  = sum(1 for s in sits if (s.get("setup") or {}).get("grade") == "B")
-    n_arb      = sum(1 for s in sits if s.get("arb"))
+    n_arb      = sum(1 for s in sits
+                     if (s.get("arb") or {}).get("quality_state") == special_arb.QUALITY_VERIFIED)
     n_cross    = sum(1 for s in sits if s.get("cross_border"))
 
     # Changes block
@@ -1084,19 +1086,12 @@ def build_context_feed(sits: list[dict],
             "why_zh":     setup.get("why_zh") or [],
         })
 
-    # Risk-arb top (up to 5: ticker, company, gross_spread_pct, annualized_pct, days_to_close)
-    arb_rows = [s for s in sits if s.get("arb")]
-    arb_rows.sort(key=lambda s: (s.get("arb") or {}).get("annualized_pct") or 0, reverse=True)
-    risk_arb_top = []
-    for s in arb_rows[:5]:
-        arb = s.get("arb") or {}
-        risk_arb_top.append({
-            "ticker":           s.get("ticker"),
-            "company":          s.get("company"),
-            "gross_spread_pct": arb.get("gross_spread_pct"),
-            "annualized_pct":   arb.get("annualized_pct"),
-            "days_to_close":    arb.get("days_to_close"),
-        })
+    # F09-1 risk-arb top — the SAME ordered projection `mastermind_emit()` uses. Only fully
+    # verified, exact-date, current-price fixed-cash rows are admitted, each carrying its term,
+    # price, clock and formula receipts. A null annualized value is never coerced to zero to
+    # sort it in; the rows that did not qualify are reported as a visible degraded census.
+    ordered, arb_census = special_arb.select_ordered_context(sits, limit=5)
+    risk_arb_top = [special_arb.context_row(r) for r in ordered]
 
     contract = {
         "schema":     "special_sits_context.v1",
@@ -1120,6 +1115,8 @@ def build_context_feed(sits: list[dict],
         "prev_state":      prev_state,
         "_current_by_key": new_by_key,
         "risk_arb_top":    risk_arb_top,
+        # visible excluded/degraded census — a row that fell out must be countable, not silent
+        "risk_arb_census": arb_census,
     }
 
     contract = _json_safe(contract)
