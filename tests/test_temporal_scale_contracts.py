@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from dataclasses import replace
+from types import MappingProxyType
 
 import pytest
 
 from scripts.research.temporal_scale.contracts import (
     ArtifactAttackResult,
     ArtifactTest,
+    atomic_write_json,
     BarReceipt,
     ChartRecipe,
     ContractError,
@@ -503,6 +505,95 @@ def test_incomplete_recipe_requires_each_absent_identity_field_to_be_named(tmp_p
     path = tmp_path / "recipe.json"
     path.write_text(json.dumps(raw), encoding="utf-8")
     assert ChartRecipe.from_json(path).capture_status == "incomplete"
+
+
+_INVENTORIED_RECIPE_FIELDS = (
+    *(("instrument", key) for key in ("display_symbol", "tickerid", "main_tickerid", "asset_class", "exchange", "vendor_feed", "currency")),
+    *(("chart", key) for key in ("timeframe_period", "named_session", "exchange_timezone", "chart_timezone", "price_adjustment", "dividend_adjustment", "back_adjustment", "settlement_as_close")),
+    *(("chart", key) for key in ("chart_is_standard", "chart_is_heikinashi", "chart_is_renko", "chart_is_linebreak", "chart_is_kagi", "chart_is_pnf", "chart_is_range")),
+    *(("indicator", key) for key in ("observed_indicator_family", "observed_indicator_title", "observed_indicator_source_kind", "observed_indicator_source_hash", "observed_indicator_inputs", "probe_indicator_family", "probe_source_git_blob_sha", "probe_inputs", "probe_rma_seed")),
+    *(("export", key) for key in ("csv_filename", "csv_sha256", "row_count", "first_bar_open_ms", "last_bar_close_ms", "loaded_history_start_ms")),
+    *(("rights", key) for key in ("use", "redistribution", "source_reference")),
+)
+
+
+@pytest.mark.parametrize(("section", "key"), _INVENTORIED_RECIPE_FIELDS)
+def test_incomplete_recipe_accepts_each_inventoried_null_with_exact_accounting(section: str, key: str) -> None:
+    """Every field named by the missing inventory is nullable only in an exact incomplete recipe."""
+    raw = complete_recipe_dict()
+    raw["capture_status"] = "incomplete"
+    raw[section][key] = None
+    raw["missing_fields"] = [f"{section}.{key}"]
+    if section == "chart" and key.startswith("chart_is_"):
+        raw["missing_fields"].append("chart.type_coherence")
+    if section == "indicator":
+        raw["indicator"]["observed_equals_probe"] = "unknown"
+    assert ChartRecipe.from_dict(raw).capture_status == "incomplete"
+    raw["capture_status"] = "complete"
+    raw["missing_fields"] = []
+    with pytest.raises(ContractError):
+        ChartRecipe.from_dict(raw)
+
+
+@pytest.mark.parametrize("invalid_filename", (0, False, [], (), {}, "", " \t"))
+def test_present_csv_filename_requires_a_nonempty_string(invalid_filename: object) -> None:
+    raw = complete_recipe_dict()
+    raw["export"]["csv_filename"] = "captured-bars.csv"
+    assert ChartRecipe.from_dict(raw).export["csv_filename"] == "captured-bars.csv"
+    raw["export"]["csv_filename"] = invalid_filename
+    with pytest.raises(ContractError, match="export.csv_filename"):
+        ChartRecipe.from_dict(raw)
+
+
+def test_strict_json_loading_rejects_duplicate_keys_at_ordinary_and_authority_depths(tmp_path: Path) -> None:
+    recipe_path = tmp_path / "duplicate-recipe.json"
+    recipe_payload = json.dumps(complete_recipe_dict()).replace(
+        '"exchange": "NYSE"', '"exchange": "NYSE", "exchange": "NASDAQ"', 1,
+    )
+    recipe_path.write_text(recipe_payload, encoding="utf-8")
+    with pytest.raises(ContractError, match="duplicate JSON object key: exchange"):
+        ChartRecipe.from_json(recipe_path)
+    result_path = tmp_path / "duplicate-authority.json"
+    result_payload = json.dumps(complete_result_dict()).replace(
+        '"may_rank": false', '"may_rank": false, "may_rank": false', 1,
+    )
+    result_path.write_text(result_payload, encoding="utf-8")
+    with pytest.raises(ContractError, match="duplicate JSON object key: may_rank"):
+        ArtifactAttackResult.from_json(result_path)
+
+
+@pytest.mark.parametrize(
+    "factory",
+    (ChartRecipe.from_dict, BarReceipt.from_dict, KernelSignature.from_dict, ArtifactTest.from_dict, ArtifactAttackResult.from_dict),
+)
+@pytest.mark.parametrize("root", (None, 7, [], "not-an-object"))
+def test_public_factories_normalize_nonobject_roots_to_contract_error(factory: object, root: object) -> None:
+    with pytest.raises(ContractError, match="must be an object"):
+        factory(root)  # type: ignore[operator]
+
+
+@pytest.mark.parametrize(
+    "parser",
+    (ChartRecipe.from_json, BarReceipt.from_json, KernelSignature.from_json, ArtifactTest.from_json, ArtifactAttackResult.from_json),
+)
+@pytest.mark.parametrize("payload", (b"\xff", b"null", b"[]", b'"not-an-object"'))
+def test_public_json_parsers_normalize_invalid_utf8_and_nonobject_roots(
+    parser: object, payload: bytes, tmp_path: Path,
+) -> None:
+    path = tmp_path / "malformed.json"
+    path.write_bytes(payload)
+    with pytest.raises(ContractError):
+        parser(path)  # type: ignore[operator]
+
+
+def test_strict_json_and_atomic_write_accept_detached_string_key_mappings(tmp_path: Path) -> None:
+    payload = MappingProxyType({"nested": MappingProxyType({"value": "ok"}), "values": (1, 2)})
+    assert strict_json_dumps(payload) == '{"nested":{"value":"ok"},"values":[1,2]}'
+    path = tmp_path / "evidence.json"
+    atomic_write_json(path, payload)
+    assert json.loads(path.read_text(encoding="utf-8")) == {"nested": {"value": "ok"}, "values": [1, 2]}
+    with pytest.raises(ContractError, match="keys must be strings"):
+        atomic_write_json(path, {1: "not-json"})  # type: ignore[arg-type]
 
 
 def test_concrete_future_uses_existing_fut_identity_semantics() -> None:

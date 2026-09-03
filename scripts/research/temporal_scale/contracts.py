@@ -153,7 +153,7 @@ def strict_json_dumps(value: object) -> str:
     """Serialize strict canonical JSON; NaN and infinity are never evidence."""
     _require_json_value(value)
     return json.dumps(
-        value,
+        _thaw(value),
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=False,
@@ -184,7 +184,7 @@ def _freeze(value: Any) -> Any:
 
 def _thaw(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return {str(key): _thaw(child) for key, child in value.items()}
+        return {key: _thaw(child) for key, child in value.items()}
     if isinstance(value, tuple):
         return [_thaw(child) for child in value]
     return value
@@ -197,6 +197,8 @@ def _mapping(value: object, path: str) -> Mapping[str, Any]:
 
 
 def _require_keys(raw: Mapping[str, Any], allowed: frozenset[str], path: str) -> None:
+    if not all(isinstance(key, str) for key in raw):
+        raise ContractError(f"{path} object keys must be strings")
     actual = set(raw)
     missing = allowed - actual
     unknown = actual - allowed
@@ -228,10 +230,21 @@ def _require_hex(value: object, length: int, path: str) -> None:
         raise ContractError(f"{path} must be {length}-hex")
 
 
+def _reject_duplicate_object_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    object_value: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in object_value:
+            raise ContractError(f"duplicate JSON object key: {key}")
+        object_value[key] = value
+    return object_value
+
+
 def _load_json(path: Path) -> Mapping[str, Any]:
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        raw = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_reject_duplicate_object_keys)
+    except ContractError:
+        raise
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ContractError(f"cannot read strict JSON {path}: {exc}") from exc
     _reject_nonfinite(raw)
     return _mapping(raw, "root")
@@ -314,6 +327,7 @@ class ChartRecipe:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "ChartRecipe":
+        raw = _mapping(raw, "recipe")
         _reject_nonfinite(raw)
         _require_keys(raw, _RECIPE_KEYS, "recipe")
         recipe = cls(
@@ -352,6 +366,14 @@ class ChartRecipe:
             raise ContractError("capture_status must be complete or incomplete")
         if not all(isinstance(item, str) for item in self.missing_fields):
             raise ContractError("missing_fields must contain field paths")
+
+        def present(section: Mapping[str, Any], key: str) -> bool:
+            value = section[key]
+            return not (
+                self.capture_status == "incomplete"
+                and (value is None or (isinstance(value, str) and not value.strip()))
+            )
+
         required_instrument_keys = _INSTRUMENT_KEYS - {"canonical_id"}
         missing_instrument_keys = required_instrument_keys - set(self.instrument)
         unknown_instrument_keys = set(self.instrument) - _INSTRUMENT_KEYS
@@ -363,10 +385,10 @@ class ChartRecipe:
         _require_keys(self.indicator, _INDICATOR_KEYS, "indicator")
         _require_keys(self.export, _EXPORT_KEYS, "export")
         _require_keys(self.rights, _RIGHTS_KEYS, "rights")
-        if self.instrument["asset_class"] not in {"equity", "futures", "spot_fx", "cfd", "etf", "other"}:
+        if present(self.instrument, "asset_class") and self.instrument["asset_class"] not in {"equity", "futures", "spot_fx", "cfd", "etf", "other"}:
             raise ContractError("instrument.asset_class is unknown")
         for key in ("display_symbol", "tickerid", "main_tickerid", "exchange", "vendor_feed", "currency"):
-            if not isinstance(self.instrument[key], str):
+            if present(self.instrument, key) and not isinstance(self.instrument[key], str):
                 raise ContractError(f"instrument.{key} must be a string")
         for key in ("contract_month", "continuous_symbol", "roll_recipe", "settlement_basis"):
             if self.instrument[key] is not None and not isinstance(self.instrument[key], str):
@@ -379,18 +401,18 @@ class ChartRecipe:
         vendor_feed = self.instrument["vendor_feed"]
         if isinstance(vendor_feed, str) and vendor_feed.strip().lower().split(":", 1)[0] in {"yahoo", "polygon", "massive"}:
             raise ContractError("instrument.vendor_feed proxy cannot satisfy a TradingView recipe identity")
-        if self.chart["named_session"] not in {"regular", "extended", "24h", "us_regular", "vendor_named"}:
+        if present(self.chart, "named_session") and self.chart["named_session"] not in {"regular", "extended", "24h", "us_regular", "vendor_named"}:
             raise ContractError("chart.named_session is unknown")
         for key in ("timeframe_period", "exchange_timezone", "chart_timezone"):
-            if not isinstance(self.chart[key], str) or not self.chart[key].strip():
+            if present(self.chart, key) and (not isinstance(self.chart[key], str) or not self.chart[key].strip()):
                 raise ContractError(f"chart.{key} must be a nonempty string")
-        if self.chart["price_adjustment"] not in {"split_adjusted", "raw", "other"}:
+        if present(self.chart, "price_adjustment") and self.chart["price_adjustment"] not in {"split_adjusted", "raw", "other"}:
             raise ContractError("chart.price_adjustment is unknown")
-        if self.chart["dividend_adjustment"] not in {"on", "off", "unknown"}:
+        if present(self.chart, "dividend_adjustment") and self.chart["dividend_adjustment"] not in {"on", "off", "unknown"}:
             raise ContractError("chart.dividend_adjustment is unknown")
-        if self.chart["back_adjustment"] not in {"on", "off", "not_applicable", "unknown"}:
+        if present(self.chart, "back_adjustment") and self.chart["back_adjustment"] not in {"on", "off", "not_applicable", "unknown"}:
             raise ContractError("chart.back_adjustment is unknown")
-        if self.chart["settlement_as_close"] not in {"on", "off", "not_applicable", "unknown"}:
+        if present(self.chart, "settlement_as_close") and self.chart["settlement_as_close"] not in {"on", "off", "not_applicable", "unknown"}:
             raise ContractError("chart.settlement_as_close is unknown")
         _require_bool(self.chart["extended_hours_enabled"], "chart.extended_hours_enabled")
         if not isinstance(self.chart["allowed_session_variants"], tuple) or not self.chart["allowed_session_variants"]:
@@ -401,41 +423,49 @@ class ChartRecipe:
             value = self.chart[key]
             if value is not None and type(value) is not bool:
                 raise ContractError(f"chart.{key} must be boolean or null while incomplete")
-        if self.indicator["observed_indicator_source_kind"] not in _OBSERVED_SOURCE_KINDS:
+        if present(self.indicator, "observed_indicator_source_kind") and self.indicator["observed_indicator_source_kind"] not in _OBSERVED_SOURCE_KINDS:
             raise ContractError("indicator.observed_indicator_source_kind is unknown")
         for key in ("observed_indicator_family", "observed_indicator_title", "probe_indicator_family", "probe_rma_seed"):
-            if not isinstance(self.indicator[key], str) or not self.indicator[key].strip():
+            if present(self.indicator, key) and (not isinstance(self.indicator[key], str) or not self.indicator[key].strip()):
                 raise ContractError(f"indicator.{key} must be a nonempty string")
         observed_equals_probe = self.indicator["observed_equals_probe"]
         if type(observed_equals_probe) is not bool and observed_equals_probe != "unknown":
             raise ContractError("indicator.observed_equals_probe must be true, false, or unknown")
-        _require_hex(self.indicator["probe_source_git_blob_sha"], 40, "indicator.probe_source_git_blob_sha")
+        if present(self.indicator, "probe_source_git_blob_sha"):
+            _require_hex(self.indicator["probe_source_git_blob_sha"], 40, "indicator.probe_source_git_blob_sha")
         if self.indicator["observed_indicator_source_hash"] is not None:
             _require_hex(self.indicator["observed_indicator_source_hash"], 40, "indicator.observed_indicator_source_hash")
         for key in ("observed_indicator_inputs", "probe_inputs"):
             if self.indicator[key] is not None:
                 _mapping(self.indicator[key], f"indicator.{key}")
         probe_inputs = self.indicator["probe_inputs"]
-        if not isinstance(probe_inputs, Mapping) or not probe_inputs:
-            raise ContractError("indicator.probe_inputs must contain the frozen owner input inventory")
-        _require_keys(probe_inputs, _PROBE_INPUT_KEYS, "indicator.probe_inputs")
-        for key, value in probe_inputs.items():
-            _require_int(value, f"indicator.probe_inputs.{key}", minimum=1)
-        if self.indicator["probe_rma_seed"] != "sma_seeded":
+        if present(self.indicator, "probe_inputs"):
+            if not isinstance(probe_inputs, Mapping) or not probe_inputs:
+                raise ContractError("indicator.probe_inputs must contain the frozen owner input inventory")
+            _require_keys(probe_inputs, _PROBE_INPUT_KEYS, "indicator.probe_inputs")
+            for key, value in probe_inputs.items():
+                _require_int(value, f"indicator.probe_inputs.{key}", minimum=1)
+        if present(self.indicator, "probe_rma_seed") and self.indicator["probe_rma_seed"] != "sma_seeded":
             raise ContractError("indicator.probe_rma_seed is unknown")
         _require_bool(self.indicator["probe_ema_adjust"], "indicator.probe_ema_adjust")
-        _require_hex(self.export["csv_sha256"], 64, "export.csv_sha256")
-        if self.rights["use"] != "local_research_only":
+        if present(self.export, "csv_filename"):
+            _require_nonempty(self.export["csv_filename"], "export.csv_filename")
+        if present(self.export, "csv_sha256"):
+            _require_hex(self.export["csv_sha256"], 64, "export.csv_sha256")
+        if present(self.rights, "use") and self.rights["use"] != "local_research_only":
             raise ContractError("rights.use must be local_research_only")
-        if self.rights["redistribution"] not in {"blocked", "allowed", "unknown"}:
+        if present(self.rights, "redistribution") and self.rights["redistribution"] not in {"blocked", "allowed", "unknown"}:
             raise ContractError("rights.redistribution is unknown")
+        if present(self.rights, "source_reference"):
+            _require_nonempty(self.rights["source_reference"], "rights.source_reference")
         for key in ("row_count", "first_bar_open_ms", "last_bar_close_ms", "loaded_history_start_ms"):
-            _require_int(self.export[key], f"export.{key}", minimum=0)
-        if self.export["row_count"] < 1:
+            if present(self.export, key):
+                _require_int(self.export[key], f"export.{key}", minimum=0)
+        if present(self.export, "row_count") and self.export["row_count"] < 1:
             raise ContractError("export.row_count must be at least 1")
-        if self.export["loaded_history_start_ms"] > self.export["first_bar_open_ms"]:
+        if present(self.export, "loaded_history_start_ms") and present(self.export, "first_bar_open_ms") and self.export["loaded_history_start_ms"] > self.export["first_bar_open_ms"]:
             raise ContractError("export.loaded_history_start_ms must not follow first_bar_open_ms")
-        if self.export["first_bar_open_ms"] >= self.export["last_bar_close_ms"]:
+        if present(self.export, "first_bar_open_ms") and present(self.export, "last_bar_close_ms") and self.export["first_bar_open_ms"] >= self.export["last_bar_close_ms"]:
             raise ContractError("export first/last bar times are inconsistent")
         missing = _missing_recipe_fields(self.to_dict())
         declared = set(self.missing_fields)
@@ -451,7 +481,15 @@ class ChartRecipe:
         source_kind = self.indicator["observed_indicator_source_kind"]
         if source_kind in _UNRESOLVABLE_OBSERVED_SOURCE_KINDS and self.capture_status == "complete":
             raise ContractError("indicator.observed_indicator_source_kind cannot be complete without exact source math")
-        if observed_equals_probe is True:
+        equality_fields_present = all(
+            present(self.indicator, key)
+            for key in (
+                "observed_indicator_family", "observed_indicator_source_kind",
+                "observed_indicator_source_hash", "observed_indicator_inputs",
+                "probe_indicator_family", "probe_source_git_blob_sha", "probe_inputs",
+            )
+        )
+        if observed_equals_probe is True and equality_fields_present:
             if source_kind not in {"repository_exact", "pine_source_exact"}:
                 raise ContractError("indicator.observed_equals_probe requires an exact observed source")
             if (
@@ -526,6 +564,7 @@ class BarReceipt:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "BarReceipt":
+        raw = _mapping(raw, "bar receipt")
         _reject_nonfinite(raw)
         names = frozenset(cls.__dataclass_fields__)
         _require_keys(raw, names, "bar receipt")
@@ -596,6 +635,7 @@ class KernelSignature:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "KernelSignature":
+        raw = _mapping(raw, "kernel signature")
         _reject_nonfinite(raw)
         names = frozenset(cls.__dataclass_fields__)
         _require_keys(raw, names, "kernel signature")
@@ -658,6 +698,7 @@ class ArtifactTest:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "ArtifactTest":
+        raw = _mapping(raw, "artifact test")
         _reject_nonfinite(raw)
         names = frozenset(cls.__dataclass_fields__)
         _require_keys(raw, names, "artifact test")
@@ -727,6 +768,7 @@ class ArtifactAttackResult:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "ArtifactAttackResult":
+        raw = _mapping(raw, "artifact attack result")
         _reject_nonfinite(raw)
         authority = _mapping(raw.get("authority"), "authority")
         _validate_authority(authority)
