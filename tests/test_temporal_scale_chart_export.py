@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import ast
 import csv
 from dataclasses import replace
 import hashlib
-import inspect
 import json
 from pathlib import Path
+import textwrap
 
 import pytest
 
@@ -104,7 +105,7 @@ def write_fixture(
         csv_sha256=hashlib.sha256(csv_path.read_bytes()).hexdigest(), row_count=len(rows),
         # Keep recipe metadata syntactically valid even when a hostile CSV cell
         # deliberately is not an integer; loader validation must own that error.
-        first_bar_open_ms=1_700_000_000_000, last_bar_close_ms=1_700_010_800_000,
+        first_bar_open_ms=1_700_000_000_000, last_bar_close_ms=1_700_000_000_000 + len(rows) * 3_600_000,
         loaded_history_start_ms=1_699_996_400_000,
     )
     recipe_path = tmp_path / "recipe.json"
@@ -153,6 +154,87 @@ def test_hash_mismatch_fails_before_pandas_parse(tmp_path: Path, monkeypatch: py
     monkeypatch.setattr(chart_export.pd, "read_csv", lambda *_args, **_kwargs: pytest.fail("parser invoked"))
     with pytest.raises(ExportError, match="CSV_HASH_MISMATCH"):
         load_chart_export(recipe_path, csv_path)
+
+
+def test_load_attests_a_single_csv_byte_snapshot_despite_path_replacement(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    recipe_path, csv_path = write_fixture(tmp_path)
+    original = csv_path.read_bytes()
+    import scripts.research.temporal_scale.chart_export as chart_export
+    original_reader = getattr(chart_export, "_read_csv_snapshot", None)
+    snapshot_returned = False
+    read_count = 0
+    path_read_bytes = Path.read_bytes
+
+    def counted_read_bytes(path: Path) -> bytes:
+        nonlocal read_count
+        if path == csv_path:
+            read_count += 1
+        return path_read_bytes(path)
+
+    def snapshot_then_replace(path: Path) -> bytes:
+        nonlocal snapshot_returned
+        assert original_reader is not None
+        snapshot = original_reader(path)
+        csv_path.write_bytes(b"replaced-after-snapshot")
+        snapshot_returned = True
+        return snapshot
+
+    monkeypatch.setattr(Path, "read_bytes", counted_read_bytes)
+    monkeypatch.setattr(chart_export, "_read_csv_snapshot", snapshot_then_replace, raising=False)
+    loaded = load_chart_export(recipe_path, csv_path)
+    assert snapshot_returned is True
+    assert read_count == 1
+    assert loaded.csv_sha256 == hashlib.sha256(original).hexdigest()
+    assert len(loaded.frame) == 3
+
+
+def test_public_csv_boundary_normalizes_bad_paths_and_column_inputs(tmp_path: Path) -> None:
+    recipe_path, csv_path = write_fixture(tmp_path)
+    import scripts.research.temporal_scale.chart_export as chart_export
+    with pytest.raises(ExportError, match="CSV_PATH_INVALID"):
+        chart_export.sha256_file(123)
+    with pytest.raises(ExportError, match="CSV_COLUMN_INPUT_INVALID"):
+        chart_export.resolve_column(None, "TG_rsi")
+    with pytest.raises(ExportError, match="CSV_COLUMN_INPUT_INVALID"):
+        chart_export.resolve_column(load_chart_export(recipe_path, csv_path).frame, ["TG_rsi"])
+    with pytest.raises(ExportError, match="CHART_RECIPE_PATH_INVALID"):
+        load_chart_export(123, csv_path)
+
+
+def test_public_csv_boundary_normalizes_io_decode_and_parser_failures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    recipe_path, csv_path = write_fixture(tmp_path)
+    import scripts.research.temporal_scale.chart_export as chart_export
+    with pytest.raises(ExportError, match="CSV_READ_ERROR"):
+        chart_export.sha256_file(tmp_path / "absent.csv")
+    csv_path.write_bytes(b"\xff")
+    refresh_hash(recipe_path, csv_path)
+    with pytest.raises(ExportError, match="CSV_DECODE_ERROR"):
+        load_chart_export(recipe_path, csv_path)
+    recipe_path, csv_path = write_fixture(tmp_path)
+    monkeypatch.setattr(chart_export.pd, "read_csv", lambda *_args, **_kwargs: (_ for _ in ()).throw(chart_export.pd.errors.ParserError("synthetic")))
+    with pytest.raises(ExportError, match="CSV_PARSE_ERROR"):
+        load_chart_export(recipe_path, csv_path)
+
+
+def test_loaded_export_has_compact_immutable_evidence_value_semantics(tmp_path: Path) -> None:
+    recipe_path, csv_path = write_fixture(tmp_path)
+    first = load_chart_export(recipe_path, csv_path)
+    second = load_chart_export(recipe_path, csv_path)
+    assert first == second
+    assert hash(first) == hash(second)
+    assert "TG_rsi" not in repr(first)
+    rows = synthetic_rows()
+    rows[0]["TG_volume"] = "2000.0000000000000000"
+    rewrite_csv(csv_path, EXPECTED_COLUMNS, rows)
+    refresh_hash(recipe_path, csv_path)
+    changed = load_chart_export(recipe_path, csv_path)
+    assert changed != first
+
+
+def test_1190_confirmed_rows_load_without_time_sensitive_assumptions(tmp_path: Path) -> None:
+    recipe_path, csv_path = write_fixture(tmp_path, rows=synthetic_rows(count=1190))
+    loaded = load_chart_export(recipe_path, csv_path)
+    assert len(loaded.frame) == len(loaded.receipts) == 1190
 
 
 @pytest.mark.parametrize("mode", ("missing", "ambiguous", "fuzzy", "duplicate"))
@@ -517,8 +599,110 @@ def test_incomplete_recipe_and_unsupported_timeframe_are_typed_export_errors(tmp
         load_chart_export(recipe_path, csv_path)
 
 
+_NETWORK_OR_PROCESS_ROOTS = frozenset({"requests", "urllib", "httpx", "socket", "subprocess"})
+_MUTATING_CALLS = frozenset({
+    "write", "write_text", "write_bytes", "to_csv", "unlink", "remove", "rename", "replace", "touch",
+    "mkdir", "makedirs", "rmdir", "rmtree", "move",
+})
+_OPEN_TARGETS = frozenset({"open", "builtins.open", "io.open", "pathlib.Path.open"})
+
+
+def _assert_no_unsafe_effects(source: str) -> None:
+    tree = ast.parse(source)
+    aliases: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                root = alias.name.split(".", 1)[0]
+                assert root not in _NETWORK_OR_PROCESS_ROOTS, f"unsafe import: {root}"
+                aliases[alias.asname or root] = alias.name
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            root = module.split(".", 1)[0]
+            assert root not in _NETWORK_OR_PROCESS_ROOTS, f"unsafe import: {root}"
+            for alias in node.names:
+                aliases[alias.asname or alias.name] = f"{module}.{alias.name}" if module else alias.name
+
+    def dotted(node: ast.AST) -> str:
+        if isinstance(node, ast.Name):
+            return aliases.get(node.id, node.id)
+        if isinstance(node, ast.Attribute):
+            base = dotted(node.value)
+            return f"{base}.{node.attr}" if base else node.attr
+        if isinstance(node, ast.Call):
+            return dotted(node.func)
+        return ""
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        target = dotted(node.func)
+        root = target.split(".", 1)[0]
+        assert root not in _NETWORK_OR_PROCESS_ROOTS, f"unsafe call: {target}"
+        assert target.rsplit(".", 1)[-1] not in _MUTATING_CALLS, f"unsafe mutation: {target}"
+        if target in _OPEN_TARGETS:
+            mode_node = next((keyword.value for keyword in node.keywords if keyword.arg == "mode"), None)
+            if mode_node is None:
+                positional_index = 0 if target == "pathlib.Path.open" else 1
+                mode_node = node.args[positional_index] if len(node.args) > positional_index else None
+            if mode_node is None:
+                mode = "r"
+            else:
+                assert isinstance(mode_node, ast.Constant) and isinstance(mode_node.value, str), f"unsafe open mode: {target}"
+                mode = mode_node.value
+            assert not ({"w", "a", "x", "+"} & set(mode)), f"unsafe open mode: {target}"
+
+
 def test_chart_export_source_has_no_network_or_write_side_effects() -> None:
     import scripts.research.temporal_scale.chart_export as chart_export
-    source = inspect.getsource(chart_export)
-    for forbidden in ("requests", "urllib", "http://", "https://", "write_text", "write_bytes", "to_csv"):
-        assert forbidden not in source
+    _assert_no_unsafe_effects(Path(chart_export.__file__).read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize(
+    ("snippet", "expected"),
+    (
+        ("import socket\nsocket.create_connection(('example.test', 443))", "socket"),
+        ("from socket import create_connection as connect\nconnect(('example.test', 443))", "socket"),
+        ("import os\nos.replace('old', 'new')", "replace"),
+        ("from pathlib import Path\nPath('x').unlink()", "unlink"),
+        ("from pathlib import Path\nPath('x').write_text('x')", "write_text"),
+        ("import subprocess\nsubprocess.run(['echo', 'x'])", "subprocess"),
+        ("from subprocess import Popen as spawn\nspawn(['echo', 'x'])", "subprocess"),
+        ("open('x', 'w')", "open"),
+        ("from pathlib import Path as LocalPath\nLocalPath('x').open(mode='a')", "open"),
+        ("from io import open as local_open\nlocal_open('x', 'x')", "open"),
+    ),
+)
+def test_effect_guard_rejects_network_and_mutation_snippets(snippet: str, expected: str) -> None:
+    with pytest.raises(AssertionError, match=expected):
+        _assert_no_unsafe_effects(textwrap.dedent(snippet))
+
+
+def test_effect_guard_permits_read_only_snippet() -> None:
+    _assert_no_unsafe_effects(
+        textwrap.dedent(
+            """
+            from pathlib import Path as LocalPath
+            with LocalPath('fixture.csv').open('rb') as handle:
+                handle.read()
+            with open('fixture.csv', 'r', encoding='utf-8') as handle:
+                handle.read()
+            """
+        )
+    )
+
+
+@pytest.mark.parametrize("mode", ("w", "a", "x", "r+"))
+def test_effect_guard_rejects_bound_path_open_positional_write_modes(mode: str) -> None:
+    with pytest.raises(AssertionError, match="unsafe open mode"):
+        _assert_no_unsafe_effects(f"from pathlib import Path\nPath('x').open('{mode}')")
+
+
+def test_effect_guard_rejects_bound_path_open_dynamic_mode() -> None:
+    with pytest.raises(AssertionError, match="unsafe open mode"):
+        _assert_no_unsafe_effects("from pathlib import Path\nmode_var = 'r'\nPath('x').open(mode_var)")
+
+
+@pytest.mark.parametrize("mode", ("r", "rb", "rt"))
+def test_effect_guard_permits_bound_path_open_positional_read_modes(mode: str) -> None:
+    _assert_no_unsafe_effects(f"from pathlib import Path\nPath('x').open('{mode}')")

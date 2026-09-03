@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 import hashlib
+from io import StringIO
 import math
 from numbers import Integral, Real
 from pathlib import Path
@@ -51,13 +52,14 @@ _CHART_TO_RECIPE = dict(zip(_CHART_COLUMNS, (
 ), strict=True))
 
 
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(frozen=True, slots=True, init=False, eq=False)
 class LoadedChartExport:
     recipe: ChartRecipe
     _frame: pd.DataFrame
     receipts: tuple[BarReceipt, ...]
     csv_sha256: str
     excluded_provisional_row_sha256: str | None
+    _evidence_key: tuple[str, str, tuple[str, ...], str | None]
 
     def __init__(
         self,
@@ -86,22 +88,57 @@ class LoadedChartExport:
         object.__setattr__(self, "receipts", receipts)
         object.__setattr__(self, "csv_sha256", csv_sha256)
         object.__setattr__(self, "excluded_provisional_row_sha256", excluded_provisional_row_sha256)
+        recipe_digest = hashlib.sha256(strict_json_dumps(recipe.to_dict()).encode("utf-8")).hexdigest()
+        object.__setattr__(
+            self,
+            "_evidence_key",
+            (recipe_digest, csv_sha256, tuple(receipt.source_row_sha256 for receipt in receipts), excluded_provisional_row_sha256),
+        )
 
     @property
     def frame(self) -> pd.DataFrame:
         """Return a deep defensive copy of the internally attested normalized frame."""
         return self._frame.copy(deep=True)
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, LoadedChartExport) and self._evidence_key == other._evidence_key
 
-def sha256_file(path: Path) -> str:
+    def __hash__(self) -> int:
+        return hash(self._evidence_key)
+
+    def __repr__(self) -> str:
+        return (
+            f"LoadedChartExport(recipe_id={self.recipe.recipe_id!r}, rows={len(self._frame)}, "
+            f"csv_sha256={self.csv_sha256!r}, provisional_excluded={self.excluded_provisional_row_sha256 is not None})"
+        )
+
+
+def _path(value: object, code: str) -> Path:
     try:
-        return hashlib.sha256(path.read_bytes()).hexdigest()
-    except OSError as exc:
+        return Path(value)
+    except (TypeError, ValueError) as exc:
+        raise ExportError(f"{code}_PATH_INVALID") from exc
+
+
+def _read_csv_snapshot(path: object) -> bytes:
+    csv_path = _path(path, "CSV")
+    try:
+        return csv_path.read_bytes()
+    except (OSError, ValueError) as exc:
         raise ExportError(f"CSV_READ_ERROR:{exc}") from exc
 
 
+def sha256_file(path: object) -> str:
+    return hashlib.sha256(_read_csv_snapshot(path)).hexdigest()
+
+
 def resolve_column(frame: pd.DataFrame, exact_title: str) -> str:
-    matches = [str(column) for column in frame.columns if str(column) == exact_title or str(column).endswith(f": {exact_title}")]
+    if not isinstance(frame, pd.DataFrame) or type(exact_title) is not str or not exact_title:
+        raise ExportError("CSV_COLUMN_INPUT_INVALID")
+    columns = tuple(frame.columns)
+    if not all(type(column) is str for column in columns):
+        raise ExportError("CSV_COLUMN_INPUT_INVALID")
+    matches = [column for column in columns if column == exact_title or column.endswith(f": {exact_title}")]
     if not matches:
         raise ExportError(f"CSV_COLUMN_MISSING:{exact_title}")
     if len(matches) != 1:
@@ -109,17 +146,16 @@ def resolve_column(frame: pd.DataFrame, exact_title: str) -> str:
     return matches[0]
 
 
-def _raw_headers(path: Path) -> list[str]:
+def _raw_headers(snapshot: str) -> list[str]:
     try:
-        with path.open("r", encoding="utf-8", newline="") as handle:
-            reader = csv.reader(handle)
-            headers = next(reader, None)
-            if headers:
-                for record in reader:
-                    if len(record) != len(headers):
-                        raise ExportError("CSV_ROW_ARITY_INVALID")
-    except (OSError, UnicodeError, csv.Error) as exc:
-        raise ExportError(f"CSV_READ_ERROR:{exc}") from exc
+        reader = csv.reader(StringIO(snapshot))
+        headers = next(reader, None)
+        if headers:
+            for record in reader:
+                if len(record) != len(headers):
+                    raise ExportError("CSV_ROW_ARITY_INVALID")
+    except csv.Error as exc:
+        raise ExportError(f"CSV_PARSE_ERROR:{exc}") from exc
     if not headers:
         raise ExportError("CSV_HEADER_MISSING")
     if len(set(headers)) != len(headers):
@@ -127,11 +163,11 @@ def _raw_headers(path: Path) -> list[str]:
     return headers
 
 
-def _read_frame(path: Path) -> pd.DataFrame:
-    _raw_headers(path)
+def _read_frame(snapshot: str) -> pd.DataFrame:
+    _raw_headers(snapshot)
     try:
-        return pd.read_csv(path, dtype=str, keep_default_na=False, na_filter=False)
-    except (OSError, UnicodeError, pd.errors.ParserError) as exc:
+        return pd.read_csv(StringIO(snapshot), dtype=str, keep_default_na=False, na_filter=False)
+    except (ValueError, pd.errors.ParserError) as exc:
         raise ExportError(f"CSV_PARSE_ERROR:{exc}") from exc
 
 
@@ -176,7 +212,6 @@ def _nominal_minutes(recipe: ChartRecipe) -> int:
 def _normalized_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
     columns = {title: resolve_column(frame, title) for title in REQUIRED_PROBE_COLUMNS}
     normalized: list[dict[str, Any]] = []
-    oscillator_has_finite = {title: False for title in _OSCILLATOR_COLUMNS}
     for _, raw_row in frame.iterrows():
         row: dict[str, Any] = {}
         for title in REQUIRED_PROBE_COLUMNS:
@@ -191,20 +226,15 @@ def _normalized_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
                 row[title] = None
             elif title in _OSCILLATOR_COLUMNS:
                 if value.strip().lower() in _MISSING_OSCILLATOR:
-                    if oscillator_has_finite[title]:
-                        raise ExportError(f"CSV_OSCILLATOR_GAP:{title}")
                     row[title] = None
                 else:
                     row[title] = _oscillator(value, title)
-                    oscillator_has_finite[title] = True
             elif title in _FLOAT_COLUMNS:
                 row[title] = _finite_float(value, title)
             else:
                 raise ExportError(f"CSV_COLUMN_MISSING:{title}")
         normalized.append(row)
-    for title, has_finite in oscillator_has_finite.items():
-        if not has_finite:
-            raise ExportError(f"CSV_OSCILLATOR_WARMUP_INVALID:{title}")
+    _validate_oscillator_prefix(normalized)
     return normalized
 
 
@@ -289,7 +319,7 @@ def _detach_normalized_frame(frame: object) -> tuple[pd.DataFrame, list[dict[str
     return pd.DataFrame(rows, columns=REQUIRED_PROBE_COLUMNS, dtype=object), rows
 
 
-def _validate_included_oscillators(rows: list[dict[str, Any]]) -> None:
+def _validate_oscillator_prefix(rows: list[dict[str, Any]]) -> None:
     for column in _OSCILLATOR_COLUMNS:
         has_finite = False
         for row in rows:
@@ -335,7 +365,7 @@ def _validate_loaded_evidence(
         has_provisional=excluded_provisional_row_sha256 is not None,
         require_confirmed=True,
     )
-    _validate_included_oscillators(rows)
+    _validate_oscillator_prefix(rows)
     nominal_minutes = _nominal_minutes(recipe)
     for receipt, row in zip(receipts, rows, strict=True):
         if not isinstance(receipt, BarReceipt):
@@ -368,16 +398,21 @@ def _receipt(recipe: ChartRecipe, row: dict[str, Any], nominal_minutes: int) -> 
 
 def load_chart_export(recipe_path: Path, csv_path: Path) -> LoadedChartExport:
     try:
-        recipe = ChartRecipe.from_json(recipe_path)
-    except ContractError as exc:
+        recipe = ChartRecipe.from_json(_path(recipe_path, "CHART_RECIPE"))
+    except (ContractError, ExportError, OSError, UnicodeError, TypeError, ValueError) as exc:
         raise ExportError(f"CHART_RECIPE_INVALID:{exc}") from exc
     if recipe.capture_status != "complete":
         raise ExportError("UNRESOLVED_DATA:INCOMPLETE_RECIPE")
-    actual_hash = sha256_file(csv_path)
+    snapshot = _read_csv_snapshot(csv_path)
+    actual_hash = hashlib.sha256(snapshot).hexdigest()
     if actual_hash != recipe.export["csv_sha256"]:
         raise ExportError("CSV_HASH_MISMATCH")
     nominal_minutes = _nominal_minutes(recipe)
-    rows = _normalized_rows(_read_frame(csv_path))
+    try:
+        decoded_snapshot = snapshot.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ExportError(f"CSV_DECODE_ERROR:{exc}") from exc
+    rows = _normalized_rows(_read_frame(decoded_snapshot))
     _validate_rows(recipe, rows)
     unconfirmed = [index for index, row in enumerate(rows) if row["TG_is_confirmed"] == 0]
     if any(index != len(rows) - 1 for index in unconfirmed):
