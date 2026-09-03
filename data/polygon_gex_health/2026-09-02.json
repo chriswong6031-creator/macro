@@ -1,0 +1,23 @@
+{
+  "session": "2026-09-02",
+  "attempts": [
+    {
+      "capture_instant": "2026-09-03T09:37:56.574399+00:00",
+      "requested_underlyings": 375,
+      "attempted_underlyings": null,
+      "successful_underlyings": null,
+      "coverage_pct": null,
+      "failure_reasons": {},
+      "failure_examples": {},
+      "aborted_early": false,
+      "decision": "skipped_outside_lease",
+      "health": "absent",
+      "lease": {
+        "valid": false,
+        "resolved_session": "2026-09-02",
+        "lease_end_et": "2026-09-03T03:00:00-04:00",
+        "write_kind": "first_write"
+      }
+    }
+  ]
+}
