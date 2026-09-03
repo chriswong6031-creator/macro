@@ -356,6 +356,9 @@ class CellObservation:
     # A page that strips the hook is disclosed, never filed under a state it never
     # entered — the same discipline the theme/locale mismatch gap already applies.
     applied_force_state: str | None = None
+    # Optional route-semantic probe (final URL, hash/query, DOM recovery). Empty
+    # for pages that do not expose Reference-library hooks; MOR-1 requires it.
+    route_state: Mapping[str, Any] = field(default_factory=dict)
 
 
 class PageDriver(Protocol):
@@ -1067,6 +1070,8 @@ def run_capture(
                     "applied_locale": observation.applied_locale,
                 }
             )
+            if observation.route_state:
+                entry["route_state"] = dict(observation.route_state)
             if cell.force_state is not None:
                 entry["applied_force_state"] = observation.applied_force_state
                 if observation.applied_force_state == cell.force_state.name:
@@ -1427,6 +1432,44 @@ _OBSERVER_SCRIPT = r"""
 }
 """
 
+# Per-cell route probe — used by MOR-1; harmless elsewhere (null-selected fields).
+_ROUTE_STATE_SCRIPT = r"""
+(requestedUrl) => {
+  let queryQ = null;
+  try {
+    const sp = new URLSearchParams(location.search);
+    queryQ = sp.has('q') ? sp.get('q') : null;
+  } catch (e) {
+    queryQ = null;
+  }
+  const miss = document.querySelector('.rf-miss');
+  const missVisible = !!(miss && !miss.hidden && miss.getClientRects().length > 0);
+  let selectedId = null;
+  const targeted = document.querySelector('.rf-e:target:not(.rf-closed)');
+  if (targeted && targeted.id) selectedId = targeted.id;
+  const qEl = document.querySelector('#rf-q');
+  const rfQValue = qEl ? String(qEl.value || '') : '';
+  const entries = Array.from(document.querySelectorAll('.rf-e'));
+  const visibleResults = entries.filter((el) => {
+    const s = getComputedStyle(el);
+    if (s.display === 'none' || s.visibility === 'hidden') return false;
+    return el.getClientRects().length > 0;
+  }).length;
+  return {
+    requested_url: String(requestedUrl || ''),
+    final_url: String(location.href || ''),
+    pathname: String(location.pathname || ''),
+    search: String(location.search || ''),
+    hash: String(location.hash || ''),
+    query_q: queryQ,
+    rf_q_value: rfQValue,
+    miss_visible: missVisible,
+    selected_id: selectedId,
+    visible_result_count: visibleResults,
+  };
+}
+"""
+
 
 def playwright_page_driver(
     *,
@@ -1570,6 +1613,21 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                 # screenshot catches the page mid-fade.
                 page.wait_for_timeout(self._settle_ms)
             observed = page.evaluate(_OBSERVER_SCRIPT.strip(), dict(self._observer_config)) or {}
+            try:
+                route_state = page.evaluate(_ROUTE_STATE_SCRIPT.strip(), url) or {}
+            except Exception:
+                route_state = {
+                    "requested_url": url,
+                    "final_url": page.url,
+                    "hash": "",
+                    "search": "",
+                    "query_q": None,
+                    "miss_visible": False,
+                    "selected_id": None,
+                    "visible_result_count": None,
+                    "rf_q_value": "",
+                    "probe_error": True,
+                }
             screenshot = page.screenshot(full_page=True)
             return CellObservation(
                 cell_id=cell.cell_id,
@@ -1583,6 +1641,7 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                 applied_theme=applied.get("theme"),
                 applied_locale=applied.get("locale"),
                 applied_force_state=applied_force,
+                route_state=route_state if isinstance(route_state, dict) else {},
             )
         except Exception as exc:
             return _failed(f"{type(exc).__name__}: {exc}")

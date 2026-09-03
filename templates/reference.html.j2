@@ -688,6 +688,22 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     history.replaceState(null, "", location.pathname + location.search);
   }
 
+  // Sync the address-bar `q` with visible search state (MOR-1 #6782).
+  // Initial URL remains the source of initial state; keystrokes replaceState
+  // (no history spam); clear removes `q`; popstate rehydrates filters.
+  // Mode/family/letter stay non-addressable and reset on popstate.
+  function syncQueryToUrl(){
+    try {
+      var url = new URL(location.href);
+      var next = (state.q || "").trim();
+      if (next) url.searchParams.set("q", next);
+      else url.searchParams.delete("q");
+      var nextHref = url.pathname + url.search + url.hash;
+      var cur = location.pathname + location.search + location.hash;
+      if (nextHref !== cur) history.replaceState(null, "", nextHref);
+    } catch (e) {}
+  }
+
   function setPressed(group, activeEl){
     Array.prototype.forEach.call(group, function(b){ b.setAttribute("aria-pressed", b === activeEl ? "true" : "false"); });
   }
@@ -737,6 +753,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
       Array.prototype.forEach.call(root.querySelectorAll(".rf-fam"), function(b){ b.setAttribute("aria-pressed", "false"); });
       Array.prototype.forEach.call(root.querySelectorAll(".rf-azb"), function(b){ b.setAttribute("aria-pressed", "false"); });
       clearHashToBrowse();
+      syncQueryToUrl();
       applyFilters();
       if (qEl) qEl.focus();
       return;
@@ -751,7 +768,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     }
   });
 
-  // 4 · Search — debounced 120ms, applied in one rAF.
+  // 4 · Search — debounced 120ms, applied in one rAF; URL `q` stays in sync.
   var qInputEl = root.querySelector("#rf-q");
   var searchTimer = null;
   if (qInputEl) qInputEl.addEventListener("input", function(){
@@ -760,11 +777,31 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     searchTimer = setTimeout(function(){
       state.q = val;
       if (val) clearHashToBrowse();
+      syncQueryToUrl();
       window.requestAnimationFrame(applyFilters);
     }, 120);
   });
 
-  // 5 · ?q= is READ, never written.
+  function rehydrateFromUrl(){
+    var q = "";
+    try {
+      q = new URLSearchParams(location.search).get("q") || "";
+    } catch (e) { q = ""; }
+    state.mode = "all";
+    state.family = null;
+    state.letter = null;
+    state.q = q;
+    if (qInputEl) qInputEl.value = q;
+    Array.prototype.forEach.call(root.querySelectorAll(".rf-seg .segbtn"), function(b){
+      b.setAttribute("aria-pressed", b.getAttribute("data-mode") === "all" ? "true" : "false");
+    });
+    Array.prototype.forEach.call(root.querySelectorAll(".rf-fam"), function(b){ b.setAttribute("aria-pressed", "false"); });
+    Array.prototype.forEach.call(root.querySelectorAll(".rf-azb"), function(b){ b.setAttribute("aria-pressed", "false"); });
+    applyFilters();
+    handleHash();
+  }
+
+  // 5 · ?q= seeds state on load; later edits write via replaceState (see syncQueryToUrl).
   try {
     var sp = new URLSearchParams(location.search);
     var initialQ = sp.get("q");
@@ -773,6 +810,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
       state.q = initialQ;
     }
   } catch(e) {}
+  window.addEventListener("popstate", rehydrateFromUrl);
 
   // 7 · Deep-link on load + hashchange.
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
