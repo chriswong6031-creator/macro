@@ -99,22 +99,59 @@ def theme_state_history(theme_id: str, current_quadrant: str, log_rows: list[dic
             "note": None}
 
 
-def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """``change_summary`` (spec §1.6): transitions + rank movers vs the previous VALID
-    session only (never the most recent calendar day — a lane that skipped a session must
-    not manufacture a phantom transition across the gap it didn't log).
+_QUALITY_CHANGE_STATUSES = frozenset({"DEGRADED", "STALE", "UNAVAILABLE", "REVISED"})
 
-    ``current`` = ``{"session": "...", "themes": {id: {"quadrant","state","vel","rank","abs"}}}``.
-    Missing log -> ALL-NULL + ``"no_previous_snapshot"`` reason; ``material_change`` is
-    ``None`` (unknown), never ``False`` — "no data" and "nothing changed" are different
-    claims and the field must not conflate them (spec §1.6 / §4 missing≠zero law).
+
+def leg_quality_history(log_rows: list[dict[str, Any]], leg_id: str,
+                        before_session: str | None) -> dict[str, Any]:
+    """{'prev_effective_date', 'trailing_median', 'trailing_n'} for one source leg — the
+    W2 coverage-collapse and REVISED-detection inputs (``engine.flow_observatory.quality``),
+    derived from state_log ``health.legs[leg_id]`` records strictly before
+    ``before_session``. Honest empty dict (never a fabricated 0) when there is no prior
+    session at all — ``quality.classify_leg`` treats an absent key as "no history yet",
+    which correctly skips both checks rather than reading a missing history as a collapse.
+    """
+    if not before_session:
+        return {}
+    rows = sorted((r for r in log_rows if r.get("session") and r["session"] < before_session),
+                  key=lambda r: r["session"], reverse=True)
+    if not rows:
+        return {}
+    prev_leg = ((rows[0].get("health") or {}).get("legs") or {}).get(leg_id) or {}
+    covs: list[float] = []
+    for r in rows[:20]:
+        leg = ((r.get("health") or {}).get("legs") or {}).get(leg_id) or {}
+        n = leg.get("coverage_n")
+        if isinstance(n, (int, float)) and not isinstance(n, bool):
+            covs.append(n)
+    trailing_median = None
+    if covs:
+        s = sorted(covs)
+        mid = len(s) // 2
+        trailing_median = s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
+    return {"prev_effective_date": prev_leg.get("effective_date"),
+           "trailing_median": trailing_median, "trailing_n": len(covs)}
+
+
+def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """``change_summary`` (spec §1.6): transitions + rank movers + quality transitions vs
+    the previous VALID session only (never the most recent calendar day — a lane that
+    skipped a session must not manufacture a phantom transition across the gap it didn't
+    log).
+
+    ``current`` = ``{"session": "...", "themes": {id: {"quadrant","state","vel","rank","abs"}},
+    "legs": {leg_id: status}}``. ``legs`` is optional (W1 callers omit it; quality_transitions
+    is simply empty then). Missing log -> ALL-NULL + ``"no_previous_snapshot"`` reason;
+    ``material_change`` is ``None`` (unknown), never ``False`` — "no data" and "nothing
+    changed" are different claims and the field must not conflate them (spec §1.6 / §4
+    missing≠zero law).
     """
     session = current.get("session")
     prev = previous_valid_entry(log_rows, before_session=session)
     if prev is None:
         return {"previous_valid_session": None, "material_change": None,
                 "transitions": [], "rank_movers": [], "source_revisions": [],
-                "reason": "no_previous_snapshot"}
+                "quality_transitions": [], "reason": "no_previous_snapshot"}
     cur_themes = current.get("themes") or {}
     prev_themes = prev.get("themes") or {}
     transitions: list[dict[str, Any]] = []
@@ -129,10 +166,41 @@ def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]]) -> 
         cr, pr = crec.get("rank"), prec.get("rank")
         if cr is not None and pr is not None and abs(cr - pr) >= 3:
             rank_movers.append({"id": tid, "from_rank": pr, "to_rank": cr, "delta": cr - pr})
+
+    # quality transitions (W2, spec §3 "what changed today"): a leg ENTERING DEGRADED/
+    # STALE/UNAVAILABLE/REVISED since the previous valid session is a material change —
+    # source quality drift is worth surfacing the same way a quadrant flip is.
+    prev_legs = (prev.get("health") or {}).get("legs") or {}
+    cur_legs = current.get("legs") or {}
+    quality_transitions: list[dict[str, Any]] = []
+    for leg_id, cur_status in cur_legs.items():
+        prev_status = (prev_legs.get(leg_id) or {}).get("status")
+        if cur_status in _QUALITY_CHANGE_STATUSES and cur_status != prev_status:
+            quality_transitions.append({"kind": "quality", "id": leg_id,
+                                        "from_status": prev_status, "to_status": cur_status})
+
     return {"previous_valid_session": prev.get("session"),
-            "material_change": bool(transitions or rank_movers),
+            "material_change": bool(transitions or rank_movers or quality_transitions),
             "transitions": transitions, "rank_movers": rank_movers,
+            "quality_transitions": quality_transitions,
             "source_revisions": [], "reason": None}
+
+
+_RUNS_HISTORY_CAP = 30
+
+
+def _prior_runs(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The most recent row's ``health.runs`` (B2 repair): a build-run history that survives
+    the per-session idempotent REPLACE below. Read from whichever row has the newest
+    ``written_at`` among EVERYTHING currently on disk (including, on a same-session rebuild,
+    that session's own about-to-be-replaced row) — so a frozen ``market_session`` that gets
+    rebuilt every night still accumulates one run per night, and a NEW session inherits the
+    PREVIOUS session's accumulated history rather than starting over."""
+    candidates = [r for r in rows if r.get("written_at")]
+    if not candidates:
+        return []
+    newest = max(candidates, key=lambda r: r["written_at"])
+    return list((newest.get("health") or {}).get("runs") or [])
 
 
 def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
@@ -143,6 +211,14 @@ def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
     advancer of forward ledgers (an intraday/manual lane computes and discards).
     ``require_lane=False`` is the test/backfill seam only, mirroring
     ``engine.group_pulse.advance_episode_ledger``'s ``require_nightly_lane`` seam.
+
+    B2 repair: the written row's ``health`` gains a ``runs`` list — one compact record per
+    BUILD RUN (``{run_date, publication_state, legs: {leg_id: status}}``), appended (never
+    replaced) and capped at the newest ``_RUNS_HISTORY_CAP`` entries. This is the accelerator
+    ``quality.consecutive_degraded_sessions``/``leg_consecutive_bad_runs`` walk instead of
+    the ``session`` key — a market session that stops advancing during a freeze must not
+    also freeze the escalation streak (see ``engine.flow_observatory.quality`` module
+    docstring, B2).
     """
     if require_lane and not advance_enabled():
         log.info("flow_observatory: state_log advance skipped (off nightly/asia-close lane)")
@@ -150,11 +226,18 @@ def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
     if not session:
         return {"written": False, "reason": "no_session", "rows": 0}
     rows = read_state_log(data_root)
-    rows = [r for r in rows if r.get("session") != session]
     stamp = written_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    run_date = str(stamp)[:10]
+    health = dict(entry.get("health") or {})
+    run_record = {"run_date": run_date, "publication_state": health.get("publication_state"),
+                 "legs": {lid: (leg or {}).get("status")
+                         for lid, leg in (health.get("legs") or {}).items()}}
+    health["runs"] = (_prior_runs(rows) + [run_record])[-_RUNS_HISTORY_CAP:]
+    rows = [r for r in rows if r.get("session") != session]
     new_row = {"session": session, "written_at": stamp,
               "themes": entry.get("themes") or {}, "aggregate": entry.get("aggregate") or {},
-              "market_read": entry.get("market_read") or {}}
+              "market_read": entry.get("market_read") or {},
+              "health": health}
     rows.append(new_row)
     rows.sort(key=lambda r: r["session"])
     p = state_log_path(data_root)
