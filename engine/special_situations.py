@@ -938,9 +938,15 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
             if k in merged and k[0] is not None:
                 merged[k]["live"] = True                       # same situation, confirmed
                 merged[k]["edgar_url"] = r.get("source_url")
+                # a digest-confirmed row keeps the DIGEST dict, which carries no CIK — take it
+                # from the confirming EDGAR filing or the observation-ledger join finds nothing
+                merged[k].setdefault("cik", r.get("cik"))
             else:
                 merged[k] = {
                     "id": r.get("id"), "ticker": r.get("ticker"), "company": r.get("company"),
+                    # the subject CIK is the join key for the deal-term observation ledger;
+                    # without it every cash deal reports SOURCE_UNAVAILABLE (F09-1)
+                    "cik": r.get("cik"),
                     "category": r.get("category"),
                     "stage": r.get("current_stage") or r.get("stage") or "",
                     "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,
@@ -1044,6 +1050,7 @@ def mastermind_emit() -> dict:
             ftr = track["by_filer"].get(activist.norm_filer(fname)) if fname else None
             consider(r.get("ticker"), {
                 "ticker": r.get("ticker"), "company": r.get("company"),
+                "cik": r.get("cik"),          # observation-ledger join key (F09-1)
                 "category": r.get("category"),
                 "stage": r.get("current_stage") or r.get("stage") or "",
                 "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,

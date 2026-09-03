@@ -829,3 +829,83 @@ def test_desk_page_renderer_consumes_the_economics_contract():
     econ = arb.reduce_cash_deal(arb.compile_current_terms([]), category="Acquisitions",
                                 asof=_d(2026, 9, 1))
     assert _arb_str(econ) == ""            # a degraded block must render as nothing, not crash
+
+
+def test_desk_payload_carries_the_ledger_join_key_end_to_end(tmp_path, monkeypatch):
+    """Regression: hand-built `sits` masked a real defect.
+
+    The observation ledger is keyed by subject CIK, but neither situation constructor put a
+    `cik` on the row and a digest-confirmed row keeps the digest dict, which has none. Every
+    production cash deal would have reported SOURCE_UNAVAILABLE while every unit test passed,
+    because the tests supplied the cik the real path never set. Go through desk_payload().
+    """
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    d = sse.desk_payload()
+    sits = {s["ticker"]: s for s in d["situations"]}
+    assert "ABC" in sits
+    assert sits["ABC"].get("cik"), "situation row lost the observation-ledger join key"
+    e = sse.mastermind_emit()
+    assert e["by_ticker"]["ABC"].get("cik"), "emit row lost the observation-ledger join key"
+    assert arb  # the join key exists for the reducer's ledger lookup
+
+
+# ---- F09-1: the collector lane that writes the ledger --------------------------------------
+
+def test_deal_term_lane_writes_a_byte_bound_ledger_and_is_idempotent(tmp_path, monkeypatch):
+    import json
+    from engine import special_arb as arb
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    root = tmp_path / "special_situations"
+    (root / "doc_cache").mkdir(parents=True)
+    (root / "doc_cache" / "0000000001-26-000001.txt").write_text(_CASH_EXACT)
+    pd.DataFrame([{"id": "e1", "form_type": "DEFM14A", "company": "ABC Inc", "cik": "0000000001",
+                   "accession": "0000000001-26-000001", "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+
+    n = ss.enrich_deal_terms()
+    assert n > 0
+    path = root / "observations" / "observations.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+    assert rows and all(r["schema"] == arb.OBSERVATION_SCHEMA for r in rows)
+    price = next(r for r in rows if r["field"] == "price_per_share")
+    assert price["normalized"] == 25.0
+    # bound to bytes, not to a URL: the digest and the exact span both travel with the number
+    assert len(price["source"]["body_sha256"]) == 64
+    assert _CASH_EXACT[price["locator"]["start"]:price["locator"]["end"]] == price["locator"]["excerpt"]
+
+    # a rebuild over unchanged bytes appends NOTHING — observation_id is a digest of the inputs
+    assert ss.enrich_deal_terms() == 0
+    assert len(path.read_text().splitlines()) == len(rows)
+
+
+def test_deal_term_lane_reads_only_already_cached_bodies(tmp_path, monkeypatch):
+    """The rights boundary: the lane must never open a parallel corpus of its own."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    root = tmp_path / "special_situations"
+    root.mkdir(parents=True)
+    pd.DataFrame([{"id": "e1", "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": "0000000001-26-000001", "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+
+    def _boom(*a, **k):                      # any network fetch is a contract violation here
+        raise AssertionError("the deal-term lane must not fetch; doc_cache only")
+    monkeypatch.setattr(ss, "_get", _boom)
+    assert ss.enrich_deal_terms() == 0       # no cached body -> nothing, and no fetch
+    assert not (root / "observations").exists()
+
+
+def test_deal_term_lane_ignores_events_outside_the_fixed_cash_categories(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    root = tmp_path / "special_situations"
+    (root / "doc_cache").mkdir(parents=True)
+    (root / "doc_cache" / "0000000002-26-000002.txt").write_text(
+        "The Board declared a special cash dividend of $2.50 per share.")
+    pd.DataFrame([{"id": "e2", "form_type": "SC 13D", "company": "XYZ Inc", "cik": "2",
+                   "accession": "0000000002-26-000002", "ticker": "XYZ", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+    assert ss.enrich_deal_terms() == 0
