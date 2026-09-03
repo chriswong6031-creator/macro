@@ -18,8 +18,29 @@ from scripts.research.temporal_scale.kernel_memory import (
     continuous_ema,
     ema_half_life_bars,
     ema_length_for_half_life_bars,
+    parameterized_indicator_frame,
     rma_half_life_bars,
 )
+
+
+def test_parameterized_full_stack_executes_changed_finite_stoch_windows() -> None:
+    close = pd.Series(
+        [100.0 + math.sin(index / 5.0) + index / 100.0 for index in range(400)],
+        index=pd.RangeIndex(400),
+    )
+    fixed = {
+        "rsi_len": 14, "macd_fast": 14, "macd_slow": 60, "macd_signal": 5,
+        "stoch_len": 14, "smooth_k": 3, "smooth_d": 3,
+    }
+    mapped = {**fixed, "macd_slow": 30, "stoch_len": 7, "smooth_k": 2, "smooth_d": 2}
+    fixed_frame = parameterized_indicator_frame(close, fixed)
+    mapped_frame = parameterized_indicator_frame(close, mapped)
+    assert tuple(fixed_frame) == ("rsi", "rsi_macd", "rsi_macd_signal", "rsi_macd_hist", "stoch_k", "stoch_d")
+    assert fixed_frame.index.equals(close.index) and mapped_frame.index.equals(close.index)
+    assert np.isfinite(mapped_frame[["stoch_k", "stoch_d"]].to_numpy()).any()
+    assert not fixed_frame.equals(mapped_frame)
+    with pytest.raises(KernelMemoryError):
+        parameterized_indicator_frame(close, {**fixed, "macd_slow": 0})
 
 
 def test_exact_half_lives_and_ema60_retention_identity() -> None:

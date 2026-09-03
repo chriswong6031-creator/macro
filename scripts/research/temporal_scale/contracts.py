@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -23,6 +24,7 @@ class ContractError(ValueError):
 
 
 CHART_RECIPE_SCHEMA = "mastermind.temporal_chart_recipe.v1"
+LOWER_GRAIN_RECIPE_SCHEMA = "mastermind.temporal_lower_grain_recipe.v1"
 BAR_RECEIPT_SCHEMA = "mastermind.temporal_bar_receipt.v1"
 KERNEL_SIGNATURE_SCHEMA = "mastermind.temporal_kernel_signature.v1"
 ARTIFACT_ATTACK_SCHEMA = "mastermind.temporal_artifact_attack.v1"
@@ -77,6 +79,7 @@ _CHART_KEYS = frozenset(
         "timeframe_period", "named_session", "exchange_timezone", "chart_timezone",
         "extended_hours_enabled", "price_adjustment", "dividend_adjustment",
         "back_adjustment", "settlement_as_close", "allowed_session_variants",
+        "session_definitions",
         "chart_is_standard", "chart_is_heikinashi", "chart_is_renko",
         "chart_is_linebreak", "chart_is_kagi", "chart_is_pnf", "chart_is_range",
     }
@@ -96,6 +99,25 @@ _EXPORT_KEYS = frozenset(
     }
 )
 _RIGHTS_KEYS = frozenset({"use", "redistribution", "source_reference"})
+_SESSION_DEFINITION_KEYS = frozenset(
+    {"session_literal", "human_label", "timezone", "intervals", "date_overrides", "provenance"}
+)
+_SESSION_INTERVAL_KEYS = frozenset({"start_local", "end_local", "label"})
+_SESSION_PROVENANCE_KEYS = frozenset({"kind", "receipt_sha256"})
+_SESSION_PROVENANCE_KINDS = frozenset(
+    {"capture_attested", "provider_documented_exact", "export_observed_exact", "synthetic_fixture"}
+)
+_LOWER_GRAIN_KEYS = frozenset(
+    {
+        "schema_version", "parent_recipe_sha256", "csv_sha256", "tickerid", "main_tickerid",
+        "canonical_id", "asset_class", "exchange", "vendor_feed", "currency", "contract_month",
+        "continuous_symbol", "roll_recipe", "settlement_basis", "named_session",
+        "exchange_timezone", "chart_timezone", "extended_hours_enabled", "price_adjustment",
+        "dividend_adjustment", "back_adjustment", "settlement_as_close", "chart_type_flags",
+        "session_definition_sha256", "rights", "row_count", "first_open_ms", "last_close_ms",
+        "source_timeframe_minutes",
+    }
+)
 _SESSION_FLAG_KEYS = frozenset(
     {
         "premarket", "market", "postmarket", "first_session_bar", "last_session_bar",
@@ -110,7 +132,6 @@ _NONSTANDARD_CHART_TYPE_FLAGS = _CHART_TYPE_FLAGS[1:]
 _OBSERVED_SOURCE_KINDS = frozenset(
     {"repository_exact", "pine_source_exact", "tradingview_builtin", "invite_only", "closed_source", "unknown"}
 )
-_UNRESOLVABLE_OBSERVED_SOURCE_KINDS = frozenset({"invite_only", "closed_source", "unknown"})
 _PROBE_INPUT_KEYS = frozenset(
     {"rsi_len", "macd_fast", "macd_slow", "macd_signal", "stoch_len", "smooth_k", "smooth_d"}
 )
@@ -278,6 +299,12 @@ def _missing_recipe_fields(raw: Mapping[str, Any]) -> set[str]:
             if value is None or (isinstance(value, str) and not value.strip()):
                 missing.add(f"{section}.{key}")
     chart = _mapping(raw["chart"], "chart")
+    definitions = chart.get("session_definitions")
+    named_session = chart.get("named_session")
+    if isinstance(named_session, str) and named_session and (
+        not isinstance(definitions, Mapping) or named_session not in definitions
+    ):
+        missing.add(f"chart.session_definitions.{named_session}")
     type_values = [chart[key] for key in _CHART_TYPE_FLAGS]
     if not all(type(value) is bool for value in type_values):
         missing.add("chart.type_coherence")
@@ -401,8 +428,11 @@ class ChartRecipe:
         vendor_feed = self.instrument["vendor_feed"]
         if isinstance(vendor_feed, str) and vendor_feed.strip().lower().split(":", 1)[0] in {"yahoo", "polygon", "massive"}:
             raise ContractError("instrument.vendor_feed proxy cannot satisfy a TradingView recipe identity")
-        if present(self.chart, "named_session") and self.chart["named_session"] not in {"regular", "extended", "24h", "us_regular", "vendor_named"}:
-            raise ContractError("chart.named_session is unknown")
+        if present(self.chart, "named_session") and (
+            not isinstance(self.chart["named_session"], str)
+            or not self.chart["named_session"].strip()
+        ):
+            raise ContractError("chart.named_session must be a nonempty literal")
         for key in ("timeframe_period", "exchange_timezone", "chart_timezone"):
             if present(self.chart, key) and (not isinstance(self.chart[key], str) or not self.chart[key].strip()):
                 raise ContractError(f"chart.{key} must be a nonempty string")
@@ -417,8 +447,16 @@ class ChartRecipe:
         _require_bool(self.chart["extended_hours_enabled"], "chart.extended_hours_enabled")
         if not isinstance(self.chart["allowed_session_variants"], tuple) or not self.chart["allowed_session_variants"]:
             raise ContractError("chart.allowed_session_variants must be a nonempty list")
-        if not all(isinstance(item, str) and item in {"regular", "extended", "24h", "us_regular", "vendor_named"} for item in self.chart["allowed_session_variants"]):
-            raise ContractError("chart.allowed_session_variants contains an unknown session")
+        if not all(isinstance(item, str) and item.strip() for item in self.chart["allowed_session_variants"]):
+            raise ContractError("chart.allowed_session_variants must contain nonempty literals")
+        definitions = self.chart["session_definitions"]
+        if not isinstance(definitions, Mapping):
+            raise ContractError("chart.session_definitions must be an object")
+        for literal, definition in definitions.items():
+            _validate_session_definition(literal, definition, self.chart["exchange_timezone"])
+        named_session = self.chart["named_session"]
+        if named_session not in definitions and self.capture_status == "complete":
+            raise ContractError("chart.named_session definition is required")
         for key in _CHART_TYPE_FLAGS:
             value = self.chart[key]
             if value is not None and type(value) is not bool:
@@ -479,8 +517,6 @@ class ChartRecipe:
         elif declared != missing:
             raise ContractError(f"incomplete recipe must name exactly missing fields: {sorted(missing)}")
         source_kind = self.indicator["observed_indicator_source_kind"]
-        if source_kind in _UNRESOLVABLE_OBSERVED_SOURCE_KINDS and self.capture_status == "complete":
-            raise ContractError("indicator.observed_indicator_source_kind cannot be complete without exact source math")
         equality_fields_present = all(
             present(self.indicator, key)
             for key in (
@@ -491,7 +527,7 @@ class ChartRecipe:
         )
         if observed_equals_probe is True and equality_fields_present:
             if source_kind not in {"repository_exact", "pine_source_exact"}:
-                raise ContractError("indicator.observed_equals_probe requires an exact observed source")
+                raise ContractError("indicator.observed_indicator_source_kind must be exact when observed_equals_probe is true")
             if (
                 self.indicator["observed_indicator_family"] != self.indicator["probe_indicator_family"]
                 or self.indicator["observed_indicator_source_hash"] != self.indicator["probe_source_git_blob_sha"]
@@ -535,6 +571,182 @@ class ChartRecipe:
             "export": _thaw(self.export), "rights": _thaw(self.rights),
             "missing_fields": list(self.missing_fields),
         }
+
+
+def _validate_session_interval(raw: object, path: str) -> None:
+    interval = _mapping(raw, path)
+    _require_keys(interval, _SESSION_INTERVAL_KEYS, path)
+    for key in ("start_local", "end_local"):
+        value = interval[key]
+        if not isinstance(value, str) or not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", value):
+            raise ContractError(f"{path}.{key} must be HH:MM")
+    _require_nonempty(interval["label"], f"{path}.label")
+
+
+def _validate_session_definition(literal: object, raw: object, exchange_timezone: object) -> None:
+    if not isinstance(literal, str) or not literal:
+        raise ContractError("chart.session_definitions keys must be nonempty strings")
+    path = f"chart.session_definitions.{literal}"
+    definition = _mapping(raw, path)
+    _require_keys(definition, _SESSION_DEFINITION_KEYS, path)
+    if definition["session_literal"] != literal:
+        raise ContractError("session definition literal must match its key")
+    _require_nonempty(definition["human_label"], f"{path}.human_label")
+    if isinstance(exchange_timezone, str) and exchange_timezone and definition["timezone"] != exchange_timezone:
+        raise ContractError("session definition timezone must equal chart exchange_timezone")
+    intervals = definition["intervals"]
+    if isinstance(intervals, (str, bytes)) or not isinstance(intervals, Sequence) or not intervals:
+        raise ContractError("session definition intervals must be a nonempty list")
+    for index, interval in enumerate(intervals):
+        _validate_session_interval(interval, f"{path}.intervals[{index}]")
+    overrides = _mapping(definition["date_overrides"], f"{path}.date_overrides")
+    for day, override in overrides.items():
+        try:
+            date.fromisoformat(day)
+        except (TypeError, ValueError) as exc:
+            raise ContractError("session definition override keys must be ISO dates") from exc
+        if isinstance(override, (str, bytes)) or not isinstance(override, Sequence):
+            raise ContractError("session definition overrides must be interval lists")
+        for index, interval in enumerate(override):
+            _validate_session_interval(interval, f"{path}.date_overrides.{day}[{index}]")
+    provenance = _mapping(definition["provenance"], f"{path}.provenance")
+    _require_keys(provenance, _SESSION_PROVENANCE_KEYS, f"{path}.provenance")
+    if provenance["kind"] not in _SESSION_PROVENANCE_KINDS:
+        raise ContractError("session definition provenance kind is unknown")
+    _require_hex(provenance["receipt_sha256"], 64, "session definition provenance receipt_sha256")
+
+
+@dataclass(frozen=True, slots=True)
+class LowerGrainRecipe:
+    schema_version: str
+    parent_recipe_sha256: str
+    csv_sha256: str
+    tickerid: str
+    main_tickerid: str
+    canonical_id: str | None
+    asset_class: str
+    exchange: str
+    vendor_feed: str
+    currency: str
+    contract_month: str | None
+    continuous_symbol: str | None
+    roll_recipe: str | None
+    settlement_basis: str | None
+    named_session: str
+    exchange_timezone: str
+    chart_timezone: str
+    extended_hours_enabled: bool
+    price_adjustment: str
+    dividend_adjustment: str
+    back_adjustment: str
+    settlement_as_close: str
+    chart_type_flags: Mapping[str, bool]
+    session_definition_sha256: str
+    rights: Mapping[str, Any]
+    row_count: int
+    first_open_ms: int
+    last_close_ms: int
+    source_timeframe_minutes: int
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "chart_type_flags", _freeze(_mapping(self.chart_type_flags, "chart_type_flags")))
+        object.__setattr__(self, "rights", _freeze(_mapping(self.rights, "rights")))
+        _require_json_value(self.to_dict())
+        self.validate()
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> "LowerGrainRecipe":
+        raw = _mapping(raw, "lower grain recipe")
+        _reject_nonfinite(raw)
+        _require_keys(raw, _LOWER_GRAIN_KEYS, "lower grain recipe")
+        return cls(**{name: _freeze(raw[name]) for name in cls.__dataclass_fields__})
+
+    @classmethod
+    def from_json(cls, path: Path) -> "LowerGrainRecipe":
+        return cls.from_dict(_load_json(path))
+
+    def validate(self) -> None:
+        if self.schema_version != LOWER_GRAIN_RECIPE_SCHEMA:
+            raise ContractError("lower grain schema_version is unknown")
+        for name in ("parent_recipe_sha256", "csv_sha256", "session_definition_sha256"):
+            _require_hex(getattr(self, name), 64, name)
+        for name in (
+            "tickerid", "main_tickerid", "asset_class", "exchange", "vendor_feed", "currency",
+            "named_session", "exchange_timezone", "chart_timezone", "price_adjustment",
+            "dividend_adjustment", "back_adjustment", "settlement_as_close",
+        ):
+            _require_nonempty(getattr(self, name), name)
+        for name in ("canonical_id", "contract_month", "continuous_symbol", "roll_recipe", "settlement_basis"):
+            value = getattr(self, name)
+            if value is not None and (not isinstance(value, str) or not value):
+                raise ContractError(f"{name} must be a nonempty string or null")
+        _require_bool(self.extended_hours_enabled, "extended_hours_enabled")
+        _require_keys(self.chart_type_flags, frozenset(_CHART_TYPE_FLAGS), "chart_type_flags")
+        if not all(type(value) is bool for value in self.chart_type_flags.values()):
+            raise ContractError("chart_type_flags values must be boolean")
+        _require_keys(self.rights, _RIGHTS_KEYS, "rights")
+        for name in ("row_count", "first_open_ms", "last_close_ms", "source_timeframe_minutes"):
+            _require_int(
+                getattr(self, name), name,
+                minimum=1 if name in {"row_count", "source_timeframe_minutes"} else 0,
+            )
+        if self.first_open_ms >= self.last_close_ms:
+            raise ContractError("lower grain first_open_ms must precede last_close_ms")
+
+    def mismatches(
+        self,
+        parent: ChartRecipe,
+        *,
+        csv_sha256: str,
+        row_count: int,
+        first_open_ms: int,
+        last_close_ms: int,
+        source_timeframe_minutes: int,
+    ) -> tuple[str, ...]:
+        if not isinstance(parent, ChartRecipe):
+            raise ContractError("parent must be a ChartRecipe")
+        session = parent.chart["session_definitions"].get(parent.chart["named_session"])
+        expected = {
+            "parent_recipe_sha256": hashlib.sha256(strict_json_dumps(parent.to_dict()).encode("utf-8")).hexdigest(),
+            "csv_sha256": csv_sha256,
+            "tickerid": parent.instrument["tickerid"],
+            "main_tickerid": parent.instrument["main_tickerid"],
+            "canonical_id": parent.instrument.get("canonical_id"),
+            "asset_class": parent.instrument["asset_class"],
+            "exchange": parent.instrument["exchange"],
+            "vendor_feed": parent.instrument["vendor_feed"],
+            "currency": parent.instrument["currency"],
+            "contract_month": parent.instrument["contract_month"],
+            "continuous_symbol": parent.instrument["continuous_symbol"],
+            "roll_recipe": parent.instrument["roll_recipe"],
+            "settlement_basis": parent.instrument["settlement_basis"],
+            "named_session": parent.chart["named_session"],
+            "exchange_timezone": parent.chart["exchange_timezone"],
+            "chart_timezone": parent.chart["chart_timezone"],
+            "extended_hours_enabled": parent.chart["extended_hours_enabled"],
+            "price_adjustment": parent.chart["price_adjustment"],
+            "dividend_adjustment": parent.chart["dividend_adjustment"],
+            "back_adjustment": parent.chart["back_adjustment"],
+            "settlement_as_close": parent.chart["settlement_as_close"],
+            "chart_type_flags": {key: parent.chart[key] for key in _CHART_TYPE_FLAGS},
+            "session_definition_sha256": hashlib.sha256(strict_json_dumps(session).encode("utf-8")).hexdigest(),
+            "rights": _thaw(parent.rights),
+            "row_count": row_count,
+            "first_open_ms": first_open_ms,
+            "last_close_ms": last_close_ms,
+            "source_timeframe_minutes": source_timeframe_minutes,
+        }
+        mismatches = [
+            f"LOWER_MANIFEST_{name.upper()}_MISMATCH"
+            for name, expected_value in expected.items()
+            if _thaw(getattr(self, name)) != expected_value
+        ]
+        if self.last_close_ms < int(parent.export["last_bar_close_ms"]):
+            mismatches.append("LOWER_MANIFEST_FINAL_ENDPOINT_UNCOVERED")
+        return tuple(sorted(set(mismatches)))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {name: _thaw(getattr(self, name)) for name in self.__dataclass_fields__}
 
 
 @dataclass(frozen=True, slots=True)
@@ -837,7 +1049,7 @@ class ArtifactAttackResult:
             or any(test.status == "FAIL" for test in required_tests)
             or any("single_arbitrary_phase_only" in test.findings for test in self.tests)
         )
-        expected_status = "UNRESOLVED_DATA" if unresolved else "ARTIFACT" if artifact else "MECHANICALLY_SURVIVES"
+        expected_status = "ARTIFACT" if artifact else "UNRESOLVED_DATA" if unresolved else "MECHANICALLY_SURVIVES"
         if self.mechanical_status != expected_status:
             raise ContractError(f"mechanical_status must be {expected_status} under carrier priority")
         if self.mechanical_status == "MECHANICALLY_SURVIVES":

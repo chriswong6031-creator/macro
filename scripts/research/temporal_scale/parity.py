@@ -167,7 +167,7 @@ def canonical_indicator_frame(close: pd.Series) -> pd.DataFrame:
 
 @dataclass(frozen=True, slots=True)
 class ParityReceipt:
-    status: Literal["PASS", "FAIL"]
+    status: Literal["PASS", "FAIL", "UNRESOLVED_DATA"]
     tolerance: float
     first_comparable_bar_ms: int | None
     compared_rows: int
@@ -176,8 +176,8 @@ class ParityReceipt:
 
     def __post_init__(self) -> None:
         _exact_tolerance(self.tolerance)
-        if self.status not in {"PASS", "FAIL"}:
-            raise ParityError("parity status must be PASS or FAIL")
+        if self.status not in {"PASS", "FAIL", "UNRESOLVED_DATA"}:
+            raise ParityError("parity status must be PASS, FAIL, or UNRESOLVED_DATA")
         if self.first_comparable_bar_ms is not None and (
             type(self.first_comparable_bar_ms) is not int or self.first_comparable_bar_ms < 0
         ):
@@ -207,6 +207,10 @@ class ParityReceipt:
             raise ParityError("PASS parity cannot contain failures")
         if self.status == "FAIL" and not failures:
             raise ParityError("FAIL parity requires a failure")
+        if self.status == "UNRESOLVED_DATA" and (
+            not failures or self.compared_rows != 0 or self.first_comparable_bar_ms is not None
+        ):
+            raise ParityError("UNRESOLVED_DATA parity requires zero comparable rows and a reason")
         if self.status == "PASS" and (self.compared_rows == 0 or self.first_comparable_bar_ms is None):
             raise ParityError("PASS parity requires comparable rows")
         object.__setattr__(self, "max_abs_error", MappingProxyType(normalized_errors))
@@ -250,7 +254,6 @@ def compare_indicator_parity(
     pair_masks: list[np.ndarray] = []
     first_times: list[int] = []
     exceeded: list[str] = []
-    no_comparable = False
     for exported_field, owner_field in PARITY_FIELDS:
         observed_values = [
             _finite_real(value, name=exported_field, allow_missing=True)
@@ -262,7 +265,6 @@ def compare_indicator_parity(
         pair_masks.append(mask)
         positions = np.flatnonzero(mask)
         if len(positions) == 0:
-            no_comparable = True
             max_errors[exported_field] = None
             continue
         first_times.append(int(index[int(positions[0])]))
@@ -272,13 +274,11 @@ def compare_indicator_parity(
             exceeded.append(f"PARITY_TOLERANCE_EXCEEDED:{exported_field}")
     common = np.logical_and.reduce(pair_masks) if pair_masks else np.zeros(len(index), dtype=bool)
     compared_rows = int(np.count_nonzero(common))
-    if compared_rows == 0:
-        no_comparable = True
-    failures = (("PARITY_NO_COMPARABLE_ROWS",) if no_comparable else ()) + tuple(exceeded)
+    failures = (("PARITY_NO_COMPARABLE_ROWS",) if compared_rows == 0 else ()) + tuple(exceeded)
     return ParityReceipt(
-        status="FAIL" if failures else "PASS",
+        status="UNRESOLVED_DATA" if compared_rows == 0 else "FAIL" if failures else "PASS",
         tolerance=tolerance,
-        first_comparable_bar_ms=max(first_times) if first_times else None,
+        first_comparable_bar_ms=max(first_times) if compared_rows and first_times else None,
         compared_rows=compared_rows,
         max_abs_error=max_errors,
         failures=failures,

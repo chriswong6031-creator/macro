@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 from pathlib import Path
 import runpy
@@ -21,7 +22,8 @@ from scripts.research.temporal_scale.artifact_attack import (
     register_artifact_grid,
     run_artifact_attack,
 )
-from scripts.research.temporal_scale.contracts import ArtifactTest, ChartRecipe
+from scripts.research.temporal_scale.chart_export import load_chart_export
+from scripts.research.temporal_scale.contracts import ArtifactTest, ChartRecipe, LowerGrainRecipe, strict_json_dumps
 
 
 def recipe() -> dict:
@@ -155,6 +157,171 @@ def test_missing_lower_grain_evidence_yields_typed_unresolved_not_proxy(tmp_path
     assert any(test.axis == "K" and test.variant_id == "standard_price_macd_12_26_9" and test.status == "PASS" for test in result.tests)
 
 
+def test_warmup_only_attack_is_parity_unavailable_and_unresolved(tmp_path: Path) -> None:
+    loaded = _loaded(tmp_path, n=3)
+    result = run_artifact_attack(
+        loaded,
+        lower_grain_rows=None,
+        grid=default_artifact_grid(loaded.recipe),
+        ledger_path=tmp_path / "ledger.jsonl",
+    )
+    assert result.parity["status"] == "UNRESOLVED_DATA"
+    parity_tests = [test for test in result.tests if test.axis == "PARITY"]
+    assert len(parity_tests) == 1
+    assert parity_tests[0].status == "UNAVAILABLE"
+    assert "PARITY_NO_COMPARABLE_ROWS" in parity_tests[0].findings
+    assert result.mechanical_status == "UNRESOLVED_DATA"
+
+
+def test_naked_lower_rows_cannot_activate_primary_gak(tmp_path: Path) -> None:
+    loaded = _loaded(tmp_path)
+    lower = pd.DataFrame([
+        {"open_ms": 1_700_000_000_000, "close_ms": 1_700_003_600_000,
+         "open": 1.0, "high": 2.0, "low": 0.5, "close": 1.5, "volume": 1.0},
+    ])
+    result = run_artifact_attack(
+        loaded, lower_grain_rows=lower, grid=default_artifact_grid(loaded.recipe),
+        ledger_path=tmp_path / "ledger.jsonl",
+    )
+    primary = [test for test in result.tests if test.axis in {"G", "A"} or (test.axis == "K" and test.variant_id.startswith("memory_target"))]
+    assert primary and all(test.status == "UNAVAILABLE" for test in primary)
+    assert all("LOWER_GRAIN_MANIFEST_UNAVAILABLE" in test.findings for test in primary)
+
+
+def test_matching_lower_manifest_crosses_gate_before_reconstruction(tmp_path: Path) -> None:
+    loaded = _loaded(tmp_path, n=320)
+    lower_records: list[dict[str, float | int]] = []
+    for row in loaded.frame.itertuples(index=False):
+        step = (int(row.TG_time_close_ms) - int(row.TG_time_open_ms)) // 4
+        for part in range(4):
+            fraction_left = part / 4
+            fraction_right = (part + 1) / 4
+            open_value = float(row.TG_open) + (float(row.TG_close) - float(row.TG_open)) * fraction_left
+            close_value = float(row.TG_open) + (float(row.TG_close) - float(row.TG_open)) * fraction_right
+            lower_records.append({
+                "open_ms": int(row.TG_time_open_ms) + part * step,
+                "close_ms": int(row.TG_time_open_ms) + (part + 1) * step,
+                "open": open_value,
+                "high": float(row.TG_high),
+                "low": float(row.TG_low),
+                "close": close_value,
+                "volume": float(row.TG_volume) / 4,
+            })
+    lower = pd.DataFrame(lower_records)
+    lower_hash = "5" * 64
+    helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_contracts.py")))
+    manifest = helpers["lower_recipe_dict"](loaded.recipe.to_dict(), lower_hash)
+    manifest.update(
+        row_count=len(lower),
+        first_open_ms=int(lower["open_ms"].iloc[0]),
+        last_close_ms=int(lower["close_ms"].iloc[-1]),
+        source_timeframe_minutes=15,
+    )
+    result = run_artifact_attack(
+        loaded,
+        lower_grain_rows=lower,
+        lower_grain_recipe=LowerGrainRecipe.from_dict(manifest),
+        lower_grain_csv_sha256=lower_hash,
+        grid=default_artifact_grid(loaded.recipe),
+        ledger_path=tmp_path / "ledger.jsonl",
+    )
+    primary = [
+        test for test in result.tests
+        if test.axis in {"G", "A"} or (test.axis == "K" and test.variant_id.startswith("memory_target"))
+    ]
+    assert primary
+    assert not any("LOWER_MANIFEST" in finding for test in primary for finding in test.findings)
+
+
+@pytest.mark.parametrize(
+    ("equality", "source_kind"),
+    [
+        (False, "repository_exact"),
+        ("unknown", "repository_exact"),
+        (False, "invite_only"),
+        (False, "closed_source"),
+        (False, "tradingview_builtin"),
+    ],
+)
+def test_owner_probe_parity_cannot_substitute_for_observed_math(
+    tmp_path: Path,
+    equality: object,
+    source_kind: str,
+) -> None:
+    _loaded(tmp_path)
+    recipe_path = tmp_path / "recipe.json"
+    raw = json.loads(recipe_path.read_text(encoding="utf-8"))
+    raw["indicator"]["observed_equals_probe"] = equality
+    raw["indicator"]["observed_indicator_source_kind"] = source_kind
+    recipe_path.write_text(json.dumps(raw), encoding="utf-8")
+    loaded = load_chart_export(recipe_path, tmp_path / "synthetic.csv")
+    result = run_artifact_attack(
+        loaded, lower_grain_rows=None, grid=default_artifact_grid(loaded.recipe),
+        ledger_path=tmp_path / "ledger.jsonl",
+    )
+    assert result.owner_probe_control["status"] == "PASS"
+    assert result.observed_indicator_reproduction["status"] == "UNRESOLVED_DATA"
+    assert result.mechanical_status == "UNRESOLVED_DATA"
+
+
+def test_session_intervals_come_only_from_recipe_evidence() -> None:
+    helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_contracts.py")))
+    equity_raw = helpers["complete_recipe_dict"]()
+    equity_raw["chart"]["named_session"] = "regular"
+    equity = ChartRecipe.from_dict(equity_raw)
+    equity_intervals, _ = artifact_attack._session_evidence(equity, "regular")
+    assert [(item.start_local, item.end_local) for item in equity_intervals] == [("09:30", "16:00")]
+
+    future_raw = helpers["complete_recipe_dict"]()
+    future_raw["instrument"].update(
+        asset_class="futures", tickerid="COMEX:SIU2026", main_tickerid="COMEX:SI1!",
+        exchange="COMEX", contract_month="202609", settlement_basis="exchange_settlement",
+        canonical_id="FUT:XCEC:SI:202609",
+    )
+    future_raw["chart"].update(
+        named_session="regular", allowed_session_variants=["regular", "vendor_named"],
+        exchange_timezone="America/Chicago", chart_timezone="America/Chicago",
+        price_adjustment="raw", settlement_as_close="on",
+        session_definitions={
+            "regular": {
+                "session_literal": "regular", "human_label": "COMEX electronic with break",
+                "timezone": "America/Chicago",
+                "intervals": [
+                    {"start_local": "17:00", "end_local": "16:00", "label": "electronic"},
+                ],
+                "date_overrides": {},
+                "provenance": {"kind": "provider_documented_exact", "receipt_sha256": "7" * 64},
+            },
+        },
+    )
+    future = ChartRecipe.from_dict(future_raw)
+    future_intervals, _ = artifact_attack._session_evidence(future, "regular")
+    assert [(item.start_local, item.end_local) for item in future_intervals] == [("17:00", "16:00")]
+    assert artifact_attack._session_evidence(future, "vendor_named") is None
+
+
+def test_exact_bar_match_requires_interior_coverage_and_volume() -> None:
+    observed = pd.DataFrame([
+        {"TG_time_open_ms": 0, "TG_time_close_ms": 180_000, "TG_open": 1.0,
+         "TG_high": 4.0, "TG_low": 0.5, "TG_close": 3.0, "TG_volume": 6.0},
+    ])
+    reconstructed = pd.DataFrame([
+        {"open_ms": 0, "close_ms": 180_000, "open": 1.0, "high": 4.0,
+         "low": 0.5, "close": 3.0, "volume": 6.0},
+    ])
+    lower = pd.DataFrame([
+        {"open_ms": 0, "close_ms": 60_000, "open": 1.0, "high": 2.0, "low": 0.5, "close": 1.5, "volume": 1.0},
+        {"open_ms": 60_000, "close_ms": 120_000, "open": 1.5, "high": 3.0, "low": 1.0, "close": 2.0, "volume": 2.0},
+        {"open_ms": 120_000, "close_ms": 180_000, "open": 2.0, "high": 4.0, "low": 1.5, "close": 3.0, "volume": 3.0},
+    ])
+    assert artifact_attack._exact_bar_match(observed, reconstructed, lower)[0] is True
+    assert artifact_attack._exact_bar_match(observed, reconstructed, lower.drop(index=1))[0] is False
+    wrong_volume = observed.copy()
+    wrong_volume.loc[0, "TG_volume"] = 7.0
+    exact, metrics = artifact_attack._exact_bar_match(wrong_volume, reconstructed, lower)
+    assert exact is False and metrics["volume_match"] is False
+
+
 def test_active_named_session_is_always_in_frozen_grid() -> None:
     raw = recipe()
     raw["chart"]["allowed_session_variants"] = ["regular"]
@@ -214,7 +381,7 @@ def test_k_binds_actual_elapsed_vector_and_uses_evidenced_sessions(tmp_path: Pat
         bars = pd.DataFrame({
             "open_ms": [1_700_000_000_000 + index * step for index in range(count)],
             "close_ms": [1_700_000_000_000 + (index + 1) * step for index in range(count)],
-            "close": [100.0 + index / 10.0 for index in range(count)],
+            "close": [100.0 + index / 10.0 + float(index % 7) for index in range(count)],
         })
         receipts = tuple(
             SimpleNamespace(
@@ -241,6 +408,54 @@ def test_k_binds_actual_elapsed_vector_and_uses_evidenced_sessions(tmp_path: Pat
     assert all(test.metrics["clock_parameter"]["actual_vector_count"] == 100 for test in tests)
     assert all(len(test.metrics["clock_parameter"]["actual_vector_sha256"]) == 64 for test in tests)
     assert all(test.metrics["evidenced_session_count"] == 10 for test in tests)
+    assert all(set(test.metrics["executions"]) == {"K0", "K1", "K2"} for test in tests)
+    assert all(
+        all(len(execution["output_sha256"]) == 64 for execution in test.metrics["executions"].values())
+        for test in tests
+    )
+    assert all("per_output_path_distance" in test.metrics for test in tests)
+
+
+def test_mapping_only_k_mutation_is_detected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    loaded = _loaded(tmp_path)
+
+    def sequence(grain: int):
+        step = grain * 60_000
+        bars = pd.DataFrame({
+            "open_ms": [1_700_000_000_000 + index * step for index in range(200)],
+            "close_ms": [1_700_000_000_000 + (index + 1) * step for index in range(200)],
+            "close": [100.0 + index / 10.0 + float(index % 7) for index in range(200)],
+        })
+        receipts = tuple(SimpleNamespace(
+            effective_minutes=grain, source_row_sha256=f"{index:064x}", volume=1.0,
+            trade_count=None, traded_minutes=None, realized_variance=None,
+            clipped=False, empty_interval=False,
+            session_flags={"first_session_bar": index % 10 == 0},
+        ) for index in range(200))
+        return bars, receipts
+
+    monkeypatch.setattr(
+        artifact_attack, "parameterized_indicator_frame",
+        lambda close, _parameters: artifact_attack.canonical_indicator_frame(close),
+    )
+    tests = artifact_attack._kernel_tests(
+        loaded, default_artifact_grid(loaded.recipe), {60: sequence(60), 120: sequence(120)},
+    )
+    assert any(test.status == "FAIL" and "K_MAPPING_ONLY_MUTATION" in test.findings for test in tests)
+
+
+def test_exact_bar_only_phase_match_never_emits_artifact_token() -> None:
+    test = artifact_attack._phase_uniqueness_test(
+        {
+            0.0: {"coverage": True, "bar_match": False, "path_pass": False},
+            0.25: {"coverage": True, "bar_match": True, "path_pass": False},
+            0.5: {"coverage": True, "bar_match": False, "path_pass": False},
+            0.75: {"coverage": True, "bar_match": False, "path_pass": False},
+        },
+        "8" * 64,
+    )
+    assert "single_arbitrary_phase_only" not in test.findings
+    assert test.status == "PASS"
 
 
 def test_nonstandard_chart_is_an_a_and_d_artifact() -> None:
@@ -343,7 +558,54 @@ def test_cli_attack_parity_pass_then_typed_unresolved_without_lower_rows(tmp_pat
     assert len(manifest["ledger_sha256"]) == 64
 
 
-def test_cli_parity_failure_is_nonzero_and_attack_never_runs(tmp_path: Path) -> None:
+def test_cli_paired_lower_recipe_is_normalized_and_hashed_even_when_unresolved(tmp_path: Path) -> None:
+    loaded = _loaded(tmp_path, n=320)
+    first = loaded.frame.iloc[0]
+    lower_path = tmp_path / "lower.csv"
+    pd.DataFrame([{
+        "open_ms": int(first["TG_time_open_ms"]),
+        "close_ms": int(first["TG_time_close_ms"]),
+        "open": float(first["TG_open"]),
+        "high": float(first["TG_high"]),
+        "low": float(first["TG_low"]),
+        "close": float(first["TG_close"]),
+        "volume": float(first["TG_volume"]),
+    }]).to_csv(lower_path, index=False)
+    lower_hash = hashlib.sha256(lower_path.read_bytes()).hexdigest()
+    helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_contracts.py")))
+    manifest = helpers["lower_recipe_dict"](loaded.recipe.to_dict(), lower_hash)
+    manifest.update(
+        row_count=1,
+        first_open_ms=int(first["TG_time_open_ms"]),
+        last_close_ms=int(first["TG_time_close_ms"]),
+        source_timeframe_minutes=60,
+    )
+    manifest_path = tmp_path / "lower-recipe.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    output = tmp_path / "paired-lower"
+    completed = _run_cli(
+        "attack",
+        "--recipe", str(tmp_path / "recipe.json"),
+        "--csv", str(tmp_path / "synthetic.csv"),
+        "--lower-grain-csv", str(lower_path),
+        "--lower-grain-recipe", str(manifest_path),
+        "--output-dir", str(output),
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert (output / "normalized_lower_grain_recipe.json").is_file()
+    run_manifest = json.loads((output / "run_manifest.json").read_text(encoding="utf-8"))
+    assert set(run_manifest["input_sha256"]) == {
+        "recipe", "csv", "lower_grain_csv", "lower_grain_recipe",
+    }
+    result = json.loads((output / "artifact_attack_result.json").read_text(encoding="utf-8"))
+    assert result["mechanical_status"] == "UNRESOLVED_DATA"
+    assert any(
+        "LOWER_MANIFEST_FINAL_ENDPOINT_UNCOVERED" in test["findings"]
+        for test in result["tests"]
+    )
+
+
+def test_cli_parity_failure_writes_typed_artifact_result(tmp_path: Path) -> None:
     helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_parity.py")))
     helpers["loaded_export_from_canonical_fixture"](
         tmp_path, n=1190, perturb=("TG_rsi_macd_hist", -1, 1e-4)
@@ -355,10 +617,11 @@ def test_cli_parity_failure_is_nonzero_and_attack_never_runs(tmp_path: Path) -> 
         "--csv", str(tmp_path / "synthetic.csv"),
         "--output-dir", str(output),
     )
-    assert completed.returncode != 0
+    assert completed.returncode == 0, completed.stderr
     assert json.loads((output / "parity_receipt.json").read_text(encoding="utf-8"))["status"] == "FAIL"
-    assert not (output / "artifact_attack_result.json").exists()
-    assert not (output / "trial_ledger.jsonl").exists()
+    result = json.loads((output / "artifact_attack_result.json").read_text(encoding="utf-8"))
+    assert result["mechanical_status"] == "ARTIFACT"
+    assert (output / "trial_ledger.jsonl").is_file()
 
 
 def test_cli_refuses_production_ledger_before_writing_it(tmp_path: Path) -> None:

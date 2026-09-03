@@ -27,6 +27,7 @@ from scripts.research.temporal_scale.contracts import (  # noqa: E402
     ArtifactAttackResult,
     ChartRecipe,
     ContractError,
+    LowerGrainRecipe,
     atomic_write_json,
     strict_json_dumps,
 )
@@ -65,6 +66,7 @@ def _parser() -> argparse.ArgumentParser:
         child.add_argument("--output-dir", type=Path, required=True)
         child.add_argument("--ledger-path", type=Path)
         child.add_argument("--lower-grain-csv", type=Path)
+        child.add_argument("--lower-grain-recipe", type=Path)
         child.add_argument("--observation-ms", type=int)
     return parser
 
@@ -262,14 +264,26 @@ def _run(args: argparse.Namespace) -> int:
     }
 
     result: ArtifactAttackResult | None = None
-    if args.command == "attack" and parity.status == "PASS":
+    if args.command == "attack":
         lower = None
+        lower_recipe = None
+        lower_csv_sha256 = None
         if args.lower_grain_csv is not None:
-            input_hashes["lower_grain_csv"] = _sha256_path(args.lower_grain_csv)
+            lower_csv_sha256 = _sha256_path(args.lower_grain_csv)
+            input_hashes["lower_grain_csv"] = lower_csv_sha256
             lower = _read_lower(args.lower_grain_csv)
+        if args.lower_grain_recipe is not None:
+            input_hashes["lower_grain_recipe"] = _sha256_path(args.lower_grain_recipe)
+            try:
+                lower_recipe = LowerGrainRecipe.from_json(args.lower_grain_recipe)
+            except (ContractError, OSError, UnicodeError, TypeError, ValueError) as exc:
+                raise CliError(f"lower-grain recipe validation failed: {exc}") from exc
+            objects["normalized_lower_grain_recipe.json"] = lower_recipe.to_dict()
         result = run_artifact_attack(
             loaded,
             lower_grain_rows=lower,
+            lower_grain_recipe=lower_recipe,
+            lower_grain_csv_sha256=lower_csv_sha256,
             grid=grid,
             ledger_path=ledger_path,
         )
@@ -288,7 +302,7 @@ def _run(args: argparse.Namespace) -> int:
         ledger_sha256=ledger_hash,
     )
     atomic_write_json(args.output_dir / "run_manifest.json", manifest)
-    if parity.status != "PASS":
+    if parity.status != "PASS" and args.command != "attack":
         print("PARITY_FAIL", file=sys.stderr)
         return 2
     print(status)

@@ -49,6 +49,22 @@ def recipe_dict() -> dict:
             "price_adjustment": "split_adjusted", "dividend_adjustment": "off",
             "back_adjustment": "not_applicable", "settlement_as_close": "not_applicable",
             "allowed_session_variants": ["extended", "regular"],
+            "session_definitions": {
+                "extended": {
+                    "session_literal": "extended", "human_label": "US extended fixture",
+                    "timezone": "America/New_York",
+                    "intervals": [{"start_local": "04:00", "end_local": "20:00", "label": "extended"}],
+                    "date_overrides": {},
+                    "provenance": {"kind": "synthetic_fixture", "receipt_sha256": "3" * 64},
+                },
+                "regular": {
+                    "session_literal": "regular", "human_label": "US cash fixture",
+                    "timezone": "America/New_York",
+                    "intervals": [{"start_local": "09:30", "end_local": "16:00", "label": "regular"}],
+                    "date_overrides": {},
+                    "provenance": {"kind": "synthetic_fixture", "receipt_sha256": "4" * 64},
+                },
+            },
             "chart_is_standard": True, "chart_is_heikinashi": False, "chart_is_renko": False,
             "chart_is_linebreak": False, "chart_is_kagi": False, "chart_is_pnf": False, "chart_is_range": False,
         },
@@ -302,7 +318,6 @@ def test_each_oscillator_allows_only_leading_blank_or_null_warmup_cells(tmp_path
     ("column", "values", "expected"),
     (
         ("TG_rsi", ("50.000000000000", "", "52.000000000000"), "CSV_OSCILLATOR_GAP:TG_rsi"),
-        ("TG_stoch_k", ("null", "", "null"), "CSV_OSCILLATOR_WARMUP_INVALID:TG_stoch_k"),
         ("TG_stoch_d", ("", "60.0000", "61.000000000000"), "INSUFFICIENT_EXPORT_PRECISION"),
     ),
 )
@@ -315,6 +330,18 @@ def test_oscillator_warmup_rejects_gaps_all_missing_and_low_precision_after_warm
     recipe_path, csv_path = write_fixture(tmp_path, rows=rows)
     with pytest.raises(ExportError, match=expected):
         load_chart_export(recipe_path, csv_path)
+
+
+def test_warmup_only_export_is_structurally_loadable(tmp_path: Path) -> None:
+    rows = synthetic_rows()
+    for row in rows:
+        for column in ("TG_rsi", "TG_rsi_macd", "TG_rsi_macd_signal", "TG_rsi_macd_hist", "TG_stoch_k", "TG_stoch_d"):
+            row[column] = ""
+    recipe_path, csv_path = write_fixture(tmp_path, rows=rows)
+    loaded = load_chart_export(recipe_path, csv_path)
+    assert all(loaded.frame[column].isna().all() for column in (
+        "TG_rsi", "TG_rsi_macd", "TG_rsi_macd_signal", "TG_rsi_macd_hist", "TG_stoch_k", "TG_stoch_d",
+    ))
 
 
 def test_row_count_range_order_and_duration_fail_closed(tmp_path: Path) -> None:
@@ -551,14 +578,14 @@ def test_loaded_constructor_applies_retained_row_semantics(tmp_path: Path, mutat
     "column",
     ("TG_rsi", "TG_rsi_macd", "TG_rsi_macd_signal", "TG_rsi_macd_hist", "TG_stoch_k", "TG_stoch_d"),
 )
-def test_final_provisional_cannot_supply_the_only_finite_oscillator_value(tmp_path: Path, column: str) -> None:
+def test_final_provisional_only_finite_value_leaves_valid_warmup_only_export(tmp_path: Path, column: str) -> None:
     rows = synthetic_rows()
     rows[0][column] = ""
     rows[1][column] = "null"
     rows[-1]["TG_is_confirmed"] = "0"
     recipe_path, csv_path = write_fixture(tmp_path, rows=rows)
-    with pytest.raises(ExportError, match=f"CSV_OSCILLATOR_WARMUP_INVALID:{column}"):
-        load_chart_export(recipe_path, csv_path)
+    loaded = load_chart_export(recipe_path, csv_path)
+    assert loaded.frame[column].isna().all()
 
 
 @pytest.mark.parametrize("mutation", ("missing", "extra"))

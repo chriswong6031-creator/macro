@@ -7,7 +7,7 @@ production-control surface.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from fractions import Fraction
 import hashlib
 import math
@@ -27,6 +27,7 @@ from scripts.research.temporal_scale.contracts import (
     ArtifactAttackResult,
     ArtifactTest,
     ChartRecipe,
+    LowerGrainRecipe,
     strict_json_dumps,
 )
 from scripts.research.temporal_scale.parity import (
@@ -35,11 +36,15 @@ from scripts.research.temporal_scale.parity import (
     compare_indicator_parity,
     truncation_invariance,
 )
-from scripts.research.temporal_scale.kernel_memory import canonical_kernel_signature
+from scripts.research.temporal_scale.kernel_memory import (
+    canonical_kernel_signature,
+    parameterized_indicator_frame,
+)
 from scripts.research.temporal_scale.session_bars import (
     BarGridSpec,
     SessionBarsError,
     SessionInterval,
+    _bounds,
     build_session_bars,
 )
 
@@ -251,19 +256,20 @@ def classify_mechanical_status(
         raise ArtifactAttackError("classification inputs are invalid")
     statuses = _axis_statuses(tests)
     records = tuple(tests) if not isinstance(tests, Mapping) else ()
-    unresolved = (
-        not recipe_complete or parity_status == "UNRESOLVED_DATA"
-        or any("UNAVAILABLE" in statuses.get(axis, ()) for axis in _REQUIRED_AXES)
-        or any(axis not in statuses for axis in _REQUIRED_AXES)
-    )
-    if unresolved:
+    if not recipe_complete or parity_status == "UNRESOLVED_DATA":
         return "UNRESOLVED_DATA"
     artifact = (
         parity_status == "FAIL"
         or any("FAIL" in statuses.get(axis, ()) for axis in _REQUIRED_AXES)
         or any("single_arbitrary_phase_only" in test.findings for test in records)
     )
-    return "ARTIFACT" if artifact else "MECHANICALLY_SURVIVES"
+    if artifact:
+        return "ARTIFACT"
+    unresolved = (
+        any("UNAVAILABLE" in statuses.get(axis, ()) for axis in _REQUIRED_AXES)
+        or any(axis not in statuses for axis in _REQUIRED_AXES)
+    )
+    return "UNRESOLVED_DATA" if unresolved else "MECHANICALLY_SURVIVES"
 
 
 def classify_artifact_attack(
@@ -322,7 +328,11 @@ def _close(loaded: LoadedChartExport) -> pd.Series:
 
 
 def _parity_test(parity: Mapping[str, Any], csv_hash: str) -> ArtifactTest:
-    status = "PASS" if parity["status"] == "PASS" else "FAIL"
+    status = (
+        "PASS" if parity["status"] == "PASS"
+        else "FAIL" if parity["status"] == "FAIL"
+        else "UNAVAILABLE"
+    )
     failures = tuple(str(value) for value in parity.get("failures", ()))
     return _artifact_test(
         "PARITY", "observed_vs_owner_1e-10",
@@ -333,7 +343,11 @@ def _parity_test(parity: Mapping[str, Any], csv_hash: str) -> ArtifactTest:
             "max_abs_error": dict(parity.get("max_abs_error", {})),
             "tolerance": parity.get("tolerance", 1e-10),
         },
-        failures or ("exact_owner_probe_parity",),
+        failures or (
+            "exact_owner_probe_parity"
+            if status == "PASS"
+            else "PARITY_NO_COMPARABLE_ROWS",
+        ),
     )
 
 
@@ -344,14 +358,40 @@ def _unavailable(axis: str, variant_id: str, source_hash: str, token: str) -> Ar
     )
 
 
-def _session_intervals(name: str) -> tuple[SessionInterval, ...] | None:
-    if name in {"regular", "us_regular"}:
-        return (SessionInterval("09:30", "16:00", "regular"),)
-    if name == "extended":
-        return (SessionInterval("04:00", "20:00", "extended"),)
-    if name == "24h":
-        return (SessionInterval("00:00", "00:00", "market"),)
-    return None
+def _session_evidence(
+    recipe: ChartRecipe,
+    name: str,
+) -> tuple[tuple[SessionInterval, ...], dict[str, tuple[SessionInterval, ...]]] | None:
+    """Resolve a session literal only from the recipe's evidenced grammar."""
+    definitions = recipe.chart.get("session_definitions")
+    if not isinstance(definitions, Mapping) or name not in definitions:
+        return None
+    definition = definitions[name]
+    if not isinstance(definition, Mapping):
+        raise ArtifactAttackError("session definition must be an object")
+
+    def intervals(value: object) -> tuple[SessionInterval, ...]:
+        if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+            raise ArtifactAttackError("session intervals must be an evidenced sequence")
+        try:
+            return tuple(
+                SessionInterval(
+                    start_local=str(item["start_local"]),
+                    end_local=str(item["end_local"]),
+                    label=str(item["label"]),
+                )
+                for item in value
+                if isinstance(item, Mapping)
+            )
+        except (KeyError, TypeError, ValueError, SessionBarsError) as exc:
+            raise ArtifactAttackError("session interval evidence is malformed") from exc
+
+    base = intervals(definition.get("intervals"))
+    raw_overrides = definition.get("date_overrides")
+    if not isinstance(raw_overrides, Mapping):
+        raise ArtifactAttackError("session date overrides must be an object")
+    overrides = {str(day): intervals(value) for day, value in raw_overrides.items()}
+    return base, overrides
 
 
 def _bars_for(
@@ -362,24 +402,16 @@ def _bars_for(
     phase_fraction: float,
     session_name: str,
 ) -> tuple[pd.DataFrame, tuple[object, ...]] | None:
-    intervals = _session_intervals(session_name)
-    if intervals is None:
+    evidence = _session_evidence(recipe, session_name)
+    if evidence is None:
         return None
+    intervals, date_overrides = evidence
     try:
-        zone = ZoneInfo(str(recipe.chart["exchange_timezone"]))
+        definition = recipe.chart["session_definitions"][session_name]
+        session_timezone = str(definition["timezone"])
+        zone = ZoneInfo(session_timezone)
     except (KeyError, TypeError, ValueError, ZoneInfoNotFoundError) as exc:
-        raise ArtifactAttackError("recipe exchange timezone is invalid") from exc
-
-    def minutes(ms: int) -> int:
-        local = datetime.fromtimestamp(ms / 1000, timezone.utc).astimezone(zone)
-        return local.hour * 60 + local.minute
-
-    def within(value: int, interval: SessionInterval) -> bool:
-        start_hour, start_minute = map(int, interval.start_local.split(":"))
-        end_hour, end_minute = map(int, interval.end_local.split(":"))
-        start = start_hour * 60 + start_minute
-        end = end_hour * 60 + end_minute
-        return True if start == end else start <= value < end if start < end else value >= start or value < end
+        raise ArtifactAttackError("recipe session timezone is invalid") from exc
 
     if not {"open_ms", "close_ms"}.issubset(rows.columns):
         raise ArtifactAttackError("lower-grain bounds are missing")
@@ -391,7 +423,20 @@ def _bars_for(
             open_ms, close_ms = int(open_value), int(close_value)
             if close_ms <= open_ms:
                 raise ArtifactAttackError("lower-grain bounds must be positive")
-            selected.append(any(within(minutes(open_ms), interval) and within(minutes(close_ms - 1), interval) for interval in intervals))
+            local_day = datetime.fromtimestamp(open_ms / 1000, zone).date()
+            candidate_days = (local_day - timedelta(days=1), local_day)
+            selected.append(any(
+                open_ms >= interval_open and close_ms <= interval_close
+                for day in candidate_days
+                for interval_open, interval_close in (
+                    _bounds(
+                        day,
+                        interval,
+                        zone,
+                    )
+                    for interval in date_overrides.get(day.isoformat(), intervals)
+                )
+            ))
     except ArtifactAttackError:
         raise
     except (OSError, OverflowError, TypeError, ValueError) as exc:
@@ -405,15 +450,131 @@ def _bars_for(
         raise ArtifactAttackError("phase cannot be represented at this grain")
     spec = BarGridSpec(
         grid_id=f"{session_name}-{grain}-p{phase_minutes}",
-        timezone=str(recipe.chart["exchange_timezone"]), nominal_minutes=grain,
+        timezone=session_timezone, nominal_minutes=grain,
         phase_minutes=phase_minutes, intervals=intervals, include_empty=False,
-        close_delay_minutes=0,
+        close_delay_minutes=0, date_overrides=date_overrides,
     )
     try:
         bars, receipts = build_session_bars(session_rows, recipe_id=recipe.recipe_id, grid=spec)
     except SessionBarsError as exc:
+        if str(exc) == "lower-grain row outside every declared session":
+            return None
         raise ArtifactAttackError("malformed lower-grain evidence") from exc
+    bars.attrs["session_definition_sha256"] = _hash(definition)
+    bars.attrs["session_definition_provenance"] = dict(definition["provenance"])
     return bars, tuple(receipts)
+
+
+def _exact_bar_match(
+    observed: pd.DataFrame,
+    reconstructed: pd.DataFrame,
+    lower: pd.DataFrame,
+) -> tuple[bool, dict[str, Any]]:
+    """Prove boundary, allocation, adjacency, OHLC, and available-volume identity."""
+    observed_columns = {
+        "TG_time_open_ms", "TG_time_close_ms", "TG_open", "TG_high", "TG_low", "TG_close",
+    }
+    reconstructed_columns = {"open_ms", "close_ms", "open", "high", "low", "close", "volume"}
+    lower_columns = reconstructed_columns
+    if not observed_columns.issubset(observed.columns):
+        raise ArtifactAttackError("observed bar evidence is incomplete")
+    if not reconstructed_columns.issubset(reconstructed.columns) or not lower_columns.issubset(lower.columns):
+        raise ArtifactAttackError("reconstructed bar evidence is incomplete")
+
+    tolerance = 1e-10
+    observed_rows = list(observed.itertuples(index=False))
+    reconstructed_by_bounds = {
+        (int(row.open_ms), int(row.close_ms)): row
+        for row in reconstructed.itertuples(index=False)
+    }
+    duplicate_reconstructed_bounds = len(reconstructed_by_bounds) != len(reconstructed)
+    duplicate_source_bounds = bool(lower[["open_ms", "close_ms"]].duplicated().any())
+    ordered_lower = lower.sort_values(["open_ms", "close_ms"])
+    source_nonoverlap = bool(
+        len(ordered_lower) < 2
+        or np.all(
+            ordered_lower["close_ms"].to_numpy(dtype=np.int64)[:-1]
+            <= ordered_lower["open_ms"].to_numpy(dtype=np.int64)[1:]
+        )
+    )
+    assigned: list[int] = []
+    boundary_match = not duplicate_reconstructed_bounds and len(observed_rows) == len(reconstructed)
+    endpoint_coverage = True
+    adjacency = True
+    ohlc_match = True
+    volume_match = True
+    per_bar_source_counts: list[int] = []
+
+    for observed_row in observed_rows:
+        bounds = (int(observed_row.TG_time_open_ms), int(observed_row.TG_time_close_ms))
+        rebuilt = reconstructed_by_bounds.get(bounds)
+        if rebuilt is None:
+            boundary_match = False
+        members = lower[
+            (lower["open_ms"] >= bounds[0]) & (lower["close_ms"] <= bounds[1])
+        ]
+        per_bar_source_counts.append(len(members))
+        if members.empty:
+            endpoint_coverage = False
+            adjacency = False
+            ohlc_match = False
+            volume_match = False
+            continue
+        member_indexes = [int(value) for value in members.index]
+        assigned.extend(member_indexes)
+        member_opens = members["open_ms"].to_numpy(dtype=np.int64)
+        member_closes = members["close_ms"].to_numpy(dtype=np.int64)
+        endpoint_coverage &= int(member_opens[0]) == bounds[0] and int(member_closes[-1]) == bounds[1]
+        adjacency &= bool(np.all(member_closes[:-1] == member_opens[1:]))
+        aggregated = {
+            "open": float(members["open"].iloc[0]),
+            "high": float(members["high"].max()),
+            "low": float(members["low"].min()),
+            "close": float(members["close"].iloc[-1]),
+            "volume": float(members["volume"].sum()),
+        }
+        observed_values = {
+            "open": float(observed_row.TG_open),
+            "high": float(observed_row.TG_high),
+            "low": float(observed_row.TG_low),
+            "close": float(observed_row.TG_close),
+        }
+        ohlc_match &= all(abs(observed_values[name] - aggregated[name]) <= tolerance for name in observed_values)
+        if rebuilt is not None:
+            ohlc_match &= all(abs(float(getattr(rebuilt, name)) - aggregated[name]) <= tolerance for name in observed_values)
+            volume_match &= abs(float(rebuilt.volume) - aggregated["volume"]) <= tolerance
+        observed_volume = getattr(observed_row, "TG_volume", None)
+        if observed_volume is not None and not pd.isna(observed_volume):
+            volume_match &= abs(float(observed_volume) - aggregated["volume"]) <= tolerance
+
+    if observed_rows:
+        first_open = min(int(row.TG_time_open_ms) for row in observed_rows)
+        last_close = max(int(row.TG_time_close_ms) for row in observed_rows)
+        eligible = lower[(lower["open_ms"] < last_close) & (lower["close_ms"] > first_open)]
+        eligible_indexes = [int(value) for value in eligible.index]
+    else:
+        eligible_indexes = []
+        endpoint_coverage = False
+    assigned_once = sorted(assigned) == sorted(eligible_indexes) and len(assigned) == len(set(assigned))
+    exact = all((
+        bool(observed_rows), boundary_match, endpoint_coverage, adjacency,
+        assigned_once, not duplicate_source_bounds, source_nonoverlap, ohlc_match, volume_match,
+    ))
+    return exact, {
+        "adjacent_source_rows": adjacency,
+        "assigned_source_rows": len(assigned),
+        "boundary_match": boundary_match,
+        "duplicate_source_bounds": duplicate_source_bounds,
+        "eligible_source_rows": len(eligible_indexes),
+        "endpoint_coverage": endpoint_coverage,
+        "every_source_row_assigned_once": assigned_once,
+        "observed_bars": len(observed_rows),
+        "ohlc_match": ohlc_match,
+        "per_bar_source_counts": per_bar_source_counts,
+        "reconstructed_bars": len(reconstructed),
+        "source_nonoverlap": source_nonoverlap,
+        "volume_match": volume_match,
+    }
 
 
 def _confirmed_lower(frame: pd.DataFrame) -> pd.DataFrame:
@@ -530,6 +691,8 @@ def _geometry(bars: pd.DataFrame, receipts: Sequence[object]) -> dict[str, Any]:
         "excluded_provisional_count": int(bars.attrs.get("excluded_provisional_count", 0)),
         "excluded_provisional_open_ms": list(bars.attrs.get("excluded_provisional_open_ms", ())),
         "excluded_provisional_row_sha256": bars.attrs.get("excluded_provisional_row_sha256"),
+        "session_definition_sha256": bars.attrs.get("session_definition_sha256"),
+        "session_definition_provenance": bars.attrs.get("session_definition_provenance"),
     }
     if bars.empty:
         metrics = {
@@ -568,6 +731,114 @@ def _geometry(bars: pd.DataFrame, receipts: Sequence[object]) -> dict[str, Any]:
     return metrics
 
 
+def _observed_indicator_frame(loaded: LoadedChartExport) -> pd.DataFrame:
+    frame = loaded.frame
+    return pd.DataFrame(
+        {
+            "rsi": frame["TG_rsi"].to_numpy(dtype=float),
+            "rsi_macd": frame["TG_rsi_macd"].to_numpy(dtype=float),
+            "rsi_macd_signal": frame["TG_rsi_macd_signal"].to_numpy(dtype=float),
+            "rsi_macd_hist": frame["TG_rsi_macd_hist"].to_numpy(dtype=float),
+            "stoch_k": frame["TG_stoch_k"].to_numpy(dtype=float),
+            "stoch_d": frame["TG_stoch_d"].to_numpy(dtype=float),
+        },
+        index=pd.Index(frame["TG_time_close_ms"].tolist(), dtype="int64", name="TG_time_close_ms"),
+    )
+
+
+def _project_indicator_path(frame: pd.DataFrame, clock: pd.Index) -> pd.DataFrame:
+    if not frame.index.is_monotonic_increasing or frame.index.has_duplicates:
+        raise ArtifactAttackError("indicator path clock must be strictly increasing")
+    union = frame.index.union(clock).sort_values()
+    return frame.reindex(union).ffill().reindex(clock)
+
+
+def _path_comparison(
+    observed: pd.DataFrame,
+    candidate: pd.DataFrame,
+    clock: pd.Index,
+) -> dict[str, Any]:
+    left = _project_indicator_path(observed, clock)
+    right = _project_indicator_path(candidate, clock)
+    columns = tuple(observed.columns)
+    fully_finite = np.isfinite(left[list(columns)].to_numpy(dtype=float)).all(axis=1)
+    fully_finite &= np.isfinite(right[list(columns)].to_numpy(dtype=float)).all(axis=1)
+    common_rows = int(fully_finite.sum())
+    distances: dict[str, dict[str, float | int | None]] = {}
+    for name in columns:
+        left_values = left[name].to_numpy(dtype=float)
+        right_values = right[name].to_numpy(dtype=float)
+        mask = np.isfinite(left_values) & np.isfinite(right_values)
+        delta = np.abs(left_values[mask] - right_values[mask])
+        distances[name] = {
+            "common_finite_rows": int(mask.sum()),
+            "mean_abs": float(delta.mean()) if len(delta) else None,
+            "max_abs": float(delta.max()) if len(delta) else None,
+        }
+    left_common = left.loc[fully_finite]
+    right_common = right.loc[fully_finite]
+    sign_topology_equal = bool(common_rows) and np.array_equal(
+        np.sign(left_common["rsi_macd_hist"].to_numpy(dtype=float)),
+        np.sign(right_common["rsi_macd_hist"].to_numpy(dtype=float)),
+    )
+    comparable_mask = pd.Series(fully_finite, index=clock, dtype=bool)
+    left_events = _events(left.where(comparable_mask, axis=0))
+    right_events = _events(right.where(comparable_mask, axis=0))
+    event_symmetric_difference = {
+        key: sorted(set(left_events[key]) ^ set(right_events[key]))
+        for key in left_events
+    }
+    distance_pass = bool(common_rows) and all(
+        value["max_abs"] is not None and float(value["max_abs"]) <= 1e-10
+        for value in distances.values()
+    )
+    event_pass = not any(event_symmetric_difference.values())
+    return {
+        "common_lower_clock_rows": len(clock),
+        "common_finite_rows": common_rows,
+        "event_symmetric_difference": event_symmetric_difference,
+        "path_pass": distance_pass and sign_topology_equal and event_pass,
+        "per_output_path_distance": distances,
+        "sign_topology_equal": sign_topology_equal,
+    }
+
+
+def _phase_uniqueness_test(
+    phase_results: Mapping[float, Mapping[str, object]],
+    source_hash: str,
+) -> ArtifactTest:
+    phases = tuple(sorted(phase_results))
+    if not phases or any(not bool(phase_results[phase].get("coverage")) for phase in phases):
+        return _unavailable("A", "phase_uniqueness", source_hash, "A_PHASE_STABILITY_UNAVAILABLE")
+    semantic = phase_results.get(0.0)
+    nonzero_bar = [
+        phase for phase in phases
+        if phase != 0.0 and bool(phase_results[phase].get("bar_match"))
+    ]
+    nonzero_path = [
+        phase for phase in phases
+        if phase != 0.0 and bool(phase_results[phase].get("path_pass"))
+    ]
+    arbitrary_only = (
+        semantic is not None
+        and not bool(semantic.get("bar_match"))
+        and not bool(semantic.get("path_pass"))
+        and len(nonzero_bar) == 1
+        and nonzero_bar == nonzero_path
+    )
+    metrics = {
+        "bar_matching_phases": nonzero_bar,
+        "path_passing_phases": nonzero_path,
+        "phase_results": {str(phase): dict(phase_results[phase]) for phase in phases},
+        "semantic_phase": 0.0,
+    }
+    return _artifact_test(
+        "A", "phase_uniqueness", {"source": source_hash, "phase_results": metrics["phase_results"]},
+        "PASS", metrics,
+        ("single_arbitrary_phase_only",) if arbitrary_only else ("single_arbitrary_phase_not_detected",),
+    )
+
+
 def _grain_and_anchor_tests(
     loaded: LoadedChartExport,
     lower_grain_rows: pd.DataFrame,
@@ -581,7 +852,7 @@ def _grain_and_anchor_tests(
     tests: list[ArtifactTest] = []
     grain_sequences: dict[int, tuple[pd.DataFrame, tuple[object, ...]]] = {}
     for grain in grid.human_chart_grains_minutes:
-        built = _bars_for(lower_grain_rows, recipe, grain=grain, phase_fraction=0.0, session_name=named)
+        built = _bars_for(confirmed_lower, recipe, grain=grain, phase_fraction=0.0, session_name=named)
         variant = f"grain_minutes_{grain}"
         if built is None:
             tests.append(_unavailable("G", variant, source_hash, "G_SESSION_RECONSTRUCTION_UNAVAILABLE"))
@@ -595,58 +866,58 @@ def _grain_and_anchor_tests(
             ("mechanical_grain_geometry_recorded",) if not bars.empty else ("G_NO_RECONSTRUCTED_BARS",),
         ))
 
-    phase_matches: list[float] = []
-    phase_comparisons = 0
     observed = loaded.frame
-    observed_keys = {
-        (int(row.TG_time_open_ms), int(row.TG_time_close_ms)): (
-            float(row.TG_open), float(row.TG_high), float(row.TG_low), float(row.TG_close)
-        )
-        for row in observed.itertuples(index=False)
-    }
-    lower_covers_observed = (
-        not confirmed_lower.empty
-        and int(confirmed_lower["open_ms"].min()) <= min(key[0] for key in observed_keys)
-        and int(confirmed_lower["close_ms"].max()) >= max(key[1] for key in observed_keys)
+    observed_path = _observed_indicator_frame(loaded)
+    lower_clock = pd.Index(
+        confirmed_lower["close_ms"].tolist(), dtype="int64", name="TG_time_close_ms",
     )
+    if len(observed):
+        lower_clock = lower_clock[
+            (lower_clock >= int(observed["TG_time_open_ms"].min()))
+            & (lower_clock <= int(observed["TG_time_close_ms"].max()))
+        ]
+    phase_results: dict[float, dict[str, object]] = {}
     for session in grid.session_variants:
         for phase in grid.anchor_phase_fractions:
-            built = _bars_for(lower_grain_rows, recipe, grain=nominal, phase_fraction=phase, session_name=session)
+            built = _bars_for(confirmed_lower, recipe, grain=nominal, phase_fraction=phase, session_name=session)
             variant = f"session_{session}_phase_{phase:g}"
             if built is None:
                 tests.append(_unavailable("A", variant, source_hash, "A_SESSION_RECONSTRUCTION_UNAVAILABLE"))
+                if session == named:
+                    phase_results[phase] = {"coverage": False, "bar_match": False, "path_pass": False}
                 continue
             bars, receipts = built
             if bars.empty:
                 tests.append(_unavailable("A", variant, source_hash, "A_SESSION_ROWS_UNAVAILABLE"))
+                if session == named:
+                    phase_results[phase] = {"coverage": False, "bar_match": False, "path_pass": False}
                 continue
-            phase_comparisons += 1
-            reconstructed_keys = {
-                (int(row.open_ms), int(row.close_ms)): (float(row.open), float(row.high), float(row.low), float(row.close))
-                for row in bars.itertuples(index=False)
-            }
-            common = sorted(set(observed_keys) & set(reconstructed_keys))
-            same_boundaries = bool(common) and len(common) == len(observed_keys) == len(reconstructed_keys)
-            exact = same_boundaries and all(
-                all(abs(left - right) <= 1e-10 for left, right in zip(observed_keys[key], reconstructed_keys[key], strict=True))
-                for key in common
+            exact, bar_metrics = _exact_bar_match(observed, bars, confirmed_lower)
+            candidate_close = pd.Series(
+                bars["close"].to_numpy(dtype=float),
+                index=pd.Index(bars["close_ms"].tolist(), dtype="int64", name="TG_time_close_ms"),
+                dtype=float,
             )
-            if exact:
-                phase_matches.append(phase)
+            candidate_path = canonical_indicator_frame(candidate_close)
+            path_metrics = _path_comparison(observed_path, candidate_path, lower_clock)
             metrics = _geometry(bars, receipts)
-            metrics.update({
-                "exact_motivating_bar_match": exact, "matched_boundaries": len(common),
-                "observed_bars": len(observed_keys), "reconstructed_bars": len(reconstructed_keys),
-                "timestamp_displacement_ms": 0 if exact else None,
-            })
+            metrics.update(bar_metrics)
+            metrics.update(path_metrics)
+            metrics["exact_motivating_bar_match"] = exact
+            metrics["timestamp_displacement_ms"] = 0 if exact else None
             motivating = session == named and phase == 0.0
             diagnostic_status = "PASS"
             findings = ("exact_motivating_bar_construction",) if exact else ("anchor_session_geometry_recorded",)
             if motivating and not exact:
-                diagnostic_status = "FAIL" if lower_covers_observed else "UNAVAILABLE"
+                window_covered = (
+                    bool(len(observed)) and not confirmed_lower.empty
+                    and int(confirmed_lower["open_ms"].min()) <= int(observed["TG_time_open_ms"].min())
+                    and int(confirmed_lower["close_ms"].max()) >= int(observed["TG_time_close_ms"].max())
+                )
+                diagnostic_status = "FAIL" if window_covered else "UNAVAILABLE"
                 findings = (
                     "motivating_bar_construction_mismatch"
-                    if lower_covers_observed
+                    if window_covered
                     else "MOTIVATING_BAR_COVERAGE_INSUFFICIENT",
                 )
             tests.append(_artifact_test(
@@ -654,18 +925,13 @@ def _grain_and_anchor_tests(
                 {"source": source_hash, "variant": variant, "receipts": [getattr(item, "source_row_sha256", "") for item in receipts]},
                 diagnostic_status, metrics, findings,
             ))
-    if len(set(phase_matches)) == 1 and phase_matches[0] != 0.0:
-        tests.append(_artifact_test(
-            "A", "phase_uniqueness", {"source": source_hash, "matches": phase_matches},
-            "PASS", {"matching_phases": sorted(set(phase_matches))}, ("single_arbitrary_phase_only",),
-        ))
-    elif phase_comparisons:
-        tests.append(_artifact_test(
-            "A", "phase_uniqueness", {"source": source_hash, "matches": phase_matches},
-            "PASS", {"matching_phases": sorted(set(phase_matches))}, ("single_arbitrary_phase_not_detected",),
-        ))
-    else:
-        tests.append(_unavailable("A", "phase_uniqueness", source_hash, "A_PHASE_COMPARISON_UNAVAILABLE"))
+            if session == named:
+                phase_results[phase] = {
+                    "coverage": bool(bar_metrics["endpoint_coverage"]),
+                    "bar_match": exact,
+                    "path_pass": bool(path_metrics["path_pass"]),
+                }
+    tests.append(_phase_uniqueness_test(phase_results, source_hash))
     return tuple(tests), grain_sequences
 
 
@@ -692,23 +958,18 @@ def _kernel_tests(
             dtype=float,
         )
 
-    nominal = int(str(loaded.recipe.chart["timeframe_period"]))
     usable = {grain: value for grain, value in sequences.items() if len(value[0]) >= 2}
+    nominal = int(str(loaded.recipe.chart["timeframe_period"]))
     if nominal not in usable or len(usable) < 2:
         return unavailable_all("K_ALTERNATE_ACTUAL_CLOCK_UNAVAILABLE")
-    base_bars = usable[nominal][0]
-    base_elapsed = elapsed_vector(base_bars)
-    base_median = float(np.median(base_elapsed.to_numpy(dtype=float)))
-    if not math.isfinite(base_median) or base_median <= 0:
-        return unavailable_all("K_ACTUAL_CLOCK_INVALID")
-    finite_windows = {
-        "rsi_length": 14,
-        "macd_fast_length": 14,
-        "macd_slow_length": 60,
-        "macd_signal_length": 5,
-        "stoch_length": 14,
-        "stoch_smooth_k": 3,
-        "stoch_smooth_d": 3,
+    fixed_parameters = {
+        "rsi_len": 14,
+        "macd_fast": 14,
+        "macd_slow": 60,
+        "macd_signal": 5,
+        "stoch_len": 14,
+        "smooth_k": 3,
+        "smooth_d": 3,
     }
 
     def nearest_count(target_span: float, median: float) -> int:
@@ -716,6 +977,83 @@ def _kernel_tests(
         lower = max(1, math.floor(raw))
         upper = max(1, math.ceil(raw))
         return min((lower, upper), key=lambda value: (abs(value * median - target_span), value))
+
+    def output_summary(frame: pd.DataFrame) -> dict[str, Any]:
+        records = [
+            {
+                name: None if pd.isna(row[name]) else float(row[name])
+                for name in frame.columns
+            }
+            for _, row in frame.iterrows()
+        ]
+        total_variation: dict[str, float | None] = {}
+        for name in frame.columns:
+            finite = frame[name].dropna().to_numpy(dtype=float)
+            total_variation[name] = float(np.abs(np.diff(finite)).sum()) if len(finite) else None
+        return {
+            "events": _events(frame),
+            "finite_rows": int(np.isfinite(frame.to_numpy(dtype=float)).all(axis=1).sum()),
+            "output_sha256": _hash({"columns": list(frame.columns), "index": [int(value) for value in frame.index], "records": records}),
+            "total_variation": total_variation,
+        }
+
+    def path_distance(reference: pd.DataFrame, candidate: pd.DataFrame) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for name in reference.columns:
+            left = reference[name].to_numpy(dtype=float)
+            right = candidate[name].to_numpy(dtype=float)
+            mask = np.isfinite(left) & np.isfinite(right)
+            delta = np.abs(left[mask] - right[mask])
+            result[name] = {
+                "common_finite_rows": int(mask.sum()),
+                "mean_abs": float(delta.mean()) if len(delta) else None,
+                "max_abs": float(delta.max()) if len(delta) else None,
+            }
+        return result
+
+    def symmetric_events(left: Mapping[str, Sequence[int]], right: Mapping[str, Sequence[int]]) -> dict[str, list[int]]:
+        return {key: sorted(set(left[key]) ^ set(right[key])) for key in left}
+
+    def span_receipt(
+        increments: pd.Series,
+        parameters: Mapping[str, int],
+        reference_median: float,
+    ) -> dict[str, Any]:
+        receipt: dict[str, Any] = {}
+        for name, count in parameters.items():
+            spans = increments.rolling(count).sum().dropna().to_numpy(dtype=float)
+            quantiles = np.quantile(spans, (0.1, 0.5, 0.9)).tolist() if len(spans) else [None, None, None]
+            target_span = float(fixed_parameters[name] * reference_median)
+            receipt[name] = {
+                "achieved_span_minutes": {"p10": quantiles[0], "median": quantiles[1], "p90": quantiles[2]},
+                "mapped_bars": count,
+                "mapping_error_minutes": None if quantiles[1] is None else float(quantiles[1]) - target_span,
+                "target_span_minutes": target_span,
+            }
+        return receipt
+
+    base_bars, base_receipts = usable[nominal]
+    base_elapsed = elapsed_vector(base_bars)
+    if (
+        len(base_receipts) != len(base_bars)
+        or not np.isfinite(base_elapsed.to_numpy(dtype=float)).all()
+        or (base_elapsed <= 0).any()
+        or any(
+            isinstance(getattr(receipt, "effective_minutes", None), bool)
+            or not isinstance(getattr(receipt, "effective_minutes", None), Real)
+            or not math.isfinite(float(getattr(receipt, "effective_minutes", 0)))
+            or float(getattr(receipt, "effective_minutes", 0)) <= 0
+            for receipt in base_receipts
+        )
+    ):
+        return unavailable_all("K_REFERENCE_CLOCK_UNAVAILABLE")
+    base_open_session = np.asarray(
+        [float(getattr(receipt, "effective_minutes")) for receipt in base_receipts], dtype=float,
+    )
+    base_elapsed_median = float(np.median(base_elapsed.to_numpy(dtype=float)))
+    base_open_median = float(np.median(base_open_session))
+    if not all(math.isfinite(value) and value > 0 for value in (base_elapsed_median, base_open_median)):
+        return unavailable_all("K_REFERENCE_CLOCK_INVALID")
 
     tests: list[ArtifactTest] = []
     for target in grid.memory_matched_grains_minutes:
@@ -727,6 +1065,32 @@ def _kernel_tests(
         _, chosen_grain, chosen_median = min(choices, key=lambda item: (item[0], item[1]))
         bars, receipts = usable[chosen_grain]
         elapsed = elapsed_vector(bars)
+        if (
+            len(receipts) != len(bars)
+            or any(
+                isinstance(getattr(receipt, "effective_minutes", None), bool)
+                or not isinstance(getattr(receipt, "effective_minutes", None), Real)
+                or not math.isfinite(float(getattr(receipt, "effective_minutes", 0)))
+                or float(getattr(receipt, "effective_minutes", 0)) <= 0
+                for receipt in receipts
+            )
+        ):
+            tests.append(_unavailable(
+                "K", f"memory_target_minutes_{target}", loaded.csv_sha256,
+                "K_OPEN_SESSION_CLOCK_UNAVAILABLE",
+            ))
+            continue
+        if not np.isfinite(elapsed.to_numpy(dtype=float)).all() or (elapsed <= 0).any():
+            tests.append(_unavailable(
+                "K", f"memory_target_minutes_{target}", loaded.csv_sha256,
+                "K_ELAPSED_CLOCK_UNAVAILABLE",
+            ))
+            continue
+        open_session = pd.Series(
+            [float(getattr(receipt, "effective_minutes")) for receipt in receipts],
+            index=elapsed.index,
+            dtype=float,
+        )
         selected_close = pd.Series(
             bars["close"].to_numpy(dtype=float), index=elapsed.index, dtype=float,
         )
@@ -739,30 +1103,66 @@ def _kernel_tests(
             clock_parameter={"unit": "minutes", "source_receipt_sha256": clock_receipt_hash},
             clock_increments=elapsed,
         )
-        half_life_mappings = {
-            name: {
-                "mapped_bars": nearest_count(float(bars_value) * base_median, chosen_median),
-                "target_elapsed_span_minutes": float(bars_value) * base_median,
-            }
-            for name, bars_value in signature.bar_memory.items()
+        elapsed_median = float(np.median(elapsed.to_numpy(dtype=float)))
+        open_median = float(np.median(open_session.to_numpy(dtype=float)))
+        if not all(math.isfinite(value) and value > 0 for value in (elapsed_median, open_median)):
+            tests.append(_unavailable(
+                "K", f"memory_target_minutes_{target}", loaded.csv_sha256,
+                "K_ACTUAL_CLOCK_INVALID",
+            ))
+            continue
+        parameter_specs = {
+            "K0": dict(fixed_parameters),
+            "K1": {
+                name: nearest_count(float(value) * base_elapsed_median, elapsed_median)
+                for name, value in fixed_parameters.items()
+            },
+            "K2": {
+                name: nearest_count(float(value) * base_open_median, open_median)
+                for name, value in fixed_parameters.items()
+            },
         }
-        finite_window_mappings = {
-            name: {
-                "mapped_bars": nearest_count(float(bars_value) * base_median, chosen_median),
-                "target_elapsed_span_minutes": float(bars_value) * base_median,
-            }
-            for name, bars_value in finite_windows.items()
+        frames = {
+            execution: parameterized_indicator_frame(selected_close, parameters)
+            for execution, parameters in parameter_specs.items()
         }
+        executions = {
+            execution: {
+                "parameter_spec": parameter_specs[execution],
+                **output_summary(frame),
+            }
+            for execution, frame in frames.items()
+        }
+        distances = {
+            execution: path_distance(frames["K0"], frames[execution])
+            for execution in ("K1", "K2")
+        }
+        event_differences = {
+            execution: symmetric_events(executions["K0"]["events"], executions[execution]["events"])
+            for execution in ("K1", "K2")
+        }
+        changed = [execution for execution in ("K1", "K2") if parameter_specs[execution] != parameter_specs["K0"]]
+        mapping_only = bool(changed) and all(
+            executions[execution]["output_sha256"] == executions["K0"]["output_sha256"]
+            for execution in changed
+        )
         metrics = _geometry(bars, receipts)
         metrics.update({
             "actual_clock": "close_to_close_elapsed_minutes", "actual_clock_count": len(elapsed),
             "actual_clock_median_minutes": chosen_median, "bar_count": len(bars),
             "declared_open_session_minutes": float(sum(int(getattr(item, "effective_minutes", 0)) for item in receipts)),
             "memory_target_minutes": target, "nearest_median_grain_minutes": chosen_grain,
-            "reference_actual_clock_median_minutes": base_median,
+            "reference_elapsed_clock_median_minutes": base_elapsed_median,
+            "reference_open_session_clock_median_minutes": base_open_median,
             "clock_parameter": dict(signature.clock_parameter),
-            "empirical_half_life_mappings": half_life_mappings,
-            "finite_window_mappings": finite_window_mappings,
+            "event_symmetric_difference": event_differences,
+            "executions": executions,
+            "parameter_specs": parameter_specs,
+            "per_output_path_distance": distances,
+            "span_receipts": {
+                "K1_elapsed": span_receipt(elapsed, parameter_specs["K1"], base_elapsed_median),
+                "K2_open_session": span_receipt(open_session, parameter_specs["K2"], base_open_median),
+            },
             "trade_clock_available": all(getattr(item, "trade_count", None) is not None for item in receipts),
             "traded_clock_available": all(getattr(item, "traded_minutes", None) is not None for item in receipts),
             "variance_clock_available": all(getattr(item, "realized_variance", None) is not None for item in receipts),
@@ -771,7 +1171,8 @@ def _kernel_tests(
         tests.append(_artifact_test(
             "K", f"memory_target_minutes_{target}",
             {"csv": loaded.csv_sha256, "target": target, "grain": chosen_grain, "elapsed": elapsed.tolist(), "clock_receipt_hash": clock_receipt_hash},
-            "PASS", metrics, ("actual_elapsed_memory_mapping_recorded",),
+            "FAIL" if mapping_only else "PASS", metrics,
+            ("K_MAPPING_ONLY_MUTATION",) if mapping_only else ("parameterized_kernel_paths_executed",),
         ))
     return tuple(tests)
 
@@ -846,32 +1247,33 @@ def _implementation_and_data_tests(
 def _lower_evidence_unavailable_tests(
     loaded: LoadedChartExport,
     grid: ArtifactGrid,
+    token: str | Sequence[str] = "LOWER_GRAIN_EVIDENCE_UNAVAILABLE",
 ) -> tuple[ArtifactTest, ...]:
+    findings = (token,) if isinstance(token, str) else tuple(token)
+
+    def unavailable(axis: str, variant_id: str) -> ArtifactTest:
+        return _artifact_test(
+            axis,
+            variant_id,
+            {"axis": axis, "source": loaded.csv_sha256, "variant_id": variant_id},
+            "UNAVAILABLE",
+            {"available": False},
+            findings,
+        )
+
     tests: list[ArtifactTest] = []
     tests.extend(
-        _unavailable(
-            "G", f"grain_minutes_{grain}", loaded.csv_sha256,
-            "LOWER_GRAIN_EVIDENCE_UNAVAILABLE",
-        )
+        unavailable("G", f"grain_minutes_{grain}")
         for grain in grid.human_chart_grains_minutes
     )
     tests.extend(
-        _unavailable(
-            "A", f"session_{session}_phase_{phase:g}", loaded.csv_sha256,
-            "LOWER_GRAIN_EVIDENCE_UNAVAILABLE",
-        )
+        unavailable("A", f"session_{session}_phase_{phase:g}")
         for session in grid.session_variants
         for phase in grid.anchor_phase_fractions
     )
-    tests.append(_unavailable(
-        "A", "phase_uniqueness", loaded.csv_sha256,
-        "LOWER_GRAIN_EVIDENCE_UNAVAILABLE",
-    ))
+    tests.append(unavailable("A", "phase_uniqueness"))
     tests.extend(
-        _unavailable(
-            "K", f"memory_target_minutes_{grain}", loaded.csv_sha256,
-            "LOWER_GRAIN_EVIDENCE_UNAVAILABLE",
-        )
+        unavailable("K", f"memory_target_minutes_{grain}")
         for grain in grid.memory_matched_grains_minutes
     )
     return tuple(tests)
@@ -881,6 +1283,8 @@ def _run_diagnostics(
     loaded: LoadedChartExport,
     *,
     lower_grain_rows: pd.DataFrame | None,
+    lower_grain_recipe: LowerGrainRecipe | None,
+    lower_grain_csv_sha256: str | None,
     grid: ArtifactGrid,
 ) -> tuple[dict[str, Any], tuple[ArtifactTest, ...]]:
     try:
@@ -892,12 +1296,45 @@ def _run_diagnostics(
         tests.extend(_implementation_and_data_tests(loaded, grid, parity))
         if lower_grain_rows is None:
             tests.extend(_lower_evidence_unavailable_tests(loaded, grid))
+        elif lower_grain_recipe is None or lower_grain_csv_sha256 is None:
+            tests.extend(_lower_evidence_unavailable_tests(
+                loaded, grid, "LOWER_GRAIN_MANIFEST_UNAVAILABLE",
+            ))
         else:
             if type(lower_grain_rows) is not pd.DataFrame:
                 raise ArtifactAttackError("lower_grain_rows must be an exact DataFrame or null")
-            ga_tests, sequences = _grain_and_anchor_tests(loaded, lower_grain_rows.copy(deep=True), grid)
-            tests.extend(ga_tests)
-            tests.extend(_kernel_tests(loaded, grid, sequences))
+            if not isinstance(lower_grain_recipe, LowerGrainRecipe):
+                raise ArtifactAttackError("lower_grain_recipe must be an exact LowerGrainRecipe or null")
+            confirmed = _confirmed_lower(lower_grain_rows)
+            if confirmed.empty:
+                tests.extend(_lower_evidence_unavailable_tests(
+                    loaded, grid, "LOWER_GRAIN_CONFIRMED_ROWS_UNAVAILABLE",
+                ))
+            else:
+                durations = (
+                    (confirmed["close_ms"] - confirmed["open_ms"]) / 60_000
+                ).to_numpy(dtype=float)
+                if (
+                    not np.isfinite(durations).all()
+                    or not np.equal(durations, np.floor(durations)).all()
+                    or len(set(int(value) for value in durations)) != 1
+                ):
+                    mismatch_tokens = ("LOWER_MANIFEST_SOURCE_TIMEFRAME_UNRESOLVED",)
+                else:
+                    mismatch_tokens = lower_grain_recipe.mismatches(
+                        loaded.recipe,
+                        csv_sha256=lower_grain_csv_sha256,
+                        row_count=len(confirmed),
+                        first_open_ms=int(confirmed["open_ms"].iloc[0]),
+                        last_close_ms=int(confirmed["close_ms"].iloc[-1]),
+                        source_timeframe_minutes=int(durations[0]),
+                    )
+                if mismatch_tokens:
+                    tests.extend(_lower_evidence_unavailable_tests(loaded, grid, mismatch_tokens))
+                else:
+                    ga_tests, sequences = _grain_and_anchor_tests(loaded, lower_grain_rows.copy(deep=True), grid)
+                    tests.extend(ga_tests)
+                    tests.extend(_kernel_tests(loaded, grid, sequences))
         return parity, tuple(tests)
     except ArtifactAttackError:
         raise
@@ -910,7 +1347,19 @@ def _observed_channel(
     parity: Mapping[str, Any],
 ) -> tuple[str, str]:
     indicator = loaded.recipe.indicator
-    status = "PASS" if parity["status"] == "PASS" else "FAIL" if parity["status"] == "FAIL" else "UNRESOLVED_DATA"
+    exact_inheritance = (
+        indicator["observed_equals_probe"] is True
+        and indicator["observed_indicator_source_kind"] in {"repository_exact", "pine_source_exact"}
+        and indicator["observed_indicator_family"] == indicator["probe_indicator_family"]
+        and indicator["observed_indicator_source_hash"] == indicator["probe_source_git_blob_sha"]
+        and indicator["observed_indicator_inputs"] == indicator["probe_inputs"]
+    )
+    status = (
+        "UNRESOLVED_DATA" if not exact_inheritance
+        else "PASS" if parity["status"] == "PASS"
+        else "FAIL" if parity["status"] == "FAIL"
+        else "UNRESOLVED_DATA"
+    )
     receipt = _hash({
         "channel": "observed_indicator_reproduction",
         "csv_sha256": loaded.csv_sha256,
@@ -945,6 +1394,8 @@ def run_artifact_attack(
     loaded: LoadedChartExport,
     *,
     lower_grain_rows: pd.DataFrame | None,
+    lower_grain_recipe: LowerGrainRecipe | None = None,
+    lower_grain_csv_sha256: str | None = None,
     grid: ArtifactGrid,
     ledger_path: Path,
 ) -> ArtifactAttackResult:
@@ -957,10 +1408,18 @@ def run_artifact_attack(
     if recipe.chart["named_session"] not in grid.session_variants:
         raise ArtifactAttackError("frozen grid omits the active named session")
     register_artifact_grid(grid, ledger_path=ledger_path, info_cutoff=recipe.captured_at)
-    parity, tests = _run_diagnostics(loaded, lower_grain_rows=lower_grain_rows, grid=grid)
-    status = classify_mechanical_status(recipe.capture_status == "complete", str(parity["status"]), tests)
+    parity, tests = _run_diagnostics(
+        loaded,
+        lower_grain_rows=lower_grain_rows,
+        lower_grain_recipe=lower_grain_recipe,
+        lower_grain_csv_sha256=lower_grain_csv_sha256,
+        grid=grid,
+    )
     observed_status, observed_receipt = _observed_channel(loaded, parity)
     probe_status, probe_receipt = _owner_channel(loaded)
+    status = classify_mechanical_status(recipe.capture_status == "complete", str(parity["status"]), tests)
+    if status == "MECHANICALLY_SURVIVES" and observed_status != "PASS":
+        status = "UNRESOLVED_DATA"
     mechanical_receipts = tuple(sorted({grid.sha256(), *(_hash(test.to_dict()) for test in tests)}))
     return ArtifactAttackResult(
         schema_version=ARTIFACT_ATTACK_SCHEMA, operation_key=_OPERATION_KEY,

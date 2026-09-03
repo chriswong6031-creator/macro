@@ -11,12 +11,13 @@ mission: >
   return one immutable DRAFT / HOLD-FOR-SOL PR without live capture, W1B, merge, deployment,
   production effect, or signal authority.
 state_before: >
-  W0 had merged in PR #6790 at db5d20c45db123a2e133d9c1a28387ec9f23a545.
-  The canonical branch sol/temporal-grain-w1a-gakd-20260903 and canonical worktree existed
-  at that pickup base with no W1A implementation commit or PR. The started Slack carrier was
-  C0BSBM78V1N/1788429215.974389 and the sticky native task was
-  01a066b4-65d5-7592-9495-b627acd7ff8f. Exact WMT and motivating silver TradingView packets
-  were absent and could not lawfully be replaced with synthetic rows or another feed.
+  PR #6803 was Draft at 5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6 when Sol returned
+  SOURCE_REPAIR_REQUIRED on Slack carrier C0BSBM78V1N/1788429215.974389. The amendment required
+  evidenced session definitions, a lower-grain manifest, exact source-row bar coverage,
+  independent observed/probe channels, totalized warm-up parity, executed K0/K1/K2 paths,
+  bar-plus-path phase stability, and a totalized attack CLI. Exact WMT and motivating silver
+  TradingView packets remained absent and could not lawfully be replaced with synthetic rows or
+  another feed. The sticky native task remained 01a066b4-65d5-7592-9495-b627acd7ff8f.
 changed:
   - path: research/signal_engine/temporal_scale/tradingview_temporal_recipe_probe.pine
     what: >
@@ -24,23 +25,25 @@ changed:
       bar-clock and owner RSI-MACD/StochRSI vector export with no strategy/order/alert surface.
   - path: research/signal_engine/temporal_scale/fixtures/README.md
     what: >
-      Added the external capture identity/rights/history runbook and local CLI procedure while
-      keeping WMT and silver packets separate and outside Git.
+      Added the external capture identity/rights/history runbook, explicit session-definition and
+      lower-manifest procedure, and totalized local CLI semantics while keeping WMT and silver
+      packets separate and outside Git.
   - path: scripts/research/temporal_scale/__init__.py
     what: >
       Exposed the strict zero-authority temporal research contracts.
   - path: scripts/research/temporal_scale/contracts.py
     what: >
-      Added strict canonical ChartRecipe, BarReceipt, KernelSignature, ArtifactTest and
-      ArtifactAttackResult contracts with null W1A mechanism and all-false authority.
+      Added strict canonical ChartRecipe, LowerGrainRecipe, BarReceipt, KernelSignature,
+      ArtifactTest and ArtifactAttackResult contracts with evidenced session grammars, typed
+      three-state parity, null W1A mechanism and all-false authority.
   - path: scripts/research/temporal_scale/chart_export.py
     what: >
       Added one-snapshot, precision-preserving CSV validation, chart/recipe identity checks,
       provisional quarantine and immutable per-bar receipts.
   - path: scripts/research/temporal_scale/kernel_memory.py
     what: >
-      Added owner-bound kernel signatures, deterministic half-life math and evidence-bound
-      unequal-time clock vectors.
+      Added owner-bound kernel signatures, the parameterized canonical RSI-MACD/StochRSI stack,
+      deterministic half-life math and evidence-bound unequal-time clock vectors.
   - path: scripts/research/temporal_scale/session_bars.py
     what: >
       Added IANA civil-session aggregation with clipping, early close, maintenance break, DST,
@@ -51,12 +54,14 @@ changed:
       histogram-turn timestamp equality.
   - path: scripts/research/temporal_scale/artifact_attack.py
     what: >
-      Added complete pre-diagnostic TrialLedger registration and outcome-blind G/A/K/D,
-      parity and truncation diagnostics with separate observed/probe receipt channels.
+      Added complete pre-diagnostic TrialLedger registration and outcome-blind G/A/K/D, parity
+      and truncation diagnostics with lower-manifest gating, exact bar-source allocation, PIT
+      phase paths, executed K0/K1/K2 paths, and separate observed/probe receipt channels.
   - path: scripts/research/run_temporal_scale_artifact_attack.py
     what: >
       Added validate-recipe, parity and attack CLI commands with atomic strict-JSON outputs,
-      provenance manifest, production-ledger refusal and parity-before-Gate-2 ordering.
+      normalized lower-manifest provenance, production-ledger refusal and totalized complete-input
+      attack results.
   - path: tests/test_temporal_scale_contracts.py
     what: >
       Added strict contract, identity, null, unknown-field and zero-authority hostile tests.
@@ -78,8 +83,8 @@ changed:
       malformed evidence and synthetic CLI end-to-end tests.
   - path: agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md
     what: >
-      Marked W0 done and W1A awaiting exact-head CI/review on DRAFT / HOLD-FOR-SOL PR #6803,
-      while retaining the W1B hold and exact-packet blockers.
+      Keeps W0 done and W1A awaiting repaired exact-head CI/rereview on DRAFT / HOLD-FOR-SOL
+      PR #6803, while retaining the W1B hold and exact-packet blockers.
   - path: agentos/handoffs/TEMPORAL-GRAIN-INTELLIGENCE-W1-R1.md
     what: >
       Recorded the exact W1A source, scientific and continuation state for Sol review.
@@ -89,16 +94,17 @@ verified:
       git branch --show-current; git log --oneline --reverse
       db5d20c45db123a2e133d9c1a28387ec9f23a545..e589dc488afaabf211f744add7f218ed8ec99078
     result: >
-      Branch sol/temporal-grain-w1a-gakd-20260903 contained eleven reviewable W1A commits
-      through implementation head e589dc488afaabf211f744add7f218ed8ec99078; its tree was
-      107b644cf239138eb161f49572575652e6203824.
-  - claim: The full local Task 1 through Task 8 temporal test slice passed before record write.
+      Branch sol/temporal-grain-w1a-gakd-20260903 preserves the exact pickup ancestry and the
+      prior 13-commit W1A head 5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6; this same-carrier
+      repair is additive and does not merge, rebase, or replace that history.
+  - claim: The full local temporal and anchor CI slice passed after the Sol repair.
     command: >
-      python3 -m pytest tests/test_temporal_scale_contracts.py
+      python3 -m pytest tests/test_session_anchor_invariance.py
+      tests/test_sq_anchor_invariance.py tests/test_temporal_scale_contracts.py
       tests/test_temporal_scale_chart_export.py tests/test_temporal_scale_kernel_memory.py
       tests/test_temporal_scale_session_bars.py tests/test_temporal_scale_parity.py
-      tests/test_temporal_scale_artifact_attack.py -q
-    result: 342 passed, 182 warnings in 17.64s.
+      tests/test_temporal_scale_artifact_attack.py -q --disable-warnings --tb=short
+    result: 627 passed, 182 warnings in 39.42s.
   - claim: The local record, registration, effect-boundary and exact-path acceptance gates passed.
     command: >
       python3 scripts/agentos.py validate; python3 scripts/check_trial_registration.py;
@@ -121,27 +127,30 @@ verified:
       artifact result file 6d716288837b336b460c60b2eb1c7e835aca675cef64b8cbf2cedd9d87b92cf0;
       result UNRESOLVED_DATA because lower-grain evidence was intentionally absent; 30 mechanical
       receipts; no network or production ledger.
-  - claim: Independent review found the final Task 7 and Task 8 boundaries ready after repairs.
+  - claim: Sol's exact-head review amendment was implemented locally without widening authority.
     command: >
-      Two read-only reviewer passes over artifact_attack.py, its hostile tests, the CLI and
-      capture runbook, followed by focused pytest execution by the implementing session.
+      Inspect the 2026-09-03 SOURCE_REPAIR_REQUIRED carrier reply; run the amended hostile tests;
+      and confirm ArtifactAttackResult.final_mechanism_classification remains null with every
+      authority boolean false.
     result: >
-      The repaired Task 7 pass closed registration, D, channel separation, provisional,
-      actual-clock, active-session, implementation-control and no-effect gaps. The independent
-      Task 8 review returned READY with no actionable blocker.
+      The amended hostile matrix passed locally. Exact-head independent rereview and hosted CI
+      remain required after the repaired head is pushed; no prior READY applies to moved source.
   - claim: Current main movement did not collide with an authorized W1A implementation path.
     command: >
       git fetch origin; git diff --name-only
-      db5d20c45db123a2e133d9c1a28387ec9f23a545..1fcac1f92a3f617f19ab7ba4b41a2568da8cfa1e
-      restricted to the eighteen authorized W1A paths.
-    result: The authorized-path intersection was empty; the semantic branch was not merged or rebased.
-  - claim: The single GitHub carrier was created in the required inert hold state.
+      db5d20c45db123a2e133d9c1a28387ec9f23a545..0df23812d08ab8d5f3f119c09e9aeecfda056f35
+      intersected with the exact nineteen authorized W1A paths.
+    result: >
+      The only intersection was .github/ci/legacy-jobs.yml. Current main's Flow Observatory
+      additions are hunk-disjoint from the W1A session-anchor-era line, whose six-suite addition
+      remains intact; the semantic branch was not merged or rebased.
+  - claim: The single GitHub carrier remained in the required inert hold state before repair push.
     command: >
       gh pr view 6803 --repo mastermindx-market-intelligence/macro --json
       number,url,isDraft,state,headRefOid,baseRefOid,mergeStateStatus,autoMergeRequest,labels
     result: >
-      PR #6803 was OPEN and Draft at implementation head
-      e589dc488afaabf211f744add7f218ed8ec99078 with autoMergeRequest null and no labels.
+      PR #6803 was OPEN and Draft at reviewed head
+      5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6 with autoMergeRequest null and no labels.
 unverified:
   - claim: The final record-bearing PR head passes all hosted CI checks.
     what_would_verify: >
@@ -187,7 +196,7 @@ danger_areas:
   - A nominal timeframe is not actual elapsed or traded time; clipped bars, DST, maintenance breaks and missing minutes must remain explicit.
   - The final provisional row must remain quarantined and can never complete confirmed coverage.
   - Standard price-MACD is a labelled implementation control and never replaces owner RSI-MACD parity.
-  - D is explicit but nonblocking; G, A, K, PARITY and TRUNCATION apply the frozen unresolved-before-artifact priority.
+  - D is explicit but nonblocking; a comparable numeric PARITY failure is ARTIFACT even while lower G/A/K is unavailable, while missing/uncomparable evidence remains UNRESOLVED_DATA.
   - Trial enumeration must remain registered before diagnostics and must never write data/trial_ledger.jsonl.
   - Raw licensed TradingView/vendor rows remain outside Git; receipts and summaries may not leak them.
   - Main moves rapidly; any later release requires a fresh same-path collision and protected-source read.
@@ -200,7 +209,9 @@ discoveries: []
 ## Capability delta
 
 Before W1A, the repository held only the frozen W0 architecture and plan. It now has an executable,
-strict and locally reproducible chart-packet/parity/GAKD harness plus synthetic proof. The capability
-ceiling remains `BUILT_NOT_PROVEN / RESEARCH_ONLY / PRODUCTION_INERT`: both exact motivating packets
-are independently `UNRESOLVED_DATA`, `final_mechanism_classification` remains null, every authority
-boolean remains false, and no usefulness, W1B, live capture, Ready, merge or deployment effect exists.
+strict and locally reproducible chart-packet/parity/GAKD harness plus synthetic proof, repaired to
+require explicit session and lower-data provenance and to execute rather than merely describe K and
+phase interventions. The capability ceiling remains `BUILT_NOT_PROVEN / RESEARCH_ONLY /
+PRODUCTION_INERT`: both exact motivating packets are independently `UNRESOLVED_DATA`,
+`final_mechanism_classification` remains null, every authority boolean remains false, and no
+usefulness, W1B, live capture, Ready, merge or deployment effect exists.

@@ -28,6 +28,11 @@ independent packets: do not pool, average, substitute, or use one to complete th
 1. Record the chart timeframe, named session, exchange timezone, and the manually selected chart
    display timezone. Record extended-hours state and every data-modification setting: split,
    dividend, back-adjustment, settlement-as-close, corrections, and any vendor-specific setting.
+   Every active or alternate session literal also needs its exact civil grammar: human label,
+   IANA timezone, one or more local-time intervals (including breaks), date overrides, and a
+   provenance kind plus SHA-256 receipt. The permitted provenance kinds are
+   `capture_attested`, `provider_documented_exact`, `export_observed_exact`, and
+   `synthetic_fixture`. A familiar label such as `regular` is not session evidence.
 2. Record all seven chart-type states from the probe: standard, Heikin-Ashi, Renko, Line Break,
    Kagi, Point & Figure, and Range. They must be coherent: standard is true only when every
    nonstandard type is false; otherwise exactly one nonstandard type is true. An unknown or
@@ -39,8 +44,11 @@ independent packets: do not pool, average, substitute, or use one to complete th
    metadata table and preserve all listed symbol/feed/session/timezone/timeframe and input values.
 4. Record observed-indicator provenance independently from the owner probe: observed family,
    title, source kind, source hash, and inputs; then probe family, Git blob SHA, inputs, EMA
-   adjustment, and RMA seed semantics. Title similarity is never equality. Invite-only,
-   closed-source, and unknown observed math remains incomplete even when the owner probe exists.
+   adjustment, and RMA seed semantics. Title similarity is never equality. The observed channel
+   may inherit owner parity only when `observed_equals_probe=true`, the observed source kind is
+   exact, and family, source hash, and inputs all match. False/unknown equality, invite-only,
+   closed-source, built-in, or otherwise unsupported observed math remains
+   `UNRESOLVED_DATA` even when the owner probe itself passes.
 5. At capture time, obtain and record the exact Git blob SHA for the committed probe source. Do
    not infer it from a title, a later local edit, or a related indicator.
 
@@ -73,6 +81,12 @@ independent packets: do not pool, average, substitute, or use one to complete th
 3. Record `rights.use=local_research_only`, the observed redistribution status, and the source
    reference. Raw TradingView or vendor exports remain outside Git unless the applicable rights
    record expressly permits redistribution.
+4. A lower-grain CSV is accepted only with a separate
+   `mastermind.temporal_lower_grain_recipe.v1` manifest. Bind the canonical parent-recipe hash,
+   exact lower CSV byte hash, full instrument/data-plane identity, active session-definition
+   hash, rights, confirmed row count, first open, final confirmed close, and exact source
+   timeframe. A missing or mismatched manifest makes only lower-grain G/A/K evidence unavailable;
+   the runner must not treat naked rows as evidence.
 
 ## Hard stop
 
@@ -103,6 +117,7 @@ python3 scripts/research/run_temporal_scale_artifact_attack.py attack \
   --recipe "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/recipe.json" \
   --csv "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/chart.csv" \
   --lower-grain-csv "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/lower-grain.csv" \
+  --lower-grain-recipe "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/lower-grain-recipe.json" \
   --ledger-path "$MMX_TEMPORAL_RESEARCH_OUTPUTS/chart/trial_ledger.jsonl" \
   --output-dir "$MMX_TEMPORAL_RESEARCH_OUTPUTS/chart"
 ```
@@ -114,13 +129,17 @@ source rows, and writes strict canonical JSON through atomic replacement.
 
 The evidence bundle contains `normalized_recipe.json`, `bar_receipts.json`,
 `kernel_signature.json`, `parity_receipt.json`, `frozen_grid.json`, and `run_manifest.json`.
-`attack` additionally writes `artifact_attack_result.json` and the explicit nonproduction trial
-ledger. The manifest records the exact command, interpreter and platform, current Git head when
-available, input and output hashes, and the invariant declarations `network_used=false` and
+When supplied, the lower manifest is emitted as `normalized_lower_grain_recipe.json`. `attack`
+additionally writes `artifact_attack_result.json` and the explicit nonproduction trial ledger.
+The manifest records the exact command, interpreter and platform, current Git head when available,
+input and output hashes, and the invariant declarations `network_used=false` and
 `production_ledger_used=false`.
 
-A complete packet with parity `FAIL` exits nonzero and Gate 2 does not execute. A schema-valid
-incomplete recipe exits zero with a typed `UNRESOLVED_DATA` result without opening the named CSV;
-this is the correct path for an absent real WMT or silver packet. `MECHANICALLY_SURVIVES` is only a
-W1A construction result. It confers no ranking, gating, sizing, trading, Prophet, W1B, or
-production authority.
+For a structurally valid complete packet, `attack` always exits zero after writing the full bundle:
+parity `FAIL` is a typed `ARTIFACT` result, while no common finite parity rows, missing lower
+evidence, or a lower-manifest mismatch is typed `UNRESOLVED_DATA`. Nonzero/no-result is reserved
+for malformed input or an unsafe output/ledger request. A schema-valid incomplete parent recipe
+also exits zero with a typed `UNRESOLVED_DATA` result without opening the named CSV; this is the
+correct path for an absent real WMT or silver packet. `MECHANICALLY_SURVIVES` is only a W1A
+construction result. It confers no ranking, gating, sizing, trading, Prophet, W1B, or production
+authority.

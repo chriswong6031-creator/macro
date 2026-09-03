@@ -85,6 +85,37 @@ def test_rth_early_close_clips_only_bucket_and_never_guesses_activity() -> None:
     assert receipts[0].known_at_ms == receipts[0].close_ms + 4 * 60_000
 
 
+def test_evidenced_date_override_and_intraday_break_change_executable_bounds() -> None:
+    early_rows = minute_rows("2026-11-27", "09:30", "13:00")
+    grid = BarGridSpec(
+        "documented-calendar", "America/New_York", 240, 0,
+        (SessionInterval("09:30", "16:00", "regular"),), False, 0,
+        date_overrides={
+            "2026-11-27": (SessionInterval("09:30", "13:00", "regular"),),
+            "2026-11-28": (),
+        },
+    )
+    _, receipts = build_session_bars(early_rows, recipe_id="wmt", grid=grid)
+    assert len(receipts) == 1
+    assert receipts[0].effective_minutes == 210
+
+    morning = minute_rows("2026-11-30", "09:00", "11:00")
+    afternoon = minute_rows("2026-11-30", "12:00", "14:00")
+    broken = BarGridSpec(
+        "vendor-break", "America/New_York", 240, 0,
+        (
+            SessionInterval("09:00", "11:00", "morning"),
+            SessionInterval("12:00", "14:00", "afternoon"),
+        ),
+        False, 0,
+    )
+    bars, broken_receipts = build_session_bars(
+        pd.concat((morning, afternoon), ignore_index=True), recipe_id="vendor", grid=broken,
+    )
+    assert len(bars) == len(broken_receipts) == 2
+    assert broken_receipts[0].close_ms < broken_receipts[1].open_ms
+
+
 def test_phase_leading_partial_conserves_interval_and_prefix_ids_are_stable() -> None:
     rows = minute_rows("2026-08-31", "09:30", "16:00")
     grid = BarGridSpec("rth-240-p30", "America/New_York", 240, 30, (SessionInterval("09:30", "16:00", "regular"),), False, 0)

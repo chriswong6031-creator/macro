@@ -11,6 +11,7 @@ from typing import Any, Mapping
 import numpy as np
 import pandas as pd
 
+from engine import canon
 from engine.entry_radar import indicator_core
 from scripts.research.temporal_scale.contracts import (
     KERNEL_SIGNATURE_SCHEMA,
@@ -32,6 +33,9 @@ _OWNER_CONFIG = {
     "macd_fast": 14, "macd_slow": 60, "macd_signal": 5,
     "ema_adjust": "adjust=False", "rma_seed": "sma_seeded",
 }
+_PARAMETER_KEYS = frozenset(
+    {"rsi_len", "macd_fast", "macd_slow", "macd_signal", "stoch_len", "smooth_k", "smooth_d"}
+)
 
 
 def _length(value: object, name: str) -> int:
@@ -160,6 +164,39 @@ def _close_series(close: object) -> pd.Series:
 def _first_finite(series: pd.Series) -> int | None:
     positions = np.flatnonzero(np.isfinite(series.to_numpy(dtype=float, na_value=np.nan)))
     return int(positions[0]) if len(positions) else None
+
+
+def parameterized_indicator_frame(close: pd.Series, parameters: Mapping[str, int]) -> pd.DataFrame:
+    """Execute the complete owner-math family with explicit integer windows.
+
+    The public owner wrapper intentionally freezes production defaults.  W1A's
+    K intervention therefore calls the same parameterized canonical primitives
+    directly and keeps this research-only surface pure.
+    """
+    normalized = _close_series(close)
+    if not isinstance(parameters, Mapping) or set(parameters) != _PARAMETER_KEYS:
+        raise KernelMemoryError("parameterized indicator inputs must contain the exact frozen keys")
+    lengths = {name: _length(value, name) for name, value in parameters.items()}
+    rsi = canon.rsi(normalized, lengths["rsi_len"])
+    macd = canon.ema(rsi, lengths["macd_fast"]) - canon.ema(rsi, lengths["macd_slow"])
+    signal = canon.ema(macd, lengths["macd_signal"])
+    low = rsi.rolling(lengths["stoch_len"]).min()
+    high = rsi.rolling(lengths["stoch_len"]).max()
+    denominator = high - low
+    raw_k = ((rsi - low) / denominator.where(denominator != 0)) * 100.0
+    stoch_k = raw_k.rolling(lengths["smooth_k"]).mean()
+    stoch_d = stoch_k.rolling(lengths["smooth_d"]).mean()
+    return pd.DataFrame(
+        {
+            "rsi": rsi,
+            "rsi_macd": macd,
+            "rsi_macd_signal": signal,
+            "rsi_macd_hist": macd - signal,
+            "stoch_k": stoch_k,
+            "stoch_d": stoch_d,
+        },
+        index=normalized.index,
+    )
 
 
 def _bound_owner_callables() -> tuple[Any, Any, Any, Any]:

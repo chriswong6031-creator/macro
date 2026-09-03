@@ -329,8 +329,11 @@ def _validate_oscillator_prefix(rows: list[dict[str, Any]]) -> None:
                     raise ExportError(f"CSV_OSCILLATOR_GAP:{column}")
                 continue
             has_finite = True
+        # A short, structurally valid capture can consist entirely of leading
+        # warm-up cells.  Whether it is comparable is a parity state, not a CSV
+        # syntax failure.
         if not has_finite:
-            raise ExportError(f"CSV_OSCILLATOR_WARMUP_INVALID:{column}")
+            continue
 
 
 def _validate_loaded_evidence(

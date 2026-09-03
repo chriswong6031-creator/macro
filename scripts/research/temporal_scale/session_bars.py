@@ -7,7 +7,8 @@ import hashlib
 import math
 from numbers import Integral, Real
 import re
-from typing import Iterable
+from types import MappingProxyType
+from typing import Iterable, Mapping
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import pandas as pd
@@ -45,8 +46,25 @@ class BarGridSpec:
     intervals: tuple[SessionInterval, ...]
     include_empty: bool
     close_delay_minutes: int
+    date_overrides: Mapping[str, tuple[SessionInterval, ...]] | None = None
 
     def __post_init__(self) -> None:
+        raw_overrides = {} if self.date_overrides is None else self.date_overrides
+        if not isinstance(raw_overrides, Mapping):
+            raise SessionBarsError("date_overrides must be a mapping")
+        normalized_overrides: dict[str, tuple[SessionInterval, ...]] = {}
+        for day, intervals in raw_overrides.items():
+            try:
+                date.fromisoformat(day)
+            except (TypeError, ValueError) as exc:
+                raise SessionBarsError("date override keys must be ISO dates") from exc
+            if isinstance(intervals, (str, bytes)) or not isinstance(intervals, (list, tuple)):
+                raise SessionBarsError("date overrides must contain interval sequences")
+            normalized = tuple(intervals)
+            if any(not isinstance(item, SessionInterval) for item in normalized):
+                raise SessionBarsError("date overrides must contain SessionInterval records")
+            normalized_overrides[day] = normalized
+        object.__setattr__(self, "date_overrides", MappingProxyType(normalized_overrides))
         self.validate()
 
     def validate(self) -> None:
@@ -71,6 +89,16 @@ class BarGridSpec:
             for other_start, other_end in spans[index + 1:]:
                 if any(max(start, other_start + shift) < min(end, other_end + shift) for shift in (-1440, 0, 1440)):
                     raise SessionBarsError("declared intervals overlap")
+        for intervals in self.date_overrides.values():
+            override_spans = []
+            for item in intervals:
+                start = time.fromisoformat(item.start_local).hour * 60 + time.fromisoformat(item.start_local).minute
+                end = time.fromisoformat(item.end_local).hour * 60 + time.fromisoformat(item.end_local).minute
+                override_spans.append((start, end + (1440 if end <= start else 0)))
+            for index, (start, end) in enumerate(override_spans):
+                for other_start, other_end in override_spans[index + 1:]:
+                    if any(max(start, other_start + shift) < min(end, other_end + shift) for shift in (-1440, 0, 1440)):
+                        raise SessionBarsError("declared override intervals overlap")
 
 
 def generate_phase_variants(base: BarGridSpec, phase_minutes: Iterable[int]) -> tuple[BarGridSpec, ...]:
@@ -82,7 +110,7 @@ def generate_phase_variants(base: BarGridSpec, phase_minutes: Iterable[int]) -> 
         raise SessionBarsError("phases must be iterable") from exc
     if any(type(v) is not int or not 0 <= v < base.nominal_minutes for v in phases):
         raise SessionBarsError("phases must be true ints within grid")
-    return tuple(BarGridSpec(f"{base.grid_id}-p{p}", base.timezone, base.nominal_minutes, p, base.intervals, base.include_empty, base.close_delay_minutes) for p in phases)
+    return tuple(BarGridSpec(f"{base.grid_id}-p{p}", base.timezone, base.nominal_minutes, p, base.intervals, base.include_empty, base.close_delay_minutes, base.date_overrides) for p in phases)
 
 
 def _endpoint(day: date, value: str, zone: ZoneInfo) -> datetime:
@@ -238,6 +266,13 @@ def _hash(
                     }
                     for item in grid.intervals
                 ],
+                "date_overrides": {
+                    day: [
+                        {"end_local": item.end_local, "label": item.label, "start_local": item.start_local}
+                        for item in intervals
+                    ]
+                    for day, intervals in grid.date_overrides.items()
+                },
                 "nominal_minutes": grid.nominal_minutes,
                 "phase_minutes": grid.phase_minutes,
                 "timezone": grid.timezone,
@@ -292,6 +327,10 @@ def _buckets(start: int, end: int, grid: BarGridSpec) -> Iterable[tuple[int, int
         cursor = finish
 
 
+def _intervals_for_day(grid: BarGridSpec, day: date) -> tuple[SessionInterval, ...]:
+    return grid.date_overrides.get(day.isoformat(), grid.intervals)
+
+
 def _build_session_bars(
     rows: pd.DataFrame,
     *,
@@ -306,8 +345,7 @@ def _build_session_bars(
         return _attach_attrs(pd.DataFrame(columns=columns), missing_minutes=0, provisional=provisional), ()
     zone = ZoneInfo(grid.timezone)
     candidate_days = {datetime.fromtimestamp(v / 1000, zone).date() for v in frame.open_ms}
-    if any(item.end_local <= item.start_local for item in grid.intervals):
-        candidate_days |= {day - timedelta(days=1) for day in tuple(candidate_days)}
+    candidate_days |= {day - timedelta(days=1) for day in tuple(candidate_days)}
     days: list[date] = []
     for day in sorted(candidate_days):
         if any(
@@ -315,14 +353,14 @@ def _build_session_bars(
                 (frame.open_ms >= interval_open) & (frame.close_ms <= interval_close)
             ].empty
             for interval_open, interval_close in (
-                _bounds(day, interval, zone) for interval in grid.intervals
+                _bounds(day, interval, zone) for interval in _intervals_for_day(grid, day)
             )
         ):
             days.append(day)
     bars, receipts, allocated = [], [], set()
     missing_minutes = 0
     for day in days:
-        for interval in grid.intervals:
+        for interval in _intervals_for_day(grid, day):
             interval_open, interval_close = _bounds(day, interval, zone)
             buckets = tuple(_buckets(interval_open, interval_close, grid))
             for position, (open_ms, close_ms) in enumerate(buckets):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 from dataclasses import replace
 from types import MappingProxyType
@@ -16,6 +17,7 @@ from scripts.research.temporal_scale.contracts import (
     ContractError,
     EXPORT_PRECISION_INSUFFICIENT,
     KernelSignature,
+    LowerGrainRecipe,
     REQUIRED_EXPORT_COLUMNS,
     strict_json_dumps,
 )
@@ -52,6 +54,22 @@ def complete_recipe_dict() -> dict:
             "back_adjustment": "not_applicable",
             "settlement_as_close": "not_applicable",
             "allowed_session_variants": ["extended", "regular"],
+            "session_definitions": {
+                "extended": {
+                    "session_literal": "extended", "human_label": "US extended fixture",
+                    "timezone": "America/New_York",
+                    "intervals": [{"start_local": "04:00", "end_local": "20:00", "label": "extended"}],
+                    "date_overrides": {},
+                    "provenance": {"kind": "synthetic_fixture", "receipt_sha256": "3" * 64},
+                },
+                "regular": {
+                    "session_literal": "regular", "human_label": "US cash fixture",
+                    "timezone": "America/New_York",
+                    "intervals": [{"start_local": "09:30", "end_local": "16:00", "label": "regular"}],
+                    "date_overrides": {},
+                    "provenance": {"kind": "synthetic_fixture", "receipt_sha256": "4" * 64},
+                },
+            },
             "chart_is_standard": True,
             "chart_is_heikinashi": False,
             "chart_is_renko": False,
@@ -94,6 +112,133 @@ def complete_recipe_dict() -> dict:
         },
         "missing_fields": [],
     }
+
+
+def lower_recipe_dict(parent: dict, csv_sha256: str = "5" * 64) -> dict:
+    session = parent["chart"]["session_definitions"][parent["chart"]["named_session"]]
+    return {
+        "schema_version": "mastermind.temporal_lower_grain_recipe.v1",
+        "parent_recipe_sha256": hashlib.sha256(strict_json_dumps(parent).encode()).hexdigest(),
+        "csv_sha256": csv_sha256,
+        "tickerid": parent["instrument"]["tickerid"],
+        "main_tickerid": parent["instrument"]["main_tickerid"],
+        "canonical_id": parent["instrument"].get("canonical_id"),
+        "asset_class": parent["instrument"]["asset_class"],
+        "exchange": parent["instrument"]["exchange"],
+        "vendor_feed": parent["instrument"]["vendor_feed"],
+        "currency": parent["instrument"]["currency"],
+        "contract_month": parent["instrument"]["contract_month"],
+        "continuous_symbol": parent["instrument"]["continuous_symbol"],
+        "roll_recipe": parent["instrument"]["roll_recipe"],
+        "settlement_basis": parent["instrument"]["settlement_basis"],
+        "named_session": parent["chart"]["named_session"],
+        "exchange_timezone": parent["chart"]["exchange_timezone"],
+        "chart_timezone": parent["chart"]["chart_timezone"],
+        "extended_hours_enabled": parent["chart"]["extended_hours_enabled"],
+        "price_adjustment": parent["chart"]["price_adjustment"],
+        "dividend_adjustment": parent["chart"]["dividend_adjustment"],
+        "back_adjustment": parent["chart"]["back_adjustment"],
+        "settlement_as_close": parent["chart"]["settlement_as_close"],
+        "chart_type_flags": {key: parent["chart"][key] for key in (
+            "chart_is_standard", "chart_is_heikinashi", "chart_is_renko",
+            "chart_is_linebreak", "chart_is_kagi", "chart_is_pnf", "chart_is_range",
+        )},
+        "session_definition_sha256": hashlib.sha256(strict_json_dumps(session).encode()).hexdigest(),
+        "rights": dict(parent["rights"]),
+        "row_count": 3,
+        "first_open_ms": parent["export"]["first_bar_open_ms"],
+        "last_close_ms": parent["export"]["last_bar_close_ms"],
+        "source_timeframe_minutes": 60,
+    }
+
+
+def test_named_session_requires_explicit_evidenced_definition() -> None:
+    raw = complete_recipe_dict()
+    raw["chart"]["session_definitions"].pop("extended")
+    with pytest.raises(ContractError, match="named_session definition"):
+        ChartRecipe.from_dict(raw)
+
+
+def test_session_literals_are_identity_keys_not_a_hardcoded_semantic_enum() -> None:
+    raw = complete_recipe_dict()
+    definition = raw["chart"]["session_definitions"].pop("extended")
+    definition["session_literal"] = "vendor:equity-total-session"
+    raw["chart"]["named_session"] = "vendor:equity-total-session"
+    raw["chart"]["allowed_session_variants"] = [
+        "vendor:equity-total-session", "vendor:cash-auction-session",
+    ]
+    raw["chart"]["session_definitions"]["vendor:equity-total-session"] = definition
+    recipe = ChartRecipe.from_dict(raw)
+    assert recipe.chart["named_session"] == "vendor:equity-total-session"
+    assert "vendor:cash-auction-session" not in recipe.chart["session_definitions"]
+
+
+def test_identical_regular_literals_can_bind_distinct_equity_and_futures_grammars() -> None:
+    equity = complete_recipe_dict()
+    equity["chart"]["named_session"] = "regular"
+    future = complete_recipe_dict()
+    future["recipe_id"] = "si-regular-fixture"
+    future["instrument"].update(
+        display_symbol="SI", tickerid="COMEX:SIU2026", main_tickerid="COMEX:SI1!",
+        asset_class="futures", exchange="COMEX", contract_month="202609",
+        settlement_basis="exchange_settlement", canonical_id="FUT:XCEC:SI:202609",
+    )
+    future["chart"].update(
+        named_session="regular", exchange_timezone="America/Chicago", chart_timezone="America/Chicago",
+        price_adjustment="raw", back_adjustment="not_applicable", settlement_as_close="on",
+    )
+    future["chart"]["session_definitions"] = {
+        "regular": {
+            "session_literal": "regular", "human_label": "COMEX electronic",
+            "timezone": "America/Chicago",
+            "intervals": [
+                {"start_local": "17:00", "end_local": "16:00", "label": "electronic"},
+            ],
+            "date_overrides": {
+                "2026-11-27": [{"start_local": "17:00", "end_local": "12:45", "label": "electronic"}],
+            },
+            "provenance": {"kind": "provider_documented_exact", "receipt_sha256": "6" * 64},
+        }
+    }
+    future["chart"]["allowed_session_variants"] = ["regular"]
+    equity_recipe = ChartRecipe.from_dict(equity)
+    future_recipe = ChartRecipe.from_dict(future)
+    assert equity_recipe.chart["session_definitions"]["regular"] != future_recipe.chart["session_definitions"]["regular"]
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "tickerid", "main_tickerid", "canonical_id", "asset_class", "exchange", "vendor_feed",
+        "currency", "contract_month", "continuous_symbol", "roll_recipe", "settlement_basis",
+        "named_session", "exchange_timezone", "chart_timezone", "extended_hours_enabled",
+        "price_adjustment", "dividend_adjustment", "back_adjustment", "settlement_as_close",
+        "chart_type_flags", "session_definition_sha256", "rights", "row_count", "first_open_ms",
+        "last_close_ms", "source_timeframe_minutes", "parent_recipe_sha256", "csv_sha256",
+    ),
+)
+def test_lower_grain_manifest_every_load_bearing_mismatch_is_typed(field: str) -> None:
+    parent = complete_recipe_dict()
+    manifest = lower_recipe_dict(parent)
+    if isinstance(manifest[field], bool):
+        manifest[field] = not manifest[field]
+    elif isinstance(manifest[field], int):
+        manifest[field] += 1
+    elif field == "chart_type_flags":
+        manifest[field] = {**manifest[field], "chart_is_standard": False}
+    elif field == "rights":
+        manifest[field] = {**manifest[field], "source_reference": "tampered"}
+    elif manifest[field] is None:
+        manifest[field] = "tampered"
+    else:
+        manifest[field] = "0" * 64 if field.endswith("sha256") else f"{manifest[field]}-tampered"
+    lower = LowerGrainRecipe.from_dict(manifest)
+    mismatches = lower.mismatches(
+        ChartRecipe.from_dict(parent), csv_sha256="5" * 64,
+        row_count=3, first_open_ms=parent["export"]["first_bar_open_ms"],
+        last_close_ms=parent["export"]["last_bar_close_ms"], source_timeframe_minutes=60,
+    )
+    assert any(field.upper() in token for token in mismatches)
 
 
 def complete_result_dict() -> dict:

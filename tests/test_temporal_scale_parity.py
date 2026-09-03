@@ -127,7 +127,7 @@ def test_every_field_must_have_comparable_rows(tmp_path: Path, monkeypatch: pyte
         indicator_core, "rsi", lambda close: pd.Series(np.nan, index=close.index, dtype=float)
     )
     receipt = compare_indicator_parity(loaded)
-    assert receipt.status == "FAIL"
+    assert receipt.status == "UNRESOLVED_DATA"
     assert receipt.failures == ("PARITY_NO_COMPARABLE_ROWS",)
     assert receipt.max_abs_error["TG_rsi"] is None
 
