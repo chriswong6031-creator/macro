@@ -2065,6 +2065,16 @@ on:
       - "collectors/china_tushare.py"
       - "tests/test_flow_velocity.py"
       - "tests/test_flow_desk_staleness.py"
+      # TOP ANATOMY OOT receipt harness (contract-delta unrun-suite finding,
+      # wired 2026-09-02): the suite shipped in #6723 with no run: owner and sat
+      # dark on main. Now carried by falsifier-tripwires; the receipt entrypoint,
+      # the Phase-0 harness it drives, and the frozen engine closure are listed
+      # WITH the test file so a subject-only edit starts ci.yml and a test-only
+      # re-pin still re-runs the owner that carries it (#3488 both halves).
+      - "scripts/research_top_anatomy_oot_receipt.py"
+      - "scripts/research_top_anatomy_phase0.py"
+      - "engine/top_anatomy.py"
+      - "tests/test_top_anatomy_oot_receipt.py"
       # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
       # collector, grader engine, build script, detector config, and test file.
       - "collectors/flow_signals.py"
