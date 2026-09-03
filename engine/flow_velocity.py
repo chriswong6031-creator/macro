@@ -212,6 +212,17 @@ def _rate_read(s: pd.Series, cfg: dict) -> dict:
             "rate_norm": rnd(norm), "rate_rel": rnd(rel)}
 
 
+# ── reusable rollup primitives (exposed for engine.flow_observatory.groups — W4) ──
+# Public aliases so the official-sector lens can compute "the same math as the theme
+# rollup" (spec §2A) without a second velocity engine — groups.py imports THESE names
+# rather than reaching into the underscore-prefixed internals of a sibling module.
+kinetics = _kinetics
+rate_read = _rate_read
+spark = _spark
+series_tail = _series_tail
+WK = _WK
+
+
 # ── 1) aggregate Connect channels ─────────────────────────────────────────────
 def _read_connect(name: str) -> pd.DataFrame | None:
     p = config.data_dir() / "china_connect" / f"{name}.parquet"
@@ -352,6 +363,20 @@ def ashare_name_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = N
 
 def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = None,
                            seats_by_ticker: dict | None = None) -> dict | None:
+    """The curated-theme (overlap-allowed) lens. W4: every basket now ALWAYS emits a
+    row (never silently dropped for thin coverage — spec §0.2 "never a
+    survivor-biased read"); coverage/overlap/concentration are computed via
+    ``engine.flow_observatory.groups`` (lazy import — that module imports the
+    kinetics primitives back from HERE, so a module-level import would cycle) so the
+    official-sector lens shares the identical math, not a second implementation. A
+    basket whose kinetics genuinely cannot be computed (too few members present in
+    the panel, or too little price history) OR whose coverage sits below the
+    calibrated floor renders as an ``insufficient_coverage`` row rather than
+    vanishing; ``n_unscored`` — kept for JSON-shape compatibility with pre-W4
+    consumers — now only ever counts a total failure of the membership store itself
+    (never a per-basket coverage gap, which is disclosed on the row instead)."""
+    from engine.flow_observatory import groups as fo_groups
+
     if wide is None:
         wide = _flow_panel()
     if wide is None:
@@ -367,31 +392,93 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
         return None
     if not mem or not mem.get("baskets"):
         return None
+
+    all_members = {
+        bid: [m["ticker"] for m in b.get("members", [])
+              if isinstance(m, dict) and m.get("ticker") and not m.get("removed")]
+        for bid, b in mem["baskets"].items()
+    }
+    overlap_by_ticker = fo_groups.compute_overlap_counts(all_members)
+    name_map = _name_map()
+    wide_cols = set(wide.columns)
+
     rows = []
     for bid, b in mem["baskets"].items():
-        members = [m["ticker"] for m in b.get("members", [])
-                   if isinstance(m, dict) and m.get("ticker") and not m.get("removed")]
-        cols = [t for t in members if t in wide.columns]
-        if len(cols) < 3:
+        members = all_members[bid]
+        n_members = len(members)
+        if n_members == 0:
             continue
-        sect_flow = wide[cols].mean(axis=1)          # equal-weight member net-rate
-        kin = _kinetics(sect_flow, _WK)
-        if not kin or kin["vel_primary"] is None:
-            continue
-        # drill-down members: the sector's biggest movers (either direction), reusing the
-        # SAME shared kinetics so a member's velocity matches the name leaderboard exactly.
-        mem_recs = sorted((kmap[t] for t in cols if t in kmap),
-                          key=lambda r: -abs(r["vel"]))[:8]
+        # B3 repair: `cols` (present in `wide`, scored OR not) stays ONLY for
+        # inst_attention below (an independent seat-activity count, not part of the
+        # reconciliation law) — the mean/kinetics/contributions/coverage/excluded set
+        # is `covered` (present in `wide` AND scored in `kmap`), the SAME set the row
+        # DECLARES as its denominator. Averaging over `cols` while declaring
+        # `n_covered`/excluded off `covered` used to let an unscored member's raw
+        # flow silently ride inside the published mean.
+        cols = [t for t in members if t in wide_cols]
+        covered = [t for t in cols if t in kmap]
+        cov = fo_groups.coverage_stats(n_members, len(covered))
+        overlap_count = fo_groups.theme_overlap_count(members, overlap_by_ticker)
+        excluded = fo_groups.excluded_members(members, wide_cols, kmap, name_map)
         inst_attention = sum(1 for t in cols if t in seats_by_ticker)
-        rows.append({
+
+        row: dict = {
             "id": bid, "name": b.get("name"), "name_zh": b.get("name_zh"),
-            "category": b.get("category"), "n_members": len(cols),
-            "vel": kin["vel_primary"], "accel": kin["accel"],
-            **_rate_read(sect_flow, _WK),
-            "state": kin["state"], "state_zh": kin["state_zh"],
-            "spark": _spark(_series_tail(sect_flow.cumsum(), 130)),   # ~6m of daily bars
-            "members": mem_recs, "inst_attention": inst_attention,
-        })
+            "category": b.get("category"), "n_members": cov["n_members"],
+            "n_covered": cov["n_covered"], "coverage_pct": cov["coverage_pct"],
+            "group_kind": "curated_theme", "overlap_allowed": True,
+            "overlap_count": overlap_count, "excluded": excluded,
+            "inst_attention": inst_attention,
+        }
+
+        # N1 repair: floor compares the RAW ratio, never the rounded display value.
+        sufficient = (cov["coverage_ratio"] is not None
+                      and cov["coverage_ratio"] >= fo_groups.COVERAGE_FLOOR_PCT / 100.0
+                      and len(covered) >= fo_groups.MIN_COLS_FOR_KINETICS)
+        kin = None
+        if sufficient:
+            sect_flow = wide[covered].mean(axis=1)     # equal-weight SCORED-member net-rate
+            kin = _kinetics(sect_flow, _WK)
+            if not kin or kin["vel_primary"] is None:
+                sufficient = False
+        if sufficient and kin:
+            # drill-down members: the theme's biggest movers (either direction),
+            # reusing the SAME shared kinetics so a member's velocity matches the
+            # name leaderboard exactly. Overlap chip data ("in N themes") rides
+            # along per member for the drilldown (spec §3).
+            mem_recs = []
+            for t in sorted((t for t in covered), key=lambda t: -abs(kmap[t]["vel"]))[:8]:
+                r = dict(kmap[t])
+                n_ov = overlap_by_ticker.get(t, 0)
+                if n_ov >= 1:
+                    r["in_n_themes"] = n_ov + 1
+                mem_recs.append(r)
+            contrib = fo_groups.member_contributions(covered, kmap)
+            conc = fo_groups.concentration_from_contributions(contrib)
+            rr = _rate_read(sect_flow, _WK)
+            # B3+M2: the DISPLAYED rate_rel must equal Σcontributions exactly (the
+            # reconciliation law, tested against this row field — not a self-defined
+            # group_rel) — see engine.flow_observatory.groups.member_contributions'
+            # docstring for why the target is the mean of covered members' rate_rel,
+            # not the theme-series' own σ-normalized demean.
+            if conc.get("group_rel") is not None:
+                rr = {**rr, "rate_rel": conc["group_rel"]}
+            row.update(
+                vel=kin["vel_primary"], accel=kin["accel"],
+                **rr,
+                state=kin["state"], state_zh=kin["state_zh"],
+                spark=_spark(_series_tail(sect_flow.cumsum(), 130)),   # ~6m of daily bars
+                members=mem_recs, concentration=conc, coverage_state="ok",
+            )
+        else:
+            row.update(
+                vel=None, accel=None, rate_now=None, rate_4wk=None, rate_norm=None,
+                rate_rel=None, state=fo_groups.INSUFFICIENT_COVERAGE_EN,
+                state_zh=fo_groups.INSUFFICIENT_COVERAGE_ZH, spark=None,
+                members=[], concentration=None, coverage_state="insufficient_coverage",
+            )
+        rows.append(row)
+
     if len(rows) < 4:
         return None
     rows.sort(key=lambda r: (r["vel"] is None, -(r["vel"] or 0)))

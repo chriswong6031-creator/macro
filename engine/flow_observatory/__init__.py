@@ -8,10 +8,10 @@ and panel builders; this package owns the additive schema on top of it.
                  No I/O. W1.
   changes.py   — ``data/flow_observatory/state_log.jsonl`` (W1 minimal precursor) and
                  ``change_summary`` (previous-session diff). W1 minimal, W3 full.
-
-Not yet built (frozen for later waves, per the masterplan's wave graph — do not add here):
   quality.py   — the per-leg HEALTHY/DEGRADED/STALE/UNAVAILABLE/REVISED state machine (W2).
   history.py   — the append-only observations ledger + replay (W3).
-  groups.py    — official-sector lens + concentration/overlap (W4).
+  groups.py    — official/curated lenses, coverage floor, overlap, concentration and
+                 contribution (W4). Reuses ``engine.flow_velocity``'s kinetics
+                 primitives; no second velocity engine.
 """
 from __future__ import annotations

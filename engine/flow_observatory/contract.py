@@ -707,6 +707,47 @@ def _previous_ranks(log_rows: list[dict[str, Any]], before_session: str | None) 
     return {tid: rec.get("rank") for tid, rec in themes.items() if isinstance(rec, dict)}
 
 
+# M1/W4 repair: the coverage_state enum both group lenses (curated ashare_sectors AND
+# official_sectors) may carry — engine.flow_observatory.groups.INSUFFICIENT_COVERAGE_EN
+# is display prose, not this machine value; kept here (not imported from groups.py) so
+# contract.py stays the sole owner of every enum validate() checks, matching the
+# STATUS_ENUM/QUADRANT pattern already established in this module.
+COVERAGE_STATE_ENUM = {"ok", "insufficient_coverage"}
+
+
+def _validate_group_rows(lens: dict[str, Any], label: str) -> None:
+    """Shared per-row check for a group lens (``{"rows": [...]}}``-shaped, curated
+    OR official): abs/rel/quadrant axis-consistency (spec §1.7, previously
+    ashare_sectors-only) plus the coverage_state enum (W4 M1 repair — previously
+    unchecked for BOTH lenses)."""
+    for row in (lens or {}).get("rows") or []:
+        cs = row.get("coverage_state")
+        if cs is not None and cs not in COVERAGE_STATE_ENUM:
+            raise ContractError(
+                f"{label} row {row.get('id')}: coverage_state {cs!r} is not in the known "
+                f"enum {sorted(COVERAGE_STATE_ENUM)}")
+        a, r, q = row.get("abs"), row.get("rel"), row.get("quadrant")
+        if a is None or r is None or q is None:
+            continue
+        av, ad = a.get("value"), a.get("direction")
+        expected_ad = direction_from_value(av, a.get("unit"))
+        if expected_ad != ad:
+            raise ContractError(
+                f"{label} row {row.get('id')}: abs.direction {ad!r} disagrees with abs.value "
+                f"{av!r} (expected {expected_ad!r})")
+        rv, rd = r.get("value"), r.get("direction")
+        expected_rd = rel_direction(rv)
+        if expected_rd != rd:
+            raise ContractError(
+                f"{label} row {row.get('id')}: rel.direction {rd!r} disagrees with rel.value "
+                f"{rv!r} (expected {expected_rd!r})")
+        expected_q = quadrant(ad, rd)
+        if expected_q != q:
+            raise ContractError(
+                f"{label} row {row.get('id')}: quadrant {q!r} inconsistent with abs={ad!r} "
+                f"rel={rd!r} (expected {expected_q!r})")
+
+
 # ── validate() (spec §1.7) ──────────────────────────────────────────────────────────
 def validate(desk: dict[str, Any]) -> None:
     """Raise :class:`ContractError` on a ``flow_observatory.v2`` contract violation.
@@ -753,27 +794,16 @@ def validate(desk: dict[str, Any]) -> None:
             if "denominator" not in (breadth or {}):
                 raise ContractError(f"market_read.{lens_name}.{breadth_name} missing denominator")
 
-    for row in (desk.get("ashare_sectors") or {}).get("rows") or []:
-        a, r, q = row.get("abs"), row.get("rel"), row.get("quadrant")
-        if a is None or r is None or q is None:
-            continue
-        av, ad = a.get("value"), a.get("direction")
-        expected_ad = direction_from_value(av, a.get("unit"))
-        if expected_ad != ad:
-            raise ContractError(
-                f"row {row.get('id')}: abs.direction {ad!r} disagrees with abs.value {av!r} "
-                f"(expected {expected_ad!r})")
-        rv, rd = r.get("value"), r.get("direction")
-        expected_rd = rel_direction(rv)
-        if expected_rd != rd:
-            raise ContractError(
-                f"row {row.get('id')}: rel.direction {rd!r} disagrees with rel.value {rv!r} "
-                f"(expected {expected_rd!r})")
-        expected_q = quadrant(ad, rd)
-        if expected_q != q:
-            raise ContractError(
-                f"row {row.get('id')}: quadrant {q!r} inconsistent with abs={ad!r} rel={rd!r} "
-                f"(expected {expected_q!r})")
+    _validate_group_rows(desk.get("ashare_sectors") or {}, "ashare_sectors")
+    # M1/W4 repair: official_sectors (the Shenwan L1 lens) never got its own
+    # validate() coverage — contract.py was untouched in the W4 landing (its rows
+    # reuse contract.enrich_group/assign_ranks, but nothing checked the RESULT).
+    # Minimal extension: the SAME abs/rel/quadrant axis-consistency check every
+    # ashare_sectors row already gets, plus the coverage_state enum (both lenses —
+    # a group's coverage_state must be a known value, never an unchecked free string).
+    os_lens = desk.get("official_sectors")
+    if isinstance(os_lens, dict) and os_lens.get("available"):
+        _validate_group_rows(os_lens, "official_sectors")
 
     generated_at = desk.get("generated_at")
     sources = desk.get("sources") or []
