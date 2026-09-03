@@ -2,7 +2,7 @@
 workstream: "WS:RATES-INFLATION-COMMAND"
 session: "sol/policy-preturn-monthly-transition-architecture-20260903"
 model: sol
-ended_because: forward_repair_validation_handoff
+ended_because: ci_handoff
 mission: >
   Recover the Chairman's monthly-turn and policy-preturn outcome, reconcile the existing
   event/OPEX/options/rebalance/Treasury/futures estate, preserve the active RIC F3 carrier,
