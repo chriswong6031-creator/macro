@@ -179,25 +179,45 @@ def test_northbound_note_matches_the_frozen_constant():
 
 
 # ── W5 adjudicated thresholds (research/flow_observatory/W5_PREREG.md;
-#    PR #6808 comment 5530582923; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) ────────────
+#    PR #6808 comment 5531154940, superseding 5530582923;
+#    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+#    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) ─────────────────────────────────────────
 def test_w5_adjudicated_constants_are_pinned():
     """Themes: tau=0.75 (in the honest-neutral band, flip strictly improves), tilt beta=30
-    (was 25). Names: tau=0.3 (mechanical nearest-band + min-flip on the M0 grid, beta=15 has
-    no production tilt-gauge consumer yet). Southbound: unchanged 0.5 (its own re-sweep
-    excluded every improving tau via the <2% held-out-reach sanity bound)."""
+    (was 25) — STANDS, reconfirmed by the R2 independent review. Names: REVERTED to the
+    incumbent tau=0.5 — an independent statistical review found the R1 tau=0.3 selection
+    was computed on the breadth-tilt state series and misapplied to the per-name surface,
+    breaching the frozen 25% neutral floor. Southbound: unchanged 0.5 (R1's own re-sweep
+    already excluded every improving tau via the <2% held-out-reach sanity bound, and R2
+    separately reverted the METHOD side too — see the winsorize tests below). The
+    module-level `_VIN`/`_VOUT` legacy-default constants were removed as readerless in
+    production (R2 cleanup) — names now shares the SAME literal default the engine's
+    `_kinetics`/`_classify` signatures already carried, so there is nothing left to pin
+    beyond `_NAMES_VIN`/`_VOUT` themselves."""
     assert (fv._THEMES_VIN, fv._THEMES_VOUT) == (0.75, -0.75)
     assert fv._THEMES_TILT_BETA == 30
-    assert (fv._NAMES_VIN, fv._NAMES_VOUT) == (0.3, -0.3)
-    assert (fv._VIN, fv._VOUT) == (0.5, -0.5)
+    assert (fv._NAMES_VIN, fv._NAMES_VOUT) == (0.5, -0.5)
+    assert not hasattr(fv, "_VIN") and not hasattr(fv, "_VOUT"), (
+        "the dead module-level _VIN/_VOUT constants were supposed to be removed in R2 — "
+        "if this fails, either they came back or a new production reader appeared that "
+        "needs a live constant again (in which case un-delete deliberately, don't just "
+        "restore the pin)")
 
 
-def test_w5_names_breadth_threshold_takes_effect():
-    """A name at vel=0.35 sat BELOW the old shared 0.5 cutoff (would not count as 'in') but
-    sits AT/ABOVE the W5-adjudicated names threshold 0.3 — the recalibration must actually
-    move the breadth count, not just exist as an unused constant."""
+def test_w5_names_threshold_reverted_to_incumbent():
+    """A name at vel=0.35 would have counted as 'in' under the withdrawn R1 tau=0.3
+    threshold, but sits BELOW the reverted incumbent tau=0.5 — the R2 reversion must
+    actually move the breadth count back, not leave the R1 value lingering in behavior
+    even after the constant changed."""
     kmap = {f"t{i}": {"vel": 0.35} for i in range(10)}
     br = fv.flow_breadth(kmap, None)
-    assert br["names_in"] == 10, "vel=0.35 should count as 'in' under the new 0.3 threshold"
+    assert br["names_in"] == 0, (
+        "vel=0.35 must NOT count as 'in' under the reverted 0.5 threshold — a regression "
+        "here means the R1 0.3 cutoff is still live somewhere")
+
+    kmap_at_incumbent = {f"t{i}": {"vel": 0.5} for i in range(10)}
+    br2 = fv.flow_breadth(kmap_at_incumbent, None)
+    assert br2["names_in"] == 10, "vel=0.5 (the incumbent boundary) must count as 'in'"
 
 
 def test_w5_themes_breadth_threshold_and_tilt_band_take_effect():
@@ -218,21 +238,29 @@ def test_w5_themes_breadth_threshold_and_tilt_band_take_effect():
 
 
 def test_w5_state_boundary_determinism_at_new_thresholds():
-    """>= is IN, strictly below is NOT — pinned at the new per-lens cutoffs so a future
-    off-by-one can't silently flip the boundary session's verdict."""
-    assert fv._classify(0.3, 0.1, fv._NAMES_VIN, fv._NAMES_VOUT)[0] == "above norm, rising"
-    assert fv._classify(0.2999, 0.1, fv._NAMES_VIN, fv._NAMES_VOUT)[0] == "near its norm"
+    """>= is IN, strictly below is NOT — pinned at the current per-lens cutoffs so a future
+    off-by-one can't silently flip the boundary session's verdict. Names uses the reverted
+    incumbent 0.5 (R2); themes keeps its W5-recalibrated 0.75 (unaffected by R2)."""
+    assert fv._classify(0.5, 0.1, fv._NAMES_VIN, fv._NAMES_VOUT)[0] == "above norm, rising"
+    assert fv._classify(0.4999, 0.1, fv._NAMES_VIN, fv._NAMES_VOUT)[0] == "near its norm"
     assert fv._classify(0.75, 0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "above norm, rising"
     assert fv._classify(0.7499, 0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "near its norm"
     assert fv._classify(-0.75, -0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "below norm, worsening"
     assert fv._classify(-0.7499, -0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "near its norm"
 
 
+# ── M1 winsorization primitive — DORMANT as of R2 (no production caller; the R1 southbound
+#    M1 adoption was withdrawn, DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2). These two
+#    tests now pin the PRIMITIVE's own correctness only (a future preregistered wave may
+#    still revisit it per R2 ruling 5) — they no longer describe live production behavior.
 def test_w5_southbound_m1_winsorize_equals_m0_when_nothing_exceeds_winsor_bounds():
-    """The M1 (winsorized) southbound path adopted by the adjudication is a NO-OP swap when
-    no value ever falls outside its own rolling 2.5th/97.5th percentile bounds — pinning
-    that keeps a change to the winsorization primitive from silently diverging M1 from M0
-    on data the bounds never bind on, which the adjudication's HOLD-bound reasoning assumed.
+    """M1 (winsorized) is a NO-OP swap over M0 when no value ever falls outside its own
+    rolling 2.5th/97.5th percentile bounds — pinning that keeps a change to the
+    winsorization primitive from silently diverging M1 from M0 on data the bounds never
+    bind on. R2 note: this is now a pure primitive-correctness guard on a dormant
+    parameter/helper, not a production-equivalence claim — southbound reverted to M0 (no
+    winsorize call at all) after an independent review found the R1 adoption rested on a
+    single unreplicated seeded draw of the Sec 5(a) metric.
 
     Random continuous data routinely DOES get clipped ~5% of the time by construction (a
     genuine outlier isn't required — being the current window's own max/min is enough), so
@@ -256,8 +284,9 @@ def test_w5_southbound_m1_winsorize_equals_m0_when_nothing_exceeds_winsor_bounds
 
 def test_w5_southbound_m1_winsorize_clips_an_injected_outlier():
     """Sanity check the OTHER direction: a single huge spike must actually get clipped by
-    the M1 path (otherwise the 'equivalence on quiet data' test above would be vacuous —
-    passing only because winsorize never does anything)."""
+    the M1 primitive (otherwise the 'equivalence on quiet data' test above would be vacuous
+    — passing only because winsorize never does anything). Dormant-primitive guard as of
+    R2 — see the module note above."""
     rng = np.random.default_rng(4)
     flow = _series(rng.normal(0, 1.0, 400))
     flow.iloc[300] = 500.0   # far past any rolling 97.5th percentile of a unit-normal series

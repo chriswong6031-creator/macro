@@ -25,6 +25,7 @@ owns_paths:
 decisions:
   - DEC:FLOW-OBSERVATORY-V2-ARCHITECTURE-FREEZE
   - DEC:FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION
+  - DEC:FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2
 landmines:
   - "engine/flow_velocity.py's in-code honesty gate (per-name CN fund-flow rank-IC ≈
     −0.008, never scored into allocation) survives every wave; validation_meta group-flow

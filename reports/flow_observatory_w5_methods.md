@@ -289,3 +289,82 @@ retained — numerically unchanged from before W5, even though the method switch
 No lens produced a HOLD on the METHOD axis (southbound's own sanity bound cleared); the
 southbound THRESHOLD axis fell back to its incumbent value via the frozen all-excluded rule
 — disclosed above as the closest thing to a HOLD this adjudication produced.
+
+## §7 Revised adjudication (R2, 2026-09-03)
+
+**This section is APPENDED — §6 above is preserved unchanged as the historical R1 record.**
+An independent statistical review of §6's adjudication returned FAIL with two blockers.
+The Fable principal accepted the review and issued a revised adjudication that supersedes
+§6. Citable provenance: PR #6808 comment
+[5531154940](https://github.com/mastermindx-market-intelligence/macro/pull/6808#issuecomment-5531154940),
+superseding comment
+[5530582923](https://github.com/mastermindx-market-intelligence/macro/pull/6808#issuecomment-5530582923).
+Authority `context_only` throughout; no forward-return metrics; validation metadata
+untouched. Decision record: `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2` (supersedes
+`DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`, never deletes it).
+
+**Verbatim revised rulings:**
+
+1. **Themes: τ=0.75, β=30 STANDS** — verified sound on its applied surface (per-theme
+   neutral 0.3222→0.4716 in band; flip 0.1865→0.1610 improves).
+2. **Names: REVERT to incumbent τ=0.5, β=25.** The τ=0.3 selection was computed on the
+   breadth-tilt state series and applied to the per-name surface, where it breaches the
+   frozen 25% neutral floor (18.8%) and worsens flip (+7.1% rel). Both lawful readings of
+   the frozen rule (wrong-surface invalidation; no-point-in-band → incumbent) retain
+   τ=0.5.
+3. **Southbound: REVERT to M0; τ stays 0.5.** The decisive §5(a) condition was a single
+   unreplicated draw with P(pass)≈0.75 under seed variation on EITHER data config — seed
+   assignment, not a lens property. No method changes on noise. The southbound τ sweep is
+   recorded as regime-inconclusive (held-out in-reach 0 at EVERY τ incl. incumbent);
+   incumbent retained by the frozen tie-break, not by my previous post-hoc
+   challenger-only exclusion, which is WITHDRAWN as a prereg breach.
+4. **All NINE harness deviations confirmed** (incl. #8 concordance-N/A, now non-load-bearing
+   with no method adopted). The nearest-band continuous relaxation is recorded as a harness
+   deviation retroactively; with names reverted it decides nothing.
+5. M1's outlier promise (30-seed median ratio ≈0.57 on both configs) is a legitimate
+   PREREGISTERABLE FOLLOW-UP: a future evaluation with a replicated, CI-carrying outlier
+   metric may adopt it program-wide — not this wave.
+6. DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION is SUPERSEDED by
+   DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2 (supersession, never deletion). Minors:
+   dead/duplicated constants removed; tooltip states the actual numbers.
+
+Net engine delta of W5 after revision: **themes thresholds only**. Authority context_only
+throughout.
+
+### Independent review's key recomputations (cited verbatim by the ruling above)
+
+- **Names applied-surface numbers**: the §6 (R1) "Names arithmetic" table selected τ=0.3
+  by running the frozen §4 procedure over the harness's breadth-tilt-style grid
+  (`threshold_sweep_all.M0`, the same construction §4 uses for the sector-breadth gauge).
+  That grid is NOT the per-name state distribution τ=0.3 would actually classify names
+  into. Applying τ=0.3 to the per-name surface (the same construction as Metric 1's
+  per-entity, pooled state-share table but at τ=0.3 instead of the frozen τ=0.5) yields a
+  neutral share of **18.8%** — below the frozen 25% neutral floor (§4 objective 1) — and a
+  one-day flip rate **+7.1% relative** worse than the incumbent τ=0.5 reading. Both breach
+  the frozen §4 objective on the surface the threshold is actually deployed on, which the
+  R1 mechanical-completion arithmetic (correct on ITS OWN grid) never checked.
+- **The 30-seed ratio range**: the R1 southbound M1 adoption's decisive §5(a) condition
+  (outlier/quiet metric improves ≥30%) was evaluated from ONE seeded draw of the fixture.
+  Independent replication across 30 seeds on both the main and held-out data configs found
+  a median improvement ratio ≈0.57 (i.e. a ≈43% median improvement, which would clear the
+  30% bar) but **P(pass) ≈ 0.75** — roughly a quarter of seeds do NOT clear the bar. A
+  condition whose pass/fail flips on which seed happened to run is seed noise, not a
+  property of the M1 method, and cannot decisively satisfy §5(a).
+- **The withdrawn held-out exclusion**: §6's southbound "Step 2" applied the `<2%`
+  held-out-reach sanity bound only to the M1 grid (the method §6 had just adopted),
+  treating the M0 grid as out of scope. That is a post-hoc, challenger-only application of
+  a bound the frozen §4/§5 text does not restrict to one candidate — WITHDRAWN as a prereg
+  breach. With southbound's method reverted to M0, the frozen tie-break (ties or
+  all-candidates-excluded → incumbent τ=0.5, β=25) is what actually retains τ=0.5, not the
+  narrower M1-only exclusion §6 relied on.
+
+### Revised final selection
+
+| lens | method | tau | beta | outcome |
+|---|---|---|---|---|
+| themes | M0 | 0.75 | 30 | threshold recalibration only (unchanged from §6) |
+| names | M0 | 0.5 | 25 | **reverted** — R1's 0.3/15 wrong-surface selection withdrawn |
+| southbound | M0 | 0.5 | n/a | **reverted** — R1's M1 method adoption withdrawn |
+
+Net W5 engine delta: **themes thresholds only** (τ=0.75, β=30). Names and southbound are
+numerically and methodologically unchanged from pre-W5.

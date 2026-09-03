@@ -1435,7 +1435,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <b>{{ t('Sources','数据来源') }}:</b>
     {{ t('Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 daily grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.','沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力日度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。') }}<br>
     <b>{{ t('Method','方法') }}:</b>
-    <span class="qm" data-tip-en="pace vs its own norm; thresholds calibrated Sep 2026" data-tip-zh="相对自身常态的节奏；阈值于2026年9月校准" role="button" tabindex="0">?</span>
+    <span class="qm" data-tip-en="themes threshold recalibrated Sep 2026 — 0.75σ; names & Southbound unchanged at 0.5σ" data-tip-zh="主题阈值于2026年9月重校准——0.75σ；个股与南向维持0.5σ" role="button" tabindex="0">?</span>
     {{ t('Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.','流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。') }}
     · {{ t('Built','构建于') }} {{ built }}
   </div>

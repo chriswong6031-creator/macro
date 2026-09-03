@@ -90,6 +90,87 @@
     },
     "state_count_diff_disclosure": "site/flowdata/desk.json before/after state counts posted in the PR body (honest-correction disclosure)"
   },
+  "adjudication_r2": {
+    "authority": "context_only",
+    "blockers": {
+      "names_wrong_surface": "tau=0.3 was selected against the harness's breadth-tilt-style grid (threshold_sweep_all.M0, the same construction the sector-breadth gauge uses) and then applied to the per-name surface, where it breaches the frozen 25% neutral floor (measured neutral_share=0.188 on the per-name application) and worsens one-day flip rate by +7.1% relative to the incumbent tau=0.5 reading. Both lawful readings of the frozen Sec 4 rule (wrong-surface invalidation, or no-point-in-band -> incumbent) retain tau=0.5.",
+      "southbound_single_draw": "The decisive Sec 5(a) condition (metric 4/5 improves >=30%) rested on a single, unreplicated seeded draw of the outlier/quiet fixture. Independent 30-seed replication on both the main and held-out data configs found P(pass)~=0.75 under seed variation and a median improvement ratio ~=0.57 -- seed assignment, not a lens property. No method change is supportable on that noise."
+    },
+    "decision_record": "DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2",
+    "final_selection": {
+      "names": {
+        "beta": 25,
+        "method": "M0",
+        "outcome": "reverted -- R1 wrong-surface selection withdrawn",
+        "tau": 0.5
+      },
+      "southbound": {
+        "beta": null,
+        "method": "M0",
+        "outcome": "reverted -- R1 method adoption withdrawn",
+        "tau": 0.5
+      },
+      "themes": {
+        "beta": 30,
+        "method": "M0",
+        "outcome": "threshold recalibration only (unchanged from R1)",
+        "tau": 0.75
+      }
+    },
+    "key_recomputations": {
+      "names_applied_surface": {
+        "flip_rate_direction": "worse",
+        "flip_rate_relative_change_pct": 7.1,
+        "floor_breached": true,
+        "neutral_floor": 0.25,
+        "neutral_share_per_name_application": 0.188,
+        "tau": 0.3
+      },
+      "southbound_m1_outlier_replication": {
+        "conclusion": "seed assignment, not a lens property -- cannot decisively satisfy Sec 5(a)",
+        "data_configs": [
+          "main",
+          "held_out"
+        ],
+        "median_improvement_ratio": 0.57,
+        "n_seeds": 30,
+        "p_pass_ge_30pct_bar": 0.75
+      },
+      "withdrawn_exclusion": "R1's southbound 'Step 2' applied the <2% held-out-reach sanity bound only to the M1 grid (the just-adopted challenger), never to M0 -- a post-hoc, challenger-only application the frozen Sec 4/Sec 5 text does not restrict to one candidate. WITHDRAWN as a prereg breach; the frozen tie-break (ties or all-excluded -> incumbent tau=0.5, beta=25) is what actually retains tau=0.5 now that the method itself is M0."
+    },
+    "net_engine_delta": "themes thresholds only (tau=0.75, beta=30); names and southbound numerically and methodologically unchanged from pre-W5",
+    "note": "APPEND-ONLY record. The 'adjudication' key above (R1) is preserved unchanged as the historical record; this key is the accepted revision that supersedes it.",
+    "pr_comment_url": "https://github.com/mastermindx-market-intelligence/macro/pull/6808#issuecomment-5531154940",
+    "prereg_deviations": "all NINE harness deviations confirmed (incl. #8 concordance-N/A, now non-load-bearing with no challenger method adopted anywhere); the nearest-band continuous relaxation used for the R1 names selection is recorded as a harness deviation retroactively -- with names reverted it decides nothing in production",
+    "principal": "macro-flow-observatory-v2-w5-method-calibration-fable-r2",
+    "program": "macro-flow-observatory-v2-program-20260902-sol-001",
+    "review_verdict": "FAIL (2 blockers)",
+    "rulings": {
+      "names": {
+        "beta": 25,
+        "method": "M0",
+        "note": "incumbent retained; the R1 tau=0.3 wrong-surface selection is withdrawn.",
+        "status": "REVERTED",
+        "tau": 0.5
+      },
+      "southbound": {
+        "beta": null,
+        "method": "M0",
+        "note": "R1's M1 adoption is withdrawn; the tau sweep is regime-inconclusive (held-out in_reach 0 at every tau incl. incumbent). Incumbent retained by the frozen tie-break, not by R1's post-hoc challenger-only held-out exclusion (WITHDRAWN as a prereg breach).",
+        "status": "REVERTED",
+        "tau": 0.5
+      },
+      "themes": {
+        "beta": 30,
+        "method": "M0",
+        "note": "verified sound on its applied surface: per-theme neutral_share 0.3222->0.4716 in band; flip 0.1865->0.1610 improves (not a tie).",
+        "status": "STANDS",
+        "tau": 0.75
+      }
+    },
+    "supersedes_decision_record": "DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION",
+    "supersedes_pr_comment_url": "https://github.com/mastermindx-market-intelligence/macro/pull/6808#issuecomment-5530582923"
+  },
   "candidates": {
     "M0": "incumbent slope_z (#3561)",
     "M1": "winsorized slope_z",

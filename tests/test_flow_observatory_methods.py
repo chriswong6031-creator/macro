@@ -282,22 +282,33 @@ def test_decision_conditions_marks_concordance_not_applicable_for_a_single_entit
     assert d["all_conditions_met"] is True
 
 
-# ── §5 Adjudication (PR #6808 comment 5530582923; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-
-#    SELECTION) — pin the ARITHMETIC the adjudication reads off this committed report,
-#    against the report's OWN grid data, so a re-run harness change can't silently move
-#    the adjudicated outcome without one of these tests catching it. ─────────────────────
+# ── §5 Adjudication R1 (PR #6808 comment 5530582923; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-
+#    SELECTION, now SUPERSEDED by DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2) — pin
+#    the ARITHMETIC the R1 adjudication read off this committed report, against the
+#    report's OWN grid data, so a re-run harness change can't silently move that HISTORICAL
+#    record without one of these tests catching it. These tests describe what R1 computed
+#    and concluded — NOT the current production selection, which R2 revised for names and
+#    southbound (see the "R2 revised adjudication" section below for the live behavior). ──
 def _load_report() -> dict:
     return json.loads(REPORT_JSON.read_text())
 
 
-def test_names_mechanical_threshold_selection_matches_the_adjudicated_tau_beta():
-    """Names: M0 stays (per the adjudication); its threshold is the frozen §4 procedure's
-    mechanical completion — in-band [0.25,0.60] min-flip, else nearest-band then min-flip
-    — applied to the M0 names grid. No grid point sits in-band (every neutral_share is
-    already > 0.60 on this heavily-directional lens), so nearest-band applies: tau=0.3 and
-    tau=0.4 (both beta=15) tie on band distance (0.6078 is 0.0078 outside the band either
-    way); the tie breaks on flip rate, and 0.3/15 (flip=0.0921) strictly beats 0.4/15
-    (flip=0.1118)."""
+def test_names_mechanical_threshold_selection_matches_the_r1_harness_grid():
+    """R1 HISTORICAL RECORD (superseded — see test_r2_names_reverted_to_incumbent below for
+    the live production threshold). Names: the frozen §4 procedure's mechanical
+    completion — in-band [0.25,0.60] min-flip, else nearest-band then min-flip — applied to
+    the M0 names grid (threshold_sweep_all, the harness's breadth-tilt-style construction)
+    correctly picked tau=0.3/beta=15 off THAT grid. No grid point sits in-band (every
+    neutral_share is already > 0.60 on this heavily-directional lens), so nearest-band
+    applies: tau=0.3 and tau=0.4 (both beta=15) tie on band distance (0.6078 is 0.0078
+    outside the band either way); the tie breaks on flip rate, and 0.3/15 (flip=0.0921)
+    strictly beats 0.4/15 (flip=0.1118).
+
+    The R2 independent review found this grid is NOT the per-name surface tau=0.3 was then
+    deployed against — engine.flow_velocity applies the names threshold per name, not to
+    this aggregate breadth-tilt-style series — and that the per-name application breaches
+    the frozen 25% neutral floor. This test is kept as a pin on the R1 HARNESS arithmetic
+    (still a true fact about the committed report), not as a claim about production."""
     grid = _load_report()["metrics"]["names"]["threshold_sweep_all"]["M0"]["grid"]
 
     def band_penalty(ns):
@@ -314,12 +325,21 @@ def test_names_mechanical_threshold_selection_matches_the_adjudicated_tau_beta()
     assert band_penalty(runner_up["main"]["neutral_share"]) == pytest.approx(
         band_penalty(winner["main"]["neutral_share"]), abs=1e-9), "the tie this test exercises no longer ties"
     assert winner["main"]["flip_rate"] < runner_up["main"]["flip_rate"]
+    # This R1 grid winner is NOT the production threshold as of R2 — the live engine
+    # constant reverted to the incumbent.
+    assert winner["tau"] != fv._NAMES_VIN, (
+        "the R1 grid winner and the live production names threshold happen to match — "
+        "if fv._NAMES_VIN is ever changed back to 0.3, this stops distinguishing "
+        "'R1 historical fact' from 'current production value'")
+    assert fv._NAMES_VIN == 0.5, "R2: names threshold must be the reverted incumbent"
 
 
 def test_themes_adjudicated_tau_beta_is_the_unique_in_band_min_flip_winner():
     """Themes: tau=0.75/beta=30 sits IN the honest-neutral band [0.25,0.60] (ns=0.549) and
     is the strict (not tied) minimum flip rate among every in-band, reachable grid point —
-    matching the adjudication's own words ('flip strictly improves — not a tie')."""
+    matching the adjudication's own words ('flip strictly improves — not a tie'). Themes is
+    the ONE lens R2's independent review reconfirmed unchanged (see the R2 section below);
+    this remains both the R1 historical arithmetic AND the live production selection."""
     grid = _load_report()["metrics"]["themes"]["threshold_sweep_all"]["M0"]["grid"]
     in_band = [g for g in grid if 0.25 <= g["main"]["neutral_share"] <= 0.60
               and g["main"]["in_reach"] >= 0.05 and g["main"]["out_reach"] >= 0.05]
@@ -331,11 +351,16 @@ def test_themes_adjudicated_tau_beta_is_the_unique_in_band_min_flip_winner():
 
 
 def test_southbound_m0_vs_m1_state_disagreement_within_the_hold_bound():
-    """Southbound: M1 (winsorized) was adopted because the M0-vs-M1 5-state disagreement
-    share, measured over the FULL causal history using the harness's own state definitions
-    (VIN/VOUT=0.5/-0.5, fixed — the same construction Metric 1 uses), sits at 4.49% — well
-    under the 20% HOLD bound the adjudication set as a sanity check that can only favor the
-    incumbent. Recomputed here (not read off the report, which does not carry this
+    """R1 HISTORICAL RECORD (superseded — see test_r2_southbound_reverted_to_m0 below for
+    the live production method). R1's rationale: M1 (winsorized) was adopted because the
+    M0-vs-M1 5-state disagreement share, measured over the FULL causal history using the
+    harness's own state definitions (VIN/VOUT=0.5/-0.5, fixed — the same construction
+    Metric 1 uses), sits at 4.49% — well under the 20% HOLD bound R1 set as a sanity check
+    that can only favor the incumbent. This 4.49% figure is unrelated to why R2 reverted
+    southbound (the R2 blocker is that R1's Sec 5(a) outlier/quiet-improvement evidence was
+    a single unreplicated seeded draw, not this disagreement measurement) — the figure
+    itself remains a true, unchanged fact about the harness's history, kept here as a
+    historical pin. Recomputed here (not read off the report, which does not carry this
     cross-candidate figure) directly from the harness's own candidate-construction
     functions on the small (n=1) southbound series — cheap, unlike a names-lens replay."""
     sb = w5.load_southbound()
@@ -351,12 +376,20 @@ def test_southbound_m0_vs_m1_state_disagreement_within_the_hold_bound():
 
 
 def test_southbound_every_tau_is_held_out_unreachable_so_the_incumbent_stays():
-    """Southbound's own threshold re-sweep (on the adopted M1 method) excludes every tau
-    in the grid because EVERY candidate's held-out-60 broad_in reach is 0% — a
-    current-regime degeneracy (the adjudication's own words: 'the tau=1.0 sweep winner
-    zeroed above-norm reach across the held-out window'). With every candidate excluded,
-    the frozen fallback applies: tau=0.5 (the incumbent) stays — numerically unchanged
-    from before W5, even though the METHOD switched to M1."""
+    """R1 HISTORICAL RECORD. Southbound's own threshold re-sweep (on the R1-adopted M1
+    method's grid) excludes every tau because EVERY candidate's held-out-60 broad_in reach
+    is 0% — a current-regime degeneracy (R1's own words: 'the tau=1.0 sweep winner zeroed
+    above-norm reach across the held-out window'). With every candidate excluded, the
+    frozen fallback applies: tau=0.5 stays numerically unchanged from before W5.
+
+    R2 note: R1 framed this as 'the incumbent stays even though the METHOD switched to
+    M1' — but R2's independent review separately found that applying the <2%
+    held-out-reach exclusion to the M1 grid ALONE (never checking M0) was itself a
+    post-hoc, challenger-only application of the bound, WITHDRAWN as a prereg breach. R2
+    reverted the method to M0 outright, so tau=0.5 is retained by the frozen tie-break
+    (ties / all-excluded -> incumbent) rather than by this M1-only re-sweep. The grid
+    arithmetic pinned below is still a true fact about the harness's M1 candidate; it no
+    longer describes why production is at tau=0.5 today."""
     grid = _load_report()["metrics"]["southbound"]["threshold_sweep_all"]["M1"]["grid"]
     assert {g["tau"] for g in grid} == {0.3, 0.4, 0.5, 0.6, 0.75, 1.0}
     reachable = [g for g in grid
@@ -365,3 +398,102 @@ def test_southbound_every_tau_is_held_out_unreachable_so_the_incumbent_stays():
         "a held-out-reachable tau now exists — southbound would no longer fall back to 0.5")
     # every held-out in_reach is exactly 0 — the specific degeneracy the adjudication names
     assert all(g["held_out"]["in_reach"] == 0.0 for g in grid)
+
+
+# ── §7 Revised adjudication R2 (PR #6808 comment 5531154940, superseding 5530582923;
+#    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+#    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) — pins the APPENDED R2 block against the
+#    report's own JSON, proves R1 was preserved append-only (never rewritten), and pins
+#    that the live engine constants actually match the revised rulings. ──────────────────
+def test_r2_block_is_appended_and_r1_block_is_preserved_unchanged():
+    """The R2 adjudication must be a genuine APPEND — the report's R1 `adjudication` key
+    keeps its original (now-superseded) numbers verbatim, and a separate `adjudication_r2`
+    key carries the revision. A test that only checked `adjudication_r2` could pass even if
+    someone had overwritten history in `adjudication` — this one guards both halves of the
+    append-only law at once."""
+    report = _load_report()
+    r1 = report["adjudication"]
+    r2 = report["adjudication_r2"]
+    # R1 preserved verbatim — its (withdrawn) numbers must still read exactly as adjudicated.
+    assert r1["decision_record"] == "DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION"
+    assert r1["rulings"]["names"]["tau"] == 0.3 and r1["rulings"]["names"]["beta"] == 15
+    assert r1["rulings"]["southbound"]["method"] == "M1"
+    assert r1["rulings"]["themes"]["tau"] == 0.75
+    # R2 present, reciprocally linked, and superseding by name.
+    assert r2["decision_record"] == "DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2"
+    assert r2["supersedes_decision_record"] == "DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION"
+    assert r2["review_verdict"].startswith("FAIL")
+
+
+def test_r2_names_reverted_to_incumbent():
+    """R2's names ruling reverts to the incumbent tau=0.5/beta=25, and records the
+    independent review's per-name applied-surface recomputation that motivated it: the R1
+    tau=0.3 pick breaches the frozen 25% neutral floor (measured 18.8% on the per-name
+    surface) and worsens flip rate +7.1% relative — both facts the R1 grid-only arithmetic
+    never surfaced because it never looked at this surface."""
+    r2 = _load_report()["adjudication_r2"]
+    names = r2["rulings"]["names"]
+    assert names["method"] == "M0"
+    assert names["tau"] == pytest.approx(0.5)
+    assert names["beta"] == 25
+    assert names["status"] == "REVERTED"
+    recomp = r2["key_recomputations"]["names_applied_surface"]
+    assert recomp["tau"] == pytest.approx(0.3)
+    assert recomp["neutral_share_per_name_application"] == pytest.approx(0.188)
+    assert recomp["neutral_floor"] == pytest.approx(0.25)
+    assert recomp["floor_breached"] is True
+    assert recomp["flip_rate_relative_change_pct"] == pytest.approx(7.1)
+    # the live engine constant must actually match this ruling, not just the report text.
+    assert fv._NAMES_VIN == pytest.approx(0.5) and fv._NAMES_VOUT == pytest.approx(-0.5)
+
+
+def test_r2_southbound_reverted_to_m0():
+    """R2's southbound ruling reverts the METHOD to M0 (tau stays 0.5, numerically and
+    methodologically unchanged from before W5), and records the independent review's
+    30-seed replication of the R1 decisive condition: P(pass)~=0.75 under seed variation
+    (median improvement ratio ~=0.57) — the R1 adoption rested on ONE draw of that same
+    coin flip."""
+    r2 = _load_report()["adjudication_r2"]
+    sb = r2["rulings"]["southbound"]
+    assert sb["method"] == "M0"
+    assert sb["tau"] == pytest.approx(0.5)
+    assert sb["status"] == "REVERTED"
+    recomp = r2["key_recomputations"]["southbound_m1_outlier_replication"]
+    assert recomp["n_seeds"] == 30
+    assert recomp["median_improvement_ratio"] == pytest.approx(0.57)
+    assert recomp["p_pass_ge_30pct_bar"] == pytest.approx(0.75)
+    assert "withdrawn_exclusion" in r2["key_recomputations"]
+    # the live engine must actually have no winsorize=True production caller left.
+    import inspect
+    src = inspect.getsource(fv._channel)
+    assert "winsorize=" not in src, (
+        "a production caller still passes winsorize= explicitly to _kinetics — the R2 "
+        "southbound M1 reversion should leave _channel calling _kinetics with its default "
+        "winsorize=False")
+
+
+def test_r2_themes_ruling_stands_unchanged():
+    """R2's themes ruling is a re-confirmation, not a change — tau=0.75/beta=30 STANDS,
+    matching both the R1 record and the live engine constants."""
+    r2 = _load_report()["adjudication_r2"]
+    themes = r2["rulings"]["themes"]
+    assert themes["method"] == "M0"
+    assert themes["tau"] == pytest.approx(0.75)
+    assert themes["beta"] == 30
+    assert themes["status"] == "STANDS"
+    assert (fv._THEMES_VIN, fv._THEMES_VOUT) == (0.75, -0.75)
+    assert fv._THEMES_TILT_BETA == 30
+
+
+def test_r2_net_engine_delta_is_themes_only():
+    """The whole point of the corrective round: after R2, the ONLY numeric engine change
+    surviving from W5 is the themes threshold. Names and southbound must both read back to
+    their pre-W5 (legacy) values."""
+    r2 = _load_report()["adjudication_r2"]
+    assert "themes thresholds only" in r2["net_engine_delta"]
+    from engine.flow_observatory import contract as fo_contract
+    assert not hasattr(fo_contract, "NAMES_REL_THRESH"), (
+        "the dead NAMES_REL_THRESH duplicate should have been removed in R2 cleanup")
+    assert fo_contract.REL_THRESH == pytest.approx(0.5)
+    assert fo_contract.SOUTHBOUND_REL_THRESH == pytest.approx(0.5)
+    assert fo_contract.THEMES_REL_THRESH == pytest.approx(0.75)

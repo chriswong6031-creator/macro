@@ -103,15 +103,26 @@ def _vel_series(x: pd.Series, w: int, base: int, floor_frac: float) -> pd.Series
 
 def _winsorize_causal(x: pd.Series, window: int = 126, lo_q: float = 0.025,
                       hi_q: float = 0.975, min_periods: int | None = None) -> pd.Series:
-    """M1 (W5-adjudicated SOUTHBOUND method, DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION):
-    clip each session's value to the [lo_q, hi_q] percentile of its OWN trailing `window`-
-    session causal history (inclusive of the current session, so this stays point-in-time).
-    During warm-up (bounds not yet defined) the value passes through unclipped. Series-only
-    mirror of ``scripts/research_flow_observatory_methods.winsorize_causal_wide`` — that
-    harness is DataFrame-vectorized for the multi-entity lenses; ``_kinetics`` here always
-    works one series at a time, so this is the same primitive at the Series shape, kept
-    exact rather than reused across the module boundary (the harness is a pure-read
-    research script, never imported by engine/)."""
+    """M1 causal-winsorization primitive: clip each session's value to the [lo_q, hi_q]
+    percentile of its OWN trailing `window`-session causal history (inclusive of the
+    current session, so this stays point-in-time). During warm-up (bounds not yet defined)
+    the value passes through unclipped. Series-only mirror of
+    ``scripts/research_flow_observatory_methods.winsorize_causal_wide`` — that harness is
+    DataFrame-vectorized for the multi-entity lenses; ``_kinetics`` here always works one
+    series at a time, so this is the same primitive at the Series shape, kept exact rather
+    than reused across the module boundary (the harness is a pure-read research script,
+    never imported by engine/).
+
+    R2 (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION): the R1 SOUTHBOUND M1 adoption rested on a
+    single, unreplicated seeded draw of the frozen §5(a) outlier/quiet metric — an
+    independent statistical review re-ran it across 30 seeds on both data configs and found
+    P(pass)~=0.75 (median improvement ratio ~=0.57) — seed assignment, not a lens property.
+    That adoption is WITHDRAWN; southbound reverts to M0 and this primitive has NO
+    production caller as of R2. Kept as a dormant harness-parity utility — the math stays
+    exact should a future, properly-replicated preregistered evaluation revisit it (the R2
+    ruling's own words: "a future evaluation with a replicated, CI-carrying outlier metric
+    may adopt it program-wide — not this wave")."""
     mp = min_periods if min_periods is not None else max(20, window // 2)
     lo = x.rolling(window, min_periods=mp).quantile(lo_q)
     hi = x.rolling(window, min_periods=mp).quantile(hi_q)
@@ -131,11 +142,15 @@ def _kinetics(flow: pd.Series, cfg: dict, vin: float = 0.5, vout: float = -0.5,
     speeding up). None when too short.
 
     `vin`/`vout` are the state-classification cutoffs passed to :func:`_classify` — default
-    to the legacy ±0.5σ; W5-adjudicated per-lens callers pass their own calibrated value
-    (research/flow_observatory/W5_PREREG.md; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+    to the legacy ±0.5σ. The only surviving W5-adjudicated per-lens override is THEMES
+    (research/flow_observatory/W5_PREREG.md; DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2,
+    superseding DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) — NAMES and SOUTHBOUND both
+    stay at the incumbent ±0.5σ after R2 reverted the R1 selections for those two lenses.
     `winsorize=True` applies the M1 causal-winsorization primitive to the demeaned series
-    before the slope_z drift/vol are computed from it — the SOUTHBOUND aggregate path only
-    (M0-vs-M1 state disagreement measured 4.49%, under the 20% HOLD bound).
+    before the slope_z drift/vol are computed from it; NO production caller passes
+    `winsorize=True` as of R2 (the SOUTHBOUND M1 adoption is withdrawn — see
+    `_winsorize_causal`'s docstring) — the parameter stays so the harness-parity tests in
+    tests/test_flow_velocity.py can still exercise the primitive directly.
     """
     flow = pd.to_numeric(flow, errors="coerce").dropna()
     if len(flow) < cfg["min_obs"]:
@@ -181,10 +196,13 @@ def _classify(vel: float | None, accel: float, vin: float = 0.5, vout: float = -
     strings read as if money were actually moving when the series could be doing the
     OPPOSITE in absolute terms — the exact conflation this program exists to kill).
 
-    `vin`/`vout` default to the legacy ±0.5σ cutoff (still SOUTHBOUND's post-W5 value).
-    NAMES/THEMES callers pass `_NAMES_VIN/_VOUT` / `_THEMES_VIN/_VOUT` — the W5-adjudicated
-    per-lens thresholds (research/flow_observatory/W5_PREREG.md §4;
-    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+    `vin`/`vout` default to the legacy ±0.5σ cutoff (SOUTHBOUND's value, and — as of R2 —
+    NAMES' value too). THEMES callers pass `_THEMES_VIN/_VOUT` — the sole surviving
+    W5-adjudicated per-lens threshold (research/flow_observatory/W5_PREREG.md §4;
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION — the R1 names tau=0.3 selection was
+    computed on the breadth-tilt state series and misapplied to this per-name surface,
+    breaching the frozen 25% neutral floor; withdrawn).
     """
     if vel is None or not np.isfinite(vel):
         return "no data", "无数据"
@@ -287,10 +305,13 @@ def _channel(name: str, label: str, label_zh: str) -> dict | None:
     if live:
         # only compute live velocity for a current series — a frozen channel's last value
         # is years stale and a velocity chip would read as "now" when it isn't.
-        # W5: the winsorized (M1) variant is adjudicated for SOUTHBOUND only (the M0-vs-M1
-        # state disagreement share cleared the HOLD bound there, 4.49% <= 20%); its threshold
-        # re-sweep still lands on the legacy 0.5/-0.5 default, so vin/vout are unchanged.
-        kin = _kinetics(net, _AGG, winsorize=(name == "southbound"))
+        # W5 R2 (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+        # DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION): the R1 SOUTHBOUND M1 adoption rested
+        # on a single unreplicated seeded draw of the §5(a) metric (independent 30-seed
+        # review: P(pass)~=0.75, median improvement ratio ~=0.57 — seed noise, not a lens
+        # property) and is WITHDRAWN. Southbound stays M0 like every other channel; vin/vout
+        # stay the legacy 0.5/-0.5 default.
+        kin = _kinetics(net, _AGG)
         out["flow_1m_b"] = round(float(net.tail(21).sum()) / 1e3, 1)   # ¥millions → ¥B (~1m net)
         out["pos_days_20"] = int((net.tail(20) > 0).sum())
         if kin:
@@ -358,8 +379,11 @@ def _name_kinetics_map(wide: pd.DataFrame) -> dict[str, dict]:
     names = _name_map()
     out: dict[str, dict] = {}
     for tk in wide.columns:
-        # W5: names-lens state cutoff (mechanical nearest-band + min-flip on the M0 grid;
-        # DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+        # W5 R2: names-lens state cutoff reverted to the incumbent +/-0.5 sigma
+        # (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+        # DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION — the R1 tau=0.3 selection was
+        # computed on the breadth-tilt state series and misapplied to this per-name surface,
+        # breaching the frozen 25% neutral floor).
         kin = _kinetics(wide[tk], _WK, vin=_NAMES_VIN, vout=_NAMES_VOUT)
         if not kin or kin["vel_primary"] is None:
             continue
@@ -477,8 +501,10 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
         kin = None
         if sufficient:
             sect_flow = wide[covered].mean(axis=1)     # equal-weight SCORED-member net-rate
-            # W5: themes-lens state cutoff — in the honest-neutral band, flip strictly
-            # improves over the incumbent (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
+            # W5 (confirmed unchanged by the R2 independent review): themes-lens state
+            # cutoff — in the honest-neutral band, flip strictly improves over the
+            # incumbent (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+            # DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
             kin = _kinetics(sect_flow, _WK, vin=_THEMES_VIN, vout=_THEMES_VOUT)
             if not kin or kin["vel_primary"] is None:
                 sufficient = False
@@ -626,21 +652,27 @@ def _seats_as_of() -> str | None:
 # and where fast money meets the institutional tape. Every read is descriptive context —
 # no numeric score is manufactured, confluence stays a render-time CLASS (agree/diverge),
 # and stances stay watch-family ([[signal-contract-gate]], honesty gate above).
-_VIN, _VOUT = 0.5, -0.5   # legacy default cutoff; ALSO southbound's post-W5 threshold —
-                          # research/flow_observatory/W5_PREREG.md §4's re-sweep excluded
-                          # every improving tau via the <2% held-out-reach sanity bound (a
-                          # current-regime degeneracy: 0% held-out "above norm" reach at
-                          # every candidate), so the incumbent 0.5 stays numerically unchanged
-                          # (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION).
-# W5-adjudicated per-lens cutoffs (same decision record). NAMES governs individual-name
-# state labels, flow_breadth's names_in/names_out count, momentum(), and confluence() — all
-# operate over the names population. THEMES governs the curated-theme rows' state labels,
-# flow_breadth's sectors_in/sectors_out + tilt count, and market_pulse's dominant_in/out —
-# all operate over the sector/theme population. Neither touches the W4 official-sector
-# (Shenwan L1) lens (engine.flow_observatory.groups.aggregate_lens) — W5 evaluated only the
-# 22 curated baskets_china themes, names, and southbound; the official lens keeps the
-# legacy default.
-_NAMES_VIN, _NAMES_VOUT = 0.3, -0.3       # mechanical nearest-band + min-flip on the M0 grid
+# W5 R2 (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+# DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION; full rationale
+# reports/flow_observatory_w5_methods.md §7 Revised adjudication): an independent
+# statistical review found two blockers in the R1 selection — (1) the names tau=0.3 pick
+# was computed on the breadth-tilt STATE SERIES and misapplied to the per-name surface,
+# where it breaches the frozen 25% neutral floor (measured 18.8%) and worsens flip rate
+# (+7.1% relative); (2) the southbound M1 adoption rested on a single unreplicated seeded
+# draw of the §5(a) metric (30-seed review: P(pass)~=0.75, median improvement ratio ~=0.57
+# — seed noise, not a lens property). Both revert to the incumbent ±0.5σ. THEMES is the
+# ONLY lens whose W5 threshold survived review, verified sound on its OWN applied surface
+# (per-theme neutral_share 0.3222->0.4716 in band; flip 0.1865->0.1610 improves — not a
+# tie). Net W5 engine delta after R2: themes thresholds only. flow_breadth's
+# names_in/names_out count, momentum(), and confluence() all read _NAMES_VIN/_VOUT over the
+# names population; flow_breadth's sectors_in/sectors_out + tilt count and
+# market_pulse's dominant_in/out read _THEMES_VIN/_VOUT over the sector/theme population.
+# Neither touches the W4 official-sector (Shenwan L1) lens
+# (engine.flow_observatory.groups.aggregate_lens) — W5 evaluated only the 22 curated
+# baskets_china themes, names, and southbound; the official lens keeps the legacy default
+# (the same ±0.5σ that names and southbound now both carry too).
+_NAMES_VIN, _NAMES_VOUT = 0.5, -0.5       # R2: reverted to the incumbent (R1 had 0.3/-0.3 —
+                                          # wrong-surface selection, withdrawn)
 _THEMES_VIN, _THEMES_VOUT = 0.75, -0.75   # in the honest-neutral band; flip strictly improves
 _THEMES_TILT_BETA = 30                     # sector-breadth tilt band (was 25)
 

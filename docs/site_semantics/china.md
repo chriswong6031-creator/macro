@@ -149,22 +149,30 @@ does not describe china.html's own internals section above, which is a different
 - **Computed by:** `engine/flow_observatory/contract.py` `quadrant` / `enrich_group` /
   `market_read`, from `abs.value` = `rate_4wk` (themes) or `flow_1m_b` (Southbound
   aggregate) and `rel.value` = `vel`/`vel_primary`. De-minimis neutral bands: |abs| < 0.1pp
-  (themes) / < ¥0.5B (Southbound). |rel|: < 0.75σ (themes) / < 0.3σ (names) / < 0.5σ
-  (southbound) — W5-calibrated per lens, `research/flow_observatory/W5_PREREG.md`,
-  `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`.
+  (themes) / < ¥0.5B (Southbound). |rel|: < 0.75σ (themes) / < 0.5σ (names) / < 0.5σ
+  (southbound) — themes W5-calibrated, names/southbound at the incumbent default,
+  `research/flow_observatory/W5_PREREG.md`,
+  `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2` (supersedes
+  `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`).
 - **So what:** Read BOTH figures on a chip before reacting to either one alone — a large σ
   reading with a negative raw flow is not the same market condition as a large σ reading
   with a positive one, even though the old page painted both the same color.
 
-**Descriptive method (W5, 2026-09):** the incumbent `slope_z` normalization (M0) stays for
-the themes and names lenses — no evaluated challenger (winsorized / median-MAD /
+**Descriptive method (W5, 2026-09; revised R2):** the incumbent `slope_z` normalization
+(M0) stays for ALL THREE lenses — no evaluated challenger (winsorized / median-MAD /
 percentile-probit) cleared the frozen improve-without-worsening bar
-(`research/flow_observatory/W5_PREREG.md` §5) — with their state thresholds recalibrated
-by the same frozen procedure: themes 0.75σ (tilt band 30pp, was 25pp), names 0.3σ (the
-mechanical nearest-band-then-min-flip result on the M0 grid; no production tilt-gauge
-consumer exists for names yet). Southbound switches to the winsorized variant (M1) after
-its own M0-vs-M1 state-disagreement share measured 4.5% — well under the 20% sanity bound
-that would have forced a HOLD — but its threshold re-sweep still lands back on 0.5σ: every
-candidate cutoff's held-out reach for "above norm" was 0% across the last 60 sessions, a
-current-regime degeneracy the adjudication excludes rather than chases. Full arithmetic:
-`reports/flow_observatory_w5_methods.md` §6 Adjudication.
+(`research/flow_observatory/W5_PREREG.md` §5). Themes' state threshold recalibrates to
+0.75σ (tilt band 30pp, was 25pp) — verified sound on its applied surface and reconfirmed
+by an independent statistical review. Names and southbound both stay at the incumbent
+0.5σ: the first adjudication's names τ=0.3 pick was computed on the harness's
+breadth-tilt-style grid and misapplied to the per-name surface, where it breaches the
+frozen 25% neutral floor (measured 18.8%) and worsens flip rate (+7.1% relative) — reverted.
+The first adjudication's southbound switch to the winsorized variant (M1) rested on a
+single unreplicated seeded draw of the frozen §5(a) outlier/quiet metric; independent
+30-seed replication found P(pass)≈0.75 under seed variation (median improvement ratio
+≈0.57) — seed noise, not a lens property — so the method reverts to M0 as well (its
+threshold sweep was already regime-inconclusive: every candidate cutoff's held-out reach
+for "above norm" was 0% across the last 60 sessions). Net W5 change: themes thresholds
+only. Full arithmetic: `reports/flow_observatory_w5_methods.md` §6 (original) and §7
+(revised adjudication); decision records `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2`
+(supersedes `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`).

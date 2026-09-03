@@ -80,6 +80,7 @@ confidence: medium
 reversibility: easy
 decided_by: coo-fable
 decided_at: 2026-09-03
+superseded_by: DEC:FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2
 ---
 
 ## Grounds

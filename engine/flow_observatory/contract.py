@@ -54,14 +54,23 @@ _ACCEL_BUCKET: dict[str, str] = {
 }
 
 # W5-calibrated thresholds — spec §1.2 (research/flow_observatory/W5_PREREG.md;
+# DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
 # DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION). REL_THRESH stays the shared default AND
-# southbound's own post-W5 cutoff (its threshold re-sweep excluded every improving tau via
-# the <2% held-out-reach sanity bound — a current-regime degeneracy — so the incumbent 0.5
-# stays numerically unchanged). THEMES/NAMES recalibrate per the frozen §4 procedure.
-REL_THRESH = 0.5                                  # ±0.5σ velocity — southbound (unchanged)
+# southbound's post-W5 cutoff (R1's threshold re-sweep excluded every improving tau via the
+# <2% held-out-reach sanity bound — a current-regime degeneracy — so the incumbent 0.5
+# stayed numerically unchanged; R2 additionally reverted southbound's METHOD back to M0
+# after an independent review found the M1 adoption rested on a single unreplicated seeded
+# draw). THEMES is the only lens whose W5 threshold survived R2 review; it recalibrates per
+# the frozen §4 procedure. NAMES also reverted to the incumbent under R2 (the R1 tau=0.3
+# pick was computed on the breadth-tilt state series and misapplied to the per-name
+# surface, breaching the frozen 25% neutral floor) — there is no separate NAMES_REL_THRESH
+# constant; names callers use REL_THRESH like southbound (removed as a dead duplicate: it
+# was never read outside its own definition even in R1, since engine.flow_velocity's names
+# lens always passed its own module-level threshold explicitly).
+REL_THRESH = 0.5                                  # ±0.5σ velocity — southbound AND (as of
+                                                   # R2) names too
 THEMES_REL_THRESH = 0.75                          # themes: in the honest-neutral band, flip
                                                    # strictly improves (not a tie)
-NAMES_REL_THRESH = 0.3                            # names: mechanical nearest-band + min-flip
 SOUTHBOUND_REL_THRESH = REL_THRESH                # explicit alias — see comment above
 ABS_DEMINIMIS: dict[str, float] = {"pct_rate": 0.1, "cny_b": 0.5}
 
@@ -136,9 +145,10 @@ def enrich_group(abs_value: float | None, rel_value: float | None, *,
     """The additive ``{abs, rel, quadrant, quadrant_en, quadrant_zh}`` block for one
     group/aggregate row — the anti-conflation device every W1 gate hinges on.
 
-    ``rel_thresh`` defaults to the legacy/southbound ±0.5σ cutoff; W5-adjudicated callers
-    pass ``THEMES_REL_THRESH``/``NAMES_REL_THRESH`` (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-
-    SELECTION)."""
+    ``rel_thresh`` defaults to the legacy/southbound/names ±0.5σ cutoff; the only
+    W5-adjudicated override still live is ``THEMES_REL_THRESH``
+    (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION — R2 reverted names to the default)."""
     a = abs_field(abs_value, period=abs_period, unit=abs_unit)
     r = rel_field(rel_value, reference_window=reference_window, thresh=rel_thresh)
     q = quadrant(a["direction"], r["direction"])
@@ -165,9 +175,12 @@ def market_read(rows: list[dict[str, Any]], unscored: int = 0, *,
     denominator + coverage). ``unscored`` folds the previously-silent kin-None drops into
     ``missing`` rather than letting them vanish from the count entirely.
 
-    ``rel_thresh`` defaults to the legacy/southbound ±0.5σ cutoff; the themes/names callers
-    in :func:`build_v2` and ``engine.flow_velocity.ashare_name_velocity`` pass their own
-    W5-adjudicated value (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION)."""
+    ``rel_thresh`` defaults to the legacy/southbound/names ±0.5σ cutoff; the themes caller
+    in :func:`build_v2` passes its own W5-adjudicated ``THEMES_REL_THRESH``
+    (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) — ``engine.flow_velocity.
+    ashare_name_velocity`` passes its own module-level ``_NAMES_VIN``, which R2 reverted to
+    the same default value."""
     denom = len(rows) + unscored
     abs_c = {"positive": 0, "negative": 0, "neutral": 0, "missing": unscored, "denominator": denom}
     rel_c = {"positive": 0, "negative": 0, "neutral": 0, "missing": unscored, "denominator": denom}
