@@ -6,7 +6,7 @@ ended_because: blocked
 mission: >
   Make the current Realm1/P0B continuation recoverable without relying on chat history: correct the
   stale unconsumed-delivery record after the exact profile_B host child acknowledged and returned its
-  no-effect checkout/host proof, pin the active but unprotected #432 source repair, and preserve the
+  no-effect checkout/host proof, pin the unprotected #432 Draft/Hold source return, and preserve the
   account, PF-1, INSTALL1 and #355 boundaries that remain before any future host continuation.
 state_before: >
   The active Chairman Control Room workstream still pointed at the 2026-08-25 fixed-port
@@ -19,13 +19,13 @@ changed:
     what: >
       Correct P0B and the workstream-level next action from DELIVERY_UNCONSUMED to the actual
       receiver-bound host hold: task ACK and prior checkout/host proof exist, but #359 is still
-      PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE. Record #432 as active source-only red
-      construction, not protected capability, and preserve the downstream account/PF-1/INSTALL1
+      PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE. Record #432 as a source-only Draft/Hold
+      return with `BUILT_NOT_PROVEN / PRODUCTION_INERT`, not protected capability, and preserve the downstream account/PF-1/INSTALL1
       and #355 architecture-only boundaries.
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-03-realm1-source-protected-profile-b-placement.md
     what: >
       Maintain this exact cold-start continuation with current carrier facts: #431 terminal duplicate,
-      #359 ACKed but effect-free hold, #432's exact task and Draft red checkpoint, profile_A proven,
+      #359 ACKed but effect-free hold, #432's exact task and Draft/Hold source return, profile_A proven,
       profile_B/account unproven, and the do-not-redo boundaries needed by the next Sol session.
 verified:
   - claim: >
@@ -40,8 +40,11 @@ verified:
     result: >
       PR #396 remains MERGED as 771a95586c7a31933ee612eafaa4d1471f57527b from approved integrated
       head 52b78464311e924a5f4d73a89ad5cd33cf559010. Current master is 6aa94e3377086d8f862c4811a2ae87b94d4bd5a1;
-      issue #432 is OPEN / STARTED / SOURCE_ONLY and Draft PR #435 head
-      53a477288a22c5f3ea06e4fa7d8fe0aff2c246e1 has a failing test checkpoint, so #432 is not protected.
+      issue #432 is OPEN / STARTED / SOURCE_ONLY. Its bound worker returned Draft PR #435 head
+      62eaf50af3b18b8ea165de2213393223f9e16f57 (tree 25b5066de1ec528809911e5806fe81b3068543aa) as
+      `DRAFT / HOLD-FOR-SOL` and `BUILT_NOT_PROVEN / PRODUCTION_INERT`; its source-only result has no
+      protected-master readback. At this read, CodeQL had concluded SUCCESS, hosted `test` was in
+      progress, and no non-author exact-head review existed.
   - claim: >
       The protected merge contains exactly the five independently reviewed semantic blobs from the
       accepted Realm1 candidate.
@@ -112,8 +115,8 @@ unverified:
       protected current-source readback.
     what_would_verify: >
       Draft PR #435 must reach a reviewed exact head with terminal green required checks, merge into
-      current Mastermind master, and be read back from the protected source; a red source-only
-      checkpoint or source merge alone is insufficient.
+      current Mastermind master, and be read back from the protected source; a Draft/Hold source
+      return or source merge alone is insufficient.
   - claim: >
       The approved Mac host, exact v3 profile_A anchor, fixed private lifecycle coordinates,
       Multilogin launcher and Keychain-owned credential route still satisfy every refreshed pre-START
@@ -139,13 +142,13 @@ unverified:
       terms/verification/2FA, and a bounded host operation proves both profile realms without copying
       cookies or storage. No account child or paid-plan default exists now.
 unresolved:
-  - "Issue #432 is active source construction only: Draft PR #435's test checkpoint is red, so no repaired source is built, protected or read back."
+  - "Issue #432 has a source-return head in Draft/Hold: its reported capability is BUILT_NOT_PROVEN / PRODUCTION_INERT, and terminal hosted exact-head checks, non-author review and protected-master readback remain absent."
   - "The #359 host task is ACKed and has prior clean-checkout/approved-host proof, but remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE."
   - "Profile_A is proven; profile_B has no live capability receipt, and no account realm is proven or signed into both profiles."
   - "No account child, account selection, account creation, payment choice, PF-1, INSTALL1 or browser action is authorized by this record."
   - "PF-1 A/B, INSTALL1, PF-1 C15-C18, final intended-seat foreground proof and #355 implementation remain unstarted or unproven."
 next_actions:
-  - "Keep #359 PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while #432 and Draft PR #435 are source-only and red; do not create another host task, branch, PR, watcher or lifecycle."
+  - "Keep #359 PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while #432's Draft/Hold source return remains unprotected; do not create another host task, branch, PR, watcher or lifecycle."
   - "Require #432's current-source protection, terminal checks and independent exact-head review; after readback, wait for one fresh Sol same-root continuation before any #359 preflight refresh."
   - "On that continuation, the existing #359 task alone re-reads protected source and returns the exact no-effect HOST_PROFILE_GATE; no bootstrap, Keychain, vendor, profile, account or browser action occurs first."
   - "Only after PROFILE_B_PROVEN can Sol close/update #359 and authorize a separate finite account-selection/sign-in ceremony with no paid-plan default."
@@ -184,8 +187,11 @@ Historic Mastermind `771a95586c7a31933ee612eafaa4d1471f57527b` remains the indep
 Realm1-C1 source release. It does not release the current host child. The sole current source repair
 is issue #432, `web-sol-realm1-live-seat-census-gate-repair-20260903-sol-001`, bound to
 Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20` on Slack root
-`C0BSBM78V1N/1788472184.797999`. It is `STARTED / SOURCE_ONLY / RED_FIRST`; Draft PR #435's test
-checkpoint is failing, so its capability is not built, protected or live.
+`C0BSBM78V1N/1788472184.797999`. The bound worker returned Draft PR #435 head
+`62eaf50af3b18b8ea165de2213393223f9e16f57` (tree `25b5066de1ec528809911e5806fe81b3068543aa`) as
+`DRAFT / HOLD-FOR-SOL` with `BUILT_NOT_PROVEN / PRODUCTION_INERT`; the effect remains source-only.
+Its terminal exact-head hosted evidence, non-author review and protected-master readback remain absent,
+so it is neither protected nor live.
 
 The canonical profile_B host child
 `web-sol-realm1-profile-b-host-provision-20260902-sol-001` remains bound to

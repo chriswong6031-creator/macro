@@ -52,11 +52,13 @@ waves:
       Codex-01a06846-1b1b-7212-aa67-e6d303802489 plus a prior clean detached-checkout and approved-host
       readback, but no lifecycle, Keychain, vendor, profile, account or browser effect. Its controlling
       state is PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE. Issue #431 is the CLOSED terminal
-      duplicate with effect=NONE. Canonical issue #432 is active STARTED / SOURCE_ONLY / RED_FIRST in
-      Codex-01a0694f-56bb-71c0-9c35-6a0644691f20; Draft Mastermind PR #435 has a failing test checkpoint,
-      so the repair is neither built nor protected. Profile_A remains the only proven disposable profile;
-      profile_B and any account realm remain unproven. Wait for #432 to be independently reviewed,
-      protected and read back, then require a fresh same-root Sol continuation before re-running only the
+      duplicate with effect=NONE. Canonical issue #432's bound worker returned source-only Draft PR #435
+      head 62eaf50af3b18b8ea165de2213393223f9e16f57 as `DRAFT / HOLD-FOR-SOL` and
+      `BUILT_NOT_PROVEN / PRODUCTION_INERT`; at the captured read, CodeQL had passed, hosted `test` was
+      in progress, and no non-author exact-head review or protected-master readback existed. Profile_A
+      remains the only proven disposable profile; profile_B and any account realm remain unproven. Wait
+      for #432 to be independently reviewed, protected and read back, then require a fresh same-root Sol
+      continuation before re-running only the
       exact no-effect host gate. PF-1 A/B, INSTALL1, PF-1 C15-C18 and intended-seat foreground proof
       remain ordered downstream gates; #355 remains architecture/semantic-readiness work only, with no
       implementation start or account ceremony child.
@@ -159,7 +161,7 @@ landmines:
   - "Historical P0B receipts include a Multilogin HTTP 501/non-JSON cloud-search result and a rejected launcher bearer. They remain valid adverse evidence but are superseded as the current start gate by later protected Mastermind repairs and must not be replayed as current capability truth."
   - "The fixed-port MAS-115 profile update is a one-profile, one-policy mutation. Any changed profile, port, payload, pre-state or ambiguous effect requires reconciliation; never blind-retry EFFECT_UNKNOWN."
   - "Mastermind PR #396 merge 771a9558 is source proof only. It does not prove profile_B, Keychain readiness, a vendor effect, a ChatGPT account realm, PF-1, INSTALL1 or production behavior."
-  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432 is protected and a fresh same-root continuation arrives."
+  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432 has terminal exact-head hosted evidence, independent review and protected-master readback, and a fresh same-root continuation arrives."
   - "PF-1 A/B precedes INSTALL1, while PF-1 C15-C18 requires the exact installed generation after INSTALL1. Collapsing PF-1 into one pre-install prerequisite creates a circular gate."
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
@@ -184,11 +186,11 @@ do_not_redo:
   - "Do not blind-retry a profile update, lifecycle bootstrap, release-receipt, Keychain or vendor effect after uncertainty; reconcile the same operation/task/host and exact fixed coordinates."
 next_action: >
   Keep the exact #359 host child at PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while the
-  sole source repair, issue #432 / Draft PR #435, remains STARTED / SOURCE_ONLY / RED_FIRST and
-  unprotected. Do not recreate a host child, revive #431, rerun the attended ceremony, or start a
-  host gate from a source-only checkpoint. After #432 has current-source protection, terminal checks
-  and independent exact-head review, wait for one fresh same-root Sol continuation to re-read the
-  protected source and run the packet's no-effect HOST_PROFILE_GATE. Only a later PROFILE_B_PROVEN
+  sole source repair, issue #432 / Draft PR #435, remains an unprotected Draft/Hold source return.
+  Do not recreate a host child, revive #431, rerun the attended ceremony, or start a host gate from a
+  source-only checkpoint. After #432 has terminal exact-head hosted evidence, independent review and
+  protected-master readback, wait for one fresh same-root Sol continuation to re-read the protected
+  source and run the packet's no-effect HOST_PROFILE_GATE. Only a later PROFILE_B_PROVEN
   return can release the separate non-sensitive account ceremony; no account child or paid-plan
   default exists now. PF-1, INSTALL1 and real-seat proof remain separate ordered gates, while #355
   remains architecture-only and ASD-A2/A3 remain independent lanes.
@@ -200,9 +202,11 @@ next_action: >
 transport path remain unproven. P0A plus H0 is `PROVEN_LIVE` on the persistent Chairman path, X1 is
 `ACCEPTED / PROVEN_LIVE_LOCAL`, and MAS-114 is complete. Mastermind PR #396 merge
 `771a95586c7a31933ee612eafaa4d1471f57527b` remains source proof for the bounded Realm1-C1 lifecycle,
-not profile capability. The current canonical source repair is issue #432: it is `STARTED / SOURCE_ONLY /
-RED_FIRST` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`, with Draft PR #435's test checkpoint
-failing, so it is not `BUILT`, `PROTECTED` or `PROVEN_LIVE`. The #359 host task
+not profile capability. The current canonical source repair is issue #432: its bound worker returned
+Draft PR #435 head `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
+`BUILT_NOT_PROVEN / PRODUCTION_INERT` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`. It remains
+source-only, without accepted terminal exact-head hosted evidence, non-author review or protected-master
+readback, and is therefore neither `PROTECTED` nor `PROVEN_LIVE`. The #359 host task
 `01a06846-1b1b-7212-aa67-e6d303802489` has an ACK plus prior clean detached-checkout and approved-host
 proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE`; no host, Keychain, vendor,
 profile, account or browser effect has occurred. Exactly profile_A is proven; profile_B and the
