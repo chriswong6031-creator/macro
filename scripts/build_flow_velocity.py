@@ -25,12 +25,60 @@ from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 from engine.flow_observatory import changes as fo_changes  # noqa: E402
 from engine.flow_observatory import contract as fo_contract  # noqa: E402
+from engine.flow_observatory import groups as fo_groups  # noqa: E402
 from engine.flow_observatory import history as fo_history  # noqa: E402
 from engine.flow_observatory import quality as fo_quality  # noqa: E402
 from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_flow_velocity")
+
+
+# ── W4: official (Shenwan L1) sector lens — wired here, not engine.flow_velocity.py
+# (OWNED-FILES scope: flow_velocity.py exposes reusable rollup HELPERS only; the lens
+# itself, and its enrich_group/assign_ranks pass, are "lens wiring" and live here). ──
+def _official_sectors_panel() -> dict | None:
+    """Build the official-sector lens payload, or ``None`` when there is nothing to
+    show (2B spike-failure shape — this build's spike SUCCEEDED, §1, so ``None`` here
+    only means the membership store has not collected yet, e.g. a fresh checkout
+    before the china_sectors collector's first run). Recomputes ``wide``/``kmap`` —
+    the same shared kinetics primitives ``engine.flow_velocity.snapshot()`` already
+    built for the theme lens — because OWNED-FILES scope keeps this assembly OUT of
+    flow_velocity.py itself; the recompute's wall-time cost is measured in the PR
+    body's performance note (spec §7)."""
+    import pandas as pd
+
+    from collectors.china_sectors import SW_L1
+    from engine.flow_velocity import _flow_panel, _name_kinetics_map
+
+    p = config.data_dir() / "china_sectors" / "membership.parquet"
+    if not p.exists():
+        return None
+    try:
+        membership_df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("official-sector membership store unreadable (%s)", e)
+        return None
+    wide = _flow_panel()
+    if wide is None:
+        return None
+    kmap = _name_kinetics_map(wide)
+    # SW_L1[code] = (cn, en) — aggregate_lens wants (en, zh) per code, EN first (its
+    # `name` field convention, matching every other lens' EN-primary row shape).
+    l1_names = {code: (en, cn) for code, (cn, en) in SW_L1.items()}
+    result = fo_groups.aggregate_lens(wide, kmap, membership_df, l1_names=l1_names)
+    if not result.get("available"):
+        return result
+    # same abs/rel/quadrant/rank contract the theme lens gets from contract.build_v2
+    # (spec §2A "emitting the same per-row contract as themes") — reused here via
+    # contract.py's PUBLIC functions, never a re-implementation.
+    rows = result["rows"]
+    for row in rows:
+        row.update(fo_contract.enrich_group(row.get("rate_4wk"), row.get("vel"),
+                                            abs_unit="pct_rate", abs_period="20d",
+                                            reference_window=126))
+    fo_contract.assign_ranks(rows)
+    return result
 
 
 def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
@@ -163,6 +211,18 @@ def main() -> int:
     if not snap:
         log.warning("no flow-velocity data (run the China/Tushare collectors first) — skipping")
         return 0
+
+    # W4: official (Shenwan L1) sector lens — additive, never fatal; a build with no
+    # membership store yet (fresh checkout) still ships the curated-theme lens alone.
+    try:
+        t0 = datetime.now(timezone.utc)
+        official = _official_sectors_panel()
+        if official is not None:
+            snap["official_sectors"] = official
+        log.info("official-sector lens: %s (%.2fs)", "built" if official else "unavailable",
+                 (datetime.now(timezone.utc) - t0).total_seconds())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("official-sector lens failed (non-fatal): %s", e)
 
     # Before the render: a template error returns 0 early (below), and the
     # staleness of the DATA is worth saying even on a night the page fails to
