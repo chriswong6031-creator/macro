@@ -2664,8 +2664,12 @@ jobs:
       # subjects (lib/desk_guard.py, engine/flow_velocity.py,
       # scripts/build_flow_velocity.py, collectors/china_tushare.py) — a guard the
       # guarded change cannot trigger is not a guard (#3488).
+      # Wired 2026-09-02 (W1, PR #6780): tests/test_flow_observatory_contract.py guards
+      # the flow_observatory.v2 desk contract (quadrant axis consistency, market_read
+      # denominators incl. unscored, five-leg sources[] honesty, state_log idempotence,
+      # banned-vocabulary at rest) — same subject family as this lane's two flow suites.
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
-        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py -q
+        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py -q
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so the render/engine guard lanes own it. It sits
       # here rather than in the sweep because it is one focused suite and because an

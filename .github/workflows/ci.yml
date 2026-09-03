@@ -2065,6 +2065,10 @@ on:
       - "collectors/china_tushare.py"
       - "tests/test_flow_velocity.py"
       - "tests/test_flow_desk_staleness.py"
+      # Flow Observatory V2 (W1, PR #6780): the v2 contract package and its suite —
+      # listed with their subjects so the guard and the guarded change trigger together.
+      - "engine/flow_observatory/**"
+      - "tests/test_flow_observatory_contract.py"
       # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
       # collector, grader engine, build script, detector config, and test file.
       - "collectors/flow_signals.py"
