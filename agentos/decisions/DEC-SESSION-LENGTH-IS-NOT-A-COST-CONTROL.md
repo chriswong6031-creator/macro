@@ -89,7 +89,12 @@ NOT repealed, and explicitly restated so nothing rides out with it:
 - DONE for ordinary work is still commit → push → PR → CI → same-day squash-merge → live
   verification, owned by one session.
 - `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` and the `PARKED / HOLD-FOR-SOL` reporting rule — a
-  ratified hold is still terminal for that PR's work and still never reported as shipped.
+  ratified hold is still terminal for the current ship/merge attempt and still never
+  reported as shipped. That terminality is scoped, not global: the reciprocal worker/Sol
+  child dialogue remains nonterminal, the same child and carrier resume on a same-carrier
+  Sol continuation, and only an explicit same-carrier Sol STOP closes the child
+  (`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`). A held worker yielding its reasoning turn is a
+  yield, not a session end — which is exactly the distinction this repeal turns on.
 
 ## What would reopen this
 
