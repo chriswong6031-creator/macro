@@ -28,6 +28,7 @@ from engine.cn_theme_tape import build_cn_theme_tape
 from engine.flow_observatory import changes as fo_changes
 from engine.flow_observatory.contract import (
     QUADRANT_LABELS,
+    STATUS_WORD,
     ContractError,
     build_sources,
     build_v2,
@@ -140,9 +141,9 @@ def _v2(log_rows=None, market_session="2026-09-01", **over):
 
 
 def _render(v2, built="test"):
-    from engine.flow_observatory.contract import QUADRANT_LABELS
     env = Environment(loader=FileSystemLoader(str(TMPL)), autoescape=True)
-    env.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS)
+    env.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS,
+                       status_word=STATUS_WORD)
     return env.get_template("flow_velocity.html.j2").render(C=C, snap=v2, built=built)
 
 

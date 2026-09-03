@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 from engine.flow_observatory import changes as fo_changes  # noqa: E402
+from engine.flow_observatory import contract as fo_contract  # noqa: E402
+from engine.flow_observatory import quality as fo_quality  # noqa: E402
 from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -89,6 +92,47 @@ def _warn_if_stale(snap: dict) -> list[dict]:
     return findings
 
 
+def _escalate_if_degraded(v2_snap: dict, log_rows: list | None = None,
+                          run_date: str | None = None) -> None:
+    """>=2-consecutive-RUN degradation escalates to ::error + a job-summary line in the
+    asia-close lane (W2_SPEC.md §2) — never fails the job (additive lane law); the
+    annotation IS the escalation surface. Bare column-zero print+flush, house annotation
+    law (this module runs inside an Actions step, same as ``_warn_if_stale`` above).
+
+    B2/SF-8 repair: the desk-wide gate (``should_escalate``, >=2 consecutive BUILD RUNS —
+    see ``quality.consecutive_degraded_sessions``) is unchanged, but each bad leg's OWN
+    printed count now comes from ``quality.leg_consecutive_bad_runs`` — a leg's own streak
+    can differ from the desk's worst-of rollup (one leg may have been STALE for nine runs
+    while another only just went DEGRADED today), so borrowing the desk-wide ``n`` for every
+    leg was itself a false claim. The wording also changes from the false "for N sessions"
+    (SF-8 — the counter was never sessions, and even the corrected session-based read would
+    have been wrong) to "×N runs".
+    """
+    health = v2_snap.get("health") or {}
+    if not fo_quality.should_escalate(health):
+        return
+    log_rows = log_rows or []
+    bad_legs = [s for s in (v2_snap.get("sources") or [])
+               if s.get("status") not in (None, fo_quality.HEALTHY, fo_quality.HISTORICAL_ONLY)]
+    lines = []
+    for leg in bad_legs:
+        n = fo_quality.leg_consecutive_bad_runs(log_rows, leg.get("source_id"), run_date,
+                                                leg.get("status"))
+        line = (f"::error title=flow-observatory-degraded::{leg['source_id']} "
+               f"{leg.get('status')} ×{n} runs")
+        print(line, flush=True)
+        lines.append(line)
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path and lines:
+        try:
+            with open(summary_path, "a", encoding="utf-8") as fh:
+                leg_names = ", ".join(b["source_id"] for b in bad_legs)
+                fh.write(f"- flow-observatory degraded: {leg_names} — see annotations for "
+                        f"each leg's own run streak\n")
+        except OSError as e:  # noqa: BLE001 — the annotation above already fired
+            log.warning("flow_observatory: could not append GITHUB_STEP_SUMMARY (%s)", e)
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     try:
@@ -118,11 +162,19 @@ def main() -> int:
     # to kill, so on that one failure mode the plain (pre-v2) `snap` ships instead.
     data_root = config.data_dir()
     v2_snap = None
+    run_date = None
+    log_rows: list = []
     try:
         log_rows = fo_changes.read_state_log(data_root)
-        generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        generated_at_dt = datetime.now(timezone.utc)
+        generated_at = generated_at_dt.isoformat(timespec="seconds")
+        run_date = generated_at[:10]
+        # B1: `now=generated_at_dt` — a real tz-aware UTC datetime, routed through the
+        # calendars' own settle-buffer-aware expected_last_session (never a bare
+        # `.date()` fed straight to an Asia calendar — the exact forbidden shape B1 closes).
         candidate = build_v2(snap, log_rows=log_rows, market_session=snap.get("as_of"),
-                             generated_at=generated_at, seats_as_of=snap.get("seats_as_of"))
+                             generated_at=generated_at, seats_as_of=snap.get("seats_as_of"),
+                             now=generated_at_dt)
         current_themes = {
             r["id"]: {"quadrant": r.get("quadrant"), "state": r.get("state"),
                       "vel": r.get("vel"), "rank": r.get("rank"),
@@ -130,8 +182,10 @@ def main() -> int:
             for r in (candidate.get("ashare_sectors") or {}).get("rows") or []
             if r.get("id")
         }
+        current_legs = {s["source_id"]: s.get("status") for s in (candidate.get("sources") or [])}
         candidate["change_summary"] = fo_changes.compute_changes(
-            {"session": candidate.get("market_session"), "themes": current_themes}, log_rows)
+            {"session": candidate.get("market_session"), "themes": current_themes,
+             "legs": current_legs}, log_rows)
         validate(candidate)
         v2_snap = candidate
     except ContractError as e:
@@ -144,6 +198,9 @@ def main() -> int:
         log.warning("flow_observatory.v2 assembly failed (non-fatal, skipping v2 extensions): %s", e)
     if v2_snap is not None:
         snap = v2_snap
+        # B2: log_rows here are the PRIOR runs (read before this run's candidate was built,
+        # so they never include the current run) + run_date names the CURRENT run explicitly.
+        _escalate_if_degraded(v2_snap, log_rows=log_rows, run_date=run_date)
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -152,8 +209,8 @@ def main() -> int:
         env.globals.update(td=i18n.td, tr=i18n.tr)
     except Exception:  # noqa: BLE001
         env.globals.update(td=lambda en: en, tr=lambda en: en)
-    from engine.flow_observatory.contract import QUADRANT_LABELS
-    env.globals.update(quadrant_labels=QUADRANT_LABELS)
+    from engine.flow_observatory.contract import QUADRANT_LABELS, STATUS_WORD
+    env.globals.update(quadrant_labels=QUADRANT_LABELS, status_word=STATUS_WORD)
 
     try:
         from scripts.build_vector import C  # shared palette
@@ -188,7 +245,10 @@ def main() -> int:
                 for r in (v2_snap.get("ashare_sectors") or {}).get("rows") or []
                 if r.get("id")
             }
-            entry = {"themes": themes_entry, "aggregate": {}, "market_read": v2_snap.get("market_read") or {}}
+            health_entry = {"publication_state": v2_snap.get("publication_state"),
+                            "legs": fo_contract.state_log_legs_snapshot(v2_snap.get("sources") or [])}
+            entry = {"themes": themes_entry, "aggregate": {},
+                    "market_read": v2_snap.get("market_read") or {}, "health": health_entry}
             res = fo_changes.append_state_log(v2_snap["market_session"], entry, data_root)
             if res.get("written"):
                 log.info("flow_observatory: state_log advanced (%d rows)", res.get("rows", 0))
