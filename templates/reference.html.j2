@@ -1,0 +1,834 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro eyebrow(en, zh) -%}
+<span class="eyebrow rf-eb">{{ t(en, zh) }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Reference — indicators &amp; terms</title>
+{% set seo_title = "Market Reference — Mastermind" %}{% set seo_desc = "What every indicator and market term on Mastermind means, how to read it, and where it appears." %}{% set seo_path = "reference.html" %}
+{% include "_seo_head.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ═══ Market Reference — page-local composition over theme.css tokens ═══════════
+   Dark = command centre: rows on the open canvas, depth by luminance.
+   Light = research workspace: the same rows printed on one white sheet, depth by
+   structure and shadow. The two are different MATERIAL, not different values. */
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font:var(--fs-body)/1.6 var(--font-ui);
+       margin:0; padding:var(--sp-4,16px); }
+@media (min-width:1100px){ body { padding:var(--sp-6,24px) max(var(--sp-8,44px), calc((100vw - 1180px)/2)); } }
+a { color:var(--ink-link, var(--link)); text-decoration:none; }
+a:hover { text-decoration:underline; text-underline-offset:2px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+           clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* ── page header (canvas plane) ─────────────────────────────────────────────── */
+.rf-head { max-width:74ch; margin:0 0 var(--sp-6,24px); }
+.rf-eb { display:block; margin-bottom:var(--sp-1,4px); }
+.rf-head h1 { font-size:var(--fs-h1); font-weight:800; letter-spacing:-.02em; margin:0 0 var(--sp-2,8px); }
+.rf-lead { font-size:var(--fs-md); color:var(--muted); margin:0; }
+.rf-return { margin:var(--sp-4,16px) 0 0; }
+.rf-back-arrow { margin-right:var(--sp-1,4px); }
+
+/* ── layout: rail + column. Methodology's proportions, one number each. ─────── */
+.rf-layout { display:grid; grid-template-columns:240px minmax(0,78ch);
+             gap:var(--sp-7,32px); align-items:start; }
+@media (max-width:999px){ .rf-layout { grid-template-columns:1fr; } .rf-rail { display:none; } }
+
+/* ── index rail ─────────────────────────────────────────────────────────────── */
+.rf-rail-inner { position:sticky; top:var(--sp-5,20px); display:flex; flex-direction:column;
+                 gap:var(--sp-5,20px); max-height:calc(100vh - var(--sp-8,44px)); overflow:auto;
+                 overscroll-behavior:contain; padding-right:var(--sp-3,12px); }
+/* DARK: the rail floats on the canvas — darkness is the separation. */
+.rf-rail { border-right:0; }
+/* LIGHT: the canvas is pale, so the rail needs a printed edge against the sheet. */
+html[data-theme="light"] .rf-rail { border-right:1px solid var(--line); }
+
+.segbtn-row { display:flex; }
+.rf-seg .segbtn { flex:1; appearance:none; background:var(--panel); color:var(--muted);
+  border:1px solid var(--line); border-right-width:0; padding:var(--sp-2,8px) var(--sp-1,4px);
+  font:600 var(--fs-sm)/1.2 var(--font-ui); cursor:pointer; border-radius:0; min-height:40px; }
+.rf-seg .segbtn:first-child { border-radius:var(--r-ctl,8px) 0 0 var(--r-ctl,8px); }
+.rf-seg .segbtn:last-child  { border-radius:0 var(--r-ctl,8px) var(--r-ctl,8px) 0; border-right-width:1px; }
+.rf-seg .segbtn[aria-pressed="true"] { color:var(--text); background:var(--panel2);
+  border-color:color-mix(in srgb, var(--link) 46%, var(--line)); }
+/* LIGHT: the estate's shared segmented hover is an accent BLOOM (theme.css:562).
+   On white a bloom is a pastel stain — swap it for a ring. Specificity beats the
+   shipped `html body :is(.segbtn…):hover`. */
+html[data-theme="light"] body .rf-seg .segbtn:hover {
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 16%, transparent); }
+
+.rf-q { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line);
+  border-radius:var(--r-ctl,8px); padding:var(--sp-2,8px) var(--sp-3,12px); min-height:40px;
+  font:400 var(--fs-sm)/1.4 var(--font-ui); }
+.rf-q::placeholder { color:var(--muted); }
+.rf-q:focus { outline:none; border-color:var(--link); }
+/* DARK: focus is a soft accent bloom — luminance depth. */
+.rf-q:focus { box-shadow:0 0 14px -4px color-mix(in srgb, var(--link) 50%, transparent); }
+/* LIGHT: white panel + a crisp ring; and the field is WHITE, not a tint — on paper
+   an input is a ruled box, not a recessed well. */
+html[data-theme="light"] .rf-q { background:var(--panel); }
+html[data-theme="light"] .rf-q:focus { box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 18%, transparent); }
+
+.rf-fams { list-style:none; margin:var(--sp-2,8px) 0 0; padding:0; }
+.rf-fam { display:flex; width:100%; align-items:center; gap:var(--sp-2,8px); background:none;
+  border:0; border-left:2px solid transparent; color:var(--muted); cursor:pointer;
+  padding:var(--sp-2,8px) var(--sp-2,8px); font:500 var(--fs-sm)/1.3 var(--font-ui);
+  text-align:left; min-height:40px; border-radius:0; }
+.rf-fam:hover { color:var(--text); }
+.rf-fam[aria-pressed="true"] { color:var(--text); border-left-color:var(--link); font-weight:700; }
+.rf-fam-n { flex:1; min-width:0; }
+.rf-fam-c { color:var(--muted); font-size:var(--fs-label); flex:none; }
+.rf-fam.is-zero { opacity:.4; }
+
+.rf-az { display:flex; flex-wrap:wrap; gap:var(--sp-1,4px); margin-top:var(--sp-2,8px); }
+.rf-azb { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:1px solid transparent; color:var(--muted); cursor:pointer;
+  border-radius:var(--r-ctl,8px); font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.06em; }
+.rf-azb:hover { color:var(--text); border-color:var(--line); }
+.rf-azb[aria-pressed="true"] { color:var(--text); border-color:var(--link); background:var(--panel2); }
+.rf-azb.is-zero { opacity:.3; pointer-events:none; }
+
+/* ── mobile filter bar (<1000w). JS moves the live rail controls into these slots. */
+.rf-bar { position:sticky; top:0; z-index:5; background:var(--bg);
+  border-bottom:1px solid var(--line); padding:var(--sp-3,12px) 0;
+  display:flex; flex-direction:column; gap:var(--sp-2,8px); margin-bottom:var(--sp-3,12px); }
+@media (min-width:1000px){ .rf-bar { display:none !important; } }
+.rf-more > summary { cursor:pointer; color:var(--muted); font-size:var(--fs-sm);
+  padding:var(--sp-2,8px) 0; list-style:none; min-height:40px; display:flex; align-items:center; }
+.rf-more > summary::-webkit-details-marker { display:none; }
+.rf-more > summary::after { content:'▾'; margin-left:var(--sp-2,8px); }
+.rf-more[open] > summary::after { content:'▴'; }
+.rf-more-body { padding-bottom:var(--sp-3,12px); }
+
+/* ── result count ───────────────────────────────────────────────────────────── */
+.rf-count { color:var(--muted); font-size:var(--fs-sm); margin:0 0 var(--sp-3,12px); }
+
+/* ── empty / not-found states (shared .mx-empty machinery) ──────────────────── */
+.rf-miss, .rf-none { border:1px dashed var(--line); border-radius:var(--r-card,12px);
+  margin-bottom:var(--sp-5,20px); }
+
+/* ══ THE LIST — the biggest deliberate divergence between the two themes ══════
+   DARK: no container. Rows sit directly on the graphite canvas, ruled by
+   hairlines; depth arrives when a row lifts to --panel on hover / --panel2 on
+   target. A large panel slab behind 200 rows flattens a dark page.
+   LIGHT: one white sheet. Unbounded hairlines on a pale canvas read as a grid
+   with nothing holding it; on paper an index is printed on a page. The sheet also
+   gives the group bands a surface to sit on. */
+.rf-list { background:transparent; border:0; border-radius:0; padding:0; }
+html[data-theme="light"] .rf-list { background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel,14px); box-shadow:var(--card-shadow);
+  padding:var(--sp-2,8px) var(--sp-4,16px) var(--sp-4,16px); }
+
+/* ── family group header ────────────────────────────────────────────────────── */
+.rf-grp-h { display:flex; align-items:baseline; gap:var(--sp-2,8px);
+  font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin:var(--sp-6,24px) 0 var(--sp-2,8px);
+  padding-bottom:var(--sp-2,8px); border-bottom:1px solid var(--line); }
+.rf-group:first-child .rf-grp-h { margin-top:0; }
+.rf-grp-c { font-size:var(--fs-label); opacity:.7; }
+/* LIGHT: a band, not a rule — the way a printed index separates its sections.
+   (A fill band in dark would read as a selected row.) */
+html[data-theme="light"] .rf-grp-h { background:var(--panel2); border-bottom:0;
+  border-radius:var(--r-ctl,8px); padding:var(--sp-2,8px) var(--sp-3,12px);
+  margin-left:calc(var(--sp-3,12px) * -1); margin-right:calc(var(--sp-3,12px) * -1); }
+html[data-lang="zh"] .rf-grp-h { letter-spacing:0; text-transform:none; }
+
+/* ── the index line ─────────────────────────────────────────────────────────── */
+.rf-e { position:relative; scroll-margin-top:84px; border-radius:var(--r-card,12px); }
+.rf-e + .rf-e > .rf-sum { border-top:1px solid var(--line); }
+.rf-sum { display:grid; grid-template-columns:auto minmax(0,max-content) auto minmax(0,1fr);
+  align-items:baseline; gap:var(--sp-2,8px); min-height:40px;
+  padding:var(--sp-2,8px) var(--sp-3,12px); color:var(--text); }
+.rf-sum:hover { text-decoration:none; }
+/* DARK: hover = a luminance lift to --panel. LIGHT: the sheet is already white,
+   so hover tints DOWN to --panel2 instead — the same gesture, inverted material. */
+.rf-sum:hover { background:var(--panel); }
+html[data-theme="light"] .rf-sum:hover { background:var(--panel2); }
+.rf-hash { color:var(--muted); font-size:var(--fs-label); opacity:0; flex:none;
+  transition:opacity var(--t-fast,.16s) ease; }
+.rf-sum:hover .rf-hash, .rf-sum:focus-visible .rf-hash, .rf-e:target .rf-hash { opacity:1; }
+.rf-label { font-size:var(--fs-h2); font-weight:800; letter-spacing:-.01em; }
+html[data-lang="zh"] .rf-label { font-weight:700; letter-spacing:0; }
+.rf-gloss { color:var(--muted); font-size:var(--fs-sm); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* kind: fill vs outline, never hue (§1 reserved-hue law — family/kind are categories). */
+.rf-kind { flex:none; font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); padding:3px var(--sp-2,8px);
+  border-radius:var(--r-pill,999px); border:1px solid transparent; white-space:nowrap; }
+.rf-kind--indicator { background:var(--panel2); }
+.rf-kind--glossary  { background:transparent; border-color:var(--line); }
+html[data-lang="zh"] .rf-kind { letter-spacing:0; text-transform:none; }
+
+/* ══ :target — deep-link open + focus state. ONE mechanism, two materials. ════ */
+.rf-body { display:none; }
+.rf-e:target .rf-body { display:block; padding:0 var(--sp-4,16px) var(--sp-5,20px) var(--sp-4,16px); }
+/* DARK: lift by LUMINANCE (--panel2) + a 3px accent rail. */
+.rf-e:target { background:var(--panel2); border-left:3px solid var(--link);
+  padding-left:var(--sp-2,8px); }
+/* LIGHT: a --panel2 step on a white sheet is the "dirty smudge" §12 names. Lift by
+   STRUCTURE instead — the card stays white, gains an accent hairline and a real
+   shadow, and keeps the same 3px rail so the semantic marker is identical. */
+html[data-theme="light"] .rf-e:target { background:var(--panel);
+  border:1px solid color-mix(in srgb, var(--link) 34%, var(--line));
+  border-left:3px solid var(--link); box-shadow:var(--card-shadow); }
+.rf-e:target .rf-label { font-weight:800; }
+.rf-e:target + .rf-e > .rf-sum, .rf-e:target > .rf-sum { border-top-color:transparent; }
+/* Close-affordance fallback (verified empirically in headless Chromium,
+   2026-09-02): history.replaceState() clearing location.hash does NOT make
+   :target stop matching in Chromium — it is "sticky" until a real navigation
+   (a hash-changing link click, location.hash assignment, or back/forward).
+   clearHashToBrowse() therefore also stamps .rf-closed on the entry it is
+   collapsing; this override wins regardless of :target's continued match,
+   and handleHash() removes the class the moment a real hash navigation
+   re-opens that (or any) entry. */
+.rf-e.rf-closed .rf-body { display:none !important; }
+.rf-e.rf-closed { background:none; border-left-color:transparent; padding-left:0; }
+html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow:none; }
+
+/* ── record blocks ──────────────────────────────────────────────────────────── */
+.rf-blk { margin:var(--sp-4,16px) 0 0; }
+.rf-blk p, .rf-blk li { margin:var(--sp-1,4px) 0 0; }
+.rf-def { font-size:var(--fs-md); }
+.rf-dep { margin:0 0 var(--sp-3,12px); padding:var(--sp-2,8px) var(--sp-3,12px);
+  border-left:2px solid var(--line); color:var(--muted); font-size:var(--fs-sm); }
+.rf-alias { margin:0; color:var(--muted); font-size:var(--fs-sm); }
+.rf-basis { margin:var(--sp-3,12px) 0 0; font-size:var(--fs-sm); }
+.rf-basis-v { margin-left:var(--sp-2,8px); color:var(--text); }
+
+/* ── THE SIGNATURE: direction ledger ────────────────────────────────────────── */
+.rf-ledger { margin:var(--sp-2,8px) 0 0; display:grid;
+  grid-template-columns:minmax(64px,max-content) minmax(0,1fr); gap:var(--sp-1,4px) var(--sp-3,12px); }
+.rf-lg-row { display:contents; }
+.rf-ledger dt { font:700 var(--fs-sm)/1.5 var(--font-ui); white-space:nowrap;
+  display:flex; align-items:baseline; gap:var(--sp-1,4px); }
+.rf-ledger dd { margin:0; font-size:var(--fs-sm); color:var(--text); }
+.rf-lg-mark { font-size:var(--fs-micro); }
+/* Direction ink flips under 红涨绿跌 for free; the MARK and the WORD carry the
+   direction so hue is never alone (§5). The meaning text keeps the --text token
+   (color:var(--text) above) — reading a move is not a goodness judgment. */
+.rf-lg--up   dt { color:var(--ink-up,   var(--up)); }
+.rf-lg--down dt { color:var(--ink-down, var(--down)); }
+.rf-lg--flat dt { color:var(--muted); }
+
+/* ── caveats: achromatic. A caveat is context, not a health state. ──────────── */
+.rf-caveats ul { margin:var(--sp-1,4px) 0 0; padding-left:var(--sp-4,16px); color:var(--muted); }
+.rf-caveats li { font-size:var(--fs-sm); }
+
+/* ── outbound links ─────────────────────────────────────────────────────────── */
+.rf-links { display:flex; flex-wrap:wrap; gap:var(--sp-2,8px); }
+.rf-owner { display:inline-flex; align-items:center; min-height:32px;
+  padding:var(--sp-1,4px) var(--sp-3,12px); border:1px solid var(--line);
+  border-radius:var(--r-pill,999px); font-size:var(--fs-sm); }
+.rf-owner:hover { border-color:color-mix(in srgb, var(--link) 50%, var(--line)); text-decoration:none; }
+.rf-src, .rf-rel { margin:var(--sp-3,12px) 0 0; font-size:var(--fs-sm); color:var(--muted);
+  overflow-wrap:anywhere; }
+.rf-src a, .rf-rel a { margin-right:var(--sp-3,12px); }
+.rf-ext { margin-left:3px; font-size:var(--fs-label); }
+.rf-closewrap { margin:var(--sp-4,16px) 0 0; }
+.rf-close { font-size:var(--fs-sm); color:var(--muted); }
+
+/* ── filter hiding ──────────────────────────────────────────────────────────── */
+.rf-e.is-off, .rf-group.is-off { display:none; }
+
+/* ── footer ─────────────────────────────────────────────────────────────────── */
+.rf-foot { color:var(--muted); font-size:var(--fs-sm); margin-top:var(--sp-8,44px);
+  border-top:1px solid var(--line); padding-top:var(--sp-4,16px); max-width:78ch; }
+
+/* ── 390w composition (the design floor) ────────────────────────────────────── */
+@media (max-width:640px){
+  body { padding:var(--sp-3,12px); }
+  .rf-head h1 { font-size:var(--fs-num-lg); }
+  /* the index line stacks: label row, then gloss row. Never truncate a label. */
+  .rf-sum { grid-template-columns:auto minmax(0,1fr) auto; row-gap:2px; min-height:52px;
+            align-items:center; }
+  .rf-gloss { grid-column:1 / -1; white-space:normal; overflow:visible;
+              display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .rf-label { font-size:var(--fs-md); }
+  .rf-e:target .rf-body { padding:0 var(--sp-3,12px) var(--sp-4,16px); }
+  .rf-ledger { grid-template-columns:minmax(56px,max-content) minmax(0,1fr); }
+  .rf-links { gap:var(--sp-1,4px); }
+  html[data-theme="light"] .rf-list { padding:var(--sp-2,8px) var(--sp-3,12px) var(--sp-3,12px); }
+}
+
+/* ── a11y floor ─────────────────────────────────────────────────────────────── */
+:where(.rf-sum, .rf-fam, .rf-azb, .rf-owner, .rf-close, .rf-q, .rf-more > summary):focus-visible {
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .rf-hash { transition:none; }
+  .rf-sum, .rf-e, .rf-e::before, .rf-e::after, .rf-sum::before, .rf-sum::after { transition:none; animation:none; }
+}
+</style>
+</head>
+<body class="page-reference">
+{% include "_site_nav.html.j2" %}
+
+<!-- ══ L1 §1 · page header (canvas plane, §3 of the design system) ══════════ -->
+<header class="rf-head">
+  {{ eyebrow('Reference', '参考') }}
+  <h1>{{ t('Market Reference', '市场参考') }}</h1>
+  <p class="rf-lead">{{ t('What each indicator and term means, how to read it, and where it appears.',
+                          '每个指标与术语的含义、读法，以及出现的位置。') }}</p>
+
+  {# Return-to-investigation. Server-rendered but display:none; JS reveals it ONLY when
+     document.referrer is same-origin AND a hash was present at load. With JS off it stays
+     hidden and the browser's own Back button is the (unbroken) path. history.back() only —
+     no custom state store (contract). #}
+  <p class="rf-return" hidden><button type="button" class="gbtn gbtn-sm gbtn-quiet rf-back">
+    <span class="rf-back-arrow" aria-hidden="true">←</span>{{ t('Back to where you were', '返回你刚才的页面') }}
+  </button></p>
+</header>
+
+<div class="rf-layout">
+
+  <!-- ══ index rail (sticky ≥1000w; hidden below — its controls move into the ══
+       ══ mobile filter bar inside the column) ═══════════════════════════════ -->
+  {# N7: aria-label is a plain attribute (no l-en/l-zh child markup possible), so
+     bilingual support here follows the M5 data-ph-en/zh pattern — a JS-driven
+     data-lang update, not a server-baked single language. seed english so the
+     label is never empty pre-JS. #}
+  <nav class="rf-rail" aria-label="Reference index" data-aria-en="Reference index" data-aria-zh="参考索引">
+    <div class="rf-rail-inner">
+      {# Mode. NOT role=tablist: these are filters over one list, not parallel tasks
+         (§9.9). role=group + aria-pressed. `all` is the default and the deep-link state. #}
+      <div class="segbtn-row rf-seg" role="group" aria-label="Show" data-aria-en="Show" data-aria-zh="显示">
+        <button type="button" class="segbtn" data-mode="all" aria-pressed="true">{{ t('All', '全部') }}</button>
+        <button type="button" class="segbtn" data-mode="indicator" aria-pressed="false">{{ t('Indicators', '指标') }}</button>
+        <button type="button" class="segbtn" data-mode="glossary" aria-pressed="false">{{ t('Terms', '术语') }}</button>
+      </div>
+
+      {# Search. type=search so mobile keyboards show the right key and UAs give a clear
+         control. No form, no submit — filtering is live. JS-only; hidden with JS off
+         (an input that does nothing is worse than no input). #}
+      <div class="rf-search" hidden>
+        <label class="sr-only" for="rf-q">{{ t('Search indicators and terms', '搜索指标与术语') }}</label>
+        <input id="rf-q" type="search" class="rf-q" autocomplete="off" spellcheck="false"
+               placeholder="Search indicators and terms" data-ph-en="Search indicators and terms"
+               data-ph-zh="搜索指标与术语">
+      </div>
+
+      <div class="rf-facets">
+        <h2 class="eyebrow rf-eb">{{ t('Families', '类别') }}</h2>
+        <ul class="rf-fams">
+          {% for f in families %}
+          <li><button type="button" class="rf-fam" data-family="{{ f.id }}" aria-pressed="false">
+            <span class="rf-fam-n">{{ t(f.label_en, f.label_zh) }}</span>
+            <span class="rf-fam-c tnum" data-count-family="{{ f.id }}">{{ f.count }}</span>
+          </button></li>
+          {% endfor %}
+        </ul>
+
+        {# A–Z is a FILTER, not a jump — one filter model {mode, family, letter, q}.
+           JS-only, hidden with JS off. #}
+        <div class="rf-az-wrap" hidden>
+          {# N3: the A-Z buttons filter on the English label's initial (initial_of()
+             in the builder never reads label_zh) — "字母" alone reads ambiguous in
+             ZH (could imply pinyin), so the ZH label names what it actually is.
+             Function unchanged; label only. #}
+          <h2 class="eyebrow rf-eb">{{ t('Letter', '按英文首字母') }}</h2>
+          <div class="rf-az" role="group" aria-label="Filter by letter" data-aria-en="Filter by letter" data-aria-zh="按字母筛选">
+            {% for L in letters %}<button type="button" class="rf-azb" data-letter="{{ L }}" aria-pressed="false">{{ L }}</button>{% endfor %}
+          </div>
+        </div>
+
+        <p class="rf-clear-wrap" hidden><button type="button" class="gbtn gbtn-sm gbtn-quiet rf-clear">{{ t('Clear filters', '清除筛选') }}</button></p>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══ L1 §2 · the library column ════════════════════════════════════════ -->
+  <main class="rf-col" id="rf-top">
+
+    {# Mobile filter bar. Same controls, JS-cloned into here on <1000w — the builder
+       MOVES the live nodes (not copies) so there is exactly one control per filter and
+       no aria/id duplication. Hidden with JS off. #}
+    <div class="rf-bar" hidden>
+      <div class="rf-bar-row" data-slot="mode"></div>
+      <div class="rf-bar-row" data-slot="search"></div>
+      <details class="rf-more">
+        <summary>{{ t('Narrow by family or letter', '按类别或字母筛选') }}</summary>
+        <div class="rf-more-body" data-slot="facets"></div>
+      </details>
+    </div>
+
+    {# Result line — the aria-live home so filtering is audible. Also the visible count.
+       ONE canonical count per population (§9.5): this number, and the rail's family
+       counts which are labelled slices of it. Nothing else on the page prints a total. #}
+    <p class="rf-count" aria-live="polite" role="status">
+      <span class="l-en"><span class="tnum" data-count-visible>{{ entries|length }}</span> of <span class="tnum">{{ entries|length }}</span> entries</span>
+      <span class="l-zh">共 <span class="tnum">{{ entries|length }}</span> 条，显示 <span class="tnum" data-count-visible>{{ entries|length }}</span> 条</span>
+    </p>
+
+    {# Unknown-anchor state (§7 failure state). Server-rendered hidden; JS reveals it when
+       location.hash names no entry. With JS OFF, an unknown hash simply matches no :target
+       and the full list renders — never a blank page, contract satisfied at baseline. #}
+    <div class="rf-miss mx-empty" hidden role="status">
+      <p class="mx-empty-line">
+        <span class="l-en">No entry called “<span data-miss-q></span>”</span>
+        <span class="l-zh">没有名为「<span data-miss-q></span>」的条目</span>
+      </p>
+      <p class="mx-empty-why">{{ t('It may have been renamed, or it is not in the library yet. Browse everything below.',
+                                   '可能已更名，或尚未收录。可浏览下方全部条目。') }}</p>
+    </div>
+
+    {# No-search-results state. Same machinery, different sentence + a way out. #}
+    <div class="rf-none mx-empty" hidden role="status">
+      <p class="mx-empty-line">
+        <span class="l-en">Nothing matches “<span data-none-q></span>”</span>
+        <span class="l-zh">没有匹配「<span data-none-q></span>」的内容</span>
+      </p>
+      <p class="mx-empty-why">{{ t('Try a shorter word, or clear the filters.', '试试更短的词，或清除筛选。') }}</p>
+      <p><button type="button" class="gbtn gbtn-sm rf-clear">{{ t('Clear filters', '清除筛选') }}</button></p>
+    </div>
+
+    <div class="rf-list">
+    {% for fam in families %}
+      <section class="rf-group" data-group="{{ fam.id }}">
+        <h2 class="rf-grp-h">
+          <span class="rf-grp-name">{{ t(fam.label_en, fam.label_zh) }}</span>
+          <span class="rf-grp-c tnum" data-count-group="{{ fam.id }}">{{ fam.count }}</span>
+        </h2>
+
+        {% for e in entries if e.family == fam.id %}
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="{{ e.id }}"
+                 data-kind="{{ e.kind }}" data-family="{{ e.family }}"
+                 data-initial="{{ e.initial }}" data-search="{{ e.search_key }}">
+
+          {# ── the always-visible index line. An <a>, not a button: that is what makes
+               open/close work with JS disabled and keeps browser back/forward honest. ── #}
+          <a class="rf-sum" href="#{{ e.id }}">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">{{ e.label_en }}</span><span class="l-zh">{{ e.label_zh }}</span>
+            </span>
+            <span class="rf-kind rf-kind--{{ e.kind }}">{{ t('Indicator', '指标') if e.kind == 'indicator' else t('Term', '术语') }}</span>
+            <span class="rf-gloss">
+              <span class="l-en">{{ e.short_definition_en }}</span><span class="l-zh">{{ e.short_definition_zh }}</span>
+            </span>
+          </a>
+
+          {# ── the record. display:none until :target. Server-rendered in full, always. ── #}
+          <div class="rf-body">
+
+            {# 0 · deprecation — FIRST, above the definition: a superseded meaning must be
+                 flagged before it is read. Achromatic; a rename is not danger.
+                 (Pattern only; no entry is deprecated in v1.) #}
+            {% if e.status == 'deprecated' %}
+            <p class="rf-dep">{{ t('Renamed. See', '已更名，请见') }}
+              <a href="#{{ e.superseded_by }}">{{ t(e.superseded_by_label_en, e.superseded_by_label_zh) }}</a>.</p>
+            {% endif %}
+
+            {# 1 · also called — a reference book's own device, and the reason the reader
+                 may not have recognised the label they arrived with. #}
+            {% if e.aliases_en or e.aliases_zh %}
+            <p class="rf-alias">{{ eyebrow('Also called', '也称') }}
+              <span class="l-en">{{ e.aliases_en|join(' · ') }}</span><span class="l-zh">{{ e.aliases_zh|join(' · ') }}</span></p>
+            {% endif %}
+
+            {# 2 · what it is — the 30-second payload, first and largest. #}
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb">{{ t('What it is', '定义') }}</h3>
+              <p class="rf-def">{{ t(e.short_definition_en, e.short_definition_zh) }}</p>
+            </div>
+
+            {# 3 · why it matters #}
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb">{{ t('Why it matters', '为什么重要') }}</h3>
+              <p>{{ t(e.why_it_matters_en, e.why_it_matters_zh) }}</p>
+            </div>
+
+            {# 4 · basis — units live in --font-ui (§4: mono is for figures, never words);
+                 any numeric range inside carries .tnum via the builder's own markup. #}
+            {% if e.unit_or_basis %}
+            <p class="rf-basis">{{ eyebrow('Basis', '计量') }}<span class="rf-basis-v tnum">{{ t(e.unit_or_basis_en, e.unit_or_basis_zh) }}</span></p>
+            {% endif %}
+
+            {# 5 · THE SIGNATURE — the direction ledger. Indicators only, and only when the
+                 registry actually carries an interpretation. Direction word carries the ink;
+                 the meaning stays --text (direction ink is for the MOVE, not a judgment). #}
+            {% if e.interpretation_up or e.interpretation_down or e.interpretation_neutral %}
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb">{{ t('How to read it', '怎么读') }}</h3>
+              <dl class="rf-ledger">
+                {% if e.interpretation_up %}
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span>{{ t('Rises', '上行') }}</dt>
+                  <dd>{{ t(e.interpretation_up_en, e.interpretation_up_zh) }}</dd>
+                </div>{% endif %}
+                {% if e.interpretation_down %}
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span>{{ t('Falls', '下行') }}</dt>
+                  <dd>{{ t(e.interpretation_down_en, e.interpretation_down_zh) }}</dd>
+                </div>{% endif %}
+                {% if e.interpretation_neutral %}
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span>{{ t('Steady', '持平') }}</dt>
+                  <dd>{{ t(e.interpretation_neutral_en, e.interpretation_neutral_zh) }}</dd>
+                </div>{% endif %}
+              </dl>
+            </div>{% endif %}
+
+            {# 6 · caveats — mandatory on kind:indicator (builder fails closed). Achromatic. #}
+            {% if e.caveats_en %}
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb">{{ t('Worth knowing', '需要注意') }}</h3>
+              <ul>{% for i in range(e.caveats_en|length) %}
+                <li><span class="l-en">{{ e.caveats_en[i] }}</span><span class="l-zh">{{ e.caveats_zh[i] }}</span></li>
+              {% endfor %}</ul>
+            </div>{% endif %}
+
+            {# 7 · where you'll see this — the ramp back INTO the product. Owner refs are
+                 PRODUCT surfaces (page#anchor), never repo paths (DEC §8). #}
+            {% if e.owner_refs %}
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb">{{ t('Where you’ll see this', '在哪里出现') }}</h3>
+              <p class="rf-links">{% for o in e.owner_refs %}<a class="rf-owner" href="{{ o.href }}">{{ t(o.label_en, o.label_zh) }}</a>{% endfor %}</p>
+            </div>{% endif %}
+
+            {# 8 · sources — public primary sources only, allowlisted by the builder. #}
+            {% if e.public_source_refs %}
+            <p class="rf-src">{{ eyebrow('Sources', '来源') }}
+              {% for s in e.public_source_refs %}<a href="{{ s.url }}" target="_blank" rel="noopener nofollow">{{ s.label }}<span class="rf-ext" aria-hidden="true">↗</span></a>{% endfor %}</p>
+            {% endif %}
+
+            {# 9 · related — in-page anchors; keeps the reader inside one document. #}
+            {% if e.related %}
+            <p class="rf-rel">{{ eyebrow('Related', '相关') }}
+              {% for r in e.related %}<a href="#{{ r.id }}">{{ t(r.label_en, r.label_zh) }}</a>{% endfor %}</p>
+            {% endif %}
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top">{{ t('Close', '收起') }}</a></p>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+    {% endfor %}
+    </div>
+  </main>
+</div>
+
+<!-- ══ L1 §3 · footer — the authority ceiling, in plain words, once ═══════════ -->
+<footer class="rf-foot">
+  {{ t('Reference only — definitions, not calls. No live market values appear on this page.',
+       '仅供参考 — 只有释义，不含判断。本页不显示任何实时行情数值。') }}
+  {{ t('Updated', '更新于') }} <span class="tnum">{{ generated_at }}</span>.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var root = document;
+
+  // 1 · Reveal the JS-only controls — everything the reader can see, works.
+  ["rf-search", "rf-az-wrap", "rf-clear-wrap", "rf-bar"].forEach(function(cls){
+    var el = root.querySelector("." + cls);
+    if (el) el.hidden = false;
+  });
+
+  // M5/N7: placeholder + aria-label translation — the estate pattern
+  // (templates/darkpool.html.j2, the updatePlaceholders()/data-ph-en/
+  // data-ph-zh idiom, extended to data-aria-en/data-aria-zh): a <input
+  // placeholder> or an aria-label attribute is not covered by the l-en/l-zh
+  // dual-span idiom (an attribute has no child nodes to hide/show), so both
+  // need their own data-lang-driven update, live on langchange.
+  function updatePlaceholders(){
+    var lang = document.documentElement.getAttribute("data-lang") || "en";
+    root.querySelectorAll("[data-ph-en]").forEach(function(el){
+      el.placeholder = lang === "zh"
+        ? (el.getAttribute("data-ph-zh") || el.getAttribute("data-ph-en"))
+        : el.getAttribute("data-ph-en");
+    });
+    root.querySelectorAll("[data-aria-en]").forEach(function(el){
+      el.setAttribute("aria-label", lang === "zh"
+        ? (el.getAttribute("data-aria-zh") || el.getAttribute("data-aria-en"))
+        : el.getAttribute("data-aria-en"));
+    });
+  }
+  document.addEventListener("langchange", updatePlaceholders);
+  updatePlaceholders();
+
+  var railSeg = root.querySelector(".rf-seg");
+  var railSearch = root.querySelector(".rf-search");
+  var railFacets = root.querySelector(".rf-facets");
+  var barModeSlot = root.querySelector('.rf-bar-row[data-slot="mode"]');
+  var barSearchSlot = root.querySelector('.rf-bar-row[data-slot="search"]');
+  var barFacetsSlot = root.querySelector('.rf-more-body[data-slot="facets"]');
+
+  // 2 · Move (do not copy) the rail controls on <1000w.
+  function relocate(mq){
+    // M3 fix: always APPEND in the desired final order rather than
+    // insertBefore-with-a-reference-node. appendChild silently MOVES a node
+    // that already exists elsewhere in the document, so this needs no
+    // "is it already a child of the target parent" reference-node check —
+    // the previous insertBefore(railSearch, railFacets) form threw
+    // NotFoundError on the <1000w -> >=1000w transition specifically,
+    // because at that moment railFacets was still a child of the MOBILE bar,
+    // not of the rail, so it was not a valid reference node for insertBefore
+    // inside the rail yet. Verified both directions via resize in the
+    // capture harness.
+    if (mq.matches){ // >=1000w: controls live in the rail, in order seg/search/facets
+      var rail = root.querySelector(".rf-rail-inner");
+      if (rail){
+        if (railSeg) rail.appendChild(railSeg);
+        if (railSearch) rail.appendChild(railSearch);
+        if (railFacets) rail.appendChild(railFacets);
+      }
+    } else { // <1000w: controls live in the mobile bar, one slot each
+      if (barModeSlot && railSeg) barModeSlot.appendChild(railSeg);
+      if (barSearchSlot && railSearch) barSearchSlot.appendChild(railSearch);
+      if (barFacetsSlot && railFacets) barFacetsSlot.appendChild(railFacets);
+    }
+  }
+  var mq1000 = window.matchMedia("(min-width:1000px)");
+  relocate(mq1000);
+  if (mq1000.addEventListener) mq1000.addEventListener("change", relocate);
+  else if (mq1000.addListener) mq1000.addListener(relocate);
+
+  // 3 · One filter state.
+  var state = { mode: "all", family: null, letter: null, q: "" };
+  var entries = Array.prototype.slice.call(root.querySelectorAll(".rf-e"));
+  var groups = Array.prototype.slice.call(root.querySelectorAll(".rf-group"));
+  var countVisibleEls = root.querySelectorAll("[data-count-visible]");
+  var countEl = root.querySelector(".rf-count");
+  var noneEl = root.querySelector(".rf-none");
+  var missEl = root.querySelector(".rf-miss");
+
+  function normalize(s){
+    if (!s) return "";
+    try { s = s.normalize("NFKC"); } catch(e) {}
+    return s.toLowerCase().replace(/[\s　-〿＀-￯!-\/:-@\[-`{-~]/g, "");
+  }
+
+  function applyFilters(){
+    var q = normalize(state.q);
+    var visible = 0;
+    entries.forEach(function(el){
+      var modeOK = state.mode === "all" || el.getAttribute("data-kind") === state.mode;
+      var familyOK = !state.family || el.getAttribute("data-family") === state.family;
+      var letterOK = !state.letter || el.getAttribute("data-initial") === state.letter;
+      var queryOK = !q || (el.getAttribute("data-search") || "").indexOf(q) !== -1;
+      var off = !(modeOK && familyOK && letterOK && queryOK);
+      el.classList.toggle("is-off", off);
+      if (!off) visible++;
+    });
+    groups.forEach(function(g){
+      var visibleInGroup = Array.prototype.filter.call(g.querySelectorAll(".rf-e"), function(el){
+        return !el.classList.contains("is-off");
+      }).length;
+      g.classList.toggle("is-off", visibleInGroup === 0);
+      // M2: the group header's own count (data-count-group) reflects entries
+      // actually visible in THIS section right now — distinct from the
+      // rail's data-count-family "what if I picked this family" number.
+      // querySelectorAll (never bare querySelector) even though exactly one
+      // match is expected per family, per the reviewer's querySelector-
+      // first-match-trap note — a duplicated attribute must never leave a
+      // second element silently stale.
+      var groupCountEls = g.querySelectorAll('[data-count-group="' + g.getAttribute("data-group") + '"]');
+      for (var gi = 0; gi < groupCountEls.length; gi++) groupCountEls[gi].textContent = String(visibleInGroup);
+    });
+    for (var i = 0; i < countVisibleEls.length; i++) countVisibleEls[i].textContent = String(visible);
+
+    // family counts among the mode/letter/query-filtered set (family itself excluded
+    // from its own predicate so each button shows what selecting it WOULD show)
+    var famButtons = root.querySelectorAll(".rf-fam");
+    famButtons.forEach(function(btn){
+      var fam = btn.getAttribute("data-family");
+      var n = entries.filter(function(el){
+        var modeOK = state.mode === "all" || el.getAttribute("data-kind") === state.mode;
+        var letterOK = !state.letter || el.getAttribute("data-initial") === state.letter;
+        var queryOK = !q || (el.getAttribute("data-search") || "").indexOf(q) !== -1;
+        return modeOK && letterOK && queryOK && el.getAttribute("data-family") === fam;
+      }).length;
+      var famCountEls = root.querySelectorAll('[data-count-family="' + fam + '"]');
+      for (var fi = 0; fi < famCountEls.length; fi++) famCountEls[fi].textContent = String(n);
+      btn.classList.toggle("is-zero", n === 0);
+    });
+    var azButtons = root.querySelectorAll(".rf-azb");
+    azButtons.forEach(function(btn){
+      var letter = btn.getAttribute("data-letter");
+      var n = entries.filter(function(el){
+        var modeOK = state.mode === "all" || el.getAttribute("data-kind") === state.mode;
+        var familyOK = !state.family || el.getAttribute("data-family") === state.family;
+        var queryOK = !q || (el.getAttribute("data-search") || "").indexOf(q) !== -1;
+        return modeOK && familyOK && queryOK && el.getAttribute("data-initial") === letter;
+      }).length;
+      btn.classList.toggle("is-zero", n === 0);
+    });
+
+    if (visible === 0 && q){
+      if (noneEl){
+        noneEl.hidden = false;
+        var qEls = noneEl.querySelectorAll("[data-none-q]");
+        for (var j = 0; j < qEls.length; j++) qEls[j].textContent = state.q;
+      }
+      if (countEl) countEl.hidden = true;
+    } else {
+      if (noneEl) noneEl.hidden = true;
+      if (countEl) countEl.hidden = false;
+    }
+  }
+
+  // 6 · Filters and the hash are mutually exclusive, deliberately.
+  function clearHashToBrowse(){
+    if (!location.hash) return;
+    // Close-affordance fallback (verified in headless Chromium): replaceState
+    // alone does not make :target stop matching, so stamp .rf-closed on the
+    // currently-open entry (its CSS wins regardless of :target). handleHash()
+    // clears the class the moment a real navigation re-opens an entry.
+    var openEl = root.querySelector(".rf-e:target");
+    if (openEl) openEl.classList.add("rf-closed");
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  function setPressed(group, activeEl){
+    Array.prototype.forEach.call(group, function(b){ b.setAttribute("aria-pressed", b === activeEl ? "true" : "false"); });
+  }
+
+  if (railSeg) railSeg.addEventListener("click", function(ev){
+    var btn = ev.target.closest ? ev.target.closest("[data-mode]") : null;
+    if (!btn) return;
+    state.mode = btn.getAttribute("data-mode");
+    setPressed(root.querySelectorAll(".rf-seg .segbtn"), btn);
+    clearHashToBrowse();
+    applyFilters();
+  });
+
+  root.addEventListener("click", function(ev){
+    var famBtn = ev.target.closest ? ev.target.closest(".rf-fam") : null;
+    if (famBtn){
+      var fam = famBtn.getAttribute("data-family");
+      state.family = (state.family === fam) ? null : fam;
+      var pressed = state.family === fam;
+      Array.prototype.forEach.call(root.querySelectorAll(".rf-fam"), function(b){
+        b.setAttribute("aria-pressed", (pressed && b === famBtn) ? "true" : "false");
+      });
+      clearHashToBrowse();
+      applyFilters();
+      return;
+    }
+    var azBtn = ev.target.closest ? ev.target.closest(".rf-azb") : null;
+    if (azBtn){
+      var letter = azBtn.getAttribute("data-letter");
+      state.letter = (state.letter === letter) ? null : letter;
+      var pressedL = state.letter === letter;
+      Array.prototype.forEach.call(root.querySelectorAll(".rf-azb"), function(b){
+        b.setAttribute("aria-pressed", (pressedL && b === azBtn) ? "true" : "false");
+      });
+      clearHashToBrowse();
+      applyFilters();
+      return;
+    }
+    var clearBtn = ev.target.closest ? ev.target.closest(".rf-clear") : null;
+    if (clearBtn){
+      state = { mode: "all", family: null, letter: null, q: "" };
+      var qEl = root.querySelector("#rf-q");
+      if (qEl) qEl.value = "";
+      Array.prototype.forEach.call(root.querySelectorAll(".rf-seg .segbtn"), function(b){
+        b.setAttribute("aria-pressed", b.getAttribute("data-mode") === "all" ? "true" : "false");
+      });
+      Array.prototype.forEach.call(root.querySelectorAll(".rf-fam"), function(b){ b.setAttribute("aria-pressed", "false"); });
+      Array.prototype.forEach.call(root.querySelectorAll(".rf-azb"), function(b){ b.setAttribute("aria-pressed", "false"); });
+      clearHashToBrowse();
+      applyFilters();
+      if (qEl) qEl.focus();
+      return;
+    }
+    var closeLink = ev.target.closest ? ev.target.closest(".rf-close") : null;
+    if (closeLink){
+      ev.preventDefault();
+      var article = closeLink.closest(".rf-e");
+      clearHashToBrowse();
+      if (article) article.scrollIntoView({ block: "start" });
+      return;
+    }
+  });
+
+  // 4 · Search — debounced 120ms, applied in one rAF.
+  var qInputEl = root.querySelector("#rf-q");
+  var searchTimer = null;
+  if (qInputEl) qInputEl.addEventListener("input", function(){
+    var val = qInputEl.value;
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(function(){
+      state.q = val;
+      if (val) clearHashToBrowse();
+      window.requestAnimationFrame(applyFilters);
+    }, 120);
+  });
+
+  // 5 · ?q= is READ, never written.
+  try {
+    var sp = new URLSearchParams(location.search);
+    var initialQ = sp.get("q");
+    if (initialQ && qInputEl){
+      qInputEl.value = initialQ;
+      state.q = initialQ;
+    }
+  } catch(e) {}
+
+  // 7 · Deep-link on load + hashchange.
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function handleHash(){
+    // N6: decodeURIComponent throws URIError on a malformed percent-encoding
+    // (an incomplete/invalid escape). Uncaught here it would abort THIS whole
+    // IIFE mid-run — since handleHash() runs before the hashchange listener
+    // is registered below, a bad hash on cold load would silently leave
+    // every later wire-up (return bar, initial applyFilters()) dead. Caught:
+    // a malformed hash just degrades to the browse-all / no-hash path.
+    var hash = "";
+    if (location.hash){
+      try { hash = decodeURIComponent(location.hash.slice(1)); }
+      catch (e) { hash = ""; }
+    }
+    if (!hash){
+      if (missEl) missEl.hidden = true;
+      return;
+    }
+    var target = null;
+    try { target = root.getElementById(hash); } catch(e) {}
+    if (target && target.classList.contains("rf-e")){
+      // a real hash navigation is opening this entry — clear any stale
+      // Close-affordance fallback class so :target's own styling shows again.
+      target.classList.remove("rf-closed");
+      if (missEl) missEl.hidden = true;
+      window.requestAnimationFrame(function(){
+        target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+      });
+    } else {
+      if (missEl){
+        missEl.hidden = false;
+        var qEls = missEl.querySelectorAll("[data-miss-q]");
+        for (var i = 0; i < qEls.length; i++) qEls[i].textContent = hash;
+      }
+    }
+  }
+  handleHash();
+  window.addEventListener("hashchange", handleHash);
+
+  // 8 · Return bar.
+  var returnEl = root.querySelector(".rf-return");
+  var backBtn = root.querySelector(".rf-back");
+  if (returnEl && backBtn){
+    var sameOriginRef = false;
+    try { sameOriginRef = document.referrer && (new URL(document.referrer)).origin === location.origin; } catch(e) {}
+    if (sameOriginRef && location.hash){
+      returnEl.hidden = false;
+    }
+    backBtn.addEventListener("click", function(){ history.back(); });
+  }
+
+  // initial apply (covers ?q= and default state)
+  applyFilters();
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

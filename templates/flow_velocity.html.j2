@@ -1,11 +1,14 @@
 {# =========================================================================
-   Capital Flow Velocity — the "laid-out answer" first. A user lands on the
-   VERDICT (what big money is doing, in one plain sentence + a breadth gauge),
-   then the four things they came for — the ROTATION (in vs out), MOMENTUM
-   shifts (turning), the FAST-MONEY × INSTITUTIONS confluence board — before the
-   full drill-map. Styled to the macro.html design system (tokens, glass, chips,
-   3px top-accent cards, reveal + hover motion). Display-only: flow is never a
-   scored signal; stances stay watch-family.
+   Capital Flow Velocity (Flow Observatory V2 W1) — trust strip first (source
+   state precedes market claims), then the two-axis VERDICT (large-order
+   pressure vs actual absolute flow — never collapsed into one inflow-colored
+   number), WHAT CHANGED TODAY, the abs×rel quadrant board, the theme flow
+   board (momentum + institutional-seat confluence demoted to collapsed
+   detail blocks), and cross-border channels. Styled to the macro.html design
+   system (tokens, glass, chips, 3px top-accent cards, reveal + hover motion).
+   Display-only: flow is never a scored signal; stances stay watch-family.
+   Language law (masterplan §6): "large-order pressure" / order-size proxy —
+   never "big money"/"institutions are buying" unqualified.
    ========================================================================= #}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
@@ -39,6 +42,37 @@
 {% set k = 'in' if (vel is not none and vel>=0.5) else ('out' if (vel is not none and vel<=-0.5) else 'mid') %}
 <span class="vstate {{ k }}">{{ t(en, zh) }}</span>
 {%- endmacro %}
+{# section watermark (W2, spec §3): any L1 section fed by a STALE leg gets a one-line band
+   directly under its own h2 — NOT an overlay, numbers stay readable, the band is unmissable.
+   ``legs`` is the list of source dicts (from snap.sources) that feed THIS section; the FIRST
+   STALE one found supplies the substituted date (a section is rarely fed by two independently
+   stale legs at once, and naming one real date beats averaging/guessing). DEGRADED never
+   triggers this — spec §3: "DEGRADED renders a quiet chip-level treatment only".
+   S6 repair: an UNAVAILABLE feeding leg (no date at all — never "showing — data") gets its
+   own wording branch, checked when no STALE leg is present (STALE takes priority when a
+   section is fed by more than one leg and they disagree). #}
+{% macro sec_watermark(legs) -%}
+{% set _stale_list = [] %}
+{% set _unavail_list = [] %}
+{% for _l in (legs or []) %}
+  {% if _l and _l.status == 'STALE' %}{% set _ = _stale_list.append(_l) %}
+  {% elif _l and _l.status == 'UNAVAILABLE' %}{% set _ = _unavail_list.append(_l) %}
+  {% endif %}
+{% endfor %}
+{% set _stale = _stale_list|first %}
+{% set _unavail = _unavail_list|first %}
+{% if _stale %}
+<div class="fv-watermark">
+  <span class="l-en">Showing last good data from {{ _stale.effective_date or '—' }} — source behind.</span>
+  <span class="l-zh">显示{{ _stale.effective_date or '—' }}最近有效数据 — 数据源滞后。</span>
+</div>
+{% elif _unavail %}
+<div class="fv-watermark fv-watermark--unavailable">
+  <span class="l-en">Source unavailable — this section has no current data.</span>
+  <span class="l-zh">数据源不可用——本节暂无当前数据。</span>
+</div>
+{% endif %}
+{%- endmacro %}
 {# confluence: a pure render-time CLASS from two existing fields — NOT a stored/ranked score #}
 {% macro confcls(vel, seat) -%}
 {%- if seat and vel is not none -%}
@@ -49,15 +83,73 @@
 {% macro nameln(m) -%}
 <a href="https://app.mastermind-x.com/terminal?sym={{ m.ticker }}&amp;from=macro" target="_blank" rel="noopener">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a>
 {%- endmacro %}
-{# one member sub-row — reused by every sector drill-down AND the "All names" leaderboard #}
+{# one member sub-row — reused by every sector drill-down AND the "All names" leaderboard.
+   B2 repair: this used to emit 5 <td> against the sectortbl's 8-column header, so the
+   member's RELATIVE rate (rate_rel, "vs norm") landed under the "abs 4wk" header — the
+   exact abs/rel conflation this program exists to kill, just relocated into the
+   drill-down. Column-for-column against the header now: (1) name (Theme column) and
+   (2) the institutional-seat badge (Members column) stay the two cells they always were
+   — identity/context, not measured quantities, so which header they nominally sit under
+   carries no conflation risk; (3) abs 4wk = the member's own RAW 4-week rate from the
+   shared kinetics map (the same number the name leaderboard shows for this ticker), NEVER
+   the relative figure — an em-dash when a member is too short-lived to score; (4) vs norm
+   = rate_rel, same footing as the theme row; (5) velocity, vbar+state combined in one
+   cell; (6) a single colspan-3 dash standing in for Quadrant/rank-Δ/flow-trend, which are
+   theme-level, not per-member, concepts. Colspans sum to 1+1+1+1+1+3 = 8, matching the
+   header exactly. #}
+{# W3: one "what changed today" row, any kind — quadrant transition, rank mover, quality
+   transition, or (new) a REVISION receipt (spec §2 pinned strings: EN "{name}: {session}
+   data revised" / ZH "{name}：{session}数据已修正", LENS carrying old→new detail). Shared
+   by the visible[:8] list and the collapsed all-changes <details> so the two never drift. #}
+{% macro chg_row(c, theme_names, src_by_id) -%}
+{% set _tr = theme_names.get(c.id) %}
+{% set _leg = src_by_id.get(c.id) %}
+{% if c.kind is defined and c.kind == 'revision' %}
+{% set _rev_label = (_tr.name, _tr.name_zh) if (c.entity_kind == 'theme' and _tr) else
+                    ((_leg.name_en, _leg.name_zh) if (c.entity_kind == 'market' and _leg) else
+                    (('Southbound', '南向') if c.id == 'southbound' else (c.id, c.id))) %}
+{% set _from = c.get('from') or {} %}
+{% set _to = c.get('to') or {} %}
+{% set _f_q = quadrant_labels.get(_from.get('quadrant')) if _from.get('quadrant') else none %}
+{% set _t_q = quadrant_labels.get(_to.get('quadrant')) if _to.get('quadrant') else none %}
+<li class="fv-chg-row fv-chg-row--revision"
+    data-tip-en="Revised: {{ (_f_q[0] if _f_q else (_from.get('status') or '—')) }} → {{ (_t_q[0] if _t_q else (_to.get('status') or '—')) }}{% if _to.get('vel') is not none %}, vel {{ '%+.2f'|format(_from.get('vel')) if _from.get('vel') is not none else '—' }} → {{ '%+.2f'|format(_to.get('vel')) }}{% endif %}."
+    data-tip-zh="已修正：{{ (_f_q[1] if _f_q else (_from.get('status') or '—')) }} → {{ (_t_q[1] if _t_q else (_to.get('status') or '—')) }}{% if _to.get('vel') is not none %}，流速 {{ '%+.2f'|format(_from.get('vel')) if _from.get('vel') is not none else '—' }} → {{ '%+.2f'|format(_to.get('vel')) }}{% endif %}。"
+    role="button" tabindex="0">
+  <b>{{ t(_rev_label[0], _rev_label[1]) }}</b>
+  <span class="l-en">: {{ c.effective_session }} data revised</span><span class="l-zh">：{{ c.effective_session }}数据已修正</span>
+</li>
+{% elif c.kind is defined and c.kind == 'quality' %}
+<li class="fv-chg-row">
+  <b>{{ t(_leg.name_en, _leg.name_zh) if _leg else c.id }}</b>
+  {% set _fw = status_word.get(c.from_status) or (c.from_status or '—', c.from_status or '—') %}
+  {% set _tw = status_word.get(c.to_status) or (c.to_status, c.to_status) %}
+  <span class="l-en">: {{ _fw[0] }} → {{ _tw[0] }}</span><span class="l-zh">：{{ _fw[1] }} → {{ _tw[1] }}</span>
+</li>
+{% elif c.from_quadrant is defined %}
+<li class="fv-chg-row">
+  <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
+  {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
+  {% set _to2 = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
+  <span class="l-en">: {{ _f[0] }} → {{ _to2[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to2[1] }}</span>
+</li>
+{% else %}
+<li class="fv-chg-row">
+  <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
+  <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
+  <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
+</li>
+{% endif %}
+{%- endmacro %}
 {% macro memberrow(m, sbt, sid, i, show=False) -%}
 {% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
   <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ nameln(m) }}</td>
   <td>{% if seat %}<span class="seat {{ seat.dir }}" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
+  <td class="tnum">{% if m.rate_4wk is defined and m.rate_4wk is not none %}<span class="chg {{ 'pos' if m.rate_4wk>=0 else 'neg' }}" style="opacity:.72">{{ '%+.1f'|format(m.rate_4wk) }}%</span>{% else %}<span class="chg na">—</span>{% endif %}</td>
   <td>{{ rate(m) }}</td>
-  <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }}</td>
-  <td style="text-align:left">{{ vstate(m.state, m.state_zh, m.vel) }}</td>
+  <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }} {{ vstate(m.state, m.state_zh, m.vel) }}</td>
+  <td class="tnum" colspan="3"><span class="rk na">—</span></td>
 </tr>
 {%- endmacro %}
 <!DOCTYPE html>
@@ -67,7 +159,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.setAttribute('data-market',sessionStorage.getItem('mkt')||'a');document.documentElement.classList.add('js');}catch(e){}</script>
 <title>Capital Flow Velocity — China &amp; Hong Kong</title>
-{% set seo_title = "Capital Flow Velocity — Mastermind" %}{% set seo_desc = "Where China and Hong Kong's big money is rushing — rotation, acceleration and institutional confluence, in one glance." %}{% set seo_path = "flow_velocity.html" %}
+{% set seo_title = "Capital Flow Velocity — Mastermind" %}{% set seo_desc = "Where China and Hong Kong large-order pressure is building — absolute vs relative flow, trust states and institutional-seat confluence, in one glance." %}{% set seo_path = "flow_velocity.html" %}
 {% include "_seo_head.html.j2" %}
 {% include "_interfonts.html.j2" %}
 <style>
@@ -152,6 +244,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* ── shared figures / direction color (zh 红涨绿跌 flips) ── */
 .chg{font-variant-numeric:tabular-nums;font-family:var(--num);font-weight:700}
 .chg.pos{color:var(--ink-ok, var(--green))} .chg.neg{color:var(--ink-act, var(--red))} .chg.na{color:var(--faint);font-weight:400}
+.chg.neu{color:var(--muted);font-weight:400}
 html[data-lang="zh"] .chg.pos{color:var(--ink-act, var(--red))} html[data-lang="zh"] .chg.neg{color:var(--ink-ok, var(--green))}
 .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
 .cdot.conf-buy{background:var(--green)}.cdot.conf-sell{background:var(--red)}
@@ -251,6 +344,169 @@ html[data-lang="zh"] .fv-meter{background:linear-gradient(90deg,
 .fv-vital .vs{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.4}
 .fv-vital .arrow{margin-left:auto;color:var(--faint);transition:transform .16s,color .16s}
 .fv-vital:hover .arrow{transform:translateX(3px);color:var(--ink-link, var(--blue))}
+
+/* ═══════════════ TRUST STRIP (spec §2.2) — source state precedes market claims ═══════ */
+.fv-trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.fv-src{border:1px solid var(--line);border-radius:var(--r-ctl, 10px);padding:8px 12px;background:var(--card);
+  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:260px;cursor:help}
+.fv-src .s-name{font-size:12px;font-weight:700;color:var(--ink)}
+.fv-src .s-meta{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;font-family:var(--num)}
+/* S9: a DEGRADED/STALE chip word can run long ("behind — showing 2026-08-17 data"); at
+   1440 this used to wrap into a cramped, uneven two-line block inside the fixed-width
+   card. Widened the card's own max-width (150->260) and gave the word a comfortable
+   line-height so a wrap (when it still happens on a long date/word combination) reads as
+   two clean lines rather than crowding the card — never clipped, no overflow hidden. */
+.fv-src .s-state{font-size:10px;letter-spacing:.06em;line-height:1.35;text-transform:uppercase;color:var(--muted)}
+.fv-src--current .s-state{color:var(--up)}
+.fv-src--expected_lag .s-state{color:var(--info)}
+.fv-src--historical{opacity:.75}
+.fv-src--behind{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.fv-src--behind .s-state{color:var(--warn)}
+/* dark = command-center glow; light = research-workspace tinted paper + deepened ink —
+   two art directions, not a token swap (TP-0). */
+html[data-theme="dark"] .fv-src--behind{box-shadow:0 0 0 1px color-mix(in srgb,var(--warn) 32%,transparent),0 0 20px -7px color-mix(in srgb,var(--warn) 60%,transparent)}
+html[data-theme="light"] .fv-src--behind{background:color-mix(in srgb,var(--warn) 7%,transparent);box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 55%,transparent)}
+html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
+.fv-src--unavailable{opacity:.68}
+.fv-src--unavailable .s-state{color:var(--faint)}
+/* STALE (W2) — a materially louder treatment than "behind": this is the chip the
+   incident-4676 12-day A-share freeze should have shown instead of reading confidently current.
+   Dark = desaturated amber RING + dimmed body (command-center instrument-fault idiom);
+   light = DIAGONAL HATCH on a deepened brown-amber ink, not the flat tint "behind" uses
+   (B4 repair — pinned mechanism, W2_SPEC.md repair round): the two states used to render
+   as the SAME mechanism at adjacent parameters (a slightly stronger version of the same
+   flat-tint recipe), which is not mechanically distinguishable from "behind" at a glance —
+   the whole point of a materially louder STALE treatment. Hatch (pattern) vs tint (flat
+   fill) is a genuine material difference. The deepened ink is
+   `color-mix(in srgb,var(--warn) 65%,var(--ink))` — var(--ink) (this page's own darkest
+   ink token) supplies the "deepened" component rather than a hand-picked hex, repeated
+   inline at each of its three use sites (design-system law: "tokens extend theme.css
+   only" / R0 rule 4 forbids a NEW literal-valued custom property outside theme.css, and
+   this page does not itself link theme.css — see the "self-contained standalone nav" note
+   above — so a theme.css-side declaration would be inert for it; deriving purely from the
+   page's own existing --warn/--ink tokens, inlined rather than named, keeps the mechanism
+   real AND compliant). Two independently art-directed treatments, never a token swap
+   (TP-0). */
+.fv-src--stale{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+.fv-src--stale .s-state{color:var(--warn);font-weight:700}
+html[data-theme="dark"] .fv-src--stale{filter:saturate(.72);opacity:.86;
+  box-shadow:0 0 0 1.5px color-mix(in srgb,var(--warn) 46%,transparent),0 0 22px -6px color-mix(in srgb,var(--warn) 55%,transparent)}
+html[data-theme="light"] .fv-src--stale{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 9%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 4%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));opacity:1}
+html[data-theme="light"] .fv-src--stale .s-state{color:color-mix(in srgb,var(--warn) 65%,var(--ink));font-weight:800}
+html[data-theme="light"] .fv-src--stale .s-name{color:var(--ink);font-weight:800}
+/* UNAVAILABLE — dark: dashed border + muted; light: hatched/dashed hairline + muted ink */
+.fv-src--unavailable{border-style:dashed}
+html[data-theme="light"] .fv-src--unavailable{background:repeating-linear-gradient(135deg,
+  color-mix(in srgb,var(--muted) 6%,transparent) 0 6px, transparent 6px 12px)}
+/* REVISED — a distinct (not amber) marker: the number itself changed, not merely its age */
+.fv-src--revised{border-color:color-mix(in srgb,var(--blue) 50%,var(--line))}
+.fv-src--revised .s-state{color:var(--ink-link, var(--blue));font-weight:700}
+html[data-theme="dark"] .fv-src--revised{box-shadow:0 0 0 1px color-mix(in srgb,var(--blue) 34%,transparent)}
+html[data-theme="light"] .fv-src--revised{background:color-mix(in srgb,var(--blue) 7%,transparent);
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--blue) 55%,transparent)}
+@media (max-width:640px){.fv-src{min-width:calc(50% - 5px);max-width:none}}
+
+/* ═══ SECTION WATERMARK (spec §3) — any L1 section fed by a STALE/UNAVAILABLE leg, right
+   under h2. B4 repair: the light watermark now uses the SAME hatch+deepened-ink mechanism
+   as the stale trust chip (not the flat tint "behind" uses) — a section watermark is a
+   STALE-severity signal (it never fires for a mere DEGRADED leg, spec §3), so it must be
+   mechanically distinct from a flat-tint treatment the same way the chip is. ═══ */
+.fv-watermark{margin:10px 0 4px;padding:9px 13px;border-radius:var(--r-ctl, 10px);font-size:12.5px;line-height:1.5;
+  display:flex;gap:8px;align-items:flex-start;color:var(--ink-2)}
+.fv-watermark::before{content:"⚠";flex:none;color:var(--ink-warn, var(--warn))}
+html[data-theme="dark"] .fv-watermark{background:color-mix(in srgb,var(--warn) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+html[data-theme="light"] .fv-watermark{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 8%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 3%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));border:1px solid color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 22%,var(--line));color:var(--ink)}
+html[data-theme="light"] .fv-watermark::before{color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
+
+/* hero STALE/UNAVAILABLE verdict form (spec §3, S5) — replaces the thesis sentence +
+   stance chip. Scoped to cn_large_order_proxy ONLY (S4) — it is the verdict's data
+   source; a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) instead gets
+   the small .fv-hero-notice chip below plus its own section watermarks. */
+.fv-thesis--stale{color:var(--ink)}
+.fv-stance--stale{border-color:var(--warn)!important;color:var(--ink-warn, var(--warn))!important;
+  background:color-mix(in srgb,var(--warn) 10%,transparent)!important}
+/* S4 — small hero notice chip for a stale/unavailable CROSS-BORDER leg while the primary
+   (cn proxy) verdict stays intact; deliberately quieter than the full hero replacement —
+   a chip, not a sentence swap. */
+.fv-hero-notice{display:inline-flex;align-items:center;gap:6px;margin:10px 0 0;padding:5px 11px;
+  border-radius:var(--r-pill, 999px);font-size:12px;font-weight:600;color:var(--ink-warn, var(--warn));
+  border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line))}
+html[data-theme="dark"] .fv-hero-notice{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 6%,var(--card));
+  border-color:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 30%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
+
+/* ═══════════════ WHAT CHANGED TODAY (spec §2.3) ═══════════════ */
+.fv-chg-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+.fv-chg-row{padding:9px 0;border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent);font-size:13px;color:var(--ink-2)}
+.fv-chg-row:first-child{border-top:none}
+.fv-chg-row b{color:var(--ink);font-weight:700}
+
+/* ═══════════════ collapsed detail blocks (momentum / confluence, spec §2.5) ═══════════ */
+.fv-disc{background:var(--card);border:1px solid var(--grid);border-radius:var(--r-card, 16px);margin-top:14px;overflow:hidden}
+.fv-disc>summary{cursor:pointer;list-style:none;padding:13px 16px;font-size:13.5px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fv-disc>summary::-webkit-details-marker{display:none}
+.fv-disc>summary::before{content:"▸";color:var(--muted);transition:transform .18s;flex:none}
+.fv-disc[open]>summary::before{transform:rotate(90deg)}
+.fv-disc-body{padding:2px 16px 16px}
+
+/* ═══════════════ ABS × REL QUADRANT BOARD (spec §2.4) — the anti-conflation device ═══ */
+.fv-quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.q-cell{border:1px solid var(--line);border-radius:var(--r-panel, 12px);padding:12px 14px;min-height:96px}
+.q-cell h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px;color:var(--muted)}
+.q-acc{border-left:3px solid var(--up)} .q-dist{border-left:3px solid var(--down)}
+.q-imp{border-left:3px solid color-mix(in srgb,var(--up) 40%,var(--line))}
+.q-weak{border-left:3px solid color-mix(in srgb,var(--down) 40%,var(--line))}
+.q-chip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid var(--line);
+  border-radius:var(--r-ctl, 8px);padding:3px 8px;margin:0 6px 6px 0;font-size:12px;color:var(--ink)}
+.q-chip .tnum{color:var(--muted);font-size:11px}
+.q-empty{color:var(--faint);font-size:12px}
+.q-neutral{margin-top:10px;font-size:12px;color:var(--muted)}
+@media(max-width:820px){.fv-quad{grid-template-columns:1fr}}
+/* quadrant chip reused on theme/aggregate rows — directional inks via --up/--down ONLY */
+.qchip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);color:var(--text);white-space:nowrap;cursor:help}
+.qchip.q-true_accumulation{border-color:var(--up);color:var(--ink-ok, var(--up));background:color-mix(in srgb,var(--up) 10%,transparent)}
+.qchip.q-true_distribution{border-color:var(--down);color:var(--ink-act, var(--down));background:color-mix(in srgb,var(--down) 10%,transparent)}
+.qchip.q-improving_but_still_selling{border-color:color-mix(in srgb,var(--up) 55%,var(--down));color:var(--ink)}
+.qchip.q-weakening_but_still_buying{border-color:color-mix(in srgb,var(--down) 55%,var(--up));color:var(--ink)}
+.qchip.q-neutral_or_unknown{border-color:var(--grid);color:var(--muted)}
+.rk{font-family:var(--num);font-size:12px;font-weight:700;color:var(--muted)}
+.rk.up{color:var(--ink-ok, var(--up))} .rk.down{color:var(--ink-act, var(--down))}
+html[data-lang="zh"] .rk.up{color:var(--ink-act, var(--down))} html[data-lang="zh"] .rk.down{color:var(--ink-ok, var(--up))}
+.rk.na{color:var(--faint);cursor:help}
+/* W3: state-age chip — the SAME hairline-pill idiom as .qchip/.rk (reuses their tokens,
+   not a new art direction), a small caption line under the quadrant chip naming how many
+   sessions the theme has held its current state. --fv-age--new marks the honest "no prior
+   session to compare" case; --fv-age--frozen marks a stale-source freeze (spec §3 test 6).
+   THEME repair round: dark keeps --faint (a quiet instrument caption, command-center
+   idiom); light reads --faint as near-invisible against the paper canvas, so light uses
+   --muted instead — the SAME two-art-direction law as every other chip on this page
+   (TP-0), never a bare token carried over unexamined. ZH nowrap (NIT/THEME): the short
+   form "状态第{n}日" (chosen over letting .fv-age wrap) keeps the caption on one line at
+   the same width EN needs — see the chg_row-adjacent template line for the EN/ZH pair. */
+.fv-age{display:block;margin-top:3px;font-size:10.5px;font-weight:600;color:var(--faint);cursor:help;white-space:nowrap}
+html[data-theme="light"] .fv-age{color:var(--muted)}
+.fv-age--new{color:var(--muted);font-style:italic}
+.fv-age-frozen{opacity:.85}
+/* W3: a revision row in "what changed today" — DARK keeps the restrained command-center
+   left-rule glow (a subdued 2px/55%-blue accent, matching this page's other dark chips).
+   LIGHT (THEME repair round — was unauthored, silently inheriting the dark rule as a bare
+   token swap, exactly the TP-0 failure) instead reuses the page's OWN existing
+   .fv-src--revised idiom verbatim: a 7% --blue paper tint, a FULL-STRENGTH (not
+   color-mixed-down) 3px blue left rule, and full-weight ink for the row's body text (not
+   the muted --ink-2 every other change-row uses) — a correction earns the same visible
+   "this changed" weight on the research-workspace surface that it already has on the
+   trust strip. */
+.fv-chg-row.fv-chg-row--revision{padding-left:8px;border-left:2px solid color-mix(in srgb,var(--blue) 55%,transparent)}
+html[data-theme="light"] .fv-chg-row.fv-chg-row--revision{
+  padding-left:10px;border-left-width:3px;border-left-color:var(--blue);
+  background:color-mix(in srgb,var(--blue) 7%,transparent);color:var(--ink)
+}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ═══════════════ THE ROTATION — in vs out ═══════════════ */
 .fv-rot{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
@@ -414,224 +670,266 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
 
   {# ============================ HERO — Flow Verdict ============================ #}
   {% set P = snap.pulse %}
-  {% set br = P.breadth if P else none %}
   {% set din = P.dominant_in if P else none %}
   {% set dout = P.dominant_out if P else none %}
   {% set sb = P.sb if P else none %}
+  {% set sb_chan = (snap.aggregate|selectattr('key','equalto','southbound')|first) if snap.aggregate else none %}
   {% set inst = P.inst if P else none %}
+  {% set MR = (snap.market_read.themes if snap.market_read else none) %}
+  {% set CS = snap.change_summary %}
+  {% set PUB = snap.publication_state %}
+  {# leg lookup by source_id, reused by every section's sec_watermark() call below (W2) #}
+  {% set _src_by_id = {} %}
+  {% for _s in (snap.sources or []) %}{% set _ = _src_by_id.update({_s.source_id: _s}) %}{% endfor %}
+  {# W2 REPAIR ROUND S4/S5: the hero verdict replacement is scoped to cn_large_order_proxy
+     ONLY — it is the verdict's own data source (the abs×rel quadrant read, the theme
+     board, the market_read breadth are all fed by it). Previously this was keyed on the
+     DESK-WIDE `publication_state`, which fires just as easily when a CROSS-BORDER leg
+     (sb_aggregate/hk_sb_holdings) alone is stale/unavailable while cn_large_order_proxy is
+     perfectly current — replacing an accurate verdict with a claim about a DIFFERENT
+     leg's trouble, and (S5) falling back to `snap.as_of` when the "stale" leg was actually
+     UNAVAILABLE (no date at all), which could print the literal, meaningless "from —". #}
+  {% set _cn_leg = _src_by_id.get('cn_large_order_proxy') %}
+  {% set _cn_status = _cn_leg.status if _cn_leg else none %}
+  {% set _hero_stale = _cn_status == 'STALE' %}
+  {% set _hero_unavailable = _cn_status == 'UNAVAILABLE' %}
+  {# S4: a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) never touches
+     the hero verdict sentence — it (i) watermarks its OWN sections (#channels, the HK
+     board), and (ii) surfaces this small notice chip so it is not silently invisible. #}
+  {% set _sb_leg = _src_by_id.get('sb_aggregate') %}
+  {% set _hk_leg = _src_by_id.get('hk_sb_holdings') %}
+  {% set _cross_border_bad = (_sb_leg and _sb_leg.status in ('STALE', 'UNAVAILABLE'))
+      or (_hk_leg and _hk_leg.status in ('STALE', 'UNAVAILABLE')) %}
+  {% if _hero_unavailable %}
+    {% set stance_en = 'Stand aside — no data' %}
+    {% set stance_zh = '暂缓 — 暂无数据' %}
+  {% elif _hero_stale %}
+    {% set stance_en = 'Stand aside — data behind' %}
+    {% set stance_zh = '暂缓 — 数据滞后' %}
+  {% elif CS and CS.material_change == false %}
+    {% set stance_en = 'No material shift — nothing to chase' %}
+    {% set stance_zh = '无重大变化' %}
+  {% else %}
+    {% set stance_en = "Watch — don't chase" %}
+    {% set stance_zh = '观察，勿追高' %}
+  {% endif %}
   <section class="fv-hero fv-reveal">
     <div class="fv-hero-eyebrow">
       <span class="dot"></span>🌊 {{ t('Capital Flow Velocity','资金流速') }} · {{ t('China &amp; Hong Kong','中国及香港') }}
       <span class="asof">{{ t('daily · as of','日度 · 截至') }} {{ snap.as_of }}</span>
     </div>
-    <div class="fv-hero-grid">
-      <div>
-        {# ---- dynamic plain-language thesis, built from the breadth + dominant rotation ---- #}
-        {% if br and br.n_sectors %}
-          {% set n = br.n_sectors %}{% set si = br.sectors_in %}
-          {% if br.state == 'broad inflow' %}
-            {% set thesis_en %}Big money is flowing <span class="em-in">broadly in</span> — <b>{{ si }}</b> of {{ n }} China groups are drawing inflow{% if din %}, led by <b class="em-in">{{ din.name }}</b>{% endif %}.{% endset %}
-            {% set thesis_zh %}大资金<span class="em-in">普遍流入</span>——{{ n }}个板块中<b>{{ si }}</b>个净流入{% if din %}，<b class="em-in">{{ din.name_zh }}</b>领跑{% endif %}。{% endset %}
-          {% elif br.state == 'broad outflow' %}
-            {% set thesis_en %}Big money is <span class="em-out">narrowing</span> — only <b>{{ si }}</b> of {{ n }} groups still draw inflow{% if din %} (led by <b class="em-in">{{ din.name }}</b>){% endif %}; most{% if dout %}, including <b class="em-out">{{ dout.name }}</b>,{% endif %} are bleeding out.{% endset %}
-            {% set thesis_zh %}大资金正在<span class="em-out">收窄</span>——{{ n }}个板块中仅<b>{{ si }}</b>个仍见流入{% if din %}（<b class="em-in">{{ din.name_zh }}</b>领跑）{% endif %}；多数{% if dout %}（含<b class="em-out">{{ dout.name_zh }}</b>）{% endif %}资金流出。{% endset %}
-          {% else %}
-            {% set thesis_en %}Big money is <b>rotating</b>{% if din %} into <b class="em-in">{{ din.name }}</b>{% endif %}{% if dout %} and out of <b class="em-out">{{ dout.name }}</b>{% endif %} — <b>{{ si }}</b> of {{ n }} groups drawing inflow.{% endset %}
-            {% set thesis_zh %}大资金正在<b>轮动</b>{% if din %}——流入<b class="em-in">{{ din.name_zh }}</b>{% endif %}{% if dout %}、流出<b class="em-out">{{ dout.name_zh }}</b>{% endif %}；{{ n }}个板块中<b>{{ si }}</b>个净流入。{% endset %}
-          {% endif %}
-          <p class="fv-thesis"><span class="l-en">{{ thesis_en }}</span><span class="l-zh">{{ thesis_zh }}</span></p>
-        {% else %}
-          <p class="fv-thesis">{{ t('Tracking how fast big money is moving through China &amp; Hong Kong groups.','追踪大资金在中国及香港板块间的流动速度。') }}</p>
-        {% endif %}
-        <p class="fv-stance-lead">{{ t('<b>Watch where the money is going</b> — this is positioning context, <b>not a buy signal</b>. Flow is never scored into an allocation call.','<b>关注资金去向</b>——这是仓位背景，<b>并非买入信号</b>。资金流向从不计入配置判断。') }}</p>
-      </div>
-      {# ---- the breadth gauge ---- #}
-      {% if br and br.n_sectors %}
-      <div class="fv-gauge">
-        <div class="fv-gauge-lab">
-          <span class="fv-gauge-word {{ 'g-in' if br.tilt>=25 else ('g-out' if br.tilt<=-25 else 'g-mid') }}">{{ t(br.state|title, br.state_zh) }}</span>
-          <span class="fv-gauge-k">{{ t('net flow breadth','资金广度') }} <span class="qm" data-tip-en="Share of the {{ br.n_sectors }} China sector groups drawing net inflow minus those bleeding out, scaled to ±100. A breadth read of how concentrated the flow is — not a signal. Right = broad inflow, left = broad outflow." data-tip-zh="{{ br.n_sectors }}个板块中净流入板块占比减去净流出板块占比，缩放至±100。衡量资金的集中/普及程度——非信号。右＝普遍流入，左＝普遍流出。" role="button" tabindex="0">?</span></span>
-        </div>
-        <div class="fv-meter">
-          <span class="tick" style="left:{{ ((br.tilt + 100) / 2)|round(1) }}%"></span>
-        </div>
-        <div class="fv-meter-scale"><span>{{ t('Broad outflow','普遍流出') }}</span><span>{{ t('Balanced','均衡') }}</span><span>{{ t('Broad inflow','普遍流入') }}</span></div>
-        <div class="fv-gauge-note">
-          <b>{{ br.sectors_in }}</b> {{ t(('group' if br.sectors_in==1 else 'groups') ~ ' drawing money','板块吸金') }} · <b>{{ br.sectors_out }}</b> {{ t('bleeding','失血') }} {{ t('of','/') }} {{ br.n_sectors }}
-          &nbsp;·&nbsp; <b>{{ br.names_in }}</b> / {{ br.n_names }} {{ t('names inflowing','个股流入') }}
-        </div>
-      </div>
-      {% endif %}
+    {% if _cross_border_bad %}
+    <div class="fv-hero-notice">
+      <span class="l-en">⚠ Cross-border data behind — see sources</span>
+      <span class="l-zh">⚠ 跨境数据滞后——见数据来源</span>
     </div>
+    {% endif %}
+    {# ---- two-axis verdict (spec §2.1) — generated from market_read, never a single
+         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ----
+         W2 (spec §3, S4/S5 repair): STALE/UNAVAILABLE cn_large_order_proxy REPLACES the
+         verdict sentence entirely — a source behind must never share a screen with a
+         confident read of the SAME data it feeds. #}
+    {% if _hero_unavailable %}
+      {# S5: no date exists for an unavailable leg — never print "from —". #}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">A-share flow source is unavailable — no current read. Other panels show their own dates.</span>
+        <span class="l-zh">A股资金数据源不可用——暂无当前读数。其余面板以各自日期为准。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif _hero_stale %}
+      {% set _stale_date = _cn_leg.effective_date or '—' %}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">Source data is behind — showing the last good read from {{ _stale_date }}. Treat levels as history, not today's tape.</span>
+        <span class="l-zh">数据源滞后——显示{{ _stale_date }}的最近有效读数。请将其视为历史，而非今日盘面。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif MR and MR.relative_breadth and MR.relative_breadth.denominator %}
+      {% set n = MR.relative_breadth.denominator %}
+      {% set relpos = MR.relative_breadth.positive %}
+      {% set abspos = MR.absolute_breadth.positive %}
+      <p class="fv-thesis">
+        {% if abspos == 0 %}
+        {# S4(a): main-money order flow is structurally a net seller (§6), so "0 of N
+           themes positive" is the common case, not a data gap — say so plainly instead of
+           reading as an alarming zero. Pinned strings, exact. #}
+        <span class="l-en">Main-force flow was a net seller in all {{ n }} themes — normal for this order-size proxy; the signal is pressure vs norm. {{ stance_en }}</span>
+        <span class="l-zh">主力资金在全部{{ n }}个主题均为净卖出——该口径的常态；关键信号是相对常态的压力。{{ stance_zh }}</span>
+        {% else %}
+        <span class="l-en">Large-order pressure ran <b>above its norm</b> in <b>{{ relpos }}</b> of {{ n }} themes; <b>{{ abspos }}</b> saw positive absolute 4-week flow. {{ stance_en }}</span>
+        <span class="l-zh">主力大单压力<b>高于常态</b>的主题 <b>{{ relpos }}</b>/{{ n }}；4周绝对净流入为正的主题 <b>{{ abspos }}</b> 个。{{ stance_zh }}</span>
+        {% endif %}
+      </p>
+    {% else %}
+      <p class="fv-thesis">{{ t('Tracking how fast large-order pressure is moving through China &amp; Hong Kong themes.','追踪主力大单压力在中国及香港主题间的流动速度。') }}</p>
+    {% endif %}
+    <p class="fv-stance-lead">{{ t('<b>Watch where the pressure is building</b> — this is positioning context, <b>not a buy signal</b>. Flow is never scored into an allocation call.','<b>关注压力所在</b>——这是仓位背景，<b>并非买入信号</b>。资金流向从不计入配置判断。') }}</p>
 
     {# ---- the four things a user came for, as jump chips ---- #}
     <div class="fv-vitals">
-      <button class="fv-vital" data-goto-sec="rotation">
-        <span class="vk">⇄ {{ t('Rotation','轮动') }}</span>
-        <span class="vv">{% if dout %}<span class="em-out">{{ t(dout.name, dout.name_zh) }}</span>{% else %}—{% endif %} <span style="color:var(--faint)">→</span> {% if din %}<span class="em-in">{{ t(din.name, din.name_zh) }}</span>{% else %}—{% endif %}<span class="arrow">→</span></span>
-        <span class="vs">{{ t('out of the leaders, into the leaders','离场者与吸金者') }}</span>
+      {# S7: a true denominator ("N of 5 legs current"), not a bare leg-count — sources[]
+         now always emits all five W1 legs (an absent panel still gets its identity row,
+         ui_state "unavailable"), so a plain length here would always print "5" regardless
+         of how many are actually live. #}
+      {% set _src_current = (snap.sources or [])|selectattr('ui_state','equalto','current')|list|length %}
+      <button class="fv-vital" data-goto-sec="sources">
+        <span class="vk">▣ {{ t('Sources','数据来源') }}</span>
+        <span class="vv"><span class="l-en"><span class="tnum">{{ _src_current }}</span> of 5 legs current</span><span class="l-zh">5条数据源·<span class="tnum">{{ _src_current }}</span>条最新</span><span class="arrow">→</span></span>
+        <span class="vs">{{ t('what\'s current, what\'s behind','各源新鲜度一览') }}</span>
       </button>
-      <button class="fv-vital" data-goto-sec="momentum">
-        <span class="vk">⚡ {{ t('Momentum','动能') }}</span>
-        {# counts are the engine's TRUE population totals (n_*), never the truncated list length #}
-        <span class="vv">{% if snap.momentum %}<span class="tnum">{{ snap.momentum.n_accel_in }}</span> {{ t('speeding up','加速中') }}<span class="arrow">→</span>{% else %}—{% endif %}</span>
-        <span class="vs">{% if snap.momentum and snap.momentum.n_cooling %}<span class="tnum">{{ snap.momentum.n_cooling }}</span> {{ t('cooling — possible exhaustion','降温——或近衰竭') }}{% else %}{{ t('where inflow is turning','流入拐点所在') }}{% endif %}</span>
+      <button class="fv-vital" data-goto-sec="changed">
+        <span class="vk">⏱ {{ t('Changed today','今日变化') }}</span>
+        <span class="vv">{% if CS and CS.material_change %}<span class="tnum">{{ (CS.transitions|length) + (CS.rank_movers|length) }}</span> {{ t('moves','项变化') }}{% elif CS and CS.material_change == false %}{{ t('none','无') }}{% else %}—{% endif %}<span class="arrow">→</span></span>
+        <span class="vs">{{ t('transitions &amp; rank movers','状态切换与排名变动') }}</span>
       </button>
-      <button class="fv-vital" data-goto-sec="confluence">
-        <span class="vk">🏛 {{ t('Institutions','机构') }}</span>
-        <span class="vv">{% if inst %}<span class="tnum">{{ inst.agree }}</span> {{ t('agree','认同') }} · <span class="tnum">{{ inst.diverge }}</span> {{ t('clash','背离') }}{% else %}—{% endif %}<span class="arrow">→</span></span>
-        <span class="vs">{{ t('fast money vs the Dragon-Tiger tape','资金与龙虎榜') }}</span>
+      <button class="fv-vital" data-goto-sec="quadrant">
+        <span class="vk">▦ {{ t('Pressure × flow','压力×流向') }}</span>
+        <span class="vv">{% if din %}<span class="em-in">{{ t(din.name, din.name_zh) }}</span>{% else %}—{% endif %} <span style="color:var(--faint)">→</span> {% if dout %}<span class="em-out">{{ t(dout.name, dout.name_zh) }}</span>{% else %}—{% endif %}<span class="arrow">→</span></span>
+        <span class="vs">{{ t('the four honest states','按两轴划分的四种状态') }}</span>
       </button>
       <button class="fv-vital" data-goto-sec="channels">
         <span class="vk">🛰 {{ t('Southbound','南向') }}</span>
-        <span class="vv">{% if sb %}{{ vstate(sb.state, sb.state_zh, sb.vel) }}{% else %}—{% endif %}<span class="arrow">→</span></span>
-        <span class="vs">{{ t('mainland money into Hong Kong','内地资金入港') }}</span>
+        <span class="vv">{% if sb_chan and sb_chan.flow_1m_b is not none %}<span class="chg {{ 'pos' if sb_chan.flow_1m_b>=0 else 'neg' }} tnum">{{ '%+.1f'|format(sb_chan.flow_1m_b) }}{{ t('¥B','十亿') }}</span> / 1m{% else %}—{% endif %}<span class="arrow">→</span></span>
+        <span class="vs">{% if sb %}{{ t('pace','节奏') }} {{ vstate(sb.state, sb.state_zh, sb.vel) }}{% else %}{{ t('mainland money into Hong Kong','内地资金入港') }}{% endif %}</span>
       </button>
     </div>
   </section>
 
-  {# ============================ THE ROTATION ============================ #}
-  {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
-  {% set rows = snap.ashare_sectors.rows|rejectattr('vel','none')|list %}
-  {# keep the FULL qualifying sets so the column headers can print the true totals — the cards
-     show only the top 5, and a truncated length must never be printed as if it were the count. #}
-  {% set into_all = rows|sort(attribute='vel', reverse=true)|selectattr('vel','ge',0.5)|list %}
-  {% set outof_all = rows|sort(attribute='vel')|selectattr('vel','le',-0.5)|list %}
-  {% set into = into_all[:5] %}
-  {% set outof = outof_all[:5] %}
-  <section class="fv-sec fv-reveal" id="rotation">
-    <div class="fv-sec-head">
-      <div>
-        <div class="fv-eyebrow">⇄ {{ t('The Rotation','资金轮动') }}</div>
-        <h2>{{ t('Where big money is rushing','大资金正涌向何处') }} <span class="sub">{{ t('sector groups, ranked by how fast large-order money is moving','按主力资金流速排序的板块') }}</span></h2>
-        <p class="fv-stance">{{ t('The fastest-moving groups both ways. <b>Watch the accelerating inflows</b> — but a fast move is crowding as often as opportunity, so don\'t chase. Click a group to drill its names below.','双向流速最快的板块。<b>关注加速流入者</b>——但快速流入既是机会也常是拥挤，切勿追高。点击板块下钻个股。') }}</p>
+  {# ============================ TRUST STRIP (spec §2.2) ============================ #}
+  {# aria-label is an HTML ATTRIBUTE — the t() macro emits <span class="l-en">/<span
+     class="l-zh"> markup that breaks out of any attribute it is called inside (B1
+     repair): committed site bytes showed the literal leak `Data sources">` on every
+     capture. NEVER call t() inside an attribute value; use a static bilingual string. #}
+  <section class="fv-sec fv-trust fv-reveal" id="sources" aria-label="Data sources / 数据来源">
+    <div class="fv-eyebrow">▣ {{ t('Data Sources','数据来源') }}</div>
+    <h2>{{ t('What\'s current, what\'s behind','各数据源新鲜度') }} <span class="sub">{{ t('one chip per source leg — hover for method &amp; provider','逐条数据源 · 悬停查看方法与来源') }}</span></h2>
+    <div class="fv-trust-row">
+      {% for s in (snap.sources or []) %}
+      <div class="fv-src fv-src--{{ s.ui_state }}"
+           data-tip-en="{{ s.tip_en }}" data-tip-zh="{{ s.tip_zh }}" role="button" tabindex="0">
+        <span class="s-name">{{ t(s.name_en, s.name_zh) }}</span>
+        <span class="s-meta tnum">{{ s.effective_date or '—' }} · {{ s.coverage_line }}</span>
+        <span class="s-state">{{ t(s.state_word_en, s.state_word_zh) }}</span>
       </div>
+      {% else %}
+      <div class="rot-empty">{{ t('No source legs available.','暂无数据源信息。') }}</div>
+      {% endfor %}
     </div>
-    <div class="fv-rot">
-      <div class="rot-col into">
-        <div class="rot-col-h"><i class="cdot conf-buy" style="width:11px;height:11px"></i> {{ t('Rushing in','资金涌入') }} <span class="rot-n">{{ into_all|length }} {{ t('group' if (into_all|length)==1 else 'groups','个板块') }}{% if into_all|length > into|length %} · {{ t('top','前') }} {{ into|length }}{% endif %}</span></div>
-        {% for r in into %}
-        <div class="rot-card" data-goto="{{ r.id }}" role="button" tabindex="0">
-          <div class="rc-top">
-            <div class="rc-name">{{ t(r.name, r.name_zh) }}</div>
-            <div class="rc-right">{{ vbar(r.vel, 'md', loop.index) }}{{ rate(r) }}</div>
-          </div>
-          <div class="rc-meta">{{ vstate(r.state, r.state_zh, r.vel) }} {% if r.inst_attention %}<span class="attn" data-tip-en="Members with Dragon-Tiger institutional-seat activity" data-tip-zh="有龙虎榜机构席位活动的成分股">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</div>
-          {% if r.members %}<div class="rc-members">{% for m in r.members[:4] %}<span><b>{{ m.name or m.ticker }}</b> <span class="chg {{ 'pos' if m.vel>=0 else 'neg' }}">{{ '%+.1f'|format(m.vel) }}σ</span></span>{% endfor %}</div>{% endif %}
-        </div>
-        {% else %}
-        <div class="rot-empty">{{ t('No group is drawing broad inflow right now.','当前暂无板块普遍流入。') }}</div>
+  </section>
+
+  {# ============================ WHAT CHANGED TODAY (spec §2.3) ============================ #}
+  {% set CS = snap.change_summary %}
+  <section class="fv-sec fv-reveal" id="changed">
+    <div class="fv-eyebrow">⏱ {{ t('What Changed Today','今日变化') }}</div>
+    <h2>{{ t('State transitions since the last valid session','自上一有效交易日以来的状态变化') }}</h2>
+    {% set _theme_names = {} %}
+    {% for _r in (snap.ashare_sectors.rows if (snap.ashare_sectors and snap.ashare_sectors.rows) else []) %}{% set _ = _theme_names.update({_r.id: _r}) %}{% endfor %}
+    {% if not CS or CS.material_change is none %}
+      <p class="fv-stance">{{ t('Change tracking begins today — no prior tracked session.','变化追踪自今日开始——暂无历史对比。') }}</p>
+    {% elif not CS.material_change %}
+      <p class="fv-stance">
+        <span class="l-en">No material flow-state transition since the previous valid market session ({{ CS.previous_valid_session }}).</span>
+        <span class="l-zh">自上一有效交易日（{{ CS.previous_valid_session }}）以来，资金状态无重大变化。</span>
+      </p>
+    {% else %}
+      {# W2 (spec §3): a leg entering DEGRADED/STALE/UNAVAILABLE/REVISED is a material
+         change too — quality transitions ride the SAME "what changed" list as quadrant
+         flips and rank movers, distinguished by kind=='quality' (leg_id + status words,
+         never a theme quadrant). W3: source_revisions[] rides the SAME list too,
+         distinguished by kind=='revision' — a correction to an already-recorded
+         observation, never re-shown as a quadrant transition (spec §3 test 9). #}
+      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) + (CS.quality_transitions or []) + (CS.source_revisions or []) %}
+      <ul class="fv-chg-list">
+        {% for c in all_changes[:8] %}
+        {{ chg_row(c, _theme_names, _src_by_id) }}
         {% endfor %}
+      </ul>
+      {% if all_changes|length > 8 %}
+      <details class="fv-disc"><summary>{{ t('all %d changes'|format(all_changes|length), '全部 %d 项变化'|format(all_changes|length)) }}</summary>
+        <ul class="fv-chg-list">
+          {% for c in all_changes[8:] %}
+          {{ chg_row(c, _theme_names, _src_by_id) }}
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  {# ============================ ABS × REL MARKET READ (spec §2.4) ============================ #}
+  {% set MRt = (snap.market_read.themes if snap.market_read else none) %}
+  <section class="fv-sec fv-reveal" id="quadrant">
+    <div class="fv-eyebrow">▦ {{ t('Absolute × Relative','绝对×相对') }}</div>
+    <h2>{{ t('Pressure vs actual flow','相对压力 × 绝对流向') }}
+        <span class="sub">{{ t('four honest states — themes placed by both axes','按两轴划分的主题分布') }}</span>
+        <span class="qm" data-tip-en="Main-force order-size flow is structurally a net seller — the two quadrants that require positive absolute flow (real inflow, above norm / still buying, pace fading) are rare by construction, so their emptiness on a given day is expected, not a data gap." data-tip-zh="主力大单口径的资金结构性为净卖出——需要绝对流入为正的两个象限（真实流入·高于常态 / 仍净流入·动能转弱）本就罕见，为空属正常现象，并非数据缺失。" role="button" tabindex="0">?</span></h2>
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
+    {% if MRt and MRt.relative_breadth and MRt.relative_breadth.denominator %}
+    <p class="fv-stance">
+      <span class="l-en">Pressure vs norm: <b>{{ MRt.relative_breadth.positive }}</b> above · <b>{{ MRt.relative_breadth.neutral }}</b> near · <b>{{ MRt.relative_breadth.negative }}</b> below — of {{ MRt.relative_breadth.denominator }} themes — {{ MRt.relative_breadth.missing }} unscored<br>Actual 4-week flow: <b>{{ MRt.absolute_breadth.positive }}</b> positive · <b>{{ MRt.absolute_breadth.negative }}</b> negative · <b>{{ MRt.absolute_breadth.neutral }}</b> neutral — {{ MRt.absolute_breadth.missing }} unscored</span>
+      <span class="l-zh">相对常态压力：{{ MRt.relative_breadth.denominator }}个主题中，<b>{{ MRt.relative_breadth.positive }}</b>个高于常态 · <b>{{ MRt.relative_breadth.neutral }}</b>个接近 · <b>{{ MRt.relative_breadth.negative }}</b>个低于常态 — {{ MRt.relative_breadth.missing }}个未评分<br>实际4周流向：<b>{{ MRt.absolute_breadth.positive }}</b>个为正 · <b>{{ MRt.absolute_breadth.negative }}</b>个为负 · <b>{{ MRt.absolute_breadth.neutral }}</b>个中性 — {{ MRt.absolute_breadth.missing }}个未评分</span>
+    </p>
+    {% endif %}
+    {% set qrows = snap.ashare_sectors.rows if (snap.ashare_sectors and snap.ashare_sectors.rows) else [] %}
+    {% set q_acc = qrows|selectattr('quadrant','defined')|selectattr('quadrant','equalto','true_accumulation')|list %}
+    {% set q_imp = qrows|selectattr('quadrant','defined')|selectattr('quadrant','equalto','improving_but_still_selling')|list %}
+    {% set q_weak = qrows|selectattr('quadrant','defined')|selectattr('quadrant','equalto','weakening_but_still_buying')|list %}
+    {% set q_dist = qrows|selectattr('quadrant','defined')|selectattr('quadrant','equalto','true_distribution')|list %}
+    {% set q_neu = qrows|selectattr('quadrant','defined')|selectattr('quadrant','equalto','neutral_or_unknown')|list %}
+    <div class="fv-quad">
+      {# S4(b): true_accumulation/weakening_but_still_buying both require positive ABSOLUTE
+         flow, which is structurally rare for this order-size proxy (main-force flow is a
+         net seller most days) — their empty state says so instead of a bare "none" that
+         reads like a data gap. improving_but_still_selling/true_distribution only need
+         NEGATIVE absolute flow (the common case), so a bare "none" there is unremarkable
+         and stays as-is. Pinned strings, exact. #}
+      <div class="q-cell q-acc"><h3>{{ t('real inflow, above norm','真实流入·高于常态') }}</h3>
+        {% for r in q_acc %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none today — rare for this proxy; exceptional when a theme appears here','今日无——该口径下罕见，出现即为异常信号') }}</span>{% endfor %}
       </div>
-      <div class="rot-col out">
-        <div class="rot-col-h"><i class="cdot conf-sell" style="width:11px;height:11px"></i> {{ t('Bleeding out','资金流出') }} <span class="rot-n">{{ outof_all|length }} {{ t('group' if (outof_all|length)==1 else 'groups','个板块') }}{% if outof_all|length > outof|length %} · {{ t('top','前') }} {{ outof|length }}{% endif %}</span></div>
-        {% for r in outof %}
-        <div class="rot-card" data-goto="{{ r.id }}" role="button" tabindex="0">
-          <div class="rc-top">
-            <div class="rc-name">{{ t(r.name, r.name_zh) }}</div>
-            <div class="rc-right">{{ vbar(r.vel, 'md', loop.index) }}{{ rate(r) }}</div>
-          </div>
-          <div class="rc-meta">{{ vstate(r.state, r.state_zh, r.vel) }} {% if r.inst_attention %}<span class="attn" data-tip-en="Members with Dragon-Tiger institutional-seat activity" data-tip-zh="有龙虎榜机构席位活动的成分股">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</div>
-          {% if r.members %}<div class="rc-members">{% for m in r.members[:4] %}<span><b>{{ m.name or m.ticker }}</b> <span class="chg {{ 'pos' if m.vel>=0 else 'neg' }}">{{ '%+.1f'|format(m.vel) }}σ</span></span>{% endfor %}</div>{% endif %}
-        </div>
-        {% else %}
-        <div class="rot-empty">{{ t('No group is bleeding broadly right now.','当前暂无板块普遍流出。') }}</div>
-        {% endfor %}
+      <div class="q-cell q-imp"><h3>{{ t('still selling, pressure easing','仍净流出·压力改善') }}</h3>
+        {% for r in q_imp %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none','无') }}</span>{% endfor %}
+      </div>
+      <div class="q-cell q-weak"><h3>{{ t('still buying, pace fading','仍净流入·动能转弱') }}</h3>
+        {% for r in q_weak %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none today','今日无') }}</span>{% endfor %}
+      </div>
+      <div class="q-cell q-dist"><h3>{{ t('real outflow, below norm','真实流出·低于常态') }}</h3>
+        {% for r in q_dist %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none','无') }}</span>{% endfor %}
       </div>
     </div>
+    <p class="q-neutral">{{ t('quiet / insufficient data','平静/数据不足') }}: {% if q_neu %}{% for r in q_neu %}{{ t(r.name, r.name_zh) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}{{ t('none','无') }}{% endif %}</p>
+    <ul class="sr-only">
+      {% for _lab_en, _lab_zh, _grp in [('real inflow, above norm','真实流入·高于常态', q_acc), ('still selling, pressure easing','仍净流出·压力改善', q_imp), ('still buying, pace fading','仍净流入·动能转弱', q_weak), ('real outflow, below norm','真实流出·低于常态', q_dist)] %}
+      <li>{{ _lab_en }} / {{ _lab_zh }}: {% for r in _grp %}{{ r.name }}{% if not loop.last %}, {% endif %}{% endfor %}</li>
+      {% endfor %}
+    </ul>
   </section>
-  {% endif %}
 
-  {# ============================ MOMENTUM SHIFTS ============================ #}
-  {% if snap.momentum %}
-  {% set M = snap.momentum %}
-  <section class="fv-sec fv-reveal" id="momentum">
-    <div class="fv-eyebrow">⚡ {{ t('Momentum Shifts','动能变化') }}</div>
-    <h2>{{ t('Where the inflow is turning','流入的拐点') }} <span class="sub">{{ t('names, by whether their flow is speeding up or fading','按资金加速或衰减排序的个股') }}</span></h2>
-    <p class="fv-stance">{{ t('Velocity says which way; acceleration says whether it\'s <b>getting stronger or running out</b>. Fading inflow and easing outflow are early turns — <b>watch, don\'t act.</b>','流速指方向；加速度指其<b>增强还是衰竭</b>。流入降温与流出趋缓是早期拐点——<b>观察，勿妄动。</b>') }}</p>
-    <div class="fv-mom">
-      <div class="mom-col m-in">
-        <div class="mom-accent"></div>
-        <div class="mom-col-h"><span class="mi">🚀</span> {{ t('Speeding up','加速流入') }}{% if M.n_accel_in and M.n_accel_in > M.accel_in|length %}<span class="mom-n">{{ M.accel_in|length }} {{ t('of','/') }} {{ M.n_accel_in }}</span>{% endif %}</div>
-        <div class="mom-sub">{{ t('inflow still accelerating','流入仍在加速') }}</div>
-        {% for m in M.accel_in %}
-        <div class="mom-row"><span class="cdot conf-buy"></span><span class="nm">{{ nameln(m) }}</span><span class="mv pos">{{ '%+.1f'|format(m.vel) }}σ</span></div>
-        {% else %}<div class="rot-empty">{{ t('none','暂无') }}</div>{% endfor %}
-      </div>
-      <div class="mom-col m-cool">
-        <div class="mom-accent"></div>
-        <div class="mom-col-h"><span class="mi">🌡️</span> {{ t('Cooling','流入降温') }}{% if M.n_cooling and M.n_cooling > M.cooling|length %}<span class="mom-n">{{ M.cooling|length }} {{ t('of','/') }} {{ M.n_cooling }}</span>{% endif %}</div>
-        <div class="mom-sub">{{ t('strong inflow now fading — possible exhaustion','强流入正衰减——或近衰竭') }}</div>
-        {% for m in M.cooling %}
-        <div class="mom-row"><span class="nm">{{ nameln(m) }}</span><span class="mv pos">{{ '%+.1f'|format(m.vel) }}σ</span></div>
-        {% else %}<div class="rot-empty">{{ t('none','暂无') }}</div>{% endfor %}
-      </div>
-      <div class="mom-col m-ease">
-        <div class="mom-accent"></div>
-        <div class="mom-col-h"><span class="mi">🌱</span> {{ t('Outflow easing','流出趋缓') }}{% if M.n_easing and M.n_easing > M.easing|length %}<span class="mom-n">{{ M.easing|length }} {{ t('of','/') }} {{ M.n_easing }}</span>{% endif %}</div>
-        <div class="mom-sub">{{ t('heavy selling now slowing — possible bottoming','重度卖出放缓——或近筑底') }}</div>
-        {% for m in M.easing %}
-        <div class="mom-row"><span class="nm">{{ nameln(m) }}</span><span class="mv neg">{{ '%+.1f'|format(m.vel) }}σ</span></div>
-        {% else %}<div class="rot-empty">{{ t('none','暂无') }}</div>{% endfor %}
-      </div>
-    </div>
-  </section>
-  {% endif %}
-
-  {# ============================ CONFLUENCE ============================ #}
-  {% if snap.confluence %}
-  {% set CF = snap.confluence %}
-  <section class="fv-sec fv-reveal" id="confluence">
-    <div class="fv-eyebrow">🏛 {{ t('Fast Money × Institutions','资金 × 机构') }}</div>
-    <h2>{{ t('Where flow meets the institutional tape','资金与机构相遇处') }}
-      <span class="qm" data-tip-en="A render-time agree/diverge CLASS joining large-order flow direction to the Dragon-Tiger institutional-seat direction on the same name — context, never a manufactured score. Agree = both point the same way (up OR down). Diverge = they clash." data-tip-zh="将主力资金方向与龙虎榜机构席位方向相连的一致/背离判断（渲染期计算）——仅供参考，绝非人造分值。一致＝二者同向（同涨或同跌）。背离＝二者相左。" role="button" tabindex="0">?</span></h2>
-    <p class="fv-stance">{{ t('When fast-money flow and the institutional seats <b>agree</b>, the positioning read is firmest. When they <b>clash</b>, treat the move with caution — someone is early or wrong.','当主力资金与机构席位<b>一致</b>时，仓位判断最稳；当二者<b>背离</b>时，谨慎对待——总有一方过早或看错。') }}</p>
-    <div class="fv-conf">
-      <div class="conf-col agree">
-        <div class="conf-col-h" style="display:flex;align-items:baseline;gap:8px"><span class="ct">✅ {{ t('They agree','二者一致') }}</span><span class="cn">{{ CF.n_agree }}</span>
-          <div class="cs" style="flex-basis:100%">{{ t('flow and institutions point the same way','资金与机构同向') }}</div></div>
-        {% for r in CF.agree %}
-        <div class="conf-row">
-          <span class="cr-nm"><i class="cdot conf-{{ 'buy' if r.vel>=0 else 'sell' }}"></i>{{ nameln(r) }}</span>
-          <span class="chg {{ 'pos' if r.vel>=0 else 'neg' }}">{{ '%+.1f'|format(r.vel) }}σ</span>
-          <span class="seat {{ r.seat_dir }}">🏛 {{ '%+.1f'|format(r.seat_yi) }}亿</span>
-        </div>
-        {% else %}<div class="conf-empty">{{ t('No overlap where they agree today.','今日无一致交集。') }}</div>{% endfor %}
-      </div>
-      <div class="conf-col diverge">
-        <div class="conf-col-h" style="display:flex;align-items:baseline;gap:8px"><span class="ct">⚠️ {{ t('They clash','二者背离') }}</span><span class="cn">{{ CF.n_diverge }}</span>
-          <div class="cs" style="flex-basis:100%">{{ t('flow one way, institutions the other','资金与机构相反') }}</div></div>
-        {% for r in CF.diverge %}
-        <div class="conf-row">
-          <span class="cr-nm"><i class="cdot conf-diverge"></i>{{ nameln(r) }}</span>
-          <span class="chg {{ 'pos' if r.vel>=0 else 'neg' }}">{{ '%+.1f'|format(r.vel) }}σ</span>
-          <span class="seat {{ r.seat_dir }}">🏛 {{ '%+.1f'|format(r.seat_yi) }}亿</span>
-        </div>
-        {% else %}<div class="conf-empty">{{ t('No clashes today.','今日无背离。') }}</div>{% endfor %}
-      </div>
-    </div>
-  </section>
-  {% endif %}
-
-  {# ============================ deep FLOW MAP ============================ #}
+  {# ============================ deep FLOW MAP / GROUPS BOARD (spec §2.5) ============================ #}
   {% if snap.ashare_sectors or snap.hk_names %}
   {% set sbt = snap.seats_by_ticker or {} %}
   {% set leaders = ((snap.ashare_names.inflow[:10] + snap.ashare_names.outflow[:10])|sort(attribute='vel', reverse=true)) if snap.ashare_names else [] %}
-  <section class="fv-sec fv-reveal" id="flowmap">
+  <section class="fv-sec fv-reveal" id="groups">
     <div class="fv-sec-head">
       <div>
-        <div class="fv-eyebrow">🧭 {{ t('The Full Map','完整流向图') }}</div>
-        <h2>{{ t('Every group, drilled to its names','逐板块下钻至个股') }}
-          <span class="qm" data-tip-en="Velocity = standardized net-flow rate: the drift of cumulative net flow ÷ its own volatility, so ±3σ fills a half-track. State folds in acceleration (the trailing slope of velocity). Confluence dots join flow direction to the Dragon-Tiger institutional-seat direction — context, never a score." data-tip-zh="流速＝标准化净流入率：累计净流向漂移÷自身波动，±3σ填满半轨。状态已含加速度（流速的滚动斜率）。共振圆点将资金方向与龙虎榜机构席位方向相连——仅供参考，绝非分值。" role="button" tabindex="0">?</span>
-          <span class="sub">{{ t('sort any column · expand a group for its members','点列排序 · 展开板块看成分') }}</span></h2>
+        <div class="fv-eyebrow">▤ {{ t('Theme Flow Board','主题资金板') }}</div>
+        <h2>{{ t('Theme flow board — large-order pressure by theme','主题资金板 — 按主力大单压力排序') }}
+          <span class="qm" data-tip-en="Velocity = standardized net-flow rate: the drift of cumulative net flow ÷ its own volatility, so ±3σ fills a half-track. Quadrant folds abs (raw 4wk flow) × rel (velocity vs the series' own norm). Confluence dots join flow direction to the Dragon-Tiger institutional-seat direction — context, never a score." data-tip-zh="流速＝标准化净流入率：累计净流向漂移÷自身波动，±3σ填满半轨。象限＝绝对4周流向×相对自身常态的流速。共振圆点将资金方向与龙虎榜机构席位方向相连——仅供参考，绝非分值。" role="button" tabindex="0">?</span>
+          <span class="sub">{{ t('curated overlapping themes — not official sectors','精选主题（可重叠），非官方行业分类') }}</span></h2>
+        <p class="fv-stance">{{ t('sort any column · expand a theme for its members','点列排序 · 展开主题看成分') }}</p>
       </div>
       <span class="mkt-toggle" role="group" aria-label="Market">
         <button data-mkt="a" aria-pressed="true">{{ t('A-Share','沪深') }}</button>
         <button data-mkt="hk" aria-pressed="false">{{ t('HK Southbound','南向') }}</button>
       </span>
     </div>
+    {# S4 scoping repair: this L1 section's TOP-level watermark keys to cn_large_order_proxy
+       ONLY — it feeds the A-share theme table this section is primarily about. The nested
+       HK per-name board below is fed by hk_sb_holdings, its OWN leg, and gets its OWN
+       watermark right at its own sub-header (see the market-hk block further down),
+       matching S4's "#quadrant/#groups/momentum-details -> cn proxy; #channels/HK board ->
+       their own legs" split. #}
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
 
-    {# ---- A-SHARE: sector lanes → member drill-down ---- #}
+    {# ---- A-SHARE: theme lanes → member drill-down ---- #}
     {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
     {% set s = snap.ashare_sectors %}
     <div class="market-a">
@@ -640,11 +938,13 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       <div class="tbl-wrap">
         <table class="board" id="sectortbl">
           <thead><tr>
-            <th data-c="0">{{ t('Sector','板块') }}</th>
+            <th data-c="0">{{ t('Theme','主题') }}</th>
             <th data-c="1">{{ t('Members','成分') }}</th>
-            <th data-c="2">{{ t('4wk vs norm','4周相对常态') }}</th>
-            <th data-c="3">{{ t('Velocity','流速') }}</th>
-            <th class="nos">{{ t('State','状态') }}</th>
+            <th data-c="2">{{ t('abs 4wk','绝对4周') }}</th>
+            <th data-c="3">{{ t('vs norm','相对常态') }}</th>
+            <th data-c="4">{{ t('Velocity','流速') }}</th>
+            <th class="nos">{{ t('Quadrant','象限') }}</th>
+            <th data-c="6">{{ t('rank Δ','排名Δ') }}</th>
             <th class="nos">{{ t('Flow trend','流向趋势') }}</th>
           </tr></thead>
           <tbody>
@@ -652,9 +952,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true">
             <td class="snm"><span class="chev">▸</span> 🏆 {{ t('All A-share names','全市场A股') }}</td>
             <td>{{ snap.ashare_names.n }}</td>
-            <td></td><td></td>
+            <td></td><td></td><td></td>
             <td style="text-align:left"><span class="lead-tag">{{ t('top inflow &amp; outflow','领涨与领跌') }}</span></td>
-            <td></td>
+            <td></td><td></td>
           </tr>
           {% for m in leaders %}{{ memberrow(m, sbt, '__all__', loop.index, show=True) }}{% endfor %}
           {% endif %}
@@ -662,10 +962,43 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
             {% set has_members = r.members and r.members|length %}
             <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
               <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}</td>
-              <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</td>
+              <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst seats','机构席位') }}</span>{% endif %}</td>
+              {# NIT12: colored by r.abs.direction (the contract's de-minimis-aware call),
+                 never the raw sign of r.abs.value — a value like -0.04% (inside the 0.1pp
+                 neutral band) used to print "-0.0%" in outflow-red ink, contradicting the
+                 quadrant's own "neutral" read of that same figure. #}
+              <td class="tnum">{% if r.abs is defined and r.abs.value is not none %}<span class="chg {{ 'pos' if r.abs.direction=='positive' else ('neg' if r.abs.direction=='negative' else 'neu') }}" style="opacity:.72">{{ '%+.1f'|format(r.abs.value) }}%</span>{% else %}<span class="chg na">·</span>{% endif %}</td>
               <td>{{ rate(r) }}</td>
               <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
-              <td style="text-align:left">{{ vstate(r.state, r.state_zh, r.vel) }}</td>
+              <td style="text-align:left">
+                {% if r.quadrant is defined and r.quadrant %}
+                <span class="qchip q-{{ r.quadrant }}" data-tip-en="Velocity-state: {{ r.state }} (acceleration-folded). {{ r.n_members }} members." data-tip-zh="流速状态：{{ r.state_zh }}（含加速度）。{{ r.n_members }}只成分股。" role="button" tabindex="0">{{ t(r.quadrant_en, r.quadrant_zh) }}</span>
+                {# W3: state age — "session {n} in this state" (spec §2 pinned strings),
+                   LENS carrying prior state + the started date. #}
+                {% set _prior_lab = quadrant_labels.get(r.prior_state) if r.prior_state else none %}
+                {% if r.state_age_sessions is defined and r.state_age_sessions is not none %}
+                <span class="fv-age{{ ' fv-age-frozen' if r.state_note == 'age frozen (stale source)' else '' }}"
+                      data-tip-en="Prior state: {{ _prior_lab[0] if _prior_lab else 'none — first tracked session' }}. In this state since {{ r.state_started or '—' }}.{{ ' Frozen — source data behind, age not advancing.' if r.state_note == 'age frozen (stale source)' else '' }}"
+                      data-tip-zh="此前状态：{{ _prior_lab[1] if _prior_lab else '无——首个追踪交易日' }}。自{{ r.state_started or '—' }}起进入该状态。{{ '数据滞后，本状态天数暂停累计。' if r.state_note == 'age frozen (stale source)' else '' }}"
+                      role="button" tabindex="0">
+                  <span class="l-en">session {{ r.state_age_sessions }} in this state</span><span class="l-zh">状态第{{ r.state_age_sessions }}日</span>{% if r.state_note == 'age frozen (stale source)' %} ❄{% endif %}
+                </span>
+                {% elif r.state_note == 'first tracked session' %}
+                <span class="fv-age fv-age--new" data-tip-en="first tracked session — no prior data to compare yet" data-tip-zh="首个追踪交易日——暂无历史可比" role="button" tabindex="0"><span class="l-en">first tracked session</span><span class="l-zh">首个追踪交易日</span></span>
+                {% endif %}
+                {% else %}
+                {{ vstate(r.state, r.state_zh, r.vel) }}
+                {% endif %}
+              </td>
+              <td class="tnum">
+                {% if r.rank_change is defined and r.rank_change is not none %}
+                  {% if r.rank_change < 0 %}<span class="rk up">▲{{ -r.rank_change }}</span>
+                  {% elif r.rank_change > 0 %}<span class="rk down">▼{{ r.rank_change }}</span>
+                  {% else %}<span class="rk">–</span>{% endif %}
+                {% else %}
+                <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
+                {% endif %}
+              </td>
               <td>{{ spark(r.spark) }}</td>
             </tr>
             {% if has_members %}
@@ -680,13 +1013,91 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     </div>
     {% endif %}
 
+    {# ---- momentum + confluence — demoted into collapsed detail blocks (spec §2.5) ---- #}
+    {% if snap.momentum %}
+    {% set M = snap.momentum %}
+    <details class="fv-disc" id="momentum">
+      <summary>⚡ {{ t('Momentum shifts','动能变化') }} — <span class="tnum">{{ M.n_accel_in }}</span> {{ t('speeding up','加速中') }} · <span class="tnum">{{ M.n_cooling }}</span> {{ t('cooling','降温') }} · <span class="tnum">{{ M.n_easing }}</span> {{ t('outflow fading','流出转弱') }}</summary>
+      <div class="fv-disc-body">
+        {# S4 scoping: momentum shifts are the A-share large-order velocity's own
+           acceleration read — keyed to cn_large_order_proxy, matching #quadrant/#groups. #}
+        {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
+        <p class="fv-stance">{{ t('Velocity says which way; acceleration says whether it\'s <b>getting stronger or running out</b>. Fading inflow and slowing outflow are early turns — <b>watch, don\'t act.</b>','流速指方向；加速度指其<b>增强还是衰竭</b>。流入转弱与流出放缓是早期拐点——<b>观察，勿妄动。</b>') }}</p>
+        <div class="fv-mom">
+          <div class="mom-col m-in">
+            <div class="mom-accent"></div>
+            <div class="mom-col-h"><span class="mi">↗</span> {{ t('Speeding up','加速中') }}{% if M.n_accel_in and M.n_accel_in > M.accel_in|length %}<span class="mom-n">{{ M.accel_in|length }} {{ t('of','/') }} {{ M.n_accel_in }}</span>{% endif %}</div>
+            <div class="mom-sub">{{ t('pressure still building','压力仍在增强') }}</div>
+            {% for m in M.accel_in %}
+            <div class="mom-row"><span class="cdot conf-buy"></span><span class="nm">{{ nameln(m) }}</span><span class="mv pos">{{ '%+.1f'|format(m.vel) }}σ</span></div>
+            {% else %}<div class="rot-empty">{{ t('none','暂无') }}</div>{% endfor %}
+          </div>
+          <div class="mom-col m-cool">
+            <div class="mom-accent"></div>
+            <div class="mom-col-h"><span class="mi">↘</span> {{ t('Cooling','降温') }}{% if M.n_cooling and M.n_cooling > M.cooling|length %}<span class="mom-n">{{ M.cooling|length }} {{ t('of','/') }} {{ M.n_cooling }}</span>{% endif %}</div>
+            <div class="mom-sub">{{ t('strong pressure now fading — possible exhaustion','强压力正衰减——或近衰竭') }}</div>
+            {% for m in M.cooling %}
+            <div class="mom-row"><span class="nm">{{ nameln(m) }}</span><span class="mv pos">{{ '%+.1f'|format(m.vel) }}σ</span></div>
+            {% else %}<div class="rot-empty">{{ t('none','暂无') }}</div>{% endfor %}
+          </div>
+          <div class="mom-col m-ease">
+            <div class="mom-accent"></div>
+            <div class="mom-col-h"><span class="mi">↙</span> {{ t('Outflow fading','流出转弱') }}{% if M.n_easing and M.n_easing > M.easing|length %}<span class="mom-n">{{ M.easing|length }} {{ t('of','/') }} {{ M.n_easing }}</span>{% endif %}</div>
+            <div class="mom-sub">{{ t('heavy selling now slowing — possible bottoming','重度卖出放缓——或近筑底') }}</div>
+            {% for m in M.easing %}
+            <div class="mom-row"><span class="nm">{{ nameln(m) }}</span><span class="mv neg">{{ '%+.1f'|format(m.vel) }}σ</span></div>
+            {% else %}<div class="rot-empty">{{ t('none','暂无') }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    {% if snap.confluence %}
+    {% set CF = snap.confluence %}
+    <details class="fv-disc" id="confluence">
+      <summary>⚖ {{ t('Fast money × institutional seats','资金 × 机构席位') }} — <span class="tnum">{{ CF.n_agree }}</span> {{ t('agree','一致') }} · <span class="tnum">{{ CF.n_diverge }}</span> {{ t('clash','背离') }}</summary>
+      <div class="fv-disc-body">
+        <p class="fv-stance">{{ t('When large-order flow and the Dragon-Tiger institutional seats <b>agree</b>, the positioning read is firmest. When they <b>clash</b>, treat the move with caution — someone is early or wrong.','当主力大单流向与龙虎榜机构席位<b>一致</b>时，仓位判断最稳；当二者<b>背离</b>时，谨慎对待——总有一方过早或看错。') }}</p>
+        <div class="fv-conf">
+          <div class="conf-col agree">
+            <div class="conf-col-h" style="display:flex;align-items:baseline;gap:8px"><span class="ct">✅ {{ t('They agree','二者一致') }}</span><span class="cn">{{ CF.n_agree }}</span>
+              <div class="cs" style="flex-basis:100%">{{ t('flow and institutional seats point the same way','资金与机构席位同向') }}</div></div>
+            {% for r in CF.agree %}
+            <div class="conf-row">
+              <span class="cr-nm"><i class="cdot conf-{{ 'buy' if r.vel>=0 else 'sell' }}"></i>{{ nameln(r) }}</span>
+              <span class="chg {{ 'pos' if r.vel>=0 else 'neg' }}">{{ '%+.1f'|format(r.vel) }}σ</span>
+              <span class="seat {{ r.seat_dir }}">⚖ {{ '%+.1f'|format(r.seat_yi) }}亿</span>
+            </div>
+            {% else %}<div class="conf-empty">{{ t('No overlap where they agree today.','今日无一致交集。') }}</div>{% endfor %}
+          </div>
+          <div class="conf-col diverge">
+            <div class="conf-col-h" style="display:flex;align-items:baseline;gap:8px"><span class="ct">⚠️ {{ t('They clash','二者背离') }}</span><span class="cn">{{ CF.n_diverge }}</span>
+              <div class="cs" style="flex-basis:100%">{{ t('flow one way, institutional seats the other','资金与机构席位相反') }}</div></div>
+            {% for r in CF.diverge %}
+            <div class="conf-row">
+              <span class="cr-nm"><i class="cdot conf-diverge"></i>{{ nameln(r) }}</span>
+              <span class="chg {{ 'pos' if r.vel>=0 else 'neg' }}">{{ '%+.1f'|format(r.vel) }}σ</span>
+              <span class="seat {{ r.seat_dir }}">⚖ {{ '%+.1f'|format(r.seat_yi) }}亿</span>
+            </div>
+            {% else %}<div class="conf-empty">{{ t('No clashes today.','今日无背离。') }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
     {# ---- HK: same board grammar, flat southbound per-name rows ---- #}
     {% if snap.hk_names %}
     {% set h = snap.hk_names %}
     <div class="market-hk">
       <span class="market-tag">{{ t('HK Southbound 南向','港股南向') }}</span>
+      {# S4 scoping: the HK board is fed by hk_sb_holdings, its OWN leg — not the parent
+         #groups section's cn_large_order_proxy watermark above. #}
+      {{ sec_watermark([_src_by_id.get('hk_sb_holdings')]) }}
       <div class="panel">
         <div class="panel-h">🇭🇰 {{ t('Mainland southbound per-name','内地南向个股') }}
+          <span class="asof">{{ t('as of','截至') }} {{ h.as_of or '—' }} · {{ t('expected T−1','预期T−1') }}</span>
           {% if not h.vel_ready %}<span class="dep">· {{ t('velocity unlocks at depth 8','流速于深度8解锁') }} ({{ h.depth }}/8) — {{ t('5d accumulation for now','当前为5日累积') }}</span>{% endif %}</div>
         <div class="tbl-wrap">
           <table class="board" id="hktbl">
@@ -729,13 +1140,22 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   <section class="fv-sec fv-reveal" id="channels">
     <div class="fv-eyebrow">🛰️ {{ t('Cross-Border Channels','跨境通道') }}</div>
     <h2>{{ t('Stock-Connect aggregate flow','沪深港通整体资金') }} <span class="sub">{{ t('the whole-channel tape · daily 1w / 1m / 3m velocity','整条通道 · 日度1周/1月/3月流速') }}</span></h2>
+    {# S4 scoping repair: #channels shows the Stock-Connect AGGREGATE cards (southbound/
+       northbound) — its own leg is sb_aggregate; hk_sb_holdings (per-name HK holdings)
+       does not feed anything on this section and gets its own watermark inside the HK
+       board sub-panel instead (market-hk block). #}
+    {{ sec_watermark([_src_by_id.get('sb_aggregate')]) }}
     {% if live_chans %}
     <div class="vgrid">
       {% for c in live_chans %}
       <div class="vcard{% if c.vel_primary is not none %} {{ 'st-in' if c.vel_primary >= 0.5 else ('st-out' if c.vel_primary <= -0.5 else 'st-mid') }}{% endif %}">
         <div class="vcard-top">
           <h3>{{ t(c.label, c.label_zh) }}</h3>
+          {% if c.quadrant is defined and c.quadrant %}
+          <span class="qchip q-{{ c.quadrant }}" data-tip-en="Velocity-state: {{ c.state }} (acceleration-folded)." data-tip-zh="流速状态：{{ c.state_zh }}（含加速度）。" role="button" tabindex="0">{{ t(c.quadrant_en, c.quadrant_zh) }}</span>
+          {% else %}
           {{ vstate(c.state, c.state_zh, c.vel_primary) }}
+          {% endif %}
           <span class="asof">{{ t('as of','截至') }} {{ c.as_of }}</span>
         </div>
         <div class="vrow">

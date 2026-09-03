@@ -587,10 +587,30 @@ waves:
       and sets tradable_at NOT_ASSERTED until B4; A9 requires episode_ref to pin the B1
       generation_id. B1 DEPENDENCY CLEARED 2026-08-28: natural run 33147282433 and
       durable main commit a8ee11ba0e48 prove the canonical episode generation. This
-      clears only D5's B1 dependency; d5 remains todo and bounded to the Cell F/Earnings
-      contract, the revision-chain PIT reader, authority-false outputs, generation-pinned
-      episode_ref, and tradable_at NOT_ASSERTED. D6 and every other downstream wave remain gated."
-    status: todo
+      clears only D5's B1 dependency. POST-RECONCILIATION LOCAL ACCEPTANCE 2026-08-31:
+      independent whole-branch hostile re-review 4 passed exact final reviewed head
+      f48c8d1598c49aa0f3b1eba85922c9e633dd114d with no P0/P1/P2/P3 findings. Merge head
+      bb34c575f58879f4944ca353e17ca6a6fa4512ca has that reviewed head and fresh-main
+      b7b3938aec35372dc32229981b4f3159f2b5faf2 as its exact parents. At the merge head,
+      focused D5 is 444 passed, hostile lineage/PIT 22 passed, complete
+      tests/test_ci_pack.py 117 passed, exact route/closure selectors 3 passed, the exact
+      Prophet Lab six-suite manifest line 453 passed, the clean declared-dependency Python
+      3.12 five-suite 435 passed, path-isolated routing 3/133 with prophet-lab selected
+      (plan hash 179a8fde50a3647cba6779dbdf781379dcbc9a6ea8b1c19214f312d4198bf896),
+      whole 14-file range 133/133 (plan hash
+      8740f42f6b48b70142dc044eebf6c8ea16771a893c98aa34cb6d5890a5e86bd9), and Agent OS
+      is 967 records / 0 errors / 40 warnings. The reconciled Caddyfile and boundary test
+      are byte-identical to fresh main. This is local proof only: hosted CI, PR, squash
+      merge to main, deploy, and authenticated covered plus typed-unresolved live receipts
+      remain pending. D6 and every other downstream wave remain gated."
+    status: in_progress
+    next_action: >
+      Complete D5 delivery from exact post-reconciliation proof without widening scope:
+      push the records-only child of merge head bb34c575f58879f4944ca353e17ca6a6fa4512ca,
+      open one PR, wait for concluded hosted CI, squash-merge, verify main and the normal
+      deploy, and collect authenticated covered plus typed-unresolved production receipts.
+      Fill the PR/merge/CI/deploy/live placeholders in the 2026-08-30 D5 pre-delivery
+      handoff before any `PROVEN_LIVE` claim.
   - id: d6
     depends_on: [d5]
     title: "V4-D6 — earnings adapter. Premise updated 0B: EIOS E1P is LIVE for the
@@ -629,13 +649,15 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  B1 is accepted / PROVEN_LIVE from natural run 33147282433 and durable main commit
-  a8ee11ba0e48; its exact evidence packet is indexed by
-  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-28-b1-acceptance.md. Reconcile and
-  execute the bounded D5-EARNINGS handoff without losing the frozen Cell F amendments.
-  Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner freezes and
-  validates an exact immutable-event relationship contract. A2/A3/A4, B2/B3/B4, and
-  all other V4 waves remain separate.
+  D5's bounded Earnings implementation is independently hostile-review accepted and locally
+  exact-head verified after fresh-main reconciliation at merge head
+  bb34c575f58879f4944ca353e17ca6a6fa4512ca, but it is not yet hosted-CI accepted, merged
+  to main, deployed, or live-proven. Continue Task 4 from
+  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-30-d5-pre-delivery.md: push the exact
+  records-only child, open one PR, wait for concluded hosted CI, squash-merge, verify
+  main/deploy, and collect authenticated covered plus typed-unresolved endpoint receipts.
+  Radar forward lineage remains
+  PROPOSED/STAGED_NOT_ARMED; A2/A3/A4, B2/B3/B4, D6, and every later wave remain separate.
 ---
 
 ## Context

@@ -8,6 +8,10 @@ throughout so a failure here can only be a transport-layer regression.
 """
 from __future__ import annotations
 
+from copy import deepcopy
+import json
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("fastapi", reason="Prophet Lab API tests need fastapi")
@@ -18,6 +22,19 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 import app.prophet_lab as prophet_lab_api  # noqa: E402
 from engine.prophet_lab.contracts import ALL_FALSE_AUTHORITY, KILL_SWITCH_ENV, SCHEMA_LAB_BOARD  # noqa: E402
+from engine.prophet_lab.intelligence_vector import (  # noqa: E402
+    ALL_FALSE_AUTHORITY as D5_ALL_FALSE_AUTHORITY,
+    SCHEMA_INTELLIGENCE_VECTOR,
+    build_earnings_intelligence_vector,
+)
+from engine.neuralweb.company_intelligence_reader import WorkspaceChainIntegrityError  # noqa: E402
+from engine.us_candidate_episode import (  # noqa: E402
+    CandidateEpisodeStoreSnapshot,
+    EpisodeContractError,
+    ValidatedCandidateEpisodeGeneration,
+    episode_id as b1_episode_id,
+)
+from lib.dataos.identity import IssuerMaster  # noqa: E402
 
 _PRIVATE_HEADERS = {
     "cache-control": "private, no-store",
@@ -39,6 +56,94 @@ def _canned_payload() -> dict:
         "authority": dict(ALL_FALSE_AUTHORITY),
         "boards": {},
     }
+
+
+_D5_EPISODE_GENERATION = "peg:" + "a" * 64
+_D5_EPISODE_KNOWN_AT = "2026-07-30T20:05:00Z"
+_D5_ANCHOR = {
+    "kind": "reset_low",
+    "time": "2026-07-30T20:00:00Z",
+    "price": "100.0000",
+    "basis": "turn_watch.reset_low",
+    "source_receipt": "sha256:" + "b" * 64,
+}
+_D5_EPISODE_ID = b1_episode_id(
+    "SEC:US-XNAS-AAPL", "epoch_0", _D5_ANCHOR, 1,
+)
+
+
+def _d5_episode() -> dict:
+    return {
+        "schema": "prophet.candidate_episode/v1",
+        "episode_id": _D5_EPISODE_ID,
+        "company_id": "ISS:US:320193",
+        "security_id": "SEC:US-XNAS-AAPL",
+        "identity_epoch": "epoch_0",
+        "state": "CANDIDATE",
+        "opened_at": _D5_EPISODE_KNOWN_AT,
+        "opened_session": "2026-07-30",
+        "structural_anchor": deepcopy(_D5_ANCHOR),
+        "expert_events": ["radar:event:content-addressed-1"],
+    }
+
+
+def _d5_snapshot(*, episodes: tuple[dict, ...] | None = None) -> CandidateEpisodeStoreSnapshot:
+    episode_rows = episodes if episodes is not None else (_d5_episode(),)
+    return CandidateEpisodeStoreSnapshot(
+        generation_id=_D5_EPISODE_GENERATION,
+        generation=ValidatedCandidateEpisodeGeneration(
+            path=Path("/not/serialized/b1-generation"),
+            events=({
+                "event_type": "OPENED",
+                "episode_id": _D5_EPISODE_ID,
+                "known_at": _D5_EPISODE_KNOWN_AT,
+            },),
+            suppressions=(),
+            episodes=episode_rows,
+            receipt={},
+        ),
+    )
+
+
+def _d5_master(*, include_cik: bool) -> IssuerMaster:
+    return IssuerMaster.from_records([{
+        "security_id": "SEC:US-XNAS-AAPL",
+        "issuer_id": "ISS:US:320193",
+        "issuer_state": "active",
+        "listing_key": "US:XNAS:AAPL",
+        "issuer_cik": "0000320193" if include_cik else None,
+    }])
+
+
+def _raise_integrity_error(_company_id: str):
+    raise WorkspaceChainIntegrityError("dummy source chain hash mismatch")
+
+
+@pytest.fixture()
+def episode_intelligence_client(monkeypatch):
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "load_candidate_episode_store_snapshot",
+        lambda _root: _d5_snapshot(),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_load_issuer_master",
+        lambda _path: _d5_master(include_cik=False),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "build_earnings_intelligence_vector",
+        build_earnings_intelligence_vector,
+        raising=False,
+    )
+    app = FastAPI()
+    app.include_router(prophet_lab_api.router)
+    app.dependency_overrides[prophet_lab_api.require_site_full_user] = lambda: {"id": "u-paid"}
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture()
@@ -238,6 +343,241 @@ def test_projection_failure_is_503_not_500(app_client, monkeypatch) -> None:
 
 
 # ---------------------------------------------------------------------------
+# GET /api/prophet/lab/v1/episodes/{episode_id}/intelligence — D5 Task 3
+# ---------------------------------------------------------------------------
+def _episode_intelligence_url(episode_id: str = _D5_EPISODE_ID) -> str:
+    return f"/api/prophet/lab/v1/episodes/{episode_id}/intelligence"
+
+
+def test_episode_intelligence_paid_user_gets_exact_b1_generation_and_private_200(
+    episode_intelligence_client,
+) -> None:
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema"] == SCHEMA_INTELLIGENCE_VECTOR
+    assert body["episode_ref"] == {
+        "schema": "prophet.candidate_episode/v1",
+        "episode_id": _D5_EPISODE_ID,
+        "generation_id": _D5_EPISODE_GENERATION,
+        "identity_ref": "ISS:US:320193",
+    }
+    assert body["decision_cut"]["known_at"] == _D5_EPISODE_KNOWN_AT
+    assert body["authority"] == D5_ALL_FALSE_AUTHORITY
+    assert body["fusion_bindings"] == []
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_anonymous_caller_is_401(monkeypatch) -> None:
+    import app.main as main_mod
+
+    monkeypatch.setattr(
+        main_mod,
+        "require_user",
+        lambda _authorization: (_ for _ in ()).throw(HTTPException(401, "missing bearer token")),
+    )
+    app = FastAPI()
+    app.include_router(prophet_lab_api.router)
+    with TestClient(app) as client:
+        response = client.get(_episode_intelligence_url())
+    assert response.status_code == 401
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_free_tier_caller_is_403(monkeypatch) -> None:
+    import app.main as main_mod
+    import app.paywall as paywall_mod
+
+    monkeypatch.setattr(main_mod, "require_user", lambda _authorization: {"id": "u-free"})
+    monkeypatch.setattr(paywall_mod, "_entitled", lambda _user_id, _feature: (False, "free"))
+    app = FastAPI()
+    app.include_router(prophet_lab_api.router)
+    with TestClient(app) as client:
+        response = client.get(
+            _episode_intelligence_url(), headers={"Authorization": "Bearer free-token"},
+        )
+    assert response.status_code == 403
+    assert response.json()["detail"]["required_feature"] == "site_full"
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_kill_switch_is_503_and_skips_b1(
+    episode_intelligence_client, monkeypatch,
+) -> None:
+    def _boom(_root):
+        raise AssertionError("B1 must not be read while PROPHET_LAB_DISABLED is active")
+
+    monkeypatch.setattr(
+        prophet_lab_api, "load_candidate_episode_store_snapshot", _boom, raising=False,
+    )
+    monkeypatch.setenv(KILL_SWITCH_ENV, "1")
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 503
+    assert response.json()["error"] == "prophet_lab_disabled"
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_absent_episode_is_private_404(
+    episode_intelligence_client, monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "load_candidate_episode_store_snapshot",
+        lambda _root: _d5_snapshot(episodes=()),
+        raising=False,
+    )
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 404
+    assert response.json() == {"error": "prophet_episode_not_found"}
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_identity_unresolved_is_typed_200(
+    episode_intelligence_client,
+) -> None:
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 200
+    family = response.json()["evidence_families"][0]
+    assert family["identity_state"] == "UNRESOLVED"
+    assert family["coverage"] == {
+        "state": "UNKNOWN",
+        "basis": "canonical_identity_unresolved",
+    }
+    assert family["observations"][0]["absence_reasons"] == ["IDENTITY_UNRESOLVED"]
+
+
+def test_episode_intelligence_not_covered_is_typed_200(
+    episode_intelligence_client, monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_load_issuer_master",
+        lambda _path: _d5_master(include_cik=True),
+        raising=False,
+    )
+
+    def _not_covered(**kwargs):
+        return build_earnings_intelligence_vector(
+            **kwargs, find_event_id=lambda _company_id: None,
+        )
+
+    monkeypatch.setattr(
+        prophet_lab_api, "build_earnings_intelligence_vector", _not_covered, raising=False,
+    )
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 200
+    family = response.json()["evidence_families"][0]
+    assert family["identity_state"] == "RESOLVED"
+    assert family["coverage"] == {
+        "state": "NOT_COVERED",
+        "basis": "no_current_generation_event",
+    }
+    assert family["observations"][0]["absence_reasons"] == ["NOT_COVERED"]
+
+
+def test_episode_intelligence_corrupt_b1_is_private_503(
+    episode_intelligence_client, monkeypatch,
+) -> None:
+    def _corrupt(_root):
+        raise EpisodeContractError("dummy corrupt HEAD")
+
+    monkeypatch.setattr(
+        prophet_lab_api, "load_candidate_episode_store_snapshot", _corrupt, raising=False,
+    )
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": "prophet_episode_intelligence_unavailable",
+        "detail": "Episode intelligence temporarily unavailable",
+    }
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_source_integrity_failure_is_private_503(
+    episode_intelligence_client, monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_load_issuer_master",
+        lambda _path: _d5_master(include_cik=True),
+        raising=False,
+    )
+
+    def _integrity_failure(**kwargs):
+        return build_earnings_intelligence_vector(
+            **kwargs, find_event_id=_raise_integrity_error,
+        )
+
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "build_earnings_intelligence_vector",
+        _integrity_failure,
+        raising=False,
+    )
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": "prophet_episode_intelligence_unavailable",
+        "detail": "Episode intelligence temporarily unavailable",
+    }
+    assert "dummy" not in response.text
+    _assert_private_headers(response)
+
+
+def test_episode_intelligence_response_has_no_prohibited_or_raw_fields(
+    episode_intelligence_client, monkeypatch,
+) -> None:
+    episode = _d5_episode()
+    episode.update({
+        "body": "DUMMY RAW EPISODE BODY MUST NOT LEAK",
+        "private_path": "/private/dummy-episode.json",
+    })
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "load_candidate_episode_store_snapshot",
+        lambda _root: _d5_snapshot(episodes=(episode,)),
+        raising=False,
+    )
+    response = episode_intelligence_client.get(_episode_intelligence_url())
+    assert response.status_code == 200
+    body = response.json()
+    prohibited = {
+        "score", "rank", "weight", "confidence", "conviction", "evidence_count",
+        "entry_open", "ENTRY_OPEN", "body", "claims", "transcript", "private_path",
+        "path", "url", "workspace", "source_span",
+    }
+
+    def _keys(value):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                yield key
+                yield from _keys(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from _keys(child)
+
+    assert prohibited.isdisjoint(set(_keys(body)))
+    serialized = json.dumps(body, sort_keys=True)
+    assert "DUMMY RAW EPISODE BODY MUST NOT LEAK" not in serialized
+    assert "/private/dummy-episode.json" not in serialized
+
+
+def test_load_issuer_master_constructs_the_canonical_reader_from_parquet(tmp_path) -> None:
+    pandas = pytest.importorskip("pandas")
+    parquet_path = tmp_path / "security_master.parquet"
+    pandas.DataFrame([{
+        "security_id": "SEC:US-XNAS-AAPL",
+        "issuer_id": "ISS:US:320193",
+        "issuer_state": "active",
+        "listing_key": "US:XNAS:AAPL",
+        "issuer_cik": "0000320193",
+    }]).to_parquet(parquet_path, index=False)
+    master = prophet_lab_api._load_issuer_master(parquet_path)  # noqa: SLF001
+    assert isinstance(master, IssuerMaster)
+    assert master.cik_of_issuer("ISS:US:320193") == "0000320193"
+
+
+# ---------------------------------------------------------------------------
 # app.main registration
 # ---------------------------------------------------------------------------
 def test_route_declares_the_paid_dependency() -> None:
@@ -246,6 +586,9 @@ def test_route_declares_the_paid_dependency() -> None:
         for route in prophet_lab_api.router.routes
     }
     assert prophet_lab_api.require_site_full_user in route_dependencies["/api/prophet/lab/v1"]
+    assert prophet_lab_api.require_site_full_user in route_dependencies[
+        "/api/prophet/lab/v1/episodes/{episode_id}/intelligence"
+    ]
 
 
 def test_route_is_mounted_on_the_production_app() -> None:
@@ -253,6 +596,7 @@ def test_route_is_mounted_on_the_production_app() -> None:
 
     public_paths = main_mod.app.openapi().get("paths", {})
     assert "/api/prophet/lab/v1" in public_paths
+    assert "/api/prophet/lab/v1/episodes/{episode_id}/intelligence" in public_paths
     assert "/api/hub/prophet" in public_paths
 
 
