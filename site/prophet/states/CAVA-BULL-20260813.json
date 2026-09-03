@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CAVA-BULL-20260813",
-  "asof": "2026-08-31",
+  "asof": "2026-09-03",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 35.2,
-  "raw_confidence": 32.5,
-  "delta_vs_base": -24.8,
+  "management_confidence": 30.2,
+  "raw_confidence": 24.0,
+  "delta_vs_base": -29.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 40.6,
+    "validity": 10.7,
     "progress": 0.0,
-    "pace": 29.9,
+    "pace": 16.2,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.513,
+    "dist_to_stop_r": 0.212,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 40.0,
-    "p1": -0.325,
-    "p2": -0.1625,
+    "horizon_pct_used": 46.7,
+    "p1": -0.5251,
+    "p2": -0.2626,
     "p3": null,
-    "move_r": -0.487,
+    "move_r": -0.788,
     "mfe_r": 0.11,
-    "mae_r": -0.487
+    "mae_r": -0.788
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Falling Behind Schedule",
+  "change_reason": "Nearing Invalidation",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 1.449997253417962,
-  "_mae": -6.430000000000007,
+  "_mae": -10.389999084472663,
   "_max_p1": 0.0732877055050777,
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 18,
-  "tau": 0.4
+  "days_elapsed": 21,
+  "tau": 0.4667
 }

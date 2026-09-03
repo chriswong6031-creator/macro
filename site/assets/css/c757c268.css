@@ -314,6 +314,34 @@ html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(
 .rk.up{color:var(--ink-ok, var(--up))} .rk.down{color:var(--ink-act, var(--down))}
 html[data-lang="zh"] .rk.up{color:var(--ink-act, var(--down))} html[data-lang="zh"] .rk.down{color:var(--ink-ok, var(--up))}
 .rk.na{color:var(--faint);cursor:help}
+/* W3: state-age chip — the SAME hairline-pill idiom as .qchip/.rk (reuses their tokens,
+   not a new art direction), a small caption line under the quadrant chip naming how many
+   sessions the theme has held its current state. --fv-age--new marks the honest "no prior
+   session to compare" case; --fv-age--frozen marks a stale-source freeze (spec §3 test 6).
+   THEME repair round: dark keeps --faint (a quiet instrument caption, command-center
+   idiom); light reads --faint as near-invisible against the paper canvas, so light uses
+   --muted instead — the SAME two-art-direction law as every other chip on this page
+   (TP-0), never a bare token carried over unexamined. ZH nowrap (NIT/THEME): the short
+   form "状态第{n}日" (chosen over letting .fv-age wrap) keeps the caption on one line at
+   the same width EN needs — see the chg_row-adjacent template line for the EN/ZH pair. */
+.fv-age{display:block;margin-top:3px;font-size:10.5px;font-weight:600;color:var(--faint);cursor:help;white-space:nowrap}
+html[data-theme="light"] .fv-age{color:var(--muted)}
+.fv-age--new{color:var(--muted);font-style:italic}
+.fv-age-frozen{opacity:.85}
+/* W3: a revision row in "what changed today" — DARK keeps the restrained command-center
+   left-rule glow (a subdued 2px/55%-blue accent, matching this page's other dark chips).
+   LIGHT (THEME repair round — was unauthored, silently inheriting the dark rule as a bare
+   token swap, exactly the TP-0 failure) instead reuses the page's OWN existing
+   .fv-src--revised idiom verbatim: a 7% --blue paper tint, a FULL-STRENGTH (not
+   color-mixed-down) 3px blue left rule, and full-weight ink for the row's body text (not
+   the muted --ink-2 every other change-row uses) — a correction earns the same visible
+   "this changed" weight on the research-workspace surface that it already has on the
+   trust strip. */
+.fv-chg-row.fv-chg-row--revision{padding-left:8px;border-left:2px solid color-mix(in srgb,var(--blue) 55%,transparent)}
+html[data-theme="light"] .fv-chg-row.fv-chg-row--revision{
+  padding-left:10px;border-left-width:3px;border-left-color:var(--blue);
+  background:color-mix(in srgb,var(--blue) 7%,transparent);color:var(--ink)
+}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ═══════════════ THE ROTATION — in vs out ═══════════════ */
@@ -339,6 +367,96 @@ html[data-lang="zh"] .rot-col.out .rot-col-h::before{background:linear-gradient(
 .rot-empty{padding:22px 16px;color:var(--muted);font-size:13px;text-align:center}
 .attn{font-size:10.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:6px;padding:2px 6px;white-space:nowrap}
 .cat{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--tile);border:1px solid var(--grid);color:var(--muted)}
+
+/* ═══════════════ W4: lenses, coverage, overlap, concentration ═══════════════ */
+/* lens tabset — the existing .tabs/.tabbtn segmented idiom (templates/discovery.html.j2),
+   reused verbatim rather than a new component: no CSS present -> JS-off renders both
+   panels stacked (spec §5 "JS-off -> both lenses render stacked"). */
+.fv-lens-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
+.fv-lens-tabs .tabbtn{padding:7px 14px;font:inherit;font-size:13px;border:1px solid var(--line, var(--grid));background:var(--panel, var(--card));color:var(--muted);border-radius:var(--r-ctl, 8px);cursor:pointer}
+.fv-lens-tabs .tabbtn.on{background:var(--panel2, var(--tile));color:var(--text, var(--ink));border-color:var(--muted)}
+/* JS-off -> no control to drive the tabs, so both lens panels render stacked with
+   their own labels (spec §5) — same "no JS = no toggle, everything shows" contract
+   as .mkt-toggle above. Under JS, the curated lens starts active; the click handler
+   below flips visibility via inline style (overrides this rule by specificity). */
+html:not(.js) .fv-lens-tabs{display:none}
+html.js #lens-official{display:none}
+/* ── coverage badge — TP-0 declared dual-theme treatment ──────────────────────────
+   Base pill (n_covered/n_members, the common case): "muted tabular numerals both
+   themes" — INTENTIONALLY SHARED, not a per-theme design decision. Both themes read
+   the identical rule below; only the underlying --muted/--tile token VALUES differ
+   per theme (already theme-aware from the :root vs html[data-theme="dark"] token
+   blocks), which is a legitimate shared mechanism, not the "same CSS renders once
+   tokens swap" failure TP-0 forbids for a MATERIAL decision — this one genuinely has
+   no material decision to make per theme. */
+.fv-cov-badge{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+/* insufficient-coverage pill — the ONE state chip in this family that needs a real
+   per-theme material call (same semantic class as W2's STALE-adjacent "behind" chip,
+   .fv-src--behind above: an amber-tinted warning surface).
+   DARK TREATMENT (existing, declared as-is): a flat amber wash mixed toward --muted
+   — reads as glow/tint against the dark card, the command-center idiom.
+   LIGHT TREATMENT (new): amber-tinted PAPER (a light amber wash mixed into --card,
+   not transparent — reads as tinted material, not an overlay) + DEEPENED
+   amber-brown ink (mixed toward --ink, never --muted — a --muted-mixed amber reads
+   washed-out on a white/paper background; --ink-mixed keeps the required contrast).
+   Token substitution alone (reusing the dark formula verbatim) was exactly the
+   failure this declares against — light gets its OWN mix target, not a re-skin. */
+html[data-theme="dark"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
+html[data-theme="dark"] .qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
+html[data-theme="light"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 12%,var(--card))}
+html[data-theme="light"] .qchip.coverage-insufficient{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 10%,var(--card))}
+/* concentration chip — informational, never a warning: no tint in EITHER theme.
+   DARK TREATMENT (existing, declared as-is): neutral hairline border, --muted ink.
+   LIGHT TREATMENT (new): SAME neutral hairline border (no tint, per spec), but ink
+   deepened toward --ink — --muted alone reads too pale against white/paper material
+   for an always-visible chip (unlike the coverage badge above, which sits on its
+   own --tile fill and can afford --muted contrast). */
+.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);white-space:nowrap;margin-left:6px;cursor:help}
+html[data-theme="dark"] .fv-conc-chip{color:var(--muted)}
+html[data-theme="light"] .fv-conc-chip{color:color-mix(in srgb,var(--ink) 55%,var(--muted));border-color:var(--line)}
+/* accruing-sparkline placeholder (N2) — informational/muted, same family as the
+   coverage badge (intentionally shared both themes; no warning semantics). */
+.fv-accruing{display:inline-block;font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--faint);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+.ovl-chip{display:inline-block;font-size:9.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:var(--r-ctl, 5px);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:help}
+/* M3/MOBILE: the concentration drilldown line and the excluded/missing disclosure
+   must WRAP (never inherit table.board's global nowrap, which forced a long
+   contributor list or a long ZH sector name into an unreadable horizontal-scroll
+   sliver on mobile — "never clip mid-token"). */
+.fv-conc-row td,.fv-excluded{white-space:normal;word-break:break-word}
+.fv-conc-row td{padding:3px 12px 8px !important;border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);background:color-mix(in srgb, var(--tile) 55%, transparent)}
+.fv-excluded{font-size:11px;color:var(--faint);padding:3px 12px 8px}
+.fv-excluded .fv-disc{margin-top:0;background:transparent;border:none;border-radius:0}
+.fv-excluded .fv-disc>summary{padding:2px 0;font-size:11px;font-weight:700;color:var(--faint)}
+.fv-excluded .fv-disc-body{padding:4px 0 0}
+.fv-lens-unavail{background:var(--card);border:1px solid var(--grid);border-radius:var(--r-card, 16px);padding:22px 20px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.fv-lens-unavail b{color:var(--ink)}
+/* MOBILE (≤640px): boards keep name, abs 4wk, vs norm, quadrant chip, and the
+   coverage badge (which lives in the Members column) — Velocity, rank Δ, and Flow
+   trend (spark) hide via CSS (display:none, never a clip/ellipsis mid-token). Column
+   order: 1 name, 2 members(coverage), 3 abs, 4 vs norm, 5 velocity, 6 quadrant,
+   7 rank Δ, 8 flow trend. */
+@media (max-width:640px){
+  /* the base table.board{min-width:780px} rule (below, in this same stylesheet) is a
+     desktop floor — without overriding it here, hiding 3 of 8 columns still leaves the
+     table forced to 780px wide, so the surviving columns sit off-screen behind a
+     horizontal scroll instead of actually becoming visible without scrolling. The
+     ID-qualified selectors below outrank the plain-class base rule on specificity
+     regardless of source order. */
+  table.board#sectortbl,table.board#officialtbl{min-width:0}
+  /* tighter padding on the surviving columns so name/members/abs/vs-norm/quadrant sit
+     closer to fitting the 390px frame — the remainder is reached via the SAME
+     .tbl-wrap{overflow-x:auto} inner scroll every board already uses (never a
+     page-level scroll — checked programmatically on every evidence capture), never a
+     clip/ellipsis mid-token. */
+  table.board#sectortbl th,table.board#sectortbl td,
+  table.board#officialtbl th,table.board#officialtbl td{padding:9px 7px}
+  table.board#sectortbl th:nth-child(5),table.board#sectortbl td:nth-child(5),
+  table.board#sectortbl th:nth-child(7),table.board#sectortbl td:nth-child(7),
+  table.board#sectortbl th:nth-child(8),table.board#sectortbl td:nth-child(8),
+  table.board#officialtbl th:nth-child(5),table.board#officialtbl td:nth-child(5),
+  table.board#officialtbl th:nth-child(7),table.board#officialtbl td:nth-child(7),
+  table.board#officialtbl th:nth-child(8),table.board#officialtbl td:nth-child(8){display:none}
+}
 
 /* ═══════════════ MOMENTUM shifts ═══════════════ */
 .fv-mom{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
