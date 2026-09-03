@@ -46,16 +46,16 @@ do_not_redo:
   - "No second alert engine, analytics plane, market calendar, or flow collector for an
     existing source."
 waves:
-  - {id: F0, title: "Architecture freeze + durable records", status: in_progress}
-  - {id: W1, title: "Trust strip, changed-today, absolute-vs-relative truth", status: todo, depends_on: [F0]}
-  - {id: W2, title: "Binding source quality + fail-visible publication", status: todo, depends_on: [W1]}
-  - {id: W3, title: "PIT observation history, transitions, corrections", status: todo, depends_on: [W2]}
+  - {id: F0, title: "Architecture freeze + durable records", status: done, pr: 6776}
+  - {id: W1, title: "Trust strip, changed-today, absolute-vs-relative truth", status: done, pr: 6780, depends_on: [F0]}
+  - {id: W2, title: "Binding source quality + fail-visible publication", status: done, pr: 6791, depends_on: [W1]}
+  - {id: W3, title: "PIT observation history, transitions, corrections", status: in_progress, depends_on: [W2]}
   - {id: W4, title: "Official/curated lenses, coverage, contribution, concentration", status: todo, depends_on: [W3]}
   - {id: W5, title: "Preregistered method evaluation + threshold calibration", status: todo, depends_on: [W4]}
   - {id: W6, title: "History, compare, drilldown, research workflow", status: todo, depends_on: [W5]}
   - {id: W7, title: "Product-learning instrumentation via /api/collect", status: todo, depends_on: [W6]}
   - {id: FINAL, title: "Adversarial integrated acceptance vs the 12 program fixtures", status: todo, depends_on: [W7]}
-next_action: "Merge the F0 freeze PR, then open W1 from fresh origin/main per masterplan §12."
+next_action: "Execute W3 (PIT observation ledger + corrections) per research/flow_observatory/W3_SPEC.md, then W4..W7 + final acceptance per masterplan §12."
 ---
 
 # Flow Observatory V2
