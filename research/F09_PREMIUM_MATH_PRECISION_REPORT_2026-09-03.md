@@ -125,3 +125,34 @@ natural production run — see §5.
 - The five Neural Web consumers (`mastermind_context`, `world_state`, `ask_brain`,
   `brief_context`, `cortex`) were censused and pass through `risk_arb_top` rows unchanged, so
   the richer rows propagate without edits. That is a read of their code, not a live observation.
+
+## 6. Market Ontology disposition (MO-PAID-064 / MO-DELTA-023)
+
+Recorded here rather than by editing
+`MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`: that file is F00C's dated
+closure artifact and belongs to a different operation. Rewriting another lane's dated ledger
+would destroy its record; final ledger reconciliation belongs to acceptance, not to this wave.
+
+F00C row `MO-PAID-064` (paired `MO-DELTA-023`) carries:
+
+- `granular_disposition: NEW_BOUNDED_BUILD`, `capability_state_c2: PARTIAL`
+- `next_bounded_child: SPLIT — premium-math slice BUILDABLE-NOW from EDGAR tender filings;
+  financing-path/break-fee stays RIGHTS-GATE`
+- `acceptance_test: one classified M&A event gets computed premium math`
+- `authority_ceiling: research_only`
+
+**Disposition after this wave.** The premium-math slice is **source-complete and unproven**:
+
+| ledger field | state after F09-1 |
+|---|---|
+| premium-math slice | implemented under the existing owner — no new store, scheduler or plane |
+| acceptance test ("one classified M&A event gets computed premium math") | **not yet satisfiable in production** — the collector lane that writes the observation ledger has no caller, and the natural daily route is under the #6783 floor |
+| financing-path / break-fee / antitrust | untouched, still RIGHTS-GATE — explicit F09-1 non-goals |
+| authority ceiling | unchanged `research_only`; `is_signal=False` is structural in the reducer's output |
+| capability state | `BUILT_NOT_PROVEN / PRODUCTION_INERT` — **not** `PROVEN_LIVE` |
+
+The honest reading of the acceptance test is that it is **not** met: computed premium math now
+exists and is grounded, but no classified M&A event has passed through it in production. Two
+things must land first — the `enrich_deal_terms()` caller (awaiting a path-boundary ruling) and
+the #6783 host recovery. Both are recorded as `next_actions` in
+`agentos/handoffs/MARKET-ONTOLOGY-F09-PREMIUM-MATH-2026-09-03.md`.
