@@ -25,66 +25,90 @@ waves:
     status: done
     pr: 276
     next_action: >
-      Protected through Mastermind PR #276 from final candidate
-      e6553b3b640712de4446b0337c291243fde07c61 as accepted squash merge
-      620263090fb9f272f763e420ba103b0ff8dc5f31. The eight-file PR/merge receipt is the
-      canonical immutable GitHub evidence; F0 made records/source law durable and installed no
-      runtime capability.
+      Protected through Mastermind PR #276 as merge
+      620263090fb9f272f763e420ba103b0ff8dc5f31. F0 is source law and created no runtime capability.
+      The Agent OS organizational home is protected through Macro #6756; that records merge is not
+      backend, bundle, index, service or production proof.
   - id: B0
-    title: Hosted exact experiment tool-bundle forge
+    title: Hosted exact Z0 experiment-bundle forge
     status: in_progress
     depends_on: [F0]
     next_action: >
-      Continue only the already-started sticky child
-      mastermind-codeintel-b0-hosted-tool-bundle-forge-20260902-sol-001 on canonical Mastermind
-      issue #371 and Slack carrier C0BSBM78V1N/1788338108.191559. Preserve its one isolated
-      worktree and branch, exact ten-path ceiling, source-only two-phase network boundary and
-      content-addressed provenance/SBOM/license contract. Its sole receiver is
-      Codex/Terra-task-01a06143-ab92-7e91-814a-784dda661713. B0 may construct one Draft/Hold source
-      candidate in parallel but may not dispatch its workflow, build or install a real bundle,
-      mark Ready, merge, or feed C0/Z0 until this Agent OS carrier, B0 source and the exact consumer
-      head have each passed their own current-head gates and Sol separately authorizes the dispatch.
+      Continue only operation mastermind-codeintel-b0-final-forge-repair-successor-20260903-sol-001
+      on Slack C0BSBM78V1N/1788471136.056329 and Mastermind PR #420 branch
+      sol/codeintel-b0-z0-minimal-forge-20260902. The current source checkpoint is
+      cec0a0fb7247afd7c4dce22db8ed05db7fcdbba7 with terminal-green CI/CodeQL; it remains Draft,
+      production-inert and needs one fresh Chairman-created Mac Codex receiver. The predecessor task
+      is terminal and PR #403 is closed unmerged. The successor must finish exact Action pins,
+      source+git-dir+common-dir read-only Phase-E sealing, closed Git reads, duplicate-basename-safe
+      source digests, strict two-artifact zero-exit validation and whole-predicate receipt publication,
+      then return one final head for independent review. No workflow dispatch occurs in this source wave.
   - id: C0
     title: Multi-language exact-worktree semantic-backend falsifier
     status: in_progress
+    depends_on: [F0, B0]
     next_action: >
-      Continue only the already-started sticky child
-      mastermind-codeintel-c0-semantic-falsifier-20260830-sol-001 on canonical Mastermind issue
-      #365 and Slack carrier C0BSBM78V1N/1788336316.706679. PR #375 at reviewed head
-      c4d465f0df7130756bcf2a33e0bf2c42cc706cfd contains useful facade/seal/stdio foundation but is
-      under commit-anchored REQUEST_CHANGES review 5087681065 and latest same-carrier Sol
-      reconciliation comment 5507189348. Preserve the same receiver, worktree, branch and PR and
-      complete the full B1-B8 repair contract in comment 5507050835: exact Serena plus direct-LSP
-      execution over Python and TypeScript/TSX, a real deterministic decision ruler, closed
-      cross-field result validation, enforceable sandbox/network/process/resource law, strict
-      worktree/path/payload containment, complete frozen task matrix, stable semantic evidence
-      identity, cleanup receipts and the full repository gate. B0 may continue independently, but
-      no bundle dispatch into C0 is authorized until Sol accepts the repaired consumer head. Do not
-      bind a second receiver or invent a winner.
+      Preserve Mastermind PR #375 at exact frozen harness head
+      ea9e591d9dfb2cdad384e6614644e6eb5bf8df65. Its source child is terminal; unpublished local
+      commits are quarantined. Capability is HARNESS_FROZEN / BUILT_NOT_PROVEN / PRODUCTION_INERT and
+      no real backend decision exists. Issue #365 comments 5532659333 and 5532838292 freeze the
+      successor: extend the same protected B0 supply plane for C0, content-address exact Serena
+      v1.7.0 plus one shared Pyright 1.1.413 and TypeScript-language-server 6.0.0 / TypeScript 6.0.3 /
+      Node 22.22.2 toolchain, then run one network-sealed Python+TypeScript/TSX paired study. Serena
+      and direct LSP must use the same exact language-engine bytes. Missing or incomplete real
+      evidence is NON_DECISION, never NO_SAFE_BACKEND.
   - id: Z0
     title: Governed global-discovery and deployment-topology falsifier
     status: in_progress
+    depends_on: [F0, B0]
     next_action: >
-      Continue only the already-started sticky child
-      mastermind-codeintel-z0-discovery-falsifier-20260830-sol-001 on canonical Mastermind issue
-      #367 and Slack carrier C0BSBM78V1N/1788336373.223499. Preserve its one isolated worktree and
-      branch, execute the protected pinned-Zoekt quality, negative-authority, immutable-generation,
-      destructive-failure and topology harness, and return one preregistered immutable result.
-      Real pinned-Zoekt execution must consume a protected B0 bundle through a separately authorized
-      exact consumer dispatch. Do not bind a second receiver or install a production index. This
-      Agent OS release, B0 and Z0's own exact-head evidence gate Ready, merge and backend acceptance.
+      Two source children are active and disjoint. PR #407 carries the governed discovery substrate;
+      operation mastermind-codeintel-z0-source-seal-final-repair-20260903-sol-001 on Slack
+      C0BSBM78V1N/1788469984.407289 has published candidate
+      0bb04211c7b95b11139e1cb6a6f4b79923c930b8 and is folding two final pre-return fences:
+      GIT_NO_REPLACE_OBJECTS=1 for verifier and pinned-Zoekt child, plus exact per-worktree git-dir
+      identity/read-only sealing in addition to root/common-dir. PR #426 carries the paired empirical
+      harness under operation mastermind-codeintel-z0-empirical-evidence-source-20260903-sol-001 on
+      Slack C0BSBM78V1N/1788456539.698499; its worker must publish one immutable QueryPlan/truth path,
+      competent equal-corpus baseline, complete keyed per-source health/coverage/freshness rows,
+      real failure/topology/resource evidence and strict NON_DECISION law. Neither source PR may run
+      the real study. Epoch-1 preregistration is immutable at issue #367 comment 5532531307.
+  - id: Z1
+    title: Real preregistered Z0 Epoch-1 paired evaluation
+    status: todo
+    depends_on: [B0, Z0]
+    next_action: >
+      After PRs #407, #420 and #426 are independently reviewed and protected, extend the same B0
+      workflow/runner once for the real operation mastermind-codeintel-z0-real-evaluation-epoch1-20260903-sol-001.
+      Use separate evaluator and frozen-corpus checkouts: Mastermind corpus 762f993e2f1af467d95e54aaa99796f20c24c2e0,
+      Macro 0795a15b0249110a7eb35439123cd1af755e8397 and mastermind-terminal
+      fadd8b82f03ecaabe8a86d693da89f27be096d9f. All are public and require no cross-repository
+      credential. Mount evaluator/corpora and their git-dir/common-dir surfaces read-only, dispatch
+      exactly once after a prior-run census, and return one complete real decision or typed blocker.
   - id: CI1
-    title: Closed sealed-stdio capability-registry extension
+    title: Closed sealed-stdio semantic capability boundary
     status: todo
     depends_on: [C0]
+    next_action: >
+      Issue #365 comment 5532964538 freezes the first product-bearing vertical. Only an accepted real
+      SERENA or DIRECT_LSP result may unlock it. Extend the existing ExecutionCapabilityRegistry and
+      CodexOperatorAdapter with sealed-stdio-v1, a six-tool Mastermind semantic MCP facade and exact
+      host-side workspace_status verification before first model turn. Stop source-only with no
+      profile, install or production grant. NO_SAFE_BACKEND kills this wave.
   - id: CI2
-    title: Exact Attempt/workspace attachment and pre-turn binding
+    title: Exact Attempt/workspace attachment and restart/isolation canary
     status: todo
-    depends_on: [C0]
+    depends_on: [CI1]
   - id: CI3
-    title: Governed Zoekt facade and protected-ref service
+    title: Governed three-tool discovery MCP over one verified generation
     status: todo
-    depends_on: [Z0]
+    depends_on: [Z1]
+    next_action: >
+      Issue #367 comment 5532970359 freezes the first discovery product vertical. Only a real
+      ZOEKT_FACADE_ACCEPTED_FOR_CI3 decision may unlock it. Reuse the accepted pure discovery core and
+      existing Mastermind MCP package pattern to expose exactly search_code, list_repositories and
+      index_status over one injected verified generation, with explicit keyed ref/SHA/health/coverage/
+      freshness/truncation facts and no service, profile, repository enrollment or index ownership.
   - id: CI4
     title: Real implementation canary and adversarial security review
     status: todo
@@ -96,54 +120,49 @@ waves:
 landmines:
   - "Direct upstream Serena as the model-facing MCP is REJECTED_BY_DESIGN; only the stable Mastermind facade may be granted."
   - "A CodeIntel workspace binding grants source-read scope only; it never grants or elects Sol, Worker, Attempt, merge, lifecycle or modification authority."
-  - "A negative global search is non-authoritative when coverage, health, requested ref or freshness is unknown, stale, omitted or truncated."
+  - "A negative global search is non-authoritative unless every requested repository/ref has one exact same-generation keyed status row proving current SHA, full coverage, health and non-truncation."
   - "Python-only semantic success cannot promote C0; TypeScript/TSX is a load-bearing Terminal language family."
-  - "Control Room projection is optional and proof-gated; never build a Sourcegraph/Sourcebot-style code browser or administration console as a substitute for worker capability."
-  - "B0, C0 and Z0 each have one START-bound sticky receiver; a second worker, branch, PR or carrier for any of them would be a duplicate operation unless the original effect is canonically reconciled first."
-  - "B0 prepares experiment evidence only; its source, workflow or artifacts never become a package registry, updater, production supply-chain admission or capability authority."
-  - "Exact bundles cannot make an incomplete consumer valid. B0 dispatch is held until the target C0/Z0 head can consume the bundle, enforce the frozen sandbox and derive the preregistered result law."
-  - "Focused stand-in tests, a process handshake or a dependency-blocked artifact do not establish an acquisition-ready C0 harness; current PR #375 remains REQUEST_REPAIR."
+  - "Green CI, an MCP handshake, a running language server or a built index is not a falsifier decision, product capability or production proof."
+  - "B0, C0 and Z0 use one canonical supply/workflow plane. Do not create a second forge, package registry, updater, replay store, credential owner or lifecycle."
+  - "Git replacement objects, repository-selected Git execution/config seams and writable linked-worktree metadata are false-source routes and must fail closed."
+  - "Evaluator source and preregistered Mastermind corpus are distinct identities in the real Z0 run. Never grade current evaluator code as the frozen corpus."
+  - "No real B0 workflow dispatch is authorized until final B0, Z0 source and empirical harness heads are protected and the exact prior-run census is clear."
 do_not_redo:
   - "Do not create a second capability registry, workspace registry, semantic router, lifecycle, retry plane, session store or code-truth database."
-  - "Do not add a broad GitHub MCP, super-MCP, Sourcebot, SCIP or ast-grep bundle in V1 without a measured benchmark gap and fresh Sol ruling."
-  - "Do not install or arm Serena, Zoekt, LSPs, services, credentials or worker profiles from the F0 or Agent OS records merge."
-  - "Do not revive Macro PR #6695 or #6696 as implementation carriers; their immediate-dedicated-program premise is superseded by the accepted organizational-parent decision."
-  - "Do not re-place, restart or fail over the active B0, C0 or Z0 child; their current START bindings are sticky."
-  - "Do not let C0 or Z0 download, compile, discover or select ambient binaries; exact bundle preparation and sealed dispatch belong only to B0 under separate release/effect gates."
-  - "Do not treat B0 protection or bundle availability as permission to skip C0's exact two-language candidate, decision, containment, isolation, cleanup and full-CI repair."
+  - "Do not reopen superseded PR #403, the terminal C0 source child, its quarantined local commits, or any stopped B0/Z0 worker."
+  - "Do not add broad GitHub MCP, Sourcebot, SCIP, ast-grep or a code browser to V1 without measured evidence and a fresh architecture ruling."
+  - "Do not let C0 or Z0 download, compile, discover or select ambient binaries; exact preparation and sealed dispatch belong to B0 successors."
+  - "Do not dispatch the real Z0 operation on partial/scaffold evidence or rerun it after timeout, cancellation or response ambiguity."
+  - "Do not install or arm Serena, Zoekt, LSPs, services, credentials or worker profiles from records, source merges or falsifier artifacts alone."
 next_action: >
-  Land this current-state records carrier after fresh exact-head Agent OS validation, hosted fences,
-  semantic CI and current-main collision review. B0, C0 and Z0 are already active on separate lawful
-  carriers. Continue C0's complete same-carrier REQUEST_REPAIR, preserve Z0's bounded falsifier work,
-  and continue B0 only through one source-only Draft/Hold forge candidate. Watch those exact carriers
-  for the next BLOCKED, DECISION_REQUEST or RESULT and adjudicate each return under the protected
-  plan. Hold CI1-CI5, production profiles, services, indexes, real bundle dispatch and Control Room
-  projection until the prerequisite consumer, supply and falsifier evidence is accepted.
+  Finish the two already-started Z0 source children and obtain final immutable heads. Chairman creates
+  exactly one Mac Codex worker from Slack C0BSBM78V1N/1788471136.056329 for B0. Then independently
+  review and expected-head release #407, #420 and #426; extend the same forge for one real Epoch-1 Z0
+  run; adjudicate its deterministic decision; build CI3 only if accepted. In parallel after B0 source
+  protection, commission the frozen C0 supply successor, run one real paired C0 study and build CI1
+  only if its decision admits a backend. Production profiles/services and CI4/CI5 remain held until
+  these real product-bearing paths are proven.
 ---
 
 ## Current capability truth
 
 ```text
-F0 architecture and bounded plans              SPEC_ONLY / PROTECTED SOURCE LAW @ 620263090fb9f272f763e420ba103b0ff8dc5f31
-Code Intelligence Fabric overall               PARTIAL / PRODUCTION_INERT
-B0 hosted exact tool-bundle forge               PARTIAL / STARTED / PRODUCTION_INERT
-C0 exact-worktree semantic falsifier            PARTIAL / REQUEST_REPAIR / DRAFT_HOLD / PRODUCTION_INERT
-Z0 global-discovery falsifier                   PARTIAL / STARTED / PRODUCTION_INERT
+F0 architecture and bounded plans              SPEC_ONLY / PROTECTED SOURCE LAW
+Agent OS organizational home                   RECORDS_ONLY / DURABLE through Macro #6756
+B0 Z0-only hosted bundle forge                 PARTIAL / FINAL SOURCE REPAIR AWAITING ONE MAC CODEX WORKER
+C0 exact-worktree semantic harness             HARNESS_FROZEN / BUILT_NOT_PROVEN / EMPIRICAL NOT RUN
+Z0 governed discovery substrate                PARTIAL / FINAL SOURCE-SEAL REPAIR ACTIVE
+Z0 paired empirical harness                    PARTIAL / FINAL SOURCE REPAIR ACTIVE
+Z0 real Epoch-1 study                          NOT_RUN / PRE-REGISTERED
+accepted semantic backend                      NOT_BUILT
+accepted global index                          NOT_BUILT
+CI1 sealed semantic capability                 SPEC_ONLY / DEPENDENCY_HELD
+CI3 three-tool discovery MCP                   SPEC_ONLY / DEPENDENCY_HELD
 production capability profile/service/index    NOT_BUILT
-Control Room projection                        NOT_BUILT / OPTIONAL AFTER PROOF
+real implementation and PR-review canaries     NOT_BUILT
 ```
 
-The B0, C0 and Z0 START receipts establish active bounded source/experimental work only. They do not
-establish that the B0 forge is built, that an executable bundle exists, that either falsifier result
-is accepted, that any backend is safe, or that a production capability exists. C0 PR #375 preserves
-useful foundation, but the exact reviewed head is not acquisition-ready: it cannot yet execute both
-candidate compositions across both required language families or lawfully derive the frozen decision.
-Runtime/session identity remains owned by its canonical execution and carrier evidence; this Agent OS
-record preserves organizational wave truth, dependency order, current review state and the
-no-duplicate continuation boundary.
-
-`macro-context-index` is the semantic parent because it already owns governed, authority-classed
-project-context retrieval across the three repositories. This workstream does not absorb or rewrite
-CXI: CXI remains the document/Agent OS context-retrieval owner; Code Intelligence adds a specialized
-global code-discovery plane and an exact local-worktree semantic plane beneath existing Executive
-Attempt/workspace authority.
+GitHub issues, PR heads, reviews, checks and run artifacts remain implementation/evidence truth. This
+workstream records organizational dependency order, current carrier identity and no-rebuild boundaries.
+It creates no worker assignment, Slack lifecycle edge, workflow dispatch, source merge, backend choice,
+index, service, credential, profile, market capability or trading authority.
