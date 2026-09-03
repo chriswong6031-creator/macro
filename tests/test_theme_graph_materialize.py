@@ -26,7 +26,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from engine.theme_graph import identity, materialize, store
+from engine.theme_graph import identity, local_sources, materialize, store
 from lib import config
 
 CONTRACTS = Path(__file__).resolve().parents[1] / "contracts" / "theme_graph"
@@ -136,6 +136,14 @@ def tree(tmp_path, monkeypatch):
     _write(root / "baskets" / "membership.json", _us_doc())
     _write(root / "baskets_china" / "membership.json", _cn_doc())
     _write(root / "baskets_china_ths" / "membership.json", _ths_doc())
+    pd.DataFrame([
+        {"snapshot_date": THS_DOC_DATE, "suite": "baskets_china_ths",
+         "basket_id": f"thsc{KNOWN_CODE}", "ticker": "600001.SS",
+         "source_shape": "membership"},
+        {"snapshot_date": THS_DOC_DATE, "suite": "baskets_china_ths",
+         "basket_id": f"thsc{KNOWN_CODE}", "ticker": "600002.SS",
+         "source_shape": "membership"},
+    ]).to_parquet(root / "baskets_china_ths" / "membership_history.parquet", index=False)
     _write(root / "baskets_china_ths" / "concept_map.json", {
         "asof": CMAP_ASOF,
         "map": {"测试概念": KNOWN_CODE, "另一概念": "900002", "第三概念": "900003"},
@@ -156,10 +164,13 @@ RAW_SNAPSHOT = (SNAP_DATE, {"测试概念": [{"ticker": "600001.SS", "name": "�
 def _build(tree, *, era="reconstruction", belief_time="2026-08-11",
            raw_snapshot=RAW_SNAPSHOT, **kw):
     root, xwalk = tree
+    ths_history = kw.pop("ths_history", None)
+    if ths_history is None:
+        ths_history = pd.read_parquet(root / "baskets_china_ths" / "membership_history.parquet")
     return materialize.build(era=era, belief_time=belief_time,
                              computed_at="2026-08-11T00:00:00Z",
                              data_dir=root, crosswalk_path=xwalk,
-                             raw_snapshot=raw_snapshot, **kw)
+                             raw_snapshot=raw_snapshot, ths_history=ths_history, **kw)
 
 
 def _by_type(view, edge_type):
@@ -170,6 +181,77 @@ def _edge(view, edge_type, src, dst):
     hits = [e for e in _by_type(view, edge_type) if e["src"] == src and e["dst"] == dst]
     assert len(hits) == 1, f"expected exactly one {edge_type} {src}->{dst}, got {hits}"
     return hits[0]
+
+
+def test_ths_owner_history_keeps_first_observed_boundary_and_reappearance():
+    """D2C: owner snapshots, never today's membership, define THS PIT intervals."""
+    history = pd.DataFrame([
+        {"snapshot_date": "2026-06-30", "basket_id": "thsc900001",
+         "ticker": "600001.SS", "source_shape": "ths_concept_dump"},
+        {"snapshot_date": "2026-07-08", "basket_id": "thsc900001",
+         "ticker": "600002.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-15", "basket_id": "thsc900001",
+         "ticker": "600001.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-15", "basket_id": "thsc900001",
+         "ticker": "600002.SS", "source_shape": "membership"},
+    ])
+
+    intervals = local_sources.ths_membership_intervals(history)
+
+    assert [(iv.basket_id, iv.ticker, iv.valid_from, iv.valid_to,
+             iv.source_shape) for iv in intervals] == [
+        ("thsc900001", "600001.SS", "2026-06-30", "2026-07-08",
+         "ths_concept_dump"),
+        ("thsc900001", "600002.SS", "2026-07-08", None, "membership"),
+        ("thsc900001", "600001.SS", "2026-07-15", None, "membership"),
+    ]
+
+
+def test_ths_graph_never_leaks_a_later_member_back_into_an_earlier_snapshot(tree):
+    """D2C mutation guard: current membership must not fill an older PIT vintage."""
+    root, _xwalk = tree
+    history = pd.DataFrame([
+        {"snapshot_date": "2026-06-30", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600001.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-08", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600001.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-08", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600002.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-15", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600003.SS", "source_shape": "ths_concept_dump"},
+    ])
+    history.to_parquet(root / "baskets_china_ths" / "membership_history.parquet", index=False)
+
+    view = _build(tree)
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+    early = _edge(view, "MEMBER_OF", "co:cn:600001.SS", basket)
+    later = _edge(view, "MEMBER_OF", "co:cn:600002.SS", basket)
+    assert early["valid_from"] == "2026-06-30"
+    assert later["valid_from"] == "2026-07-08"
+    assert later["valid_from"] > early["valid_from"]
+    assert not [edge for edge in view.edges if edge["src"] == "co:cn:600003.SS"], (
+        "a raw concept dump has a current-basis concept-to-basket mapping and cannot "
+        "become a historical graph membership")
+    assert view.per_suite["baskets_china_ths"]["excluded_source_shapes"] == [
+        "ths_concept_dump"]
+
+
+def test_ths_graph_declines_current_membership_when_owner_history_is_absent(tree):
+    view = _build(tree, ths_history=pd.DataFrame())
+    assert not [edge for edge in _by_type(view, "MEMBER_OF")
+                if edge["dst"].startswith("basket:baskets_china_ths:")]
+    assert view.per_suite["baskets_china_ths"]["member_edges"] == 0
+
+
+def test_ths_canonical_join_declines_a_mapping_receipted_after_the_crosswalk(tree):
+    root, _xwalk = tree
+    doc = _ths_doc()
+    doc["version"] = "2026-07-10"  # after the crosswalk's 2026-07-09 receipt
+    _write(root / "baskets_china_ths" / "membership.json", doc)
+    view = _build(tree)
+    assert not [edge for edge in _by_type(view, "EXPRESSES")
+                if edge["src"] == f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+                and edge["dst"] == "theme:solar"]
 
 
 # ---------------------------------------------------------------------------
@@ -250,20 +332,16 @@ def test_crosswalk_derived_edges_declare_their_own_provenance(tree):
 # 3. Evidence: corroboration adds, never replaces
 # ---------------------------------------------------------------------------
 
-def test_a_ths_member_the_raw_dump_also_shows_carries_a_second_receipt(tree):
+def test_a_raw_ths_concept_dump_never_backdates_a_basket_membership(tree):
     view = _build(tree)
     ths_basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
     covered = _edge(view, "MEMBER_OF", "co:cn:600001.SS", ths_basket)
     uncovered = _edge(view, "MEMBER_OF", "co:cn:600002.SS", ths_basket)
-    assert len(covered["evidence_refs"]) == 2
-    assert len(uncovered["evidence_refs"]) == 1
-    assert set(uncovered["evidence_refs"]) < set(covered["evidence_refs"]), (
-        "corroboration must ADD a receipt beside the membership document's, not swap it")
-    ev = {e["evidence_id"]: e for e in view.evidence}
-    extra = ev[(set(covered["evidence_refs"]) - set(uncovered["evidence_refs"])).pop()]
-    assert extra["kind"] == "scrape" and extra["published_at"] == SNAP_DATE
-    # ...and the edge's own provenance still describes where valid_from came from.
-    assert covered["date_provenance"] == "seed_constant"
+    assert len(covered["evidence_refs"]) == len(uncovered["evidence_refs"]) == 1
+    assert covered["confidence_basis"] == "membership_pit.ths.v1"
+    refs = {e["evidence_id"]: e for e in view.evidence}
+    assert all(refs[eid]["source_ref"].endswith(f"@{THS_DOC_DATE}")
+               for eid in covered["evidence_refs"])
 
 
 def test_without_a_raw_snapshot_the_membership_receipt_stands_alone(tree):

@@ -242,6 +242,7 @@ class _Builder:
     def __init__(self, *, data_dir: Path, crosswalk_path: Path, era: str,
                  belief_time: str, computed_at: str,
                  raw_snapshot: tuple[str, dict] | None,
+                 ths_history=None,
                  finviz_seed_path: Path | None = None,
                  finviz_history_path: Path | None = None,
                  finviz_live_tree_path: Path | None = None,
@@ -253,6 +254,9 @@ class _Builder:
         self.belief_time = belief_time
         self.computed_at = computed_at
         self.raw_snapshot = raw_snapshot
+        # D2C: handed in by the owning membership-PIT reader.  Materialization
+        # remains a pure consumer and never discovers or writes the owner store.
+        self.ths_history = ths_history
         self.finviz_seed_path = finviz_seed_path
         self.finviz_history_path = finviz_history_path
         self.finviz_live_tree_path = finviz_live_tree_path
@@ -506,6 +510,90 @@ class _Builder:
 
     # -- THS concept map + raw snapshot ------------------------------------
 
+    def build_ths_membership_history(self) -> None:
+        """Emit THS memberships solely from the owner PIT history.
+
+        The owner store's ``ths_concept_dump`` rows deliberately do not enter the
+        graph: their concept-to-basket resolution used the current map, so a dated
+        graph edge would backdate a mapping we do not historically possess.  An empty
+        history therefore means unavailable membership coverage, never a fallback to
+        today's ``membership.json``.
+        """
+        history = self.ths_history
+        rows = (history.to_dict("records") if hasattr(history, "to_dict")
+                else list(history or ()))
+        membership_rows = [row for row in rows
+                           if _text(row.get("source_shape")) == "membership"]
+        excluded_shapes = sorted({
+            _text(row.get("source_shape")) or "unknown" for row in rows
+            if _text(row.get("source_shape")) != "membership"
+        })
+        if not membership_rows:
+            self.out.per_suite[THS_SUITE] = {
+                "baskets": 0, "companies": 0, "member_edges": 0,
+                "membership_pit_rows": 0, "excluded_source_shapes": excluded_shapes,
+                "note": "no historically receipted membership-shape THS snapshots",
+            }
+            return
+
+        intervals = local_sources.ths_membership_intervals(membership_rows)
+        basket_ids = sorted({iv.basket_id for iv in intervals})
+        companies: set[str] = set()
+        n_closed = 0
+        for basket_id in basket_ids:
+            self._node(
+                identity.basket_node_id(THS_SUITE, basket_id),
+                kind="basket", market_scope="cn",
+                provenance=f"membership_history:{THS_SUITE}",
+                external_ids={"suite": THS_SUITE, "basket_id": basket_id},
+            )
+
+        for iv in intervals:
+            try:
+                company = identity.company_node_id(THS_SUITE, iv.ticker, breaks=self.breaks)
+            except ValueError as exc:
+                log.warning("theme_graph: THS PIT %s/%s skipped (%s)",
+                            iv.basket_id, iv.ticker, exc)
+                continue
+            self._node(
+                company, kind="company", market_scope="cn",
+                provenance=f"membership_history:{THS_SUITE}",
+                external_ids={"symbol": iv.ticker.upper()},
+                identity_epoch=identity.identity_epoch("cn", iv.ticker, breaks=self.breaks),
+            )
+            companies.add(company)
+            opening = self._evidence_ref(
+                kind="scrape",
+                source_ref=(f"data/{THS_SUITE}/membership_history.parquet@"
+                            f"{iv.valid_from}"),
+                published_at=iv.valid_from, licensing=_licensing(THS_FAMILY),
+            )
+            refs = [opening]
+            if iv.closed_by:
+                refs.append(self._evidence_ref(
+                    kind="scrape",
+                    source_ref=(f"data/{THS_SUITE}/membership_history.parquet@"
+                                f"{iv.closed_by}"),
+                    published_at=iv.closed_by, licensing=_licensing(THS_FAMILY),
+                ))
+                n_closed += 1
+            self._edge(
+                edge_type="MEMBER_OF", src=company,
+                dst=identity.basket_node_id(THS_SUITE, iv.basket_id),
+                valid_from=iv.valid_from, valid_to=iv.valid_to,
+                evidence_time=iv.closed_by or iv.valid_from,
+                source_class="scrape", date_provenance="raw_snapshot",
+                evidence_refs=refs, confidence_basis="membership_pit.ths.v1",
+                era=self._era_for(iv.closed_by or iv.valid_from),
+            )
+
+        self.out.per_suite[THS_SUITE] = {
+            "baskets": len(basket_ids), "companies": len(companies),
+            "member_edges": len(intervals), "closed_member_edges": n_closed,
+            "membership_pit_rows": len(membership_rows),
+            "excluded_source_shapes": excluded_shapes,
+        }
+
     def _concept_map(self) -> dict[str, str]:
         if not hasattr(self, "_cmap"):
             p = self.data_dir / THS_SUITE / "concept_map.json"
@@ -745,6 +833,7 @@ class _Builder:
 
         doc = self._membership(THS_SUITE)
         n_expresses, unresolved = 0, []
+        self._ths_basket_concept_dates: dict[str, str] = {}
         if doc:
             published_at = _doc_published_at(doc)
             doc_ev = self._evidence_ref(
@@ -765,6 +854,15 @@ class _Builder:
                 lt_node = f"ltheme:ths:{code}"
                 if b_node not in self._nodes or lt_node not in self._nodes:
                     continue
+                # This is a dated association in the membership document, not a
+                # timeless property inferred from the current map.  Keep it for the
+                # later crosswalk gate as well as the source-local expression.
+                basket_node = self._nodes[b_node]
+                basket_external = json.loads(basket_node["external_ids"])
+                basket_external["ths_code"] = code
+                basket_node["external_ids"] = json.dumps(
+                    basket_external, ensure_ascii=False, sort_keys=True)
+                self._ths_basket_concept_dates[b_node] = published_at or asof
                 self._edge(
                     edge_type="EXPRESSES", src=b_node, dst=lt_node,
                     valid_from=published_at or asof, valid_to=None,
@@ -862,6 +960,12 @@ class _Builder:
             for b_node, code in ths_code_by_node.items():
                 if code not in wanted:
                     continue
+                association_date = getattr(self, "_ths_basket_concept_dates", {}).get(b_node)
+                if not association_date or association_date > xwalk_date:
+                    # A current basket→concept association cannot certify an older
+                    # canonical join.  The local edge remains visible at its own
+                    # observation date; the canonical edge declines honestly.
+                    continue
                 refs = [xwalk_ev] + ([cmap_ev] if cmap_ev else [])
                 self._edge(edge_type="EXPRESSES", src=b_node, dst=t_node,
                            valid_from=xwalk_date, valid_to=None,
@@ -902,6 +1006,10 @@ class _Builder:
 
     def run(self) -> Materialization:
         for suite in SUITES:
+            # D2C gives THS a distinct producer below: its live document has no
+            # historical membership authority.
+            if suite == THS_SUITE:
+                continue
             try:
                 self.build_family(suite)
             except ValueError as exc:
@@ -911,7 +1019,8 @@ class _Builder:
         # planes resolve against (a Finviz ticker already present must resolve to the
         # existing node, never to a twin), and the THS plane mints the concept nodes the
         # crosswalk's vocabulary-resolution edges point at.
-        for build_plane in (self.build_finviz_plane, self.build_ths_plane):
+        for build_plane in (self.build_ths_membership_history,
+                            self.build_finviz_plane, self.build_ths_plane):
             try:
                 build_plane()
             except Exception as exc:  # noqa: BLE001 — a local plane is additive
@@ -1041,6 +1150,7 @@ def build(*, era: str, belief_time: str | None = None,
           data_dir: Path | None = None,
           crosswalk_path: Path | None = None,
           raw_snapshot: tuple[str, dict] | None = None,
+          ths_history=None,
           finviz_seed_path: Path | None = None,
           finviz_history_path: Path | None = None,
           finviz_live_tree_path: Path | None = None,
@@ -1062,6 +1172,7 @@ def build(*, era: str, belief_time: str | None = None,
         belief_time=belief_time or utc_today(),
         computed_at=computed_at or utc_now_stamp(),
         raw_snapshot=raw_snapshot,
+        ths_history=ths_history,
         finviz_seed_path=finviz_seed_path,
         finviz_history_path=finviz_history_path,
         finviz_live_tree_path=finviz_live_tree_path,

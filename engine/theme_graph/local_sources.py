@@ -297,6 +297,18 @@ class Interval:
     closed_by: str | None   # source_ref of the vintage that first showed it GONE
 
 
+@dataclass(frozen=True)
+class THSInterval:
+    """One owner-history THS membership interval, bounded by observed snapshots."""
+
+    basket_id: str
+    ticker: str
+    valid_from: str
+    valid_to: str | None
+    source_shape: str
+    closed_by: str | None = None
+
+
 def membership_intervals(ladder: Ladder) -> list[Interval]:
     """Every observed interval across the ladder, oldest first.
 
@@ -326,6 +338,45 @@ def membership_intervals(ladder: Ladder) -> list[Interval]:
                 run_start = None
     out.sort(key=lambda iv: (iv.valid_from, iv.subtheme_key, iv.symbol))
     return out
+
+
+def ths_membership_intervals(history) -> list[THSInterval]:
+    """Turn the canonical THS owner history into observed membership intervals.
+
+    ``history`` is intentionally duck-typed: the graph remains a pure consumer of
+    the owner parquet and never inherits its writer or append semantics.  A member
+    opens only at the first snapshot that contains it; the first later snapshot
+    where it is absent closes the interval; a reappearance opens a new interval.
+    """
+    rows = history.to_dict("records") if hasattr(history, "to_dict") else list(history)
+    snapshots: dict[str, dict[tuple[str, str], str]] = {}
+    for row in rows:
+        date = str(row.get("snapshot_date") or "").strip()
+        basket = str(row.get("basket_id") or "").strip()
+        ticker = str(row.get("ticker") or "").strip()
+        if not date or not basket or not ticker:
+            continue
+        snapshots.setdefault(date, {}).setdefault(
+            (basket, ticker), str(row.get("source_shape") or "unknown"))
+    dates = sorted(snapshots)
+    pairs = sorted({pair for entries in snapshots.values() for pair in entries})
+    out: list[THSInterval] = []
+    for basket, ticker in pairs:
+        opened: int | None = None
+        shape = "unknown"
+        for index, present in enumerate(
+                [(basket, ticker) in snapshots[date] for date in dates] + [False]):
+            if present and opened is None:
+                opened = index
+                shape = snapshots[dates[index]][(basket, ticker)]
+            elif not present and opened is not None:
+                out.append(THSInterval(
+                    basket_id=basket, ticker=ticker, valid_from=dates[opened],
+                    valid_to=dates[index] if index < len(dates) else None,
+                    source_shape=shape,
+                    closed_by=dates[index] if index < len(dates) else None))
+                opened = None
+    return sorted(out, key=lambda iv: (iv.valid_from, iv.basket_id, iv.ticker))
 
 
 def subtheme_registry(ladder: Ladder,

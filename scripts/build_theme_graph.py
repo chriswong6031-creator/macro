@@ -41,6 +41,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import basket_membership_pit  # noqa: E402
 from engine.theme_graph import materialize, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -114,6 +115,8 @@ def run(*, backfill: bool, force_backfill: bool,
         return 1
 
     view = materialize.build(era=era, raw_snapshot=_newest_raw_snapshot(),
+                             ths_history=basket_membership_pit.read_history(
+                                 basket_membership_pit.SUITE_THS),
                              retired_node_ids=_retired_node_ids())
     edges = view.edges if backfill else materialize.changed_edges(view.edges, stored)
 
