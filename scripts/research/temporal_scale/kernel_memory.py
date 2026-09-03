@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import math
 import re
 from numbers import Real
@@ -25,6 +26,12 @@ class KernelMemoryError(ValueError):
 
 _MAX_LENGTH = 2**53 - 1
 _CLOCK_BASES = frozenset({"bar_count", "elapsed_time", "traded_time", "volume_time", "trade_time", "variance_time"})
+_OWNER_CONFIG = {
+    "family": "R-A canon (SMA-seeded RMA == Pine ta.rsi)", "module": "engine.canon",
+    "rsi_len": 14, "stoch_len": 14, "smooth_k": 3, "smooth_d": 3,
+    "macd_fast": 14, "macd_slow": 60, "macd_signal": 5,
+    "ema_adjust": "adjust=False", "rma_seed": "sma_seeded",
+}
 
 
 def _length(value: object, name: str) -> int:
@@ -155,6 +162,52 @@ def _first_finite(series: pd.Series) -> int | None:
     return int(positions[0]) if len(positions) else None
 
 
+def _bound_owner_callables() -> tuple[Any, Any, Any, Any]:
+    """Fail closed if owner defaults cannot establish the declared frozen recipe."""
+    names = ("rsi", "rsi_macd", "rsi_macd_hist", "stoch_rsi_kd")
+    functions = tuple(getattr(indicator_core, name, None) for name in names)
+    try:
+        for function in functions:
+            if not callable(function):
+                raise KernelMemoryError("owner public signatures cannot bind the frozen recipe")
+            parameters = tuple(inspect.signature(function).parameters.values())
+            if len(parameters) != 1:
+                raise KernelMemoryError("owner public signatures cannot bind the frozen recipe")
+            parameter = parameters[0]
+            if parameter.name != "close" or parameter.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD or parameter.default is not inspect.Parameter.empty:
+                raise KernelMemoryError("owner public signatures cannot bind the frozen recipe")
+    except KernelMemoryError:
+        raise
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise KernelMemoryError("owner public signatures cannot bind the frozen recipe") from exc
+    try:
+        current = indicator_core.INDICATOR_CORE
+        if not isinstance(current, Mapping) or any(current.get(key) != value for key, value in _OWNER_CONFIG.items()):
+            raise KernelMemoryError("owner public defaults drift from the frozen recipe")
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise KernelMemoryError("owner public defaults cannot bind the frozen recipe") from exc
+    return functions  # type: ignore[return-value]
+
+
+def _call_owner(function: Any, close: pd.Series, name: str) -> object:
+    try:
+        return function(close)
+    except TypeError as exc:
+        raise KernelMemoryError(f"owner {name} rejected the bound close input") from exc
+
+
+def _owner_series(value: object, close: pd.Series, name: str) -> pd.Series:
+    if not isinstance(value, pd.Series) or len(value) != len(close) or not value.index.equals(close.index):
+        raise KernelMemoryError(f"owner {name} must return an index-aligned pandas Series")
+    return _numeric_series(value, name=f"owner {name}", allow_missing=True)
+
+
+def _owner_pair(value: object, close: pd.Series, name: str) -> tuple[pd.Series, pd.Series]:
+    if type(value) is not tuple or len(value) != 2:
+        raise KernelMemoryError(f"owner {name} must return exactly two Series")
+    return _owner_series(value[0], close, f"{name}[0]"), _owner_series(value[1], close, f"{name}[1]")
+
+
 def _strict_index_labels(index: pd.Index) -> list[int | str]:
     labels: list[int | str] = []
     for label in index:
@@ -182,22 +235,35 @@ def _clock_provenance(
     if clock_basis == "bar_count":
         if clock_increments is not None:
             raise KernelMemoryError("bar_count must not receive external clock increments")
-        if clock_parameter not in (None, {}):
-            raise KernelMemoryError("bar_count must not receive external clock provenance")
+        if clock_parameter is not None:
+            if not isinstance(clock_parameter, Mapping):
+                raise KernelMemoryError("bar_count clock_parameter must be null or an empty mapping")
+            try:
+                if list(clock_parameter.items()):
+                    raise KernelMemoryError("bar_count must not receive external clock provenance")
+            except KernelMemoryError:
+                raise
+            except Exception as exc:
+                raise KernelMemoryError("bar_count clock_parameter cannot be materialized") from exc
         return {}
     if not isinstance(clock_parameter, Mapping):
         raise KernelMemoryError("non-bar clocks require a structured clock_parameter")
+    try:
+        keys = set(clock_parameter.keys())
+        if keys != {"unit", "source_receipt_sha256"}:
+            raise KernelMemoryError("non-bar clock provenance keys must be exact")
+        unit = clock_parameter["unit"]
+        receipt = clock_parameter["source_receipt_sha256"]
+        if not isinstance(unit, str) or not unit.strip() or not isinstance(receipt, str) or not re.fullmatch(r"[0-9a-f]{64}", receipt):
+            raise KernelMemoryError("non-bar clock provenance requires unit and lowercase source receipt SHA-256")
+        strict_json_dumps({"unit": unit, "source_receipt_sha256": receipt})
+        labels = _strict_index_labels(close.index)
+    except KernelMemoryError:
+        raise
+    except Exception as exc:
+        raise KernelMemoryError("clock provenance must be strict JSON") from exc
     if not isinstance(clock_increments, pd.Series) or not close.index.equals(clock_increments.index):
         raise KernelMemoryError("non-bar clocks require index-aligned actual clock increments")
-    unit = clock_parameter.get("unit")
-    receipt = clock_parameter.get("source_receipt_sha256")
-    if not isinstance(unit, str) or not unit.strip() or not isinstance(receipt, str) or not re.fullmatch(r"[0-9a-f]{64}", receipt):
-        raise KernelMemoryError("non-bar clock provenance requires unit and lowercase source receipt SHA-256")
-    try:
-        strict_json_dumps(dict(clock_parameter))
-        labels = _strict_index_labels(close.index)
-    except ContractError as exc:
-        raise KernelMemoryError("clock provenance must be strict JSON") from exc
     increments = _numeric_series(clock_increments, name="clock increments", allow_missing=False)
     if (increments < 0).any():
         raise KernelMemoryError("clock increments must be finite and nonnegative")
@@ -221,10 +287,11 @@ def canonical_kernel_signature(
     if not isinstance(clock_basis, str) or clock_basis not in _CLOCK_BASES:
         raise KernelMemoryError("clock_basis is unknown")
     parameter = _clock_provenance(close, clock_basis, clock_parameter, clock_increments)
-    rsi = indicator_core.rsi(close)
-    macd, signal = indicator_core.rsi_macd(close)
-    hist = indicator_core.rsi_macd_hist(close)
-    stoch_k, stoch_d = indicator_core.stoch_rsi_kd(close)
+    rsi_function, macd_function, hist_function, stoch_function = _bound_owner_callables()
+    rsi = _owner_series(_call_owner(rsi_function, close, "rsi"), close, "rsi")
+    macd, signal = _owner_pair(_call_owner(macd_function, close, "rsi_macd"), close, "rsi_macd")
+    hist = _owner_series(_call_owner(hist_function, close, "rsi_macd_hist"), close, "rsi_macd_hist")
+    stoch_k, stoch_d = _owner_pair(_call_owner(stoch_function, close, "stoch_rsi_kd"), close, "stoch_rsi_kd")
     spec = {
         "owner_family": "R-A canon (SMA-seeded RMA == Pine ta.rsi)", "owner_module": "engine.canon",
         "owner_public_module": "engine.entry_radar.indicator_core", "input": "close", "rsi_len": 14,
