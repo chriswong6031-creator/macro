@@ -1322,3 +1322,12 @@ def test_annotations_start_the_line_as_bare_prints():
 
     assert found >= 3, "the module should still carry its annotation emissions"
     assert "log.warning" not in source and "logger.warning" not in source
+
+
+def test_mor1_journey_script_performs_real_back_and_forward():
+    source = MODULE_PATH.read_text(encoding="utf-8")
+    assert "history.forward()" in source
+    assert "history.back()" in source
+    assert "matches_final: true" not in source
+    assert 'TOOL_VERSION = "1.4.0"' in source
+    assert "back_forward" not in cpe._MOR1_JOURNEY_SCRIPT

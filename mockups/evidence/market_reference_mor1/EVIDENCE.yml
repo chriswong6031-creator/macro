@@ -6,6 +6,7 @@ changed_paths:
   - scripts/capture_market_reference_mor1.py
   - scripts/market_reference_route_evidence.py
   - scripts/check_market_reference_route_evidence.py
-  - tests/test_market_reference_route_evidence.py
+  - tests/test_market_reference.py
+  - tests/test_capture_page_evidence.py
   - mockups/evidence/market_reference_mor1/manifest.json
 manifest: mockups/evidence/market_reference_mor1/manifest.json

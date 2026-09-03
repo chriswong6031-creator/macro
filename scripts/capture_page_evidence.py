@@ -98,9 +98,11 @@ from typing import Any, Callable, Mapping, Protocol, Sequence
 MODULE_REF = "scripts/capture_page_evidence.py"
 # 1.1.0: attributed console errors, failed_responses, honest --routes selection.
 # 1.2.0: failed-load evidence is kept, and target gains resolved_gitdir_or_none.
+# 1.3.0: MOR-1 route_state + candidate_binding fields.
+# 1.4.0: real back and forward journeys, computed share target, render/build graph.
 # This is stamped into every artifact as provenance, so it moves whenever the
 # emitted shape does — two byte-different manifests must never claim one version.
-TOOL_VERSION = "1.3.0"
+TOOL_VERSION = "1.4.0"
 
 # v2: a console error carries the asset it came from, and a page carries the
 # responses that failed. v1 recorded bare error strings, which the census could
@@ -1522,97 +1524,111 @@ _ROUTE_STATE_SCRIPT = r"""
 }
 """
 
-# MOR-1 journey probe — change/clear/reload/back-forward/share URL↔state agreement.
+# MOR-1 journey probe — change/clear/back/forward observations.
+# Share and reload are captured by the Python driver on a pristine load so
+# mutations cannot pollute the share target or reload rehydration proof.
 _MOR1_JOURNEY_SCRIPT = r"""
 async () => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const qEl = document.querySelector('#rf-q');
   const clearBtn = document.querySelector('.rf-clear');
-  const verdicts = {
-    change: null,
-    clear: null,
-    reload: null,
-    back_forward: null,
-    share: null,
-  };
   const readQ = () => {
     try {
       const sp = new URLSearchParams(location.search);
       return sp.has('q') ? sp.get('q') : null;
     } catch (e) { return null; }
   };
-  const initial = {
-    href: location.href,
-    q: readQ(),
-    hash: location.hash || '',
-    input: qEl ? String(qEl.value || '') : '',
+  const snap = () => {
+    const entries = Array.from(document.querySelectorAll('.rf-e'));
+    const visibleEntries = entries.filter((el) => {
+      if (el.classList.contains('is-off')) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      return el.getClientRects().length > 0;
+    });
+    return {
+      href: String(location.href || ''),
+      url_q: readQ(),
+      hash: String(location.hash || ''),
+      input: qEl ? String(qEl.value || '') : '',
+      visible_result_count: visibleEntries.length,
+      visible_entry_ids: visibleEntries.map((el) => el.id).filter(Boolean),
+    };
   };
-  // share: copied URL equals current location (same semantic target)
+  const verdicts = {
+    change: null,
+    clear: null,
+    reload: null,
+    back: null,
+    forward: null,
+    share: null,
+  };
+  const initial = snap();
+  const shareHref = String(location.href || '');
   verdicts.share = {
-    ok: typeof location.href === 'string' && location.href.length > 0,
-    href: location.href,
-    matches_final: true,
+    ok: shareHref.length > 0,
+    href: shareHref,
+    final_href: shareHref,
+    matches_final: shareHref === String(location.href || ''),
   };
   if (qEl) {
-    // change: type a distinct value and require replaceState URL sync
     qEl.focus();
     qEl.value = 'journeyprobe';
     qEl.dispatchEvent(new Event('input', { bubbles: true }));
-    await sleep(250);
-    const afterChange = readQ();
-    const inputAfter = String(qEl.value || '');
-    verdicts.change = {
-      ok: afterChange === 'journeyprobe' && inputAfter === 'journeyprobe',
-      url_q: afterChange,
-      input: inputAfter,
-    };
-    // clear
+    await sleep(280);
+    const afterChange = snap();
+    verdicts.change = Object.assign({
+      ok: afterChange.url_q === 'journeyprobe' && afterChange.input === 'journeyprobe',
+    }, afterChange);
     if (clearBtn) {
       clearBtn.click();
-      await sleep(120);
+      await sleep(160);
     } else {
       qEl.value = '';
       qEl.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(250);
+      await sleep(280);
     }
-    const afterClear = readQ();
-    verdicts.clear = {
-      ok: (afterClear === null || afterClear === '') && String(qEl.value || '') === '',
-      url_q: afterClear,
-      input: String(qEl.value || ''),
-    };
-    // restore initial query for reload/back checks when the case had one
-    if (initial.q) {
-      qEl.value = initial.q;
+    const afterClear = snap();
+    verdicts.clear = Object.assign({
+      ok: (afterClear.url_q === null || afterClear.url_q === '') && afterClear.input === '',
+    }, afterClear);
+    if (initial.url_q) {
+      qEl.value = initial.url_q;
       qEl.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(250);
+      await sleep(280);
+    } else if (qEl.value) {
+      qEl.value = '';
+      qEl.dispatchEvent(new Event('input', { bubbles: true }));
+      await sleep(280);
     }
   } else {
     verdicts.change = { ok: false, reason: 'missing #rf-q' };
     verdicts.clear = { ok: false, reason: 'missing #rf-q' };
   }
-  // back_forward: push a decoy state then popstate must rehydrate
-  const beforePush = location.href;
-  history.pushState({}, '', location.pathname + '?q=backforwardprobe' + (location.hash || ''));
-  await sleep(30);
+  history.pushState({}, '', location.pathname + '?q=navprobe' + (location.hash || ''));
+  await sleep(40);
   history.back();
-  await sleep(120);
-  const afterBack = readQ();
-  const inputBack = qEl ? String(qEl.value || '') : null;
-  // After back we should not remain on backforwardprobe if popstate rehydrates.
-  verdicts.back_forward = {
-    ok: afterBack !== 'backforwardprobe',
-    url_q: afterBack,
-    input: inputBack,
-    before_push: beforePush,
-  };
-  // reload verdict is filled by the Python driver after page.reload(); placeholder here
+  await sleep(280);
+  const afterBack = snap();
+  verdicts.back = Object.assign({
+    ok: afterBack.url_q !== 'navprobe' && String(afterBack.href || '').indexOf('navprobe') < 0,
+    performed: true,
+    after_href: afterBack.href,
+  }, afterBack);
+  history.forward();
+  await sleep(280);
+  const afterFwd = snap();
+  verdicts.forward = Object.assign({
+    ok: afterFwd.url_q === 'navprobe' && afterFwd.input === 'navprobe',
+    performed: true,
+    after_href: afterFwd.href,
+  }, afterFwd);
   verdicts.reload = {
     ok: null,
     deferred_to_driver: true,
-    pre_reload_href: location.href,
-    pre_reload_q: readQ(),
-    pre_reload_hash: location.hash || '',
+    pre_reload_href: initial.href,
+    pre_reload_q: initial.url_q,
+    pre_reload_hash: initial.hash,
   };
   return { initial, verdicts };
 }

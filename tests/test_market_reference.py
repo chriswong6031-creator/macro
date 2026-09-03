@@ -23,7 +23,10 @@ Verifies:
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -559,3 +562,508 @@ def test_unknown_anchor_state_and_search_input_are_server_rendered(rendered_html
     # them, so a JS-disabled reader never sees a blank page or a broken filter.
     assert 'class="rf-miss mx-empty"' in rendered_html
     assert 'id="rf-q"' in rendered_html
+
+
+# ---------------------------------------------------------------------------
+# MOR-1 route-semantic evidence (issue #6782 / PR #6792 review #5099458870)
+# Hosted here so contract-delta sees an already-wired suite; do not add a
+# new pytest file or expand .github/ci/**.
+# ---------------------------------------------------------------------------
+
+from scripts.market_reference_route_evidence import (  # noqa: E402
+    REQUIRED_RENDER_INPUTS,
+    REQUIRED_SHARED_ASSETS,
+    ROUTE_CASES,
+    assert_historical_overclaim_is_red,
+    expected_query_entry_ids,
+    mor1_capture_rows,
+    validate_manifest_route_matrix,
+)
+
+HISTORICAL_OVERCLAIM = {
+    "schema": "mastermind.p0_evidence.v2",
+    "tool": {"version": "1.0.0"},
+    "pages": [
+        {
+            "page_id": "reference.html",
+            "route": "reference.html",
+            "states": [
+                {
+                    "viewport": vp,
+                    "locale": loc,
+                    "theme": th,
+                    "access": "anonymous",
+                    "force_state": None,
+                    "captured": True,
+                    "file": "deadbeef.png",
+                    "sha256": "aa" * 32,
+                    "bytes": 1,
+                    "width": 1,
+                    "height": 1,
+                    "applied_theme": th,
+                    "applied_locale": loc,
+                }
+                for vp in ("desktop", "mobile")
+                for loc in ("en", "zh")
+                for th in ("dark", "light")
+            ],
+        }
+    ],
+    "excluded": [
+        {"route": "reference.html#vix", "reason": "historical omission"},
+        {"route": "reference.html#not-a-real-entry", "reason": "historical omission"},
+        {"route": "reference.html?q=curve", "reason": "historical omission"},
+    ],
+}
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _git(*args: str) -> str:
+    return subprocess.check_output(["git", "-C", str(REPO), *args], text=True).strip()
+
+
+def _live_binding() -> dict:
+    source_commit = _git("rev-parse", "HEAD")
+    source_tree = _git("rev-parse", f"{source_commit}^{{tree}}")
+    site_sha = _sha256_file(REPO / "site" / "reference.html")
+    tool_ver = "1.4.0"
+    return {
+        "source_commit": source_commit,
+        "source_tree": source_tree,
+        "worktree": str(REPO),
+        "site_reference_sha256": site_sha,
+        "serve_root": "http://127.0.0.1:9",
+        "capture_tool_version": tool_ver,
+        "capture_tool_module_sha256": _sha256_file(REPO / "scripts" / "capture_page_evidence.py"),
+        "render_invocation": {
+            "command": "python -m scripts.build_market_reference",
+            "argv": [sys.executable, "-m", "scripts.build_market_reference"],
+            "input_digests": {rel: _sha256_file(REPO / rel) for rel in REQUIRED_RENDER_INPUTS},
+            "output_digests": {"site/reference.html": site_sha},
+        },
+        "shared_asset_digests": {rel: _sha256_file(REPO / rel) for rel in REQUIRED_SHARED_ASSETS},
+    }
+
+
+def _ok_journeys(case: dict) -> dict:
+    route = case["route"]
+    want_q = case["expect"].get("query_q")
+    want_hash = (case["expect"].get("hash") or "").lstrip("#")
+    final = f"http://127.0.0.1:9/{route}"
+    full_ids = expected_query_entry_ids(None, repo_root=REPO)
+    probe_ids = expected_query_entry_ids("journeyprobe", repo_root=REPO)
+    nav_ids = expected_query_entry_ids("navprobe", repo_root=REPO)
+    case_ids = expected_query_entry_ids(want_q, repo_root=REPO) if want_q else full_ids
+    back_q = want_q
+    back_input = want_q or ""
+    return {
+        "change": {
+            "ok": True,
+            "url_q": "journeyprobe",
+            "input": "journeyprobe",
+            "visible_result_count": len(probe_ids),
+            "visible_entry_ids": list(probe_ids),
+        },
+        "clear": {
+            "ok": True,
+            "url_q": None,
+            "input": "",
+            "visible_result_count": len(full_ids),
+            "visible_entry_ids": list(full_ids),
+        },
+        "reload": {
+            "ok": True,
+            "post_href": final,
+            "post_q": want_q,
+            "post_hash": want_hash,
+            "input_rehydrated": back_input,
+            "visible_result_count": len(case_ids),
+            "visible_entry_ids": list(case_ids),
+        },
+        "back": {
+            "ok": True,
+            "performed": True,
+            "after_href": final,
+            "href": final,
+            "url_q": back_q,
+            "input": back_input,
+        },
+        "forward": {
+            "ok": True,
+            "performed": True,
+            "after_href": "http://127.0.0.1:9/reference.html?q=navprobe",
+            "href": "http://127.0.0.1:9/reference.html?q=navprobe",
+            "url_q": "navprobe",
+            "input": "navprobe",
+            "visible_result_count": len(nav_ids),
+            "visible_entry_ids": list(nav_ids),
+        },
+        "share": {
+            "ok": True,
+            "href": final,
+            "final_href": final,
+            "matches_final": True,
+        },
+    }
+
+
+def _route_state_for(case: dict, *, locale: str = "en") -> dict:
+    expect = case["expect"]
+    want_q = expect.get("query_q")
+    ids = expected_query_entry_ids(want_q, repo_root=REPO) if want_q else expected_query_entry_ids(
+        None, repo_root=REPO
+    )
+    count = len(ids)
+    selected = expect.get("selected_id")
+    focused = selected if expect.get("require_focus") else None
+    total = len(expected_query_entry_ids(None, repo_root=REPO))
+    if locale == "zh":
+        label = f"显示 {count} 条"
+    else:
+        label = f"{count} of {total} entries"
+    return {
+        "requested_url": f"http://127.0.0.1:9/{case['route']}",
+        "final_url": f"http://127.0.0.1:9/{case['route']}",
+        "hash": expect.get("hash", ""),
+        "query_q": want_q,
+        "rf_q_value": want_q or "",
+        "miss_visible": bool(expect.get("miss_visible")),
+        "selected_id": selected,
+        "visible_result_count": count,
+        "visible_entry_ids": list(ids),
+        "count_label_visible": True,
+        "count_label_text": label,
+        "count_label_values": [str(count)],
+        "focused_element_id": focused,
+        "focused_visible": bool(expect.get("require_focus")),
+        "target_below_fixed_ui": True if expect.get("require_focus") else None,
+    }
+
+
+def _rest_states_for(route_state: dict, *, sha: str) -> list[dict]:
+    states = []
+    total = len(expected_query_entry_ids(None, repo_root=REPO))
+    for viewport in ("desktop", "mobile"):
+        for locale in ("en", "zh"):
+            for theme in ("dark", "light"):
+                rs = dict(route_state)
+                count = rs.get("visible_result_count") or 0
+                if locale == "zh":
+                    rs["count_label_text"] = f"显示 {count} 条"
+                else:
+                    rs["count_label_text"] = f"{count} of {total} entries"
+                states.append(
+                    {
+                        "viewport": viewport,
+                        "locale": locale,
+                        "theme": theme,
+                        "access": "anonymous",
+                        "force_state": None,
+                        "captured": True,
+                        "file": f"{sha[:16]}.png",
+                        "sha256": sha,
+                        "bytes": 10,
+                        "width": 10,
+                        "height": 10,
+                        "applied_theme": theme,
+                        "applied_locale": locale,
+                        "route_state": rs,
+                    }
+                )
+    return states
+
+
+def _green_manifest() -> dict:
+    pages = []
+    for i, case in enumerate(ROUTE_CASES):
+        sha = f"{i:064x}"
+        pages.append(
+            {
+                "page_id": case["page_id"],
+                "route": case["route"],
+                "console_errors": [],
+                "failed_responses": [],
+                "route_journeys": _ok_journeys(case),
+                "states": _rest_states_for(_route_state_for(case), sha=sha),
+            }
+        )
+    return {
+        "schema": "mastermind.p0_evidence.v2",
+        "tool": {"version": "1.4.0", "module_ref": "scripts/capture_page_evidence.py"},
+        "candidate_binding": _live_binding(),
+        "target": {
+            "resolved_sha_or_none": _git("rev-parse", "HEAD"),
+            "resolved_sha_source": "verified worktree HEAD",
+        },
+        "pages": pages,
+        "excluded": [],
+    }
+
+
+def test_historical_committed_manifest_is_red_overclaim():
+    assert_historical_overclaim_is_red(HISTORICAL_OVERCLAIM)
+
+
+def test_missing_route_case_is_red():
+    manifest = _green_manifest()
+    manifest["pages"] = [p for p in manifest["pages"] if p["route"] != "reference.html#vix"]
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("valid_anchor" in e or "reference.html#vix" in e for e in errors)
+
+
+def test_relabel_default_digest_as_vix_is_red():
+    manifest = _green_manifest()
+    default = next(p for p in manifest["pages"] if p["route"] == "reference.html")
+    vix = next(p for p in manifest["pages"] if p["route"] == "reference.html#vix")
+    stolen = default["states"][0]["sha256"]
+    for state in vix["states"]:
+        state["sha256"] = stolen
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("reused across distinct routes" in e for e in errors)
+
+
+def test_query_route_without_query_state_is_red():
+    manifest = _green_manifest()
+    page = next(p for p in manifest["pages"] if p["route"] == "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["query_q"] = None
+        state["route_state"]["visible_result_count"] = 0
+        state["route_state"]["visible_entry_ids"] = []
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("query_q" in e or "visible_result_count" in e for e in errors)
+
+
+def test_unknown_anchor_without_miss_is_red():
+    manifest = _green_manifest()
+    page = next(p for p in manifest["pages"] if p["route"] == "reference.html#not-a-real-entry")
+    for state in page["states"]:
+        state["route_state"]["miss_visible"] = False
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("miss_visible" in e for e in errors)
+
+
+def test_vix_without_focus_is_red():
+    manifest = _green_manifest()
+    page = next(p for p in manifest["pages"] if p["route"] == "reference.html#vix")
+    for state in page["states"]:
+        state["route_state"]["focused_visible"] = False
+        state["route_state"]["target_below_fixed_ui"] = False
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("focused_visible" in e or "target_below_fixed_ui" in e for e in errors)
+
+
+def test_duplicate_page_id_is_red():
+    manifest = _green_manifest()
+    clone = copy.deepcopy(manifest["pages"][0])
+    clone["route"] = "reference.html#dup"
+    manifest["pages"].append(clone)
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("duplicate page_id" in e for e in errors)
+
+
+def test_missing_journeys_is_red():
+    manifest = _green_manifest()
+    for page in manifest["pages"]:
+        page.pop("route_journeys", None)
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("route_journeys" in e for e in errors)
+
+
+def test_missing_candidate_binding_is_red():
+    manifest = _green_manifest()
+    manifest.pop("candidate_binding")
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("candidate_binding" in e for e in errors)
+
+
+def test_png_byte_mutate_is_red(tmp_path: Path):
+    manifest = _green_manifest()
+    for page in manifest["pages"]:
+        for state in page["states"]:
+            path = tmp_path / state["file"]
+            path.write_bytes(b"not-a-png-but-bytes")
+    errors = validate_manifest_route_matrix(manifest, evidence_dir=tmp_path, repo_root=REPO)
+    assert any("PNG" in e or "hash" in e or "bytes" in e or "dimensions" in e for e in errors)
+
+
+def test_unexpected_extra_png_is_red(tmp_path: Path):
+    manifest = _green_manifest()
+    import struct
+    import zlib
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(data))
+            + tag
+            + data
+            + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+        )
+
+    raw = b"\x00\xff\x00\x00"
+    png = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
+    digest = hashlib.sha256(png).hexdigest()
+    for page in manifest["pages"]:
+        for state in page["states"]:
+            state["sha256"] = digest
+            state["bytes"] = len(png)
+            state["width"] = 1
+            state["height"] = 1
+            (tmp_path / state["file"]).write_bytes(png)
+    (tmp_path / "orphan_extra.png").write_bytes(png)
+    errors = validate_manifest_route_matrix(manifest, evidence_dir=tmp_path, repo_root=REPO)
+    assert any("unexpected PNG extras" in e for e in errors)
+
+
+def test_old_tool_version_is_red():
+    manifest = _green_manifest()
+    manifest["tool"]["version"] = "1.2.0"
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert any("tool version" in e for e in errors)
+
+
+def test_green_matrix_passes():
+    assert validate_manifest_route_matrix(_green_manifest(), repo_root=REPO) == []
+
+
+def test_mor1_capture_rows_cover_four_cases():
+    rows = mor1_capture_rows()
+    assert [r["capture_route"] for r in rows] == [c["route"] for c in ROUTE_CASES]
+    assert len(rows) == 4
+
+
+def test_template_writes_query_to_url_and_focuses_valid_anchor():
+    text = (REPO / "templates" / "reference.html.j2").read_text(encoding="utf-8")
+    assert "READ, never written" not in text
+    assert "function syncQueryToUrl" in text
+    assert "popstate" in text
+    assert "searchParams.set(\"q\"" in text or "searchParams.set('q'" in text
+    assert "focusEl.focus" in text or ".focus(" in text
+    assert "scrollIntoView" in text
+
+
+def test_direct_checker_bootstrap_importable():
+    src = (REPO / "scripts" / "check_market_reference_route_evidence.py").read_text(
+        encoding="utf-8"
+    )
+    assert "sys.path.insert" in src
+
+
+def test_forged_zero_source_commit_is_red():
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["source_commit"] = "0" * 40
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert errors, "forged all-zero source_commit must not validate"
+    joined = "\n".join(errors)
+    assert "forged" in joined or "not a commit" in joined or "not a 40-char" in joined
+
+
+def test_fabricated_curve_full_library_ids_are_red():
+    manifest = _green_manifest()
+    fake_ids = [f"fake-{i}" for i in range(34)]
+    page = next(p for p in manifest["pages"] if p["route"] == "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["visible_result_count"] = 34
+        state["route_state"]["visible_entry_ids"] = list(fake_ids)
+        state["route_state"]["count_label_text"] = "34 of 34 entries"
+        state["route_state"]["count_label_values"] = ["34"]
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert errors, "34 fabricated curve IDs must not validate"
+    joined = "\n".join(errors)
+    assert "visible_entry_ids" in joined or "visible_result_count" in joined or "34/34" in joined
+
+
+def test_extra_tablet_rest_cell_is_red():
+    manifest = _green_manifest()
+    page = manifest["pages"][0]
+    extra = copy.deepcopy(page["states"][0])
+    extra["viewport"] = "tablet"
+    extra["file"] = "tablet-extra.png"
+    extra["sha256"] = "ab" * 32
+    page["states"].append(extra)
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert errors, "extra tablet REST cell must not validate"
+    joined = "\n".join(errors)
+    assert "tablet" in joined or "extra REST" in joined
+
+
+def test_arbitrary_extra_page_is_red():
+    manifest = _green_manifest()
+    manifest["pages"].append(
+        {
+            "page_id": "other_page",
+            "route": "other.html",
+            "console_errors": [],
+            "failed_responses": [],
+            "route_journeys": _ok_journeys(ROUTE_CASES[0]),
+            "states": [],
+        }
+    )
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert errors, "arbitrary extra page must not validate"
+    joined = "\n".join(errors)
+    assert "other_page" in joined or "unexpected extra page" in joined
+
+
+def test_bogus_back_forward_share_receipts_are_red():
+    manifest = _green_manifest()
+    bogus = {
+        "back": {
+            "ok": True,
+            "performed": True,
+            "after_href": "http://127.0.0.1:9/reference.html?q=navprobe",
+            "url_q": "navprobe",
+            "input": "wrong",
+        },
+        "forward": {
+            "ok": True,
+            "performed": True,
+            "after_href": "http://127.0.0.1:9/reference.html",
+            "url_q": None,
+            "input": "",
+        },
+        "share": {
+            "ok": True,
+            "href": "http://example.test/not-the-share-target",
+            "final_href": "http://127.0.0.1:9/reference.html",
+            "matches_final": True,
+        },
+    }
+    for page in manifest["pages"]:
+        page["route_journeys"].update(bogus)
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert errors, "bogus back/forward/share receipts must not validate"
+    joined = "\n".join(errors)
+    assert "journey back" in joined or "journey forward" in joined or "journey share" in joined
+
+
+def test_missing_vix_focus_identity_is_red():
+    manifest = _green_manifest()
+    page = next(p for p in manifest["pages"] if p["route"] == "reference.html#vix")
+    for state in page["states"]:
+        state["route_state"]["focused_element_id"] = None
+    errors = validate_manifest_route_matrix(manifest, repo_root=REPO)
+    assert errors, "missing VIX focused_element_id must not validate"
+    joined = "\n".join(errors)
+    assert "focused_element_id" in joined and "vix" in joined
+
+
+def test_committed_mor1_packet_satisfies_route_contract():
+    manifest_path = REPO / "mockups" / "evidence" / "market_reference_mor1" / "manifest.json"
+    assert manifest_path.is_file()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    errors = validate_manifest_route_matrix(
+        manifest, evidence_dir=manifest_path.parent, repo_root=REPO
+    )
+    assert errors == [], "\n".join(errors)
