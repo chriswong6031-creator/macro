@@ -1,23 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-09-03T01:07:35.495485+00:00",
+  "as_of": "2026-09-03T05:47:20.023274+00:00",
   "posts_seen": 11,
   "seen_total": 160,
-  "evaluated": 2,
-  "activated": 1,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-09-03-president-trump-secures-the-biggest-oil-deal-in-world-history",
-      "importance": 88,
-      "activated": true,
-      "degraded_reason": "served_by:codex"
-    },
-    {
-      "id": "wh-2026-09-03-congressional-bill-h-r-6500-signed-into-law",
-      "importance": 45,
-      "activated": false,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }
