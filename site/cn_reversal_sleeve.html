@@ -318,14 +318,14 @@
   <span><span class="l-en">sleeve gross</span><span class="l-zh">组合仓位</span></span>
   <span class="prov">· <span class="l-en">CN drawdown radar</span><span class="l-zh">A股回撤雷达</span>: risk-off
     · can_force <code>no</code>
-    · 2026-09-03</span>
+    · 2026-09-02</span>
 </div>
 
 <div class="strip">
   <span class="stat"><span class="l-en">as of</span><span class="l-zh">截至</span> <b>2026-09-03</b></span>
   <span class="stat"><span class="l-en">data through</span><span class="l-zh">数据截至</span> <b>2026-09-03</b></span>
-  <span class="stat"><span class="l-en">members</span><span class="l-zh">成分</span> <b>329</b></span>
-  <span class="stat"><span class="l-en">universe</span><span class="l-zh">可选池</span> <b>1646</b></span>
+  <span class="stat"><span class="l-en">members</span><span class="l-zh">成分</span> <b>330</b></span>
+  <span class="stat"><span class="l-en">universe</span><span class="l-zh">可选池</span> <b>1648</b></span>
   <span class="stat"><span class="l-en">sectors</span><span class="l-zh">行业</span> <b>12</b></span>
   <span class="stat"><span class="l-en">equal weight</span><span class="l-zh">等权</span> <b>0.3%</b></span>
   <span class="stat"><span class="l-en">rebalance</span><span class="l-zh">再平衡</span> <b><span class="l-en">monthly</span><span class="l-zh">按月</span></b></span>
@@ -407,17 +407,17 @@
     <line x1="0" y1="178.7" x2="940" y2="178.7" stroke="var(--line)" stroke-dasharray="3 4"/>
     
     
-    <polyline fill="none" stroke="var(--muted)" stroke-width="1.6" points="0.0,178.7 39.2,196.0 78.3,194.1 117.5,192.7 156.7,200.3 195.8,194.5 235.0,195.2 274.2,203.0 313.3,196.9 352.5,189.4 391.7,177.7 430.8,147.6 470.0,138.2 509.2,137.2 548.3,145.3 587.5,137.3 626.7,131.9 665.8,130.9 705.0,149.1 744.2,124.1 783.3,117.2 822.5,110.6 861.7,135.9 900.8,133.7 940.0,138.1"/>
+    <polyline fill="none" stroke="var(--muted)" stroke-width="1.6" points="0.0,178.7 39.2,196.0 78.3,194.1 117.5,192.7 156.7,200.3 195.8,194.5 235.0,195.2 274.2,203.0 313.3,196.9 352.5,189.4 391.7,177.7 430.8,147.6 470.0,138.2 509.2,137.2 548.3,145.3 587.5,137.3 626.7,131.9 665.8,130.9 705.0,149.1 744.2,124.1 783.3,117.2 822.5,110.6 861.7,135.9 900.8,133.7 940.0,133.7"/>
     
     
     <polyline fill="none" stroke="var(--up)" stroke-width="2.1" points="0.0,178.7 39.2,177.5 78.3,171.6 117.5,166.3 156.7,169.7 195.8,144.7 235.0,143.4 274.2,156.3 313.3,149.4 352.5,123.9 391.7,103.0 430.8,71.5 470.0,70.2 509.2,64.6 548.3,69.9 587.5,50.3 626.7,19.6 665.8,7.0 705.0,41.1 744.2,14.2 783.3,34.6 822.5,65.1 861.7,48.6 900.8,13.3 940.0,22.5"/>
   </svg>
   <div class="bc-stats">
-    <span><span class="l-en">excess / mo</span><span class="l-zh">月度超额</span> <span class="pos">+1.34%</span></span>
-    <span><span class="l-en">Sharpe (ann.)</span><span class="l-zh">夏普(年化)</span> <b>1.02</b></span>
+    <span><span class="l-en">excess / mo</span><span class="l-zh">月度超额</span> <span class="pos">+1.98%</span></span>
+    <span><span class="l-en">Sharpe (ann.)</span><span class="l-zh">夏普(年化)</span> <b>1.39</b></span>
     <span><span class="l-en">max drawdown</span><span class="l-zh">最大回撤</span> <span class="neg">-12.9%</span></span>
-    <span><span class="l-en">hit</span><span class="l-zh">胜率</span> <b>62.5%</b></span>
-    <span><span class="l-en">graded on</span><span class="l-zh">评分基准</span> <code>csi300_excess</code></span>
+    <span><span class="l-en">hit</span><span class="l-zh">胜率</span> <b>70.8%</b></span>
+    <span><span class="l-en">graded on</span><span class="l-zh">评分基准</span> <code>absolute</code></span>
   </div>
   <div class="bc-stats">
     <span><span class="l-en">Original reference (1990→2026, upper bound — see re-derivation above for honest number)</span><span class="l-zh">原始参考（1990→2026，上界——诚实数据见上方再推导区块）</span>:
@@ -433,13 +433,13 @@
 
 
 <div class="sec"><h2><span class="l-en">Forward ledger — the real record</span><span class="l-zh">前瞻记录簿——真实记录</span></h2>
-  <span class="cnt">13131 <span class="l-en">rows</span><span class="l-zh">行</span></span></div>
+  <span class="cnt">13135 <span class="l-en">rows</span><span class="l-zh">行</span></span></div>
 <p class="sub"><span class="l-en">Every rebalance is registered to its own point-in-time parquet and graded CSI300-relative, fill-realistic (T+1, locked-limit excluded). This is what the sleeve is judged on — not the backcast.</span><span class="l-zh">每次再平衡都登记到自有的时点parquet，并按沪深300相对、真实成交（T+1、排除一字板）评分。组合以此为准——而非回测。</span></p>
 
 
 <div class="bc-stats">
-  <span><span class="l-en">rebalances graded</span><span class="l-zh">已评分再平衡</span> <b>21</b></span>
-  <span><span class="l-en">mean excess / rebalance</span><span class="l-zh">每次超额均值</span> <span class="pos">+7.50%</span></span>
+  <span><span class="l-en">rebalances graded</span><span class="l-zh">已评分再平衡</span> <b>20</b></span>
+  <span><span class="l-en">mean excess / rebalance</span><span class="l-zh">每次超额均值</span> <span class="pos">+7.66%</span></span>
   <span><span class="l-en">hit vs CSI300</span><span class="l-zh">对沪深300胜率</span> <b>100.0%</b></span>
 </div>
 
@@ -447,7 +447,7 @@
 
 
 <div class="sec"><h2><span class="l-en">Current membership</span><span class="l-zh">当前成分</span></h2>
-  <span class="cnt">329 <span class="l-en">names</span><span class="l-zh">只</span> · <span class="l-en">EW</span><span class="l-zh">等权</span> · <span class="l-en">no gate</span><span class="l-zh">无门槛</span></span></div>
+  <span class="cnt">330 <span class="l-en">names</span><span class="l-zh">只</span> · <span class="l-en">EW</span><span class="l-zh">等权</span> · <span class="l-en">no gate</span><span class="l-zh">无门槛</span></span></div>
 <p class="sub"><span class="l-en">Deepest-quintile within-sector 3M reversal fuel (rev_z). Universe hygiene only: ST fail-closed, real-mktcap floor, ADV floor. Context chips are DISPLAY ONLY — they do NOT affect membership or weights.</span><span class="l-zh">同板块3个月反转燃料最深五分位（rev_z）。仅做基础净化：ST一律排除、真实市值下限、成交额下限。上下文标签仅供展示——不影响成分或权重。</span>
   <br><span class="l-en">screened out</span><span class="l-zh">已筛除</span>: ST 1 · <span class="l-en">mcap</span><span class="l-zh">市值</span> 0 · ADV 46</p>
 
@@ -510,7 +510,7 @@
     <td>Basic Materials</td>
     <td class="num revz">2.39</td>
     <td class="num"><span class="neg">-47.1%</span></td>
-    <td class="num">1/256</td>
+    <td class="num">1/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
@@ -536,9 +536,9 @@
       
     </td>
     <td>Technology</td>
-    <td class="num revz">2.35</td>
+    <td class="num revz">2.23</td>
     <td class="num"><span class="neg">-53.1%</span></td>
-    <td class="num">1/395</td>
+    <td class="num">1/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
@@ -629,20 +629,6 @@
   
   <tr>
     <td class="num">13</td>
-    <td class="tk">301666.SZ</td>
-    <td>DAPUSTOR CORPORATION / 大普微
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">2.04</td>
-    <td class="num"><span class="neg">-47.2%</span></td>
-    <td class="num">2/395</td>
-    <td class="num">1860</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">14</td>
     <td class="tk">300913.SZ</td>
     <td>Zhejiang Zhaolong Interconnect Technology Co.,Ltd. / 兆龙互连
       
@@ -656,21 +642,7 @@
   </tr>
   
   <tr>
-    <td class="num">15</td>
-    <td class="tk">688390.SS</td>
-    <td>GoodWe Technologies Co., Ltd. / 固德威
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">2.02</td>
-    <td class="num"><span class="neg">-46.8%</span></td>
-    <td class="num">3/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">16</td>
+    <td class="num">14</td>
     <td class="tk">301225.SZ</td>
     <td>Hengbo Holdings Co.,Ltd. / 恒勃股份
       
@@ -684,21 +656,7 @@
   </tr>
   
   <tr>
-    <td class="num">17</td>
-    <td class="tk">300136.SZ</td>
-    <td>Shenzhen Sunway Communication Co., Ltd. / 信维通信
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.97</td>
-    <td class="num"><span class="neg">-45.8%</span></td>
-    <td class="num">4/395</td>
-    <td class="num">558</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">18</td>
+    <td class="num">15</td>
     <td class="tk">000681.SZ</td>
     <td>Visual China Group Co.,Ltd. / 视觉中国
       
@@ -712,7 +670,7 @@
   </tr>
   
   <tr>
-    <td class="num">19</td>
+    <td class="num">16</td>
     <td class="tk">600726.SS</td>
     <td>Huadian Energy Company Limited / 华电能源
       
@@ -726,7 +684,7 @@
   </tr>
   
   <tr>
-    <td class="num">20</td>
+    <td class="num">17</td>
     <td class="tk">600418.SS</td>
     <td>Anhui Jianghuai Automobile Group Corp.,Ltd. / 江淮汽车
       
@@ -740,7 +698,26 @@
   </tr>
   
   <tr>
-    <td class="num">21</td>
+    <td class="num">18</td>
+    <td class="tk">301666.SZ</td>
+    <td>DAPUSTOR CORPORATION / 大普微
+      
+      <div class="chips">
+        
+        <span class="chip prob" title="+1.57%/21d t≈0.8 (140 obs, weak-positive, never negative)">inst_seat_lhb</span>
+      </div>
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.94</td>
+    <td class="num"><span class="neg">-47.2%</span></td>
+    <td class="num">2/396</td>
+    <td class="num">1860</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">19</td>
     <td class="tk">301531.SZ</td>
     <td>Shandong Chunguang Technology Group / 春光集团
       
@@ -754,7 +731,21 @@
   </tr>
   
   <tr>
-    <td class="num">22</td>
+    <td class="num">20</td>
+    <td class="tk">688390.SS</td>
+    <td>GoodWe Technologies Co., Ltd. / 固德威
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.92</td>
+    <td class="num"><span class="neg">-46.8%</span></td>
+    <td class="num">3/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">21</td>
     <td class="tk">001896.SZ</td>
     <td>Henan Yuneng Holdings Co.,Ltd. / 豫能控股
       
@@ -768,7 +759,7 @@
   </tr>
   
   <tr>
-    <td class="num">23</td>
+    <td class="num">22</td>
     <td class="tk">601001.SS</td>
     <td>Jinneng Holding Shanxi Coal Industry Co.,ltd. / 晋控煤业
       
@@ -778,6 +769,20 @@
     <td class="num"><span class="neg">-26.2%</span></td>
     <td class="num">2/37</td>
     <td class="num">272</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">23</td>
+    <td class="tk">300136.SZ</td>
+    <td>Shenzhen Sunway Communication Co., Ltd. / 信维通信
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.87</td>
+    <td class="num"><span class="neg">-45.8%</span></td>
+    <td class="num">4/396</td>
+    <td class="num">558</td>
     <td class="num">0.3%</td>
   </tr>
   
@@ -797,20 +802,6 @@
   
   <tr>
     <td class="num">25</td>
-    <td class="tk">300322.SZ</td>
-    <td>Huizhou Speed Wireless Technology Co.,Ltd. / 硕贝德
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.86</td>
-    <td class="num"><span class="neg">-43.9%</span></td>
-    <td class="num">5/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">26</td>
     <td class="tk">000766.SZ</td>
     <td>Tonghua Golden-Horse Pharmaceutical Industry Co,Ltd / 通化金马
       
@@ -824,7 +815,7 @@
   </tr>
   
   <tr>
-    <td class="num">27</td>
+    <td class="num">26</td>
     <td class="tk">688635.SS</td>
     <td>WUHAN CHANGJIN PHOTONICS TECH C / 长进光子
       
@@ -838,7 +829,7 @@
   </tr>
   
   <tr>
-    <td class="num">28</td>
+    <td class="num">27</td>
     <td class="tk">601963.SS</td>
     <td>Bank of Chongqing Co., Ltd. / 重庆银行
       
@@ -852,7 +843,7 @@
   </tr>
   
   <tr>
-    <td class="num">29</td>
+    <td class="num">28</td>
     <td class="tk">002183.SZ</td>
     <td>Eternal Asia Supply Chain Management Ltd. / 怡亚通
       
@@ -866,21 +857,7 @@
   </tr>
   
   <tr>
-    <td class="num">30</td>
-    <td class="tk">301458.SZ</td>
-    <td>Juneway Electronic Technology Co., Ltd. / 钧崴电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.78</td>
-    <td class="num"><span class="neg">-42.3%</span></td>
-    <td class="num">6/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">31</td>
+    <td class="num">29</td>
     <td class="tk">300257.SZ</td>
     <td>Kaishan Group Co., Ltd. / 开山股份
       
@@ -894,7 +871,21 @@
   </tr>
   
   <tr>
-    <td class="num">32</td>
+    <td class="num">30</td>
+    <td class="tk">300322.SZ</td>
+    <td>Huizhou Speed Wireless Technology Co.,Ltd. / 硕贝德
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.78</td>
+    <td class="num"><span class="neg">-43.9%</span></td>
+    <td class="num">5/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">31</td>
     <td class="tk">000988.SZ</td>
     <td>HGTECH Company Limited / 华工科技
       
@@ -908,7 +899,7 @@
   </tr>
   
   <tr>
-    <td class="num">33</td>
+    <td class="num">32</td>
     <td class="tk">002531.SZ</td>
     <td>Titan Wind Energy (Suzhou) Co.,Ltd / 天顺风能
       
@@ -922,7 +913,7 @@
   </tr>
   
   <tr>
-    <td class="num">34</td>
+    <td class="num">33</td>
     <td class="tk">600773.SS</td>
     <td>Tibet Urban Development and Investment Co.,LTD / 西藏城投
       
@@ -936,7 +927,7 @@
   </tr>
   
   <tr>
-    <td class="num">35</td>
+    <td class="num">34</td>
     <td class="tk">688698.SS</td>
     <td>Suzhou Veichi Electric Co., Ltd. / 伟创电气
       
@@ -945,6 +936,20 @@
     <td class="num revz">1.71</td>
     <td class="num"><span class="neg">-36.7%</span></td>
     <td class="num">12/366</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">35</td>
+    <td class="tk">301458.SZ</td>
+    <td>Juneway Electronic Technology Co., Ltd. / 钧崴电子
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.70</td>
+    <td class="num"><span class="neg">-42.3%</span></td>
+    <td class="num">6/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
@@ -972,7 +977,7 @@
     <td>Basic Materials</td>
     <td class="num revz">1.69</td>
     <td class="num"><span class="neg">-34.3%</span></td>
-    <td class="num">2/256</td>
+    <td class="num">2/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
@@ -1035,20 +1040,6 @@
   
   <tr>
     <td class="num">42</td>
-    <td class="tk">601231.SS</td>
-    <td>Universal Scientific Industrial (Shanghai) Co., Ltd. / 环旭电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.65</td>
-    <td class="num"><span class="neg">-39.8%</span></td>
-    <td class="num">7/395</td>
-    <td class="num">606</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">43</td>
     <td class="tk">000539.SZ</td>
     <td>Guangdong Electric Power Development Co., Ltd. / 粤电力Ａ
       
@@ -1062,7 +1053,7 @@
   </tr>
   
   <tr>
-    <td class="num">44</td>
+    <td class="num">43</td>
     <td class="tk">603992.SS</td>
     <td>Xiamen Solex High-tech Industries Co., Ltd. / 松霖科技
       
@@ -1076,7 +1067,7 @@
   </tr>
   
   <tr>
-    <td class="num">45</td>
+    <td class="num">44</td>
     <td class="tk">688700.SS</td>
     <td>Kunshan Dongwei Technology Co.,Ltd. / 东威科技
       
@@ -1090,7 +1081,7 @@
   </tr>
   
   <tr>
-    <td class="num">46</td>
+    <td class="num">45</td>
     <td class="tk">600246.SS</td>
     <td>Vantone Neo Development Group Co., Ltd. / 万通发展
       
@@ -1104,7 +1095,7 @@
   </tr>
   
   <tr>
-    <td class="num">47</td>
+    <td class="num">46</td>
     <td class="tk">301291.SZ</td>
     <td>Guangdong Mingyang Electric Co.,Ltd. / 明阳电气
       
@@ -1118,7 +1109,7 @@
   </tr>
   
   <tr>
-    <td class="num">48</td>
+    <td class="num">47</td>
     <td class="tk">300809.SZ</td>
     <td>Hiecise Precision Equipment Co.,Ltd. / 华辰装备
       
@@ -1132,7 +1123,7 @@
   </tr>
   
   <tr>
-    <td class="num">49</td>
+    <td class="num">48</td>
     <td class="tk">300776.SZ</td>
     <td>Wuhan DR Laser Technology Corp.,Ltd / 帝尔激光
       
@@ -1146,21 +1137,7 @@
   </tr>
   
   <tr>
-    <td class="num">50</td>
-    <td class="tk">603920.SS</td>
-    <td>Olympic Circuit Technology Co., Ltd / 世运电路
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.59</td>
-    <td class="num"><span class="neg">-38.5%</span></td>
-    <td class="num">8/395</td>
-    <td class="num">270</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">51</td>
+    <td class="num">49</td>
     <td class="tk">000767.SZ</td>
     <td>Jinneng Holding Shanxi Electric Power Co.,LTD. / 晋控电力
       
@@ -1174,7 +1151,21 @@
   </tr>
   
   <tr>
-    <td class="num">52</td>
+    <td class="num">50</td>
+    <td class="tk">603688.SS</td>
+    <td>Jiangsu Pacific Quartz Co., Ltd / 石英股份
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.58</td>
+    <td class="num"><span class="neg">-32.2%</span></td>
+    <td class="num">3/257</td>
+    <td class="num">255</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">51</td>
     <td class="tk">603698.SS</td>
     <td>Changzheng Engineering Technology Co.,Ltd / 航天工程
       
@@ -1188,21 +1179,21 @@
   </tr>
   
   <tr>
-    <td class="num">53</td>
-    <td class="tk">603688.SS</td>
-    <td>Jiangsu Pacific Quartz Co., Ltd / 石英股份
+    <td class="num">52</td>
+    <td class="tk">601231.SS</td>
+    <td>Universal Scientific Industrial (Shanghai) Co., Ltd. / 环旭电子
       
     </td>
-    <td>Basic Materials</td>
+    <td>Technology</td>
     <td class="num revz">1.58</td>
-    <td class="num"><span class="neg">-32.2%</span></td>
-    <td class="num">3/256</td>
-    <td class="num">255</td>
+    <td class="num"><span class="neg">-39.8%</span></td>
+    <td class="num">7/396</td>
+    <td class="num">606</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">54</td>
+    <td class="num">53</td>
     <td class="tk">002922.SZ</td>
     <td>Eaglerise Electric &amp; Electronic (China) Co., Ltd / 伊戈尔
       
@@ -1216,13 +1207,13 @@
   </tr>
   
   <tr>
-    <td class="num">55</td>
+    <td class="num">54</td>
     <td class="tk">600996.SS</td>
     <td>Guizhou BC&amp;TV Information Network CO.,LTD / 贵广网络
       
     </td>
     <td>Communication Services</td>
-    <td class="num revz">1.57</td>
+    <td class="num revz">1.56</td>
     <td class="num"><span class="neg">-25.7%</span></td>
     <td class="num">4/52</td>
     <td class="num">—</td>
@@ -1230,21 +1221,7 @@
   </tr>
   
   <tr>
-    <td class="num">56</td>
-    <td class="tk">603629.SS</td>
-    <td>Jiangsu Lettall Electronic Co.,Ltd / 利通电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.57</td>
-    <td class="num"><span class="neg">-38.1%</span></td>
-    <td class="num">9/395</td>
-    <td class="num">409</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">57</td>
+    <td class="num">55</td>
     <td class="tk">301371.SZ</td>
     <td>Harbin Fuerjia Technology Co., Ltd. / 敷尔佳
       
@@ -1258,21 +1235,7 @@
   </tr>
   
   <tr>
-    <td class="num">58</td>
-    <td class="tk">605358.SS</td>
-    <td>Hangzhou Lion Electronics Co.,Ltd / 立昂微
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.56</td>
-    <td class="num"><span class="neg">-38.0%</span></td>
-    <td class="num">10/395</td>
-    <td class="num">320</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">59</td>
+    <td class="num">56</td>
     <td class="tk">600783.SS</td>
     <td>Luxin Venture Capital Group Co., Ltd. / 鲁信创投
       
@@ -1286,7 +1249,7 @@
   </tr>
   
   <tr>
-    <td class="num">60</td>
+    <td class="num">57</td>
     <td class="tk">603256.SS</td>
     <td>Grace Fabric Technology Co.,Ltd. / 宏和科技
       
@@ -1294,19 +1257,33 @@
     <td>Basic Materials</td>
     <td class="num revz">1.54</td>
     <td class="num"><span class="neg">-31.6%</span></td>
-    <td class="num">4/256</td>
+    <td class="num">4/257</td>
     <td class="num">1213</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">61</td>
+    <td class="num">58</td>
+    <td class="tk">600063.SS</td>
+    <td>Anhui Wanwei Updated High-Tech Material Industry Co.,Ltd / 皖维高新
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.53</td>
+    <td class="num"><span class="neg">-31.3%</span></td>
+    <td class="num">5/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">59</td>
     <td class="tk">601698.SS</td>
     <td>China Satellite Communications Co., Ltd. / 中国卫通
       
     </td>
     <td>Communication Services</td>
-    <td class="num revz">1.53</td>
+    <td class="num revz">1.52</td>
     <td class="num"><span class="neg">-25.1%</span></td>
     <td class="num">5/52</td>
     <td class="num">1011</td>
@@ -1314,35 +1291,21 @@
   </tr>
   
   <tr>
-    <td class="num">62</td>
-    <td class="tk">600063.SS</td>
-    <td>Anhui Wanwei Updated High-Tech Material Industry Co.,Ltd / 皖维高新
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.52</td>
-    <td class="num"><span class="neg">-31.3%</span></td>
-    <td class="num">5/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">63</td>
-    <td class="tk">002465.SZ</td>
-    <td>Guangzhou Haige Communications Group Incorporated Company / 海格通信
+    <td class="num">60</td>
+    <td class="tk">603920.SS</td>
+    <td>Olympic Circuit Technology Co., Ltd / 世运电路
       
     </td>
     <td>Technology</td>
-    <td class="num revz">1.52</td>
-    <td class="num"><span class="neg">-37.2%</span></td>
-    <td class="num">11/395</td>
-    <td class="num">248</td>
+    <td class="num revz">1.51</td>
+    <td class="num"><span class="neg">-38.5%</span></td>
+    <td class="num">8/396</td>
+    <td class="num">270</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">64</td>
+    <td class="num">61</td>
     <td class="tk">301238.SZ</td>
     <td>Jiangsu Ruitai New Energy Materials Co., Ltd. / 瑞泰新材
       
@@ -1350,13 +1313,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.51</td>
     <td class="num"><span class="neg">-31.0%</span></td>
-    <td class="num">6/256</td>
+    <td class="num">6/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">65</td>
+    <td class="num">62</td>
     <td class="tk">688097.SS</td>
     <td>Bozhon Precision Industry Technology Co.,Ltd. / 博众精工
       
@@ -1370,7 +1333,7 @@
   </tr>
   
   <tr>
-    <td class="num">66</td>
+    <td class="num">63</td>
     <td class="tk">600578.SS</td>
     <td>Beijing Jingneng Power Co., Ltd. / 京能电力
       
@@ -1384,21 +1347,7 @@
   </tr>
   
   <tr>
-    <td class="num">67</td>
-    <td class="tk">300672.SZ</td>
-    <td>Hunan Goke Microelectronics Co.,Ltd. / 国科微
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.50</td>
-    <td class="num"><span class="neg">-36.9%</span></td>
-    <td class="num">12/395</td>
-    <td class="num">410</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">68</td>
+    <td class="num">64</td>
     <td class="tk">601519.SS</td>
     <td>Shanghai DZH Limited / 大智慧
       
@@ -1412,7 +1361,21 @@
   </tr>
   
   <tr>
-    <td class="num">69</td>
+    <td class="num">65</td>
+    <td class="tk">603629.SS</td>
+    <td>Jiangsu Lettall Electronic Co.,Ltd / 利通电子
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.49</td>
+    <td class="num"><span class="neg">-38.1%</span></td>
+    <td class="num">9/396</td>
+    <td class="num">409</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">66</td>
     <td class="tk">600879.SS</td>
     <td>China Aerospace Times Electronics CO., LTD. / 航天电子
       
@@ -1426,21 +1389,21 @@
   </tr>
   
   <tr>
-    <td class="num">70</td>
-    <td class="tk">300323.SZ</td>
-    <td>BOE HC SemiTek Corporation / 华灿光电
+    <td class="num">67</td>
+    <td class="tk">605358.SS</td>
+    <td>Hangzhou Lion Electronics Co.,Ltd / 立昂微
       
     </td>
     <td>Technology</td>
-    <td class="num revz">1.48</td>
-    <td class="num"><span class="neg">-36.5%</span></td>
-    <td class="num">13/395</td>
-    <td class="num">—</td>
+    <td class="num revz">1.49</td>
+    <td class="num"><span class="neg">-38.0%</span></td>
+    <td class="num">10/396</td>
+    <td class="num">320</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">71</td>
+    <td class="num">68</td>
     <td class="tk">000534.SZ</td>
     <td>Wedge Industrial Co.,Ltd. / 万泽股份
       
@@ -1454,7 +1417,7 @@
   </tr>
   
   <tr>
-    <td class="num">72</td>
+    <td class="num">69</td>
     <td class="tk">688800.SS</td>
     <td>Suzhou Recodeal Interconnect System Co.,Ltd / 瑞可达
       
@@ -1468,7 +1431,7 @@
   </tr>
   
   <tr>
-    <td class="num">73</td>
+    <td class="num">70</td>
     <td class="tk">600930.SS</td>
     <td>Huadian New Energy Group Corporation Limited / 华电新能
       
@@ -1482,7 +1445,7 @@
   </tr>
   
   <tr>
-    <td class="num">74</td>
+    <td class="num">71</td>
     <td class="tk">603308.SS</td>
     <td>Anhui Yingliu Electromechanical Co., Ltd. / 应流股份
       
@@ -1496,7 +1459,7 @@
   </tr>
   
   <tr>
-    <td class="num">75</td>
+    <td class="num">72</td>
     <td class="tk">000600.SZ</td>
     <td>HCIG Energy Investment Co., Ltd. / 建投能源
       
@@ -1510,7 +1473,7 @@
   </tr>
   
   <tr>
-    <td class="num">76</td>
+    <td class="num">73</td>
     <td class="tk">001267.SZ</td>
     <td>Hui Lyu Ecological Technology Groups Co.,Ltd. / 汇绿生态
       
@@ -1524,7 +1487,21 @@
   </tr>
   
   <tr>
-    <td class="num">77</td>
+    <td class="num">74</td>
+    <td class="tk">603826.SS</td>
+    <td>Fujian Kuncai Material Technology Co., Ltd. / 坤彩科技
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.47</td>
+    <td class="num"><span class="neg">-30.1%</span></td>
+    <td class="num">7/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">75</td>
     <td class="tk">688006.SS</td>
     <td>Zhejiang HangKe Technology Incorporated Company / 杭可科技
       
@@ -1538,7 +1515,7 @@
   </tr>
   
   <tr>
-    <td class="num">78</td>
+    <td class="num">76</td>
     <td class="tk">600577.SS</td>
     <td>Tongling Jingda Special Magnet Wire Co., Ltd. / 精达股份
       
@@ -1552,21 +1529,7 @@
   </tr>
   
   <tr>
-    <td class="num">79</td>
-    <td class="tk">603826.SS</td>
-    <td>Fujian Kuncai Material Technology Co., Ltd. / 坤彩科技
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.46</td>
-    <td class="num"><span class="neg">-30.1%</span></td>
-    <td class="num">7/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">80</td>
+    <td class="num">77</td>
     <td class="tk">301487.SZ</td>
     <td>Tianjin Guoan Mengguli New Materials Science &amp; Technology Co., Ltd. / 盟固利
       
@@ -1580,7 +1543,21 @@
   </tr>
   
   <tr>
-    <td class="num">81</td>
+    <td class="num">78</td>
+    <td class="tk">002240.SZ</td>
+    <td>Chengxin Lithium Group Co., Ltd. / 盛新锂能
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.45</td>
+    <td class="num"><span class="neg">-29.9%</span></td>
+    <td class="num">8/257</td>
+    <td class="num">279</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">79</td>
     <td class="tk">600184.SS</td>
     <td>North Electro-Optic Co.,Ltd. / 光电股份
       
@@ -1594,7 +1571,7 @@
   </tr>
   
   <tr>
-    <td class="num">82</td>
+    <td class="num">80</td>
     <td class="tk">002077.SZ</td>
     <td>Jiangsu Dagang Co., Ltd. / 大港股份
       
@@ -1608,77 +1585,49 @@
   </tr>
   
   <tr>
-    <td class="num">83</td>
-    <td class="tk">002240.SZ</td>
-    <td>Chengxin Lithium Group Co., Ltd. / 盛新锂能
+    <td class="num">81</td>
+    <td class="tk">002465.SZ</td>
+    <td>Guangzhou Haige Communications Group Incorporated Company / 海格通信
       
     </td>
-    <td>Basic Materials</td>
+    <td>Technology</td>
     <td class="num revz">1.45</td>
-    <td class="num"><span class="neg">-29.9%</span></td>
-    <td class="num">8/256</td>
-    <td class="num">279</td>
+    <td class="num"><span class="neg">-37.2%</span></td>
+    <td class="num">11/396</td>
+    <td class="num">248</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">84</td>
-    <td class="tk">001309.SZ</td>
-    <td>Shenzhen Techwinsemi Technology Co., Ltd. / 德明利
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.44</td>
-    <td class="num"><span class="neg">-35.8%</span></td>
-    <td class="num">14/395</td>
-    <td class="num">919</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">85</td>
-    <td class="tk">603005.SS</td>
-    <td>China Wafer Level CSP Co., Ltd. / 晶方科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.44</td>
-    <td class="num"><span class="neg">-35.7%</span></td>
-    <td class="num">15/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">86</td>
-    <td class="tk">002484.SZ</td>
-    <td>Nantong Jianghai Capacitor Co. Ltd. / 江海股份
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.43</td>
-    <td class="num"><span class="neg">-35.6%</span></td>
-    <td class="num">16/395</td>
-    <td class="num">493</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">87</td>
+    <td class="num">82</td>
     <td class="tk">001203.SZ</td>
     <td>Dazhong Mining Co., Ltd. / 大中矿业
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">1.43</td>
+    <td class="num revz">1.44</td>
     <td class="num"><span class="neg">-29.6%</span></td>
-    <td class="num">9/256</td>
+    <td class="num">9/257</td>
     <td class="num">405</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">88</td>
+    <td class="num">83</td>
+    <td class="tk">300672.SZ</td>
+    <td>Hunan Goke Microelectronics Co.,Ltd. / 国科微
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.43</td>
+    <td class="num"><span class="neg">-36.9%</span></td>
+    <td class="num">12/396</td>
+    <td class="num">410</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">84</td>
     <td class="tk">002847.SZ</td>
     <td>YanKer shop Food Co.,Ltd / 盐津铺子
       
@@ -1692,7 +1641,7 @@
   </tr>
   
   <tr>
-    <td class="num">89</td>
+    <td class="num">85</td>
     <td class="tk">688668.SS</td>
     <td>Dongguan Dingtong Precision Metal Co., Ltd. / 鼎通科技
       
@@ -1706,21 +1655,7 @@
   </tr>
   
   <tr>
-    <td class="num">90</td>
-    <td class="tk">002897.SZ</td>
-    <td>Wenzhou Yihua Connector Co., Ltd. / 意华股份
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.42</td>
-    <td class="num"><span class="neg">-35.4%</span></td>
-    <td class="num">17/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">91</td>
+    <td class="num">86</td>
     <td class="tk">688301.SS</td>
     <td>iRay Group / 奕瑞科技
       
@@ -1734,21 +1669,21 @@
   </tr>
   
   <tr>
-    <td class="num">92</td>
-    <td class="tk">301413.SZ</td>
-    <td>Shenzhen Ampron Technology Co., Ltd. / 安培龙
+    <td class="num">87</td>
+    <td class="tk">300323.SZ</td>
+    <td>BOE HC SemiTek Corporation / 华灿光电
       
     </td>
     <td>Technology</td>
-    <td class="num revz">1.42</td>
-    <td class="num"><span class="neg">-35.3%</span></td>
-    <td class="num">18/395</td>
+    <td class="num revz">1.41</td>
+    <td class="num"><span class="neg">-36.5%</span></td>
+    <td class="num">13/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">93</td>
+    <td class="num">88</td>
     <td class="tk">688523.SS</td>
     <td>Hunan Aerospace Huanyu Communication Technology Co.,LTD. / 航天环宇
       
@@ -1762,7 +1697,7 @@
   </tr>
   
   <tr>
-    <td class="num">94</td>
+    <td class="num">89</td>
     <td class="tk">600113.SS</td>
     <td>Zhejiang Dongri Limited Company / 浙江东日
       
@@ -1776,7 +1711,7 @@
   </tr>
   
   <tr>
-    <td class="num">95</td>
+    <td class="num">90</td>
     <td class="tk">600118.SS</td>
     <td>China Spacesat Co.,Ltd. / 中国卫星
       
@@ -1790,21 +1725,7 @@
   </tr>
   
   <tr>
-    <td class="num">96</td>
-    <td class="tk">603267.SS</td>
-    <td>Beijing Yuanliu Hongyuan Electronic Technology Co., Ltd. / 鸿远电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.39</td>
-    <td class="num"><span class="neg">-34.8%</span></td>
-    <td class="num">19/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">97</td>
+    <td class="num">91</td>
     <td class="tk">002709.SZ</td>
     <td>Guangzhou Tinci Materials Technology Co., Ltd. / 天赐材料
       
@@ -1812,13 +1733,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.39</td>
     <td class="num"><span class="neg">-28.8%</span></td>
-    <td class="num">10/256</td>
+    <td class="num">10/257</td>
     <td class="num">705</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">98</td>
+    <td class="num">92</td>
     <td class="tk">601689.SS</td>
     <td>Ningbo Tuopu Group Co.,Ltd. / 拓普集团
       
@@ -1832,7 +1753,26 @@
   </tr>
   
   <tr>
-    <td class="num">99</td>
+    <td class="num">93</td>
+    <td class="tk">001309.SZ</td>
+    <td>Shenzhen Techwinsemi Technology Co., Ltd. / 德明利
+      
+      <div class="chips">
+        
+        <span class="chip prob" title="+1.57%/21d t≈0.8 (140 obs, weak-positive, never negative)">inst_seat_lhb</span>
+      </div>
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.38</td>
+    <td class="num"><span class="neg">-35.8%</span></td>
+    <td class="num">14/396</td>
+    <td class="num">919</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">94</td>
     <td class="tk">300772.SZ</td>
     <td>Windey Energy Technology Group Co., Ltd. / 运达股份
       
@@ -1846,21 +1786,35 @@
   </tr>
   
   <tr>
-    <td class="num">100</td>
-    <td class="tk">300476.SZ</td>
-    <td>Victory Giant Technology (HuiZhou) Co.,Ltd / 胜宏科技
+    <td class="num">95</td>
+    <td class="tk">603005.SS</td>
+    <td>China Wafer Level CSP Co., Ltd. / 晶方科技
       
     </td>
     <td>Technology</td>
-    <td class="num revz">1.37</td>
-    <td class="num"><span class="neg">-34.3%</span></td>
-    <td class="num">20/395</td>
-    <td class="num">2187</td>
+    <td class="num revz">1.38</td>
+    <td class="num"><span class="neg">-35.7%</span></td>
+    <td class="num">15/396</td>
+    <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">101</td>
+    <td class="num">96</td>
+    <td class="tk">002484.SZ</td>
+    <td>Nantong Jianghai Capacitor Co. Ltd. / 江海股份
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.37</td>
+    <td class="num"><span class="neg">-35.6%</span></td>
+    <td class="num">16/396</td>
+    <td class="num">493</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">97</td>
     <td class="tk">300450.SZ</td>
     <td>Wuxi Lead Intelligent Equipment CO.,LTD. / 先导智能
       
@@ -1874,7 +1828,21 @@
   </tr>
   
   <tr>
-    <td class="num">102</td>
+    <td class="num">98</td>
+    <td class="tk">002897.SZ</td>
+    <td>Wenzhou Yihua Connector Co., Ltd. / 意华股份
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.36</td>
+    <td class="num"><span class="neg">-35.4%</span></td>
+    <td class="num">17/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">99</td>
     <td class="tk">688351.SS</td>
     <td>Shanghai MicroPort EP MedTech Co., Ltd. / 微电生理
       
@@ -1888,7 +1856,7 @@
   </tr>
   
   <tr>
-    <td class="num">103</td>
+    <td class="num">100</td>
     <td class="tk">603667.SS</td>
     <td>Zhejiang XCC Group Co.,Ltd / 五洲新春
       
@@ -1902,7 +1870,7 @@
   </tr>
   
   <tr>
-    <td class="num">104</td>
+    <td class="num">101</td>
     <td class="tk">688411.SS</td>
     <td>Beijing HyperStrong Technology Co., Ltd. / 海博思创
       
@@ -1916,7 +1884,21 @@
   </tr>
   
   <tr>
-    <td class="num">105</td>
+    <td class="num">102</td>
+    <td class="tk">301413.SZ</td>
+    <td>Shenzhen Ampron Technology Co., Ltd. / 安培龙
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.35</td>
+    <td class="num"><span class="neg">-35.3%</span></td>
+    <td class="num">18/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">103</td>
     <td class="tk">603319.SS</td>
     <td>Hunan Meihu Intelligent Manufacturing Co., Ltd. / 美湖股份
       
@@ -1930,7 +1912,7 @@
   </tr>
   
   <tr>
-    <td class="num">106</td>
+    <td class="num">104</td>
     <td class="tk">301662.SZ</td>
     <td>Ongoal Technology Co., Ltd. / 宏工科技
       
@@ -1944,35 +1926,35 @@
   </tr>
   
   <tr>
-    <td class="num">107</td>
-    <td class="tk">688691.SS</td>
-    <td>Brite Semiconductor (Shanghai) Co., Ltd. / 灿芯股份
+    <td class="num">105</td>
+    <td class="tk">603267.SS</td>
+    <td>Beijing Yuanliu Hongyuan Electronic Technology Co., Ltd. / 鸿远电子
       
     </td>
     <td>Technology</td>
-    <td class="num revz">1.31</td>
-    <td class="num"><span class="neg">-33.2%</span></td>
-    <td class="num">21/395</td>
+    <td class="num revz">1.33</td>
+    <td class="num"><span class="neg">-34.8%</span></td>
+    <td class="num">19/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">108</td>
-    <td class="tk">688775.SS</td>
-    <td>Arashi Vision Inc. / 影石创新
+    <td class="num">106</td>
+    <td class="tk">300476.SZ</td>
+    <td>Victory Giant Technology (HuiZhou) Co.,Ltd / 胜宏科技
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.31</td>
-    <td class="num"><span class="neg">-33.2%</span></td>
-    <td class="num">22/395</td>
-    <td class="num">437</td>
+    <td class="num"><span class="neg">-34.3%</span></td>
+    <td class="num">20/396</td>
+    <td class="num">2187</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">109</td>
+    <td class="num">107</td>
     <td class="tk">688190.SS</td>
     <td>Qingdao Yunlu Advanced Materials Technology Co., Ltd. / 云路股份
       
@@ -1986,7 +1968,7 @@
   </tr>
   
   <tr>
-    <td class="num">110</td>
+    <td class="num">108</td>
     <td class="tk">002929.SZ</td>
     <td>Runjian Co., Ltd. / 润建股份
       
@@ -2000,21 +1982,21 @@
   </tr>
   
   <tr>
-    <td class="num">111</td>
+    <td class="num">109</td>
     <td class="tk">603124.SS</td>
     <td>Jiangxi Jiangnan New Material Technology Co., Ltd. / 江南新材
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">1.28</td>
+    <td class="num revz">1.29</td>
     <td class="num"><span class="neg">-26.9%</span></td>
-    <td class="num">11/256</td>
+    <td class="num">11/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">112</td>
+    <td class="num">110</td>
     <td class="tk">300777.SZ</td>
     <td>Sinofibers Technology Co., Ltd. / 中简科技
       
@@ -2022,27 +2004,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.27</td>
     <td class="num"><span class="neg">-26.6%</span></td>
-    <td class="num">12/256</td>
+    <td class="num">12/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">113</td>
-    <td class="tk">688172.SS</td>
-    <td>Beijing YanDong MicroElectronic Co., Ltd. / 燕东微
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.27</td>
-    <td class="num"><span class="neg">-32.4%</span></td>
-    <td class="num">23/395</td>
-    <td class="num">661</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">114</td>
+    <td class="num">111</td>
     <td class="tk">605589.SS</td>
     <td>Jinan Shengquan Group Share Holding Co., Ltd. / 圣泉集团
       
@@ -2050,19 +2018,19 @@
     <td>Basic Materials</td>
     <td class="num revz">1.27</td>
     <td class="num"><span class="neg">-26.5%</span></td>
-    <td class="num">13/256</td>
+    <td class="num">13/257</td>
     <td class="num">324</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">115</td>
+    <td class="num">112</td>
     <td class="tk">688639.SS</td>
     <td>Anhui Huaheng Biotechnology Co., Ltd. / 华恒生物
       
     </td>
     <td>Healthcare</td>
-    <td class="num revz">1.26</td>
+    <td class="num revz">1.27</td>
     <td class="num"><span class="neg">-20.9%</span></td>
     <td class="num">5/154</td>
     <td class="num">—</td>
@@ -2070,35 +2038,21 @@
   </tr>
   
   <tr>
-    <td class="num">116</td>
-    <td class="tk">301389.SZ</td>
-    <td>Long Young Electronic (Kunshan) Co., Ltd. / 隆扬电子
+    <td class="num">113</td>
+    <td class="tk">002125.SZ</td>
+    <td>Xiangtan Electrochemical Scientific Co.,Ltd / 湘潭电化
       
     </td>
-    <td>Technology</td>
+    <td>Basic Materials</td>
     <td class="num revz">1.26</td>
-    <td class="num"><span class="neg">-32.3%</span></td>
-    <td class="num">24/395</td>
+    <td class="num"><span class="neg">-26.3%</span></td>
+    <td class="num">14/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">117</td>
-    <td class="tk">688027.SS</td>
-    <td>QuantumCTek Co., Ltd. / 国盾量子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.26</td>
-    <td class="num"><span class="neg">-32.3%</span></td>
-    <td class="num">25/395</td>
-    <td class="num">378</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">118</td>
+    <td class="num">114</td>
     <td class="tk">601818.SS</td>
     <td>China Everbright Bank Company Limited / 光大银行
       
@@ -2112,49 +2066,35 @@
   </tr>
   
   <tr>
-    <td class="num">119</td>
-    <td class="tk">002125.SZ</td>
-    <td>Xiangtan Electrochemical Scientific Co.,Ltd / 湘潭电化
+    <td class="num">115</td>
+    <td class="tk">688691.SS</td>
+    <td>Brite Semiconductor (Shanghai) Co., Ltd. / 灿芯股份
       
     </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.26</td>
-    <td class="num"><span class="neg">-26.3%</span></td>
-    <td class="num">14/256</td>
+    <td>Technology</td>
+    <td class="num revz">1.25</td>
+    <td class="num"><span class="neg">-33.2%</span></td>
+    <td class="num">21/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">120</td>
-    <td class="tk">688568.SS</td>
-    <td>Geovis Technology Co.,Ltd / 中科星图
+    <td class="num">116</td>
+    <td class="tk">688775.SS</td>
+    <td>Arashi Vision Inc. / 影石创新
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.25</td>
-    <td class="num"><span class="neg">-32.1%</span></td>
-    <td class="num">26/395</td>
-    <td class="num">252</td>
+    <td class="num"><span class="neg">-33.2%</span></td>
+    <td class="num">22/396</td>
+    <td class="num">437</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">121</td>
-    <td class="tk">002429.SZ</td>
-    <td>Shenzhen MTC Co., Ltd. / 兆驰股份
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.25</td>
-    <td class="num"><span class="neg">-32.1%</span></td>
-    <td class="num">27/395</td>
-    <td class="num">364</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">122</td>
+    <td class="num">117</td>
     <td class="tk">002859.SZ</td>
     <td>Zhejiang Jiemei Electronic And Technology Co., Ltd. / 洁美科技
       
@@ -2162,41 +2102,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.25</td>
     <td class="num"><span class="neg">-26.2%</span></td>
-    <td class="num">15/256</td>
+    <td class="num">15/257</td>
     <td class="num">290</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">123</td>
-    <td class="tk">688515.SS</td>
-    <td>Motorcomm Electronic Technology Co., Ltd. / 裕太微
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.24</td>
-    <td class="num"><span class="neg">-31.9%</span></td>
-    <td class="num">28/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">124</td>
-    <td class="tk">600487.SS</td>
-    <td>Hengtong Optic-Electric Co., Ltd. / 亨通光电
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.24</td>
-    <td class="num"><span class="neg">-31.9%</span></td>
-    <td class="num">29/395</td>
-    <td class="num">1610</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">125</td>
+    <td class="num">118</td>
     <td class="tk">603026.SS</td>
     <td>Shida Shinghwa Advanced Material Group Co., Ltd. / 石大胜华
       
@@ -2204,13 +2116,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.24</td>
     <td class="num"><span class="neg">-26.0%</span></td>
-    <td class="num">16/256</td>
+    <td class="num">16/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">126</td>
+    <td class="num">119</td>
     <td class="tk">000688.SZ</td>
     <td>GuoCheng Mining CO.,LTD / 国城矿业
       
@@ -2218,27 +2130,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.24</td>
     <td class="num"><span class="neg">-26.0%</span></td>
-    <td class="num">17/256</td>
+    <td class="num">17/257</td>
     <td class="num">342</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">127</td>
-    <td class="tk">688531.SS</td>
-    <td>Unicomp Technology Group Co., Ltd. / 日联科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.23</td>
-    <td class="num"><span class="neg">-31.6%</span></td>
-    <td class="num">30/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">128</td>
+    <td class="num">120</td>
     <td class="tk">603567.SS</td>
     <td>Heilongjiang ZBD Pharmaceutical Co., Ltd. / 珍宝岛
       
@@ -2252,7 +2150,7 @@
   </tr>
   
   <tr>
-    <td class="num">129</td>
+    <td class="num">121</td>
     <td class="tk">603733.SS</td>
     <td>Xianhe Co.,Ltd. / 仙鹤股份
       
@@ -2260,13 +2158,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.22</td>
     <td class="num"><span class="neg">-25.7%</span></td>
-    <td class="num">18/256</td>
+    <td class="num">18/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">130</td>
+    <td class="num">122</td>
     <td class="tk">601778.SS</td>
     <td>Jinko Power Technology Co., Ltd. / 晶科科技
       
@@ -2280,7 +2178,49 @@
   </tr>
   
   <tr>
-    <td class="num">131</td>
+    <td class="num">123</td>
+    <td class="tk">688172.SS</td>
+    <td>Beijing YanDong MicroElectronic Co., Ltd. / 燕东微
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.21</td>
+    <td class="num"><span class="neg">-32.4%</span></td>
+    <td class="num">23/396</td>
+    <td class="num">661</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">124</td>
+    <td class="tk">301389.SZ</td>
+    <td>Long Young Electronic (Kunshan) Co., Ltd. / 隆扬电子
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.21</td>
+    <td class="num"><span class="neg">-32.3%</span></td>
+    <td class="num">24/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">125</td>
+    <td class="tk">688027.SS</td>
+    <td>QuantumCTek Co., Ltd. / 国盾量子
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.21</td>
+    <td class="num"><span class="neg">-32.3%</span></td>
+    <td class="num">25/396</td>
+    <td class="num">378</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">126</td>
     <td class="tk">600522.SS</td>
     <td>Jiangsu Zhongtian Technology Co., Ltd. / 中天科技
       
@@ -2294,35 +2234,49 @@
   </tr>
   
   <tr>
-    <td class="num">132</td>
-    <td class="tk">300308.SZ</td>
-    <td>Zhongji Innolight Co., Ltd. / 中际旭创
+    <td class="num">127</td>
+    <td class="tk">688568.SS</td>
+    <td>Geovis Technology Co.,Ltd / 中科星图
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.20</td>
-    <td class="num"><span class="neg">-31.1%</span></td>
-    <td class="num">31/395</td>
-    <td class="num">9576</td>
+    <td class="num"><span class="neg">-32.1%</span></td>
+    <td class="num">26/396</td>
+    <td class="num">252</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">133</td>
-    <td class="tk">300061.SZ</td>
-    <td>Qitian Technology Group Co., Ltd. / 旗天科技
+    <td class="num">128</td>
+    <td class="tk">002324.SZ</td>
+    <td>Shanghai Pret Composites Co., Ltd. / 普利特
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.20</td>
+    <td class="num"><span class="neg">-25.2%</span></td>
+    <td class="num">19/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">129</td>
+    <td class="tk">002429.SZ</td>
+    <td>Shenzhen MTC Co., Ltd. / 兆驰股份
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.20</td>
-    <td class="num"><span class="neg">-31.1%</span></td>
-    <td class="num">32/395</td>
-    <td class="num">47</td>
+    <td class="num"><span class="neg">-32.1%</span></td>
+    <td class="num">27/396</td>
+    <td class="num">364</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">134</td>
+    <td class="num">130</td>
     <td class="tk">688726.SS</td>
     <td>LAPLACE Renewable Energy Technology Co., Ltd. / 拉普拉斯
       
@@ -2336,21 +2290,7 @@
   </tr>
   
   <tr>
-    <td class="num">135</td>
-    <td class="tk">002324.SZ</td>
-    <td>Shanghai Pret Composites Co., Ltd. / 普利特
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.19</td>
-    <td class="num"><span class="neg">-25.2%</span></td>
-    <td class="num">19/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">136</td>
+    <td class="num">131</td>
     <td class="tk">600114.SS</td>
     <td>NBTM New Materials Group Co., Ltd. / 东睦股份
       
@@ -2364,7 +2304,7 @@
   </tr>
   
   <tr>
-    <td class="num">137</td>
+    <td class="num">132</td>
     <td class="tk">002121.SZ</td>
     <td>Shenzhen Clou Electronics Co., Ltd. / 科陆电子
       
@@ -2378,35 +2318,63 @@
   </tr>
   
   <tr>
-    <td class="num">138</td>
-    <td class="tk">301658.SZ</td>
-    <td>Shenzhen SOFARSOLAR Co., Ltd. / 首航新能
+    <td class="num">133</td>
+    <td class="tk">301511.SZ</td>
+    <td>Jiujiang Defu Technology Co., Limited / 德福科技
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.19</td>
+    <td class="num"><span class="neg">-25.1%</span></td>
+    <td class="num">20/257</td>
+    <td class="num">565</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">134</td>
+    <td class="tk">688515.SS</td>
+    <td>Motorcomm Electronic Technology Co., Ltd. / 裕太微
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.19</td>
-    <td class="num"><span class="neg">-30.9%</span></td>
-    <td class="num">33/395</td>
+    <td class="num"><span class="neg">-31.9%</span></td>
+    <td class="num">28/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">139</td>
-    <td class="tk">301308.SZ</td>
-    <td>Shenzhen Longsys Electronics Co., Ltd. / 江波龙
+    <td class="num">135</td>
+    <td class="tk">600487.SS</td>
+    <td>Hengtong Optic-Electric Co., Ltd. / 亨通光电
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.19</td>
-    <td class="num"><span class="neg">-30.8%</span></td>
-    <td class="num">34/395</td>
-    <td class="num">1545</td>
+    <td class="num"><span class="neg">-31.9%</span></td>
+    <td class="num">29/396</td>
+    <td class="num">1610</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">140</td>
+    <td class="num">136</td>
+    <td class="tk">300576.SZ</td>
+    <td>Shenzhen RongDa Photosensitive Science &amp; Technology Co., Ltd. / 容大感光
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.19</td>
+    <td class="num"><span class="neg">-25.0%</span></td>
+    <td class="num">21/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">137</td>
     <td class="tk">002364.SZ</td>
     <td>Hangzhou Zhongheng Electric Co., Ltd / 中恒电气
       
@@ -2420,7 +2388,7 @@
   </tr>
   
   <tr>
-    <td class="num">141</td>
+    <td class="num">138</td>
     <td class="tk">688063.SS</td>
     <td>Pylon Technologies Co., Ltd. / 派能科技
       
@@ -2434,35 +2402,7 @@
   </tr>
   
   <tr>
-    <td class="num">142</td>
-    <td class="tk">301511.SZ</td>
-    <td>Jiujiang Defu Technology Co., Limited / 德福科技
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.18</td>
-    <td class="num"><span class="neg">-25.0%</span></td>
-    <td class="num">20/256</td>
-    <td class="num">565</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">143</td>
-    <td class="tk">300576.SZ</td>
-    <td>Shenzhen RongDa Photosensitive Science &amp; Technology Co., Ltd. / 容大感光
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.18</td>
-    <td class="num"><span class="neg">-25.0%</span></td>
-    <td class="num">21/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">144</td>
+    <td class="num">139</td>
     <td class="tk">600426.SS</td>
     <td>Shandong Hualu-Hengsheng Chemical Co., Ltd. / 华鲁恒升
       
@@ -2470,13 +2410,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.18</td>
     <td class="num"><span class="neg">-24.9%</span></td>
-    <td class="num">22/256</td>
+    <td class="num">22/257</td>
     <td class="num">569</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">145</td>
+    <td class="num">140</td>
     <td class="tk">600699.SS</td>
     <td>Ningbo Joyson Electronic Corp. / 均胜电子
       
@@ -2490,7 +2430,21 @@
   </tr>
   
   <tr>
-    <td class="num">146</td>
+    <td class="num">141</td>
+    <td class="tk">688531.SS</td>
+    <td>Unicomp Technology Group Co., Ltd. / 日联科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.17</td>
+    <td class="num"><span class="neg">-31.6%</span></td>
+    <td class="num">30/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">142</td>
     <td class="tk">000403.SZ</td>
     <td>Pacific Shuanglin Bio-pharmacy Co., Ltd. / 派林生物
       
@@ -2504,7 +2458,7 @@
   </tr>
   
   <tr>
-    <td class="num">147</td>
+    <td class="num">143</td>
     <td class="tk">002617.SZ</td>
     <td>Roshow Technology Co., Ltd. / 露笑科技
       
@@ -2518,35 +2472,7 @@
   </tr>
   
   <tr>
-    <td class="num">148</td>
-    <td class="tk">300782.SZ</td>
-    <td>Maxscend Microelectronics Company Limited / 卓胜微
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.16</td>
-    <td class="num"><span class="neg">-30.4%</span></td>
-    <td class="num">35/395</td>
-    <td class="num">419</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">149</td>
-    <td class="tk">600498.SS</td>
-    <td>Fiberhome Telecommunication Technologies Co., Ltd. / 烽火通信
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.16</td>
-    <td class="num"><span class="neg">-30.3%</span></td>
-    <td class="num">36/395</td>
-    <td class="num">535</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">150</td>
+    <td class="num">144</td>
     <td class="tk">002048.SZ</td>
     <td>Ningbo Huaxiang Electronic Co., Ltd. / 宁波华翔
       
@@ -2560,21 +2486,7 @@
   </tr>
   
   <tr>
-    <td class="num">151</td>
-    <td class="tk">300726.SZ</td>
-    <td>Zhuzhou Hongda Electronics Corp.,Ltd. / 宏达电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.15</td>
-    <td class="num"><span class="neg">-30.2%</span></td>
-    <td class="num">37/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">152</td>
+    <td class="num">145</td>
     <td class="tk">002353.SZ</td>
     <td>Yantai Jereh Oilfield Services Group Co., Ltd. / 杰瑞股份
       
@@ -2588,7 +2500,35 @@
   </tr>
   
   <tr>
-    <td class="num">153</td>
+    <td class="num">146</td>
+    <td class="tk">300308.SZ</td>
+    <td>Zhongji Innolight Co., Ltd. / 中际旭创
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.15</td>
+    <td class="num"><span class="neg">-31.1%</span></td>
+    <td class="num">31/396</td>
+    <td class="num">9576</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">147</td>
+    <td class="tk">300061.SZ</td>
+    <td>Qitian Technology Group Co., Ltd. / 旗天科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.15</td>
+    <td class="num"><span class="neg">-31.1%</span></td>
+    <td class="num">32/396</td>
+    <td class="num">47</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">148</td>
     <td class="tk">000559.SZ</td>
     <td>Wanxiang Qianchao Co.,Ltd. / 万向钱潮
       
@@ -2602,7 +2542,35 @@
   </tr>
   
   <tr>
-    <td class="num">154</td>
+    <td class="num">149</td>
+    <td class="tk">301565.SZ</td>
+    <td>Sinolong New Materials Co., Ltd. / 中仑新材
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.14</td>
+    <td class="num"><span class="neg">-24.2%</span></td>
+    <td class="num">23/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">150</td>
+    <td class="tk">301658.SZ</td>
+    <td>Shenzhen SOFARSOLAR Co., Ltd. / 首航新能
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.14</td>
+    <td class="num"><span class="neg">-30.9%</span></td>
+    <td class="num">33/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">151</td>
     <td class="tk">600600.SS</td>
     <td>Tsingtao Brewery Company Limited / 青岛啤酒
       
@@ -2616,21 +2584,35 @@
   </tr>
   
   <tr>
-    <td class="num">155</td>
-    <td class="tk">301565.SZ</td>
-    <td>Sinolong New Materials Co., Ltd. / 中仑新材
+    <td class="num">152</td>
+    <td class="tk">301308.SZ</td>
+    <td>Shenzhen Longsys Electronics Co., Ltd. / 江波龙
       
     </td>
-    <td>Basic Materials</td>
+    <td>Technology</td>
     <td class="num revz">1.14</td>
-    <td class="num"><span class="neg">-24.2%</span></td>
-    <td class="num">23/256</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-30.8%</span></td>
+    <td class="num">34/396</td>
+    <td class="num">1545</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">156</td>
+    <td class="num">153</td>
+    <td class="tk">600301.SS</td>
+    <td>Guangxi Huaxi Nonferrous Metal Co.,Ltd / 华锡有色
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.14</td>
+    <td class="num"><span class="neg">-24.1%</span></td>
+    <td class="num">24/257</td>
+    <td class="num">286</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">154</td>
     <td class="tk">002518.SZ</td>
     <td>Shenzhen KSTAR Science and Technology Co., Ltd. / 科士达
       
@@ -2644,35 +2626,7 @@
   </tr>
   
   <tr>
-    <td class="num">157</td>
-    <td class="tk">002222.SZ</td>
-    <td>CASTECH Inc. / 福晶科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.13</td>
-    <td class="num"><span class="neg">-29.8%</span></td>
-    <td class="num">38/395</td>
-    <td class="num">311</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">158</td>
-    <td class="tk">600301.SS</td>
-    <td>Guangxi Huaxi Nonferrous Metal Co.,Ltd / 华锡有色
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.13</td>
-    <td class="num"><span class="neg">-24.1%</span></td>
-    <td class="num">24/256</td>
-    <td class="num">286</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">159</td>
+    <td class="num">155</td>
     <td class="tk">000617.SZ</td>
     <td>CNPC Capital Company Limited / 中油资本
       
@@ -2686,7 +2640,21 @@
   </tr>
   
   <tr>
-    <td class="num">160</td>
+    <td class="num">156</td>
+    <td class="tk">688295.SS</td>
+    <td>Zhongfu Shenying Carbon Fiber Co.,Ltd. / 中复神鹰
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.13</td>
+    <td class="num"><span class="neg">-23.9%</span></td>
+    <td class="num">25/257</td>
+    <td class="num">344</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">157</td>
     <td class="tk">600688.SS</td>
     <td>Sinopec Shanghai Petrochemical Company Limited / 上海石化
       
@@ -2700,21 +2668,7 @@
   </tr>
   
   <tr>
-    <td class="num">161</td>
-    <td class="tk">688295.SS</td>
-    <td>Zhongfu Shenying Carbon Fiber Co.,Ltd. / 中复神鹰
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.12</td>
-    <td class="num"><span class="neg">-23.9%</span></td>
-    <td class="num">25/256</td>
-    <td class="num">344</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">162</td>
+    <td class="num">158</td>
     <td class="tk">002008.SZ</td>
     <td>Han&#39;s Laser Technology Industry Group Co., Ltd. / 大族激光
       
@@ -2733,7 +2687,21 @@
   </tr>
   
   <tr>
-    <td class="num">163</td>
+    <td class="num">159</td>
+    <td class="tk">300782.SZ</td>
+    <td>Maxscend Microelectronics Company Limited / 卓胜微
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.12</td>
+    <td class="num"><span class="neg">-30.4%</span></td>
+    <td class="num">35/396</td>
+    <td class="num">419</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">160</td>
     <td class="tk">002051.SZ</td>
     <td>China CAMC Engineering Co., Ltd. / 中工国际
       
@@ -2747,21 +2715,35 @@
   </tr>
   
   <tr>
-    <td class="num">164</td>
-    <td class="tk">603516.SS</td>
-    <td>Beijing Tricolor Technology Co., Ltd / 淳中科技
+    <td class="num">161</td>
+    <td class="tk">600498.SS</td>
+    <td>Fiberhome Telecommunication Technologies Co., Ltd. / 烽火通信
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.11</td>
-    <td class="num"><span class="neg">-29.4%</span></td>
-    <td class="num">39/395</td>
+    <td class="num"><span class="neg">-30.3%</span></td>
+    <td class="num">36/396</td>
+    <td class="num">535</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">162</td>
+    <td class="tk">002290.SZ</td>
+    <td>Suzhou Hesheng Special Material Co., Ltd. / 禾盛新材
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.11</td>
+    <td class="num"><span class="neg">-23.6%</span></td>
+    <td class="num">26/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">165</td>
+    <td class="num">163</td>
     <td class="tk">600580.SS</td>
     <td>Wolong Electric Group Co.,Ltd. / 卧龙电驱
       
@@ -2775,7 +2757,7 @@
   </tr>
   
   <tr>
-    <td class="num">166</td>
+    <td class="num">164</td>
     <td class="tk">300680.SZ</td>
     <td>Wuxi Longsheng Technology Co.,Ltd / 隆盛科技
       
@@ -2789,21 +2771,7 @@
   </tr>
   
   <tr>
-    <td class="num">167</td>
-    <td class="tk">002290.SZ</td>
-    <td>Suzhou Hesheng Special Material Co., Ltd. / 禾盛新材
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.11</td>
-    <td class="num"><span class="neg">-23.6%</span></td>
-    <td class="num">26/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">168</td>
+    <td class="num">165</td>
     <td class="tk">688818.SS</td>
     <td>CETC LANTIAN TECHNOLOGY CO LTD / 电科蓝天
       
@@ -2817,7 +2785,7 @@
   </tr>
   
   <tr>
-    <td class="num">169</td>
+    <td class="num">166</td>
     <td class="tk">000901.SZ</td>
     <td>Aerospace Hi-Tech Holding Group Co., Ltd. / 航天科技
       
@@ -2831,49 +2799,21 @@
   </tr>
   
   <tr>
-    <td class="num">170</td>
-    <td class="tk">300184.SZ</td>
-    <td>Wuhan P&amp;S Information Technology Co., Ltd. / 力源信息
+    <td class="num">167</td>
+    <td class="tk">300726.SZ</td>
+    <td>Zhuzhou Hongda Electronics Corp.,Ltd. / 宏达电子
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.10</td>
-    <td class="num"><span class="neg">-29.3%</span></td>
-    <td class="num">40/395</td>
+    <td class="num"><span class="neg">-30.2%</span></td>
+    <td class="num">37/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">171</td>
-    <td class="tk">002273.SZ</td>
-    <td>Zhejiang Crystal-Optech Co., Ltd / 水晶光电
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.10</td>
-    <td class="num"><span class="neg">-29.2%</span></td>
-    <td class="num">41/395</td>
-    <td class="num">356</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">172</td>
-    <td class="tk">002056.SZ</td>
-    <td>Hengdian Group DMEGC Magnetics Co., Ltd. / 横店东磁
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.10</td>
-    <td class="num"><span class="neg">-29.2%</span></td>
-    <td class="num">42/395</td>
-    <td class="num">328</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">173</td>
+    <td class="num">168</td>
     <td class="tk">000981.SZ</td>
     <td>Sensteed Hi-Tech Group / 山子高科
       
@@ -2887,7 +2827,7 @@
   </tr>
   
   <tr>
-    <td class="num">174</td>
+    <td class="num">169</td>
     <td class="tk">688776.SS</td>
     <td>Guoguang Electric Co.,Ltd.Chengdu / 国光电气
       
@@ -2901,7 +2841,7 @@
   </tr>
   
   <tr>
-    <td class="num">175</td>
+    <td class="num">170</td>
     <td class="tk">688567.SS</td>
     <td>Farasis Energy (Gan Zhou) Co., Ltd. / 孚能科技
       
@@ -2915,35 +2855,21 @@
   </tr>
   
   <tr>
-    <td class="num">176</td>
-    <td class="tk">600105.SS</td>
-    <td>Jiangsu Etern Company Limited / 永鼎股份
+    <td class="num">171</td>
+    <td class="tk">600389.SS</td>
+    <td>Nantong Jiangshan Agrochemical &amp; Chemicals Co.,Ltd. / 江山股份
       
     </td>
-    <td>Technology</td>
+    <td>Basic Materials</td>
     <td class="num revz">1.09</td>
-    <td class="num"><span class="neg">-29.1%</span></td>
-    <td class="num">43/395</td>
-    <td class="num">575</td>
+    <td class="num"><span class="neg">-23.3%</span></td>
+    <td class="num">27/257</td>
+    <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">177</td>
-    <td class="tk">688525.SS</td>
-    <td>BIWIN Storage Technology Co., Ltd. / 佰维存储
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.09</td>
-    <td class="num"><span class="neg">-29.1%</span></td>
-    <td class="num">44/395</td>
-    <td class="num">1040</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">178</td>
+    <td class="num">172</td>
     <td class="tk">600089.SS</td>
     <td>TBEA Co., Ltd. / 特变电工
       
@@ -2957,7 +2883,7 @@
   </tr>
   
   <tr>
-    <td class="num">179</td>
+    <td class="num">173</td>
     <td class="tk">601166.SS</td>
     <td>Industrial Bank Co., Ltd. / 兴业银行
       
@@ -2971,35 +2897,35 @@
   </tr>
   
   <tr>
-    <td class="num">180</td>
-    <td class="tk">600389.SS</td>
-    <td>Nantong Jiangshan Agrochemical &amp; Chemicals Co.,Ltd. / 江山股份
+    <td class="num">174</td>
+    <td class="tk">002222.SZ</td>
+    <td>CASTECH Inc. / 福晶科技
       
     </td>
-    <td>Basic Materials</td>
+    <td>Technology</td>
     <td class="num revz">1.09</td>
-    <td class="num"><span class="neg">-23.3%</span></td>
-    <td class="num">27/256</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-29.8%</span></td>
+    <td class="num">38/396</td>
+    <td class="num">311</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">181</td>
+    <td class="num">175</td>
     <td class="tk">002838.SZ</td>
     <td>Shandong Dawn Polymer Co.,Ltd. / 道恩股份
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">1.08</td>
+    <td class="num revz">1.09</td>
     <td class="num"><span class="neg">-23.2%</span></td>
-    <td class="num">28/256</td>
+    <td class="num">28/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">182</td>
+    <td class="num">176</td>
     <td class="tk">002460.SZ</td>
     <td>Ganfeng Lithium Group Co., Ltd. / 赣锋锂业
       
@@ -3007,13 +2933,27 @@
     <td>Basic Materials</td>
     <td class="num revz">1.08</td>
     <td class="num"><span class="neg">-23.0%</span></td>
-    <td class="num">29/256</td>
+    <td class="num">29/257</td>
     <td class="num">1059</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">183</td>
+    <td class="num">177</td>
+    <td class="tk">688150.SS</td>
+    <td>Shaanxi Lighte Optoelectronics Material Co.,Ltd / 莱特光电
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">1.07</td>
+    <td class="num"><span class="neg">-22.9%</span></td>
+    <td class="num">30/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">178</td>
     <td class="tk">603220.SS</td>
     <td>China Bester Group Telecom Co., Ltd. / 中贝通信
       
@@ -3027,35 +2967,7 @@
   </tr>
   
   <tr>
-    <td class="num">184</td>
-    <td class="tk">688150.SS</td>
-    <td>Shaanxi Lighte Optoelectronics Material Co.,Ltd / 莱特光电
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">1.07</td>
-    <td class="num"><span class="neg">-22.9%</span></td>
-    <td class="num">30/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">185</td>
-    <td class="tk">688107.SS</td>
-    <td>Shanghai Anlogic Infotech Co., Ltd. / 安路科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.07</td>
-    <td class="num"><span class="neg">-28.6%</span></td>
-    <td class="num">45/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">186</td>
+    <td class="num">179</td>
     <td class="tk">603306.SS</td>
     <td>HMT (Xiamen) New Technical Materials Co., Ltd / 华懋科技
       
@@ -3069,7 +2981,21 @@
   </tr>
   
   <tr>
-    <td class="num">187</td>
+    <td class="num">180</td>
+    <td class="tk">603516.SS</td>
+    <td>Beijing Tricolor Technology Co., Ltd / 淳中科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.06</td>
+    <td class="num"><span class="neg">-29.4%</span></td>
+    <td class="num">39/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">181</td>
     <td class="tk">301696.SZ</td>
     <td>NANCHANG SANRUI INTELLIGENCE TE / 三瑞智能
       
@@ -3083,7 +3009,21 @@
   </tr>
   
   <tr>
-    <td class="num">188</td>
+    <td class="num">182</td>
+    <td class="tk">300184.SZ</td>
+    <td>Wuhan P&amp;S Information Technology Co., Ltd. / 力源信息
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.06</td>
+    <td class="num"><span class="neg">-29.3%</span></td>
+    <td class="num">40/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">183</td>
     <td class="tk">600021.SS</td>
     <td>Shanghai Electric Power Co., Ltd. / 上海电力
       
@@ -3097,7 +3037,7 @@
   </tr>
   
   <tr>
-    <td class="num">189</td>
+    <td class="num">184</td>
     <td class="tk">600000.SS</td>
     <td>Shanghai Pudong Development Bank Co., Ltd. / 浦发银行
       
@@ -3111,7 +3051,7 @@
   </tr>
   
   <tr>
-    <td class="num">190</td>
+    <td class="num">185</td>
     <td class="tk">603799.SS</td>
     <td>Zhejiang Huayou Cobalt Co., Ltd / 华友钴业
       
@@ -3119,13 +3059,41 @@
     <td>Basic Materials</td>
     <td class="num revz">1.06</td>
     <td class="num"><span class="neg">-22.7%</span></td>
-    <td class="num">31/256</td>
+    <td class="num">31/257</td>
     <td class="num">732</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">191</td>
+    <td class="num">186</td>
+    <td class="tk">002273.SZ</td>
+    <td>Zhejiang Crystal-Optech Co., Ltd / 水晶光电
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.06</td>
+    <td class="num"><span class="neg">-29.2%</span></td>
+    <td class="num">41/396</td>
+    <td class="num">356</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">187</td>
+    <td class="tk">002056.SZ</td>
+    <td>Hengdian Group DMEGC Magnetics Co., Ltd. / 横店东磁
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.06</td>
+    <td class="num"><span class="neg">-29.2%</span></td>
+    <td class="num">42/396</td>
+    <td class="num">328</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">188</td>
     <td class="tk">688003.SS</td>
     <td>Suzhou TZTEK Technology Co., Ltd / 天准科技
       
@@ -3139,7 +3107,7 @@
   </tr>
   
   <tr>
-    <td class="num">192</td>
+    <td class="num">189</td>
     <td class="tk">600869.SS</td>
     <td>Far East Smarter Energy Co., Ltd. / 远东股份
       
@@ -3153,21 +3121,35 @@
   </tr>
   
   <tr>
-    <td class="num">193</td>
-    <td class="tk">300102.SZ</td>
-    <td>Xiamen Changelight Co., Ltd. / 乾照光电
+    <td class="num">190</td>
+    <td class="tk">600105.SS</td>
+    <td>Jiangsu Etern Company Limited / 永鼎股份
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.05</td>
-    <td class="num"><span class="neg">-28.2%</span></td>
-    <td class="num">46/395</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-29.1%</span></td>
+    <td class="num">43/396</td>
+    <td class="num">575</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">194</td>
+    <td class="num">191</td>
+    <td class="tk">688525.SS</td>
+    <td>BIWIN Storage Technology Co., Ltd. / 佰维存储
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.05</td>
+    <td class="num"><span class="neg">-29.1%</span></td>
+    <td class="num">44/396</td>
+    <td class="num">1040</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">192</td>
     <td class="tk">688017.SS</td>
     <td>Leader Harmonious Drive Systems Co., Ltd. / 绿的谐波
       
@@ -3181,35 +3163,21 @@
   </tr>
   
   <tr>
-    <td class="num">195</td>
-    <td class="tk">000062.SZ</td>
-    <td>Shenzhen Huaqiang Industry Co., Ltd. / 深圳华强
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.04</td>
-    <td class="num"><span class="neg">-28.1%</span></td>
-    <td class="num">47/395</td>
-    <td class="num">253</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">196</td>
+    <td class="num">193</td>
     <td class="tk">300395.SZ</td>
     <td>Hubei Feilihua Quartz Glass Co., Ltd. / 菲利华
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">1.04</td>
+    <td class="num revz">1.05</td>
     <td class="num"><span class="neg">-22.4%</span></td>
-    <td class="num">32/256</td>
+    <td class="num">32/257</td>
     <td class="num">486</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">197</td>
+    <td class="num">194</td>
     <td class="tk">603108.SS</td>
     <td>Shanghai Runda Medical Technology Co., Ltd. / 润达医疗
       
@@ -3223,7 +3191,7 @@
   </tr>
   
   <tr>
-    <td class="num">198</td>
+    <td class="num">195</td>
     <td class="tk">001979.SZ</td>
     <td>China Merchants Shekou Industrial Zone Holdings Co., Ltd. / 招商蛇口
       
@@ -3237,7 +3205,7 @@
   </tr>
   
   <tr>
-    <td class="num">199</td>
+    <td class="num">196</td>
     <td class="tk">300438.SZ</td>
     <td>Guangzhou Great Power Energy and Technology Co., Ltd / 鹏辉能源
       
@@ -3251,7 +3219,7 @@
   </tr>
   
   <tr>
-    <td class="num">200</td>
+    <td class="num">197</td>
     <td class="tk">601991.SS</td>
     <td>Datang International Power Generation Co., Ltd. / 大唐发电
       
@@ -3265,21 +3233,7 @@
   </tr>
   
   <tr>
-    <td class="num">201</td>
-    <td class="tk">300502.SZ</td>
-    <td>Eoptolink Technology Inc., Ltd. / 新易盛
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.03</td>
-    <td class="num"><span class="neg">-27.9%</span></td>
-    <td class="num">48/395</td>
-    <td class="num">5364</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">202</td>
+    <td class="num">198</td>
     <td class="tk">301219.SZ</td>
     <td>Ganzhou Tengyuan Cobalt New Material Co., Ltd. / 腾远钴业
       
@@ -3287,13 +3241,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.03</td>
     <td class="num"><span class="neg">-22.2%</span></td>
-    <td class="num">33/256</td>
+    <td class="num">33/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">203</td>
+    <td class="num">199</td>
     <td class="tk">603392.SS</td>
     <td>Beijing Wantai Biological Pharmacy Enterprise Co., Ltd. / 万泰生物
       
@@ -3307,7 +3261,7 @@
   </tr>
   
   <tr>
-    <td class="num">204</td>
+    <td class="num">200</td>
     <td class="tk">002001.SZ</td>
     <td>Zhejiang NHU Company Ltd. / 新 和 成
       
@@ -3321,7 +3275,7 @@
   </tr>
   
   <tr>
-    <td class="num">205</td>
+    <td class="num">201</td>
     <td class="tk">002896.SZ</td>
     <td>Ningbo ZhongDa Leader Intelligent Transmission Co., Ltd. / 中大力德
       
@@ -3335,7 +3289,21 @@
   </tr>
   
   <tr>
-    <td class="num">206</td>
+    <td class="num">202</td>
+    <td class="tk">688107.SS</td>
+    <td>Shanghai Anlogic Infotech Co., Ltd. / 安路科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.02</td>
+    <td class="num"><span class="neg">-28.6%</span></td>
+    <td class="num">45/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">203</td>
     <td class="tk">301550.SZ</td>
     <td>Zhejiang Sling Automobile Bearing Co., Ltd. / 斯菱智驱
       
@@ -3349,7 +3317,7 @@
   </tr>
   
   <tr>
-    <td class="num">207</td>
+    <td class="num">204</td>
     <td class="tk">300660.SZ</td>
     <td>Jiangsu Leili Motor Co., Ltd / 江苏雷利
       
@@ -3363,7 +3331,7 @@
   </tr>
   
   <tr>
-    <td class="num">208</td>
+    <td class="num">205</td>
     <td class="tk">300969.SZ</td>
     <td>NINGBO HENGSHUAI Co., LTD. / 恒帅股份
       
@@ -3377,7 +3345,7 @@
   </tr>
   
   <tr>
-    <td class="num">209</td>
+    <td class="num">206</td>
     <td class="tk">300113.SZ</td>
     <td>Hangzhou Shunwang Technology Co,Ltd / 顺网科技
       
@@ -3391,7 +3359,7 @@
   </tr>
   
   <tr>
-    <td class="num">210</td>
+    <td class="num">207</td>
     <td class="tk">000858.SZ</td>
     <td>Wuliangye Yibin Co.,Ltd. / 五 粮 液
       
@@ -3405,7 +3373,21 @@
   </tr>
   
   <tr>
-    <td class="num">211</td>
+    <td class="num">208</td>
+    <td class="tk">300102.SZ</td>
+    <td>Xiamen Changelight Co., Ltd. / 乾照光电
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">1.01</td>
+    <td class="num"><span class="neg">-28.2%</span></td>
+    <td class="num">46/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">209</td>
     <td class="tk">300390.SZ</td>
     <td>Canmax Technologies Co., Ltd. / 天华新能
       
@@ -3419,7 +3401,7 @@
   </tr>
   
   <tr>
-    <td class="num">212</td>
+    <td class="num">210</td>
     <td class="tk">300276.SZ</td>
     <td>SanFeng Intelligent Equipment Group Co., Ltd. / 三丰智能
       
@@ -3433,7 +3415,7 @@
   </tr>
   
   <tr>
-    <td class="num">213</td>
+    <td class="num">211</td>
     <td class="tk">002625.SZ</td>
     <td>Kuang-Chi Technologies Co., Ltd. / 光启技术
       
@@ -3447,35 +3429,21 @@
   </tr>
   
   <tr>
-    <td class="num">214</td>
-    <td class="tk">603678.SS</td>
-    <td>Fujian Torch Electron Technology Co., Ltd. / 火炬电子
+    <td class="num">212</td>
+    <td class="tk">000062.SZ</td>
+    <td>Shenzhen Huaqiang Industry Co., Ltd. / 深圳华强
       
     </td>
     <td>Technology</td>
     <td class="num revz">1.00</td>
-    <td class="num"><span class="neg">-27.3%</span></td>
-    <td class="num">49/395</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-28.1%</span></td>
+    <td class="num">47/396</td>
+    <td class="num">253</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">215</td>
-    <td class="tk">300115.SZ</td>
-    <td>Shenzhen Everwin Precision Technology Co., Ltd. / 长盈精密
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">1.00</td>
-    <td class="num"><span class="neg">-27.3%</span></td>
-    <td class="num">50/395</td>
-    <td class="num">333</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">216</td>
+    <td class="num">213</td>
     <td class="tk">605376.SS</td>
     <td>Jiangsu Boqian New Materials Stock Co., Ltd. / 博迁新材
       
@@ -3483,13 +3451,13 @@
     <td>Basic Materials</td>
     <td class="num revz">1.00</td>
     <td class="num"><span class="neg">-21.6%</span></td>
-    <td class="num">34/256</td>
+    <td class="num">34/257</td>
     <td class="num">366</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">217</td>
+    <td class="num">214</td>
     <td class="tk">600875.SS</td>
     <td>Dongfang Electric Corporation Limited / 东方电气
       
@@ -3503,7 +3471,7 @@
   </tr>
   
   <tr>
-    <td class="num">218</td>
+    <td class="num">215</td>
     <td class="tk">301196.SZ</td>
     <td>Xiamen Voke Mold &amp; Plastic Engineering Co., Ltd. / 唯科科技
       
@@ -3517,7 +3485,7 @@
   </tr>
   
   <tr>
-    <td class="num">219</td>
+    <td class="num">216</td>
     <td class="tk">600643.SS</td>
     <td>Shanghai Aj Group Co.,Ltd / 爱建集团
       
@@ -3531,7 +3499,7 @@
   </tr>
   
   <tr>
-    <td class="num">220</td>
+    <td class="num">217</td>
     <td class="tk">002706.SZ</td>
     <td>Shanghai Liangxin Electrical Co.,LTD. / 良信股份
       
@@ -3545,7 +3513,21 @@
   </tr>
   
   <tr>
-    <td class="num">221</td>
+    <td class="num">218</td>
+    <td class="tk">300502.SZ</td>
+    <td>Eoptolink Technology Inc., Ltd. / 新易盛
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.99</td>
+    <td class="num"><span class="neg">-27.9%</span></td>
+    <td class="num">48/396</td>
+    <td class="num">5364</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">219</td>
     <td class="tk">301000.SZ</td>
     <td>Shanghai Hajime Advanced Material Technology Co., Ltd. / 肇民科技
       
@@ -3559,7 +3541,21 @@
   </tr>
   
   <tr>
-    <td class="num">222</td>
+    <td class="num">220</td>
+    <td class="tk">600111.SS</td>
+    <td>China Northern Rare Earth (Group) High-Tech Co.,Ltd / 北方稀土
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.98</td>
+    <td class="num"><span class="neg">-21.2%</span></td>
+    <td class="num">35/257</td>
+    <td class="num">1411</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">221</td>
     <td class="tk">688676.SS</td>
     <td>Hainan Jinpan Smart Technology Co., Ltd. / 金盘科技
       
@@ -3573,21 +3569,21 @@
   </tr>
   
   <tr>
-    <td class="num">223</td>
-    <td class="tk">600111.SS</td>
-    <td>China Northern Rare Earth (Group) High-Tech Co.,Ltd / 北方稀土
+    <td class="num">222</td>
+    <td class="tk">600596.SS</td>
+    <td>Zhejiang Xinan Chemical Industrial Group Co.,Ltd / 新安股份
       
     </td>
     <td>Basic Materials</td>
     <td class="num revz">0.97</td>
-    <td class="num"><span class="neg">-21.2%</span></td>
-    <td class="num">35/256</td>
-    <td class="num">1411</td>
+    <td class="num"><span class="neg">-21.1%</span></td>
+    <td class="num">36/257</td>
+    <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">224</td>
+    <td class="num">223</td>
     <td class="tk">000899.SZ</td>
     <td>Jiangxi Ganneng Co., Ltd. / 赣能股份
       
@@ -3601,35 +3597,7 @@
   </tr>
   
   <tr>
-    <td class="num">225</td>
-    <td class="tk">300296.SZ</td>
-    <td>Leyard Optoelectronic Co., Ltd. / 利亚德
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.97</td>
-    <td class="num"><span class="neg">-26.7%</span></td>
-    <td class="num">51/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">226</td>
-    <td class="tk">600596.SS</td>
-    <td>Zhejiang Xinan Chemical Industrial Group Co.,Ltd / 新安股份
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.97</td>
-    <td class="num"><span class="neg">-21.1%</span></td>
-    <td class="num">36/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">227</td>
+    <td class="num">224</td>
     <td class="tk">603305.SS</td>
     <td>Ningbo Xusheng Group Co., Ltd. / 旭升集团
       
@@ -3643,21 +3611,49 @@
   </tr>
   
   <tr>
-    <td class="num">228</td>
-    <td class="tk">300007.SZ</td>
-    <td>Hanwei Electronics Group Corporation / 汉威科技
+    <td class="num">225</td>
+    <td class="tk">603678.SS</td>
+    <td>Fujian Torch Electron Technology Co., Ltd. / 火炬电子
       
     </td>
     <td>Technology</td>
     <td class="num revz">0.96</td>
-    <td class="num"><span class="neg">-26.6%</span></td>
-    <td class="num">52/395</td>
+    <td class="num"><span class="neg">-27.3%</span></td>
+    <td class="num">49/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">229</td>
+    <td class="num">226</td>
+    <td class="tk">000969.SZ</td>
+    <td>Advanced Technology &amp; Materials Co., Ltd. / 安泰科技
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.96</td>
+    <td class="num"><span class="neg">-20.9%</span></td>
+    <td class="num">37/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">227</td>
+    <td class="tk">300115.SZ</td>
+    <td>Shenzhen Everwin Precision Technology Co., Ltd. / 长盈精密
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.96</td>
+    <td class="num"><span class="neg">-27.3%</span></td>
+    <td class="num">50/396</td>
+    <td class="num">333</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">228</td>
     <td class="tk">301155.SZ</td>
     <td>Jiangsu Haili Wind Power Equipment Technology Co., Ltd. / 海力风电
       
@@ -3671,35 +3667,7 @@
   </tr>
   
   <tr>
-    <td class="num">230</td>
-    <td class="tk">000969.SZ</td>
-    <td>Advanced Technology &amp; Materials Co., Ltd. / 安泰科技
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.96</td>
-    <td class="num"><span class="neg">-20.9%</span></td>
-    <td class="num">37/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">231</td>
-    <td class="tk">002506.SZ</td>
-    <td>GCL System Integration Technology Co., Ltd. / 协鑫集成
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.96</td>
-    <td class="num"><span class="neg">-26.5%</span></td>
-    <td class="num">53/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">232</td>
+    <td class="num">229</td>
     <td class="tk">002251.SZ</td>
     <td>Better Life Commercial Chain Share Co.,Ltd / 步步高
       
@@ -3713,49 +3681,35 @@
   </tr>
   
   <tr>
-    <td class="num">233</td>
+    <td class="num">230</td>
     <td class="tk">002080.SZ</td>
     <td>Sinoma Science &amp; Technology Co.,Ltd. / 中材科技
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">0.94</td>
+    <td class="num revz">0.95</td>
     <td class="num"><span class="neg">-20.7%</span></td>
-    <td class="num">38/256</td>
+    <td class="num">38/257</td>
     <td class="num">835</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">234</td>
-    <td class="tk">688516.SS</td>
-    <td>Wuxi Autowell Technology Co.,Ltd. / 奥特维
+    <td class="num">231</td>
+    <td class="tk">601702.SS</td>
+    <td>Shanghai Huafon Aluminium Corporation / 华峰铝业
       
     </td>
-    <td>Technology</td>
+    <td>Basic Materials</td>
     <td class="num revz">0.94</td>
-    <td class="num"><span class="neg">-26.2%</span></td>
-    <td class="num">54/395</td>
+    <td class="num"><span class="neg">-20.6%</span></td>
+    <td class="num">39/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">235</td>
-    <td class="tk">002939.SZ</td>
-    <td>China Great Wall Securities Co.,Ltd. / 长城证券
-      
-    </td>
-    <td>Financial Services</td>
-    <td class="num revz">0.94</td>
-    <td class="num"><span class="pos">+0.1%</span></td>
-    <td class="num">10/101</td>
-    <td class="num">326</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">236</td>
+    <td class="num">232</td>
     <td class="tk">300685.SZ</td>
     <td>Amoy Diagnostics Co., Ltd. / 艾德生物
       
@@ -3769,21 +3723,7 @@
   </tr>
   
   <tr>
-    <td class="num">237</td>
-    <td class="tk">601702.SS</td>
-    <td>Shanghai Huafon Aluminium Corporation / 华峰铝业
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.94</td>
-    <td class="num"><span class="neg">-20.6%</span></td>
-    <td class="num">39/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">238</td>
+    <td class="num">233</td>
     <td class="tk">002466.SZ</td>
     <td>Tianqi Lithium Corporation / 天齐锂业
       
@@ -3791,41 +3731,41 @@
     <td>Basic Materials</td>
     <td class="num revz">0.94</td>
     <td class="num"><span class="neg">-20.6%</span></td>
-    <td class="num">40/256</td>
+    <td class="num">40/257</td>
     <td class="num">804</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">239</td>
-    <td class="tk">688001.SS</td>
-    <td>Suzhou HYC Technology Co.,Ltd. / 华兴源创
+    <td class="num">234</td>
+    <td class="tk">002939.SZ</td>
+    <td>China Great Wall Securities Co.,Ltd. / 长城证券
+      
+    </td>
+    <td>Financial Services</td>
+    <td class="num revz">0.94</td>
+    <td class="num"><span class="pos">+0.1%</span></td>
+    <td class="num">10/101</td>
+    <td class="num">326</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">235</td>
+    <td class="tk">300296.SZ</td>
+    <td>Leyard Optoelectronic Co., Ltd. / 利亚德
       
     </td>
     <td>Technology</td>
-    <td class="num revz">0.94</td>
-    <td class="num"><span class="neg">-26.1%</span></td>
-    <td class="num">55/395</td>
+    <td class="num revz">0.93</td>
+    <td class="num"><span class="neg">-26.7%</span></td>
+    <td class="num">51/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">240</td>
-    <td class="tk">688408.SS</td>
-    <td>Arctech Solar Holding Co., Ltd. / 中信博
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.94</td>
-    <td class="num"><span class="neg">-26.1%</span></td>
-    <td class="num">56/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">241</td>
+    <td class="num">236</td>
     <td class="tk">605499.SS</td>
     <td>Eastroc Beverage (Group) Co., Ltd. / 东鹏饮料
       
@@ -3839,21 +3779,21 @@
   </tr>
   
   <tr>
-    <td class="num">242</td>
-    <td class="tk">300682.SZ</td>
-    <td>Longshine Technology Group Co., Ltd. / 朗新科技
+    <td class="num">237</td>
+    <td class="tk">300007.SZ</td>
+    <td>Hanwei Electronics Group Corporation / 汉威科技
       
     </td>
     <td>Technology</td>
     <td class="num revz">0.93</td>
-    <td class="num"><span class="neg">-25.9%</span></td>
-    <td class="num">57/395</td>
+    <td class="num"><span class="neg">-26.6%</span></td>
+    <td class="num">52/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">243</td>
+    <td class="num">238</td>
     <td class="tk">688660.SS</td>
     <td>Shanghai Electric Wind Power Group Co., Ltd. / 电气风电
       
@@ -3867,7 +3807,7 @@
   </tr>
   
   <tr>
-    <td class="num">244</td>
+    <td class="num">239</td>
     <td class="tk">688326.SS</td>
     <td>Beijing Jingwei Hirain Technologies Co., Inc. / 经纬恒润
       
@@ -3881,7 +3821,21 @@
   </tr>
   
   <tr>
-    <td class="num">245</td>
+    <td class="num">240</td>
+    <td class="tk">300806.SZ</td>
+    <td>Jiangsu Sidike New Materials Science &amp; Technology Co., Ltd. / 斯迪克
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.92</td>
+    <td class="num"><span class="neg">-20.2%</span></td>
+    <td class="num">41/257</td>
+    <td class="num">300</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">241</td>
     <td class="tk">601187.SS</td>
     <td>Xiamen Bank Co., Ltd. / 厦门银行
       
@@ -3895,35 +3849,21 @@
   </tr>
   
   <tr>
-    <td class="num">246</td>
-    <td class="tk">300806.SZ</td>
-    <td>Jiangsu Sidike New Materials Science &amp; Technology Co., Ltd. / 斯迪克
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.92</td>
-    <td class="num"><span class="neg">-20.2%</span></td>
-    <td class="num">41/256</td>
-    <td class="num">300</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">247</td>
-    <td class="tk">301095.SZ</td>
-    <td>Semitronix Corporation / 广立微
+    <td class="num">242</td>
+    <td class="tk">002506.SZ</td>
+    <td>GCL System Integration Technology Co., Ltd. / 协鑫集成
       
     </td>
     <td>Technology</td>
-    <td class="num revz">0.91</td>
-    <td class="num"><span class="neg">-25.6%</span></td>
-    <td class="num">58/395</td>
+    <td class="num revz">0.92</td>
+    <td class="num"><span class="neg">-26.5%</span></td>
+    <td class="num">53/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">248</td>
+    <td class="num">243</td>
     <td class="tk">603345.SS</td>
     <td>Anjoy Foods Group Co., Ltd. / 安井食品
       
@@ -3937,7 +3877,35 @@
   </tr>
   
   <tr>
-    <td class="num">249</td>
+    <td class="num">244</td>
+    <td class="tk">300337.SZ</td>
+    <td>Yinbang Clad Material Co.,Ltd / 银邦股份
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.91</td>
+    <td class="num"><span class="neg">-20.0%</span></td>
+    <td class="num">42/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">245</td>
+    <td class="tk">688516.SS</td>
+    <td>Wuxi Autowell Technology Co.,Ltd. / 奥特维
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.91</td>
+    <td class="num"><span class="neg">-26.2%</span></td>
+    <td class="num">54/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">246</td>
     <td class="tk">688100.SS</td>
     <td>Willfar Information Technology Co., Ltd. / 威胜信息
       
@@ -3951,35 +3919,35 @@
   </tr>
   
   <tr>
-    <td class="num">250</td>
-    <td class="tk">300337.SZ</td>
-    <td>Yinbang Clad Material Co.,Ltd / 银邦股份
+    <td class="num">247</td>
+    <td class="tk">003022.SZ</td>
+    <td>Levima Advanced Materials Corporation / 联泓新科
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">0.91</td>
-    <td class="num"><span class="neg">-20.0%</span></td>
-    <td class="num">42/256</td>
+    <td class="num revz">0.90</td>
+    <td class="num"><span class="neg">-19.9%</span></td>
+    <td class="num">43/257</td>
+    <td class="num">261</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">248</td>
+    <td class="tk">688001.SS</td>
+    <td>Suzhou HYC Technology Co.,Ltd. / 华兴源创
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.90</td>
+    <td class="num"><span class="neg">-26.1%</span></td>
+    <td class="num">55/396</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">251</td>
-    <td class="tk">688223.SS</td>
-    <td>Jinko Solar Co., Ltd. / 晶科能源
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.90</td>
-    <td class="num"><span class="neg">-25.5%</span></td>
-    <td class="num">59/395</td>
-    <td class="num">412</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">252</td>
+    <td class="num">249</td>
     <td class="tk">300294.SZ</td>
     <td>China Resources Boya Bio-pharmaceutical Group Co.,Ltd / 博雅生物
       
@@ -3993,35 +3961,21 @@
   </tr>
   
   <tr>
-    <td class="num">253</td>
-    <td class="tk">003022.SZ</td>
-    <td>Levima Advanced Materials Corporation / 联泓新科
+    <td class="num">250</td>
+    <td class="tk">688408.SS</td>
+    <td>Arctech Solar Holding Co., Ltd. / 中信博
       
     </td>
-    <td>Basic Materials</td>
+    <td>Technology</td>
     <td class="num revz">0.90</td>
-    <td class="num"><span class="neg">-19.9%</span></td>
-    <td class="num">43/256</td>
-    <td class="num">261</td>
+    <td class="num"><span class="neg">-26.1%</span></td>
+    <td class="num">56/396</td>
+    <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">254</td>
-    <td class="tk">002131.SZ</td>
-    <td>Leo Group Co., Ltd. / 利欧股份
-      
-    </td>
-    <td>Communication Services</td>
-    <td class="num revz">0.90</td>
-    <td class="num"><span class="neg">-16.4%</span></td>
-    <td class="num">9/52</td>
-    <td class="num">317</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">255</td>
+    <td class="num">251</td>
     <td class="tk">688005.SS</td>
     <td>Ningbo Ronbay New Energy Technology Co.,Ltd. / 容百科技
       
@@ -4035,21 +3989,35 @@
   </tr>
   
   <tr>
-    <td class="num">256</td>
-    <td class="tk">688048.SS</td>
-    <td>Suzhou Everbright Photonics Co., Ltd. / 长光华芯
+    <td class="num">252</td>
+    <td class="tk">002131.SZ</td>
+    <td>Leo Group Co., Ltd. / 利欧股份
       
     </td>
-    <td>Technology</td>
+    <td>Communication Services</td>
     <td class="num revz">0.89</td>
-    <td class="num"><span class="neg">-25.2%</span></td>
-    <td class="num">60/395</td>
-    <td class="num">486</td>
+    <td class="num"><span class="neg">-16.4%</span></td>
+    <td class="num">9/52</td>
+    <td class="num">317</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">257</td>
+    <td class="num">253</td>
+    <td class="tk">300682.SZ</td>
+    <td>Longshine Technology Group Co., Ltd. / 朗新科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.89</td>
+    <td class="num"><span class="neg">-25.9%</span></td>
+    <td class="num">57/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">254</td>
     <td class="tk">002050.SZ</td>
     <td>Zhejiang Sanhua Intelligent Controls Co.,Ltd / 三花智控
       
@@ -4063,7 +4031,7 @@
   </tr>
   
   <tr>
-    <td class="num">258</td>
+    <td class="num">255</td>
     <td class="tk">603997.SS</td>
     <td>Ningbo Jifeng Auto Parts Co., Ltd. / 继峰股份
       
@@ -4077,7 +4045,7 @@
   </tr>
   
   <tr>
-    <td class="num">259</td>
+    <td class="num">256</td>
     <td class="tk">601916.SS</td>
     <td>China Zheshang Bank Co., Ltd / 浙商银行
       
@@ -4091,21 +4059,7 @@
   </tr>
   
   <tr>
-    <td class="num">260</td>
-    <td class="tk">688609.SS</td>
-    <td>Unionman Technology / 九联科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.89</td>
-    <td class="num"><span class="neg">-25.1%</span></td>
-    <td class="num">61/395</td>
-    <td class="num">56</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">261</td>
+    <td class="num">257</td>
     <td class="tk">600151.SS</td>
     <td>Shanghai Aerospace Automobile Electromechanical Co., Ltd. / 航天机电
       
@@ -4119,7 +4073,7 @@
   </tr>
   
   <tr>
-    <td class="num">262</td>
+    <td class="num">258</td>
     <td class="tk">002936.SZ</td>
     <td>Bank of Zhengzhou Co., Ltd. / 郑州银行
       
@@ -4133,35 +4087,7 @@
   </tr>
   
   <tr>
-    <td class="num">263</td>
-    <td class="tk">000727.SZ</td>
-    <td>TPV Technology Co., Ltd. / 冠捷科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.88</td>
-    <td class="num"><span class="neg">-25.0%</span></td>
-    <td class="num">62/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">264</td>
-    <td class="tk">600563.SS</td>
-    <td>Xiamen Faratronic Co., Ltd. / 法拉电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.88</td>
-    <td class="num"><span class="neg">-24.9%</span></td>
-    <td class="num">63/395</td>
-    <td class="num">282</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">265</td>
+    <td class="num">259</td>
     <td class="tk">600299.SS</td>
     <td>Bluestar Adisseo Company / 安迪苏
       
@@ -4169,13 +4095,27 @@
     <td>Basic Materials</td>
     <td class="num revz">0.88</td>
     <td class="num"><span class="neg">-19.4%</span></td>
-    <td class="num">44/256</td>
+    <td class="num">44/257</td>
     <td class="num">256</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">266</td>
+    <td class="num">260</td>
+    <td class="tk">301095.SZ</td>
+    <td>Semitronix Corporation / 广立微
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.88</td>
+    <td class="num"><span class="neg">-25.6%</span></td>
+    <td class="num">58/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">261</td>
     <td class="tk">002797.SZ</td>
     <td>First Capital Securities Co., Ltd. / 第一创业
       
@@ -4189,21 +4129,7 @@
   </tr>
   
   <tr>
-    <td class="num">267</td>
-    <td class="tk">600707.SS</td>
-    <td>Caihong Display Devices Co.,Ltd. / 彩虹股份
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.87</td>
-    <td class="num"><span class="neg">-24.9%</span></td>
-    <td class="num">64/395</td>
-    <td class="num">314</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">268</td>
+    <td class="num">262</td>
     <td class="tk">301363.SZ</td>
     <td>MeHow Innovative Ltd. / 美好医疗
       
@@ -4217,7 +4143,21 @@
   </tr>
   
   <tr>
-    <td class="num">269</td>
+    <td class="num">263</td>
+    <td class="tk">688223.SS</td>
+    <td>Jinko Solar Co., Ltd. / 晶科能源
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.87</td>
+    <td class="num"><span class="neg">-25.5%</span></td>
+    <td class="num">59/396</td>
+    <td class="num">412</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">264</td>
     <td class="tk">002608.SZ</td>
     <td>Jiangsu Guoxin Corp. Ltd. / 江苏国信
       
@@ -4231,7 +4171,7 @@
   </tr>
   
   <tr>
-    <td class="num">270</td>
+    <td class="num">265</td>
     <td class="tk">688032.SS</td>
     <td>Hoymiles Power Electronics Inc. / 禾迈股份
       
@@ -4250,7 +4190,7 @@
   </tr>
   
   <tr>
-    <td class="num">271</td>
+    <td class="num">266</td>
     <td class="tk">600480.SS</td>
     <td>Ling Yun Industrial Corporation Limited / 凌云股份
       
@@ -4264,7 +4204,7 @@
   </tr>
   
   <tr>
-    <td class="num">272</td>
+    <td class="num">267</td>
     <td class="tk">688016.SS</td>
     <td>Shanghai MicroPort Endovascular MedTech Co., Ltd. / 心脉医疗
       
@@ -4278,7 +4218,21 @@
   </tr>
   
   <tr>
-    <td class="num">273</td>
+    <td class="num">268</td>
+    <td class="tk">688048.SS</td>
+    <td>Suzhou Everbright Photonics Co., Ltd. / 长光华芯
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.86</td>
+    <td class="num"><span class="neg">-25.2%</span></td>
+    <td class="num">60/396</td>
+    <td class="num">486</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">269</td>
     <td class="tk">002202.SZ</td>
     <td>Goldwind Science&amp;Technology Co., Ltd. / 金风科技
       
@@ -4292,7 +4246,35 @@
   </tr>
   
   <tr>
-    <td class="num">274</td>
+    <td class="num">270</td>
+    <td class="tk">000762.SZ</td>
+    <td>Xizang Mineral Development Co. LTD / 西藏矿业
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.86</td>
+    <td class="num"><span class="neg">-19.0%</span></td>
+    <td class="num">45/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">271</td>
+    <td class="tk">688609.SS</td>
+    <td>Unionman Technology / 九联科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.85</td>
+    <td class="num"><span class="neg">-25.1%</span></td>
+    <td class="num">61/396</td>
+    <td class="num">56</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">272</td>
     <td class="tk">688165.SS</td>
     <td>EFORT Intelligent Equipment Co., Ltd. / 埃夫特
       
@@ -4306,21 +4288,7 @@
   </tr>
   
   <tr>
-    <td class="num">275</td>
-    <td class="tk">000762.SZ</td>
-    <td>Xizang Mineral Development Co. LTD / 西藏矿业
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.85</td>
-    <td class="num"><span class="neg">-19.0%</span></td>
-    <td class="num">45/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">276</td>
+    <td class="num">273</td>
     <td class="tk">603876.SS</td>
     <td>Jiangsu Dingsheng New Materials Joint-Stock Co.,Ltd / 鼎胜新材
       
@@ -4328,13 +4296,41 @@
     <td>Basic Materials</td>
     <td class="num revz">0.85</td>
     <td class="num"><span class="neg">-18.9%</span></td>
-    <td class="num">46/256</td>
+    <td class="num">46/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">277</td>
+    <td class="num">274</td>
+    <td class="tk">000727.SZ</td>
+    <td>TPV Technology Co., Ltd. / 冠捷科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.85</td>
+    <td class="num"><span class="neg">-25.0%</span></td>
+    <td class="num">62/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">275</td>
+    <td class="tk">600563.SS</td>
+    <td>Xiamen Faratronic Co., Ltd. / 法拉电子
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.85</td>
+    <td class="num"><span class="neg">-24.9%</span></td>
+    <td class="num">63/396</td>
+    <td class="num">282</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">276</td>
     <td class="tk">600928.SS</td>
     <td>Bank of Xi&#39;an Co.,Ltd. / 西安银行
       
@@ -4344,6 +4340,20 @@
     <td class="num"><span class="pos">+0.9%</span></td>
     <td class="num">15/101</td>
     <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">277</td>
+    <td class="tk">688303.SS</td>
+    <td>Xinjiang Daqo New Energy Co.,Ltd. / 大全能源
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.85</td>
+    <td class="num"><span class="neg">-18.8%</span></td>
+    <td class="num">47/257</td>
+    <td class="num">354</td>
     <td class="num">0.3%</td>
   </tr>
   
@@ -4363,6 +4373,20 @@
   
   <tr>
     <td class="num">279</td>
+    <td class="tk">600707.SS</td>
+    <td>Caihong Display Devices Co.,Ltd. / 彩虹股份
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.84</td>
+    <td class="num"><span class="neg">-24.9%</span></td>
+    <td class="num">64/396</td>
+    <td class="num">314</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">280</td>
     <td class="tk">003006.SZ</td>
     <td>Chongqing Baiya Sanitary Products Co., Ltd. / 百亚股份
       
@@ -4372,20 +4396,6 @@
     <td class="num"><span class="neg">-9.9%</span></td>
     <td class="num">8/67</td>
     <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">280</td>
-    <td class="tk">688303.SS</td>
-    <td>Xinjiang Daqo New Energy Co.,Ltd. / 大全能源
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.84</td>
-    <td class="num"><span class="neg">-18.8%</span></td>
-    <td class="num">47/256</td>
-    <td class="num">354</td>
     <td class="num">0.3%</td>
   </tr>
   
@@ -4405,53 +4415,20 @@
   
   <tr>
     <td class="num">282</td>
-    <td class="tk">688047.SS</td>
-    <td>Loongson Technology Corporation Limited / 龙芯中科
+    <td class="tk">601208.SS</td>
+    <td>Sichuan Em Technology Co., Ltd. / 东材科技
       
     </td>
-    <td>Technology</td>
-    <td class="num revz">0.84</td>
-    <td class="num"><span class="neg">-24.1%</span></td>
-    <td class="num">65/395</td>
-    <td class="num">414</td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.82</td>
+    <td class="num"><span class="neg">-18.3%</span></td>
+    <td class="num">48/257</td>
+    <td class="num">468</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
     <td class="num">283</td>
-    <td class="tk">688387.SS</td>
-    <td>CICT Mobile Communication Technology Co., Ltd. / 信科移动
-      
-      <div class="chips">
-        <span class="chip warn" title="−0.60%/5d premium-block drag (t≈−2.8)"><span class="l-en">Premium block-trade (drag)</span><span class="l-zh">溢价大宗（拖累）</span></span>
-        
-      </div>
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.83</td>
-    <td class="num"><span class="neg">-24.0%</span></td>
-    <td class="num">66/395</td>
-    <td class="num">441</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">284</td>
-    <td class="tk">688472.SS</td>
-    <td>CSI Solar Co., Ltd. / 阿特斯
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.82</td>
-    <td class="num"><span class="neg">-23.9%</span></td>
-    <td class="num">67/395</td>
-    <td class="num">317</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">285</td>
     <td class="tk">600157.SS</td>
     <td>Wintime Energy Group Co.,Ltd. / 永泰能源
       
@@ -4465,7 +4442,7 @@
   </tr>
   
   <tr>
-    <td class="num">286</td>
+    <td class="num">284</td>
     <td class="tk">603179.SS</td>
     <td>Jiangsu Xinquan Automotive Trim Co.,Ltd. / 新泉股份
       
@@ -4479,35 +4456,7 @@
   </tr>
   
   <tr>
-    <td class="num">287</td>
-    <td class="tk">601208.SS</td>
-    <td>Sichuan Em Technology Co., Ltd. / 东材科技
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.82</td>
-    <td class="num"><span class="neg">-18.3%</span></td>
-    <td class="num">48/256</td>
-    <td class="num">468</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">288</td>
-    <td class="tk">002281.SZ</td>
-    <td>Accelink Technologies Co,Ltd. / 光迅科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.82</td>
-    <td class="num"><span class="neg">-23.8%</span></td>
-    <td class="num">68/395</td>
-    <td class="num">1436</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">289</td>
+    <td class="num">285</td>
     <td class="tk">002171.SZ</td>
     <td>Anhui Truchum Advanced Materials and Technology Co., Ltd. / 楚江新材
       
@@ -4515,13 +4464,13 @@
     <td>Basic Materials</td>
     <td class="num revz">0.82</td>
     <td class="num"><span class="neg">-18.3%</span></td>
-    <td class="num">49/256</td>
+    <td class="num">49/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">290</td>
+    <td class="num">286</td>
     <td class="tk">603919.SS</td>
     <td>JINHUI LIQUOR Co., Ltd. / 金徽酒
       
@@ -4535,49 +4484,7 @@
   </tr>
   
   <tr>
-    <td class="num">291</td>
-    <td class="tk">300762.SZ</td>
-    <td>Jushri Technologies, INC. / 上海瀚讯
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.81</td>
-    <td class="num"><span class="neg">-23.6%</span></td>
-    <td class="num">69/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">292</td>
-    <td class="tk">301631.SZ</td>
-    <td>Shenzhen Uniconn Technology Co., Ltd. / 壹连科技
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.81</td>
-    <td class="num"><span class="neg">-23.6%</span></td>
-    <td class="num">70/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">293</td>
-    <td class="tk">300394.SZ</td>
-    <td>Suzhou TFC Optical Communication Co., Ltd. / 天孚通信
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.81</td>
-    <td class="num"><span class="neg">-23.6%</span></td>
-    <td class="num">71/395</td>
-    <td class="num">2714</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">294</td>
+    <td class="num">287</td>
     <td class="tk">300398.SZ</td>
     <td>PhiChem Corporation / 飞凯材料
       
@@ -4585,27 +4492,27 @@
     <td>Basic Materials</td>
     <td class="num revz">0.81</td>
     <td class="num"><span class="neg">-18.1%</span></td>
-    <td class="num">50/256</td>
+    <td class="num">50/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">295</td>
-    <td class="tk">300353.SZ</td>
-    <td>Kyland Technology Co., Ltd. / 东土科技
+    <td class="num">288</td>
+    <td class="tk">688047.SS</td>
+    <td>Loongson Technology Corporation Limited / 龙芯中科
       
     </td>
     <td>Technology</td>
-    <td class="num revz">0.80</td>
-    <td class="num"><span class="neg">-23.5%</span></td>
-    <td class="num">72/395</td>
-    <td class="num">—</td>
+    <td class="num revz">0.81</td>
+    <td class="num"><span class="neg">-24.1%</span></td>
+    <td class="num">65/396</td>
+    <td class="num">414</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">296</td>
+    <td class="num">289</td>
     <td class="tk">603662.SS</td>
     <td>Keli Sensing Technology (Ningbo) Co.,Ltd. / 柯力传感
       
@@ -4619,7 +4526,40 @@
   </tr>
   
   <tr>
-    <td class="num">297</td>
+    <td class="num">290</td>
+    <td class="tk">688387.SS</td>
+    <td>CICT Mobile Communication Technology Co., Ltd. / 信科移动
+      
+      <div class="chips">
+        <span class="chip warn" title="−0.60%/5d premium-block drag (t≈−2.8)"><span class="l-en">Premium block-trade (drag)</span><span class="l-zh">溢价大宗（拖累）</span></span>
+        
+      </div>
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.80</td>
+    <td class="num"><span class="neg">-24.0%</span></td>
+    <td class="num">66/396</td>
+    <td class="num">441</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">291</td>
+    <td class="tk">600338.SS</td>
+    <td>Xizang Zhufeng Resources Co., Ltd. / 西藏珠峰
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.80</td>
+    <td class="num"><span class="neg">-17.9%</span></td>
+    <td class="num">51/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">292</td>
     <td class="tk">301632.SZ</td>
     <td>Guangdong Provincial Academy of Building Research Group Co., Ltd. / 广东建科
       
@@ -4638,7 +4578,7 @@
   </tr>
   
   <tr>
-    <td class="num">298</td>
+    <td class="num">293</td>
     <td class="tk">600158.SS</td>
     <td>China Sports Industry Group Co., Ltd. / 中体产业
       
@@ -4652,7 +4592,7 @@
   </tr>
   
   <tr>
-    <td class="num">299</td>
+    <td class="num">294</td>
     <td class="tk">600403.SS</td>
     <td>Henan Dayou Energy Co., Ltd / 大有能源
       
@@ -4666,7 +4606,21 @@
   </tr>
   
   <tr>
-    <td class="num">300</td>
+    <td class="num">295</td>
+    <td class="tk">300409.SZ</td>
+    <td>Guangdong Dowstone Technology Co., Ltd. / 道氏技术
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.80</td>
+    <td class="num"><span class="neg">-17.9%</span></td>
+    <td class="num">52/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">296</td>
     <td class="tk">002221.SZ</td>
     <td>Oriental Energy Co., Ltd. / 东华能源
       
@@ -4680,21 +4634,21 @@
   </tr>
   
   <tr>
-    <td class="num">301</td>
-    <td class="tk">600338.SS</td>
-    <td>Xizang Zhufeng Resources Co., Ltd. / 西藏珠峰
+    <td class="num">297</td>
+    <td class="tk">688472.SS</td>
+    <td>CSI Solar Co., Ltd. / 阿特斯
       
     </td>
-    <td>Basic Materials</td>
+    <td>Technology</td>
     <td class="num revz">0.80</td>
-    <td class="num"><span class="neg">-17.9%</span></td>
-    <td class="num">51/256</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-23.9%</span></td>
+    <td class="num">67/396</td>
+    <td class="num">317</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">302</td>
+    <td class="num">298</td>
     <td class="tk">603693.SS</td>
     <td>Jiangsu New Energy Development Co., Ltd. / 江苏新能
       
@@ -4708,7 +4662,7 @@
   </tr>
   
   <tr>
-    <td class="num">303</td>
+    <td class="num">299</td>
     <td class="tk">000966.SZ</td>
     <td>CHN Energy Changyuan Electric Power Co.,Ltd. / 长源电力
       
@@ -4722,21 +4676,21 @@
   </tr>
   
   <tr>
-    <td class="num">304</td>
-    <td class="tk">300409.SZ</td>
-    <td>Guangdong Dowstone Technology Co., Ltd. / 道氏技术
+    <td class="num">300</td>
+    <td class="tk">002053.SZ</td>
+    <td>Yunnan Energy Investment Co., Ltd. / 云南能投
       
     </td>
     <td>Basic Materials</td>
     <td class="num revz">0.79</td>
-    <td class="num"><span class="neg">-17.9%</span></td>
-    <td class="num">52/256</td>
+    <td class="num"><span class="neg">-17.8%</span></td>
+    <td class="num">53/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">305</td>
+    <td class="num">301</td>
     <td class="tk">300529.SZ</td>
     <td>Jafron Biomedical Co.,Ltd. / 健帆生物
       
@@ -4750,21 +4704,7 @@
   </tr>
   
   <tr>
-    <td class="num">306</td>
-    <td class="tk">002053.SZ</td>
-    <td>Yunnan Energy Investment Co., Ltd. / 云南能投
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.79</td>
-    <td class="num"><span class="neg">-17.8%</span></td>
-    <td class="num">53/256</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">307</td>
+    <td class="num">302</td>
     <td class="tk">605123.SS</td>
     <td>Wuxi Paike New Materials Technology Co.,Ltd. / 派克新材
       
@@ -4778,7 +4718,7 @@
   </tr>
   
   <tr>
-    <td class="num">308</td>
+    <td class="num">303</td>
     <td class="tk">000786.SZ</td>
     <td>Beijing New Building Materials Public Limited Company / 北新建材
       
@@ -4792,49 +4732,91 @@
   </tr>
   
   <tr>
-    <td class="num">309</td>
+    <td class="num">304</td>
+    <td class="tk">002281.SZ</td>
+    <td>Accelink Technologies Co,Ltd. / 光迅科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.79</td>
+    <td class="num"><span class="neg">-23.8%</span></td>
+    <td class="num">68/396</td>
+    <td class="num">1436</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">305</td>
     <td class="tk">603659.SS</td>
     <td>Shanghai Putailai New Energy Technology Group Co.,Ltd. / 璞泰来
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">0.78</td>
+    <td class="num revz">0.79</td>
     <td class="num"><span class="neg">-17.7%</span></td>
-    <td class="num">54/256</td>
+    <td class="num">54/257</td>
     <td class="num">487</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">310</td>
-    <td class="tk">688234.SS</td>
-    <td>SICC Co., Ltd. / 天岳先进
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.78</td>
-    <td class="num"><span class="neg">-23.1%</span></td>
-    <td class="num">73/395</td>
-    <td class="num">488</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">311</td>
+    <td class="num">306</td>
     <td class="tk">002326.SZ</td>
     <td>Zhejiang Yongtai Technology Co.,Ltd. / 永太科技
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">0.78</td>
+    <td class="num revz">0.79</td>
     <td class="num"><span class="neg">-17.7%</span></td>
-    <td class="num">55/256</td>
+    <td class="num">55/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">312</td>
+    <td class="num">307</td>
+    <td class="tk">002378.SZ</td>
+    <td>Chongyi Zhangyuan Tungsten Co., Ltd. / 章源钨业
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.78</td>
+    <td class="num"><span class="neg">-17.6%</span></td>
+    <td class="num">56/257</td>
+    <td class="num">293</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">308</td>
+    <td class="tk">300762.SZ</td>
+    <td>Jushri Technologies, INC. / 上海瀚讯
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.78</td>
+    <td class="num"><span class="neg">-23.6%</span></td>
+    <td class="num">69/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">309</td>
+    <td class="tk">301631.SZ</td>
+    <td>Shenzhen Uniconn Technology Co., Ltd. / 壹连科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.78</td>
+    <td class="num"><span class="neg">-23.6%</span></td>
+    <td class="num">70/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">310</td>
     <td class="tk">002755.SZ</td>
     <td>Beijing Aosaikang Pharmaceutical Co., Ltd. / 奥赛康
       
@@ -4848,35 +4830,21 @@
   </tr>
   
   <tr>
-    <td class="num">313</td>
-    <td class="tk">002378.SZ</td>
-    <td>Chongyi Zhangyuan Tungsten Co., Ltd. / 章源钨业
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.78</td>
-    <td class="num"><span class="neg">-17.6%</span></td>
-    <td class="num">56/256</td>
-    <td class="num">293</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">314</td>
-    <td class="tk">002544.SZ</td>
-    <td>Cetc Potevio Science&amp;Technology Co.,Ltd. / 普天科技
+    <td class="num">311</td>
+    <td class="tk">300394.SZ</td>
+    <td>Suzhou TFC Optical Communication Co., Ltd. / 天孚通信
       
     </td>
     <td>Technology</td>
     <td class="num revz">0.78</td>
-    <td class="num"><span class="neg">-23.0%</span></td>
-    <td class="num">74/395</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-23.6%</span></td>
+    <td class="num">71/396</td>
+    <td class="num">2714</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
-    <td class="num">315</td>
+    <td class="num">312</td>
     <td class="tk">600055.SS</td>
     <td>Beijing Wandong Medical Technology Co.,Ltd. / 万东医疗
       
@@ -4890,21 +4858,7 @@
   </tr>
   
   <tr>
-    <td class="num">316</td>
-    <td class="tk">300058.SZ</td>
-    <td>BlueFocus Intelligent Communications Group Co., Ltd. / 蓝色光标
-      
-    </td>
-    <td>Communication Services</td>
-    <td class="num revz">0.78</td>
-    <td class="num"><span class="neg">-14.8%</span></td>
-    <td class="num">10/52</td>
-    <td class="num">474</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">317</td>
+    <td class="num">313</td>
     <td class="tk">601377.SS</td>
     <td>Industrial Securities Co.,Ltd. / 兴业证券
       
@@ -4918,7 +4872,49 @@
   </tr>
   
   <tr>
-    <td class="num">318</td>
+    <td class="num">314</td>
+    <td class="tk">300353.SZ</td>
+    <td>Kyland Technology Co., Ltd. / 东土科技
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.78</td>
+    <td class="num"><span class="neg">-23.5%</span></td>
+    <td class="num">72/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">315</td>
+    <td class="tk">300058.SZ</td>
+    <td>BlueFocus Intelligent Communications Group Co., Ltd. / 蓝色光标
+      
+    </td>
+    <td>Communication Services</td>
+    <td class="num revz">0.78</td>
+    <td class="num"><span class="neg">-14.8%</span></td>
+    <td class="num">10/52</td>
+    <td class="num">474</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">316</td>
+    <td class="tk">600549.SS</td>
+    <td>Xiamen Tungsten Co.,Ltd. / 厦门钨业
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.77</td>
+    <td class="num"><span class="neg">-17.5%</span></td>
+    <td class="num">57/257</td>
+    <td class="num">804</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">317</td>
     <td class="tk">002434.SZ</td>
     <td>Zhejiang Wanliyang Co., Ltd. / 万里扬
       
@@ -4932,49 +4928,7 @@
   </tr>
   
   <tr>
-    <td class="num">319</td>
-    <td class="tk">688322.SS</td>
-    <td>Orbbec Inc. / 奥比中光
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.77</td>
-    <td class="num"><span class="neg">-22.9%</span></td>
-    <td class="num">75/395</td>
-    <td class="num">401</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">320</td>
-    <td class="tk">600549.SS</td>
-    <td>Xiamen Tungsten Co.,Ltd. / 厦门钨业
-      
-    </td>
-    <td>Basic Materials</td>
-    <td class="num revz">0.77</td>
-    <td class="num"><span class="neg">-17.5%</span></td>
-    <td class="num">57/256</td>
-    <td class="num">804</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">321</td>
-    <td class="tk">688503.SS</td>
-    <td>Changzhou Fusion New Material Co., Ltd. / 聚和材料
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.77</td>
-    <td class="num"><span class="neg">-22.8%</span></td>
-    <td class="num">76/395</td>
-    <td class="num">—</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">322</td>
+    <td class="num">318</td>
     <td class="tk">002961.SZ</td>
     <td>Ruida Futures Co.,Ltd. / 瑞达期货
       
@@ -4988,21 +4942,7 @@
   </tr>
   
   <tr>
-    <td class="num">323</td>
-    <td class="tk">688375.SS</td>
-    <td>Guobo Electronics Co., Ltd. / 国博电子
-      
-    </td>
-    <td>Technology</td>
-    <td class="num revz">0.76</td>
-    <td class="num"><span class="neg">-22.7%</span></td>
-    <td class="num">77/395</td>
-    <td class="num">431</td>
-    <td class="num">0.3%</td>
-  </tr>
-  
-  <tr>
-    <td class="num">324</td>
+    <td class="num">319</td>
     <td class="tk">600188.SS</td>
     <td>Yankuang Energy Group Company Limited / 兖矿能源
       
@@ -5016,7 +4956,7 @@
   </tr>
   
   <tr>
-    <td class="num">325</td>
+    <td class="num">320</td>
     <td class="tk">300482.SZ</td>
     <td>Guangzhou Wondfo Biotech Co.,Ltd / 万孚生物
       
@@ -5030,7 +4970,35 @@
   </tr>
   
   <tr>
-    <td class="num">326</td>
+    <td class="num">321</td>
+    <td class="tk">688234.SS</td>
+    <td>SICC Co., Ltd. / 天岳先进
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.76</td>
+    <td class="num"><span class="neg">-23.1%</span></td>
+    <td class="num">73/396</td>
+    <td class="num">488</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">322</td>
+    <td class="tk">002254.SZ</td>
+    <td>Tayho Advanced Materials Group Co., Ltd. / 泰和新材
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.76</td>
+    <td class="num"><span class="neg">-17.1%</span></td>
+    <td class="num">58/257</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">323</td>
     <td class="tk">600821.SS</td>
     <td>NYOCOR Co., Ltd. / 金开新能
       
@@ -5044,44 +5012,100 @@
   </tr>
   
   <tr>
-    <td class="num">327</td>
-    <td class="tk">300455.SZ</td>
-    <td>Beijing Aerospace Shenzhou Intelligent Equipment Technology Co., Ltd. / 航天智装
+    <td class="num">324</td>
+    <td class="tk">600143.SS</td>
+    <td>Kingfa Sci. &amp; Tech. Co., Ltd. / 金发科技
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.75</td>
+    <td class="num"><span class="neg">-17.1%</span></td>
+    <td class="num">59/257</td>
+    <td class="num">369</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">325</td>
+    <td class="tk">002544.SZ</td>
+    <td>Cetc Potevio Science&amp;Technology Co.,Ltd. / 普天科技
       
     </td>
     <td>Technology</td>
     <td class="num revz">0.75</td>
-    <td class="num"><span class="neg">-22.6%</span></td>
-    <td class="num">78/395</td>
+    <td class="num"><span class="neg">-23.0%</span></td>
+    <td class="num">74/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">326</td>
+    <td class="tk">601777.SS</td>
+    <td>Chongqing Afari Technology Co., Ltd. / 千里科技
+      
+    </td>
+    <td>Consumer Cyclical</td>
+    <td class="num revz">0.75</td>
+    <td class="num"><span class="neg">-18.8%</span></td>
+    <td class="num">29/129</td>
+    <td class="num">369</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">327</td>
+    <td class="tk">600459.SS</td>
+    <td>Sino-Platinum Metals Co.,Ltd / 贵研铂业
+      
+    </td>
+    <td>Basic Materials</td>
+    <td class="num revz">0.75</td>
+    <td class="num"><span class="neg">-17.0%</span></td>
+    <td class="num">60/257</td>
     <td class="num">—</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
     <td class="num">328</td>
-    <td class="tk">300166.SZ</td>
-    <td>Business-intelligence of Oriental Nations Corporation Ltd. / 东方国信
+    <td class="tk">688322.SS</td>
+    <td>Orbbec Inc. / 奥比中光
       
     </td>
     <td>Technology</td>
     <td class="num revz">0.75</td>
-    <td class="num"><span class="neg">-22.6%</span></td>
-    <td class="num">79/395</td>
-    <td class="num">—</td>
+    <td class="num"><span class="neg">-22.9%</span></td>
+    <td class="num">75/396</td>
+    <td class="num">401</td>
     <td class="num">0.3%</td>
   </tr>
   
   <tr>
     <td class="num">329</td>
-    <td class="tk">002254.SZ</td>
-    <td>Tayho Advanced Materials Group Co., Ltd. / 泰和新材
+    <td class="tk">688503.SS</td>
+    <td>Changzhou Fusion New Material Co., Ltd. / 聚和材料
+      
+    </td>
+    <td>Technology</td>
+    <td class="num revz">0.74</td>
+    <td class="num"><span class="neg">-22.8%</span></td>
+    <td class="num">76/396</td>
+    <td class="num">—</td>
+    <td class="num">0.3%</td>
+  </tr>
+  
+  <tr>
+    <td class="num">330</td>
+    <td class="tk">300919.SZ</td>
+    <td>CNGR Advanced Material Co., Ltd. / 中伟新材
       
     </td>
     <td>Basic Materials</td>
-    <td class="num revz">0.75</td>
-    <td class="num"><span class="neg">-17.1%</span></td>
-    <td class="num">58/256</td>
-    <td class="num">—</td>
+    <td class="num revz">0.74</td>
+    <td class="num"><span class="neg">-16.8%</span></td>
+    <td class="num">61/257</td>
+    <td class="num">419</td>
     <td class="num">0.3%</td>
   </tr>
   
@@ -5092,7 +5116,7 @@
 <div class="foot">
   <span class="l-en">Reversal Sleeve — monthly-rebalanced contrarian basket. A portfolio, NOT stock tips; high variance, size small.</span><span class="l-zh">反转组合 — 按月再平衡的逆向篮子。这是一个组合，不是个股建议；高波动，宜小仓位。</span>
   · <code>site/factordata/cn_reversal_sleeve.json</code> ·
-  <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-09-03 11:58 UTC ·
+  <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-09-03 21:45 UTC ·
   <span class="l-en">W5-B: page promoted from shadow (CONFIRM verdict, 2026-07-03). Honest headline from survivorship-clean(er) raw-plane re-derive; forward ledger is the real record.</span><span class="l-zh">W5-B：页面已从影子状态升级（CONFIRM裁决，2026-07-03）。诚实标题数据来自幸存者偏差更小的原始面板再推导；前瞻台账是真实记录。</span>
 </div>
 <script src="theme.js?v=f0609099" defer></script>
