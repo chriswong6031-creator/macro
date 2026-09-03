@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/special_situations_deal_term_observation.schema.json",
+  "title": "Special Situations deal-term observation",
+  "description": "An immutable, source-byte-bound observation of ONE directly stated deal term of a public EDGAR filing. It is not an event, a lifecycle record, a price, a score, a rank, or a trade claim. A correction never edits this record: it appends a new one that supersedes it. Sibling of contracts/capital_structure_document_term_observation.schema.json, which is scoped to registration-fee-table rows of a different owner and is therefore not reusable here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "observation_id", "status", "field", "normalized", "raw", "precision",
+    "source", "locator", "extraction_method", "extraction_revision"
+  ],
+  "properties": {
+    "schema": {"const": "special_situations.deal_term_observation.v1"},
+    "observation_id": {"type": "string", "minLength": 8},
+    "prior_observation_id": {"type": ["string", "null"]},
+    "supersedes_observation_id": {"type": ["string", "null"]},
+    "status": {"enum": ["observed", "ambiguous", "deferred", "retracted"]},
+    "field": {
+      "enum": ["price_per_share", "currency", "consideration", "stated_premium_pct",
+               "expected_close"]
+    },
+    "normalized": {"type": ["string", "number", "null"]},
+    "raw": {"type": ["string", "number", "null"]},
+    "unit": {"type": ["string", "null"]},
+    "currency": {"type": ["string", "null"]},
+    "currency_basis": {
+      "description": "HOW the currency was established. A bare dollar sign names no currency on its own, so an inference is never recorded as an observation.",
+      "type": ["string", "null"],
+      "enum": ["explicit_token", "bare_dollar_unambiguous_usd_listing",
+               "bare_dollar_document_ambiguous", "bare_dollar_unresolved_listing", null]
+    },
+    "precision": {
+      "enum": ["exact_date", "month", "quarter", "half_year", "text_only", "exact_numeric"]
+    },
+    "note": {"type": ["string", "null"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "body_sha256", "doc_id"],
+      "properties": {
+        "cik": {"type": ["string", "null"]},
+        "form_type": {"type": ["string", "null"]},
+        "accession": {"type": "string", "minLength": 1},
+        "filing_date": {"type": ["string", "null"]},
+        "source_url": {"type": ["string", "null"]},
+        "body_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "body_chars": {"type": ["integer", "null"]},
+        "body_truncated": {"type": "boolean"},
+        "acquired_at": {"type": ["string", "null"]},
+        "doc_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "locator": {
+      "description": "Exact evidence span inside the bound bytes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["doc_id", "start", "end", "excerpt_sha256"],
+      "properties": {
+        "doc_id": {"type": "string", "minLength": 1},
+        "section": {"type": ["string", "null"]},
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 1},
+        "excerpt": {"type": "string"},
+        "excerpt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "extraction_method": {"const": "deterministic_regex_span"},
+    "extraction_revision": {"type": "string", "minLength": 1},
+    "correction_reason": {"type": ["string", "null"]},
+    "recorded_at": {"type": ["string", "null"]}
+  }
+}

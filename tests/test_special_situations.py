@@ -683,3 +683,130 @@ def test_snapshot_is_context_only(tmp_path, monkeypatch):
     assert "disclaimer" in snap
     assert snap["counts"].get("Activist Campaigns") == 1
     assert snap["coverage"]["floor_musd"] == 100.0
+
+
+# ---- F09-1: evidence-bound cash-deal economics, end to end -------------------
+#
+# The published 42,790.2% annualized spread had essentially no test coverage: one
+# `"risk_arb_top" in result` assertion stood between an ungrounded number and the machine
+# context every Neural Web consumer reads. These pin the wiring, not just the pure math.
+
+def _f09_env(tmp_path, monkeypatch, *, text, sessions, ticker="ABC", last_close=15.19,
+             filed="2026-06-17", category="Acquisitions"):
+    """A tmp data dir carrying one arb-category event, its observation ledger and a closes panel."""
+    import json
+    from engine import special_arb as arb
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({1: ticker}, {}))
+    root = tmp_path / "special_situations"
+    root.mkdir(exist_ok=True)
+    pd.DataFrame([{"id": 9, "ticker": ticker, "company": f"{ticker} Inc", "country": "US",
+                   "category": category, "issue": 19, "issue_date": "2026-06-14",
+                   "market_cap_musd": 500.0, "summary": "deal", "source_url": "u",
+                   "headline": "h"}]).to_parquet(root / "digest_db.parquet")
+    pd.DataFrame([{"id": "e1", "form_type": "DEFM14A", "company": f"{ticker} Inc", "cik": "1",
+                   "items": None, "date_filed": filed, "source_url": "edgarurl"}]
+                 ).to_parquet(root / "events.parquet")
+    src = arb.source_descriptor(cik="1", form_type="8-K", accession="0000000001-26-000001",
+                                filing_date=filed, source_url="https://sec.gov/x", body=text,
+                                acquired_at="2026-06-17T00:00:00Z")
+    obs = arb.extract_term_observations(text, source=src, listing_currency="USD",
+                                        recorded_at="2026-06-17T00:00:00Z")
+    (root / "observations").mkdir(exist_ok=True)
+    (root / "observations" / "observations.jsonl").write_text(
+        "\n".join(json.dumps(o, sort_keys=True) for o in obs) + "\n")
+    closes = pd.DataFrame({ticker: [last_close] * len(sessions), "ZZZZ": [1.0] * len(sessions)},
+                          index=pd.to_datetime(sessions))
+    (tmp_path / "breadth").mkdir(exist_ok=True)
+    closes.to_parquet(tmp_path / "breadth" / "_closes_cache.parquet")
+    return obs
+
+
+_CASH_EXACT = ("Each share of common stock will be converted into the right to receive $25.00 "
+               "in cash per share. The transaction is expected to close on December 15, 2026.")
+_CASH_MONTH = ("Each share of common stock will be converted into the right to receive $25.00 "
+               "in cash per share. The transaction is expected to close in November 2026.")
+
+
+def test_enrich_arb_publishes_receipts_not_bare_numbers(tmp_path, monkeypatch):
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    e = sits[0]["arb"]
+    assert e["quality_state"] == arb.QUALITY_VERIFIED
+    assert e["offer_price"] == 25.0 and e["currency"] == "USD"
+    # a real exchange session, a real artifact and a real basis — not "the last non-null row"
+    assert e["live_session"] == "2026-06-18" and e["sessions_behind"] == 0
+    assert e["live_source"].endswith("_closes_cache.parquet") and e["price_basis"] == "close_raw"
+    # the reference session is strictly BEFORE SEC availability, not a 30-row lookback
+    assert e["reference_session"] == "2026-06-16"
+    assert e["accession"] == "0000000001-26-000001"
+    assert e["evidence"]["price_per_share"]["locator"]["end"] > 0
+
+
+def test_enrich_arb_marks_a_stale_close_instead_of_pricing_off_it(tmp_path, monkeypatch):
+    """The panel's newest session exists, but this listing did not trade on it."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-15", "2026-06-16"])
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    # ZZZZ trades on a later session; ABC does not, so ABC is one session behind
+    panel = pd.read_parquet(tmp_path / "breadth" / "_closes_cache.parquet")
+    panel.loc[pd.Timestamp("2026-06-18")] = [float("nan"), 1.0]
+    panel.sort_index().to_parquet(tmp_path / "breadth" / "_closes_cache.parquet")
+    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    e = sits[0]["arb"]
+    assert e["quality_state"] == arb.QUALITY_STALE_PRICE and e["sessions_behind"] == 1
+    assert e["orderable"] is False
+
+
+def test_enrich_arb_never_invents_a_close_day(tmp_path, monkeypatch):
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_MONTH, sessions=["2026-06-16", "2026-06-18"])
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    e = sits[0]["arb"]
+    assert e["expected_close"] == "2026-11" and e["expected_close_precision"] == "month"
+    assert e["days_to_close"] is None and e["annualized_pct"] is None
+    assert e["quality_state"] == arb.QUALITY_VERIFIED and e["orderable"] is False
+
+
+def test_enrich_arb_without_observations_is_degraded_not_absent(tmp_path, monkeypatch):
+    """The LLM lane may still hold `llm_terms`; with no observation ledger there is no number."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    (tmp_path / "special_situations" / "observations" / "observations.jsonl").write_text("")
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17",
+             "deal_terms": {"price_per_share": 25.0, "consideration": "cash"}}]
+    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    e = sits[0]["arb"]
+    assert e["quality_state"] == arb.QUALITY_SOURCE_UNAVAILABLE
+    assert e["offer_price"] is None and e["live_gross_spread_pct"] is None
+
+
+def test_mastermind_emit_and_context_feed_cannot_diverge(tmp_path, monkeypatch):
+    """The mutant that shipped: one consumer excluded a row the other ranked first."""
+    from engine import special_arb as arb
+    from engine import special_sits_intel as si
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"},
+            {"ticker": "MIX", "company": "MIX Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    emit_rows, emit_counts = arb.select_ordered_context(sits, limit=25)
+    feed_rows, feed_counts = arb.select_ordered_context(sits, limit=5)
+    assert {r["ticker"] for r in feed_rows} <= {r["ticker"] for r in emit_rows}
+    assert emit_counts["by_state"] == feed_counts["by_state"]
+    # and the emitted payload carries the census, so an excluded row is countable
+    e = sse.mastermind_emit()
+    assert "risk_arb_census" in e
+    for row in e["risk_arb"]:
+        assert row["is_signal"] is False and row["quality_state"] == arb.QUALITY_VERIFIED
+    assert si  # the feed consumer imports the same owner

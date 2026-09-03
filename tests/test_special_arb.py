@@ -356,3 +356,30 @@ def test_precision_corpus_close_precision_is_never_overstated():
             continue
         compiled = arb.compile_current_terms(_obs(case))
         assert compiled["terms"].get("expected_close_precision") == want, case["id"]
+
+
+# ---------------------------------------------------------------- the published contract
+
+def test_every_observation_validates_against_the_committed_contract():
+    from jsonschema import Draft202012Validator
+    schema = json.loads(
+        (Path(__file__).parents[1] /
+         "contracts/special_situations_deal_term_observation.schema.json").read_text())
+    v = Draft202012Validator(schema)
+    n = 0
+    for case in CORPUS:
+        for o in _obs(case):
+            errors = sorted(v.iter_errors(o), key=str)
+            assert not errors, f"{case['id']}/{o['field']}: {[e.message for e in errors]}"
+            n += 1
+    assert n > 20, "corpus produced too few observations to be a real contract check"
+
+
+def test_a_model_authored_term_cannot_satisfy_the_contract():
+    """`llm_terms` have no bytes, no span and no digest — they cannot be minted as observations."""
+    from jsonschema import Draft202012Validator
+    schema = json.loads(
+        (Path(__file__).parents[1] /
+         "contracts/special_situations_deal_term_observation.schema.json").read_text())
+    candidate = arb.parse_terms({"price_per_share": 25.0, "consideration": "cash"})
+    assert list(Draft202012Validator(schema).iter_errors(candidate))
