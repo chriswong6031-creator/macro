@@ -42,6 +42,23 @@
 {% set k = 'in' if (vel is not none and vel>=0.5) else ('out' if (vel is not none and vel<=-0.5) else 'mid') %}
 <span class="vstate {{ k }}">{{ t(en, zh) }}</span>
 {%- endmacro %}
+{# section watermark (W2, spec §3): any L1 section fed by a STALE leg gets a one-line band
+   directly under its own h2 — NOT an overlay, numbers stay readable, the band is unmissable.
+   ``legs`` is the list of source dicts (from snap.sources) that feed THIS section; the FIRST
+   STALE one found supplies the substituted date (a section is rarely fed by two independently
+   stale legs at once, and naming one real date beats averaging/guessing). DEGRADED never
+   triggers this — spec §3: "DEGRADED renders a quiet chip-level treatment only". #}
+{% macro sec_watermark(legs) -%}
+{% set _stale_list = [] %}
+{% for _l in (legs or []) %}{% if _l and _l.status == 'STALE' %}{% set _ = _stale_list.append(_l) %}{% endif %}{% endfor %}
+{% set _stale = _stale_list|first %}
+{% if _stale %}
+<div class="fv-watermark">
+  <span class="l-en">Showing last good data from {{ _stale.effective_date or '—' }} — source behind.</span>
+  <span class="l-zh">显示{{ _stale.effective_date or '—' }}最近有效数据 — 数据源滞后。</span>
+</div>
+{% endif %}
+{%- endmacro %}
 {# confluence: a pure render-time CLASS from two existing fields — NOT a stored/ranked score #}
 {% macro confcls(vel, seat) -%}
 {%- if seat and vel is not none -%}
@@ -289,7 +306,43 @@ html[data-theme="light"] .fv-src--behind{background:color-mix(in srgb,var(--warn
 html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
 .fv-src--unavailable{opacity:.68}
 .fv-src--unavailable .s-state{color:var(--faint)}
+/* STALE (W2) — a materially louder treatment than "behind": this is the chip the
+   incident-4676 12-day A-share freeze should have shown instead of reading confidently current.
+   Dark = desaturated amber RING + dimmed body (command-center instrument-fault idiom);
+   light = amber-tinted paper + 3px amber rail + deepened ink (research-workspace idiom) —
+   two independently art-directed treatments, never a token swap (TP-0). */
+.fv-src--stale{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+.fv-src--stale .s-state{color:var(--warn);font-weight:700}
+html[data-theme="dark"] .fv-src--stale{filter:saturate(.72);opacity:.86;
+  box-shadow:0 0 0 1.5px color-mix(in srgb,var(--warn) 46%,transparent),0 0 22px -6px color-mix(in srgb,var(--warn) 55%,transparent)}
+html[data-theme="light"] .fv-src--stale{background:color-mix(in srgb,var(--warn) 11%,transparent);
+  box-shadow:inset 3px 0 0 var(--warn);opacity:1}
+html[data-theme="light"] .fv-src--stale .s-name{color:var(--ink);font-weight:800}
+/* UNAVAILABLE — dark: dashed border + muted; light: hatched/dashed hairline + muted ink */
+.fv-src--unavailable{border-style:dashed}
+html[data-theme="light"] .fv-src--unavailable{background:repeating-linear-gradient(135deg,
+  color-mix(in srgb,var(--muted) 6%,transparent) 0 6px, transparent 6px 12px)}
+/* REVISED — a distinct (not amber) marker: the number itself changed, not merely its age */
+.fv-src--revised{border-color:color-mix(in srgb,var(--blue) 50%,var(--line))}
+.fv-src--revised .s-state{color:var(--ink-link, var(--blue));font-weight:700}
+html[data-theme="dark"] .fv-src--revised{box-shadow:0 0 0 1px color-mix(in srgb,var(--blue) 34%,transparent)}
+html[data-theme="light"] .fv-src--revised{background:color-mix(in srgb,var(--blue) 7%,transparent);
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--blue) 55%,transparent)}
 @media (max-width:640px){.fv-src{min-width:calc(50% - 5px);max-width:none}}
+
+/* ═══ SECTION WATERMARK (spec §3) — any L1 section fed by a STALE leg, right under h2 ═══ */
+.fv-watermark{margin:10px 0 4px;padding:9px 13px;border-radius:var(--r-ctl, 10px);font-size:12.5px;line-height:1.5;
+  display:flex;gap:8px;align-items:flex-start;color:var(--ink-2)}
+.fv-watermark::before{content:"⚠";flex:none;color:var(--ink-warn, var(--warn))}
+html[data-theme="dark"] .fv-watermark{background:color-mix(in srgb,var(--warn) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+html[data-theme="light"] .fv-watermark{background:color-mix(in srgb,var(--warn) 10%,transparent);
+  box-shadow:inset 3px 0 0 var(--warn);border:1px solid color-mix(in srgb,var(--warn) 24%,var(--line))}
+
+/* hero STALE verdict form (spec §3) — replaces the thesis sentence + stance chip */
+.fv-thesis--stale{color:var(--ink)}
+.fv-stance--stale{border-color:var(--warn)!important;color:var(--ink-warn, var(--warn))!important;
+  background:color-mix(in srgb,var(--warn) 10%,transparent)!important}
 
 /* ═══════════════ WHAT CHANGED TODAY (spec §2.3) ═══════════════ */
 .fv-chg-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
@@ -500,7 +553,15 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   {% set inst = P.inst if P else none %}
   {% set MR = (snap.market_read.themes if snap.market_read else none) %}
   {% set CS = snap.change_summary %}
-  {% if CS and CS.material_change == false %}
+  {% set PUB = snap.publication_state %}
+  {# leg lookup by source_id, reused by every section's sec_watermark() call below (W2) #}
+  {% set _src_by_id = {} %}
+  {% for _s in (snap.sources or []) %}{% set _ = _src_by_id.update({_s.source_id: _s}) %}{% endfor %}
+  {% set _is_stale_pub = PUB in ('STALE', 'UNAVAILABLE') %}
+  {% if _is_stale_pub %}
+    {% set stance_en = 'Stand aside — data behind' %}
+    {% set stance_zh = '暂缓 — 数据滞后' %}
+  {% elif CS and CS.material_change == false %}
     {% set stance_en = 'No material shift — nothing to chase' %}
     {% set stance_zh = '无重大变化' %}
   {% else %}
@@ -513,8 +574,18 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       <span class="asof">{{ t('daily · as of','日度 · 截至') }} {{ snap.as_of }}</span>
     </div>
     {# ---- two-axis verdict (spec §2.1) — generated from market_read, never a single
-         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ---- #}
-    {% if MR and MR.relative_breadth and MR.relative_breadth.denominator %}
+         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ----
+         W2 (spec §3): a STALE/UNAVAILABLE publication_state REPLACES the verdict sentence
+         entirely — a source behind must never share a screen with a confident read. #}
+    {% if _is_stale_pub %}
+      {% set _stale_leg = (snap.sources or [])|selectattr('status','defined')|selectattr('status','in',['STALE','UNAVAILABLE'])|list|first %}
+      {% set _stale_date = (_stale_leg.effective_date if (_stale_leg and _stale_leg.effective_date) else snap.as_of) or '—' %}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">Source data is behind — showing the last good read from {{ _stale_date }}. Treat levels as history, not today's tape.</span>
+        <span class="l-zh">数据源滞后——显示{{ _stale_date }}的最近有效读数。请将其视为历史，而非今日盘面。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif MR and MR.relative_breadth and MR.relative_breadth.denominator %}
       {% set n = MR.relative_breadth.denominator %}
       {% set relpos = MR.relative_breadth.positive %}
       {% set abspos = MR.absolute_breadth.positive %}
@@ -602,17 +673,28 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <span class="l-zh">自上一有效交易日（{{ CS.previous_valid_session }}）以来，资金状态无重大变化。</span>
       </p>
     {% else %}
-      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) %}
+      {# W2 (spec §3): a leg entering DEGRADED/STALE/UNAVAILABLE/REVISED is a material
+         change too — quality transitions ride the SAME "what changed" list as quadrant
+         flips and rank movers, distinguished by kind=='quality' (leg_id + status words,
+         never a theme quadrant). #}
+      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) + (CS.quality_transitions or []) %}
       <ul class="fv-chg-list">
         {% for c in all_changes[:8] %}
         {% set _tr = _theme_names.get(c.id) %}
+        {% set _leg = _src_by_id.get(c.id) %}
         <li class="fv-chg-row">
+          {% if c.kind is defined and c.kind == 'quality' %}
+          <b>{{ t(_leg.name_en, _leg.name_zh) if _leg else c.id }}</b>
+          {% set _fw = status_word.get(c.from_status) or (c.from_status or '—', c.from_status or '—') %}
+          {% set _tw = status_word.get(c.to_status) or (c.to_status, c.to_status) %}
+          <span class="l-en">: {{ _fw[0] }} → {{ _tw[0] }}</span><span class="l-zh">：{{ _fw[1] }} → {{ _tw[1] }}</span>
+          {% elif c.from_quadrant is defined %}
           <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
-          {% if c.from_quadrant is defined %}
           {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
           {% set _to = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
           <span class="l-en">: {{ _f[0] }} → {{ _to[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to[1] }}</span>
           {% else %}
+          <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
           <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
           <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
           {% endif %}
@@ -624,12 +706,20 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <ul class="fv-chg-list">
           {% for c in all_changes[8:] %}
           {% set _tr = _theme_names.get(c.id) %}
-          <li class="fv-chg-row"><b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
-            {% if c.from_quadrant is defined %}
+          {% set _leg = _src_by_id.get(c.id) %}
+          <li class="fv-chg-row">
+            {% if c.kind is defined and c.kind == 'quality' %}
+            <b>{{ t(_leg.name_en, _leg.name_zh) if _leg else c.id }}</b>
+            {% set _fw = status_word.get(c.from_status) or (c.from_status or '—', c.from_status or '—') %}
+            {% set _tw = status_word.get(c.to_status) or (c.to_status, c.to_status) %}
+            <span class="l-en">: {{ _fw[0] }} → {{ _tw[0] }}</span><span class="l-zh">：{{ _fw[1] }} → {{ _tw[1] }}</span>
+            {% elif c.from_quadrant is defined %}
+            <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
             {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
             {% set _to = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
             <span class="l-en">: {{ _f[0] }} → {{ _to[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to[1] }}</span>
             {% else %}
+            <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
             <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
             <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
             {% endif %}
@@ -648,6 +738,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <h2>{{ t('Pressure vs actual flow','相对压力 × 绝对流向') }}
         <span class="sub">{{ t('four honest states — themes placed by both axes','按两轴划分的主题分布') }}</span>
         <span class="qm" data-tip-en="Main-force order-size flow is structurally a net seller — the two quadrants that require positive absolute flow (real inflow, above norm / still buying, pace fading) are rare by construction, so their emptiness on a given day is expected, not a data gap." data-tip-zh="主力大单口径的资金结构性为净卖出——需要绝对流入为正的两个象限（真实流入·高于常态 / 仍净流入·动能转弱）本就罕见，为空属正常现象，并非数据缺失。" role="button" tabindex="0">?</span></h2>
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
     {% if MRt and MRt.relative_breadth and MRt.relative_breadth.denominator %}
     <p class="fv-stance">
       <span class="l-en">Pressure vs norm: <b>{{ MRt.relative_breadth.positive }}</b> above · <b>{{ MRt.relative_breadth.neutral }}</b> near · <b>{{ MRt.relative_breadth.negative }}</b> below — of {{ MRt.relative_breadth.denominator }} themes — {{ MRt.relative_breadth.missing }} unscored<br>Actual 4-week flow: <b>{{ MRt.absolute_breadth.positive }}</b> positive · <b>{{ MRt.absolute_breadth.negative }}</b> negative · <b>{{ MRt.absolute_breadth.neutral }}</b> neutral — {{ MRt.absolute_breadth.missing }} unscored</span>
@@ -706,6 +797,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <button data-mkt="hk" aria-pressed="false">{{ t('HK Southbound','南向') }}</button>
       </span>
     </div>
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy'), _src_by_id.get('hk_sb_holdings')]) }}
 
     {# ---- A-SHARE: theme lanes → member drill-down ---- #}
     {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
@@ -899,6 +991,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   <section class="fv-sec fv-reveal" id="channels">
     <div class="fv-eyebrow">🛰️ {{ t('Cross-Border Channels','跨境通道') }}</div>
     <h2>{{ t('Stock-Connect aggregate flow','沪深港通整体资金') }} <span class="sub">{{ t('the whole-channel tape · daily 1w / 1m / 3m velocity','整条通道 · 日度1周/1月/3月流速') }}</span></h2>
+    {{ sec_watermark([_src_by_id.get('sb_aggregate'), _src_by_id.get('hk_sb_holdings')]) }}
     {% if live_chans %}
     <div class="vgrid">
       {% for c in live_chans %}

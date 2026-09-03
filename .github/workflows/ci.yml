@@ -2069,6 +2069,11 @@ on:
       # listed with their subjects so the guard and the guarded change trigger together.
       - "engine/flow_observatory/**"
       - "tests/test_flow_observatory_contract.py"
+      # Flow Observatory V2 W2 (source quality + fail-visible publication): quality.py is
+      # already covered by the engine/flow_observatory/** glob above; its test file is
+      # listed explicitly per the W1 contract-delta lesson (wire the new file + its path
+      # gate in the SAME commit).
+      - "tests/test_flow_observatory_quality.py"
       # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
       # collector, grader engine, build script, detector config, and test file.
       - "collectors/flow_signals.py"
