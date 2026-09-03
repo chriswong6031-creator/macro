@@ -12980,6 +12980,7 @@ jobs:
       - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
+      - tests/test_top_anatomy_oot_receipt.py
       - tests/test_top_maturation.py
       - tests/test_winner_health_design_freeze.py
       - tests/test_winner_health_page.py
@@ -13041,6 +13042,23 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # Wired 2026-09-02: tests/test_top_anatomy_oot_receipt.py shipped in #6723
+      # named by NO run: step in any workflow (contract-delta unrun-suite
+      # finding, inherited on main at dae473ed625e), so the guard over the
+      # FROZEN TOPA OOT prereg (research/top_anatomy/TOPA_OOT_PREREG.md —
+      # STRICT session-arithmetic boundary, per-cell eligibility, separate
+      # episode- and day-level labeled-unit blocks) sat dark from the day it
+      # merged. It belongs to this owner: the suite drives
+      # scripts/research_top_anatomy_oot_receipt.py and the Phase-0 harness
+      # over synthetic massive_stock_day stores in tmp_path (CI has no real
+      # data/ tree) through the same engine/top_anatomy closure the step above
+      # owns, and the shared install is a strict superset of its
+      # pandas/numpy/pyarrow needs. Path-gated in ci.yml on BOTH the test and
+      # its subjects (scripts/research_top_anatomy_oot_receipt.py,
+      # scripts/research_top_anatomy_phase0.py, engine/top_anatomy.py) — a
+      # guard the guarded change cannot trigger is not a guard (#3488).
+      - name: TOP ANATOMY OOT receipt — frozen prereg schema and boundary contracts
+        run: python -m pytest tests/test_top_anatomy_oot_receipt.py -q
       # The same harness's JSON write path, so it belongs to the same owner rather
       # than a second overlapping job. `default=str` does NOT catch NaN — it only
       # fires for values the encoder cannot serialize — so three shipped
