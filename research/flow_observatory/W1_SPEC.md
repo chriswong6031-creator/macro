@@ -247,9 +247,21 @@ Accessible text alternative: a visually-hidden ordered list summarizing cell mem
 
 Compose through contract.py (`build_v2`, `validate`); append state_log under the lane
 guard; keep the additive never-fatal shape (a state_log/contract failure logs + skips the
-v2 extensions rather than killing the page build — but validate() failure on the FINAL
-payload blocks the desk.json write and annotates, because publishing a contract-violating
-payload is the defect class this program exists to kill).
+v2 extensions rather than killing the page build).
+
+**Ratified deviation (W1 repair round, ratified by the program principal):** the line
+above originally read "...but validate() failure on the FINAL payload blocks the desk.json
+write and annotates, because publishing a contract-violating payload is the defect class
+this program exists to kill." As BUILT, `scripts/build_flow_velocity.py` does not block the
+write on a `ContractError`: it logs `log.error(...)`, emits a `::error` annotation, and
+falls back to publishing the PRE-v2 (plain) payload — `desk.json`/`flow_velocity.html`
+still get written every run, just without the v2 extensions on the run that failed
+validation. This is the correct behavior and supersedes the block-the-write line: a v2
+payload that fails `validate()` is worth refusing, but the EXISTING plain flow-velocity
+page (which has shipped reliably for months) must never go dark because a new, additive
+extension had a bad night — that would make the v2 program itself a new source of outage
+risk for a page that worked before it existed. The `::error` annotation still fires so the
+failure is visible and actionable; it just does not take the whole desk down with it.
 
 ## 4. Tests (write failing FIRST; file: tests/test_flow_observatory_contract.py + edits)
 

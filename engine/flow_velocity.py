@@ -145,15 +145,22 @@ def _kinetics(flow: pd.Series, cfg: dict) -> dict | None:
 
 
 def _classify(vel: float | None, accel: float) -> tuple[str, str]:
-    """Direction (velocity sign) × momentum-of-direction (acceleration sign)."""
+    """Direction (velocity sign) × momentum-of-direction (acceleration sign).
+
+    Vocabulary v2 (masterplan §6 — replaces the old "accelerating in"/"outflow easing"
+    family, which used ABSOLUTE words for a RELATIVE measure: `vel` is a standardized
+    t-stat against the series' own trailing norm, not a raw flow direction, so the old
+    strings read as if money were actually moving when the series could be doing the
+    OPPOSITE in absolute terms — the exact conflation this program exists to kill).
+    """
     if vel is None or not np.isfinite(vel):
-        return "n/a", "无数据"
+        return "no data", "无数据"
     a = accel if np.isfinite(accel) else 0.0
     if vel >= 0.5:
-        return ("accelerating in", "加速流入") if a > 0 else ("inflow cooling", "流入降温")
+        return ("above norm, rising", "高于常态·升温") if a > 0 else ("above norm, cooling", "高于常态·降温")
     if vel <= -0.5:
-        return ("accelerating out", "加速流出") if a < 0 else ("outflow easing", "流出趋缓")
-    return ("balanced", "均衡")
+        return ("below norm, worsening", "低于常态·加剧") if a < 0 else ("below norm, easing", "低于常态·趋缓")
+    return ("near its norm", "接近常态")
 
 
 def _spark(vals: list[float], w: int = 120, h: int = 28, pad: int = 2) -> str | None:
@@ -329,8 +336,15 @@ def ashare_name_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = N
     df = pd.DataFrame(list(kmap.values()))
     inflow = df.sort_values("vel", ascending=False).head(top).to_dict("records")
     outflow = df.sort_values("vel").head(top).to_dict("records")
+    # kin-None drops (engine._name_kinetics_map skips a name too short / unscoreable to
+    # rank) used to vanish from every count silently. flow_observatory.v2's market_read
+    # denominator law (missing != zero) needs the drop folded back in as `n_unscored` —
+    # the FULL universe is len(wide.columns), not just the names that happened to score.
+    n_unscored = int(len(wide.columns) - len(kmap))
+    from engine.flow_observatory.contract import market_read as _market_read
     return {"cadence": "daily", "as_of": str(wide.index.max().date()),
-            "n": int(len(df)), "primary": _WK["primary"],
+            "n": int(len(df)), "n_unscored": n_unscored, "primary": _WK["primary"],
+            "market_read": _market_read(list(kmap.values()), unscored=n_unscored),
             "note": "主力 net-rate (super-large + large orders); velocity = the 4-week inflow rate standardized against the name's OWN trailing norm (not against zero — main money is a structural net seller), acceleration = its trend.",
             "note_zh": "主力净占比（超大单+大单）；流速＝4周流入率相对该股自身常态的标准化值（非相对零——主力资金结构性净卖出），加速度＝其趋势。",
             "inflow": inflow, "outflow": outflow}
@@ -381,8 +395,9 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
     if len(rows) < 4:
         return None
     rows.sort(key=lambda r: (r["vel"] is None, -(r["vel"] or 0)))
+    n_unscored = max(0, len(mem["baskets"]) - len(rows))
     return {"cadence": "daily", "as_of": str(wide.index.max().date()),
-            "n": len(rows), "primary": _WK["primary"],
+            "n": len(rows), "n_unscored": n_unscored, "primary": _WK["primary"],
             "note": "Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity vs the sector's own trailing norm. Expand a sector for its biggest-moving member names.",
             "note_zh": "板块主力资金＝等权成分股主力净占比，按4周流速（相对板块自身常态）排序。展开板块查看流向最强的成分股。",
             "rows": rows}
@@ -456,6 +471,24 @@ def _seats_by_ticker() -> dict[str, dict]:
                             "n_sell": int(r.get("n_inst_sell") or 0),
                             "dir": "buy" if inv > 0 else "sell"}
     return out
+
+
+def _seats_as_of() -> str | None:
+    """The Dragon-Tiger leg's OWN effective date (latest collection `asof`), separate from
+    every other leg's date — flow_observatory.v2 sources[] needs it so this leg's chip
+    never silently borrows the themes' as_of (spec §1.5 / the "no top-level date implies
+    shared leg dates" contract law)."""
+    p = config.data_dir() / "china_lhb" / "detail.parquet"
+    if not p.exists():
+        return None
+    try:
+        d = pd.read_parquet(p, columns=["asof"])
+        if d.empty:
+            return None
+        return str(pd.to_datetime(d["asof"]).max().date())
+    except Exception as e:  # noqa: BLE001
+        log.debug("seats as_of unreadable (%s)", e)
+        return None
 
 
 # ── descriptive glance layer (DISPLAY-TIER — never a scored signal) ───────────
@@ -584,6 +617,7 @@ def snapshot() -> dict | None:
         "ashare_sectors": ashare_sector_velocity(wide, kmap=kmap, seats_by_ticker=seats_by_ticker),
         "hk_names": hk_name_flow(),
         "seats_by_ticker": seats_by_ticker,
+        "seats_as_of": _seats_as_of(),
     }
     content = ("aggregate", "ashare_names", "ashare_sectors", "hk_names")
     if not any(panels.get(k) for k in content):

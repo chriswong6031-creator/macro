@@ -50,7 +50,7 @@ def test_flat_series_scores_near_zero_whatever_its_offset(offset):
     assert abs(kin["vel_primary"]) < 0.5, (
         f"offset {offset:+} alone produced velocity {kin['vel_primary']:+.2f} — the measure is "
         "reading the structural level, not the drift")
-    assert kin["state"] == "balanced"
+    assert kin["state"] == "near its norm"
 
 
 def test_real_drift_still_scores_after_demeaning():
@@ -61,7 +61,7 @@ def test_real_drift_still_scores_after_demeaning():
     kin = fv._kinetics(_series(base), _cfg())
     assert kin is not None
     assert kin["vel_primary"] >= 0.5, f"a real burst scored only {kin['vel_primary']:+.2f}"
-    assert kin["state"] in ("accelerating in", "inflow cooling")
+    assert kin["state"] in ("above norm, rising", "above norm, cooling")
 
 
 def test_breadth_gauge_can_reach_both_verdicts():
