@@ -40,7 +40,8 @@ changed:
   - path: agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md
     what: >
       Created the durable sibling workstream under market-timing-intelligence with W0-W5
-      dependencies, no-rebuild laws, explicit zero authority and exact next action.
+      dependencies, no-rebuild laws, explicit zero authority, PR #6790 binding and exact
+      next action.
   - path: agentos/decisions/DEC-TEMPORAL-GRAIN-OWNERSHIP-AND-ZERO-AUTHORITY.md
     what: >
       Assigned instrument/session/vendor truth to existing ontology/data/identity owners,
@@ -54,7 +55,8 @@ changed:
       todo and undispatched. Recorded Temporal Grain as a sibling, not a replacement.
   - path: agentos/handoffs/TEMPORAL-GRAIN-INTELLIGENCE-2026-09-03-W0.md
     what: >
-      Recorded this exact W0 state, evidence, unverified gates and continuation.
+      Recorded this exact W0 state, evidence, unverified gates, PR binding and
+      continuation.
 verified:
   - claim: Protected Skillpack compatibility and atomic procedure pin.
     command: >
@@ -78,12 +80,13 @@ verified:
     result: >
       No exact operation, issue, PR, workstream or Slack carrier found before branch
       creation.
-  - claim: Technical Opportunity W0 merge truth conflicts with its current Agent OS projection.
+  - claim: Technical Opportunity W0 merge truth conflicted with its prior Agent OS projection.
     command: >
-      Read current WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE and GitHub PR #6570.
+      Read prior WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE and GitHub PR #6570.
     result: >
-      Agent OS says W0 awaiting_ci; GitHub says PR #6570 merged 2026-08-30 with merge SHA
-      6e3126c5106d5d240961088a866bf0e45f940538. GitHub is canonical for merge truth.
+      The prior Agent OS record said W0 awaiting_ci; GitHub says PR #6570 merged
+      2026-08-30 with merge SHA 6e3126c5106d5d240961088a866bf0e45f940538.
+      GitHub is canonical for merge truth and this carrier corrects the records layer.
   - claim: TOI W1 and W2-0 have no current Slack delivery under their frozen operation keys.
     command: >
       Search Slack for TOI-W1-EVIDENCE-CENSUS-V1 and TOI-W2-0-DATA-CLOCK-V1.
@@ -99,15 +102,23 @@ verified:
       empty intervals, extended-session coverage and adjustment defaults; CME documents
       distinct Silver products and session/maintenance semantics. Exact observed feed
       remains a required recipe field.
+  - claim: The single W0 GitHub carrier exists and initially had only the frozen seven-path scope.
+    command: >
+      Compare Macro 931870b1feccb91b5122d92b07995e9749566aae to branch head
+      6f5fbf2f46dc7f4d24e5ea72072c580cfd598083, then create draft PR #6790.
+    result: >
+      ahead_by=7, behind_by=0, exactly seven authorized paths; draft PR #6790 opened
+      against main. Subsequent commits only bind that same PR into its workstream and
+      handoff.
 unverified:
   - claim: Agent OS validation and repository CI are green on the final W0 head.
     what_would_verify: >
       Run python3 scripts/agentos.py validate, git diff --check and hosted exact-head CI
-      after all seven files are committed.
+      after the PR-binding commits, and preserve the exact results on PR #6790.
   - claim: W0 is accepted and merged.
     what_would_verify: >
       Sol performs exact-head review, current-main collision check, accepts the records-only
-      result and merges the one W0 PR.
+      result and merges PR #6790.
   - claim: The TradingView Pine probe and Python Gate-1/2 harness work.
     what_would_verify: >
       Execute the implementation plan in the later W1 child, compile the probe, pass the
@@ -118,7 +129,7 @@ unresolved:
   - No concrete W1 receiver is selected; placement is WAITING_CAPACITY / needs_placement.
 next_actions:
   - >
-    Validate and accept the records-only W0 carrier. Do not call architecture or plan files
+    Validate and exact-head review draft PR #6790. Do not call architecture or plan files
     empirical completion.
   - >
     After W0 merge, create one top-level child carrier for
@@ -137,7 +148,7 @@ danger_areas:
   - Massive data cannot prove TradingView parity unless feed identity and exact bars match.
   - Current main moves rapidly; merge/acceptance requires a fresh same-path collision check.
   - Raw TradingView/vendor exports may be restricted and must remain outside Git.
-prs: []
+prs: [6790]
 decisions:
   - DEC:TEMPORAL-GRAIN-OWNERSHIP-AND-ZERO-AUTHORITY
 discoveries: []
@@ -149,6 +160,6 @@ discoveries: []
 ruling, exact contract, TDD implementation plan or canonical carrier. TOI’s W0 projection was
 false-stale.
 
-**After:** one records-only branch carries the complete W0 freeze and reconciliation. Capability is
+**After:** draft PR #6790 carries one records-only W0 freeze and reconciliation. Capability is
 still `SPEC_ONLY`; no empirical chart has been reproduced, no worker has started, no runtime or
 data-plane effect exists, and no signal authority changed.
