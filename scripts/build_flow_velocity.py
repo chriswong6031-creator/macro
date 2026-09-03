@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
+from engine.flow_observatory import changes as fo_changes  # noqa: E402
+from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_flow_velocity")
@@ -108,6 +110,41 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("flow desk staleness check failed (non-fatal): %s", e)
 
+    # flow_observatory.v2 — additive, never fatal (masterplan §3 builder contract): a
+    # state_log/contract failure logs + SKIPS the v2 extensions rather than killing the
+    # page build, but a payload that fails validate() never gets published — publishing a
+    # contract-violating payload (a quadrant disagreeing with its own abs/rel directions,
+    # a market_read with no denominator) is exactly the defect class this program exists
+    # to kill, so on that one failure mode the plain (pre-v2) `snap` ships instead.
+    data_root = config.data_dir()
+    v2_snap = None
+    try:
+        log_rows = fo_changes.read_state_log(data_root)
+        generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        candidate = build_v2(snap, log_rows=log_rows, market_session=snap.get("as_of"),
+                             generated_at=generated_at, seats_as_of=snap.get("seats_as_of"))
+        current_themes = {
+            r["id"]: {"quadrant": r.get("quadrant"), "state": r.get("state"),
+                      "vel": r.get("vel"), "rank": r.get("rank"),
+                      "abs": (r.get("abs") or {}).get("value")}
+            for r in (candidate.get("ashare_sectors") or {}).get("rows") or []
+            if r.get("id")
+        }
+        candidate["change_summary"] = fo_changes.compute_changes(
+            {"session": candidate.get("market_session"), "themes": current_themes}, log_rows)
+        validate(candidate)
+        v2_snap = candidate
+    except ContractError as e:
+        log.error("flow_observatory.v2 contract validation failed — publishing WITHOUT the "
+                  "v2 extensions this build: %s", e)
+        print(f"::error title=flow-observatory-contract::flow_observatory.v2 payload failed "
+              f"validation ({e}) — desk.json published without the v2 extensions this build.",
+              flush=True)
+    except Exception as e:  # noqa: BLE001 — additive: assembly failure must not sink the page
+        log.warning("flow_observatory.v2 assembly failed (non-fatal, skipping v2 extensions): %s", e)
+    if v2_snap is not None:
+        snap = v2_snap
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     try:
@@ -115,6 +152,8 @@ def main() -> int:
         env.globals.update(td=i18n.td, tr=i18n.tr)
     except Exception:  # noqa: BLE001
         env.globals.update(td=lambda en: en, tr=lambda en: en)
+    from engine.flow_observatory.contract import QUADRANT_LABELS
+    env.globals.update(quadrant_labels=QUADRANT_LABELS)
 
     try:
         from scripts.build_vector import C  # shared palette
@@ -136,6 +175,25 @@ def main() -> int:
             json.dumps(snap, separators=(",", ":"), ensure_ascii=False, default=str))
     except Exception as e:  # noqa: BLE001
         log.warning("flow_velocity json payload failed: %s", e)
+
+    # state_log.jsonl advance — lane-gated (asia-close/US-nightly only; append_state_log
+    # is a no-op elsewhere), idempotent per session, best-effort. Reflects what actually
+    # got PUBLISHED above, never a payload that failed validate().
+    if v2_snap is not None and v2_snap.get("market_session"):
+        try:
+            themes_entry = {
+                r["id"]: {"quadrant": r.get("quadrant"), "state": r.get("state"),
+                          "vel": r.get("vel"), "rank": r.get("rank"),
+                          "abs": (r.get("abs") or {}).get("value")}
+                for r in (v2_snap.get("ashare_sectors") or {}).get("rows") or []
+                if r.get("id")
+            }
+            entry = {"themes": themes_entry, "aggregate": {}, "market_read": v2_snap.get("market_read") or {}}
+            res = fo_changes.append_state_log(v2_snap["market_session"], entry, data_root)
+            if res.get("written"):
+                log.info("flow_observatory: state_log advanced (%d rows)", res.get("rows", 0))
+        except Exception as e:  # noqa: BLE001
+            log.warning("flow_observatory state_log append failed (non-fatal): %s", e)
 
     n_sec = len((snap.get("ashare_sectors") or {}).get("rows", []))
     n_names = (snap.get("ashare_names") or {}).get("n", 0)

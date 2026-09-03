@@ -2051,6 +2051,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--themes", default="light,dark")
     parser.add_argument("--max-pages", type=int, default=30)
     parser.add_argument("--delay-ms", type=int, default=500, help="politeness sleep between page loads")
+    parser.add_argument(
+        "--settle-ms", type=int, default=400,
+        help=(
+            "pause (each, x3: before state apply, after state apply, after any forced "
+            "state) before the driver reads/shoots the page. Default 400ms is fine for "
+            "a page with no >400ms one-shot animation on theme/locale apply; a page "
+            "whose shared chrome runs a longer transition (e.g. templates/theme.js's "
+            "skyToggleFx() sun/moon flourish, ~1100ms, fired by _APPLY_STATE_SCRIPT's "
+            "window.setTheme() call) needs a larger value so the shot is taken after "
+            "that transition's own cleanup, not mid-animation."
+        ),
+    )
     parser.add_argument("--timeout-s", type=float, default=30.0)
     parser.add_argument("--as-of", help="pin generated_at (ISO); makes a run byte-reproducible")
     parser.add_argument(
@@ -2186,6 +2198,7 @@ def main(
             headless=not args.headed,
             user_agent=USER_AGENT,
             observer_config=observer_config,
+            settle_ms=max(0, args.settle_ms),
         )
     except CaptureUnavailable as exc:
         if httpd is not None:
