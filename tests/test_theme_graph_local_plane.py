@@ -133,6 +133,12 @@ def world(tmp_path, monkeypatch):
     data = root / "data"
     _write(root / local_sources.SEED_TREE_FILE, _seed_doc({"aicompute": ["AAA", "BBB"]}))
     _write(data / "baskets_china_ths" / "membership.json", _ths_membership())
+    pd.DataFrame([
+        {"snapshot_date": THS_DOC_DATE, "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": ticker, "source_shape": "membership"}
+        for ticker in ("600001.SS", "600002.SS", "600003.SS", "600004.SS")
+    ]).to_parquet(data / "baskets_china_ths" / "membership_history.parquet",
+                  index=False)
     _write(data / "baskets_china_ths" / "concept_map.json",
            {"asof": CMAP_ASOF, "map": {"测试概念": KNOWN_CODE, "无篮概念": UNSEEDED_CODE}})
     xwalk = root / "theme_crosswalk.yml"
@@ -144,8 +150,13 @@ def world(tmp_path, monkeypatch):
 
 
 def _build(world, *, era="reconstruction", belief_time=BUILD_DAY, **kw):
+    ths_history = kw.pop("ths_history", None)
+    if ths_history is None:
+        ths_history = pd.read_parquet(
+            world["data"] / "baskets_china_ths" / "membership_history.parquet")
     return materialize.build(era=era, belief_time=belief_time, computed_at=STAMP,
-                             data_dir=world["data"], crosswalk_path=world["xwalk"], **kw)
+                             data_dir=world["data"], crosswalk_path=world["xwalk"],
+                             ths_history=ths_history, **kw)
 
 
 def _set_tree(world, seed: dict[str, list[str]] | None = None,
