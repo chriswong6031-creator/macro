@@ -65,7 +65,7 @@ alternatives:
       carrier churn and violate the no-duplicate/no-recommission boundary.
 evidence:
   - "Chairman instruction 2026-08-26: preserve concurrent execution and stop one COO ↔ Sol micromanagement."
-  - "Current protected Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32 / mastermind.sol_skillpack.v1 v1.0.1: current INDEX, Fable Root/Seat, WORKER_AVENUE_ROUTING, WATCHER_ACTION_LOOP and dialogue/routing law govern bounded delegation and continuation."
+  - "Verified during the 2026-09-03 repair against action-time protected Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa / mastermind.sol_skillpack.v1 v1.0.1: INDEX, Fable Root/Seat, WORKER_AVENUE_ROUTING, WATCHER_ACTION_LOOP and dialogue/routing law govern bounded delegation and continuation."
   - "Current protected routing law: ordinary unbound CAPACITY_SELECTABLE work is WAITING_CAPACITY / needs_placement; do not emit routine OPEN_PICKUP or ask the Chairman for an account merely because automatic placement is not production-live."
   - "Current protected receiver-binding law: explicit live manual binding/delegation may establish a receiver; lawful PRESTART_REBIND preserves the operation/carrier before START; post-START binding is sticky and EFFECT_UNKNOWN fails closed."
   - "Current protected routing law: bounded work uses the least-scarce capable avenue; Fable remains principal/escalation capacity rather than the default child executor."

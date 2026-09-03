@@ -30,29 +30,29 @@ verified:
     command: "Read current canonical F00-F13 handoff estate and this manifest."
     result: "PASS — the existing F01-F13 operation keys and durable handoffs remain unchanged."
   - claim: "Current source law has one logical Fable COO responsibility above provider sessions/workers."
-    command: "Read current protected Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32 Fable Root/Seat and routing law."
+    command: "Read Fable Root/Seat and routing law at action-time protected Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa during the 2026-09-03 repair."
     result: >
       PASS — do not multiply organizational Fable identities from provider accounts,
       Slack users or sessions; parallel execution is subordinate to the one logical root
       responsibility through existing governed execution or bounded transport-only manual work.
   - claim: "Ordinary unbound bounded work is not a routine Chairman account-selection request."
-    command: "Read current protected INDEX.md and WORKER_AVENUE_ROUTING.md at Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32."
+    command: "Read INDEX.md and WORKER_AVENUE_ROUTING.md at action-time protected Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa during the 2026-09-03 repair."
     result: >
       PASS — CAPACITY_SELECTABLE with no receiver remains WAITING_CAPACITY / needs_placement.
       PREFERRED_AVENUE is guidance only. CHAIRMAN_SELECTS is consumed only when a current
       live explicit manual exception/directive actually supplies that binding.
   - claim: "Current receiver-binding law permits bounded pre-START reassignment but forbids silent post-START failover."
-    command: "Read current protected routing/dialogue law at Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32."
+    command: "Read routing/dialogue law at action-time protected Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa during the 2026-09-03 repair."
     result: >
       PASS — PRESTART_REBIND preserves the same operation/carrier/scope before START;
       after START the binding is sticky, and EFFECT_UNKNOWN must reconcile before retry/failover.
   - claim: "Current worker-routing law does not make Fable the default child executor."
-    command: "Read current protected EXECUTIVE_WORKER_ROUTING_CHAIRMAN_ADDENDUM.md at Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32."
+    command: "Read EXECUTIVE_WORKER_ROUTING_CHAIRMAN_ADDENDUM.md at action-time protected Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa during the 2026-09-03 repair."
     result: >
       PASS — route each bounded mission through the least-scarce capable avenue and reserve
       Fable for principal ambiguity/continuity/integration that genuinely requires it.
   - claim: "Sol continuation watchers are action re-entry hooks, not lifecycle authority or notification-only relays."
-    command: "Read current protected WATCHER_ACTION_LOOP.md at Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32."
+    command: "Read WATCHER_ACTION_LOOP.md at action-time protected Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa during the 2026-09-03 repair."
     result: >
       PASS — on an already-authorized return Sol re-pins, adjudicates and posts the lawful
       same-carrier edge before reporting when gates permit; watchers own no lifecycle truth.
@@ -107,9 +107,9 @@ danger_areas:
 **Program operation:** `marketontology-complete-parity-fanout-20260826-sol-001`  
 **F00 Linear:** `MAS-141`  
 **Canonical product owner:** `WS:MARKET-OS`  
-**Shared semantic owner:** `WS:ALPHA-INTELLIGENCE-INTEGRATION`  
-**Current protected procedure:** `mastermindx-market-intelligence/Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32` / `mastermind.sol_skillpack.v1` v1.0.1  
-**Current operator identity law:** one logical Fable COO/root responsibility above provider-native sessions and subordinate workers.  
+**Shared semantic owner:** `WS:ALPHA-INTELLIGENCE-INTEGRATION` \
+**Protected procedure verified during the 2026-09-03 repair:** `mastermindx-market-intelligence/Mastermind@e7d91bfe0f6ef176878a6a281afd459c0905e5aa` / `mastermind.sol_skillpack.v1` v1.0.1 \
+**Current operator identity law:** one logical Fable COO/root responsibility above provider-native sessions and subordinate workers. \
 **Ordinary unbound routing law:** `CAPACITY_SELECTABLE` / `WAITING_CAPACITY / needs_placement`; `PREFERRED_AVENUE` is guidance, not a RuntimeBinding.
 
 F00 is program-control/coverage/dependency integration. F01-F13 are independent durable domain
