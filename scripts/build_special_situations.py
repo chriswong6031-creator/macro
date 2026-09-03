@@ -76,16 +76,22 @@ def _txt(v, dash: str = "—") -> str:
 
 
 def _arb_str(a: dict | None) -> str:
-    """Compact merger-arb line: 'spread +8.3% · +24%/yr · ~120d · break -31%'."""
-    if not a:
+    """Compact cash-deal line: 'spread +8.3% · +24%/yr · ~120d'.
+
+    Reads the F09-1 economics contract: `live_gross_spread_pct` is the offer against the latest
+    usable close, named so it can never be confused with the stated or filing-reference premium.
+    Every arb-category situation now carries a typed block INCLUDING the degraded ones, where the
+    spread is None — so a missing spread renders as nothing rather than formatting a null.
+    Downside-on-break is gone with the contract: an unaffected-price proxy is a downside target,
+    which #6785 keeps outside F09-1, and it will not be reinvented here.
+    """
+    if not a or a.get("live_gross_spread_pct") is None:
         return ""
-    parts = [f"spread {a['gross_spread_pct']:+.1f}%"]
+    parts = [f"spread {a['live_gross_spread_pct']:+.1f}%"]
     if a.get("annualized_pct") is not None:
         parts.append(f"{a['annualized_pct']:+.0f}%/yr")
     if a.get("days_to_close"):
         parts.append(f"~{a['days_to_close']}d")
-    if a.get("downside_on_break_pct") is not None:
-        parts.append(f"break {a['downside_on_break_pct']:+.0f}%")
     return " · ".join(parts)
 
 

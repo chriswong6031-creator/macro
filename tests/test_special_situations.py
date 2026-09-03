@@ -812,23 +812,43 @@ def test_mastermind_emit_and_context_feed_cannot_diverge(tmp_path, monkeypatch):
     assert si  # the feed consumer imports the same owner
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "MERGE-BLOCKING, KNOWN, AWAITING A PATH-BOUNDARY RULING. "
-    "scripts/build_special_situations.py:82 `_arb_str` subscripts a['gross_spread_pct'] "
-    "directly, and that key was renamed to the unambiguous `live_gross_spread_pct` (plus the "
-    "block is now attached to DEGRADED rows too, where it is None). The desk page build "
-    "therefore raises KeyError on this contract, and NOTHING in CI covers `_arb_str`, so the "
-    "break is invisible to every check. The two-line consumer patch sits outside the path set "
-    "frozen at START, so it is not applied here. strict=True is the ratchet: the moment the "
-    "consumer is fixed this XPASSes and FAILS the build, forcing this marker to be removed "
-    "rather than silently outliving the defect."))
 def test_desk_page_renderer_consumes_the_economics_contract():
+    """The desk page reads the F09-1 contract, not the retired keys.
+
+    This was found by tracing the wire rather than by any check: `_arb_str` subscripted
+    `a['gross_spread_pct']` directly, so the page build raised KeyError on the new block — and
+    nothing in CI covers `_arb_str`, so the PR would have gone fully green carrying a page-build
+    crash. Authorized as a one-path boundary expansion; this guard replaces the temporary xfail.
+    """
     from datetime import date as _d
     from engine import special_arb as arb
     from scripts.build_special_situations import _arb_str
-    econ = arb.reduce_cash_deal(arb.compile_current_terms([]), category="Acquisitions",
-                                asof=_d(2026, 9, 1))
-    assert _arb_str(econ) == ""            # a degraded block must render as nothing, not crash
+
+    # a degraded row renders as nothing — it must never format a null or raise
+    degraded = arb.reduce_cash_deal(arb.compile_current_terms([]), category="Acquisitions",
+                                    asof=_d(2026, 9, 1))
+    assert degraded["quality_state"] == arb.QUALITY_SOURCE_UNAVAILABLE
+    assert _arb_str(degraded) == ""
+
+    # a verified row renders the LIVE spread, named unambiguously
+    obs = arb.extract_term_observations(
+        _CASH_EXACT,
+        source=arb.source_descriptor(cik="1", form_type="8-K",
+                                     accession="0000000001-26-000001",
+                                     filing_date="2026-06-17", source_url="u",
+                                     body=_CASH_EXACT, acquired_at="z"),
+        listing_currency="USD")
+    live = arb.price_input(ticker="ABC", session="2026-06-18", value=20.0, currency="USD",
+                           basis="close_raw", source_artifact="breadth/_closes_cache.parquet",
+                           sessions_behind=0)
+    econ = arb.reduce_cash_deal(arb.compile_current_terms(obs), category="Acquisitions",
+                                stage="pending", live_price=live, asof=_d(2026, 6, 18))
+    assert econ["quality_state"] == arb.QUALITY_VERIFIED
+    rendered = _arb_str(econ)
+    assert rendered.startswith("spread +25.0%")
+    assert "%/yr" in rendered and "d" in rendered
+    # the retired ambiguous key must not come back as an alias
+    assert "gross_spread_pct" not in econ
 
 
 def test_desk_payload_carries_the_ledger_join_key_end_to_end(tmp_path, monkeypatch):
