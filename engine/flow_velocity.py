@@ -187,6 +187,59 @@ def _kinetics(flow: pd.Series, cfg: dict, vin: float = 0.5, vout: float = -0.5,
             "state": en, "state_zh": zh, "n": int(len(flow))}
 
 
+def _kinetics_series(flow: pd.Series, cfg: dict, vin: float = 0.5, vout: float = -0.5,
+                     winsorize: bool = False) -> pd.DataFrame | None:
+    """Full-history counterpart to :func:`_kinetics` (Flow Observatory V2 W6 — replay
+    history, ``research/flow_observatory/W6_SPEC.md`` §1). Same math, but returns the
+    causal per-SESSION series (``vel``/``accel``/``abs_rate``/``state_en``/``state_zh``,
+    indexed by the source's own trading-day index) instead of only the latest value.
+
+    This is NOT a second computation. `_vel_series` and `indicators.rolling_slope` are
+    already rolling/trailing-window transforms — every point they produce uses only data
+    at or before its own date — so slicing them at every prior date (rather than just the
+    last one) reconstructs exactly "what this build's method would have shown on that
+    day", i.e. a causal replay under TODAY's method, by construction rather than by a
+    separate backtest harness. The LAST row of the returned frame is exactly what
+    `_kinetics(flow, cfg, vin, vout, winsorize)` reports for `flow` right now — pinned by
+    tests/test_flow_observatory_workflow.py so the two paths can never quietly diverge.
+
+    Returns ``None`` under the identical too-short-history conditions `_kinetics` itself
+    returns ``None`` for (same `min_obs`/demean-warmup guards).
+    """
+    flow = pd.to_numeric(flow, errors="coerce").dropna()
+    if len(flow) < cfg["min_obs"]:
+        return None
+    raw = flow
+    dm = cfg.get("demean")
+    if dm:
+        dm = min(dm, max(30, len(flow) // 2))
+        flow = (flow - flow.rolling(dm, min_periods=max(20, dm // 2)).mean()).dropna()
+        if len(flow) < max(cfg["horizons"][cfg["primary"]] + 2, 30):
+            return None
+    if winsorize:
+        flow = _winsorize_causal(flow, 126, 0.025, 0.975)
+    base = min(cfg["base"], max(8, len(flow) // 2))
+    floor_frac = cfg.get("vol_floor") or 0.0
+    pw = cfg["horizons"][cfg["primary"]]
+    vser = _vel_series(flow, pw, base, floor_frac)
+    aser = pd.Series(np.nan, index=vser.index)
+    if len(vser.dropna()) > cfg["accel_w"] + 2:
+        aser = indicators.rolling_slope(vser, cfg["accel_w"])
+    # abs-rate = the SAME trailing mean `_rate_read`'s r4 uses (raw, undemeaned) — computed
+    # on the full raw series first (so the rolling window has its true trailing history)
+    # then aligned down onto the demeaned series' (shorter, warmup-trimmed) index.
+    abs_ser = raw.rolling(pw, min_periods=pw).mean().reindex(flow.index)
+    out = pd.DataFrame({"vel": vser, "accel": aser, "abs_rate": abs_ser})
+    states = [_classify(v if pd.notna(v) else None, a if pd.notna(a) else 0.0, vin, vout)
+             for v, a in zip(out["vel"], out["accel"])]
+    out["state_en"] = [s[0] for s in states]
+    out["state_zh"] = [s[1] for s in states]
+    return out
+
+
+kinetics_series = _kinetics_series
+
+
 def _classify(vel: float | None, accel: float, vin: float = 0.5, vout: float = -0.5) -> tuple[str, str]:
     """Direction (velocity sign) × momentum-of-direction (acceleration sign).
 

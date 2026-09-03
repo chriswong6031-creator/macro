@@ -209,6 +209,70 @@
 </tr>
 {% endif %}
 {%- endmacro %}
+{# W6 (spec §1): the per-group 60-session history drawer — server-rendered <details>,
+   reusing the existing SVG spark idiom (no new chart machinery). ``force_open``: the
+   spec's own page-weight bound — "JS-off shows the panel expanded for the top-3
+   THEMES only" — is implemented by pre-opening the <details> natively (no JS needed
+   to read it); every OTHER group still ships the identical full markup so a reader
+   (with or without JS) can open ANY of them, since <details>/<summary> needs no
+   script to toggle. This is the ONLY page-weight lever this wave pulls — see the PR
+   body's performance note for the measured delta and the "<800KB or demote depth"
+   gate (spec §6). #}
+{% macro historyrow(r, colspan=8, sector_id=none, force_open=False) -%}
+{% if r.history %}
+{% set h = r.history %}
+{% set sid = sector_id if sector_id is not none else r.id %}
+<tr class="mrow fv-hist-row" data-sector="{{ sid }}">
+  <td colspan="{{ colspan }}">
+    <details class="fv-disc fv-hist"{{ ' open' if force_open }}>
+      <summary>{{ t('60-session history','60日历史') }}</summary>
+      <div class="fv-disc-body">
+        <p class="fv-replay-caption">{{ t(h.caption_en, h.caption_zh) }}</p>
+        <div class="fv-hist-line">
+          <span class="fv-hist-lbl">{{ t('absolute 4wk rate','绝对4周净率') }}</span>
+          <span class="fv-hist-track">{{ spark(h.spark_abs) }}</span>
+        </div>
+        <div class="fv-hist-line">
+          <span class="fv-hist-lbl">{{ t('relative pressure (σ)','相对压力（σ）') }}</span>
+          <span class="fv-hist-track">
+            {% for b in h.bands %}<span class="fv-band dir-{{ b.direction }}" style="left:{{ b.left_pct }}%;width:{{ b.width_pct }}%" data-tip-en="{{ 'above-norm pressure' if b.direction=='up' else 'below-norm pressure' }}" data-tip-zh="{{ '高于常态压力' if b.direction=='up' else '低于常态压力' }}" role="img"></span>{% endfor %}
+            {{ spark(h.spark_rel) }}
+            {% for pct in h.revision_marker_pct %}<span class="fv-rev-marker" style="left:{{ pct }}%" data-tip-en="published revision at this session" data-tip-zh="该交易日存在已发布修正">◆</span>{% endfor %}
+          </span>
+        </div>
+        {% if h.published_segments %}
+        <div class="fv-published-track">
+          {% for seg in h.published_segments %}<span class="fv-published-seg" style="left:{{ seg.left_pct }}%;width:{{ seg.width_pct }}%"></span>{% endfor %}
+        </div>
+        <p class="fv-published-note">{{ t('— published record (from %s)'|format(h.ledger_start), '— 发布记录（自%s起）'|format(h.ledger_start)) }}</p>
+        {% endif %}
+        {% if r.episodes %}
+        <div class="fv-episodes">
+          <p class="fv-episode-note">{{ t('similar setups, not forecasts','相似情形，非预测') }}</p>
+          {% for e in r.episodes %}
+          <div class="fv-episode-card">
+            <span class="fv-ep-date">{{ e.session }}</span>
+            <span class="fv-ep-vals">{{ '%+.2f'|format(e.rel_value) if e.rel_value is not none else '—' }}σ / {{ '%+.1f'|format(e.abs_value) if e.abs_value is not none else '—' }}%</span>
+            <span class="fv-ep-outcome">{{ t(e.outcome_en, e.outcome_zh) }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </details>
+  </td>
+</tr>
+{% endif %}
+{%- endmacro %}
+{# W6 (spec §2): compare checkbox, max 2, same-lens only (JS enforces the pinned
+   cross-lens refusal — engine.flow_observatory.workflow.compare_groups carries the
+   same reason text). JS-off: CSS hides the input entirely (`html:not(.js) .fv-cmp-cb`)
+   — no dangling control with nothing to drive it. #}
+{% macro cmpcheck(r, lens) -%}
+{% if r.vel is not none %}
+<input type="checkbox" class="fv-cmp-cb" data-cmp-lens="{{ lens }}" data-cmp-id="{{ r.id }}" data-cmp-name="{{ r.name }}" data-cmp-name-zh="{{ r.name_zh or r.name }}" aria-label="compare" onclick="event.stopPropagation()">
+{% endif %}
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -510,6 +574,67 @@ html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(
 .fv-disc>summary::before{content:"▸";color:var(--muted);transition:transform .18s;flex:none}
 .fv-disc[open]>summary::before{transform:rotate(90deg)}
 .fv-disc-body{padding:2px 16px 16px}
+
+/* ═══════════════ W6: per-group history drawer, compare, episodes (spec §1-§4) ═══════
+   TP-0 declared dual-theme treatment for state bands: DARK = command-center idiom, a
+   low-alpha luminance fill (glow reads correctly against the dark canvas); LIGHT =
+   research-workspace idiom, a 6%-tinted fill bounded by a hairline top/bottom edge — a
+   flat low-alpha wash reads as a smudge on white paper, so light gets a defined edge
+   instead of more glow. Direction (up/down) is NOT flipped by data-lang here (unlike
+   .chg/.vbar/.cdot) — these bands describe a MACRO regime read, not a raw buy/sell
+   color, and the existing zh-flip convention is scoped to those. ═══════════════════ */
+.fv-hist{margin:0}
+.fv-hist>summary{padding:9px 12px;font-size:12px;font-weight:700}
+.fv-hist .fv-disc-body{padding:4px 14px 14px}
+.fv-replay-caption{font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.5}
+.fv-hist-line{display:flex;align-items:center;gap:10px;margin:6px 0}
+.fv-hist-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);width:150px;flex:none}
+.fv-hist-track{position:relative;flex:1;min-width:0;height:28px;display:block}
+.fv-hist-track .spark{position:relative;z-index:2;width:100%;height:100%}
+.fv-band{position:absolute;top:0;bottom:0;border-radius:var(--r-ctl, 2px);pointer-events:auto;cursor:help}
+html[data-theme="dark"] .fv-band.dir-up{background:color-mix(in srgb,var(--up) 18%,transparent)}
+html[data-theme="dark"] .fv-band.dir-down{background:color-mix(in srgb,var(--down) 18%,transparent)}
+html[data-theme="light"] .fv-band.dir-up{background:color-mix(in srgb,var(--up) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--up) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--up) 45%,transparent)}
+html[data-theme="light"] .fv-band.dir-down{background:color-mix(in srgb,var(--down) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--down) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--down) 45%,transparent)}
+.fv-rev-marker{position:absolute;top:-3px;font-size:9px;color:var(--ink-warn, var(--amber));transform:translateX(-50%);z-index:3;cursor:help}
+.fv-published-track{position:relative;height:5px;margin:3px 0 0 160px}
+.fv-published-seg{position:absolute;top:1px;height:2px;border-radius:var(--r-ctl, 2px);background:var(--muted)}
+html[data-theme="light"] .fv-published-seg{background:var(--ink-2)}
+.fv-published-note{font-size:10.5px;color:var(--muted);margin:4px 0 0 160px}
+.fv-episodes{margin-top:12px;border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent);padding-top:10px}
+.fv-episode-note{font-size:11px;color:var(--muted);margin:0 0 8px;font-style:italic}
+.fv-episode-card{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;font-size:12px;padding:5px 0;border-top:1px dashed color-mix(in srgb,var(--grid) 45%,transparent)}
+.fv-episode-card:first-child{border-top:none}
+.fv-ep-date{font-family:var(--num);color:var(--ink);font-weight:700;width:82px;flex:none}
+.fv-ep-vals{font-family:var(--num);color:var(--muted);width:130px;flex:none}
+.fv-ep-outcome{color:var(--text)}
+
+/* compare — JS-only (needs a 2-row pairing before there is anything to render); the
+   checkbox is CSS-hidden without `.js` (spec §2 "JS-off: the compare control hides;
+   a note names the JS dependency" — the <noscript> paragraph above the bar). */
+.fv-cmp-cb{margin-right:7px;vertical-align:middle;width:14px;height:14px}
+html:not(.js) .fv-cmp-cb{display:none}
+.fv-compare-bar{display:none;position:sticky;bottom:12px;margin:12px 0;padding:10px 14px;
+  background:var(--card);border:1px solid var(--grid);border-radius:var(--r-ctl, 10px);
+  align-items:center;gap:12px;z-index:5;font-size:13px}
+.fv-compare-bar{box-shadow:var(--glass-shadow)}
+html.js .fv-compare-bar.on{display:flex}
+.fv-compare-panel{margin-top:14px}
+.fv-compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.fv-compare-cols{grid-template-columns:1fr}}
+.fv-compare-col{border:1px solid var(--grid);border-radius:var(--r-card, 14px);padding:12px 14px;background:var(--card)}
+.fv-compare-col h4{margin:0 0 8px;font-size:13.5px;color:var(--ink)}
+.fv-compare-stats{font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.fv-compare-refusal{font-size:12.5px;color:var(--ink-warn, var(--warn));padding:10px 0}
+.fv-cmp-btn{appearance:none;border:1px solid var(--line, var(--grid));background:var(--panel, var(--card));
+  color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:var(--r-ctl, 8px);cursor:pointer}
+.fv-cmp-btn:hover{border-color:var(--muted)}
+.fv-cmp-btn-go{background:var(--panel2, var(--tile));border-color:var(--blue);color:var(--ink-link, var(--blue));font-weight:800}
+.fv-cmp-btn-go:disabled{opacity:.45;cursor:not-allowed}
+.fv-watch-note{font-size:11.5px;color:var(--muted);margin:10px 0 0;padding:9px 13px;
+  border:1px dashed var(--grid);border-radius:var(--r-ctl, 8px);line-height:1.5}
 
 /* ═══════════════ ABS × REL QUADRANT BOARD (spec §2.4) — the anti-conflation device ═══ */
 .fv-quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
@@ -1118,8 +1243,15 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           {% endif %}
           {% for r in s.rows %}
             {% set has_members = r.members and r.members|length %}
-            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
-              <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}
+            {% set _abs_v = r.abs.value if (r.abs is defined and r.abs) else none %}
+            {% set _top1 = (r.concentration.top1 if (r.concentration is defined and r.concentration) else none) %}
+            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false"
+                data-abs="{{ _abs_v if _abs_v is not none else '' }}"
+                data-rel="{{ r.vel if r.vel is not none else '' }}" data-quadrant="{{ r.quadrant or '' }}"
+                data-coverage="{{ r.coverage_pct if (r.coverage_pct is defined and r.coverage_pct is not none) else '' }}"
+                data-top="{{ _top1.ticker if _top1 else '' }}"
+                data-quadrant-en="{{ r.quadrant_en or '' }}" data-quadrant-zh="{{ r.quadrant_zh or '' }}">
+              <td class="snm">{{ cmpcheck(r, 'theme') }}<span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}
                 {% if r.concentration and r.concentration.top1_share is not none and r.concentration.top1_share > 40 %}<span class="fv-conc-chip" data-tip-en="One member drives more than 40% of this theme's gross flow — see the drilldown line below" data-tip-zh="单一成分股贡献了本主题超过40%的总流量——见下方展开说明" role="button" tabindex="0">{{ t('concentrated','集中度高') }}</span>{% endif %}
               </td>
               <td>
@@ -1169,7 +1301,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
               </td>
               <td>{{ spark(r.spark) }}</td>
             </tr>
-            {{ concrow(r) }}{{ excludedrow(r) }}
+            {{ concrow(r) }}{{ excludedrow(r) }}{{ historyrow(r, 8, none, force_open=(loop.index <= 3)) }}
             {% if has_members %}
             {% for m in r.members %}{{ memberrow(m, sbt, r.id, loop.index) }}{% endfor %}
             {% endif %}
@@ -1205,8 +1337,15 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           <tbody>
           {% for r in os.rows %}
             {% set has_members = r.members and r.members|length %}
-            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="off-{{ r.id }}" aria-expanded="false">
-              <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}
+            {% set _abs_v2 = r.abs.value if (r.abs is defined and r.abs) else none %}
+            {% set _top1b = (r.concentration.top1 if (r.concentration is defined and r.concentration) else none) %}
+            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="off-{{ r.id }}" aria-expanded="false"
+                data-abs="{{ _abs_v2 if _abs_v2 is not none else '' }}"
+                data-rel="{{ r.vel if r.vel is not none else '' }}" data-quadrant="{{ r.quadrant or '' }}"
+                data-coverage="{{ r.coverage_pct if (r.coverage_pct is defined and r.coverage_pct is not none) else '' }}"
+                data-top="{{ _top1b.ticker if _top1b else '' }}"
+                data-quadrant-en="{{ r.quadrant_en or '' }}" data-quadrant-zh="{{ r.quadrant_zh or '' }}">
+              <td class="snm">{{ cmpcheck(r, 'sector') }}<span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}
                 {% if r.concentration and r.concentration.top1_share is not none and r.concentration.top1_share > 40 %}<span class="fv-conc-chip" data-tip-en="One member drives more than 40% of this sector's gross flow — see the drilldown line below" data-tip-zh="单一成分股贡献了本行业超过40%的总流量——见下方展开说明" role="button" tabindex="0">{{ t('concentrated','集中度高') }}</span>{% endif %}
               </td>
               <td>
@@ -1241,7 +1380,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
                  progress rather than rendering nothing unexplained. #}
               <td>{% if r.spark %}{{ spark(r.spark) }}{% elif r.spark_accrual and not r.spark_accrual.ready %}<span class="fv-accruing" data-tip-en="Membership history accrues from {{ os.seed_date or '—' }} — the sparkline unlocks once {{ r.spark_accrual.window }} sessions have accrued ({{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} so far)." data-tip-zh="成分历史自{{ os.seed_date or '—' }}起累积——满{{ r.spark_accrual.window }}个交易日后解锁走势图（当前{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）。" role="button" tabindex="0"><span class="l-en">accruing — {{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} sessions</span><span class="l-zh">累积中（{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）</span></span>{% endif %}</td>
             </tr>
-            {{ concrow(r, 8, 'off-' + r.id) }}{{ excludedrow(r, 8, 'off-' + r.id) }}
+            {{ concrow(r, 8, 'off-' + r.id) }}{{ excludedrow(r, 8, 'off-' + r.id) }}{{ historyrow(r, 8, 'off-' + r.id, force_open=False) }}
             {% if has_members %}
             {% for m in r.members %}{{ memberrow(m, {}, 'off-' + r.id, loop.index) }}{% endfor %}
             {% endif %}
@@ -1264,6 +1403,25 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       {% endif %}
       </div>
     </div>
+
+    {# W6 (spec §2): compare bar + panel — JS-only (needs a 2-row selection to pair);
+       JS-off hides the checkboxes (see `.fv-cmp-cb` CSS) and this note is what a
+       no-JS reader sees instead of a dangling, non-functional control. #}
+    <noscript><p class="fv-stance" style="margin-top:10px">{{ t('Comparing two groups side by side needs JavaScript — select two rows\' checkboxes above to compare with JavaScript enabled.', '并排比较两个分组需要JavaScript——启用JavaScript后，勾选上方两行的复选框即可比较。') }}</p></noscript>
+    <div class="fv-compare-bar" id="fv-compare-bar" role="region" aria-label="compare">
+      <span class="l-en" id="fv-cmp-count">0 selected</span><span class="l-zh" id="fv-cmp-count-zh">已选0项</span>
+      <button type="button" class="fv-cmp-btn fv-cmp-btn-go" id="fv-cmp-go" disabled>{{ t('Compare','比较') }}</button>
+      <button type="button" class="fv-cmp-btn" id="fv-cmp-clear">{{ t('Clear','清除') }}</button>
+    </div>
+    <div id="fv-compare-panel" class="fv-compare-panel"></div>
+
+    {# W6 (spec §4): watch-store limitation — recorded, not silently dropped. See
+       engine/flow_observatory/workflow.py's WATCH_LIMITATION_EN/_ZH (the SAME
+       decision, restated here for the reader rather than duplicated logic: the
+       existing watch stores are a single priced-ticker list shared with the
+       Watchlist page, so writing a non-ticker group key would corrupt that page
+       rather than extend the store — shipped as a recorded dependency instead). #}
+    <p class="fv-watch-note">★ {{ t('Watching a theme or sector isn\'t available yet — the existing watch list is a stock-ticker list shared with the Watchlist page, and a non-ticker group key would corrupt it rather than extend it. Recorded as a dependency for the watchlist-sentinel owner (server-side alerts on a state onset are a separate, not-yet-built system).', '暂不支持关注主题或行业——现有关注列表是与"关注列表"页面共用的股票代码列表，写入非股票代码的分组键会污染该页面，而非扩展该存储。已记录为关注列表哨兵负责人的依赖项（状态变化时的服务器端提醒是另一套尚未构建的系统）。') }}</p>
     {% endif %}
 
     {# ---- momentum + confluence — demoted into collapsed detail blocks (spec §2.5) ---- #}
@@ -1543,6 +1701,86 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   } else {
     document.querySelectorAll('.fv-reveal').forEach(function(el){ el.classList.add('is-in'); });
   }
+  // ---- W6 (spec §2): compare — max 2 checkboxes, same-lens only. Never a new chart:
+  // the compare panel CLONES each selected row's own already-server-rendered .fv-hist
+  // <details> node (real <svg><polyline> markup built server-side) rather than
+  // constructing any chart element from scratch — this JS only selects/positions
+  // existing DOM and reads existing data-* attributes, never originates a number. ----
+  (function(){
+    var bar=document.getElementById('fv-compare-bar');
+    var panel=document.getElementById('fv-compare-panel');
+    var goBtn=document.getElementById('fv-cmp-go');
+    var clearBtn=document.getElementById('fv-cmp-clear');
+    var countEn=document.getElementById('fv-cmp-count');
+    var countZh=document.getElementById('fv-cmp-count-zh');
+    if(!bar||!panel) return;
+    var REFUSAL_EN="Themes and official sectors can't be compared directly — different denominators and universes.";
+    var REFUSAL_ZH="主题与官方行业口径不同（分母与样本范围不同），无法直接比较。";
+    function checked(){ return Array.prototype.slice.call(document.querySelectorAll('.fv-cmp-cb:checked')); }
+    function esc(id){ return (window.CSS&&CSS.escape)?CSS.escape(id):id; }
+    function refresh(){
+      var cbs=checked();
+      bar.classList.toggle('on', cbs.length>0);
+      countEn.textContent=cbs.length+' selected';
+      countZh.textContent='已选'+cbs.length+'项';
+      goBtn.disabled = cbs.length!==2;
+      // enforce "max 2": once two are checked, disable every other checkbox (never
+      // silently uncheck a prior pick — the user drives which two).
+      var atMax = cbs.length>=2;
+      document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){
+        if(!cb.checked) cb.disabled = atMax;
+      });
+    }
+    function statRow(labelEn, labelZh, val){
+      return '<div><span class="l-en">'+labelEn+'</span><span class="l-zh">'+labelZh+'</span>: '+val+'</div>';
+    }
+    function buildCol(row){
+      var name = document.documentElement.getAttribute('data-lang')==='zh'
+        ? (row.getAttribute('data-cmp-name-zh')||row.getAttribute('data-cmp-name'))
+        : row.getAttribute('data-cmp-name');
+      var abs=row.getAttribute('data-abs'), rel=row.getAttribute('data-rel'),
+          cov=row.getAttribute('data-coverage'), top=row.getAttribute('data-top');
+      var q = document.documentElement.getAttribute('data-lang')==='zh'
+        ? (row.getAttribute('data-quadrant-zh')||row.getAttribute('data-quadrant'))
+        : (row.getAttribute('data-quadrant-en')||row.getAttribute('data-quadrant'));
+      var html='<div class="fv-compare-col"><h4>'+ (name||'') +'</h4><div class="fv-compare-stats">'
+        + statRow('abs 4wk','绝对4周', abs? (parseFloat(abs).toFixed(1)+'%') : '—')
+        + statRow('vs norm','相对常态', rel? (parseFloat(rel).toFixed(2)+'σ') : '—')
+        + statRow('quadrant','象限', q||'—')
+        + statRow('coverage','覆盖率', cov? (cov+'%') : '—')
+        + statRow('top contributor','最大贡献', top||'—')
+        + '</div>';
+      var sid=row.getAttribute('data-sector');
+      var histRow=document.querySelector('tr.fv-hist-row[data-sector="'+esc(sid)+'"] details.fv-hist');
+      if(histRow){
+        var clone=histRow.cloneNode(true);
+        clone.open=true;
+        html+=clone.outerHTML;
+      }
+      html+='</div>';
+      return html;
+    }
+    function doCompare(){
+      var cbs=checked();
+      if(cbs.length!==2) return;
+      var a=cbs[0].closest('tr.sector-row'), b=cbs[1].closest('tr.sector-row');
+      var lensA=cbs[0].getAttribute('data-cmp-lens'), lensB=cbs[1].getAttribute('data-cmp-lens');
+      if(lensA!==lensB){
+        panel.innerHTML='<div class="fv-compare-refusal"><span class="l-en">'+REFUSAL_EN+'</span><span class="l-zh">'+REFUSAL_ZH+'</span></div>';
+        return;
+      }
+      panel.innerHTML='<div class="fv-compare-cols">'+buildCol(a)+buildCol(b)+'</div>';
+      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+    document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){ cb.addEventListener('change', refresh); });
+    goBtn.addEventListener('click', doCompare);
+    clearBtn.addEventListener('click', function(){
+      document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){ cb.checked=false; cb.disabled=false; });
+      panel.innerHTML='';
+      refresh();
+    });
+    refresh();
+  })();
 })();
 </script>
 <script src="theme.js"></script>

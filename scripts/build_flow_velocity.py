@@ -28,6 +28,7 @@ from engine.flow_observatory import contract as fo_contract  # noqa: E402
 from engine.flow_observatory import groups as fo_groups  # noqa: E402
 from engine.flow_observatory import history as fo_history  # noqa: E402
 from engine.flow_observatory import quality as fo_quality  # noqa: E402
+from engine.flow_observatory import workflow as fo_workflow  # noqa: E402
 from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -144,6 +145,100 @@ def _official_sector_ledger_entities(rows: list[dict] | None, cn_status: str | N
                               "rank": r.get("rank"), "status": cn_status}
         for r in (rows or []) if r.get("id")
     }
+
+
+def _attach_group_histories(candidate: dict, ledger_rows: list[dict] | None) -> None:
+    """W6 (``research/flow_observatory/W6_SPEC.md`` §1/§3): attach a per-group
+    ``row["history"]``/``row["episodes"]`` payload to every curated-theme row and, gated
+    on the official lens' own accrual readiness, every official-sector row —
+    ``engine.flow_observatory.workflow``'s pure functions do the actual computation;
+    this is wiring only.
+
+    OWNED-FILES scope keeps this assembly OUT of engine/flow_velocity.py and
+    engine/flow_observatory/groups.py (same boundary ``_official_sectors_panel``
+    already documents), so ``wide``/``kmap``/membership are recomputed a THIRD time in
+    this build (once inside ``flow_velocity.snapshot()``, once inside
+    ``_official_sectors_panel``, once here) — the added wall-clock cost is measured and
+    reported in the PR body's performance note, matching the precedent
+    ``_official_sectors_panel``'s own docstring already accepts for the same reason.
+
+    Official-sector gate: a sector's row only gets a history/episodes panel when its
+    OWN ``spark_accrual.ready`` is true (or it already carries a ``spark``) — the W4
+    official lens applies TODAY's membership retroactively across the whole flow panel,
+    so a REPLAY drawn from that backfill before real accrual covers the window would
+    imply a composition depth the membership store has never actually held (the exact
+    thing ``engine.flow_observatory.groups.aggregate_lens`` already refuses for the
+    single-point spark — replay history for W6 refuses it identically, never a second,
+    laxer rule for the SAME data).
+    """
+    try:
+        import pandas as pd
+
+        from engine.baskets_china import _membership as _curated_membership
+        from engine.flow_velocity import WK, _flow_panel, _name_kinetics_map
+        from engine.flow_velocity import _THEMES_VIN, _THEMES_VOUT
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("flow_observatory workflow: import failed (non-fatal): %s", e)
+        return
+
+    wide = _flow_panel()
+    if wide is None:
+        return
+    kmap = _name_kinetics_map(wide)
+    wide_cols = set(wide.columns)
+    ledger_rows = ledger_rows or []
+
+    # ── curated themes (spec §1: every group gets a history panel) ──────────────────
+    theme_rows = (candidate.get("ashare_sectors") or {}).get("rows") or []
+    if theme_rows:
+        try:
+            mem = _curated_membership() or {}
+        except Exception as e:  # noqa: BLE001
+            log.debug("flow_observatory workflow: curated membership unavailable (%s)", e)
+            mem = {}
+        baskets = mem.get("baskets") or {}
+        for r in theme_rows:
+            bid = r.get("id")
+            b = baskets.get(bid)
+            if not b:
+                continue
+            members = [m["ticker"] for m in b.get("members", [])
+                      if isinstance(m, dict) and m.get("ticker") and not m.get("removed")]
+            covered = [t for t in members if t in wide_cols and t in kmap]
+            if len(covered) < fo_groups.MIN_COLS_FOR_KINETICS:
+                continue
+            sect_flow = wide[covered].mean(axis=1)
+            full = fo_workflow.compute_full_series(sect_flow, WK, _THEMES_VIN, _THEMES_VOUT)
+            hist = fo_workflow.history_panel(full, ledger_rows, "theme", bid)
+            r["history"] = hist
+            r["episodes"] = fo_workflow.select_episodes(full) if hist else []
+
+    # ── official (Shenwan L1) sectors — accrual-gated (see docstring) ───────────────
+    official_rows = (candidate.get("official_sectors") or {}).get("rows") or []
+    if official_rows:
+        p = config.data_dir() / "china_sectors" / "membership.parquet"
+        membership_df = None
+        if p.exists():
+            try:
+                membership_df = pd.read_parquet(p)
+            except Exception as e:  # noqa: BLE001
+                log.debug("flow_observatory workflow: sector membership unreadable (%s)", e)
+        if membership_df is not None and not membership_df.empty:
+            by_code, _ = fo_groups.resolve_active_membership(membership_df, as_of=None)
+            for r in official_rows:
+                accrual = r.get("spark_accrual") or {}
+                if not (r.get("spark") or accrual.get("ready")):
+                    continue  # not yet accrued — no replay before real history exists (spec §2A)
+                code = r.get("id")
+                members = by_code.get(code, [])
+                covered = [t for t in members if t in wide_cols and t in kmap]
+                if len(covered) < fo_groups.MIN_COLS_FOR_KINETICS:
+                    continue
+                sect_flow = wide[covered].mean(axis=1)
+                full = fo_workflow.compute_full_series(sect_flow, WK, 0.5, -0.5)
+                hist = fo_workflow.history_panel(full, ledger_rows, "sector", code)
+                r["history"] = hist
+                r["episodes"] = fo_workflow.select_episodes(full) if hist else []
 
 
 def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
@@ -354,6 +449,16 @@ def main() -> int:
         official_rows = (candidate.get("official_sectors") or {}).get("rows") or []
         _apply_official_rank_change(official_rows, ledger_rows, candidate.get("market_session"),
                                     current_legs.get("cn_large_order_proxy"))
+        # W6: per-group 60-session history/episodes drawer (spec §1/§3) — additive,
+        # never fatal; a failure here must not sink a build that already produced a
+        # valid v1/v2 payload.
+        try:
+            t_hist0 = datetime.now(timezone.utc)
+            _attach_group_histories(candidate, ledger_rows)
+            log.info("flow_observatory workflow (history/episodes): attached in %.2fs",
+                     (datetime.now(timezone.utc) - t_hist0).total_seconds())
+        except Exception as e:  # noqa: BLE001
+            log.warning("flow_observatory workflow (history/episodes) failed (non-fatal): %s", e)
         # W3: theme observations this build would append to the ledger (the SAME shape
         # `_escalate_if_degraded`/state_log already read off `candidate` — status carries
         # cn_large_order_proxy's OWN current-session read, the input the ledger's
