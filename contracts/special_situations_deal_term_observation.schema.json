@@ -6,67 +6,273 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema", "observation_id", "status", "field", "normalized", "raw", "precision",
-    "source", "locator", "extraction_method", "extraction_revision"
+    "schema",
+    "observation_id",
+    "status",
+    "field",
+    "normalized",
+    "raw",
+    "precision",
+    "source",
+    "locator",
+    "extraction_method",
+    "extraction_revision"
   ],
   "properties": {
-    "schema": {"const": "special_situations.deal_term_observation.v1"},
-    "observation_id": {"type": "string", "minLength": 8},
-    "prior_observation_id": {"type": ["string", "null"]},
-    "supersedes_observation_id": {"type": ["string", "null"]},
-    "status": {"enum": ["observed", "ambiguous", "deferred", "retracted"]},
-    "field": {
-      "enum": ["price_per_share", "currency", "consideration", "stated_premium_pct",
-               "expected_close"]
+    "schema": {
+      "const": "special_situations.deal_term_observation.v1"
     },
-    "normalized": {"type": ["string", "number", "null"]},
-    "raw": {"type": ["string", "number", "null"]},
-    "unit": {"type": ["string", "null"]},
-    "currency": {"type": ["string", "null"]},
+    "observation_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "prior_observation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "supersedes_observation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "observed",
+        "ambiguous",
+        "deferred",
+        "retracted"
+      ]
+    },
+    "field": {
+      "enum": [
+        "price_per_share",
+        "currency",
+        "consideration",
+        "stated_premium_pct",
+        "expected_close"
+      ]
+    },
+    "normalized": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ]
+    },
+    "raw": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ]
+    },
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "currency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "currency_basis": {
       "description": "HOW the currency was established. A bare dollar sign names no currency on its own, so an inference is never recorded as an observation.",
-      "type": ["string", "null"],
-      "enum": ["explicit_token", "bare_dollar_unambiguous_usd_listing",
-               "bare_dollar_document_ambiguous", "bare_dollar_unresolved_listing", null]
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "explicit_token",
+        "bare_dollar_unambiguous_usd_listing",
+        "bare_dollar_document_ambiguous",
+        "bare_dollar_unresolved_listing",
+        null
+      ]
     },
     "precision": {
-      "enum": ["exact_date", "month", "quarter", "half_year", "text_only", "exact_numeric"]
+      "enum": [
+        "exact_date",
+        "month",
+        "quarter",
+        "half_year",
+        "text_only",
+        "exact_numeric"
+      ]
     },
-    "note": {"type": ["string", "null"]},
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["accession", "body_sha256", "doc_id"],
+      "required": [
+        "accession",
+        "body_sha256",
+        "doc_id",
+        "projection_revision",
+        "completeness"
+      ],
       "properties": {
-        "cik": {"type": ["string", "null"]},
-        "form_type": {"type": ["string", "null"]},
-        "accession": {"type": "string", "minLength": 1},
-        "filing_date": {"type": ["string", "null"]},
-        "source_url": {"type": ["string", "null"]},
-        "body_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "body_chars": {"type": ["integer", "null"]},
-        "body_truncated": {"type": "boolean"},
-        "acquired_at": {"type": ["string", "null"]},
-        "doc_id": {"type": "string", "minLength": 1}
+        "cik": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "form_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accession": {
+          "type": "string",
+          "minLength": 1
+        },
+        "filing_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "body_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "body_chars": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "body_truncated": {
+          "type": "boolean"
+        },
+        "acquired_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doc_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "raw_sha256": {
+          "description": "Digest of the COMPLETE retained source object. The body digest below covers only the normalized projection the offsets index.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "raw_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "projection_revision": {
+          "description": "Which normalized projection the character offsets index. Offsets are meaningless without it.",
+          "type": "string",
+          "minLength": 1
+        },
+        "completeness": {
+          "description": "A truncated projection cannot be declared conflict-free, so it can never yield a VERIFIED term.",
+          "enum": [
+            "complete",
+            "truncated",
+            "unknown"
+          ]
+        },
+        "acceptance_datetime": {
+          "description": "SEC acceptance / system-availability moment parsed from the source bytes. A date-only filing date cannot separate premarket from after-close and cannot fix a reference session.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "locator": {
       "description": "Exact evidence span inside the bound bytes.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["doc_id", "start", "end", "excerpt_sha256"],
+      "required": [
+        "doc_id",
+        "start",
+        "end",
+        "excerpt_sha256"
+      ],
       "properties": {
-        "doc_id": {"type": "string", "minLength": 1},
-        "section": {"type": ["string", "null"]},
-        "start": {"type": "integer", "minimum": 0},
-        "end": {"type": "integer", "minimum": 1},
-        "excerpt": {"type": "string"},
-        "excerpt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        "doc_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "excerpt": {
+          "type": "string"
+        },
+        "excerpt_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
       }
     },
-    "extraction_method": {"const": "deterministic_regex_span"},
-    "extraction_revision": {"type": "string", "minLength": 1},
-    "correction_reason": {"type": ["string", "null"]},
-    "recorded_at": {"type": ["string", "null"]}
+    "extraction_method": {
+      "const": "deterministic_regex_span"
+    },
+    "extraction_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correction_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recorded_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stated_basis": {
+      "description": "The captured comparator for a stated premium \u2014 the phrase the filing itself used (closing price on a date, VWAP, unaffected price). A percentage without one has no semantics and is not published.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
   }
 }

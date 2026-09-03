@@ -115,6 +115,13 @@ unverified:
     what_would_verify: "The natural run's typed state for LGMK. Only the SHAPE is pinned by tests today."
 unresolved:
   - >
+    Sol's exact-head review 5099936758 REJECTED the first head with eight defects (six real
+    false-precision holes) and they are repaired at the successor head: producer wiring,
+    accession-scoped deal identity, complete-byte retention with versioned projection,
+    fail-closed ledger revalidation, lib/nyse_calendar as the independent freshness owner,
+    explicit now_utc plus acceptance-timestamp reference sessions, transaction-scoped
+    extraction, and comparator-bound stated premium. See research report section 7.
+  - >
     A secretary relay on the carrier reported the consumer repair, the xfail removal and a head
     as already done BEFORE any of it existed (verified false against git at the time: the file
     was untouched, the xfail present, and that head was a records-only commit). The receiver
@@ -136,6 +143,9 @@ do_not_redo:
   - "Do NOT re-run the full suite in this sparse worktree to judge health — 45 failures are pre-existing artifacts. Compare against origin/main with the same four files swapped, as this session did."
   - "Do NOT let a model lane supply a numeric term. parse_terms is _candidate_only and provably cannot satisfy the observation contract."
   - "Do NOT re-add downside_on_break_pct to the rendered desk line or the contract. It is a downside target, explicitly outside F09-1, and Sol's boundary ruling names it."
+  - "Do NOT reintroduce a panel-derived session count. lib/nyse_calendar.py is the freshness owner and must not be edited, copied, or approximated."
+  - "Do NOT bind an observation to the stripped doc_cache. It is a lossy TRUNCATED projection; retain the complete object and keep the projection as a separate versioned receipt."
+  - "Do NOT group observations by issuer CIK. An accession is an isolated transaction unless an explicit source-linked supersession proves otherwise."
   - "Do NOT reason about _arb_str from the pre-F09 signature. It reads live_gross_spread_pct and is null-safe; a real guard test now pins both directions."
 danger_areas:
   - "engine/special_arb.py `_price_candidates` negative lexicon: loosening the ±160-char window or removing a term (dividend/redemption/exercise/conversion/aggregate/notes) reopens the false-price class the corpus exists to catch."
@@ -145,7 +155,8 @@ danger_areas:
   - "The observation ledger is append-only and de-duplicates on observation_id, which is a digest of (bytes, field, span, value, revision). Changing EXTRACTION_REVISION intentionally re-mints every observation — that is the correction path, not a bug."
 prs: [6793]
 decisions: ["DEC:CASH-DEAL-NUMBERS-ARE-BYTE-BOUND-OR-ABSENT"]
-discoveries: ["DSC:ARB-PLAUSIBILITY-BAND-ADMITTED-THE-DEFECT-IT-GUARDED"]
+discoveries: ["DSC:ARB-PLAUSIBILITY-BAND-ADMITTED-THE-DEFECT-IT-GUARDED",
+              "DSC:A-DIGEST-OF-A-DERIVED-PROJECTION-IS-NOT-BYTE-BINDING"]
 ---
 
 ## Why this handoff says `blocked` rather than `complete`

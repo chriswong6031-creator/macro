@@ -21,16 +21,17 @@ when the same filer also filed an SC 13E-3 (affiliate take-private), per §B1.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time as dtime, timezone
 from pathlib import Path
 
 import pandas as pd
 
 from engine import special_arb as arb
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -546,6 +547,21 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
 
 _PRICE_BASIS = {}          # artifact -> basis; every panel below is a RAW daily close
 _DEFAULT_PRICE_BASIS = "close_raw"
+# pinned so a published freshness verdict names the calendar revision that issued it
+_CALENDAR_REVISION = "nyse_calendar.v1"
+
+
+def _closes_paths() -> dict[str, Path]:
+    """artifact identity -> file, for the immutable digest receipt on every published price."""
+    out: dict[str, Path] = {}
+    for g in ("breadth", "midcap_breadth", "smallcap_breadth"):
+        out[f"{g}/_closes_cache.parquet"] = config.data_dir() / g / "_closes_cache.parquet"
+    for f in ("bt_prices.parquet", "arb_prices.parquet"):
+        out[f"{GROUP}/{f}"] = config.data_dir() / GROUP / f
+    for sub, fn in (("canada_search", "closes.parquet"), ("intl_search", "closes.parquet"),
+                    ("hk_search", "closes_deep.parquet")):
+        out[f"{sub}/{fn}"] = config.data_dir() / sub / fn
+    return {k: v for k, v in out.items() if v.exists()}
 
 
 def _closes_frames() -> list[tuple[str, pd.DataFrame]]:
@@ -606,112 +622,150 @@ def _panel_sources(frames: list[tuple[str, pd.DataFrame]]) -> dict[str, str]:
     return out
 
 
-def _calendar_index(panel: pd.DataFrame) -> dict[str, pd.DatetimeIndex]:
-    """Sessions on which ANY listing sharing an exchange suffix traded.
-
-    This is the closest thing to an exchange calendar this repo owns, and it is enough to answer
-    the only question the freshness law asks: how many completed sessions is this close behind?
-    A bare "last non-null row" cannot answer it at all.
-    """
-    groups: dict[str, list[str]] = {}
-    for c in panel.columns:
-        s = str(c)
-        groups.setdefault(s.rsplit(".", 1)[-1].upper() if "." in s else "", []).append(c)
-    out: dict[str, pd.DatetimeIndex] = {}
-    for suf, cols in groups.items():
-        try:
-            out[suf] = panel.index[panel[cols].notna().any(axis=1)]
-        except Exception:  # noqa: BLE001
-            continue
-    return out
+def _artifact_digest(path: Path) -> str | None:
+    """sha256 of the exact price artifact bytes. A path is a location, not an identity."""
+    try:
+        h = hashlib.sha256()
+        with path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except OSError:
+        return None
 
 
 def _observations_path() -> Path:
     return config.data_dir() / GROUP / "observations" / "observations.jsonl"
 
 
-def _load_observations() -> dict[str, list[dict]]:
-    """Append-only deal-term observation ledger, grouped by subject CIK.
+def _load_observations() -> tuple[dict[str, list[dict]], dict]:
+    """Append-only deal-term observation ledger, grouped by CIK, with an integrity census.
 
-    History is never rewritten: an amendment appends a NEW observation and the pure compiler
-    applies accession precedence, so a corrected price supersedes without deleting the receipt
-    that recorded the old one.
+    Fails CLOSED. The previous loader checked a `schema` string and silently dropped anything it
+    could not parse, so a malformed trailing line or a hand-edited value degraded into a
+    perfectly healthy-looking projection of the surviving rows. Now every row is re-validated
+    against its own closed digest, and any malformed or invalid row is COUNTED and reported —
+    partial generation is a visible state, not a quiet subset.
     """
     from engine import special_arb as arb
     p = _observations_path()
+    census = {"lines": 0, "malformed": 0, "invalid": 0, "kept": 0, "integrity_failed": False}
     if not p.exists():
-        return {}
+        return {}, census
     out: dict[str, list[dict]] = {}
     try:
         lines = p.read_text(errors="replace").splitlines()
     except Exception as e:  # noqa: BLE001
         log.warning("special_situations: observation ledger unreadable: %s", e)
-        return {}
+        census["integrity_failed"] = True
+        return {}, census
     for line in lines:
         line = line.strip()
         if not line:
             continue
+        census["lines"] += 1
         try:
             o = json.loads(line)
         except ValueError:
+            census["malformed"] += 1          # a truncated last write is a REAL failure
             continue
-        if not isinstance(o, dict) or o.get("schema") != arb.OBSERVATION_SCHEMA:
+        if not arb.validate_observation(o):
+            census["invalid"] += 1
             continue
         cik = str((o.get("source") or {}).get("cik") or "").lstrip("0")
         if cik:
             out.setdefault(cik, []).append(o)
-    return out
+            census["kept"] += 1
+    census["integrity_failed"] = bool(census["malformed"] or census["invalid"])
+    if census["integrity_failed"]:
+        log.warning("special_situations: observation ledger integrity: %d malformed, %d invalid "
+                    "of %d rows", census["malformed"], census["invalid"], census["lines"])
+    return out, census
 
 
-def _price_inputs(panel: pd.DataFrame, cal: dict, sources: dict, col: str, ticker: str,
-                  availability: object) -> tuple[dict | None, dict | None]:
-    """Typed live + filing-reference prices for one listing, with their real sessions.
+def _price_inputs(panel: pd.DataFrame, sources: dict, digests: dict, col: str, ticker: str,
+                  now_utc: datetime) -> tuple[dict | None, dict | None]:
+    """Typed live + filing-reference prices for one listing, with INDEPENDENT freshness.
 
-    The reference price is the last completed session STRICTLY BEFORE the first verified SEC
-    availability session — not a fixed 30-row lookback, which counts rows rather than sessions
-    and cannot be called an unaffected or announcement price at all.
+    Expected session and sessions-behind come from `lib/nyse_calendar` — the canonical US
+    cash-equity calendar owner — never from the price panel. Grading a store against itself is
+    how a globally frozen panel reports every listing as current.
+
+    The reference price is deliberately NOT resolved here: it needs the SEC acceptance timestamp,
+    which lives in the observation evidence, so the reducer decides whether a reference session
+    is admissible at all.
     """
     from engine import special_arb as arb
     s = panel[col].dropna()
     if s.empty:
         return None, None
     ccy = arb.market_currency(col)
+    if not ccy:
+        return None, None                       # unresolved listing is not a USD listing
     artifact = sources.get(str(col))
-    suf = str(col).rsplit(".", 1)[-1].upper() if "." in str(col) else ""
-    sessions = cal.get(suf)
-    last = s.index[-1]
-    behind = int((sessions > last).sum()) if sessions is not None and len(sessions) else None
-    expected = sessions[-1] if sessions is not None and len(sessions) else None
+    last = s.index[-1].date()
+    expected = nyse_calendar.expected_last_session(now_utc)
+    behind = nyse_calendar.sessions_behind(last, now_utc)
     live = arb.price_input(
-        ticker=ticker, session=last.date().isoformat(), value=float(s.iloc[-1]), currency=ccy,
+        ticker=ticker, session=last.isoformat(), value=float(s.iloc[-1]), currency=ccy,
         basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS), source_artifact=artifact,
-        sessions_behind=behind,
-        expected_session=expected.date().isoformat() if expected is not None else None,
-        calendar_id=suf or "US")
-    ref = None
-    try:
-        cut = pd.Timestamp(availability) if availability else None
-    except Exception:  # noqa: BLE001
-        cut = None
-    if cut is not None:
-        before = s.index[s.index < cut]
-        if len(before):
-            rs = before[-1]
-            ref = arb.price_input(
-                ticker=ticker, session=rs.date().isoformat(), value=float(s.loc[rs]),
-                currency=ccy, basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS),
-                source_artifact=artifact, calendar_id=suf or "US")
-    return live, ref
+        artifact_sha256=digests.get(artifact),
+        sessions_behind=behind, expected_session=expected.isoformat(),
+        calendar_owner="lib/nyse_calendar.py", calendar_revision=_CALENDAR_REVISION,
+        calendar_id="XNYS", recorded_at=now_utc.isoformat())
+    return live, s
 
 
-def _enrich_arb(sits: list[dict], *, asof: date | None = None) -> int:
-    """Attach the typed `arb` economics block to every fixed-cash-eligible situation.
+def _reference_price(series, acceptance: object, sources: dict, digests: dict, col: str,
+                     ticker: str, now_utc: datetime) -> dict | None:
+    """Last completed session strictly BEFORE the exact SEC availability moment, or None.
 
-    Every arb-category situation now gets a block, INCLUDING the degraded ones: a deal whose
-    terms are ambiguous, whose price is stale or whose close date was never observed is
-    reported in its own visible state rather than vanishing. Returns the VERIFIED count.
+    A date-only filing date cannot say whether the market had already closed when the filing
+    became available, so without an exact acceptance timestamp there is no defensible reference
+    session and the reducer reports REFERENCE_SESSION_UNRESOLVED.
     """
     from engine import special_arb as arb
+    if series is None or acceptance is None:
+        return None
+    try:
+        cut = pd.Timestamp(acceptance)
+    except Exception:  # noqa: BLE001
+        return None
+    if cut.tzinfo is None:
+        cut = cut.tz_localize("UTC")
+    cut_et = cut.tz_convert(nyse_calendar.ET)
+    # A session qualifies only once it has CLOSED. Comparing the session's midnight index
+    # against the acceptance moment made a premarket filing pick that same day's unclosed
+    # session — the exact premarket/after-close confusion the exact timestamp exists to remove.
+    qualified = [d for d in (x.date() for x in series.index)
+                 if pd.Timestamp(datetime.combine(d, dtime(16, 0)),
+                                 tz=nyse_calendar.ET) < cut_et]
+    if not qualified:
+        return None
+    rs = pd.Timestamp(qualified[-1])
+    ccy = arb.market_currency(col)
+    if not ccy:
+        return None
+    artifact = sources.get(str(col))
+    return arb.price_input(
+        ticker=ticker, session=rs.date().isoformat(), value=float(series.loc[rs]), currency=ccy,
+        basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS), source_artifact=artifact,
+        artifact_sha256=digests.get(artifact), calendar_owner="lib/nyse_calendar.py",
+        calendar_revision=_CALENDAR_REVISION, calendar_id="XNYS",
+        expected_session=nyse_calendar.expected_last_session(now_utc).isoformat(),
+        sessions_behind=nyse_calendar.sessions_behind(rs.date(), now_utc),
+        recorded_at=now_utc.isoformat())
+
+
+def _enrich_arb(sits: list[dict], *, now_utc: datetime | None = None) -> int:
+    """Attach the typed `arb` economics block to every fixed-cash-eligible situation.
+
+    Every arb-category situation gets a block, INCLUDING the degraded ones, so a missing term,
+    a stale price or a failed ledger row is reported in its own visible state rather than
+    vanishing. Returns the VERIFIED count.
+    """
+    from engine import special_arb as arb
+    now_utc = now_utc or datetime.now(timezone.utc)
     try:
         frames = _closes_frames()
         panel = _closes_panel(frames)
@@ -719,27 +773,37 @@ def _enrich_arb(sits: list[dict], *, asof: date | None = None) -> int:
         log.warning("special_situations arb: closes panel failed: %s", e)
         frames, panel = [], pd.DataFrame()
     sources = _panel_sources(frames)
-    cal = _calendar_index(panel) if not panel.empty else {}
-    obs_by_cik = _load_observations()
-    asof = asof or date.today()
+    digests = {name: _artifact_digest(path) for name, path in _closes_paths().items()}
+    obs_by_cik, census = _load_observations()
     n = 0
     for s in sits:
         if s.get("category") not in arb.ARB_CATEGORIES:
             continue
         cik = str(s.get("cik") or "").lstrip("0")
-        compiled = arb.compile_current_terms(obs_by_cik.get(cik))
+        rows = obs_by_cik.get(cik)
+        if census.get("integrity_failed"):
+            # partial generation must not present as a healthy projection of survivors
+            s["arb"] = arb.reduce_cash_deal(
+                {"status": "ambiguous", "reasons": ["INTEGRITY_FAILED", "PARTIAL_GENERATION"],
+                 "terms": {}, "evidence": {}, "accession": None, "amendment_chain": []},
+                category=s.get("category"), stage=s.get("stage"), now_utc=now_utc)
+            s["arb"]["ledger_census"] = census
+            continue
+        compiled = arb.compile_current_terms(rows)
         raw = str(s.get("ticker") or "").upper()
         col = None
         if not panel.empty:
             col = next((c for c in (raw, raw.split(".")[0]) if c and c in panel.columns), None)
         live = ref = None
         if col:
-            live, ref = _price_inputs(panel, cal, sources, col, raw,
-                                      s.get("date_filed") or s.get("date"))
-        econ = arb.reduce_cash_deal(
-            compiled, category=s.get("category"), stage=s.get("stage"), live_price=live,
-            reference_price=ref, availability_session=s.get("date_filed") or s.get("date"),
-            asof=asof, ticker=raw)
+            live, series = _price_inputs(panel, sources, digests, col, raw, now_utc)
+            acceptance = next((ev.get("acceptance_datetime")
+                               for ev in (compiled.get("evidence") or {}).values()
+                               if ev.get("acceptance_datetime")), None)
+            ref = _reference_price(series, acceptance, sources, digests, col, raw, now_utc)
+        econ = arb.reduce_cash_deal(compiled, category=s.get("category"), stage=s.get("stage"),
+                                    live_price=live, reference_price=ref, now_utc=now_utc,
+                                    ticker=raw)
         s["arb"] = econ
         if econ.get("quality_state") == arb.QUALITY_VERIFIED:
             n += 1

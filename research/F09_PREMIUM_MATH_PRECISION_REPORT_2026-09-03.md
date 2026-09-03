@@ -156,3 +156,46 @@ exists and is grounded, but no classified M&A event has passed through it in pro
 things must land first — the `enrich_deal_terms()` caller (awaiting a path-boundary ruling) and
 the #6783 host recovery. Both are recorded as `next_actions` in
 `agentos/handoffs/MARKET-ONTOLOGY-F09-PREMIUM-MATH-2026-09-03.md`.
+
+## 7. Repair after Sol's exact-head review (review 5099936758)
+
+The independent review rejected the first head and named eight defects. Six were real
+false-precision holes; three of those my own records had half-named without my drawing the
+conclusion. All are repaired at this head.
+
+| # | Defect on `5db9634a31a3` | Repair |
+|---|---|---|
+| 1 | `enrich_deal_terms()` never called by `build(refresh=True)` — a natural run leaves the ledger empty and every deal reports `SOURCE_UNAVAILABLE` | wired into the refresh sequence **before** `desk_payload()`, under the granted one-path expansion; `--no-refresh` stays source-inert, pinned by a build-path test |
+| 2 | observations grouped by issuer **CIK**, so two unrelated deals shared terms | accession-isolated; multiple accessions merge only through an explicit `link_supersession()` chain. `/A` or a shared filer proves nothing |
+| 3 | digest taken over `_strip_markup(raw)[:40000]` while the span claimed `full_submission_text` | complete response bytes retained (`raw_sha256`/`raw_bytes`) beside a **versioned** normalized projection; `completeness ∈ complete/truncated/unknown`, and anything but `complete` can never be VERIFIED |
+| 4 | ledger checked a `schema` label; malformed JSON skipped silently | every row re-validated against a **closed** digest; malformed/invalid rows counted and surfaced as `INTEGRITY_FAILED` + `PARTIAL_GENERATION`, never a healthy subset |
+| 5 | `_calendar_index` derived the expected session from the panel being graded | `lib/nyse_calendar.py` **unchanged** as the owner; every price carries `calendar_owner`, `calendar_revision`, `expected_session`, `sessions_behind` and an immutable `artifact_sha256` |
+| 6 | `market_currency("") → "USD"`; date-only `date_filed` as availability; `date.today()` as market clock | unresolved listing returns `None`; reference sessions need the exact SEC acceptance moment parsed from source bytes; `now_utc` is a **required** argument — omitting it raises |
+| 7 | consideration matched document-wide, so a background CVR could classify the live deal | every field resolves inside one `transaction_scope()` anchored on the price span and cut at section boundaries |
+| 8 | `stated_premium_pct` published with no comparator | publishable only with a captured basis; no comparator, or two disagreeing ones, publishes nothing — and never substitutes for the computed filing-reference premium |
+
+### Evidence
+
+- **RED first**: 16 new mutants failed against the reviewed head before any fix; all green now.
+- **Required REDs, all present**: same CIK/two deals · forged observation · tampered offset ·
+  malformed trailing JSONL line · truncated body · unresolved foreign listing + bare `$` ·
+  whole-panel stale · missing calendar receipt · premarket vs after-close acceptance · real
+  `build(refresh=True)` path · background-only CVR · cash financing beside a stock deal ·
+  two premium comparators · bare `35% premium`.
+- **143 passed** across `test_special_arb` / `test_special_situations` / `test_special_sits_intel`.
+- **No regressions**: 40 failures across the full dependent surface, all in unrelated suites
+  (`china_heatmap_gate`, `us_board_gate`, `seo_meta_rollout`, …) that need `site/`/`data/`;
+  **zero** in any `special_*` suite.
+
+### One repair that changed a rule rather than a line
+
+The premarket/after-close mutant exposed a second bug behind the first. `_reference_price`
+compared the session index's **midnight** against the acceptance moment, so a filing accepted at
+07:45 ET selected that same day's *unclosed* session as its reference. Keying the comparison to
+the session's 16:00 ET close fixed it — and made the previously-passing
+`test_filing_day_close_is_not_a_reference_price` wrong on its own premise, since an after-close
+filing genuinely may use that day's close. That test was replaced rather than patched.
+
+`DSC:A-DIGEST-OF-A-DERIVED-PROJECTION-IS-NOT-BYTE-BINDING` records the transferable half: no
+single layer lied — the falsehood lived at the seam between "the bytes I hashed" and "the
+document I claimed", which is precisely what per-layer review does not inspect.

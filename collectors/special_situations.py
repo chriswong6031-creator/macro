@@ -25,6 +25,8 @@ moment a situation hit EDGAR is never overwritten on later amendments.
 """
 from __future__ import annotations
 
+import gzip
+import hashlib
 import json
 import logging
 import re
@@ -396,18 +398,74 @@ def _strip_markup(html: str) -> str:
 
 
 def _fetch_filing_text(cik: str, accession: str, max_chars: int = 40000) -> str | None:
-    """Fetch + cache the stripped text of a filing's full submission (8-K body +
-    Exhibit 99.1 sit near the top). Cached so daily rebuilds never re-fetch."""
+    """Fetch + cache the stripped text of a filing's full submission. Cached so daily rebuilds
+    never re-fetch. NOTE: this is a LOSSY, TRUNCATED projection — see `_retain_source`."""
     cache = config.data_dir() / GROUP / "doc_cache" / f"{accession}.txt"
     if cache.exists():
         return cache.read_text(errors="replace")
     raw = _get(_filing_text_url(cik, accession), as_json=False)
     if not raw:
         return None
+    _retain_source(accession, raw, max_chars=max_chars)
     txt = _strip_markup(raw)[:max_chars]
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(txt)
     return txt
+
+
+# SEC full-submission headers carry the exact acceptance moment. `_strip_markup` destroys it,
+# which is precisely why the stripped cache cannot fix a reference session on its own.
+_ACCEPTANCE_RE = re.compile(r"<ACCEPTANCE-DATETIME>\s*(\d{14})")
+
+
+def _retain_source(accession: str, raw: str, *, max_chars: int = 40000) -> dict:
+    """Retain the COMPLETE response bytes plus an acquisition receipt beside the projection.
+
+    The old cache kept only `_strip_markup(raw)[:40000]` — derived AND truncated — so an
+    observation could hash that, call itself `full_submission_text`, and declare no conflicting
+    price existed when the rest of the document was simply never retained. Absence of evidence
+    inside a cut body is not evidence of absence.
+    """
+    root = config.data_dir() / GROUP / "source_objects"
+    root.mkdir(parents=True, exist_ok=True)
+    body = raw.encode("utf-8", "replace")
+    raw_sha = hashlib.sha256(body).hexdigest()
+    obj = root / f"{accession}.raw.gz"
+    if not obj.exists():
+        with gzip.open(obj, "wb") as fh:
+            fh.write(body)
+    projection = _strip_markup(raw)
+    m = _ACCEPTANCE_RE.search(raw)
+    acceptance = None
+    if m:
+        t = m.group(1)
+        acceptance = (f"{t[0:4]}-{t[4:6]}-{t[6:8]}T{t[8:10]}:{t[10:12]}:{t[12:14]}-04:00")
+    receipt = {
+        "accession": accession,
+        "raw_sha256": raw_sha,
+        "raw_bytes": len(body),
+        "projection_revision": "strip_markup.v1",
+        "projection_sha256": hashlib.sha256(
+            projection[:max_chars].encode("utf-8", "replace")).hexdigest(),
+        "projection_chars": len(projection[:max_chars]),
+        "truncated": len(projection) > max_chars,
+        "acceptance_datetime": acceptance,
+        "acquired_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source_url": None,
+    }
+    (root / f"{accession}.receipt.json").write_text(json.dumps(receipt, sort_keys=True))
+    return receipt
+
+
+def _source_receipt(accession: str) -> dict | None:
+    """The retained acquisition receipt for an accession, or None if bytes were never kept."""
+    p = config.data_dir() / GROUP / "source_objects" / f"{accession}.receipt.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except ValueError:
+        return None
 
 
 def enrich_text(limit: int | None = None,
@@ -791,6 +849,7 @@ def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) 
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     fresh: list[dict] = []
     read = 0
+    skipped_no_receipt = 0
     for _, r in eligible.iterrows():
         accession = str(r.get("accession") or "")
         cik = str(r.get("cik") or "")
@@ -810,11 +869,21 @@ def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) 
                                                   timezone.utc).isoformat(timespec="seconds")
             except OSError:
                 acquired = None
+        receipt = _source_receipt(accession)
+        if receipt is None:
+            # legacy stripped/truncated .txt is unverified derived cache: it can seed candidates
+            # but must never present as a complete, conflict-free source object
+            skipped_no_receipt += 1
+            continue
         src = arb.source_descriptor(
             cik=cik, form_type=r.get("form_type"), accession=accession,
             filing_date=r.get("date_filed") or r.get("date"),
-            source_url=_filing_text_url(cik, accession), body=body, acquired_at=acquired,
-            body_truncated=len(body) >= 40000)
+            source_url=_filing_text_url(cik, accession), body=body,
+            acquired_at=receipt.get("acquired_at") or acquired,
+            body_truncated=bool(receipt.get("truncated")),
+            raw_sha256=receipt.get("raw_sha256"), raw_bytes=receipt.get("raw_bytes"),
+            acceptance_datetime=receipt.get("acceptance_datetime"),
+            projection_revision=receipt.get("projection_revision", "strip_markup.v1"))
         ticker = str(r.get("ticker") or "")
         for o in arb.extract_term_observations(
                 body, source=src, listing_currency=arb.market_currency(ticker),
@@ -824,6 +893,10 @@ def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) 
             known.add(o["observation_id"])
             fresh.append(o)
 
+    if skipped_no_receipt:
+        log.info("special_situations deal-term lane: %d accession(s) skipped — no retained "
+                 "source receipt (legacy stripped cache is not a verified source object)",
+                 skipped_no_receipt)
     if not fresh:
         log.info("special_situations deal-term lane: %d bodies read, 0 new observations", read)
         return 0

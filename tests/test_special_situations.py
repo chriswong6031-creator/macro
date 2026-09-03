@@ -22,7 +22,7 @@ from collectors import special_situations as ss
 from engine import special_situations as sse
 from scripts import ingest_digest_db as idb
 from scripts import backtest_special_situations as bt
-from datetime import date
+from datetime import date, datetime, timezone
 
 
 # ---- fixtures ---------------------------------------------------------------
@@ -709,7 +709,9 @@ def _f09_env(tmp_path, monkeypatch, *, text, sessions, ticker="ABC", last_close=
                  ).to_parquet(root / "events.parquet")
     src = arb.source_descriptor(cik="1", form_type="8-K", accession="0000000001-26-000001",
                                 filing_date=filed, source_url="https://sec.gov/x", body=text,
-                                acquired_at="2026-06-17T00:00:00Z")
+                                acquired_at="2026-06-17T00:00:00Z",
+                                raw_sha256="c" * 64, raw_bytes=len(text) * 3,
+                                acceptance_datetime=f"{filed}T17:31:00-04:00")
     obs = arb.extract_term_observations(text, source=src, listing_currency="USD",
                                         recorded_at="2026-06-17T00:00:00Z")
     (root / "observations").mkdir(exist_ok=True)
@@ -721,6 +723,8 @@ def _f09_env(tmp_path, monkeypatch, *, text, sessions, ticker="ABC", last_close=
     closes.to_parquet(tmp_path / "breadth" / "_closes_cache.parquet")
     return obs
 
+
+NOW_UTC = datetime(2026, 6, 18, 22, 0, tzinfo=timezone.utc)   # explicit market clock
 
 _CASH_EXACT = ("Each share of common stock will be converted into the right to receive $25.00 "
                "in cash per share. The transaction is expected to close on December 15, 2026.")
@@ -734,7 +738,7 @@ def test_enrich_arb_publishes_receipts_not_bare_numbers(tmp_path, monkeypatch):
              sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
     sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
              "stage": "pending", "date_filed": "2026-06-17"}]
-    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
     e = sits[0]["arb"]
     assert e["quality_state"] == arb.QUALITY_VERIFIED
     assert e["offer_price"] == 25.0 and e["currency"] == "USD"
@@ -757,9 +761,13 @@ def test_enrich_arb_marks_a_stale_close_instead_of_pricing_off_it(tmp_path, monk
     panel = pd.read_parquet(tmp_path / "breadth" / "_closes_cache.parquet")
     panel.loc[pd.Timestamp("2026-06-18")] = [float("nan"), 1.0]
     panel.sort_index().to_parquet(tmp_path / "breadth" / "_closes_cache.parquet")
-    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
     e = sits[0]["arb"]
-    assert e["quality_state"] == arb.QUALITY_STALE_PRICE and e["sessions_behind"] == 1
+    # 2, not 1: nyse_calendar counts real completed sessions (06-17 and 06-18) after the last
+    # close this listing actually has. The old panel-derived count could only ever see rows the
+    # panel happened to contain, which is what let a frozen store look current.
+    assert e["quality_state"] == arb.QUALITY_STALE_PRICE and e["sessions_behind"] == 2
+    assert e["calendar_owner"] == "lib/nyse_calendar.py"
     assert e["orderable"] is False
 
 
@@ -768,7 +776,7 @@ def test_enrich_arb_never_invents_a_close_day(tmp_path, monkeypatch):
     _f09_env(tmp_path, monkeypatch, text=_CASH_MONTH, sessions=["2026-06-16", "2026-06-18"])
     sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
              "stage": "pending", "date_filed": "2026-06-17"}]
-    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
     e = sits[0]["arb"]
     assert e["expected_close"] == "2026-11" and e["expected_close_precision"] == "month"
     assert e["days_to_close"] is None and e["annualized_pct"] is None
@@ -783,7 +791,7 @@ def test_enrich_arb_without_observations_is_degraded_not_absent(tmp_path, monkey
     sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
              "stage": "pending", "date_filed": "2026-06-17",
              "deal_terms": {"price_per_share": 25.0, "consideration": "cash"}}]
-    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
     e = sits[0]["arb"]
     assert e["quality_state"] == arb.QUALITY_SOURCE_UNAVAILABLE
     assert e["offer_price"] is None and e["live_gross_spread_pct"] is None
@@ -799,7 +807,7 @@ def test_mastermind_emit_and_context_feed_cannot_diverge(tmp_path, monkeypatch):
              "stage": "pending", "date_filed": "2026-06-17"},
             {"ticker": "MIX", "company": "MIX Inc", "category": "Acquisitions", "cik": "1",
              "stage": "pending", "date_filed": "2026-06-17"}]
-    sse._enrich_arb(sits, asof=date(2026, 6, 18))
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
     emit_rows, emit_counts = arb.select_ordered_context(sits, limit=25)
     feed_rows, feed_counts = arb.select_ordered_context(sits, limit=5)
     assert {r["ticker"] for r in feed_rows} <= {r["ticker"] for r in emit_rows}
@@ -826,7 +834,7 @@ def test_desk_page_renderer_consumes_the_economics_contract():
 
     # a degraded row renders as nothing — it must never format a null or raise
     degraded = arb.reduce_cash_deal(arb.compile_current_terms([]), category="Acquisitions",
-                                    asof=_d(2026, 9, 1))
+                                    now_utc=NOW_UTC)
     assert degraded["quality_state"] == arb.QUALITY_SOURCE_UNAVAILABLE
     assert _arb_str(degraded) == ""
 
@@ -836,13 +844,17 @@ def test_desk_page_renderer_consumes_the_economics_contract():
         source=arb.source_descriptor(cik="1", form_type="8-K",
                                      accession="0000000001-26-000001",
                                      filing_date="2026-06-17", source_url="u",
-                                     body=_CASH_EXACT, acquired_at="z"),
+                                     body=_CASH_EXACT, acquired_at="z",
+                                     raw_sha256="e" * 64, raw_bytes=999,
+                                     acceptance_datetime="2026-06-17T17:31:00-04:00"),
         listing_currency="USD")
     live = arb.price_input(ticker="ABC", session="2026-06-18", value=20.0, currency="USD",
                            basis="close_raw", source_artifact="breadth/_closes_cache.parquet",
-                           sessions_behind=0)
+                           artifact_sha256="d" * 64, sessions_behind=0,
+                           expected_session="2026-06-18", calendar_owner="lib/nyse_calendar.py",
+                           calendar_revision="nyse_calendar.v1")
     econ = arb.reduce_cash_deal(arb.compile_current_terms(obs), category="Acquisitions",
-                                stage="pending", live_price=live, asof=_d(2026, 6, 18))
+                                stage="pending", live_price=live, now_utc=NOW_UTC)
     assert econ["quality_state"] == arb.QUALITY_VERIFIED
     rendered = _arb_str(econ)
     assert rendered.startswith("spread +25.0%")
@@ -880,6 +892,8 @@ def test_deal_term_lane_writes_a_byte_bound_ledger_and_is_idempotent(tmp_path, m
     root = tmp_path / "special_situations"
     (root / "doc_cache").mkdir(parents=True)
     (root / "doc_cache" / "0000000001-26-000001.txt").write_text(_CASH_EXACT)
+    ss._retain_source("0000000001-26-000001",
+                      "<ACCEPTANCE-DATETIME>20260617173100\n" + _CASH_EXACT)
     pd.DataFrame([{"id": "e1", "form_type": "DEFM14A", "company": "ABC Inc", "cik": "0000000001",
                    "accession": "0000000001-26-000001", "ticker": "ABC", "items": None,
                    "date_filed": "2026-06-17", "source_url": "u"}]
@@ -924,8 +938,107 @@ def test_deal_term_lane_ignores_events_outside_the_fixed_cash_categories(tmp_pat
     (root / "doc_cache").mkdir(parents=True)
     (root / "doc_cache" / "0000000002-26-000002.txt").write_text(
         "The Board declared a special cash dividend of $2.50 per share.")
+    ss._retain_source("0000000002-26-000002",
+                      "The Board declared a special cash dividend of $2.50 per share.")
     pd.DataFrame([{"id": "e2", "form_type": "SC 13D", "company": "XYZ Inc", "cik": "2",
                    "accession": "0000000002-26-000002", "ticker": "XYZ", "items": None,
                    "date_filed": "2026-06-17", "source_url": "u"}]
                  ).to_parquet(root / "events.parquet")
     assert ss.enrich_deal_terms() == 0
+
+
+# ---- F09-1 repair: required REDs that only exist at the engine/build boundary ---------------
+
+def test_a_malformed_last_ledger_line_is_partial_generation_not_a_healthy_subset(
+        tmp_path, monkeypatch):
+    """A truncated final write is a REAL failure. The old loader skipped it silently and
+    published the surviving rows as a complete, healthy projection."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-16", "2026-06-18"])
+    led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+    led.write_text(led.read_text() + '{"schema":"special_situations.deal_term_obs')  # cut mid-write
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] != arb.QUALITY_VERIFIED
+    assert "PARTIAL_GENERATION" in e["reasons"] and "INTEGRITY_FAILED" in e["reasons"]
+    assert e["ledger_census"]["malformed"] == 1
+
+
+def test_a_forged_ledger_row_does_not_reach_the_projection(tmp_path, monkeypatch):
+    import json
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+    rows = [json.loads(x) for x in led.read_text().splitlines() if x.strip()]
+    for r in rows:
+        if r["field"] == "price_per_share":
+            r["normalized"] = 999.0            # value swapped, observation_id left intact
+    led.write_text("\n".join(json.dumps(r, sort_keys=True) for r in rows) + "\n")
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] != arb.QUALITY_VERIFIED
+    assert e["offer_price"] != 999.0 and e["offer_price"] is None
+
+
+def test_a_globally_stale_panel_cannot_certify_itself_as_current(tmp_path, monkeypatch):
+    """The whole point of the independent calendar: when EVERY listing is equally behind, a
+    panel-derived session count still reports 0 behind, because it can only see its own rows."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-05-04", "2026-05-05"])          # panel frozen six weeks back
+    sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+             "stage": "pending", "date_filed": "2026-06-17"}]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["sessions_behind"] > 20, "a frozen panel certified itself as current"
+    assert e["quality_state"] == arb.QUALITY_STALE_PRICE and e["orderable"] is False
+
+
+def test_after_close_and_premarket_acceptance_pick_different_reference_sessions(
+        tmp_path, monkeypatch):
+    """Date-only `date_filed` cannot tell these apart, which is why it may not fix a reference
+    session at all. With an exact acceptance time the reference is deterministic."""
+    from engine import special_arb as arb
+    sessions = ["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18"]
+
+    def _ref_for(acceptance):
+        _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=sessions)
+        led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+        import json
+        rows = [json.loads(x) for x in led.read_text().splitlines() if x.strip()]
+        rebuilt = []
+        for r in rows:
+            r["source"] = dict(r["source"], acceptance_datetime=acceptance)
+            r["observation_id"] = arb.observation_id(
+                source=r["source"], field=r["field"], locator=r["locator"],
+                normalized=r["normalized"])
+            rebuilt.append(r)
+        led.write_text("\n".join(json.dumps(r, sort_keys=True) for r in rebuilt) + "\n")
+        sits = [{"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "cik": "1",
+                 "stage": "pending", "date_filed": "2026-06-17"}]
+        sse._enrich_arb(sits, now_utc=NOW_UTC)
+        return sits[0]["arb"]
+
+    premarket = _ref_for("2026-06-17T07:45:00-04:00")   # before the 06-17 close
+    after_close = _ref_for("2026-06-17T17:31:00-04:00")  # after it
+    assert premarket["reference_session"] == "2026-06-16"
+    assert after_close["reference_session"] == "2026-06-17"
+    assert premarket["reference_session"] != after_close["reference_session"]
+
+
+def test_the_real_build_path_calls_the_producer_and_no_refresh_stays_source_inert():
+    """`enrich_deal_terms()` was never called by build(refresh=True), so a natural run would
+    leave the ledger empty and every cash deal would report SOURCE_UNAVAILABLE."""
+    import inspect
+    from scripts import build_special_situations as bss
+    src = inspect.getsource(bss.build)
+    assert "enrich_deal_terms" in src, "the producer is not wired into the refresh sequence"
+    refresh_block = src.split("if refresh:", 1)[1]
+    assert "enrich_deal_terms" in refresh_block, "producer must run only under refresh"
+    # it must run BEFORE the desk is compiled, or the first build reads an empty ledger
+    assert refresh_block.index("enrich_deal_terms") < refresh_block.index("desk_payload")

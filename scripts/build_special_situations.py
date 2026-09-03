@@ -373,6 +373,11 @@ def build(refresh: bool = True) -> str:
                 _config.load().get("qual_extraction", {}).get("extract_per_build", 100)))
             colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated)
             colintl.fetch_intl_situations()                      # Phase 4 UK/Canada intl lanes (gated per market)
+            # F09-1: deterministic, evidence-bound deal terms BEFORE the desk is compiled.
+            # Without this call the observation ledger stays empty on a natural run and every
+            # cash deal reports SOURCE_UNAVAILABLE — the capability would be inert in production
+            # while every unit test passed. Reads only already-retained source objects.
+            col.enrich_deal_terms(limit=int(ss.get("deal_terms_per_build", 200)))
             from collectors import special_prices as colpx
             colpx.fetch_arb_prices()                             # P1.2 price ADR/OTC deal targets (best-effort)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
