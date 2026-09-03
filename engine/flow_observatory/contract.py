@@ -211,6 +211,11 @@ _STATE_WORDS = {
     "expected_lag": ("expected T−1", "预期T−1"),
     # {date} is substituted by the caller (build_sources) with the leg's own effective_date.
     "behind": ("behind — showing {date} data", "滞后 · 显示{date}数据"),
+    # S9: a coverage-collapse DEGRADED (gap_sessions == 0 — the leg IS today's date, just
+    # thin) reads differently from a plain calendar-gap DEGRADED: "behind — showing {date}"
+    # would be misleading (the date shown is TODAY's, not a stale one), and the real numbers
+    # already live in the chip's LENS tooltip (REASON_TEXT["coverage_collapse"] below).
+    "thin_coverage": ("thin coverage", "覆盖不足"),
     "stale": ("stale — showing {date}", "已过期 · 显示{date}数据"),
     "historical": ("historical only — ended {date}", "仅历史 · 止于{date}"),
     "unavailable": ("unavailable", "不可用"),
@@ -270,10 +275,34 @@ def ui_state_from_status(status: str | None, reasons: list[str] | None = None) -
     ``reasons=["expected_t_minus_1"]`` and reads "expected_lag", not a bare "current" (that
     would erase the useful "this leg is ALWAYS one session behind by design" signal); every
     other HEALTHY leg reads "current".
+
+    S1: the literal "revised" ui_state word is possible ONLY when ``status`` is itself the
+    literal string "REVISED" — which (per ``quality.classify_leg``'s S1 repair) only ever
+    happens when the gap verdict ALONE would have been HEALTHY. A leg that is ALSO
+    STALE/UNAVAILABLE never reaches this branch: its ``status`` stays "STALE"/"UNAVAILABLE"
+    (the regression only ever WORSENS a gap-based status, never replaces it with "REVISED"),
+    so ``_STATUS_TO_UI_STATE`` maps it to "stale"/"unavailable" as normal — the "revised"
+    chip word can never mask a materially worse read.
     """
     if status == fo_quality.HEALTHY and reasons and "expected_t_minus_1" in reasons:
         return "expected_lag"
     return _STATUS_TO_UI_STATE.get(status, "unavailable")
+
+
+def _state_word_key(status: str | None, ui_state: str, reasons: list[str] | None,
+                    gap_sessions: int | None) -> str:
+    """The ``_STATE_WORDS`` key for one leg's chip (S9 repair): DEGRADED's own wording
+    depends on WHY it is degraded. A plain calendar-gap DEGRADED keeps the existing
+    "behind — showing {date} data" word (``ui_state`` "behind"). A pure coverage-collapse
+    DEGRADED — ``gap_sessions == 0``, i.e. the leg's date IS current, it is just thin — reads
+    "thin coverage" instead: the {date}-behind wording would misleadingly show TODAY's date
+    under a word implying staleness, and the real coverage numbers already live in the
+    chip's LENS tooltip (``REASON_TEXT["coverage_collapse"]``).
+    """
+    if (status == fo_quality.DEGRADED and reasons and "coverage_collapse" in reasons
+            and (gap_sessions or 0) == 0):
+        return "thin_coverage"
+    return ui_state
 
 
 def _reason_suffix(reasons: list[str] | None, lang_idx: int) -> str:
@@ -324,8 +353,10 @@ def _source_leg(source_id: str, *, provider: str, market: str, effective_date: s
     reasons = q.get("reasons") or []
     confidence = q.get("confidence")
     gap_sessions = q.get("gap_sessions")
+    revised = bool(q.get("revised"))
     ui_state = ui_state_from_status(status, reasons)
-    word_en, word_zh = _STATE_WORDS.get(ui_state, _STATE_WORDS["unavailable"])
+    word_key = _state_word_key(status, ui_state, reasons, gap_sessions)
+    word_en, word_zh = _STATE_WORDS.get(word_key, _STATE_WORDS["unavailable"])
     date_str = effective_date or "—"
     tip_en, tip_zh = meta.get("tip_en", ""), meta.get("tip_zh", "")
     suf_en, suf_zh = _reason_suffix(reasons, 0), _reason_suffix(reasons, 1)
@@ -339,7 +370,7 @@ def _source_leg(source_id: str, *, provider: str, market: str, effective_date: s
         "expected_availability": expected_availability, "coverage": coverage,
         "first_known_at": first_known_at, "status": status,
         "reasons": reasons, "confidence": confidence, "gap_sessions": gap_sessions,
-        "ui_state": ui_state,
+        "revised": revised, "ui_state": ui_state,
         "name_en": meta.get("name_en", source_id), "name_zh": meta.get("name_zh", source_id),
         "tip_en": tip_en, "tip_zh": tip_zh,
         "coverage_line": _coverage_line(coverage),
@@ -365,7 +396,7 @@ def state_log_legs_snapshot(sources: list[dict[str, Any]]) -> dict[str, dict[str
 def build_sources(snap: dict[str, Any], *, newest_session: str | None,
                   seats_as_of: str | None = None,
                   log_rows: list[dict[str, Any]] | None = None,
-                  today=None) -> list[dict[str, Any]]:
+                  now=None) -> list[dict[str, Any]]:
     """One block per masterplan §3 leg — ALWAYS all five W1 legs (S7 repair): a leg whose
     panel did not build this run still gets its identity row so the trust strip shows
     "unavailable — not zero flow" rather than a silent hole (masterplan §5 publication
@@ -373,13 +404,22 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     it at all yet; see the SOURCE_META docstring above for why fabricating one would
     itself violate the honesty gate this module exists to enforce).
 
-    W2: every leg's ``status``/``reasons``/``confidence``/``gap_sessions`` now come from
-    ``engine.flow_observatory.quality.classify_leg`` (never left ``null`` as W1 did), with
-    the desk-level wall-clock backstop applied across all five before ``ui_state`` is
-    derived (spec §1-§2). ``today`` is the wall-clock anchor for calendar-gap legs —
-    ``None`` (the default, and every pre-W2 caller) skips staleness measurement entirely
-    (documented in ``quality.classify_leg``), so existing W1 callers keep reporting HEALTHY/
-    "current" exactly as before unless they opt in by passing a real ``today``.
+    W2: every leg's ``status``/``reasons``/``confidence``/``gap_sessions``/``revised`` now
+    come from ``engine.flow_observatory.quality.classify_leg`` (never left ``null`` as W1
+    did), with the desk-level wall-clock backstop applied across all five before
+    ``ui_state`` is derived (spec §1-§2).
+
+    ``now`` (B1 repair — renamed from ``today``) is the wall-clock anchor for calendar-gap
+    legs, and MUST be a real ``datetime`` for production callers (never a bare UTC date fed
+    straight to an Asia calendar — the exact forbidden shape B1 closes; see
+    ``quality.classify_leg`` / ``quality._newest_completed_session``). ``None`` (the
+    default, and every pre-W2 caller) skips staleness measurement entirely, so existing
+    callers keep reporting HEALTHY/"current" exactly as before unless they opt in by
+    passing a real ``now``. The desk-level wall-clock backstop (``apply_desk_backstop``, the
+    ONE calendar-day rule) derives its own coarse ``today`` date FROM ``now`` here rather
+    than taking a second explicit parameter — one wall-clock anchor in, and both the
+    session-aware per-leg gap and the calendar-day backstop derive their own reading from
+    it.
     ``log_rows`` (state_log history) feeds the coverage-collapse/REVISED inputs; omitted or
     empty degrades those two checks to their honest "insufficient/no history" no-ops.
 
@@ -389,8 +429,11 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     comparing an HK leg's date against a CN close date can manufacture a false gap/false
     currency on days the two markets' sessions diverge. CN legs keep the CN anchor.
     """
+    from datetime import datetime as _dt
+
     from engine.flow_observatory.changes import leg_quality_history
 
+    today = now.date() if isinstance(now, _dt) else now
     log_rows = log_rows or []
     agg = {c.get("key"): c for c in (snap.get("aggregate") or []) if isinstance(c, dict)}
     names = snap.get("ashare_names") or {}
@@ -427,19 +470,20 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     seats_coverage = ({"n_observed": len(seats), "n_sized": None, "pct_names": None} if seats
                       else {"n_observed": None, "n_sized": None, "pct_names": None})
 
-    # ── classify every leg (quality engine, W2) ──
+    # ── classify every leg (quality engine, W2) ── B1: `now` (a real datetime for
+    # production callers), never the coarse `today` date — see classify_leg's own docstring.
     cn_q = fo_quality.classify_leg(
         "cn_large_order_proxy", names_asof, cn_coverage,
-        leg_quality_history(log_rows, "cn_large_order_proxy", newest_session), today)
+        leg_quality_history(log_rows, "cn_large_order_proxy", newest_session), now)
     sb_q = fo_quality.classify_leg(
         "sb_aggregate", sb_effective, sb_coverage,
-        leg_quality_history(log_rows, "sb_aggregate", newest_session), today)
+        leg_quality_history(log_rows, "sb_aggregate", newest_session), now)
     hk_q = fo_quality.classify_leg(
         "hk_sb_holdings", hk_effective, hk_coverage,
-        leg_quality_history(log_rows, "hk_sb_holdings", newest_session), today)
-    nb_q = fo_quality.classify_leg("nb_aggregate", nb_effective, {}, {}, today)
+        leg_quality_history(log_rows, "hk_sb_holdings", newest_session), now)
+    nb_q = fo_quality.classify_leg("nb_aggregate", nb_effective, {}, {}, now)
     seats_q = fo_quality.classify_leg("lhb_inst_seats", seats_effective, seats_coverage,
-                                      {"present": bool(seats)}, today)
+                                      {"present": bool(seats)}, now)
 
     leg_results = {"cn_large_order_proxy": cn_q, "sb_aggregate": sb_q,
                   "hk_sb_holdings": hk_q, "nb_aggregate": nb_q, "lhb_inst_seats": seats_q}
@@ -491,22 +535,27 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
 # ── build_v2 assembly (spec §1.7) ──────────────────────────────────────────────────
 def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = None,
             market_session: str | None = None, generated_at: str | None = None,
-            seats_as_of: str | None = None, today=None,
+            seats_as_of: str | None = None, now=None,
             state_history=None) -> dict[str, Any]:
     """Merge the W1+W2 ``flow_observatory.v2`` additive fields into the existing desk payload.
 
     Pure assembly — no I/O. ``log_rows`` is the already-read ``state_log.jsonl`` content
     (pass ``[]``/``None`` when unavailable — history fields degrade to honest nulls, never
-    a fabricated zero). ``today`` (W2) is the wall-clock anchor threaded into
-    :func:`build_sources` / ``quality.classify_leg`` for calendar-gap staleness — ``None``
-    (the default) skips staleness measurement entirely, so every pre-W2 caller keeps
-    reporting HEALTHY/"current" unless it opts in with a real date. ``state_history`` is an
-    injectable ``changes.theme_state_history`` callable (defaults to importing
-    :mod:`engine.flow_observatory.changes` lazily, keeping this module import-cycle-free for
-    tests that only need the pure math).
+    a fabricated zero). ``now`` (B1 repair — renamed from ``today``) is the wall-clock
+    anchor threaded into :func:`build_sources` / ``quality.classify_leg`` for calendar-gap
+    staleness, and MUST be a real ``datetime`` for production callers (never a bare UTC date
+    fed straight to an Asia calendar). ``None`` (the default) skips staleness measurement
+    entirely, so every pre-W2 caller keeps reporting HEALTHY/"current" unless it opts in
+    with a real ``now``. ``state_history`` is an injectable ``changes.theme_state_history``
+    callable (defaults to importing :mod:`engine.flow_observatory.changes` lazily, keeping
+    this module import-cycle-free for tests that only need the pure math).
     """
     log_rows = log_rows or []
     market_session = market_session or snap.get("as_of")
+    # B2: the escalation streak's "current run" is identified by BUILD date (generated_at's
+    # own date), never the market session — a frozen market_session must not also freeze
+    # `quality.consecutive_degraded_sessions`'s walk (see that function's docstring).
+    run_date = str(generated_at)[:10] if generated_at else None
     if state_history is None:
         from engine.flow_observatory.changes import theme_state_history as state_history
 
@@ -572,7 +621,7 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
 
     # §1.5 — sources[], now carrying the W2 quality classification per leg.
     out["sources"] = build_sources(snap, newest_session=market_session, seats_as_of=seats_as_of,
-                                   log_rows=log_rows, today=today)
+                                   log_rows=log_rows, now=now)
 
     # §2 — publication_state (worst-of live legs) + the desk-wide health block. Computed
     # AFTER sources[] so both read the SAME per-leg statuses the trust strip renders —
@@ -581,7 +630,9 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     pub_state = fo_quality.publication_state(leg_statuses)
     out["publication_state"] = pub_state
     leg_results_by_id = {s["source_id"]: s for s in out["sources"]}
-    out["health"] = fo_quality.compute_health(pub_state, leg_results_by_id, log_rows, market_session)
+    # B2: keyed on the BUILD run_date (generated_at), never market_session — see this
+    # function's own docstring and quality.consecutive_degraded_sessions.
+    out["health"] = fo_quality.compute_health(pub_state, leg_results_by_id, log_rows, run_date)
 
     # a STALE/UNAVAILABLE cn_large_order_proxy must never let market_read read as current —
     # both the theme lens AND the names lens are fed by the SAME Tushare panel (spec §2).
@@ -635,6 +686,19 @@ def validate(desk: dict[str, Any]) -> None:
     zero false-positive risk against a real T+0 leg whose date legitimately coincides with
     today's build date; (2) the original byte-identical comparison is kept as a
     defense-in-depth belt-and-suspenders check.
+
+    S3 repair (five checks, each with its own failing-first test in
+    tests/test_flow_observatory_quality.py): (a) every ``sources[]`` block's ``status`` is
+    non-null AND drawn from the enum — previously a null status only failed silently
+    elsewhere, never here; (b) ``publication_state`` is now a REQUIRED top-level key, not a
+    soft "only check it if present" — a payload that omits it entirely used to sail through
+    unchecked; (c) ``market_read.{themes,names}.quality`` must reflect the cn proxy's status
+    for BOTH STALE ("stale") and UNAVAILABLE ("unavailable") — the old check only ever
+    covered STALE; (d) ``health.publication_state`` must equal the top-level
+    ``publication_state`` — the two are supposed to be the SAME number by construction, but
+    nothing enforced that machine/UI agreement; (e) every leg's ``ui_state`` must equal
+    ``ui_state_from_status(status, reasons)`` — the machine (status) and the UI (ui_state)
+    reading are validated to agree, never merely assumed to.
     """
     mr = desk.get("market_read") or {}
     for lens_name, lens in mr.items():
@@ -684,35 +748,70 @@ def validate(desk: dict[str, Any]) -> None:
                     f"generated_at (build instant) is byte-identical to source "
                     f"{s.get('source_id')}'s effective_date {generated_at!r} — build time must "
                     "never imitate source time (§5 law)")
-        # W2 — status must be present and drawn from the enum (spec §2: "status (now
-        # always set — replaces W1's null)").
+        # W2/S3(a) — status must be present (non-null) AND drawn from the enum (spec §2:
+        # "status (now always set — replaces W1's null)").
         st = s.get("status")
-        if st is not None and st not in fo_quality.STATUS_ENUM:
+        if st is None:
+            raise ContractError(
+                f"source {s.get('source_id')}: status is null — W2 always sets a status "
+                "(classify_leg never returns None)")
+        if st not in fo_quality.STATUS_ENUM:
             raise ContractError(
                 f"source {s.get('source_id')}: status {st!r} is not in the W2 quality enum "
                 f"{sorted(fo_quality.STATUS_ENUM)}")
+        # S3(e) — the UI's own ui_state must equal what the status/reasons MAP to; a payload
+        # cannot claim a status while showing a DIFFERENT ui_state chip for it.
+        expected_ui = ui_state_from_status(st, s.get("reasons"))
+        if s.get("ui_state") != expected_ui:
+            raise ContractError(
+                f"source {s.get('source_id')}: ui_state {s.get('ui_state')!r} disagrees with "
+                f"status {st!r}/reasons {s.get('reasons')!r} (expected {expected_ui!r}) — "
+                "machine and UI must read the same verdict (W2_SPEC.md §0.1)")
 
-    # W2 — publication_state must be the worst-of rollup of the SAME leg statuses sources[]
-    # just carried (spec §2: "publication_state consistent with worst-of rule"), and a STALE
-    # cn_large_order_proxy proxy leg can never coexist with a HEALTHY desk-wide rollup — the
-    # exact "stale reads as confidently current" defect this wave exists to close.
-    if "publication_state" in desk:
-        by_id = {s.get("source_id"): s for s in sources}
-        pub_state = desk.get("publication_state")
-        expected_pub = fo_quality.publication_state({sid: s.get("status") for sid, s in by_id.items()})
-        if pub_state != expected_pub:
-            raise ContractError(
-                f"publication_state {pub_state!r} inconsistent with the worst-of rollup of "
-                f"sources[] statuses (expected {expected_pub!r})")
-        proxy = by_id.get("cn_large_order_proxy")
-        if proxy and proxy.get("status") == fo_quality.STALE and pub_state == fo_quality.HEALTHY:
-            raise ContractError(
-                "publication_state HEALTHY cannot coexist with a STALE cn_large_order_proxy "
-                "leg — a stale source must never publish as confidently current (spec §2)")
-        if proxy and proxy.get("status") == fo_quality.STALE:
-            themes_quality = ((desk.get("market_read") or {}).get("themes") or {}).get("quality")
-            if themes_quality != "stale":
+    # W2/S3(b) — publication_state is now a REQUIRED top-level key (previously only checked
+    # "if present" — a payload omitting it entirely used to sail through untouched), and it
+    # must be the worst-of rollup of the SAME leg statuses sources[] just carried (spec §2:
+    # "publication_state consistent with worst-of rule"). A STALE cn_large_order_proxy proxy
+    # leg can never coexist with a HEALTHY desk-wide rollup — the exact "stale reads as
+    # confidently current" defect this wave exists to close.
+    if "publication_state" not in desk:
+        raise ContractError(
+            "publication_state is a required top-level key (W2_SPEC.md §2) — missing entirely")
+    by_id = {s.get("source_id"): s for s in sources}
+    pub_state = desk.get("publication_state")
+    expected_pub = fo_quality.publication_state({sid: s.get("status") for sid, s in by_id.items()})
+    if pub_state != expected_pub:
+        raise ContractError(
+            f"publication_state {pub_state!r} inconsistent with the worst-of rollup of "
+            f"sources[] statuses (expected {expected_pub!r})")
+    proxy = by_id.get("cn_large_order_proxy")
+    if proxy and proxy.get("status") == fo_quality.STALE and pub_state == fo_quality.HEALTHY:
+        raise ContractError(
+            "publication_state HEALTHY cannot coexist with a STALE cn_large_order_proxy "
+            "leg — a stale source must never publish as confidently current (spec §2)")
+    # S3(c): the market_read quality flag must reflect the cn proxy's status for BOTH STALE
+    # ("stale") AND UNAVAILABLE ("unavailable") — the pre-repair check only ever covered the
+    # STALE case, so an UNAVAILABLE proxy silently leaving market_read.quality unset (or
+    # wrong) went unnoticed by validate() even though contract.build_v2 already sets it
+    # correctly in production.
+    proxy_status = proxy.get("status") if proxy else None
+    expected_quality = {fo_quality.STALE: "stale", fo_quality.UNAVAILABLE: "unavailable"}.get(proxy_status)
+    if expected_quality:
+        for lens_name in ("themes", "names"):
+            lens_quality = ((desk.get("market_read") or {}).get(lens_name) or {}).get("quality")
+            if lens_quality != expected_quality:
                 raise ContractError(
-                    "market_read.themes.quality must be 'stale' when cn_large_order_proxy is "
-                    f"STALE (got {themes_quality!r}) — quadrants computed from a stale proxy "
-                    "must carry that quality flag (spec §2)")
+                    f"market_read.{lens_name}.quality must be {expected_quality!r} when "
+                    f"cn_large_order_proxy is {proxy_status} (got {lens_quality!r}) — "
+                    "quadrants computed from a non-current proxy must carry that quality "
+                    "flag (spec §2)")
+
+    # S3(d): health.publication_state must equal the top-level publication_state — the two
+    # are supposed to be the identical number by construction (build_v2 computes health
+    # AFTER publication_state, from the same pub_state value), but nothing enforced that
+    # machine/UI agreement until now.
+    health = desk.get("health")
+    if isinstance(health, dict) and health.get("publication_state") != pub_state:
+        raise ContractError(
+            f"health.publication_state {health.get('publication_state')!r} != top-level "
+            f"publication_state {pub_state!r} — the two must always agree (W2_SPEC.md §2)")

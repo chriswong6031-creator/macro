@@ -259,10 +259,15 @@ html[data-lang="zh"] .fv-meter{background:linear-gradient(90deg,
 /* ═══════════════ TRUST STRIP (spec §2.2) — source state precedes market claims ═══════ */
 .fv-trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .fv-src{border:1px solid var(--line);border-radius:var(--r-ctl, 10px);padding:8px 12px;background:var(--card);
-  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:230px;cursor:help}
+  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:260px;cursor:help}
 .fv-src .s-name{font-size:12px;font-weight:700;color:var(--ink)}
 .fv-src .s-meta{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;font-family:var(--num)}
-.fv-src .s-state{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* S9: a DEGRADED/STALE chip word can run long ("behind — showing 2026-08-17 data"); at
+   1440 this used to wrap into a cramped, uneven two-line block inside the fixed-width
+   card. Widened the card's own max-width (150->260) and gave the word a comfortable
+   line-height so a wrap (when it still happens on a long date/word combination) reads as
+   two clean lines rather than crowding the card — never clipped, no overflow hidden. */
+.fv-src .s-state{font-size:10px;letter-spacing:.06em;line-height:1.35;text-transform:uppercase;color:var(--muted)}
 .fv-src--current .s-state{color:var(--up)}
 .fv-src--expected_lag .s-state{color:var(--info)}
 .fv-src--historical{opacity:.75}
@@ -278,14 +283,29 @@ html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
 /* STALE (W2) — a materially louder treatment than "behind": this is the chip the
    incident-4676 12-day A-share freeze should have shown instead of reading confidently current.
    Dark = desaturated amber RING + dimmed body (command-center instrument-fault idiom);
-   light = amber-tinted paper + 3px amber rail + deepened ink (research-workspace idiom) —
-   two independently art-directed treatments, never a token swap (TP-0). */
+   light = DIAGONAL HATCH on a deepened brown-amber ink, not the flat tint "behind" uses
+   (B4 repair — pinned mechanism, W2_SPEC.md repair round): the two states used to render
+   as the SAME mechanism at adjacent parameters (a slightly stronger version of the same
+   flat-tint recipe), which is not mechanically distinguishable from "behind" at a glance —
+   the whole point of a materially louder STALE treatment. Hatch (pattern) vs tint (flat
+   fill) is a genuine material difference. The deepened ink is
+   `color-mix(in srgb,var(--warn) 65%,var(--ink))` — var(--ink) (this page's own darkest
+   ink token) supplies the "deepened" component rather than a hand-picked hex, repeated
+   inline at each of its three use sites (design-system law: "tokens extend theme.css
+   only" / R0 rule 4 forbids a NEW literal-valued custom property outside theme.css, and
+   this page does not itself link theme.css — see the "self-contained standalone nav" note
+   above — so a theme.css-side declaration would be inert for it; deriving purely from the
+   page's own existing --warn/--ink tokens, inlined rather than named, keeps the mechanism
+   real AND compliant). Two independently art-directed treatments, never a token swap
+   (TP-0). */
 .fv-src--stale{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
 .fv-src--stale .s-state{color:var(--warn);font-weight:700}
 html[data-theme="dark"] .fv-src--stale{filter:saturate(.72);opacity:.86;
   box-shadow:0 0 0 1.5px color-mix(in srgb,var(--warn) 46%,transparent),0 0 22px -6px color-mix(in srgb,var(--warn) 55%,transparent)}
-html[data-theme="light"] .fv-src--stale{background:color-mix(in srgb,var(--warn) 11%,transparent);
-  box-shadow:inset 3px 0 0 var(--warn);opacity:1}
+html[data-theme="light"] .fv-src--stale{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 9%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 4%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));opacity:1}
+html[data-theme="light"] .fv-src--stale .s-state{color:color-mix(in srgb,var(--warn) 65%,var(--ink));font-weight:800}
 html[data-theme="light"] .fv-src--stale .s-name{color:var(--ink);font-weight:800}
 /* UNAVAILABLE — dark: dashed border + muted; light: hatched/dashed hairline + muted ink */
 .fv-src--unavailable{border-style:dashed}
@@ -299,19 +319,37 @@ html[data-theme="light"] .fv-src--revised{background:color-mix(in srgb,var(--blu
   box-shadow:inset 3px 0 0 color-mix(in srgb,var(--blue) 55%,transparent)}
 @media (max-width:640px){.fv-src{min-width:calc(50% - 5px);max-width:none}}
 
-/* ═══ SECTION WATERMARK (spec §3) — any L1 section fed by a STALE leg, right under h2 ═══ */
+/* ═══ SECTION WATERMARK (spec §3) — any L1 section fed by a STALE/UNAVAILABLE leg, right
+   under h2. B4 repair: the light watermark now uses the SAME hatch+deepened-ink mechanism
+   as the stale trust chip (not the flat tint "behind" uses) — a section watermark is a
+   STALE-severity signal (it never fires for a mere DEGRADED leg, spec §3), so it must be
+   mechanically distinct from a flat-tint treatment the same way the chip is. ═══ */
 .fv-watermark{margin:10px 0 4px;padding:9px 13px;border-radius:var(--r-ctl, 10px);font-size:12.5px;line-height:1.5;
   display:flex;gap:8px;align-items:flex-start;color:var(--ink-2)}
 .fv-watermark::before{content:"⚠";flex:none;color:var(--ink-warn, var(--warn))}
 html[data-theme="dark"] .fv-watermark{background:color-mix(in srgb,var(--warn) 8%,transparent);
   border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
-html[data-theme="light"] .fv-watermark{background:color-mix(in srgb,var(--warn) 10%,transparent);
-  box-shadow:inset 3px 0 0 var(--warn);border:1px solid color-mix(in srgb,var(--warn) 24%,var(--line))}
+html[data-theme="light"] .fv-watermark{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 8%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 3%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));border:1px solid color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 22%,var(--line));color:var(--ink)}
+html[data-theme="light"] .fv-watermark::before{color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
 
-/* hero STALE verdict form (spec §3) — replaces the thesis sentence + stance chip */
+/* hero STALE/UNAVAILABLE verdict form (spec §3, S5) — replaces the thesis sentence +
+   stance chip. Scoped to cn_large_order_proxy ONLY (S4) — it is the verdict's data
+   source; a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) instead gets
+   the small .fv-hero-notice chip below plus its own section watermarks. */
 .fv-thesis--stale{color:var(--ink)}
 .fv-stance--stale{border-color:var(--warn)!important;color:var(--ink-warn, var(--warn))!important;
   background:color-mix(in srgb,var(--warn) 10%,transparent)!important}
+/* S4 — small hero notice chip for a stale/unavailable CROSS-BORDER leg while the primary
+   (cn proxy) verdict stays intact; deliberately quieter than the full hero replacement —
+   a chip, not a sentence swap. */
+.fv-hero-notice{display:inline-flex;align-items:center;gap:6px;margin:10px 0 0;padding:5px 11px;
+  border-radius:var(--r-pill, 999px);font-size:12px;font-weight:600;color:var(--ink-warn, var(--warn));
+  border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line))}
+html[data-theme="dark"] .fv-hero-notice{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 6%,var(--card));
+  border-color:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 30%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
 
 /* ═══════════════ WHAT CHANGED TODAY (spec §2.3) ═══════════════ */
 .fv-chg-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
@@ -802,6 +840,14 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
     
     
   
@@ -812,13 +858,17 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     </div>
     
     
+    
       
       
-      <p class="fv-thesis fv-thesis--stale">
-        <span class="l-en">Source data is behind — showing the last good read from 2026-09-01. Treat levels as history, not today's tape.</span>
-        <span class="l-zh">数据源滞后——显示2026-09-01的最近有效读数。请将其视为历史，而非今日盘面。</span>
+      
+      <p class="fv-thesis">
+        
+        
+        <span class="l-en">Main-force flow was a net seller in all 22 themes — normal for this order-size proxy; the signal is pressure vs norm. Watch — don&#39;t chase</span>
+        <span class="l-zh">主力资金在全部22个主题均为净卖出——该口径的常态；关键信号是相对常态的压力。观察，勿追高</span>
+        
       </p>
-      <span class="vstate mid fv-stance--stale"><span class="l-en">Stand aside — data behind</span><span class="l-zh">暂缓 — 数据滞后</span></span>
     
     <p class="fv-stance-lead"><span class="l-en"><b>Watch where the pressure is building</b> — this is positioning context, <b>not a buy signal</b>. Flow is never scored into an allocation call.</span><span class="l-zh"><b>关注压力所在</b>——这是仓位背景，<b>并非买入信号</b>。资金流向从不计入配置判断。</span></p>
 
@@ -857,25 +907,25 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <h2><span class="l-en">What's current, what's behind</span><span class="l-zh">各数据源新鲜度</span> <span class="sub"><span class="l-en">one chip per source leg — hover for method &amp; provider</span><span class="l-zh">逐条数据源 · 悬停查看方法与来源</span></span></h2>
     <div class="fv-trust-row">
       
-      <div class="fv-src fv-src--stale"
-           data-tip-en="Large &amp; super-large order-size proxy — Tushare moneyflow_dc main-force order-size classification, not identified investors. multiple sessions behind its own calendar" data-tip-zh="大单+超大单口径——Tushare moneyflow_dc 主力口径分类，非机构身份识别。 落后自身日历多个交易日" role="button" tabindex="0">
+      <div class="fv-src fv-src--behind"
+           data-tip-en="Large &amp; super-large order-size proxy — Tushare moneyflow_dc main-force order-size classification, not identified investors. one session behind its own calendar" data-tip-zh="大单+超大单口径——Tushare moneyflow_dc 主力口径分类，非机构身份识别。 落后自身日历一个交易日" role="button" tabindex="0">
         <span class="s-name"><span class="l-en">A-share large-order flow</span><span class="l-zh">A股主力大单</span></span>
         <span class="s-meta tnum">2026-09-01 · 1,518 · 84.2%</span>
-        <span class="s-state"><span class="l-en">stale — showing 2026-09-01</span><span class="l-zh">已过期 · 显示2026-09-01数据</span></span>
+        <span class="s-state"><span class="l-en">behind — showing 2026-09-01 data</span><span class="l-zh">滞后 · 显示2026-09-01数据</span></span>
       </div>
       
-      <div class="fv-src fv-src--stale"
-           data-tip-en="Official Stock-Connect southbound aggregate net flow — Eastmoney RPT_MUTUAL_DEAL_HISTORY, whole-channel tape. multiple sessions behind its own calendar" data-tip-zh="沪深港通南向整体净流入——东方财富 RPT_MUTUAL_DEAL_HISTORY，整条通道口径。 落后自身日历多个交易日" role="button" tabindex="0">
+      <div class="fv-src fv-src--behind"
+           data-tip-en="Official Stock-Connect southbound aggregate net flow — Eastmoney RPT_MUTUAL_DEAL_HISTORY, whole-channel tape. one session behind its own calendar" data-tip-zh="沪深港通南向整体净流入——东方财富 RPT_MUTUAL_DEAL_HISTORY，整条通道口径。 落后自身日历一个交易日" role="button" tabindex="0">
         <span class="s-name"><span class="l-en">Southbound aggregate</span><span class="l-zh">南向整体</span></span>
         <span class="s-meta tnum">2026-09-01 · 1</span>
-        <span class="s-state"><span class="l-en">stale — showing 2026-09-01</span><span class="l-zh">已过期 · 显示2026-09-01数据</span></span>
+        <span class="s-state"><span class="l-en">behind — showing 2026-09-01 data</span><span class="l-zh">滞后 · 显示2026-09-01数据</span></span>
       </div>
       
-      <div class="fv-src fv-src--stale"
+      <div class="fv-src fv-src--behind"
            data-tip-en="Mainland southbound per-name holdings — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS, expected one HK session behind. behind its own T−1 cadence" data-tip-zh="内地南向个股持仓——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS，预期滞后一个港股交易日。 落后于其自身T−1节奏" role="button" tabindex="0">
         <span class="s-name"><span class="l-en">HK southbound holdings</span><span class="l-zh">南向持仓</span></span>
         <span class="s-meta tnum">2026-08-31 · 501 (431 sized)</span>
-        <span class="s-state"><span class="l-en">stale — showing 2026-08-31</span><span class="l-zh">已过期 · 显示2026-08-31数据</span></span>
+        <span class="s-state"><span class="l-en">behind — showing 2026-08-31 data</span><span class="l-zh">滞后 · 显示2026-08-31数据</span></span>
       </div>
       
       <div class="fv-src fv-src--historical"
@@ -917,11 +967,10 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     
 
 
+  
 
-<div class="fv-watermark">
-  <span class="l-en">Showing last good data from 2026-09-01 — source behind.</span>
-  <span class="l-zh">显示2026-09-01最近有效数据 — 数据源滞后。</span>
-</div>
+
+
 
     
     <p class="fv-stance">
@@ -983,13 +1032,13 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
       </span>
     </div>
     
+    
+
+
+  
 
 
 
-<div class="fv-watermark">
-  <span class="l-en">Showing last good data from 2026-09-01 — source behind.</span>
-  <span class="l-zh">显示2026-09-01最近有效数据 — 数据源滞后。</span>
-</div>
 
 
     
@@ -4970,6 +5019,15 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <details class="fv-disc" id="momentum">
       <summary>⚡ <span class="l-en">Momentum shifts</span><span class="l-zh">动能变化</span> — <span class="tnum">585</span> <span class="l-en">speeding up</span><span class="l-zh">加速中</span> · <span class="tnum">210</span> <span class="l-en">cooling</span><span class="l-zh">降温</span> · <span class="tnum">51</span> <span class="l-en">outflow fading</span><span class="l-zh">流出转弱</span></summary>
       <div class="fv-disc-body">
+        
+        
+
+
+  
+
+
+
+
         <p class="fv-stance"><span class="l-en">Velocity says which way; acceleration says whether it's <b>getting stronger or running out</b>. Fading inflow and slowing outflow are early turns — <b>watch, don't act.</b></span><span class="l-zh">流速指方向；加速度指其<b>增强还是衰竭</b>。流入转弱与流出放缓是早期拐点——<b>观察，勿妄动。</b></span></p>
         <div class="fv-mom">
           <div class="mom-col m-in">
@@ -5196,6 +5254,15 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     
     <div class="market-hk">
       <span class="market-tag"><span class="l-en">HK Southbound 南向</span><span class="l-zh">港股南向</span></span>
+      
+      
+
+
+  
+
+
+
+
       <div class="panel">
         <div class="panel-h">🇭🇰 <span class="l-en">Mainland southbound per-name</span><span class="l-zh">内地南向个股</span>
           <span class="asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-08-31 · <span class="l-en">expected T−1</span><span class="l-zh">预期T−1</span></span>
@@ -5326,13 +5393,13 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <div class="fv-eyebrow">🛰️ <span class="l-en">Cross-Border Channels</span><span class="l-zh">跨境通道</span></div>
     <h2><span class="l-en">Stock-Connect aggregate flow</span><span class="l-zh">沪深港通整体资金</span> <span class="sub"><span class="l-en">the whole-channel tape · daily 1w / 1m / 3m velocity</span><span class="l-zh">整条通道 · 日度1周/1月/3月流速</span></span></h2>
     
+    
+
+
+  
 
 
 
-<div class="fv-watermark">
-  <span class="l-en">Showing last good data from 2026-09-01 — source behind.</span>
-  <span class="l-zh">显示2026-09-01最近有效数据 — 数据源滞后。</span>
-</div>
 
     
     <div class="vgrid">
@@ -5383,7 +5450,7 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <span class="l-en">Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 daily grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.</span><span class="l-zh">沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力日度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。</span><br>
     <b><span class="l-en">Method</span><span class="l-zh">方法</span>:</b>
     <span class="l-en">Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.</span><span class="l-zh">流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。</span>
-    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-03 05:54 UTC
+    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-03 07:13 UTC
   </div>
 </div>
 <script>

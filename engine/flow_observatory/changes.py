@@ -186,6 +186,23 @@ def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]]) -> 
             "source_revisions": [], "reason": None}
 
 
+_RUNS_HISTORY_CAP = 30
+
+
+def _prior_runs(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The most recent row's ``health.runs`` (B2 repair): a build-run history that survives
+    the per-session idempotent REPLACE below. Read from whichever row has the newest
+    ``written_at`` among EVERYTHING currently on disk (including, on a same-session rebuild,
+    that session's own about-to-be-replaced row) — so a frozen ``market_session`` that gets
+    rebuilt every night still accumulates one run per night, and a NEW session inherits the
+    PREVIOUS session's accumulated history rather than starting over."""
+    candidates = [r for r in rows if r.get("written_at")]
+    if not candidates:
+        return []
+    newest = max(candidates, key=lambda r: r["written_at"])
+    return list((newest.get("health") or {}).get("runs") or [])
+
+
 def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
                      require_lane: bool = True, written_at: str | None = None) -> dict[str, Any]:
     """Append (or idempotently REPLACE) this session's line.
@@ -194,6 +211,14 @@ def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
     advancer of forward ledgers (an intraday/manual lane computes and discards).
     ``require_lane=False`` is the test/backfill seam only, mirroring
     ``engine.group_pulse.advance_episode_ledger``'s ``require_nightly_lane`` seam.
+
+    B2 repair: the written row's ``health`` gains a ``runs`` list — one compact record per
+    BUILD RUN (``{run_date, publication_state, legs: {leg_id: status}}``), appended (never
+    replaced) and capped at the newest ``_RUNS_HISTORY_CAP`` entries. This is the accelerator
+    ``quality.consecutive_degraded_sessions``/``leg_consecutive_bad_runs`` walk instead of
+    the ``session`` key — a market session that stops advancing during a freeze must not
+    also freeze the escalation streak (see ``engine.flow_observatory.quality`` module
+    docstring, B2).
     """
     if require_lane and not advance_enabled():
         log.info("flow_observatory: state_log advance skipped (off nightly/asia-close lane)")
@@ -201,12 +226,18 @@ def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
     if not session:
         return {"written": False, "reason": "no_session", "rows": 0}
     rows = read_state_log(data_root)
-    rows = [r for r in rows if r.get("session") != session]
     stamp = written_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    run_date = str(stamp)[:10]
+    health = dict(entry.get("health") or {})
+    run_record = {"run_date": run_date, "publication_state": health.get("publication_state"),
+                 "legs": {lid: (leg or {}).get("status")
+                         for lid, leg in (health.get("legs") or {}).items()}}
+    health["runs"] = (_prior_runs(rows) + [run_record])[-_RUNS_HISTORY_CAP:]
+    rows = [r for r in rows if r.get("session") != session]
     new_row = {"session": session, "written_at": stamp,
               "themes": entry.get("themes") or {}, "aggregate": entry.get("aggregate") or {},
               "market_read": entry.get("market_read") or {},
-              "health": entry.get("health") or {}}
+              "health": health}
     rows.append(new_row)
     rows.sort(key=lambda r: r["session"])
     p = state_log_path(data_root)
