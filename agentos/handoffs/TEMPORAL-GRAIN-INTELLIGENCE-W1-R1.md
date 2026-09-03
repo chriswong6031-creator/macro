@@ -12,12 +12,14 @@ mission: >
   production effect, or signal authority.
 state_before: >
   PR #6803 was Draft at 5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6 when Sol returned
-  SOURCE_REPAIR_REQUIRED on Slack carrier C0BSBM78V1N/1788429215.974389. The amendment required
-  evidenced session definitions, a lower-grain manifest, exact source-row bar coverage,
-  independent observed/probe channels, totalized warm-up parity, executed K0/K1/K2 paths,
-  bar-plus-path phase stability, and a totalized attack CLI. Exact WMT and motivating silver
-  TradingView packets remained absent and could not lawfully be replaced with synthetic rows or
-  another feed. The sticky native task remained 01a066b4-65d5-7592-9495-b627acd7ff8f.
+  SOURCE_REPAIR_REQUIRED on Slack carrier C0BSBM78V1N/1788429215.974389. The first repaired head
+  a99869f50e6d3449d7690166af8315e93e5714b0 implemented the eight-clause amendment, after which
+  independent immutable review found two remaining mixed-case fail-open paths: the nonstandard
+  chart's A-axis diagnostic was emitted outside the preregistered grid, and one changed K1/K2 path
+  could collapse to K0 while the other changed path masked it. Both findings were repaired with
+  discriminating regressions before the final exact-head review cycle. Exact WMT and motivating
+  silver TradingView packets remained absent and could not lawfully be replaced with synthetic
+  rows or another feed. The sticky native task remained 01a066b4-65d5-7592-9495-b627acd7ff8f.
 changed:
   - path: research/signal_engine/temporal_scale/tradingview_temporal_recipe_probe.pine
     what: >
@@ -56,7 +58,8 @@ changed:
     what: >
       Added complete pre-diagnostic TrialLedger registration and outcome-blind G/A/K/D, parity
       and truncation diagnostics with lower-manifest gating, exact bar-source allocation, PIT
-      phase paths, executed K0/K1/K2 paths, and separate observed/probe receipt channels.
+      phase paths, executed K0/K1/K2 paths, separate observed/probe receipt channels, registration
+      for every emitted chart-construction axis, and per-execution K1/K2 collapse detection.
   - path: scripts/research/run_temporal_scale_artifact_attack.py
     what: >
       Added validate-recipe, parity and attack CLI commands with atomic strict-JSON outputs,
@@ -80,7 +83,8 @@ changed:
   - path: tests/test_temporal_scale_artifact_attack.py
     what: >
       Added grid registration/classification, no-effect boundary, actual-clock, provisional,
-      malformed evidence and synthetic CLI end-to-end tests.
+      malformed evidence and synthetic CLI end-to-end tests, including standard/nonstandard
+      diagnostic-registration coverage and separate K1-only and K2-only no-op mutations.
   - path: agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md
     what: >
       Keeps W0 done and W1A awaiting repaired exact-head CI/rereview on DRAFT / HOLD-FOR-SOL
@@ -92,11 +96,12 @@ verified:
   - claim: The implementation remained on the sole assigned branch and preserved its pickup history.
     command: >
       git branch --show-current; git log --oneline --reverse
-      db5d20c45db123a2e133d9c1a28387ec9f23a545..e589dc488afaabf211f744add7f218ed8ec99078
+      db5d20c45db123a2e133d9c1a28387ec9f23a545..HEAD
     result: >
       Branch sol/temporal-grain-w1a-gakd-20260903 preserves the exact pickup ancestry and the
-      prior 13-commit W1A head 5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6; this same-carrier
-      repair is additive and does not merge, rebase, or replace that history.
+      prior W1A heads 5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6 and
+      a99869f50e6d3449d7690166af8315e93e5714b0; both same-carrier repairs are additive and do not
+      merge, rebase, or replace that history.
   - claim: The full local temporal and anchor CI slice passed after the Sol repair.
     command: >
       python3 -m pytest tests/test_session_anchor_invariance.py
@@ -104,18 +109,18 @@ verified:
       tests/test_temporal_scale_chart_export.py tests/test_temporal_scale_kernel_memory.py
       tests/test_temporal_scale_session_bars.py tests/test_temporal_scale_parity.py
       tests/test_temporal_scale_artifact_attack.py -q --disable-warnings --tb=short
-    result: 627 passed, 182 warnings in 39.42s.
+    result: 630 passed, 101 warnings in 44.54s.
   - claim: The local record, registration, effect-boundary and exact-path acceptance gates passed.
     command: >
       python3 scripts/agentos.py validate; python3 scripts/check_trial_registration.py;
       git diff --check; parse the Pine and W1A Python AST/import surfaces; and compare the
-      pickup-to-working-tree path census with the eighteen authorized paths.
+      pickup-to-working-tree path census with the nineteen authorized paths.
     result: >
       Agent OS returned 0 errors and 87 repository-wide advisory warnings; trial registration
       returned OK with 33 grandfathered harnesses; diff-check was clean; Pine exposed no
       strategy, alert, webhook or external-request surface; W1A Python exposed no network or
-      filesystem-effect imports and only the git-head provenance subprocess; all eighteen and
-      only the eighteen authorized paths were present.
+      filesystem-effect imports and only the git-head provenance subprocess; all nineteen and
+      only the nineteen authorized paths were present.
   - claim: The right-safe synthetic attack produced immutable local-only W1A receipts.
     command: >
       Generate the canonical 1190-row synthetic parity fixture in a TemporaryDirectory and run
@@ -133,8 +138,11 @@ verified:
       and confirm ArtifactAttackResult.final_mechanism_classification remains null with every
       authority boolean false.
     result: >
-      The amended hostile matrix passed locally. Exact-head independent rereview and hosted CI
-      remain required after the repaired head is pushed; no prior READY applies to moved source.
+      The first amended hostile matrix passed locally, then independent review of exact head
+      a99869f50e6d3449d7690166af8315e93e5714b0 found two mixed-case gaps. New RED tests proved
+      both gaps, then GREEN proved A-axis chart-construction preregistration and independent
+      K1/K2 collapse rejection. Exact-head rereview and hosted CI remain required after the next
+      repaired head is pushed; no prior READY applies to moved source.
   - claim: Current main movement did not collide with an authorized W1A implementation path.
     command: >
       git fetch origin; git diff --name-only
@@ -144,13 +152,14 @@ verified:
       The only intersection was .github/ci/legacy-jobs.yml. Current main's Flow Observatory
       additions are hunk-disjoint from the W1A session-anchor-era line, whose six-suite addition
       remains intact; the semantic branch was not merged or rebased.
-  - claim: The single GitHub carrier remained in the required inert hold state before repair push.
+  - claim: The single GitHub carrier remained in the required inert hold state before the final repair push.
     command: >
       gh pr view 6803 --repo mastermindx-market-intelligence/macro --json
       number,url,isDraft,state,headRefOid,baseRefOid,mergeStateStatus,autoMergeRequest,labels
     result: >
       PR #6803 was OPEN and Draft at reviewed head
-      5fc7153f45d9c76e5daed836dbb1ceb1b9bd73f6 with autoMergeRequest null and no labels.
+      a99869f50e6d3449d7690166af8315e93e5714b0 with autoMergeRequest null, no labels and
+      reviewDecision CHANGES_REQUESTED.
 unverified:
   - claim: The final record-bearing PR head passes all hosted CI checks.
     what_would_verify: >

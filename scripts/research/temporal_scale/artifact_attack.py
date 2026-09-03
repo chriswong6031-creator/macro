@@ -185,7 +185,7 @@ def _registration_configs(grid: ArtifactGrid) -> list[dict[str, object]]:
         ("A", tuple(
             f"session_{session}_phase_{phase:g}"
             for session in grid.session_variants for phase in grid.anchor_phase_fractions
-        ) + ("phase_uniqueness",)),
+        ) + ("phase_uniqueness", "chart_price_construction")),
         ("K", (*tuple(f"memory_target_minutes_{grain}" for grain in grid.memory_matched_grains_minutes), *grid.implementation_controls)),
         ("D", ("chart_price_construction", *grid.data_plane_controls)),
         ("PARITY", ("observed_vs_owner_1e-10",)),
@@ -1142,10 +1142,11 @@ def _kernel_tests(
             for execution in ("K1", "K2")
         }
         changed = [execution for execution in ("K1", "K2") if parameter_specs[execution] != parameter_specs["K0"]]
-        mapping_only = bool(changed) and all(
-            executions[execution]["output_sha256"] == executions["K0"]["output_sha256"]
+        mapping_only_executions = [
+            execution
             for execution in changed
-        )
+            if executions[execution]["output_sha256"] == executions["K0"]["output_sha256"]
+        ]
         metrics = _geometry(bars, receipts)
         metrics.update({
             "actual_clock": "close_to_close_elapsed_minutes", "actual_clock_count": len(elapsed),
@@ -1171,8 +1172,11 @@ def _kernel_tests(
         tests.append(_artifact_test(
             "K", f"memory_target_minutes_{target}",
             {"csv": loaded.csv_sha256, "target": target, "grain": chosen_grain, "elapsed": elapsed.tolist(), "clock_receipt_hash": clock_receipt_hash},
-            "FAIL" if mapping_only else "PASS", metrics,
-            ("K_MAPPING_ONLY_MUTATION",) if mapping_only else ("parameterized_kernel_paths_executed",),
+            "FAIL" if mapping_only_executions else "PASS", metrics,
+            (
+                "K_MAPPING_ONLY_MUTATION",
+                *(f"K_MAPPING_ONLY_MUTATION:{execution}" for execution in mapping_only_executions),
+            ) if mapping_only_executions else ("parameterized_kernel_paths_executed",),
         ))
     return tuple(tests)
 

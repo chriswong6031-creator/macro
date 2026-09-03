@@ -116,6 +116,7 @@ def test_registration_persists_every_axis_before_diagnostics(tmp_path: Path, mon
     assert {row["info_cutoff"] for row in rows} == {"2026-09-03T06:00:00Z"}
     assert all(row["config"]["grid_hash"] == grid.sha256() for row in rows)
     registered = {(row["config"]["axis"], row["config"]["variant"]) for row in rows}
+    assert ("A", "chart_price_construction") in registered
     assert ("D", "chart_price_construction") in registered
     assert ("A", "phase_uniqueness") in registered
     assert ("K", "standard_price_macd_12_26_9") in registered
@@ -416,7 +417,13 @@ def test_k_binds_actual_elapsed_vector_and_uses_evidenced_sessions(tmp_path: Pat
     assert all("per_output_path_distance" in test.metrics for test in tests)
 
 
-def test_mapping_only_k_mutation_is_detected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(("collapsed_execution", "call_offset"), (("K1", 1), ("K2", 2)))
+def test_each_mapping_only_k_execution_is_detected(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    collapsed_execution: str,
+    call_offset: int,
+) -> None:
     loaded = _loaded(tmp_path)
 
     def sequence(grain: int):
@@ -434,14 +441,27 @@ def test_mapping_only_k_mutation_is_detected(tmp_path: Path, monkeypatch: pytest
         ) for index in range(200))
         return bars, receipts
 
-    monkeypatch.setattr(
-        artifact_attack, "parameterized_indicator_frame",
-        lambda close, _parameters: artifact_attack.canonical_indicator_frame(close),
-    )
+    original = artifact_attack.parameterized_indicator_frame
+    calls = 0
+
+    def collapse_one_execution(close, parameters):
+        nonlocal calls
+        execution_offset = calls % 3
+        calls += 1
+        if execution_offset == call_offset:
+            return artifact_attack.canonical_indicator_frame(close)
+        return original(close, parameters)
+
+    monkeypatch.setattr(artifact_attack, "parameterized_indicator_frame", collapse_one_execution)
     tests = artifact_attack._kernel_tests(
         loaded, default_artifact_grid(loaded.recipe), {60: sequence(60), 120: sequence(120)},
     )
-    assert any(test.status == "FAIL" and "K_MAPPING_ONLY_MUTATION" in test.findings for test in tests)
+    assert any(
+        test.status == "FAIL"
+        and "K_MAPPING_ONLY_MUTATION" in test.findings
+        and f"K_MAPPING_ONLY_MUTATION:{collapsed_execution}" in test.findings
+        for test in tests
+    )
 
 
 def test_exact_bar_only_phase_match_never_emits_artifact_token() -> None:
@@ -467,6 +487,25 @@ def test_nonstandard_chart_is_an_a_and_d_artifact() -> None:
     assert {(test.axis, test.status) for test in tests} == {("A", "FAIL"), ("D", "FAIL")}
     assert all("nonstandard_chart_price_construction" in test.findings for test in tests)
     assert classify_mechanical_status(True, "PASS", (*_required(), *tests)) == "ARTIFACT"
+
+
+@pytest.mark.parametrize("nonstandard", (False, True))
+def test_chart_diagnostics_are_a_subset_of_preregistered_variants(nonstandard: bool) -> None:
+    helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_contracts.py")))
+    raw = helpers["complete_recipe_dict"]()
+    if nonstandard:
+        raw["chart"].update(chart_is_standard=False, chart_is_heikinashi=True)
+    recipe_value = ChartRecipe.from_dict(raw)
+    grid = default_artifact_grid(recipe_value)
+    registered = {
+        (str(config["axis"]), str(config["variant"]))
+        for config in artifact_attack._registration_configs(grid)
+    }
+    emitted = {
+        (test.axis, test.variant_id)
+        for test in artifact_attack._chart_type_tests(recipe_value, "2" * 64)
+    }
+    assert emitted <= registered
 
 
 _FORBIDDEN_ROOTS = {"requests", "urllib", "http", "httpx", "socket", "subprocess", "yfinance", "ccxt", "os", "shutil"}
