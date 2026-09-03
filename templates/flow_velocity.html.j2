@@ -481,14 +481,31 @@ html[data-lang="zh"] .rk.up{color:var(--ink-act, var(--down))} html[data-lang="z
 /* W3: state-age chip — the SAME hairline-pill idiom as .qchip/.rk (reuses their tokens,
    not a new art direction), a small caption line under the quadrant chip naming how many
    sessions the theme has held its current state. --fv-age--new marks the honest "no prior
-   session to compare" case; --fv-age--frozen marks a stale-source freeze (spec §3 test 6). */
+   session to compare" case; --fv-age--frozen marks a stale-source freeze (spec §3 test 6).
+   THEME repair round: dark keeps --faint (a quiet instrument caption, command-center
+   idiom); light reads --faint as near-invisible against the paper canvas, so light uses
+   --muted instead — the SAME two-art-direction law as every other chip on this page
+   (TP-0), never a bare token carried over unexamined. ZH nowrap (NIT/THEME): the short
+   form "状态第{n}日" (chosen over letting .fv-age wrap) keeps the caption on one line at
+   the same width EN needs — see the chg_row-adjacent template line for the EN/ZH pair. */
 .fv-age{display:block;margin-top:3px;font-size:10.5px;font-weight:600;color:var(--faint);cursor:help;white-space:nowrap}
+html[data-theme="light"] .fv-age{color:var(--muted)}
 .fv-age--new{color:var(--muted);font-style:italic}
 .fv-age-frozen{opacity:.85}
-/* W3: a revision row in "what changed today" — a distinct left rule (blue, matching the
-   trust strip's --info token) so a correction reads visibly different from a transition
-   or rank-mover row without inventing a new palette. */
+/* W3: a revision row in "what changed today" — DARK keeps the restrained command-center
+   left-rule glow (a subdued 2px/55%-blue accent, matching this page's other dark chips).
+   LIGHT (THEME repair round — was unauthored, silently inheriting the dark rule as a bare
+   token swap, exactly the TP-0 failure) instead reuses the page's OWN existing
+   .fv-src--revised idiom verbatim: a 7% --blue paper tint, a FULL-STRENGTH (not
+   color-mixed-down) 3px blue left rule, and full-weight ink for the row's body text (not
+   the muted --ink-2 every other change-row uses) — a correction earns the same visible
+   "this changed" weight on the research-workspace surface that it already has on the
+   trust strip. */
 .fv-chg-row.fv-chg-row--revision{padding-left:8px;border-left:2px solid color-mix(in srgb,var(--blue) 55%,transparent)}
+html[data-theme="light"] .fv-chg-row.fv-chg-row--revision{
+  padding-left:10px;border-left-width:3px;border-left-color:var(--blue);
+  background:color-mix(in srgb,var(--blue) 7%,transparent);color:var(--ink)
+}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ═══════════════ THE ROTATION — in vs out ═══════════════ */
@@ -964,7 +981,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
                       data-tip-en="Prior state: {{ _prior_lab[0] if _prior_lab else 'none — first tracked session' }}. In this state since {{ r.state_started or '—' }}.{{ ' Frozen — source data behind, age not advancing.' if r.state_note == 'age frozen (stale source)' else '' }}"
                       data-tip-zh="此前状态：{{ _prior_lab[1] if _prior_lab else '无——首个追踪交易日' }}。自{{ r.state_started or '—' }}起进入该状态。{{ '数据滞后，本状态天数暂停累计。' if r.state_note == 'age frozen (stale source)' else '' }}"
                       role="button" tabindex="0">
-                  <span class="l-en">session {{ r.state_age_sessions }} in this state</span><span class="l-zh">本状态第{{ r.state_age_sessions }}个交易日</span>{% if r.state_note == 'age frozen (stale source)' %} ❄{% endif %}
+                  <span class="l-en">session {{ r.state_age_sessions }} in this state</span><span class="l-zh">状态第{{ r.state_age_sessions }}日</span>{% if r.state_note == 'age frozen (stale source)' %} ❄{% endif %}
                 </span>
                 {% elif r.state_note == 'first tracked session' %}
                 <span class="fv-age fv-age--new" data-tip-en="first tracked session — no prior data to compare yet" data-tip-zh="首个追踪交易日——暂无历史可比" role="button" tabindex="0"><span class="l-en">first tracked session</span><span class="l-zh">首个追踪交易日</span></span>

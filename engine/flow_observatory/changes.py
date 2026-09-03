@@ -21,6 +21,23 @@ that state age/onset/prior-state/rank-change and ``sources[].first_known_at`` de
 once it is deep enough — ``compute_changes`` below now reads FROM the ledger when
 ``ledger_rows`` is supplied and holds ≥2 theme sessions, falling back to this file's
 state_log path otherwise (both paths tested, spec §2/§3 test 10).
+
+Belief-identity split (B2, W3 repair round): the LEDGER'S OWN revision comparison
+(``history.append_observations``/``_diff_entities``) covers PRODUCT fields only (vel,
+abs_value, quadrant, state, rank) — a leg's ``status``/``coverage_n`` context never mints a
+ledger revision on its own. That is why ``revised_ids`` here (built from
+``revisions[].id``) only ever suppresses a transition/rank-mover for a GENUINE product
+correction, never for routine same-session staleness flapping: health/staleness HISTORY
+stays this file's own job (``health.legs``/``health.runs`` below), never the ledger's.
+
+Baseline unification (M9, W3 repair round): quality_transitions used to ALWAYS compare
+against ``previous_valid_entry(log_rows, before_session=session)`` — state_log's own idea
+of "most recent before today" — even when the ledger (a DIFFERENT source, keyed on its own
+previous-valid-session) was already driving transitions/rank_movers above. The two could
+name different "yesterday"s in one payload. ``compute_changes`` now looks the state_log
+health baseline up at EXACTLY the same ``prev_session`` the transitions branch just
+settled on (ledger-derived when ``ledger_ready``, state_log-native otherwise) — never an
+independently re-derived answer that can silently diverge from it.
 """
 from __future__ import annotations
 
@@ -79,6 +96,20 @@ def previous_valid_entry(log_rows: list[dict[str, Any]],
     if not rows:
         return None
     return max(rows, key=lambda r: r["session"])
+
+
+def _log_entry_at(log_rows: list[dict[str, Any]], session: str | None) -> dict[str, Any] | None:
+    """The state_log entry recorded for EXACTLY ``session`` (``None`` if that session was
+    never logged) — the M9 baseline-unification lookup: quality_transitions must compare
+    against the SAME previous session ``compute_changes`` already settled on for
+    transitions/rank_movers, never an independently re-derived "most recent before today"
+    state_log answer that can silently diverge from it."""
+    if not session:
+        return None
+    for r in log_rows:
+        if r.get("session") == session:
+            return r
+    return None
 
 
 def theme_state_history(theme_id: str, current_quadrant: str, log_rows: list[dict[str, Any]],
@@ -143,12 +174,23 @@ def leg_quality_history(log_rows: list[dict[str, Any]], leg_id: str,
 
 
 def _theme_changes_from_state_log(current: dict[str, Any], log_rows: list[dict[str, Any]],
-                                  session: str | None, revised_ids: set[str]
+                                  session: str | None, revised_ids: set[str],
+                                  restated_quadrant_flips: set[tuple]
                                   ) -> tuple[list[dict], list[dict], str | None, str | None]:
     """W1/W2 path (unchanged behavior) — transitions/rank_movers vs the previous valid
     state_log entry. Returns ``(transitions, rank_movers, previous_valid_session, reason)``;
     ``previous_valid_session`` is ``None`` (with reason ``"no_previous_snapshot"``) when
-    there is no prior entry at all."""
+    there is no prior entry at all.
+
+    S7 narrowed suppression: a transition is suppressed ONLY when it RESTATES a revision
+    this build made — same entity, same (from_quadrant, to_quadrant) as that revision's own
+    "from"/"to" — via ``restated_quadrant_flips``. An entity with some OTHER, unrelated
+    revision this build (a correction to a different session, or the same session but a
+    different quadrant pair) still gets its genuinely new transition reported; otherwise a
+    real flip on the same night as an unrelated correction would be silently blacked out.
+    ``revised_ids`` (entity id only) still gates rank_movers — that half is unchanged by S7
+    (the frozen spec item is scoped to transitions).
+    """
     prev = previous_valid_entry(log_rows, before_session=session)
     if prev is None:
         return [], [], None, "no_previous_snapshot"
@@ -157,14 +199,14 @@ def _theme_changes_from_state_log(current: dict[str, Any], log_rows: list[dict[s
     transitions: list[dict[str, Any]] = []
     rank_movers: list[dict[str, Any]] = []
     for tid, crec in cur_themes.items():
-        if tid in revised_ids:
-            continue  # a correction, not a fresh transition (spec §3 test 9)
         prec = prev_themes.get(tid)
         if not isinstance(prec, dict):
             continue
         cq, pq = crec.get("quadrant"), prec.get("quadrant")
-        if cq is not None and pq is not None and cq != pq:
+        if cq is not None and pq is not None and cq != pq and (tid, pq, cq) not in restated_quadrant_flips:
             transitions.append({"id": tid, "from_quadrant": pq, "to_quadrant": cq})
+        if tid in revised_ids:
+            continue  # rank_movers suppression stays entity-level (unchanged by S7)
         cr, pr = crec.get("rank"), prec.get("rank")
         if cr is not None and pr is not None and abs(cr - pr) >= 3:
             rank_movers.append({"id": tid, "from_rank": pr, "to_rank": cr, "delta": cr - pr})
@@ -172,12 +214,14 @@ def _theme_changes_from_state_log(current: dict[str, Any], log_rows: list[dict[s
 
 
 def _theme_changes_from_ledger(current: dict[str, Any], ledger_rows: list[dict[str, Any]],
-                               session: str | None, revised_ids: set[str]
+                               session: str | None, revised_ids: set[str],
+                               restated_quadrant_flips: set[tuple]
                                ) -> tuple[list[dict], list[dict], str | None, str | None]:
     """W3 path — transitions/rank_movers vs the ledger's own previous-valid-session
     snapshot (spec §2: "compute_changes gains the ledger as its transition/rank source").
     Same output shape as :func:`_theme_changes_from_state_log`, so callers cannot tell
-    which path fired except by the returned ``previous_valid_session``.
+    which path fired except by the returned ``previous_valid_session``. S7 narrowed
+    suppression: see :func:`_theme_changes_from_state_log`'s docstring — identical rule.
     """
     from engine.flow_observatory import history as fo_history
 
@@ -190,11 +234,11 @@ def _theme_changes_from_ledger(current: dict[str, Any], ledger_rows: list[dict[s
     transitions: list[dict[str, Any]] = []
     rank_movers: list[dict[str, Any]] = []
     for tid, crec in cur_themes.items():
-        if tid in revised_ids:
-            continue  # a correction, not a fresh transition (spec §3 test 9)
         cq, pq = crec.get("quadrant"), prev_quadrants.get(tid)
-        if cq is not None and pq is not None and cq != pq:
+        if cq is not None and pq is not None and cq != pq and (tid, pq, cq) not in restated_quadrant_flips:
             transitions.append({"id": tid, "from_quadrant": pq, "to_quadrant": cq})
+        if tid in revised_ids:
+            continue  # rank_movers suppression stays entity-level (unchanged by S7)
         cr, pr = crec.get("rank"), prev_ranks.get(tid)
         if cr is not None and pr is not None and abs(cr - pr) >= 3:
             rank_movers.append({"id": tid, "from_rank": pr, "to_rank": cr, "delta": cr - pr})
@@ -222,23 +266,34 @@ def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]], *,
     fallback until the ledger has ≥2 sessions" — both paths are tested,
     :func:`_theme_changes_from_ledger` / :func:`_theme_changes_from_state_log`).
     ``revisions`` (``history.preview_revisions``/``append_observations`` receipts for THIS
-    build) populate ``source_revisions[]`` directly and are EXCLUDED from ``transitions``/
-    ``rank_movers`` for the same entity — a correction must produce a REVISED what-changed
-    row, never ALSO a duplicate transition row (spec §3 test 9).
+    build) populate ``source_revisions[]`` directly. S7 narrowed suppression (repair round):
+    a revision is EXCLUDED from ``transitions`` only when it RESTATES that exact transition
+    — same entity, same (from_quadrant, to_quadrant) as the revision's own "from"/"to"
+    (spec §3 test 9) — never merely because the entity had SOME revision this build.
+    ``rank_movers`` suppression stays entity-level (unchanged; the frozen spec's S7 item is
+    scoped to transitions).
     """
     session = current.get("session")
     revisions = list(revisions or [])
     revised_ids = {r.get("id") for r in revisions if r.get("entity_kind") in (None, "theme")}
+    # S7: a transition is suppressed only when it restates a revision's OWN quadrant flip —
+    # same entity, same (from, to). An entity with some OTHER unrelated revision this build
+    # (a different session, or the same session but a different quadrant pair) still gets
+    # its genuinely new transition reported.
+    restated_quadrant_flips = {
+        (r.get("id"), (r.get("from") or {}).get("quadrant"), (r.get("to") or {}).get("quadrant"))
+        for r in revisions if r.get("entity_kind") in (None, "theme")
+    }
     from engine.flow_observatory import history as fo_history
 
     ledger_rows = ledger_rows or []
     ledger_ready = bool(ledger_rows) and fo_history.ledger_session_count(ledger_rows, "theme") >= 2
     if ledger_ready:
         transitions, rank_movers, prev_session, reason = _theme_changes_from_ledger(
-            current, ledger_rows, session, revised_ids)
+            current, ledger_rows, session, revised_ids, restated_quadrant_flips)
     else:
         transitions, rank_movers, prev_session, reason = _theme_changes_from_state_log(
-            current, log_rows, session, revised_ids)
+            current, log_rows, session, revised_ids, restated_quadrant_flips)
 
     if prev_session is None:
         return {"previous_valid_session": None, "material_change": None,
@@ -247,10 +302,13 @@ def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]], *,
 
     # quality transitions (W2, spec §3 "what changed today"): a leg ENTERING DEGRADED/
     # STALE/UNAVAILABLE/REVISED since the previous valid session is a material change —
-    # source quality drift is worth surfacing the same way a quadrant flip is. Unchanged by
-    # W3 — this stays state_log-based (the per-BUILD leg-status journal), independent of
-    # the theme transition source switch above.
-    prev_entry = previous_valid_entry(log_rows, before_session=session)
+    # source quality drift is worth surfacing the same way a quadrant flip is. The DATA
+    # stays state_log-based (the per-BUILD leg-status journal — the ledger does not carry
+    # a market-session-keyed leg snapshot), but M9 baseline unification pins the BASELINE
+    # SESSION to `prev_session` above (ledger-derived when ledger_ready, state_log-native
+    # otherwise) rather than an independently re-derived "most recent before today" —
+    # never two different "yesterday"s in one change_summary payload.
+    prev_entry = _log_entry_at(log_rows, prev_session)
     prev_legs = ((prev_entry.get("health") or {}).get("legs") or {}) if prev_entry else {}
     cur_legs = current.get("legs") or {}
     quality_transitions: list[dict[str, Any]] = []

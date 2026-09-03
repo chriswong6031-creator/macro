@@ -33,6 +33,24 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_flow_velocity")
 
 
+def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
+    """M11: never publish ``change_summary.source_revisions[]`` receipts the ledger does not
+    actually hold. ``preview_revisions`` runs BEFORE ``validate()`` (spec §2 ordering) so a
+    valid payload's ``change_summary`` can already name this build's corrections — but the
+    REAL, disk-writing append happens later, after validate() passes, and can itself fail
+    (disk full, a monotonicity refusal, an I/O error) after some, none, or an unknown subset
+    of its per-session calls already landed. Call this from that append's own except block:
+    it zeroes the previewed receipts rather than guess which (if any) survived, so desk.json
+    never claims a correction the ledger cannot back up. Returns True iff there was anything
+    to strip (so the caller knows whether to also emit its own annotation).
+    """
+    cs = v2_snap.get("change_summary")
+    if isinstance(cs, dict) and cs.get("source_revisions"):
+        cs["source_revisions"] = []
+        return True
+    return False
+
+
 def _leg_map(snap: dict) -> dict:
     """Flatten the desk payload into {display name: leg} for the staleness check.
 
@@ -168,9 +186,23 @@ def main() -> int:
     ledger_rows: list = []
     ledger_path = fo_history.observations_path(data_root)
     theme_entities: dict = {}
+    # B1: a ledger that EXISTS but fails to parse must never be treated as an empty
+    # bootstrap ledger — that reading is exactly what lets the ordinary append below
+    # overwrite (destroy) a torn file's still-valid closed rows. Caught here, at the read
+    # boundary, so both the revisions PREVIEW (further below) and the real append (much
+    # further below, after validate()) skip together — never one without the other.
+    ledger_unavailable = False
     try:
         log_rows = fo_changes.read_state_log(data_root)
-        ledger_rows = fo_history.read_ledger(ledger_path)
+        try:
+            ledger_rows = fo_history.read_ledger(ledger_path)
+        except fo_history.LedgerCorrupt as e:
+            ledger_unavailable = True
+            ledger_rows = []
+            log.error("flow_observatory: observations ledger unreadable — refusing to "
+                     "append; publishing without ledger features: %s", e)
+            print("::warning title=flow-observatory-ledger::unreadable ledger — refusing "
+                 "to append; publishing without ledger features", flush=True)
         generated_at_dt = datetime.now(timezone.utc)
         generated_at = generated_at_dt.isoformat(timespec="seconds")
         run_date = generated_at[:10]
@@ -202,7 +234,9 @@ def main() -> int:
                              "rank": rec.get("rank"), "status": current_legs.get("cn_large_order_proxy")}
             for tid, rec in current_themes.items()
         }
-        revisions_preview = fo_history.preview_revisions(
+        # B1: a corrupt ledger skips BOTH the preview and the real append (below) — never
+        # preview a "revision" against a ledger we have already refused to trust.
+        revisions_preview = [] if ledger_unavailable else fo_history.preview_revisions(
             ledger_rows, candidate.get("market_session"), theme_entities, generated_at_dt)
         candidate["change_summary"] = fo_changes.compute_changes(
             {"session": candidate.get("market_session"), "themes": current_themes,
@@ -231,7 +265,11 @@ def main() -> int:
     # the southbound aggregate (market_session), and each of the 5 source legs at ITS OWN
     # effective_date (never market_session — a leg's own date is what sources[].
     # first_known_at keys on, spec §1/§2).
-    if v2_snap is not None and v2_snap.get("market_session") and theme_entities:
+    # B1: never attempt an append against a ledger already known to be unreadable this
+    # build — `append_observations` would just re-raise LedgerCorrupt from its own
+    # `read_ledger` call, and the point is to refuse cleanly, not to retry into the same
+    # exception a second time.
+    if v2_snap is not None and v2_snap.get("market_session") and theme_entities and not ledger_unavailable:
         try:
             agg_entities: dict = {}
             for chan in v2_snap.get("aggregate") or []:
@@ -264,6 +302,16 @@ def main() -> int:
             print("::warning title=flow-observatory-ledger::observations ledger append "
                  f"failed ({e}) — desk.json publishes normally this build; state age/"
                  "replay history may lag one build.", flush=True)
+            # M11: `revisions_preview` (computed BEFORE validate(), spec §2 ordering) already
+            # sits inside v2_snap["change_summary"]["source_revisions"] — but the append that
+            # was SUPPOSED to actually persist those corrections just failed above (possibly
+            # partway through the per-session loop, so some, none, or all of them may have
+            # landed). Publishing the previewed receipts anyway would claim the ledger holds
+            # a correction it may not — strip them rather than guess which (if any) survived.
+            if _strip_unpersisted_revisions(v2_snap):
+                print("::warning title=flow-observatory-ledger::append failure — "
+                     "source_revisions[] stripped from this build's change_summary (the "
+                     "ledger does not hold what was previewed)", flush=True)
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
