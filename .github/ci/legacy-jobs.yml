@@ -2668,8 +2668,13 @@ jobs:
       # the flow_observatory.v2 desk contract (quadrant axis consistency, market_read
       # denominators incl. unscored, five-leg sources[] honesty, state_log idempotence,
       # banned-vocabulary at rest) — same subject family as this lane's two flow suites.
+      # Wired 2026-09-02/03 (W2): tests/test_flow_observatory_quality.py guards the new
+      # engine/flow_observatory/quality.py state machine (per-leg HEALTHY/DEGRADED/STALE/
+      # UNAVAILABLE/HISTORICAL_ONLY/REVISED classification, the desk-wide wall-clock
+      # backstop, worst-of publication_state, and the ::error escalation annotation) — the
+      # W1 contract-delta lesson applies again: wired in the SAME commit that adds the file.
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
-        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py -q
+        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py tests/test_flow_observatory_quality.py -q
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so the render/engine guard lanes own it. It sits
       # here rather than in the sweep because it is one focused suite and because an
