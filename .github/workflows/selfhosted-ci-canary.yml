@@ -326,7 +326,7 @@ jobs:
     name: diagnostic-four-slot-parent-envelope-preflight
     if: inputs.slots == '4'
     needs: plan
-    runs-on: [self-hosted, ci-linux]
+    runs-on: [self-hosted, ci-linux-canary]
     timeout-minutes: 5
     steps:
       # No checkout and no candidate code: the installed root-owned guard
@@ -344,7 +344,23 @@ jobs:
     if: >-
       always() && needs.plan.result == 'success' &&
       (inputs.slots != '4' || needs.four-slot-preflight.result == 'success')
-    runs-on: ${{ fromJSON(inputs.slots == '1' && '["self-hosted","ci-linux-canary"]' || '["self-hosted","ci-linux"]') }}
+    # slots=4 temporarily binds the existing canary label to its selected
+    # primary pack. The primary must be the canonical numeric identity of the
+    # selector's first entry: a missing, malformed, or inconsistent output
+    # therefore reaches fromJSON('') and fails before choosing a runner label.
+    runs-on: >-
+      ${{ fromJSON(
+        (inputs.slots == '1' ||
+          (inputs.slots == '4' &&
+            matrix.pack == fromJSON(
+              needs.plan.outputs.primary_pack ==
+                toJSON(fromJSON(needs.plan.outputs.selected_packs)[0].index) &&
+              needs.plan.outputs.primary_pack ||
+              ''
+            ))) &&
+        '["self-hosted","ci-linux-canary"]' ||
+        '["self-hosted","ci-linux"]'
+      ) }}
     timeout-minutes: 180
     strategy:
       fail-fast: false

@@ -164,3 +164,35 @@ This is still source, not capacity. PR #6728 remains DRAFT / HOLD-FOR-SOL;
 production remains exactly three `ci-linux` carriers at `max-parallel: 3`; and no
 host, runner, registration, label, cgroup, service, cache, credential, render,
 dispatch or production effect occurred in this operation.
+
+## Correction — fourth-candidate route repair (2026-09-03)
+
+The prior receipt's statement that the four-slot preflight was connected was
+necessary but incomplete. Current-head release adjudication proved that both the
+preflight and all four self-hosted packs still required `ci-linux`, while pending
+`pc-ci-4` is forbidden from carrying that production label before host acceptance.
+Operation `ci-c3ra-fourth-canary-route-repair-20260903-sol-001` repairs the same
+PR #6728 and branch without importing the terminal foreign holder or changing the
+existing 12-path footprint.
+
+The repaired source routes `four-slot-preflight` on
+`[self-hosted, ci-linux-canary]`. For `slots=4`, exactly the selector's canonical
+numeric `primary_pack` uses that same label and the other three selected packs use
+`[self-hosted, ci-linux]`; malformed, missing, non-integer, or selector-inconsistent
+primary identity fails closed. Slots 1 and 3, all four hosted/self-hosted/compare
+and failure-preservation legs, the independent `render-linux` probe, and production
+trusted execution at `max-parallel: 3` remain unchanged. RED-first workflow tests
+failed 11 cases against the prior route, then passed 34/34 after the repair; all
+three C3R-A suites passed 213/213. `scripts/check_runner_policy.py`, Agent OS
+validation, 12-pack legacy-manifest validation, and all 97 workflow YAML parse
+checks returned zero.
+
+C3R-B may later perform the documented, separately authorized ceremony only after
+drain and exact identity proof: temporarily transfer `ci-linux-canary` from exact
+`pc-ci-1` to exact `pc-ci-4`, verify `pc-ci-4` still lacks `ci-linux`, run one
+four-slot diagnostic, and restore the label to `pc-ci-1` on every exit. A lost or
+ambiguous label response is `EFFECT_UNKNOWN` and blocks dispatch, retry, and
+promotion. This correction performed no host, runner, registration, label, group,
+service, cgroup, cache, credential, dispatch, rerun, render, Ready, merge, or
+production effect. PR #6728 remains DRAFT / HOLD-FOR-SOL; source CI and review
+still cannot substitute for C3R-B real-host proof.

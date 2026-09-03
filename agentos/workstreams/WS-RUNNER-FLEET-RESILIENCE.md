@@ -377,3 +377,28 @@ exactly `pc-ci-1..3`, trusted execution stays `max-parallel: 3`, and no registra
 label/group, service, cgroup, cache, credential, dispatch, render, or production
 effect is authorized. Current-head CI and an independent exact-head source approval
 still cannot substitute for the separately authorized C3R-B real-host proof.
+
+## C3R-A fourth-candidate route repair — 2026-09-03
+
+Current-head release adjudication found one remaining end-to-end contradiction:
+pending `pc-ci-4` must remain free of production label `ci-linux`, but the four-slot
+preflight and every pack previously required that label. Operation
+`ci-c3ra-fourth-canary-route-repair-20260903-sol-001` keeps the same PR #6728,
+branch, label inventory, and 12-path footprint while binding the existing
+diagnostic-only `ci-linux-canary` route to the fourth-candidate journey.
+
+For `slots=4`, the no-checkout parent-envelope preflight and exactly the selected
+primary pack use `ci-linux-canary`; the other three selected packs use `ci-linux`.
+The primary output is parsed as a canonical numeric value and bound to the first
+selected-pack identity, so missing, malformed, or inconsistent identity fails
+closed. Slots 1 and 3, all four hosted/compare/failure legs, the independent
+`render-linux` reservation, and production trusted execution at `max-parallel: 3`
+remain unchanged.
+
+This is source capability only. C3R-B still owns every host and GitHub label effect:
+after drain and exact identity proof it temporarily transfers `ci-linux-canary`
+from exact `pc-ci-1` to exact `pc-ci-4`, proves `pc-ci-4` still lacks `ci-linux`,
+runs one diagnostic, and restores the label on every exit. An ambiguous response is
+`EFFECT_UNKNOWN` and blocks dispatch, retry, and promotion. This source operation
+performs none of those acts; PR #6728 remains DRAFT / HOLD-FOR-SOL and the maximum
+claim remains `FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.

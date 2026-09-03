@@ -283,10 +283,18 @@ refuse in every profile once that flag is set. This does not alter today's three
 live services because they do not opt into the flag.
 
 The `slots=4` workflow path now has one blocking, no-checkout
-`four-slot-preflight` job before matrix fanout. It executes only the installed
-root-owned guard with `--require-slice --preflight-profile four-slot-canary`;
-slots 1 and 3 retain their prior journey. This is a source gate, not host proof:
-it cannot pass lawfully until C3R-B installs and proves the envelope.
+`four-slot-preflight` job on `[self-hosted, ci-linux-canary]` before matrix
+fanout. It executes only the installed root-owned guard with
+`--require-slice --preflight-profile four-slot-canary`. The selected primary
+pack then runs on that same diagnostic-only label while the other three selected
+packs retain `[self-hosted, ci-linux]`. The primary identity must be the canonical
+numeric form of the selector's first `selected_packs` entry; missing, malformed,
+or inconsistent output fails expression evaluation rather than silently routing
+zero candidate jobs. Slots 1 and 3 retain their prior journeys, the hosted
+control and comparison matrices still cover every selected pack, and the
+slots-1-only cache/contamination jobs cannot race a slots-4 candidate. This is a
+source gate, not host proof: it cannot pass lawfully until C3R-B installs and
+proves the envelope.
 
 The memory floor stays a **guest-wide** `MemAvailable` read on purpose: the renderer
 lives outside the slice, so a slice-local read would show a nearly idle cgroup while
@@ -354,10 +362,16 @@ The later host carrier installs `/etc/systemd/system/mastermind-ci.slice`, repla
 the `pc-ci-1..3` units from their exact pre-change snapshot at a natural drain,
 creates the sealed `/opt/mastermind-ci/runner-4` root, and registers `pc-ci-4` with
 platform/architecture labels **only** — no `ci-linux` — so roster, service, PID, root
-and cgroup can be proved online but unroutable. Adding `ci-linux` and moving the live
-inventory to four is one separately audited activation act gated on GitHub reporting
-the exact runner online/idle. Only after that is accepted may a further carrier
-change trusted-executor `max-parallel` from 3 to 4.
+and cgroup can be proved online but unroutable. After the relevant runners are
+drained and every identity is re-proved, C3R-B temporarily transfers the existing
+`ci-linux-canary` label from exact `pc-ci-1` to exact `pc-ci-4`, verifies again that
+`pc-ci-4` lacks `ci-linux`, runs one `slots=4` diagnostic, and restores the label to
+`pc-ci-1` on every exit. A lost or ambiguous label response is `EFFECT_UNKNOWN` and
+blocks dispatch, retry, and promotion; it is never treated as a reason to repeat the
+mutation. Adding `ci-linux` and moving the live inventory to four is one separately
+audited activation act gated on GitHub reporting the exact runner online/idle. Only
+after that is accepted may a further carrier change trusted-executor
+`max-parallel` from 3 to 4.
 
 ### Rollback for this code carrier
 
