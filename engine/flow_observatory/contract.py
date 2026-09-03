@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from engine.flow_observatory import history
 from engine.flow_observatory import quality as fo_quality
 
 SCHEMA = "flow_observatory.v2"
@@ -396,6 +397,7 @@ def state_log_legs_snapshot(sources: list[dict[str, Any]]) -> dict[str, dict[str
 def build_sources(snap: dict[str, Any], *, newest_session: str | None,
                   seats_as_of: str | None = None,
                   log_rows: list[dict[str, Any]] | None = None,
+                  ledger_rows: list[dict[str, Any]] | None = None,
                   now=None) -> list[dict[str, Any]]:
     """One block per masterplan §3 leg — ALWAYS all five W1 legs (S7 repair): a leg whose
     panel did not build this run still gets its identity row so the trust strip shows
@@ -422,6 +424,12 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     it.
     ``log_rows`` (state_log history) feeds the coverage-collapse/REVISED inputs; omitted or
     empty degrades those two checks to their honest "insufficient/no history" no-ops.
+
+    ``ledger_rows`` (W3 — the observations ledger, ``engine.flow_observatory.history``)
+    feeds each leg's ``first_known_at`` (spec §2: "closes the W1 limitation" — previously
+    always ``None``): the ``entity_kind='market'`` row's own ``revision_id==0`` first-known
+    time for that leg's effective date. Omitted/empty ledger degrades to the honest
+    ``None`` every pre-W3 caller already saw (bootstrap: the ledger starts empty).
 
     HK-market legs (S8): ``sb_aggregate``/``hk_sb_holdings`` anchor their freshness gap
     against the newest HK-family date (sb_aggregate's own effective_date) rather than the
@@ -494,25 +502,35 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     # so a total freeze floors every live leg's chip together (spec §1 last bullet).
     leg_results = fo_quality.apply_desk_backstop(leg_results, leg_effective_dates, today)
 
+    # W3: each leg's first-known time from the observations ledger (None until the ledger
+    # actually holds this leg's key — honest bootstrap, spec §2/§5).
+    def _fk(source_id: str, effective_date: str | None) -> str | None:
+        if not ledger_rows or not effective_date:
+            return None
+        return history.first_known_at(ledger_rows, "market", source_id, effective_date)
+
     legs: list[dict[str, Any]] = []
 
     legs.append(_source_leg(
         "cn_large_order_proxy", source_kind="large_order_size_proxy",
         provider="Tushare moneyflow_dc", market="CN", effective_date=names_asof,
         expected_availability="T+0 after CN close", coverage=cn_coverage,
-        quality_result=leg_results["cn_large_order_proxy"]))
+        quality_result=leg_results["cn_large_order_proxy"],
+        first_known_at=_fk("cn_large_order_proxy", names_asof)))
 
     legs.append(_source_leg(
         "sb_aggregate", source_kind="official_connect_aggregate",
         provider="Eastmoney RPT_MUTUAL_DEAL_HISTORY", market="HK",
         effective_date=sb_effective, expected_availability="T+0 after HK close",
-        coverage=sb_coverage, quality_result=leg_results["sb_aggregate"]))
+        coverage=sb_coverage, quality_result=leg_results["sb_aggregate"],
+        first_known_at=_fk("sb_aggregate", sb_effective)))
 
     legs.append(_source_leg(
         "hk_sb_holdings", source_kind="official_connect_holdings",
         provider="Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS", market="HK",
         effective_date=hk_effective, expected_availability="expected T−1",
-        coverage=hk_coverage, quality_result=leg_results["hk_sb_holdings"]))
+        coverage=hk_coverage, quality_result=leg_results["hk_sb_holdings"],
+        first_known_at=_fk("hk_sb_holdings", hk_effective)))
 
     legs.append(_source_leg(
         "nb_aggregate", source_kind="official_connect_aggregate",
@@ -521,23 +539,27 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
         expected_availability=(f"discontinued {nb.get('frozen_since')}" if nb and nb.get("frozen_since")
                                else "discontinued"),
         coverage={"n_observed": None, "n_sized": None, "pct_names": None},
-        quality_result=leg_results["nb_aggregate"]))
+        quality_result=leg_results["nb_aggregate"],
+        first_known_at=_fk("nb_aggregate", nb_effective)))
 
     legs.append(_source_leg(
         "lhb_inst_seats", source_kind="event_selected_institution_seat",
         provider="Eastmoney 龙虎榜 机构专用", market="CN",
         effective_date=seats_effective, expected_availability="event-window",
-        coverage=seats_coverage, quality_result=leg_results["lhb_inst_seats"]))
+        coverage=seats_coverage, quality_result=leg_results["lhb_inst_seats"],
+        first_known_at=_fk("lhb_inst_seats", seats_effective)))
 
     return legs
 
 
 # ── build_v2 assembly (spec §1.7) ──────────────────────────────────────────────────
 def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = None,
+            ledger_rows: list[dict[str, Any]] | None = None,
             market_session: str | None = None, generated_at: str | None = None,
             seats_as_of: str | None = None, now=None,
             state_history=None) -> dict[str, Any]:
-    """Merge the W1+W2 ``flow_observatory.v2`` additive fields into the existing desk payload.
+    """Merge the W1+W2+W3 ``flow_observatory.v2`` additive fields into the existing desk
+    payload.
 
     Pure assembly — no I/O. ``log_rows`` is the already-read ``state_log.jsonl`` content
     (pass ``[]``/``None`` when unavailable — history fields degrade to honest nulls, never
@@ -549,8 +571,17 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     with a real ``now``. ``state_history`` is an injectable ``changes.theme_state_history``
     callable (defaults to importing :mod:`engine.flow_observatory.changes` lazily, keeping
     this module import-cycle-free for tests that only need the pure math).
+
+    ``ledger_rows`` (W3 — the already-read ``observations.parquet`` content,
+    ``engine.flow_observatory.history``) becomes the per-row state_started/
+    state_age_sessions/prior_state/rank_change source, AND feeds ``sources[]``'
+    ``first_known_at``, once it holds ≥2 distinct theme sessions (spec §2: "state_log
+    summaries stay as fallback until the ledger has ≥2 sessions" — both paths tested).
+    ``None``/empty (the bootstrap state and every pre-W3 caller) keeps the exact W1/W2
+    state_log-derived behavior.
     """
     log_rows = log_rows or []
+    ledger_rows = ledger_rows or []
     market_session = market_session or snap.get("as_of")
     # B2: the escalation streak's "current run" is identified by BUILD date (generated_at's
     # own date), never the market session — a frozen market_session must not also freeze
@@ -565,6 +596,16 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     out["generated_at"] = generated_at
     out["market_session"] = market_session
 
+    # §1.5 — sources[] (hoisted ahead of the per-row loop below, W3): the per-row age walk
+    # needs cn_large_order_proxy's OWN current-session status to know whether TODAY's read
+    # must freeze (spec §3 test 6) — build_sources has no dependency on the enriched rows,
+    # so calling it first changes nothing about its own output, only its ORDER.
+    out["sources"] = build_sources(snap, newest_session=market_session, seats_as_of=seats_as_of,
+                                   log_rows=log_rows, ledger_rows=ledger_rows, now=now)
+    leg_statuses = {s["source_id"]: s.get("status") for s in out["sources"]}
+    cn_status = leg_statuses.get("cn_large_order_proxy")
+    ledger_ready = bool(ledger_rows) and history.ledger_session_count(ledger_rows, "theme") >= 2
+
     # §1.3 — per-row abs/rel/quadrant/rank/rank_change/state_* on ashare_sectors.rows[]
     sectors = snap.get("ashare_sectors")
     enriched_rows: list[dict[str, Any]] = []
@@ -577,18 +618,24 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
         assign_ranks(enriched_rows)
         prev_ranks = _previous_ranks(log_rows, market_session)
         for row in enriched_rows:
-            hist = (state_history(row["id"], row["quadrant"], log_rows, market_session)
-                    if market_session else
-                    {"state_started": None, "state_age_sessions": None, "prior_state": None,
-                     "note": "first tracked session"})
+            if ledger_ready and market_session:
+                hist = history.state_for_session(
+                    ledger_rows, "theme", row["id"], market_session, row["quadrant"],
+                    current_rank=row.get("rank"), current_status=cn_status)
+                row["rank_change"] = hist["rank_change"]
+            else:
+                hist = (state_history(row["id"], row["quadrant"], log_rows, market_session)
+                        if market_session else
+                        {"state_started": None, "state_age_sessions": None, "prior_state": None,
+                         "note": "first tracked session"})
+                prev_rank = prev_ranks.get(row["id"]) if prev_ranks is not None else None
+                row["rank_change"] = (row["rank"] - prev_rank) \
+                    if (prev_ranks is not None and row["rank"] is not None and prev_rank is not None) \
+                    else None
             row["state_started"] = hist["state_started"]
             row["state_age_sessions"] = hist["state_age_sessions"]
             row["prior_state"] = hist["prior_state"]
             row["state_note"] = hist["note"]
-            prev_rank = prev_ranks.get(row["id"]) if prev_ranks is not None else None
-            row["rank_change"] = (row["rank"] - prev_rank) \
-                if (prev_ranks is not None and row["rank"] is not None and prev_rank is not None) \
-                else None
         out["ashare_sectors"] = {**sectors, "rows": enriched_rows}
 
     # southbound aggregate — the SAME abs+rel+quadrant treatment (spec §1.3 last line)
@@ -619,14 +666,10 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     names_mr = names.get("market_read") or market_read([], names.get("n_unscored") or 0)
     out["market_read"] = {"themes": themes_mr, "names": names_mr}
 
-    # §1.5 — sources[], now carrying the W2 quality classification per leg.
-    out["sources"] = build_sources(snap, newest_session=market_session, seats_as_of=seats_as_of,
-                                   log_rows=log_rows, now=now)
-
-    # §2 — publication_state (worst-of live legs) + the desk-wide health block. Computed
-    # AFTER sources[] so both read the SAME per-leg statuses the trust strip renders —
-    # machine contract and UI can never disagree on what "worst" means (W2_SPEC.md §0.1).
-    leg_statuses = {s["source_id"]: s.get("status") for s in out["sources"]}
+    # §2 — publication_state (worst-of live legs) + the desk-wide health block. sources[]
+    # (and leg_statuses) were already built above, ahead of the per-row loop (W3) — machine
+    # contract and UI still read the SAME per-leg statuses the trust strip renders
+    # (W2_SPEC.md §0.1); only the ORDER of assembly moved, not the values.
     pub_state = fo_quality.publication_state(leg_statuses)
     out["publication_state"] = pub_state
     leg_results_by_id = {s["source_id"]: s for s in out["sources"]}

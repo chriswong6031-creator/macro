@@ -321,6 +321,34 @@ def test_source_leg_dates_stay_distinct():
     assert by_id["nb_aggregate"]["effective_date"] != by_id["cn_large_order_proxy"]["effective_date"]
 
 
+# ── W3: sources[].first_known_at comes from the observations ledger ───────────────
+def test_source_first_known_at_bootstrap_null_then_real_from_ledger():
+    """W1 shipped ``first_known_at`` permanently ``None`` (no ledger existed yet).
+    W3 closes that: omitted/empty ``ledger_rows`` keeps the exact bootstrap null
+    (backward-compat — every pre-W3 caller), and a ledger holding the leg's
+    ``revision_id==0`` row for its own effective_date surfaces the REAL first-known
+    instant (research/flow_observatory/W3_SPEC.md §2)."""
+    v2 = _v2()
+    bootstrap_sources = build_sources(v2, newest_session="2026-09-01", seats_as_of="2026-08-30")
+    by_id = {s["source_id"]: s for s in bootstrap_sources}
+    assert by_id["cn_large_order_proxy"]["first_known_at"] is None
+
+    ledger_rows = [{
+        "entity_kind": "market", "entity_id": "cn_large_order_proxy",
+        "effective_session": "2026-09-01", "revision_id": 0,
+        "first_known_at": "2026-09-01T09:00:00+00:00", "revised_at": None,
+        "vel": None, "abs_value": None, "quadrant": None, "state": None,
+        "rank": None, "coverage_n": 100, "status": "HEALTHY",
+    }]
+    fed_sources = build_sources(v2, newest_session="2026-09-01", seats_as_of="2026-08-30",
+                                ledger_rows=ledger_rows)
+    by_id2 = {s["source_id"]: s for s in fed_sources}
+    assert by_id2["cn_large_order_proxy"]["first_known_at"] == "2026-09-01T09:00:00+00:00"
+    # a DIFFERENT leg (no matching ledger row) stays honestly null, never borrowing
+    # cn_large_order_proxy's instant.
+    assert by_id2["sb_aggregate"]["first_known_at"] is None
+
+
 # ── 11: proxy disclosure copy, rendered ────────────────────────────────────────────
 def test_order_size_copy_carries_proxy_disclosure():
     out = _render(_v2())
