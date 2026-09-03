@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-09-01T07:20:50.435808+00:00",
+  "produced_at": "2026-09-03T10:13:16.168058+00:00",
   "as_of": "2026-08-28",
   "overall_status": "warn",
   "lobes": [
