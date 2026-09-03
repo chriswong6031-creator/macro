@@ -1,78 +1,87 @@
 ---
 key: POLICY-PRETURN-CALENDAR-FLOW-COMPOSITION
-question: "How should Mastermind model recurring OPEX/month-end turns and fast policy jawboning without creating a second calendar or a calendar-driven trade signal?"
+question: >
+  How should Mastermind model recurring OPEX/month-end turns, official policy events,
+  Treasury liquidity and futures mechanics without creating a second market owner,
+  an unexecutable test plan, a stale cross-lane publisher or a calendar-driven trade signal?
 answer: >
-  Extend the existing Rates & Inflation, Policy-Shock, Options and Rebalance/Liquidity
-  owners with one deterministic policy_turn_clock.v1 composer. The composer preserves
-  independent event, options-support, Treasury-liquidity, futures-roll, rebalance and
-  source-freshness axes; it may summarize support formation, stability, pinning,
-  rolloff, catalyst override, month-end dominance, mixed evidence or unknown state.
-  Calendar proximity alone carries no direction or capital authority. Official actor
-  and Treasury observations accrue as point-in-time keep-FIRST vintages, and the same
-  machine artifact serves the Policy Watch user experience and governed machine
-  consumers. Yield momentum remains owned by existing RIC F3 PR #6721.
+  Build one deterministic policy_turn_clock.v1 composition over existing event, release,
+  OPEX, options, broad-flow, rebalance, Treasury/TGA, volatility, market-state and futures
+  owners. Hourly is the sole official-event/current-artifact writer; the existing nightly
+  regional-desk lane runs the same builder in ledger-only mode. Preserve event venue apart
+  from explicitly supported physical actor presence, preserve Treasury operation mechanism,
+  purpose and separate amount fields, make silent source revisions correction-safe, and
+  expose method/input/source identity. Standard VX settlement is monthly and separate from
+  weekly fronts and quarterly equity/Treasury rolls. Calendar proximity and every W1 state
+  remain context-only with can_rank/can_gate/can_size/can_trade=false.
 rationale: >
-  The Chairman's observed pattern is economically plausible only as a compound inventory,
-  liquidity and catalyst clock. Options expiration can remove stabilizing long-gamma/pin
-  inventory or remove destabilizing short-gamma inventory; month-end can add Treasury
-  settlements, TGA changes, bond-index extension, index/pension rebalancing and closing
-  auction flows; quarterly futures rolls apply only in March, June, September and
-  December; early-month cash and replacement books are conditional rather than guaranteed;
-  and macro releases can dominate every mechanical flow. Existing repository organs
-  already own each underlying truth but no current composition answers whether support is
-  building, expiring, being replaced or being overwhelmed. A deterministic composer over
-  those owners gives the user an anticipatory, falsifiable transition read without
-  laundering a decayed turn-of-month anomaly, a dealer-sign assumption or policy narrative
-  into a buy/sell signal. One canonical artifact also prevents UI prose and machine context
-  from drifting into separate interpretations.
+  The Chairman's observed sequence is plausible only as a compound inventory, liquidity,
+  flow and catalyst clock. Expiration can remove stabilizing long-gamma inventory or
+  destabilizing short-gamma inventory; replacement may rebuild or fail; month-end may
+  combine broad ETF flow, observed rebalancing, asset-specific bond-index extension and
+  Treasury cash movement; standard VIX futures settle monthly while major equity-index and
+  Treasury futures roll quarterly; macro events can dominate every mechanical clock.
+  Existing repository organs already own each underlying truth, but the previous W1 draft
+  omitted explicit inputs needed by its own states, lacked a real nightly receipt advancer,
+  allowed wall-clock-only hourly byte churn, conflated buyback mechanism with purpose,
+  treated event venue as physical presence, could drop silent source corrections, and
+  forbade the CI manifest required to execute its new suites. The repaired architecture
+  closes those defects by composing current owners through an explicit pure interface,
+  one current publisher, one nightly receipt path, semantic no-op/no-regress behavior and
+  canonical executable test ownership. This creates useful anticipatory context without
+  laundering calendar folklore, source ambiguity or model narrative into capital authority.
 alternatives:
   - option: "Create a universal buy-at-month-start and de-risk-after-OPEX signal."
     why_not: >
-      The unconditional turn-of-month anomaly is sample- and era-dependent, modern
-      in-repo studies withhold a forward edge, and options expiration can remove either
-      stabilizing or destabilizing inventory. A directional calendar rule would be both
-      empirically fragile and contrary to the existing no-calendar-sizing authority law.
-  - option: "Create a new standalone policy calendar and market-structure database."
+      The unconditional effect is era-dependent; options expiration can remove either
+      stabilizing or destabilizing inventory; current in-repo evidence withholds a robust
+      universal post-OPEX direction. A calendar trade would be empirically fragile and
+      violate existing authority law.
+  - option: "Create a standalone policy calendar, futures database and transition score."
     why_not: >
-      `engine/event_calendar.py`, Macro Release Intelligence, `engine/opex.py`, the
-      ThetaData options plane, Rebalance/Liquidity Transmission and Treasury Watch already
-      own these facts. A new database would duplicate event, correction, calendar and
-      evidence authority and would inevitably drift from the production owners.
-  - option: "Use an LLM to predict when Bessent, Warsh or the administration will intervene."
+      Event Calendar, Macro Release Intelligence, OPEX, ThetaData options, Rebalance Pulse,
+      ETF flows, Treasury Watch, Cboe VX and current market-state/volatility owners already
+      hold the facts. New stores or a weighted score would fork truth, correction clocks and
+      authority.
+  - option: "Run collection, current publication and prospective evidence from both hourly and nightly lanes."
     why_not: >
-      Discretionary private timing and secret coordination are not identifiable from
-      public evidence. An LLM may later summarize receipt-grounded interest and rhetoric
-      changes, but it cannot invent schedules, infer private locations or originate a
-      response probability/state that overrides deterministic evidence.
-  - option: "Wait for RIC F3 and every later intelligence layer before shipping anything."
+      Two writers with independent concurrency/rebase behavior can regress a newer evidence
+      cutoff and create duplicate receipts. Hourly single-writer plus nightly ledger-only is
+      the smallest composition over existing workflows.
+  - option: "Use an LLM to infer private actor location, coordination or intervention timing."
     why_not: >
-      The official actor/liquidity clock and monthly support/rolloff composition are
-      independently useful without yield-cause decomposition. Building them as W1 creates
-      immediate product value while preserving a one-way seam for later RIC and
-      cross-asset inputs.
+      Private timing and physical presence are not identifiable from public calendars or
+      aligned interests. Model text may later narrate grounded receipts but cannot create
+      source facts or W1 state.
+  - option: "Keep the prior plan and let implementation discover the missing interfaces and CI/runtime owners."
+    why_not: >
+      Independent exact-head review proved the plan could not produce several promised
+      states, could never advance its prospective ledger, and could leave tests dark.
+      Delegating those architecture decisions to a bounded worker would recreate the
+      ambiguity W1 is supposed to remove.
 evidence:
-  - "Chairman Chris explicitly approved initiation and requested robust monthly/OPEX/futures integration in the active Sol session on 2026-09-03."
-  - "Protected procedure was pinned to mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0; Skillpack schema/version/bootstrap are compatible."
-  - "Macro issue #6787 is the sole canonical W1 implementation carrier and records WAITING_CAPACITY / needs_placement, receiver NONE, START NONE, effect NONE."
-  - "Macro PR #6721 is the existing RIC F3 yield-momentum carrier at observed head 0d7ff3db29cd95c5296a8fd5d33d3b0494ce6647 and remains open/draft/unmerged/release-blocked."
-  - "Macro PR #6658 remains open/draft and owns the colliding .github/ci/legacy-jobs.yml path; the RIC F3 worker was continued in PARK on Slack carrier C0BSBM78V1N/1788266777.058699."
-  - "DEC:RIC-CANONICAL-COMPOSITION-BOUNDARIES assigns scheduled events, release truth, OPEX, options, transmission, policy, risk and learning to existing owners and denies calendar rank/gate/size/trade authority."
-  - "engine/event_calendar.py, engine/opex.py, engine/opex_risk.py, engine/options_surface.py, engine/rebalance_calendar.py, engine/rebalance_pulse.py and engine/treasury_watch.py provide the canonical W1 inputs."
-  - "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md and reports/artifacts/options_opex_vanna_charm_summary.md reject a robust unconditional post-OPEX direction while preserving measured concentration/vanna/volatility context."
-  - "reports/d2-rates-calendar-flows-phase0.md finds measurable month-end Treasury duration extension while generic auction and pension-rebalance hypotheses fail, requiring asset- and mechanism-specific treatment."
-  - "research/REBALANCE_LIQUIDITY_TRANSMISSION_MASTERPLAN_BY_FABLE.md explicitly keeps turn-of-month direction dead and treats rebalance observations as display/context rather than bottom calls."
+  - "Chairman Chris explicitly approved initiation and instructed Sol to continue at full throttle in the active session on 2026-09-03."
+  - "Protected procedure was re-pinned to mastermindx-market-intelligence/Mastermind@c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6; Skillpack v1.0.1 remains bootstrap-major-1 compatible."
+  - "Macro PR #6788 exact-head review child policy-preturn-pr6788-9bc18-full-review-20260903-sol-002 returned merits REQUEST_CHANGES at Slack 1788427555.357049; Sol accepted and terminally stopped the child at 1788427931.007269."
+  - "The review proved six blocking defects: no real nightly invocation, quiet-hour byte churn, Treasury taxonomy/amount collapse, venue/presence and silent-revision defects, incomplete pure-composer inputs, and non-reproducible market/method identity."
+  - "Current W1 design and plan are replaced on the same PR branch with explicit hourly single-writer, nightly ledger-only, semantic no-op/no-regress, corrected evidence schema, pure input closure and method identity."
+  - "Current open-PR census found multiple .github/ci/legacy-jobs.yml candidates beyond PR #6721; W1 therefore requires a fresh all-owner START-time collision census rather than a single-owner assumption."
+  - "collectors/cboe_vix_futures.py and its existing stores distinguish nearest weekly-or-monthly front from standard monthly M1-M6; W1 consumes those owners and suppresses rank-roll false changes."
+  - "engine/etf_flows.py documents the SPY/QQQ/IWM/RSP/DIA broad-flow proxy as forward-accruing, T+1 and display-only; W1 preserves that lag and limitation."
+  - "reports/artifacts/options_surface_coverage.md proves canonical options coverage for 20 roots, mostly 2017 onward; issue #6794 separately freezes historical versus prospective study cohorts."
+  - "reports/d2-rates-calendar-flows-phase0.md finds asset-specific TLT/IEF month-end extension while generic auction/pension variants fail, requiring separate duration context rather than a generic equity flow claim."
 affects:
   - "WS:RATES-INFLATION-COMMAND"
   - "Policy Transmission & Pre-Turn Command"
-  - "Rebalance & Liquidity Transmission"
-  - "Policy-Shock Regime"
-  - "engine/event_calendar.py"
-  - "engine/opex.py"
-  - "engine/opex_risk.py"
-  - "engine/options_surface.py"
-  - "engine/rebalance_calendar.py"
-  - "engine/rebalance_pulse.py"
-  - "engine/treasury_watch.py"
+  - "policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001"
+  - "policy_turn_clock.v1"
+  - "collectors/policy_event_clock.py"
+  - "engine/futures_roll_calendar.py"
+  - "engine/policy_turn_clock.py"
+  - "scripts/build_policy_turn_clock.py"
+  - ".github/workflows/whitehouse-sentinel.yml"
+  - "scripts/ci/daily_engine_regional_desk_builders.sh"
+  - ".github/ci/legacy-jobs.yml"
   - "site/policy_turn_clock.json"
   - "site/policy_watch.html"
 confidence: high
@@ -85,9 +94,9 @@ decided_at: 2026-09-03
 
 ## One canonical composition
 
-`policy_turn_clock.v1` is a deterministic composition and projection. It does not own the underlying scheduled event, release, OPEX, options, futures-price, rebalance, TGA, yield, market-state, forecast or trade facts. It carries exact owner references, availability clocks, assumptions, corrections and gaps.
+`policy_turn_clock.v1` is a pure deterministic composition and projection. It does not own underlying event, release, options, OPEX, flow, Treasury, market-state, futures or portfolio truth. Every axis carries owner, as-of/available-at, freshness, assumption, correction and null evidence.
 
-The glance state preserves this closed vocabulary:
+The closed glance vocabulary is:
 
 ```text
 SUPPORT_BUILDING
@@ -101,40 +110,46 @@ MIXED
 UNKNOWN
 ```
 
-The state is not a score and cannot be consumed as a position instruction. `VOLATILITY_WINDOW_OPEN` requires independent realized confirmation from an existing owner; the expiration date alone can reach at most a support-rolloff watch. A calendar-eligible month-end without an observed non-quiet Rebalance Pulse cannot become dominant.
+No state is a score or position instruction.
+
+## Evidence ruling
+
+Official evidence preserves stable event identity, explicit/fallback revision identity, canonical semantic digest and keep-FIRST receipts. A reused revision token with changed semantic content is a visible collision. Formatting-only page changes do not create vintages.
+
+Event location, attendance mode and actor physical presence are distinct. Current physical location requires explicit official live-presence support; scheduled, virtual, prerecorded, ambiguous, cancelled and ended appearances leave it unknown.
+
+Treasury operation mechanism and purpose are distinct. A cash-management or liquidity-support case remains `operation_kind=buyback` with an explicit purpose. Maximum, offered, submitted and accepted amounts remain separate nullable fields.
 
 ## Monthly mechanism ruling
 
-The current product must communicate these distinctions:
+1. OPEX proximity never establishes dealer sign or direction.
+2. Stabilizing and destabilizing expiration configurations remain opposite cases.
+3. Replacement evidence requires comparable canonical observations; missing is unknown.
+4. `SUPPORT_BUILDING` requires at least two independent applicable support mechanisms, not option replacement alone.
+5. Month-end scheduled eligibility, pressure estimate and observed mechanical pulse are distinct; dominance requires observed pulse.
+6. Bond-index extension is an asset-specific duration context, not a current equity flow claim.
+7. Standard VX settlement is monthly; weekly fronts and quarterly equity/Treasury rolls remain separate.
+8. `VOLATILITY_WINDOW_OPEN` requires fresh independent market/volatility/breadth/credit confirmation.
+9. High-impact official catalysts may override mechanical windows without gaining capital authority.
 
-1. Into OPEX, measured long-gamma, pin, front-cycle concentration and vanna/volatility conditions can stabilize price. The date does not establish the sign of dealer inventory.
-2. Expiration can remove stabilizing support or remove destabilizing short-gamma exposure. “Post-OPEX” therefore means a conditional inventory transition, not an automatic correction.
-3. Replacement-book evidence must be observed from comparable current and prior option-surface rows. Missing evidence is `unknown`, not `absent`.
-4. Month-end may combine equity/index rebalancing, bond-index extension, Treasury operations/settlements, TGA movement and closing-auction liquidity. Those mechanisms can point in different asset directions.
-5. Major equity-index and Treasury futures rolls are quarterly. Ordinary months are `not_applicable`; a scheduled window is not active without source-owned volume/open-interest progress.
-6. High-impact releases and policy events can override mechanical support. The product must show catalyst dominance and the exact collision instead of retaining a stale seasonal label.
-7. Early-month support must be evidenced through current liquidity, replacement inventory, breadth, volatility-control or other accepted owners. It is not inferred merely because the date changed.
+## Runtime ruling
 
-## Actor and policy ruling
+Hourly White House Sentinel is the sole official-event and current `site/policy_turn_clock.json` writer. Healthy semantic no-op reruns remain byte-stable. Older cutoffs cannot overwrite newer artifacts.
 
-Current actor location is shown only during a bounded official event window. After the window, the product retains `last_verified_location` and reports current location unknown. A source conflict is visible and unresolved rather than silently selected.
+The existing nightly regional-desk owner invokes `scripts.build_policy_turn_clock --mode ledger-only` immediately before Policy Watch. It does not collect evidence or publish current JSON/UI. It may append one keep-FIRST receipt only through `engine.ledger_lane.nightly_advance_enabled()`.
 
-Actor interests, tools and constraints can later support a receipt-grounded response-window graph. They cannot prove private coordination or a precise discretionary action time. Retrieved statements and model summaries remain context, not authority.
+`config/dag.yml` mirrors real execution; it is not an executor.
+
+## CI ruling
+
+Every new suite must be executed by one canonical logical job in `.github/ci/legacy-jobs.yml` and triggered through `.github/workflows/ci.yml`. W1 waits until all current owners of the shared manifest path are released. It may not bypass the hold with another workflow, job, planner or unrun-test exemption.
 
 ## Authority ceiling
 
-The W1 contract always publishes:
+Every W1 artifact remains:
 
 ```json
 {"can_rank": false, "can_gate": false, "can_size": false, "can_trade": false}
 ```
 
-No calendar, official-event, OPEX, futures-roll, rebalancing, TGA or model-generated field may bypass existing Prophet/portfolio promotion and authority law. A future request to wire any state into ranking, entry, risk or size is a new Sol/Chairman decision after point-in-time replay and forward promotion evidence.
-
-## Execution sequence
-
-1. Land the records-only architecture/spec/plan carrier after exact-head validation and independent review.
-2. Canonical capacity placement binds one eligible CTO Sol receiver to issue #6787.
-3. The worker posts pickup and separate START receipts after a fresh path/collision census.
-4. W1 returns one immutable source-to-artifact-to-browser/machine PR for Sol review.
-5. Source breadth, yield/cross-asset decomposition, actor reaction functions and calibrated posture remain separate later waves.
+A later request for ranking, gating, sizing or trading is a new Chairman/Sol decision after issue #6794 evidence and the existing promotion gauntlet.

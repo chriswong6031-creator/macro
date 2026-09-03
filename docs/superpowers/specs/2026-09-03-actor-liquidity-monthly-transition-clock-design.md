@@ -1,64 +1,166 @@
 # Actor, Liquidity & Monthly Transition Clock — W1 Design
 
 Date: 2026-09-03  
-Status: **DESIGN ACCEPTED / IMPLEMENTATION NOT STARTED**  
-Parent architecture: `docs/superpowers/specs/2026-09-03-policy-transmission-preturn-command-design.md`  
-Canonical implementation carrier: GitHub issue #6787  
-Operation key: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
-Protected Sol procedure at freeze: `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`, Skillpack 1.0.1, bootstrap major 1 compatible.  
-Macro design base: `931870b1feccb91b5122d92b07995e9749566aae`.
+Status: **REPAIRED DESIGN / HOLD-FOR-SOL / SPEC_ONLY**  
+Parent program: Policy Transmission & Pre-Turn Command  
+Organizational owner: `WS:RATES-INFLATION-COMMAND`  
+Implementation carrier: Macro issue #6787  
+Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
+Architecture carrier: Macro PR #6788  
+Protected procedure at repair: `mastermindx-market-intelligence/Mastermind@c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.  
+Macro source observation at repair: `main@16aac3be6a7e8790af0aee75ab1d44ac43eecfab`.
 
-## 1. One useful vertical
+This document replaces the prior contents of this path. The VIX-futures and executable-CI amendments in the same PR remain provenance and must agree with this consolidated contract.
 
-This wave builds one independently useful capability:
+---
 
-> Before a scheduled policy/liquidity event or a monthly market-structure transition, one deterministic machine artifact and one visible Policy Watch composition tell the user what support is present, what is expiring, what event can override it, what is unknown, and what observations confirm or invalidate the proposed transition.
+## 1. Outcome
 
-The wave is successful only when this journey works with current official sources and current Macro inputs:
+Before a macro turn becomes obvious in a retrospective regime label, a user can open Policy Watch and answer:
+
+1. What official Fed, Treasury and TreasuryDirect events or liquidity operations are next?
+2. Which actor appearance is merely scheduled, which is actually occurring, and what physical location—if any—is officially supported now?
+3. Is monthly market support building, stable, pinned, rolling off, replaced, contradicted, or overwhelmed by a catalyst?
+4. Are the relevant futures mechanics a quarterly equity-index/Treasury roll, a weekly VX expiry, a standard monthly VX settlement, or not applicable?
+5. What Treasury/TGA, broad-market flow, month-end duration, rebalance, volatility, breadth and credit evidence confirms or invalidates the proposed transition?
+6. Which facts are stale, unavailable, conflicting or corrected?
+7. Why is the read context and decision support rather than a hidden buy/sell instruction?
+
+The same machine-readable `policy_turn_clock.v1` payload feeds Policy Watch and at least one direct machine consumer. HTML is never the machine API.
+
+The end state is not a calendar card. It is a correction-safe transition diagnosis:
 
 ```text
-official source observations
-+ canonical event/OPEX/options/rebalance/TGA owners
-+ quarterly futures-roll context
-              |
-              v
-      policy_turn_clock.v1
-              |
-       +------+-------+
-       |              |
-Policy Watch UI   machine consumer
-       |
-prospective receipt frozen before a real event/window
+support formation
+→ support stability / pinning
+→ expiration / rolloff
+→ replacement or failure to replace
+→ month-end / Treasury / futures / catalyst override
+→ confirmation, contradiction or unknown
 ```
 
-The vertical is deterministic and useful without any LLM. It is display/context authority only. It never ranks, gates, sizes or originates a trade.
+## 2. Empirical and authority law
 
-## 2. Scope and path ceiling
+The Chairman’s observed early-month/pre-OPEX rally and post-OPEX/late-month volatility pattern is treated as a conditional compound clock, not a universal seasonal trade.
 
-### 2.1 Source and computation paths
+- Long-gamma/pin inventory may damp movement into expiration.
+- Short-gamma inventory may amplify movement and its expiration may stabilize the tape.
+- Replacement inventory may rebuild support after expiration or may remain unknown.
+- Broad ETF flows, systematic re-risking, Treasury/TGA movement, index/pension flows, bond-index extension, futures rolls and macro releases can reinforce or contradict one another.
+- Standard monthly VX settlement occurs every month; major equity-index and Treasury futures rolls are quarterly.
+- Calendar proximity alone does not establish dealer sign, flow direction, realized volatility, equity direction or actor intent.
 
-The implementation may create or modify only these source paths unless a same-carrier Sol ruling changes the ceiling before `START`:
+Every W1 payload publishes:
+
+```json
+{
+  "can_rank": false,
+  "can_gate": false,
+  "can_size": false,
+  "can_trade": false
+}
+```
+
+No W1 state may enter Prophet, portfolio sizing, risk limits, orders, alerts that imply action, or trade origination. A later promotion requires point-in-time replay, prospective evidence, a separate Sol/Chairman authority decision and the existing governed promotion path.
+
+## 3. Capability ledger at repaired design
+
+| Capability | State | W1 implication |
+|---|---|---|
+| Canonical upcoming U.S. event calendar | `PROVEN_LIVE` as existing context owner | extend/consume, never replace |
+| OPEX calendar and phase | `PROVEN_LIVE` | consume exact phase and clocks |
+| Options surface / OPEX risk | built with real history and explicit caveats | consume availability, OI timing and dealer-sign passport |
+| Rebalance calendar / Rebalance Pulse | built context owners | scheduled eligibility and observed pulse remain separate |
+| Treasury Watch / TGA / net liquidity | existing canonical owner | consume mechanics and freshness; never infer rescue intent |
+| Broad ETF flow proxy | forward-accruing, T+1, display-only | use as lagged context, not intraday cash flow |
+| Standard monthly VX M1–M6 curve | forward-accruing, shallow | use current context; no deep historical efficacy claim |
+| RIC F3 yield momentum | `BUILT_NOT_PROVEN`, PR #6721 | do not rebuild; consume only after accepted availability |
+| Policy turn clock | `NOT_BUILT` | W1 target |
+| Prospective policy-turn evidence | `NOT_BUILT` | nightly-only receipt begins in W1 |
+| Monthly transition evidence lab | `SPEC_ONLY`, issue #6794 | dependency-gated; no outcome computation in W1 |
+
+## 4. Canonical owners and no-rebuild boundaries
+
+W1 composes these owners:
+
+```text
+engine/event_calendar.py
+engine/event_window.py
+engine/opex.py
+engine/options_surface.py
+engine/opex_risk.py
+engine/rebalance_calendar.py
+engine/rebalance_pulse.py
+engine/etf_flows.py
+engine/treasury_watch.py
+engine/ledger_lane.py
+collectors/_first_seen_store.py
+collectors/cboe_vix_futures.py
+data/flows/broad_flow_proxy.parquet
+data/cboe/vix_futures.parquet
+data/cboe/vix_curve.parquet
+data/market_structure/latest.json
+data/regime/latest.json
+site/vol/regime.json
+```
+
+W1 may not create another:
+
+- event or release truth store;
+- OPEX or options surface;
+- TGA or Treasury-liquidity owner;
+- broad ETF flow collector;
+- VIX futures collector/store;
+- market-state or volatility engine;
+- lifecycle, queue, scheduler, lock service, retry ledger or publisher plane;
+- CI planner, logical-job registry or trusted-executor plane;
+- score, recommendation or trade authority.
+
+Unconditional no-edit paths:
+
+```text
+engine/yield_momentum.py
+engine/rates_inflation_command.py
+scripts/build_rates_command.py
+agentos/workstreams/WS-RATES-INFLATION-COMMAND.md
+collectors/cboe_vix_futures.py
+```
+
+`.github/ci/legacy-jobs.yml` is conditionally shared. No W1 source effect may begin until a fresh census proves every active owner of that path is released or a later Sol ruling provides a collision-free composition. Current review found open PR references beyond #6721, including #6791, #6706, #6651, #6625, #6514, #6389 and #6296. START-time GitHub truth, not this historical list, controls.
+
+## 5. Exact expected implementation surface
+
+### New source files
 
 ```text
 collectors/policy_event_clock.py
 engine/futures_roll_calendar.py
 engine/policy_turn_clock.py
-engine/event_calendar.py
 scripts/build_policy_turn_clock.py
-scripts/build_policy_watch.py
 templates/partials/_policy_turn_clock.html.j2
-templates/policy_watch.html.j2
 tests/test_policy_event_clock.py
 tests/test_futures_roll_calendar.py
 tests/test_policy_turn_clock.py
 tests/test_build_policy_turn_clock.py
+```
+
+### Existing files modified
+
+```text
+engine/event_calendar.py
+scripts/build_policy_watch.py
+templates/policy_watch.html.j2
 tests/test_policy_watch_ui.py
 config/dag.yml
 .github/workflows/whitehouse-sentinel.yml
+scripts/ci/daily_engine_regional_desk_builders.sh
 .github/workflows/ci.yml
+.github/ci/legacy-jobs.yml
 ```
 
-Generated or evidence paths owned by this wave:
+`tests/test_dag_conformance.py` may enter only when current source proves an exact expectation must change. The worker must declare it before edit.
+
+### Generated/evidence outputs
 
 ```text
 data/policy_events/official_events.parquet
@@ -69,114 +171,53 @@ site/policy_watch.html
 mockups/refs/policy-turn-clock/**
 ```
 
-Generated artifacts are not hand-edited. A worker may add one `.gitkeep` only when the repository’s existing tracked-directory convention requires it; that addition must be declared before commit and remain inside the same evidence directory.
+Generated outputs are never hand-edited.
 
-### 2.2 Protected/no-edit paths
+## 6. Official evidence contract
 
-This operation must not edit:
+### 6.1 Collection sources
 
-```text
-engine/yield_momentum.py
-engine/rates_inflation_command.py
-scripts/build_rates_command.py
-.github/ci/legacy-jobs.yml
-agentos/workstreams/WS-RATES-INFLATION-COMMAND.md
-```
+W1 normalizes bounded official-public observations from:
 
-The first four are bound by RIC F3 PR #6721 and its current CI-manifest collision with PR #6658. The workstream record is separately owned by open PR #6593. Any discovered need to touch a protected path is `DECISION_REQUEST / PATH_CEILING`, not permission to widen.
+- Federal Reserve Board calendar and event detail pages;
+- U.S. Treasury press release/event surfaces;
+- TreasuryDirect buyback index, tentative schedule, linked preliminary/final/results XML and published XSD;
+- existing canonical scheduled-event and Treasury auction owners where already available.
 
-### 2.3 Explicit non-goals
+The collector does not scrape social media, infer private schedules, infer travel from photographs, or use the Treasury auction endpoint as a buyback source.
 
-This wave does not build:
+### 6.2 Evidence row schema
 
-- yield-cause decomposition;
-- cross-asset contradiction resolution;
-- model-generated speech interpretation;
-- regional-Fed, BOJ/MOF, White House, State, Energy or Iran source breadth beyond records already consumed through existing canonical owners;
-- a private-location inference system;
-- a new event database, scheduler, queue, watcher, lifecycle or notification transport;
-- a new options, market-data, release, TGA, rebalancing or futures-price store;
-- a universal turn-of-month or post-OPEX directional signal;
-- Prophet integration, portfolio ranking, entry timing, sizing or execution.
-
-Regional and international source breadth is PTC-W2. Yield/cross-asset work is PTC-W3 and remains gated on canonical reconciliation of PR #6721.
-
-## 3. Canonical inputs
-
-### 3.1 Existing owners consumed unchanged
-
-| Input | Canonical owner | W1 use |
-|---|---|---|
-| Upcoming CPI/PPI/NFP/GDP/PCE/FOMC/claims/ISM/OPEX/Treasury auctions | `engine/event_calendar.py` | exact scheduled catalysts |
-| Event collision/window context | `engine/event_window.py` | optional current context; no duplicate statistics |
-| OPEX phase | `engine/opex.py` | `td_to_opex`, `td_since_opex`, `in_opex_week`, quad-cycle context |
-| Dealer surface | `engine/options_surface.py` aggregates | support inventory and replacement-book evidence |
-| OPEX holdability | `engine/opex_risk.py` | pin, concentration, dealer-load and vanna/charm context |
-| Rebalance calendar | `engine/rebalance_calendar.py` | month-/quarter-end, Russell and S&P windows |
-| Rebalance observation | `engine/rebalance_pulse.py` | absorbed/distributed/mixed mechanical volume |
-| TGA/net-liquidity | `engine/treasury_watch.py` and current liquidity artifacts | mechanical liquidity state |
-| Release truth/corrections | existing Macro Release Intelligence | released/revised state when available |
-| Official hourly transport | `.github/workflows/whitehouse-sentinel.yml` | reuse schedule and commit lane; no new scheduler |
-| PIT append contract | `collectors/_first_seen_store.py` | keep-FIRST official-event vintages |
-
-Every consumer carries the owner’s units, clocks, caveats and null semantics. This wave does not normalize away disagreement between owners.
-
-### 3.2 First-wave official sources
-
-The official-source collector is deliberately bounded to sources needed for the first complete journey:
-
-1. **Federal Reserve Board** public calendar and speech/event pages for Board members and the Chair.
-2. **U.S. Treasury** press releases and event/statement pages for the Secretary and named Treasury officials when the official source provides an explicit event, speech or location.
-3. **TreasuryDirect** buyback operation schedule and results in machine-readable XML/CSV when available.
-4. Existing TreasuryDirect upcoming-auction owner through `engine/event_calendar.py`; do not refetch or duplicate its auction truth.
-5. Existing TGA owner through `engine/treasury_watch.py`; do not create a second TGA collector.
-
-A source not in this list appears in `gaps[]` rather than being silently scraped from media. The collector may ingest a source-discovered official canonical URL, but it must not broaden into an unbounded web crawler.
-
-## 4. Official-event evidence contract
-
-### 4.1 Store
-
-Canonical W1 event evidence is accrued at:
-
-```text
-data/policy_events/official_events.parquet
-```
-
-It uses the existing `collectors._first_seen_store.accrue_keep_first` contract. A present-but-unreadable store aborts the append and remains untouched. Writes use the existing atomic sibling/replace discipline.
-
-The immutable evidence identity is:
-
-```text
-(source_key, source_event_id, source_revision)
-```
-
-The first observed bytes for one identity win. A correction or cancellation creates a new `source_revision`; it never replaces the prior row. The current projection selects the latest valid revision by `available_at`, then `observed_at`, then stable digest ordering.
-
-### 4.2 Row schema
-
-Each row contains exactly these logical fields; physical nullable types follow existing parquet conventions:
+Every stored row carries:
 
 ```text
 schema_version              int = 1
 source_key                  string
 source_event_id             string
 source_revision             string
+canonical_semantic_sha256   lowercase hex
 record_kind                 actor_event | treasury_operation
 actor_id                    string | null
 actor_name                  string | null
 actor_role                  string | null
 organization                string
-operation_kind              auction | buyback | cash_management | speech | interview |
-                            meeting | testimony | release | settlement | other
+event_kind                  speech | interview | meeting | testimony | release | other | null
+operation_kind              auction | buyback | cash_management_operation | settlement |
+                            tga_release | tga_build | other | null
+operation_purpose           cash_management | liquidity_support | funding | market_function |
+                            debt_management | other | null
 headline                    string
 summary                     string | null
 scheduled_start             offset-aware ISO timestamp | null
 scheduled_end               offset-aware ISO timestamp | null
-status                      scheduled | active | completed | revised | cancelled | unknown
-location_label              string | null
-location_precision          venue | city | country | unknown
+source_status               scheduled | active | completed | revised | cancelled | unknown
+phase_at_observation        future | active | past | unknown
+event_location_label        string | null
+event_location_precision    venue | city | country | unknown
+attendance_mode             in_person | virtual | hybrid | prerecorded | unknown
+presence_basis              source_explicit | format_and_venue | unsupported
 announced_max_usd_bn        float | null
+offered_usd_bn              float | null
 submitted_usd_bn            float | null
 accepted_usd_bn             float | null
 instrument_scope            string | null
@@ -186,7 +227,6 @@ source_published_at         offset-aware ISO timestamp | null
 observed_at                 offset-aware ISO timestamp
 available_at                offset-aware ISO timestamp
 first_seen                  offset-aware ISO timestamp
-content_sha256              lowercase hex
 supersedes_revision         string | null
 evidence_class              FACT | INFERENCE | PRIOR | THEORY
 rights_class                official_public
@@ -194,265 +234,177 @@ parser_version              string
 null_reason                 string | null
 ```
 
-Money is USD billions. Source-native amounts are converted only when the unit is explicit. An absent amount remains null; it is never coerced to zero.
+All money is USD billions. Inapplicable or unpublished values are null. Maximum, offered, submitted and accepted amounts are never inferred from one another.
 
-### 4.3 Collector status
+### 6.3 Stable identity and silent revisions
 
-`data/policy_events/collector_status.json` is an overwrite status artifact, not an event store. It contains per-source:
+The immutable storage key is:
+
+```text
+(source_key, source_event_id, source_revision, canonical_semantic_sha256)
+```
+
+`source_event_id` identifies the real event/operation independently of page order. `source_revision` uses an explicit source publication/revision identity when available. When the source provides no revision token, derive a stable revision identity from normalized semantic fields plus publication/availability evidence—not from raw HTML bytes.
+
+A reused explicit revision with a different canonical semantic digest produces:
+
+```text
+REVISION_ID_COLLISION
+```
+
+Both receipts survive. The current projection selects the latest valid row by `available_at`, then `observed_at`, then digest, while preserving the conflict. Whitespace, navigation and formatting-only page changes do not create a semantic vintage.
+
+A source may still label an event `scheduled` after its time has passed. `source_status` remains immutable source evidence; `phase_at_observation` and current phase are derived separately from the clock.
+
+### 6.4 Event venue versus actor presence
+
+An event venue is not automatically the actor’s current physical location. A virtual appearance, hybrid broadcast, pre-recorded video, named host venue, or “Watch Live” link may provide event context without proving physical presence.
+
+The actor projection is:
 
 ```json
 {
-  "schema": "policy_event_collector_status.v1",
-  "generated_at": "offset-aware timestamp",
-  "sources": {
-    "fed_board": {
-      "last_attempt_at": "...",
-      "last_success_at": "...",
-      "status": "healthy|partial|failed|never_succeeded",
-      "records_seen": 0,
-      "records_added": 0,
-      "http_status": null,
-      "error_code": null,
-      "error_summary": null
-    }
-  }
+  "actor_id": "...",
+  "current_physical_location": null,
+  "current_location_status": "publicly_confirmed|active_unverified|conflicting|unknown",
+  "last_verified_location": null,
+  "last_verified_at": null,
+  "attendance_mode": "...",
+  "presence_basis": "...",
+  "candidate_receipts": [],
+  "gaps": []
 }
 ```
 
-A quiet fetch with zero new records can be healthy. An HTTP or parser failure is not “no events.”
+`current_physical_location` may be non-null only during the official event window when the source explicitly supports live physical presence. Merely scheduled, virtual, prerecorded, cancelled, ended or ambiguous records leave current physical location unknown. Conflicting simultaneous official receipts remain visible.
 
-### 4.4 Collector interfaces
+## 7. Futures-roll contract
 
-`collectors/policy_event_clock.py` exposes pure parser seams and one bounded I/O entry point:
-
-```python
-@dataclass(frozen=True)
-class CollectionResult:
-    rows_seen: int
-    rows_added: int
-    status: dict[str, object]
-    gaps: tuple[str, ...]
-
-
-def normalize_fed_board_event(
-    raw: Mapping[str, object], *, observed_at: datetime
-) -> dict[str, object] | None: ...
-
-
-def normalize_treasury_event(
-    raw: Mapping[str, object], *, observed_at: datetime
-) -> dict[str, object] | None: ...
-
-
-def normalize_buyback_record(
-    raw: Mapping[str, object], *, observed_at: datetime
-) -> dict[str, object] | None: ...
-
-
-def current_records(
-    rows: Sequence[Mapping[str, object]], *, now: datetime
-) -> list[dict[str, object]]: ...
-
-
-def collect(
-    *, now: datetime, session: requests.Session | None = None,
-    root: Path | None = None
-) -> CollectionResult: ...
-```
-
-All public datetime inputs must be timezone-aware. A naive datetime raises `ValueError` in pure seams and is converted into a typed collector failure at the CLI boundary.
-
-### 4.5 Actor location law
-
-The current actor view is computed, never stored as a second fact:
-
-```python
-def actor_presence(
-    records: Sequence[Mapping[str, object]], *, actor_id: str, now: datetime
-) -> dict[str, object]: ...
-```
-
-Rules:
-
-1. `current_location` is non-null only when a latest valid official record has `scheduled_start <= now <= scheduled_end` and location precision is not `unknown`.
-2. An event without an end time uses a source-kind-specific bounded window declared in code and tests: two hours for a speech/interview/testimony; calendar day only for an explicitly all-day meeting; never indefinite.
-3. After the supported window, move the label to `last_verified_location` and set `current_location_status="unknown"`.
-4. A cancelled event never supports current location.
-5. Multiple overlapping official records produce `current_location_status="conflicting"`, both receipts and a gap; the composer must not pick one silently.
-
-## 5. Futures-roll helper
-
-### 5.1 Ownership boundary
-
-`engine/futures_roll_calendar.py` is a pure schedule/progress helper consumed by the canonical event view. It is not a second event calendar and does not collect futures prices or open interest.
-
-### 5.2 Interfaces
+`engine/futures_roll_calendar.py` is pure date/input arithmetic and exposes:
 
 ```python
 def equity_roll_window(d: date) -> dict[str, object]: ...
-
 def treasury_roll_window(d: date) -> dict[str, object]: ...
-
+def vix_settlement_window(
+    d: date,
+    *,
+    front: Mapping[str, object] | None = None,
+    curve: Mapping[str, object] | None = None,
+    source_asof: date | None = None,
+) -> dict[str, object]: ...
 def snapshot(
-    asof: date, *, live_progress: Mapping[str, object] | None = None
+    asof: date,
+    *,
+    live_progress: Mapping[str, object] | None = None,
+    vix_front: Mapping[str, object] | None = None,
+    vix_curve: Mapping[str, object] | None = None,
+    vix_source_asof: date | None = None,
 ) -> dict[str, object]: ...
 ```
 
-Output:
+Output preserves independent families:
 
 ```json
 {
   "schema": "futures_roll_calendar.v1",
   "as_of": "YYYY-MM-DD",
-  "equity_index": {
-    "status": "not_applicable|scheduled|active|completed|unknown",
-    "lead_contract": "...",
-    "next_contract": "...",
-    "roll_start": "YYYY-MM-DD|null",
-    "expiry": "YYYY-MM-DD|null",
-    "progress": null,
-    "progress_basis": "not_provided|volume|open_interest|both"
-  },
-  "treasury": {"status": "..."},
+  "equity_index": {},
+  "treasury": {},
+  "volatility": {},
+  "gaps": [],
   "authority": {"can_rank": false, "can_gate": false, "can_size": false, "can_trade": false}
 }
 ```
 
-Rules:
+Equity-index and Treasury rolls are quarterly. Calendar windows are `scheduled`; they become `active` only with source-owned current-contract/next-contract volume or open-interest progress. Ordinary months are `not_applicable` for those two families.
 
-- Major equity-index and U.S. Treasury futures rolls are quarterly: March, June, September and December.
-- An ordinary month returns `not_applicable`, not `quiet` and not `unknown`.
-- A quarterly date inside the declared roll window but without live progress is `scheduled`, never `active`.
-- `active` requires valid same-window volume/open-interest progress supplied by an existing owner or explicit input.
-- A contract-symbol mapping is deterministic and tested across year boundaries.
-- Holiday-adjusted expiry uses the repository’s accepted market calendar where available; any fallback is labeled.
+Standard VX settlement is monthly. Weekly front contracts remain distinct from the standard monthly M1. The helper validates the standard Wednesday/SOQ/holiday rule against fresh canonical M1 DTE when available. A disagreement is `VX_EXPIRY_SOURCE_CONFLICT`, not silent preference.
 
-## 6. Canonical event-calendar extension
+The standard curve is rank-based. When former M2 becomes new M1 across settlement, raw M1-to-M1 change is not same-contract repricing. `same_contract_change_available=false` unless an existing owner supplies contract identity. Missing/stale M2 produces `curve_state=unknown`, never flat.
 
-`engine/event_calendar.py` remains the single upcoming-event view. Add:
+VX settlement proximity alone cannot select `VOLATILITY_WINDOW_OPEN` or any direction.
 
-```python
-def policy_turn_events(
-    today: date | None = None,
-    horizon_days: int = 14,
-    *,
-    official_records: Sequence[Mapping[str, object]] | None = None,
-    futures_roll: Mapping[str, object] | None = None,
-) -> list[dict[str, object]]: ...
-```
+## 8. Pure transition composer
 
-The function:
+### 8.1 Interface
 
-1. starts with `us_macro_events(...)` rather than rebuilding its rows;
-2. appends latest valid official actor/Treasury-operation records inside the horizon;
-3. appends futures-roll window rows only when applicable;
-4. deduplicates exact owner-equivalent rows by stable event identity while preserving source disagreement;
-5. sorts by offset-aware scheduled time where available;
-6. marks every row context-only;
-7. leaves existing `us_macro_events`, `high_impact_strip` and current consumers behaviorally unchanged except for backward-compatible fields explicitly tested.
-
-An official record that revises an existing static event may annotate it but cannot silently replace the canonical release owner. Contradictory official records remain two rows plus `conflict_group`.
-
-## 7. Monthly transition composer
-
-### 7.1 Pure interface
-
-`engine/policy_turn_clock.py` contains no network, filesystem, model or ledger I/O:
+`engine/policy_turn_clock.py` performs no network, filesystem, model, ledger or wall-clock I/O beyond the injected aware datetime:
 
 ```python
 def compose(
     *,
     now: datetime,
     events: Sequence[Mapping[str, object]],
+    official_treasury_operations: Sequence[Mapping[str, object]],
     opex: Mapping[str, object] | None,
     opex_risk: Mapping[str, object] | None,
     option_surface: Sequence[Mapping[str, object]] | None,
+    broad_market_flow: Mapping[str, object] | None,
     rebalance_calendar: Mapping[str, object] | None,
     rebalance_pulse: Mapping[str, object] | None,
-    treasury: Mapping[str, object] | None,
+    duration_extension_context: Mapping[str, object] | None,
+    treasury_tga: Mapping[str, object] | None,
     futures_roll: Mapping[str, object] | None,
+    market_confirmation: Mapping[str, object] | None,
     prior_clock: Mapping[str, object] | None = None,
 ) -> dict[str, object]: ...
 ```
 
-`now` must be offset-aware. Input order must not affect output or digest.
+Input order does not affect output. Hidden reads are forbidden.
 
-### 7.2 Output contract
+### 8.2 Decision timezone and semantic identity
+
+Normalize `now` once to `America/New_York` for the U.S. decision date/session. Preserve source-native timestamps on evidence rows. Equivalent instants represented with different offsets must produce identical `as_of`, phase, countdown, state and semantic digest.
+
+Required top-level fields:
 
 ```json
 {
   "schema": "policy_turn_clock.v1",
+  "method_version": "policy_turn_clock.v1.0.0",
+  "input_digest": "lowercase sha256",
+  "source_versions": {},
+  "source_watermarks": {},
   "as_of": "YYYY-MM-DD",
   "generated_at": "offset-aware timestamp",
   "evidence_cutoff": "offset-aware timestamp",
-  "state": "SUPPORT_BUILDING|SUPPORT_STABLE|PINNED|SUPPORT_ROLLOFF_IMMINENT|VOLATILITY_WINDOW_OPEN|MONTH_END_REBALANCE_DOMINANT|CATALYST_DOMINANT|MIXED|UNKNOWN",
-  "state_basis": [
-    {"predicate": "string", "value": true, "source": "owner", "as_of": "..."}
-  ],
-  "change_from_prior": {
-    "changed": true,
-    "prior_state": "...|null",
-    "changed_axes": []
-  },
+  "state": "...",
+  "state_basis": [],
+  "change_from_prior": {},
   "calendar": {},
   "actor_clock": {},
   "treasury_liquidity": {},
   "option_support": {},
   "futures_roll": {},
   "rebalance": {},
+  "market_confirmation": {},
   "catalysts": [],
   "confirmation": [],
   "invalidation": [],
+  "disagreements": [],
   "gaps": [],
   "freshness": {},
   "authority": {"can_rank": false, "can_gate": false, "can_size": false, "can_trade": false}
 }
 ```
 
-No score, probability, target, size, order, recommendation or hidden scalar authority is permitted.
+`generated_at` is excluded from `input_digest` and semantic change detection. Identical semantic inputs with a later wall clock do not create `change_from_prior.changed=true` or a new receipt. A method-version mismatch refuses direct prior-state comparison unless an explicit bridge is supplied. Correction rows link to the original method/input/cutoff identity.
 
-### 7.3 Independent axes
+### 8.3 Independent axes
 
-The composer first derives independent states:
-
-#### Calendar
-
-- OPEX phase and business-day distance;
-- post-OPEX window;
-- month-/quarter-end window;
-- applicable futures-roll windows;
-- catalyst collision count and next high-impact event.
-
-#### Option support
+#### Options support
 
 ```text
-status:
-  stabilizing
-  destabilizing
-  transition
-  unavailable
-  stale
-  ambiguous
+stabilizing | destabilizing | transition | unavailable | stale | ambiguous
 ```
 
-Inputs include current gamma regime, pin proximity, front-seven-day concentration, dealer-load magnitude, vanna relief/drag and replacement-book evidence. The dealer-sign passport and vanna symmetry caveat are always present.
-
-#### Replacement book
-
-Replacement evidence is derived only when the same canonical option-surface owner supplies comparable prior and current observations with availability clocks. Candidate fields:
-
-- change in `fm_oi_frac`;
-- change in `fm_gex_bn` and `bk_gex_bn`;
-- post-expiry front-week reset;
-- freshness and root-class match.
-
-Output:
+Carry OI timing, dealer-sign assumption, root class, source as-of and stale reason. Replacement book is:
 
 ```text
 building | present | weak | absent | unknown | incomparable
 ```
 
-Missing surface data produces `unknown`, never “no replacement.”
+Only comparable current/prior rows from the same canonical owner/root class can establish replacement. Missing evidence is unknown.
 
 #### Treasury liquidity
 
@@ -460,79 +412,147 @@ Missing surface data produces `unknown`, never “no replacement.”
 supportive | draining | mixed | neutral | unavailable | stale
 ```
 
-The state exposes TGA episode, net-liquidity context, upcoming/observed buyback and auction/settlement details separately. Announcement maximum and accepted amount never share one field.
+Compose TGA/net-liquidity mechanics with official Treasury operations. Buybacks/auctions/settlements retain mechanism, purpose, clocks and separate amounts. A TGA decline is mechanically supportive all else equal; it is not evidence of deliberate equity rescue.
 
-#### Rebalance
+#### Broad-market flow
 
-Uses calendar eligibility and `rebalance_pulse.class`. A calendar date without an observed pulse is `scheduled_unconfirmed`; it cannot become dominant.
+Consume the canonical SPY/QQQ/IWM/RSP/DIA creation/redemption proxy with its true publication lag, coverage depth, jump guard and display-only authority. Do not describe it as intraday cash or a complete institutional-flow measure.
 
-#### Catalyst
+#### Rebalance and duration
 
-High-impact event dominance requires a valid scheduled event inside 24 hours or an active/released official event plus at least one mechanism-specific collision (OPEX, auction/settlement, futures roll, or event-window evidence). Event proximity alone adds context but cannot change position authority.
+Preserve:
 
-### 7.4 State precedence
+```text
+scheduled_unconfirmed
+pressure_estimate_context
+observed_mechanical_pulse
+```
 
-State is the glance-level summary over axes. Apply this deterministic order:
+Only a fresh non-quiet Rebalance Pulse may support `MONTH_END_REBALANCE_DOMINANT`. A relative-performance estimate remains context. Bond-index extension is an asset-specific duration-calendar/measured-prior context; it cannot establish current equity flow or direction.
 
-1. **`UNKNOWN`** when no valid current calendar plus at least two of the three core mechanism families—options, Treasury liquidity, rebalance/catalyst—are available, or when a required current timestamp is stale beyond its owner budget.
-2. **`CATALYST_DOMINANT`** when a valid high-impact event is inside 24 hours and a collision/override predicate is true.
-3. **`MONTH_END_REBALANCE_DOMINANT`** when a valid late-month/quarter-end window and an observed non-quiet rebalance pulse are present, unless a catalyst is dominant.
-4. **`VOLATILITY_WINDOW_OPEN`** only when stabilizing support was previously observed, has rolled off, and at least one independent realized confirmation is supplied by existing owners. In W1, when the required independent confirmation is unavailable, stop at `SUPPORT_ROLLOFF_IMMINENT`; never invent a volatility-open state from the date.
-5. **`SUPPORT_ROLLOFF_IMMINENT`** when expiry is at most two business days away or occurred within one business day, stabilizing/pinning inventory is present or recently observed, and replacement-book evidence is weak/unknown.
-6. **`PINNED`** when long-gamma context, valid pin proximity and compressed-range context are all present, with no higher-precedence override.
-7. **`SUPPORT_BUILDING`** when replacement-book evidence is `building` and Treasury/rebalance/catalyst axes do not contradict it.
-8. **`SUPPORT_STABLE`** when stabilizing support is current and no higher-precedence override exists.
-9. **`MIXED`** otherwise.
+#### Market confirmation
 
-Every selected state must list exact predicates in `state_basis`. A worker may refine threshold names only by preserving these semantic gates and recording the numeric values in code/tests; no unreviewed weighted score is allowed.
+Consume existing current volatility, breadth, credit and market-structure owners with source watermarks. `VOLATILITY_WINDOW_OPEN` requires at least one fresh independent confirmation beyond calendar, OPEX and VX settlement. Stale confirmation is unavailable, not neutral.
 
-### 7.5 Confirmation and invalidation
+### 8.4 Closed top-level state vocabulary
 
-The composer emits observable conditions, not advice. W1’s deterministic library includes:
+```text
+SUPPORT_BUILDING
+SUPPORT_STABLE
+PINNED
+SUPPORT_ROLLOFF_IMMINENT
+VOLATILITY_WINDOW_OPEN
+MONTH_END_REBALANCE_DOMINANT
+CATALYST_DOMINANT
+MIXED
+UNKNOWN
+```
 
-- support confirmation: replacement book builds, stable long-gamma/pin context, supportive TGA/liquidity, absorbed rebalance pulse, catalyst passes without adverse realized response;
-- rolloff confirmation: support inventory falls after expiry plus existing owner reports volatility/breadth/credit deterioration;
-- invalidation of rolloff: replacement book rebuilds, short-gamma expiration removes destabilizing inventory, or realized tape remains absorbed;
-- catalyst invalidation: cancellation/revision, event passes without expected mechanism, or owner freshness fails;
-- month-end invalidation: no observed mechanical pulse or pulse classified quiet.
+### 8.5 Deterministic precedence
 
-The text is produced from a frozen bilingual phrase registry; no LLM is needed.
+1. `UNKNOWN` when the current calendar is unavailable or fewer than two applicable core mechanism families are fresh enough to interpret safely.
+2. `CATALYST_DOMINANT` when a valid high-impact event/operation is inside 24 hours or active and at least one mechanism-specific collision is present.
+3. `MONTH_END_REBALANCE_DOMINANT` only with a valid late-month/quarter-end window and a fresh observed non-quiet mechanical pulse, absent catalyst dominance.
+4. `VOLATILITY_WINDOW_OPEN` only when previously observed stabilizing support has rolled off and a fresh independent volatility/breadth/credit/market-structure confirmation is present.
+5. `SUPPORT_ROLLOFF_IMMINENT` when expiry is near/recent, prior stabilizing support is valid and replacement is weak/unknown, without independent confirmation sufficient for an open volatility window.
+6. `PINNED` when long-gamma context, valid pin proximity and compressed-range context are all fresh.
+7. `SUPPORT_BUILDING` only when at least two independent applicable support mechanisms agree—such as replacement building, supportive broad ETF flows, supportive Treasury/TGA, current systematic re-risking, or stable/improving breadth/credit—and no higher-precedence contradiction exists. Literal K-of-N only; no weights.
+8. `SUPPORT_STABLE` when current stabilizing support is fresh and no higher-precedence override exists.
+9. `MIXED` otherwise.
 
-## 8. Builder and evidence ledger
+Every state lists exact predicates, values, sources, cutoffs and applicable counts in `state_basis`. No hidden scalar score is permitted.
 
-### 8.1 Builder
+## 9. Builder and runtime ownership
 
-`scripts/build_policy_turn_clock.py` owns bounded I/O and exposes:
+### 9.1 Builder modes
+
+`scripts/build_policy_turn_clock.py` exposes:
 
 ```python
 def gather_inputs(*, root: Path, now: datetime) -> dict[str, object]: ...
-
 def build_payload(*, root: Path, now: datetime) -> dict[str, object]: ...
-
 def write_payload(payload: Mapping[str, object], *, root: Path) -> Path: ...
-
+def append_forward_receipt(payload: Mapping[str, object], *, root: Path) -> int: ...
 def main(argv: Sequence[str] | None = None) -> int: ...
 ```
 
-It reads the current official-event store/status and canonical owner artifacts. It never performs network I/O. Collector and builder remain separately testable.
-
-The artifact is written atomically to:
+CLI modes:
 
 ```text
+--mode publish-current
+--mode ledger-only
+--mode verify
+```
+
+The builder never performs network I/O.
+
+### 9.2 Hourly single writer / current publisher
+
+Reuse `.github/workflows/whitehouse-sentinel.yml`.
+
+Hourly owns:
+
+```text
+data/policy_events/official_events.parquet
+data/policy_events/collector_status.json
 site/policy_turn_clock.json
 ```
 
-The JSON is deterministic for fixed inputs except `generated_at`; tests inject the clock. The builder always writes a schema-shaped artifact, including `UNKNOWN`, rather than disappearing.
+Sequence:
 
-### 8.2 Forward receipt
+```text
+collect official evidence
+→ persist semantic changes/status transitions only
+→ build current clock with COLLECT_LANE=hourly
+→ no-regress compare against current published artifact
+→ validate
+→ publish owned event/status/current JSON paths
+```
 
-On the existing nightly ledger lane only, the builder appends one keep-FIRST prospective receipt when:
+A healthy quiet rerun with no semantic source/status/input change preserves bytes and creates no commit. `last_attempt_at` may appear in ephemeral logs but must not force a tracked status rewrite. A real failure, recovery, parser-shape change, stale transition, correction or source watermark advance publishes a new status/current artifact.
 
-- the glance state changes materially; or
-- a high-impact event enters 24 hours; or
-- OPEX enters T−2; or
-- post-OPEX enters T+1; or
-- a month-/quarter-end observed pulse first appears.
+### 9.3 Policy Watch consumption
+
+`scripts/build_policy_watch.py` and the template provide the static shell and fallback. The dynamic turn-clock component loads the same-origin `policy_turn_clock.json` at runtime so nightly HTML rebuilds cannot embed an older clock than the machine artifact. The page has a keyboard-accessible noscript/unavailable state and does not silently reuse stale embedded data.
+
+### 9.4 Nightly ledger-only advancer
+
+The real existing nightly owner is:
+
+```text
+scripts/ci/daily_engine_regional_desk_builders.sh
+```
+
+Immediately before its existing Policy Watch invocation, run:
+
+```text
+python -m scripts.build_policy_turn_clock --mode ledger-only
+```
+
+under the existing `COLLECT_LANE=nightly` environment.
+
+Ledger-only mode:
+
+- does not collect official evidence;
+- does not write/stage `site/policy_turn_clock.json` or Policy Watch HTML;
+- reads current official evidence and fresh after-close canonical market inputs;
+- appends at most one keep-FIRST prospective receipt;
+- reruns idempotently.
+
+`config/dag.yml` mirrors the actual hourly and nightly execution paths; it is not an executor.
+
+### 9.5 No-regress publication
+
+Before hourly publication, compare incoming `method_version`, `input_digest`, source watermarks and `evidence_cutoff` with the currently published artifact after a fresh source read.
+
+- older cutoff/watermarks: refuse current-artifact overwrite;
+- equal semantic identity: no-op;
+- newer valid identity: publish;
+- source failure/staleness transition: publish a truthful degraded status while preserving last-good evidence and watermark.
+
+Because nightly is ledger-only, it cannot regress the current machine/UI artifact. No cross-lane lock service is introduced.
+
+## 10. Prospective ledger
 
 Path:
 
@@ -540,168 +560,140 @@ Path:
 data/policy_turn_clock/forward_log.jsonl
 ```
 
-Identity:
+Advance gate:
 
-```text
-(as_of, trigger_kind, trigger_id, method_version)
+```python
+engine.ledger_lane.nightly_advance_enabled()
 ```
 
-The original receipt is immutable. A correction can create a linked correction row but cannot rewrite the original evidence cutoff. W1 records rulers but does not claim a mature track record:
+Canonical environment is `COLLECT_LANE=nightly`; `US_LANE=nightly` is a legacy alias. Hourly never appends.
 
-- warning lead time to realized transition;
-- realized 1d/5d volatility versus trailing regime;
-- max adverse/favorable path over 5d and 10d;
-- mechanism correctness;
-- state persistence;
-- false alarm/miss classification when maturity arrives.
-
-Backfilled descriptive studies and prospective receipts never share one badge.
-
-## 9. Policy Watch product composition
-
-### 9.1 Builder integration
-
-`scripts/build_policy_watch.py` reads `site/policy_turn_clock.json` defensively and passes `turn_clock` to the template. It does not recompute or reinterpret the contract.
-
-### 9.2 Partial
-
-`templates/partials/_policy_turn_clock.html.j2` owns one focused component. `templates/policy_watch.html.j2` includes it near the top decision layer.
-
-### 9.3 Required glance hierarchy
-
-1. **Now** — state, what changed, and one plain-language mechanism sentence.
-2. **Support inventory** — present, building, expiring or unknown; includes OPEX/futures/month-end phase.
-3. **Next 72 hours** — at most five highest-information official events/operations with exact ET time, status, actor, amount where applicable and source freshness.
-4. **Confirm / invalidate** — at most three concise conditions each.
-5. **Coverage** — stale/unavailable/conflicting source chips; always visible when nonempty.
-6. **Evidence detail** — expandable receipts, source links, exact clocks, dealer-sign/OI caveats and raw axes.
-
-The UI must not show “bullish,” “bearish,” “buy,” “sell,” position sizes or a master score. `SUPPORT_BUILDING` describes observed market structure, not a recommendation.
-
-### 9.4 Responsive and bilingual requirements
-
-- 1440, 768 and 390 CSS-pixel viewports;
-- dark and light themes;
-- English and Simplified Chinese;
-- no clipped event times, amounts or source-status labels;
-- state meaning cannot rely on color alone;
-- Chinese market-direction colors follow the existing house convention where direction is actually displayed;
-- unknown/stale/cancelled/conflicting states get first-class layouts, not empty gaps;
-- evidence detail remains keyboard-accessible.
-
-Browser receipts live under `mockups/refs/policy-turn-clock/` and are evidence only, not a new product asset plane.
-
-## 10. Existing scheduler and workflow integration
-
-### 10.1 No new scheduler
-
-Reuse `.github/workflows/whitehouse-sentinel.yml` for the official-source poll. The existing hourly cron is best-effort, not exact real-time.
-
-The workflow sequence is:
+Receipt identity:
 
 ```text
-collect official policy-event records
-→ build policy_turn_clock.json
-→ rebuild policy_watch.html
-→ run focused validation
-→ commit only changed owned data/site/status paths
+(as_of, trigger_kind, trigger_id, method_version, input_digest)
 ```
 
-A quiet hour creates no commit. A collector failure updates the status artifact and rebuilds the UI to show the gap without erasing last good event evidence.
+Eligible first-seen triggers:
 
-Nightly remains the sole advancer of the forward ledger. The hourly lane must set/retain the existing environment that makes `engine.ledger_lane.nightly_advance_enabled()` false.
+- material semantic state change;
+- high-impact event enters 24 hours;
+- OPEX enters T−2;
+- post-OPEX enters T+1;
+- observed month/quarter-end pulse first appears;
+- standard VX settlement enters T−2 or rank-roll boundary first appears.
 
-### 10.2 DAG and CI
+The receipt freezes method/input/source identity, evidence cutoff, state/basis, all axes, gaps, expected mechanism, confirmation/invalidation and predeclared outcome horizons. Corrections append linked rows and never rewrite the original.
 
-`config/dag.yml` registers collector, builder and consumer in the existing pipeline vocabulary. `.github/workflows/ci.yml` adds the exact focused tests/paths without editing `.github/ci/legacy-jobs.yml`.
+## 11. CI ownership
 
-The worker must run the repository’s DAG conformance tests and ensure the live workflow and DAG declaration agree. No new required check or merge authority is created.
+After every active owner of `.github/ci/legacy-jobs.yml` is released, W1 may make the smallest additive existing-job composition:
 
-## 11. Failure behavior
+- extend one compatible policy/front-facing logical job;
+- name all four new test suites in executable pytest command(s);
+- include each suite and exact source subject in the job path closure;
+- add matching `.github/workflows/ci.yml` triggers;
+- include `scripts/ci/daily_engine_regional_desk_builders.sh` and workflow/DAG subjects in the appropriate conformance closure;
+- run the selected logical job through the canonical pack runner;
+- preserve unrelated current-main lines;
+- do not add a job, workflow, runner, planner, permission, trusted-executor, secret, concurrency or merge-control plane;
+- do not use `config/unrun_test_baseline.json` as an escape hatch.
 
-The following behaviors are binding:
+START-time collision census must inspect all open PRs and active branches/worktrees. A list frozen in this document is not sufficient.
 
-| Failure | Required result |
-|---|---|
-| Official page unavailable | preserve prior evidence, mark source failed/stale, expose gap |
-| Markup changed | typed parser failure; never reinterpret random text |
-| Duplicate publication | zero new evidence rows, stable current view |
-| Revision/cancellation | append new vintage; current view projects latest valid revision |
-| Actor role ambiguity | record null/ambiguous role and gap; no guessed identity |
-| Location window expired | current unknown, last verified retained |
-| Overlapping locations | conflicting, both receipts retained |
-| Naive datetime/DST ambiguity | fail pure seam; typed collector error at CLI |
-| Event passed but source still scheduled | status conflict exposed; no silent completion |
-| Buyback max confused with accepted amount | contract/test failure |
-| TGA stale | Treasury axis stale, not neutral |
-| Ordinary month | futures roll `not_applicable` |
-| Quarterly roll without progress | `scheduled`, not `active` |
-| Options surface absent | option axis unavailable; no inferred support absence |
-| Wrong root class or incomparable observations | replacement book `incomparable` |
-| Dealer-sign caveat missing | contract/test failure |
-| Positive support expires without confirmation | rolloff imminent, not volatility-open |
-| Short-gamma expires | no automatic volatility-rise conclusion |
-| Rebalance date without observed pulse | scheduled-unconfirmed, not dominant |
-| Contradictory axes | `MIXED` plus disagreement list |
-| Fixed-input rerun changes semantics | determinism test failure |
-| Output stale | stale badge and gap; never current-looking |
-| Score/rank/gate/size/trade field appears | static/contract test failure |
-| Path collision | stop before edit with exact competing owner |
+## 12. User experience
 
-## 12. Acceptance tests
+Policy Watch hierarchy:
 
-### 12.1 Hermetic tests
+1. **Now** — state, what changed and one mechanism sentence.
+2. **Support inventory** — option support/replacement and evidence quality.
+3. **Flow and liquidity** — broad ETF lagged flow, Treasury/TGA, observed rebalance and duration context.
+4. **Futures clocks** — quarterly equity/Treasury and weekly/standard VX kept separate.
+5. **Next 72 hours / 14 days** — at most five highest-information official events/operations with exact ET time, status, amount fields and freshness.
+6. **Why this can turn** — mechanism chain, not prediction prose.
+7. **Confirm / invalidate** — at most three concise observable conditions each.
+8. **Coverage** — stale, unavailable, conflicting and corrected evidence.
+9. **Evidence detail** — source links, exact clocks, input digest, OI/dealer caveats and raw axes.
 
-Required RED-before-GREEN cases:
+Required states: fresh, quiet, partial, stale, failed, recovered, cancelled, revised, conflicting, virtual/prerecorded, unknown and source-shape-changed.
 
-1. Fed event normalization with exact timezone and location expiry.
-2. Treasury event and buyback normalization separating announced, submitted and accepted amounts.
-3. Duplicate, revised and cancelled event vintages using keep-FIRST storage.
-4. Present-but-unreadable event store refuses replacement.
-5. Non-quarterly futures month returns `not_applicable`.
-6. Quarterly scheduled roll without progress never reports active.
-7. Year-boundary contract mapping and holiday/expiry behavior.
-8. Canonical event view composes existing rows plus official/roll rows without replacing owner truth.
-9. OPEX calendar alone cannot produce support or direction.
-10. Positive-gamma/pin support near expiry plus weak/unknown replacement produces `SUPPORT_ROLLOFF_IMMINENT`.
-11. Short-gamma expiration refuses a volatility-rise assertion.
-12. `VOLATILITY_WINDOW_OPEN` requires independent realized confirmation.
-13. Observed month-end mechanical pulse can dominate; mere calendar eligibility cannot.
-14. High-impact event collision produces `CATALYST_DOMINANT`.
-15. Missing core evidence produces `UNKNOWN` with exact gaps.
-16. Input-order invariance and fixed-clock determinism.
-17. Authority fields remain all false and forbidden fields are absent.
-18. Builder writes schema-shaped fresh, partial, stale and unknown artifacts.
-19. Forward receipt keep-FIRST and correction lineage.
-20. UI renders fresh, partial, stale, cancelled, conflicting and unknown states in EN/ZH.
+Required viewports/themes/languages: 1440, 768 and 390 CSS pixels; dark/light; English/Simplified Chinese. State meaning cannot rely on color.
 
-### 12.2 Static boundaries
+## 13. Failure behavior
 
-Tests or repository scans must prove:
+Explicitly represent:
 
-- no import from `policy_turn_clock` into ranking, risk sizing, conditions, Prophet or order paths;
-- no new scheduler, lifecycle, queue, event database or model call;
-- no edit to protected paths;
-- existing event/OPEX/options/rebalance/TGA owner semantics remain intact;
-- generated JSON is the machine contract; templates do not become a second semantic implementation.
+```text
+SOURCE_UNAVAILABLE
+SOURCE_SHAPE_CHANGED
+REVISION_ID_COLLISION
+EVENT_IDENTITY_AMBIGUOUS
+ACTOR_PRESENCE_UNSUPPORTED
+ACTOR_LOCATION_CONFLICT
+TIMEZONE_OR_DST_INVALID
+MARKET_CALENDAR_UNAVAILABLE
+TREASURY_AMOUNT_INCOMPLETE
+BUYBACK_PURPOSE_UNKNOWN
+OPTIONS_SURFACE_UNAVAILABLE
+OPTIONS_SURFACE_STALE
+DEALER_SIGN_AMBIGUOUS
+REPLACEMENT_INCOMPARABLE
+BROAD_FLOW_STALE
+BROAD_FLOW_SHORT_HISTORY
+REBALANCE_SCHEDULED_UNCONFIRMED
+VX_EXPIRY_SOURCE_CONFLICT
+VX_CURVE_STALE
+VX_RANK_ROLL_BOUNDARY
+MARKET_CONFIRMATION_UNAVAILABLE
+METHOD_VERSION_MISMATCH
+INPUT_DIGEST_MISMATCH
+NO_REGRESS_REFUSAL
+LEDGER_LANE_REFUSED
+PATH_COLLISION
+```
 
-### 12.3 Real proof
+One failed axis does not erase healthy axes, but required missing/stale evidence may force top-level `UNKNOWN`. No failure becomes zero, false, quiet, current or no-event.
 
-Acceptance requires all of:
+## 14. Acceptance
 
-1. Real official Fed and Treasury source run with source receipts and timestamps.
-2. Real TreasuryDirect buyback schedule/results record if a current operation is available; otherwise a real official schedule plus a typed absence of results.
-3. Real current Macro owner inputs through the builder.
-4. `site/policy_turn_clock.json` digest and inspection.
-5. Policy Watch browser proof at 1440/768/390, dark/light, EN/ZH.
-6. At least fresh, partial/stale and unknown/cancelled/conflicting states demonstrated with real or source-faithful fixtures.
-7. One real machine consumer reads and validates the JSON without scraping HTML.
-8. One prospective receipt frozen before a real upcoming event or transition window.
-9. Hosted CI on the immutable PR head.
-10. Independent adversarial review and explicit Sol acceptance.
+Minimum source/contract proof:
 
-A manual one-off source fetch, green CI, merged code or a screenshot alone is not production proof.
+1. RED-before-GREEN tests for every schema, time, correction, null and failure family.
+2. Real official Fed/Treasury/TreasuryDirect source run with source/shape/freshness receipts.
+3. Buyback preliminary/final/extended/cancelled/results fixtures preserving purpose and separate amounts.
+4. Virtual, prerecorded, in-person, conflicting and ended actor-presence fixtures.
+5. Same-instant UTC/ET and DST/session invariance.
+6. Weekly VX vs standard monthly VX and rank-roll suppression.
+7. Quarterly roll scheduled vs active-with-progress distinction.
+8. OPEX long/short gamma and replacement unknown/incomparable behavior.
+9. Explicit market-confirmation requirement for `VOLATILITY_WINDOW_OPEN`.
+10. Broad-flow lag/short-history disclosure and no option-replacement-as-cash shortcut.
+11. Month-end scheduled/estimated/observed separation and asset-specific duration context.
+12. Quiet healthy hourly rerun produces byte-identical tracked outputs and no commit candidate.
+13. Real source failure/recovery transition updates status without erasing last-good evidence.
+14. Older cutoff cannot overwrite a newer current artifact.
+15. Hourly append is refused; nightly ledger-only appends exactly once and reruns idempotently.
+16. All new suites execute through the canonical logical job and pack runner.
+17. Browser proof at all required states/viewports/themes/languages.
+18. One direct machine consumer reads the exact JSON contract.
+19. One prospective receipt freezes before a real eligible event/transition.
+20. Static/mutation proof keeps every authority field false and kills duplicate-plane attempts.
 
-## 13. Stop condition
+CI green is necessary but is not product or production acceptance.
 
-The worker stops at one immutable `HOLD-FOR-SOL` PR that proves this W1 vertical. It must not merge, deploy, start W2/W3, alter Prophet authority or extend the path ceiling. The return packet includes exact base/head/tree, paths, collision census, ACK/START receipts, tests/CI, source receipts, artifact digest, browser/machine proof, prospective receipt ID, unresolved gaps and the next bounded recommendation.
+## 15. Stop condition
+
+The W1 worker stops at one immutable Draft/HOLD-FOR-SOL implementation PR proving the complete official-source → deterministic artifact → Policy Watch → machine consumer → prospective receipt vertical.
+
+Do not absorb:
+
+- RIC F3 yield implementation;
+- yield-cause decomposition;
+- actor reaction-function forecasting;
+- commodity delivery-month calendars;
+- Prophet/risk/portfolio wiring;
+- capital authority;
+- evaluation-lab outcome computation;
+- merge or deployment.
+
+Return exact receiver, carrier receipts, pickup base/current main, head/tree/parents, changed paths, collision census, RED→GREEN evidence, selected logical CI job/executed-suite proof, hosted checks, official-source receipts, artifact digest, browser/machine proof, prospective receipt identity, authority diff and remaining gaps.

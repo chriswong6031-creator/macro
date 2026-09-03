@@ -2,110 +2,122 @@
 workstream: "WS:RATES-INFLATION-COMMAND"
 session: "sol/policy-preturn-monthly-transition-architecture-20260903"
 model: sol
-ended_because: blocked
+ended_because: ci_handoff
 mission: >
-  Recover the Chairman's pre-turn intelligence outcome, reconcile the existing
-  Rates/OPEX/options/rebalance/Treasury estate, explain the observed monthly pattern
-  without converting it into folklore authority, preserve the existing RIC F3 carrier,
-  and freeze one canonical architecture plus one bounded executable W1 carrier.
+  Recover the Chairman's monthly-turn and policy-preturn outcome, reconcile the existing
+  event/OPEX/options/rebalance/Treasury/futures estate, preserve the active RIC F3 carrier,
+  obtain an independent exact-head architecture review, consume its blocking findings, and
+  repair the same seven-record W1 architecture into one executable source/time/runtime/CI
+  contract without starting implementation or creating a duplicate control plane.
 state_before: >
-  Separate scheduled-event, OPEX, options-surface, rebalance-pulse, Treasury/TGA and
-  policy-intent organs existed, but no canonical composition answered whether support
-  was building, stable, pinned, expiring, replaced or overridden. Static policy
-  intelligence was too stale for rapid jawboning. RIC F3 yield momentum existed on open
-  draft PR #6721 with remote source effect but was unaccepted and release-blocked by a
-  live .github/ci/legacy-jobs.yml collision with PR #6658. No approved actor, liquidity
-  and monthly transition implementation carrier existed.
+  PR #6788 carried a strong conditional monthly-transition thesis plus VIX and CI-owner
+  amendments, but independent review of exact head 9bc18e7a found six blocking defects:
+  no real nightly receipt invocation; wall-clock-only hourly byte churn; collapsed Treasury
+  buyback taxonomy and amount semantics; event venue promoted to physical presence and
+  silent source revisions droppable; missing pure-composer inputs for promised states; and
+  non-reproducible market-date/method identity. The shared CI manifest also had more active
+  open-PR owners than the records named. W1 remained NOT_BUILT and RIC F3 remained on its
+  existing started carrier.
 changed:
-  - path: "docs/superpowers/specs/2026-09-03-policy-transmission-preturn-command-design.md"
-    what: >
-      Frozen the complete product, evidence, yield-cause, cross-asset contradiction,
-      reaction-function, monthly-transition, authority, experience, learning and wave
-      architecture for Policy Transmission & Pre-Turn Command.
   - path: "docs/superpowers/specs/2026-09-03-actor-liquidity-monthly-transition-clock-design.md"
     what: >
-      Frozen W1's source scope, path ceiling, point-in-time event contract,
-      actor-location law, futures-roll helper, canonical event composition, state
-      precedence, machine artifact, prospective ledger, UI, workflow and proof gates.
+      Replaced the primary W1 design with the consolidated repaired architecture: corrected
+      official evidence taxonomy, actor-presence law, silent-revision identity, explicit
+      pure-composer input closure, monthly/weekly/quarterly futures separation, semantic
+      method identity, hourly single writer, nightly ledger-only advancer, no-regress/no-op
+      publication, executable CI ownership and full product/proof behavior.
   - path: "docs/superpowers/plans/2026-09-03-actor-liquidity-monthly-transition-clock-implementation.md"
     what: >
-      Added an eight-task TDD plan with exact interfaces, paths, tests, commands,
-      commits, workflow wiring, browser/machine proof, mutation checks and return law.
+      Replaced the implementation plan with nine exact TDD tasks covering pickup/collision
+      gates, source evidence, futures, canonical event composition, pure state composition,
+      builder/runtime modes, dynamic Policy Watch, actual hourly/nightly/CI wiring and real
+      source/browser/machine/prospective proof.
   - path: "agentos/decisions/DEC-POLICY-PRETURN-CALENDAR-FLOW-COMPOSITION.md"
     what: >
-      Recorded the binding decision to model the monthly observation as conditional
-      support formation, expiry, replacement and catalyst override over existing owners,
-      never as a universal calendar trade signal or private-intent oracle.
+      Replaced the binding decision with the reviewed composition, evidence, runtime, CI and
+      authority rulings and recorded why the rejected alternatives would duplicate owners,
+      regress freshness, leave tests dark or create false calendar authority.
   - path: "agentos/handoffs/RATES-INFLATION-COMMAND-2026-09-03-actor-liquidity-monthly-transition-clock.md"
     what: >
-      Made the exact architecture carrier, W1 issue, blockers, next actions, no-rebuild
-      boundaries and proof obligations recoverable without this chat.
+      Reconciled durable continuation to the accepted review findings, repaired seven-record
+      carrier, current blockers, RIC F3 dependency, W1 START gates, evidence-lab carrier and
+      exact next actions.
+  - path: "docs/superpowers/specs/2026-09-03-policy-turn-clock-ci-owner-amendment.md"
+    what: >
+      Replaced the CI amendment with current all-owner collision law, actual nightly owner,
+      hourly single-writer/semantic-no-op contract, existing-job executable ownership and
+      mutation/pack-runner proof requirements.
 verified:
-  - claim: "Current protected Sol procedure is bootstrap-compatible and was loaded atomically."
-    command: "GitHub.fetch Mastermind protected master; GitHub.fetch_file INDEX.md and required skills at ref 793e75639911f21dae9c90a77c3a5dbf4b37cbb0"
-    result: "mastermind.sol_skillpack.v1 version 1.0.1 requires bootstrap major 1; the active bootstrap major is 1."
-  - claim: "The records carrier was composed from a fresh Macro base with exactly five added paths."
-    command: "GitHub.fetch Macro main; GitHub.create_tree base 69d2ea428fe322ee9c7fdac1db170be4c9a2c649; GitHub.create_commit parent 931870b1feccb91b5122d92b07995e9749566aae; GitHub.create_pull_request"
-    result: "Draft/HOLD-FOR-SOL PR #6788 opened from initial exact head afa9779eb24652e32f3d776668b10e95fe7334b9 and tree 127a5c697da1f5f896fd9a1f6e23f049f48c57d1 with five changed files and no implementation path."
-  - claim: "One canonical W1 implementation carrier exists with no receiver, pickup or START."
-    command: "GitHub.create_issue mastermindx-market-intelligence/macro #6787"
-    result: "Issue #6787 owns operation policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001 and records CTO Sol, CAPACITY_SELECTABLE, WAITING_CAPACITY / needs_placement, receiver NONE, START NONE, effect NONE and NOT_BUILT."
-  - claim: "RIC F3 remains one existing unaccepted yield-momentum carrier and cannot be duplicated."
-    command: "GitHub.get_pr_info Macro#6721; GitHub.fetch_commit_workflow_runs 0d7ff3db29cd95c5296a8fd5d33d3b0494ce6647"
-    result: "PR #6721 is open/draft/unmerged at observed head 0d7ff3db29cd95c5296a8fd5d33d3b0494ce6647; fences succeeded, CI failed, and capability remains BUILT_NOT_PROVEN / RELEASE_BLOCKED / PRODUCTION_NONE."
-  - claim: "The RIC F3 path collision is real and its started dialogue was reconciled rather than replaced."
-    command: "GitHub.get_pr_info Macro#6658; Slack.slack_read_thread C0BSBM78V1N/1788266777.058699; Slack.slack_send_message same carrier"
-    result: "PR #6658 remains open/draft at observed head 1da64def4cb3ee8080e2ab6a48c2f54363f7f329 and owns .github/ci/legacy-jobs.yml. Sol posted CONTINUE-PARK at Slack message 1788412766.523439, preserving the existing RuntimeBinding/source effect and forbidding edit, retry, failover, merge and deploy until lawful reconciliation."
-  - claim: "Existing canonical owners cover the underlying W1 facts and forbid a duplicate calendar signal."
-    command: "GitHub.fetch_file DEC-RIC-CANONICAL-COMPOSITION-BOUNDARIES and engine/event_calendar.py, event_window.py, opex.py, opex_risk.py, options_surface.py, rebalance_calendar.py, rebalance_pulse.py, treasury_watch.py"
-    result: "The files own scheduled events, event windows, OPEX, dealer/OPEX context, rebalance and TGA mechanics; the accepted decision denies calendar rank/gate/size/trade authority and requires composition."
-  - claim: "The monthly observation is conditional rather than a robust universal modern direction."
-    command: "GitHub.fetch_file OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md, options_opex_vanna_charm_summary.md, d2-rates-calendar-flows-phase0.md, REBALANCE_LIQUIDITY_TRANSMISSION_MASTERPLAN_BY_FABLE.md and turn_of_month_phase0.py"
-    result: "Repository evidence preserves useful OPEX concentration/vanna/holdability and month-end Treasury extension context but rejects or withholds a universal post-OPEX/turn-of-month trade edge."
+  - claim: "Current protected Skillpack is compatible and modifying workflow remained available."
+    command: "GitHub.fetch Mastermind protected master; GitHub.fetch_file INDEX/COLD_START/RECONCILE_STATE/REVIEW_RETURN/COMMISSION_WAVE/WORKER_AVENUE_ROUTING at c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6."
+    result: "PASS — mastermind.sol_skillpack.v1 version 1.0.1 requires bootstrap major 1; current bootstrap major is 1."
+  - claim: "The independent architecture reviewer was genuinely distinct, exact-head bound and read-only."
+    command: "Fresh-read Slack carrier C0BSBM78V1N/1788426054.225919 and GitHub PR #6788 review identity/head/tree/merge-ref state."
+    result: "PASS — native Codex task 01a06685-8bce-7e60-a653-9870abf91dfc authenticated mastermindx-3, ACKed, armed continuation, STARTed READ_ONLY, changed no source/metadata/check/merge/production state, and returned REQUEST_CHANGES merits."
+  - claim: "The stale review child was explicitly consumed and terminally stopped."
+    command: "Slack write/read on C0BSBM78V1N/1788426054.225919 after RESULT 1788427555.357049."
+    result: "PASS — Sol accepted the findings and posted CLOSED/STOP at 1788427931.007269; no GitHub review was submitted on the stale head."
+  - claim: "The previous plan lacked a real nightly invocation."
+    command: "Read prior implementation Task 7, config/dag.yml conformance behavior and current scripts/ci/daily_engine_regional_desk_builders.sh."
+    result: "PASS — prior source invoked the clock only hourly; the actual existing nightly Policy Watch owner is the regional-desk builder, and DAG is a mirror rather than an executor."
+  - claim: "Canonical broad ETF and VX inputs are forward-accruing context rather than deep historical validation."
+    command: "Read collectors/sponsors.py, engine/etf_flows.py, collectors/cboe_vix_futures.py and coverage records."
+    result: "PASS — broad SPY/QQQ/IWM/RSP/DIA shares-outstanding history accrues from first deployment at T+1; standard VX M1-M6 history also accrues forward from shallow daily files."
+  - claim: "Current options history can support bounded 2017+ mechanism research without backfilling unavailable dealer facts."
+    command: "Read reports/artifacts/options_surface_coverage.md on current Macro source."
+    result: "PASS — 20 roots pass the audit; most greeks begin 2017-01-03, QQQ begins 2012-06-01 and XLC begins 2018-06-22, with explicit OI/greeks coverage."
+  - claim: "RIC F3 was advanced through its original started carrier rather than duplicated."
+    command: "Fresh-read PRs #6721/#6658 and Slack C0BSBM78V1N/1788266777.058699; send same-carrier Sol CONTINUE."
+    result: "PASS — #6658 no longer owns the former manifest path, and exact existing F3 task 01a05a89-cb19-7162-99c4-54ffdc714cf1 was authorized to compose current main on the existing branch/PR with no rebind or duplicate."
+  - claim: "The future evidence study has a durable pre-outcome carrier and honest cohort partition."
+    command: "GitHub.create_issue Macro #6794 and add pre-outcome coverage census."
+    result: "PASS — issue #6794 is WAITING_DEPENDENCY/PRE_START with no receiver, START, outcome computation, promotion, product or production effect; deep-history, 2017+ options and prospective-only flow/VX cohorts are separate."
 unverified:
-  - claim: "PR #6788 is validated, independently approved and merged."
-    what_would_verify: "Fresh exact-head Agent OS/schema/fences/semantic CI, clean five-path current-main compare, no unresolved review threads, independent approval and explicit expected-head Sol release followed by merge."
-  - claim: "A concrete CTO Sol worker is assigned or has acknowledged issue #6787."
-    what_would_verify: "A lawful current placement/delivery edge naming one eligible receiver followed by its same-carrier PICKUP_ACK."
-  - claim: "PTC-W1 source/product/runtime implementation has started."
-    what_would_verify: "A separate truthful START on issue #6787 after PR #6788 merge, current protected-procedure pin and collision-free exact path census."
-  - claim: "Official actor/Treasury events and the monthly transition clock are live or decision-improving."
-    what_would_verify: "Real official-source records through policy_turn_clock.v1 to Policy Watch and a direct machine consumer, plus prospective receipts matured across sufficient independent episodes."
+  - claim: "The repaired seven-record PR head is schema-valid, exact-current-base green and independently approved."
+    what_would_verify: "Create the one semantic repair commit, reconcile current main, run Agent OS/schema/fences/contract-delta/semantic CI, then obtain a fresh independent review on the new immutable head and current merge ref."
+  - claim: "RIC F3 current-base composition is complete or accepted."
+    what_would_verify: "Existing exact task returns RESULT/HOLD on C0BSBM78V1N/1788266777.058699 with new head/tree, tests, current feature-frame→Transmission→Forward Path proof and Sol exact-head review."
+  - claim: "W1 has a concrete receiver or START."
+    what_would_verify: "PR #6788 accepted/merged, all planned-path owners released, lawful receiver assignment, Pickup ACK/watcher receipt and separate START on issue #6787."
+  - claim: "policy_turn_clock.v1 is built, live or decision-improving."
+    what_would_verify: "Accepted W1 implementation plus real official-source/current-owner artifact, Policy Watch, direct machine consumer, no-regress, natural nightly receipt and matured prospective evidence."
 unresolved:
-  - "PR #6788 remains Draft/HOLD-FOR-SOL and requires exact-head validation, independent review and Sol release."
-  - "Issue #6787 remains WAITING_CAPACITY / needs_placement; no receiver-specific commission or watcher is lawful before placement."
-  - "RIC F3 PR #6721 remains parked/release-blocked while PR #6658 owns the colliding CI-manifest path."
-  - "Regional-Fed, BOJ/MOF and broader administration/Iran official-source coverage remains PTC-W2, not W1."
-  - "Yield-cause decomposition and cross-asset contradiction resolution remain PTC-W3 and cannot rebuild RIC F3."
-  - "No prospective policy_turn_clock.v1 evidence exists before implementation."
+  - "Exact-head/current-integration validation and fresh independent review of the repaired PR #6788 semantic head."
+  - "Existing RIC F3 task return and release of its current shared manifest ownership."
+  - "Fresh START-time census of every active .github/ci/legacy-jobs.yml owner; the reviewer observed #6791, #6721, #6706, #6651, #6625, #6514, #6389 and #6296, but current GitHub truth controls."
+  - "W1 receiver placement after architecture and collision gates clear."
+  - "Real Mac/browser proof and natural hourly/nightly proof after W1 implementation; no such proof exists yet."
+  - "Dependency-gated issue #6794 outcome computation after W1 and source coverage gates."
 next_actions:
-  - "Keep PR #6788 Draft/HOLD, re-fetch current protected procedure and Macro main, verify the exact five-path delta, run exact-head Agent OS/schema/fences/semantic CI, and obtain one independent adversarial architecture review."
-  - "After exact-head Sol release and merge of PR #6788, the canonical placement owner binds one eligible CTO Sol receiver to issue #6787 without asking the Chairman to select a numbered account."
-  - "The bound receiver posts PICKUP_ACK, fresh source/path collision receipts and a separate START only when every W1 entrance gate is open."
-  - "Execute the frozen implementation plan through one immutable Draft/HOLD-FOR-SOL implementation PR and return real source, artifact, UI, machine-consumer and prospective-receipt evidence."
-  - "Sol reviews the exact implementation head against the Chairman outcome before any merge, deployment or later wave."
+  - "Create one same-branch semantic repair commit replacing the five records named above while retaining the same seven candidate-owned paths."
+  - "Fresh-read Macro main, history-preservingly reconcile it into the same PR branch, and update PR #6788 body with exact head/tree/parents/current merge ref and seven-path census."
+  - "Run/observe Agent OS/schema validation, fences, contract-delta and semantic CI on the exact current integration."
+  - "Commission one fresh independent exact-head architecture review; do not reuse the terminal 9bc18e7a review child or its unused GitHub review budget."
+  - "If accepted, issue an explicit Sol release/merge adjudication for the architecture carrier only."
+  - "After merge and complete planned-path release, deliver the current W1 Codex packet to one eligible receiver, require ACK/watcher/separate START, and execute one implementation PR through real source/UI/machine/nightly proof."
+  - "Continue monitoring only the existing RIC F3 carrier for its exact task return; do not create a second F3 worker."
 do_not_redo:
-  - "Do not create another yield-momentum module or replace PR #6721."
-  - "Do not create a second event, release, OPEX, options, rebalance, TGA, lifecycle, queue, scheduler, evidence or trade-authority plane."
-  - "Do not convert calendar proximity, turn-of-month history or post-OPEX folklore into rank, gate, size, target, probability or direction."
-  - "Do not infer a private/current actor location outside a bounded official event window or infer secret coordination from aligned interests."
-  - "Do not ask Chairman Chris to choose a numbered account for ordinary CAPACITY_SELECTABLE placement."
-  - "Do not edit .github/ci/legacy-jobs.yml, RIC F3 integration paths or WS:RATES-INFLATION-COMMAND under W1."
+  - "Do not recreate the event, release, OPEX, options, broad-flow, TGA, VX, market-state, lifecycle, scheduler, publisher, CI-planner or trade-authority owners."
+  - "Do not convert turn-of-month or post-OPEX history into a universal directional signal."
+  - "Do not treat event venue, virtual appearance or Watch Live as proof of physical actor location."
+  - "Do not infer a missing Treasury amount, replacement book, flow, market confirmation or source event as zero/none/quiet."
+  - "Do not run W1 outcome studies inside implementation; issue #6794 owns dependency-gated evaluation."
+  - "Do not create another architecture PR, W1 issue, F3 branch/worker, review carrier for the terminal old head, workflow or CI job."
 danger_areas:
-  - "Macro main moves frequently; fresh-read main and exact path ownership before review, composition and START."
-  - "PR #6721 has a stale body head and remote source effect; its current GitHub/Slack carrier controls."
-  - "PR #6658 and PR #6593 own adjacent paths; apparently routine CI/workstream edits can violate one-carrier law."
+  - "Macro main and the shared CI manifest move frequently; current path ownership must be read at every START/review/release boundary."
+  - "Hourly and nightly pipelines have independent concurrency/rebase semantics; only hourly publishes current state and nightly must remain ledger-only."
+  - "A later generated_at is not new evidence; semantic identity and source watermarks control writes and transitions."
+  - "Broad ETF flows and standard VX curve are short forward-accrual stores; do not present them as long historical validation."
   - "Options OI is delayed and dealer sign is an unobservable assumption; both passports must survive every consumer."
-  - "A TGA decline is mechanically supportive all else equal but does not prove deliberate equity rescue; announced maximum is not accepted amount."
-  - "A futures-roll schedule without live volume/OI progress is scheduled, not active; ordinary months are not applicable."
-  - "Official source failure, revisions, cancellations, DST and stale observations must not become zero/no-event/current-looking data."
-  - "The glance state is descriptive over independent axes; a weighted score or Prophet/risk consumer violates the architecture."
+  - "A TGA decline is mechanically supportive all else equal but does not establish deliberate equity rescue."
+  - "Green CI or a merged architecture is not W1 product, production or decision-usefulness proof."
 prs:
   - 6788
+  - 6721
 decisions:
   - "DEC:POLICY-PRETURN-CALENDAR-FLOW-COMPOSITION"
 ---
 
 # Continuation boundary
 
-The architecture carrier exists and is still unaccepted. The exact dependency is validation and independent review of PR #6788, then Sol release/merge, then lawful capacity placement for issue #6787. Product, source, runtime and learning effects remain absent until a separately acknowledged and STARTed worker proves W1 end to end.
+This record ends at a repaired architecture/current-validation handoff. The architecture is still `SPEC_ONLY`; W1 is still `NOT_BUILT`; RIC F3 is still separately owned. The next lawful effect is exact-head validation and a fresh independent review of the repaired PR—not implementation, merge, deployment or capital use.
