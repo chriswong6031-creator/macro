@@ -97,59 +97,95 @@ def _pv_css() -> str:
     return str(mod.pv_css())
 
 
-def test_zone_value_never_shrinks_the_added_and_date_chips_do():
-    # F1 (2026-09-01 repair round): the buy-zone price (.pv-znr) must never
-    # CROWD-OUT-clip because of the .pv-dt/.pv-added metadata chips sharing
-    # the same flex row — .pv-znr is pinned flex:none (renders at full
-    # content width, never shrunk by its siblings), while .pv-dt/.pv-added
-    # are the ones that shrink + ellipsize under pressure. This is the
-    # inverse of the pre-fix rule, where .pv-znr was the only shrinkable
-    # child and absorbed 100% of the squeeze from the un-shrinkable metadata
-    # chips.
-    #
-    # R4 (round 3 repair): flex:none alone has no ceiling of its own, so a
-    # pathologically long zone string could still overflow the row and get
-    # hard-clipped by .pv-zn's own overflow:hidden with no ellipsis — an
-    # UNSIGNALLED clip, not the crowd-out F1 fixed but a different failure
-    # mode. .pv-znr now carries its OWN bounded overflow (max-width:100%,
-    # overflow:hidden, text-overflow:ellipsis) so that edge case degrades
-    # visibly instead. min-width:0 is still deliberately absent — that
-    # would reintroduce flex-shrink and let the chips crowd the price out
-    # again, which is exactly what F1 fixed.
-    css = _pv_css()
-    znr_rule = re.search(r"\.pv-znr\{([^}]*)\}", css)
-    assert znr_rule, ".pv-znr rule not found in pv_css()"
-    znr_body = znr_rule.group(1)
-    assert "flex:none" in znr_body
-    assert "min-width:0" not in znr_body  # no shrink -> chips still yield first
-    assert "max-width:100%" in znr_body
-    assert "overflow:hidden" in znr_body
-    assert "text-overflow:ellipsis" in znr_body  # bounded self-degradation, not a hard clip
+def _rule(css: str, cls: str, block: str | None = None) -> str:
+    """Body of the FIRST `.<cls>{...}` rule in `css` (or in `block`)."""
+    hay = block if block is not None else css
+    m = re.search(r"(?<![.\w-])\." + cls + r"\{([^}]*)\}", hay)
+    assert m, f".{cls} rule not found"
+    return m.group(1)
 
-    for cls in ("pv-dt", "pv-added"):
-        rule = re.search(r"\." + cls + r"\{([^}]*)\}", css)
-        assert rule, f".{cls} rule not found in pv_css()"
-        body = rule.group(1)
-        assert "flex:none" not in body, f".{cls} must not be flex:none (must be able to shrink)"
-        assert "min-width:0" in body
+
+def test_the_zone_shelf_folds_so_the_added_chip_can_never_truncate():
+    """2026-09-02 (Chairman visibility report). The zone shelf is a two-end
+    table row whose right end is provenance. It used to be a single
+    unwrappable line in which the metadata chip was the only shrinkable
+    child, so on a dense grid the chip did not yield space — it DISSOLVED.
+    Measured on the live US board at its 2-up narrow grid (154px cards):
+    `.pv-added` rendered at 5px EN ("Added A…" → nothing) and 18–29px ZH
+    ("入.."), while `.pv-zn` itself overflowed and hard-clipped the zone
+    price on the widest card.
+
+    The law now is: the PRICE keeps first claim on line one, and the chip
+    either renders in FULL or drops to its own line. It has no truncated
+    state left. Three declarations carry that and all three are load-bearing.
+    """
+    css = _pv_css()
+
+    # 1. the shelf may wrap — this is the whole mechanism
+    zn = _rule(css, "pv-zn")
+    assert "flex-wrap:wrap" in zn, (
+        ".pv-zn must wrap — without it the chip has nowhere to fold to and "
+        "the row goes back to truncating the metadata (or clipping the price)")
+    assert re.search(r"gap:\d", zn), ".pv-zn must keep an explicit row/column gap pair"
+
+    # 2. BOTH zone-value variants are unshrinkable-but-self-bounded, so the
+    #    metadata always yields first and neither value can be crowded out.
+    #    (F1 hardened .pv-znr only; .pv-znm was the value path it missed, and
+    #    with the chip no longer shrinkable it would have become the sole
+    #    absorber of the squeeze — clipping a stance sentence to protect a date.)
+    for cls in ("pv-znr", "pv-znm"):
+        body = _rule(css, cls)
+        assert "flex:none" in body, f".{cls} must never shrink for metadata"
+        assert "min-width:0" not in body, (
+            f".{cls} must not carry min-width:0 — that reintroduces flex-shrink "
+            "and lets the chip crowd the value out again")
+        assert "max-width:100%" in body
         assert "overflow:hidden" in body
-        assert "text-overflow:ellipsis" in body
+        assert "text-overflow:ellipsis" in body  # bounded self-degradation, never a hard clip
+
+    # 3. the chip: never shrinks, and has NO truncated state to render
+    added = _rule(css, "pv-added")
+    assert "flex:0 0 auto" in added, ".pv-added must not shrink — it folds instead"
+    assert "margin-left:auto" in added, ".pv-added stays hard against the right edge"
+    assert "min-width:0" not in added
+    # The two halves of one decision: a flex item whose overflow is not
+    # `visible` resolves min-width:auto to 0, so re-adding overflow here
+    # would silently defeat flex:0 0 auto and collapse the chip to 5px again.
+    assert "overflow" not in added, (
+        ".pv-added must carry NO overflow/text-overflow: with a non-visible "
+        "overflow its automatic minimum size collapses to 0 and the fold dies "
+        "silently — the chip would truncate again instead of wrapping")
+    assert "ellipsis" not in added
 
 
-def test_narrow_viewport_caps_added_chip_width_so_zone_gets_room():
-    # R5 (round 3 repair): the ≤680px max-width:32% cap is scoped to
-    # `.pv-added` ONLY. `.pv-dt` is the separate legacy per-row date chip
-    # used by PLAN cards (a non-chip surface this program's evidence matrix
-    # does not shoot) and must keep its PRIOR narrow-viewport behavior — no
-    # extra cap beyond the shared shrink+ellipsize base rule (checked above).
-    # This replaces test_narrow_viewport_caps_metadata_chip_width_so_zone_
-    # gets_room, which pinned the (since-corrected) combined-selector cap.
+def test_the_legacy_plan_card_date_chip_is_untouched_by_the_fold():
+    """`.pv-dt` is the separate legacy per-row PLAN-card date (see the
+    partial's header). R5 deliberately kept it out of this packet's scope and
+    that still holds: it keeps min-width:0 + ellipsis, so it shrinks to
+    nothing before the shelf ever folds and plan cards keep their prior
+    geometry exactly. Only `.pv-added` opts into the fold."""
     css = _pv_css()
-    narrow_block = css[css.index("@media (max-width:680px)"):]
-    assert re.search(r"(?<![.\w-])\.pv-added\{[^}]*max-width:32%", narrow_block), (
-        ".pv-added must carry the max-width:32% narrow-viewport cap")
-    # .pv-dt must NOT share that selector/cap anywhere in the narrow block.
-    assert not re.search(r"\.pv-dt\s*,\s*\.pv-added\{", narrow_block)
-    assert not re.search(r"\.pv-added\s*,\s*\.pv-dt\{", narrow_block)
-    dt_rule = re.search(r"(?<![.\w-])\.pv-dt\{([^}]*)\}", narrow_block)
-    assert not dt_rule, ".pv-dt must not gain its own narrow-viewport rule either"
+    dt = _rule(css, "pv-dt")
+    assert "flex:0 1 auto" in dt
+    assert "min-width:0" in dt
+    assert "overflow:hidden" in dt
+    assert "text-overflow:ellipsis" in dt
+
+
+def test_the_narrow_viewport_truncation_cap_is_gone():
+    """The ≤680px `.pv-added{max-width:32%}` cap enforced the right priority
+    (price first) with the wrong verb: at the 2-up narrow grid it is ~42px
+    against a 66px chip, i.e. it GUARANTEED a truncated date on every phone
+    card carrying one. The fold enforces the same priority without ever
+    rendering a partial date, so the cap is removed rather than retuned —
+    on the folded line the chip has the whole row and a cap could only
+    re-impose the defect. `.pv-dt` stays uncapped here, exactly as R5 left it."""
+    css = _pv_css()
+    narrow = css[css.index("@media (max-width:680px)"):]
+    assert "max-width:32%" not in narrow, (
+        "the truncation cap must not come back — the chip folds, it does not shrink")
+    assert not re.search(r"(?<![.\w-])\.pv-added\{", narrow), (
+        ".pv-added must carry no narrow-viewport rule at all")
+    assert not re.search(r"(?<![.\w-])\.pv-dt\{", narrow)
+    assert not re.search(r"\.pv-dt\s*,\s*\.pv-added\{", narrow)
+    assert not re.search(r"\.pv-added\s*,\s*\.pv-dt\{", narrow)

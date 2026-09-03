@@ -92,3 +92,65 @@ Computing engine: `scripts/build_china.py`.
 - **Means:** Buy-readiness score: how close this A-share name is to an actionable entry, not a win-rate. Combines the cycle trigger (is the turn happening now?), stored upside (how washed out), distress haircut, and tailwind from sector and theme. A score of 70+ = "primed"; 45–70 = "setting up"; 25–45 = "watch"; below 25 = no setup.
 - **Computed by:** `engine/name_score.py` `potential_score`. Blends trigger, fuel, survive, tailwind, confidence, and edge_mult (CN = 1.0 — no validated cross-sectional name edge; reversal edge lives in the cycle/washout trigger). Trigger gate from `_TRIGGER` dict.
 - **So what:** A high score means the setup is clean and the timing looks right; it does not mean the stock will go up. Use it to rank the shortlist, not to override the cycle state or the board track record.
+
+---
+
+## Site Semantics: flow_velocity.html (Flow Observatory V2, W1)
+
+A separate page (`templates/flow_velocity.html.j2`, engine `engine/flow_velocity.py` +
+`engine/flow_observatory/{contract,changes}.py`, builder `scripts/build_flow_velocity.py`,
+payload `site/flowdata/desk.json` — `schema: "flow_observatory.v2"`, `authority:
+"context_only"`). This section documents the W1 trust/change/two-axis additions only; it
+does not describe china.html's own internals section above, which is a different page.
+
+### Data Sources — trust strip
+
+- **Shown as:** A row of chips, one per source leg (A-share large-order flow, Southbound
+  aggregate, Northbound aggregate, HK southbound holdings, Dragon-Tiger institutional
+  seats), each showing its own effective date, coverage, and a state word (current /
+  expected T−1 / behind — showing {date} / historical only — ended {date}).
+- **Means:** Which underlying feeds this page's numbers rest on, how fresh each one is
+  RIGHT NOW, and what kind of data it actually is (an order-size proxy is not "detected
+  institutions"). Source state renders BEFORE the market read below it — trust precedes
+  claims.
+- **Computed by:** `engine/flow_observatory/contract.py` `build_sources` / `leg_ui_state`.
+  W1 emits identity, dates, and coverage only; the HEALTHY/DEGRADED/STALE status machine
+  lands in a later wave.
+- **So what:** A "behind" or "historical only" chip means treat that leg's contribution to
+  the page's verdict with extra caution — it is not describing today.
+
+### What Changed Today
+
+- **Shown as:** A list of theme quadrant transitions and rank movers since the previous
+  valid market session, or the explicit quiet state "No material flow-state transition
+  since the previous valid market session (date)." / first-run state "Change tracking
+  begins today — no prior tracked session."
+- **Means:** What is actually NEW since the last time this page had a valid reading —
+  never re-narrating a session that already printed the same read.
+- **Computed by:** `engine/flow_observatory/changes.py` `compute_changes` against
+  `data/flow_observatory/state_log.jsonl` (one line per valid CN session, appended only on
+  the asia-close/US-nightly lanes — `engine.ledger_lane`).
+- **So what:** An empty or quiet read is itself informative (nothing changed) — it is
+  distinct from "we have no baseline yet" (first-run), which the page never conflates with
+  "nothing changed."
+
+### Pressure vs Actual Flow — the quadrant board
+
+- **Shown as:** A 2×2 board — "real inflow, above norm" / "still selling, pressure easing"
+  / "still buying, pace fading" / "real outflow, below norm" — each theme placed by BOTH
+  its raw 4-week net flow (abs) and its velocity vs its own trailing norm (rel), shown as
+  two separate figures on every chip (e.g. "−0.9% · +2.6σ"), plus two breadth-count lines
+  and a per-theme abs/rel/quadrant/rank-Δ column set on the theme flow board below it.
+- **Means:** The page's anti-conflation device. A theme can be genuinely still selling
+  (negative raw flow) while its selling pressure eases relative to its own norm — the two
+  facts are never collapsed into one inflow-colored number. This replaces the old
+  "state"/"state_zh" vocabulary (`accelerating in`, `outflow easing`, …), which used
+  absolute-sounding words for what was actually a relative (σ) measure.
+- **Computed by:** `engine/flow_observatory/contract.py` `quadrant` / `enrich_group` /
+  `market_read`, from `abs.value` = `rate_4wk` (themes) or `flow_1m_b` (Southbound
+  aggregate) and `rel.value` = `vel`/`vel_primary`. De-minimis neutral bands: |abs| < 0.1pp
+  (themes) / < ¥0.5B (Southbound); |rel| < 0.5σ. Thresholds are provisional pending W5
+  calibration.
+- **So what:** Read BOTH figures on a chip before reacting to either one alone — a large σ
+  reading with a negative raw flow is not the same market condition as a large σ reading
+  with a positive one, even though the old page painted both the same color.
