@@ -81,3 +81,46 @@ portfolio results, signal rankings, W1B usefulness claims, or production decisio
 identity, session, roll, observed indicator math, rights, or export precision cannot be frozen,
 return an independently typed incomplete/`UNRESOLVED_DATA` packet for that chart rather than using
 another symbol, vendor, session, or product.
+
+## Local W1A CLI
+
+The repository child does not perform the external capture. After a separate authorized capture
+child has produced a recipe and local CSV, run the deterministic coordinator from the repository
+root. Keep all inputs and outputs outside tracked production paths.
+
+```bash
+python3 scripts/research/run_temporal_scale_artifact_attack.py validate-recipe \
+  --recipe "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/recipe.json" \
+  --csv "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/chart.csv" \
+  --output-dir "$MMX_TEMPORAL_RESEARCH_OUTPUTS/chart"
+
+python3 scripts/research/run_temporal_scale_artifact_attack.py parity \
+  --recipe "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/recipe.json" \
+  --csv "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/chart.csv" \
+  --output-dir "$MMX_TEMPORAL_RESEARCH_OUTPUTS/chart"
+
+python3 scripts/research/run_temporal_scale_artifact_attack.py attack \
+  --recipe "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/recipe.json" \
+  --csv "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/chart.csv" \
+  --lower-grain-csv "$MMX_TEMPORAL_RESEARCH_INPUTS/chart/lower-grain.csv" \
+  --ledger-path "$MMX_TEMPORAL_RESEARCH_OUTPUTS/chart/trial_ledger.jsonl" \
+  --output-dir "$MMX_TEMPORAL_RESEARCH_OUTPUTS/chart"
+```
+
+If `--ledger-path` is omitted, `attack` uses `OUTPUT_DIR/trial_ledger.jsonl`. The production
+`data/trial_ledger.jsonl` path is always refused and has no override. The command validates and
+hashes inputs before creating outputs, prints the frozen grid hash before diagnostics, never prints
+source rows, and writes strict canonical JSON through atomic replacement.
+
+The evidence bundle contains `normalized_recipe.json`, `bar_receipts.json`,
+`kernel_signature.json`, `parity_receipt.json`, `frozen_grid.json`, and `run_manifest.json`.
+`attack` additionally writes `artifact_attack_result.json` and the explicit nonproduction trial
+ledger. The manifest records the exact command, interpreter and platform, current Git head when
+available, input and output hashes, and the invariant declarations `network_used=false` and
+`production_ledger_used=false`.
+
+A complete packet with parity `FAIL` exits nonzero and Gate 2 does not execute. A schema-valid
+incomplete recipe exits zero with a typed `UNRESOLVED_DATA` result without opening the named CSV;
+this is the correct path for an absent real WMT or silver packet. `MECHANICALLY_SURVIVES` is only a
+W1A construction result. It confers no ranking, gating, sizing, trading, Prophet, W1B, or
+production authority.

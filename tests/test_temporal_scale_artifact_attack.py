@@ -4,6 +4,8 @@ import ast
 import json
 from pathlib import Path
 import runpy
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pandas as pd
@@ -285,3 +287,113 @@ def test_artifact_attack_has_no_network_outcome_or_raw_row_surface() -> None:
     assert _boundary_violations("import os as x\nx.replace('a', 'b')")
     source = Path("scripts/research/temporal_scale/artifact_attack.py").read_text(encoding="utf-8")
     assert _boundary_violations(source) == set()
+
+
+def _run_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "scripts/research/run_temporal_scale_artifact_attack.py", *arguments],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def test_cli_validate_recipe_writes_atomic_provenance_bundle(tmp_path: Path) -> None:
+    _loaded(tmp_path)
+    output = tmp_path / "out"
+    completed = _run_cli(
+        "validate-recipe",
+        "--recipe", str(tmp_path / "recipe.json"),
+        "--csv", str(tmp_path / "synthetic.csv"),
+        "--output-dir", str(output),
+        "--observation-ms", "1788431707297",
+    )
+    assert completed.returncode == 0, completed.stderr
+    expected = {
+        "normalized_recipe.json", "bar_receipts.json", "kernel_signature.json",
+        "parity_receipt.json", "frozen_grid.json", "run_manifest.json",
+    }
+    assert expected.issubset({path.name for path in output.iterdir()})
+    manifest = json.loads((output / "run_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["network_used"] is False
+    assert manifest["production_ledger_used"] is False
+    assert manifest["observation_ms"] == 1788431707297
+    assert manifest["git_head"]
+    assert set(manifest["input_sha256"]) == {"recipe", "csv"}
+
+
+def test_cli_attack_parity_pass_then_typed_unresolved_without_lower_rows(tmp_path: Path) -> None:
+    _loaded(tmp_path)
+    output = tmp_path / "attack"
+    completed = _run_cli(
+        "attack",
+        "--recipe", str(tmp_path / "recipe.json"),
+        "--csv", str(tmp_path / "synthetic.csv"),
+        "--output-dir", str(output),
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "FROZEN_GRID_SHA256=" in completed.stdout
+    result = json.loads((output / "artifact_attack_result.json").read_text(encoding="utf-8"))
+    assert result["mechanical_status"] == "UNRESOLVED_DATA"
+    assert result["final_mechanism_classification"] is None
+    assert set(result["authority"].values()) == {False}
+    assert all(len(receipt) == 64 for receipt in result["mechanical_receipts"])
+    assert (output / "trial_ledger.jsonl").is_file()
+    manifest = json.loads((output / "run_manifest.json").read_text(encoding="utf-8"))
+    assert len(manifest["ledger_sha256"]) == 64
+
+
+def test_cli_parity_failure_is_nonzero_and_attack_never_runs(tmp_path: Path) -> None:
+    helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_parity.py")))
+    helpers["loaded_export_from_canonical_fixture"](
+        tmp_path, n=1190, perturb=("TG_rsi_macd_hist", -1, 1e-4)
+    )
+    output = tmp_path / "parity-fail"
+    completed = _run_cli(
+        "attack",
+        "--recipe", str(tmp_path / "recipe.json"),
+        "--csv", str(tmp_path / "synthetic.csv"),
+        "--output-dir", str(output),
+    )
+    assert completed.returncode != 0
+    assert json.loads((output / "parity_receipt.json").read_text(encoding="utf-8"))["status"] == "FAIL"
+    assert not (output / "artifact_attack_result.json").exists()
+    assert not (output / "trial_ledger.jsonl").exists()
+
+
+def test_cli_refuses_production_ledger_before_writing_it(tmp_path: Path) -> None:
+    _loaded(tmp_path)
+    output = tmp_path / "refused"
+    completed = _run_cli(
+        "attack",
+        "--recipe", str(tmp_path / "recipe.json"),
+        "--csv", str(tmp_path / "synthetic.csv"),
+        "--output-dir", str(output),
+        "--ledger-path", "data/trial_ledger.jsonl",
+    )
+    assert completed.returncode != 0
+    assert "production TrialLedger" in completed.stderr
+    assert not output.exists()
+
+
+def test_cli_incomplete_recipe_is_unresolved_without_loading_csv(tmp_path: Path) -> None:
+    helpers = runpy.run_path(str(Path(__file__).with_name("test_temporal_scale_contracts.py")))
+    raw = helpers["complete_recipe_dict"]()
+    raw["capture_status"] = "incomplete"
+    raw["instrument"]["tickerid"] = ""
+    raw["missing_fields"] = ["instrument.tickerid"]
+    recipe_path = tmp_path / "incomplete.json"
+    recipe_path.write_text(json.dumps(raw), encoding="utf-8")
+    output = tmp_path / "incomplete-out"
+    completed = _run_cli(
+        "attack",
+        "--recipe", str(recipe_path),
+        "--csv", str(tmp_path / "does-not-exist.csv"),
+        "--output-dir", str(output),
+    )
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads((output / "artifact_attack_result.json").read_text(encoding="utf-8"))
+    manifest = json.loads((output / "run_manifest.json").read_text(encoding="utf-8"))
+    assert result["mechanical_status"] == "UNRESOLVED_DATA"
+    assert result["recipes"] == [raw["recipe_id"]]
+    assert manifest["csv_loaded"] is False
