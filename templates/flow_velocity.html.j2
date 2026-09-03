@@ -42,6 +42,37 @@
 {% set k = 'in' if (vel is not none and vel>=0.5) else ('out' if (vel is not none and vel<=-0.5) else 'mid') %}
 <span class="vstate {{ k }}">{{ t(en, zh) }}</span>
 {%- endmacro %}
+{# section watermark (W2, spec §3): any L1 section fed by a STALE leg gets a one-line band
+   directly under its own h2 — NOT an overlay, numbers stay readable, the band is unmissable.
+   ``legs`` is the list of source dicts (from snap.sources) that feed THIS section; the FIRST
+   STALE one found supplies the substituted date (a section is rarely fed by two independently
+   stale legs at once, and naming one real date beats averaging/guessing). DEGRADED never
+   triggers this — spec §3: "DEGRADED renders a quiet chip-level treatment only".
+   S6 repair: an UNAVAILABLE feeding leg (no date at all — never "showing — data") gets its
+   own wording branch, checked when no STALE leg is present (STALE takes priority when a
+   section is fed by more than one leg and they disagree). #}
+{% macro sec_watermark(legs) -%}
+{% set _stale_list = [] %}
+{% set _unavail_list = [] %}
+{% for _l in (legs or []) %}
+  {% if _l and _l.status == 'STALE' %}{% set _ = _stale_list.append(_l) %}
+  {% elif _l and _l.status == 'UNAVAILABLE' %}{% set _ = _unavail_list.append(_l) %}
+  {% endif %}
+{% endfor %}
+{% set _stale = _stale_list|first %}
+{% set _unavail = _unavail_list|first %}
+{% if _stale %}
+<div class="fv-watermark">
+  <span class="l-en">Showing last good data from {{ _stale.effective_date or '—' }} — source behind.</span>
+  <span class="l-zh">显示{{ _stale.effective_date or '—' }}最近有效数据 — 数据源滞后。</span>
+</div>
+{% elif _unavail %}
+<div class="fv-watermark fv-watermark--unavailable">
+  <span class="l-en">Source unavailable — this section has no current data.</span>
+  <span class="l-zh">数据源不可用——本节暂无当前数据。</span>
+</div>
+{% endif %}
+{%- endmacro %}
 {# confluence: a pure render-time CLASS from two existing fields — NOT a stored/ranked score #}
 {% macro confcls(vel, seat) -%}
 {%- if seat and vel is not none -%}
@@ -273,10 +304,15 @@ html[data-lang="zh"] .fv-meter{background:linear-gradient(90deg,
 /* ═══════════════ TRUST STRIP (spec §2.2) — source state precedes market claims ═══════ */
 .fv-trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .fv-src{border:1px solid var(--line);border-radius:var(--r-ctl, 10px);padding:8px 12px;background:var(--card);
-  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:230px;cursor:help}
+  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:260px;cursor:help}
 .fv-src .s-name{font-size:12px;font-weight:700;color:var(--ink)}
 .fv-src .s-meta{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;font-family:var(--num)}
-.fv-src .s-state{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* S9: a DEGRADED/STALE chip word can run long ("behind — showing 2026-08-17 data"); at
+   1440 this used to wrap into a cramped, uneven two-line block inside the fixed-width
+   card. Widened the card's own max-width (150->260) and gave the word a comfortable
+   line-height so a wrap (when it still happens on a long date/word combination) reads as
+   two clean lines rather than crowding the card — never clipped, no overflow hidden. */
+.fv-src .s-state{font-size:10px;letter-spacing:.06em;line-height:1.35;text-transform:uppercase;color:var(--muted)}
 .fv-src--current .s-state{color:var(--up)}
 .fv-src--expected_lag .s-state{color:var(--info)}
 .fv-src--historical{opacity:.75}
@@ -289,7 +325,76 @@ html[data-theme="light"] .fv-src--behind{background:color-mix(in srgb,var(--warn
 html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
 .fv-src--unavailable{opacity:.68}
 .fv-src--unavailable .s-state{color:var(--faint)}
+/* STALE (W2) — a materially louder treatment than "behind": this is the chip the
+   incident-4676 12-day A-share freeze should have shown instead of reading confidently current.
+   Dark = desaturated amber RING + dimmed body (command-center instrument-fault idiom);
+   light = DIAGONAL HATCH on a deepened brown-amber ink, not the flat tint "behind" uses
+   (B4 repair — pinned mechanism, W2_SPEC.md repair round): the two states used to render
+   as the SAME mechanism at adjacent parameters (a slightly stronger version of the same
+   flat-tint recipe), which is not mechanically distinguishable from "behind" at a glance —
+   the whole point of a materially louder STALE treatment. Hatch (pattern) vs tint (flat
+   fill) is a genuine material difference. The deepened ink is
+   `color-mix(in srgb,var(--warn) 65%,var(--ink))` — var(--ink) (this page's own darkest
+   ink token) supplies the "deepened" component rather than a hand-picked hex, repeated
+   inline at each of its three use sites (design-system law: "tokens extend theme.css
+   only" / R0 rule 4 forbids a NEW literal-valued custom property outside theme.css, and
+   this page does not itself link theme.css — see the "self-contained standalone nav" note
+   above — so a theme.css-side declaration would be inert for it; deriving purely from the
+   page's own existing --warn/--ink tokens, inlined rather than named, keeps the mechanism
+   real AND compliant). Two independently art-directed treatments, never a token swap
+   (TP-0). */
+.fv-src--stale{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+.fv-src--stale .s-state{color:var(--warn);font-weight:700}
+html[data-theme="dark"] .fv-src--stale{filter:saturate(.72);opacity:.86;
+  box-shadow:0 0 0 1.5px color-mix(in srgb,var(--warn) 46%,transparent),0 0 22px -6px color-mix(in srgb,var(--warn) 55%,transparent)}
+html[data-theme="light"] .fv-src--stale{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 9%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 4%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));opacity:1}
+html[data-theme="light"] .fv-src--stale .s-state{color:color-mix(in srgb,var(--warn) 65%,var(--ink));font-weight:800}
+html[data-theme="light"] .fv-src--stale .s-name{color:var(--ink);font-weight:800}
+/* UNAVAILABLE — dark: dashed border + muted; light: hatched/dashed hairline + muted ink */
+.fv-src--unavailable{border-style:dashed}
+html[data-theme="light"] .fv-src--unavailable{background:repeating-linear-gradient(135deg,
+  color-mix(in srgb,var(--muted) 6%,transparent) 0 6px, transparent 6px 12px)}
+/* REVISED — a distinct (not amber) marker: the number itself changed, not merely its age */
+.fv-src--revised{border-color:color-mix(in srgb,var(--blue) 50%,var(--line))}
+.fv-src--revised .s-state{color:var(--ink-link, var(--blue));font-weight:700}
+html[data-theme="dark"] .fv-src--revised{box-shadow:0 0 0 1px color-mix(in srgb,var(--blue) 34%,transparent)}
+html[data-theme="light"] .fv-src--revised{background:color-mix(in srgb,var(--blue) 7%,transparent);
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--blue) 55%,transparent)}
 @media (max-width:640px){.fv-src{min-width:calc(50% - 5px);max-width:none}}
+
+/* ═══ SECTION WATERMARK (spec §3) — any L1 section fed by a STALE/UNAVAILABLE leg, right
+   under h2. B4 repair: the light watermark now uses the SAME hatch+deepened-ink mechanism
+   as the stale trust chip (not the flat tint "behind" uses) — a section watermark is a
+   STALE-severity signal (it never fires for a mere DEGRADED leg, spec §3), so it must be
+   mechanically distinct from a flat-tint treatment the same way the chip is. ═══ */
+.fv-watermark{margin:10px 0 4px;padding:9px 13px;border-radius:var(--r-ctl, 10px);font-size:12.5px;line-height:1.5;
+  display:flex;gap:8px;align-items:flex-start;color:var(--ink-2)}
+.fv-watermark::before{content:"⚠";flex:none;color:var(--ink-warn, var(--warn))}
+html[data-theme="dark"] .fv-watermark{background:color-mix(in srgb,var(--warn) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+html[data-theme="light"] .fv-watermark{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 8%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 3%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));border:1px solid color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 22%,var(--line));color:var(--ink)}
+html[data-theme="light"] .fv-watermark::before{color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
+
+/* hero STALE/UNAVAILABLE verdict form (spec §3, S5) — replaces the thesis sentence +
+   stance chip. Scoped to cn_large_order_proxy ONLY (S4) — it is the verdict's data
+   source; a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) instead gets
+   the small .fv-hero-notice chip below plus its own section watermarks. */
+.fv-thesis--stale{color:var(--ink)}
+.fv-stance--stale{border-color:var(--warn)!important;color:var(--ink-warn, var(--warn))!important;
+  background:color-mix(in srgb,var(--warn) 10%,transparent)!important}
+/* S4 — small hero notice chip for a stale/unavailable CROSS-BORDER leg while the primary
+   (cn proxy) verdict stays intact; deliberately quieter than the full hero replacement —
+   a chip, not a sentence swap. */
+.fv-hero-notice{display:inline-flex;align-items:center;gap:6px;margin:10px 0 0;padding:5px 11px;
+  border-radius:var(--r-pill, 999px);font-size:12px;font-weight:600;color:var(--ink-warn, var(--warn));
+  border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line))}
+html[data-theme="dark"] .fv-hero-notice{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 6%,var(--card));
+  border-color:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 30%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
 
 /* ═══════════════ WHAT CHANGED TODAY (spec §2.3) ═══════════════ */
 .fv-chg-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
@@ -500,7 +605,36 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   {% set inst = P.inst if P else none %}
   {% set MR = (snap.market_read.themes if snap.market_read else none) %}
   {% set CS = snap.change_summary %}
-  {% if CS and CS.material_change == false %}
+  {% set PUB = snap.publication_state %}
+  {# leg lookup by source_id, reused by every section's sec_watermark() call below (W2) #}
+  {% set _src_by_id = {} %}
+  {% for _s in (snap.sources or []) %}{% set _ = _src_by_id.update({_s.source_id: _s}) %}{% endfor %}
+  {# W2 REPAIR ROUND S4/S5: the hero verdict replacement is scoped to cn_large_order_proxy
+     ONLY — it is the verdict's own data source (the abs×rel quadrant read, the theme
+     board, the market_read breadth are all fed by it). Previously this was keyed on the
+     DESK-WIDE `publication_state`, which fires just as easily when a CROSS-BORDER leg
+     (sb_aggregate/hk_sb_holdings) alone is stale/unavailable while cn_large_order_proxy is
+     perfectly current — replacing an accurate verdict with a claim about a DIFFERENT
+     leg's trouble, and (S5) falling back to `snap.as_of` when the "stale" leg was actually
+     UNAVAILABLE (no date at all), which could print the literal, meaningless "from —". #}
+  {% set _cn_leg = _src_by_id.get('cn_large_order_proxy') %}
+  {% set _cn_status = _cn_leg.status if _cn_leg else none %}
+  {% set _hero_stale = _cn_status == 'STALE' %}
+  {% set _hero_unavailable = _cn_status == 'UNAVAILABLE' %}
+  {# S4: a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) never touches
+     the hero verdict sentence — it (i) watermarks its OWN sections (#channels, the HK
+     board), and (ii) surfaces this small notice chip so it is not silently invisible. #}
+  {% set _sb_leg = _src_by_id.get('sb_aggregate') %}
+  {% set _hk_leg = _src_by_id.get('hk_sb_holdings') %}
+  {% set _cross_border_bad = (_sb_leg and _sb_leg.status in ('STALE', 'UNAVAILABLE'))
+      or (_hk_leg and _hk_leg.status in ('STALE', 'UNAVAILABLE')) %}
+  {% if _hero_unavailable %}
+    {% set stance_en = 'Stand aside — no data' %}
+    {% set stance_zh = '暂缓 — 暂无数据' %}
+  {% elif _hero_stale %}
+    {% set stance_en = 'Stand aside — data behind' %}
+    {% set stance_zh = '暂缓 — 数据滞后' %}
+  {% elif CS and CS.material_change == false %}
     {% set stance_en = 'No material shift — nothing to chase' %}
     {% set stance_zh = '无重大变化' %}
   {% else %}
@@ -512,9 +646,32 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       <span class="dot"></span>🌊 {{ t('Capital Flow Velocity','资金流速') }} · {{ t('China &amp; Hong Kong','中国及香港') }}
       <span class="asof">{{ t('daily · as of','日度 · 截至') }} {{ snap.as_of }}</span>
     </div>
+    {% if _cross_border_bad %}
+    <div class="fv-hero-notice">
+      <span class="l-en">⚠ Cross-border data behind — see sources</span>
+      <span class="l-zh">⚠ 跨境数据滞后——见数据来源</span>
+    </div>
+    {% endif %}
     {# ---- two-axis verdict (spec §2.1) — generated from market_read, never a single
-         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ---- #}
-    {% if MR and MR.relative_breadth and MR.relative_breadth.denominator %}
+         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ----
+         W2 (spec §3, S4/S5 repair): STALE/UNAVAILABLE cn_large_order_proxy REPLACES the
+         verdict sentence entirely — a source behind must never share a screen with a
+         confident read of the SAME data it feeds. #}
+    {% if _hero_unavailable %}
+      {# S5: no date exists for an unavailable leg — never print "from —". #}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">A-share flow source is unavailable — no current read. Other panels show their own dates.</span>
+        <span class="l-zh">A股资金数据源不可用——暂无当前读数。其余面板以各自日期为准。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif _hero_stale %}
+      {% set _stale_date = _cn_leg.effective_date or '—' %}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">Source data is behind — showing the last good read from {{ _stale_date }}. Treat levels as history, not today's tape.</span>
+        <span class="l-zh">数据源滞后——显示{{ _stale_date }}的最近有效读数。请将其视为历史，而非今日盘面。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif MR and MR.relative_breadth and MR.relative_breadth.denominator %}
       {% set n = MR.relative_breadth.denominator %}
       {% set relpos = MR.relative_breadth.positive %}
       {% set abspos = MR.absolute_breadth.positive %}
@@ -602,17 +759,28 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <span class="l-zh">自上一有效交易日（{{ CS.previous_valid_session }}）以来，资金状态无重大变化。</span>
       </p>
     {% else %}
-      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) %}
+      {# W2 (spec §3): a leg entering DEGRADED/STALE/UNAVAILABLE/REVISED is a material
+         change too — quality transitions ride the SAME "what changed" list as quadrant
+         flips and rank movers, distinguished by kind=='quality' (leg_id + status words,
+         never a theme quadrant). #}
+      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) + (CS.quality_transitions or []) %}
       <ul class="fv-chg-list">
         {% for c in all_changes[:8] %}
         {% set _tr = _theme_names.get(c.id) %}
+        {% set _leg = _src_by_id.get(c.id) %}
         <li class="fv-chg-row">
+          {% if c.kind is defined and c.kind == 'quality' %}
+          <b>{{ t(_leg.name_en, _leg.name_zh) if _leg else c.id }}</b>
+          {% set _fw = status_word.get(c.from_status) or (c.from_status or '—', c.from_status or '—') %}
+          {% set _tw = status_word.get(c.to_status) or (c.to_status, c.to_status) %}
+          <span class="l-en">: {{ _fw[0] }} → {{ _tw[0] }}</span><span class="l-zh">：{{ _fw[1] }} → {{ _tw[1] }}</span>
+          {% elif c.from_quadrant is defined %}
           <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
-          {% if c.from_quadrant is defined %}
           {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
           {% set _to = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
           <span class="l-en">: {{ _f[0] }} → {{ _to[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to[1] }}</span>
           {% else %}
+          <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
           <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
           <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
           {% endif %}
@@ -624,12 +792,20 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <ul class="fv-chg-list">
           {% for c in all_changes[8:] %}
           {% set _tr = _theme_names.get(c.id) %}
-          <li class="fv-chg-row"><b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
-            {% if c.from_quadrant is defined %}
+          {% set _leg = _src_by_id.get(c.id) %}
+          <li class="fv-chg-row">
+            {% if c.kind is defined and c.kind == 'quality' %}
+            <b>{{ t(_leg.name_en, _leg.name_zh) if _leg else c.id }}</b>
+            {% set _fw = status_word.get(c.from_status) or (c.from_status or '—', c.from_status or '—') %}
+            {% set _tw = status_word.get(c.to_status) or (c.to_status, c.to_status) %}
+            <span class="l-en">: {{ _fw[0] }} → {{ _tw[0] }}</span><span class="l-zh">：{{ _fw[1] }} → {{ _tw[1] }}</span>
+            {% elif c.from_quadrant is defined %}
+            <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
             {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
             {% set _to = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
             <span class="l-en">: {{ _f[0] }} → {{ _to[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to[1] }}</span>
             {% else %}
+            <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
             <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
             <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
             {% endif %}
@@ -648,6 +824,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <h2>{{ t('Pressure vs actual flow','相对压力 × 绝对流向') }}
         <span class="sub">{{ t('four honest states — themes placed by both axes','按两轴划分的主题分布') }}</span>
         <span class="qm" data-tip-en="Main-force order-size flow is structurally a net seller — the two quadrants that require positive absolute flow (real inflow, above norm / still buying, pace fading) are rare by construction, so their emptiness on a given day is expected, not a data gap." data-tip-zh="主力大单口径的资金结构性为净卖出——需要绝对流入为正的两个象限（真实流入·高于常态 / 仍净流入·动能转弱）本就罕见，为空属正常现象，并非数据缺失。" role="button" tabindex="0">?</span></h2>
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
     {% if MRt and MRt.relative_breadth and MRt.relative_breadth.denominator %}
     <p class="fv-stance">
       <span class="l-en">Pressure vs norm: <b>{{ MRt.relative_breadth.positive }}</b> above · <b>{{ MRt.relative_breadth.neutral }}</b> near · <b>{{ MRt.relative_breadth.negative }}</b> below — of {{ MRt.relative_breadth.denominator }} themes — {{ MRt.relative_breadth.missing }} unscored<br>Actual 4-week flow: <b>{{ MRt.absolute_breadth.positive }}</b> positive · <b>{{ MRt.absolute_breadth.negative }}</b> negative · <b>{{ MRt.absolute_breadth.neutral }}</b> neutral — {{ MRt.absolute_breadth.missing }} unscored</span>
@@ -706,6 +883,13 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <button data-mkt="hk" aria-pressed="false">{{ t('HK Southbound','南向') }}</button>
       </span>
     </div>
+    {# S4 scoping repair: this L1 section's TOP-level watermark keys to cn_large_order_proxy
+       ONLY — it feeds the A-share theme table this section is primarily about. The nested
+       HK per-name board below is fed by hk_sb_holdings, its OWN leg, and gets its OWN
+       watermark right at its own sub-header (see the market-hk block further down),
+       matching S4's "#quadrant/#groups/momentum-details -> cn proxy; #channels/HK board ->
+       their own legs" split. #}
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
 
     {# ---- A-SHARE: theme lanes → member drill-down ---- #}
     {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
@@ -784,6 +968,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <details class="fv-disc" id="momentum">
       <summary>⚡ {{ t('Momentum shifts','动能变化') }} — <span class="tnum">{{ M.n_accel_in }}</span> {{ t('speeding up','加速中') }} · <span class="tnum">{{ M.n_cooling }}</span> {{ t('cooling','降温') }} · <span class="tnum">{{ M.n_easing }}</span> {{ t('outflow fading','流出转弱') }}</summary>
       <div class="fv-disc-body">
+        {# S4 scoping: momentum shifts are the A-share large-order velocity's own
+           acceleration read — keyed to cn_large_order_proxy, matching #quadrant/#groups. #}
+        {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
         <p class="fv-stance">{{ t('Velocity says which way; acceleration says whether it\'s <b>getting stronger or running out</b>. Fading inflow and slowing outflow are early turns — <b>watch, don\'t act.</b>','流速指方向；加速度指其<b>增强还是衰竭</b>。流入转弱与流出放缓是早期拐点——<b>观察，勿妄动。</b>') }}</p>
         <div class="fv-mom">
           <div class="mom-col m-in">
@@ -854,6 +1041,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     {% set h = snap.hk_names %}
     <div class="market-hk">
       <span class="market-tag">{{ t('HK Southbound 南向','港股南向') }}</span>
+      {# S4 scoping: the HK board is fed by hk_sb_holdings, its OWN leg — not the parent
+         #groups section's cn_large_order_proxy watermark above. #}
+      {{ sec_watermark([_src_by_id.get('hk_sb_holdings')]) }}
       <div class="panel">
         <div class="panel-h">🇭🇰 {{ t('Mainland southbound per-name','内地南向个股') }}
           <span class="asof">{{ t('as of','截至') }} {{ h.as_of or '—' }} · {{ t('expected T−1','预期T−1') }}</span>
@@ -899,6 +1089,11 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   <section class="fv-sec fv-reveal" id="channels">
     <div class="fv-eyebrow">🛰️ {{ t('Cross-Border Channels','跨境通道') }}</div>
     <h2>{{ t('Stock-Connect aggregate flow','沪深港通整体资金') }} <span class="sub">{{ t('the whole-channel tape · daily 1w / 1m / 3m velocity','整条通道 · 日度1周/1月/3月流速') }}</span></h2>
+    {# S4 scoping repair: #channels shows the Stock-Connect AGGREGATE cards (southbound/
+       northbound) — its own leg is sb_aggregate; hk_sb_holdings (per-name HK holdings)
+       does not feed anything on this section and gets its own watermark inside the HK
+       board sub-panel instead (market-hk block). #}
+    {{ sec_watermark([_src_by_id.get('sb_aggregate')]) }}
     {% if live_chans %}
     <div class="vgrid">
       {% for c in live_chans %}

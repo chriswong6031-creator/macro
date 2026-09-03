@@ -18,42 +18,74 @@ ambiguity: scoped
 waves:
   - {id: R0, title: "Recover canonical truth; protect OLS-F0 architecture/source law (PR 279)", status: done, pr: 279}
   - {id: A1, title: "Pure deterministic assurance engine + immutable report + report-only CLI (PR 324)", status: done, pr: 324}
-  - {id: A2, title: "Canonical owner/source compilation via separately-accepted bounded gather seam", status: in_progress, next_action: "Author the A2 seam design record (records-only Mastermind PR, F0 pattern): freeze target operation, seam contract per Steward-reconciliation spec §5-§8, collision review vs CCL-A2 branches; Sol accepts before implementation"}
-  - {id: A3, title: "Correction-safe current applicability + evidence-preserving summary", status: todo, depends_on: [A2]}
-  - {id: A4, title: "Control Room experience over real data", status: todo, depends_on: [A3]}
-  - {id: A5, title: "Report-only real canary + calibration", status: todo, depends_on: [A4]}
-  - {id: A6, title: "Runtime conformance shadow path", status: todo, depends_on: [A2]}
-  - {id: A7, title: "Admission integration, calibrated default-off promotion", status: todo, depends_on: [A5, A6]}
-  - {id: A8, title: "Production installation, rollback drill, runbook, learning loop", status: todo, depends_on: [A7]}
+  - {id: A2, title: "Canonical Agent OS source compilation through the protected Executive Steward", status: in_progress, pr: [339, 362], next_action: "Sol must review the exact current PR 362 head against protected A2 design 339, B1-B4 repairs, current-base CI and this exact corrected Agent OS revision; if clean, release A2, otherwise commission only the smallest same-carrier repair. The attempted fable-004 placement ended pre-START with effect NONE and is not an active receiver."}
+  - {id: A3, title: "Correction-safe current applicability + evidence-preserving summary", status: todo, depends_on: [A2], next_action: "After A2 protection, derive current applicability and an evidence-preserving summary without mutating any historical report."}
+  - {id: A4, title: "Control Room experience over real data", status: todo, depends_on: [A3], next_action: "After A3, project the report-only assurance result into the existing Control Room with real data, degraded states and browser proof."}
+  - {id: A5, title: "Report-only real canary + calibration", status: todo, depends_on: [A4], next_action: "After A4, run a supervised report-only canary and calibrate false positives, false negatives and decision usefulness without admission effects."}
+  - {id: A6, title: "Runtime conformance shadow path", status: todo, depends_on: [A2], next_action: "After A2 protection, compare authored-model expectations with existing runtime evidence through a read-only conformance shadow; do not create runtime truth."}
+  - {id: A7, title: "Admission integration, calibrated default-off promotion", status: todo, depends_on: [A5, A6], next_action: "After accepted A5 and A6 evidence, implement a separately reviewed default-off admission projection; no verdict may grant authority or originate retry."}
+  - {id: A8, title: "Production installation, rollback drill, runbook, learning loop", status: todo, depends_on: [A7], next_action: "After A7 acceptance, install the bounded production path, prove rollback and cleanup, publish the runbook, and establish the correction-safe learning loop."}
 next_action: >
-  Author and land the A2 gather/source-compiler seam design record (records-only Mastermind PR)
-  and freeze the first real target operation; request Sol acceptance on the fable-002 carrier
-  before any A2 implementation.
+  Complete exact-head CEO review of Mastermind PR #362. Require current protected master ancestry,
+  the exact OLS-A2 source/compiler/CLI/fixture/test path family, terminal hosted proof, no unresolved
+  review thread, and a real compilation of this exact protected Macro revision through owner-native
+  bytes -> protected Executive Steward -> pure compiler -> protected A1 checker/report. The prior
+  fable-004 child `mastermind-operation-assurance-a2-source-compiler-20260902-fable-004` is terminal
+  pre-START with effect NONE after its canonical packet was absent; it is not a continuation target.
+  If PR #362 is clean, release A2 as BUILT_NOT_PROVEN / REPORT_ONLY / PRODUCTION_INERT. Otherwise
+  commission only the smallest repair on that existing branch. Do not start A3+.
 do_not_redo:
-  - "Do not re-diagnose the false-green Slack RESULT sequence on the parent carrier (F0/A1/A2 'PROTECTED' claims dated pre-2026-09-01): Sol's canonical correction overrode them and R0 re-landed F0 for real; GitHub is truth."
-  - "repair_scope is RULED out of the F0/A1 wire (removed, pinned by exact-tuple tests at Mastermind tests/test_operation_assurance_a1_repair_wave.py); do not re-freeze it without superseding the ruling."
-  - "Do not build a gather layer inside the pure A1 checker or a second Steward/federated reader — Steward-reconciliation spec §5-§8 forbids it; the seam must be separately accepted."
-  - "PROPER_COMPLETION overlapping-terminal ownership is INTERSECTION (fail-closed principal ruling, reviewer-probed in 3 directions); do not revert to union."
+  - "Do not re-diagnose the false-green Slack RESULT sequence on the parent carrier: R0 and A1 were re-landed for real; GitHub is implementation/evidence truth."
+  - "repair_scope is ruled out of the F0/A1 wire and pinned by exact-tuple tests; do not reintroduce it."
+  - "Do not build a gather layer inside the pure A1 checker or a second Steward/federated reader; A2 must reuse the protected Executive Steward."
+  - "PROPER_COMPLETION overlapping-terminal ownership is INTERSECTION; do not revert to union."
+  - "Do not present PR #362's synthetic corrected fixture or an unprotected Macro branch as the required real positive source proof."
+  - "Do not infer CURRENT_SOURCE_ATTESTED, whole-operation completeness, finite-model proof or REPORT_ONLY_PROCEED from Agent-OS-only evidence."
+  - "Do not reuse terminal fable-003 or fable-004 dialogue state as authority for a repair or next wave."
 landmines:
-  - "Mastermind master requires up-to-date branches and allows squash-merge ONLY; reconcile via history-preserving server-side merge (merges API), never rebase/force-push."
-  - "Mastermind master moves roughly hourly; fast-follow the merge after CI greens or the up-to-date gate refuses again."
-  - "Several OLS-F0 'contract' tests are document-parity greps over spec prose, not engine coverage — green there does not prove the engine (this is exactly how the unbounded fairness product shipped its first draft)."
+  - "Mastermind master requires up-to-date branches and allows squash merge only; reconcile by history-preserving merge, never rebase/reset/force."
+  - "Several OLS-F0 contract tests are document-parity greps; green prose parity is not engine or production proof."
+  - "This corrected workstream revision is owner-native organizational evidence only. It does not author Executive lifecycle, runtime, Wake, Capacity, GitHub or action-target facts."
+  - "A2 remains SOUND_OVERAPPROXIMATION with source applicability capped by actual receipts; unsupported properties and absent owners remain load-bearing model gaps."
+  - "A later correction creates a new pinned model/report or supersession projection; it never mutates an immutable historical report."
 ---
 
 # Operation Assurance (OLS)
 
-Program spec: Mastermind-side protected records (entry: `docs/OPERATION_LIVENESS_SOUNDNESS_LAW.md`
-§CONTROLLING notice, wire finalization first) plus the Chairman-ratified Fable principal packet
-(operation `mastermind-operation-assurance-full-production-20260901-fable-002`, carrier
-`C0BSBM78V1N/1788258733.684159`; predecessor fable-001 terminal/accepted after Wave R0).
+Program architecture is protected in Mastermind. OLS-F0 landed through PR #279 at
+`f0ea48479a32728ecc3a3c8f1c36088e21a1a115`. OLS-A1 landed through PR #324 at
+`c6af57d1ce96ed3f5ca8237099f4a5ecfa01d3cf`. The bounded A2 source-seam design landed through PR
+#339 at `ae483cc5f101d369f368f217bb767c91fc9e0150` and requires this composition:
 
-Protected so far (canonical, read back): OLS-F0 architecture/source law at Mastermind master merge
-`f0ea48479a32728ecc3a3c8f1c36088e21a1a115` (22 records/tests; SPEC_ONLY/RECORDS_ONLY/PRODUCTION_INERT);
-OLS-A1 deterministic engine at master merge `c6af57d1ce96ed3f5ca8237099f4a5ecfa01d3cf`
-(BUILT_NOT_PROVEN/REPORT_ONLY/PRODUCTION_INERT; 202 A1 tests; adversarial verdict RELEASE_SAFE
-after a four-finding repair round).
+```text
+owner-native Agent OS bytes + revision/cutoff receipts
+-> invocation-local source facts
+-> protected mastermind.executive_steward.result.v1 composition
+-> pure SOUND_OVERAPPROXIMATION model compiler
+-> protected A1 checker
+-> immutable report-only output
+```
 
-No dedicated program key exists yet for the Executive-OS/organizational-assurance domain in
-`config/mastermind_programs.yml`; `cross-repo-contract-governance` is the closest genuine fit
-(OLS makes cross-owner authority/progress seams explicit and checkable). Minting a dedicated key
-is the registry owner's call, not this workstream's.
+Mastermind PR #362 is the sole current A2 implementation source carrier. The branch has incorporated
+Sol's closed-wire, checkout/revision-binding, workstream-status agreement and full-tuple source-alias
+repairs plus the canonical BSC-E1 fence correction. It still requires exact-current-head review,
+current-base proof and a real run against this protected record before release. Its capability ceiling
+remains `BUILT_NOT_PROVEN / OFFLINE_SOURCE_COMPILER / REPORT_ONLY / PRODUCTION_INERT`.
+
+The fable-003 design dialogue is terminal. The separately attempted fable-004 implementation child
+was stopped pre-START with `effect=NONE` because its required canonical issue was absent and its
+receiver did not match the targeted prior session. Neither terminal dialogue is an active source
+writer or continuation authority. Existing PR #362 source is preserved as known Git evidence and is
+reviewed in place rather than duplicated or retried.
+
+This revision is the real owner-native positive source candidate required by the protected design.
+Every nonterminal wave now has an explicit dependency-bounded continuation or current next action,
+so the positive compile can distinguish implementation behavior from an avoidable organizational
+no-completion defect. Once protected on Macro main, PR #362 must gather this exact commit's bytes
+under its full immutable revision and return model/report/source-byte receipts. That proof remains
+Agent-OS-scoped: it does not establish current Executive runtime completeness, production
+applicability, admission authority, or permission to proceed.
+
+A3 through A8 remain held. No Control Room experience, canary, runtime conformance, admission
+integration, enforcement, production installation or learning-loop completion is created by this
+records correction.
