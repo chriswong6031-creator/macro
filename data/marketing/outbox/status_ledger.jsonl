@@ -4823,3 +4823,10 @@
 {"id":"ob-2026-09-03-9642a605cc","from":"approved","to":"quarantined","at":"2026-09-03T17:33:19Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
 {"id":"ob-2026-09-03-aa3b4fcc22","from":"approved","to":"posting","at":"2026-09-03T17:33:24Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-09-03-aa3b4fcc22","from":"posting","to":"posted","at":"2026-09-03T17:33:29Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a99af650b51a61256760b96","external_url":null,"at":"2026-09-03T17:33:08Z","booked_at":"2026-09-03T17:33:08Z"}}
+{"id":"ob-2026-09-03-147ab8a0f9","from":"queued","to":"approved","at":"2026-09-03T17:38:48Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-03-17acb00384","from":"queued","to":"approved","at":"2026-09-03T17:38:48Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-03-a9793fc178","from":"queued","to":"approved","at":"2026-09-03T17:38:48Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-03-147ab8a0f9","from":"approved","to":"quarantined","at":"2026-09-03T17:38:48Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-09-03-17acb00384","from":"approved","to":"quarantined","at":"2026-09-03T17:38:48Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.60) of ob-2026-09-03-c002c5e4ac posted today; same template, different ticker","receipt":null}
+{"id":"ob-2026-09-03-a9793fc178","from":"approved","to":"posting","at":"2026-09-03T17:38:54Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-09-03-a9793fc178","from":"posting","to":"posted","at":"2026-09-03T17:38:55Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a99b0af18474247f7570a42","external_url":null,"at":"2026-09-03T17:38:46Z","booked_at":"2026-09-03T17:38:46Z"}}
