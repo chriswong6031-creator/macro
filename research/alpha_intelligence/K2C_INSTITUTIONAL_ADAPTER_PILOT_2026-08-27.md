@@ -544,13 +544,18 @@ relationship as agreement. Consequently:
   precisely the back door this repair exists to close. Its real-world
   outcome on any input is therefore always the
   `PILOT_OWNER_SEMANTICS_UNRESOLVED` terminal receipt shown in §8.2.
-- The ONE test-only STRUCTURAL fixture
+- **WITHDRAWN (§8.5, 2026-09-03 blocker+MAJOR repair).** This bullet
+  previously said the ONE test-only STRUCTURAL fixture
   (`tests/test_institutional_13f_adapter_contract.py::
-  _structural_owner_semantics`) proves the gate machinery correctly routes a
-  fully owner-resolved binding into the K2-B compiler and that compiled
-  output stays uninjectable — it is explicitly commented as NOT evidence any
-  production owner can supply these values, and is never presented as a
-  production positive.
+  _structural_owner_semantics`) "proves the gate machinery correctly routes
+  a fully owner-resolved binding into the K2-B compiler and that compiled
+  output stays uninjectable." That framing is retired: per §8.5, the
+  fixture can no longer reach `PILOT_COMPILED` under ANY mutation (a second
+  adversarial review found the shape-only gate this bullet described was
+  itself still exploitable), and no test in the suite asserts
+  `state == PILOT_COMPILED` any more. The fixture's only remaining role is
+  proving the SHAPE gate still accepts a well-formed payload's shape while
+  the (now-mandatory) owner-VERIFICATION stage still refuses it.
 
 **Result:** this repair closes the false-positive bug entirely (no
 `owner_semantics` producer exists → every current real-world read is now
@@ -597,8 +602,15 @@ owner primitive:
   validated `provenance.owner`/`reference_id` once a recipe was reached —
   two receipts proven by two DIFFERENT owners were byte-identical and
   shared one `receipt_id`. Repaired: the block is now emitted on the
-  positive path too, carrying the owner's `provenance` verbatim. Falsifier:
-  `test_owner_provenance_is_recorded_and_distinguishes_receipts`.
+  positive path too, carrying the owner's `provenance` verbatim. Falsifier
+  at the time: `test_owner_provenance_is_recorded_and_distinguishes_
+  receipts`. **Superseded by §8.5 (2026-09-03):** the "positive path" this
+  fix restored provenance ONTO is now itself unreachable by construction, so
+  provenance is once again never echoed on ANY receipt this module can
+  produce — not a regression of R3, but S4 of the later commission
+  deliberately closing the exact laundering surface R3 had reopened for a
+  now-impossible positive. The renamed falsifier is
+  `test_varying_provenance_no_longer_distinguishes_unresolved_receipts`.
 - **R4 (MAJOR — wrong exemplar).** §8.2's worked example was mislabelled as
   what "the §7 filer (CIK 0001792167, CUSIP 037833100)" would now produce;
   corrected in place above (§8.2) — that pairing is the repaired module's
@@ -619,4 +631,120 @@ owner primitive:
   five directories for one syntactic dict-literal-key form, with named
   blind spots (non-literal construction, non-`.py` files, directories
   outside the five searched).
+
+### 8.5 Owner-verifier-registry repair (Sol review 5099850302, 2026-09-03) — blocker + MAJOR closed by an architectural change, not a bigger checklist
+
+Sol issued `REQUEST_REPAIR` on GitHub review `5099850302` (CHANGES_REQUESTED,
+commit-anchored to `339a5c3c39e0`) against the §8.4 repair. Two BLOCKERs and
+one MAJOR, all reproduced directly on that head before this repair began:
+
+1. `SEC:US-XNYS-TOTALLYOTHER` — parseable under `lib.dataos.identity.parse_id`
+   (a real MIC, an alphanumeric code) but NOT the binding for the request's
+   CUSIP `037833100` — paired with `alias_table_resolved`, caller-fabricated
+   provenance, and otherwise-valid epochs, was **accepted**, reaching
+   `PILOT_COMPILED`. §8.4's R1 fix closed the UNRESOLVED-sentinel and
+   grammar holes but never asked whether a grammatically well-formed id was
+   the RIGHT id — no shape check can, because no CUSIP→SEC resolver exists
+   in this repository (§3).
+2. A vehicle epoch linking a DIFFERENT `manager_complex_id` than the manager
+   epoch's own was **accepted** — reproduced directly: this payload made
+   `validate_recipe` raise an uncaught `InstitutionalIntelligenceError`
+   (`vehicle_complex_epoch_unresolved`) out of `run_pilot`, escaping the
+   typed-refusal envelope entirely, which is worse than a false positive.
+3. `vehicle_class="broad_passive"` with `decision_mode="discretionary"` (a
+   K2-B class/mode conflict K2-B's own `validate()` already names as
+   `vehicle_class_decision_mode_conflict`) was **accepted**, then likewise
+   raised from `validate_recipe` AFTER `build_recipe` had already run,
+   instead of refusing before it — reproduced directly on `339a5c3c39e0`
+   alongside finding 2.
+
+**Root cause, per Sol's framing (adopted verbatim as this repair's design
+principle):** the defect was architectural, not a missing check. §8.2/§8.4
+built an ever-growing SHAPE checklist (`_validate_owner_semantics`) and kept
+finding one more field combination it didn't cover, because a checklist can
+only ever validate that a caller-supplied payload is well-FORMED, never that
+it is TRUE — there is no canonical owner artifact anywhere in this
+repository to check the mapping against. Adding a fourth, fifth, sixth
+bespoke conflict check (a `vehicle_class`/`decision_mode` table; a
+manager/vehicle cross-link check; a CUSIP→SEC truth table) would have been
+the SAME mistake in different clothing: trusting the caller's shape as a
+proxy for the caller's truth.
+
+**The fix.** `_validate_owner_semantics` is replaced by
+`_verify_owner_semantics(owner_semantics, *, cusip, cutoff) -> (payload |
+None, reason)`. Stage 1 keeps every existing shape check from §8.2/§8.4
+unchanged (sentinel resolution, `SEC:` grammar, epoch `resolution_state`,
+required epoch fields, `status`/`resolution_state` contradiction) — still
+necessary, now explicitly documented as insufficient. Stage 2 hands a
+shape-valid payload to every verifier registered in a new module-level
+registry, `_CANONICAL_OWNER_VERIFIERS: tuple = ()` — **empty by
+construction**. K2-C may never populate it itself; only the owning programs
+may, in their own future waves (security axis → Data OS / Stock Identity;
+manager/vehicle → Institutional Intelligence / K2-B). While it stays empty,
+a shape-valid payload always falls through to `(None, "no_canonical_owner_
+verifier")` — there is nothing in this repository that could verify ANY
+payload, however well-formed, so nothing can unlock recipe construction. No
+new domain-specific conflict check was added for findings 2 or 3 either:
+both fall through to the same registry-absence refusal as finding 1, which
+is the point — the fix is one architectural gate, not three patched holes.
+
+**Consequence (frozen spec point S3, stated in the module docstring
+verbatim): the positive path is unreachable by construction.**
+`build_recipe`/`compile_recipe` remain in the module as the structure a
+future owner wires into once a real verifier exists, but `run_pilot` always
+takes the typed pre-recipe `PILOT_OWNER_SEMANTICS_UNRESOLVED` branch today —
+no caller, and nothing in this repository, can reach `POSITIVE_STATE`
+(`PILOT_COMPILED`) or `NON_POSITIVE_STATE` (`PILOT_COMPILED_NON_POSITIVE`)
+under this head. Two things fall out of that architecturally, not from a
+bespoke check: no partial or self-contradictory epoch can ever reach
+`build_recipe` (nothing can raise `validate_recipe`'s own errors AFTER
+construction, because construction itself is unreachable — this is what
+actually fixes findings 2 and 3, not a new cross-field check), and no
+caller-authored `provenance` is ever admitted onto a receipt — the
+unresolved receipt's `owner_semantics.provenance` stays `null`
+unconditionally, and the receipt instead carries an explicit
+`owner_semantics.reason` naming exactly which shape check or the empty
+registry refused it (frozen spec point S4).
+
+**§8.3's "STRUCTURAL fixture" framing is withdrawn, not merely corrected.**
+§8.3's closing bullet (marked WITHDRAWN in place above) used to say the one
+test-only STRUCTURAL fixture
+(`tests/test_institutional_13f_adapter_contract.py::
+_structural_owner_semantics`) "proves the gate machinery correctly routes a
+fully owner-resolved binding into the K2-B compiler." That claim is exactly
+what findings 1–3 falsified: a fixture that is merely SHAPE-valid was never
+proof the gate was sound, because shape-validity was never the same claim
+as truth. No test in the suite asserts `state == PILOT_COMPILED` any more
+(`tests/test_institutional_13f_adapter_contract.py::
+test_no_canonical_owner_verifier_is_registered` is the new owner-blocked
+discriminator, asserting `_CANONICAL_OWNER_VERIFIERS == ()` directly); the
+fixture's only remaining job is proving the shape gate still accepts a
+well-formed payload's shape while the (now-mandatory) verification stage
+still refuses it — see
+`test_parseable_but_wrong_sec_identity_cannot_prove_a_positive`,
+`test_fabricated_provenance_cannot_prove_a_positive`,
+`test_owner_semantics_contradiction_cannot_prove_a_positive` (the five-case
+contradiction matrix reproducing findings 1–3's own shapes: missing manager
+`interval`; an actor/epoch `resolution_state` conflict; the
+`vehicle_class`/`decision_mode` conflict; a vehicle→complex link conflict;
+a manager/vehicle identity mismatch), and
+`test_rich_provenance_is_not_admitted_and_never_echoed`.
+
+**What this repair does NOT change (still true, still disclosed):** §8.3's
+two `missing_*_owner_primitive` disclosures stand unchanged — no repo owner
+resolves a 13F `cusip` to a Data OS `SEC:` identity, and no repo owner
+supplies a resolved K2-B `managerComplexEpoch`/`vehicleEpoch` pair; this
+repair does not implement either primitive, and OUT OF SCOPE forbids it
+from doing so. §8.2's R4 disclosure stands: §7's real production positive
+(Custos Family Office, CIK 0001904423 × ABBVIE, CUSIP 00287Y109) has still
+not been re-read against this head. §8.3's R5a DEC-inversion disclosure
+stands unformalized: minting a supersession record for
+`DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP` remains Sol's call, not
+this worker packet's — this repair makes the inversion MORE architecturally
+final (there is now no registry entry to point to, not merely an unresolved
+field), which if anything strengthens the case for a formal supersession,
+but does not itself mint one. K2-C's acceptance state is unchanged by this
+repair: `PARTIAL / NOT SOL-ACCEPTED` for a real positive, with the
+false-positive/escaped-exception defects this §8.5 repairs now closed by
+construction rather than by a longer checklist.
 
