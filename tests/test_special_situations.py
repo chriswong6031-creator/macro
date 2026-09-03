@@ -810,3 +810,22 @@ def test_mastermind_emit_and_context_feed_cannot_diverge(tmp_path, monkeypatch):
     for row in e["risk_arb"]:
         assert row["is_signal"] is False and row["quality_state"] == arb.QUALITY_VERIFIED
     assert si  # the feed consumer imports the same owner
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "MERGE-BLOCKING, KNOWN, AWAITING A PATH-BOUNDARY RULING. "
+    "scripts/build_special_situations.py:82 `_arb_str` subscripts a['gross_spread_pct'] "
+    "directly, and that key was renamed to the unambiguous `live_gross_spread_pct` (plus the "
+    "block is now attached to DEGRADED rows too, where it is None). The desk page build "
+    "therefore raises KeyError on this contract, and NOTHING in CI covers `_arb_str`, so the "
+    "break is invisible to every check. The two-line consumer patch sits outside the path set "
+    "frozen at START, so it is not applied here. strict=True is the ratchet: the moment the "
+    "consumer is fixed this XPASSes and FAILS the build, forcing this marker to be removed "
+    "rather than silently outliving the defect."))
+def test_desk_page_renderer_consumes_the_economics_contract():
+    from datetime import date as _d
+    from engine import special_arb as arb
+    from scripts.build_special_situations import _arb_str
+    econ = arb.reduce_cash_deal(arb.compile_current_terms([]), category="Acquisitions",
+                                asof=_d(2026, 9, 1))
+    assert _arb_str(econ) == ""            # a degraded block must render as nothing, not crash
