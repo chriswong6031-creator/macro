@@ -31,10 +31,11 @@ waves:
   - id: W0
     title: Architecture, ownership, contracts, plan and parent-state reconciliation
     status: awaiting_ci
+    pr: 6790
     next_action: >
-      Validate and obtain Sol exact-head acceptance of the records-only W0 carrier
-      temporal-grain-w0-freeze-20260903-sol-001. W0 creates no empirical result,
-      runtime, signal, data plane or production capability.
+      Validate and obtain Sol exact-head acceptance of draft PR #6790, the records-only
+      W0 carrier for temporal-grain-w0-freeze-20260903-sol-001. W0 creates no
+      empirical result, runtime, signal, data plane or production capability.
   - id: W1
     title: Exact WMT/silver recipe capture, TradingView parity and G/A/K/D artifact attack
     status: todo
@@ -91,10 +92,10 @@ artifacts:
   - agentos/decisions/DEC-TEMPORAL-GRAIN-OWNERSHIP-AND-ZERO-AUTHORITY.md
   - agentos/handoffs/TEMPORAL-GRAIN-INTELLIGENCE-2026-09-03-W0.md
 next_action: >
-  Complete exact-head validation and Sol acceptance of the W0 records carrier. Then place exactly
-  one W1 implementation session through PREFERRED_AVENUE CTO Sol,
-  RECEIVER_BINDING_MODE CAPACITY_SELECTABLE. Current placement is WAITING_CAPACITY /
-  needs_placement; no Slack delivery, pickup, START, Executive Job or watcher exists.
+  Complete exact-head validation and Sol acceptance of draft PR #6790. Then place exactly one W1
+  implementation session through PREFERRED_AVENUE CTO Sol, RECEIVER_BINDING_MODE
+  CAPACITY_SELECTABLE. Current placement is WAITING_CAPACITY / needs_placement; no Slack
+  delivery, pickup, START, Executive Job or watcher exists.
 ---
 
 ## Scientific prior
