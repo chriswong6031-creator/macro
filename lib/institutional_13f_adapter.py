@@ -31,9 +31,16 @@ verbatim in the per-period row blocks but feeds NO semantics anywhere; and a
 filer CIK is a filer identifier, never a resolved manager-complex identity
 -- this module mints no ``mcx_*``/``mce_*``/``veh_*``/``vie_*`` identity of
 its own.  Validation of a supplied ``owner_semantics`` payload is strict and
-fail-closed: anything missing, empty, wrong-typed, or partial makes the
-WHOLE payload unresolved (never partially trusted), and the receipt then
-carries ``state=PILOT_OWNER_SEMANTICS_UNRESOLVED`` with no K2-B recipe ever
+fail-closed: anything missing, empty, wrong-typed, unresolved (the security
+seam's own unresolved sentinel is never accepted as proof of resolution),
+not a well-formed ``SEC:`` identity under the owner's own grammar,
+structurally partial (missing any of the specific fields this adapter
+itself reads out of an epoch -- never the full K2-B epoch schema, which the
+K2-B compiler enforces once a recipe reaches it), or internally
+self-contradictory (``status=="unresolved"`` alongside
+``resolution_state=="resolved"``) makes the WHOLE payload unresolved (never
+partially trusted), and the receipt then carries
+``state=PILOT_OWNER_SEMANTICS_UNRESOLVED`` with no K2-B recipe ever
 constructed -- refusing BEFORE construction rather than laundering
 missingness through a placeholder vehicle class.  No current repository
 producer supplies a lawful ``owner_semantics`` payload (see
@@ -76,6 +83,7 @@ from engine.institutional_census.storage import (
     build_institutional_13f_store,
     load_raw_evidence,
 )
+from lib.dataos.identity import IdentityError, parse_id
 from lib.evidence_foundation import (
     ALL_FALSE_AUTHORITY,
     compute_reference_id,
@@ -605,28 +613,80 @@ def _original_lineage() -> dict[str, Any]:
     return {"state": "original", "predecessor_epoch_id": None, "reason": None, "append_only": True}
 
 
+_MANAGER_COMPLEX_EPOCH_REQUIRED_KEYS = ("manager_complex_id", "complex_epoch_id")
+# vehicle_epoch's required keys mirror exactly what build_recipe reads out of
+# it (decision_mode selects the measure kind; the rest is carried verbatim
+# into the K2-B recipe) -- never the full K2-B vehicleEpoch schema, which
+# lib.institutional_intelligence.validate owns.
+_VEHICLE_EPOCH_REQUIRED_KEYS = (
+    "vehicle_epoch_id", "decision_mode", "manager_complex_id", "complex_epoch_id", "vehicle_class",
+)
+
+
+def _epoch_string_fields_present(epoch: Mapping[str, Any], keys: tuple[str, ...]) -> bool:
+    """True only when every one of ``keys`` is present on ``epoch`` as a
+    non-empty string. Checks structural completeness of exactly the keys
+    THIS ADAPTER itself consumes (see ``build_recipe``) -- never the full
+    K2-B ``managerComplexEpoch``/``vehicleEpoch`` schema, which the K2-B
+    compiler (``lib.institutional_intelligence.validate``) owns and enforces
+    on its own terms once a recipe reaches it.
+    """
+    for key in keys:
+        value = epoch.get(key)
+        if not isinstance(value, str) or not value.strip():
+            return False
+    return True
+
+
+def _epoch_status_contradicts_resolved(epoch: Mapping[str, Any]) -> bool:
+    """True when an epoch claims ``resolution_state=="resolved"`` while its
+    own ``status`` is ``"unresolved"`` -- self-contradictory.  K2-B's own
+    semantic law (``lib/institutional_intelligence.py``,
+    ``unresolved_complex_status_conflict``) already refuses the mirror case
+    (``resolution_state=="unresolved"`` with ``status!="unresolved"``); this
+    closes the other direction, which matters here because
+    ``resolution_state=="resolved"`` is exactly what this validator treats
+    as proof an epoch may be trusted at all.
+    """
+    return epoch.get("status") == "unresolved" and epoch.get("resolution_state") == "resolved"
+
+
 def _validate_owner_semantics(owner_semantics: Any) -> Mapping[str, Any] | None:
     """Strictly, atomically validate one ``owner_semantics`` payload.
 
     Returns the payload UNCHANGED only when every required component is
-    present, well-typed, and each supplied K2-B epoch's own
-    ``resolution_state`` is ``"resolved"``:
+    present and well-typed:
 
     * ``provenance``: a mapping with non-empty string ``owner`` and
       non-empty string ``reference_id``;
     * ``security``: a mapping with non-empty string ``dataos_security_id``
-      and non-empty string ``dataos_resolution``;
-    * ``manager_complex_epoch``: a full K2-B ``managerComplexEpoch`` mapping
-      whose own ``resolution_state`` is ``"resolved"``;
-    * ``vehicle_epoch``: a full K2-B ``vehicleEpoch`` mapping whose own
-      ``resolution_state`` is ``"resolved"``.
+      and non-empty string ``dataos_resolution``, where ADDITIONALLY (a)
+      ``dataos_resolution`` is not the typed unresolved sentinel
+      (``SECURITY_BINDING_UNRESOLVED`` -- the schema's own "not proven"
+      value is never proof of resolution) and (b) ``dataos_security_id``
+      parses under the canonical Data OS grammar
+      (``lib.dataos.identity.parse_id``) AND denotes a ``SEC:`` security
+      identity specifically (an ``ISS:`` issuer id, a bare listing key, or
+      any other instrument-class id is not a security binding);
+    * ``manager_complex_epoch``: a mapping whose own ``resolution_state`` is
+      ``"resolved"``, whose ``status`` does not contradict that (see
+      :func:`_epoch_status_contradicts_resolved`), and which carries
+      non-empty string values for every key in
+      ``_MANAGER_COMPLEX_EPOCH_REQUIRED_KEYS`` -- the keys THIS ADAPTER
+      itself reads out of it, not the full K2-B schema;
+    * ``vehicle_epoch``: the same three checks (resolved, status-consistent,
+      structurally complete) against ``_VEHICLE_EPOCH_REQUIRED_KEYS``.
 
     Any single defect anywhere in the payload -- missing, empty,
-    wrong-typed, or partial -- returns ``None`` for the WHOLE payload; the
+    wrong-typed, unresolved, structurally partial, or internally
+    self-contradictory -- returns ``None`` for the WHOLE payload; the
     security seam and the manager/vehicle seam are never independently
     trusted out of a partially-valid mapping, and no default is ever filled
     in for a missing field.  This is the ONLY function in the module that
-    may treat ``owner_semantics`` as authoritative.
+    may treat ``owner_semantics`` as authoritative.  It never resolves,
+    mints, derives, or maps a security identity -- it only asks the Data OS
+    identity owner whether a string a caller already supplied is even a
+    well-formed identity of its own.
     """
     if not isinstance(owner_semantics, Mapping):
         return None
@@ -648,15 +708,37 @@ def _validate_owner_semantics(owner_semantics: Any) -> Mapping[str, Any] | None:
         return None
     if not isinstance(dataos_resolution, str) or not dataos_resolution.strip():
         return None
+    # (R1, blocker repair 2026-09-03) The unresolved sentinel is never proof
+    # of resolution, and a caller-supplied id that is not even a well-formed
+    # SEC: security identity under the owner's own grammar cannot be a
+    # security binding either. The commission forbids calling an unresolved
+    # security binding positive; both checks below exist to make that
+    # literally impossible, not just discouraged by convention.
+    if dataos_resolution == SECURITY_BINDING_UNRESOLVED:
+        return None
+    try:
+        security_id_kind, _ = parse_id(dataos_security_id)
+    except IdentityError:
+        return None
+    if security_id_kind != "security":
+        return None
     manager_complex_epoch = owner_semantics.get("manager_complex_epoch")
     if not isinstance(manager_complex_epoch, Mapping):
         return None
     if manager_complex_epoch.get("resolution_state") != "resolved":
         return None
+    if _epoch_status_contradicts_resolved(manager_complex_epoch):
+        return None
+    if not _epoch_string_fields_present(manager_complex_epoch, _MANAGER_COMPLEX_EPOCH_REQUIRED_KEYS):
+        return None
     vehicle_epoch = owner_semantics.get("vehicle_epoch")
     if not isinstance(vehicle_epoch, Mapping):
         return None
     if vehicle_epoch.get("resolution_state") != "resolved":
+        return None
+    if _epoch_status_contradicts_resolved(vehicle_epoch):
+        return None
+    if not _epoch_string_fields_present(vehicle_epoch, _VEHICLE_EPOCH_REQUIRED_KEYS):
         return None
     return owner_semantics
 
@@ -1136,6 +1218,7 @@ def run_pilot(
         else {"state": "not_compiled", "reason": "non_discretionary_vehicle"}
     )
 
+    provenance = validated_owner_semantics["provenance"]
     body = {
         **common_fields,
         "state": POSITIVE_STATE if is_eligible else NON_POSITIVE_STATE,
@@ -1149,6 +1232,24 @@ def run_pilot(
         "measure": top_measure,
         "recipe": recipe,
         "compiled": compiled,
+        # (R3 repair 2026-09-03) The owner_semantics receipt block used to be
+        # emitted ONLY on the unresolved path, where provenance is always
+        # None -- the validated provenance.owner/reference_id were silently
+        # discarded on every reached-a-recipe path, so two receipts proven
+        # by two DIFFERENT owners could be byte-identical. Emitted here too,
+        # verbatim, so provenance survives onto whichever state (POSITIVE or
+        # NON_POSITIVE) this path reaches.
+        "owner_semantics": {
+            "security": {
+                "resolved": True,
+                "resolution": str(security["dataos_resolution"]),
+            },
+            "manager_vehicle": {"resolved": True, "resolution": "resolved"},
+            "provenance": {
+                "owner": str(provenance["owner"]),
+                "reference_id": str(provenance["reference_id"]),
+            },
+        },
     }
     return _finalize(body)
 

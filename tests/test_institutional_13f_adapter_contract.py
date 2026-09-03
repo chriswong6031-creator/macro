@@ -307,7 +307,12 @@ def _request(**overrides) -> PilotRequest:
 # vehicle_epochs and DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP. Every
 # ID here is deliberately NOT filer/CIK-derived (a "structural_test_owner"
 # stem, not "filer_<CIK>"), so it can never be mistaken for the repaired
-# defect it exists to rule out.
+# defect it exists to rule out. ``dataos_security_id`` is
+# "SEC:US-XNAS-STRUCTURALTEST" -- a syntactically well-formed SEC: security
+# identity under lib.dataos.identity's own grammar (a real MIC, an
+# alphanumeric code), NOT a claim that this listing exists on any real
+# venue; it exists only to satisfy _validate_owner_semantics's grammar
+# check (R1, 2026-09-03) without being mistaken for a real security.
 
 
 def _structural_owner_semantics(
@@ -345,7 +350,7 @@ def _structural_owner_semantics(
     return {
         "provenance": {"owner": "structural_test_fixture", "reference_id": "structural-fixture-001"},
         "security": {
-            "dataos_security_id": "SEC:STRUCTURAL:TEST",
+            "dataos_security_id": "SEC:US-XNAS-STRUCTURALTEST",
             "dataos_resolution": "alias_table_resolved",
         },
         "manager_complex_epoch": manager_complex_epoch,
@@ -424,10 +429,20 @@ def test_owner_resolved_structural_fixture_reaches_positive_and_recompiles(tmp_p
     assert receipt["measure"] == {"q_prev": 100, "q_now": 140, "unit": "shares"}
     assert receipt["security_binding"] == {
         "key_type": "cusip", "cusip": CUSIP,
-        "dataos_security_id": "SEC:STRUCTURAL:TEST",
+        "dataos_security_id": "SEC:US-XNAS-STRUCTURALTEST",
         "dataos_resolution": "alias_table_resolved",
     }
     assert receipt["compiled"]["authority"] == receipt["authority"]
+
+    # R3 repair (2026-09-03): the validated provenance now survives onto the
+    # positive path too -- it used to be discarded entirely once a recipe
+    # was reached, so two receipts proven by two different owners were
+    # byte-identical.
+    assert receipt["owner_semantics"] == {
+        "security": {"resolved": True, "resolution": "alias_table_resolved"},
+        "manager_vehicle": {"resolved": True, "resolution": "resolved"},
+        "provenance": {"owner": "structural_test_fixture", "reference_id": "structural-fixture-001"},
+    }
 
     # Finding 10 (preserved): the receipt embeds the full recipe, and
     # recompiling it independently reproduces the embedded "compiled"
@@ -1424,6 +1439,47 @@ _OWNER_SEMANTICS_DEFECTS = [
         id="manager_complex_epoch_unresolved",
     ),
     pytest.param(lambda _os: "not-a-mapping", id="non_mapping"),
+    # --- R1/R2 repair (2026-09-03) new discriminators ------------------------
+    pytest.param(
+        lambda os: {
+            **os,
+            "security": {**os["security"], "dataos_resolution": SECURITY_BINDING_UNRESOLVED},
+        },
+        id="security_unresolved_sentinel",
+    ),
+    pytest.param(
+        lambda os: {**os, "security": {**os["security"], "dataos_security_id": "not-an-identity"}},
+        id="security_id_not_owner_grammar",
+    ),
+    pytest.param(
+        lambda os: {**os, "security": {**os["security"], "dataos_security_id": "SEC:"}},
+        id="security_id_not_owner_grammar_empty_listing",
+    ),
+    pytest.param(
+        lambda os: {
+            **os,
+            "security": {**os["security"], "dataos_security_id": "ISS:US-XNAS-STRUCTURALTEST"},
+        },
+        id="security_id_not_owner_grammar_issuer_not_security",
+    ),
+    pytest.param(
+        lambda os: {
+            **os,
+            "manager_complex_epoch": _drop(os["manager_complex_epoch"], "manager_complex_id"),
+        },
+        id="manager_epoch_missing_manager_complex_id",
+    ),
+    pytest.param(
+        lambda os: {**os, "vehicle_epoch": _drop(os["vehicle_epoch"], "vehicle_class")},
+        id="vehicle_epoch_missing_vehicle_class",
+    ),
+    pytest.param(
+        lambda os: {
+            **os,
+            "manager_complex_epoch": {**os["manager_complex_epoch"], "status": "unresolved"},
+        },
+        id="epoch_status_unresolved_but_resolution_state_resolved",
+    ),
 ]
 
 
@@ -1445,19 +1501,114 @@ def test_owner_semantics_partial_or_unprovenanced_is_refused(tmp_path: Path, mut
     assert receipt["owner_semantics"]["provenance"] is None
 
 
+def test_unresolved_security_sentinel_cannot_prove_a_positive(tmp_path: Path) -> None:
+    """The blocker this repair exists to kill (adversarial review finding,
+    2026-09-03). The prior head's ``_validate_owner_semantics`` checked BOTH
+    K2-B epochs for ``resolution_state == "resolved"`` but checked the
+    security seam only for non-emptiness -- so
+    ``dataos_resolution == SECURITY_BINDING_UNRESOLVED`` (the schema's own
+    UNRESOLVED sentinel), paired with a non-empty but otherwise arbitrary
+    ``dataos_security_id`` and two fully resolved epochs, was accepted as
+    proof of resolution and reached ``state == POSITIVE_STATE``. That is
+    verbatim the commission's ``do_not_redo`` clause "Do not call an
+    unresolved security binding positive." A well-formed
+    ``dataos_security_id`` is supplied here specifically so this test
+    isolates the sentinel defect alone -- not a grammar defect.
+    """
+    store = _build_world(tmp_path)
+    owner_semantics = _structural_owner_semantics()
+    owner_semantics = {
+        **owner_semantics,
+        "security": {
+            **owner_semantics["security"],
+            "dataos_resolution": SECURITY_BINDING_UNRESOLVED,
+        },
+    }
+    receipt = run_pilot(store, _request(), owner_semantics=owner_semantics)
+
+    assert receipt["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE
+    assert receipt["state"] != POSITIVE_STATE
+    assert receipt["recipe"] is None
+    assert receipt["compiled"] is None
+    assert receipt["owner_semantics"]["security"]["resolved"] is False
+
+
+def test_partial_owner_epoch_is_refused_not_raised(tmp_path: Path) -> None:
+    """A structurally partial epoch (present, ``resolution_state=="resolved"``,
+    but missing a key ``build_recipe`` itself reads) must be refused with the
+    typed unresolved receipt -- never a bare ``KeyError`` escaping out of
+    ``build_recipe`` through ``run_pilot``. Before R2, the validator checked
+    only ``resolution_state``, so this exact payload reached ``build_recipe``
+    and raised ``KeyError: 'vehicle_class'``.
+    """
+    store = _build_world(tmp_path)
+    owner_semantics = _structural_owner_semantics()
+    partial_vehicle_epoch = _drop(owner_semantics["vehicle_epoch"], "vehicle_class")
+    owner_semantics = {**owner_semantics, "vehicle_epoch": partial_vehicle_epoch}
+
+    receipt = run_pilot(store, _request(), owner_semantics=owner_semantics)
+
+    assert receipt["state"] == OWNER_SEMANTICS_UNRESOLVED_STATE
+    assert receipt["recipe"] is None
+    assert receipt["compiled"] is None
+    assert receipt["owner_semantics"]["manager_vehicle"]["resolved"] is False
+
+
+def test_owner_provenance_is_recorded_and_distinguishes_receipts(tmp_path: Path) -> None:
+    """R3 repair (2026-09-03): the ``owner_semantics`` receipt block used to
+    be emitted ONLY on the unresolved path (where ``provenance`` is always
+    ``None``); the positive path emitted no such block at all, so the
+    validated ``provenance.owner``/``reference_id`` were discarded once a
+    recipe was reached. Consequence: two receipts proven by two DIFFERENT
+    owners were byte-identical and shared one ``receipt_id``. This proves
+    they no longer do, and that the positive receipt's own
+    ``owner_semantics.provenance`` carries the owner's values verbatim.
+    """
+    store = _build_world(tmp_path)
+    owner_semantics_a = _structural_owner_semantics()
+    owner_semantics_b = {
+        **owner_semantics_a,
+        "provenance": {"owner": "a_different_structural_owner", "reference_id": "structural-fixture-002"},
+    }
+
+    receipt_a = run_pilot(store, _request(), owner_semantics=owner_semantics_a)
+    receipt_b = run_pilot(store, _request(), owner_semantics=owner_semantics_b)
+
+    assert receipt_a["state"] == POSITIVE_STATE
+    assert receipt_b["state"] == POSITIVE_STATE
+    assert receipt_a["receipt_id"] != receipt_b["receipt_id"]
+    assert receipt_a["owner_semantics"]["provenance"] == {
+        "owner": "structural_test_fixture", "reference_id": "structural-fixture-001",
+    }
+    assert receipt_b["owner_semantics"]["provenance"] == {
+        "owner": "a_different_structural_owner", "reference_id": "structural-fixture-002",
+    }
+
+
 def test_no_repo_producer_supplies_owner_manager_vehicle_epochs() -> None:
     """OWNER-BLOCKED discriminator (records a repo-fact, NOT a production
-    positive). Greps the repository for any producer of a recipe's
-    ``manager_complex_epochs``/``vehicle_epochs`` list literal -- code that
-    actually CONSTRUCTS these owner-native K2-B epoch collections, not code
-    that merely reads/validates a recipe someone else built. The only
-    producer found is this adapter's own module -- the exact module this
-    repair now forces to require its ONE owner seam
-    (``run_pilot(..., owner_semantics=...)``) instead of authoring these
-    epochs itself. That means no current canonical institutional/K2-B owner
-    can fill the seam today; this is an owner-primitive gap per the
-    commission's owner-primitive-blocker contract, NOT evidence a
-    production positive is currently reachable.
+    positive). What this actually does (R5b correction, 2026-09-03 -- the
+    prior docstring said "Greps the repository", which overclaimed the
+    check's real reach): it regex-greps exactly FIVE top-level directories
+    (``lib``, ``engine``, ``scripts``, ``collectors``, ``app`` -- not
+    ``tests``, ``data``, ``docs``, ``config``, ``contracts``, or the repo
+    root) for ONE syntactic form -- a dict-literal key immediately followed
+    by ``:`` and a ``[`` on the same match (``"manager_complex_epochs": [``
+    or ``"vehicle_epochs": [``, single- or double-quoted). Known blind
+    spots this does NOT catch: a list built via ``.append()``/comprehension
+    and assigned to the key afterward; the key and value split across
+    non-matching whitespace/newlines the regex does not tolerate; a
+    producer reached through a helper function or f-string rather than a
+    literal dict key; any non-``.py`` file; and any producer outside the
+    five searched directories. The only producer this specific check found
+    is this adapter's own module -- the exact module this repair now forces
+    to require its ONE owner seam (``run_pilot(..., owner_semantics=...)``)
+    instead of authoring these epochs itself. That means no current
+    canonical institutional/K2-B owner can fill the seam today under THIS
+    check's coverage; this is an owner-primitive gap per the commission's
+    owner-primitive-blocker contract, NOT evidence a production positive is
+    currently reachable, and NOT proof no other producer exists anywhere in
+    the repository.
     """
     import inspect
 
