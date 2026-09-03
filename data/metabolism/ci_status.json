@@ -1,18 +1,12 @@
 {
-  "ts": "2026-09-02T21:23:07+00:00",
-  "main_sha": "9a117af0e0fd74d32f64a5f10475783e163066e1",
+  "ts": "2026-09-03T00:32:57+00:00",
+  "main_sha": "507219e21e8360fe068745cf57037465139a6036",
   "red_required": [
     {
       "name": "publish",
       "conclusion": "failure",
       "status": "completed",
       "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33684226525/job/100427708161"
-    },
-    {
-      "name": "publish",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33683673522/job/100425903632"
     },
     {
       "name": "tier-gate",
@@ -52,8 +46,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 88,
+  "consecutive_failures": 89,
   "sensed_shas": [
+    "507219e21e8360fe068745cf57037465139a6036",
     "9a117af0e0fd74d32f64a5f10475783e163066e1"
   ],
   "heartbeat_degraded": false
