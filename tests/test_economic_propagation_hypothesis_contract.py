@@ -1560,3 +1560,141 @@ def test_blocker1_canonical_json_preimage_blocks_component_boundary_forgery():
     d = {"requested_key": "Y", "resolution": {"resolution_state": "UNRESOLVED\nX",
                                               "issuer_id": None, "security_id": None}}
     assert derive_record_id("evt-forge-0001", c, ASOF) != derive_record_id("evt-forge-0001", d, ASOF)
+
+
+# ---------------------------------------------------------------------------
+# Sol REQUEST_REPAIR (carrier 1788364666.530399): the source-identity gate must
+# STOP semantic inference, not raise after attempting it.
+#
+# K3D_R015 already rejects a non-abstained record whose source_identity is
+# non-RESOLVED, but compose_hypothesis() gated inference on the TARGET only. So
+# target-RESOLVED + source-non-RESOLVED ran the whole admissions -> graph ->
+# mechanism derivation and died at final self-validation; and with ZERO semantic
+# inputs it could not compose the honest abstention at all, because the
+# resolved-target branch demands at least one admission.
+# ---------------------------------------------------------------------------
+
+
+def _source_unresolved_kwargs(state="UNRESOLVED", **over):
+    """target RESOLVED, source identity NOT resolved."""
+    kwargs = dict(
+        source_event=_source_event(event_id="evt-srcid-0001",
+                                   resolution=_identity(state=state, issuer=None, security=None)),
+        target=_target(requested_key="SRCID"),
+        asof=ASOF, compiled_at=COMPILED_AT,
+        generator_admissions=[], relationship_paths=[], similarity_evidence=[],
+        market_evidence=[], mechanism_proposal=None,
+        alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+    )
+    kwargs.update(over)
+    return kwargs
+
+
+def test_r015_composer_refuses_semantic_admissions_when_source_identity_unresolved():
+    # (a) Refusal must happen BEFORE derivation, not as a post-hoc failure of
+    # the composed record's own self-validation.
+    with pytest.raises(EconomicPropagationError) as exc:
+        compose_hypothesis(**_source_unresolved_kwargs(
+            generator_admissions=[_admission("gen_disclosed_customer_supplier", "graph_1",
+                                             "disclosed_customer_supplier")],
+            relationship_paths=[_g1_leg(leg_id="g1_srcid")],
+        ))
+    msg = str(exc.value)
+    assert "failed its own contract" not in msg, (
+        f"source-identity refusal came from post-hoc self-validation, not the gate: {msg}"
+    )
+    assert "source" in msg.lower()
+
+
+def test_r015_composer_refuses_mechanism_when_source_identity_unresolved():
+    with pytest.raises(EconomicPropagationError) as exc:
+        compose_hypothesis(**_source_unresolved_kwargs(mechanism_proposal=_mechanism_proposal()))
+    msg = str(exc.value)
+    assert "failed its own contract" not in msg, msg
+    # Must be refused BY the source-identity gate, not by the resolved-target
+    # branch's "requires at least one generator admission" -- that message would
+    # mean the gate never ran.
+    assert "source_event.source_identity" in msg, msg
+    assert "mechanism cannot be hypothesized" in msg, msg
+
+
+def test_r015_zero_semantic_input_source_unresolved_composes_clean_typed_abstention():
+    # (b) The honest record must be COMPOSABLE. Previously this raised
+    # "a resolved target requires at least one generator admission".
+    record = compose_hypothesis(**_source_unresolved_kwargs())
+    assert validate_hypothesis(record) == [], validate_hypothesis(record)
+    assert record["hypothesis_state"] == "abstained"
+    assert record["abstention"]["abstained"] is True
+    assert record["abstention"]["reasons"] == ["unresolved_identity"]
+    assert record["mechanism"]["state"] == "abstained"
+    assert record["generator_admissions"] == []
+    assert record["relationship_paths"] == record["similarity_evidence"] == record["market_evidence"] == []
+    # K3D_R015 must NOT fire on an honestly-abstained record.
+    assert "K3D_R015" not in _codes(validate_hypothesis(record))
+
+
+def test_r015_conflicting_source_identity_uses_conflicting_reason():
+    record = compose_hypothesis(**_source_unresolved_kwargs(state="CONFLICTING"))
+    assert validate_hypothesis(record) == []
+    assert record["abstention"]["reasons"] == ["conflicting_identity"]
+
+
+def test_r015_target_state_still_governs_when_both_identities_unresolved():
+    # Lawful control: the pre-existing target-side path is untouched.
+    record = _load_fixture("golden_typed_abstention_unresolved")
+    assert record["target"]["resolution"]["resolution_state"] == "NOT_IN_MASTER"
+    assert record["source_event"]["source_identity"]["resolution_state"] == "NOT_IN_MASTER"
+    assert record["abstention"]["reasons"] == ["unresolved_identity"]
+    assert validate_hypothesis(record) == []
+
+
+def test_r015_resolved_source_and_target_still_support_a_hypothesis():
+    # Lawful control: the gate must not block the supported path.
+    record = _load_fixture("golden_supported_hypothesis")
+    assert record["source_event"]["source_identity"]["resolution_state"] == "RESOLVED"
+    assert record["hypothesis_state"] == "supported_hypothesis"
+    assert validate_hypothesis(record) == []
+
+
+def test_r015_target_identity_is_reported_first_when_both_sides_are_unresolved():
+    # governing_identity_state documents target-first precedence, and that
+    # ordering is what keeps every pre-existing target-side abstention reason
+    # byte-identical. Mutation-tested: swapping the precedence left the other
+    # r015 tests green, so the order needs its own discriminator.
+    conflicting_target = _identity(state="CONFLICTING", issuer=None, security=None)
+    unresolved_source = _identity(state="UNRESOLVED", issuer=None, security=None)
+    record = compose_hypothesis(
+        source_event=_source_event(event_id="evt-srcid-0002", resolution=unresolved_source),
+        target=_target(requested_key="BOTHBAD", resolution=conflicting_target),
+        asof=ASOF, compiled_at=COMPILED_AT,
+        generator_admissions=[], relationship_paths=[], similarity_evidence=[],
+        market_evidence=[], mechanism_proposal=None,
+        alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+    )
+    assert validate_hypothesis(record) == []
+    # target CONFLICTING wins over source UNRESOLVED.
+    assert record["abstention"]["reasons"] == ["conflicting_identity"]
+
+
+def test_r015_gate_names_the_blocking_side():
+    # The refusal must say WHICH identity blocked, so an operator is not left
+    # guessing which side of the join was unresolvable.
+    with pytest.raises(EconomicPropagationError) as target_exc:
+        compose_hypothesis(
+            source_event=_source_event(event_id="evt-srcid-0003"),
+            target=_target(requested_key="T",
+                           resolution=_identity(state="UNRESOLVED", issuer=None, security=None)),
+            asof=ASOF, compiled_at=COMPILED_AT,
+            generator_admissions=[_admission("gen_theme_membership", "graph_2", "theme_membership")],
+            relationship_paths=[], similarity_evidence=[_g2_leg()], market_evidence=[],
+            mechanism_proposal=None,
+            alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+        )
+    assert "target is UNRESOLVED" in str(target_exc.value)
+
+    with pytest.raises(EconomicPropagationError) as source_exc:
+        compose_hypothesis(**_source_unresolved_kwargs(
+            generator_admissions=[_admission("gen_theme_membership", "graph_2", "theme_membership")],
+            similarity_evidence=[_g2_leg()],
+        ))
+    assert "source_event.source_identity is UNRESOLVED" in str(source_exc.value)

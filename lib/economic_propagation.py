@@ -385,6 +385,39 @@ def _effective_admissions(admissions: list[dict], registry: dict) -> list[dict]:
     return out
 
 
+_LAWFUL_RESOLUTION_STATES = (
+    "RESOLVED",
+    "NOT_IN_MASTER",
+    "UNRESOLVED",
+    "CONFLICTING",
+    "UNSUPPORTED_MARKET",
+    "DEFERRED_IDENTITY_EXCEPTION",
+    "ENTITY_TYPE_CONFLICT",
+)
+
+
+def governing_identity_state(target_resolution_state: Any, source_identity_state: Any) -> Any:
+    """Which identity, if either, blocks semantic inference.
+
+    Semantic inference requires BOTH identities RESOLVED: the target's
+    (validator K3D_R010) and the source event's OWN identity (K3D_R015). An
+    event that cannot itself be pinned to an exact identity is not a lawful
+    base for inference about anything.
+
+    The target is reported first when both are unresolved, so records that
+    already abstain on the target keep their existing typed reason unchanged.
+    Returns "RESOLVED" only when neither side blocks.
+
+    Composer and validator both route through THIS function, so the gate that
+    refuses inference and the reasons the validator recomputes can never drift.
+    """
+    if target_resolution_state != "RESOLVED":
+        return target_resolution_state
+    if source_identity_state != "RESOLVED":
+        return source_identity_state
+    return "RESOLVED"
+
+
 def derive_abstention_reasons(
     resolution_state: str,
     graph_states: dict,
@@ -880,9 +913,13 @@ def validate_hypothesis(record: Any) -> list[Finding]:
 
     mechanism_hypothesized = mechanism.get("state") == "hypothesized"
     expected_reasons: list[str] | None = None
+    # A non-RESOLVED source identity blocks inference exactly as a non-RESOLVED
+    # target does (K3D_R015 mirrors K3D_R010), so the recomputed reasons must be
+    # derived from whichever identity actually governs.
+    governing_state = governing_identity_state(resolution_state, source_identity_state)
     if isinstance(resolution_state, str):
         expected_reasons = derive_abstention_reasons(
-            resolution_state,
+            governing_state,
             derived_states,
             [a for a in admissions if isinstance(a, dict)],
             registry,
@@ -1113,30 +1150,41 @@ def compose_hypothesis(
 
     resolution = target.get("resolution") if isinstance(target.get("resolution"), dict) else {}
     resolution_state = resolution.get("resolution_state")
-    if resolution_state not in (
-        "RESOLVED",
-        "NOT_IN_MASTER",
-        "UNRESOLVED",
-        "CONFLICTING",
-        "UNSUPPORTED_MARKET",
-        "DEFERRED_IDENTITY_EXCEPTION",
-        "ENTITY_TYPE_CONFLICT",
-    ):
+    if resolution_state not in _LAWFUL_RESOLUTION_STATES:
         raise EconomicPropagationError(f"target.resolution.resolution_state {resolution_state!r} is not a lawful state")
+
+    source_identity = (
+        source_event.get("source_identity") if isinstance(source_event.get("source_identity"), dict) else {}
+    )
+    source_identity_state = source_identity.get("resolution_state")
+    if source_identity_state not in _LAWFUL_RESOLUTION_STATES:
+        raise EconomicPropagationError(
+            f"source_event.source_identity.resolution_state {source_identity_state!r} is not a lawful state"
+        )
 
     admissions = [dict(a) for a in generator_admissions]
     g1_legs = [dict(leg) for leg in relationship_paths]
     g2_legs = [dict(leg) for leg in similarity_evidence]
     g3_legs = [dict(leg) for leg in market_evidence]
 
-    if resolution_state != "RESOLVED":
+    # Identity gate. Semantic inference requires BOTH identities RESOLVED, and
+    # the refusal happens HERE -- before admissions/graph/mechanism derivation --
+    # rather than as a post-hoc failure of the composed record's own
+    # self-validation. A source event whose own identity is unresolved is not a
+    # lawful base for inference, so with zero semantic inputs the lawful typed
+    # abstention must remain composable.
+    governing_state = governing_identity_state(resolution_state, source_identity_state)
+    if governing_state != "RESOLVED":
+        blocked_side = "target" if resolution_state != "RESOLVED" else "source_event.source_identity"
         if admissions or g1_legs or g2_legs or g3_legs:
             raise EconomicPropagationError(
-                f"target is {resolution_state}: typed abstention precedes semantic inference — "
+                f"{blocked_side} is {governing_state}: typed abstention precedes semantic inference — "
                 "evidence legs and generator admissions are unlawful on an unresolved identity"
             )
         if mechanism_proposal is not None:
-            raise EconomicPropagationError(f"target is {resolution_state}: a mechanism cannot be hypothesized")
+            raise EconomicPropagationError(
+                f"{blocked_side} is {governing_state}: a mechanism cannot be hypothesized"
+            )
     else:
         if not admissions:
             raise EconomicPropagationError("a resolved target requires at least one generator admission")
@@ -1155,7 +1203,7 @@ def compose_hypothesis(
 
     graph_states = derive_graph_states(g1_legs, g2_legs, g3_legs)
     base_reasons = derive_abstention_reasons(
-        resolution_state, graph_states, admissions, registry, True, g1_legs
+        governing_state, graph_states, admissions, registry, True, g1_legs
     )
 
     if mechanism_proposal is not None:
@@ -1193,7 +1241,7 @@ def compose_hypothesis(
 
     mechanism_hypothesized = mechanism["state"] == "hypothesized"
     reasons = derive_abstention_reasons(
-        resolution_state, graph_states, admissions, registry, mechanism_hypothesized, g1_legs
+        governing_state, graph_states, admissions, registry, mechanism_hypothesized, g1_legs
     )
     hypothesis_state = "supported_hypothesis" if not reasons else "abstained"
 
