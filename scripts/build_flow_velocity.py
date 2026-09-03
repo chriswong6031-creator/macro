@@ -25,6 +25,7 @@ from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 from engine.flow_observatory import changes as fo_changes  # noqa: E402
 from engine.flow_observatory import contract as fo_contract  # noqa: E402
+from engine.flow_observatory import history as fo_history  # noqa: E402
 from engine.flow_observatory import quality as fo_quality  # noqa: E402
 from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
@@ -164,15 +165,20 @@ def main() -> int:
     v2_snap = None
     run_date = None
     log_rows: list = []
+    ledger_rows: list = []
+    ledger_path = fo_history.observations_path(data_root)
+    theme_entities: dict = {}
     try:
         log_rows = fo_changes.read_state_log(data_root)
+        ledger_rows = fo_history.read_ledger(ledger_path)
         generated_at_dt = datetime.now(timezone.utc)
         generated_at = generated_at_dt.isoformat(timespec="seconds")
         run_date = generated_at[:10]
         # B1: `now=generated_at_dt` — a real tz-aware UTC datetime, routed through the
         # calendars' own settle-buffer-aware expected_last_session (never a bare
         # `.date()` fed straight to an Asia calendar — the exact forbidden shape B1 closes).
-        candidate = build_v2(snap, log_rows=log_rows, market_session=snap.get("as_of"),
+        candidate = build_v2(snap, log_rows=log_rows, ledger_rows=ledger_rows,
+                             market_session=snap.get("as_of"),
                              generated_at=generated_at, seats_as_of=snap.get("seats_as_of"),
                              now=generated_at_dt)
         current_themes = {
@@ -183,9 +189,24 @@ def main() -> int:
             if r.get("id")
         }
         current_legs = {s["source_id"]: s.get("status") for s in (candidate.get("sources") or [])}
+        # W3: theme observations this build would append to the ledger (the SAME shape
+        # `_escalate_if_degraded`/state_log already read off `candidate` — status carries
+        # cn_large_order_proxy's OWN current-session read, the input the ledger's
+        # stale-freeze rule needs, spec §3 test 6). Built here (before validate()) so a
+        # PREVIEW of any resulting revision can feed change_summary.source_revisions
+        # without writing anything yet (spec §2 ordering — the real append happens only
+        # after validate() passes, further below).
+        theme_entities = {
+            ("theme", tid): {"vel": rec.get("vel"), "abs_value": rec.get("abs"),
+                             "quadrant": rec.get("quadrant"), "state": rec.get("state"),
+                             "rank": rec.get("rank"), "status": current_legs.get("cn_large_order_proxy")}
+            for tid, rec in current_themes.items()
+        }
+        revisions_preview = fo_history.preview_revisions(
+            ledger_rows, candidate.get("market_session"), theme_entities, generated_at_dt)
         candidate["change_summary"] = fo_changes.compute_changes(
             {"session": candidate.get("market_session"), "themes": current_themes,
-             "legs": current_legs}, log_rows)
+             "legs": current_legs}, log_rows, ledger_rows=ledger_rows, revisions=revisions_preview)
         validate(candidate)
         v2_snap = candidate
     except ContractError as e:
@@ -201,6 +222,48 @@ def main() -> int:
         # B2: log_rows here are the PRIOR runs (read before this run's candidate was built,
         # so they never include the current run) + run_date names the CURRENT run explicitly.
         _escalate_if_degraded(v2_snap, log_rows=log_rows, run_date=run_date)
+
+    # W3: observations ledger append — AFTER validate() passes, BEFORE desk.json write
+    # (spec §2 ordering); same lane gate as state_log (asia-close/US-nightly only,
+    # append_observations is a no-op elsewhere); best-effort, never fatal — a ledger write
+    # failure logs + annotates but must not sink a build that already produced a valid
+    # payload. Appends every entity this build observed: the 22 themes (market_session),
+    # the southbound aggregate (market_session), and each of the 5 source legs at ITS OWN
+    # effective_date (never market_session — a leg's own date is what sources[].
+    # first_known_at keys on, spec §1/§2).
+    if v2_snap is not None and v2_snap.get("market_session") and theme_entities:
+        try:
+            agg_entities: dict = {}
+            for chan in v2_snap.get("aggregate") or []:
+                if chan.get("key") == "southbound" and chan.get("live"):
+                    agg_entities[("aggregate", "southbound")] = {
+                        "vel": chan.get("vel_primary"),
+                        "abs_value": (chan.get("abs") or {}).get("value"),
+                        "quadrant": chan.get("quadrant"), "state": chan.get("state"),
+                        "status": current_legs.get("sb_aggregate")}
+            by_session: dict[str, dict] = {}
+            by_session.setdefault(v2_snap["market_session"], {}).update(theme_entities)
+            by_session.setdefault(v2_snap["market_session"], {}).update(agg_entities)
+            for s in v2_snap.get("sources") or []:
+                sid, ed = s.get("source_id"), s.get("effective_date")
+                if sid and ed:
+                    by_session.setdefault(ed, {})[("market", sid)] = {
+                        "status": s.get("status"),
+                        "coverage_n": (s.get("coverage") or {}).get("n_observed")}
+            total_added = 0
+            for sess, ents in by_session.items():
+                if not sess or not ents:
+                    continue
+                res = fo_history.append_observations(ledger_path, sess, ents, generated_at_dt)
+                if res.get("written"):
+                    total_added += res.get("rows_added", 0)
+            if total_added:
+                log.info("flow_observatory: observations ledger advanced (+%d rows)", total_added)
+        except Exception as e:  # noqa: BLE001 — additive lane law, same as state_log below
+            log.warning("flow_observatory observations ledger append failed (non-fatal): %s", e)
+            print("::warning title=flow-observatory-ledger::observations ledger append "
+                 f"failed ({e}) — desk.json publishes normally this build; state age/"
+                 "replay history may lag one build.", flush=True)
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)

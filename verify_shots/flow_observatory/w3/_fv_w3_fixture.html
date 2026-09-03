@@ -21,33 +21,6 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script data-dbase>(function () {
-  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
-  var B = window.DATA_BASE;
-  if (!B) return;                                         // no-op when unset -> zero behavior change
-  B = B.replace(/\/+$/, "");                              // strip trailing slash
-  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
-  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
-  var orig = window.fetch;
-  window.fetch = function (u, o) {
-    try {
-      if (typeof u === "string") {
-        /* theme.js resolves shared assets from its own script URL, so its stock
-           libraries arrive here as absolute same-origin URLs.  The old shim only
-           recognized bare/../ paths, leaving those requests on the protected HTML
-           origin (401 on Start) and the search spinner alive forever.  Normalize
-           every same-origin string to a root-relative key before matching; preserve
-           query/hash cache keys, and never rewrite an already-external URL. */
-        var a = new URL(u, location.href);
-        if (a.origin === location.origin) {
-          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
-          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
-        }
-      }
-    } catch (e) { /* never let the shim break a fetch */ }
-    return orig.call(this, u, o);
-  };
-})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.setAttribute('data-market',sessionStorage.getItem('mkt')||'a');document.documentElement.classList.add('js');}catch(e){}</script>
 <title>Capital Flow Velocity — China &amp; Hong Kong</title>
@@ -897,7 +870,7 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
       </button>
       <button class="fv-vital" data-goto-sec="changed">
         <span class="vk">⏱ <span class="l-en">Changed today</span><span class="l-zh">今日变化</span></span>
-        <span class="vv">—<span class="arrow">→</span></span>
+        <span class="vv"><span class="tnum">0</span> <span class="l-en">moves</span><span class="l-zh">项变化</span><span class="arrow">→</span></span>
         <span class="vs"><span class="l-en">transitions &amp; rank movers</span><span class="l-zh">状态切换与排名变动</span></span>
       </button>
       <button class="fv-vital" data-goto-sec="quadrant">
@@ -967,7 +940,29 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     
     
     
-      <p class="fv-stance"><span class="l-en">Change tracking begins today — no prior tracked session.</span><span class="l-zh">变化追踪自今日开始——暂无历史对比。</span></p>
+      
+      
+      <ul class="fv-chg-list">
+        
+        
+
+
+
+
+
+
+
+<li class="fv-chg-row fv-chg-row--revision"
+    data-tip-en="Revised: real inflow, above norm → real outflow, below norm, vel +1.20 → -1.60."
+    data-tip-zh="已修正：真实流入·高于常态 → 真实流出·低于常态，流速 +1.20 → -1.60。"
+    role="button" tabindex="0">
+  <b><span class="l-en">Defense & Aerospace</span><span class="l-zh">军工航天</span></b>
+  <span class="l-en">: 2026-08-30 data revised</span><span class="l-zh">：2026-08-30数据已修正</span>
+</li>
+
+        
+      </ul>
+      
     
   </section>
 
@@ -1459,7 +1454,12 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 
                 
                 
-                <span class="fv-age fv-age--new" data-tip-en="first tracked session — no prior data to compare yet" data-tip-zh="首个追踪交易日——暂无历史可比" role="button" tabindex="0"><span class="l-en">first tracked session</span><span class="l-zh">首个追踪交易日</span></span>
+                <span class="fv-age"
+                      data-tip-en="Prior state: real outflow, below norm. In this state since 2026-08-24."
+                      data-tip-zh="此前状态：真实流出·低于常态。自2026-08-24起进入该状态。"
+                      role="button" tabindex="0">
+                  <span class="l-en">session 6 in this state</span><span class="l-zh">本状态第6个交易日</span>
+                </span>
                 
                 
               </td>
@@ -1632,7 +1632,12 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 
                 
                 
-                <span class="fv-age fv-age--new" data-tip-en="first tracked session — no prior data to compare yet" data-tip-zh="首个追踪交易日——暂无历史可比" role="button" tabindex="0"><span class="l-en">first tracked session</span><span class="l-zh">首个追踪交易日</span></span>
+                <span class="fv-age fv-age-frozen"
+                      data-tip-en="Prior state: quiet / insufficient data. In this state since 2026-08-30. Frozen — source data behind, age not advancing."
+                      data-tip-zh="此前状态：平静 / 数据不足。自2026-08-30起进入该状态。数据滞后，本状态天数暂停累计。"
+                      role="button" tabindex="0">
+                  <span class="l-en">session 2 in this state</span><span class="l-zh">本状态第2个交易日</span> ❄
+                </span>
                 
                 
               </td>
@@ -5604,7 +5609,7 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <span class="l-en">Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 daily grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.</span><span class="l-zh">沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力日度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。</span><br>
     <b><span class="l-en">Method</span><span class="l-zh">方法</span>:</b>
     <span class="l-en">Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.</span><span class="l-zh">流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。</span>
-    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-03 10:13 UTC
+    · <span class="l-en">Built</span><span class="l-zh">构建于</span> W3 fixture — verify_shots evidence
   </div>
 </div>
 <script>
