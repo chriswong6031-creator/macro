@@ -37,6 +37,21 @@ log = logging.getLogger("build_flow_velocity")
 # ── W4: official (Shenwan L1) sector lens — wired here, not engine.flow_velocity.py
 # (OWNED-FILES scope: flow_velocity.py exposes reusable rollup HELPERS only; the lens
 # itself, and its enrich_group/assign_ranks pass, are "lens wiring" and live here). ──
+def _l1_names() -> dict[str, tuple[str, str]]:
+    """The official-sector lens' code -> ``(name_en, name_zh)`` map, built from
+    ``collectors.china_sectors.SW_L1`` (``code: (cn, en)``).
+
+    SF/W4 repair: this used to be inlined as a one-line dict comprehension inside
+    ``_official_sectors_panel`` — the ZH-name regression test could only exercise
+    ``engine.flow_observatory.groups.aggregate_lens`` with a HAND-WRITTEN
+    ``l1_names`` fixture, which pins ``aggregate_lens``' own plumbing but not the
+    real CALLER that builds this dict in production; an EN-only revert here
+    (``{code: (en, en)}``) would have shipped without failing anything. Extracted so
+    a test can import and assert on THIS function directly."""
+    from collectors.china_sectors import SW_L1
+    return {code: (en, cn) for code, (cn, en) in SW_L1.items()}
+
+
 def _official_sectors_panel() -> dict | None:
     """Build the official-sector lens payload, or ``None`` when there is nothing to
     show (2B spike-failure shape — this build's spike SUCCEEDED, §1, so ``None`` here
@@ -48,8 +63,7 @@ def _official_sectors_panel() -> dict | None:
     body's performance note (spec §7)."""
     import pandas as pd
 
-    from collectors.china_sectors import SW_L1
-    from engine.flow_velocity import _flow_panel, _name_kinetics_map
+    from engine.flow_velocity import _flow_panel, _name_kinetics_map, _name_map
 
     p = config.data_dir() / "china_sectors" / "membership.parquet"
     if not p.exists():
@@ -63,10 +77,12 @@ def _official_sectors_panel() -> dict | None:
     if wide is None:
         return None
     kmap = _name_kinetics_map(wide)
-    # SW_L1[code] = (cn, en) — aggregate_lens wants (en, zh) per code, EN first (its
-    # `name` field convention, matching every other lens' EN-primary row shape).
-    l1_names = {code: (en, cn) for code, (cn, en) in SW_L1.items()}
-    result = fo_groups.aggregate_lens(wide, kmap, membership_df, l1_names=l1_names)
+    l1_names = _l1_names()
+    # M3/W4 repair: thread the SAME ticker->display-name map the curated lens already
+    # uses so an official-sector excluded/missing entry shows a real name (the ticker
+    # slug rides along in the entry's own LENS tip only) rather than a bare ticker.
+    result = fo_groups.aggregate_lens(wide, kmap, membership_df, l1_names=l1_names,
+                                      name_map=_name_map())
     if not result.get("available"):
         return result
     # same abs/rel/quadrant/rank contract the theme lens gets from contract.build_v2
@@ -79,6 +95,55 @@ def _official_sectors_panel() -> dict | None:
                                             reference_window=126))
     fo_contract.assign_ranks(rows)
     return result
+
+
+def _apply_official_rank_change(rows: list[dict], ledger_rows: list[dict] | None,
+                                market_session: str | None, cn_status: str | None) -> None:
+    """M1/W4 repair: official_sectors rows never got ``rank_change``/``state_*`` —
+    those fields are assigned to theme rows INSIDE ``contract.build_v2``'s own
+    per-row loop, but ``official_sectors`` isn't part of that loop (it lives
+    entirely in THIS builder, per OWNED-FILES scope: contract.py owns only the
+    ``validate()`` extension this wave, never ``build_v2`` itself). Mutates ``rows``
+    in place with the SAME ledger-derived shape themes get
+    (``engine.flow_observatory.history.state_for_session``, entity_kind ``"sector"``,
+    entity_id = the SW L1 code) once the ledger holds >=2 distinct sector sessions;
+    until then every row gets ``rank_change=None`` + ``state_note="first tracked
+    session"`` — a real value that stays honest as history accrues, NEVER a
+    permanent dash by construction (there is no legacy sector state_log to fall back
+    to, unlike themes, so there is only the one branch)."""
+    from engine.flow_observatory import history as fo_history
+
+    ledger_rows = ledger_rows or []
+    ledger_ready = bool(ledger_rows) and fo_history.ledger_session_count(ledger_rows, "sector") >= 2
+    for row in rows:
+        rid = row.get("id")
+        if ledger_ready and market_session and rid:
+            hist = fo_history.state_for_session(
+                ledger_rows, "sector", rid, market_session, row.get("quadrant"),
+                current_rank=row.get("rank"), current_status=cn_status)
+        else:
+            hist = {"state_started": None, "state_age_sessions": None, "prior_state": None,
+                   "rank_change": None, "note": "first tracked session"}
+        row["rank_change"] = hist["rank_change"]
+        row["state_started"] = hist["state_started"]
+        row["state_age_sessions"] = hist["state_age_sessions"]
+        row["prior_state"] = hist["prior_state"]
+        row["state_note"] = hist["note"]
+
+
+def _official_sector_ledger_entities(rows: list[dict] | None, cn_status: str | None) -> dict:
+    """M1/W4 repair: official-sector observations for the append-only ledger —
+    entity_kind ``"sector"``, entity_id = the SW L1 code — same
+    ``{(entity_kind, entity_id): {<subset of FIELDS>}}`` shape ``theme_entities``
+    already builds below, so both flow through the SAME guarded
+    ``fo_history.append_observations`` call in ``main()`` (spec M1 "in the
+    builder's guarded append", never a second append path)."""
+    return {
+        ("sector", r["id"]): {"vel": r.get("vel"), "abs_value": (r.get("abs") or {}).get("value"),
+                              "quadrant": r.get("quadrant"), "state": r.get("state"),
+                              "rank": r.get("rank"), "status": cn_status}
+        for r in (rows or []) if r.get("id")
+    }
 
 
 def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
@@ -281,6 +346,14 @@ def main() -> int:
             if r.get("id")
         }
         current_legs = {s["source_id"]: s.get("status") for s in (candidate.get("sources") or [])}
+        # M1/W4 repair: official_sectors rows never flow through build_v2's own
+        # per-row loop (that assembly lives entirely in THIS builder, see
+        # _official_sectors_panel — contract.py's build_v2 is out of OWNED-FILES
+        # scope this wave) — apply the SAME ledger-derived rank_change/state_*
+        # fields here, in place, before validate() sees the final payload.
+        official_rows = (candidate.get("official_sectors") or {}).get("rows") or []
+        _apply_official_rank_change(official_rows, ledger_rows, candidate.get("market_session"),
+                                    current_legs.get("cn_large_order_proxy"))
         # W3: theme observations this build would append to the ledger (the SAME shape
         # `_escalate_if_degraded`/state_log already read off `candidate` — status carries
         # cn_large_order_proxy's OWN current-session read, the input the ledger's
@@ -339,8 +412,16 @@ def main() -> int:
                         "abs_value": (chan.get("abs") or {}).get("value"),
                         "quadrant": chan.get("quadrant"), "state": chan.get("state"),
                         "status": current_legs.get("sb_aggregate")}
+            # M1/W4 repair: official-sector observations ride the SAME guarded append
+            # as themes — entity_kind "sector", entity_id = the SW L1 code, keyed on
+            # market_session (the sector rollup is computed off the same daily flow
+            # panel as the theme rollup, same effective session).
+            sector_entities = _official_sector_ledger_entities(
+                (v2_snap.get("official_sectors") or {}).get("rows"),
+                current_legs.get("cn_large_order_proxy"))
             by_session: dict[str, dict] = {}
             by_session.setdefault(v2_snap["market_session"], {}).update(theme_entities)
+            by_session.setdefault(v2_snap["market_session"], {}).update(sector_entities)
             by_session.setdefault(v2_snap["market_session"], {}).update(agg_entities)
             for s in v2_snap.get("sources") or []:
                 sid, ed = s.get("source_id"), s.get("effective_date")

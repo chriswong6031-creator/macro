@@ -152,28 +152,52 @@
   <td class="tnum" colspan="3"><span class="rk na">—</span></td>
 </tr>
 {%- endmacro %}
-{# W4: excluded/missing members line — the drilldown's honest denominator receipt
-   (spec §3/§6 test 7). One row, colspan across the full table, shown right after the
-   member rows when a group has any excluded names. #}
-{% macro excludedrow(r, colspan=8) -%}
+{# W4: excluded/missing members — the drilldown's honest denominator receipt (spec
+   §3/§6 test 7). M3 repair: moved behind a native <details class="fv-disc"> (Tier-2)
+   whose summary carries only the COUNT ("53 excluded / 53只未纳入") — the full list
+   used to render as visible-by-default text (a baked-in ' show' class independent of
+   whether the sector drilldown was ever opened), leaking a dense name list above the
+   fold. The outer <tr> still rides the SAME accordion show/hide as every other
+   drilldown sub-row (no baked default — the click handler toggles it like any
+   .mrow[data-sector]); the inner <details> is a SECOND, independent disclosure the
+   reader opens deliberately once the drilldown itself is open. Official-lens entries
+   show a real display NAME (name_map-threaded, spec M3) — the ticker SLUG rides only
+   in the entry's own LENS tip, never as the primary label when a name exists. #}
+{% macro excludedrow(r, colspan=8, sector_id=none) -%}
 {% if r.excluded and r.excluded|length %}
-<tr class="mrow fv-excl-row{{ ' show' if r.members and r.members|length }}" data-sector="{{ r.id }}">
+{# sector_id: the official lens' sector-row/member-rows use "off-{id}" (disambiguated
+   from the curated lens' bare id) — the accordion click handler toggles EVERY
+   .mrow[data-sector] sharing the CLICKED row's own data-sector value, so this row
+   must carry the SAME prefixed value the official lens uses, or it can never be
+   revealed (a real defect this fix exposed: the pre-repair baked ' show' default hid
+   this mismatch by always showing the row regardless of accordion state). #}
+<tr class="mrow fv-excl-row" data-sector="{{ sector_id if sector_id is not none else r.id }}">
   <td colspan="{{ colspan }}" class="fv-excluded">
-    {{ t('Excluded / missing (%d): '|format(r.excluded|length), '剔除 / 缺失（%d）：'|format(r.excluded|length)) }}
-    {% for e in r.excluded[:12] %}{{ e.name or e.ticker }} <span class="l-en">({{ 'duplicate source classification' if e.reason == 'duplicate_membership' else e.reason }})</span><span class="l-zh">（{{ '来源重复分类' if e.reason == 'duplicate_membership' else ('无数据' if e.reason == 'missing' else '未评分') }}）</span>{% if not loop.last %}, {% endif %}{% endfor %}
-    {% if r.excluded|length > 12 %} …{% endif %}
+    <details class="fv-disc">
+      <summary>{{ t('%d excluded'|format(r.excluded|length), '%d只未纳入'|format(r.excluded|length)) }}</summary>
+      <div class="fv-disc-body">
+        {% for e in r.excluded[:12] %}<span data-tip-en="{{ e.ticker }}" data-tip-zh="{{ e.ticker }}" role="button" tabindex="0">{{ e.name or e.ticker }}</span> <span class="l-en">({{ 'duplicate source classification' if e.reason == 'duplicate_membership' else e.reason }})</span><span class="l-zh">（{{ '来源重复分类' if e.reason == 'duplicate_membership' else ('无数据' if e.reason == 'missing' else '未评分') }}）</span>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% if r.excluded|length > 12 %} …{% endif %}
+      </div>
+    </details>
   </td>
 </tr>
 {% endif %}
 {%- endmacro %}
 {# W4: concentration/contribution pinned drilldown line (spec §4, exact strings).
-   Shown right under the group's own row, one line, colspan across the table. #}
-{% macro concrow(r, colspan=8) -%}
+   Shown right under the group's own row, one line, colspan across the table. M3
+   repair: no baked ' show' default (was visible whenever the row had members,
+   independent of whether the sector drilldown was ever opened) — rides the SAME
+   accordion show/hide as every other .mrow[data-sector] sub-row, collapsed until
+   drilled like the member rows themselves. #}
+{% macro concrow(r, colspan=8, sector_id=none) -%}
 {% if r.concentration and r.concentration.top1_share is not none %}
 {% set c = r.concentration %}
 {% set _dir_en = {'same':'same direction','flip':'flips','unknown':'unclear'}.get(c.without_top1_direction, 'unclear') %}
 {% set _dir_zh = {'same':'方向不变','flip':'方向反转','unknown':'不明确'}.get(c.without_top1_direction, '不明确') %}
-<tr class="mrow fv-conc-row{{ ' show' if r.members and r.members|length }}" data-sector="{{ r.id }}">
+{# sector_id: see excludedrow's own comment above — same official-lens "off-{id}"
+   prefix requirement so the accordion click can actually reveal this row. #}
+<tr class="mrow fv-conc-row" data-sector="{{ sector_id if sector_id is not none else r.id }}">
   <td colspan="{{ colspan }}">
     <span class="l-en">top name = {{ '%.0f'|format(c.top1_share) }}% of gross flow · without it: {{ _dir_en }}</span>
     <span class="l-zh">最大贡献个股占总流量{{ '%.0f'|format(c.top1_share) }}% · 剔除后：{{ _dir_zh }}</span>
@@ -578,15 +602,82 @@ html[data-lang="zh"] .rot-col.out .rot-col-h::before{background:linear-gradient(
    below flips visibility via inline style (overrides this rule by specificity). */
 html:not(.js) .fv-lens-tabs{display:none}
 html.js #lens-official{display:none}
-.fv-cov-badge{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
-.fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
-.qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
-.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);color:var(--muted);white-space:nowrap;margin-left:6px;cursor:help}
+/* ── coverage badge — TP-0 declared dual-theme treatment ──────────────────────────
+   Base pill (n_covered/n_members, the common case): "muted tabular numerals both
+   themes" — INTENTIONALLY SHARED, not a per-theme design decision. Both themes read
+   the identical rule below; only the underlying --muted/--tile token VALUES differ
+   per theme (already theme-aware from the :root vs html[data-theme="dark"] token
+   blocks), which is a legitimate shared mechanism, not the "same CSS renders once
+   tokens swap" failure TP-0 forbids for a MATERIAL decision — this one genuinely has
+   no material decision to make per theme. */
+.fv-cov-badge{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+/* insufficient-coverage pill — the ONE state chip in this family that needs a real
+   per-theme material call (same semantic class as W2's STALE-adjacent "behind" chip,
+   .fv-src--behind above: an amber-tinted warning surface).
+   DARK TREATMENT (existing, declared as-is): a flat amber wash mixed toward --muted
+   — reads as glow/tint against the dark card, the command-center idiom.
+   LIGHT TREATMENT (new): amber-tinted PAPER (a light amber wash mixed into --card,
+   not transparent — reads as tinted material, not an overlay) + DEEPENED
+   amber-brown ink (mixed toward --ink, never --muted — a --muted-mixed amber reads
+   washed-out on a white/paper background; --ink-mixed keeps the required contrast).
+   Token substitution alone (reusing the dark formula verbatim) was exactly the
+   failure this declares against — light gets its OWN mix target, not a re-skin. */
+html[data-theme="dark"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
+html[data-theme="dark"] .qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
+html[data-theme="light"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 12%,var(--card))}
+html[data-theme="light"] .qchip.coverage-insufficient{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 10%,var(--card))}
+/* concentration chip — informational, never a warning: no tint in EITHER theme.
+   DARK TREATMENT (existing, declared as-is): neutral hairline border, --muted ink.
+   LIGHT TREATMENT (new): SAME neutral hairline border (no tint, per spec), but ink
+   deepened toward --ink — --muted alone reads too pale against white/paper material
+   for an always-visible chip (unlike the coverage badge above, which sits on its
+   own --tile fill and can afford --muted contrast). */
+.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);white-space:nowrap;margin-left:6px;cursor:help}
+html[data-theme="dark"] .fv-conc-chip{color:var(--muted)}
+html[data-theme="light"] .fv-conc-chip{color:color-mix(in srgb,var(--ink) 55%,var(--muted));border-color:var(--line)}
+/* accruing-sparkline placeholder (N2) — informational/muted, same family as the
+   coverage badge (intentionally shared both themes; no warning semantics). */
+.fv-accruing{display:inline-block;font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--faint);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
 .ovl-chip{display:inline-block;font-size:9.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:var(--r-ctl, 5px);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:help}
+/* M3/MOBILE: the concentration drilldown line and the excluded/missing disclosure
+   must WRAP (never inherit table.board's global nowrap, which forced a long
+   contributor list or a long ZH sector name into an unreadable horizontal-scroll
+   sliver on mobile — "never clip mid-token"). */
+.fv-conc-row td,.fv-excluded{white-space:normal;word-break:break-word}
 .fv-conc-row td{padding:3px 12px 8px !important;border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);background:color-mix(in srgb, var(--tile) 55%, transparent)}
 .fv-excluded{font-size:11px;color:var(--faint);padding:3px 12px 8px}
+.fv-excluded .fv-disc{margin-top:0;background:transparent;border:none;border-radius:0}
+.fv-excluded .fv-disc>summary{padding:2px 0;font-size:11px;font-weight:700;color:var(--faint)}
+.fv-excluded .fv-disc-body{padding:4px 0 0}
 .fv-lens-unavail{background:var(--card);border:1px solid var(--grid);border-radius:var(--r-card, 16px);padding:22px 20px;color:var(--muted);font-size:13.5px;line-height:1.55}
 .fv-lens-unavail b{color:var(--ink)}
+/* MOBILE (≤640px): boards keep name, abs 4wk, vs norm, quadrant chip, and the
+   coverage badge (which lives in the Members column) — Velocity, rank Δ, and Flow
+   trend (spark) hide via CSS (display:none, never a clip/ellipsis mid-token). Column
+   order: 1 name, 2 members(coverage), 3 abs, 4 vs norm, 5 velocity, 6 quadrant,
+   7 rank Δ, 8 flow trend. */
+@media (max-width:640px){
+  /* the base table.board{min-width:780px} rule (below, in this same stylesheet) is a
+     desktop floor — without overriding it here, hiding 3 of 8 columns still leaves the
+     table forced to 780px wide, so the surviving columns sit off-screen behind a
+     horizontal scroll instead of actually becoming visible without scrolling. The
+     ID-qualified selectors below outrank the plain-class base rule on specificity
+     regardless of source order. */
+  table.board#sectortbl,table.board#officialtbl{min-width:0}
+  /* tighter padding on the surviving columns so name/members/abs/vs-norm/quadrant sit
+     closer to fitting the 390px frame — the remainder is reached via the SAME
+     .tbl-wrap{overflow-x:auto} inner scroll every board already uses (never a
+     page-level scroll — checked programmatically on every evidence capture), never a
+     clip/ellipsis mid-token. */
+  table.board#sectortbl th,table.board#sectortbl td,
+  table.board#officialtbl th,table.board#officialtbl td{padding:9px 7px}
+  table.board#sectortbl th:nth-child(5),table.board#sectortbl td:nth-child(5),
+  table.board#sectortbl th:nth-child(7),table.board#sectortbl td:nth-child(7),
+  table.board#sectortbl th:nth-child(8),table.board#sectortbl td:nth-child(8),
+  table.board#officialtbl th:nth-child(5),table.board#officialtbl td:nth-child(5),
+  table.board#officialtbl th:nth-child(7),table.board#officialtbl td:nth-child(7),
+  table.board#officialtbl th:nth-child(8),table.board#officialtbl td:nth-child(8){display:none}
+}
 
 /* ═══════════════ MOMENTUM shifts ═══════════════ */
 .fv-mom{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
@@ -1095,6 +1186,10 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       {% if os and os.available and os.rows %}
       <div class="panel">
       <p class="fv-stance" style="margin:0 0 10px">{{ t('Official sectors (Shenwan L1) — current membership; history accrues from %s'|format(os.seed_date or '—'), '官方行业（申万一级）——当前成分；历史自%s起累积'|format(os.seed_date or '—')) }}</p>
+      {# N2: the LENS receipt — rate/vel columns stay (same current-membership basis
+         as themes, already labeled by the line above); this one extra line pins the
+         basis explicitly for the numeric columns themselves. #}
+      <p class="fv-stance" style="margin:0 0 10px">{{ t('current-membership basis — constituents as of %s'|format(os.seed_date or '—'), '按当前成分计算——成分截至%s'|format(os.seed_date or '—')) }}</p>
       <div class="tbl-wrap">
         <table class="board" id="officialtbl">
           <thead><tr>
@@ -1138,9 +1233,15 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 {% endif %}
               </td>
-              <td>{{ spark(r.spark) }}</td>
+              {# N2: the official lens applies today's membership retroactively across
+                 the whole flow panel — a sparkline drawn from that backfill would
+                 imply a composition depth the membership store has not actually
+                 accrued (spec §2A "no historical replay"). Suppressed until real
+                 accrual clears the spark window; a muted placeholder names the
+                 progress rather than rendering nothing unexplained. #}
+              <td>{% if r.spark %}{{ spark(r.spark) }}{% elif r.spark_accrual and not r.spark_accrual.ready %}<span class="fv-accruing" data-tip-en="Membership history accrues from {{ os.seed_date or '—' }} — the sparkline unlocks once {{ r.spark_accrual.window }} sessions have accrued ({{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} so far)." data-tip-zh="成分历史自{{ os.seed_date or '—' }}起累积——满{{ r.spark_accrual.window }}个交易日后解锁走势图（当前{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）。" role="button" tabindex="0"><span class="l-en">accruing — {{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} sessions</span><span class="l-zh">累积中（{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）</span></span>{% endif %}</td>
             </tr>
-            {{ concrow(r, 8) }}{{ excludedrow(r, 8) }}
+            {{ concrow(r, 8, 'off-' + r.id) }}{{ excludedrow(r, 8, 'off-' + r.id) }}
             {% if has_members %}
             {% for m in r.members %}{{ memberrow(m, {}, 'off-' + r.id, loop.index) }}{% endfor %}
             {% endif %}

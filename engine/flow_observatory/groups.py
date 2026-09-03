@@ -66,11 +66,23 @@ _DIR_WORDS: dict[str, tuple[str, str]] = {
 
 # ── coverage (spec §3) ─────────────────────────────────────────────────────────────
 def coverage_stats(n_members: int, n_covered: int) -> dict[str, Any]:
-    """``{n_members, n_covered, coverage_pct}`` — every group statistic's own
-    denominator (§0.2 gate). ``coverage_pct`` is ``None`` only when the group has no
-    known membership at all (n_members == 0), never silently treated as 0%."""
-    pct = round(100.0 * n_covered / n_members, 1) if n_members else None
-    return {"n_members": n_members, "n_covered": n_covered, "coverage_pct": pct}
+    """``{n_members, n_covered, coverage_pct, coverage_ratio}`` — every group
+    statistic's own denominator (§0.2 gate). ``coverage_pct``/``coverage_ratio`` are
+    ``None`` only when the group has no known membership at all (n_members == 0),
+    never silently treated as 0%.
+
+    N1 repair: ``coverage_pct`` is ROUNDED (1dp) for display — 241/402 members
+    (59.9502...%) rounds to a displayed "60.0%", which would silently CLEAR a 60%
+    floor it does not actually meet. ``coverage_ratio`` is the raw, unrounded
+    fraction (``n_covered / n_members``); the floor comparison in
+    :func:`aggregate_lens` / ``engine.flow_velocity.ashare_sector_velocity`` uses
+    THIS field, never the rounded percentage, so the floor decision and the number a
+    user reads can legitimately disagree at the boundary without the floor itself
+    being wrong."""
+    ratio = (n_covered / n_members) if n_members else None
+    pct = round(100.0 * ratio, 1) if ratio is not None else None
+    return {"n_members": n_members, "n_covered": n_covered, "coverage_pct": pct,
+           "coverage_ratio": ratio}
 
 
 def excluded_members(members: list[str], wide_columns, kmap: dict[str, Any],
@@ -205,12 +217,16 @@ def resolve_active_membership(membership_df: pd.DataFrame | None,
 
 
 # ── official-sector lens assembly (spec §2A) ────────────────────────────────────────
+SPARK_WINDOW_SESSIONS = 130   # matches the theme rollup's _series_tail(..., 130) window
+
+
 def aggregate_lens(wide: pd.DataFrame | None, kmap: dict[str, Any],
                     membership_df: pd.DataFrame | None, *,
                     l1_names: dict[str, tuple[str, str]] | None = None,
                     seed_date: str | None = None, as_of: str | None = None,
                     cfg: dict | None = None,
-                    coverage_floor: float = COVERAGE_FLOOR_PCT) -> dict[str, Any]:
+                    coverage_floor: float = COVERAGE_FLOOR_PCT,
+                    name_map: dict[str, str] | None = None) -> dict[str, Any]:
     """The official (Shenwan L1) sector lens: same per-group equal-weight-mean
     kinetics as the curated-theme rollup, reusing ``engine.flow_velocity``'s shared
     primitives, over CURRENT constituent membership only (spec §2A — never a
@@ -228,6 +244,11 @@ def aggregate_lens(wide: pd.DataFrame | None, kmap: dict[str, Any],
     still renders — never dropped — with every numeric field null and
     ``coverage_state: "insufficient_coverage"`` (spec §3/§0.2: never a
     survivor-biased read).
+
+    ``name_map`` (ticker -> display name) is threaded into this lens' own
+    ``excluded`` list so an official-sector excluded/missing entry shows a real name
+    rather than a bare ticker slug (W4 repair — previously only the curated-theme
+    lens' ``excluded_members`` call carried a name map).
     """
     from engine.flow_velocity import WK as _wk_cfg
     from engine.flow_velocity import kinetics as _kin
@@ -256,10 +277,24 @@ def aggregate_lens(wide: pd.DataFrame | None, kmap: dict[str, Any],
 
     by_code, dup_excluded = resolve_active_membership(membership_df, as_of=as_of)
     l1_names = l1_names or {}
+    name_map = name_map or {}
     wide_cols = set(wide.columns) if wide is not None else set()
     dup_by_ticker: dict[str, list[dict]] = {}
     for e in dup_excluded:
         dup_by_ticker.setdefault(e["ticker"], []).append(e)
+
+    # N2: how many trading sessions this WIDE panel carries on/after seed_date — the
+    # official lens applies TODAY's membership retroactively across the whole flow
+    # panel (spec §2A "current membership, no historical replay"), so a sparkline
+    # drawn from that backfill implies a composition depth the membership store has
+    # not actually accrued yet. Suppressed until real accrual clears the window.
+    accrued_sessions = 0
+    if wide is not None and seed_date:
+        try:
+            accrued_sessions = int((wide.index >= pd.Timestamp(seed_date)).sum())
+        except (TypeError, ValueError):
+            accrued_sessions = 0
+    spark_ready = accrued_sessions >= SPARK_WINDOW_SESSIONS
 
     rows: list[dict[str, Any]] = []
     for code in sorted(by_code):
@@ -267,10 +302,15 @@ def aggregate_lens(wide: pd.DataFrame | None, kmap: dict[str, Any],
         n_members = len(members)
         if n_members == 0:
             continue
-        cols = [t for t in members if t in wide_cols]
-        covered = [t for t in cols if t in kmap]
+        # B3 repair: the published statistic's member set IS the declared
+        # denominator — `covered` (present in `wide` AND scored in `kmap`) is the
+        # ONLY set that feeds the mean/kinetics/contributions below. The old code
+        # averaged over `cols` (present in `wide`, scored OR not) while declaring
+        # `n_covered`/`excluded` off the narrower `covered` set — the row's own
+        # number and its own denominator disagreed. There is no more `cols`.
+        covered = [t for t in members if t in wide_cols and t in kmap]
         cov = coverage_stats(n_members, len(covered))
-        excluded = excluded_members(members, wide_cols, kmap)
+        excluded = excluded_members(members, wide_cols, kmap, name_map)
         for t in members:
             excluded.extend(dup_by_ticker.get(t, []))
 
@@ -285,11 +325,14 @@ def aggregate_lens(wide: pd.DataFrame | None, kmap: dict[str, Any],
             "coverage_pct": cov["coverage_pct"], "excluded": excluded,
         }
 
-        sufficient = (cov["coverage_pct"] is not None and cov["coverage_pct"] >= coverage_floor
-                      and len(cols) >= MIN_COLS_FOR_KINETICS)
+        # N1 repair: the floor compares the RAW ratio, never the rounded display
+        # value — see coverage_stats' docstring for the 241/402 boundary case.
+        sufficient = (cov["coverage_ratio"] is not None
+                      and cov["coverage_ratio"] >= coverage_floor / 100.0
+                      and len(covered) >= MIN_COLS_FOR_KINETICS)
         kin = None
         if sufficient:
-            sect_flow = wide[cols].mean(axis=1)
+            sect_flow = wide[covered].mean(axis=1)
             kin = _kin(sect_flow, cfg)
             if not kin or kin.get("vel_primary") is None:
                 sufficient = False
@@ -297,16 +340,25 @@ def aggregate_lens(wide: pd.DataFrame | None, kmap: dict[str, Any],
             rr = _rr(sect_flow, cfg)
             contrib = member_contributions(covered, kmap)
             conc = concentration_from_contributions(contrib)
+            # B3+M2: the row's DISPLAYED rate_rel must equal Σcontributions exactly
+            # (the reconciliation law tested against the row field, not a
+            # self-defined group_rel) — contributions are the mean of the SAME
+            # `covered` members' rate_rel, so wiring the row's own field to that
+            # same value makes the two agree by construction, not by coincidence.
+            if conc.get("group_rel") is not None:
+                rr = {**rr, "rate_rel": conc["group_rel"]}
             row.update(vel=kin["vel_primary"], accel=kin["accel"], **rr,
                        state=kin["state"], state_zh=kin["state_zh"],
-                       spark=_sp(_st(sect_flow.cumsum(), 130)),
+                       spark=_sp(_st(sect_flow.cumsum(), SPARK_WINDOW_SESSIONS)) if spark_ready else None,
+                       spark_accrual={"n": accrued_sessions, "window": SPARK_WINDOW_SESSIONS,
+                                     "ready": spark_ready},
                        concentration=conc, coverage_state="ok",
                        members=sorted((kmap[t] for t in covered),
                                       key=lambda r: -abs(r.get("vel") or 0))[:8])
         else:
             row.update(vel=None, accel=None, rate_now=None, rate_4wk=None, rate_norm=None,
                        rate_rel=None, state=INSUFFICIENT_COVERAGE_EN, state_zh=INSUFFICIENT_COVERAGE_ZH,
-                       spark=None, concentration=None, members=[],
+                       spark=None, spark_accrual=None, concentration=None, members=[],
                        coverage_state="insufficient_coverage")
         rows.append(row)
 

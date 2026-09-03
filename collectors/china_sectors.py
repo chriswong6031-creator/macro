@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date as _date
+from pathlib import Path
 
 import pandas as pd
 
@@ -94,10 +95,18 @@ def normalize_cn_ticker(raw: str) -> str:
     ``.SS``/``.SZ`` suffix convention every other collector/basket store in this repo
     already uses. SSE (Shanghai) main-board/STAR codes start with 6 (B-shares with 9
     are legacy/illiquid but map the same way); everything else (SZSE: 000/001/002/003
-    main board, 300/301 ChiNext) is Shenzhen."""
+    main board, 300/301 ChiNext) is Shenzhen — EXCEPT the Beijing Stock Exchange
+    (N3, W4 repair): 8xxxxx (83/87/88-series NEEQ-select carryovers) and the two-digit
+    43xxxx/92xxxx prefixes are BSE, ``.BJ``, checked BEFORE the 6/9 branch so a 92xxxx
+    code is never misrouted to the legacy-B-share ``.SS`` fallback. A ``.BJ`` ticker is
+    honest, not silently dropped: it still counts in a sector's ``n_members`` (real
+    membership), and lands in ``excluded(missing)`` (spec §3) until the Tushare
+    large-order panel this desk reads from covers the BSE."""
     code = str(raw).strip()
     if "." in code:  # already suffixed (defensive; akshare never emits this today)
         return code.upper()
+    if code[:1] == "8" or code[:2] in ("43", "92"):
+        return f"{code}.BJ"
     return f"{code}.SS" if code[:1] in ("6", "9") else f"{code}.SZ"
 
 
@@ -106,14 +115,45 @@ def _membership_path():
     return config.data_dir() / "china_sectors" / "membership.parquet"
 
 
-def _fetch_sw_snapshot() -> pd.DataFrame:
+def overlapping_intervals(df: pd.DataFrame) -> list[dict]:
+    """Store invariant (B2/W4 repair): every ``(ticker, l1_code)`` pair's rows, sorted
+    by ``start_date``, must form a sequence of NON-overlapping ``[start_date,
+    end_date)`` intervals — a name cannot re-enter an industry before its own prior
+    stint there closed, and two simultaneously-open rows for the same pair is a
+    storage-level contradiction. Returns one violation dict per offending pair (empty
+    == clean); never raises — callers log/annotate on a non-empty result so a real
+    anomaly is visible without ever blocking a build."""
+    if df is None or df.empty:
+        return []
+    out: list[dict] = []
+    for (ticker, code), g in df.groupby(["ticker", "l1_code"]):
+        g = g.sort_values("start_date", na_position="first")
+        open_rows = int(g["end_date"].isna().sum())
+        if open_rows > 1:
+            out.append({"ticker": ticker, "l1_code": code, "reason": "multiple_open_intervals",
+                       "n_open": open_rows})
+        prev_end = None
+        for _, r in g.iterrows():
+            start = r.get("start_date")
+            if prev_end is not None and start is not None and str(start) < str(prev_end):
+                out.append({"ticker": ticker, "l1_code": code, "reason": "overlap",
+                           "prev_end": prev_end, "next_start": start})
+            prev_end = r.get("end_date") if pd.notna(r.get("end_date")) else prev_end
+    return out
+
+
+def _fetch_sw_snapshot() -> tuple[pd.DataFrame, set[str]]:
     """One ``index_component_sw`` call per SW L1 code -> a flat CURRENT-snapshot frame
-    (ticker/l1_code/l1_name/start_date). Per-code isolation, same discipline as the
-    price fetch above: one dead index logs a gap, the rest of the snapshot still
-    builds."""
+    (ticker/l1_code/l1_name/start_date) PLUS the set of codes this run actually
+    OBSERVED (a successful call that returned real rows) — B2/W4 repair: the diff step
+    in ``collect_sw_membership`` needs to know which codes it may safely close
+    intervals for, never inferring "not in the snapshot" as "membership vanished" for
+    a code whose fetch simply failed. Per-code isolation, same discipline as the price
+    fetch above: one dead index logs a gap, the rest of the snapshot still builds."""
     import akshare as ak  # lazy: heavy import, only needed at collect time
 
     rows: list[dict] = []
+    observed: set[str] = set()
     for code, (cn, en) in SW_L1.items():
         try:
             df = ak.index_component_sw(symbol=code)
@@ -123,15 +163,18 @@ def _fetch_sw_snapshot() -> pd.DataFrame:
         if df is None or df.empty or "证券代码" not in df.columns:
             log.warning("china_sectors membership %s (%s): empty/unexpected payload", code, en)
             continue
+        observed.add(code)
         for _, r in df.iterrows():
             ticker = normalize_cn_ticker(r["证券代码"])
             incl = r.get("计入日期")
             start = str(incl) if pd.notna(incl) else None
             rows.append({"ticker": ticker, "l1_code": code, "l1_name": en, "start_date": start})
-    return pd.DataFrame(rows, columns=["ticker", "l1_code", "l1_name", "start_date"])
+    return pd.DataFrame(rows, columns=["ticker", "l1_code", "l1_name", "start_date"]), observed
 
 
-def collect_sw_membership(today: str | None = None, snapshot: pd.DataFrame | None = None) -> pd.DataFrame:
+def collect_sw_membership(today: str | None = None, snapshot: pd.DataFrame | None = None,
+                          observed_codes: set[str] | None = None,
+                          path=None) -> pd.DataFrame:
     """Shenwan L1 constituent membership — an INTERVAL store (ticker · l1_code ·
     l1_name · start_date · end_date[null=current] · collected_at), the official
     (non-overlapping) sector lens' membership source (W4 spec §2A).
@@ -163,13 +206,45 @@ def collect_sw_membership(today: str | None = None, snapshot: pd.DataFrame | Non
     EXCLUDE, so the same "excluded/missing, never silently double-counted" surface
     (spec §2A/§3) also covers a real source anomaly, not just an unscored member.
 
-    ``snapshot`` is injectable (tests / callers that already fetched); ``today`` is
-    the collection run's date (ISO string), defaulting to the real wall-clock date.
-    Returns the merged frame that was written to disk.
+    B2/W4 repair — collector safety, three rules:
+
+    1. **Refuse to diff an EMPTY fetched snapshot.** A total akshare outage (every
+       code's call failed) used to read as "every sector's membership vanished
+       today" — every open interval in the store closed in one run (measured: 5,211
+       rows would have closed from a single empty fetch against the real seeded
+       store). An empty ``snap`` is now a pure no-op: the existing store is returned
+       untouched (not even re-written), and the gap is logged, never silently
+       swallowed into a mass-departure diff.
+    2. **Close intervals ONLY for l1_codes this run actually OBSERVED.** A partial
+       outage (some codes failed, others succeeded) used to close the FAILED codes'
+       intervals too, because "not in `snap`" was read identically whether a code's
+       fetch failed or its true membership emptied out. ``observed_codes`` (from
+       :func:`_fetch_sw_snapshot`, or derived from ``snapshot`` when injected)
+       scopes the closure diff to codes this run genuinely saw; every other code's
+       open rows are left exactly as they were, with the gap logged by name.
+    3. **A re-entry never mints an overlapping interval.** A (ticker, l1_code) pair
+       whose prior row is CLOSED (not open) is a re-entry, not a fresh arrival — SW's
+       own reported inclusion date can predate that closure (or predate today by
+       years), so trusting it verbatim could open a new interval that overlaps the
+       one just closed. A re-entry's ``start_date`` is pinned to ``today`` whenever
+       the source's own date would not clear the prior close;
+       :func:`overlapping_intervals` re-checks the whole merged store as a store
+       invariant before every write and logs (never raises on) any violation found.
+
+    ``snapshot``/``observed_codes``/``path`` are injectable (tests / callers that
+    already fetched); ``today`` is the collection run's date (ISO string),
+    defaulting to the real wall-clock date. Returns the merged frame — the same
+    frame written to disk, except on the empty-snapshot no-op above.
     """
     today = today or str(_date.today())
-    snap = _fetch_sw_snapshot() if snapshot is None else snapshot.copy()
-    path = _membership_path()
+    if snapshot is None:
+        snap, observed_codes = _fetch_sw_snapshot()
+    else:
+        snap = snapshot.copy()
+        if observed_codes is None:
+            observed_codes = set(snap["l1_code"].unique()) if not snap.empty else set()
+
+    path = Path(path) if path is not None else _membership_path()
     old = None
     if path.exists():
         try:
@@ -177,6 +252,15 @@ def collect_sw_membership(today: str | None = None, snapshot: pd.DataFrame | Non
         except Exception as e:  # noqa: BLE001
             log.warning("china_sectors membership: existing store unreadable (%s)", e)
             old = None
+
+    # (1) refuse to diff an empty snapshot — never a mass-closure inference.
+    if snap.empty:
+        log.warning("china_sectors membership: fetched snapshot is EMPTY (akshare outage or "
+                   "no code returned rows) — refusing to diff/close any interval this run; "
+                   "the existing store is left untouched.")
+        if old is not None and not old.empty:
+            return old.reindex(columns=MEMBERSHIP_COLUMNS)
+        return pd.DataFrame(columns=MEMBERSHIP_COLUMNS)
 
     if old is None or old.empty:
         merged = snap.copy()
@@ -187,20 +271,46 @@ def collect_sw_membership(today: str | None = None, snapshot: pd.DataFrame | Non
         old = old.reindex(columns=MEMBERSHIP_COLUMNS).copy()
         open_old = old[old["end_date"].isna()]
         old_keys = set(zip(open_old["ticker"], open_old["l1_code"]))
+        # the most recent CLOSED end_date per (ticker, l1_code), for the re-entry
+        # start_date guard below (3).
+        closed_old = old[old["end_date"].notna()]
+        prior_close = (closed_old.sort_values("end_date")
+                       .groupby(["ticker", "l1_code"])["end_date"].max()
+                       if not closed_old.empty else pd.Series(dtype=object))
         new_keys = set(zip(snap["ticker"], snap["l1_code"]))
 
+        # (2) close intervals ONLY for codes this run observed.
         closed = old.copy()
         is_open = closed["end_date"].isna()
+        observed_mask = closed["l1_code"].isin(observed_codes)
         still_present = closed.apply(lambda r: (r["ticker"], r["l1_code"]) in new_keys, axis=1)
-        closed.loc[is_open & ~still_present, "end_date"] = today
+        closed.loc[is_open & observed_mask & ~still_present, "end_date"] = today
+        skipped = sorted(set(closed.loc[is_open, "l1_code"]) - set(observed_codes))
+        if skipped:
+            log.warning("china_sectors membership: %d l1_code(s) not observed this run "
+                       "(fetch failed/empty) — their open intervals are left untouched: %s",
+                       len(skipped), ", ".join(skipped))
 
         is_new = ~snap.apply(lambda r: (r["ticker"], r["l1_code"]) in old_keys, axis=1)
         arrivals = snap[is_new].copy()
         arrivals["end_date"] = None
         arrivals["collected_at"] = today
+        if len(arrivals):
+            def _arrival_start(r):
+                # (3) a re-entry's start_date may never precede its own prior close.
+                prior_end = prior_close.get((r["ticker"], r["l1_code"])) \
+                    if len(prior_close) else None
+                if prior_end is not None and (not r["start_date"] or str(r["start_date"]) <= str(prior_end)):
+                    return today
+                return r["start_date"]
+            arrivals["start_date"] = arrivals.apply(_arrival_start, axis=1)
         merged = pd.concat([closed, arrivals.reindex(columns=MEMBERSHIP_COLUMNS)], ignore_index=True)
 
     merged = merged.sort_values(["l1_code", "ticker", "start_date"], na_position="first").reset_index(drop=True)
+    violations = overlapping_intervals(merged)
+    if violations:
+        log.error("china_sectors membership: %d overlapping-interval store invariant "
+                 "violation(s) post-merge — %s", len(violations), violations[:5])
     path.parent.mkdir(parents=True, exist_ok=True)
     merged.to_parquet(path, index=False)
     return merged

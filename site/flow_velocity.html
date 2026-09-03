@@ -462,15 +462,82 @@ html[data-lang="zh"] .rot-col.out .rot-col-h::before{background:linear-gradient(
    below flips visibility via inline style (overrides this rule by specificity). */
 html:not(.js) .fv-lens-tabs{display:none}
 html.js #lens-official{display:none}
-.fv-cov-badge{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
-.fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
-.qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
-.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);color:var(--muted);white-space:nowrap;margin-left:6px;cursor:help}
+/* ── coverage badge — TP-0 declared dual-theme treatment ──────────────────────────
+   Base pill (n_covered/n_members, the common case): "muted tabular numerals both
+   themes" — INTENTIONALLY SHARED, not a per-theme design decision. Both themes read
+   the identical rule below; only the underlying --muted/--tile token VALUES differ
+   per theme (already theme-aware from the :root vs html[data-theme="dark"] token
+   blocks), which is a legitimate shared mechanism, not the "same CSS renders once
+   tokens swap" failure TP-0 forbids for a MATERIAL decision — this one genuinely has
+   no material decision to make per theme. */
+.fv-cov-badge{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+/* insufficient-coverage pill — the ONE state chip in this family that needs a real
+   per-theme material call (same semantic class as W2's STALE-adjacent "behind" chip,
+   .fv-src--behind above: an amber-tinted warning surface).
+   DARK TREATMENT (existing, declared as-is): a flat amber wash mixed toward --muted
+   — reads as glow/tint against the dark card, the command-center idiom.
+   LIGHT TREATMENT (new): amber-tinted PAPER (a light amber wash mixed into --card,
+   not transparent — reads as tinted material, not an overlay) + DEEPENED
+   amber-brown ink (mixed toward --ink, never --muted — a --muted-mixed amber reads
+   washed-out on a white/paper background; --ink-mixed keeps the required contrast).
+   Token substitution alone (reusing the dark formula verbatim) was exactly the
+   failure this declares against — light gets its OWN mix target, not a re-skin. */
+html[data-theme="dark"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
+html[data-theme="dark"] .qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
+html[data-theme="light"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 12%,var(--card))}
+html[data-theme="light"] .qchip.coverage-insufficient{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 10%,var(--card))}
+/* concentration chip — informational, never a warning: no tint in EITHER theme.
+   DARK TREATMENT (existing, declared as-is): neutral hairline border, --muted ink.
+   LIGHT TREATMENT (new): SAME neutral hairline border (no tint, per spec), but ink
+   deepened toward --ink — --muted alone reads too pale against white/paper material
+   for an always-visible chip (unlike the coverage badge above, which sits on its
+   own --tile fill and can afford --muted contrast). */
+.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);white-space:nowrap;margin-left:6px;cursor:help}
+html[data-theme="dark"] .fv-conc-chip{color:var(--muted)}
+html[data-theme="light"] .fv-conc-chip{color:color-mix(in srgb,var(--ink) 55%,var(--muted));border-color:var(--line)}
+/* accruing-sparkline placeholder (N2) — informational/muted, same family as the
+   coverage badge (intentionally shared both themes; no warning semantics). */
+.fv-accruing{display:inline-block;font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--faint);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
 .ovl-chip{display:inline-block;font-size:9.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:var(--r-ctl, 5px);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:help}
+/* M3/MOBILE: the concentration drilldown line and the excluded/missing disclosure
+   must WRAP (never inherit table.board's global nowrap, which forced a long
+   contributor list or a long ZH sector name into an unreadable horizontal-scroll
+   sliver on mobile — "never clip mid-token"). */
+.fv-conc-row td,.fv-excluded{white-space:normal;word-break:break-word}
 .fv-conc-row td{padding:3px 12px 8px !important;border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);background:color-mix(in srgb, var(--tile) 55%, transparent)}
 .fv-excluded{font-size:11px;color:var(--faint);padding:3px 12px 8px}
+.fv-excluded .fv-disc{margin-top:0;background:transparent;border:none;border-radius:0}
+.fv-excluded .fv-disc>summary{padding:2px 0;font-size:11px;font-weight:700;color:var(--faint)}
+.fv-excluded .fv-disc-body{padding:4px 0 0}
 .fv-lens-unavail{background:var(--card);border:1px solid var(--grid);border-radius:var(--r-card, 16px);padding:22px 20px;color:var(--muted);font-size:13.5px;line-height:1.55}
 .fv-lens-unavail b{color:var(--ink)}
+/* MOBILE (≤640px): boards keep name, abs 4wk, vs norm, quadrant chip, and the
+   coverage badge (which lives in the Members column) — Velocity, rank Δ, and Flow
+   trend (spark) hide via CSS (display:none, never a clip/ellipsis mid-token). Column
+   order: 1 name, 2 members(coverage), 3 abs, 4 vs norm, 5 velocity, 6 quadrant,
+   7 rank Δ, 8 flow trend. */
+@media (max-width:640px){
+  /* the base table.board{min-width:780px} rule (below, in this same stylesheet) is a
+     desktop floor — without overriding it here, hiding 3 of 8 columns still leaves the
+     table forced to 780px wide, so the surviving columns sit off-screen behind a
+     horizontal scroll instead of actually becoming visible without scrolling. The
+     ID-qualified selectors below outrank the plain-class base rule on specificity
+     regardless of source order. */
+  table.board#sectortbl,table.board#officialtbl{min-width:0}
+  /* tighter padding on the surviving columns so name/members/abs/vs-norm/quadrant sit
+     closer to fitting the 390px frame — the remainder is reached via the SAME
+     .tbl-wrap{overflow-x:auto} inner scroll every board already uses (never a
+     page-level scroll — checked programmatically on every evidence capture), never a
+     clip/ellipsis mid-token. */
+  table.board#sectortbl th,table.board#sectortbl td,
+  table.board#officialtbl th,table.board#officialtbl td{padding:9px 7px}
+  table.board#sectortbl th:nth-child(5),table.board#sectortbl td:nth-child(5),
+  table.board#sectortbl th:nth-child(7),table.board#sectortbl td:nth-child(7),
+  table.board#sectortbl th:nth-child(8),table.board#sectortbl td:nth-child(8),
+  table.board#officialtbl th:nth-child(5),table.board#officialtbl td:nth-child(5),
+  table.board#officialtbl th:nth-child(7),table.board#officialtbl td:nth-child(7),
+  table.board#officialtbl th:nth-child(8),table.board#officialtbl td:nth-child(8){display:none}
+}
 
 /* ═══════════════ MOMENTUM shifts ═══════════════ */
 .fv-mom{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
@@ -1521,7 +1588,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_autos">
+
+<tr class="mrow fv-conc-row" data-sector="cn_autos">
   <td colspan="8">
     <span class="l-en">top name = 16% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量16% · 剔除后：方向不变</span>
@@ -1717,7 +1785,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_soe_value">
+
+<tr class="mrow fv-conc-row" data-sector="cn_soe_value">
   <td colspan="8">
     <span class="l-en">top name = 20% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量20% · 剔除后：方向不变</span>
@@ -1885,9 +1954,9 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td>
 
 <span class="chg pos"
-  data-tip-en="+1.5% vs its own norm — main money ran -2.0% of turnover over the last 4 weeks against a usual -3.5%."
-  data-tip-zh="相对自身常态 +1.5%——近4周主力净占比 -2.0%，常态为 -3.5%。"
-  role="button" tabindex="0">+1.5%</span></td>
+  data-tip-en="+1.7% vs its own norm — main money ran -2.0% of turnover over the last 4 weeks against a usual -3.5%."
+  data-tip-zh="相对自身常态 +1.7%——近4周主力净占比 -2.0%，常态为 -3.5%。"
+  role="button" tabindex="0">+1.7%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill pos" style="width:30.0%;--i:3"></span></span>
   <span class="vbar-sig">+1.80σ</span>
@@ -1913,7 +1982,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_defense">
+
+<tr class="mrow fv-conc-row" data-sector="cn_defense">
   <td colspan="8">
     <span class="l-en">top name = 26% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量26% · 剔除后：方向不变</span>
@@ -2109,7 +2179,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_coal">
+
+<tr class="mrow fv-conc-row" data-sector="cn_coal">
   <td colspan="8">
     <span class="l-en">top name = 23% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量23% · 剔除后：方向不变</span>
@@ -2305,7 +2376,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_med_devices">
+
+<tr class="mrow fv-conc-row" data-sector="cn_med_devices">
   <td colspan="8">
     <span class="l-en">top name = 28% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量28% · 剔除后：方向不变</span>
@@ -2501,7 +2573,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_baijiu">
+
+<tr class="mrow fv-conc-row" data-sector="cn_baijiu">
   <td colspan="8">
     <span class="l-en">top name = 30% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量30% · 剔除后：方向不变</span>
@@ -2680,7 +2753,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_gold">
+
+<tr class="mrow fv-conc-row" data-sector="cn_gold">
   <td colspan="8">
     <span class="l-en">top name = 30% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量30% · 剔除后：方向不变</span>
@@ -2814,9 +2888,9 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td>
 
 <span class="chg pos"
-  data-tip-en="+1.1% vs its own norm — main money ran -2.2% of turnover over the last 4 weeks against a usual -3.2%."
-  data-tip-zh="相对自身常态 +1.1%——近4周主力净占比 -2.2%，常态为 -3.2%。"
-  role="button" tabindex="0">+1.1%</span></td>
+  data-tip-en="+1.0% vs its own norm — main money ran -2.2% of turnover over the last 4 weeks against a usual -3.2%."
+  data-tip-zh="相对自身常态 +1.0%——近4周主力净占比 -2.2%，常态为 -3.2%。"
+  role="button" tabindex="0">+1.0%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill pos" style="width:12.3%;--i:8"></span></span>
   <span class="vbar-sig">+0.74σ</span>
@@ -2842,7 +2916,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_brokers">
+
+<tr class="mrow fv-conc-row" data-sector="cn_brokers">
   <td colspan="8">
     <span class="l-en">top name = 17% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量17% · 剔除后：方向不变</span>
@@ -3010,9 +3085,9 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td>
 
 <span class="chg pos"
-  data-tip-en="+0.5% vs its own norm — main money ran -2.3% of turnover over the last 4 weeks against a usual -2.8%."
-  data-tip-zh="相对自身常态 +0.5%——近4周主力净占比 -2.3%，常态为 -2.8%。"
-  role="button" tabindex="0">+0.5%</span></td>
+  data-tip-en="+0.6% vs its own norm — main money ran -2.3% of turnover over the last 4 weeks against a usual -2.8%."
+  data-tip-zh="相对自身常态 +0.6%——近4周主力净占比 -2.3%，常态为 -2.8%。"
+  role="button" tabindex="0">+0.6%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill pos" style="width:10.2%;--i:9"></span></span>
   <span class="vbar-sig">+0.61σ</span>
@@ -3038,7 +3113,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_solar">
+
+<tr class="mrow fv-conc-row" data-sector="cn_solar">
   <td colspan="8">
     <span class="l-en">top name = 15% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量15% · 剔除后：方向不变</span>
@@ -3234,7 +3310,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_software">
+
+<tr class="mrow fv-conc-row" data-sector="cn_software">
   <td colspan="8">
     <span class="l-en">top name = 22% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量22% · 剔除后：方向不变</span>
@@ -3430,7 +3507,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_insurers">
+
+<tr class="mrow fv-conc-row" data-sector="cn_insurers">
   <td colspan="8">
     <span class="l-en">top name = 46% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量46% · 剔除后：方向不变</span>
@@ -3575,7 +3653,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_banks">
+
+<tr class="mrow fv-conc-row" data-sector="cn_banks">
   <td colspan="8">
     <span class="l-en">top name = 13% of gross flow · without it: flips</span>
     <span class="l-zh">最大贡献个股占总流量13% · 剔除后：方向反转</span>
@@ -3771,7 +3850,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_consumer_elec">
+
+<tr class="mrow fv-conc-row" data-sector="cn_consumer_elec">
   <td colspan="8">
     <span class="l-en">top name = 16% of gross flow · without it: flips</span>
     <span class="l-zh">最大贡献个股占总流量16% · 剔除后：方向反转</span>
@@ -3967,7 +4047,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_metals">
+
+<tr class="mrow fv-conc-row" data-sector="cn_metals">
   <td colspan="8">
     <span class="l-en">top name = 21% of gross flow · without it: flips</span>
     <span class="l-zh">最大贡献个股占总流量21% · 剔除后：方向反转</span>
@@ -4135,9 +4216,9 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td>
 
 <span class="chg neg"
-  data-tip-en="-0.1% vs its own norm — main money ran -2.0% of turnover over the last 4 weeks against a usual -2.0%."
-  data-tip-zh="相对自身常态 -0.1%——近4周主力净占比 -2.0%，常态为 -2.0%。"
-  role="button" tabindex="0">-0.1%</span></td>
+  data-tip-en="-0.0% vs its own norm — main money ran -2.0% of turnover over the last 4 weeks against a usual -2.0%."
+  data-tip-zh="相对自身常态 -0.0%——近4周主力净占比 -2.0%，常态为 -2.0%。"
+  role="button" tabindex="0">-0.0%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:1.5%;--i:15"></span></span>
   <span class="vbar-sig">-0.09σ</span>
@@ -4163,7 +4244,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_appliances">
+
+<tr class="mrow fv-conc-row" data-sector="cn_appliances">
   <td colspan="8">
     <span class="l-en">top name = 43% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量43% · 剔除后：方向不变</span>
@@ -4359,7 +4441,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_pharma_cxo">
+
+<tr class="mrow fv-conc-row" data-sector="cn_pharma_cxo">
   <td colspan="8">
     <span class="l-en">top name = 24% of gross flow · without it: flips</span>
     <span class="l-zh">最大贡献个股占总流量24% · 剔除后：方向反转</span>
@@ -4555,7 +4638,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_battery">
+
+<tr class="mrow fv-conc-row" data-sector="cn_battery">
   <td colspan="8">
     <span class="l-en">top name = 15% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量15% · 剔除后：方向不变</span>
@@ -4751,7 +4835,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_ai_compute">
+
+<tr class="mrow fv-conc-row" data-sector="cn_ai_compute">
   <td colspan="8">
     <span class="l-en">top name = 19% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量19% · 剔除后：方向不变</span>
@@ -4919,9 +5004,9 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td>
 
 <span class="chg neg"
-  data-tip-en="-0.3% vs its own norm — main money ran -2.5% of turnover over the last 4 weeks against a usual -2.2%."
-  data-tip-zh="相对自身常态 -0.3%——近4周主力净占比 -2.5%，常态为 -2.2%。"
-  role="button" tabindex="0">-0.3%</span></td>
+  data-tip-en="-0.1% vs its own norm — main money ran -2.5% of turnover over the last 4 weeks against a usual -2.2%."
+  data-tip-zh="相对自身常态 -0.1%——近4周主力净占比 -2.5%，常态为 -2.2%。"
+  role="button" tabindex="0">-0.1%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:4.7%;--i:19"></span></span>
   <span class="vbar-sig">-0.28σ</span>
@@ -4947,7 +5032,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_robotics">
+
+<tr class="mrow fv-conc-row" data-sector="cn_robotics">
   <td colspan="8">
     <span class="l-en">top name = 18% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量18% · 剔除后：方向不变</span>
@@ -5143,7 +5229,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_semis">
+
+<tr class="mrow fv-conc-row" data-sector="cn_semis">
   <td colspan="8">
     <span class="l-en">top name = 13% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量13% · 剔除后：方向不变</span>
@@ -5339,7 +5426,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_food_bev">
+
+<tr class="mrow fv-conc-row" data-sector="cn_food_bev">
   <td colspan="8">
     <span class="l-en">top name = 21% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量21% · 剔除后：方向不变</span>
@@ -5535,7 +5623,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="cn_rare_earth">
+
+<tr class="mrow fv-conc-row" data-sector="cn_rare_earth">
   <td colspan="8">
     <span class="l-en">top name = 22% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量22% · 剔除后：方向不变</span>
@@ -5698,6 +5787,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
       
       <div class="panel">
       <p class="fv-stance" style="margin:0 0 10px"><span class="l-en">Official sectors (Shenwan L1) — current membership; history accrues from 2026-09-03</span><span class="l-zh">官方行业（申万一级）——当前成分；历史自2026-09-03起累积</span></p>
+      
+      <p class="fv-stance" style="margin:0 0 10px"><span class="l-en">current-membership basis — constituents as of 2026-09-03</span><span class="l-zh">按当前成分计算——成分截至2026-09-03</span></p>
       <div class="tbl-wrap">
         <table class="board" id="officialtbl">
           <thead><tr>
@@ -5737,14 +5828,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801010">
+
+<tr class="mrow fv-excl-row" data-sector="off-801010">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (86): </span><span class="l-zh">剔除 / 缺失（86）：</span>
-    000019.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000505.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000592.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000663.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000702.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000713.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000735.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000798.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000911.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000930.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000972.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001201.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">86 excluded</span><span class="l-zh">86只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000019.SZ" data-tip-zh="000019.SZ" role="button" tabindex="0">深粮控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000505.SZ" data-tip-zh="000505.SZ" role="button" tabindex="0">京粮控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000592.SZ" data-tip-zh="000592.SZ" role="button" tabindex="0">平潭发展</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000663.SZ" data-tip-zh="000663.SZ" role="button" tabindex="0">永安林业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000702.SZ" data-tip-zh="000702.SZ" role="button" tabindex="0">正虹科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000713.SZ" data-tip-zh="000713.SZ" role="button" tabindex="0">国投丰乐</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000735.SZ" data-tip-zh="000735.SZ" role="button" tabindex="0">罗 牛 山</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000798.SZ" data-tip-zh="000798.SZ" role="button" tabindex="0">中水渔业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000911.SZ" data-tip-zh="000911.SZ" role="button" tabindex="0">*ST广糖</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000930.SZ" data-tip-zh="000930.SZ" role="button" tabindex="0">中粮科技</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000972.SZ" data-tip-zh="000972.SZ" role="button" tabindex="0">中基健康</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001201.SZ" data-tip-zh="001201.SZ" role="button" tabindex="0">东瑞股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -5775,14 +5872,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801030">
+
+<tr class="mrow fv-excl-row" data-sector="off-801030">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (318): </span><span class="l-zh">剔除 / 缺失（318）：</span>
-    000510.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000525.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000545.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000553.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000565.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000635.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000677.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000683.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000691.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000707.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000731.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000782.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">318 excluded</span><span class="l-zh">318只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000510.SZ" data-tip-zh="000510.SZ" role="button" tabindex="0">新金路</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000525.SZ" data-tip-zh="000525.SZ" role="button" tabindex="0">红太阳</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000545.SZ" data-tip-zh="000545.SZ" role="button" tabindex="0">金浦钛业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000553.SZ" data-tip-zh="000553.SZ" role="button" tabindex="0">安道麦A</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000565.SZ" data-tip-zh="000565.SZ" role="button" tabindex="0">渝三峡Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000635.SZ" data-tip-zh="000635.SZ" role="button" tabindex="0">英 力 特</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000677.SZ" data-tip-zh="000677.SZ" role="button" tabindex="0">ST海龙</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000683.SZ" data-tip-zh="000683.SZ" role="button" tabindex="0">博源化工</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000691.SZ" data-tip-zh="000691.SZ" role="button" tabindex="0">亚太实业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000707.SZ" data-tip-zh="000707.SZ" role="button" tabindex="0">双环科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000731.SZ" data-tip-zh="000731.SZ" role="button" tabindex="0">四川美丰</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000782.SZ" data-tip-zh="000782.SZ" role="button" tabindex="0">恒申新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -5813,14 +5916,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801040">
+
+<tr class="mrow fv-excl-row" data-sector="off-801040">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (28): </span><span class="l-zh">剔除 / 缺失（28）：</span>
-    000655.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000709.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000717.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000761.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000778.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000825.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000898.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000932.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002075.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002110.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002318.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002443.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">28 excluded</span><span class="l-zh">28只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000655.SZ" data-tip-zh="000655.SZ" role="button" tabindex="0">金岭矿业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000709.SZ" data-tip-zh="000709.SZ" role="button" tabindex="0">河钢股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000717.SZ" data-tip-zh="000717.SZ" role="button" tabindex="0">中南股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000761.SZ" data-tip-zh="000761.SZ" role="button" tabindex="0">本钢板材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000778.SZ" data-tip-zh="000778.SZ" role="button" tabindex="0">新兴铸管</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000825.SZ" data-tip-zh="000825.SZ" role="button" tabindex="0">太钢不锈</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000898.SZ" data-tip-zh="000898.SZ" role="button" tabindex="0">鞍钢股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000932.SZ" data-tip-zh="000932.SZ" role="button" tabindex="0">华菱钢铁</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002075.SZ" data-tip-zh="002075.SZ" role="button" tabindex="0">沙钢股份</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002110.SZ" data-tip-zh="002110.SZ" role="button" tabindex="0">三钢闽光</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002318.SZ" data-tip-zh="002318.SZ" role="button" tabindex="0">久立特材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002443.SZ" data-tip-zh="002443.SZ" role="button" tabindex="0">金洲管道</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -5837,13 +5946,13 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td class="tnum"><span class="chg neg" style="opacity:.72">-2.2%</span></td>
               <td>
 
-<span class="chg pos"
-  data-tip-en="+0.0% vs its own norm — main money ran -2.2% of turnover over the last 4 weeks against a usual -2.2%."
-  data-tip-zh="相对自身常态 +0.0%——近4周主力净占比 -2.2%，常态为 -2.2%。"
-  role="button" tabindex="0">+0.0%</span></td>
+<span class="chg neg"
+  data-tip-en="-0.0% vs its own norm — main money ran -2.2% of turnover over the last 4 weeks against a usual -2.2%."
+  data-tip-zh="相对自身常态 -0.0%——近4周主力净占比 -2.2%，常态为 -2.2%。"
+  role="button" tabindex="0">-0.0%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
-  <span class="vbar-track"><span class="vbar-fill pos" style="width:0.3%;--i:4"></span></span>
-  <span class="vbar-sig">+0.02σ</span>
+  <span class="vbar-track"><span class="vbar-fill pos" style="width:0.0%;--i:4"></span></span>
+  <span class="vbar-sig">-0.00σ</span>
 </span></td>
               <td style="text-align:left">
                 
@@ -5855,13 +5964,15 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
-              <td><svg class="spark" viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 2.9,2.1 3.8,2.8 4.7,3.2 5.6,3.5 6.5,3.9 7.4,4.2 8.3,4.3 9.2,4.6 10.1,5.1 11.0,5.6 11.9,6.2 12.8,6.6 13.7,7.0 14.6,7.9 15.5,8.3 16.4,8.8 17.3,8.6 18.2,8.3 19.1,8.7 20.0,8.3 20.9,8.2 21.8,8.4 22.7,8.3 23.6,8.8 24.5,9.3 25.4,9.4 26.3,8.8 27.2,9.0 28.1,9.3 29.0,9.4 29.9,9.5 30.8,9.8 31.7,9.6 32.6,9.7 33.5,9.8 34.4,10.0 35.3,10.1 36.2,10.9 37.1,11.2 38.0,11.6 38.9,12.2 39.8,11.9 40.7,12.2 41.6,12.0 42.5,12.2 43.4,12.4 44.3,12.5 45.2,13.0 46.1,13.3 47.0,13.9 47.9,14.5 48.8,14.9 49.7,15.4 50.6,15.7 51.5,16.1 52.4,15.8 53.3,16.0 54.2,15.9 55.1,16.3 56.0,16.5 56.9,16.9 57.8,17.1 58.7,16.9 59.6,16.9 60.4,17.4 61.3,17.8 62.2,18.3 63.1,18.3 64.0,18.7 64.9,18.4 65.8,17.8 66.7,17.7 67.6,17.9 68.5,18.2 69.4,18.4 70.3,18.1 71.2,18.7 72.1,18.8 73.0,19.2 73.9,19.7 74.8,19.7 75.7,19.7 76.6,19.7 77.5,19.6 78.4,19.4 79.3,19.7 80.2,20.1 81.1,20.6 82.0,21.1 82.9,21.1 83.8,21.6 84.7,21.2 85.6,21.5 86.5,21.8 87.4,22.3 88.3,22.6 89.2,22.4 90.1,22.2 91.0,21.8 91.9,22.4 92.8,22.2 93.7,22.7 94.6,22.6 95.5,22.9 96.4,22.7 97.3,22.8 98.2,22.6 99.1,22.2 100.0,22.4 100.9,22.2 101.8,22.1 102.7,22.6 103.6,22.8 104.5,23.6 105.4,23.6 106.3,23.5 107.2,23.8 108.1,24.5 109.0,24.5 109.9,24.3 110.8,24.4 111.7,24.7 112.6,24.5 113.5,24.6 114.4,24.8 115.3,25.1 116.2,25.5 117.1,26.0 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+              
+              <td><span class="fv-accruing" data-tip-en="Membership history accrues from 2026-09-03 — the sparkline unlocks once 130 sessions have accrued (1/130 so far)." data-tip-zh="成分历史自2026-09-03起累积——满130个交易日后解锁走势图（当前1/130）。" role="button" tabindex="0"><span class="l-en">accruing — 1/130 sessions</span><span class="l-zh">累积中（1/130）</span></span></td>
             </tr>
             
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="801050">
+
+<tr class="mrow fv-conc-row" data-sector="off-801050">
   <td colspan="8">
     <span class="l-en">top name = 4% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量4% · 剔除后：方向不变</span>
@@ -5872,11 +5983,16 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
   </td>
 </tr>
 
-<tr class="mrow fv-excl-row show" data-sector="801050">
+
+<tr class="mrow fv-excl-row" data-sector="off-801050">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (53): </span><span class="l-zh">剔除 / 缺失（53）：</span>
-    000633.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000751.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000970.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002114.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002160.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002167.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002192.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002295.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002501.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002540.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002578.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002716.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">53 excluded</span><span class="l-zh">53只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000633.SZ" data-tip-zh="000633.SZ" role="button" tabindex="0">合金投资</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000751.SZ" data-tip-zh="000751.SZ" role="button" tabindex="0">锌业股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000970.SZ" data-tip-zh="000970.SZ" role="button" tabindex="0">中科三环</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002114.SZ" data-tip-zh="002114.SZ" role="button" tabindex="0">罗平锌电</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002160.SZ" data-tip-zh="002160.SZ" role="button" tabindex="0">常铝股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002167.SZ" data-tip-zh="002167.SZ" role="button" tabindex="0">东方锆业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002192.SZ" data-tip-zh="002192.SZ" role="button" tabindex="0">融捷股份</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002295.SZ" data-tip-zh="002295.SZ" role="button" tabindex="0">精艺股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002501.SZ" data-tip-zh="002501.SZ" role="button" tabindex="0">*ST利源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002540.SZ" data-tip-zh="002540.SZ" role="button" tabindex="0">亚太科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002578.SZ" data-tip-zh="002578.SZ" role="button" tabindex="0">闽发铝业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002716.SZ" data-tip-zh="002716.SZ" role="button" tabindex="0">湖南白银</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6045,14 +6161,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801080">
+
+<tr class="mrow fv-excl-row" data-sector="off-801080">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (275): </span><span class="l-zh">剔除 / 缺失（275）：</span>
-    000020.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000045.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000050.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000509.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000536.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000670.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000823.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001232.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 001298.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001308.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001314.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001373.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">275 excluded</span><span class="l-zh">275只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000020.SZ" data-tip-zh="000020.SZ" role="button" tabindex="0">深华发Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000045.SZ" data-tip-zh="000045.SZ" role="button" tabindex="0">深纺织Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000050.SZ" data-tip-zh="000050.SZ" role="button" tabindex="0">深天马Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000509.SZ" data-tip-zh="000509.SZ" role="button" tabindex="0">华塑控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000536.SZ" data-tip-zh="000536.SZ" role="button" tabindex="0">华映科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000670.SZ" data-tip-zh="000670.SZ" role="button" tabindex="0">盈方微</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000823.SZ" data-tip-zh="000823.SZ" role="button" tabindex="0">超声电子</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001232.SZ" data-tip-zh="001232.SZ" role="button" tabindex="0">嘉立创</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="001298.SZ" data-tip-zh="001298.SZ" role="button" tabindex="0">好上好</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001308.SZ" data-tip-zh="001308.SZ" role="button" tabindex="0">康冠科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001314.SZ" data-tip-zh="001314.SZ" role="button" tabindex="0">亿道信息</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001373.SZ" data-tip-zh="001373.SZ" role="button" tabindex="0">翔腾新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6083,14 +6205,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801110">
+
+<tr class="mrow fv-excl-row" data-sector="off-801110">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (73): </span><span class="l-zh">剔除 / 缺失（73）：</span>
-    000016.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000404.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000521.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000541.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000801.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 001259.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001268.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001326.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001387.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002005.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002011.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002035.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">73 excluded</span><span class="l-zh">73只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000016.SZ" data-tip-zh="000016.SZ" role="button" tabindex="0">*ST康佳A</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000404.SZ" data-tip-zh="000404.SZ" role="button" tabindex="0">长虹华意</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000521.SZ" data-tip-zh="000521.SZ" role="button" tabindex="0">长虹美菱</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000541.SZ" data-tip-zh="000541.SZ" role="button" tabindex="0">佛山照明</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000801.SZ" data-tip-zh="000801.SZ" role="button" tabindex="0">四川九洲</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="001259.SZ" data-tip-zh="001259.SZ" role="button" tabindex="0">利仁科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001268.SZ" data-tip-zh="001268.SZ" role="button" tabindex="0">联合精密</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001326.SZ" data-tip-zh="001326.SZ" role="button" tabindex="0">联域股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001387.SZ" data-tip-zh="001387.SZ" role="button" tabindex="0">雪祺电气</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002005.SZ" data-tip-zh="002005.SZ" role="button" tabindex="0">德豪润达</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002011.SZ" data-tip-zh="002011.SZ" role="button" tabindex="0">盾安环境</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002035.SZ" data-tip-zh="002035.SZ" role="button" tabindex="0">华帝股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6121,14 +6249,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801120">
+
+<tr class="mrow fv-excl-row" data-sector="off-801120">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (82): </span><span class="l-zh">剔除 / 缺失（82）：</span>
-    000529.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000639.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000716.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000752.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000799.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000869.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000929.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000995.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001215.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001219.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001318.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002329.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">82 excluded</span><span class="l-zh">82只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000529.SZ" data-tip-zh="000529.SZ" role="button" tabindex="0">广弘控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000639.SZ" data-tip-zh="000639.SZ" role="button" tabindex="0">ST西王</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000716.SZ" data-tip-zh="000716.SZ" role="button" tabindex="0">黑芝麻</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000752.SZ" data-tip-zh="000752.SZ" role="button" tabindex="0">*ST西发</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000799.SZ" data-tip-zh="000799.SZ" role="button" tabindex="0">酒鬼酒</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000869.SZ" data-tip-zh="000869.SZ" role="button" tabindex="0">张  裕Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000929.SZ" data-tip-zh="000929.SZ" role="button" tabindex="0">兰州黄河</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000995.SZ" data-tip-zh="000995.SZ" role="button" tabindex="0">皇台酒业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001215.SZ" data-tip-zh="001215.SZ" role="button" tabindex="0">千味央厨</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001219.SZ" data-tip-zh="001219.SZ" role="button" tabindex="0">青岛食品</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001318.SZ" data-tip-zh="001318.SZ" role="button" tabindex="0">阳光乳业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002329.SZ" data-tip-zh="002329.SZ" role="button" tabindex="0">皇氏集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6159,14 +6293,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801130">
+
+<tr class="mrow fv-excl-row" data-sector="off-801130">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (94): </span><span class="l-zh">剔除 / 缺失（94）：</span>
-    000017.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000026.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000726.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000850.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000955.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001209.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001234.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001312.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001390.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002029.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002042.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002083.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">94 excluded</span><span class="l-zh">94只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000017.SZ" data-tip-zh="000017.SZ" role="button" tabindex="0">深中华A</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000026.SZ" data-tip-zh="000026.SZ" role="button" tabindex="0">飞亚达</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000726.SZ" data-tip-zh="000726.SZ" role="button" tabindex="0">鲁  泰Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000850.SZ" data-tip-zh="000850.SZ" role="button" tabindex="0">华茂股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000955.SZ" data-tip-zh="000955.SZ" role="button" tabindex="0">欣龙控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001209.SZ" data-tip-zh="001209.SZ" role="button" tabindex="0">洪兴股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001234.SZ" data-tip-zh="001234.SZ" role="button" tabindex="0">泰慕士</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001312.SZ" data-tip-zh="001312.SZ" role="button" tabindex="0">福恩股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001390.SZ" data-tip-zh="001390.SZ" role="button" tabindex="0">古麒绒材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002029.SZ" data-tip-zh="002029.SZ" role="button" tabindex="0">七 匹 狼</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002042.SZ" data-tip-zh="002042.SZ" role="button" tabindex="0">华孚时尚</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002083.SZ" data-tip-zh="002083.SZ" role="button" tabindex="0">孚日股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6197,14 +6337,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801140">
+
+<tr class="mrow fv-excl-row" data-sector="off-801140">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (148): </span><span class="l-zh">剔除 / 缺失（148）：</span>
-    000488.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000659.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000812.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000910.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001211.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001216.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001221.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001222.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001238.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001279.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001300.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001322.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">148 excluded</span><span class="l-zh">148只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000488.SZ" data-tip-zh="000488.SZ" role="button" tabindex="0">ST晨鸣</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000659.SZ" data-tip-zh="000659.SZ" role="button" tabindex="0">珠海中富</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000812.SZ" data-tip-zh="000812.SZ" role="button" tabindex="0">陕西金叶</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000910.SZ" data-tip-zh="000910.SZ" role="button" tabindex="0">大亚圣象</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001211.SZ" data-tip-zh="001211.SZ" role="button" tabindex="0">双枪科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001216.SZ" data-tip-zh="001216.SZ" role="button" tabindex="0">华瓷股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001221.SZ" data-tip-zh="001221.SZ" role="button" tabindex="0">悍高集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001222.SZ" data-tip-zh="001222.SZ" role="button" tabindex="0">源飞宠物</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001238.SZ" data-tip-zh="001238.SZ" role="button" tabindex="0">浙江正特</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001279.SZ" data-tip-zh="001279.SZ" role="button" tabindex="0">强邦新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001300.SZ" data-tip-zh="001300.SZ" role="button" tabindex="0">三柏硕</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001322.SZ" data-tip-zh="001322.SZ" role="button" tabindex="0">箭牌家居</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6235,14 +6381,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801150">
+
+<tr class="mrow fv-excl-row" data-sector="off-801150">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (353): </span><span class="l-zh">剔除 / 缺失（353）：</span>
-    000078.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000153.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000411.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000504.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000516.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000518.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000566.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000590.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000597.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000623.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000705.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000710.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">353 excluded</span><span class="l-zh">353只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000078.SZ" data-tip-zh="000078.SZ" role="button" tabindex="0">ST海王</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000153.SZ" data-tip-zh="000153.SZ" role="button" tabindex="0">丰原药业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000411.SZ" data-tip-zh="000411.SZ" role="button" tabindex="0">英特集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000504.SZ" data-tip-zh="000504.SZ" role="button" tabindex="0">南华生物</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000516.SZ" data-tip-zh="000516.SZ" role="button" tabindex="0">国际医学</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000518.SZ" data-tip-zh="000518.SZ" role="button" tabindex="0">四环生物</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000566.SZ" data-tip-zh="000566.SZ" role="button" tabindex="0">海南海药</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000590.SZ" data-tip-zh="000590.SZ" role="button" tabindex="0">古汉医药</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000597.SZ" data-tip-zh="000597.SZ" role="button" tabindex="0">东北制药</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000623.SZ" data-tip-zh="000623.SZ" role="button" tabindex="0">吉林敖东</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000705.SZ" data-tip-zh="000705.SZ" role="button" tabindex="0">浙江震元</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000710.SZ" data-tip-zh="000710.SZ" role="button" tabindex="0">贝瑞基因</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6273,14 +6425,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801160">
+
+<tr class="mrow fv-excl-row" data-sector="off-801160">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (75): </span><span class="l-zh">剔除 / 缺失（75）：</span>
-    000037.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000155.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000407.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000507.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000531.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000537.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000591.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000593.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000595.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000601.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000631.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000669.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">75 excluded</span><span class="l-zh">75只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000037.SZ" data-tip-zh="000037.SZ" role="button" tabindex="0">深南电A</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000155.SZ" data-tip-zh="000155.SZ" role="button" tabindex="0">川能动力</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000407.SZ" data-tip-zh="000407.SZ" role="button" tabindex="0">胜利股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000507.SZ" data-tip-zh="000507.SZ" role="button" tabindex="0">珠海港</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000531.SZ" data-tip-zh="000531.SZ" role="button" tabindex="0">穗恒运Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000537.SZ" data-tip-zh="000537.SZ" role="button" tabindex="0">绿发电力</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000591.SZ" data-tip-zh="000591.SZ" role="button" tabindex="0">太阳能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000593.SZ" data-tip-zh="000593.SZ" role="button" tabindex="0">德龙汇能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000595.SZ" data-tip-zh="000595.SZ" role="button" tabindex="0">新能股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000601.SZ" data-tip-zh="000601.SZ" role="button" tabindex="0">韶能股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000631.SZ" data-tip-zh="000631.SZ" role="button" tabindex="0">顺发恒能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000669.SZ" data-tip-zh="000669.SZ" role="button" tabindex="0">ST金鸿</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6311,14 +6469,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801170">
+
+<tr class="mrow fv-excl-row" data-sector="off-801170">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (81): </span><span class="l-zh">剔除 / 缺失（81）：</span>
-    000088.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000089.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000099.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000520.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000548.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000557.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000626.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000755.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000886.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000900.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000905.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000906.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">81 excluded</span><span class="l-zh">81只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000088.SZ" data-tip-zh="000088.SZ" role="button" tabindex="0">盐 田 港</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000089.SZ" data-tip-zh="000089.SZ" role="button" tabindex="0">深圳机场</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000099.SZ" data-tip-zh="000099.SZ" role="button" tabindex="0">中信海直</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000520.SZ" data-tip-zh="000520.SZ" role="button" tabindex="0">凤凰航运</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000548.SZ" data-tip-zh="000548.SZ" role="button" tabindex="0">湖南投资</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000557.SZ" data-tip-zh="000557.SZ" role="button" tabindex="0">西部创业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000626.SZ" data-tip-zh="000626.SZ" role="button" tabindex="0">远大控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000755.SZ" data-tip-zh="000755.SZ" role="button" tabindex="0">山西高速</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000886.SZ" data-tip-zh="000886.SZ" role="button" tabindex="0">海南高速</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000900.SZ" data-tip-zh="000900.SZ" role="button" tabindex="0">现代投资</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000905.SZ" data-tip-zh="000905.SZ" role="button" tabindex="0">厦门港务</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000906.SZ" data-tip-zh="000906.SZ" role="button" tabindex="0">浙商中拓</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6349,14 +6513,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801180">
+
+<tr class="mrow fv-excl-row" data-sector="off-801180">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (79): </span><span class="l-zh">剔除 / 缺失（79）：</span>
-    000006.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000011.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000014.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000031.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000036.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000042.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000056.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000069.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000090.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000402.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000514.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000517.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">79 excluded</span><span class="l-zh">79只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000006.SZ" data-tip-zh="000006.SZ" role="button" tabindex="0">深振业Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000011.SZ" data-tip-zh="000011.SZ" role="button" tabindex="0">深物业A</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000014.SZ" data-tip-zh="000014.SZ" role="button" tabindex="0">沙河股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000031.SZ" data-tip-zh="000031.SZ" role="button" tabindex="0">大悦城</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000036.SZ" data-tip-zh="000036.SZ" role="button" tabindex="0">华联控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000042.SZ" data-tip-zh="000042.SZ" role="button" tabindex="0">中洲控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000056.SZ" data-tip-zh="000056.SZ" role="button" tabindex="0">*ST皇庭</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000069.SZ" data-tip-zh="000069.SZ" role="button" tabindex="0">华侨城Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000090.SZ" data-tip-zh="000090.SZ" role="button" tabindex="0">天健集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000402.SZ" data-tip-zh="000402.SZ" role="button" tabindex="0">金 融 街</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000514.SZ" data-tip-zh="000514.SZ" role="button" tabindex="0">渝 开 发</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000517.SZ" data-tip-zh="000517.SZ" role="button" tabindex="0">荣安地产</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6387,14 +6557,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801200">
+
+<tr class="mrow fv-excl-row" data-sector="off-801200">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (77): </span><span class="l-zh">剔除 / 缺失（77）：</span>
-    000007.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000151.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000417.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000419.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000501.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000564.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000679.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000701.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000715.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000759.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000785.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000829.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">77 excluded</span><span class="l-zh">77只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000007.SZ" data-tip-zh="000007.SZ" role="button" tabindex="0">全新好</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000151.SZ" data-tip-zh="000151.SZ" role="button" tabindex="0">中成股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000417.SZ" data-tip-zh="000417.SZ" role="button" tabindex="0">合百集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000419.SZ" data-tip-zh="000419.SZ" role="button" tabindex="0">通程控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000501.SZ" data-tip-zh="000501.SZ" role="button" tabindex="0">武商集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000564.SZ" data-tip-zh="000564.SZ" role="button" tabindex="0">供销大集</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000679.SZ" data-tip-zh="000679.SZ" role="button" tabindex="0">大连友谊</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000701.SZ" data-tip-zh="000701.SZ" role="button" tabindex="0">厦门信达</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000715.SZ" data-tip-zh="000715.SZ" role="button" tabindex="0">中兴商业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000759.SZ" data-tip-zh="000759.SZ" role="button" tabindex="0">中百集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000785.SZ" data-tip-zh="000785.SZ" role="button" tabindex="0">居然智家</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000829.SZ" data-tip-zh="000829.SZ" role="button" tabindex="0">天音控股</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6425,14 +6601,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801210">
+
+<tr class="mrow fv-excl-row" data-sector="off-801210">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (75): </span><span class="l-zh">剔除 / 缺失（75）：</span>
-    000428.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000430.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000524.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000526.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000558.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000610.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000721.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000796.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000888.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000978.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002033.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002057.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">75 excluded</span><span class="l-zh">75只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000428.SZ" data-tip-zh="000428.SZ" role="button" tabindex="0">华天酒店</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000430.SZ" data-tip-zh="000430.SZ" role="button" tabindex="0">张家界</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000524.SZ" data-tip-zh="000524.SZ" role="button" tabindex="0">岭南控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000526.SZ" data-tip-zh="000526.SZ" role="button" tabindex="0">学大教育</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000558.SZ" data-tip-zh="000558.SZ" role="button" tabindex="0">天府文旅</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000610.SZ" data-tip-zh="000610.SZ" role="button" tabindex="0">*ST西旅</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000721.SZ" data-tip-zh="000721.SZ" role="button" tabindex="0">西安饮食</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000796.SZ" data-tip-zh="000796.SZ" role="button" tabindex="0">凯撒旅业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000888.SZ" data-tip-zh="000888.SZ" role="button" tabindex="0">峨眉山Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000978.SZ" data-tip-zh="000978.SZ" role="button" tabindex="0">桂林旅游</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002033.SZ" data-tip-zh="002033.SZ" role="button" tabindex="0">丽江股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002057.SZ" data-tip-zh="002057.SZ" role="button" tabindex="0">中钢天源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6463,14 +6645,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801230">
+
+<tr class="mrow fv-excl-row" data-sector="off-801230">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (16): </span><span class="l-zh">剔除 / 缺失（16）：</span>
-    000025.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000421.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000523.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000632.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000652.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000753.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002316.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002420.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002575.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600051.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600620.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600689.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">16 excluded</span><span class="l-zh">16只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000025.SZ" data-tip-zh="000025.SZ" role="button" tabindex="0">特  力Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000421.SZ" data-tip-zh="000421.SZ" role="button" tabindex="0">南京公用</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000523.SZ" data-tip-zh="000523.SZ" role="button" tabindex="0">红棉股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000632.SZ" data-tip-zh="000632.SZ" role="button" tabindex="0">ST三木</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000652.SZ" data-tip-zh="000652.SZ" role="button" tabindex="0">泰达股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000753.SZ" data-tip-zh="000753.SZ" role="button" tabindex="0">漳州发展</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002316.SZ" data-tip-zh="002316.SZ" role="button" tabindex="0">亚联发展</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002420.SZ" data-tip-zh="002420.SZ" role="button" tabindex="0">毅昌科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002575.SZ" data-tip-zh="002575.SZ" role="button" tabindex="0">群兴玩具</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600051.SS" data-tip-zh="600051.SS" role="button" tabindex="0">宁波联合</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600620.SS" data-tip-zh="600620.SS" role="button" tabindex="0">天宸股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600689.SS" data-tip-zh="600689.SS" role="button" tabindex="0">上海三毛</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6501,14 +6689,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801710">
+
+<tr class="mrow fv-excl-row" data-sector="off-801710">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (57): </span><span class="l-zh">剔除 / 缺失（57）：</span>
-    000012.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000055.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000401.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000619.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000789.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001212.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002066.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002088.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002201.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002205.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002225.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002247.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">57 excluded</span><span class="l-zh">57只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000012.SZ" data-tip-zh="000012.SZ" role="button" tabindex="0">南  玻Ａ</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000055.SZ" data-tip-zh="000055.SZ" role="button" tabindex="0">方大集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000401.SZ" data-tip-zh="000401.SZ" role="button" tabindex="0">金隅冀东</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000619.SZ" data-tip-zh="000619.SZ" role="button" tabindex="0">海螺新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000789.SZ" data-tip-zh="000789.SZ" role="button" tabindex="0">万年青</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001212.SZ" data-tip-zh="001212.SZ" role="button" tabindex="0">中旗新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002066.SZ" data-tip-zh="002066.SZ" role="button" tabindex="0">瑞泰科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002088.SZ" data-tip-zh="002088.SZ" role="button" tabindex="0">鲁阳节能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002201.SZ" data-tip-zh="002201.SZ" role="button" tabindex="0">九鼎新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002205.SZ" data-tip-zh="002205.SZ" role="button" tabindex="0">国统股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002225.SZ" data-tip-zh="002225.SZ" role="button" tabindex="0">濮耐股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002247.SZ" data-tip-zh="002247.SZ" role="button" tabindex="0">聚力文化</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6539,14 +6733,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801720">
+
+<tr class="mrow fv-excl-row" data-sector="off-801720">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (118): </span><span class="l-zh">剔除 / 缺失（118）：</span>
-    000010.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000628.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000779.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001396.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002047.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002062.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002116.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002135.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002140.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002163.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002200.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002307.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">118 excluded</span><span class="l-zh">118只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000010.SZ" data-tip-zh="000010.SZ" role="button" tabindex="0">*ST美丽</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000628.SZ" data-tip-zh="000628.SZ" role="button" tabindex="0">高新发展</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000779.SZ" data-tip-zh="000779.SZ" role="button" tabindex="0">甘咨询</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001396.SZ" data-tip-zh="001396.SZ" role="button" tabindex="0">誉帆科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002047.SZ" data-tip-zh="002047.SZ" role="button" tabindex="0">宝鹰股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002062.SZ" data-tip-zh="002062.SZ" role="button" tabindex="0">宏润建设</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002116.SZ" data-tip-zh="002116.SZ" role="button" tabindex="0">中国海诚</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002135.SZ" data-tip-zh="002135.SZ" role="button" tabindex="0">东南网架</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002140.SZ" data-tip-zh="002140.SZ" role="button" tabindex="0">东华科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002163.SZ" data-tip-zh="002163.SZ" role="button" tabindex="0">海南发展</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002200.SZ" data-tip-zh="002200.SZ" role="button" tabindex="0">交投生态</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002307.SZ" data-tip-zh="002307.SZ" role="button" tabindex="0">北新路桥</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6577,14 +6777,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801730">
+
+<tr class="mrow fv-excl-row" data-sector="off-801730">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (254): </span><span class="l-zh">剔除 / 缺失（254）：</span>
-    000009.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000049.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000159.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000400.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000533.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000682.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000695.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000720.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000809.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000821.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000922.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001208.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">254 excluded</span><span class="l-zh">254只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000009.SZ" data-tip-zh="000009.SZ" role="button" tabindex="0">中国宝安</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000049.SZ" data-tip-zh="000049.SZ" role="button" tabindex="0">德赛电池</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000159.SZ" data-tip-zh="000159.SZ" role="button" tabindex="0">国际实业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000400.SZ" data-tip-zh="000400.SZ" role="button" tabindex="0">许继电气</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000533.SZ" data-tip-zh="000533.SZ" role="button" tabindex="0">顺钠股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000682.SZ" data-tip-zh="000682.SZ" role="button" tabindex="0">东方电子</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000695.SZ" data-tip-zh="000695.SZ" role="button" tabindex="0">滨海能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000720.SZ" data-tip-zh="000720.SZ" role="button" tabindex="0">新能泰山</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000809.SZ" data-tip-zh="000809.SZ" role="button" tabindex="0">和展能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000821.SZ" data-tip-zh="000821.SZ" role="button" tabindex="0">ST京机</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000922.SZ" data-tip-zh="000922.SZ" role="button" tabindex="0">佳电股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001208.SZ" data-tip-zh="001208.SZ" role="button" tabindex="0">华菱线缆</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6615,14 +6821,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801740">
+
+<tr class="mrow fv-excl-row" data-sector="off-801740">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (85): </span><span class="l-zh">剔除 / 缺失（85）：</span>
-    000561.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000576.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000697.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000738.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002023.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002111.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002151.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002189.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002214.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002297.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002383.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002413.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">85 excluded</span><span class="l-zh">85只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000561.SZ" data-tip-zh="000561.SZ" role="button" tabindex="0">烽火电子</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000576.SZ" data-tip-zh="000576.SZ" role="button" tabindex="0">甘化科工</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000697.SZ" data-tip-zh="000697.SZ" role="button" tabindex="0">炼石航空</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000738.SZ" data-tip-zh="000738.SZ" role="button" tabindex="0">航发控制</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002023.SZ" data-tip-zh="002023.SZ" role="button" tabindex="0">海特高新</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002111.SZ" data-tip-zh="002111.SZ" role="button" tabindex="0">威海广泰</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002151.SZ" data-tip-zh="002151.SZ" role="button" tabindex="0">北斗星通</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002189.SZ" data-tip-zh="002189.SZ" role="button" tabindex="0">中光学</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002214.SZ" data-tip-zh="002214.SZ" role="button" tabindex="0">大立科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002297.SZ" data-tip-zh="002297.SZ" role="button" tabindex="0">博云新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002383.SZ" data-tip-zh="002383.SZ" role="button" tabindex="0">合众思壮</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002413.SZ" data-tip-zh="002413.SZ" role="button" tabindex="0">雷科防务</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6653,14 +6865,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801750">
+
+<tr class="mrow fv-excl-row" data-sector="off-801750">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (252): </span><span class="l-zh">剔除 / 缺失（252）：</span>
-    000158.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000409.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000815.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000948.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000997.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001229.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002063.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002065.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002152.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002153.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002178.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002180.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">252 excluded</span><span class="l-zh">252只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000158.SZ" data-tip-zh="000158.SZ" role="button" tabindex="0">常山北明</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000409.SZ" data-tip-zh="000409.SZ" role="button" tabindex="0">云鼎科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000815.SZ" data-tip-zh="000815.SZ" role="button" tabindex="0">美利云</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000948.SZ" data-tip-zh="000948.SZ" role="button" tabindex="0">南天信息</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000997.SZ" data-tip-zh="000997.SZ" role="button" tabindex="0">新 大 陆</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001229.SZ" data-tip-zh="001229.SZ" role="button" tabindex="0">魅视科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002063.SZ" data-tip-zh="002063.SZ" role="button" tabindex="0">远光软件</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002065.SZ" data-tip-zh="002065.SZ" role="button" tabindex="0">东华软件</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002152.SZ" data-tip-zh="002152.SZ" role="button" tabindex="0">广电运通</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002153.SZ" data-tip-zh="002153.SZ" role="button" tabindex="0">石基信息</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002178.SZ" data-tip-zh="002178.SZ" role="button" tabindex="0">延华智能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002180.SZ" data-tip-zh="002180.SZ" role="button" tabindex="0">奔图科技</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6691,14 +6909,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801760">
+
+<tr class="mrow fv-excl-row" data-sector="off-801760">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (84): </span><span class="l-zh">剔除 / 缺失（84）：</span>
-    000156.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000607.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000665.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000793.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000802.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000892.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001330.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002095.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002238.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002264.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002291.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002292.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">84 excluded</span><span class="l-zh">84只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000156.SZ" data-tip-zh="000156.SZ" role="button" tabindex="0">华数传媒</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000607.SZ" data-tip-zh="000607.SZ" role="button" tabindex="0">华媒控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000665.SZ" data-tip-zh="000665.SZ" role="button" tabindex="0">湖北广电</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000793.SZ" data-tip-zh="000793.SZ" role="button" tabindex="0">ST华闻</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000802.SZ" data-tip-zh="000802.SZ" role="button" tabindex="0">北京文化</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000892.SZ" data-tip-zh="000892.SZ" role="button" tabindex="0">欢瑞世纪</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001330.SZ" data-tip-zh="001330.SZ" role="button" tabindex="0">博纳影业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002095.SZ" data-tip-zh="002095.SZ" role="button" tabindex="0">生 意 宝</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002238.SZ" data-tip-zh="002238.SZ" role="button" tabindex="0">天威视讯</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002264.SZ" data-tip-zh="002264.SZ" role="button" tabindex="0">新 华 都</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002291.SZ" data-tip-zh="002291.SZ" role="button" tabindex="0">遥望科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002292.SZ" data-tip-zh="002292.SZ" role="button" tabindex="0">奥飞娱乐</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6729,14 +6953,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801770">
+
+<tr class="mrow fv-excl-row" data-sector="off-801770">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (75): </span><span class="l-zh">剔除 / 缺失（75）：</span>
-    000070.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000586.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000839.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000889.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002017.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002115.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002123.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002148.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002296.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002313.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002467.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002583.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">75 excluded</span><span class="l-zh">75只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000070.SZ" data-tip-zh="000070.SZ" role="button" tabindex="0">特发信息</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000586.SZ" data-tip-zh="000586.SZ" role="button" tabindex="0">汇源通信</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000839.SZ" data-tip-zh="000839.SZ" role="button" tabindex="0">国安股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000889.SZ" data-tip-zh="000889.SZ" role="button" tabindex="0">中嘉博创</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002017.SZ" data-tip-zh="002017.SZ" role="button" tabindex="0">东信和平</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002115.SZ" data-tip-zh="002115.SZ" role="button" tabindex="0">三维通信</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002123.SZ" data-tip-zh="002123.SZ" role="button" tabindex="0">梦网科技</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002148.SZ" data-tip-zh="002148.SZ" role="button" tabindex="0">北纬科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002296.SZ" data-tip-zh="002296.SZ" role="button" tabindex="0">辉煌科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002313.SZ" data-tip-zh="002313.SZ" role="button" tabindex="0">日海智能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002467.SZ" data-tip-zh="002467.SZ" role="button" tabindex="0">二六三</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002583.SZ" data-tip-zh="002583.SZ" role="button" tabindex="0">海能达</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6758,8 +6988,8 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
   data-tip-zh="相对自身常态 +0.9%——近4周主力净占比 +0.3%，常态为 -0.6%。"
   role="button" tabindex="0">+0.9%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
-  <span class="vbar-track"><span class="vbar-fill pos" style="width:19.7%;--i:24"></span></span>
-  <span class="vbar-sig">+1.18σ</span>
+  <span class="vbar-track"><span class="vbar-fill pos" style="width:18.3%;--i:24"></span></span>
+  <span class="vbar-sig">+1.10σ</span>
 </span></td>
               <td style="text-align:left">
                 
@@ -6771,13 +7001,15 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
-              <td><svg class="spark" viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,3.9 2.9,3.3 3.8,2.9 4.7,2.7 5.6,2.0 6.5,2.4 7.4,3.7 8.3,2.7 9.2,2.0 10.1,2.6 11.0,2.5 11.9,2.3 12.8,2.3 13.7,3.1 14.6,3.6 15.5,4.2 16.4,5.4 17.3,4.6 18.2,4.1 19.1,4.9 20.0,4.6 20.9,4.8 21.8,5.2 22.7,4.5 23.6,3.8 24.5,4.6 25.4,5.2 26.3,4.2 27.2,5.8 28.1,5.8 29.0,4.7 29.9,3.1 30.8,3.2 31.7,4.2 32.6,4.3 33.5,3.8 34.4,3.4 35.3,4.6 36.2,4.1 37.1,4.3 38.0,5.4 38.9,5.3 39.8,5.2 40.7,5.6 41.6,5.8 42.5,5.7 43.4,6.1 44.3,5.6 45.2,6.7 46.1,7.9 47.0,7.6 47.9,8.4 48.8,8.8 49.7,8.9 50.6,10.0 51.5,9.9 52.4,8.8 53.3,8.5 54.2,8.4 55.1,8.3 56.0,9.9 56.9,9.0 57.8,7.0 58.7,6.8 59.6,7.4 60.4,8.2 61.3,7.7 62.2,7.3 63.1,6.4 64.0,6.5 64.9,7.4 65.8,6.6 66.7,5.7 67.6,6.2 68.5,8.0 69.4,10.7 70.3,10.3 71.2,8.8 72.1,9.5 73.0,10.0 73.9,11.3 74.8,11.0 75.7,11.3 76.6,10.4 77.5,9.9 78.4,9.9 79.3,8.9 80.2,9.0 81.1,9.2 82.0,9.7 82.9,8.2 83.8,9.0 84.7,9.8 85.6,11.8 86.5,13.2 87.4,15.1 88.3,16.1 89.2,17.8 90.1,18.1 91.0,19.9 91.9,21.9 92.8,22.3 93.7,22.3 94.6,24.3 95.5,24.2 96.4,24.4 97.3,25.1 98.2,25.9 99.1,26.0 100.0,25.7 100.9,25.9 101.8,25.1 102.7,24.8 103.6,23.3 104.5,21.6 105.4,20.7 106.3,19.7 107.2,19.6 108.1,19.8 109.0,19.7 109.9,20.7 110.8,20.3 111.7,21.9 112.6,22.5 113.5,23.1 114.4,23.2 115.3,22.1 116.2,22.3 117.1,22.6 118.0,23.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+              
+              <td><span class="fv-accruing" data-tip-en="Membership history accrues from 2026-09-03 — the sparkline unlocks once 130 sessions have accrued (1/130 so far)." data-tip-zh="成分历史自2026-09-03起累积——满130个交易日后解锁走势图（当前1/130）。" role="button" tabindex="0"><span class="l-en">accruing — 1/130 sessions</span><span class="l-zh">累积中（1/130）</span></span></td>
             </tr>
             
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="801780">
+
+<tr class="mrow fv-conc-row" data-sector="off-801780">
   <td colspan="8">
     <span class="l-en">top name = 6% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量6% · 剔除后：方向不变</span>
@@ -6788,11 +7020,16 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
   </td>
 </tr>
 
-<tr class="mrow fv-excl-row show" data-sector="801780">
+
+<tr class="mrow fv-excl-row" data-sector="off-801780">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (4): </span><span class="l-zh">剔除 / 缺失（4）：</span>
-    001227.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002936.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 601128.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 601997.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-    
+    <details class="fv-disc">
+      <summary><span class="l-en">4 excluded</span><span class="l-zh">4只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="001227.SZ" data-tip-zh="001227.SZ" role="button" tabindex="0">兰州银行</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002936.SZ" data-tip-zh="002936.SZ" role="button" tabindex="0">郑州银行</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="601128.SS" data-tip-zh="601128.SS" role="button" tabindex="0">常熟银行</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="601997.SS" data-tip-zh="601997.SS" role="button" tabindex="0">贵阳银行</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+        
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -6944,16 +7181,16 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
               <td>
                 <span class="fv-cov-badge" data-tip-en="61 of 79 constituents present and scored (77.2% coverage)" data-tip-zh="79只成分股中61只已纳入并评分（覆盖率77.2%）" role="button" tabindex="0">61/79</span>
               </td>
-              <td class="tnum"><span class="chg neg" style="opacity:.72">-1.7%</span></td>
+              <td class="tnum"><span class="chg neg" style="opacity:.72">-1.8%</span></td>
               <td>
 
 <span class="chg pos"
-  data-tip-en="+1.5% vs its own norm — main money ran -1.7% of turnover over the last 4 weeks against a usual -3.2%."
-  data-tip-zh="相对自身常态 +1.5%——近4周主力净占比 -1.7%，常态为 -3.2%。"
-  role="button" tabindex="0">+1.5%</span></td>
+  data-tip-en="+1.4% vs its own norm — main money ran -1.8% of turnover over the last 4 weeks against a usual -3.2%."
+  data-tip-zh="相对自身常态 +1.4%——近4周主力净占比 -1.8%，常态为 -3.2%。"
+  role="button" tabindex="0">+1.4%</span></td>
               <td style="text-align:center"><span class="vbar vbar-md">
-  <span class="vbar-track"><span class="vbar-fill pos" style="width:23.3%;--i:25"></span></span>
-  <span class="vbar-sig">+1.40σ</span>
+  <span class="vbar-track"><span class="vbar-fill pos" style="width:21.8%;--i:25"></span></span>
+  <span class="vbar-sig">+1.31σ</span>
 </span></td>
               <td style="text-align:left">
                 
@@ -6965,13 +7202,15 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
-              <td><svg class="spark" viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 2.9,2.4 3.8,2.7 4.7,3.3 5.6,3.4 6.5,3.2 7.4,3.7 8.3,3.7 9.2,3.7 10.1,3.9 11.0,4.2 11.9,4.4 12.8,4.1 13.7,4.3 14.6,4.8 15.5,5.5 16.4,6.2 17.3,6.2 18.2,6.2 19.1,6.9 20.0,6.9 20.9,7.2 21.8,7.5 22.7,7.5 23.6,8.0 24.5,8.3 25.4,8.7 26.3,8.3 27.2,8.9 28.1,8.4 29.0,8.6 29.9,8.8 30.8,9.1 31.7,9.0 32.6,9.5 33.5,9.8 34.4,10.3 35.3,10.3 36.2,10.8 37.1,11.1 38.0,11.3 38.9,11.1 39.8,11.1 40.7,11.2 41.6,11.2 42.5,11.6 43.4,12.0 44.3,11.8 45.2,11.9 46.1,12.2 47.0,12.9 47.9,13.5 48.8,13.8 49.7,13.7 50.6,14.0 51.5,14.0 52.4,14.5 53.3,14.6 54.2,14.5 55.1,14.9 56.0,15.4 56.9,15.3 57.8,15.3 58.7,15.5 59.6,15.8 60.4,16.5 61.3,16.8 62.2,17.2 63.1,17.3 64.0,17.2 64.9,17.6 65.8,17.1 66.7,17.0 67.6,17.2 68.5,17.4 69.4,18.0 70.3,17.5 71.2,17.6 72.1,17.8 73.0,17.6 73.9,18.2 74.8,18.2 75.7,18.3 76.6,17.9 77.5,18.1 78.4,18.0 79.3,18.0 80.2,18.6 81.1,19.0 82.0,19.1 82.9,19.3 83.8,19.7 84.7,19.9 85.6,19.7 86.5,20.2 87.4,20.6 88.3,20.9 89.2,21.0 90.1,21.1 91.0,21.0 91.9,21.8 92.8,21.8 93.7,22.3 94.6,22.3 95.5,22.7 96.4,22.7 97.3,22.9 98.2,23.2 99.1,23.3 100.0,23.8 100.9,23.9 101.8,24.0 102.7,24.3 103.6,24.1 104.5,24.1 105.4,24.6 106.3,24.6 107.2,25.1 108.1,25.8 109.0,25.7 109.9,25.6 110.8,25.6 111.7,25.7 112.6,25.2 113.5,25.3 114.4,25.5 115.3,25.6 116.2,25.4 117.1,26.0 118.0,25.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+              
+              <td><span class="fv-accruing" data-tip-en="Membership history accrues from 2026-09-03 — the sparkline unlocks once 130 sessions have accrued (1/130 so far)." data-tip-zh="成分历史自2026-09-03起累积——满130个交易日后解锁走势图（当前1/130）。" role="button" tabindex="0"><span class="l-en">accruing — 1/130 sessions</span><span class="l-zh">累积中（1/130）</span></span></td>
             </tr>
             
 
 
 
-<tr class="mrow fv-conc-row show" data-sector="801790">
+
+<tr class="mrow fv-conc-row" data-sector="off-801790">
   <td colspan="8">
     <span class="l-en">top name = 6% of gross flow · without it: same direction</span>
     <span class="l-zh">最大贡献个股占总流量6% · 剔除后：方向不变</span>
@@ -6982,11 +7221,16 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
   </td>
 </tr>
 
-<tr class="mrow fv-excl-row show" data-sector="801790">
+
+<tr class="mrow fv-excl-row" data-sector="off-801790">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (18): </span><span class="l-zh">剔除 / 缺失（18）：</span>
-    000532.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000567.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000750.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002423.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002500.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002647.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002670.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 002926.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600053.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600095.SS <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 600318.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600390.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">18 excluded</span><span class="l-zh">18只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000532.SZ" data-tip-zh="000532.SZ" role="button" tabindex="0">华金资本</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000567.SZ" data-tip-zh="000567.SZ" role="button" tabindex="0">海德股份</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000750.SZ" data-tip-zh="000750.SZ" role="button" tabindex="0">国海证券</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002423.SZ" data-tip-zh="002423.SZ" role="button" tabindex="0">中粮资本</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002500.SZ" data-tip-zh="002500.SZ" role="button" tabindex="0">山西证券</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002647.SZ" data-tip-zh="002647.SZ" role="button" tabindex="0">仁东控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002670.SZ" data-tip-zh="002670.SZ" role="button" tabindex="0">国盛证券</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="002926.SZ" data-tip-zh="002926.SZ" role="button" tabindex="0">华西证券</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600053.SS" data-tip-zh="600053.SS" role="button" tabindex="0">*ST九鼎</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600095.SS" data-tip-zh="600095.SS" role="button" tabindex="0">湘财股份</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="600318.SS" data-tip-zh="600318.SS" role="button" tabindex="0">新力金融</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600390.SS" data-tip-zh="600390.SS" role="button" tabindex="0">五矿资本</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7155,14 +7399,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801880">
+
+<tr class="mrow fv-excl-row" data-sector="off-801880">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (214): </span><span class="l-zh">剔除 / 缺失（214）：</span>
-    000570.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000572.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000581.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000589.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000599.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000678.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000700.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000757.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000816.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000868.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000903.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000951.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">214 excluded</span><span class="l-zh">214只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000570.SZ" data-tip-zh="000570.SZ" role="button" tabindex="0">苏常柴Ａ</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000572.SZ" data-tip-zh="000572.SZ" role="button" tabindex="0">海马汽车</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000581.SZ" data-tip-zh="000581.SZ" role="button" tabindex="0">威孚高科</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000589.SZ" data-tip-zh="000589.SZ" role="button" tabindex="0">贵州轮胎</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000599.SZ" data-tip-zh="000599.SZ" role="button" tabindex="0">青岛双星</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000678.SZ" data-tip-zh="000678.SZ" role="button" tabindex="0">襄阳轴承</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000700.SZ" data-tip-zh="000700.SZ" role="button" tabindex="0">模塑科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000757.SZ" data-tip-zh="000757.SZ" role="button" tabindex="0">浩物股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000816.SZ" data-tip-zh="000816.SZ" role="button" tabindex="0">智慧农业</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000868.SZ" data-tip-zh="000868.SZ" role="button" tabindex="0">安凯客车</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000903.SZ" data-tip-zh="000903.SZ" role="button" tabindex="0">ST云动</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000951.SZ" data-tip-zh="000951.SZ" role="button" tabindex="0">中国重汽</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7193,14 +7443,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801890">
+
+<tr class="mrow fv-excl-row" data-sector="off-801890">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (438): </span><span class="l-zh">剔除 / 缺失（438）：</span>
-    000008.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000410.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000528.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000530.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000680.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000777.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000852.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000856.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000880.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 000925.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001223.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001225.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">438 excluded</span><span class="l-zh">438只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000008.SZ" data-tip-zh="000008.SZ" role="button" tabindex="0">神州高铁</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000410.SZ" data-tip-zh="000410.SZ" role="button" tabindex="0">沈阳机床</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000528.SZ" data-tip-zh="000528.SZ" role="button" tabindex="0">柳    工</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000530.SZ" data-tip-zh="000530.SZ" role="button" tabindex="0">冰山冷热</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000680.SZ" data-tip-zh="000680.SZ" role="button" tabindex="0">山推股份</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000777.SZ" data-tip-zh="000777.SZ" role="button" tabindex="0">中核科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000852.SZ" data-tip-zh="000852.SZ" role="button" tabindex="0">石化机械</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000856.SZ" data-tip-zh="000856.SZ" role="button" tabindex="0">冀东装备</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000880.SZ" data-tip-zh="000880.SZ" role="button" tabindex="0">潍柴重机</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="000925.SZ" data-tip-zh="000925.SZ" role="button" tabindex="0">众合科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001223.SZ" data-tip-zh="001223.SZ" role="button" tabindex="0">欧克科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001225.SZ" data-tip-zh="001225.SZ" role="button" tabindex="0">和泰机电</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7231,14 +7487,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801950">
+
+<tr class="mrow fv-excl-row" data-sector="off-801950">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (14): </span><span class="l-zh">剔除 / 缺失（14）：</span>
-    000571.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000723.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000937.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600121.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600395.SS <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 600408.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600546.SS <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 600725.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600758.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 600792.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 601011.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 601015.SS <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">14 excluded</span><span class="l-zh">14只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000571.SZ" data-tip-zh="000571.SZ" role="button" tabindex="0">新大洲A</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000723.SZ" data-tip-zh="000723.SZ" role="button" tabindex="0">美锦能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000937.SZ" data-tip-zh="000937.SZ" role="button" tabindex="0">冀中能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600121.SS" data-tip-zh="600121.SS" role="button" tabindex="0">郑州煤电</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600395.SS" data-tip-zh="600395.SS" role="button" tabindex="0">盘江股份</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="600408.SS" data-tip-zh="600408.SS" role="button" tabindex="0">安泰集团</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600546.SS" data-tip-zh="600546.SS" role="button" tabindex="0">山煤国际</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="600725.SS" data-tip-zh="600725.SS" role="button" tabindex="0">云维股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600758.SS" data-tip-zh="600758.SS" role="button" tabindex="0">辽宁能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="600792.SS" data-tip-zh="600792.SS" role="button" tabindex="0">云煤能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="601011.SS" data-tip-zh="601011.SS" role="button" tabindex="0">宝泰隆</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="601015.SS" data-tip-zh="601015.SS" role="button" tabindex="0">陕西黑猫</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7269,14 +7531,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801960">
+
+<tr class="mrow fv-excl-row" data-sector="off-801960">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (29): </span><span class="l-zh">剔除 / 缺失（29）：</span>
-    000096.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000554.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000637.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000698.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000819.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000968.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000985.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001316.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002207.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002377.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002476.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002554.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">29 excluded</span><span class="l-zh">29只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000096.SZ" data-tip-zh="000096.SZ" role="button" tabindex="0">广聚能源</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000554.SZ" data-tip-zh="000554.SZ" role="button" tabindex="0">泰山石油</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000637.SZ" data-tip-zh="000637.SZ" role="button" tabindex="0">茂化实华</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000698.SZ" data-tip-zh="000698.SZ" role="button" tabindex="0">ST沈化</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000819.SZ" data-tip-zh="000819.SZ" role="button" tabindex="0">岳阳兴长</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000968.SZ" data-tip-zh="000968.SZ" role="button" tabindex="0">蓝焰控股</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000985.SZ" data-tip-zh="000985.SZ" role="button" tabindex="0">大庆华科</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001316.SZ" data-tip-zh="001316.SZ" role="button" tabindex="0">润贝航科</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002207.SZ" data-tip-zh="002207.SZ" role="button" tabindex="0">*ST准油</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002377.SZ" data-tip-zh="002377.SZ" role="button" tabindex="0">国创高新</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002476.SZ" data-tip-zh="002476.SZ" role="button" tabindex="0">新叶股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002554.SZ" data-tip-zh="002554.SZ" role="button" tabindex="0">惠博普</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7307,14 +7575,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801970">
+
+<tr class="mrow fv-excl-row" data-sector="off-801970">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (111): </span><span class="l-zh">剔除 / 缺失（111）：</span>
-    000068.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000544.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000546.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000551.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000598.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000605.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000711.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000803.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000820.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000826.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 000890.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001230.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">111 excluded</span><span class="l-zh">111只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000068.SZ" data-tip-zh="000068.SZ" role="button" tabindex="0">华控赛格</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000544.SZ" data-tip-zh="000544.SZ" role="button" tabindex="0">中原环保</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000546.SZ" data-tip-zh="000546.SZ" role="button" tabindex="0">金圆股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000551.SZ" data-tip-zh="000551.SZ" role="button" tabindex="0">创元科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000598.SZ" data-tip-zh="000598.SZ" role="button" tabindex="0">兴蓉环境</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000605.SZ" data-tip-zh="000605.SZ" role="button" tabindex="0">渤海股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000711.SZ" data-tip-zh="000711.SZ" role="button" tabindex="0">京蓝科技</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000803.SZ" data-tip-zh="000803.SZ" role="button" tabindex="0">山高环能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000820.SZ" data-tip-zh="000820.SZ" role="button" tabindex="0">神雾节能</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000826.SZ" data-tip-zh="000826.SZ" role="button" tabindex="0">*ST启环</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="000890.SZ" data-tip-zh="000890.SZ" role="button" tabindex="0">法尔胜</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001230.SZ" data-tip-zh="001230.SZ" role="button" tabindex="0">劲旅环境</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7345,14 +7619,20 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
                 <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
                 
               </td>
+              
               <td></td>
             </tr>
             
-<tr class="mrow fv-excl-row" data-sector="801980">
+
+<tr class="mrow fv-excl-row" data-sector="off-801980">
   <td colspan="8" class="fv-excluded">
-    <span class="l-en">Excluded / missing (25): </span><span class="l-zh">剔除 / 缺失（25）：</span>
-    000615.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001206.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 001328.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002094.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 002511.SZ <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, 300132.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 300658.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 300740.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 300849.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 300856.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 300888.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, 300955.SZ <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
-     …
+    <details class="fv-disc">
+      <summary><span class="l-en">25 excluded</span><span class="l-zh">25只未纳入</span></summary>
+      <div class="fv-disc-body">
+        <span data-tip-en="000615.SZ" data-tip-zh="000615.SZ" role="button" tabindex="0">*ST美谷</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001206.SZ" data-tip-zh="001206.SZ" role="button" tabindex="0">依依股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="001328.SZ" data-tip-zh="001328.SZ" role="button" tabindex="0">登康口腔</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002094.SZ" data-tip-zh="002094.SZ" role="button" tabindex="0">青岛金王</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="002511.SZ" data-tip-zh="002511.SZ" role="button" tabindex="0">中顺洁柔</span> <span class="l-en">(unscored)</span><span class="l-zh">（未评分）</span>, <span data-tip-en="300132.SZ" data-tip-zh="300132.SZ" role="button" tabindex="0">诺斯贝尔</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="300658.SZ" data-tip-zh="300658.SZ" role="button" tabindex="0">延江股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="300740.SZ" data-tip-zh="300740.SZ" role="button" tabindex="0">水羊股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="300849.SZ" data-tip-zh="300849.SZ" role="button" tabindex="0">锦盛新材</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="300856.SZ" data-tip-zh="300856.SZ" role="button" tabindex="0">科思股份</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="300888.SZ" data-tip-zh="300888.SZ" role="button" tabindex="0">稳健医疗</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>, <span data-tip-en="300955.SZ" data-tip-zh="300955.SZ" role="button" tabindex="0">嘉亨家化</span> <span class="l-en">(missing)</span><span class="l-zh">（无数据）</span>
+         …
+      </div>
+    </details>
   </td>
 </tr>
 
@@ -7739,7 +8019,7 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <span class="l-en">Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 daily grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.</span><span class="l-zh">沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力日度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。</span><br>
     <b><span class="l-en">Method</span><span class="l-zh">方法</span>:</b>
     <span class="l-en">Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.</span><span class="l-zh">流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。</span>
-    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-03 15:22 UTC
+    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-03 16:53 UTC
   </div>
 </div>
 <script>

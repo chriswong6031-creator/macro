@@ -414,3 +414,433 @@ def test_ashare_sector_velocity_never_drops_a_basket_for_low_coverage():
     assert thin["coverage_state"] == "insufficient_coverage"
     assert thin["n_members"] == 10 and thin["n_covered"] <= 1
     assert thin["vel"] is None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════
+# W4 REPAIR ROUND — B1 (CI wiring, verified by CI running this file, not a unit test)
+# B2 (collector safety), B3 (denominator == the actual mean set), B4 (theme
+# treatments — CSS, verified visually), M1 (official-sector ledger/validate), M3
+# (disclosure UI), N1 (raw-ratio floor), N2 (spark accrual), N3 (Beijing tickers),
+# SF (ZH-name caller pin).
+# ═══════════════════════════════════════════════════════════════════════════════════
+
+# ── B3: the published mean/velocity/rate_rel is computed over the DECLARED
+#    denominator (scored `covered` members), never a wider `wide`-present set ────────
+def test_aggregate_lens_mean_excludes_unscored_members_from_the_denominator():
+    """B3: an unscored member (present in `wide`, absent from `kmap`) must never
+    silently ride inside the published mean even though it renders in `excluded` —
+    the row's own number and its own denominator must describe the SAME set."""
+    idx = pd.date_range("2025-01-01", periods=140, freq="D")
+    import numpy as np
+    rng = np.random.default_rng(3)
+    scored = {"AAA": rng.normal(0, 1, 140), "BBB": rng.normal(0, 1, 140), "CCC": rng.normal(0, 1, 140)}
+    wide = pd.DataFrame({**scored, "DDD": np.full(140, 1000.0)}, index=idx)
+    kmap = {t: _kmap_member(t, t, 1.0, 1.0) for t in ("AAA", "BBB", "CCC")}   # DDD NOT scored
+    mem = _membership_df([_mrow(t, "801780") for t in ("AAA", "BBB", "CCC", "DDD")])
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["n_members"] == 4 and row["n_covered"] == 3
+    covered_mean = wide[["AAA", "BBB", "CCC"]].mean(axis=1)
+    assert row["rate_now"] == round(float(covered_mean.iloc[-1]), 1)
+    # the bug: averaging over `cols` (incl. DDD=1000) would pull rate_now into the
+    # hundreds — assert it stays on the covered-only scale instead.
+    assert abs(row["rate_now"]) < 10
+    ex = {e["ticker"]: e["reason"] for e in row["excluded"]}
+    assert ex["DDD"] == "unscored"
+
+
+def test_ashare_sector_velocity_mean_excludes_unscored_members_from_the_denominator():
+    """B3, curated (theme) lens — same law via ashare_sector_velocity."""
+    from engine.flow_velocity import ashare_sector_velocity
+
+    idx = pd.date_range("2025-01-01", periods=140, freq="D")
+    import numpy as np
+    import sys
+    import types
+    rng = np.random.default_rng(9)
+    scored = {f"S{i}.SZ": rng.normal(0, 1, 140) for i in range(3)}
+    wide = pd.DataFrame({**scored, "U0.SZ": np.full(140, 1000.0)}, index=idx)
+
+    class _FakeBaskets:
+        @staticmethod
+        def _membership():
+            # ashare_sector_velocity requires >=4 rows to publish at all — 3 filler
+            # baskets with members absent from `wide` entirely (insufficient_coverage,
+            # never dropped per W4) pad the count without affecting the row under test.
+            return {"baskets": {
+                "thm": {"name": "Theme", "name_zh": "主题", "category": "x",
+                       "members": [{"ticker": t, "removed": None} for t in list(scored) + ["U0.SZ"]]},
+                "b2": {"name": "B2", "name_zh": "乙", "category": "x",
+                      "members": [{"ticker": f"F{i}.SZ", "removed": None} for i in range(3)]},
+                "b3": {"name": "B3", "name_zh": "丙", "category": "x",
+                      "members": [{"ticker": f"G{i}.SZ", "removed": None} for i in range(3)]},
+                "b4": {"name": "B4", "name_zh": "丁", "category": "x",
+                      "members": [{"ticker": f"H{i}.SZ", "removed": None} for i in range(3)]},
+            }}
+
+    fake_mod = types.ModuleType("engine.baskets_china")
+    fake_mod._membership = _FakeBaskets._membership
+    old = sys.modules.get("engine.baskets_china")
+    sys.modules["engine.baskets_china"] = fake_mod
+    try:
+        sec = ashare_sector_velocity(wide)
+    finally:
+        if old is not None:
+            sys.modules["engine.baskets_china"] = old
+        else:
+            del sys.modules["engine.baskets_china"]
+    assert sec is not None
+    row = sec["rows"][0]
+    assert row["n_members"] == 4 and row["n_covered"] == 3
+    covered_mean = wide[list(scored)].mean(axis=1)
+    assert row["rate_now"] == round(float(covered_mean.iloc[-1]), 1)
+    assert abs(row["rate_now"]) < 10
+
+
+# ── B3+M2: the row's DISPLAYED rate_rel reconciles to Σcontributions — tested
+#    against the ROW FIELD, not a self-defined group_rel ─────────────────────────────
+def test_official_lens_row_rate_rel_reconciles_to_its_own_contributions():
+    kmap = {"AAA": _kmap_member("AAA", "A", 1.5, 3.0), "BBB": _kmap_member("BBB", "B", -0.5, -1.0),
+           "CCC": _kmap_member("CCC", "C", 0.8, 1.6)}
+    wide = _wide_from_kmap(kmap)
+    mem = _membership_df([_mrow(t, "801780") for t in kmap])
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["coverage_state"] == "ok"
+    contrib = fo_groups.member_contributions(list(kmap), kmap)
+    total = sum(c["contribution"] for c in contrib)
+    assert abs(row["rate_rel"] - total) < 1e-6
+    assert abs(row["rate_rel"] - (3.0 - 1.0 + 1.6) / 3) < 1e-6
+
+
+def test_curated_lens_row_rate_rel_reconciles_to_its_own_contributions():
+    from engine.flow_velocity import ashare_sector_velocity
+
+    kmap = {"AAA": _kmap_member("AAA", "A", 1.5, 3.0), "BBB": _kmap_member("BBB", "B", -0.5, -1.0),
+           "CCC": _kmap_member("CCC", "C", 0.8, 1.6)}
+    wide = _wide_from_kmap(kmap)
+
+    import sys
+    import types
+
+    class _FakeBaskets:
+        @staticmethod
+        def _membership():
+            return {"baskets": {
+                "thm": {"name": "Theme", "name_zh": "主题", "category": "x",
+                       "members": [{"ticker": t, "removed": None} for t in kmap]},
+                "b2": {"name": "B2", "name_zh": "乙", "category": "x",
+                      "members": [{"ticker": f"F{i}.SZ", "removed": None} for i in range(3)]},
+                "b3": {"name": "B3", "name_zh": "丙", "category": "x",
+                      "members": [{"ticker": f"G{i}.SZ", "removed": None} for i in range(3)]},
+                "b4": {"name": "B4", "name_zh": "丁", "category": "x",
+                      "members": [{"ticker": f"H{i}.SZ", "removed": None} for i in range(3)]},
+            }}
+
+    fake_mod = types.ModuleType("engine.baskets_china")
+    fake_mod._membership = _FakeBaskets._membership
+    old = sys.modules.get("engine.baskets_china")
+    sys.modules["engine.baskets_china"] = fake_mod
+    try:
+        # kmap MUST be injected explicitly — omitting it lets ashare_sector_velocity
+        # recompute its own kmap from `wide` (real kinetics off the random panel),
+        # silently ignoring this test's pinned rate_rel values.
+        sec = ashare_sector_velocity(wide, kmap=kmap)
+    finally:
+        if old is not None:
+            sys.modules["engine.baskets_china"] = old
+        else:
+            del sys.modules["engine.baskets_china"]
+    row = next(r for r in sec["rows"] if r["id"] == "thm")
+    assert row["coverage_state"] == "ok"
+    contrib = fo_groups.member_contributions(list(kmap), kmap)
+    total = sum(c["contribution"] for c in contrib)
+    assert abs(row["rate_rel"] - total) < 1e-6
+
+
+# ── N1: coverage floor compares the RAW ratio, never the rounded display value ──────
+def test_coverage_floor_uses_raw_ratio_not_rounded_display_value():
+    """241/402 = 59.9502...% ROUNDS to a displayed 60.0% but must still be judged
+    INSUFFICIENT against a 60% floor — the floor compares the raw ratio, never the
+    number a user reads."""
+    kmap = {f"T{i}": _kmap_member(f"T{i}", f"N{i}", 1.0, 1.0) for i in range(241)}
+    wide = _wide_from_kmap(kmap)
+    rows = [_mrow(t, "801780") for t in kmap] + [_mrow(f"X{i}", "801780") for i in range(402 - 241)]
+    mem = _membership_df(rows)
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["n_members"] == 402 and row["n_covered"] == 241
+    assert row["coverage_pct"] == 60.0          # rounds up to a displayed 60.0%
+    assert row["coverage_state"] == "insufficient_coverage"   # but the raw ratio is < 60%
+
+
+def test_coverage_floor_clears_just_above_the_raw_boundary():
+    kmap = {f"T{i}": _kmap_member(f"T{i}", f"N{i}", 1.0, 1.0) for i in range(242)}
+    wide = _wide_from_kmap(kmap)
+    rows = [_mrow(t, "801780") for t in kmap] + [_mrow(f"X{i}", "801780") for i in range(402 - 242)]
+    mem = _membership_df(rows)
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["n_members"] == 402 and row["n_covered"] == 242
+    assert row["coverage_state"] == "ok"
+
+
+# ── N2: official-lens sparkline suppressed until membership history accrues ────────
+def test_official_lens_sparkline_suppressed_until_accrual_clears_the_window():
+    kmap = {t: _kmap_member(t, t, 1.0, 1.0) for t in ("AAA", "BBB", "CCC")}
+    wide = _wide_from_kmap(kmap, n=140)
+    seed_date = str(wide.index[-20].date())   # only 20 sessions accrued, window=130
+    mem = _membership_df([_mrow(t, "801780", collected=seed_date) for t in kmap])
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["coverage_state"] == "ok"
+    assert row["spark"] is None
+    assert row["spark_accrual"]["ready"] is False
+    assert row["spark_accrual"]["n"] < row["spark_accrual"]["window"]
+
+
+def test_official_lens_sparkline_renders_once_the_window_accrues():
+    kmap = {t: _kmap_member(t, t, 1.0, 1.0) for t in ("AAA", "BBB", "CCC")}
+    wide = _wide_from_kmap(kmap, n=260)
+    seed_date = str(wide.index[0].date())     # accrued since the very first bar
+    mem = _membership_df([_mrow(t, "801780", collected=seed_date) for t in kmap])
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["coverage_state"] == "ok"
+    assert row["spark"] is not None
+    assert row["spark_accrual"]["ready"] is True
+
+
+# ── N3: normalize_cn_ticker's Beijing (.BJ) branch ──────────────────────────────────
+def test_normalize_cn_ticker_routes_beijing_prefixes_to_bj():
+    from collectors.china_sectors import normalize_cn_ticker as norm
+    assert norm("830001") == "830001.BJ"    # 83xxxx
+    assert norm("870001") == "870001.BJ"    # 87xxxx
+    assert norm("430001") == "430001.BJ"    # 43xxxx
+    assert norm("920001") == "920001.BJ"    # 92xxxx — must NOT fall into the 9->SS branch
+    assert norm("600000") == "600000.SS"    # unaffected: SSE main board
+    assert norm("000001") == "000001.SZ"    # unaffected: SZSE main board
+    assert norm("900001") == "900001.SS"    # unaffected: legacy SSE B-share
+
+
+def test_bj_member_counts_in_n_members_and_lands_in_excluded_missing():
+    """N3: a .BJ member is honest, not silently dropped — it counts in the group's
+    real n_members and lands in excluded(missing) until the flow grid covers BSE."""
+    kmap = {t: _kmap_member(t, t, 1.0, 1.0) for t in ("AAA", "BBB", "CCC")}
+    wide = _wide_from_kmap(kmap)
+    mem = _membership_df([_mrow(t, "801780") for t in kmap] + [_mrow("830001.BJ", "801780")])
+    res = fo_groups.aggregate_lens(wide, kmap, mem)
+    row = res["rows"][0]
+    assert row["n_members"] == 4
+    ex = {e["ticker"]: e["reason"] for e in row["excluded"]}
+    assert ex["830001.BJ"] == "missing"
+
+
+# ── M3: excluded/missing list is a Tier-2 <details> disclosure, never baked visible;
+#    concentration/excluded rows carry no baked ' show' default ───────────────────────
+def test_excludedrow_wraps_the_list_in_a_details_disclosure_with_a_count_summary():
+    v2 = _v2()
+    v2["ashare_sectors"]["rows"][0] = dict(
+        v2["ashare_sectors"]["rows"][0],
+        excluded=[{"ticker": "999999.SZ", "name": "GhostCo", "reason": "missing"}])
+    html = _render(v2)
+    m = re.search(r'<tr class="mrow fv-excl-row"[^>]*>.*?</tr>', html, re.S)
+    assert m, "excluded row not found"
+    block = m.group(0)
+    assert 'class="fv-excl-row"' in block.split('data-sector')[0] or 'fv-excl-row"' in block
+    assert "show" not in re.search(r'class="([^"]*)"', block).group(1)
+    assert '<details class="fv-disc">' in block
+    assert '<summary>' in block
+    assert "1 excluded" in block and "1只未纳入" in block
+    assert "GhostCo" in block
+
+
+def test_concrow_carries_no_baked_show_default():
+    v2 = _v2()
+    v2["ashare_sectors"]["rows"][0] = dict(
+        v2["ashare_sectors"]["rows"][0],
+        concentration={"top1_share": 55.0, "top3_share": 88.0, "without_top1_direction": "flip",
+                      "top3_pos": [], "top3_neg": [], "gross": 10.0, "group_rel": 1.0,
+                      "top1": {"ticker": "T0", "name": "T0"}})
+    html = _render(v2)
+    m = re.search(r'<tr class="mrow fv-conc-row"[^>]*>', html)
+    assert m, "concentration row must render without a baked ' show' class"
+
+
+def test_official_lens_concrow_and_excludedrow_share_the_off_prefixed_sector_id():
+    """Regression: concrow/excludedrow are shared macros between the curated lens
+    (bare ``r.id`` data-sector, matching its sector-row/member-rows) and the official
+    lens (which prefixes EVERY sector-row/member-row data-sector with "off-" to
+    disambiguate it from the curated lens' own ids). Removing the baked ' show'
+    default (M3, this repair round) exposed a real, previously-invisible defect: the
+    official lens' concrow/excludedrow rendered a BARE data-sector (no "off-" prefix)
+    while the accordion click toggles `.mrow[data-sector="<the clicked row's own
+    value>"]` — for an official-lens row that value is ALWAYS "off-{id}", so a bare
+    concrow/excludedrow could never be found by that toggle and would be permanently
+    unreachable once the baked-visible default was removed. concrow/excludedrow now
+    accept an explicit ``sector_id`` override; the official lens must pass the SAME
+    "off-{id}" value its own sector-row/member-rows use."""
+    v2 = _v2()
+    v2["official_sectors"] = {
+        "available": True, "seed_date": "2026-09-01", "n": 1,
+        "rows": [dict(**enrich_group(1.0, 1.1), id="801780", name="Banks", name_zh="银行",
+                     group_kind="official_sector", overlap_allowed=False,
+                     membership_as_of="current", n_members=10, n_covered=9, coverage_pct=90.0,
+                     coverage_state="ok", excluded=[{"ticker": "999999.SZ", "name": "GhostCo",
+                                                     "reason": "missing"}],
+                     vel=1.1, accel=0.02, rate_now=1.0, rate_4wk=1.0, rate_norm=0.0, rate_rel=1.0,
+                     state="above norm, rising", state_zh="高于常态·升温", spark=None,
+                     concentration={"top1_share": 55.0, "top3_share": 88.0,
+                                   "without_top1_direction": "flip", "top3_pos": [], "top3_neg": [],
+                                   "gross": 10.0, "group_rel": 1.0,
+                                   "top1": {"ticker": "T0", "name": "T0"}},
+                     members=[{"ticker": "600000.SS", "name": "SPDB", "vel": 1.0, "accel": 0.0,
+                              "rate_now": 1.0, "rate_4wk": 1.0, "rate_norm": 0.0, "rate_rel": 1.0,
+                              "state": "above norm, rising", "state_zh": "高于常态·升温"}],
+                     rank=1, rank_change=None)],
+    }
+    html = _render(v2)
+    m = re.search(r'<tr class="sector-row"[^>]*data-sector="(off-801780)"', html)
+    assert m, "official-lens sector-row must carry the off-prefixed data-sector"
+    conc = re.search(r'<tr class="mrow fv-conc-row" data-sector="([^"]*)"', html)
+    excl = re.search(r'<tr class="mrow fv-excl-row" data-sector="([^"]*)"', html)
+    assert conc and conc.group(1) == "off-801780", \
+        f"concrow data-sector must match the sector-row's own value, got {conc.group(1) if conc else None!r}"
+    assert excl and excl.group(1) == "off-801780", \
+        f"excludedrow data-sector must match the sector-row's own value, got {excl.group(1) if excl else None!r}"
+
+
+# ── SF: the ZH-name regression test pins the CALLER (scripts.build_flow_velocity),
+#    not just aggregate_lens' own plumbing — an EN-only revert in the caller fails ──
+def test_l1_names_caller_builds_distinct_en_zh_names():
+    from scripts.build_flow_velocity import _l1_names
+    names = _l1_names()
+    assert names["801780"] == ("Banks", "银行")
+    for code, (en, zh) in names.items():
+        assert en != zh, f"{code}: name_en == name_zh — an EN-only revert would pass silently"
+
+
+# ── M1: official_sectors rows get ledger-derived rank_change (or an honest "first
+#    tracked session"), the SAME shape themes get, via the builder's own function ──
+def test_apply_official_rank_change_first_session_is_honest_not_a_permanent_dash():
+    from scripts.build_flow_velocity import _apply_official_rank_change
+    rows = [{"id": "801780", "quadrant": "accumulation", "rank": 1}]
+    _apply_official_rank_change(rows, ledger_rows=[], market_session="2026-09-03", cn_status="HEALTHY")
+    assert rows[0]["rank_change"] is None
+    assert rows[0]["state_note"] == "first tracked session"
+
+
+def test_apply_official_rank_change_uses_the_ledger_once_two_sessions_accrue():
+    from engine.flow_observatory import history as fo_history
+    from scripts.build_flow_velocity import _apply_official_rank_change
+
+    rows_ledger = [
+        {"entity_kind": "sector", "entity_id": "801780", "effective_session": "2026-09-01",
+         "revision_id": 0, "quadrant": "accumulation", "rank": 3, "vel": 1.0, "abs_value": 1.0,
+         "state": "above norm, rising", "status": "HEALTHY", "first_known_at": "2026-09-01T00:00:00+00:00"},
+        {"entity_kind": "sector", "entity_id": "801780", "effective_session": "2026-09-02",
+         "revision_id": 0, "quadrant": "accumulation", "rank": 2, "vel": 1.1, "abs_value": 1.1,
+         "state": "above norm, rising", "status": "HEALTHY", "first_known_at": "2026-09-02T00:00:00+00:00"},
+    ]
+    assert fo_history.ledger_session_count(rows_ledger, "sector") == 2
+    rows = [{"id": "801780", "quadrant": "accumulation", "rank": 1}]
+    _apply_official_rank_change(rows, ledger_rows=rows_ledger, market_session="2026-09-03",
+                                cn_status="HEALTHY")
+    assert rows[0]["rank_change"] == -1   # rank improved 2 -> 1
+
+
+def test_official_sector_ledger_entities_use_entity_kind_sector():
+    from scripts.build_flow_velocity import _official_sector_ledger_entities
+    rows = [{"id": "801780", "vel": 1.1, "abs": {"value": 2.2}, "quadrant": "accumulation",
+            "state": "above norm, rising", "rank": 1}]
+    ents = _official_sector_ledger_entities(rows, "HEALTHY")
+    assert ("sector", "801780") in ents
+    assert ents[("sector", "801780")]["vel"] == 1.1
+    assert ents[("sector", "801780")]["abs_value"] == 2.2
+
+
+# ── B2: collector safety — refuse an empty diff, per-code closure, no overlapping
+#    re-entry intervals (store invariant) ───────────────────────────────────────────
+def test_collector_refuses_to_diff_an_empty_snapshot(tmp_path):
+    from collectors.china_sectors import collect_sw_membership
+
+    path = tmp_path / "membership.parquet"
+    seed = pd.DataFrame([
+        {"ticker": "600000.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+        {"ticker": "600036.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+    ])
+    collect_sw_membership(today="2026-09-01", snapshot=seed, path=path)
+    empty = pd.DataFrame(columns=["ticker", "l1_code", "l1_name", "start_date"])
+    result = collect_sw_membership(today="2026-09-02", snapshot=empty, observed_codes=set(), path=path)
+    assert len(result) == 2
+    assert result["end_date"].isna().all(), \
+        "an empty fetched snapshot must never read as 'every open interval closed'"
+
+
+def test_collector_closes_intervals_only_for_observed_l1_codes():
+    from collectors.china_sectors import collect_sw_membership
+    import tempfile
+    import os as _os
+
+    tmp = tempfile.mktemp(suffix=".parquet")
+    try:
+        seed = pd.DataFrame([
+            {"ticker": "600000.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+            {"ticker": "601318.SS", "l1_code": "801790", "l1_name": "Non-bank Financials",
+             "start_date": "2020-01-01"},
+        ])
+        collect_sw_membership(today="2026-09-01", snapshot=seed, path=tmp)
+        # 801780's fetch "failed" this run — only 801790 was observed, and 600000.SS
+        # dropped out of ITS snapshot (which never included 801780 at all).
+        partial = pd.DataFrame([
+            {"ticker": "601318.SS", "l1_code": "801790", "l1_name": "Non-bank Financials",
+             "start_date": "2020-01-01"},
+        ])
+        result = collect_sw_membership(today="2026-09-02", snapshot=partial,
+                                       observed_codes={"801790"}, path=tmp)
+        row_780 = result[result.l1_code == "801780"]
+        assert row_780["end_date"].isna().all(), \
+            "801780 was not observed this run — its open interval must stay untouched"
+    finally:
+        if _os.path.exists(tmp):
+            _os.remove(tmp)
+
+
+def test_collector_reentry_never_mints_an_overlapping_interval(tmp_path):
+    from collectors.china_sectors import collect_sw_membership, overlapping_intervals
+
+    path = tmp_path / "membership.parquet"
+    seed = pd.DataFrame([
+        {"ticker": "600000.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+        {"ticker": "600036.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+    ])
+    collect_sw_membership(today="2026-09-01", snapshot=seed, path=path)
+    # close 600000.SS (drops out of 801780's snapshot)
+    closing = pd.DataFrame([
+        {"ticker": "600036.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+    ])
+    collect_sw_membership(today="2026-09-04", snapshot=closing, observed_codes={"801780"}, path=path)
+    # re-entry with an EARLY reported start_date (would overlap the just-closed row
+    # if trusted verbatim)
+    reentry = pd.DataFrame([
+        {"ticker": "600000.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2021-06-01"},
+        {"ticker": "600036.SS", "l1_code": "801780", "l1_name": "Banks", "start_date": "2020-01-01"},
+    ])
+    result = collect_sw_membership(today="2026-09-10", snapshot=reentry, observed_codes={"801780"},
+                                   path=path)
+    assert overlapping_intervals(result) == []
+    reentry_row = result[(result.ticker == "600000.SS") & (result.end_date.isna())]
+    assert (reentry_row["start_date"] == "2026-09-10").all(), \
+        "a re-entry's start_date must be pinned to today when the source date would overlap"
+
+
+def test_overlapping_intervals_detects_a_constructed_violation():
+    from collectors.china_sectors import overlapping_intervals
+    bad = pd.DataFrame([
+        {"ticker": "600000.SS", "l1_code": "801780", "l1_name": "Banks",
+         "start_date": "2020-01-01", "end_date": "2022-01-01", "collected_at": "2020-01-01"},
+        {"ticker": "600000.SS", "l1_code": "801780", "l1_name": "Banks",
+         "start_date": "2021-01-01", "end_date": None, "collected_at": "2021-01-01"},
+    ])
+    violations = overlapping_intervals(bad)
+    assert violations and violations[0]["ticker"] == "600000.SS"

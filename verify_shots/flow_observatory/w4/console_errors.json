@@ -1,10 +1,18 @@
 {
-  "dark_en_1440": [],
-  "dark_en_390": [],
-  "dark_zh_1440": [],
-  "dark_zh_390": [],
-  "light_en_1440": [],
-  "light_en_390": [],
-  "light_zh_1440": [],
-  "light_zh_390": []
+  "curated_dark_en_1440": [],
+  "official_dark_en_1440": [],
+  "curated_dark_en_390": [],
+  "official_dark_en_390": [],
+  "curated_dark_zh_1440": [],
+  "official_dark_zh_1440": [],
+  "curated_dark_zh_390": [],
+  "official_dark_zh_390": [],
+  "curated_light_en_1440": [],
+  "official_light_en_1440": [],
+  "curated_light_en_390": [],
+  "official_light_en_390": [],
+  "curated_light_zh_1440": [],
+  "official_light_zh_1440": [],
+  "curated_light_zh_390": [],
+  "official_light_zh_390": []
 }

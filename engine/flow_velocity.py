@@ -408,6 +408,13 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
         n_members = len(members)
         if n_members == 0:
             continue
+        # B3 repair: `cols` (present in `wide`, scored OR not) stays ONLY for
+        # inst_attention below (an independent seat-activity count, not part of the
+        # reconciliation law) — the mean/kinetics/contributions/coverage/excluded set
+        # is `covered` (present in `wide` AND scored in `kmap`), the SAME set the row
+        # DECLARES as its denominator. Averaging over `cols` while declaring
+        # `n_covered`/excluded off `covered` used to let an unscored member's raw
+        # flow silently ride inside the published mean.
         cols = [t for t in members if t in wide_cols]
         covered = [t for t in cols if t in kmap]
         cov = fo_groups.coverage_stats(n_members, len(covered))
@@ -424,12 +431,13 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
             "inst_attention": inst_attention,
         }
 
-        sufficient = (cov["coverage_pct"] is not None
-                      and cov["coverage_pct"] >= fo_groups.COVERAGE_FLOOR_PCT
-                      and len(cols) >= fo_groups.MIN_COLS_FOR_KINETICS)
+        # N1 repair: floor compares the RAW ratio, never the rounded display value.
+        sufficient = (cov["coverage_ratio"] is not None
+                      and cov["coverage_ratio"] >= fo_groups.COVERAGE_FLOOR_PCT / 100.0
+                      and len(covered) >= fo_groups.MIN_COLS_FOR_KINETICS)
         kin = None
         if sufficient:
-            sect_flow = wide[cols].mean(axis=1)       # equal-weight member net-rate
+            sect_flow = wide[covered].mean(axis=1)     # equal-weight SCORED-member net-rate
             kin = _kinetics(sect_flow, _WK)
             if not kin or kin["vel_primary"] is None:
                 sufficient = False
@@ -447,9 +455,17 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
                 mem_recs.append(r)
             contrib = fo_groups.member_contributions(covered, kmap)
             conc = fo_groups.concentration_from_contributions(contrib)
+            rr = _rate_read(sect_flow, _WK)
+            # B3+M2: the DISPLAYED rate_rel must equal Σcontributions exactly (the
+            # reconciliation law, tested against this row field — not a self-defined
+            # group_rel) — see engine.flow_observatory.groups.member_contributions'
+            # docstring for why the target is the mean of covered members' rate_rel,
+            # not the theme-series' own σ-normalized demean.
+            if conc.get("group_rel") is not None:
+                rr = {**rr, "rate_rel": conc["group_rel"]}
             row.update(
                 vel=kin["vel_primary"], accel=kin["accel"],
-                **_rate_read(sect_flow, _WK),
+                **rr,
                 state=kin["state"], state_zh=kin["state_zh"],
                 spark=_spark(_series_tail(sect_flow.cumsum(), 130)),   # ~6m of daily bars
                 members=mem_recs, concentration=conc, coverage_state="ok",
