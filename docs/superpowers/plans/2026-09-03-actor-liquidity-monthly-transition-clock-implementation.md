@@ -1,24 +1,155 @@
-# Actor, Liquidity & Monthly Transition Clock Implementation Plan
+# Actor, Liquidity & Monthly Transition Clock — W1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` or `superpowers:executing-plans` task by task. Use `superpowers:test-driven-development` for every source change and `superpowers:verification-before-completion` before every success claim.
+Date: 2026-09-03  
+Status: **FORWARD-REPAIRED PLAN / HOLD-FOR-SOL / NOT STARTED**  
+Canonical implementation carrier: Macro issue #6787  
+Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
+Architecture carrier: Macro PR #6788  
+Protected procedure at repair: `mastermindx-market-intelligence/Mastermind@da6af515c95301377fb5fd8748e374a8948a3540`  
+Authority: records only until a separately assigned W1 worker posts Pickup ACK, continuity receipt when available, and separate START after every entrance gate is open.
 
-**Goal:** Build one correction-safe official-source-to-product clock that explains whether monthly market support is building, stable, pinned, rolling off, replaced, contradicted or overridden—without creating a duplicate market owner or any capital authority.
+This plan implements `docs/superpowers/specs/2026-09-03-actor-liquidity-monthly-transition-clock-design.md` plus the VIX-futures and CI-owner amendments on this same architecture carrier. Where older text conflicts, the forward-repaired design and this plan control.
 
-**Architecture:** An hourly single-writer lane normalizes official Fed/Treasury evidence and publishes one current `policy_turn_clock.v1` JSON. A pure composer receives explicit canonical option, Treasury/TGA, broad-flow, rebalance, futures, duration and market-confirmation inputs. The existing nightly regional-desk lane invokes the same builder in ledger-only mode to freeze prospective receipts without republishing current state. Policy Watch loads the same-origin JSON; the canonical CI manifest executes every new suite.
+The implementation is one bounded vertical slice:
 
-**Tech stack:** Python 3.12, dataclasses, `zoneinfo`, `requests`, `pandas`/Parquet, XML/XSD-aware parsing, Jinja2, vanilla browser JavaScript, pytest, PyYAML, GitHub Actions and Playwright.
+```text
+official source receipts
+→ deterministic event/futures/monthly composition
+→ current policy_turn_clock.v1
+→ Policy Watch
+→ existing Neural Web direct machine consumer
+→ eligible-trigger-only prospective receipt
+→ exact tests + hosted CI + real proof
+```
 
-**Spec:** `docs/superpowers/specs/2026-09-03-actor-liquidity-monthly-transition-clock-design.md`
+No score, recommendation, trade authority, new scheduler, new publisher, duplicate machine API, RIC F3 implementation or evaluation-lab outcome computation is included.
 
-**Canonical carrier:** Macro issue #6787, operation `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`.
+---
 
-## Global constraints
+## Task 0 — Lawful pickup, session-root sparse worktree, exact scope and collision gate
 
-- Re-pin current protected `mastermindx-market-intelligence/Mastermind` Skillpack before pickup, START, review and release.
-- Architecture PR #6788 must be accepted and merged before W1 START.
-- Fresh-census every planned path against all open PRs, active branches/worktrees and started operations.
-- `.github/ci/legacy-jobs.yml` must be collision-free before START; current historical owner lists are not sufficient.
-- Do not edit:
+### Step 0.1 — Fresh truth before effect
+
+Fresh-read:
+
+```text
+current protected Mastermind/docs/sol_skills/INDEX.md
+current Macro main
+Macro AGENTS.md and CLAUDE.md
+issue #6787
+merged architecture PR #6788 exact accepted head
+DEC:POLICY-PRETURN-CALENDAR-FLOW-COMPOSITION
+this design + VIX + CI amendments
+current open PRs touching any planned path
+current worktree/branch occupancy
+```
+
+Require:
+
+- protected Skillpack compatible;
+- architecture PR accepted/merged;
+- this operation not already STARTed/effect-unknown elsewhere;
+- no STOP/supersession;
+- every current owner of `.github/ci/legacy-jobs.yml` terminally released, merged or explicitly reconciled by Sol;
+- every other planned shared path collision either absent or explicitly ruled;
+- W1 receiver identity and exact session are bound.
+
+If any gate fails, return typed HOLD with `effect=NONE`; do not create another carrier/branch/workflow/job.
+
+### Step 0.2 — Bind to the host-provided session-root worktree
+
+**Do not run the forbidden manual shape** `git worktree add ../...`, do not create a sibling via `../`, and never create/use a `codex/` branch. The current repository law gives each supported harness its own session-root/worktree procedure. The implementation worker operates only in the already assigned/minted session worktree supplied by that harness, or follows the current checked-in harness/`.agents/skills/macro-sparse-worktree` procedure when the harness explicitly requires manual session-root setup.
+
+From the actual assigned session worktree:
+
+```bash
+git fetch origin main
+git rev-parse --show-toplevel
+git branch --show-current
+git status --short
+git rev-parse HEAD
+git rev-parse --git-common-dir
+python3 scripts/worktree_sparse.py status
+```
+
+Verify:
+
+- top level is the current harness’s lawful session root/worktree, not the shared primary checkout and not an invented Codex-only location;
+- expected assigned branch is bound to this operation;
+- status is clean before mutation;
+- pickup base is a fresh current-main descendant according to current law;
+- the worktree is registered and no foreign operation is occupying it.
+
+If the harness has not supplied a lawful linked session worktree, STOP and follow the checked-in repository procedure. This plan does not invent a branch prefix or filesystem destination.
+
+### Step 0.3 — Sparse heavy-tree opt-in is mandatory before use
+
+`data/`, `site/`, `mockups/` and `verify_shots/` are omitted by default in a session worktree. Before any task reads, writes, builds, compares or captures a planned omitted tree, materialize it in the current worktree:
+
+```bash
+python3 scripts/worktree_sparse.py status
+python3 scripts/worktree_sparse.py add data
+python3 scripts/worktree_sparse.py add site
+python3 scripts/worktree_sparse.py add mockups
+```
+
+Use:
+
+```bash
+python3 scripts/worktree_sparse.py full
+```
+
+instead if the exact validation genuinely needs the full checkout. `verify_shots/` must also be explicitly added when a governed evidence tool writes there.
+
+Rules:
+
+- never infer a canonical file is absent merely because a sparse tree omitted it;
+- never write into an omitted tracked tree—the writer can truncate committed bytes;
+- never use an unexpected `git add -A` to sweep generated data/site diffs;
+- check `python3 scripts/worktree_sparse.py clean` report-first when an omitted-tree write is suspected;
+- do not run the full test suite in a sparse checkout unless `full` has been materialized.
+
+Task 1/2/5 real-data work requires `data`; Task 5/6 current artifact and UI work requires `site`; Task 6/8 design evidence requires `mockups` and, if the current evidence framework uses it, `verify_shots`.
+
+### Step 0.4 — Freeze planned source surface
+
+Expected new files:
+
+```text
+collectors/policy_event_clock.py
+engine/futures_roll_calendar.py
+engine/policy_turn_clock.py
+scripts/build_policy_turn_clock.py
+templates/partials/_policy_turn_clock.html.j2
+tests/test_policy_event_clock.py
+tests/test_futures_roll_calendar.py
+tests/test_policy_turn_clock.py
+tests/test_build_policy_turn_clock.py
+```
+
+Expected modified files:
+
+```text
+engine/event_calendar.py
+engine/neuralweb/world_state.py
+scripts/build_policy_watch.py
+templates/policy_watch.html.j2
+tests/test_policy_watch_ui.py
+tests/test_world_state.py
+config/dag.yml
+.github/workflows/whitehouse-sentinel.yml
+scripts/ci/daily_engine_regional_desk_builders.sh
+.github/workflows/ci.yml
+.github/ci/legacy-jobs.yml
+```
+
+Conditional only when current source proves exact expectation change:
+
+```text
+tests/test_dag_conformance.py
+```
+
+Unconditional no-edit paths:
 
 ```text
 engine/yield_momentum.py
@@ -28,1044 +159,844 @@ agentos/workstreams/WS-RATES-INFLATION-COMMAND.md
 collectors/cboe_vix_futures.py
 ```
 
-- Consume canonical event, OPEX, options, rebalance, broad-flow, Treasury/TGA, VX, market-state, volatility and ledger owners.
-- No network or filesystem I/O inside `engine/policy_turn_clock.py` or `engine/futures_roll_calendar.py`.
-- All action-time datetimes are offset-aware. U.S. decision/session semantics normalize to `America/New_York`.
-- Missing, false, zero, quiet, stale, conflicting and not-applicable remain distinct.
-- Official evidence is append-only/keep-FIRST and correction-safe.
-- Hourly is the sole official-event/current-artifact writer. Nightly is ledger-only.
-- No model call is permitted in source normalization, composition, publication or UI interpretation.
-- All `can_rank`, `can_gate`, `can_size`, and `can_trade` values remain false.
-- One implementation PR only. It remains Draft/HOLD-FOR-SOL through exact-head review.
+Before START and again immediately before every shared CI-manifest/workflow edit, perform a complete current open-PR census. At architecture repair time, `.github/ci/legacy-jobs.yml` remained actively owned by open #6721, #6706, #6651, #6625, #6514, #6389 and #6296; `.github/workflows/ci.yml` remained actively owned by open #6628. #6791 had merged. These numbers are historical observations only; current GitHub truth controls.
 
-## File structure
+Post `PATH_FREEZE` naming exact current owners and paths before edits. Any unruled collision returns `BLOCKED PATH_COLLISION effect=NONE`.
 
-### Create
+### Step 0.5 — RED discipline
+
+No implementation source before the relevant test is RED for the intended reason. Keep each task independently reviewable. Do not widen scope to repair an unrelated inherited red.
+
+---
+
+## Task 1 — Official evidence collector and correction-safe Event Calendar composition
+
+### Files
+
+Create:
 
 ```text
-collectors/policy_event_clock.py       official evidence normalization/persistence only
-engine/futures_roll_calendar.py        pure quarterly-roll and VX-settlement context
-engine/policy_turn_clock.py            pure deterministic transition composition
-scripts/build_policy_turn_clock.py     bounded I/O, modes, no-regress, prospective receipt
+collectors/policy_event_clock.py
+tests/test_policy_event_clock.py
+```
+
+Modify:
+
+```text
+engine/event_calendar.py
+```
+
+### RED tests first
+
+Add fixtures/tests proving:
+
+```python
+def test_fed_event_stable_identity_survives_reordering(): ...
+def test_treasury_event_stable_identity_survives_reordering(): ...
+def test_formatting_only_page_change_does_not_create_revision(): ...
+def test_reused_revision_with_semantic_change_is_visible_collision(): ...
+def test_silent_revision_preserves_both_receipts(): ...
+def test_scheduled_source_status_is_distinct_from_observed_phase(): ...
+def test_virtual_event_does_not_prove_actor_physical_location(): ...
+def test_prerecorded_event_does_not_prove_actor_physical_location(): ...
+def test_explicit_live_presence_can_project_current_location_only_inside_window(): ...
+def test_ended_event_cannot_project_current_location(): ...
+def test_conflicting_official_presence_receipts_remain_conflicting(): ...
+def test_buyback_mechanism_is_not_collapsed_into_purpose(): ...
+def test_buyback_max_offered_submitted_accepted_amounts_are_distinct(): ...
+def test_missing_treasury_amount_remains_null(): ...
+def test_cancelled_or_revised_operation_keeps_lineage(): ...
+def test_keep_first_store_is_idempotent(): ...
+def test_collector_status_changes_only_on_semantic_status_transition(): ...
+```
+
+Tests must fail because W1 collector/composition behavior is absent, not because of sparse missing data.
+
+### Implement smallest source owner
+
+`collectors/policy_event_clock.py`:
+
+- bounded official-public Fed/Treasury/TreasuryDirect adapters;
+- stable `source_event_id` independent of page order;
+- explicit or fallback semantic `source_revision`;
+- canonical semantic digest;
+- keep-FIRST persistence via existing first-seen utility;
+- explicit `record_kind`, source clocks, rights and parser version;
+- Treasury operation mechanism/purpose and four separate nullable amount fields;
+- event location, attendance mode and physical presence basis separated;
+- no private-location inference;
+- no model call.
+
+`engine/event_calendar.py` consumes the normalized official rows in its existing composition role; do not create a second calendar.
+
+### GREEN + hostile mutations
+
+Run the focused suite. Then mutate one at a time and require RED:
+
+- derive event ID from page position;
+- reuse revision token and drop changed semantics;
+- infer presence from venue/Watch Live;
+- infer accepted amount from announced maximum;
+- map buyback purpose into operation kind;
+- overwrite first-seen receipt.
+
+Restore each mutation.
+
+---
+
+## Task 2 — Equity/Treasury quarterly roll + monthly VX settlement helper
+
+### Files
+
+Create:
+
+```text
+engine/futures_roll_calendar.py
+tests/test_futures_roll_calendar.py
+```
+
+### RED tests
+
+```python
+def test_equity_and_treasury_rolls_are_quarterly(): ...
+def test_ordinary_month_is_not_applicable_for_equity_and_treasury(): ...
+def test_scheduled_window_is_not_active_without_progress_input(): ...
+def test_live_progress_can_mark_active_without_direction(): ...
+def test_august_is_not_applicable_for_equity_treasury_but_vx_is_monthly(): ...
+def test_september_2026_standard_vx_expiry_is_2026_09_16(): ...
+def test_weekly_front_does_not_replace_standard_monthly_expiry(): ...
+def test_vx_holiday_rule_moves_to_prior_business_day(): ...
+def test_vx_dte_and_rule_conflict_is_unknown_not_silent_preference(): ...
+def test_fresh_curve_classifies_contango_flat_and_backwardation(): ...
+def test_stale_curve_is_not_current_or_flat(): ...
+def test_rank_roll_boundary_blocks_same_contract_change_claim(): ...
+def test_vx_settlement_alone_has_zero_directional_authority(): ...
+```
+
+Use deterministic acceptance fixtures for 2026-08/09 and current official rule semantics. Do not hard-code one year as eternal truth.
+
+### Implement
+
+Pure helpers only; no network/store owner. Consume existing `data/cboe/vix_futures.parquet` / `data/cboe/vix_curve.parquet` or the existing projection when supplied by the builder. Do not touch `collectors/cboe_vix_futures.py`.
+
+Preserve independent families:
+
+```text
+equity_index
+treasury
+volatility
+```
+
+Weekly front, standard monthly M1 and quarterly rolls never collapse into one status.
+
+### GREEN + mutations
+
+Kill:
+
+- quarterly-only blanket `futures_roll=not_applicable` in August;
+- weekly front replacing monthly M1;
+- calendar window called active without progress;
+- M1 rank reset described as same-contract price shock;
+- stale/missing M2 called flat;
+- any rank/gate/size/trade field becoming true.
+
+---
+
+## Task 3 — Pure policy-turn composer input closure, identity and state vocabulary
+
+### Files
+
+Create:
+
+```text
+engine/policy_turn_clock.py
+tests/test_policy_turn_clock.py
+```
+
+### RED contract tests
+
+Prove the public interface requires explicit injected inputs for:
+
+```text
+events
+official_treasury_operations
+opex
+opex_risk
+option_surface
+broad_market_flow
+rebalance_calendar
+rebalance_pulse
+duration_extension_context
+treasury_tga
+futures_roll
+market_confirmation
+prior_clock
+now
+```
+
+Tests:
+
+```python
+def test_compose_has_no_filesystem_network_or_model_read(): ...
+def test_input_order_does_not_change_payload(): ...
+def test_equivalent_utc_and_et_instant_has_same_us_decision_date(): ...
+def test_generated_at_is_not_semantic_change_identity(): ...
+def test_method_version_is_exposed(): ...
+def test_input_digest_is_stable(): ...
+def test_source_versions_and_watermarks_are_exposed(): ...
+def test_method_version_mismatch_refuses_prior_delta(): ...
+def test_missing_required_calendar_truth_can_force_unknown(): ...
+def test_all_authority_fields_are_false(): ...
+```
+
+### Implement pure normalizers
+
+Normalize `now` once to `America/New_York`. Source-native clocks remain unmodified in evidence. All nulls/staleness/conflicts survive.
+
+Top-level payload must include independent:
+
+```text
+option_support
+broad_market_flow
+support_composition
+treasury_liquidity
+futures_roll
+rebalance
+market_confirmation
+```
+
+No hidden global numeric score.
+
+---
+
+## Task 4 — State composition with options/broad-flow axis separation
+
+### Files
+
+Continue:
+
+```text
+engine/policy_turn_clock.py
+tests/test_policy_turn_clock.py
+```
+
+### RED cases
+
+```python
+def test_option_replacement_alone_cannot_build_support(): ...
+def test_broad_flow_alone_cannot_build_support(): ...
+def test_options_and_broad_flow_are_distinct_axes(): ...
+def test_option_support_never_contains_cross_axis_count(): ...
+def test_two_independent_support_mechanisms_can_build_support(): ...
+def test_stale_broad_flow_does_not_change_option_support(): ...
+def test_opex_proximity_does_not_infer_dealer_sign(): ...
+def test_replacement_requires_comparable_same_owner_root_observations(): ...
+def test_missing_replacement_is_unknown_not_absent(): ...
+def test_vx_settlement_alone_does_not_open_volatility_window(): ...
+def test_rolloff_plus_fresh_independent_confirmation_can_open_volatility_window(): ...
+def test_month_end_schedule_without_observed_pulse_is_not_dominant(): ...
+def test_month_end_fresh_nonquiet_pulse_can_be_dominant(): ...
+def test_bond_index_extension_is_not_equity_flow(): ...
+def test_high_impact_catalyst_can_override_mechanical_window(): ...
+def test_conflicting_fresh_axes_return_mixed(): ...
+```
+
+The corrected two-mechanism test is structurally:
+
+```python
+def test_two_independent_support_mechanisms_can_build_support():
+    out = compose(**REPLACEMENT_AND_SUPPORTIVE_FLOW)
+    assert out["option_support"]["replacement"] == "building"
+    assert out["broad_market_flow"]["status"] == "supportive"
+    assert "applicable_support_count" not in out["option_support"]
+    assert out["support_composition"]["applicable_support_count"] >= 2
+    assert {"option_replacement", "broad_market_flow"} <= set(
+        out["support_composition"]["supporting_mechanisms"]
+    )
+    assert out["state"] == "SUPPORT_BUILDING"
+```
+
+This kills the prior cross-axis bug: the K-of-N result belongs only to `support_composition`; broad flow never becomes an `option_support` fact.
+
+### Implement deterministic precedence
+
+Closed states only:
+
+```text
+SUPPORT_BUILDING
+SUPPORT_STABLE
+PINNED
+SUPPORT_ROLLOFF_IMMINENT
+VOLATILITY_WINDOW_OPEN
+MONTH_END_REBALANCE_DOMINANT
+CATALYST_DOMINANT
+MIXED
+UNKNOWN
+```
+
+Use the binding precedence from the design. `SUPPORT_BUILDING` counts independently sourced mechanism families at most once each, literal K-of-N, no weights. Stale/unavailable families cast no supportive vote. Preserve exact predicate receipts in `state_basis` and `support_composition.predicate_results`.
+
+### Hostile mutations
+
+Require RED if:
+
+- `option_support.applicable_support_count` is reintroduced;
+- broad-flow status is copied into option support;
+- one option-replacement axis creates `SUPPORT_BUILDING`;
+- VX settlement alone opens volatility window;
+- month-end calendar eligibility alone creates dominance;
+- stale confirmation is treated neutral/fresh;
+- a hidden weighted score is added.
+
+---
+
+## Task 5 — Builder modes, per-source no-regress and eligible-trigger prospective ledger
+
+### Files
+
+Create:
+
+```text
+scripts/build_policy_turn_clock.py
+tests/test_build_policy_turn_clock.py
+```
+
+Generated after sparse opt-in:
+
+```text
+site/policy_turn_clock.json
+data/policy_turn_clock/forward_log.jsonl
+```
+
+### RED builder/purity tests
+
+```python
+def test_builder_gathers_existing_owners_without_network(): ...
+def test_publish_current_writes_exact_json_contract(): ...
+def test_verify_mode_writes_nothing(): ...
+def test_ledger_only_never_writes_current_json(): ...
+def test_same_semantic_inputs_later_attempt_is_byte_stable(): ...
+def test_same_semantic_inputs_do_not_create_changed_axes(): ...
+def test_source_versions_and_watermarks_participate_in_digest(): ...
+```
+
+### RED per-source no-regress tests
+
+At minimum:
+
+```python
+def test_mixed_source_advance_and_regression_keeps_new_a_and_last_good_b(): ...
+def test_regressed_source_never_lowers_published_watermark(): ...
+def test_source_failure_preserves_last_good_evidence_and_marks_degraded(): ...
+def test_source_recovery_advances_from_preserved_last_good(): ...
+def test_equal_watermark_equal_semantics_is_noop(): ...
+def test_valid_correction_preserves_original_lineage_and_advances_correction_identity(): ...
+def test_correction_cannot_use_older_source_identity_to_overwrite_newer(): ...
+def test_all_regressive_inputs_refuse_current_overwrite(): ...
+def test_recomputed_evidence_cutoff_never_moves_backward(): ...
+```
+
+Required mixed-source fixture:
+
+```text
+published: source A watermark=10, source B watermark=20
+incoming:  source A watermark=11, source B watermark=19
+expected: source A=11 accepted; source B=20 last-good retained;
+          B emits SOURCE_WATERMARK_REGRESSION; payload may publish because A advanced;
+          no field derived from B@19 enters current state.
+```
+
+A whole-payload “older/newer” check is not a substitute.
+
+### Implement source reconciliation
+
+Before current publication:
+
+1. fresh-read the existing current artifact;
+2. compare each source key independently using owner-native watermark/revision/availability identity plus semantic digest/correction lineage;
+3. accept advances;
+4. preserve equal identities as byte-stable;
+5. preserve current last-good on regression and emit a typed gap;
+6. let truthful failure/stale status change while retaining last-good evidence/watermark;
+7. accept a valid correction only with explicit lineage and non-regressive source identity;
+8. recompute payload state/digest/cutoff from the reconciled evidence set;
+9. refuse/no-op when nothing semantically valid advanced/changed.
+
+No cross-lane lock service.
+
+### RED prospective-ledger tests — kill unconditional nightly append
+
+The following are mandatory executable tests, not prose acceptance only:
+
+```python
+def test_hourly_publish_never_appends_forward_receipt(): ...
+def test_nightly_ineligible_trigger_is_noop(): ...
+def test_nightly_no_trigger_does_not_create_jsonl_file_or_row(): ...
+def test_direct_append_off_lane_is_refused_inside_append_seam(): ...
+```
+
+Parametrize every eligible first-seen family:
+
+```python
+@pytest.mark.parametrize("trigger_kind", [
+    "material_state_change",
+    "high_impact_event_t24",
+    "opex_t_minus_2",
+    "post_opex_t_plus_1",
+    "month_or_quarter_end_pulse",
+    "vx_t_minus_2",
+    "vx_rank_roll_boundary",
+])
+def test_each_trigger_family_can_append_first_seen_receipt(trigger_kind): ...
+```
+
+Receipt identity and idempotence:
+
+```python
+def test_receipt_identity_is_asof_trigger_kind_trigger_id_method_and_input_digest(): ...
+def test_exact_receipt_identity_is_keep_first_on_rerun(): ...
+def test_new_trigger_id_is_not_deduped_as_old_trigger(): ...
+def test_multiple_simultaneous_triggers_use_frozen_precedence_and_append_at_most_one(): ...
+```
+
+Correction semantics:
+
+```python
+def test_correction_appends_linked_row_without_rewriting_original(): ...
+def test_correction_row_names_original_receipt_and_source_lineage(): ...
+def test_correction_target_missing_is_refused(): ...
+def test_correction_append_is_still_refused_off_nightly_lane(): ...
+```
+
+### Implement ledger gate
+
+`append_forward_receipt()` itself calls `engine.ledger_lane.nightly_advance_enabled()`; callers cannot bypass the lane check.
+
+Nightly lane is necessary but never sufficient. Build the eligible-trigger set from current/prior semantic evidence. If no first-seen trigger exists, append zero rows. When multiple first-seen triggers are present, select the first unseen trigger by the frozen design order and append at most one receipt.
+
+Receipt identity:
+
+```text
+(as_of, trigger_kind, trigger_id, method_version, input_digest)
+```
+
+Corrections append `record_kind=correction` with `correction_of_receipt_id`; originals remain immutable.
+
+### GREEN + hostile mutations
+
+Kill:
+
+- `if nightly: append(...)` unconditional path;
+- lane check only in CLI while direct helper bypasses it;
+- receipt identity omitting trigger ID or method/input identity;
+- correction overwriting original JSONL line;
+- whole-payload no-regress that permits one source to move backward;
+- source failure that erases last-good evidence.
+
+---
+
+## Task 6 — Policy Watch product, binding dual-theme packet and durable Neural Web machine consumer
+
+### Files
+
+Create:
+
+```text
 templates/partials/_policy_turn_clock.html.j2
-                                      static shell/fallback for dynamic component
+```
+
+Modify:
+
+```text
+scripts/build_policy_watch.py
+templates/policy_watch.html.j2
+tests/test_policy_watch_ui.py
+engine/neuralweb/world_state.py
+tests/test_world_state.py
+```
+
+Generated after `site/` opt-in:
+
+```text
+site/policy_watch.html
+```
+
+Design evidence after `mockups/` (and current framework’s evidence directory) opt-in:
+
+```text
+mockups/refs/policy-turn-clock/**
+```
+
+### Product RED tests
+
+```python
+def test_policy_watch_loads_same_origin_policy_turn_clock_json(): ...
+def test_static_shell_does_not_embed_independent_current_payload(): ...
+def test_noscript_or_fetch_failure_is_explicit_unavailable_state(): ...
+def test_unknown_is_not_rendered_as_neutral_or_current(): ...
+def test_degraded_shows_stale_clock_and_named_gap(): ...
+def test_weekly_vx_and_standard_monthly_vx_are_distinct(): ...
+def test_all_authority_false_is_visible_in_contract_not_trade_language(): ...
+def test_en_zh_semantics_cover_every_state_and_gap_label(): ...
+def test_keyboard_accessible_evidence_and_source_details(): ...
+def test_ui_does_not_depend_on_color_only_state_meaning(): ...
+```
+
+### Binding art-direction packet
+
+Baseline:
+
+```text
+research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+research/DESIGN_DOCTRINE.md
+mockups/design_system/specimen.html
+existing Policy Watch route/composition
+```
+
+**DARK TREATMENT — command center:** near-black luminance depth; restrained instrument wells; narrow luminous edge/restrained glow only for fresh state; precise warning/catalyst rails; high-information clocks. Dark degraded removes glow/material lift and adds segmented/dashed warning rail + explicit stale clock/gap. Dark unknown uses neutral graphite/charcoal, explicit UNKNOWN and missing evidence, with no directional tint.
+
+**LIGHT TREATMENT — research workspace:** cool neutral canvas; white research material; graphite type; disciplined hairlines; modest shadow instead of glow; restrained semantic ink/tint in labels/rails. Light degraded keeps the white/cool material and uses a mechanically distinct caution rail/hatch + explicit stale clock/gap. Light unknown is a neutral research sheet with explicit UNKNOWN/missing evidence and no pale-green “fine” implication.
+
+Same IA, semantics, density, state meaning, action and interaction across themes; materially different depth mechanism by design. Token substitution alone is not PASS. No parallel token root or opaque runtime stylesheet.
+
+### Evidence matrix — binding
+
+Capture/review every required cell:
+
+```text
+dark  × EN × 1440 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+dark  × EN ×  390 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+dark  × ZH × 1440 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+dark  × ZH ×  390 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+light × EN × 1440 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+light × EN ×  390 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+light × ZH × 1440 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+light × ZH ×  390 × {fresh/support, rolloff, catalyst, degraded, unknown, conflict}
+```
+
+Also run 768 geometry/function checks in both themes/languages. Use governed evidence receipt format. Run where applicable:
+
+```bash
+python3 scripts/check_design_system.py --mode enforce-added
+python3 scripts/check_runtime_style_injection.py
+python3 scripts/check_ui_visual_evidence.py
+```
+
+Automated checks prove matrix completeness/state identity; a human/Opus review judges actual dark/light art direction.
+
+### Durable direct machine consumer RED tests
+
+`tests/test_world_state.py` gains exact contract tests:
+
+```python
+def test_world_state_directly_consumes_policy_turn_clock_json(): ...
+def test_world_state_policy_turn_lobe_preserves_schema_method_digest_state_axes_and_authority(): ...
+def test_world_state_does_not_scrape_policy_watch_html_for_policy_turn(): ...
+def test_missing_policy_turn_json_is_fail_open_typed_gap(): ...
+def test_corrupt_or_wrong_schema_policy_turn_is_fail_open_typed_gap(): ...
+def test_policy_turn_authority_violation_is_not_laundered_into_world_state(): ...
+def test_changed_policy_turn_input_digest_changes_world_state_semantic_identity(): ...
+def test_same_policy_turn_digest_remains_deterministic_under_world_state_clock_law(): ...
+```
+
+### Implement one existing machine lobe, not another API
+
+Exact owner/path/input/output/call site:
+
+```text
+owner:       Neural Web N1 world-state composition
+path:        engine/neuralweb/world_state.py
+input:       site/policy_turn_clock.json
+output:      data/neuralweb/world_state.json top-level policy_turn_clock lobe
+call site:   build_world_state() / build_and_write(), reached by existing scripts/build_world_state.py
+proof:       tests/test_world_state.py
+```
+
+The helper reads JSON directly, validates the policy-turn contract minimally enough to fail open, preserves the all-false authority and independent axes, and returns a display-only lobe. It does not recompute state, create a second policy-turn store, register a new API, parse HTML or silently substitute old content.
+
+Missing/corrupt/invalid input follows the existing Neural Web fail-open shape: null/absent lobe plus typed gap. No direction or capital authority.
+
+### GREEN + product mutations
+
+Kill:
+
+- light theme implemented as token-only copy with no distinct material mechanism/evidence;
+- degraded/unknown rendered identically to fresh/neutral;
+- missing EN/ZH state text;
+- hidden independent current clock embedded in HTML;
+- Neural Web reader scraping HTML;
+- new sibling machine JSON store;
+- invalid authority accepted into world state.
+
+---
+
+## Task 7 — Real hourly/nightly execution and canonical CI ownership
+
+### Files
+
+Modify:
+
+```text
+.github/workflows/whitehouse-sentinel.yml
+scripts/ci/daily_engine_regional_desk_builders.sh
+config/dag.yml
+.github/workflows/ci.yml
+.github/ci/legacy-jobs.yml
+```
+
+Potential expectation-only change after proof:
+
+```text
+tests/test_dag_conformance.py
+```
+
+### Re-census shared paths before edit
+
+Fresh-read every open owner at action time. If any active owner remains on `.github/ci/legacy-jobs.yml` or `.github/workflows/ci.yml`, do not “work around” it by adding a workflow/job. Return `BLOCKED PATH_COLLISION` unless Sol explicitly authorizes a composition.
+
+### RED runtime/conformance tests
+
+Ensure current test/conformance surface fails when any of these is true:
+
+- nightly regional-desk script omits `--mode ledger-only` before Policy Watch;
+- nightly uses `publish-current`;
+- hourly uses nightly lane or can append forward receipt;
+- DAG claims an invocation not present in real workflow/script;
+- healthy quiet hourly attempt changes tracked status bytes;
+- current publisher can overwrite one source with an older watermark;
+- Policy Watch current payload is published by more than hourly owner.
+
+### Wire real owners
+
+Hourly `.github/workflows/whitehouse-sentinel.yml`:
+
+```text
+python -m collectors.policy_event_clock
+COLLECT_LANE=hourly python -m scripts.build_policy_turn_clock --mode publish-current
+focused validation
+stage only exact owned official/status/current artifact paths
+existing normal rebase/push behavior
+```
+
+Nightly `scripts/ci/daily_engine_regional_desk_builders.sh` immediately before existing Policy Watch:
+
+```text
+python -m scripts.build_policy_turn_clock --mode ledger-only
+```
+
+No official-source network call nightly. No current JSON write nightly.
+
+DAG mirrors both exact modes.
+
+### Canonical CI ownership
+
+Add the four new suites to one compatible existing logical owner in `.github/ci/legacy-jobs.yml`:
+
+```text
 tests/test_policy_event_clock.py
 tests/test_futures_roll_calendar.py
 tests/test_policy_turn_clock.py
 tests/test_build_policy_turn_clock.py
 ```
 
-### Modify
+`tests/test_policy_watch_ui.py` remains in its existing owner unless exact current manifest proves a non-duplicating compatible composition.
 
-```text
-engine/event_calendar.py
-scripts/build_policy_watch.py
-templates/policy_watch.html.j2
-tests/test_policy_watch_ui.py
-config/dag.yml
-.github/workflows/whitehouse-sentinel.yml
-scripts/ci/daily_engine_regional_desk_builders.sh
-.github/workflows/ci.yml
-.github/ci/legacy-jobs.yml
-```
+`tests/test_world_state.py` already has Neural Web ownership; extend that existing executable owner to cover the policy-turn lobe rather than creating a duplicate logical job. If current manifest structure proves a different minimal execution arrangement, preserve exactly-one intended owner per suite and document it.
 
-`tests/test_dag_conformance.py` may be modified only after declaring the exact current expectation that requires it.
+Update source/test/template/workflow path closures precisely. Update `.github/workflows/ci.yml` triggers so test-only and source-only changes each schedule the owning jobs. Do not use broad globs to hide a missing dependency.
 
----
+### Exact validation commands
 
-## Task 0: Pickup, path census and isolated carrier
-
-**Files:** no source edit.
-
-**Produces:** one clean worktree/branch, exact collision census, Pickup ACK, watcher receipt and separate START only when all gates are open.
-
-- [ ] **Step 1: Fresh-read governing state**
-
-Read current protected Skillpack, issue #6787, merged architecture, current Macro main, PR #6721, all open PRs touching planned paths, current worktrees and branch refs.
-
-- [ ] **Step 2: Post Pickup ACK**
-
-```text
-PICKUP_ACK policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001 receiver=<actual task/session> github=<actual principal> effect=NONE
-```
-
-- [ ] **Step 3: Arm or reuse one exact-carrier continuation source**
-
-Post `WATCH_ARMED` or a truthful `WATCH_UNAVAILABLE`; do not create a second watcher for the same side/operation/carrier/purpose.
-
-- [ ] **Step 4: Create the isolated worktree**
+At minimum, after materializing required checkout paths:
 
 ```bash
-git fetch origin main
-git worktree add ../policy-turn-clock-w1 -b codex/policy-turn-clock-w1-20260903 origin/main
-cd ../policy-turn-clock-w1
-git branch --show-current
-git status --short
-git rev-parse HEAD
-git rev-parse --git-common-dir
-```
-
-Expected: correct branch, clean status, HEAD equal to the fresh `origin/main` pickup SHA.
-
-- [ ] **Step 5: Run the complete collision census**
-
-Check every path in the file structure above against all open PR file lists, active worktrees and local/remote branches. Explicitly census `.github/ci/legacy-jobs.yml`; do not assume release because one historical owner changed.
-
-- [ ] **Step 6: Stop on collision or post START**
-
-Collision response:
-
-```text
-BLOCKED PATH_COLLISION operation=policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001 owner=<carrier> path=<path> effect=NONE
-```
-
-Clean response:
-
-```text
-START policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001 base=<sha> branch=<branch> worktree=<path> effect=ISOLATED_SOURCE_AUTHORIZED
-```
-
-No commit is created in Task 0.
-
----
-
-## Task 1: Official event, Treasury operation and actor-presence evidence
-
-**Files:**
-
-```text
-Create: collectors/policy_event_clock.py
-Create: tests/test_policy_event_clock.py
-Reuse:  collectors/_first_seen_store.py
-```
-
-**Consumes:** official-public Fed/Treasury/TreasuryDirect responses, injected aware `now`, existing keep-FIRST helper.
-
-**Produces:** normalized rows, current projection, actor-presence projection, atomic store/status writes and a source collection result.
-
-### Interfaces
-
-```python
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
-import requests
-
-@dataclass(frozen=True)
-class CollectionResult:
-    rows_seen: int
-    rows_added: int
-    semantic_changes: int
-    status_changed: bool
-    status: dict[str, object]
-    gaps: tuple[str, ...]
-
-
-def normalize_fed_event(
-    raw: Mapping[str, object], *, observed_at: datetime
-) -> dict[str, object] | None: ...
-
-
-def normalize_treasury_event(
-    raw: Mapping[str, object], *, observed_at: datetime
-) -> dict[str, object] | None: ...
-
-
-def normalize_buyback_record(
-    raw: Mapping[str, object], *, observed_at: datetime
-) -> dict[str, object] | None: ...
-
-
-def current_records(
-    rows: Sequence[Mapping[str, object]], *, now: datetime
-) -> list[dict[str, object]]: ...
-
-
-def actor_presence(
-    rows: Sequence[Mapping[str, object]], *, actor_id: str, now: datetime
-) -> dict[str, object]: ...
-
-
-def persist_rows(rows: Sequence[Mapping[str, object]], *, root: Path) -> int: ...
-
-
-def write_status_if_changed(
-    status: Mapping[str, object], *, root: Path
-) -> bool: ...
-
-
-def collect(
-    *, now: datetime, session: requests.Session | None = None,
-    root: Path | None = None
-) -> CollectionResult: ...
-```
-
-### Frozen enums and fields
-
-```python
-PARSER_VERSION = "policy_event_clock.v1"
-EVENT_KEY = [
-    "source_key", "source_event_id", "source_revision",
-    "canonical_semantic_sha256",
-]
-
-RECORD_KINDS = {"actor_event", "treasury_operation"}
-EVENT_KINDS = {"speech", "interview", "meeting", "testimony", "release", "other"}
-OPERATION_KINDS = {
-    "auction", "buyback", "cash_management_operation", "settlement",
-    "tga_release", "tga_build", "other",
-}
-OPERATION_PURPOSES = {
-    "cash_management", "liquidity_support", "funding", "market_function",
-    "debt_management", "other",
-}
-ATTENDANCE_MODES = {"in_person", "virtual", "hybrid", "prerecorded", "unknown"}
-```
-
-### RED tests
-
-- [ ] **Step 1: Write timezone and semantic-identity tests**
-
-```python
-def test_observed_at_must_be_aware():
-    with pytest.raises(ValueError, match="datetime must be timezone-aware"):
-        normalize_fed_event({"id": "x"}, observed_at=datetime(2026, 9, 3, 9, 0))
-
-
-def test_formatting_only_change_keeps_semantic_digest():
-    a = normalize_fed_event(FED_EVENT_HTML_A, observed_at=ET_NOW)
-    b = normalize_fed_event(FED_EVENT_HTML_FORMATTING_ONLY, observed_at=ET_LATER)
-    assert a["canonical_semantic_sha256"] == b["canonical_semantic_sha256"]
-```
-
-- [ ] **Step 2: Write buyback taxonomy/amount tests**
-
-```python
-def test_buyback_keeps_mechanism_purpose_and_amounts_separate():
-    row = normalize_buyback_record({
-        "source_event_id": "bb-2026-09-03",
-        "announcement_type": "Final",
-        "operation_status": "Released",
-        "operation_type": "Cash Management",
-        "operation_start": "2026-09-03T13:40:00-04:00",
-        "operation_end": "2026-09-03T14:00:00-04:00",
-        "settlement_date": "2026-09-04",
-        "max_par_usd": "12500000000",
-        "offered_par_usd": "20100000000",
-        "accepted_par_usd": "12400000000",
-        "source_url": BUYBACK_INDEX_URL,
-    }, observed_at=ET_NOW)
-    assert row["operation_kind"] == "buyback"
-    assert row["operation_purpose"] == "cash_management"
-    assert row["announced_max_usd_bn"] == 12.5
-    assert row["offered_usd_bn"] == 20.1
-    assert row["submitted_usd_bn"] is None
-    assert row["accepted_usd_bn"] == 12.4
-```
-
-- [ ] **Step 3: Write actor-presence tests**
-
-```python
-def test_virtual_event_never_proves_physical_location():
-    row = normalize_fed_event(VIRTUAL_EVENT, observed_at=ET_NOW)
-    result = actor_presence([row], actor_id="powell", now=EVENT_MIDPOINT)
-    assert result["current_physical_location"] is None
-    assert result["attendance_mode"] == "virtual"
-    assert result["current_location_status"] == "unknown"
-
-
-def test_explicit_in_person_active_event_can_confirm_location():
-    row = normalize_fed_event(IN_PERSON_EXPLICIT, observed_at=ET_NOW)
-    result = actor_presence([row], actor_id="powell", now=EVENT_MIDPOINT)
-    assert result["current_physical_location"] == "New York, NY"
-    assert result["current_location_status"] == "publicly_confirmed"
-
-
-def test_ended_event_expires_current_location_but_keeps_last_verified():
-    row = normalize_fed_event(IN_PERSON_EXPLICIT, observed_at=ET_NOW)
-    result = actor_presence([row], actor_id="powell", now=EVENT_END + timedelta(seconds=1))
-    assert result["current_physical_location"] is None
-    assert result["last_verified_location"] == "New York, NY"
-```
-
-- [ ] **Step 4: Write revision-collision tests**
-
-```python
-def test_same_explicit_revision_changed_semantics_is_collision():
-    rows = [NORMALIZED_V1, NORMALIZED_SAME_REVISION_CHANGED]
-    current = current_records(rows, now=ET_NOW)
-    assert current[0]["projection_status"] == "revision_id_collision"
-    assert len(current[0]["candidate_receipts"]) == 2
-```
-
-- [ ] **Step 5: Write persistence/no-op tests**
-
-```python
-def test_quiet_success_status_is_byte_stable(tmp_path):
-    assert write_status_if_changed(SEMANTIC_STATUS, root=tmp_path) is True
-    before = (tmp_path / "data/policy_events/collector_status.json").read_bytes()
-    later = {**SEMANTIC_STATUS, "ephemeral_last_attempt_at": "2026-09-03T11:00:00-04:00"}
-    assert write_status_if_changed(later, root=tmp_path) is False
-    assert (tmp_path / "data/policy_events/collector_status.json").read_bytes() == before
-
-
-def test_present_but_unreadable_store_is_not_replaced(tmp_path):
-    p = tmp_path / "data/policy_events/official_events.parquet"
-    p.parent.mkdir(parents=True)
-    p.write_bytes(b"not parquet")
-    assert persist_rows([NORMALIZED_V1], root=tmp_path) == 0
-    assert p.read_bytes() == b"not parquet"
-```
-
-Run RED:
-
-```bash
-python -m pytest tests/test_policy_event_clock.py -q
-```
-
-Expected: import failure or failing assertions. Record exact failures.
-
-### Implementation
-
-- [ ] **Step 6: Implement aware-time and canonical semantic hashing**
-
-Canonicalize timestamps to ISO strings with offsets. Hash normalized semantic fields only; exclude `observed_at`, `first_seen`, ephemeral attempts and raw page chrome.
-
-- [ ] **Step 7: Implement explicit source parsers**
-
-Define exact constants:
-
-```python
-FED_BOARD_CALENDAR_URL = "https://www.federalreserve.gov/newsevents/calendar.htm"
-TREASURY_PRESS_URL = "https://home.treasury.gov/news/press-releases"
-BUYBACK_INDEX_URL = "https://www.treasurydirect.gov/auctions/announcements-data-results/buy-backs/"
-BUYBACK_SCHEDULE_XML_URL = "https://home.treasury.gov/system/files/221/Tentative-Buyback-Schedule.xml"
-BUYBACK_XSD_URL = "https://www.treasurydirect.gov/xsd/buyback-schema.xsd"
-```
-
-Discover current buyback preliminary/final/results XML links from the official index. Validate expected roots/elements. Never call a URL containing `TA_WS/securities/auctioned` for buybacks.
-
-- [ ] **Step 8: Implement identity, current projection and actor presence**
-
-Keep source status immutable, derive phase separately, preserve collisions, and require explicit live physical-presence evidence.
-
-- [ ] **Step 9: Implement keep-FIRST persistence and semantic status writes**
-
-Use `collectors._first_seen_store.accrue_keep_first` with `EVENT_KEY`. Write status atomically only when semantic status changes. Log attempts ephemerally.
-
-- [ ] **Step 10: Verify GREEN**
-
-```bash
-python -m pytest tests/test_policy_event_clock.py -q
-python -m py_compile collectors/policy_event_clock.py
-git diff --check
-```
-
-- [ ] **Step 11: Commit**
-
-```bash
-git add collectors/policy_event_clock.py tests/test_policy_event_clock.py
-git commit -m "feat(policy-clock): add correction-safe official evidence"
-```
-
----
-
-## Task 2: Quarterly futures and monthly VX settlement context
-
-**Files:**
-
-```text
-Create: engine/futures_roll_calendar.py
-Create: tests/test_futures_roll_calendar.py
-```
-
-**Produces:** pure `futures_roll_calendar.v1` with `equity_index`, `treasury`, and `volatility` families.
-
-### Interfaces
-
-```python
-def equity_roll_window(d: date) -> dict[str, object]: ...
-def treasury_roll_window(d: date) -> dict[str, object]: ...
-def vix_settlement_window(
-    d: date, *, front: Mapping[str, object] | None = None,
-    curve: Mapping[str, object] | None = None,
-    source_asof: date | None = None,
-) -> dict[str, object]: ...
-def snapshot(
-    asof: date, *, live_progress: Mapping[str, object] | None = None,
-    vix_front: Mapping[str, object] | None = None,
-    vix_curve: Mapping[str, object] | None = None,
-    vix_source_asof: date | None = None,
-) -> dict[str, object]: ...
-```
-
-### RED tests
-
-- [ ] **Step 1: Write quarterly-family tests**
-
-```python
-def test_august_equity_and_treasury_are_not_applicable():
-    out = snapshot(date(2026, 8, 10))
-    assert out["equity_index"]["status"] == "not_applicable"
-    assert out["treasury"]["status"] == "not_applicable"
-
-
-def test_september_equity_roll_is_scheduled_without_progress():
-    out = snapshot(date(2026, 9, 14))
-    assert out["equity_index"]["roll_start"] == "2026-09-14"
-    assert out["equity_index"]["expiry"] == "2026-09-18"
-    assert out["equity_index"]["status"] == "scheduled"
-```
-
-- [ ] **Step 2: Write VX calendar and weekly-front tests**
-
-```python
-def test_september_standard_vx_expiry_is_2026_09_16():
-    out = vix_settlement_window(date(2026, 9, 1))
-    assert out["standard_expiry"] == "2026-09-16"
-
-
-def test_weekly_front_does_not_replace_standard_monthly():
-    out = vix_settlement_window(
-        date(2026, 9, 1),
-        front={"front_settle": 18.0, "days_to_expiry": 1},
-        curve={"m1_settle": 19.0, "m1_dte": 15, "m2_settle": 20.0, "m2_dte": 43},
-        source_asof=date(2026, 9, 1),
-    )
-    assert out["front_is_weekly"] is True
-    assert out["standard_expiry"] == "2026-09-16"
-```
-
-- [ ] **Step 3: Write curve and rank-roll tests**
-
-```python
-@pytest.mark.parametrize((m1, m2, expected), [
-    (20.0, 20.3, "contango"),
-    (20.0, 20.05, "flat"),
-    (20.0, 19.6, "backwardation"),
-])
-def test_curve_state(m1, m2, expected):
-    out = vix_settlement_window(
-        date(2026, 9, 10),
-        curve={"m1_settle": m1, "m1_dte": 6, "m2_settle": m2, "m2_dte": 34},
-        source_asof=date(2026, 9, 10),
-    )
-    assert out["curve_state"] == expected
-
-
-def test_rank_roll_never_claims_same_contract_change():
-    out = vix_settlement_window(
-        date(2026, 9, 17),
-        curve={"m1_settle": 20.0, "m1_dte": 27, "m2_settle": 21.0, "m2_dte": 55,
-               "prior_m1_dte": 0},
-        source_asof=date(2026, 9, 17),
-    )
-    assert out["rank_roll_boundary"] is True
-    assert out["same_contract_change_available"] is False
-```
-
-Run RED:
-
-```bash
-python -m pytest tests/test_futures_roll_calendar.py -q
-```
-
-### Implementation and verification
-
-- [ ] **Step 4: Implement NYSE/Cboe-aware date helpers and quarterly codes**
-
-Use existing calendar helpers where available. Do not use generic weekday arithmetic when exchange holidays control.
-
-- [ ] **Step 5: Implement progress validation and VX source reconciliation**
-
-Wrong contract/date, stale observation, impossible shares or computed/source expiry disagreement emit typed gaps and never produce `active`/current-looking state.
-
-- [ ] **Step 6: Verify GREEN and commit**
-
-```bash
-python -m pytest tests/test_futures_roll_calendar.py -q
-python -m py_compile engine/futures_roll_calendar.py
-git diff --check
-git add engine/futures_roll_calendar.py tests/test_futures_roll_calendar.py
-git commit -m "feat(policy-clock): add futures transition context"
-```
-
----
-
-## Task 3: Extend the canonical event calendar
-
-**Files:**
-
-```text
-Modify: engine/event_calendar.py
-Test:   tests/test_policy_event_clock.py
-Test:   tests/test_futures_roll_calendar.py
-```
-
-**Consumes:** `current_records(...)` and `futures_roll_calendar.snapshot(...)` outputs.
-
-**Produces:** additive official-event and futures-context entries without a second calendar.
-
-### Interfaces
-
-```python
-def merge_official_events(
-    base_events: Sequence[Mapping[str, object]],
-    official_events: Sequence[Mapping[str, object]],
-) -> list[dict[str, object]]: ...
-
-
-def transition_context(
-    *, asof: date, official_events: Sequence[Mapping[str, object]],
-    futures: Mapping[str, object] | None,
-) -> dict[str, object]: ...
-```
-
-- [ ] **Step 1: Write failing dedupe/correction tests**
-
-Assert stable identity, latest-valid projection, cancellation retention, no duplicate event, and unchanged `is_context_only=True`/authority false.
-
-- [ ] **Step 2: Write failing futures-context tests**
-
-Assert weekly VX, standard VX and quarterly rolls remain separate; no event row contains direction, score or size.
-
-- [ ] **Step 3: Run RED**
-
-```bash
-python -m pytest tests/test_policy_event_clock.py tests/test_futures_roll_calendar.py -q
-```
-
-- [ ] **Step 4: Implement minimal additive helpers**
-
-Do not change existing release/OPEX behavior. No network calls enter `event_calendar.py` beyond its existing accepted boundaries.
-
-- [ ] **Step 5: Verify and commit**
-
-```bash
-python -m pytest tests/test_policy_event_clock.py tests/test_futures_roll_calendar.py -q
-python -m py_compile engine/event_calendar.py
-git diff --check
-git add engine/event_calendar.py tests/test_policy_event_clock.py tests/test_futures_roll_calendar.py
-git commit -m "feat(policy-clock): compose official events into canonical calendar"
-```
-
----
-
-## Task 4: Pure `policy_turn_clock.v1` composer
-
-**Files:**
-
-```text
-Create: engine/policy_turn_clock.py
-Create: tests/test_policy_turn_clock.py
-```
-
-**Consumes:** all explicit inputs in the design interface.
-
-**Produces:** deterministic, order-invariant, authority-false `policy_turn_clock.v1`.
-
-### Interface
-
-Use exactly the full `compose(...)` signature in the design, including `official_treasury_operations`, `broad_market_flow`, `duration_extension_context`, `market_confirmation` and `prior_clock`.
-
-### RED tests
-
-- [ ] **Step 1: Write output/authority and input-order tests**
-
-```python
-def test_payload_has_method_and_semantic_identity():
-    out = compose(**BASE_INPUTS)
-    assert out["schema"] == "policy_turn_clock.v1"
-    assert out["method_version"] == "policy_turn_clock.v1.0.0"
-    assert len(out["input_digest"]) == 64
-    assert out["authority"] == {
-        "can_rank": False, "can_gate": False,
-        "can_size": False, "can_trade": False,
-    }
-
-
-def test_input_order_does_not_change_digest():
-    a = compose(**BASE_INPUTS)
-    b = compose(**{**BASE_INPUTS, "events": list(reversed(BASE_INPUTS["events"]))})
-    assert a["input_digest"] == b["input_digest"]
-```
-
-- [ ] **Step 2: Write same-instant/timezone and method tests**
-
-```python
-def test_same_instant_has_same_us_decision_date_and_state():
-    et = datetime(2026, 9, 3, 21, 30, tzinfo=ZoneInfo("America/New_York"))
-    utc = et.astimezone(timezone.utc)
-    a = compose(**{**BASE_INPUTS, "now": et})
-    b = compose(**{**BASE_INPUTS, "now": utc})
-    assert (a["as_of"], a["state"], a["input_digest"]) == (
-        b["as_of"], b["state"], b["input_digest"]
-    )
-
-
-def test_cross_method_prior_is_not_compared():
-    out = compose(**{**BASE_INPUTS, "prior_clock": {"method_version": "old.v1"}})
-    assert out["change_from_prior"]["comparable"] is False
-    assert "METHOD_VERSION_MISMATCH" in out["gaps"]
-```
-
-- [ ] **Step 3: Write OPEX/gamma/replacement tests**
-
-```python
-def test_post_opex_calendar_alone_is_not_bearish_or_open_vol():
-    out = compose(**POST_OPEX_NO_CONFIRMATION)
-    assert out["state"] in {"SUPPORT_ROLLOFF_IMMINENT", "MIXED", "UNKNOWN"}
-    assert out["state"] != "VOLATILITY_WINDOW_OPEN"
-
-
-def test_short_gamma_expiry_does_not_inherit_long_gamma_rolloff():
-    out = compose(**SHORT_GAMMA_EXPIRY)
-    assert "stabilizing_support_rolled_off" not in {
-        row["predicate"] for row in out["state_basis"]
-    }
-
-
-def test_missing_replacement_is_unknown():
-    out = compose(**NO_REPLACEMENT_DATA)
-    assert out["option_support"]["replacement"] == "unknown"
-```
-
-- [ ] **Step 4: Write support-building and month-end tests**
-
-```python
-def test_replacement_alone_is_not_broad_support_building():
-    out = compose(**REPLACEMENT_ONLY)
-    assert out["state"] != "SUPPORT_BUILDING"
-
-
-def test_two_independent_support_mechanisms_can_build_support():
-    out = compose(**REPLACEMENT_AND_SUPPORTIVE_FLOW)
-    assert out["state"] == "SUPPORT_BUILDING"
-    assert out["option_support"]["applicable_support_count"] >= 2
-
-
-def test_calendar_only_month_end_is_scheduled_unconfirmed():
-    out = compose(**MONTH_END_NO_PULSE)
-    assert out["rebalance"]["status"] == "scheduled_unconfirmed"
-    assert out["state"] != "MONTH_END_REBALANCE_DOMINANT"
-```
-
-- [ ] **Step 5: Write Treasury/market-confirmation/VX tests**
-
-```python
-def test_official_buyback_enters_treasury_axis():
-    out = compose(**WITH_BUYBACK)
-    assert out["treasury_liquidity"]["operations"][0]["operation_kind"] == "buyback"
-    assert out["treasury_liquidity"]["operations"][0]["offered_usd_bn"] == 20.1
-
-
-def test_volatility_window_requires_independent_fresh_confirmation():
-    out = compose(**ROLLOFF_WITH_STALE_CONFIRMATION)
-    assert out["state"] != "VOLATILITY_WINDOW_OPEN"
-    assert "MARKET_CONFIRMATION_UNAVAILABLE" in out["gaps"]
-
-
-def test_vx_settlement_alone_has_no_state_authority():
-    out = compose(**VX_SETTLEMENT_ONLY)
-    assert out["state"] != "VOLATILITY_WINDOW_OPEN"
-```
-
-Run RED:
-
-```bash
-python -m pytest tests/test_policy_turn_clock.py -q
-```
-
-### Implementation
-
-- [ ] **Step 6: Implement normalization and semantic digest**
-
-Exclude `generated_at`; include method version, source versions/watermarks, canonical inputs and decision-date identity.
-
-- [ ] **Step 7: Implement independent axes**
-
-Use literal predicates and applicable counts. Do not add a score. Preserve stale/unavailable/conflicting evidence.
-
-- [ ] **Step 8: Implement exact state precedence and bilingual phrase keys**
-
-Phrase keys are deterministic; rendered strings live in one frozen registry. The composer emits keys and plain data, not model text.
-
-- [ ] **Step 9: Implement prior comparison**
-
-Only compare equal methods. Identical input digest is unchanged despite later `generated_at`.
-
-- [ ] **Step 10: Verify and commit**
-
-```bash
-python -m pytest tests/test_policy_turn_clock.py -q
-python -m py_compile engine/policy_turn_clock.py
-git diff --check
-git add engine/policy_turn_clock.py tests/test_policy_turn_clock.py
-git commit -m "feat(policy-clock): compose monthly transition state"
-```
-
----
-
-## Task 5: Builder modes, no-regress publication and prospective ledger
-
-**Files:**
-
-```text
-Create: scripts/build_policy_turn_clock.py
-Create: tests/test_build_policy_turn_clock.py
-```
-
-**Consumes:** official store/status and current canonical owner artifacts.
-
-**Produces:** current JSON in publish mode; keep-FIRST receipt in nightly ledger-only mode.
-
-### Interfaces
-
-```python
-def gather_inputs(*, root: Path, now: datetime) -> dict[str, object]: ...
-def build_payload(*, root: Path, now: datetime) -> dict[str, object]: ...
-def write_payload_if_newer(
-    payload: Mapping[str, object], *, root: Path
-) -> tuple[Path, bool, str]: ...
-def append_forward_receipt(
-    payload: Mapping[str, object], *, root: Path
-) -> int: ...
-def main(argv: Sequence[str] | None = None) -> int: ...
-```
-
-CLI:
-
-```text
---mode publish-current
---mode ledger-only
---mode verify
-```
-
-### RED tests
-
-- [ ] **Step 1: Write canonical-input and stale/null tests**
-
-Use temp fixtures for official events, options surface, broad flows, Rebalance Pulse, TGA, VX, market structure and regime. Assert every owner watermark is exposed and stale input is unavailable rather than neutral.
-
-- [ ] **Step 2: Write semantic no-op/no-regress tests**
-
-```python
-def test_later_generated_at_same_inputs_is_noop(tmp_path):
-    first = build_payload(root=seed_all(tmp_path), now=ET_0900)
-    _, wrote, _ = write_payload_if_newer(first, root=tmp_path)
-    assert wrote is True
-    second = build_payload(root=tmp_path, now=ET_1000)
-    _, wrote, reason = write_payload_if_newer(second, root=tmp_path)
-    assert wrote is False
-    assert reason == "semantic_noop"
-
-
-def test_older_evidence_cutoff_cannot_overwrite_newer(tmp_path):
-    write_payload_if_newer(NEWER_PAYLOAD, root=tmp_path)
-    _, wrote, reason = write_payload_if_newer(OLDER_PAYLOAD, root=tmp_path)
-    assert wrote is False
-    assert reason == "no_regress_refusal"
-```
-
-- [ ] **Step 3: Write lane tests**
-
-```python
-def test_hourly_publish_never_appends(monkeypatch, tmp_path):
-    monkeypatch.setenv("COLLECT_LANE", "hourly")
-    assert main(["--root", str(seed_all(tmp_path)), "--mode", "publish-current"]) == 0
-    assert not (tmp_path / "data/policy_turn_clock/forward_log.jsonl").exists()
-
-
-def test_nightly_ledger_only_appends_once_and_does_not_publish(monkeypatch, tmp_path):
-    monkeypatch.setenv("COLLECT_LANE", "nightly")
-    root = seed_all(tmp_path)
-    assert main(["--root", str(root), "--mode", "ledger-only"]) == 0
-    first = (root / "data/policy_turn_clock/forward_log.jsonl").read_text().splitlines()
-    assert len(first) == 1
-    assert not (root / "site/policy_turn_clock.json").exists()
-    assert main(["--root", str(root), "--mode", "ledger-only"]) == 0
-    assert (root / "data/policy_turn_clock/forward_log.jsonl").read_text().splitlines() == first
-```
-
-- [ ] **Step 4: Write failure/recovery tests**
-
-A source failure publishes degraded current status while preserving last-good evidence. Recovery advances semantic status. One malformed source does not erase healthy axes.
-
-Run RED:
-
-```bash
-python -m pytest tests/test_build_policy_turn_clock.py -q
-```
-
-### Implementation
-
-- [ ] **Step 5: Implement bounded artifact readers and owner watermarks**
-
-Read exact canonical paths and preserve each owner’s as-of/freshness/caveat. No network calls.
-
-- [ ] **Step 6: Implement publish-current and no-regress**
-
-Atomically write only when semantic identity or a meaningful status/freshness transition changes. Preserve byte stability for quiet reruns.
-
-- [ ] **Step 7: Implement ledger-only through `engine.ledger_lane.nightly_advance_enabled()`**
-
-Identity includes `as_of`, trigger kind/id, method version and input digest. Off-lane append returns zero.
-
-- [ ] **Step 8: Verify and commit**
-
-```bash
-python -m pytest tests/test_build_policy_turn_clock.py -q
-python -m py_compile scripts/build_policy_turn_clock.py
-git diff --check
-git add scripts/build_policy_turn_clock.py tests/test_build_policy_turn_clock.py
-git commit -m "feat(policy-clock): publish current state and nightly receipts"
-```
-
----
-
-## Task 6: Policy Watch dynamic component and bilingual states
-
-**Files:**
-
-```text
-Create: templates/partials/_policy_turn_clock.html.j2
-Modify: scripts/build_policy_watch.py
-Modify: templates/policy_watch.html.j2
-Modify: tests/test_policy_watch_ui.py
-```
-
-**Produces:** static shell/fallback and same-origin dynamic JSON consumer.
-
-### RED tests
-
-- [ ] **Step 1: Write structural and accessibility tests**
-
-Assert one component root, JSON URL, noscript/unavailable state, keyboard-accessible evidence details, bilingual labels and no recommendation vocabulary.
-
-- [ ] **Step 2: Write state-fixture tests**
-
-Fixtures: fresh support-building, rolloff imminent, catalyst dominant, stale, source failed, cancelled, conflicting location, virtual/prerecorded, unknown and rank-roll boundary.
-
-- [ ] **Step 3: Write same-artifact/no-stale-embed test**
-
-Assert the template does not embed a full stale clock payload and runtime code reads `policy_turn_clock.json` from same origin. The static fallback cannot claim current state.
-
-Run RED:
-
-```bash
-python -m pytest tests/test_policy_watch_ui.py -q
-```
-
-### Implementation
-
-- [ ] **Step 4: Implement static shell and deterministic browser renderer**
-
-Render Now, Support Inventory, Flow/Liquidity, Futures Clocks, Next 72h/14d, Why This Can Turn, Confirm, Invalidate, Coverage and Evidence. No model call.
-
-- [ ] **Step 5: Preserve theme/language and failure layouts**
-
-State meaning is textual, not color-only. EN/ZH parity is complete.
-
-- [ ] **Step 6: Verify and commit**
-
-```bash
-python -m pytest tests/test_policy_watch_ui.py -q
-python -m scripts.build_policy_watch
-git diff --check
-git add templates/partials/_policy_turn_clock.html.j2 scripts/build_policy_watch.py \
-  templates/policy_watch.html.j2 tests/test_policy_watch_ui.py
-git commit -m "feat(policy-clock): add Policy Watch transition workflow"
-```
-
----
-
-## Task 7: Real hourly/nightly wiring and executable CI ownership
-
-**Files:**
-
-```text
-Modify: .github/workflows/whitehouse-sentinel.yml
-Modify: scripts/ci/daily_engine_regional_desk_builders.sh
-Modify: config/dag.yml
-Modify: .github/workflows/ci.yml
-Modify: .github/ci/legacy-jobs.yml
-Possibly modify: tests/test_dag_conformance.py
-```
-
-### RED/validation requirements
-
-- [ ] **Step 1: Write/extend conformance tests before workflow edits**
-
-Tests assert:
-
-- hourly sequence is collector → publish-current → focused validation;
-- hourly `COLLECT_LANE` is non-nightly;
-- nightly regional builder invokes `--mode ledger-only` immediately before Policy Watch;
-- no nightly official-event collector or current-artifact publisher exists;
-- DAG mirrors both real calls;
-- every new suite has exactly one executable logical owner;
-- exact source subjects are in owner paths and PR triggers;
-- no new logical job/workflow/runner/planner/permission/trusted-executor/concurrency/merge control exists;
-- current-main unrelated manifest markers remain.
-
-- [ ] **Step 2: Run RED/validate-only**
-
-```bash
-python -m pytest tests/test_dag_conformance.py tests/test_build_policy_turn_clock.py -q
-python -m scripts.run_ci_pack --validate-only
-python -m scripts.audit_unrun_tests
-```
-
-Expected before wiring: missing invocation/ownership failures.
-
-### Implementation
-
-- [ ] **Step 3: Wire hourly single writer**
-
-In the existing sentinel, run:
-
-```bash
-python -m collectors.policy_event_clock
-COLLECT_LANE=hourly python -m scripts.build_policy_turn_clock --mode publish-current
-python -m pytest tests/test_policy_event_clock.py tests/test_futures_roll_calendar.py \
-  tests/test_policy_turn_clock.py tests/test_build_policy_turn_clock.py \
-  tests/test_policy_watch_ui.py -q
-```
-
-Stage only owned event/status/current JSON and existing sentinel-owned outputs. A quiet semantic no-op yields no commit.
-
-- [ ] **Step 4: Wire nightly ledger-only**
-
-In `scripts/ci/daily_engine_regional_desk_builders.sh`, immediately before the existing Policy Watch command, add a distinct buffered `brun` call for:
-
-```text
-scripts.build_policy_turn_clock --mode ledger-only
-```
-
-Do not run the collector or publish-current mode nightly.
-
-- [ ] **Step 5: Update DAG mirror**
-
-Declare both actual calls and modes in existing vocabulary. Do not treat DAG as execution.
-
-- [ ] **Step 6: Compose canonical CI ownership**
-
-Only after a fresh path census is clean, extend one existing policy/front-facing logical job in `.github/ci/legacy-jobs.yml`. Name every new suite. Add exact source/test/workflow/DAG path closure and matching `.github/workflows/ci.yml` triggers. Preserve all unrelated current-main lines.
-
-- [ ] **Step 7: Run GREEN and mutation checks**
-
-```bash
-python -m pytest tests/test_policy_event_clock.py \
+python -m pytest \
+  tests/test_policy_event_clock.py \
   tests/test_futures_roll_calendar.py \
   tests/test_policy_turn_clock.py \
   tests/test_build_policy_turn_clock.py \
   tests/test_policy_watch_ui.py \
+  tests/test_world_state.py \
   tests/test_dag_conformance.py -q
 python -m scripts.run_ci_pack --validate-only
 python -m scripts.audit_unrun_tests
+python3 scripts/agentos.py validate
 git diff --check
 ```
 
-Temporarily remove one new suite from the manifest and verify the unrun/contract guard fails; restore. Temporarily remove one source subject from the owner path closure and verify failure; restore. Temporarily set hourly `COLLECT_LANE=nightly` and verify lane test failure; restore.
+Then run the exact selected logical owner(s) through the canonical pack runner, not only direct pytest.
 
-- [ ] **Step 8: Commit**
+### Required CI mutations
 
-```bash
-git add .github/workflows/whitehouse-sentinel.yml \
-  scripts/ci/daily_engine_regional_desk_builders.sh \
-  config/dag.yml .github/workflows/ci.yml .github/ci/legacy-jobs.yml
-[ -n "$(git status --short tests/test_dag_conformance.py)" ] && git add tests/test_dag_conformance.py || true
-git commit -m "ci(policy-clock): wire hourly publisher and nightly evidence owner"
-```
+Each must RED, then restore:
+
+1. remove one new suite from all manifest commands;
+2. keep suite but remove its source subject from owner paths;
+3. keep manifest owner but remove matching `ci.yml` trigger;
+4. add duplicate logical owner;
+5. add suite to unrun baseline;
+6. delete unrelated current-main manifest marker;
+7. remove nightly ledger-only invocation;
+8. change nightly to publish-current;
+9. change hourly lane to nightly;
+10. advance only wall-clock attempt on quiet hour;
+11. let one source watermark regress while another advances;
+12. make nightly append with no eligible trigger;
+13. call append helper directly off-lane and let it succeed;
+14. remove Neural Web machine-consumer test from its real owner.
+
+No new workflow/job/runner/permission/secret/concurrency/merge-control plane.
 
 ---
 
-## Task 8: End-to-end real proof and immutable return
+## Task 8 — Real end-to-end proof and immutable HOLD return
 
-**Files:** implementation and evidence outputs only; no scope widening.
+### Step 8.1 — Real official-source path
 
-- [ ] **Step 1: Re-pin and re-census before proof**
+Against current public official surfaces, prove:
 
-Fresh-read protected procedure, current main, all planned paths and current PR collisions. Reconcile main history-preservingly without force or dropped commits.
+- at least one Fed actor/event receipt;
+- at least one Treasury event/operation receipt when available;
+- TreasuryDirect buyback semantics including purpose and separate amounts;
+- source versions/watermarks and evidence cutoff;
+- exact current phase derived independently from immutable source status;
+- no unsupported actor-location claim.
 
-- [ ] **Step 2: Run real official sources**
+If current source lacks a desired operation, prove typed no-data/unavailable behavior rather than manufacturing a positive row.
 
-Run the collector against current Fed/Treasury/TreasuryDirect sources. Record source URLs, response/status shape, observed/available clocks, semantic rows, additions, failures and collector-status digest. Do not expose secrets.
+### Step 8.2 — Real existing market-owner path
 
-- [ ] **Step 3: Run real current artifact build**
-
-Use current canonical OPEX/options/TGA/rebalance/broad-flow/VX/market-state inputs and `COLLECT_LANE=hourly`. Produce `site/policy_turn_clock.json`, record input digest/source watermarks/evidence cutoff, and rerun to prove semantic no-op.
-
-- [ ] **Step 4: Prove no-regress**
-
-Attempt to publish a fixture with an older cutoff and verify refusal. Prove a real source-failure status transition can publish while last-good evidence remains.
-
-- [ ] **Step 5: Prove nightly ledger-only**
-
-Under `COLLECT_LANE=nightly`, freeze one eligible prospective receipt. Rerun and prove no duplicate. Prove current JSON/UI are not written by ledger-only mode.
-
-- [ ] **Step 6: Prove machine consumer**
-
-Use a direct JSON reader—not HTML scraping—to parse schema, method version, input digest, state, axes, gaps and authority.
-
-- [ ] **Step 7: Browser proof**
-
-Capture 1440, 768 and 390 CSS-pixel evidence in dark/light and EN/ZH for fresh, partial, stale, cancelled, conflicting, virtual/prerecorded and unknown states. Verify no clipped times/amounts and keyboard accessibility.
-
-- [ ] **Step 8: Run full verification**
-
-```bash
-python -m pytest tests/test_policy_event_clock.py \
-  tests/test_futures_roll_calendar.py \
-  tests/test_policy_turn_clock.py \
-  tests/test_build_policy_turn_clock.py \
-  tests/test_policy_watch_ui.py \
-  tests/test_dag_conformance.py -q
-python -m scripts.run_ci_pack --validate-only
-python -m scripts.audit_unrun_tests
-python -m compileall collectors/policy_event_clock.py engine/futures_roll_calendar.py \
-  engine/policy_turn_clock.py scripts/build_policy_turn_clock.py
-git diff --check
-git status --short
-```
-
-Push one branch and open one Draft/HOLD-FOR-SOL implementation PR. Run hosted exact-head fences and semantic CI. Do not mark Ready or merge.
-
-- [ ] **Step 9: Return**
-
-Return on issue #6787 and the exact communication carrier:
+After `data/` opt-in, read current canonical:
 
 ```text
-operation key
-receiver/session and GitHub identity
-PICKUP_ACK / WATCH / START receipts
-pickup base / current main
-exact head / tree / parents
-exact changed paths
-collision census
-RED→GREEN evidence
-selected logical CI job and executed-suite proof
-hosted checks
-real official-source/freshness receipts
-artifact digest/method/input identity
-browser receipts
-machine-consumer receipt
-prospective receipt ID
-no-regress and quiet-no-op proof
-authority diff
-known gaps/corrections
-effect=APPLIED_REMOTE_SOURCE / MERGE_NONE / DEPLOY_NONE / PRODUCTION_NONE
+OPEX/options owner
+broad ETF flow owner
+Treasury/TGA owner
+Rebalance owner
+Cboe VX front + standard monthly curve or canonical projection
+market-state/volatility/breadth/credit confirmation owners
 ```
 
-Re-arm the exact-carrier continuation source and wait for Sol’s explicit review edge.
+Prove source as-of/availability/staleness and short-history limitations. Do not backfill facts W1 does not own.
 
-## Self-review checklist
+### Step 8.3 — Current artifact proof
 
-- Every source, state, time, null, correction, writer, CI and authority requirement maps to a task above.
-- No `TBD`, `TODO`, “implement later,” generic error-handling instruction or undefined neighboring interface remains.
-- `operation_kind`, `operation_purpose`, amount fields, presence fields, composer arguments, builder modes, method identity and artifact fields are consistent across tasks.
-- Hourly owns official/current publication; nightly owns prospective append only.
-- Calendar, options, futures, Treasury, broad flows, rebalance, duration and market confirmation remain independent axes.
-- No calendar state receives direction or capital authority.
-- Stop condition is one immutable Draft/HOLD-FOR-SOL W1 implementation PR.
+Build one real `policy_turn_clock.v1` and show:
+
+- exact schema/method/input digest/source watermarks;
+- independent `option_support`, `broad_market_flow`, `support_composition`;
+- correct futures-family separation;
+- current state and predicate basis;
+- gaps/disagreements;
+- all authority false.
+
+Run a synthetic mixed-source watermark replay proving source A can advance while source B’s regression is rejected/preserved-last-good. Run a source-failure/recovery replay and a correction replay.
+
+### Step 8.4 — Policy Watch browser proof
+
+Render real current artifact plus deterministic fixture states. Capture and review the complete binding evidence matrix:
+
+```text
+dark/light × EN/ZH × 1440/390
+```
+
+for fresh/support, rolloff, catalyst, degraded, unknown and conflict, plus 768 geometry checks.
+
+Record:
+
+- no console/page-origin errors;
+- no document/card horizontal overflow;
+- correct keyboard/focus behavior;
+- current JSON fetch from same origin;
+- degraded/unknown theme-specific mechanisms;
+- distinct dark command-center and light research-workspace treatments;
+- no stale embedded payload fallback.
+
+### Step 8.5 — Durable direct machine proof
+
+Using the real existing world-state call path, prove:
+
+```text
+site/policy_turn_clock.json
+→ engine/neuralweb/world_state.py build_world_state()/build_and_write()
+→ data/neuralweb/world_state.json policy_turn_clock lobe
+```
+
+Show the lobe preserves policy-turn method/input/state/axes/gaps/all-false authority and is derived from direct JSON, not HTML. Show missing/corrupt input produces the typed fail-open gap. Show same policy-turn digest remains deterministic; changed digest changes world-state semantic identity.
+
+This is the required durable machine consumer. A one-off reader script does not satisfy acceptance.
+
+### Step 8.6 — Prospective receipt proof
+
+A natural nightly run may append only when one frozen first-seen trigger is actually eligible. Prove:
+
+- no-trigger nightly run appends zero;
+- eligible trigger appends at most one keep-FIRST receipt;
+- rerun is idempotent;
+- exact receipt identity is frozen;
+- direct off-lane append is refused;
+- a correction fixture appends a linked correction row without rewriting original.
+
+If the real current nightly has no eligible trigger, zero rows is the correct production proof. Do not fabricate a live event just to create a receipt; use fixture proof for positive path and wait for a natural eligible trigger for later live evidence.
+
+### Step 8.7 — Natural hosted CI
+
+Push normally. Observe natural hosted CI to terminal state for the immutable head. Require:
+
+- Agent OS/schema validation attributable to candidate;
+- exact source-law/fence/contract-delta checks;
+- selected logical jobs actually execute the new suites;
+- canonical pack runner proof;
+- no candidate-introduced failure;
+- current-main relationship reconciled without force.
+
+Inherited failures are named with main/head comparison evidence; do not repair foreign scope.
+
+### Step 8.8 — Immutable return
+
+Return on the canonical W1 carrier:
+
+```text
+RESULT / HOLD-FOR-SOL
+operation
+receiver/session identity
+pickup ACK / continuity / START receipts
+pickup base
+current main integrated
+head
+tree
+parents
+changed-file census
+planned-path collision census
+focused tests
+mutation tests
+Agent OS validation
+pack ownership/execution proof
+hosted CI checks
+official-source receipts
+policy_turn_clock digest
+per-source no-regress proof
+quiet no-op proof
+Policy Watch evidence matrix
+Neural Web direct-machine-consumer proof
+prospective receipt or lawful no-trigger zero-row proof
+authority all-false proof
+remaining gaps
+effect=BUILT_NOT_PROVEN / PRODUCTION_INERT
+```
+
+Keep PR OPEN/DRAFT/HOLD with labels empty and auto-merge null. Do not mark Ready, merge, deploy, start issue #6794 outcome computation, wire Prophet/portfolio, or claim production/decision usefulness.
+
+---
+
+## Completion standard for this implementation PR
+
+A W1 implementation candidate is reviewable only when one independently useful vertical exists end-to-end:
+
+- **Truth:** correction-safe official/public evidence + exact source/freshness/nulls.
+- **Intelligence:** deterministic separate axes, support composition, futures/calendar/catalyst precedence and explicit unknowns.
+- **Product:** real Policy Watch dynamic consumer across dark/light, EN/ZH and desktop/mobile states.
+- **Machine:** existing Neural Web world state directly consumes the same exact JSON contract.
+- **Learning:** the nightly prospective lane is trigger-gated, keep-FIRST, correction-safe and capable of accruing evidence without unconditional rows.
+
+Green CI, source files, generated JSON or a rendered card alone are insufficient.

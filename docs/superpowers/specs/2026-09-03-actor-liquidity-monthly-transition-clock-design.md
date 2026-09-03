@@ -1,16 +1,16 @@
 # Actor, Liquidity & Monthly Transition Clock — W1 Design
 
 Date: 2026-09-03  
-Status: **REPAIRED DESIGN / HOLD-FOR-SOL / SPEC_ONLY**  
+Status: **FORWARD-REPAIRED DESIGN / HOLD-FOR-SOL / SPEC_ONLY**  
 Parent program: Policy Transmission & Pre-Turn Command  
 Organizational owner: `WS:RATES-INFLATION-COMMAND`  
 Implementation carrier: Macro issue #6787  
 Operation: `policy-preturn-actor-liquidity-calendar-clock-20260903-sol-001`  
 Architecture carrier: Macro PR #6788  
-Protected procedure at repair: `mastermindx-market-intelligence/Mastermind@c7fa5b43de6ca702f942fbf20cbe3ac45a02b0f6`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.  
-Macro source observation at repair: `main@16aac3be6a7e8790af0aee75ab1d44ac43eecfab`.
+Protected procedure at forward repair: `mastermindx-market-intelligence/Mastermind@da6af515c95301377fb5fd8748e374a8948a3540`, `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1 compatible.  
+Macro source observation at repair START: `main@9c7d23e4efc9a5fef52d51b935a635a89774055f`; action-time current main controls reconciliation.
 
-This document replaces the prior contents of this path. The VIX-futures and executable-CI amendments in the same PR remain provenance and must agree with this consolidated contract.
+This document consolidates the binding W1 contract. The VIX-futures and executable-CI amendments in the same PR remain provenance and must agree with this design. The six-finding forward repair on operation `policy-preturn-pr6788-six-finding-forward-repair-20260903-sol-001` adds no implementation or runtime effect; it closes pre-implementation worktree, machine-consumer, design-evidence, prospective-ledger, per-source no-regress, and axis-composition gaps identified by independent review.
 
 ---
 
@@ -26,7 +26,7 @@ Before a macro turn becomes obvious in a retrospective regime label, a user can 
 6. Which facts are stale, unavailable, conflicting or corrected?
 7. Why is the read context and decision support rather than a hidden buy/sell instruction?
 
-The same machine-readable `policy_turn_clock.v1` payload feeds Policy Watch and at least one direct machine consumer. HTML is never the machine API.
+The same machine-readable `policy_turn_clock.v1` payload feeds Policy Watch and the existing Neural Web world-state plane. HTML is never the machine API.
 
 The end state is not a calendar card. It is a correction-safe transition diagnosis:
 
@@ -74,9 +74,10 @@ No W1 state may enter Prophet, portfolio sizing, risk limits, orders, alerts tha
 | Treasury Watch / TGA / net liquidity | existing canonical owner | consume mechanics and freshness; never infer rescue intent |
 | Broad ETF flow proxy | forward-accruing, T+1, display-only | use as lagged context, not intraday cash flow |
 | Standard monthly VX M1–M6 curve | forward-accruing, shallow | use current context; no deep historical efficacy claim |
+| Neural Web world state | existing durable machine projection | add one read-only `policy_turn_clock` lobe; do not create a new machine API |
 | RIC F3 yield momentum | `BUILT_NOT_PROVEN`, PR #6721 | do not rebuild; consume only after accepted availability |
 | Policy turn clock | `NOT_BUILT` | W1 target |
-| Prospective policy-turn evidence | `NOT_BUILT` | nightly-only receipt begins in W1 |
+| Prospective policy-turn evidence | `NOT_BUILT` | eligible-trigger-only nightly receipt begins in W1 |
 | Monthly transition evidence lab | `SPEC_ONLY`, issue #6794 | dependency-gated; no outcome computation in W1 |
 
 ## 4. Canonical owners and no-rebuild boundaries
@@ -96,6 +97,7 @@ engine/treasury_watch.py
 engine/ledger_lane.py
 collectors/_first_seen_store.py
 collectors/cboe_vix_futures.py
+engine/neuralweb/world_state.py
 data/flows/broad_flow_proxy.parquet
 data/cboe/vix_futures.parquet
 data/cboe/vix_curve.parquet
@@ -112,6 +114,7 @@ W1 may not create another:
 - broad ETF flow collector;
 - VIX futures collector/store;
 - market-state or volatility engine;
+- world-state/machine-context bus;
 - lifecycle, queue, scheduler, lock service, retry ledger or publisher plane;
 - CI planner, logical-job registry or trusted-executor plane;
 - score, recommendation or trade authority.
@@ -126,7 +129,9 @@ agentos/workstreams/WS-RATES-INFLATION-COMMAND.md
 collectors/cboe_vix_futures.py
 ```
 
-`.github/ci/legacy-jobs.yml` is conditionally shared. No W1 source effect may begin until a fresh census proves every active owner of that path is released or a later Sol ruling provides a collision-free composition. Current review found open PR references beyond #6721, including #6791, #6706, #6651, #6625, #6514, #6389 and #6296. START-time GitHub truth, not this historical list, controls.
+`.github/ci/legacy-jobs.yml` is conditionally shared. No W1 source effect may begin until a fresh census proves every active owner of that path is released or a later Sol ruling provides a collision-free composition. At the forward-repair census, open owners still included #6721, #6706, #6651, #6625, #6514, #6389 and #6296; `.github/workflows/ci.yml` also remained owned by open #6628. PR #6791 had merged and was no longer a live owner. START-time GitHub truth, not this historical list, controls.
+
+Fresh open-PR search at the forward repair found no active owner for the newly named machine-consumer paths `engine/neuralweb/world_state.py` or `tests/test_world_state.py`; this is an observation, not a durable lock.
 
 ## 5. Exact expected implementation surface
 
@@ -148,9 +153,11 @@ tests/test_build_policy_turn_clock.py
 
 ```text
 engine/event_calendar.py
+engine/neuralweb/world_state.py
 scripts/build_policy_watch.py
 templates/policy_watch.html.j2
 tests/test_policy_watch_ui.py
+tests/test_world_state.py
 config/dag.yml
 .github/workflows/whitehouse-sentinel.yml
 scripts/ci/daily_engine_regional_desk_builders.sh
@@ -172,6 +179,19 @@ mockups/refs/policy-turn-clock/**
 ```
 
 Generated outputs are never hand-edited.
+
+### Sparse-worktree precondition
+
+Session worktrees are sparse by repository law. Before any read/write/build that touches planned `data/`, `site/`, or `mockups/` paths, the implementation worker must use the current checked-in worktree helper from the already assigned session-root worktree:
+
+```bash
+python3 scripts/worktree_sparse.py status
+python3 scripts/worktree_sparse.py add data
+python3 scripts/worktree_sparse.py add site
+python3 scripts/worktree_sparse.py add mockups
+```
+
+A worker may use `python3 scripts/worktree_sparse.py full` instead when the operation genuinely needs the full checkout. It may not infer path absence from a sparse omission, write into an omitted tree, or stage an unexpected broad `git add -A` delta. The implementation plan carries the full session-root procedure.
 
 ## 6. Official evidence contract
 
@@ -375,6 +395,8 @@ Required top-level fields:
   "actor_clock": {},
   "treasury_liquidity": {},
   "option_support": {},
+  "broad_market_flow": {},
+  "support_composition": {},
   "futures_roll": {},
   "rebalance": {},
   "market_confirmation": {},
@@ -390,9 +412,11 @@ Required top-level fields:
 
 `generated_at` is excluded from `input_digest` and semantic change detection. Identical semantic inputs with a later wall clock do not create `change_from_prior.changed=true` or a new receipt. A method-version mismatch refuses direct prior-state comparison unless an explicit bridge is supplied. Correction rows link to the original method/input/cutoff identity.
 
-### 8.3 Independent axes
+### 8.3 Independent axes and composition
 
 #### Options support
+
+`option_support` contains only options/OPEX-owner evidence:
 
 ```text
 stabilizing | destabilizing | transition | unavailable | stale | ambiguous
@@ -406,6 +430,28 @@ building | present | weak | absent | unknown | incomparable
 
 Only comparable current/prior rows from the same canonical owner/root class can establish replacement. Missing evidence is unknown.
 
+`option_support` MUST NOT contain broad-flow state, Treasury support, breadth/credit confirmation, a cross-axis `applicable_support_count`, or any K-of-N result. It is an evidence axis, not the support composer.
+
+#### Broad-market flow
+
+`broad_market_flow` consumes only the canonical SPY/QQQ/IWM/RSP/DIA creation/redemption proxy with its true publication lag, coverage depth, jump guard and display-only authority. It may expose descriptive status such as `supportive|draining|mixed|neutral|unavailable|stale`, but it cannot be copied into `option_support`, described as intraday cash, or treated as a complete institutional-flow measure.
+
+#### Support composition
+
+`support_composition` is the only place that compares independent support families. It receives already-composed axis states and records, without weights:
+
+```json
+{
+  "applicable_support_count": 0,
+  "supporting_mechanisms": [],
+  "contradicting_mechanisms": [],
+  "unavailable_mechanisms": [],
+  "predicate_results": []
+}
+```
+
+The eligible support families are separately sourced mechanisms such as option replacement, broad-market flow, Treasury/TGA, current systematic re-risking, and fresh breadth/credit confirmation. A family contributes at most one vote. Stale/unavailable evidence contributes no supportive vote and remains visible. Options and broad flow therefore stay separate even when both contribute to a top-level state.
+
 #### Treasury liquidity
 
 ```text
@@ -413,10 +459,6 @@ supportive | draining | mixed | neutral | unavailable | stale
 ```
 
 Compose TGA/net-liquidity mechanics with official Treasury operations. Buybacks/auctions/settlements retain mechanism, purpose, clocks and separate amounts. A TGA decline is mechanically supportive all else equal; it is not evidence of deliberate equity rescue.
-
-#### Broad-market flow
-
-Consume the canonical SPY/QQQ/IWM/RSP/DIA creation/redemption proxy with its true publication lag, coverage depth, jump guard and display-only authority. Do not describe it as intraday cash or a complete institutional-flow measure.
 
 #### Rebalance and duration
 
@@ -456,11 +498,11 @@ UNKNOWN
 4. `VOLATILITY_WINDOW_OPEN` only when previously observed stabilizing support has rolled off and a fresh independent volatility/breadth/credit/market-structure confirmation is present.
 5. `SUPPORT_ROLLOFF_IMMINENT` when expiry is near/recent, prior stabilizing support is valid and replacement is weak/unknown, without independent confirmation sufficient for an open volatility window.
 6. `PINNED` when long-gamma context, valid pin proximity and compressed-range context are all fresh.
-7. `SUPPORT_BUILDING` only when at least two independent applicable support mechanisms agree—such as replacement building, supportive broad ETF flows, supportive Treasury/TGA, current systematic re-risking, or stable/improving breadth/credit—and no higher-precedence contradiction exists. Literal K-of-N only; no weights.
+7. `SUPPORT_BUILDING` only when `support_composition` records at least two independent applicable supporting mechanism families and no higher-precedence contradiction exists. Literal K-of-N only; no weights. `option_support` alone, broad flow alone, or any cross-axis count stored inside either axis is insufficient.
 8. `SUPPORT_STABLE` when current stabilizing support is fresh and no higher-precedence override exists.
 9. `MIXED` otherwise.
 
-Every state lists exact predicates, values, sources, cutoffs and applicable counts in `state_basis`. No hidden scalar score is permitted.
+Every state lists exact predicates, values, sources, cutoffs and applicable counts in `state_basis` and `support_composition`. No hidden scalar score is permitted.
 
 ## 9. Builder and runtime ownership
 
@@ -504,18 +546,56 @@ Sequence:
 collect official evidence
 → persist semantic changes/status transitions only
 → build current clock with COLLECT_LANE=hourly
-→ no-regress compare against current published artifact
+→ reconcile every source watermark against the fresh published artifact
 → validate
 → publish owned event/status/current JSON paths
 ```
 
 A healthy quiet rerun with no semantic source/status/input change preserves bytes and creates no commit. `last_attempt_at` may appear in ephemeral logs but must not force a tracked status rewrite. A real failure, recovery, parser-shape change, stale transition, correction or source watermark advance publishes a new status/current artifact.
 
-### 9.3 Policy Watch consumption
+### 9.3 Per-source no-regress publication law
+
+Whole-payload cutoff comparison is necessary but not sufficient. Before hourly publication, reconcile each incoming source independently with the currently published artifact after a fresh read.
+
+Each `source_watermarks[source_key]` entry carries enough owner-native identity to compare the source monotonically: accepted source/revision identity, `available_at`/observation watermark as applicable, semantic digest, correction lineage, and last-good evidence reference.
+
+For every source independently:
+
+- **advance:** a newer valid source identity replaces that source’s current/last-good block;
+- **equal semantic identity:** preserve bytes for that source;
+- **regression:** an older source identity can never lower the published watermark or replace last-good evidence; retain the published source block and emit `SOURCE_WATERMARK_REGRESSION:<source_key>`;
+- **failure/staleness transition:** publish the truthful degraded status while retaining the source’s last-good evidence and watermark; a failure clock is not a data watermark;
+- **valid correction:** a correction with explicit lineage may change semantic content without pretending the prior row never existed; preserve the original receipt, record `supersedes_revision`/correction identity, and accept only when the correction identity is not a time/source regression;
+- **mixed candidate:** if source A advances while source B regresses, publish A’s advance plus B’s preserved last-good block and a B regression gap when the reconciled payload is semantically new. Do not reject A merely because B regressed, and do not regress B merely because A advanced.
+
+After source-level reconciliation, recompute `input_digest`, `evidence_cutoff`, freshness, gaps and state from the accepted evidence set. `evidence_cutoff` itself must not move backward. If every attempted change is regressive or semantically equal, publication is refused/no-op as appropriate.
+
+Because nightly is ledger-only, it cannot regress the current machine/UI artifact. No cross-lane lock service is introduced.
+
+### 9.4 Policy Watch consumption
 
 `scripts/build_policy_watch.py` and the template provide the static shell and fallback. The dynamic turn-clock component loads the same-origin `policy_turn_clock.json` at runtime so nightly HTML rebuilds cannot embed an older clock than the machine artifact. The page has a keyboard-accessible noscript/unavailable state and does not silently reuse stale embedded data.
 
-### 9.4 Nightly ledger-only advancer
+### 9.5 Durable direct machine consumer — Neural Web world state
+
+The W1 direct machine consumer is not an ad-hoc proof script. It is the existing Neural Web N1 producer/reader plane:
+
+```text
+owner:       existing Neural Web N1 world-state composition
+source path: engine/neuralweb/world_state.py
+input:       site/policy_turn_clock.json
+output:      data/neuralweb/world_state.json -> top-level policy_turn_clock lobe
+call site:   build_world_state() / build_and_write(), invoked by existing scripts/build_world_state.py
+proof owner: tests/test_world_state.py
+```
+
+`engine/neuralweb/world_state.py` reads the exact JSON directly—never Policy Watch HTML—and projects a read-only/display-only `policy_turn_clock` lobe. The lobe preserves `schema`, `method_version`, `input_digest`, `as_of`, `evidence_cutoff`, `state`, independent axes, gaps and all-false authority. It may add Neural-Web envelope metadata but may not recompute a second policy-turn state.
+
+Missing, corrupt, wrong-schema or authority-violating input follows the existing world-state fail-open contract: the lobe is absent/null-shaped with a typed gap; it never silently substitutes stale HTML, zeroes missing axes, or treats an invalid payload as current. A changed policy-turn `input_digest` must change world-state semantic input identity; an unchanged policy-turn digest must remain deterministic under the existing world-state single-clock law.
+
+No new machine API, bus, store or consumer registry is created.
+
+### 9.6 Nightly ledger-only advancer
 
 The real existing nightly owner is:
 
@@ -536,21 +616,11 @@ Ledger-only mode:
 - does not collect official evidence;
 - does not write/stage `site/policy_turn_clock.json` or Policy Watch HTML;
 - reads current official evidence and fresh after-close canonical market inputs;
-- appends at most one keep-FIRST prospective receipt;
+- appends **zero** rows unless an explicit eligible first-seen trigger is present;
+- appends at most one keep-FIRST prospective receipt per invocation by frozen trigger precedence;
 - reruns idempotently.
 
 `config/dag.yml` mirrors the actual hourly and nightly execution paths; it is not an executor.
-
-### 9.5 No-regress publication
-
-Before hourly publication, compare incoming `method_version`, `input_digest`, source watermarks and `evidence_cutoff` with the currently published artifact after a fresh source read.
-
-- older cutoff/watermarks: refuse current-artifact overwrite;
-- equal semantic identity: no-op;
-- newer valid identity: publish;
-- source failure/staleness transition: publish a truthful degraded status while preserving last-good evidence and watermark.
-
-Because nightly is ledger-only, it cannot regress the current machine/UI artifact. No cross-lane lock service is introduced.
 
 ## 10. Prospective ledger
 
@@ -566,7 +636,7 @@ Advance gate:
 engine.ledger_lane.nightly_advance_enabled()
 ```
 
-Canonical environment is `COLLECT_LANE=nightly`; `US_LANE=nightly` is a legacy alias. Hourly never appends.
+Canonical environment is `COLLECT_LANE=nightly`; `US_LANE=nightly` is a legacy alias. The lane check must live inside the append seam itself; calling `append_forward_receipt()` directly off-lane is refused. Hourly never appends.
 
 Receipt identity:
 
@@ -574,16 +644,21 @@ Receipt identity:
 (as_of, trigger_kind, trigger_id, method_version, input_digest)
 ```
 
-Eligible first-seen triggers:
+Eligible first-seen trigger families, in deterministic selection order when several occur in one build:
 
-- material semantic state change;
-- high-impact event enters 24 hours;
-- OPEX enters T−2;
-- post-OPEX enters T+1;
-- observed month/quarter-end pulse first appears;
-- standard VX settlement enters T−2 or rank-roll boundary first appears.
+1. `material_state_change` — material semantic top-level transition first appears;
+2. `high_impact_event_t24` — high-impact event first enters 24 hours;
+3. `opex_t_minus_2` — OPEX first enters T−2;
+4. `post_opex_t_plus_1` — post-OPEX first enters T+1;
+5. `month_or_quarter_end_pulse` — observed month/quarter-end pulse first appears;
+6. `vx_t_minus_2` — standard VX settlement first enters T−2;
+7. `vx_rank_roll_boundary` — rank-roll boundary first appears.
 
-The receipt freezes method/input/source identity, evidence cutoff, state/basis, all axes, gaps, expected mechanism, confirmation/invalidation and predeclared outcome horizons. Corrections append linked rows and never rewrite the original.
+Nightly eligibility alone is never a trigger. If no first-seen trigger exists, return a semantic no-op and append zero rows.
+
+The receipt freezes method/input/source identity, evidence cutoff, state/basis, all independent axes, support composition, gaps, expected mechanism, confirmation/invalidation and predeclared outcome horizons.
+
+Corrections never rewrite the original prospective receipt. A correction row must carry its own new receipt identity plus `record_kind=correction`, `correction_of_receipt_id`, original method/input/cutoff identity, source correction lineage, and corrected semantic fields. It is appendable only when the referenced original receipt exists and the correction passes the same nightly lane and source no-regress laws.
 
 ## 11. CI ownership
 
@@ -591,33 +666,77 @@ After every active owner of `.github/ci/legacy-jobs.yml` is released, W1 may mak
 
 - extend one compatible policy/front-facing logical job;
 - name all four new test suites in executable pytest command(s);
-- include each suite and exact source subject in the job path closure;
+- include `tests/test_world_state.py` in its existing Neural Web owner rather than duplicating the full suite when possible, while adding the exact policy-turn consumer test to executable ownership;
+- include each new suite and exact source subject in the appropriate job path closure;
 - add matching `.github/workflows/ci.yml` triggers;
 - include `scripts/ci/daily_engine_regional_desk_builders.sh` and workflow/DAG subjects in the appropriate conformance closure;
-- run the selected logical job through the canonical pack runner;
+- run the selected logical job(s) through the canonical pack runner;
 - preserve unrelated current-main lines;
 - do not add a job, workflow, runner, planner, permission, trusted-executor, secret, concurrency or merge-control plane;
 - do not use `config/unrun_test_baseline.json` as an escape hatch.
 
 START-time collision census must inspect all open PRs and active branches/worktrees. A list frozen in this document is not sufficient.
 
-## 12. User experience
+## 12. Policy Watch binding design packet
 
-Policy Watch hierarchy:
+The design packet is implementation law, not optional taste guidance.
 
-1. **Now** — state, what changed and one mechanism sentence.
-2. **Support inventory** — option support/replacement and evidence quality.
-3. **Flow and liquidity** — broad ETF lagged flow, Treasury/TGA, observed rebalance and duration context.
-4. **Futures clocks** — quarterly equity/Treasury and weekly/standard VX kept separate.
-5. **Next 72 hours / 14 days** — at most five highest-information official events/operations with exact ET time, status, amount fields and freshness.
-6. **Why this can turn** — mechanism chain, not prediction prose.
-7. **Confirm / invalidate** — at most three concise observable conditions each.
-8. **Coverage** — stale, unavailable, conflicting and corrected evidence.
-9. **Evidence detail** — source links, exact clocks, input digest, OI/dealer caveats and raw axes.
+### Baseline and invariant semantics
 
-Required states: fresh, quiet, partial, stale, failed, recovered, cancelled, revised, conflicting, virtual/prerecorded, unknown and source-shape-changed.
+Baseline/reference:
 
-Required viewports/themes/languages: 1440, 768 and 390 CSS pixels; dark/light; English/Simplified Chinese. State meaning cannot rely on color.
+```text
+research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+research/DESIGN_DOCTRINE.md
+mockups/design_system/specimen.html
+existing Policy Watch route/composition
+```
+
+The two themes share information architecture, component semantics, ordering, density, spacing/type scales, interactions, keyboard behavior, state meanings, evidence hierarchy and EN/ZH meaning. They intentionally differ in material treatment. Token substitution alone is not an accepted light design.
+
+No parallel token root or opaque runtime stylesheet system may be introduced. Use canonical theme tokens/components and governed presentation sources.
+
+### DARK TREATMENT — command center
+
+- Near-black/luminance-depth canvas with restrained instrument layering rather than large flat fills.
+- Fresh/current state uses a narrow luminous edge or restrained local glow only where it improves scanability; glow never encodes a meaning unavailable to text/icon/shape.
+- Evidence rows sit in calm layered instrument wells with crisp typography and subdued separators.
+- Catalyst/conflict/warning emphasis uses restrained semantic rails and precise text, not saturated full-card alarm color.
+- Countdown and source freshness are high-information, compact instrument readouts.
+
+**Dark degraded:** remove fresh-state glow, reduce material lift, use a segmented/dashed warning rail plus explicit `DEGRADED`/stale clock and named gap. Do not dim the whole panel into apparent disabled state.
+
+**Dark unknown:** neutral graphite/charcoal surface, no implied directional tint, explicit `UNKNOWN`, missing-evidence list and last-good timestamps when lawful. Unknown never looks like calm/neutral market confirmation.
+
+### LIGHT TREATMENT — research workspace
+
+- Cool neutral canvas with white research material, graphite text, disciplined hairline rules and modest spatial shadow instead of glow.
+- State emphasis uses restrained semantic tint/ink in labels and rails; the card body remains readable white/cool material.
+- Evidence detail reads like an analyst worksheet: clean tabular alignment, precise timestamps, visible source/provenance affordances and low visual noise.
+- Countdowns and freshness use crisp ink/hairline hierarchy rather than a dark-theme glow translated onto white.
+
+**Light degraded:** white/cool material remains present; use a warning hairline/hatched or otherwise mechanically distinct caution rail, explicit `DEGRADED`, stale clock and named gap. A low-contrast gray wash that makes data disappear is forbidden.
+
+**Light unknown:** no pale-green or low-contrast neutral that could read as “fine.” Use a neutral research sheet with explicit `UNKNOWN`, a distinct missing-evidence treatment, preserved last-good references when lawful and no directional tint.
+
+### Intentional differences and why
+
+Dark depth is created by luminance layering and restrained glow because the command-center environment needs fast instrument separation. Light depth is created by white material, hairlines and modest shadow because glow on a bright research surface reduces precision. Degraded/unknown mechanisms therefore differ materially by theme while preserving the exact same semantic text, status icons/shapes and interaction behavior.
+
+### Binding evidence matrix
+
+A W1 UI proof is incomplete unless every required cell is captured from real rendered bytes and human-reviewed for hierarchy/material/state meaning:
+
+| Theme | Language | 1440 desktop | 390 mobile | Required state coverage |
+|---|---|---:|---:|---|
+| dark | EN | required | required | fresh/support, rolloff, catalyst, degraded, unknown, conflict |
+| dark | ZH | required | required | fresh/support, rolloff, catalyst, degraded, unknown, conflict |
+| light | EN | required | required | fresh/support, rolloff, catalyst, degraded, unknown, conflict |
+| light | ZH | required | required | fresh/support, rolloff, catalyst, degraded, unknown, conflict |
+
+Also run 768 CSS-pixel functional/geometry checks in both themes and both languages. The committed evidence lives under `mockups/refs/policy-turn-clock/**` using the repository’s governed visual-evidence format. Before creating or reading those files in a sparse session, opt into `mockups/` explicitly.
+
+Automated tests prove state identity, source/freshness text, no hidden color-only meaning, keyboard behavior, EN/ZH parity and evidence-manifest completeness. `scripts/check_design_system.py --mode enforce-added`, `scripts/check_runtime_style_injection.py`, and `scripts/check_ui_visual_evidence.py` must run where applicable. Human review owns whether dark and light are genuinely distinct art directions.
 
 ## 13. Failure behavior
 
@@ -647,8 +766,12 @@ VX_RANK_ROLL_BOUNDARY
 MARKET_CONFIRMATION_UNAVAILABLE
 METHOD_VERSION_MISMATCH
 INPUT_DIGEST_MISMATCH
+SOURCE_WATERMARK_REGRESSION
 NO_REGRESS_REFUSAL
 LEDGER_LANE_REFUSED
+LEDGER_TRIGGER_INELIGIBLE
+LEDGER_CORRECTION_TARGET_MISSING
+MACHINE_CONSUMER_SCHEMA_INVALID
 PATH_COLLISION
 ```
 
@@ -667,23 +790,26 @@ Minimum source/contract proof:
 7. Quarterly roll scheduled vs active-with-progress distinction.
 8. OPEX long/short gamma and replacement unknown/incomparable behavior.
 9. Explicit market-confirmation requirement for `VOLATILITY_WINDOW_OPEN`.
-10. Broad-flow lag/short-history disclosure and no option-replacement-as-cash shortcut.
-11. Month-end scheduled/estimated/observed separation and asset-specific duration context.
-12. Quiet healthy hourly rerun produces byte-identical tracked outputs and no commit candidate.
-13. Real source failure/recovery transition updates status without erasing last-good evidence.
-14. Older cutoff cannot overwrite a newer current artifact.
-15. Hourly append is refused; nightly ledger-only appends exactly once and reruns idempotently.
-16. All new suites execute through the canonical logical job and pack runner.
-17. Browser proof at all required states/viewports/themes/languages.
-18. One direct machine consumer reads the exact JSON contract.
-19. One prospective receipt freezes before a real eligible event/transition.
-20. Static/mutation proof keeps every authority field false and kills duplicate-plane attempts.
+10. Options and broad-flow axis separation: broad flow never appears inside `option_support`; K-of-N exists only in `support_composition`.
+11. Broad-flow lag/short-history disclosure and no option-replacement-as-cash shortcut.
+12. Month-end scheduled/estimated/observed separation and asset-specific duration context.
+13. Quiet healthy hourly rerun produces byte-identical tracked outputs and no commit candidate.
+14. Per-source no-regress: mixed-source advance/regression keeps the advanced source and preserves the regressed source’s last-good watermark/evidence; all-regressive input cannot overwrite current state.
+15. Real source failure/recovery transition updates status without erasing last-good evidence/watermark.
+16. Valid source correction preserves original lineage and cannot masquerade as a watermark regression or rewrite history.
+17. Hourly append is refused; nightly with **no eligible trigger** appends zero; each frozen trigger family can append its first-seen receipt; reruns are idempotent.
+18. Receipt identity deduplication, correction-link append, and direct off-lane append refusal are executable tests.
+19. All new suites execute through canonical logical owners and pack runner; the Neural Web consumer test executes through its existing owner.
+20. Browser proof satisfies the binding dark/light × EN/ZH × 1440/390 evidence matrix plus 768 geometry checks and all required states.
+21. `engine/neuralweb/world_state.py` directly reads the exact JSON, emits the governed lobe, fails open on invalid input, and never scrapes HTML.
+22. One prospective receipt freezes before a real eligible event/transition.
+23. Static/mutation proof keeps every authority field false and kills duplicate-plane attempts.
 
 CI green is necessary but is not product or production acceptance.
 
 ## 15. Stop condition
 
-The W1 worker stops at one immutable Draft/HOLD-FOR-SOL implementation PR proving the complete official-source → deterministic artifact → Policy Watch → machine consumer → prospective receipt vertical.
+The W1 worker stops at one immutable Draft/HOLD-FOR-SOL implementation PR proving the complete official-source → deterministic artifact → Policy Watch → existing Neural Web machine consumer → eligible-trigger prospective receipt vertical.
 
 Do not absorb:
 
@@ -696,4 +822,4 @@ Do not absorb:
 - evaluation-lab outcome computation;
 - merge or deployment.
 
-Return exact receiver, carrier receipts, pickup base/current main, head/tree/parents, changed paths, collision census, RED→GREEN evidence, selected logical CI job/executed-suite proof, hosted checks, official-source receipts, artifact digest, browser/machine proof, prospective receipt identity, authority diff and remaining gaps.
+Return exact receiver, carrier receipts, pickup base/current main, head/tree/parents, changed paths, collision census, RED→GREEN evidence, selected logical CI job/executed-suite proof, hosted checks, official-source receipts, artifact digest, browser/machine proof, prospective receipt identity, per-source no-regress/quiet-no-op proof, authority diff and remaining gaps.
