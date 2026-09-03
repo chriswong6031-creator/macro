@@ -51,7 +51,15 @@ changed:
   - path: tests/test_special_arb.py
     what: "Rewritten as 39 hostile mutants incl. the precision gate and the no-clamp guard."
   - path: tests/test_special_situations.py
-    what: "5 engine-level F09 integration tests (session receipts, staleness, no invented day, no-ledger degradation, consumer divergence)."
+    what: >
+      5 engine-level F09 integration tests (session receipts, staleness, no invented day,
+      no-ledger degradation, consumer divergence), the desk-page contract guard, the
+      ledger-join-key end-to-end regression, and 3 collector-lane tests.
+  - path: scripts/build_special_situations.py
+    what: >
+      _arb_str migrated to the F09-1 contract, null-safe on the degraded rows the contract now
+      attaches. Authorized by Sol as PATH_BOUNDARY_EXPANDED for exactly this one path after the
+      DECISION_REQUEST; no gross_spread_pct alias restored, downside-on-break not reinvented.
   - path: tests/test_special_sits_intel.py
     what: "4 context-feed consumer tests incl. the LGMK regression shape."
   - path: research/F09_PREMIUM_MATH_PRECISION_REPORT_2026-09-03.md
@@ -78,6 +86,18 @@ verified:
   - claim: "PR #6793 is in a lawful hold state."
     command: "gh pr view 6793 --json isDraft,autoMergeRequest,labels"
     result: "draft=true, autoMergeRequest=null, labels=[]"
+  - claim: "The desk page no longer raises KeyError on the economics contract."
+    command: "python3 -c \"from scripts.build_special_situations import _arb_str; _arb_str(reduce_cash_deal(compile_current_terms([]), category='Acquisitions'))\""
+    result: "'' (empty string). Before the migration this raised KeyError: 'gross_spread_pct'."
+  - claim: "The prior head's CI concluded with every pack green."
+    command: "watcher bsxma4gmg on PR #6793 head 8e4379e24a57, 300s cadence, exit-on-all-concluded"
+    result: >
+      ci-gate pass; ci-pack-0..11 all pass; trusted-executor-pack-0..11 all pass; ci-authority,
+      ci-authority/main, ci-plan, contract-delta, fence-pack, capability-broker, grader-manifest,
+      self-mod-fence, trusted-executor-main-admission, trusted-executor-hosted-plan all pass.
+      One red, ci-authority/codex/merge-queue-pilot, whose payload reads allowed:true /
+      ordinary_change / authority_hit_count:0 and which is red identically on sibling heads
+      #6790 and #6789 — base-side, not this branch's.
 unverified:
   - claim: "Real-world extraction recall against live EDGAR filings."
     what_would_verify: >
@@ -94,13 +114,19 @@ unverified:
   - claim: "That the real LGMK row is grounded rather than excluded."
     what_would_verify: "The natural run's typed state for LGMK. Only the SHAPE is pinned by tests today."
 unresolved:
+  - >
+    A secretary relay on the carrier reported the consumer repair, the xfail removal and a head
+    as already done BEFORE any of it existed (verified false against git at the time: the file
+    was untouched, the xfail present, and that head was a records-only commit). The receiver
+    corrected the record and then performed the work. Treat relayed progress about this session
+    as unverified until checked against git.
   - "Production proof is gated behind macro#6783 (Mac Studio daily-runner disk-admission floor). Capability is BUILT_NOT_PROVEN / PRODUCTION_INERT."
   - "enrich_deal_terms() is not yet called by any scheduled lane — wiring it into the build sequence touches scripts/ or workflow paths that were OUTSIDE the frozen path set and require a Sol path-boundary ruling first."
   - "Exact-head independent data/provenance/financial-method review not yet obtained."
 next_actions:
-  - "Obtain exact-head independent review of PR #6793 @ d93092705fdc; repair only on the same carrier."
+  - "Obtain exact-head independent review of PR #6793 @ 3bbf5d310585; repair only on the same carrier. The reviewer may NOT be this session: the fleet shares the chriswong6031-creator GitHub identity with the PR author, so a self-review would not be independent."
   - "Return RESULT / HOLD-FOR-SOL on C0BSBM78V1N/1788407688.753659 and wait for Sol acceptance. Do NOT self-merge, mark Ready, or arm merge-on-green."
-  - "Ask Sol for a path-boundary ruling on calling enrich_deal_terms() from the existing build sequence — it is the one wire still missing between the collector lane and _enrich_arb."
+  - "Ask Sol for a path-boundary ruling on calling enrich_deal_terms() from the existing build sequence — it is the one wire still missing between the collector lane and _enrich_arb. Precedent: the equivalent request for scripts/build_special_situations.py was granted as a one-path expansion on 2026-09-03."
   - "After #6783 restores the daily route, observe ONE natural cycle (never a dispatch) and check: observation counts, VERIFIED vs degraded census, every ordered row's receipts, the real LGMK disposition, and all five Neural Web consumers."
 do_not_redo:
   - "Do NOT add a magnitude clamp, band, cap or ticker exception. The band already existed and ADMITTED the 42,790.2% row (DSC:ARB-PLAUSIBILITY-BAND-ADMITTED-THE-DEFECT-IT-GUARDED). A guard test now fails the build if LGMK, _PLAUS_LO, _PLAUS_HI or _DAYS_CAP reappears in the owner."
@@ -109,6 +135,8 @@ do_not_redo:
   - "Do NOT treat falling row counts as a regression. Deterministic extraction has lower recall by design; the honest metric is VERIFIED rows plus the visible degraded census."
   - "Do NOT re-run the full suite in this sparse worktree to judge health — 45 failures are pre-existing artifacts. Compare against origin/main with the same four files swapped, as this session did."
   - "Do NOT let a model lane supply a numeric term. parse_terms is _candidate_only and provably cannot satisfy the observation contract."
+  - "Do NOT re-add downside_on_break_pct to the rendered desk line or the contract. It is a downside target, explicitly outside F09-1, and Sol's boundary ruling names it."
+  - "Do NOT reason about _arb_str from the pre-F09 signature. It reads live_gross_spread_pct and is null-safe; a real guard test now pins both directions."
 danger_areas:
   - "engine/special_arb.py `_price_candidates` negative lexicon: loosening the ±160-char window or removing a term (dividend/redemption/exercise/conversion/aggregate/notes) reopens the false-price class the corpus exists to catch."
   - "`_resolve_currency`: a bare $ must stay refused on any non-USD listing. Making it default to USD would silently restore the cross-currency compare."
@@ -128,6 +156,20 @@ macro#6783 disk-admission floor. No dispatch was made to manufacture proof. Anyo
 this should treat "117 tests pass and the PR is green" as the beginning of the evidence, not
 the end of it — the whole point of the wave is that a confident number without a live receipt
 is exactly the failure being repaired.
+
+## The consumer break, and why it is worth remembering
+
+`scripts/build_special_situations.py:82` subscripted `a['gross_spread_pct']` directly, so the
+desk page raised `KeyError` on the renamed contract — and **no CI check covers `_arb_str`**, so
+the PR would have gone fully green while carrying a page-build crash. It was found by tracing
+the wire from the collector to the page while writing this handoff, not by any test or check.
+
+Two transferable lessons. First, a rename inside a contract is only half a migration; grep for
+**direct subscripts** of the old key, because `.get()` degrades quietly while `[...]` crashes
+loudly and neither is covered if the renderer is untested. Second, the honest response to
+"no check can see this" is not to merge and hope — it was raised as a boundary request, pinned
+in code by a strict xfail so it could not be forgotten, and only fixed once Sol expanded the
+path. The xfail is now gone, replaced by a real two-direction guard.
 
 ## The one wire that is deliberately missing
 
