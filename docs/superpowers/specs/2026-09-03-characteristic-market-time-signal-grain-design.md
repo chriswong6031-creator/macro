@@ -1,9 +1,9 @@
 # Characteristic Market Time × Signal Grain — Gate 1/2 Design Specification
 
-**Date:** 2026-09-03  
-**Status:** W0 design freeze; implementation not started  
-**Workstream:** `WS:TEMPORAL-GRAIN-INTELLIGENCE`  
-**Implements:** `research/signal_engine/temporal_scale/CHARACTERISTIC_MARKET_TIME_SIGNAL_GRAIN_ARCHITECTURE_FREEZE_2026-09-03.md`  
+**Date:** 2026-09-03
+**Status:** W0 design freeze; implementation not started
+**Workstream:** `WS:TEMPORAL-GRAIN-INTELLIGENCE`
+**Implements:** `research/signal_engine/temporal_scale/CHARACTERISTIC_MARKET_TIME_SIGNAL_GRAIN_ARCHITECTURE_FREEZE_2026-09-03.md`
 **First implementation operation:** `temporal-grain-gakd-artifact-attack-r1-20260903-sol-001`
 
 ## 1. Goal

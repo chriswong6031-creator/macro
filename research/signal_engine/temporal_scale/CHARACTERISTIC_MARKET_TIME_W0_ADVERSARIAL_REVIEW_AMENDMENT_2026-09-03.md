@@ -1,11 +1,11 @@
 # Characteristic Market Time × Signal Grain — W0 Adversarial Review Amendment
 
-**Date:** 2026-09-03  
-**Workstream:** `WS:TEMPORAL-GRAIN-INTELLIGENCE`  
-**W0 carrier:** Macro PR #6790  
-**Exact reviewed pre-amendment head:** `d9ce56f4b276dbd11f6e2220ea187fea6898117e`  
-**Protected procedure pin:** `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`  
-**Review verdict on pre-amendment head:** `REQUEST_CHANGES — one scientific blocker`  
+**Date:** 2026-09-03
+**Workstream:** `WS:TEMPORAL-GRAIN-INTELLIGENCE`
+**W0 carrier:** Macro PR #6790
+**Exact reviewed pre-amendment head:** `d9ce56f4b276dbd11f6e2220ea187fea6898117e`
+**Protected procedure pin:** `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`
+**Review verdict on pre-amendment head:** `REQUEST_CHANGES — one scientific blocker`
 **Capability:** records-only `SPEC_ONLY`; production and signal authority remain zero
 
 ---

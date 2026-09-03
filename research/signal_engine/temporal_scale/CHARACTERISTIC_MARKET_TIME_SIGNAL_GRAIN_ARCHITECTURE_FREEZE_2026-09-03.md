@@ -1,14 +1,14 @@
 # Characteristic Market Time × Signal Grain — W0 Architecture Freeze
 
-**Date:** 2026-09-03  
-**Workstream:** `WS:TEMPORAL-GRAIN-INTELLIGENCE`  
-**Parent program:** `market-timing-intelligence`  
-**Chairman intent:** continue the approved Pro-mode investigation at full throttle  
-**W0 operation:** `temporal-grain-w0-freeze-20260903-sol-001`  
-**First empirical child:** `temporal-grain-gakd-artifact-attack-r1-20260903-sol-001`  
-**Protected procedure pin:** `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`  
-**Macro base:** `mastermindx-market-intelligence/macro@931870b1feccb91b5122d92b07995e9749566aae`  
-**Capability at W0:** `SPEC_ONLY`  
+**Date:** 2026-09-03
+**Workstream:** `WS:TEMPORAL-GRAIN-INTELLIGENCE`
+**Parent program:** `market-timing-intelligence`
+**Chairman intent:** continue the approved Pro-mode investigation at full throttle
+**W0 operation:** `temporal-grain-w0-freeze-20260903-sol-001`
+**First empirical child:** `temporal-grain-gakd-artifact-attack-r1-20260903-sol-001`
+**Protected procedure pin:** `mastermindx-market-intelligence/Mastermind@793e75639911f21dae9c90a77c3a5dbf4b37cbb0`
+**Macro base:** `mastermindx-market-intelligence/macro@931870b1feccb91b5122d92b07995e9749566aae`
+**Capability at W0:** `SPEC_ONLY`
 **Authority at birth:** research only; rank/gate/size/trade/Prophet/Golden-Oracle authority all false
 
 ---
@@ -103,8 +103,8 @@ This workstream therefore forbids:
 records PR #6570 merged on 2026-08-30 as
 `6e3126c5106d5d240961088a866bf0e45f940538`.
 
-Canonical owner for merge truth: GitHub.  
-Stale layer: Agent OS workstream projection.  
+Canonical owner for merge truth: GitHub.
+Stale layer: Agent OS workstream projection.
 Repair in this W0 carrier: mark TOI W0 done and leave W1/W2-0 honestly todo and undispatched.
 
 This temporal study is a **sibling**, not a replacement for TOI W2-0:
