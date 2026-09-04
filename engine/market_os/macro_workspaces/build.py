@@ -42,6 +42,7 @@ from engine.market_os.macro_workspaces import (
     growth,
     inflation,
     labor,
+    liquidity_central_banks,
     liquidity_regime,
     monetary_policy,
     registry,
@@ -53,6 +54,8 @@ DEFAULT_REGIME_LATEST = ROOT / "data" / "regime" / "latest.json"
 DEFAULT_INFLATION_INTEL = ROOT / "data" / "release_forecast" / "inflation_intelligence.json"
 DEFAULT_RATES_COMMAND = ROOT / "data" / "rates_command" / "latest.json"
 DEFAULT_INTL_RISK = ROOT / "data" / "intl_risk" / "latest.json"
+DEFAULT_GLT_LATEST = ROOT / "site" / "liquiditydata" / "global_liquidity_transmission.json"
+DEFAULT_GLT_HISTORY_META = ROOT / "data" / "global_liquidity_transmission" / "state_history_meta.json"
 MIN_CLIENT_CONTRACT = f"{contract.CONTRACT_ID}@{contract.CONTRACT_VERSION}"
 
 
@@ -160,7 +163,8 @@ def build_liquidity_regime(
 
 def _compose_workspace(workspace_id: str, *, regime_latest: dict,
                        inflation_intel: dict, rates_command: dict,
-                       intl_risk: dict, built_at: str,
+                       intl_risk: dict, glt_latest: dict,
+                       glt_history_meta: dict, built_at: str,
                        prior_snapshot: dict | None,
                        code_version: str | None) -> dict:
     """Route one BUILT workspace to its composer with its owner-native inputs.
@@ -199,6 +203,13 @@ def _compose_workspace(workspace_id: str, *, regime_latest: dict,
             (regime_latest.get("rate_inflation_transmission") or {}),
             built_at=built_at,
             prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "liquidity_central_banks":
+        return liquidity_central_banks.compose(
+            glt_latest,
+            (intl_risk.get("cb_desk") or {}),
+            glt_history_meta,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
     raise ValueError(f"no builder route for workspace id: {workspace_id!r}")
 
 
@@ -207,6 +218,8 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
               inflation_intel_path: Path | str = DEFAULT_INFLATION_INTEL,
               rates_command_path: Path | str = DEFAULT_RATES_COMMAND,
               intl_risk_path: Path | str = DEFAULT_INTL_RISK,
+              glt_latest_path: Path | str = DEFAULT_GLT_LATEST,
+              glt_history_meta_path: Path | str = DEFAULT_GLT_HISTORY_META,
               built_at: str, code_version: str | None = None,
               prior_snapshot_path: Path | str | None = None,
               write: bool = True) -> dict:
@@ -223,6 +236,8 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
     inflation_intel = _load_json_or_empty(Path(inflation_intel_path))
     rates_command = _load_json_or_empty(Path(rates_command_path))
     intl_risk = _load_json_or_empty(Path(intl_risk_path))
+    glt_latest = _load_json_or_empty(Path(glt_latest_path))
+    glt_history_meta = _load_json_or_empty(Path(glt_history_meta_path))
 
     out = Path(out_root)
     manifest_entries: dict[str, dict] = {}
@@ -245,7 +260,9 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
 
         body = _compose_workspace(
             wid, regime_latest=regime_latest, inflation_intel=inflation_intel,
-            rates_command=rates_command, intl_risk=intl_risk, built_at=built_at,
+            rates_command=rates_command, intl_risk=intl_risk,
+            glt_latest=glt_latest, glt_history_meta=glt_history_meta,
+            built_at=built_at,
             prior_snapshot=prior, code_version=code_version)
         snapshot = contract.finalize(body)
         contract.validate(snapshot)

@@ -149,6 +149,23 @@ REGISTRY: dict[str, dict] = {
             "vol_regime_risk_score",
         ),
     },
+    "liquidity_central_banks": {
+        "id": "liquidity_central_banks",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.liquidity_central_banks",
+        "method_version": "liquidity_central_banks.compose.v1",
+        "title_en": "Liquidity & Central Banks",
+        "title_zh": "流动性与央行",
+        "subtitle_en": "Global monetary impulse x Fed/ECB/BoJ balance-sheet stance",
+        "subtitle_zh": "全球货币脉冲 × 美联储/欧央行/日央行资产负债表姿态",
+        "required_components": (
+            "glt_monetary_impulse",
+            "glt_liquidity_breadth",
+            "glt_usd_funding_impulse",
+            "cb_fed_balance_sheet_impulse_13w",
+        ),
+    },
 }
 
 # Declare the remaining not-yet-built workspaces so the registry lists the

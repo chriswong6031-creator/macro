@@ -13687,6 +13687,7 @@ jobs:
       - "tests/test_macro_workspace_growth.py"
       - "tests/test_macro_workspace_inflation.py"
       - "tests/test_macro_workspace_labor.py"
+      - "tests/test_macro_workspace_liquidity_central_banks.py"
       - "tests/test_macro_workspace_liquidity_regime.py"
       - "tests/test_macro_workspace_monetary_policy.py"
     timeout-minutes: 8
@@ -13709,6 +13710,7 @@ jobs:
           tests/test_macro_workspace_growth.py
           tests/test_macro_workspace_inflation.py
           tests/test_macro_workspace_labor.py
+          tests/test_macro_workspace_liquidity_central_banks.py
           tests/test_macro_workspace_liquidity_regime.py
           tests/test_macro_workspace_monetary_policy.py
           -q
@@ -13747,6 +13749,8 @@ jobs:
       - "templates/macro_inflation_system.html.j2"
       - "templates/macro_monetary_policy.html.j2"
       - "templates/macro_financial_conditions.html.j2"
+      # R3 2026-09-04: the Liquidity & Central Banks page.
+      - "templates/macro_liquidity_central_banks.html.j2"
       - "templates/macro_suite.css"
       - "templates/macro_suite.js"
       - "templates/macro_suite_boot.js"

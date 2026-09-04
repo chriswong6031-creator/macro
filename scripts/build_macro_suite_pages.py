@@ -149,6 +149,17 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
             "uncovered legs typed honestly and every source clock shown."
         ),
     ),
+    SuitePage(
+        workspace_id="liquidity_central_banks",
+        region="US",
+        template="macro_liquidity_central_banks.html.j2",
+        output="macro_liquidity_central_banks.html",
+        seo_title="Liquidity & Central Banks — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Global monetary impulse against Fed, ECB and BoJ balance-sheet stance, "
+            "with the weekly grid clock, warmup windows and typed gaps shown."
+        ),
+    ),
 )
 
 

@@ -397,7 +397,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "inflation_system-US-9729b95c0811e157",
+    "prior_generation_id": "inflation_system-US-1ace1cfb5c523cca",
     "prior_method_version": "inflation_system.compose.v1",
     "status": "PRESENT"
   },
@@ -405,7 +405,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no source value changed (no-change republication).",
-    "predecessor_generation_id": "inflation_system-US-9729b95c0811e157"
+    "predecessor_generation_id": "inflation_system-US-1ace1cfb5c523cca"
   },
   "drivers": {
     "balance_sheet": [
@@ -526,11 +526,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T16:01:06Z",
+    "built_at": "2026-09-04T18:41:41Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "23cf73e9a101d95565aada49e9d26ec3cbe7faaa",
-    "content_sha256": "1ace1cfb5c523ccaaf73e25587ffcaa357c202feb3bad1094d2a5ff18d98ecf4",
-    "generation_id": "inflation_system-US-1ace1cfb5c523cca",
+    "code_version": "001f1af4a2d1d6022d9ab291796373606e8c202e",
+    "content_sha256": "b76cf78391a4717ee2fed82ebe0b2294b9a4d032d48810bf1b75c9fd110a5149",
+    "generation_id": "inflation_system-US-b76cf78391a4717e",
     "producer": "engine.market_os.macro_workspaces.inflation",
     "rendered_at": null
   },
