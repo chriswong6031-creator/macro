@@ -1674,3 +1674,96 @@ def test_render_argv_wrong_module_is_red():
     ]
     joined = _red(manifest)
     assert "argv[1:]" in joined
+
+
+# --- SOL build-identity addendum: deterministic clean-checkout replay -------
+
+
+def test_builder_clock_is_an_explicit_input():
+    """An implicit wall clock makes the artifact unreplayable by construction."""
+
+    from scripts.build_market_reference import GENERATED_AT_ENV, resolve_generated_at
+
+    import os as _os
+
+    prev = _os.environ.get(GENERATED_AT_ENV)
+    try:
+        _os.environ[GENERATED_AT_ENV] = "2026-09-04 05:30 UTC"
+        assert resolve_generated_at() == "2026-09-04 05:30 UTC"
+        _os.environ[GENERATED_AT_ENV] = "2026-09-04T05:30:00Z"
+        assert resolve_generated_at() == "2026-09-04 05:30 UTC"
+        _os.environ.pop(GENERATED_AT_ENV)
+        assert resolve_generated_at().endswith("UTC")
+    finally:
+        if prev is None:
+            _os.environ.pop(GENERATED_AT_ENV, None)
+        else:
+            _os.environ[GENERATED_AT_ENV] = prev
+
+
+def test_committed_artifact_replays_byte_identically():
+    """The committed page must be rebuildable from the subject commit."""
+
+    binding = _live_binding()
+    errors = validate_manifest_route_matrix(_green_manifest(), repo_root=REPO)
+    replay_errors = [e for e in errors if "replay" in e]
+    assert replay_errors == [], "\n".join(replay_errors)
+    assert binding["render_invocation"]["generated_at"]
+
+
+def test_different_generated_at_fails_the_replay_is_red():
+    """The named mutant: every declared digest is internally consistent, but the
+    committed page was produced with a different clock."""
+
+    manifest = _green_manifest()
+    invocation = manifest["candidate_binding"]["render_invocation"]
+    invocation["generated_at"] = "2001-01-01 00:00 UTC"
+    invocation["env"] = {"MOR1_GENERATED_AT": "2001-01-01 00:00 UTC"}
+    joined = _red(manifest)
+    assert "replay does not reproduce" in joined
+
+
+def test_missing_generated_at_is_red():
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["render_invocation"].pop("generated_at")
+    joined = _red(manifest)
+    assert "generated_at missing" in joined
+
+
+def test_env_not_recording_the_clock_is_red():
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["render_invocation"]["env"] = {"MOR1_GENERATED_AT": "elsewhen"}
+    joined = _red(manifest)
+    assert "MOR1_GENERATED_AT" in joined
+
+
+# --- SOL build-identity addendum: origin + complete query shape -------------
+
+
+def test_foreign_origin_with_correct_path_query_hash_is_red():
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["final_url"] = "https://evil.example/reference.html?q=curve"
+    joined = _red(manifest)
+    assert "cross-origin" in joined
+
+
+def test_conflicting_repeated_q_values_are_red():
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["final_url"] = f"{BASE}/reference.html?q=curve&q=curve"
+    joined = _red(manifest)
+    assert "query" in joined
+
+
+def test_share_round_trip_on_the_wrong_origin_is_red():
+    """Correct path state, wrong host — that is not a round trip."""
+
+    manifest = _green_manifest()
+    share = manifest["pages"][0]["route_journey"]["steps"]["share"]
+    share["final_href"] = "https://evil.example/reference.html"
+    share["reopened"]["final_href"] = "https://evil.example/reference.html"
+    joined = _red(manifest)
+    assert "round-trip" in joined or "cross-origin" in joined

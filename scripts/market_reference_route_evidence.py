@@ -20,9 +20,11 @@ current-disk hashes cannot stand in for a clean immutable subject.
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import struct
 import subprocess
+import sys
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
@@ -941,7 +943,14 @@ def _validate_journey(
         # ``final_href = href``.
         parsed_href = parse_href(href)
         parsed_final = parse_href(final_href)
-        computed = bool(parsed_href is not None and parsed_href == parsed_final)
+        # Origin is part of the round trip: a share URL that reopens the right
+        # path/query/hash on the WRONG host has not round-tripped.
+        computed = bool(
+            parsed_href is not None
+            and parsed_href == parsed_final
+            and _origin_of(href) is not None
+            and _origin_of(href) == _origin_of(final_href)
+        )
         if share.get("matches_final") is not True:
             errors.append(
                 f"journey share.matches_final is not exactly true: {share.get('matches_final')!r}"
@@ -1022,6 +1031,102 @@ def expected_query_entry_ids_cached(query: str | None, probes: Mapping[str, Any]
 # ---------------------------------------------------------------------------
 # candidate binding
 # ---------------------------------------------------------------------------
+
+
+# Paths the builder needs in a replay checkout. Deliberately narrow: this is a
+# rebuild of one page, not a clone.
+REPLAY_TREES = ("scripts", "config", "templates", "lib")
+
+
+@lru_cache(maxsize=16)
+def _replay_render(
+    repo_root: Path,
+    source_commit: str,
+    interpreter: str,
+    clock: str,
+) -> tuple[int, str, str]:
+    """Rebuild ``site/reference.html`` from the SUBJECT COMMIT in a fresh tree.
+
+    ``git archive`` gives a clean checkout of the immutable subject without
+    touching the repo's worktree registry or the caller's working tree. Returns
+    ``(returncode, digest, detail)``; digest is '' when the build produced no
+    page.
+    """
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="mor1-replay-") as tmp:
+        root = Path(tmp)
+        archive = subprocess.run(
+            ["git", "-C", str(repo_root), "archive", source_commit, *REPLAY_TREES],
+            capture_output=True,
+            check=False,
+        )
+        if archive.returncode != 0:
+            return (-1, "", f"git archive failed: {archive.stderr.decode('utf-8', 'replace')[:200]}")
+        extract = subprocess.run(
+            ["tar", "-x", "-C", str(root)], input=archive.stdout, capture_output=True, check=False
+        )
+        if extract.returncode != 0:
+            return (-1, "", f"tar extract failed: {extract.stderr.decode('utf-8', 'replace')[:200]}")
+        (root / "site").mkdir(exist_ok=True)
+        env = dict(os.environ)
+        env["MOR1_GENERATED_AT"] = clock
+        env["PYTHONPATH"] = str(root)
+        proc = subprocess.run(
+            [interpreter, "-m", RENDER_MODULE],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        page = root / "site" / "reference.html"
+        digest = _sha256_file(page) if page.is_file() else ""
+        detail = (proc.stderr or proc.stdout or "").strip()[-300:]
+        return (proc.returncode, digest, detail)
+
+
+def _verify_render_replay(
+    *,
+    repo_root: Path,
+    source_commit: str,
+    invocation: Any,
+    expected_digest: Any,
+) -> list[str]:
+    if not isinstance(invocation, Mapping):
+        return ["render replay skipped: render_invocation missing"]
+    clock = invocation.get("generated_at")
+    if not isinstance(clock, str) or not clock.strip():
+        return [
+            "render_invocation.generated_at missing — the presentation clock must be an "
+            "explicit recorded build input, or no replay can confirm the committed page"
+        ]
+    env = invocation.get("env")
+    if not isinstance(env, Mapping) or env.get("MOR1_GENERATED_AT") != clock:
+        return [
+            "render_invocation.env must record MOR1_GENERATED_AT equal to generated_at; "
+            f"got {env!r}"
+        ]
+    argv = invocation.get("argv")
+    interpreter = argv[0] if isinstance(argv, list) and argv else ""
+    if not isinstance(interpreter, str) or not Path(interpreter).exists():
+        # Replay needs a runnable interpreter; fall back to this process's.
+        interpreter = sys.executable
+    rc, digest, detail = _replay_render(repo_root, source_commit, interpreter, clock)
+    if rc != 0:
+        return [
+            f"clean-checkout replay of {source_commit[:12]} exited {rc}: {detail}"
+        ]
+    if not digest:
+        return [f"clean-checkout replay of {source_commit[:12]} produced no site/reference.html"]
+    if digest != expected_digest:
+        return [
+            "clean-checkout replay does not reproduce the committed artifact: replayed "
+            f"{digest[:16]}… != subject site/reference.html {str(expected_digest)[:16]}… "
+            "(the committed page was not built from this subject with this clock)"
+        ]
+    return []
 
 
 def _authenticate_binding(
@@ -1240,6 +1345,21 @@ def _authenticate_binding(
             blob_check(rel, digest, "local_asset_digests")
 
     resolve_blob_checks()
+
+    # --- deterministic clean-checkout replay --------------------------------
+    # A command/argv receipt can be perfectly self-consistent while the
+    # committed page was produced from a dirty tree or a different clock. The
+    # only proof is to REBUILD from the subject commit in a fresh checkout and
+    # compare bytes.
+    if not errors:
+        errors.extend(
+            _verify_render_replay(
+                repo_root=repo_root,
+                source_commit=source_commit,
+                invocation=binding.get("render_invocation"),
+                expected_digest=binding.get("site_reference_sha256"),
+            )
+        )
 
     # --- evidence descendant purity ----------------------------------------
     rc_diff, changed = _git(

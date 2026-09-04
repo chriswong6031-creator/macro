@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +42,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_ROOT))
 
 from scripts import capture_page_evidence as cpe  # noqa: E402
+from scripts.build_market_reference import GENERATED_AT_ENV  # noqa: E402
 from scripts.market_reference_route_evidence import (  # noqa: E402
     EVIDENCE_DIR_REL,
     REQUIRED_RENDER_INPUTS,
@@ -160,12 +162,20 @@ def _run_render() -> dict[str, Any]:
     """
 
     argv = [sys.executable, "-m", "scripts.build_market_reference"]
+    # The presentation clock is PINNED and recorded, so a clean-checkout replay
+    # of the same subject commit reproduces the artifact byte for byte. It is
+    # derived from git (HEAD's committer instant), not invented, and it is the
+    # value the verifier replays with.
+    clock = _git_output("show", "-s", "--format=%cI", "HEAD")
+    env = dict(os.environ)
+    env[GENERATED_AT_ENV] = clock
     proc = subprocess.run(
         argv,
         cwd=str(REPO),
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
     if proc.returncode != 0:
         raise RuntimeError(
@@ -181,8 +191,13 @@ def _run_render() -> dict[str, Any]:
         "returncode": proc.returncode,
         "input_digests": input_digests,
         "output_digests": output_digests,
-        "bit_reproducible": False,
-        "not_reproducible_reason": "the page stamps its own build time (Updated <UTC>)",
+        "generated_at": clock,
+        "env": {GENERATED_AT_ENV: clock},
+        "bit_reproducible": True,
+        "reproducible_note": (
+            "byte-reproducible given the recorded generated_at; the presentation "
+            "clock is an explicit build input, not an implicit wall clock"
+        ),
     }
 
 

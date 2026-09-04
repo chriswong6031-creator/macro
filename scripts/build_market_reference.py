@@ -17,6 +17,7 @@ Usage: python -m scripts.build_market_reference
 from __future__ import annotations
 
 import logging
+import os
 import re
 import string
 import sys
@@ -512,6 +513,42 @@ def build_view_model(entries: list[dict]) -> tuple[list[dict], list[dict], list[
     return vm, families, letters
 
 
+GENERATED_AT_ENV = "MOR1_GENERATED_AT"
+GENERATED_AT_FORMAT = "%Y-%m-%d %H:%M UTC"
+
+
+def resolve_generated_at() -> str:
+    """The page's presentation clock, as an EXPLICIT build input.
+
+    An implicit ``datetime.now()`` made the artifact unreproducible: an
+    independent replay one minute later necessarily produced different bytes
+    even when every real input was identical, so no clean-checkout replay could
+    ever confirm the committed page. ``MOR1_GENERATED_AT`` closes the clock so a
+    replay of the same subject commit with the same recorded instant is
+    byte-identical. Unset, behaviour is unchanged (wall clock), so the nightly
+    render is untouched.
+    """
+
+    pinned = os.environ.get(GENERATED_AT_ENV)
+    if pinned:
+        pinned = pinned.strip()
+        # Accept the rendered form, or an ISO instant that normalizes to it.
+        try:
+            return datetime.strptime(pinned, GENERATED_AT_FORMAT).strftime(GENERATED_AT_FORMAT)
+        except ValueError:
+            pass
+        try:
+            parsed = datetime.fromisoformat(pinned.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise SystemExit(
+                f"{GENERATED_AT_ENV}={pinned!r} is neither '{GENERATED_AT_FORMAT}' nor ISO-8601"
+            ) from exc
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc).strftime(GENERATED_AT_FORMAT)
+    return datetime.now(timezone.utc).strftime(GENERATED_AT_FORMAT)
+
+
 def main() -> int:
     site = config.ROOT / "site"
     try:
@@ -526,7 +563,7 @@ def main() -> int:
         return 1
 
     entries_vm, families_vm, letters = build_view_model(entries)
-    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    generated_at = resolve_generated_at()
 
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template(TEMPLATE_NAME).render(
