@@ -184,6 +184,30 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
             "release clock shown."
         ),
     ),
+    SuitePage(
+        workspace_id="consumer_payments",
+        region="US",
+        template="macro_consumer_payments.html.j2",
+        output="macro_consumer_payments.html",
+        seo_title="US Consumer & Payments — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Retail sales, consumer sentiment, household credit, saving and "
+            "delinquencies for the United States — payments panels and sources "
+            "still being collected are typed honestly, never imputed."
+        ),
+    ),
+    SuitePage(
+        workspace_id="national_debt_liabilities",
+        region="US",
+        template="macro_national_debt_liabilities.html.j2",
+        output="macro_national_debt_liabilities.html",
+        seo_title="US National Debt & Liabilities — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Treasury cash balance, net issuance, auction demand and BIS debt-service "
+            "reads for the United States, with the missing debt-stock lanes disclosed "
+            "rather than fabricated."
+        ),
+    ),
 )
 
 

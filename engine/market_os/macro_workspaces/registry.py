@@ -195,6 +195,41 @@ REGISTRY: dict[str, dict] = {
             "case_shiller_hpi",
         ),
     },
+    "consumer_payments": {
+        "id": "consumer_payments",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.consumer_payments",
+        "method_version": "consumer_payments.compose.v1",
+        "title_en": "Consumer & Payments",
+        "title_zh": "消费与支付",
+        "subtitle_en": "Cash-flow/spending momentum x consumer credit stress",
+        "subtitle_zh": "现金流/支出动能 × 消费信贷压力",
+        # Only the two series populated on disk today are required; the seven
+        # config-appended consumer_household legs are optional until the nightly
+        # collect lands them (housing's ZORI precedent — optional never degrades).
+        "required_components": (
+            "retail_sales",
+            "consumer_sentiment",
+        ),
+    },
+    "national_debt_liabilities": {
+        "id": "national_debt_liabilities",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.national_debt",
+        "method_version": "national_debt_liabilities.compose.v1",
+        "title_en": "National Debt & Liabilities",
+        "title_zh": "国债与负债",
+        "subtitle_en": "Refinancing/issuance pressure x fiscal capacity/interest-burden resilience",
+        "subtitle_zh": "再融资/发行压力 × 财政能力/利息负担韧性",
+        "required_components": (
+            "tga",
+            "net_issuance",
+            "withheld_taxes",
+            "auction_demand",
+        ),
+    },
 }
 
 # Declare the remaining not-yet-built workspaces so the registry lists the

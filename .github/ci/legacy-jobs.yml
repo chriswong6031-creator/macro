@@ -13683,6 +13683,8 @@ jobs:
       - "tests/test_macro_workspace_business_activity.py"
       - "tests/test_macro_workspace_capital_structure.py"
       - "tests/test_macro_workspace_consumer.py"
+      # R6 2026-09-04: Consumer & Household + National Debt composer suites.
+      - "tests/test_macro_workspace_consumer_payments.py"
       - "tests/test_macro_workspace_contract.py"
       - "tests/test_macro_workspace_financial_conditions.py"
       - "tests/test_macro_workspace_growth.py"
@@ -13692,6 +13694,7 @@ jobs:
       - "tests/test_macro_workspace_liquidity_central_banks.py"
       - "tests/test_macro_workspace_liquidity_regime.py"
       - "tests/test_macro_workspace_monetary_policy.py"
+      - "tests/test_macro_workspace_national_debt.py"
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -13708,6 +13711,7 @@ jobs:
           tests/test_macro_workspace_business_activity.py
           tests/test_macro_workspace_capital_structure.py
           tests/test_macro_workspace_consumer.py
+          tests/test_macro_workspace_consumer_payments.py
           tests/test_macro_workspace_contract.py
           tests/test_macro_workspace_financial_conditions.py
           tests/test_macro_workspace_growth.py
@@ -13717,6 +13721,7 @@ jobs:
           tests/test_macro_workspace_liquidity_central_banks.py
           tests/test_macro_workspace_liquidity_regime.py
           tests/test_macro_workspace_monetary_policy.py
+          tests/test_macro_workspace_national_debt.py
           -q
 
   market-os-macro-suite-pages:
@@ -13758,6 +13763,9 @@ jobs:
       # R4/R5 2026-09-04: Capital Structure + Housing pages.
       - "templates/macro_capital_structure.html.j2"
       - "templates/macro_housing_real_estate.html.j2"
+      # R6 2026-09-04: Consumer & Household + National Debt pages.
+      - "templates/macro_consumer_payments.html.j2"
+      - "templates/macro_national_debt_liabilities.html.j2"
       - "templates/macro_suite.css"
       - "templates/macro_suite.js"
       - "templates/macro_suite_boot.js"
