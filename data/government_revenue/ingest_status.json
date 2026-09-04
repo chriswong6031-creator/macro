@@ -2,16 +2,16 @@
   "action_awards_attempted": 168,
   "action_awards_succeeded": 168,
   "action_page_size": 5000,
-  "actions_seen": 34387,
-  "actions_total": 35383,
+  "actions_seen": 34396,
+  "actions_total": 35392,
   "award_event_spine": {
-    "action_versions_seen": 34387,
-    "action_versions_total": 35380,
+    "action_versions_seen": 34396,
+    "action_versions_total": 35389,
     "activation_state": "live",
-    "award_action_versions_row_count": 35380,
-    "award_action_versions_semantic_sha256": "7dcbe9ed8cf2c579755902c99677c6741a11725f754c322446b7af79b969e493",
-    "award_event_snapshots_row_count": 303,
-    "award_event_snapshots_semantic_sha256": "51a07498b001ac737ec259d9ecc1471b7e4d9cf394562867c1d50d49e113ec71",
+    "award_action_versions_row_count": 35389,
+    "award_action_versions_semantic_sha256": "7ab291748e5415f1365297a86f468ca08098b99ea6ae41627724c3576cdfe9a1",
+    "award_event_snapshots_row_count": 314,
+    "award_event_snapshots_semantic_sha256": "5d8f3da1d6ef1523b7810f7e3760c30898735e9edb8a675d8854325bc67a44bd",
     "baseline_completed_at": "2026-08-09T23:26:53.143216+00:00",
     "baseline_started_at": "2026-08-09T23:26:53.143216+00:00",
     "bounded_sample_complete": true,
@@ -230,15 +230,15 @@
     "coverage_manifest_changed_this_run": false,
     "coverage_manifest_id": "award-coverage-4c6b9a67f7f044aaa6563af2277dac0f7ddd1b976ae383f74aba8b0ea022343f",
     "coverage_scope": "USAspending award-detail and transaction observations collected from bounded recipient-query discovery; not a complete federal procurement corpus or issuer attribution.",
-    "event_eligible_action_versions_seen": 34387,
+    "event_eligible_action_versions_seen": 34396,
     "event_eligible_snapshots_seen": 168,
     "full_receipt_bound_baseline_this_run": true,
-    "last_observed_at": "2026-09-03T08:04:14.713092+00:00",
-    "projection_generation_id": "award-event-206bb03e7b8aeffe235b045a",
-    "projection_semantic_sha256": "206bb03e7b8aeffe235b045a56dfb82b4c466c11d4664acd429f22fda138bb26",
+    "last_observed_at": "2026-09-04T17:42:58.811976+00:00",
+    "projection_generation_id": "award-event-901f041c0e997b1166450a46",
+    "projection_semantic_sha256": "901f041c0e997b1166450a465b1fb83d61a27e00a070f44101be5e9e3f509e02",
     "schema_version": "government_revenue.award_event_projection_state.v1",
     "snapshots_seen": 168,
-    "snapshots_total": 303,
+    "snapshots_total": 314,
     "source_exhausted": false,
     "state_is_stale_because": null,
     "state_reflects_this_run": true,
@@ -247,7 +247,7 @@
   },
   "award_search_limit_per_entity": 200,
   "awards_seen": 3773,
-  "awards_total": 3837,
+  "awards_total": 3838,
   "baseline_activation": {
     "activated_this_run": true,
     "blocked_by": null,
@@ -479,17 +479,17 @@
     "new_receipts_this_run": 376,
     "path": "collection_receipts.jsonl",
     "raw_response_bodies_persisted": false,
-    "receipt_payloads_sha256": "425b1383827a7b06d1fe52e5c79313007beab0ee105cda7a26240347e55a26db",
-    "receipts_total": 11168,
+    "receipt_payloads_sha256": "276b4b227bd17ca8486321fe41047809d57fff78daffddd1b96fea686ece3e18",
+    "receipts_total": 11544,
     "response_receipts_this_run": 376,
-    "run_id": "usaspending-690dfe075169b79292286af4",
+    "run_id": "usaspending-c1521636e6ad1377b7ee17cb",
     "schema_version": "government_revenue.collection_receipt.v1"
   },
   "coverage_scope": "bounded recipient-query award data plus bounded award-detail/action sample; not full USAspending coverage",
   "detail_awards_attempted": 168,
   "detail_awards_limit_per_entity": 8,
   "detail_awards_succeeded": 168,
-  "effective_at": "2026-09-03",
+  "effective_at": "2026-09-04",
   "entities_configured_total": 21,
   "entities_mapped": 21,
   "entities_requested": 21,
@@ -613,7 +613,7 @@
   "lookback_days": 1826,
   "max_action_pages_per_award": 100,
   "max_pages_per_entity": 2,
-  "observed_at": "2026-09-03T08:04:14.713092+00:00",
+  "observed_at": "2026-09-04T17:42:58.811976+00:00",
   "page_size": 100,
   "partial": true,
   "rails": {
@@ -653,10 +653,10 @@
         "unresolved_has_next_awards": 0
       },
       "records": {
-        "accepted": 34387,
-        "ledger_total": 35383,
-        "normalized": 34387,
-        "raw": 34387
+        "accepted": 34396,
+        "ledger_total": 35392,
+        "normalized": 34396,
+        "raw": 34396
       },
       "response_receipts": 168,
       "state": "partial"
@@ -691,7 +691,7 @@
       "records": {
         "candidate_awards": 168,
         "details_fetched": 168,
-        "ledger_total": 3837
+        "ledger_total": 3838
       },
       "response_receipts": 168,
       "state": "partial"
@@ -737,7 +737,7 @@
       },
       "records": {
         "accepted": 3773,
-        "ledger_total": 3837,
+        "ledger_total": 3838,
         "normalized": 3773,
         "raw": 3773
       },
@@ -746,7 +746,7 @@
     }
   },
   "schema_version": "government_revenue.ingest_status.v2",
-  "snapshots_total": 4923,
+  "snapshots_total": 4982,
   "source_urls": [
     "https://api.usaspending.gov/api/v2/search/spending_by_award/",
     "https://api.usaspending.gov/api/v2/awards/{award_id}/",
