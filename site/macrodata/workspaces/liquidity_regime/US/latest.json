@@ -333,19 +333,34 @@
     ]
   },
   "changes": {
-    "comparability": "NO_PRIOR",
-    "deltas": [],
-    "null_reason": "WARMUP",
-    "prior_effective_date": null,
-    "prior_generation_id": null,
-    "prior_method_version": null,
-    "status": "ABSENT"
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 20.05,
+        "delta": 0.0,
+        "metric_id": "funding_pressure",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 20.05
+      },
+      {
+        "current_value": 25.12,
+        "delta": 0.0,
+        "metric_id": "balance_sheet_support",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 25.12
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-09-03",
+    "prior_generation_id": "liquidity_regime-US-628bad5c6a1b534d",
+    "prior_method_version": "liquidity_regime.compose.v1",
+    "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
-    "predecessor_generation_id": null
+    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
+    "predecessor_generation_id": "liquidity_regime-US-628bad5c6a1b534d"
   },
   "drivers": {
     "balance_sheet": [
@@ -452,21 +467,21 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T11:15:18Z",
+    "built_at": "2026-09-04T15:38:06Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "7d11b76b935ab5dc33d6d5b18098b0682fbfbb78",
-    "content_sha256": "e63031977e4f6499f8a073c157df8aee096576a4bd33bb7bbc04e501ac2912b3",
-    "generation_id": "liquidity_regime-US-e63031977e4f6499",
+    "code_version": "7b59eeff974997364e2046720899451d823dd469",
+    "content_sha256": "2b9033a7dcf8d03abb893d54df75d55f1b881d362549bdab45066dc60b8b3518",
+    "generation_id": "liquidity_regime-US-2b9033a7dcf8d03a",
     "producer": "engine.market_os.macro_workspaces.liquidity_regime",
     "rendered_at": null
   },
   "headline": {
     "effective_date": "2026-09-03",
     "hysteresis": {
-      "applied": false,
+      "applied": true,
       "band": 5.0,
       "held_prior": false,
-      "note": "no comparable prior print; raw threshold classification, hysteresis not applied"
+      "note": "raw classification already matches the prior print; no boundary crossing, hysteresis not engaged"
     },
     "method_version": "liquidity_regime.compose.v1",
     "nearest_boundary": {
@@ -476,15 +491,15 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": null,
-      "dy": null,
-      "null_reason": "WARMUP",
-      "status": "ABSENT"
+      "dx": 0.0,
+      "dy": 0.0,
+      "null_reason": null,
+      "status": "PRESENT"
     },
     "prior_state": {
-      "effective_date": null,
-      "method_version": null,
-      "state_id": null
+      "effective_date": "2026-09-03",
+      "method_version": "liquidity_regime.compose.v1",
+      "state_id": "C"
     },
     "quadrant": {
       "x": 20.05,
@@ -502,7 +517,7 @@
       "en": "Rate / liquidity regime",
       "zh": "利率 / 流动性体制"
     },
-    "transition_distance": null
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [

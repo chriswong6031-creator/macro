@@ -90,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
         built_at = args.built_at or _utc_now_iso()
         code_version = args.code_version or _git_sha()
 
-        receipt = _build.build_liquidity_regime(
+        receipts = _build.build_all(
             regime_latest_path=args.regime_latest,
             out_root=args.out_root,
             built_at=built_at,
@@ -99,28 +99,36 @@ def main(argv: list[str] | None = None) -> int:
             write=not args.no_write,
         )
 
-        snap = receipt["snapshot"]
-        availability_state = snap["availability"]["state"]
-        summary = {
-            "workspace": "liquidity_regime/US",
+        worst_degraded = False
+        summaries = []
+        for key, receipt in receipts.items():
+            if key == "_manifest":
+                continue
+            snap = receipt["snapshot"]
+            availability_state = snap["availability"]["state"]
+            if availability_state not in _USABLE_AVAILABILITY:
+                worst_degraded = True
+            summaries.append({
+                "workspace": key,
+                "generation_id": snap["generation"]["generation_id"],
+                "content_sha256": receipt["digest"],
+                "bytes": receipt["bytes"],
+                "headline_state": snap["headline"]["state_id"],
+                "availability_state": availability_state,
+                "contradiction": snap["availability"]["contradiction"]["present"],
+            })
+        print(json.dumps({
             "built_at": built_at,
             "code_version": code_version,
-            "generation_id": snap["generation"]["generation_id"],
-            "content_sha256": receipt["digest"],
-            "bytes": receipt["bytes"],
-            "headline_state": snap["headline"]["state_id"],
-            "state_label": snap["headline"]["state_label"]["en"],
-            "funding_pressure_x": snap["headline"]["quadrant"]["x"],
-            "balance_sheet_support_y": snap["headline"]["quadrant"]["y"],
-            "one_month_vector": snap["headline"]["one_month_vector"],
-            "availability_state": availability_state,
-            "contradiction": snap["availability"]["contradiction"]["present"],
-            "written": receipt["paths"],
-        }
-        print(json.dumps(summary, indent=2, ensure_ascii=False))
+            "workspaces": summaries,
+            "manifest": receipts["_manifest"]["path"],
+        }, indent=2, ensure_ascii=False))
         if args.do_print:
-            print(json.dumps(snap, indent=2, ensure_ascii=False, sort_keys=True))
-        return 0 if availability_state in _USABLE_AVAILABILITY else 2
+            for key, receipt in receipts.items():
+                if key == "_manifest":
+                    continue
+                print(json.dumps(receipt["snapshot"], indent=2, ensure_ascii=False, sort_keys=True))
+        return 2 if worst_degraded else 0
     except Exception as exc:  # noqa: BLE001 - hard failure path, must not raise past main()
         print(f"build_macro_workspaces: FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)

@@ -166,20 +166,38 @@ def _fake_receipt(availability_state: str) -> dict:
             "paths": {"workspace": None, "manifest": None}}
 
 
+def _fake_receipts(availability_state: str) -> dict:
+    # The CLI consumes build_all()'s receipts shape: one entry per built
+    # workspace plus the "_manifest" bookkeeping entry.
+    return {
+        "liquidity_regime/US": _fake_receipt(availability_state),
+        "_manifest": {"manifest": {}, "path": None},
+    }
+
+
 def test_cli_main_returns_0_when_current(monkeypatch) -> None:
-    monkeypatch.setattr(cli._build, "build_liquidity_regime", lambda **kw: _fake_receipt("CURRENT"))
+    monkeypatch.setattr(cli._build, "build_all", lambda **kw: _fake_receipts("CURRENT"))
     assert cli.main(["--no-write"]) == 0
 
 
 def test_cli_main_returns_0_when_late_within_tolerance(monkeypatch) -> None:
-    monkeypatch.setattr(cli._build, "build_liquidity_regime",
-                        lambda **kw: _fake_receipt("LATE_WITHIN_TOLERANCE"))
+    monkeypatch.setattr(cli._build, "build_all",
+                        lambda **kw: _fake_receipts("LATE_WITHIN_TOLERANCE"))
     assert cli.main(["--no-write"]) == 0
 
 
 def test_cli_main_returns_2_when_typed_degraded(monkeypatch) -> None:
-    monkeypatch.setattr(cli._build, "build_liquidity_regime",
-                        lambda **kw: _fake_receipt("STALE_SOURCE"))
+    monkeypatch.setattr(cli._build, "build_all",
+                        lambda **kw: _fake_receipts("STALE_SOURCE"))
+    assert cli.main(["--no-write"]) == 2
+
+
+def test_cli_main_returns_2_when_any_one_workspace_is_degraded(monkeypatch) -> None:
+    # Suite-wide worst-state law: one degraded workspace among healthy ones
+    # still exits 2 -- a green exit must mean every published workspace is usable.
+    receipts = _fake_receipts("CURRENT")
+    receipts["growth_real_economy/US"] = _fake_receipt("SOURCE_FAILED")
+    monkeypatch.setattr(cli._build, "build_all", lambda **kw: receipts)
     assert cli.main(["--no-write"]) == 2
 
 
@@ -187,7 +205,7 @@ def test_cli_main_returns_1_on_hard_failure(monkeypatch, capsys) -> None:
     def _boom(**kw):
         raise RuntimeError("owner artifact missing")
 
-    monkeypatch.setattr(cli._build, "build_liquidity_regime", _boom)
+    monkeypatch.setattr(cli._build, "build_all", _boom)
     rc = cli.main(["--no-write"])
     assert rc == 1
     err = capsys.readouterr().err
