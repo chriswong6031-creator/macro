@@ -9,8 +9,21 @@ and validates it against the closed contract, and publishes atomically:
 The suite manifest carries the generation identity plus, per published
 workspace, the content hash, byte size, availability state, minimum client
 contract, and build state. The workspace body is written FIRST (tmp + os.replace)
-and the manifest LAST, so a reader that validates manifest -> workspace hash
-before rendering never sees a manifest describing a body that is not yet on disk.
+and the manifest LAST. That ordering bounds the failure window to one
+direction only: a concurrent reader can observe an OLD manifest paired with a
+NEWER body on disk (the manifest's declared content_sha256 then differs from
+the body's actual digest), but never the reverse -- os.replace of the body
+always completes before the manifest write begins, so a manifest can never
+name a body that is not yet on disk.
+
+This is a property AVAILABLE to a validating reader, not a guarantee this repo
+enforces end-to-end today: no consumer shipped in R1A cross-checks the
+manifest's declared content_sha256 against the body it names before using it
+(``consumer.py`` only self-validates a body's own embedded digest against
+itself; it never opens the manifest at all). A reader that wants torn-
+generation safety must read the manifest, then the body, then recompute and
+compare the body's digest against the manifest's declared content_sha256
+itself -- R1B is expected to implement that validating reader.
 
 Pure projection: no owner path is mutated, no mutable service state is created.
 """

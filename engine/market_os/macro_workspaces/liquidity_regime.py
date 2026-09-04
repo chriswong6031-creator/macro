@@ -31,16 +31,27 @@ owner input always yields an identical snapshot body.
 from __future__ import annotations
 
 import copy
+from hashlib import sha256
 from typing import Any, Mapping
 
 METHOD_VERSION = "liquidity_regime.compose.v1"
-AXIS_DEFINITION_VERSION = "1.0.0"
+# Bumped 1.0.0 -> 1.1.0: adversarial review round 1 finding F1 corrected the
+# hysteresis crossing rule (a method change to axes[*]/headline.hysteresis
+# semantics). Architecture 7.8 requires the definition version to move on a
+# method change; this constant feeds both axis.definition_version and
+# metric.definition_version, so the move is disclosed directly in the
+# published artifact.
+AXIS_DEFINITION_VERSION = "1.1.0"
 PRODUCER = "engine.market_os.macro_workspaces.liquidity_regime"
 
 BOUNDARY = 50.0
 HYSTERESIS_BAND = 5.0
 ROC_SCALE_BN = 500.0   # net-liquidity RoC that maps to a full half-axis swing
 Z_SCALE = 2.5          # HY-OAS z that maps to a full half-axis swing
+# F7: the ON RRP buffer is a facility balance and cannot economically go
+# negative. A near-zero reading (0 <= value <= floor) is a legitimate typed
+# "at the floor" disclosure; a negative reading is a data-quality failure.
+RRP_FLOOR_BN = 1.0
 
 # Quadrant labels (architecture 10.1 / reference A/B/C/D grid).
 _QUADRANTS = {
@@ -265,6 +276,33 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
     # ---- contradiction: quantity vs quality ----------------------------- #
     contradiction = _detect_contradiction(lq, roc_raw, quality_raw, stress_overlay, composition)
 
+    # F3: a fired contradiction is a typed DISAGREEMENT on the AFFECTED axis,
+    # never left silently PRESENT with the contradiction only visible in a
+    # side block. The numeric axis value stays published (typed disagreement,
+    # not censoring) -- only value_status / the quadrant's matching x_status
+    # or y_status / the implicated components' coverage_state move to
+    # DISAGREEMENT. Guarded on the axis value actually being computed: an
+    # already-ABSENT axis (coverage-floor refusal) is a different typed state
+    # and must not be overwritten to claim a value exists.
+    if contradiction["present"]:
+        affected_ids = set(contradiction["components"])
+        y_ids = {c["component_id"] for c in y_components}
+        x_ids = {c["component_id"] for c in x_components}
+        if y_value is not None and affected_ids & y_ids:
+            y_status = "DISAGREEMENT"
+            for c in y_components:
+                if c["component_id"] in affected_ids:
+                    c["coverage_state"] = "DISAGREEMENT"
+        if x_value is not None and affected_ids & x_ids:
+            x_status = "DISAGREEMENT"
+            for c in x_components:
+                if c["component_id"] in affected_ids:
+                    c["coverage_state"] = "DISAGREEMENT"
+
+    # F7: RRP buffer floor/failure flag, threaded to the drivers note.
+    rrp_raw_for_floor = _num(_get(lq, "rrp_buffer_bn"))
+    rrp_floor_flag = rrp_raw_for_floor is not None and 0 <= rrp_raw_for_floor <= RRP_FLOOR_BN
+
     # ---- freshness roll-up over the REQUIRED set ------------------------ #
     required_ids = ("net_liquidity_roc", "liquidity_quality_level", "nfci_pctile", "ofr_fsi_pctile")
     by_id = {c["component_id"]: c for c in (y_components + x_components)}
@@ -330,7 +368,9 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
                   "higher_stronger", y_value, y_status, y_null, y_components, y_avail,
                   low_en="Weak support", low_zh="弱支持", high_en="Strong support", high_zh="强支持",
                   weights_law="weighted mean of standardized components, weights renormalized over present; quality label 0.40, overlay level 0.35, net-liquidity RoC 0.25",
-                  transformation="owner labels mapped to descriptive support levels (benign-expansion 85 ... contracting 20); RoC mapped 50+clamp(roc/500bn,-1,1)*50",
+                  transformation="owner labels mapped to descriptive support levels (benign-expansion 85 ... contracting 20); RoC mapped 50+clamp(roc/500bn,-1,1)*50; "
+                                 f"RRP buffer disclosure (informational, not axis-weighted): 0 <= value <= {RRP_FLOOR_BN}bn is typed 'rrp_floor' (status stays PRESENT, "
+                                 "flagged in implications/drivers); a negative value is physically impossible for a facility balance and is typed SOURCE_FAILED",
                   frequency_alignment="net-liquidity quantity/quality is weekly (Fed H.4.1 Wed, released Thu) with a 3-business-day owner lag; overlay/quality share the same cadence"),
         ]},
         "metrics": {"items": _metrics(r, lq, cond, stress_overlay, asof, vintages,
@@ -340,19 +380,14 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
             "status": "ABSENT",
             "null_reason": "INSUFFICIENT_HISTORY",
         },
-        "drivers": _drivers(x_components, y_components),
+        "drivers": _drivers(x_components, y_components, rrp_floor=rrp_floor_flag),
         "changes": changes,
         "implications": {"items": _implications(headline, x_value, y_value, contradiction,
                                                worst, coverage_ratio, lq)},
         "scenario_contract": _scenario_contract(),
         "alert_contract": _alert_contract(),
         "sources": {"items": _sources(asof, vintages, lq, stale_inputs)},
-        "corrections": {
-            "predecessor_generation_id": _get(prior_snapshot, "generation", "generation_id"),
-            "changed_fingerprints": [],
-            "correction_state": "none",
-            "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
-        },
+        "corrections": _corrections(x_components, y_components, asof, prior_snapshot),
         "learning": {
             "instrumentation": "first_party",
             "event_names": [
@@ -450,15 +485,43 @@ def _headline(x_value, x_status, x_null, y_value, y_status, y_null, asof,
     state_id = None
     held_prior = False
     applied = False
+    raw = None
+    crossed_axes: list[str] = []
     if computable:
         raw = _classify(x_value, y_value)
         state_id = raw
         if comparable_prior:
             applied = True
-            within_band = (abs(x_value - BOUNDARY) <= HYSTERESIS_BAND) or (abs(y_value - BOUNDARY) <= HYSTERESIS_BAND)
-            if raw != prior_id and within_band:
-                state_id = prior_id
-                held_prior = True
+            if raw != prior_id:
+                # F1 fix: hysteresis may hold the prior quadrant ONLY if every
+                # axis that actually crossed the 50 boundary (relative to its
+                # OWN prior print value) is within the band. An axis idling
+                # near its own boundary WITHOUT crossing it must never suppress
+                # a decisive flip on a different axis (the old rule ORed
+                # "either axis near ITS boundary", which let a calm axis
+                # suppress the other's real flip).
+                prior_x_num = prior_x if isinstance(prior_x, (int, float)) else None
+                prior_y_num = prior_y if isinstance(prior_y, (int, float)) else None
+                if prior_x_num is not None and prior_y_num is not None:
+                    if (x_value >= BOUNDARY) != (prior_x_num >= BOUNDARY):
+                        crossed_axes.append("funding_pressure")
+                    if (y_value >= BOUNDARY) != (prior_y_num >= BOUNDARY):
+                        crossed_axes.append("balance_sheet_support")
+                    within_band = {
+                        "funding_pressure": abs(x_value - BOUNDARY) <= HYSTERESIS_BAND,
+                        "balance_sheet_support": abs(y_value - BOUNDARY) <= HYSTERESIS_BAND,
+                    }
+                    # Vacuously true when crossed_axes is empty: raw != prior_id
+                    # here only because prior_id was itself an earlier HELD
+                    # state that no longer matches classify(prior_x, prior_y) —
+                    # nothing has crossed a boundary since that print, so keep
+                    # holding it.
+                    if all(within_band[a] for a in crossed_axes):
+                        state_id = prior_id
+                        held_prior = True
+                # else: no usable numeric prior axis values (e.g. WARMUP-style
+                # malformed prior) -> hysteresis cannot hold anything; the raw
+                # classification stands.
 
     if state_id is not None:
         label = _QUADRANTS[state_id]
@@ -486,15 +549,36 @@ def _headline(x_value, x_status, x_null, y_value, y_status, y_null, asof,
                "status": "PRESENT", "null_reason": None}
         transition_distance = round(((x_value - prior_x) ** 2 + (y_value - prior_y) ** 2) ** 0.5, 2)
     else:
-        vec = {"dx": None, "dy": None, "status": "ABSENT",
-               "null_reason": "WARMUP" if prior_snapshot is None else "INSUFFICIENT_HISTORY"}
+        # F6: mirror _changes()'s own comparability gate (prior_method !=
+        # METHOD_VERSION -> METHOD_CHANGED/COMPUTATION_REFUSED) instead of
+        # collapsing every non-WARMUP case into INSUFFICIENT_HISTORY. A prior
+        # print on an incomparable method is a refused computation, not a
+        # genuine lack of history.
+        if prior_snapshot is None:
+            vec_null = "WARMUP"
+        elif prior_method != METHOD_VERSION:
+            vec_null = "COMPUTATION_REFUSED"
+        else:
+            vec_null = "INSUFFICIENT_HISTORY"
+        vec = {"dx": None, "dy": None, "status": "ABSENT", "null_reason": vec_null}
         transition_distance = None
 
-    note = "hysteresis holds the prior quadrant when the flipping axis is within the band of its boundary"
-    if held_prior:
-        note = "prior quadrant held: the flip is within the hysteresis band of the boundary"
-    elif not applied:
+    # F1: disclosure text describes the corrected per-axis-crossing rule.
+    if not applied:
         note = "no comparable prior print; raw threshold classification, hysteresis not applied"
+    elif not held_prior and raw == prior_id:
+        note = "raw classification already matches the prior print; no boundary crossing, hysteresis not engaged"
+    elif held_prior:
+        crossed_txt = " and ".join(crossed_axes) if crossed_axes else "no axis"
+        note = (f"prior quadrant held: {crossed_txt} crossed the 50 boundary since the prior "
+                f"print but stayed within the {HYSTERESIS_BAND}-pt hysteresis band of ITS OWN "
+                f"boundary; an axis idling near 50 without crossing it can never suppress a "
+                f"decisive flip on a different axis")
+    else:
+        crossed_txt = " and ".join(crossed_axes) if crossed_axes else "the classification"
+        note = (f"prior quadrant not held: {crossed_txt} crossed the 50 boundary and moved beyond "
+                f"the {HYSTERESIS_BAND}-pt hysteresis band, so the transition to the raw quadrant "
+                f"is accepted")
 
     return {
         "state_id": state_id,
@@ -617,6 +701,14 @@ def _metrics(r, lq, cond, stress_overlay, asof, vintages, x_value, y_value,
     lq_asof = _get(lq, "asof") or asof
     x_fresh = _worst_freshness([c["freshness"] for c in x_components]) if x_components else "SOURCE_FAILED"
     y_fresh = _worst_freshness([c["freshness"] for c in y_components]) if y_components else "SOURCE_FAILED"
+    # F7: a negative RRP buffer is physically impossible for a facility
+    # balance -> typed SOURCE_FAILED, never published as a trustworthy number.
+    # 0 <= value <= RRP_FLOOR_BN is a legitimate near-zero floor read: status
+    # stays PRESENT (see _implications/_drivers for the 'rrp_floor' flag).
+    rrp_raw = _num(_get(lq, "rrp_buffer_bn"))
+    rrp_negative = rrp_raw is not None and rrp_raw < 0
+    rrp_status = "SOURCE_FAILED" if rrp_negative else "PRESENT"
+    rrp_null_reason = "SOURCE_FAILED" if rrp_negative else None
     items = [
         _metric("funding_pressure", x_value, "score_0_100", "score", "composite_prior_only",
                 "higher_tighter", "engine.market_os.macro_workspaces.liquidity_regime",
@@ -630,10 +722,11 @@ def _metrics(r, lq, cond, stress_overlay, asof, vintages, x_value, y_value,
                 "roc_over_owner_window", "higher_stronger", "engine.regime.liquidity_quality",
                 "liquidity_quality.quantity_roc_bn", lq_asof,
                 _liquidity_freshness(_get(lq, "quantity_roc_bn") is not None, lq)),
-        _metric("rrp_buffer_bn", _num(_get(lq, "rrp_buffer_bn")), "currency_bn", "USD_bn",
+        _metric("rrp_buffer_bn", rrp_raw, "currency_bn", "USD_bn",
                 "level", "higher_more_cushion", "engine.regime.liquidity_quality",
                 "liquidity_quality.rrp_buffer_bn", lq_asof,
-                _liquidity_freshness(_get(lq, "rrp_buffer_bn") is not None, lq)),
+                "SOURCE_FAILED" if rrp_negative else _liquidity_freshness(rrp_raw is not None, lq),
+                status=rrp_status, null_reason=rrp_null_reason),
         _metric("nfci", _num(_get(cond, "financial_conditions", "nfci")), "index", "stddev",
                 "level", "higher_tighter", "engine.conditions.financial_conditions",
                 "conditions.financial_conditions.nfci", _get(vintages, "nfci", "asof"),
@@ -657,10 +750,18 @@ def _metrics(r, lq, cond, stress_overlay, asof, vintages, x_value, y_value,
     return items
 
 
-def _drivers(x_components, y_components) -> dict:
+def _drivers(x_components, y_components, *, rrp_floor: bool = False) -> dict:
     def _to_driver(c, unit):
         contrib = c["contribution"]
         sign = 0 if contrib is None else (1 if contrib > 0 else (-1 if contrib < 0 else 0))
+        note = f"signed push = (standardized-50)*weight toward the axis high side; standardized={c['standardized_value']}, weight={c['weight']}"
+        # F7: rrp_buffer_bn is informational (not itself axis-weighted); the
+        # nearest weighted proxy for it is net_liquidity_roc, so the floor
+        # flag surfaces there rather than inventing a new driver slot (the
+        # drivers schema is closed to exactly rate_side/balance_sheet).
+        if rrp_floor and c["component_id"] == "net_liquidity_roc":
+            note += (f" [rrp_floor] RRP buffer is at/below its {RRP_FLOOR_BN}bn descriptive floor: "
+                     "the benign RRP->reserves cushion is exhausted.")
         return {
             "driver_id": c["component_id"],
             "label": c["label"],
@@ -669,7 +770,7 @@ def _drivers(x_components, y_components) -> dict:
             "unit": unit,
             "impact_sign": sign,
             "impact_magnitude": None if contrib is None else abs(contrib),
-            "note": f"signed push = (standardized-50)*weight toward the axis high side; standardized={c['standardized_value']}, weight={c['weight']}",
+            "note": note,
             "coverage_state": c["coverage_state"],
         }
     rate_side = [_to_driver(c, u) for c, u in zip(
@@ -698,13 +799,16 @@ def _implications(headline, x_value, y_value, contradiction, worst_freshness,
     items: list[dict] = []
     state_id = headline["state_id"]
     if state_id is not None:
-        label = _QUADRANTS[state_id]["en"]
+        # F11: the zh narrative must interpolate the zh quadrant label, never
+        # the English one -- each language string stays self-contained.
+        label_en = _QUADRANTS[state_id]["en"]
+        label_zh = _QUADRANTS[state_id]["zh"]
         items.append({
             "implication_id": "state_descriptive",
             "text": _bil(
-                f"US liquidity regime reads {state_id} - {label} (funding pressure x={x_value}, "
+                f"US liquidity regime reads {state_id} - {label_en} (funding pressure x={x_value}, "
                 f"balance-sheet support y={y_value}, boundary 50).",
-                f"美国流动性体制读数为 {state_id} - {label}（融资压力 x={x_value}，资产负债表支持 y={y_value}，分界 50）。"),
+                f"美国流动性体制读数为 {state_id} - {label_zh}（融资压力 x={x_value}，资产负债表支持 y={y_value}，分界 50）。"),
             "evidence_class": "DESCRIPTIVE",
             "confidence": conf,
             "horizon": "current",
@@ -751,6 +855,26 @@ def _implications(headline, x_value, y_value, contradiction, worst_freshness,
             "contradictions": [],
             "trace_ref": "data/regime/latest.json#liquidity_quality.rrp_exhausted",
         })
+    # F7: our own typed near-zero floor read (rrp_floor), independent of the
+    # owner's own rrp_exhausted boolean above -- a diagnostics entry so a
+    # zero/near-zero buffer is never a silent, unflagged PRESENT number.
+    rrp_raw = _num(_get(lq, "rrp_buffer_bn"))
+    if rrp_raw is not None and 0 <= rrp_raw <= RRP_FLOOR_BN:
+        items.append({
+            "implication_id": "rrp_floor_note",
+            "text": _bil(
+                f"RRP buffer reads {rrp_raw}bn, at/below the {RRP_FLOOR_BN}bn descriptive floor "
+                "(rrp_floor): a typed disclosure that the buffer has essentially no further room to "
+                "cushion, not a neutral reading.",
+                f"逆回购缓冲读数为 {rrp_raw} 十亿美元，处于 {RRP_FLOOR_BN} 十亿美元描述性下限（rrp_floor）"
+                "或以下：这是类型化披露——缓冲已基本没有进一步缓冲空间，而非中性读数。"),
+            "evidence_class": "MECHANISM_SUPPORTED",
+            "confidence": conf,
+            "horizon": "weeks",
+            "channels": ["reserves", "funding"],
+            "contradictions": [],
+            "trace_ref": "data/regime/latest.json#liquidity_quality.rrp_buffer_bn",
+        })
     return items
 
 
@@ -796,6 +920,80 @@ def _alert_contract() -> dict:
         ],
         "status": "ABSENT",
         "note": "Eligible condition types are declared; R1A writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    }
+
+
+# F8: which axis components' owner-native raw values back which named source.
+_SOURCE_COMPONENT_MAP: dict[str, tuple[str, ...]] = {
+    "net_liquidity": ("liquidity_overlay_level", "liquidity_quality_level", "net_liquidity_roc"),
+    "nfci": ("nfci_pctile",),
+    "ofr_fsi": ("ofr_fsi_pctile",),
+    "hy_oas": ("hy_oas_z",),
+}
+
+
+def _prior_component_raw(prior_snapshot, component_id):
+    for axis in (_get(prior_snapshot, "axes", "items") or []):
+        for c in (axis.get("components") or []):
+            if c.get("component_id") == component_id:
+                return c.get("raw_value")
+    return None
+
+
+def _corrections(x_components, y_components, asof, prior_snapshot) -> dict:
+    """F8: minimal, honest supersession detection.
+
+    A "correction" is a REVISION of the same reference period's published
+    read (predecessor's headline.effective_date == this print's asof), not
+    the normal day-over-day evolution of a new observation -- a new asof is
+    a new print, never a correction of the old one. changed_fingerprints
+    lists which owner-native source components moved between the two prints
+    of that SAME period, each as ``{source_id}:{component_id}:{digest16}``.
+
+    This is a scoped subset of full source-vintage revision tracking (per
+    adversarial review finding F8): it compares the published axis-component
+    raw values captured in the predecessor print against this print's, not a
+    persisted vintage/revision ledger. Sufficient to make correction_state
+    honest (never hardcoded 'none' when a same-period value actually moved),
+    not a complete revision-history system.
+    """
+    prior_gen = _get(prior_snapshot, "generation", "generation_id")
+    if prior_snapshot is None:
+        return {
+            "predecessor_generation_id": None,
+            "changed_fingerprints": [],
+            "correction_state": "none",
+            "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
+        }
+    prior_asof = _get(prior_snapshot, "headline", "effective_date")
+    if prior_asof != asof:
+        return {
+            "predecessor_generation_id": prior_gen,
+            "changed_fingerprints": [],
+            "correction_state": "none",
+            "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
+        }
+    current_raw = {c["component_id"]: c["raw_value"] for c in (list(x_components) + list(y_components))}
+    changed: list[str] = []
+    for source_id, comp_ids in _SOURCE_COMPONENT_MAP.items():
+        for cid in comp_ids:
+            cur = current_raw.get(cid)
+            prev = _prior_component_raw(prior_snapshot, cid)
+            if cur != prev:
+                digest16 = sha256(f"{source_id}:{cid}:{cur!r}".encode("utf-8")).hexdigest()[:16]
+                changed.append(f"{source_id}:{cid}:{digest16}")
+    if changed:
+        return {
+            "predecessor_generation_id": prior_gen,
+            "changed_fingerprints": sorted(changed),
+            "correction_state": "superseded",
+            "note": "Same reference period as the predecessor print, but one or more owner-native source components changed value: this print supersedes the prior one as a revision.",
+        }
+    return {
+        "predecessor_generation_id": prior_gen,
+        "changed_fingerprints": [],
+        "correction_state": "none",
+        "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
     }
 
 

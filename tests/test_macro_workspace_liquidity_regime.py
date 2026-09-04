@@ -155,6 +155,19 @@ def test_contradiction_quantity_vs_quality_is_typed_disagreement() -> None:
     # surfaced as an implication too, never silently calm
     assert any(i["implication_id"] == "quantity_quality_contradiction"
                for i in snap["implications"]["items"])
+    # F3: the literal DISAGREEMENT enum lands on the affected axis, never left
+    # as a plain PRESENT with the contradiction only in a side block. Value
+    # stays published (typed disagreement, not censoring).
+    axis = _axis(snap, "balance_sheet_support")
+    assert axis["value_status"] == "DISAGREEMENT"
+    assert axis["value"] is not None
+    assert snap["headline"]["quadrant"]["y_status"] == "DISAGREEMENT"
+    for cid in ("net_liquidity_roc", "liquidity_quality_level"):
+        comp = next(c2 for c2 in axis["components"] if c2["component_id"] == cid)
+        assert comp["coverage_state"] == "DISAGREEMENT"
+    # x axis is untouched -- the contradiction only implicates y-side components
+    assert _axis(snap, "funding_pressure")["value_status"] != "DISAGREEMENT"
+    assert snap["headline"]["quadrant"]["x_status"] != "DISAGREEMENT"
 
 
 def test_hollow_expansion_is_flagged() -> None:
@@ -165,6 +178,11 @@ def test_hollow_expansion_is_flagged() -> None:
     snap = _compose(reg)
     assert snap["availability"]["contradiction"]["present"] is True
     assert snap["availability"]["contradiction"]["kind"] == "hollow_expansion"
+    # F3: same typed-DISAGREEMENT requirement for the hollow-expansion path.
+    axis = _axis(snap, "balance_sheet_support")
+    assert axis["value_status"] == "DISAGREEMENT"
+    assert axis["value"] is not None
+    assert snap["headline"]["quadrant"]["y_status"] == "DISAGREEMENT"
 
 
 # --------------------------------------------------------------------------- #
@@ -194,6 +212,11 @@ def test_method_version_mismatch_refuses_numeric_comparison() -> None:
     assert snap["changes"]["comparability"] == "METHOD_CHANGED"
     assert snap["changes"]["deltas"] == []
     assert snap["changes"]["null_reason"] == "COMPUTATION_REFUSED"
+    # F6: the sibling one_month_vector must carry the SAME refusal reason as
+    # changes, not the WARMUP/INSUFFICIENT_HISTORY mislabel (a prior exists,
+    # it is just on an incomparable method -- a refused computation).
+    assert snap["headline"]["one_month_vector"]["status"] == "ABSENT"
+    assert snap["headline"]["one_month_vector"]["null_reason"] == "COMPUTATION_REFUSED"
 
 
 def test_comparable_prior_produces_deltas_and_vector() -> None:
@@ -244,6 +267,130 @@ def test_hysteresis_flips_when_both_axes_beyond_band() -> None:
     snap = _compose(reg, prior_snapshot=_prior(state_id="D", x=52.0, y=48.0))
     assert snap["headline"]["hysteresis"]["held_prior"] is False
     assert snap["headline"]["state_id"] == "C"
+
+
+def test_hysteresis_does_not_suppress_decisive_flip_on_other_axis() -> None:
+    # F1 regression: funding_pressure flips decisively (x: 20 -> 90, far
+    # beyond the band) while balance_sheet_support idles near ITS OWN
+    # boundary (y ~ 49) WITHOUT crossing it (prior y=48, also < 50). The old
+    # buggy rule ORed "either axis within band of its own boundary" and would
+    # have held the prior quadrant C off y idling near 50, wrongly suppressing
+    # x's real flip. The corrected rule only lets CROSSING axes gate the
+    # hold; y never crossed, so it cannot suppress x's flip.
+    reg = _regime_at((1.0, 1.0, 100.0), -40.0)
+    snap = _compose(reg, prior_snapshot=_prior(state_id="C", x=20.0, y=48.0))
+    assert snap["headline"]["quadrant"]["x"] == 90.0
+    assert abs(snap["headline"]["quadrant"]["y"] - 50) <= liquidity_regime.HYSTERESIS_BAND
+    assert snap["headline"]["hysteresis"]["held_prior"] is False
+    assert snap["headline"]["state_id"] == "D"
+
+
+# --------------------------------------------------------------------------- #
+# F11: zh narrative strings must never embed an English quadrant label
+# --------------------------------------------------------------------------- #
+_QUADRANT_EN_LABEL_PHRASES = ("Easy funding", "Tight funding", "Strong support", "Weak support")
+
+
+def _find_english_label_leaks(node, path: str = "$") -> list[tuple[str, str, str]]:
+    """Walk every bilingual {"en": ..., "zh": ...} pair in a composed snapshot
+    and flag any zh string that contains one of the English quadrant-label
+    phrases (the F11 bug class: a shared interpolation variable leaking the
+    English label into the zh narrative instead of using the zh label)."""
+    leaks: list[tuple[str, str, str]] = []
+    if isinstance(node, dict):
+        zh = node.get("zh")
+        if "en" in node and isinstance(zh, str):
+            for phrase in _QUADRANT_EN_LABEL_PHRASES:
+                if phrase in zh:
+                    leaks.append((path, phrase, zh))
+        for k, v in node.items():
+            leaks.extend(_find_english_label_leaks(v, f"{path}.{k}"))
+    elif isinstance(node, list):
+        for idx, v in enumerate(node):
+            leaks.extend(_find_english_label_leaks(v, f"{path}[{idx}]"))
+    return leaks
+
+
+def test_zh_narrative_never_embeds_english_quadrant_label() -> None:
+    # F11: e.g. the state_descriptive implication's zh text must interpolate
+    # the zh quadrant label ("易融资/弱支持" etc.), never the English one.
+    # Exercise two different quadrants so both label pairs get walked.
+    for x_targets, y_target in (((0.05, 0.05, 5.0), -400.0),   # easy funding / weak support -> C
+                                ((1.0, 1.0, 100.0), -400.0)):  # tight funding / weak support -> D
+        reg = _regime_at(x_targets, y_target)
+        snap = _compose(reg)
+        assert snap["headline"]["state_id"] in ("A", "B", "C", "D")
+        leaks = _find_english_label_leaks(snap)
+        assert leaks == [], f"English quadrant label leaked into zh field(s): {leaks}"
+
+
+# --------------------------------------------------------------------------- #
+# F7: RRP buffer floor / negative-value typed states
+# --------------------------------------------------------------------------- #
+def test_rrp_buffer_at_zero_is_typed_floor_present() -> None:
+    reg = _base_regime()
+    reg["liquidity_quality"]["rrp_buffer_bn"] = 0.0
+    snap = _compose(reg)
+    m = next(i for i in snap["metrics"]["items"] if i["metric_id"] == "rrp_buffer_bn")
+    assert m["status"] == "PRESENT"
+    assert m["value"] == 0.0
+    assert m["null_reason"] is None
+    assert any(i["implication_id"] == "rrp_floor_note" for i in snap["implications"]["items"])
+    driver = next(d for d in snap["drivers"]["balance_sheet"] if d["driver_id"] == "net_liquidity_roc")
+    assert "rrp_floor" in driver["note"]
+
+
+def test_rrp_buffer_negative_is_typed_source_failed() -> None:
+    reg = _base_regime()
+    reg["liquidity_quality"]["rrp_buffer_bn"] = -3.5
+    snap = _compose(reg)
+    m = next(i for i in snap["metrics"]["items"] if i["metric_id"] == "rrp_buffer_bn")
+    assert m["status"] == "SOURCE_FAILED"
+    assert m["null_reason"] == "SOURCE_FAILED"
+    assert m["value"] == -3.5  # typed provenance, not censored
+    # a physically-impossible reading must never be silently flagged 'rrp_floor'
+    assert not any(i["implication_id"] == "rrp_floor_note" for i in snap["implications"]["items"])
+
+
+# --------------------------------------------------------------------------- #
+# F8: corrections / supersession honesty
+# --------------------------------------------------------------------------- #
+def test_corrections_none_for_first_print() -> None:
+    snap = _compose(_base_regime())
+    assert snap["corrections"]["correction_state"] == "none"
+    assert snap["corrections"]["predecessor_generation_id"] is None
+    assert snap["corrections"]["changed_fingerprints"] == []
+
+
+def test_corrections_superseded_when_same_period_source_value_changes() -> None:
+    reg = _base_regime()
+    prior_snap = contract.finalize(_compose(reg))
+    reg2 = copy.deepcopy(reg)
+    reg2["liquidity_quality"]["quantity_roc_bn"] = -300.0  # revision, SAME asof
+    snap2 = _compose(reg2, prior_snapshot=prior_snap)
+    assert snap2["corrections"]["correction_state"] == "superseded"
+    assert snap2["corrections"]["changed_fingerprints"]
+    assert any(fp.startswith("net_liquidity:net_liquidity_roc:")
+               for fp in snap2["corrections"]["changed_fingerprints"])
+    assert snap2["corrections"]["predecessor_generation_id"] == prior_snap["generation"]["generation_id"]
+
+
+def test_corrections_none_when_same_period_no_source_change() -> None:
+    reg = _base_regime()
+    prior_snap = contract.finalize(_compose(reg))
+    snap2 = _compose(copy.deepcopy(reg), prior_snapshot=prior_snap)
+    assert snap2["corrections"]["correction_state"] == "none"
+    assert snap2["corrections"]["changed_fingerprints"] == []
+
+
+def test_corrections_none_when_reference_period_advances() -> None:
+    reg = _base_regime()
+    prior_snap = contract.finalize(_compose(reg))
+    reg2 = copy.deepcopy(reg)
+    reg2["asof"] = reg2["date"] = "2026-09-04"  # new observation, not a revision
+    reg2["liquidity_quality"]["quantity_roc_bn"] = -300.0
+    snap2 = _compose(reg2, prior_snapshot=prior_snap)
+    assert snap2["corrections"]["correction_state"] == "none"
 
 
 # --------------------------------------------------------------------------- #

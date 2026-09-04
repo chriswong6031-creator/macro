@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-09-04T10:21:47Z",
+  "generated_at": "2026-09-04T11:15:18Z",
   "min_client_contract": "mastermind.macro_workspace_snapshot.v1@1.0.0",
   "schema": "mastermind.macro_workspace_manifest.v1",
   "workspaces": {
     "liquidity_regime/US": {
       "availability_state": "CURRENT",
       "build_state": "BUILT",
-      "built_at": "2026-09-04T10:21:47Z",
-      "bytes": 33795,
-      "content_sha256": "635d7fdc9665d2165003ce3eb1eef899faef8828d6d49afdd58e0fdd8ca51df8",
-      "generation_id": "liquidity_regime-US-635d7fdc9665d216",
+      "built_at": "2026-09-04T11:15:18Z",
+      "bytes": 34041,
+      "content_sha256": "e63031977e4f6499f8a073c157df8aee096576a4bd33bb7bbc04e501ac2912b3",
+      "generation_id": "liquidity_regime-US-e63031977e4f6499",
       "headline_state": "C",
       "path": "workspaces/liquidity_regime/US/latest.json",
       "region": "US",

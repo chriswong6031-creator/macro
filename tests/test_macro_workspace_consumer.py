@@ -90,6 +90,11 @@ def test_inert_on_unsupported_version() -> None:
     snap["schema"]["version"] = "2.0.0"
     out = consumer.summarize(snap)
     assert out["state"] == "INERT"
+    # F9: strengthen -- an unsupported schema version must surface a visible,
+    # typed audit reason, not just a bare INERT state.
+    assert out["audit"]["contract_ok"] is False
+    assert out["audit"]["reason_code"] == "CONTRACT_INVALID"
+    assert "2.0.0" in out["audit"]["detail"] or "unsupported schema version" in out["audit"]["detail"]
 
 
 def test_inert_on_stale_snapshot_but_active_when_stale_allowed() -> None:
@@ -108,6 +113,18 @@ def test_inert_on_unreadable_path() -> None:
     out = consumer.summarize_from_path(ROOT / "does" / "not" / "exist.json")
     assert out["state"] == "INERT"
     assert out["audit"]["reason_code"] == "SNAPSHOT_UNREADABLE"
+
+
+def test_inert_on_snapshot_not_json(tmp_path) -> None:
+    # F9: a readable file that is not valid JSON is a distinct typed failure
+    # from an unreadable path -- must not raise, must surface SNAPSHOT_NOT_JSON.
+    p = tmp_path / "latest.json"
+    p.write_bytes(b"{not: valid json,,,")
+    out = consumer.summarize_from_path(p)
+    assert out["state"] == "INERT" and out["active"] is False
+    assert out["summary"] is None
+    assert out["audit"]["contract_ok"] is False
+    assert out["audit"]["reason_code"] == "SNAPSHOT_NOT_JSON"
 
 
 def test_summarize_from_path_roundtrip(tmp_path) -> None:
