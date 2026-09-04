@@ -25,9 +25,20 @@ A pull request is PARKED only when all of these are true:
 When those conditions hold, the unmerged state is intentional and externally
 controlled. Report the work as **PARKED / HOLD-FOR-SOL**, not SHIPPED and not
 `SHIP LOOP BLOCKED`. Do not merge, mark ready, arm automation, relabel, or repeatedly
-poll/retry merely to satisfy the ordinary merge completion rule. End the session
-after one concise evidence report. Resume the ship loop only after Sol releases or
-changes the hold.
+poll/retry merely to satisfy the ordinary merge completion rule. Report the evidence
+once. Resume the ship loop only after Sol releases or changes the hold.
+
+PARKED is terminal for the current ship/merge attempt, never for the worker. The
+reciprocal worker/Sol child dialogue remains nonterminal: the same child, carrier,
+branch and PR resume on a same-carrier Sol `CONTINUE` / `RULING` / `REQUEST_REPAIR`,
+and only an explicit same-carrier Sol STOP (or `ACCEPTED / STOP`, `CLOSED / STOP`)
+closes the child. A reasoning session may yield its turn at PARKED only after it has
+posted one exact-carrier `RESULT / HOLD-FOR-SOL` and established a truthful
+continuation path: `WATCH_ARMED` only for a real, verified registration, otherwise
+`WATCH_UNAVAILABLE` naming the surface checked and the exact failure. "Waiting for
+Sol" is not a continuation path, and going silent on the holding authority is not a
+lawful stop. This rule is law, not evidence — it never establishes that any watcher
+is actually armed (`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`).
 
 If any condition above is missing, ambiguous, red, pending, dirty, or stale, fail
 closed and follow the ordinary ship loop instead. A vague request to "hold" or

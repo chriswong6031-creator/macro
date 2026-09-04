@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -419,3 +420,243 @@ def test_stop_hook_routes_through_wrapper_but_keeps_original_guard_as_delegate()
         for hook in entry["hooks"]
     ]
     assert any("ship_loop_guard.py" in hook.get("command", "") for hook in session_hooks)
+
+
+# --------------------------------------------------------------------------------------
+# PARKED message: the ship/merge attempt is terminal; the worker<->Sol dialogue is not.
+#
+# Operation macro-hold-dialogue-separation-20260901-sol-001. Repository law described
+# PARKED as "terminal for the current session" at four source-law sites and once here at
+# runtime. That is true of the ship/merge attempt and false of the reciprocal child
+# dialogue, so a lawful held worker read it as an order to close the dialogue as well and
+# went silent on Sol — which Mastermind docs/AGENT_DIALOGUE_SESSION_CLOSE_LAW.md forbids
+# ("silence is never a terminal receipt"). These tests pin the separation, and pin that it
+# is a MESSAGE correction only: parked still requires every binding check concluded green,
+# and merge/Ready/auto-merge/render/deploy/retry stay forbidden.
+# --------------------------------------------------------------------------------------
+
+
+PARKED_PROBE = {
+    "number": 6608,
+    "branch": "claude/biocatalyst-p1-0r-authority-closure",
+    "head": HEAD,
+    "candidate_kind": "ordinary_unmerged",
+    "source_blocker": "unmerged",
+    "status": "parked",
+    "red": [],
+    "pending": [],
+    "passed": ["ci-gate", "fences"],
+}
+
+
+def _parked_text() -> str:
+    message = WRAPPER._parked_message(PARKED_PROBE)
+    assert set(message) == {"systemMessage"}, "PARKED stays a systemMessage, not a decision"
+    return message["systemMessage"]
+
+
+def test_parked_message_separates_ship_terminal_from_dialogue_terminal():
+    text = _parked_text()
+    lowered = text.lower()
+
+    assert "SHIP LOOP PARKED" in text
+    assert "not SHIPPED" in text
+    assert "dialogue remains nonterminal" in text
+    assert "only explicit Sol STOP" in text
+    assert "same child" in text
+    assert "same carrier" in text
+    # What is actually terminal, stated positively.
+    assert "terminal for the current ship/merge attempt" in text
+    # The exact conflation this repair removes must not come back in any phrasing.
+    for banned in (
+        "terminal for the current session",
+        "the session is terminal",
+        "this session is terminal",
+        "the child is terminal",
+        "the worker is terminal",
+        "the dialogue is terminal",
+    ):
+        assert banned not in lowered, f"re-conflates ship attempt with dialogue: {banned!r}"
+    # "Just wait for Sol" is not a continuation path; the law requires a real receipt.
+    assert "wait for sol" not in lowered
+
+
+def test_parked_message_requires_truthful_continuation_receipt_before_yield():
+    text = _parked_text()
+    lowered = text.lower()
+
+    # Both alternatives must be offered, so a worker with no watcher has a truthful
+    # option other than disappearing.
+    assert "WATCH_ARMED" in text
+    assert "WATCH_UNAVAILABLE" in text
+    # The posted return is a precondition of yielding, not an afterthought.
+    assert "exact-carrier" in lowered
+    assert "RESULT" in text
+    assert "HOLD-FOR-SOL" in text
+    # The hook is non-authoritative: it may state the obligation, never claim it is met.
+    for banned in (
+        "watcher is armed",
+        "watcher has been armed",
+        "a watcher was armed",
+        "your watcher is armed",
+        "watch_armed receipt exists",
+    ):
+        assert banned not in lowered, f"hook must not claim watcher state: {banned!r}"
+
+
+def test_parked_message_claims_no_slack_state_and_creates_no_successor():
+    """The wrapper is a message surface, not a control plane."""
+    text = _parked_text()
+    lowered = text.lower()
+
+    # It cannot see Slack, so it must never report or infer Slack state.
+    assert "slack" not in lowered
+    assert re.search(r"\bC0B[A-Z0-9]{6,}\b", text) is None, "no channel/carrier id may be invented"
+    assert "http://" not in lowered and "https://" not in lowered
+    # It elects no Sol and mints no next unit of work.
+    assert "@" not in text
+    for banned in ("successor", "new session", "next wave", "spawn"):
+        assert banned not in lowered, f"hook must not create a successor: {banned!r}"
+
+
+def test_parked_message_still_forbids_every_release_action():
+    """The permission boundary this repair must not move."""
+    text = _parked_text()
+    lowered = text.lower()
+
+    # "mark ready", not bare "ready" — the latter is satisfied by the word "already".
+    for forbidden_action in ("merge", "mark ready", "auto-merge", "render", "deploy", "retry"):
+        assert forbidden_action in lowered, f"{forbidden_action!r} must still be named as forbidden"
+    assert "forbidden" in lowered
+    # Green-check evidence is still reported, so PARKED cannot be read as a bare assertion.
+    assert "ci-gate" in text and "fences" in text
+
+
+def test_parked_message_is_pure_and_needs_no_probe_or_network(monkeypatch):
+    """`_parked_message` composes text only; eligibility stays in `_hold_probe`."""
+
+    def explode(*_args, **_kwargs):
+        raise AssertionError("_parked_message must not touch git, GitHub, or the filesystem")
+
+    monkeypatch.setattr(WRAPPER, "_git", explode)
+    monkeypatch.setattr(WRAPPER.subprocess, "run", explode)
+    assert "SHIP LOOP PARKED" in WRAPPER._parked_message(PARKED_PROBE)["systemMessage"]
+
+
+def test_main_parked_branch_emits_exactly_the_composed_message(monkeypatch, tmp_path, capsys):
+    """`main()` must print the helper's message, not a second divergent copy."""
+    _stub_clean_pushed_git(monkeypatch)
+    guard, _ = _fake_guard(tmp_path)
+    monkeypatch.setattr(WRAPPER, "_load_guard", lambda _path: guard)
+    monkeypatch.setattr(
+        WRAPPER,
+        "_read_payload",
+        lambda: ({"hook_event_name": "Stop", "cwd": str(tmp_path)}, b"{}"),
+    )
+    monkeypatch.setattr(
+        WRAPPER, "_relay", lambda *_a, **_k: pytest.fail("a lawful green hold must not delegate")
+    )
+
+    WRAPPER.main()
+
+    emitted = json.loads(capsys.readouterr().out)
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+    assert emitted == WRAPPER._parked_message(probe)
+
+
+# --------------------------------------------------------------------------------------
+# Source-law parity. Five files carry this rule; a future edit to one must not silently
+# re-open the conflation in another.
+# --------------------------------------------------------------------------------------
+
+
+PARITY_FILES = (
+    "CLAUDE.md",
+    "AGENTS.md",
+    "agentos/decisions/DEC-SOL-HOLD-IS-A-MERGE-BARRIER.md",
+    "agentos/decisions/DEC-SESSION-LENGTH-IS-NOT-A-COST-CONTROL.md",
+    "agentos/decisions/DEC-HOLD-PARKS-SHIP-NOT-DIALOGUE.md",
+    # Sixth law surface. The Cursor rule is a separate ENFORCEMENT surface, so it went
+    # on carrying the conflation ("End the session after one concise evidence report")
+    # while the other five were corrected — and it does not contain the banned phrase
+    # verbatim, so the ban alone would never have caught it. A worker on that surface
+    # would still have been told to close the dialogue at PARKED.
+    ".cursor/rules/ship-loop-terminal-states.mdc",
+)
+
+PARITY_TOKENS = (
+    "terminal for the current ship/merge attempt",
+    "dialogue remains nonterminal",
+    "explicit same-carrier Sol STOP",
+)
+
+
+def _source_law_text(relative: str) -> str:
+    """Return the file with whitespace normalized to single spaces.
+
+    Parity is a claim about meaning, not layout. Without this, a token that happens to
+    straddle a Markdown line wrap reads as absent — and, far worse, the banned phrase
+    would evade its own check simply by being re-wrapped across two lines.
+    """
+    return " ".join(_source_law_raw(relative).split())
+
+
+def _source_law_raw(relative: str) -> str:
+    path = ROOT / relative
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    proc = subprocess.run(
+        ("git", "show", f"HEAD:{relative}"),
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert proc.returncode == 0, f"{relative} unreadable: {proc.stderr}"
+    return proc.stdout
+
+
+@pytest.mark.parametrize("relative", PARITY_FILES)
+def test_source_law_agrees_ship_attempt_is_not_the_reciprocal_dialogue(relative):
+    text = _source_law_text(relative)
+    for token in PARITY_TOKENS:
+        assert token in text, f"{relative} is missing the parity token {token!r}"
+
+
+@pytest.mark.parametrize("relative", PARITY_FILES)
+def test_source_law_never_calls_parked_session_terminal(relative):
+    lowered = _source_law_text(relative).lower()
+    assert "terminal for the current session" not in lowered, (
+        f"{relative} still conflates the ship attempt with the child dialogue"
+    )
+
+
+def test_source_law_keeps_hold_a_hard_merge_barrier():
+    """Parity must never be achieved by weakening the barrier."""
+    decision = _source_law_text("agentos/decisions/DEC-HOLD-PARKS-SHIP-NOT-DIALOGUE.md")
+    lowered = decision.lower()
+    assert "merge barrier" in lowered
+    assert "not shipped" in lowered
+    # The green requirement is the gate that makes PARKED lawful at all.
+    assert "concluded green" in lowered
+
+
+def test_cursor_rule_no_longer_orders_the_session_closed_at_parked():
+    """The tenth-path falsifier: the banned phrase alone could not catch this one.
+
+    `.cursor/rules/ship-loop-terminal-states.mdc` never contained the literal string
+    `terminal for the current session`; it encoded the same conflation as an
+    instruction — "End the session after one concise evidence report" — so the parity
+    ban passed it while a Cursor-surface worker was still told to close the dialogue.
+    Pin the instruction's absence, not just the phrase's.
+    """
+    lowered = _source_law_text(".cursor/rules/ship-loop-terminal-states.mdc").lower()
+
+    for banned in ("end the session", "end your session", "stop the session"):
+        assert banned not in lowered, f"the Cursor rule still closes the session: {banned!r}"
+    # The prohibitions this surface already carried must survive the correction.
+    for kept in ("do not merge", "mark ready", "arm automation", "poll/retry"):
+        assert kept in lowered, f"tenth-path edit dropped an existing prohibition: {kept!r}"
+    # Law text is never evidence that a watcher exists.
+    assert "never establishes that any watcher" in lowered

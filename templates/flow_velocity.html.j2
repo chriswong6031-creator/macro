@@ -42,15 +42,62 @@
 {% set k = 'in' if (vel is not none and vel>=0.5) else ('out' if (vel is not none and vel<=-0.5) else 'mid') %}
 <span class="vstate {{ k }}">{{ t(en, zh) }}</span>
 {%- endmacro %}
+{# section watermark (W2, spec §3): any L1 section fed by a STALE leg gets a one-line band
+   directly under its own h2 — NOT an overlay, numbers stay readable, the band is unmissable.
+   ``legs`` is the list of source dicts (from snap.sources) that feed THIS section; the FIRST
+   STALE one found supplies the substituted date (a section is rarely fed by two independently
+   stale legs at once, and naming one real date beats averaging/guessing). DEGRADED never
+   triggers this — spec §3: "DEGRADED renders a quiet chip-level treatment only".
+   S6 repair: an UNAVAILABLE feeding leg (no date at all — never "showing — data") gets its
+   own wording branch, checked when no STALE leg is present (STALE takes priority when a
+   section is fed by more than one leg and they disagree). #}
+{% macro sec_watermark(legs) -%}
+{% set _stale_list = [] %}
+{% set _unavail_list = [] %}
+{% for _l in (legs or []) %}
+  {% if _l and _l.status == 'STALE' %}{% set _ = _stale_list.append(_l) %}
+  {% elif _l and _l.status == 'UNAVAILABLE' %}{% set _ = _unavail_list.append(_l) %}
+  {% endif %}
+{% endfor %}
+{% set _stale = _stale_list|first %}
+{% set _unavail = _unavail_list|first %}
+{% if _stale %}
+<div class="fv-watermark">
+  <span class="l-en">Showing last good data from {{ _stale.effective_date or '—' }} — source behind.</span>
+  <span class="l-zh">显示{{ _stale.effective_date or '—' }}最近有效数据 — 数据源滞后。</span>
+</div>
+{% elif _unavail %}
+<div class="fv-watermark fv-watermark--unavailable">
+  <span class="l-en">Source unavailable — this section has no current data.</span>
+  <span class="l-zh">数据源不可用——本节暂无当前数据。</span>
+</div>
+{% endif %}
+{%- endmacro %}
 {# confluence: a pure render-time CLASS from two existing fields — NOT a stored/ranked score #}
 {% macro confcls(vel, seat) -%}
 {%- if seat and vel is not none -%}
 {%- if vel>=0.5 and seat.dir=='buy' -%}conf-buy{%- elif vel<=-0.5 and seat.dir=='sell' -%}conf-sell{%- elif (vel>=0.5 and seat.dir=='sell') or (vel<=-0.5 and seat.dir=='buy') -%}conf-diverge{%- endif -%}
 {%- endif -%}
 {%- endmacro %}
-{# a Terminal-linked name, quiet until hover — reused everywhere a ticker appears #}
+{# a Terminal-linked name, quiet until hover — reused everywhere a ticker appears.
+   S9 repair (W6 review round): this used to hardcode the Terminal URL for EVERY
+   ticker unconditionally — engine.flow_observatory.workflow.terminal_link() (the
+   SAME EXISTING contract, spec §4) was written but never actually wired into this
+   macro, so a ticker outside the desk's own covered/scored universe still rendered a
+   dead link. `terminal_link`/`known_tickers` are optional render-context globals
+   (registered by scripts/build_flow_velocity.py's real render); a caller that never
+   supplies them (the W2/W4 test suites' own minimal `_render` helpers, which predate
+   W6 and are out of this repair's OWNED-FILES scope) keeps the OLD always-linked
+   behavior byte-for-byte via the else branch below — never a hard dependency. #}
 {% macro nameln(m) -%}
-<a href="https://app.mastermind-x.com/terminal?sym={{ m.ticker }}&amp;from=macro" target="_blank" rel="noopener">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a>
+{% if terminal_link is defined %}{% set _url = terminal_link(m.ticker, known_tickers if known_tickers is defined else none) %}
+{%- else %}{% set _url = ('https://app.mastermind-x.com/terminal?sym=' + m.ticker + '&from=macro') if m.ticker else none %}
+{%- endif -%}
+{%- if _url -%}
+<a href="{{ _url }}" target="_blank" rel="noopener">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a>
+{%- else -%}
+<span class="mname-unlinked">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></span>
+{%- endif -%}
 {%- endmacro %}
 {# one member sub-row — reused by every sector drill-down AND the "All names" leaderboard.
    B2 repair: this used to emit 5 <td> against the sectortbl's 8-column header, so the
@@ -66,16 +113,220 @@
    cell; (6) a single colspan-3 dash standing in for Quadrant/rank-Δ/flow-trend, which are
    theme-level, not per-member, concepts. Colspans sum to 1+1+1+1+1+3 = 8, matching the
    header exactly. #}
+{# W3: one "what changed today" row, any kind — quadrant transition, rank mover, quality
+   transition, or (new) a REVISION receipt (spec §2 pinned strings: EN "{name}: {session}
+   data revised" / ZH "{name}：{session}数据已修正", LENS carrying old→new detail). Shared
+   by the visible[:8] list and the collapsed all-changes <details> so the two never drift. #}
+{% macro chg_row(c, theme_names, src_by_id) -%}
+{% set _tr = theme_names.get(c.id) %}
+{% set _leg = src_by_id.get(c.id) %}
+{% if c.kind is defined and c.kind == 'revision' %}
+{% set _rev_label = (_tr.name, _tr.name_zh) if (c.entity_kind == 'theme' and _tr) else
+                    ((_leg.name_en, _leg.name_zh) if (c.entity_kind == 'market' and _leg) else
+                    (('Southbound', '南向') if c.id == 'southbound' else (c.id, c.id))) %}
+{% set _from = c.get('from') or {} %}
+{% set _to = c.get('to') or {} %}
+{% set _f_q = quadrant_labels.get(_from.get('quadrant')) if _from.get('quadrant') else none %}
+{% set _t_q = quadrant_labels.get(_to.get('quadrant')) if _to.get('quadrant') else none %}
+<li class="fv-chg-row fv-chg-row--revision"
+    data-tip-en="Revised: {{ (_f_q[0] if _f_q else (_from.get('status') or '—')) }} → {{ (_t_q[0] if _t_q else (_to.get('status') or '—')) }}{% if _to.get('vel') is not none %}, vel {{ '%+.2f'|format(_from.get('vel')) if _from.get('vel') is not none else '—' }} → {{ '%+.2f'|format(_to.get('vel')) }}{% endif %}."
+    data-tip-zh="已修正：{{ (_f_q[1] if _f_q else (_from.get('status') or '—')) }} → {{ (_t_q[1] if _t_q else (_to.get('status') or '—')) }}{% if _to.get('vel') is not none %}，流速 {{ '%+.2f'|format(_from.get('vel')) if _from.get('vel') is not none else '—' }} → {{ '%+.2f'|format(_to.get('vel')) }}{% endif %}。"
+    role="button" tabindex="0">
+  <b>{{ t(_rev_label[0], _rev_label[1]) }}</b>
+  <span class="l-en">: {{ c.effective_session }} data revised</span><span class="l-zh">：{{ c.effective_session }}数据已修正</span>
+</li>
+{% elif c.kind is defined and c.kind == 'quality' %}
+<li class="fv-chg-row">
+  <b>{{ t(_leg.name_en, _leg.name_zh) if _leg else c.id }}</b>
+  {% set _fw = status_word.get(c.from_status) or (c.from_status or '—', c.from_status or '—') %}
+  {% set _tw = status_word.get(c.to_status) or (c.to_status, c.to_status) %}
+  <span class="l-en">: {{ _fw[0] }} → {{ _tw[0] }}</span><span class="l-zh">：{{ _fw[1] }} → {{ _tw[1] }}</span>
+</li>
+{% elif c.from_quadrant is defined %}
+<li class="fv-chg-row">
+  <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
+  {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
+  {% set _to2 = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
+  <span class="l-en">: {{ _f[0] }} → {{ _to2[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to2[1] }}</span>
+</li>
+{% else %}
+<li class="fv-chg-row">
+  <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
+  <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
+  <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
+</li>
+{% endif %}
+{%- endmacro %}
 {% macro memberrow(m, sbt, sid, i, show=False) -%}
 {% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
-  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ nameln(m) }}</td>
+  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ nameln(m) }}{% if m.in_n_themes is defined and m.in_n_themes and m.in_n_themes >= 2 %}<span class="ovl-chip" data-tip-en="Also in {{ m.in_n_themes - 1 }} other curated theme(s) — curated themes may overlap" data-tip-zh="同时属于其他{{ m.in_n_themes - 1 }}个精选主题——精选主题可重叠" role="button" tabindex="0">{{ t('in %d themes'|format(m.in_n_themes), '属%d个主题'|format(m.in_n_themes)) }}</span>{% endif %}</td>
   <td>{% if seat %}<span class="seat {{ seat.dir }}" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
   <td class="tnum">{% if m.rate_4wk is defined and m.rate_4wk is not none %}<span class="chg {{ 'pos' if m.rate_4wk>=0 else 'neg' }}" style="opacity:.72">{{ '%+.1f'|format(m.rate_4wk) }}%</span>{% else %}<span class="chg na">—</span>{% endif %}</td>
   <td>{{ rate(m) }}</td>
   <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }} {{ vstate(m.state, m.state_zh, m.vel) }}</td>
   <td class="tnum" colspan="3"><span class="rk na">—</span></td>
 </tr>
+{%- endmacro %}
+{# W4: excluded/missing members — the drilldown's honest denominator receipt (spec
+   §3/§6 test 7). M3 repair: moved behind a native <details class="fv-disc"> (Tier-2)
+   whose summary carries only the COUNT ("53 excluded / 53只未纳入") — the full list
+   used to render as visible-by-default text (a baked-in ' show' class independent of
+   whether the sector drilldown was ever opened), leaking a dense name list above the
+   fold. The outer <tr> still rides the SAME accordion show/hide as every other
+   drilldown sub-row (no baked default — the click handler toggles it like any
+   .mrow[data-sector]); the inner <details> is a SECOND, independent disclosure the
+   reader opens deliberately once the drilldown itself is open. Official-lens entries
+   show a real display NAME (name_map-threaded, spec M3) — the ticker SLUG rides only
+   in the entry's own LENS tip, never as the primary label when a name exists. #}
+{% macro excludedrow(r, colspan=8, sector_id=none) -%}
+{% if r.excluded and r.excluded|length %}
+{# sector_id: the official lens' sector-row/member-rows use "off-{id}" (disambiguated
+   from the curated lens' bare id) — the accordion click handler toggles EVERY
+   .mrow[data-sector] sharing the CLICKED row's own data-sector value, so this row
+   must carry the SAME prefixed value the official lens uses, or it can never be
+   revealed (a real defect this fix exposed: the pre-repair baked ' show' default hid
+   this mismatch by always showing the row regardless of accordion state). #}
+<tr class="mrow fv-excl-row" data-sector="{{ sector_id if sector_id is not none else r.id }}">
+  <td colspan="{{ colspan }}" class="fv-excluded">
+    <details class="fv-disc">
+      <summary>{{ t('%d excluded'|format(r.excluded|length), '%d只未纳入'|format(r.excluded|length)) }}</summary>
+      <div class="fv-disc-body">
+        {% for e in r.excluded[:12] %}<span data-tip-en="{{ e.ticker }}" data-tip-zh="{{ e.ticker }}" role="button" tabindex="0">{{ e.name or e.ticker }}</span> <span class="l-en">({{ 'duplicate source classification' if e.reason == 'duplicate_membership' else e.reason }})</span><span class="l-zh">（{{ '来源重复分类' if e.reason == 'duplicate_membership' else ('无数据' if e.reason == 'missing' else '未评分') }}）</span>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% if r.excluded|length > 12 %} …{% endif %}
+      </div>
+    </details>
+  </td>
+</tr>
+{% endif %}
+{%- endmacro %}
+{# W4: concentration/contribution pinned drilldown line (spec §4, exact strings).
+   Shown right under the group's own row, one line, colspan across the table. M3
+   repair: no baked ' show' default (was visible whenever the row had members,
+   independent of whether the sector drilldown was ever opened) — rides the SAME
+   accordion show/hide as every other .mrow[data-sector] sub-row, collapsed until
+   drilled like the member rows themselves. #}
+{% macro concrow(r, colspan=8, sector_id=none) -%}
+{% if r.concentration and r.concentration.top1_share is not none %}
+{% set c = r.concentration %}
+{% set _dir_en = {'same':'same direction','flip':'flips','unknown':'unclear'}.get(c.without_top1_direction, 'unclear') %}
+{% set _dir_zh = {'same':'方向不变','flip':'方向反转','unknown':'不明确'}.get(c.without_top1_direction, '不明确') %}
+{# sector_id: see excludedrow's own comment above — same official-lens "off-{id}"
+   prefix requirement so the accordion click can actually reveal this row. #}
+<tr class="mrow fv-conc-row" data-sector="{{ sector_id if sector_id is not none else r.id }}">
+  <td colspan="{{ colspan }}">
+    <span class="l-en">top name = {{ '%.0f'|format(c.top1_share) }}% of gross flow · without it: {{ _dir_en }}</span>
+    <span class="l-zh">最大贡献个股占总流量{{ '%.0f'|format(c.top1_share) }}% · 剔除后：{{ _dir_zh }}</span>
+    {% if c.top3_pos or c.top3_neg %}
+    <span class="l-en"> — top: {% for cc in c.top3_pos[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}{% if c.top3_neg %}{% if c.top3_pos %} · {% endif %}bottom: {% for cc in c.top3_neg[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
+    <span class="l-zh"> — 领涨：{% for cc in c.top3_pos[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}{% if c.top3_neg %}{% if c.top3_pos %} · {% endif %}领跌：{% for cc in c.top3_neg[:3] %}{{ cc.name or cc.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
+    {% endif %}
+  </td>
+</tr>
+{% endif %}
+{%- endmacro %}
+{# W6 (spec §1): the per-group 60-session history drawer — server-rendered <details>,
+   reusing the existing SVG spark idiom (no new chart machinery). ``force_open``: the
+   spec's own page-weight bound — "JS-off shows the panel expanded for the top-3
+   THEMES only" — is implemented by pre-opening the <details> natively (no JS needed
+   to read it); every OTHER group still ships the identical full markup so a reader
+   (with or without JS) can open ANY of them, since <details>/<summary> needs no
+   script to toggle. This is the ONLY page-weight lever this wave pulls — see the PR
+   body's performance note for the measured delta and the "<800KB or demote depth"
+   gate (spec §6). #}
+{% macro historyrow(r, colspan=8, sector_id=none, force_open=False) -%}
+{% if r.history %}
+{% set h = r.history %}
+{% set sid = sector_id if sector_id is not none else r.id %}
+<tr class="mrow fv-hist-row" data-sector="{{ sid }}">
+  <td colspan="{{ colspan }}">
+    <details class="fv-disc fv-hist"{{ ' open' if force_open }}>
+      <summary>{{ t('60-session history','60日历史') }}</summary>
+      <div class="fv-disc-body">
+        {# B3 repair (W6 review round): `.fv-hist-text` wraps every piece of PROSE in
+           this drawer (caption + episode note/cards) so it can never inherit
+           `table.board td{white-space:nowrap}` — at 390px the caption used to run
+           off the visible edge and read as truncated mid-word (it was technically
+           inside the table's own .tbl-wrap horizontal-scroll container, but a static
+           390px capture shows exactly that: text sliced at the frame edge). The two
+           spark tracks (label + polyline) are UNCHANGED — wrapped in their own
+           `.fv-hist-tracks` sub-container instead, which may scroll horizontally
+           independently if it is ever too narrow to fit (it isn't today: the track
+           is `flex:1;min-width:0`), so neither the page nor the outer table ever
+           gains a horizontal scrollbar because of this row. #}
+        <div class="fv-hist-text">
+        <p class="fv-replay-caption">{{ t(h.caption_en, h.caption_zh) }}</p>
+        </div>
+        <div class="fv-hist-tracks">
+        <div class="fv-hist-line">
+          <span class="fv-hist-lbl">{{ t('absolute 4wk rate','绝对4周净率') }}</span>
+          <span class="fv-hist-track">{{ spark(h.spark_abs) }}</span>
+        </div>
+        <div class="fv-hist-line">
+          {# S7: the σ unit must stay lowercase even under an ancestor
+             text-transform:uppercase (none currently applies here, but the label
+             sits beside other uppercase eyebrow/label text elsewhere on this page —
+             wrapped defensively so this label can never inherit one by accident). #}
+          <span class="fv-hist-lbl">{{ t('relative pressure (','相对压力（') }}<span class="no-uc">σ</span>{{ t(')','）') }}</span>
+          <span class="fv-hist-track">
+            {% for b in h.bands %}<span class="fv-band dir-{{ b.direction }}" style="left:{{ b.left_pct }}%;width:{{ b.width_pct }}%" data-tip-en="{{ 'above-norm pressure' if b.direction=='above' else 'below-norm pressure' }}" data-tip-zh="{{ '高于常态压力' if b.direction=='above' else '低于常态压力' }}" role="img"></span>{% endfor %}
+            {{ spark(h.spark_rel) }}
+            {% for pct in h.revision_marker_pct %}<span class="fv-rev-marker" style="left:{{ pct }}%" data-tip-en="published revision at this session" data-tip-zh="该交易日存在已发布修正">◆</span>{% endfor %}
+          </span>
+        </div>
+        {% if h.published_segments %}
+        <div class="fv-published-track">
+          {% for seg in h.published_segments %}<span class="fv-published-seg" style="left:{{ seg.left_pct }}%;width:{{ seg.width_pct }}%"></span>{% endfor %}
+        </div>
+        {% endif %}
+        </div>
+        {% if h.published_segments %}
+        <div class="fv-hist-text">
+        <p class="fv-published-note">{{ t('— published record (from %s)'|format(h.ledger_start), '— 发布记录（自%s起）'|format(h.ledger_start)) }}</p>
+        </div>
+        {% endif %}
+        {% if r.episodes %}
+        <div class="fv-episodes fv-hist-text">
+          {# S5: the honest-count heading — ALWAYS reflects the actual number of
+             distinct (>=5-session-separated) episodes selected, never the target
+             EPISODE_COUNT — a thinned pool (e.g. 2 instead of 3) ships that smaller
+             number rather than padding with a near-duplicate. #}
+          <p class="fv-episode-count">{{ t('%d distinct prior episode%s'|format(r.episodes|length, '' if r.episodes|length == 1 else 's'), '%d个相似历史情形'|format(r.episodes|length)) }}</p>
+          <p class="fv-episode-note">{{ t('similar setups, not forecasts','相似情形，非预测') }}</p>
+          {% for e in r.episodes %}
+          <div class="fv-episode-card">
+            <span class="fv-ep-date">{{ e.session }}</span>
+            <span class="fv-ep-vals">{{ '%+.2f'|format(e.rel_value) if e.rel_value is not none else '—' }}<span class="no-uc">σ</span> / {{ '%+.1f'|format(e.abs_value) if e.abs_value is not none else '—' }}%</span>
+            <span class="fv-ep-outcome">{{ t(e.outcome_en, e.outcome_zh) }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </details>
+  </td>
+</tr>
+{% endif %}
+{%- endmacro %}
+{# W6 (spec §2): compare checkbox, max 2, same-lens only (JS enforces the pinned
+   cross-lens refusal — engine.flow_observatory.workflow.compare_groups carries the
+   same reason text). JS-off: CSS hides the input entirely (`html:not(.js) .fv-cmp-cb`)
+   — no dangling control with nothing to drive it.
+   B2 repair (W6 review round): `data-cmp-name`/`-name-zh`/`-lens` used to live ONLY on
+   this checkbox — but the compare JS reads them off `row.getAttribute(...)` where
+   `row = checkbox.closest('tr.sector-row')`, i.e. the ENCLOSING row, which never
+   carried these attributes, so every compare column rendered an empty h4 (anonymous
+   "headless" columns). The attributes are now emitted on `tr.sector-row` itself (see
+   the `data-cmp-*` attrs on the row's own opening tag, both lenses) — this macro keeps
+   its OWN copies too (harmless, and other future consumers of the checkbox alone can
+   still read them there). aria-label is now unique per row ("compare {name} ({lens})"
+   — real production data has same-named entries ACROSS lenses, e.g. curated theme
+   "Coal" vs official-sector "Coal", so the lens suffix is load-bearing for uniqueness,
+   not decoration; verified unique against tests/test_flow_observatory_workflow.py). #}
+{% macro cmpcheck(r, lens) -%}
+{% if r.vel is not none %}
+<input type="checkbox" class="fv-cmp-cb" data-cmp-lens="{{ lens }}" data-cmp-id="{{ r.id }}" data-cmp-name="{{ r.name }}" data-cmp-name-zh="{{ r.name_zh or r.name }}" aria-label="compare {{ r.name }} ({{ lens }})" onclick="event.stopPropagation()">
+{% endif %}
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -182,6 +433,9 @@ html[data-lang="zh"] .cdot.conf-buy{background:var(--red)}html[data-lang="zh"] .
 .snm a:hover,.nm a:hover,.cr-nm a:hover{color:var(--ink-link, var(--blue))}
 .snm a:hover::after,.nm a:hover::after,.cr-nm a:hover::after{opacity:1}
 .snm a:hover .tk,.nm a:hover .tk,.cr-nm a:hover .tk{color:var(--ink-link, var(--blue))}
+/* S9: a ticker outside the desk's covered/scored universe renders unlinked (no dead
+   Terminal link) — plain text, same layout as the linked form (name + .tk ticker). */
+.mname-unlinked{color:inherit}
 
 /* ── the velocity-bar glyph (the spine) ── */
 .vbar{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
@@ -273,10 +527,15 @@ html[data-lang="zh"] .fv-meter{background:linear-gradient(90deg,
 /* ═══════════════ TRUST STRIP (spec §2.2) — source state precedes market claims ═══════ */
 .fv-trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .fv-src{border:1px solid var(--line);border-radius:var(--r-ctl, 10px);padding:8px 12px;background:var(--card);
-  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:230px;cursor:help}
+  display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 150px;max-width:260px;cursor:help}
 .fv-src .s-name{font-size:12px;font-weight:700;color:var(--ink)}
 .fv-src .s-meta{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;font-family:var(--num)}
-.fv-src .s-state{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* S9: a DEGRADED/STALE chip word can run long ("behind — showing 2026-08-17 data"); at
+   1440 this used to wrap into a cramped, uneven two-line block inside the fixed-width
+   card. Widened the card's own max-width (150->260) and gave the word a comfortable
+   line-height so a wrap (when it still happens on a long date/word combination) reads as
+   two clean lines rather than crowding the card — never clipped, no overflow hidden. */
+.fv-src .s-state{font-size:10px;letter-spacing:.06em;line-height:1.35;text-transform:uppercase;color:var(--muted)}
 .fv-src--current .s-state{color:var(--up)}
 .fv-src--expected_lag .s-state{color:var(--info)}
 .fv-src--historical{opacity:.75}
@@ -289,7 +548,76 @@ html[data-theme="light"] .fv-src--behind{background:color-mix(in srgb,var(--warn
 html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
 .fv-src--unavailable{opacity:.68}
 .fv-src--unavailable .s-state{color:var(--faint)}
+/* STALE (W2) — a materially louder treatment than "behind": this is the chip the
+   incident-4676 12-day A-share freeze should have shown instead of reading confidently current.
+   Dark = desaturated amber RING + dimmed body (command-center instrument-fault idiom);
+   light = DIAGONAL HATCH on a deepened brown-amber ink, not the flat tint "behind" uses
+   (B4 repair — pinned mechanism, W2_SPEC.md repair round): the two states used to render
+   as the SAME mechanism at adjacent parameters (a slightly stronger version of the same
+   flat-tint recipe), which is not mechanically distinguishable from "behind" at a glance —
+   the whole point of a materially louder STALE treatment. Hatch (pattern) vs tint (flat
+   fill) is a genuine material difference. The deepened ink is
+   `color-mix(in srgb,var(--warn) 65%,var(--ink))` — var(--ink) (this page's own darkest
+   ink token) supplies the "deepened" component rather than a hand-picked hex, repeated
+   inline at each of its three use sites (design-system law: "tokens extend theme.css
+   only" / R0 rule 4 forbids a NEW literal-valued custom property outside theme.css, and
+   this page does not itself link theme.css — see the "self-contained standalone nav" note
+   above — so a theme.css-side declaration would be inert for it; deriving purely from the
+   page's own existing --warn/--ink tokens, inlined rather than named, keeps the mechanism
+   real AND compliant). Two independently art-directed treatments, never a token swap
+   (TP-0). */
+.fv-src--stale{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+.fv-src--stale .s-state{color:var(--warn);font-weight:700}
+html[data-theme="dark"] .fv-src--stale{filter:saturate(.72);opacity:.86;
+  box-shadow:0 0 0 1.5px color-mix(in srgb,var(--warn) 46%,transparent),0 0 22px -6px color-mix(in srgb,var(--warn) 55%,transparent)}
+html[data-theme="light"] .fv-src--stale{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 9%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 4%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));opacity:1}
+html[data-theme="light"] .fv-src--stale .s-state{color:color-mix(in srgb,var(--warn) 65%,var(--ink));font-weight:800}
+html[data-theme="light"] .fv-src--stale .s-name{color:var(--ink);font-weight:800}
+/* UNAVAILABLE — dark: dashed border + muted; light: hatched/dashed hairline + muted ink */
+.fv-src--unavailable{border-style:dashed}
+html[data-theme="light"] .fv-src--unavailable{background:repeating-linear-gradient(135deg,
+  color-mix(in srgb,var(--muted) 6%,transparent) 0 6px, transparent 6px 12px)}
+/* REVISED — a distinct (not amber) marker: the number itself changed, not merely its age */
+.fv-src--revised{border-color:color-mix(in srgb,var(--blue) 50%,var(--line))}
+.fv-src--revised .s-state{color:var(--ink-link, var(--blue));font-weight:700}
+html[data-theme="dark"] .fv-src--revised{box-shadow:0 0 0 1px color-mix(in srgb,var(--blue) 34%,transparent)}
+html[data-theme="light"] .fv-src--revised{background:color-mix(in srgb,var(--blue) 7%,transparent);
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--blue) 55%,transparent)}
 @media (max-width:640px){.fv-src{min-width:calc(50% - 5px);max-width:none}}
+
+/* ═══ SECTION WATERMARK (spec §3) — any L1 section fed by a STALE/UNAVAILABLE leg, right
+   under h2. B4 repair: the light watermark now uses the SAME hatch+deepened-ink mechanism
+   as the stale trust chip (not the flat tint "behind" uses) — a section watermark is a
+   STALE-severity signal (it never fires for a mere DEGRADED leg, spec §3), so it must be
+   mechanically distinct from a flat-tint treatment the same way the chip is. ═══ */
+.fv-watermark{margin:10px 0 4px;padding:9px 13px;border-radius:var(--r-ctl, 10px);font-size:12.5px;line-height:1.5;
+  display:flex;gap:8px;align-items:flex-start;color:var(--ink-2)}
+.fv-watermark::before{content:"⚠";flex:none;color:var(--ink-warn, var(--warn))}
+html[data-theme="dark"] .fv-watermark{background:color-mix(in srgb,var(--warn) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+html[data-theme="light"] .fv-watermark{
+  background:repeating-linear-gradient(-45deg,color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 8%,transparent) 0 6px,transparent 6px 12px),color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 3%,var(--card));
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--warn) 65%,var(--ink));border:1px solid color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 22%,var(--line));color:var(--ink)}
+html[data-theme="light"] .fv-watermark::before{color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
+
+/* hero STALE/UNAVAILABLE verdict form (spec §3, S5) — replaces the thesis sentence +
+   stance chip. Scoped to cn_large_order_proxy ONLY (S4) — it is the verdict's data
+   source; a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) instead gets
+   the small .fv-hero-notice chip below plus its own section watermarks. */
+.fv-thesis--stale{color:var(--ink)}
+.fv-stance--stale{border-color:var(--warn)!important;color:var(--ink-warn, var(--warn))!important;
+  background:color-mix(in srgb,var(--warn) 10%,transparent)!important}
+/* S4 — small hero notice chip for a stale/unavailable CROSS-BORDER leg while the primary
+   (cn proxy) verdict stays intact; deliberately quieter than the full hero replacement —
+   a chip, not a sentence swap. */
+.fv-hero-notice{display:inline-flex;align-items:center;gap:6px;margin:10px 0 0;padding:5px 11px;
+  border-radius:var(--r-pill, 999px);font-size:12px;font-weight:600;color:var(--ink-warn, var(--warn));
+  border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line))}
+html[data-theme="dark"] .fv-hero-notice{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 6%,var(--card));
+  border-color:color-mix(in srgb,color-mix(in srgb,var(--warn) 65%,var(--ink)) 30%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink))}
 
 /* ═══════════════ WHAT CHANGED TODAY (spec §2.3) ═══════════════ */
 .fv-chg-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
@@ -304,6 +632,125 @@ html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
 .fv-disc>summary::before{content:"▸";color:var(--muted);transition:transform .18s;flex:none}
 .fv-disc[open]>summary::before{transform:rotate(90deg)}
 .fv-disc-body{padding:2px 16px 16px}
+
+/* ═══════════════ W6: per-group history drawer, compare, episodes (spec §1-§4) ═══════
+   TP-0 declared dual-theme treatment for state bands: DARK = command-center idiom, a
+   low-alpha luminance fill (glow reads correctly against the dark canvas); LIGHT =
+   research-workspace idiom, a 6%-tinted fill bounded by a hairline top/bottom edge — a
+   flat low-alpha wash reads as a smudge on white paper, so light gets a defined edge
+   instead of more glow. S8 repair (W6 review round): direction ("above"/"below" the
+   group's own norm — see engine.flow_observatory.workflow._direction) NOW rides the
+   SAME --up/--down-derived, data-lang-flipped color the state chips already use
+   (`.rk.up`/`.rk.down`'s own convention below), so the ZH red-up flip is automatic
+   instead of a second, band-specific rule the state chip and the band underneath it
+   used to visibly disagree on. ═══════════════════════════════════════════════════ */
+.fv-hist{margin:0}
+.fv-hist>summary{padding:9px 12px;font-size:12px;font-weight:700}
+.fv-hist .fv-disc-body{padding:4px 14px 14px}
+/* B3 repair — the ACTUAL mechanism (measured, not guessed): `table.board` is already,
+   independent of anything in this drawer, wider than the 390px mobile viewport —
+   `table.board#sectortbl`'s Theme/Members/Quadrant columns carry pre-existing nowrap
+   name/badge/chip content (the SAME "table-internal clipping...pre-existing to
+   table.board" characteristic the ORIGINAL W6 evidence README already documented
+   for the sibling `concrow`/`excludedrow` rows) that measures ~900px wide even with
+   NO drawer open at all — confirmed by diffing against the git HEAD build BEFORE
+   this repair, which shows the identical ~900px table width. A `colspan="8"` cell
+   (this drawer's `<td>`) always renders at the SUM of the table's actual column
+   widths, so `white-space:normal` alone (which only stops single-LINE overflow) still
+   wraps the caption onto an ~855px-wide box the 390px viewport can only show the
+   LEFT slice of — invisible, not merely scrolled, exactly the "truncates mid-word"
+   review finding. Overhauling table.board's general mobile responsiveness for EVERY
+   column is out of this repair's scope (and is the same pre-existing gap the W3/W4
+   rows already carry) — instead, `.fv-hist-text`/`.fv-hist-tracks` are given an
+   EXPLICIT, viewport-relative `max-width` at the mobile breakpoint. A definite width
+   on a block breaks the "inherit the oversized auto column width" chain: once
+   `.fv-hist-text`'s width is DEFINITE (not "auto" resolving against a wide column),
+   its `<p>` children wrap within that definite width regardless of how wide sibling
+   columns are; likewise `.fv-hist-tracks`' flex children (see `.fv-hist-track` below)
+   correctly shrink-to-fit a definite parent width instead of contributing their own
+   max-content size to the table's column-width computation. */
+.fv-hist-text{white-space:normal;word-break:break-word}
+.fv-replay-caption{font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.5}
+.fv-hist-tracks{overflow-x:auto}
+.fv-hist-line{display:flex;align-items:center;gap:10px;margin:6px 0;white-space:nowrap}
+.fv-hist-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);width:150px;flex:none}
+/* S7: text-transform:uppercase on the label above turns a lowercase "σ" into a
+   visually capitalized "Σ" — CSS text-transform is a rendering step, not a DOM edit,
+   so the unit must be exempted explicitly rather than "just not uppercased" at the
+   source string. Applied everywhere σ appears inside this drawer. */
+.no-uc{text-transform:none}
+/* defensive cap, independent of the mobile fix above: a percentage-sized SVG inside
+   a `flex:1;min-width:0` track can otherwise balloon during intrinsic-sizing passes
+   (measured up to 695px) — flex-basis:0 (not auto) plus a hard max-width keeps the
+   spark itself sane at every viewport, desktop included. */
+.fv-hist-track{position:relative;flex:1 1 0;min-width:0;max-width:480px;height:28px;display:block}
+@media (max-width:640px){
+  /* the load-bearing half of the B3 fix — see the comment above `.fv-hist-text`.
+     `calc(100vw - 64px)` clears `.wrap`'s 20px side padding plus this row's own
+     reduced 7px mobile td padding either side, with margin to spare; verified
+     empirically (see PR body) that this keeps the drawer's own content inside the
+     visible 390px frame regardless of how wide table.board's OTHER columns force
+     the table itself to become. */
+  .fv-hist-text{max-width:calc(100vw - 64px)}
+  .fv-hist-tracks{max-width:calc(100vw - 64px)}
+}
+.fv-hist-track .spark{position:relative;z-index:2;width:100%;height:100%}
+.fv-band{position:absolute;top:0;bottom:0;border-radius:var(--r-ctl, 2px);pointer-events:auto;cursor:help}
+html[data-theme="dark"] .fv-band.dir-above{background:color-mix(in srgb,var(--up) 18%,transparent)}
+html[data-theme="dark"] .fv-band.dir-below{background:color-mix(in srgb,var(--down) 18%,transparent)}
+html[data-theme="light"] .fv-band.dir-above{background:color-mix(in srgb,var(--up) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--up) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--up) 45%,transparent)}
+html[data-theme="light"] .fv-band.dir-below{background:color-mix(in srgb,var(--down) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--down) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--down) 45%,transparent)}
+/* zh flip — "above the group's own norm" keeps meaning "above", but the COLOR that
+   means "constructive" flips red<->green in zh (same convention `.rk.up`/`.rk.down`
+   already apply), so the swap is which --up/--down token feeds "above" vs "below",
+   never the direction word itself. */
+html[data-theme="dark"][data-lang="zh"] .fv-band.dir-above{background:color-mix(in srgb,var(--down) 18%,transparent)}
+html[data-theme="dark"][data-lang="zh"] .fv-band.dir-below{background:color-mix(in srgb,var(--up) 18%,transparent)}
+html[data-theme="light"][data-lang="zh"] .fv-band.dir-above{background:color-mix(in srgb,var(--down) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--down) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--down) 45%,transparent)}
+html[data-theme="light"][data-lang="zh"] .fv-band.dir-below{background:color-mix(in srgb,var(--up) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--up) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--up) 45%,transparent)}
+.fv-rev-marker{position:absolute;top:-3px;font-size:9px;color:var(--ink-warn, var(--amber));transform:translateX(-50%);z-index:3;cursor:help}
+.fv-published-track{position:relative;height:5px;margin:3px 0 0 160px}
+.fv-published-seg{position:absolute;top:1px;height:2px;border-radius:var(--r-ctl, 2px);background:var(--muted)}
+html[data-theme="light"] .fv-published-seg{background:var(--ink-2)}
+.fv-published-note{font-size:10.5px;color:var(--muted);margin:4px 0 0 160px}
+@media (max-width:640px){.fv-published-note{margin-left:0}}
+.fv-episodes{margin-top:12px;border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent);padding-top:10px}
+.fv-episode-count{font-size:12px;font-weight:700;color:var(--ink);margin:0 0 3px}
+.fv-episode-note{font-size:11px;color:var(--muted);margin:0 0 8px;font-style:italic}
+.fv-episode-card{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;font-size:12px;padding:5px 0;border-top:1px dashed color-mix(in srgb,var(--grid) 45%,transparent)}
+.fv-episode-card:first-child{border-top:none}
+.fv-ep-date{font-family:var(--num);color:var(--ink);font-weight:700;width:82px;flex:none}
+.fv-ep-vals{font-family:var(--num);color:var(--muted);width:130px;flex:none}
+.fv-ep-outcome{color:var(--text);white-space:normal}
+
+/* compare — JS-only (needs a 2-row pairing before there is anything to render); the
+   checkbox is CSS-hidden without `.js` (spec §2 "JS-off: the compare control hides;
+   a note names the JS dependency" — the <noscript> paragraph above the bar). */
+.fv-cmp-cb{margin-right:7px;vertical-align:middle;width:14px;height:14px}
+html:not(.js) .fv-cmp-cb{display:none}
+.fv-compare-bar{display:none;position:sticky;bottom:12px;margin:12px 0;padding:10px 14px;
+  background:var(--card);border:1px solid var(--grid);border-radius:var(--r-ctl, 10px);
+  align-items:center;gap:12px;z-index:5;font-size:13px}
+.fv-compare-bar{box-shadow:var(--glass-shadow)}
+html.js .fv-compare-bar.on{display:flex}
+.fv-compare-panel{margin-top:14px}
+.fv-compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.fv-compare-cols{grid-template-columns:1fr}}
+.fv-compare-col{border:1px solid var(--grid);border-radius:var(--r-card, 14px);padding:12px 14px;background:var(--card)}
+.fv-compare-col h4{margin:0 0 8px;font-size:13.5px;color:var(--ink)}
+.fv-compare-stats{font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.fv-compare-refusal{font-size:12.5px;color:var(--ink-warn, var(--warn));padding:10px 0}
+.fv-cmp-btn{appearance:none;border:1px solid var(--line, var(--grid));background:var(--panel, var(--card));
+  color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:var(--r-ctl, 8px);cursor:pointer}
+.fv-cmp-btn:hover{border-color:var(--muted)}
+.fv-cmp-btn-go{background:var(--panel2, var(--tile));border-color:var(--blue);color:var(--ink-link, var(--blue));font-weight:800}
+.fv-cmp-btn-go:disabled{opacity:.45;cursor:not-allowed}
+.fv-watch-note{font-size:11.5px;color:var(--muted);margin:10px 0 0;padding:9px 13px;
+  border:1px dashed var(--grid);border-radius:var(--r-ctl, 8px);line-height:1.5}
 
 /* ═══════════════ ABS × REL QUADRANT BOARD (spec §2.4) — the anti-conflation device ═══ */
 .fv-quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
@@ -329,6 +776,34 @@ html[data-theme="light"] .fv-src--behind .s-name{color:var(--ink)}
 .rk.up{color:var(--ink-ok, var(--up))} .rk.down{color:var(--ink-act, var(--down))}
 html[data-lang="zh"] .rk.up{color:var(--ink-act, var(--down))} html[data-lang="zh"] .rk.down{color:var(--ink-ok, var(--up))}
 .rk.na{color:var(--faint);cursor:help}
+/* W3: state-age chip — the SAME hairline-pill idiom as .qchip/.rk (reuses their tokens,
+   not a new art direction), a small caption line under the quadrant chip naming how many
+   sessions the theme has held its current state. --fv-age--new marks the honest "no prior
+   session to compare" case; --fv-age--frozen marks a stale-source freeze (spec §3 test 6).
+   THEME repair round: dark keeps --faint (a quiet instrument caption, command-center
+   idiom); light reads --faint as near-invisible against the paper canvas, so light uses
+   --muted instead — the SAME two-art-direction law as every other chip on this page
+   (TP-0), never a bare token carried over unexamined. ZH nowrap (NIT/THEME): the short
+   form "状态第{n}日" (chosen over letting .fv-age wrap) keeps the caption on one line at
+   the same width EN needs — see the chg_row-adjacent template line for the EN/ZH pair. */
+.fv-age{display:block;margin-top:3px;font-size:10.5px;font-weight:600;color:var(--faint);cursor:help;white-space:nowrap}
+html[data-theme="light"] .fv-age{color:var(--muted)}
+.fv-age--new{color:var(--muted);font-style:italic}
+.fv-age-frozen{opacity:.85}
+/* W3: a revision row in "what changed today" — DARK keeps the restrained command-center
+   left-rule glow (a subdued 2px/55%-blue accent, matching this page's other dark chips).
+   LIGHT (THEME repair round — was unauthored, silently inheriting the dark rule as a bare
+   token swap, exactly the TP-0 failure) instead reuses the page's OWN existing
+   .fv-src--revised idiom verbatim: a 7% --blue paper tint, a FULL-STRENGTH (not
+   color-mixed-down) 3px blue left rule, and full-weight ink for the row's body text (not
+   the muted --ink-2 every other change-row uses) — a correction earns the same visible
+   "this changed" weight on the research-workspace surface that it already has on the
+   trust strip. */
+.fv-chg-row.fv-chg-row--revision{padding-left:8px;border-left:2px solid color-mix(in srgb,var(--blue) 55%,transparent)}
+html[data-theme="light"] .fv-chg-row.fv-chg-row--revision{
+  padding-left:10px;border-left-width:3px;border-left-color:var(--blue);
+  background:color-mix(in srgb,var(--blue) 7%,transparent);color:var(--ink)
+}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ═══════════════ THE ROTATION — in vs out ═══════════════ */
@@ -354,6 +829,96 @@ html[data-lang="zh"] .rot-col.out .rot-col-h::before{background:linear-gradient(
 .rot-empty{padding:22px 16px;color:var(--muted);font-size:13px;text-align:center}
 .attn{font-size:10.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:6px;padding:2px 6px;white-space:nowrap}
 .cat{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--tile);border:1px solid var(--grid);color:var(--muted)}
+
+/* ═══════════════ W4: lenses, coverage, overlap, concentration ═══════════════ */
+/* lens tabset — the existing .tabs/.tabbtn segmented idiom (templates/discovery.html.j2),
+   reused verbatim rather than a new component: no CSS present -> JS-off renders both
+   panels stacked (spec §5 "JS-off -> both lenses render stacked"). */
+.fv-lens-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
+.fv-lens-tabs .tabbtn{padding:7px 14px;font:inherit;font-size:13px;border:1px solid var(--line, var(--grid));background:var(--panel, var(--card));color:var(--muted);border-radius:var(--r-ctl, 8px);cursor:pointer}
+.fv-lens-tabs .tabbtn.on{background:var(--panel2, var(--tile));color:var(--text, var(--ink));border-color:var(--muted)}
+/* JS-off -> no control to drive the tabs, so both lens panels render stacked with
+   their own labels (spec §5) — same "no JS = no toggle, everything shows" contract
+   as .mkt-toggle above. Under JS, the curated lens starts active; the click handler
+   below flips visibility via inline style (overrides this rule by specificity). */
+html:not(.js) .fv-lens-tabs{display:none}
+html.js #lens-official{display:none}
+/* ── coverage badge — TP-0 declared dual-theme treatment ──────────────────────────
+   Base pill (n_covered/n_members, the common case): "muted tabular numerals both
+   themes" — INTENTIONALLY SHARED, not a per-theme design decision. Both themes read
+   the identical rule below; only the underlying --muted/--tile token VALUES differ
+   per theme (already theme-aware from the :root vs html[data-theme="dark"] token
+   blocks), which is a legitimate shared mechanism, not the "same CSS renders once
+   tokens swap" failure TP-0 forbids for a MATERIAL decision — this one genuinely has
+   no material decision to make per theme. */
+.fv-cov-badge{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--muted);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+/* insufficient-coverage pill — the ONE state chip in this family that needs a real
+   per-theme material call (same semantic class as W2's STALE-adjacent "behind" chip,
+   .fv-src--behind above: an amber-tinted warning surface).
+   DARK TREATMENT (existing, declared as-is): a flat amber wash mixed toward --muted
+   — reads as glow/tint against the dark card, the command-center idiom.
+   LIGHT TREATMENT (new): amber-tinted PAPER (a light amber wash mixed into --card,
+   not transparent — reads as tinted material, not an overlay) + DEEPENED
+   amber-brown ink (mixed toward --ink, never --muted — a --muted-mixed amber reads
+   washed-out on a white/paper background; --ink-mixed keeps the required contrast).
+   Token substitution alone (reusing the dark formula verbatim) was exactly the
+   failure this declares against — light gets its OWN mix target, not a re-skin. */
+html[data-theme="dark"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 14%,transparent)}
+html[data-theme="dark"] .qchip.coverage-insufficient{border-color:var(--amber);color:color-mix(in srgb,var(--amber) 82%, var(--muted));background:color-mix(in srgb,var(--amber) 12%,transparent)}
+html[data-theme="light"] .fv-cov-badge.insufficient{color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 12%,var(--card))}
+html[data-theme="light"] .qchip.coverage-insufficient{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:color-mix(in srgb,var(--warn) 65%,var(--ink));background:color-mix(in srgb,var(--warn) 10%,var(--card))}
+/* concentration chip — informational, never a warning: no tint in EITHER theme.
+   DARK TREATMENT (existing, declared as-is): neutral hairline border, --muted ink.
+   LIGHT TREATMENT (new): SAME neutral hairline border (no tint, per spec), but ink
+   deepened toward --ink — --muted alone reads too pale against white/paper material
+   for an always-visible chip (unlike the coverage badge above, which sits on its
+   own --tile fill and can afford --muted contrast). */
+.fv-conc-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill, 999px);border:1px solid var(--grid);white-space:nowrap;margin-left:6px;cursor:help}
+html[data-theme="dark"] .fv-conc-chip{color:var(--muted)}
+html[data-theme="light"] .fv-conc-chip{color:color-mix(in srgb,var(--ink) 55%,var(--muted));border-color:var(--line)}
+/* accruing-sparkline placeholder (N2) — informational/muted, same family as the
+   coverage badge (intentionally shared both themes; no warning semantics). */
+.fv-accruing{display:inline-block;font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--num);color:var(--faint);background:var(--tile);border-radius:var(--r-ctl, 6px);padding:2px 6px;white-space:nowrap;cursor:help}
+.ovl-chip{display:inline-block;font-size:9.5px;font-weight:700;color:var(--ink-link, var(--blue));background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:var(--r-ctl, 5px);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:help}
+/* M3/MOBILE: the concentration drilldown line and the excluded/missing disclosure
+   must WRAP (never inherit table.board's global nowrap, which forced a long
+   contributor list or a long ZH sector name into an unreadable horizontal-scroll
+   sliver on mobile — "never clip mid-token"). */
+.fv-conc-row td,.fv-excluded{white-space:normal;word-break:break-word}
+.fv-conc-row td{padding:3px 12px 8px !important;border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);background:color-mix(in srgb, var(--tile) 55%, transparent)}
+.fv-excluded{font-size:11px;color:var(--faint);padding:3px 12px 8px}
+.fv-excluded .fv-disc{margin-top:0;background:transparent;border:none;border-radius:0}
+.fv-excluded .fv-disc>summary{padding:2px 0;font-size:11px;font-weight:700;color:var(--faint)}
+.fv-excluded .fv-disc-body{padding:4px 0 0}
+.fv-lens-unavail{background:var(--card);border:1px solid var(--grid);border-radius:var(--r-card, 16px);padding:22px 20px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.fv-lens-unavail b{color:var(--ink)}
+/* MOBILE (≤640px): boards keep name, abs 4wk, vs norm, quadrant chip, and the
+   coverage badge (which lives in the Members column) — Velocity, rank Δ, and Flow
+   trend (spark) hide via CSS (display:none, never a clip/ellipsis mid-token). Column
+   order: 1 name, 2 members(coverage), 3 abs, 4 vs norm, 5 velocity, 6 quadrant,
+   7 rank Δ, 8 flow trend. */
+@media (max-width:640px){
+  /* the base table.board{min-width:780px} rule (below, in this same stylesheet) is a
+     desktop floor — without overriding it here, hiding 3 of 8 columns still leaves the
+     table forced to 780px wide, so the surviving columns sit off-screen behind a
+     horizontal scroll instead of actually becoming visible without scrolling. The
+     ID-qualified selectors below outrank the plain-class base rule on specificity
+     regardless of source order. */
+  table.board#sectortbl,table.board#officialtbl{min-width:0}
+  /* tighter padding on the surviving columns so name/members/abs/vs-norm/quadrant sit
+     closer to fitting the 390px frame — the remainder is reached via the SAME
+     .tbl-wrap{overflow-x:auto} inner scroll every board already uses (never a
+     page-level scroll — checked programmatically on every evidence capture), never a
+     clip/ellipsis mid-token. */
+  table.board#sectortbl th,table.board#sectortbl td,
+  table.board#officialtbl th,table.board#officialtbl td{padding:9px 7px}
+  table.board#sectortbl th:nth-child(5),table.board#sectortbl td:nth-child(5),
+  table.board#sectortbl th:nth-child(7),table.board#sectortbl td:nth-child(7),
+  table.board#sectortbl th:nth-child(8),table.board#sectortbl td:nth-child(8),
+  table.board#officialtbl th:nth-child(5),table.board#officialtbl td:nth-child(5),
+  table.board#officialtbl th:nth-child(7),table.board#officialtbl td:nth-child(7),
+  table.board#officialtbl th:nth-child(8),table.board#officialtbl td:nth-child(8){display:none}
+}
 
 /* ═══════════════ MOMENTUM shifts ═══════════════ */
 .fv-mom{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
@@ -500,7 +1065,36 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   {% set inst = P.inst if P else none %}
   {% set MR = (snap.market_read.themes if snap.market_read else none) %}
   {% set CS = snap.change_summary %}
-  {% if CS and CS.material_change == false %}
+  {% set PUB = snap.publication_state %}
+  {# leg lookup by source_id, reused by every section's sec_watermark() call below (W2) #}
+  {% set _src_by_id = {} %}
+  {% for _s in (snap.sources or []) %}{% set _ = _src_by_id.update({_s.source_id: _s}) %}{% endfor %}
+  {# W2 REPAIR ROUND S4/S5: the hero verdict replacement is scoped to cn_large_order_proxy
+     ONLY — it is the verdict's own data source (the abs×rel quadrant read, the theme
+     board, the market_read breadth are all fed by it). Previously this was keyed on the
+     DESK-WIDE `publication_state`, which fires just as easily when a CROSS-BORDER leg
+     (sb_aggregate/hk_sb_holdings) alone is stale/unavailable while cn_large_order_proxy is
+     perfectly current — replacing an accurate verdict with a claim about a DIFFERENT
+     leg's trouble, and (S5) falling back to `snap.as_of` when the "stale" leg was actually
+     UNAVAILABLE (no date at all), which could print the literal, meaningless "from —". #}
+  {% set _cn_leg = _src_by_id.get('cn_large_order_proxy') %}
+  {% set _cn_status = _cn_leg.status if _cn_leg else none %}
+  {% set _hero_stale = _cn_status == 'STALE' %}
+  {% set _hero_unavailable = _cn_status == 'UNAVAILABLE' %}
+  {# S4: a stale/unavailable CROSS-BORDER leg (sb_aggregate/hk_sb_holdings) never touches
+     the hero verdict sentence — it (i) watermarks its OWN sections (#channels, the HK
+     board), and (ii) surfaces this small notice chip so it is not silently invisible. #}
+  {% set _sb_leg = _src_by_id.get('sb_aggregate') %}
+  {% set _hk_leg = _src_by_id.get('hk_sb_holdings') %}
+  {% set _cross_border_bad = (_sb_leg and _sb_leg.status in ('STALE', 'UNAVAILABLE'))
+      or (_hk_leg and _hk_leg.status in ('STALE', 'UNAVAILABLE')) %}
+  {% if _hero_unavailable %}
+    {% set stance_en = 'Stand aside — no data' %}
+    {% set stance_zh = '暂缓 — 暂无数据' %}
+  {% elif _hero_stale %}
+    {% set stance_en = 'Stand aside — data behind' %}
+    {% set stance_zh = '暂缓 — 数据滞后' %}
+  {% elif CS and CS.material_change == false %}
     {% set stance_en = 'No material shift — nothing to chase' %}
     {% set stance_zh = '无重大变化' %}
   {% else %}
@@ -512,9 +1106,32 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       <span class="dot"></span>🌊 {{ t('Capital Flow Velocity','资金流速') }} · {{ t('China &amp; Hong Kong','中国及香港') }}
       <span class="asof">{{ t('daily · as of','日度 · 截至') }} {{ snap.as_of }}</span>
     </div>
+    {% if _cross_border_bad %}
+    <div class="fv-hero-notice">
+      <span class="l-en">⚠ Cross-border data behind — see sources</span>
+      <span class="l-zh">⚠ 跨境数据滞后——见数据来源</span>
+    </div>
+    {% endif %}
     {# ---- two-axis verdict (spec §2.1) — generated from market_read, never a single
-         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ---- #}
-    {% if MR and MR.relative_breadth and MR.relative_breadth.denominator %}
+         inflow-colored number. relpos/abspos/n are the canonical breadth counts. ----
+         W2 (spec §3, S4/S5 repair): STALE/UNAVAILABLE cn_large_order_proxy REPLACES the
+         verdict sentence entirely — a source behind must never share a screen with a
+         confident read of the SAME data it feeds. #}
+    {% if _hero_unavailable %}
+      {# S5: no date exists for an unavailable leg — never print "from —". #}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">A-share flow source is unavailable — no current read. Other panels show their own dates.</span>
+        <span class="l-zh">A股资金数据源不可用——暂无当前读数。其余面板以各自日期为准。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif _hero_stale %}
+      {% set _stale_date = _cn_leg.effective_date or '—' %}
+      <p class="fv-thesis fv-thesis--stale">
+        <span class="l-en">Source data is behind — showing the last good read from {{ _stale_date }}. Treat levels as history, not today's tape.</span>
+        <span class="l-zh">数据源滞后——显示{{ _stale_date }}的最近有效读数。请将其视为历史，而非今日盘面。</span>
+      </p>
+      <span class="vstate mid fv-stance--stale">{{ t(stance_en, stance_zh) }}</span>
+    {% elif MR and MR.relative_breadth and MR.relative_breadth.denominator %}
       {% set n = MR.relative_breadth.denominator %}
       {% set relpos = MR.relative_breadth.positive %}
       {% set abspos = MR.absolute_breadth.positive %}
@@ -602,38 +1219,23 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <span class="l-zh">自上一有效交易日（{{ CS.previous_valid_session }}）以来，资金状态无重大变化。</span>
       </p>
     {% else %}
-      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) %}
+      {# W2 (spec §3): a leg entering DEGRADED/STALE/UNAVAILABLE/REVISED is a material
+         change too — quality transitions ride the SAME "what changed" list as quadrant
+         flips and rank movers, distinguished by kind=='quality' (leg_id + status words,
+         never a theme quadrant). W3: source_revisions[] rides the SAME list too,
+         distinguished by kind=='revision' — a correction to an already-recorded
+         observation, never re-shown as a quadrant transition (spec §3 test 9). #}
+      {% set all_changes = (CS.transitions or []) + (CS.rank_movers or []) + (CS.quality_transitions or []) + (CS.source_revisions or []) %}
       <ul class="fv-chg-list">
         {% for c in all_changes[:8] %}
-        {% set _tr = _theme_names.get(c.id) %}
-        <li class="fv-chg-row">
-          <b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
-          {% if c.from_quadrant is defined %}
-          {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
-          {% set _to = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
-          <span class="l-en">: {{ _f[0] }} → {{ _to[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to[1] }}</span>
-          {% else %}
-          <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
-          <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
-          {% endif %}
-        </li>
+        {{ chg_row(c, _theme_names, _src_by_id) }}
         {% endfor %}
       </ul>
       {% if all_changes|length > 8 %}
       <details class="fv-disc"><summary>{{ t('all %d changes'|format(all_changes|length), '全部 %d 项变化'|format(all_changes|length)) }}</summary>
         <ul class="fv-chg-list">
           {% for c in all_changes[8:] %}
-          {% set _tr = _theme_names.get(c.id) %}
-          <li class="fv-chg-row"><b>{{ t(_tr.name, _tr.name_zh) if _tr else c.id }}</b>
-            {% if c.from_quadrant is defined %}
-            {% set _f = quadrant_labels.get(c.from_quadrant) or (c.from_quadrant, c.from_quadrant) %}
-            {% set _to = quadrant_labels.get(c.to_quadrant) or (c.to_quadrant, c.to_quadrant) %}
-            <span class="l-en">: {{ _f[0] }} → {{ _to[0] }}</span><span class="l-zh">：{{ _f[1] }} → {{ _to[1] }}</span>
-            {% else %}
-            <span class="l-en">: {{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
-            <span class="l-zh">：{{ t('rank','排名') }} {{ c.from_rank }} → {{ c.to_rank }}</span>
-            {% endif %}
-          </li>
+          {{ chg_row(c, _theme_names, _src_by_id) }}
           {% endfor %}
         </ul>
       </details>
@@ -648,6 +1250,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <h2>{{ t('Pressure vs actual flow','相对压力 × 绝对流向') }}
         <span class="sub">{{ t('four honest states — themes placed by both axes','按两轴划分的主题分布') }}</span>
         <span class="qm" data-tip-en="Main-force order-size flow is structurally a net seller — the two quadrants that require positive absolute flow (real inflow, above norm / still buying, pace fading) are rare by construction, so their emptiness on a given day is expected, not a data gap." data-tip-zh="主力大单口径的资金结构性为净卖出——需要绝对流入为正的两个象限（真实流入·高于常态 / 仍净流入·动能转弱）本就罕见，为空属正常现象，并非数据缺失。" role="button" tabindex="0">?</span></h2>
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
     {% if MRt and MRt.relative_breadth and MRt.relative_breadth.denominator %}
     <p class="fv-stance">
       <span class="l-en">Pressure vs norm: <b>{{ MRt.relative_breadth.positive }}</b> above · <b>{{ MRt.relative_breadth.neutral }}</b> near · <b>{{ MRt.relative_breadth.negative }}</b> below — of {{ MRt.relative_breadth.denominator }} themes — {{ MRt.relative_breadth.missing }} unscored<br>Actual 4-week flow: <b>{{ MRt.absolute_breadth.positive }}</b> positive · <b>{{ MRt.absolute_breadth.negative }}</b> negative · <b>{{ MRt.absolute_breadth.neutral }}</b> neutral — {{ MRt.absolute_breadth.missing }} unscored</span>
@@ -706,12 +1309,30 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         <button data-mkt="hk" aria-pressed="false">{{ t('HK Southbound','南向') }}</button>
       </span>
     </div>
+    {# S4 scoping repair: this L1 section's TOP-level watermark keys to cn_large_order_proxy
+       ONLY — it feeds the A-share theme table this section is primarily about. The nested
+       HK per-name board below is fed by hk_sb_holdings, its OWN leg, and gets its OWN
+       watermark right at its own sub-header (see the market-hk block further down),
+       matching S4's "#quadrant/#groups/momentum-details -> cn proxy; #channels/HK board ->
+       their own legs" split. #}
+    {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
 
     {# ---- A-SHARE: theme lanes → member drill-down ---- #}
     {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
     {% set s = snap.ashare_sectors %}
     <div class="market-a">
       <span class="market-tag">{{ t('A-Share 沪深','A股 沪深') }}</span>
+
+      {# W4 lens tabset (spec §5): curated (overlap-allowed) themes vs the official
+         (non-overlapping) Shenwan L1 sector lens. URL hash state; JS-off renders
+         BOTH panels stacked (no CSS display:none by default — see .fv-lens-tabs
+         above, the same idiom as templates/discovery.html.j2's .tabs/.tabbtn). #}
+      <div class="fv-lens-tabs" role="tablist" aria-label="Lens">
+        <button type="button" class="tabbtn on" data-lens="curated" role="tab" aria-selected="true" id="lens-tab-curated">{{ t('Curated themes','精选主题') }}</button>
+        <button type="button" class="tabbtn" data-lens="official" role="tab" aria-selected="false" id="lens-tab-official">{{ t('Official sectors','官方行业') }}</button>
+      </div>
+
+      <div id="lens-curated" data-lens-panel role="tabpanel" aria-labelledby="lens-tab-curated">
       <div class="panel">
       <div class="tbl-wrap">
         <table class="board" id="sectortbl">
@@ -738,9 +1359,25 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           {% endif %}
           {% for r in s.rows %}
             {% set has_members = r.members and r.members|length %}
-            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
-              <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}</td>
-              <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst seats','机构席位') }}</span>{% endif %}</td>
+            {% set _abs_v = r.abs.value if (r.abs is defined and r.abs) else none %}
+            {% set _top1 = (r.concentration.top1 if (r.concentration is defined and r.concentration) else none) %}
+            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false"
+                data-abs="{{ _abs_v if _abs_v is not none else '' }}"
+                data-rel="{{ r.vel if r.vel is not none else '' }}" data-quadrant="{{ r.quadrant or '' }}"
+                data-coverage="{{ r.coverage_pct if (r.coverage_pct is defined and r.coverage_pct is not none) else '' }}"
+                data-top="{{ _top1.ticker if _top1 else '' }}"
+                data-quadrant-en="{{ r.quadrant_en or '' }}" data-quadrant-zh="{{ r.quadrant_zh or '' }}"
+                data-cmp-name="{{ r.name }}" data-cmp-name-zh="{{ r.name_zh or r.name }}" data-cmp-lens="theme">
+              <td class="snm">{{ cmpcheck(r, 'theme') }}<span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}
+                {% if r.concentration and r.concentration.top1_share is not none and r.concentration.top1_share > 40 %}<span class="fv-conc-chip" data-tip-en="One member drives more than 40% of this theme's gross flow — see the drilldown line below" data-tip-zh="单一成分股贡献了本主题超过40%的总流量——见下方展开说明" role="button" tabindex="0">{{ t('concentrated','集中度高') }}</span>{% endif %}
+              </td>
+              <td>
+                {% if r.coverage_pct is defined and r.coverage_pct is not none %}
+                <span class="fv-cov-badge{{ ' insufficient' if r.coverage_state == 'insufficient_coverage' }}" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} members present and scored ({{ r.coverage_pct }}% coverage){{ ' — below the reporting floor' if r.coverage_state == 'insufficient_coverage' }}" data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（覆盖率{{ r.coverage_pct }}%）{{ '——低于披露门槛' if r.coverage_state == 'insufficient_coverage' }}" role="button" tabindex="0">{{ r.n_covered }}/{{ r.n_members }}</span>
+                {% else %}{{ r.n_members }}{% endif %}
+                {% if r.overlap_count %}<span class="fv-conc-chip" data-tip-en="{{ r.overlap_count }} member(s) also belong to another curated theme (themes may overlap)" data-tip-zh="{{ r.overlap_count }}只成分股同时属于其他精选主题（主题可重叠）" role="button" tabindex="0">{{ t('overlap %d'|format(r.overlap_count), '重叠%d'|format(r.overlap_count)) }}</span>{% endif %}
+                {% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst seats','机构席位') }}</span>{% endif %}
+              </td>
               {# NIT12: colored by r.abs.direction (the contract's de-minimis-aware call),
                  never the raw sign of r.abs.value — a value like -0.04% (inside the 0.1pp
                  neutral band) used to print "-0.0%" in outflow-red ink, contradicting the
@@ -749,8 +1386,23 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
               <td>{{ rate(r) }}</td>
               <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
               <td style="text-align:left">
-                {% if r.quadrant is defined and r.quadrant %}
+                {% if r.coverage_state == 'insufficient_coverage' %}
+                <span class="qchip q-neutral_or_unknown coverage-insufficient" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} members present and scored ({{ r.coverage_pct }}%) — below the calibrated coverage floor, so no directional read is published for this group (never a survivor-biased partial statistic)." data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（{{ r.coverage_pct }}%）——低于校准的覆盖门槛，因此本组不发布方向性判读（绝不发布幸存者偏差的片面统计）。" role="button" tabindex="0">{{ t('insufficient coverage','覆盖不足') }}</span>
+                {% elif r.quadrant is defined and r.quadrant %}
                 <span class="qchip q-{{ r.quadrant }}" data-tip-en="Velocity-state: {{ r.state }} (acceleration-folded). {{ r.n_members }} members." data-tip-zh="流速状态：{{ r.state_zh }}（含加速度）。{{ r.n_members }}只成分股。" role="button" tabindex="0">{{ t(r.quadrant_en, r.quadrant_zh) }}</span>
+                {# W3: state age — "session {n} in this state" (spec §2 pinned strings),
+                   LENS carrying prior state + the started date. #}
+                {% set _prior_lab = quadrant_labels.get(r.prior_state) if r.prior_state else none %}
+                {% if r.state_age_sessions is defined and r.state_age_sessions is not none %}
+                <span class="fv-age{{ ' fv-age-frozen' if r.state_note == 'age frozen (stale source)' else '' }}"
+                      data-tip-en="Prior state: {{ _prior_lab[0] if _prior_lab else 'none — first tracked session' }}. In this state since {{ r.state_started or '—' }}.{{ ' Frozen — source data behind, age not advancing.' if r.state_note == 'age frozen (stale source)' else '' }}"
+                      data-tip-zh="此前状态：{{ _prior_lab[1] if _prior_lab else '无——首个追踪交易日' }}。自{{ r.state_started or '—' }}起进入该状态。{{ '数据滞后，本状态天数暂停累计。' if r.state_note == 'age frozen (stale source)' else '' }}"
+                      role="button" tabindex="0">
+                  <span class="l-en">session {{ r.state_age_sessions }} in this state</span><span class="l-zh">状态第{{ r.state_age_sessions }}日</span>{% if r.state_note == 'age frozen (stale source)' %} ❄{% endif %}
+                </span>
+                {% elif r.state_note == 'first tracked session' %}
+                <span class="fv-age fv-age--new" data-tip-en="first tracked session — no prior data to compare yet" data-tip-zh="首个追踪交易日——暂无历史可比" role="button" tabindex="0"><span class="l-en">first tracked session</span><span class="l-zh">首个追踪交易日</span></span>
+                {% endif %}
                 {% else %}
                 {{ vstate(r.state, r.state_zh, r.vel) }}
                 {% endif %}
@@ -766,6 +1418,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
               </td>
               <td>{{ spark(r.spark) }}</td>
             </tr>
+            {{ concrow(r) }}{{ excludedrow(r) }}{{ historyrow(r, 8, none, force_open=(loop.index <= 3)) }}
             {% if has_members %}
             {% for m in r.members %}{{ memberrow(m, sbt, r.id, loop.index) }}{% endfor %}
             {% endif %}
@@ -775,7 +1428,118 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       </div>
       </div>
       <p class="fv-stance" style="margin-top:10px">{{ t(s.note, s.note_zh) }}</p>
+      </div>
+      {# ---- official (Shenwan L1) sector lens — spec §2A/§2B ---- #}
+      <div id="lens-official" data-lens-panel role="tabpanel" aria-labelledby="lens-tab-official">
+      {% set os = snap.official_sectors %}
+      {% if os and os.available and os.rows %}
+      <div class="panel">
+      <p class="fv-stance" style="margin:0 0 10px">{{ t('Official sectors (Shenwan L1) — current membership; history accrues from %s'|format(os.seed_date or '—'), '官方行业（申万一级）——当前成分；历史自%s起累积'|format(os.seed_date or '—')) }}</p>
+      {# N2: the LENS receipt — rate/vel columns stay (same current-membership basis
+         as themes, already labeled by the line above); this one extra line pins the
+         basis explicitly for the numeric columns themselves. #}
+      <p class="fv-stance" style="margin:0 0 10px">{{ t('current-membership basis — constituents as of %s'|format(os.seed_date or '—'), '按当前成分计算——成分截至%s'|format(os.seed_date or '—')) }}</p>
+      <div class="tbl-wrap">
+        <table class="board" id="officialtbl">
+          <thead><tr>
+            <th data-c="0">{{ t('Sector','行业') }}</th>
+            <th data-c="1">{{ t('Members','成分') }}</th>
+            <th data-c="2">{{ t('abs 4wk','绝对4周') }}</th>
+            <th data-c="3">{{ t('vs norm','相对常态') }}</th>
+            <th data-c="4">{{ t('Velocity','流速') }}</th>
+            <th class="nos">{{ t('Quadrant','象限') }}</th>
+            <th data-c="6">{{ t('rank Δ','排名Δ') }}</th>
+            <th class="nos">{{ t('Flow trend','流向趋势') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in os.rows %}
+            {% set has_members = r.members and r.members|length %}
+            {% set _abs_v2 = r.abs.value if (r.abs is defined and r.abs) else none %}
+            {% set _top1b = (r.concentration.top1 if (r.concentration is defined and r.concentration) else none) %}
+            <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="off-{{ r.id }}" aria-expanded="false"
+                data-abs="{{ _abs_v2 if _abs_v2 is not none else '' }}"
+                data-rel="{{ r.vel if r.vel is not none else '' }}" data-quadrant="{{ r.quadrant or '' }}"
+                data-coverage="{{ r.coverage_pct if (r.coverage_pct is defined and r.coverage_pct is not none) else '' }}"
+                data-top="{{ _top1b.ticker if _top1b else '' }}"
+                data-quadrant-en="{{ r.quadrant_en or '' }}" data-quadrant-zh="{{ r.quadrant_zh or '' }}"
+                data-cmp-name="{{ r.name }}" data-cmp-name-zh="{{ r.name_zh or r.name }}" data-cmp-lens="sector">
+              <td class="snm">{{ cmpcheck(r, 'sector') }}<span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}
+                {% if r.concentration and r.concentration.top1_share is not none and r.concentration.top1_share > 40 %}<span class="fv-conc-chip" data-tip-en="One member drives more than 40% of this sector's gross flow — see the drilldown line below" data-tip-zh="单一成分股贡献了本行业超过40%的总流量——见下方展开说明" role="button" tabindex="0">{{ t('concentrated','集中度高') }}</span>{% endif %}
+              </td>
+              <td>
+                <span class="fv-cov-badge{{ ' insufficient' if r.coverage_state == 'insufficient_coverage' }}" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} constituents present and scored ({{ r.coverage_pct }}% coverage){{ ' — below the reporting floor' if r.coverage_state == 'insufficient_coverage' }}" data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（覆盖率{{ r.coverage_pct }}%）{{ '——低于披露门槛' if r.coverage_state == 'insufficient_coverage' }}" role="button" tabindex="0">{{ r.n_covered }}/{{ r.n_members }}</span>
+              </td>
+              <td class="tnum">{% if r.abs is defined and r.abs.value is not none %}<span class="chg {{ 'pos' if r.abs.direction=='positive' else ('neg' if r.abs.direction=='negative' else 'neu') }}" style="opacity:.72">{{ '%+.1f'|format(r.abs.value) }}%</span>{% else %}<span class="chg na">·</span>{% endif %}</td>
+              <td>{{ rate(r) }}</td>
+              <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
+              <td style="text-align:left">
+                {% if r.coverage_state == 'insufficient_coverage' %}
+                <span class="qchip q-neutral_or_unknown coverage-insufficient" data-tip-en="{{ r.n_covered }} of {{ r.n_members }} constituents present and scored ({{ r.coverage_pct }}%) — below the calibrated coverage floor; the Tushare large-order panel this desk uses does not cover most of this sector's true membership, so no directional read is published (never a survivor-biased partial statistic)." data-tip-zh="{{ r.n_members }}只成分股中{{ r.n_covered }}只已纳入并评分（{{ r.coverage_pct }}%）——低于校准的覆盖门槛；本看板所用的Tushare主力大单面板未覆盖该行业的多数真实成分，因此不发布方向性判读（绝不发布幸存者偏差的片面统计）。" role="button" tabindex="0">{{ t('insufficient coverage','覆盖不足') }}</span>
+                {% elif r.quadrant is defined and r.quadrant %}
+                <span class="qchip q-{{ r.quadrant }}" data-tip-en="Velocity-state: {{ r.state }} (acceleration-folded). {{ r.n_members }} constituents." data-tip-zh="流速状态：{{ r.state_zh }}（含加速度）。{{ r.n_members }}只成分股。" role="button" tabindex="0">{{ t(r.quadrant_en, r.quadrant_zh) }}</span>
+                {% else %}
+                {{ vstate(r.state, r.state_zh, r.vel) }}
+                {% endif %}
+              </td>
+              <td class="tnum">
+                {% if r.rank_change is defined and r.rank_change is not none %}
+                  {% if r.rank_change < 0 %}<span class="rk up">▲{{ -r.rank_change }}</span>
+                  {% elif r.rank_change > 0 %}<span class="rk down">▼{{ r.rank_change }}</span>
+                  {% else %}<span class="rk">–</span>{% endif %}
+                {% else %}
+                <span class="rk na" data-tip-en="first tracked session" data-tip-zh="首个追踪交易日">—</span>
+                {% endif %}
+              </td>
+              {# N2: the official lens applies today's membership retroactively across
+                 the whole flow panel — a sparkline drawn from that backfill would
+                 imply a composition depth the membership store has not actually
+                 accrued (spec §2A "no historical replay"). Suppressed until real
+                 accrual clears the spark window; a muted placeholder names the
+                 progress rather than rendering nothing unexplained. #}
+              <td>{% if r.spark %}{{ spark(r.spark) }}{% elif r.spark_accrual and not r.spark_accrual.ready %}<span class="fv-accruing" data-tip-en="Membership history accrues from {{ os.seed_date or '—' }} — the sparkline unlocks once {{ r.spark_accrual.window }} sessions have accrued ({{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} so far)." data-tip-zh="成分历史自{{ os.seed_date or '—' }}起累积——满{{ r.spark_accrual.window }}个交易日后解锁走势图（当前{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）。" role="button" tabindex="0"><span class="l-en">accruing — {{ r.spark_accrual.n }}/{{ r.spark_accrual.window }} sessions</span><span class="l-zh">累积中（{{ r.spark_accrual.n }}/{{ r.spark_accrual.window }}）</span></span>{% endif %}</td>
+            </tr>
+            {{ concrow(r, 8, 'off-' + r.id) }}{{ excludedrow(r, 8, 'off-' + r.id) }}{{ historyrow(r, 8, 'off-' + r.id, force_open=False) }}
+            {% if has_members %}
+            {% for m in r.members %}{{ memberrow(m, {}, 'off-' + r.id, loop.index) }}{% endfor %}
+            {% endif %}
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="fv-stance" style="margin-top:10px">{{ t('Official (non-overlapping) Shenwan L1 sectors — never the curated theme baskets. A sector below the coverage floor renders insufficient coverage rather than a partial read: the Tushare large-order panel this desk uses does not track most small/micro-cap names, so several sectors legitimately have too little of their true membership scored to publish.', '官方（不重叠）申万一级行业——绝非精选主题篮子。低于覆盖门槛的行业会显示"覆盖不足"而非片面判读：本看板所用的Tushare主力大单面板未追踪多数中小市值个股，因此部分行业确实没有足够的真实成分被评分。') }}</p>
+      </div>
+      {% elif os and not os.available and os.reason == 'before_seed_date' %}
+      <div class="fv-lens-unavail">
+        <b>{{ t('Official sector lens unavailable','官方行业视图暂不可用') }}</b> —
+        {{ t('the requested window predates this store\'s own accrual origin (%s).'|format(os.seed_date or '—'), '所请求的时间窗口早于本数据源自身的积累起点（%s）。'|format(os.seed_date or '—')) }}
+      </div>
+      {% else %}
+      <div class="fv-lens-unavail">
+        <b>{{ t('Official sector lens unavailable','官方行业视图暂不可用') }}</b> —
+        {{ t('no lawful keyless constituent source; showing curated themes only.','缺少合规的成分数据源；仅显示精选主题。') }}
+      </div>
+      {% endif %}
+      </div>
     </div>
+
+    {# W6 (spec §2): compare bar + panel — JS-only (needs a 2-row selection to pair);
+       JS-off hides the checkboxes (see `.fv-cmp-cb` CSS) and this note is what a
+       no-JS reader sees instead of a dangling, non-functional control. #}
+    <noscript><p class="fv-stance" style="margin-top:10px">{{ t('Comparing two groups side by side needs JavaScript — select two rows\' checkboxes above to compare with JavaScript enabled.', '并排比较两个分组需要JavaScript——启用JavaScript后，勾选上方两行的复选框即可比较。') }}</p></noscript>
+    <div class="fv-compare-bar" id="fv-compare-bar" role="region" aria-label="compare">
+      <span class="l-en" id="fv-cmp-count">0 selected</span><span class="l-zh" id="fv-cmp-count-zh">已选0项</span>
+      <button type="button" class="fv-cmp-btn fv-cmp-btn-go" id="fv-cmp-go" disabled>{{ t('Compare','比较') }}</button>
+      <button type="button" class="fv-cmp-btn" id="fv-cmp-clear">{{ t('Clear','清除') }}</button>
+    </div>
+    <div id="fv-compare-panel" class="fv-compare-panel"></div>
+
+    {# W6 (spec §4): watch-store limitation — recorded, not silently dropped. See
+       engine/flow_observatory/workflow.py's WATCH_LIMITATION_EN/_ZH (the SAME
+       decision, restated here for the reader rather than duplicated logic: the
+       existing watch stores are a single priced-ticker list shared with the
+       Watchlist page, so writing a non-ticker group key would corrupt that page
+       rather than extend the store — shipped as a recorded dependency instead). #}
+    <p class="fv-watch-note">★ {{ t('Watching a theme or sector isn\'t available yet — the existing watch list is a stock-ticker list shared with the Watchlist page, and a non-ticker group key would corrupt it rather than extend it. Recorded as a dependency for the watchlist-sentinel owner (server-side alerts on a state onset are a separate, not-yet-built system).', '暂不支持关注主题或行业——现有关注列表是与"关注列表"页面共用的股票代码列表，写入非股票代码的分组键会污染该页面，而非扩展该存储。已记录为关注列表哨兵负责人的依赖项（状态变化时的服务器端提醒是另一套尚未构建的系统）。') }}</p>
     {% endif %}
 
     {# ---- momentum + confluence — demoted into collapsed detail blocks (spec §2.5) ---- #}
@@ -784,6 +1548,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <details class="fv-disc" id="momentum">
       <summary>⚡ {{ t('Momentum shifts','动能变化') }} — <span class="tnum">{{ M.n_accel_in }}</span> {{ t('speeding up','加速中') }} · <span class="tnum">{{ M.n_cooling }}</span> {{ t('cooling','降温') }} · <span class="tnum">{{ M.n_easing }}</span> {{ t('outflow fading','流出转弱') }}</summary>
       <div class="fv-disc-body">
+        {# S4 scoping: momentum shifts are the A-share large-order velocity's own
+           acceleration read — keyed to cn_large_order_proxy, matching #quadrant/#groups. #}
+        {{ sec_watermark([_src_by_id.get('cn_large_order_proxy')]) }}
         <p class="fv-stance">{{ t('Velocity says which way; acceleration says whether it\'s <b>getting stronger or running out</b>. Fading inflow and slowing outflow are early turns — <b>watch, don\'t act.</b>','流速指方向；加速度指其<b>增强还是衰竭</b>。流入转弱与流出放缓是早期拐点——<b>观察，勿妄动。</b>') }}</p>
         <div class="fv-mom">
           <div class="mom-col m-in">
@@ -854,6 +1621,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     {% set h = snap.hk_names %}
     <div class="market-hk">
       <span class="market-tag">{{ t('HK Southbound 南向','港股南向') }}</span>
+      {# S4 scoping: the HK board is fed by hk_sb_holdings, its OWN leg — not the parent
+         #groups section's cn_large_order_proxy watermark above. #}
+      {{ sec_watermark([_src_by_id.get('hk_sb_holdings')]) }}
       <div class="panel">
         <div class="panel-h">🇭🇰 {{ t('Mainland southbound per-name','内地南向个股') }}
           <span class="asof">{{ t('as of','截至') }} {{ h.as_of or '—' }} · {{ t('expected T−1','预期T−1') }}</span>
@@ -899,6 +1669,11 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   <section class="fv-sec fv-reveal" id="channels">
     <div class="fv-eyebrow">🛰️ {{ t('Cross-Border Channels','跨境通道') }}</div>
     <h2>{{ t('Stock-Connect aggregate flow','沪深港通整体资金') }} <span class="sub">{{ t('the whole-channel tape · daily 1w / 1m / 3m velocity','整条通道 · 日度1周/1月/3月流速') }}</span></h2>
+    {# S4 scoping repair: #channels shows the Stock-Connect AGGREGATE cards (southbound/
+       northbound) — its own leg is sb_aggregate; hk_sb_holdings (per-name HK holdings)
+       does not feed anything on this section and gets its own watermark inside the HK
+       board sub-panel instead (market-hk block). #}
+    {{ sec_watermark([_src_by_id.get('sb_aggregate')]) }}
     {% if live_chans %}
     <div class="vgrid">
       {% for c in live_chans %}
@@ -936,6 +1711,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <b>{{ t('Sources','数据来源') }}:</b>
     {{ t('Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 daily grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.','沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力日度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。') }}<br>
     <b>{{ t('Method','方法') }}:</b>
+    <span class="qm" data-tip-en="themes threshold recalibrated Sep 2026 — 0.75σ; names & Southbound unchanged at 0.5σ" data-tip-zh="主题阈值于2026年9月重校准——0.75σ；个股与南向维持0.5σ" role="button" tabindex="0">?</span>
     {{ t('Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.','流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。') }}
     · {{ t('Built','构建于') }} {{ built }}
   </div>
@@ -965,6 +1741,29 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   }
   btns.forEach(function(b){b.addEventListener('click',function(){setMkt(b.getAttribute('data-mkt'));});});
   setMkt(H.getAttribute('data-market')||'a');
+  // ---- W4 lens tabset: curated themes <-> official sectors, URL hash state ----
+  (function(){
+    var tabs=document.querySelectorAll('.fv-lens-tabs .tabbtn');
+    if(!tabs.length) return;
+    var panels={curated:document.getElementById('lens-curated'), official:document.getElementById('lens-official')};
+    function setLens(name, pushHash){
+      if(!panels[name]) return;
+      tabs.forEach(function(b){
+        var on=b.getAttribute('data-lens')===name;
+        b.classList.toggle('on',on); b.setAttribute('aria-selected',on?'true':'false');
+      });
+      // 'block', never '' for the active panel: an empty inline value merely CLEARS
+      // any previous override, and #lens-official's own default CSS rule
+      // (html.js #lens-official{display:none}) would then keep it hidden even
+      // after being selected — caught rendering the evidence screenshots.
+      Object.keys(panels).forEach(function(k){ if(panels[k]) panels[k].style.display=(k===name?'block':'none'); });
+      if(pushHash){ try{ history.replaceState(null,'','#lens-'+name); }catch(e){ location.hash='lens-'+name; } }
+    }
+    tabs.forEach(function(b){ b.addEventListener('click',function(){ setLens(b.getAttribute('data-lens'), true); }); });
+    var initial='curated';
+    if(location.hash==='#lens-official') initial='official';
+    setLens(initial, false);
+  })();
   // ---- drill into a sector's lane in the full map (rotation cards + any [data-goto]) ----
   function drillSector(id){
     var row=document.querySelector('tr.sector-row[data-sector="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');
@@ -1020,6 +1819,86 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   } else {
     document.querySelectorAll('.fv-reveal').forEach(function(el){ el.classList.add('is-in'); });
   }
+  // ---- W6 (spec §2): compare — max 2 checkboxes, same-lens only. Never a new chart:
+  // the compare panel CLONES each selected row's own already-server-rendered .fv-hist
+  // <details> node (real <svg><polyline> markup built server-side) rather than
+  // constructing any chart element from scratch — this JS only selects/positions
+  // existing DOM and reads existing data-* attributes, never originates a number. ----
+  (function(){
+    var bar=document.getElementById('fv-compare-bar');
+    var panel=document.getElementById('fv-compare-panel');
+    var goBtn=document.getElementById('fv-cmp-go');
+    var clearBtn=document.getElementById('fv-cmp-clear');
+    var countEn=document.getElementById('fv-cmp-count');
+    var countZh=document.getElementById('fv-cmp-count-zh');
+    if(!bar||!panel) return;
+    var REFUSAL_EN="Themes and official sectors can't be compared directly — different denominators and universes.";
+    var REFUSAL_ZH="主题与官方行业口径不同（分母与样本范围不同），无法直接比较。";
+    function checked(){ return Array.prototype.slice.call(document.querySelectorAll('.fv-cmp-cb:checked')); }
+    function esc(id){ return (window.CSS&&CSS.escape)?CSS.escape(id):id; }
+    function refresh(){
+      var cbs=checked();
+      bar.classList.toggle('on', cbs.length>0);
+      countEn.textContent=cbs.length+' selected';
+      countZh.textContent='已选'+cbs.length+'项';
+      goBtn.disabled = cbs.length!==2;
+      // enforce "max 2": once two are checked, disable every other checkbox (never
+      // silently uncheck a prior pick — the user drives which two).
+      var atMax = cbs.length>=2;
+      document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){
+        if(!cb.checked) cb.disabled = atMax;
+      });
+    }
+    function statRow(labelEn, labelZh, val){
+      return '<div><span class="l-en">'+labelEn+'</span><span class="l-zh">'+labelZh+'</span>: '+val+'</div>';
+    }
+    function buildCol(row){
+      var name = document.documentElement.getAttribute('data-lang')==='zh'
+        ? (row.getAttribute('data-cmp-name-zh')||row.getAttribute('data-cmp-name'))
+        : row.getAttribute('data-cmp-name');
+      var abs=row.getAttribute('data-abs'), rel=row.getAttribute('data-rel'),
+          cov=row.getAttribute('data-coverage'), top=row.getAttribute('data-top');
+      var q = document.documentElement.getAttribute('data-lang')==='zh'
+        ? (row.getAttribute('data-quadrant-zh')||row.getAttribute('data-quadrant'))
+        : (row.getAttribute('data-quadrant-en')||row.getAttribute('data-quadrant'));
+      var html='<div class="fv-compare-col"><h4>'+ (name||'') +'</h4><div class="fv-compare-stats">'
+        + statRow('abs 4wk','绝对4周', abs? (parseFloat(abs).toFixed(1)+'%') : '—')
+        + statRow('vs norm','相对常态', rel? (parseFloat(rel).toFixed(2)+'σ') : '—')
+        + statRow('quadrant','象限', q||'—')
+        + statRow('coverage','覆盖率', cov? (cov+'%') : '—')
+        + statRow('top contributor','最大贡献', top||'—')
+        + '</div>';
+      var sid=row.getAttribute('data-sector');
+      var histRow=document.querySelector('tr.fv-hist-row[data-sector="'+esc(sid)+'"] details.fv-hist');
+      if(histRow){
+        var clone=histRow.cloneNode(true);
+        clone.open=true;
+        html+=clone.outerHTML;
+      }
+      html+='</div>';
+      return html;
+    }
+    function doCompare(){
+      var cbs=checked();
+      if(cbs.length!==2) return;
+      var a=cbs[0].closest('tr.sector-row'), b=cbs[1].closest('tr.sector-row');
+      var lensA=cbs[0].getAttribute('data-cmp-lens'), lensB=cbs[1].getAttribute('data-cmp-lens');
+      if(lensA!==lensB){
+        panel.innerHTML='<div class="fv-compare-refusal"><span class="l-en">'+REFUSAL_EN+'</span><span class="l-zh">'+REFUSAL_ZH+'</span></div>';
+        return;
+      }
+      panel.innerHTML='<div class="fv-compare-cols">'+buildCol(a)+buildCol(b)+'</div>';
+      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+    document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){ cb.addEventListener('change', refresh); });
+    goBtn.addEventListener('click', doCompare);
+    clearBtn.addEventListener('click', function(){
+      document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){ cb.checked=false; cb.disabled=false; });
+      panel.innerHTML='';
+      refresh();
+    });
+    refresh();
+  })();
 })();
 </script>
 <script src="theme.js"></script>

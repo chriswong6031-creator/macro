@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PRGO-BULL-20260702",
-  "asof": "2026-08-31",
+  "asof": "2026-09-03",
   "phase": "between_t1_t2",
   "detection_phase": "between_t1_t2",
-  "management_confidence": 85.1,
-  "raw_confidence": 86.1,
-  "delta_vs_base": 25.1,
+  "management_confidence": 84.9,
+  "raw_confidence": 84.7,
+  "delta_vs_base": 24.9,
   "recommended_action": "hold",
   "human_state": "Advancing to T2",
   "components": {
     "validity": 100.0,
-    "progress": 80.4,
-    "pace": 88.5,
-    "retention": 97.2,
+    "progress": 79.0,
+    "pace": 86.7,
+    "retention": 93.7,
     "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 3.424,
-    "dist_to_t1_r": -0.924,
-    "dist_to_t2_r": 0.576,
-    "horizon_pct_used": 91.1,
-    "p1": 1.6163,
-    "p2": 0.8081,
+    "dist_to_stop_r": 3.337,
+    "dist_to_t1_r": -0.837,
+    "dist_to_t2_r": 0.663,
+    "horizon_pct_used": 97.8,
+    "p1": 1.5581,
+    "p2": 0.7791,
     "p3": null,
-    "move_r": 2.424,
+    "move_r": 2.337,
     "mfe_r": 2.494,
     "mae_r": -0.221
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": "2026-08-06",
   "_first_t2_ts": null,
-  "days_elapsed": 41,
-  "tau": 0.9111
+  "days_elapsed": 44,
+  "tau": 0.9778
 }

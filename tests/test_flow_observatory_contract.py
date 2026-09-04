@@ -28,6 +28,7 @@ from engine.cn_theme_tape import build_cn_theme_tape
 from engine.flow_observatory import changes as fo_changes
 from engine.flow_observatory.contract import (
     QUADRANT_LABELS,
+    STATUS_WORD,
     ContractError,
     build_sources,
     build_v2,
@@ -140,9 +141,9 @@ def _v2(log_rows=None, market_session="2026-09-01", **over):
 
 
 def _render(v2, built="test"):
-    from engine.flow_observatory.contract import QUADRANT_LABELS
     env = Environment(loader=FileSystemLoader(str(TMPL)), autoescape=True)
-    env.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS)
+    env.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS,
+                       status_word=STATUS_WORD)
     return env.get_template("flow_velocity.html.j2").render(C=C, snap=v2, built=built)
 
 
@@ -320,6 +321,34 @@ def test_source_leg_dates_stay_distinct():
     assert by_id["nb_aggregate"]["effective_date"] != by_id["cn_large_order_proxy"]["effective_date"]
 
 
+# ── W3: sources[].first_known_at comes from the observations ledger ───────────────
+def test_source_first_known_at_bootstrap_null_then_real_from_ledger():
+    """W1 shipped ``first_known_at`` permanently ``None`` (no ledger existed yet).
+    W3 closes that: omitted/empty ``ledger_rows`` keeps the exact bootstrap null
+    (backward-compat — every pre-W3 caller), and a ledger holding the leg's
+    ``revision_id==0`` row for its own effective_date surfaces the REAL first-known
+    instant (research/flow_observatory/W3_SPEC.md §2)."""
+    v2 = _v2()
+    bootstrap_sources = build_sources(v2, newest_session="2026-09-01", seats_as_of="2026-08-30")
+    by_id = {s["source_id"]: s for s in bootstrap_sources}
+    assert by_id["cn_large_order_proxy"]["first_known_at"] is None
+
+    ledger_rows = [{
+        "entity_kind": "market", "entity_id": "cn_large_order_proxy",
+        "effective_session": "2026-09-01", "revision_id": 0,
+        "first_known_at": "2026-09-01T09:00:00+00:00", "revised_at": None,
+        "vel": None, "abs_value": None, "quadrant": None, "state": None,
+        "rank": None, "coverage_n": 100, "status": "HEALTHY",
+    }]
+    fed_sources = build_sources(v2, newest_session="2026-09-01", seats_as_of="2026-08-30",
+                                ledger_rows=ledger_rows)
+    by_id2 = {s["source_id"]: s for s in fed_sources}
+    assert by_id2["cn_large_order_proxy"]["first_known_at"] == "2026-09-01T09:00:00+00:00"
+    # a DIFFERENT leg (no matching ledger row) stays honestly null, never borrowing
+    # cn_large_order_proxy's instant.
+    assert by_id2["sb_aggregate"]["first_known_at"] is None
+
+
 # ── 11: proxy disclosure copy, rendered ────────────────────────────────────────────
 def test_order_size_copy_carries_proxy_disclosure():
     out = _render(_v2())
@@ -438,6 +467,60 @@ def test_validate_rejects_quadrant_axis_mismatch():
 
 def test_validate_passes_a_consistent_payload():
     validate(_v2())   # must not raise
+
+
+# ── M1/W4 repair: validate() extended to cover official_sectors rows (quadrant/axis
+#    consistency + the coverage_state enum) — previously entirely unchecked, since
+#    contract.py was not touched in the W4 landing. ─────────────────────────────────
+def _official_row(**over):
+    from engine.flow_observatory.contract import enrich_group
+    row = dict(enrich_group(1.0, 1.1), id="801780", name="Banks", name_zh="银行",
+              group_kind="official_sector", overlap_allowed=False,
+              membership_as_of="current", n_members=42, n_covered=38, coverage_pct=90.5,
+              coverage_state="ok", excluded=[], vel=1.1, accel=0.02, rate_now=1.0,
+              rate_4wk=1.0, rate_norm=0.0, rate_rel=1.1, state="above norm, rising",
+              state_zh="高于常态·升温", spark=None, concentration=None, members=[],
+              rank=1, rank_change=None)
+    row.update(over)
+    return row
+
+
+def test_validate_passes_a_consistent_official_sectors_payload():
+    v2 = _v2()
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-03", "n": 1,
+                              "rows": [_official_row()]}
+    validate(v2)   # must not raise
+
+
+def test_validate_rejects_an_official_sectors_quadrant_axis_mismatch():
+    v2 = _v2()
+    bad = _official_row(quadrant="true_distribution")   # abs/rel both positive -> mismatch
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-03", "n": 1, "rows": [bad]}
+    with pytest.raises(ContractError):
+        validate(v2)
+
+
+def test_validate_rejects_an_unknown_coverage_state():
+    v2 = _v2()
+    bad = _official_row(coverage_state="mostly_ok")   # not in the enum
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-03", "n": 1, "rows": [bad]}
+    with pytest.raises(ContractError):
+        validate(v2)
+
+
+def test_validate_rejects_an_unknown_coverage_state_on_a_curated_theme_row_too():
+    """The coverage_state enum check is shared by BOTH lenses (M1 — minimal, but not
+    official_sectors-only where the field is equally real on ashare_sectors rows)."""
+    v2 = _v2()
+    v2["ashare_sectors"]["rows"][0]["coverage_state"] = "mostly_ok"
+    with pytest.raises(ContractError):
+        validate(v2)
+
+
+def test_validate_ignores_an_unavailable_official_sectors_lens():
+    v2 = _v2()
+    v2["official_sectors"] = {"available": False, "reason": "no_membership_data"}
+    validate(v2)   # must not raise — an unavailable lens carries no rows to check
 
 
 def test_validate_rejects_a_missing_denominator():
@@ -720,3 +803,40 @@ def test_theme_abs_column_colors_by_direction_not_raw_sign():
     row_html = next(r for r in _TR_RE.findall(table_html) if "cn_autos" in r or "Autos" in r)
     assert 'class="chg neu"' in row_html, "a neutral-direction abs value must use the muted 'neu' class"
     assert 'class="chg neg"' not in row_html, "a neutral-direction abs value must never render as 'neg'"
+
+
+# ── B1 structural kill (W6 review round) ───────────────────────────────────────────────
+# This program has now shipped FOUR waves (W2, W3, W4, W5 — see the "Wired ..." comments
+# stacked in .github/ci/legacy-jobs.yml immediately above its flow lane run: line) that
+# each landed a brand-new tests/test_flow_observatory_*.py suite with no job naming it
+# anywhere in CI, so the suite's own tests never actually ran despite being present and
+# green-looking in the PR's own local run. W6 (tests/test_flow_observatory_workflow.py)
+# was the FIFTH instance, caught only by independent review after merge. Every prior fix
+# was a one-off edit to the run: line; none of them closed the CLASS. This test does: it
+# reads the run: line directly off disk and fails the NEXT time a suite ships unwired,
+# in the same PR, before merge — the fourth-plus recurrence a mere code-review comment
+# evidently cannot prevent.
+def test_all_flow_observatory_suites_are_wired_into_the_ci_lane():
+    legacy_src = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
+    # Matched structurally (the pytest invocation naming test_flow_velocity.py, the
+    # oldest suite this lane has always carried) rather than by line number — line
+    # numbers drift on every unrelated ci edit, exactly the kind of edit this lane sees
+    # constantly.
+    m = re.search(r"run:\s*python -m pytest ([^\n]*\btests/test_flow_velocity\.py\b[^\n]*)\n", legacy_src)
+    assert m, ('the flow-velocity measure guards run: line (naming tests/test_flow_velocity.py) '
+              'was not found in .github/ci/legacy-jobs.yml — this test can no longer locate the '
+              'lane it is supposed to guard; update the regex above if the lane was legitimately '
+              'restructured, but do not simply delete this test')
+    run_line = m.group(1)
+    wired = set(re.findall(r"tests/test_flow_observatory_\w+\.py", run_line))
+    on_disk = {f"tests/{p.name}" for p in (ROOT / "tests").glob("test_flow_observatory_*.py")}
+    missing = on_disk - wired
+    assert not missing, (
+        f"{sorted(missing)} exist under tests/ but are NOT named on the flow-velocity "
+        "measure guards' run: line in .github/ci/legacy-jobs.yml — a new "
+        "tests/test_flow_observatory_*.py suite ships DARK (present, looks green locally, "
+        "NEVER actually executed by CI) until it is added to that run: line. This is the "
+        "SAME defect that shipped unwired in W2, W3, W4, W5, and W6 (5 waves in a row) — "
+        "add the new file to the run: command in .github/ci/legacy-jobs.yml (and its "
+        "matching path-gate entry in .github/workflows/ci.yml) in this SAME commit before "
+        "this test will pass.")

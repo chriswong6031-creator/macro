@@ -239,3 +239,27 @@ def test_a_failed_module_does_not_read_as_collection():
     broken = pd.DataFrame([{"tushare_valuation": -1.0, "tushare_moneyflow": 0.0}],
                           index=[pd.Timestamp("2026-08-05")])
     assert adapter.fetch_result_status({"run_log": broken}) == "stale"
+
+
+# ── M11 (W3 repair round): never publish source_revisions[] the ledger does not hold ────
+
+def test_strip_unpersisted_revisions_on_ledger_append_failure():
+    """A ledger append AFTER validate() can itself fail (disk error, a monotonicity
+    refusal, a partial per-session loop) — the previewed source_revisions[] the payload's
+    change_summary already carries must not survive into desk.json when that happens."""
+    from scripts import build_flow_velocity as bfv
+
+    v2_snap = {"change_summary": {"source_revisions": [{"kind": "revision", "id": "cn_autos"}],
+                                  "transitions": []}}
+    stripped = bfv._strip_unpersisted_revisions(v2_snap)
+    assert stripped is True
+    assert v2_snap["change_summary"]["source_revisions"] == []
+
+
+def test_strip_unpersisted_revisions_is_a_noop_when_nothing_to_strip():
+    from scripts import build_flow_velocity as bfv
+
+    v2_snap = {"change_summary": {"source_revisions": [], "transitions": []}}
+    assert bfv._strip_unpersisted_revisions(v2_snap) is False
+
+    assert bfv._strip_unpersisted_revisions({}) is False
