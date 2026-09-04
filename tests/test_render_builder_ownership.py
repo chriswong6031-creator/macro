@@ -109,6 +109,20 @@ def test_render_uses_positive_builder_ownership_not_the_repo_wide_wildcard():
     assert _owned_modules(), "the explicit builder ownership list vanished"
 
 
+def test_the_macro_suite_hook_reaches_the_page_builder():
+    """The macro-suite pages (F01 R1B) enter the render lane through
+    build_site's guarded hook — render.yml owns
+    scripts/build_macro_suite_pages.py only because this edge exists. The
+    guard lives HERE rather than in tests/test_macro_suite_pages.py because
+    this suite already reads builder sources (``_static_builder_imports``);
+    in the page suite the same read_text dragged build_site's whole import
+    closure into the curated market-os-macro-suite-pages scope (490-file
+    coverage miss, 2026-09-04)."""
+    source = (ROOT / "scripts" / "build_site.py").read_text(encoding="utf-8")
+    assert "from scripts.build_macro_suite_pages import render as _render_macro_suite" in source
+    assert "_macro_suite_pages = _render_macro_suite(config.ROOT)" in source
+
+
 def test_every_owned_builder_exists():
     missing = sorted(
         module

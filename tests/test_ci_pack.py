@@ -3558,6 +3558,15 @@ CURATED_EXCLUSIVE = {
     # the read subpackages, deliberately not engine/**), the frozen fixture
     # trees, and the sha-frozen staged goldens.
     "defense-rail-laws",
+    # 2026-09-04 (F01 R1B): the macro-suite page family, exclusive at birth.
+    # The page builder's jinja FileSystemLoader is an opaque construct whose
+    # fallback smear claimed templates/** and pushed templates/index.html to
+    # 132 > 131 on the probe below. The declaration names the page family's
+    # own closure (five templates, the two suite libs, lib/pages, the
+    # workspace contract/registry, the published artifacts); the build_site
+    # hook guard moved to tests/test_render_builder_ownership.py so this
+    # job's closure stays the page family rather than the whole site builder.
+    "market-os-macro-suite-pages",
 }
 
 

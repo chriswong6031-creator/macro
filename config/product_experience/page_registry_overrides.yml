@@ -1161,3 +1161,6 @@ pages:
     access_shell: "anonymous"
     payload_tier: "public"
     evidence: [terminal/app/login/page.tsx]
+
+  macro:macro_liquidity_regime:
+    archetype: "regime_dashboard"
