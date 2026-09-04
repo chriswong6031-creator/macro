@@ -64,10 +64,11 @@ class SuitePage:
     seo_desc: str
 
 
-# The suite registry. R1B publishes exactly one page; the other eleven appear
-# here only when their producer is BUILT in
-# engine.market_os.macro_workspaces.registry — a page is never advertised ahead
-# of its data (production navigation law, architecture section 6.2).
+# The suite registry. A workspace appears here only when its producer is BUILT
+# in engine.market_os.macro_workspaces.registry — a page is never advertised
+# ahead of its data (production navigation law, architecture section 6.2).
+# R1B shipped liquidity_regime; the R2 pages wave (2026-09-04) added the six
+# MCS/cycle workspaces the R2 producer wave made BUILT.
 SUITE_PAGES: tuple[SuitePage, ...] = (
     SuitePage(
         workspace_id="liquidity_regime",
@@ -78,6 +79,74 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
         seo_desc=(
             "Funding pressure against balance-sheet support for the United States, "
             "with every source clock, method receipt and typed gap shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="growth_real_economy",
+        region="US",
+        template="macro_growth_real_economy.html.j2",
+        output="macro_growth_real_economy.html",
+        seo_title="US Growth & Real Economy — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Growth momentum against level and breadth for the United States, with "
+            "nowcast-versus-hard-data disagreement, source clocks and typed gaps shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="business_activity",
+        region="US",
+        template="macro_business_activity.html.j2",
+        output="macro_business_activity.html",
+        seo_title="US Business Activity — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Leading, coincident and lagging cycle tiers for the United States — "
+            "composites refuse honestly when their legs fall below floor, with every "
+            "source clock shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="labor_markets",
+        region="US",
+        template="macro_labor_markets.html.j2",
+        output="macro_labor_markets.html",
+        seo_title="US Labor Markets — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Labor demand against supply tightness for the United States, with "
+            "source clocks, method receipts and typed coverage gaps shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="inflation_system",
+        region="US",
+        template="macro_inflation_system.html.j2",
+        output="macro_inflation_system.html",
+        seo_title="US Inflation System — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Inflation impulse against persistence and breadth for the United "
+            "States, with sticky-versus-headline contradictions surfaced and "
+            "release-lag clocks shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="monetary_policy",
+        region="US",
+        template="macro_monetary_policy.html.j2",
+        output="macro_monetary_policy.html",
+        seo_title="US Monetary Policy — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Policy stance against the market-implied path for the United States, "
+            "with two-sided splits surfaced and every source clock and typed gap shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="financial_conditions",
+        region="US",
+        template="macro_financial_conditions.html.j2",
+        output="macro_financial_conditions.html",
+        seo_title="US Financial Conditions — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Financial-conditions level against impulse for the United States, with "
+            "uncovered legs typed honestly and every source clock shown."
         ),
     ),
 )

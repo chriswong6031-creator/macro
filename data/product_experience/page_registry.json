@@ -1,14 +1,14 @@
 {
   "schema": "mastermind.page_registry.v1",
-  "generated_at": "2026-09-04T15:54:55Z",
+  "generated_at": "2026-09-04",
   "sources": {
     "macro": {
       "available": true,
       "root": "/private/tmp/f01-r1b-wt",
       "ref": "HEAD",
-      "sha": "b808c2ff73a23f38a98d2bad77e3d0abc5c26375",
+      "sha": "8e59a413018d0f1563b86ccfbb7e0b4b688eed72",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 8919,
+      "tracked_html_pages": 8925,
       "write_page_sites": 151,
       "write_page_unresolved": 35,
       "unresolved_write_sites": [
@@ -6331,6 +6331,49 @@
       "notes": []
     },
     {
+      "page_id": "macro:macro_business_activity",
+      "repo": "macro",
+      "route": "/macro_business_activity.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_business_activity.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_business_activity.html",
+        "templates/macro_business_activity.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
       "page_id": "macro:macro_context",
       "repo": "macro",
       "route": "/macro_context.html",
@@ -6375,6 +6418,178 @@
       "notes": []
     },
     {
+      "page_id": "macro:macro_financial_conditions",
+      "repo": "macro",
+      "route": "/macro_financial_conditions.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_financial_conditions.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_financial_conditions.html",
+        "templates/macro_financial_conditions.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_growth_real_economy",
+      "repo": "macro",
+      "route": "/macro_growth_real_economy.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_growth_real_economy.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_growth_real_economy.html",
+        "templates/macro_growth_real_economy.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_inflation_system",
+      "repo": "macro",
+      "route": "/macro_inflation_system.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_inflation_system.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_inflation_system.html",
+        "templates/macro_inflation_system.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_labor_markets",
+      "repo": "macro",
+      "route": "/macro_labor_markets.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_labor_markets.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_labor_markets.html",
+        "templates/macro_labor_markets.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
       "page_id": "macro:macro_liquidity_regime",
       "repo": "macro",
       "route": "/macro_liquidity_regime.html",
@@ -6411,6 +6626,49 @@
         "config/site_access.yml:1",
         "site/macro_liquidity_regime.html",
         "templates/macro_liquidity_regime.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_monetary_policy",
+      "repo": "macro",
+      "route": "/macro_monetary_policy.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_monetary_policy.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_monetary_policy.html",
+        "templates/macro_monetary_policy.html.j2"
       ],
       "notes": [
         "template attributed by name match; no write_page() call site names it",
@@ -7519,7 +7777,7 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "editorial",
       "design_system": {
         "compliant": false
       },
@@ -7692,7 +7950,7 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
       "design_system": {
         "compliant": false
       },
