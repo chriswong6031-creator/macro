@@ -2,51 +2,44 @@
 schema: agentos.decision.v1
 key: AUTONOMY-CLOSURE-SPINE-V1
 question: >
-  How should Mastermind close the remaining autonomy-composition gap without replacing existing
-  lifecycle, action-target, Wake, dialogue, capacity, COO, Control Room, or Agent OS owners?
+  Should Mastermind add ACF-1 Semantic Directive Convergence before the first golden-root canary,
+  or first test whether the existing action-target, dialogue, Wake, Runtime, COO, and Control Room
+  owners already close the user-visible autonomy journey?
 answer: >
-  Adopt Autonomy Closure Spine v1 and preserve the W3C -> C2 -> MAT-S1 -> Stage-B1 -> Control Room
-  -> golden-root train. Authorize only ACF-1 before fleet proof. ACF-1 uses one Executive Runtime
-  command domain per terminal-return revision; accepts only the existing ACTION_TARGET authority
-  through control_plane.sol_action_target.require_sol_action_authority; validates an exact bounded
-  CONTINUE/REPAIR/STOP/ESCALATE body; canonicalizes through the existing
-  control_plane.wake_events.canonical_json_bytes owner; performs replay lookup before current actor
-  revalidation so no-effect readback survives target rotation; and lets the existing COO cycle
-  consume the Event once in the same transaction as the downstream mutation. STOP closes only the
-  returned source-child boundary; root terminalization remains existing COO/Runtime law. ACF-2
-  through ACF-6 remain evidence-gated.
+  Defer ACF-1 until post-golden-root evidence. Preserve Mastermind PR #438 and issue #437 as
+  closed, unmerged advisory evidence. The pre-canary critical path is the existing W3C -> C2-R1A
+  -> MAT-S1 -> Stage-B1 -> Control Room train, followed by one real golden-root and adversarial
+  multi-root canary. Reopen the ACF-1 architecture only if that canary reproduces a decision-
+  convergence failure in which more than one otherwise-lawful semantic decision becomes effective
+  despite exact action-target and same-carrier continuation enforcement.
 rationale: >
-  Target identity and transport truth do not establish which semantic decision became effective.
-  Live W3C and C2 carriers demonstrated conflicting or stale action-looking instructions. Slack
-  ordering cannot reject an observer, stale target, changed body, or CONTINUE/STOP race. Actor,
-  target-generation, or decision entropy in the command key would create parallel commands. A
-  free-form body would create model-authored executable authority. Requiring current actor authority
-  to read back an already-committed effect after target rotation would strand effect reconciliation.
-  Allowing STOP to mean either child or root would make the machine transition ambiguous. The
-  smallest lawful repair uses existing owners and makes both boundaries exact.
+  Target authority and semantic-decision convergence are conceptually distinct, but architecture
+  must close a reproduced blocker rather than speculate ahead of the first integrated proof.
+  Conflicting Slack prose is already non-authoritative, observer Sols cannot act, and the current
+  action target plus explicit same-carrier continuation is sufficient for the first acceptance
+  attempt. Merging a new Runtime directive family before that attempt would widen the critical
+  path, compete with C2-R1A's Runtime ownership, and risk creating unnecessary policy and consumer
+  surface. Closing F0 unmerged preserves the design work and exact falsifier without treating
+  records, green checks, or review effort as evidence that the new layer is necessary.
 alternatives:
-  - option: Finish each existing component independently
-    why_not: Locally correct components can still accept conflicting semantic decisions.
-  - option: Build a new autonomy platform
-    why_not: It duplicates Executive lifecycle, Event, routing, retry, identity, and state owners.
-  - option: Latest Slack message wins
-    why_not: Slack is transport and cannot bind exact return, conflict, or consumption.
-  - option: Include actor, target, or decision in command identity
-    why_not: Rival proposals would derive different command IDs and could all commit.
-  - option: Require current actor authority for no-effect readback
-    why_not: Target rotation after a lost response would make a known committed Event unrecoverable.
-  - option: Let STOP choose child or root at consumption time
-    why_not: The directive would not be a closed deterministic command; root lifecycle has an existing owner.
+  - option: Merge PR #438 and require ACF-1 before the first golden root
+    why_not: >
+      No real integrated canary has yet shown that existing exact-target and continuation enforcement
+      permits two semantic decisions to become effective.
+  - option: Delete the ACF-1 research and branch
+    why_not: >
+      The architecture and repaired source-law candidate remain useful post-canary evidence if the
+      exact falsifier is later reproduced.
+  - option: Build a second Slack or watcher command authority instead
+    why_not: >
+      Slack and watchers are transport/attention only and may not replace Executive Runtime,
+      action-target, or COO ownership.
 evidence:
-  - "Mastermind issue #437 is the single Chairman-approved architecture carrier."
-  - "Mastermind PR #438 remains the exact three-path F0 source carrier on protected base 7022e70640637a4fa07f073442dc693301290e2a."
-  - "Current F0 head f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7 uses wake_events canonical JSON, replay-first readback, and source-child-only STOP semantics."
-  - "The sole v1 actor owner is mastermind.sol_action_target.v1 / SolActionTargetResolution.evidence_digest."
-  - "REPAIR uses normalized CommissionRef; STOP and ESCALATE use closed enums; body maximum is 4096 canonical UTF-8 bytes."
-  - "Mastermind PR #427 protected W3C source through a945e76befb34d15d0ab0e369b4197901883bb16."
-  - "Mastermind PR #415 remains the active C2-R1A Runtime writer and gates ACF-1 implementation."
-  - "Mastermind PR #326 remains the active Control Room writer."
-  - "Issue #400 is closed duplicate; issue #386 remains canonical."
+  - "Slack C0BSBM78V1N/1788495922.483179/1788508703.540179 records the Chairman terminal STOP and post-golden-root evidence gate."
+  - "Mastermind PR #438 is CLOSED_UNMERGED at d6ffac38108c5d59f6cba02140068924e444d2b2."
+  - "Mastermind issue #437 is CLOSED / NOT_PLANNED and preserves the advisory architecture."
+  - "Mastermind PR #436 merged as 22b36b830bd5560942186ada7597508f918696af, protecting the MAT-C1 materialization receipt predecessor."
+  - "C2-R1A PR #415, CAP-S1 PR #350, and Control Room PR #326 remain the active pre-canary source carriers."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
   - WS:EXECUTIVE-CAPACITY-FABRIC
@@ -56,27 +49,17 @@ affects:
 confidence: high
 reversibility: easy
 decided_by: chairman
-decided_at: 2026-09-03
+decided_at: 2026-09-04
 ---
 
-# Autonomy Closure Spine v1
+# Post-golden-root evidence gate
 
-ACF-1 is the only newly authorized pre-fleet closure layer and remains
-`WAITING_ARCHITECTURE_PROTECTION / WAITING_RUNTIME_PATH_RELEASE / needs_placement`.
-No implementation worker, branch, Runtime Event, provider action, deployment, or canary exists.
+ACF-1 is not part of the current implementation queue. No ACF-1 operation, worker, branch, Runtime
+Event, provider call, deployment, or canary may be created from the closed records.
 
-## Existing-owner boundary
+The trigger for reconsideration is narrow: a real golden-root or adversarial multi-root canary must
+show that two otherwise-lawful semantic decisions can both become effective, or that a stale/observer
+decision reaches the downstream owner despite current exact-target and same-carrier enforcement.
 
-- Executive Runtime owns command conflict, Event commit/readback, and lifecycle truth.
-- `control_plane.sol_action_target` owns the sole v1 actor authority.
-- `control_plane.wake_events.canonical_json_bytes` owns canonical JSON bytes.
-- `common.commission_ref` owns immutable REPAIR source identity.
-- terminal-return owns source completion evidence.
-- W3C/Wake/Agent Relay own attention and delivery; Agent Dialogue owns transport.
-- the existing COO cycle owns transactional consumption and the ordinary downstream Event receipt.
-- root terminalization remains existing COO/Runtime authority; ACF-1 STOP is source-child-only.
-- Control Room may later project state but never author it.
-
-Exact existing Event readback is no-effect reconciliation and remains available after target rotation.
-Consumed, applied, or effect-unknown work cannot be reversed by later prose. ACF-2 through ACF-6 may
-start only when golden-root evidence proves a concrete existing-owner gap.
+Until that trigger exists, finish and prove the existing train. PR #438 remains preserved evidence,
+not protected architecture and not production proof.
