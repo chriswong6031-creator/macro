@@ -63,7 +63,7 @@ Every card has exactly these top-level fields:
 - source_artifacts: non-empty list of SourceArtifact objects
 - authority: the exact five-boolean authority object defined below
 
-LocalizedText has exactly en and zh non-empty strings. SourceArtifact has exactly role, path, sha256, as_of, and rights. A path is repository-relative, sha256 is a lowercase 64-character digest, as_of is an ISO date or null, and rights is a stable rights/availability code.
+LocalizedText has exactly en and zh non-empty strings. SourceArtifact has exactly role, path, sha256, as_of, as_of_reason, and rights. A path is repository-relative, sha256 is a lowercase 64-character digest, as_of is an ISO date or null, and rights is a stable rights/availability code. A null as_of requires a non-empty localized as_of_reason; a dated receipt requires as_of_reason=null.
 
 Typed metrics and diagnostics carry a stable code, LocalizedText label, typed value, explicit unit, and source locator. A null value is allowed only when null_reasons includes a matching field code. Missing is never encoded as zero, false, neutral, or an empty success state.
 
@@ -123,7 +123,7 @@ The card preserves the selected CAR, monthly Newey-West t statistic, placebo mea
 - Roster hash: b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148
 - HSI hash: 184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45
 
-The card preserves the Stock Connect inclusion announce-anchor +20-day result, event N, independent episode K, HAC result, 90 percent interval, DSR, BH-FDR, panel coverage, exclusions, and the owner-provided ordered event curve. sample_n is the recorded event count. effective_n is the recorded episode_k, because this artifact explicitly names the distinct-episode count. The ordered path is permitted only because the artifact supplies ordered horizons.
+The card preserves the Stock Connect inclusion announce-anchor +20-day result, event N, independent episode K, HAC result, the three owner interval quantiles, DSR, BH-FDR, panel coverage, exclusions, and the owner-provided ordered event curve. sample_n is the recorded event count. effective_n is the recorded episode_k, because this artifact explicitly names the distinct-episode count. The ordered path is permitted only because the artifact supplies ordered horizons. Its closed object also carries the owner's EXPLORATORY_NON_GATED status, the selected horizon, localized sample basis and comparison note, and a localized accessible name. The chart must distinguish the event-weighted full-window curve from the episode-clustered headline rather than inviting a same-estimator comparison.
 
 Quality is ARTIFACT_INCOMPLETE. The generator depended on a gitignored absolute hk_stocks_ext input whose immutable digest and rights receipt are absent. Outputs remain visible, while completion and decision implication are refused. Language stays descriptive and does not call the observation a causal treatment effect.
 
@@ -139,7 +139,7 @@ Quality is ARTIFACT_INCOMPLETE. The generator depended on a gitignored absolute 
 
 ## Existing Measurement product integration
 
-The section title is Research Implications. Its permanent stance is “Research context — do not use as a trading signal” with equivalent ZH copy. Filters are non-ranking controls for method family, evidence tier, and quality state. Stable anchors use card_id.
+The section title is Research Implications. Its permanent stance is “Research context — do not use as a trading signal” with equivalent ZH copy. Filters are non-ranking controls for method family, evidence tier, and quality state. Stable card-unique anchors use method_family + study_run_id + selected_result_id so deep links survive a result-artifact digest change without colliding across cards.
 
 The collapsed card shows method, question, cutoff, evidence tier, quality, and a small set of owner metrics. Expandable details expose outputs, uncertainty, diagnostics, exclusions, limitations, missingness, counterexamples/placebos, ordered path when present, and artifact receipts. There is no edit, rerun, save, promote, score, rank, size, or trade affordance.
 
@@ -152,7 +152,7 @@ Required evidence matrix is dark/light × EN/ZH × desktop 1440/mobile 390. Deta
 - Focused adapter tests prove real synthetic-control and event-study cards.
 - Hostile tests prove digest mismatch, selected-result drift, missing-vs-zero, sample_n/effective_n separation, failed-diagnostic dominance, all-false authority, closed keys, deterministic replay, and mutation-sensitive identity.
 - Builder tests prove the human and machine projections consume the same cards and IDs.
-- UI tests prove the non-ranking filters, stable anchors, stance, localization, state treatments, details semantics, and absence of prohibited controls.
+- UI tests prove the non-ranking filters, stable anchors, stance, localization, state treatments, details semantics, exact formatted value projection for every metric, outer-quantile interval rendering, typed receipt-date nulls, and absence of prohibited controls.
 - Headless browser evidence proves complete, diagnostic-only, incomplete/missing, failed-diagnostic, and stale fixture states in both themes, both languages, and both viewports.
 - Repository design-system, runtime-style-injection, visual-evidence, template/site-sync, and focused pytest checks pass from the exact branch head.
 

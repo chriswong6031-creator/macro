@@ -65,7 +65,7 @@ _CARD_KEYS = frozenset(
         "authority",
     }
 )
-_SOURCE_KEYS = frozenset({"role", "path", "sha256", "as_of", "rights"})
+_SOURCE_KEYS = frozenset({"role", "path", "sha256", "as_of", "as_of_reason", "rights"})
 _LOCALIZED_KEYS = frozenset({"en", "zh"})
 _METRIC_KEYS = frozenset({"code", "label", "value", "unit", "source"})
 _GATE_DIAGNOSTIC_KEYS = frozenset({"code", "label", "passed", "detail", "source"})
@@ -191,6 +191,7 @@ def _source_artifact(
     path: str,
     expected_sha256: str,
     as_of: str | None,
+    as_of_reason: dict[str, str] | None = None,
     rights: str = "REPOSITORY_INTERNAL",
 ) -> dict[str, Any]:
     absolute = root / path
@@ -206,6 +207,7 @@ def _source_artifact(
         "path": path,
         "sha256": observed,
         "as_of": as_of,
+        "as_of_reason": as_of_reason,
         "rights": rights,
     }
 
@@ -262,6 +264,14 @@ def _validate_source(value: Any, context: str) -> None:
         or not _ISO_DATE_RE.fullmatch(value["as_of"])
     ):
         raise CardContractError(f"{context}.as_of must be an ISO date or null")
+    if value["as_of"] is None:
+        if value["as_of_reason"] is None:
+            raise CardContractError(f"{context}: null as_of requires a typed reason")
+        _validate_localized(value["as_of_reason"], f"{context}.as_of_reason")
+    elif value["as_of_reason"] is not None:
+        raise CardContractError(
+            f"{context}.as_of_reason must be null when as_of is present"
+        )
     if not isinstance(value["rights"], str) or not value["rights"]:
         raise CardContractError(f"{context}.rights must be non-empty")
 
@@ -277,6 +287,20 @@ def _validate_metric(value: Any, context: str) -> None:
         raise CardContractError(f"{context}.value cannot be null; use null_reasons")
     if not isinstance(value["unit"], str) or not value["unit"]:
         raise CardContractError(f"{context}.unit must be non-empty")
+    if value["unit"] == "return_fraction_interval":
+        interval = value["value"]
+        if (
+            not isinstance(interval, list)
+            or len(interval) != 3
+            or any(
+                isinstance(item, bool) or not isinstance(item, (int, float))
+                for item in interval
+            )
+            or interval != sorted(interval)
+        ):
+            raise CardContractError(
+                f"{context}.value must contain three ordered quantiles"
+            )
     if not isinstance(value["source"], str) or not value["source"]:
         raise CardContractError(f"{context}.source must be non-empty")
 
@@ -413,13 +437,45 @@ def validate_card(card: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(effect_path, dict):
             raise CardContractError("ordered_effect_path must be an object or null")
         expected_path_keys = frozenset(
-            {"owner_supplied", "x_unit", "y_unit", "points", "source"}
+            {
+                "owner_supplied",
+                "x_unit",
+                "y_unit",
+                "points",
+                "source",
+                "evidence_status",
+                "selected_horizon",
+                "sample_basis",
+                "comparison_note",
+                "accessible_name",
+            }
         )
         _require_keys(effect_path, expected_path_keys, "ordered_effect_path")
         if effect_path["owner_supplied"] is not True:
             raise CardContractError("ordered_effect_path requires owner_supplied=true")
         if not isinstance(effect_path["points"], list) or not effect_path["points"]:
             raise CardContractError("ordered_effect_path.points must be non-empty")
+        if (
+            not isinstance(effect_path["evidence_status"], str)
+            or not effect_path["evidence_status"]
+        ):
+            raise CardContractError(
+                "ordered_effect_path.evidence_status must be non-empty"
+            )
+        if isinstance(effect_path["selected_horizon"], bool) or not isinstance(
+            effect_path["selected_horizon"], int
+        ):
+            raise CardContractError(
+                "ordered_effect_path.selected_horizon must be an integer"
+            )
+        for localized_field in (
+            "sample_basis",
+            "comparison_note",
+            "accessible_name",
+        ):
+            _validate_localized(
+                effect_path[localized_field], f"ordered_effect_path.{localized_field}"
+            )
         horizons = []
         for index, point in enumerate(effect_path["points"]):
             expected_point_keys = frozenset({"horizon", "value", "n"})
@@ -434,10 +490,26 @@ def validate_card(card: dict[str, Any]) -> dict[str, Any]:
                 point["horizon"], int
             ):
                 raise CardContractError("ordered effect horizons must be integers")
+            if isinstance(point["value"], bool) or not isinstance(
+                point["value"], (int, float)
+            ):
+                raise CardContractError("ordered effect values must be numeric")
+            if (
+                isinstance(point["n"], bool)
+                or not isinstance(point["n"], int)
+                or point["n"] < 0
+            ):
+                raise CardContractError(
+                    "ordered effect sample counts must be non-negative integers"
+                )
             horizons.append(point["horizon"])
         if horizons != sorted(horizons) or len(set(horizons)) != len(horizons):
             raise CardContractError(
                 "ordered effect horizons must be unique and increasing"
+            )
+        if effect_path["selected_horizon"] not in horizons:
+            raise CardContractError(
+                "ordered_effect_path.selected_horizon must name an owner point"
             )
 
     result_receipts = [
@@ -686,6 +758,14 @@ def adapt_synthetic_control(root: Path) -> dict[str, Any]:
                 "families.sp_pure_adds.arms.sc_nnls.placebo.0_5.empirical_p",
             ),
             _metric(
+                "empirical_p_floor",
+                "Empirical p-value resolution floor",
+                "经验 p 值分辨率下限",
+                placebo["empirical_p_floor"],
+                "probability",
+                "families.sp_pure_adds.arms.sc_nnls.placebo.0_5.empirical_p_floor",
+            ),
+            _metric(
                 "placebo_draw_count",
                 "Placebo draw count",
                 "安慰剂抽样次数",
@@ -788,6 +868,10 @@ def adapt_hincl2_event_study(root: Path) -> dict[str, Any]:
         path=_HINCL2_ROSTER_PATH,
         expected_sha256=_HINCL2_ROSTER_SHA256,
         as_of=None,
+        as_of_reason=_localized(
+            "No single as-of date applies; the owner roster records dated inclusion events.",
+            "此名册不适用单一截止日期；所有者名册记录的是带日期的纳入事件。",
+        ),
     )
     benchmark_receipt = _source_artifact(
         root,
@@ -1004,6 +1088,22 @@ def adapt_hincl2_event_study(root: Path) -> dict[str, Any]:
                 "boolean",
                 "trials.announce.h20.split_half.same_sign",
             ),
+            _metric(
+                "split_half_first_mean",
+                "First-half mean",
+                "前半段均值",
+                selected["split_half"]["h1_mean"],
+                "return_fraction",
+                "trials.announce.h20.split_half.h1_mean",
+            ),
+            _metric(
+                "split_half_second_mean",
+                "Second-half mean",
+                "后半段均值",
+                selected["split_half"]["h2_mean"],
+                "return_fraction",
+                "trials.announce.h20.split_half.h2_mean",
+            ),
         ],
         "ordered_effect_path": {
             "owner_supplied": True,
@@ -1011,6 +1111,20 @@ def adapt_hincl2_event_study(root: Path) -> dict[str, Any]:
             "y_unit": "cumulative_abnormal_return",
             "points": ordered_points,
             "source": "event_curve_announce",
+            "evidence_status": "EXPLORATORY_NON_GATED",
+            "selected_horizon": selected["h"],
+            "sample_basis": _localized(
+                "Equal-weighted across events that have the complete −10 to +60 trading-day window.",
+                "对具备完整公告前10日至公告后60个交易日窗口的事件进行等权平均。",
+            ),
+            "comparison_note": _localized(
+                f"This path is not the headline estimator: the headline first averages events within {selected['episode_k']} announcement-date episodes at +{selected['h']} days, while this curve averages eligible events directly.",
+                f"该路径并非标题估计量：标题数值先在公告日期内汇总事件，再对{selected['episode_k']}个事件期取平均；本曲线则直接对符合条件的事件取平均。",
+            ),
+            "accessible_name": _localized(
+                "Exploratory, non-gated event-time cumulative abnormal return path",
+                "探索性、非门控的事件时间累计异常收益路径",
+            ),
         },
         "evidence_tier": "DIAGNOSTIC",
         "quality": "ARTIFACT_INCOMPLETE",

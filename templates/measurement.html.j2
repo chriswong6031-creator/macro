@@ -608,6 +608,8 @@ html[data-theme="light"] .ric-fig{background:color-mix(in srgb,var(--text) 5%,tr
 .ric-fig-v{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
   font-size:.95rem;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
 .ric-fig-u{font-size:.68rem;color:var(--muted);margin-left:5px;font-weight:400}
+.ric-fig-sub{display:block;margin-top:3px;font-family:var(--font-sans,system-ui,sans-serif);
+  font-size:.65rem;line-height:1.4;color:var(--muted);font-weight:400}
 /* A null is typed, never zero: the em dash is the value, the reason is beside it. */
 .ric-null{color:var(--muted);font-weight:400}
 .ric-why{display:block;font-size:.68rem;color:var(--muted);margin-top:5px;line-height:1.45}
@@ -620,11 +622,17 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 .ric-path svg{display:block;width:100%;height:auto;overflow:visible}
 .ric-path-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
 .ric-path-anchor{stroke:color-mix(in srgb,var(--text) 30%,transparent);stroke-width:1}
+.ric-path-selected{stroke:var(--warn);stroke-width:1;stroke-dasharray:2 3}
 .ric-path-line{fill:none;stroke:var(--blue);stroke-width:2;
   stroke-linejoin:round;stroke-linecap:round}
 .ric-path-dot{fill:var(--blue)}
+.ric-path-dot-selected{fill:var(--warn);stroke:var(--panel);stroke-width:1.5}
 .ric-path-ax{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
   font-size:9px;fill:var(--muted)}
+.ric-path-callout{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;
+  margin-top:6px;font-size:.7rem;line-height:1.45;color:var(--muted)}
+.ric-path-callout code{font-size:.62rem;color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 12%,transparent);
+  padding:2px 6px;border-radius:var(--r-ctl,8px)}
 
 /* Gate outcomes: the PC-1/PC-2 story, in the contract's own pass/fail terms. */
 .ric-gates-l{font-size:.72rem;font-weight:600;letter-spacing:.04em;color:var(--muted);
@@ -2099,8 +2107,9 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
     {%- set u = item.get('unit') -%}
     {%- if v is none -%}<span class="ric-null">—</span>
     {%- elif u == 'boolean' -%}<span class="l-en">{{ 'Yes' if v else 'No' }}</span><span class="l-zh">{{ '是' if v else '否' }}</span>
-    {%- elif u == 'return_fraction_interval' and v is sequence and v is not string -%}
-      {{ '%.2f'|format(v[0] * 100) }}% … {{ '%.2f'|format(v[1] * 100) }}%
+    {%- elif u == 'return_fraction_interval' and v is sequence and v is not string and v|length == 3 -%}
+      {{ '%.2f'|format(v[0] * 100) }}% … {{ '%.2f'|format(v[2] * 100) }}%
+      <span class="ric-fig-sub"><span class="l-en">bootstrap median</span><span class="l-zh">自助法中位数</span> {{ '%.2f'|format(v[1] * 100) }}%</span>
     {%- elif u == 'return_fraction' or u == 'fraction' -%}{{ '%.3f'|format(v * 100) }}%
     {%- elif u in ('months', 'events', 'episodes', 'draws', 'tickers') -%}{{ v }}{{ ric_unit(u) }}
     {%- elif v is number -%}{{ '%.4f'|format(v) }}{{ ric_unit(u) }}
@@ -2155,7 +2164,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       {%- set scls = 'ric-s-failed' if q == 'DIAGNOSTIC_FAILED' else ('ric-s-incomplete' if q == 'ARTIFACT_INCOMPLETE' else 'ric-s-other') -%}
       {%- set gates = card.diagnostics|selectattr('passed', 'defined')|list -%}
       {%- set metrics = card.diagnostics|rejectattr('passed', 'defined')|list -%}
-      <article class="ric-card {{ scls }}" id="ric-{{ card.method_family }}"
+      {%- set card_anchor = ('ric-' ~ card.method_family ~ '-' ~ card.study_run_id ~ '-' ~ card.selected_result_id)|replace('_', '-')|replace('/', '-')|replace('@', '-') -%}
+      <article class="ric-card {{ scls }}" id="{{ card_anchor }}"
                data-ric-family="{{ card.method_family }}" data-ric-quality="{{ q }}">
         <div class="ric-rail" aria-hidden="true"></div>
         <div class="ric-body">
@@ -2181,16 +2191,16 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 
           <div class="ric-figs">
             {% for out in card.outputs %}
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="{{ out.code }}">
               <span class="ric-fig-l"><span class="l-en">{{ out.label.en|e }}</span><span class="l-zh">{{ (out.label.zh or out.label.en)|e }}</span></span>
               <span class="ric-fig-v">{{ ric_value(out) }}</span>
             </div>
             {% endfor %}
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="sample_n">
               <span class="ric-fig-l"><span class="l-en">Sample size</span><span class="l-zh">样本量</span></span>
               <span class="ric-fig-v">{% if card.sample_n is none %}<span class="ric-null">—</span>{% else %}{{ card.sample_n }}{% endif %}</span>
             </div>
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="effective_n">
               <span class="ric-fig-l"><span class="l-en">Effective sample size</span><span class="l-zh">有效样本量</span></span>
               <span class="ric-fig-v">{% if card.effective_n is none %}<span class="ric-null">—</span>{% else %}{{ card.effective_n }}{% endif %}</span>
               {% if card.effective_n is none %}
@@ -2199,7 +2209,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               {% endfor %}
               {% endif %}
             </div>
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="cutoff">
               <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
               <span class="ric-fig-v">{{ card.cutoff }}</span>
             </div>
@@ -2216,21 +2226,27 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           {%- set ylo = [ys|min, 0]|min -%}{%- set yhi = [ys|max, 0]|max -%}
           {%- set xr = (xmax - xmin) if (xmax - xmin) != 0 else 1 -%}
           {%- set yr = (yhi - ylo) if (yhi - ylo) != 0 else 1 -%}
+          {%- set selected_points = pts|selectattr('horizon', 'equalto', card.ordered_effect_path.selected_horizon)|list -%}
+          {%- set selected_point = selected_points|first -%}
+          {%- set headline_points = card.outputs|selectattr('code', 'equalto', 'mean_cumulative_abnormal_return')|list -%}
+          {%- set headline_point = headline_points|first -%}
           {%- set W = 560 -%}{%- set H = 150 -%}{%- set PL = 34 -%}{%- set PR = 8 -%}{%- set PT = 10 -%}{%- set PB = 20 -%}
           <div class="ric-path">
             <div class="ric-path-t">
-              <span class="l-en">Recorded path, {{ card.ordered_effect_path.y_unit|replace('_', ' ') }} by {{ card.ordered_effect_path.x_unit|replace('_', ' ') }}. Descriptive — the owner did not identify a cause.</span>
-              <span class="l-zh">记录路径：纵轴为{{ '累计异常收益' if card.ordered_effect_path.y_unit == 'cumulative_abnormal_return' else card.ordered_effect_path.y_unit }}，横轴为公告后交易日。属描述性结果，所有者未识别成因。</span>
+              <span class="l-en"><strong>{{ card.ordered_effect_path.evidence_status }}</strong> · Recorded path, {{ card.ordered_effect_path.y_unit|replace('_', ' ') }} by {{ card.ordered_effect_path.x_unit|replace('_', ' ') }}. {{ card.ordered_effect_path.sample_basis.en|e }} {{ card.ordered_effect_path.comparison_note.en|e }} Descriptive — the owner did not identify a cause.</span>
+              <span class="l-zh"><strong>{{ card.ordered_effect_path.evidence_status }}</strong> · 记录路径：纵轴为{{ '累计异常收益' if card.ordered_effect_path.y_unit == 'cumulative_abnormal_return' else card.ordered_effect_path.y_unit }}，横轴为公告后交易日。{{ card.ordered_effect_path.sample_basis.zh|e }} {{ card.ordered_effect_path.comparison_note.zh|e }} 属描述性结果，所有者未识别成因。</span>
             </div>
-            <svg viewBox="0 0 {{ W }} {{ H }}" role="img" preserveAspectRatio="xMidYMid meet">
-              <title>{{ card.ordered_effect_path.source }}</title>
+            <svg viewBox="0 0 {{ W }} {{ H }}" role="img" aria-labelledby="{{ card_anchor }}-path-title" preserveAspectRatio="xMidYMid meet">
+              <title id="{{ card_anchor }}-path-title">{{ card.ordered_effect_path.accessible_name.en|e }} / {{ card.ordered_effect_path.accessible_name.zh|e }}</title>
               {%- set yzero = PT + ((yhi - 0) / yr) * (H - PT - PB) -%}
               <line class="ric-path-zero" x1="{{ PL }}" y1="{{ '%.1f'|format(yzero) }}" x2="{{ W - PR }}" y2="{{ '%.1f'|format(yzero) }}"/>
               {%- set xanchor = PL + ((0 - xmin) / xr) * (W - PL - PR) -%}
               <line class="ric-path-anchor" x1="{{ '%.1f'|format(xanchor) }}" y1="{{ PT }}" x2="{{ '%.1f'|format(xanchor) }}" y2="{{ H - PB }}"/>
+              {%- set xselected = PL + ((selected_point.horizon - xmin) / xr) * (W - PL - PR) -%}
+              <line class="ric-path-selected" x1="{{ '%.1f'|format(xselected) }}" y1="{{ PT }}" x2="{{ '%.1f'|format(xselected) }}" y2="{{ H - PB }}"/>
               <path class="ric-path-line" d="M{% for p in pts %}{{ '%.1f'|format(PL + ((p.horizon - xmin) / xr) * (W - PL - PR)) }},{{ '%.1f'|format(PT + ((yhi - p.value) / yr) * (H - PT - PB)) }}{% if not loop.last %}L{% endif %}{% endfor %}"/>
               {% for p in pts %}
-              <circle class="ric-path-dot" cx="{{ '%.1f'|format(PL + ((p.horizon - xmin) / xr) * (W - PL - PR)) }}" cy="{{ '%.1f'|format(PT + ((yhi - p.value) / yr) * (H - PT - PB)) }}" r="2"/>
+              <circle class="ric-path-dot{% if p.horizon == card.ordered_effect_path.selected_horizon %} ric-path-dot-selected{% endif %}" cx="{{ '%.1f'|format(PL + ((p.horizon - xmin) / xr) * (W - PL - PR)) }}" cy="{{ '%.1f'|format(PT + ((yhi - p.value) / yr) * (H - PT - PB)) }}" r="{{ 4 if p.horizon == card.ordered_effect_path.selected_horizon else 2 }}"/>
               {% endfor %}
               <text class="ric-path-ax" x="0" y="{{ PT + 4 }}">{{ '%.1f'|format(yhi * 100) }}%</text>
               <text class="ric-path-ax" x="0" y="{{ H - PB }}">{{ '%.1f'|format(ylo * 100) }}%</text>
@@ -2238,6 +2254,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               <text class="ric-path-ax" x="{{ '%.1f'|format(xanchor) }}" y="{{ H - 6 }}" text-anchor="middle">0</text>
               <text class="ric-path-ax" x="{{ W - PR }}" y="{{ H - 6 }}" text-anchor="end">{{ xmax }}</text>
             </svg>
+            <div class="ric-path-callout">
+              <code>{{ card.ordered_effect_path.evidence_status }}</code>
+              <span class="l-en">Curve at selected +{{ selected_point.horizon }}-day horizon: {{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} events. This is not the {{ '%.3f'|format(headline_point.value * 100) }}% episode-clustered headline.</span>
+              <span class="l-zh">曲线在所选 +{{ selected_point.horizon }} 日期限：{{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} 个事件；该数值并非按事件期聚类的 {{ '%.3f'|format(headline_point.value * 100) }}% 标题数值。</span>
+            </div>
           </div>
           {% endif %}
 
@@ -2261,10 +2282,10 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
             <summary><span class="l-en">Uncertainty and diagnostics</span><span class="l-zh">不确定性与诊断</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
               {% for it in card.uncertainty %}
-              <li><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
               {% endfor %}
               {% for it in metrics %}
-              <li><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
               {% endfor %}
             </ul></div>
           </details>
@@ -2274,9 +2295,9 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <details class="ric-more">
             <summary><span class="l-en">Placebos and counterexamples</span><span class="l-zh">安慰剂与反例</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              {% for it in card.placebos_or_counterexamples %}
-              <li><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
-              {% endfor %}
+              {%- for it in card.placebos_or_counterexamples %}
+              <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              {%- endfor %}
             </ul></div>
           </details>
           {% endif %}
@@ -2316,7 +2337,14 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
                 <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>{{ card.adapter_version }}</dd>
                 <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>{{ card.method_revision }}</dd>
                 {% for a in card.source_artifacts + card.code_identity %}
-                <dt>{{ a.role }}</dt><dd>{{ a.path }}<br>sha256:{{ a.sha256 }} · as of {{ a.as_of }} · {{ a.rights }}</dd>
+                <dt>
+                  <span class="l-en">{{ {'result':'Result artifact','report':'Research report','event_roster':'Event roster','benchmark':'Benchmark series','preregistration':'Preregistration','generator':'Generator','estimator':'Estimator'}.get(a.role, a.role|replace('_', ' ')|title) }}</span>
+                  <span class="l-zh">{{ {'result':'结果文物','report':'研究报告','event_roster':'事件名册','benchmark':'基准序列','preregistration':'预注册','generator':'生成器','estimator':'估计器'}.get(a.role, '来源凭证') }}</span>
+                </dt>
+                <dd>{{ a.path }}<br>sha256:{{ a.sha256 }} · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  {% if a.as_of %}{{ a.as_of }}{% else %}<span class="ric-null">—</span>
+                  <span class="ric-why"><span class="l-en">{{ a.as_of_reason.en|e }}</span><span class="l-zh">{{ a.as_of_reason.zh|e }}</span></span>{% endif %}
+                  · {{ a.rights }}</dd>
                 {% endfor %}
               </dl>
             </div>

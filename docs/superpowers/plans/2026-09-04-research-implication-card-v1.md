@@ -141,7 +141,7 @@ The adapter owner must first post ADAPTER_FREEZE on the exact Slack carrier with
 
 Step 1: add failing template/UI tests for the frozen semantics.
 
-The tests render contract fixtures for COMPLETE, DIAGNOSTIC_ONLY, ARTIFACT_INCOMPLETE, ARTIFACT_MISSING, DIAGNOSTIC_FAILED, and STALE. They assert the Research Implications section, permanent non-trading stance, method/tier/state filters, stable card_id anchors, EN/ZH copy, details disclosure, owner metrics, missingness and null-reason display, ordered-path presence only when supplied, and no edit/run/save/promote/rank/score/size/trade controls.
+The tests render contract fixtures for COMPLETE, DIAGNOSTIC_ONLY, ARTIFACT_INCOMPLETE, ARTIFACT_MISSING, DIAGNOSTIC_FAILED, and STALE. They assert the Research Implications section, permanent non-trading stance, method/tier/state filters, stable semantic card anchors, EN/ZH copy, details disclosure, exact owner metric rendering in each declared unit, missingness and typed null-reason display, outer-quantile interval bounds, exploratory/sample-qualified ordered-path presence only when supplied, and no edit/run/save/promote/rank/score/size/trade controls.
 
 Step 2: run the narrow UI tests and observe RED because the section is absent.
 

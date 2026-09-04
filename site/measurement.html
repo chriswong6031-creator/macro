@@ -637,6 +637,8 @@ html[data-theme="light"] .ric-fig{background:color-mix(in srgb,var(--text) 5%,tr
 .ric-fig-v{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
   font-size:.95rem;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
 .ric-fig-u{font-size:.68rem;color:var(--muted);margin-left:5px;font-weight:400}
+.ric-fig-sub{display:block;margin-top:3px;font-family:var(--font-sans,system-ui,sans-serif);
+  font-size:.65rem;line-height:1.4;color:var(--muted);font-weight:400}
 /* A null is typed, never zero: the em dash is the value, the reason is beside it. */
 .ric-null{color:var(--muted);font-weight:400}
 .ric-why{display:block;font-size:.68rem;color:var(--muted);margin-top:5px;line-height:1.45}
@@ -649,11 +651,17 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 .ric-path svg{display:block;width:100%;height:auto;overflow:visible}
 .ric-path-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
 .ric-path-anchor{stroke:color-mix(in srgb,var(--text) 30%,transparent);stroke-width:1}
+.ric-path-selected{stroke:var(--warn);stroke-width:1;stroke-dasharray:2 3}
 .ric-path-line{fill:none;stroke:var(--blue);stroke-width:2;
   stroke-linejoin:round;stroke-linecap:round}
 .ric-path-dot{fill:var(--blue)}
+.ric-path-dot-selected{fill:var(--warn);stroke:var(--panel);stroke-width:1.5}
 .ric-path-ax{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
   font-size:9px;fill:var(--muted)}
+.ric-path-callout{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;
+  margin-top:6px;font-size:.7rem;line-height:1.45;color:var(--muted)}
+.ric-path-callout code{font-size:.62rem;color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 12%,transparent);
+  padding:2px 6px;border-radius:var(--r-ctl,8px)}
 
 /* Gate outcomes: the PC-1/PC-2 story, in the contract's own pass/fail terms. */
 .ric-gates-l{font-size:.72rem;font-weight:600;letter-spacing:.04em;color:var(--muted);
@@ -7342,7 +7350,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
     </fieldset>
 
     <div class="ric-cards" id="ric-cards">
-      <article class="ric-card ric-s-failed" id="ric-synthetic_control"
+      <article class="ric-card ric-s-failed" id="ric-synthetic-control-synthetic-control-phase0-2026-08-06-sp-pure-adds-sc-nnls-0-5"
                data-ric-family="synthetic_control" data-ric-quality="DIAGNOSTIC_FAILED">
         <div class="ric-rail" aria-hidden="true"></div>
         <div class="ric-body">
@@ -7368,36 +7376,36 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 
           <div class="ric-figs">
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="cumulative_abnormal_return">
               <span class="ric-fig-l"><span class="l-en">Five-day cumulative abnormal return</span><span class="l-zh">五日累计异常收益</span></span>
               <span class="ric-fig-v">3.015%</span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="monthly_newey_west_t">
               <span class="ric-fig-l"><span class="l-en">Monthly Newey-West t statistic</span><span class="l-zh">月度 Newey-West t 统计量</span></span>
               <span class="ric-fig-v">8.2910<span class="ric-fig-u"><span class="l-en">t</span><span class="l-zh">t 值</span></span></span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="monthly_newey_west_p">
               <span class="ric-fig-l"><span class="l-en">Monthly Newey-West p value</span><span class="l-zh">月度 Newey-West p 值</span></span>
               <span class="ric-fig-v">0.0000<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="monthly_observation_count">
               <span class="ric-fig-l"><span class="l-en">Monthly observation count</span><span class="l-zh">月度观测数</span></span>
               <span class="ric-fig-v">52<span class="ric-fig-u"><span class="l-en">months</span><span class="l-zh">个月</span></span></span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="hit_rate">
               <span class="ric-fig-l"><span class="l-en">Positive abnormal-return share</span><span class="l-zh">异常收益为正的占比</span></span>
               <span class="ric-fig-v">69.637%</span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="sample_n">
               <span class="ric-fig-l"><span class="l-en">Sample size</span><span class="l-zh">样本量</span></span>
               <span class="ric-fig-v">303</span>
             </div>
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="effective_n">
               <span class="ric-fig-l"><span class="l-en">Effective sample size</span><span class="l-zh">有效样本量</span></span>
               <span class="ric-fig-v"><span class="ric-null">—</span></span>
               
@@ -7406,7 +7414,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               
               
             </div>
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="cutoff">
               <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
               <span class="ric-fig-v">2026-07-02</span>
             </div>
@@ -7460,15 +7468,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <details class="ric-more">
             <summary><span class="l-en">Placebos and counterexamples</span><span class="l-zh">安慰剂与反例</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              
-              <li><span class="l-en">Placebo mean</span><span class="l-zh">安慰剂均值</span> — <span class="ric-count">0.197%</span></li>
-              
-              <li><span class="l-en">Placebo standard deviation</span><span class="l-zh">安慰剂标准差</span> — <span class="ric-count">0.614%</span></li>
-              
-              <li><span class="l-en">Placebo empirical p value</span><span class="l-zh">安慰剂经验 p 值</span> — <span class="ric-count">0.0100<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
-              
-              <li><span class="l-en">Placebo draw count</span><span class="l-zh">安慰剂抽样次数</span> — <span class="ric-count">200<span class="ric-fig-u"><span class="l-en">draws</span><span class="l-zh">次抽样</span></span></span></li>
-              
+              <li data-ric-code="placebo_mean"><span class="l-en">Placebo mean</span><span class="l-zh">安慰剂均值</span> — <span class="ric-count">0.197%</span></li>
+              <li data-ric-code="placebo_standard_deviation"><span class="l-en">Placebo standard deviation</span><span class="l-zh">安慰剂标准差</span> — <span class="ric-count">0.614%</span></li>
+              <li data-ric-code="placebo_empirical_p"><span class="l-en">Placebo empirical p value</span><span class="l-zh">安慰剂经验 p 值</span> — <span class="ric-count">0.0100<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
+              <li data-ric-code="empirical_p_floor"><span class="l-en">Empirical p-value resolution floor</span><span class="l-zh">经验 p 值分辨率下限</span> — <span class="ric-count">0.0050<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
+              <li data-ric-code="placebo_draw_count"><span class="l-en">Placebo draw count</span><span class="l-zh">安慰剂抽样次数</span> — <span class="ric-count">200<span class="ric-fig-u"><span class="l-en">draws</span><span class="l-zh">次抽样</span></span></span></li>
             </ul></div>
           </details>
           
@@ -7508,13 +7512,37 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
                 <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>synthetic_control/v1</dd>
                 <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>sha256:31583485f88ebd6c779787a2c0ea5cec68037669460dbb896ea3b83fd7a49a65</dd>
                 
-                <dt>result</dt><dd>data/experiments/synthetic_control_phase0_results.json<br>sha256:f759bdd72de5370e597459dc0630bb1f880e8a38be9b8882a1c75f54872af1e2 · as of 2026-07-02 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Result artifact</span>
+                  <span class="l-zh">结果文物</span>
+                </dt>
+                <dd>data/experiments/synthetic_control_phase0_results.json<br>sha256:f759bdd72de5370e597459dc0630bb1f880e8a38be9b8882a1c75f54872af1e2 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-07-02
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>report</dt><dd>research/SYNTHETIC_CONTROL_PHASE0.md<br>sha256:a8d2e0023279ca241788b589af55bcedbe07117485cb3918a50d0e395a9ac587 · as of 2026-08-06 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Research report</span>
+                  <span class="l-zh">研究报告</span>
+                </dt>
+                <dd>research/SYNTHETIC_CONTROL_PHASE0.md<br>sha256:a8d2e0023279ca241788b589af55bcedbe07117485cb3918a50d0e395a9ac587 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-08-06
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>generator</dt><dd>scripts/synthetic_control_phase0.py<br>sha256:bc6479968fd71bc541fdec6b1a1337a1ded9b51c0eb5cdcd1664961bc6f3ab11 · as of 2026-08-06 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Generator</span>
+                  <span class="l-zh">生成器</span>
+                </dt>
+                <dd>scripts/synthetic_control_phase0.py<br>sha256:bc6479968fd71bc541fdec6b1a1337a1ded9b51c0eb5cdcd1664961bc6f3ab11 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-08-06
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>estimator</dt><dd>engine/synthetic_control.py<br>sha256:31583485f88ebd6c779787a2c0ea5cec68037669460dbb896ea3b83fd7a49a65 · as of 2026-08-06 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Estimator</span>
+                  <span class="l-zh">估计器</span>
+                </dt>
+                <dd>engine/synthetic_control.py<br>sha256:31583485f88ebd6c779787a2c0ea5cec68037669460dbb896ea3b83fd7a49a65 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-08-06
+                  · REPOSITORY_INTERNAL</dd>
                 
               </dl>
             </div>
@@ -7530,7 +7558,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 
         </div>
       </article>
-      <article class="ric-card ric-s-incomplete" id="ric-event_study"
+      <article class="ric-card ric-s-incomplete" id="ric-event-study-hincl2-event-study-2026-07-03-announce-h20"
                data-ric-family="event_study" data-ric-quality="ARTIFACT_INCOMPLETE">
         <div class="ric-rail" aria-hidden="true"></div>
         <div class="ric-body">
@@ -7556,31 +7584,31 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 
           <div class="ric-figs">
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="mean_cumulative_abnormal_return">
               <span class="ric-fig-l"><span class="l-en">Mean cumulative abnormal return</span><span class="l-zh">平均累计异常收益</span></span>
               <span class="ric-fig-v">-8.812%</span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="event_count">
               <span class="ric-fig-l"><span class="l-en">Event observations</span><span class="l-zh">事件观测数</span></span>
               <span class="ric-fig-v">282<span class="ric-fig-u"><span class="l-en">events</span><span class="l-zh">个事件</span></span></span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="episode_count">
               <span class="ric-fig-l"><span class="l-en">Distinct episodes</span><span class="l-zh">独立事件期数</span></span>
               <span class="ric-fig-v">74<span class="ric-fig-u"><span class="l-en">episodes</span><span class="l-zh">个区间</span></span></span>
             </div>
             
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="sample_n">
               <span class="ric-fig-l"><span class="l-en">Sample size</span><span class="l-zh">样本量</span></span>
               <span class="ric-fig-v">282</span>
             </div>
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="effective_n">
               <span class="ric-fig-l"><span class="l-en">Effective sample size</span><span class="l-zh">有效样本量</span></span>
               <span class="ric-fig-v">74</span>
               
             </div>
-            <div class="ric-fig">
+            <div class="ric-fig" data-ric-code="cutoff">
               <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
               <span class="ric-fig-v">2026-07-03</span>
             </div>
@@ -7589,11 +7617,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <div class="ric-path">
             <div class="ric-path-t">
-              <span class="l-en">Recorded path, cumulative abnormal return by trading day relative to announcement. Descriptive — the owner did not identify a cause.</span>
-              <span class="l-zh">记录路径：纵轴为累计异常收益，横轴为公告后交易日。属描述性结果，所有者未识别成因。</span>
+              <span class="l-en"><strong>EXPLORATORY_NON_GATED</strong> · Recorded path, cumulative abnormal return by trading day relative to announcement. Equal-weighted across events that have the complete −10 to +60 trading-day window. This path is not the headline estimator: the headline first averages events within 74 announcement-date episodes at +20 days, while this curve averages eligible events directly. Descriptive — the owner did not identify a cause.</span>
+              <span class="l-zh"><strong>EXPLORATORY_NON_GATED</strong> · 记录路径：纵轴为累计异常收益，横轴为公告后交易日。对具备完整公告前10日至公告后60个交易日窗口的事件进行等权平均。 该路径并非标题估计量：标题数值先在公告日期内汇总事件，再对74个事件期取平均；本曲线则直接对符合条件的事件取平均。 属描述性结果，所有者未识别成因。</span>
             </div>
-            <svg viewBox="0 0 560 150" role="img" preserveAspectRatio="xMidYMid meet">
-              <title>event_curve_announce</title><line class="ric-path-zero" x1="34" y1="25.2" x2="552" y2="25.2"/><line class="ric-path-anchor" x1="108.0" y1="10" x2="108.0" y2="130"/>
+            <svg viewBox="0 0 560 150" role="img" aria-labelledby="ric-event-study-hincl2-event-study-2026-07-03-announce-h20-path-title" preserveAspectRatio="xMidYMid meet">
+              <title id="ric-event-study-hincl2-event-study-2026-07-03-announce-h20-path-title">Exploratory, non-gated event-time cumulative abnormal return path / 探索性、非门控的事件时间累计异常收益路径</title><line class="ric-path-zero" x1="34" y1="25.2" x2="552" y2="25.2"/><line class="ric-path-anchor" x1="108.0" y1="10" x2="108.0" y2="130"/><line class="ric-path-selected" x1="256.0" y1="10" x2="256.0" y2="130"/>
               <path class="ric-path-line" d="M34.0,56.2L71.0,52.7L85.8,53.4L100.6,46.1L108.0,25.2L115.4,23.6L130.2,10.0L145.0,13.9L182.0,28.4L256.0,52.3L404.0,100.4L552.0,130.0"/>
               
               <circle class="ric-path-dot" cx="34.0" cy="56.2" r="2"/>
@@ -7614,7 +7642,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               
               <circle class="ric-path-dot" cx="182.0" cy="28.4" r="2"/>
               
-              <circle class="ric-path-dot" cx="256.0" cy="52.3" r="2"/>
+              <circle class="ric-path-dot ric-path-dot-selected" cx="256.0" cy="52.3" r="4"/>
               
               <circle class="ric-path-dot" cx="404.0" cy="100.4" r="2"/>
               
@@ -7626,6 +7654,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               <text class="ric-path-ax" x="108.0" y="144" text-anchor="middle">0</text>
               <text class="ric-path-ax" x="552" y="144" text-anchor="end">60</text>
             </svg>
+            <div class="ric-path-callout">
+              <code>EXPLORATORY_NON_GATED</code>
+              <span class="l-en">Curve at selected +20-day horizon: -2.17% · n=276 events. This is not the -8.812% episode-clustered headline.</span>
+              <span class="l-zh">曲线在所选 +20 日期限：-2.17% · n=276 个事件；该数值并非按事件期聚类的 -8.812% 标题数值。</span>
+            </div>
           </div>
           
 
@@ -7636,26 +7669,27 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
             <summary><span class="l-en">Uncertainty and diagnostics</span><span class="l-zh">不确定性与诊断</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
               
-              <li><span class="l-en">HAC mean</span><span class="l-zh">HAC 均值</span> — <span class="ric-count">-8.812%</span></li>
+              <li data-ric-code="hac_mean"><span class="l-en">HAC mean</span><span class="l-zh">HAC 均值</span> — <span class="ric-count">-8.812%</span></li>
               
-              <li><span class="l-en">HAC standard error</span><span class="l-zh">HAC 标准误</span> — <span class="ric-count">5.317%</span></li>
+              <li data-ric-code="hac_standard_error"><span class="l-en">HAC standard error</span><span class="l-zh">HAC 标准误</span> — <span class="ric-count">5.317%</span></li>
               
-              <li><span class="l-en">HAC t statistic</span><span class="l-zh">HAC t 统计量</span> — <span class="ric-count">-1.6570<span class="ric-fig-u"><span class="l-en">t</span><span class="l-zh">t 值</span></span></span></li>
+              <li data-ric-code="hac_t_statistic"><span class="l-en">HAC t statistic</span><span class="l-zh">HAC t 统计量</span> — <span class="ric-count">-1.6570<span class="ric-fig-u"><span class="l-en">t</span><span class="l-zh">t 值</span></span></span></li>
               
-              <li><span class="l-en">HAC p value</span><span class="l-zh">HAC p 值</span> — <span class="ric-count">0.0975<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
+              <li data-ric-code="hac_p_value"><span class="l-en">HAC p value</span><span class="l-zh">HAC p 值</span> — <span class="ric-count">0.0975<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
               
-              <li><span class="l-en">90% owner interval</span><span class="l-zh">90% 所有者区间</span> — <span class="ric-count">-18.05% … -8.44%</span></li>
+              <li data-ric-code="mean_ci90"><span class="l-en">90% owner interval</span><span class="l-zh">90% 所有者区间</span> — <span class="ric-count">-18.05% … -1.39%
+      <span class="ric-fig-sub"><span class="l-en">bootstrap median</span><span class="l-zh">自助法中位数</span> -8.44%</span></span></li>
               
               
-              <li><span class="l-en">Deflated Sharpe ratio</span><span class="l-zh">折减夏普比率</span> — <span class="ric-count">0.0000<span class="ric-fig-u"><span class="l-en">ratio</span><span class="l-zh">比值</span></span></span></li>
+              <li data-ric-code="deflated_sharpe_ratio"><span class="l-en">Deflated Sharpe ratio</span><span class="l-zh">折减夏普比率</span> — <span class="ric-count">0.0000<span class="ric-fig-u"><span class="l-en">ratio</span><span class="l-zh">比值</span></span></span></li>
               
-              <li><span class="l-en">BH-FDR rejection</span><span class="l-zh">BH-FDR 拒绝结果</span> — <span class="ric-count"><span class="l-en">No</span><span class="l-zh">否</span></span></li>
+              <li data-ric-code="bh_fdr_announce_reject"><span class="l-en">BH-FDR rejection</span><span class="l-zh">BH-FDR 拒绝结果</span> — <span class="ric-count"><span class="l-en">No</span><span class="l-zh">否</span></span></li>
               
-              <li><span class="l-en">BH-FDR q value</span><span class="l-zh">BH-FDR q 值</span> — <span class="ric-count">0.9620<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
+              <li data-ric-code="bh_fdr_announce_q"><span class="l-en">BH-FDR q value</span><span class="l-zh">BH-FDR q 值</span> — <span class="ric-count">0.9620<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
               
-              <li><span class="l-en">Panel coverage</span><span class="l-zh">面板覆盖率</span> — <span class="ric-count">61.940%</span></li>
+              <li data-ric-code="panel_coverage_fraction"><span class="l-en">Panel coverage</span><span class="l-zh">面板覆盖率</span> — <span class="ric-count">61.940%</span></li>
               
-              <li><span class="l-en">Zero-imputed non-studiable tickers</span><span class="l-zh">零值填补的不可研究股票数</span> — <span class="ric-count">179<span class="ric-fig-u"><span class="l-en">tickers</span><span class="l-zh">只标的</span></span></span></li>
+              <li data-ric-code="imputed_zero_count"><span class="l-en">Zero-imputed non-studiable tickers</span><span class="l-zh">零值填补的不可研究股票数</span> — <span class="ric-count">179<span class="ric-fig-u"><span class="l-en">tickers</span><span class="l-zh">只标的</span></span></span></li>
               
             </ul></div>
           </details>
@@ -7665,13 +7699,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <details class="ric-more">
             <summary><span class="l-en">Placebos and counterexamples</span><span class="l-zh">安慰剂与反例</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              
-              <li><span class="l-en">Pre-event run mean</span><span class="l-zh">事件前走势均值</span> — <span class="ric-count">2.856%</span></li>
-              
-              <li><span class="l-en">Survivorship lower-bound mean</span><span class="l-zh">幸存者偏差下界均值</span> — <span class="ric-count">-2.577%</span></li>
-              
-              <li><span class="l-en">Split-half sign agreement</span><span class="l-zh">分半符号一致</span> — <span class="ric-count"><span class="l-en">Yes</span><span class="l-zh">是</span></span></li>
-              
+              <li data-ric-code="pre_event_run_mean"><span class="l-en">Pre-event run mean</span><span class="l-zh">事件前走势均值</span> — <span class="ric-count">2.856%</span></li>
+              <li data-ric-code="survivorship_lower_bound_mean"><span class="l-en">Survivorship lower-bound mean</span><span class="l-zh">幸存者偏差下界均值</span> — <span class="ric-count">-2.577%</span></li>
+              <li data-ric-code="split_half_same_sign"><span class="l-en">Split-half sign agreement</span><span class="l-zh">分半符号一致</span> — <span class="ric-count"><span class="l-en">Yes</span><span class="l-zh">是</span></span></li>
+              <li data-ric-code="split_half_first_mean"><span class="l-en">First-half mean</span><span class="l-zh">前半段均值</span> — <span class="ric-count">-0.785%</span></li>
+              <li data-ric-code="split_half_second_mean"><span class="l-en">Second-half mean</span><span class="l-zh">后半段均值</span> — <span class="ric-count">-16.839%</span></li>
             </ul></div>
           </details>
           
@@ -7717,17 +7749,54 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
                 <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>hincl2_event_study/v1</dd>
                 <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>sha256:f3c6b5db4aef6c11c4e8105a163bd20ca750de98b56a16052eacd49fa0f9151d</dd>
                 
-                <dt>result</dt><dd>data/experiments/hincl2_event_study_results.json<br>sha256:f415b2c4cf9b12fbc8e4dd9e3a30a51c736c93f4ffbc3f818392b4796ea81139 · as of 2026-07-03 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Result artifact</span>
+                  <span class="l-zh">结果文物</span>
+                </dt>
+                <dd>data/experiments/hincl2_event_study_results.json<br>sha256:f415b2c4cf9b12fbc8e4dd9e3a30a51c736c93f4ffbc3f818392b4796ea81139 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-07-03
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>event_roster</dt><dd>data/hk_connect_roster/roster.parquet<br>sha256:b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148 · as of None · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Event roster</span>
+                  <span class="l-zh">事件名册</span>
+                </dt>
+                <dd>data/hk_connect_roster/roster.parquet<br>sha256:b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  <span class="ric-null">—</span>
+                  <span class="ric-why"><span class="l-en">No single as-of date applies; the owner roster records dated inclusion events.</span><span class="l-zh">此名册不适用单一截止日期；所有者名册记录的是带日期的纳入事件。</span></span>
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>benchmark</dt><dd>data/hk/_HSI.parquet<br>sha256:184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45 · as of 2026-07-03 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Benchmark series</span>
+                  <span class="l-zh">基准序列</span>
+                </dt>
+                <dd>data/hk/_HSI.parquet<br>sha256:184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-07-03
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>preregistration</dt><dd>research/HINCL2_PREREG.md<br>sha256:cd2dbe01981e7f256f79aadac23a2952517bc71810121c05c9517ca324a5ce06 · as of 2026-07-03 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Preregistration</span>
+                  <span class="l-zh">预注册</span>
+                </dt>
+                <dd>research/HINCL2_PREREG.md<br>sha256:cd2dbe01981e7f256f79aadac23a2952517bc71810121c05c9517ca324a5ce06 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-07-03
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>report</dt><dd>reports/hincl2-phase0.md<br>sha256:e7391bcabb1a81856ccf3309f611c37c8a7ecc8292cda7a602051bfabfcdfa99 · as of 2026-07-03 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Research report</span>
+                  <span class="l-zh">研究报告</span>
+                </dt>
+                <dd>reports/hincl2-phase0.md<br>sha256:e7391bcabb1a81856ccf3309f611c37c8a7ecc8292cda7a602051bfabfcdfa99 · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-07-03
+                  · REPOSITORY_INTERNAL</dd>
                 
-                <dt>generator</dt><dd>scripts/hincl2_event_study.py<br>sha256:f3c6b5db4aef6c11c4e8105a163bd20ca750de98b56a16052eacd49fa0f9151d · as of 2026-07-03 · REPOSITORY_INTERNAL</dd>
+                <dt>
+                  <span class="l-en">Generator</span>
+                  <span class="l-zh">生成器</span>
+                </dt>
+                <dd>scripts/hincl2_event_study.py<br>sha256:f3c6b5db4aef6c11c4e8105a163bd20ca750de98b56a16052eacd49fa0f9151d · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  2026-07-03
+                  · REPOSITORY_INTERNAL</dd>
                 
               </dl>
             </div>
@@ -7758,7 +7827,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-09-04T10:12:17.076376Z</dd>
+        <dd>2026-09-04T10:57:08.544690Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">

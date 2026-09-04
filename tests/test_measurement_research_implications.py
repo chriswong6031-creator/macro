@@ -9,7 +9,7 @@ here — these tests consume the frozen envelope, they never re-derive it.
 
 What is pinned:
 1.  Absent/empty envelope renders no section at all (no empty shell, no zero).
-2.  Both real frozen cards render with stable, family-derived anchors.
+2.  Both real frozen cards render with stable, card-unique semantic anchors.
 3.  The typed quality code is shown verbatim beside a plain-word gloss.
 4.  The exact required stance line is present in EN and ZH.
 5.  All five authority booleans are disclosed as withheld; no ranking language.
@@ -136,6 +136,45 @@ def _section(html: str) -> str:
     return html[open_tag : end + len("</section>")]
 
 
+def _stable_anchor(card: dict) -> str:
+    """Mirror the semantic (non-digest) card anchor contract."""
+    parts = (
+        card["method_family"],
+        card["study_run_id"],
+        card["selected_result_id"],
+    )
+    slug = "-".join(parts).replace("_", "-").replace("/", "-").replace("@", "-")
+    return f"ric-{slug}"
+
+
+def _metric_markup(card_html: str, code: str) -> str:
+    marker = f'data-ric-code="{code}"'
+    start = card_html.find(marker)
+    assert start != -1, f"metric {code!r} has no dedicated rendered node"
+    open_tag = card_html.rfind("<", 0, start)
+    tag = re.match(r"<([a-z0-9]+)\b", card_html[open_tag:])
+    assert tag
+    end = card_html.find(f"</{tag.group(1)}>", start)
+    assert end != -1
+    return card_html[open_tag : end + len(tag.group(1)) + 3]
+
+
+def _expected_metric_value(metric: dict) -> str:
+    value = metric["value"]
+    unit = metric["unit"]
+    if unit == "boolean":
+        return "Yes" if value else "No"
+    if unit == "return_fraction_interval":
+        return f"{value[0] * 100:.2f}% … {value[2] * 100:.2f}%"
+    if unit in {"return_fraction", "fraction"}:
+        return f"{value * 100:.3f}%"
+    if unit in {"months", "events", "episodes", "draws", "tickers"}:
+        return str(value)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f"{value:.4f}"
+    return str(value)
+
+
 @pytest.fixture(scope="module")
 def contract() -> dict:
     assert CONTRACT_PATH.exists(), (
@@ -183,20 +222,24 @@ def test_missing_envelope_key_does_not_crash_the_page():
 # ---------------------------------------------------------------------------
 
 
-def test_both_real_cards_render_with_stable_family_anchors(contract, real_section):
+def test_both_real_cards_render_with_stable_unique_anchors(contract, real_section):
     assert real_section, "Research Implications section did not render"
     families = [c["method_family"] for c in contract["cards"]]
     assert set(families) == {"synthetic_control", "event_study"}
-    for family in families:
-        assert f'id="ric-{family}"' in real_section, f"no stable anchor for {family}"
+    anchors = [_stable_anchor(card) for card in contract["cards"]]
+    assert len(anchors) == len(set(anchors))
+    for card, anchor in zip(contract["cards"], anchors, strict=True):
+        assert (
+            f'id="{anchor}"' in real_section
+        ), f"no stable card-unique anchor for {card['method_family']}"
 
 
-def test_anchor_is_family_derived_not_card_id(contract, real_section):
+def test_anchor_is_semantic_not_card_digest(contract, real_section):
     """card_id changes whenever the artifact changes; an anchor must not.
 
     A deep link into this page has to survive a re-run of the estimator, so the
-    anchor is keyed on the stable method family and the volatile card_id is
-    disclosed as a receipt instead.
+    anchor is keyed on stable method/run/selection semantics and the volatile
+    card_id is disclosed as a receipt instead.
     """
     for card in contract["cards"]:
         assert f'id="ric-{card["card_id"]}"' not in real_section
@@ -222,6 +265,40 @@ def test_card_ids_in_html_match_the_machine_contract(contract, real_section):
             "card_id absent from the human projection — human and machine "
             "projections must be traceable to the same card object"
         )
+
+
+def test_every_contract_metric_has_an_exact_rendered_value(contract, real_section):
+    """Projection identity includes values, not only object/card identifiers."""
+    for card in contract["cards"]:
+        card_html = _isolate_card(real_section, card["method_family"])
+        metrics = (
+            card["outputs"]
+            + card["uncertainty"]
+            + [item for item in card["diagnostics"] if "value" in item]
+            + card["placebos_or_counterexamples"]
+        )
+        for metric in metrics:
+            markup = _metric_markup(card_html, metric["code"])
+            assert _expected_metric_value(metric) in markup, (
+                f"{card['method_family']}.{metric['code']} does not render its "
+                "contract value in the declared unit"
+            )
+
+
+def test_owner_interval_uses_outer_quantiles_and_discloses_median(
+    contract, real_section
+):
+    card = next(c for c in contract["cards"] if c["method_family"] == "event_study")
+    interval = next(item for item in card["uncertainty"] if item["code"] == "mean_ci90")
+    markup = _metric_markup(_isolate_card(real_section, "event_study"), "mean_ci90")
+
+    assert (
+        f"{interval['value'][0] * 100:.2f}% … {interval['value'][2] * 100:.2f}%"
+        in markup
+    )
+    assert f"{interval['value'][1] * 100:.2f}%" in markup
+    assert "bootstrap median" in markup.lower()
+    assert "自助法中位数" in markup
 
 
 # ---------------------------------------------------------------------------
@@ -352,6 +429,34 @@ def test_ordered_path_axes_are_labelled_with_owner_units(contract, real_section)
     assert str(path["points"][-1]["horizon"]) in es_html
 
 
+def test_ordered_path_preserves_exploratory_and_sample_semantics(
+    contract, real_section
+):
+    es = next(c for c in contract["cards"] if c["method_family"] == "event_study")
+    path = es["ordered_effect_path"]
+    es_html = _isolate_card(real_section, "event_study")
+    selected = next(
+        point
+        for point in path["points"]
+        if point["horizon"] == path["selected_horizon"]
+    )
+
+    assert path["evidence_status"] in es_html
+    assert path["sample_basis"]["en"] in es_html
+    assert path["comparison_note"]["en"] in es_html
+    assert f"{selected['value'] * 100:.2f}%" in es_html
+    assert f"n={selected['n']}" in es_html
+
+
+def test_ordered_path_has_a_localized_accessible_name(contract, real_section):
+    es = next(c for c in contract["cards"] if c["method_family"] == "event_study")
+    es_html = _isolate_card(real_section, "event_study")
+    path = es["ordered_effect_path"]
+    assert path["accessible_name"]["en"] in es_html
+    assert path["accessible_name"]["zh"] in es_html
+    assert "<title>event_curve_announce</title>" not in es_html
+
+
 def test_ordered_path_is_not_described_as_causal(real_section):
     """Descriptive event study — causal language would be an overclaim."""
     low = real_section.lower()
@@ -377,6 +482,19 @@ def test_source_artifact_digests_are_shown(contract, real_section):
 def test_cutoff_is_shown_for_each_card(contract, real_section):
     for card in contract["cards"]:
         assert card["cutoff"] in real_section, "point-in-time cutoff not disclosed"
+
+
+def test_null_artifact_as_of_is_typed_and_never_python_none(contract, real_section):
+    roster = next(
+        artifact
+        for card in contract["cards"]
+        for artifact in card["source_artifacts"]
+        if artifact["role"] == "event_roster"
+    )
+    assert roster["as_of"] is None
+    assert roster["as_of_reason"]["en"] in real_section
+    assert roster["as_of_reason"]["zh"] in real_section
+    assert "as of None" not in real_section
 
 
 def test_missingness_is_visible_for_the_incomplete_card(contract, real_section):
@@ -453,7 +571,7 @@ def test_dom_order_equals_contract_order(contract, real_section):
     """Filters may hide, never reorder — reordering would imply a ranking."""
     positions = []
     for card in contract["cards"]:
-        idx = real_section.find(f'id="ric-{card["method_family"]}"')
+        idx = real_section.find(f'id="{_stable_anchor(card)}"')
         assert idx != -1
         positions.append(idx)
     assert positions == sorted(
@@ -514,8 +632,8 @@ def test_html_in_artifact_text_is_escaped():
 def test_single_card_envelope_renders(contract):
     one = {"schema": contract["schema"], "cards": [copy.deepcopy(contract["cards"][0])]}
     section = _section(_render(research_implications=one))
-    assert 'id="ric-synthetic_control"' in section
-    assert 'id="ric-event_study"' not in section
+    assert f'id="{_stable_anchor(one["cards"][0])}"' in section
+    assert "event-study-hincl2-event-study" not in section
 
 
 # ---------------------------------------------------------------------------
@@ -562,6 +680,7 @@ def _minimal_card(*, family: str, quality: str, outputs=None) -> dict:
         "source_artifacts": [
             {
                 "as_of": "2026-01-01",
+                "as_of_reason": None,
                 "path": "data/experiments/test.json",
                 "rights": "REPOSITORY_INTERNAL",
                 "role": "result",
@@ -571,6 +690,7 @@ def _minimal_card(*, family: str, quality: str, outputs=None) -> dict:
         "code_identity": [
             {
                 "as_of": "2026-01-01",
+                "as_of_reason": None,
                 "path": "scripts/test.py",
                 "rights": "REPOSITORY_INTERNAL",
                 "role": "generator",
@@ -584,7 +704,7 @@ def _minimal_card(*, family: str, quality: str, outputs=None) -> dict:
 def _isolate_card(section: str, family: str) -> str:
     """Return just one card's markup, so a claim about card A cannot be
     accidentally satisfied by card B's copy."""
-    start = section.find(f'id="ric-{family}"')
+    start = section.find(f'data-ric-family="{family}"')
     assert start != -1, f"card {family} not found in section"
     open_tag = section.rfind("<article", 0, start)
     assert open_tag != -1, f"card {family} is not an <article>"

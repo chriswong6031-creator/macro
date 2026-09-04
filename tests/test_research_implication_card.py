@@ -100,6 +100,7 @@ def test_real_synthetic_control_card_preserves_failed_diagnostic_truth() -> None
         "path": "data/experiments/synthetic_control_phase0_results.json",
         "sha256": "f759bdd72de5370e597459dc0630bb1f880e8a38be9b8882a1c75f54872af1e2",
         "as_of": "2026-07-02",
+        "as_of_reason": None,
         "rights": "REPOSITORY_INTERNAL",
     }
     _assert_closed_false_authority(card)
@@ -133,6 +134,19 @@ def test_real_event_study_card_preserves_episode_n_and_typed_incompleteness() ->
     assert _coded(card["diagnostics"], "bh_fdr_announce_reject")["value"] is False
     assert _coded(card["diagnostics"], "bh_fdr_announce_q")["value"] == 0.962
     assert _coded(card["diagnostics"], "panel_coverage_fraction")["value"] == 0.6194
+
+    path = card["ordered_effect_path"]
+    assert path["evidence_status"] == "EXPLORATORY_NON_GATED"
+    assert path["selected_horizon"] == 20
+    assert path["sample_basis"]["en"].startswith("Equal-weighted across events")
+    assert "episode" in path["comparison_note"]["en"].lower()
+    assert path["accessible_name"]["zh"]
+    selected_point = next(
+        point
+        for point in path["points"]
+        if point["horizon"] == path["selected_horizon"]
+    )
+    assert selected_point == {"horizon": 20, "value": -0.02168, "n": 276}
 
     assert card["quality"] == "ARTIFACT_INCOMPLETE"
     assert card["evidence_tier"] == "DIAGNOSTIC"
@@ -318,6 +332,52 @@ def test_ordered_effect_path_requires_unique_increasing_owner_horizons() -> None
 
     with pytest.raises(CardContractError, match="unique and increasing"):
         validate_card(card)
+
+
+def test_return_fraction_interval_requires_three_ordered_quantiles() -> None:
+    card = adapt_hincl2_event_study(ROOT)
+    interval = _coded(card["uncertainty"], "mean_ci90")
+
+    interval["value"] = [-0.18, -0.08]
+    with pytest.raises(CardContractError, match="three ordered quantiles"):
+        validate_card(card)
+
+    interval["value"] = [-0.18, -0.01, -0.08]
+    with pytest.raises(CardContractError, match="three ordered quantiles"):
+        validate_card(card)
+
+
+def test_null_source_as_of_requires_a_typed_reason() -> None:
+    card = adapt_hincl2_event_study(ROOT)
+    roster = next(
+        source
+        for source in card["source_artifacts"]
+        if source["role"] == "event_roster"
+    )
+    assert roster["as_of"] is None
+    assert roster["as_of_reason"]["en"]
+    assert roster["as_of_reason"]["zh"]
+
+    roster["as_of_reason"] = None
+    with pytest.raises(CardContractError, match="null as_of requires"):
+        validate_card(card)
+
+
+def test_counterexample_receipts_preserve_resolution_and_split_magnitudes() -> None:
+    synthetic = adapt_synthetic_control(ROOT)
+    event = adapt_hincl2_event_study(ROOT)
+
+    assert _coded(synthetic["placebos_or_counterexamples"], "empirical_p_floor")[
+        "value"
+    ] == pytest.approx(0.004975124378109453)
+    assert (
+        _coded(event["placebos_or_counterexamples"], "split_half_first_mean")["value"]
+        == -0.00785
+    )
+    assert (
+        _coded(event["placebos_or_counterexamples"], "split_half_second_mean")["value"]
+        == -0.16839
+    )
 
 
 def test_fixed_adapter_order_is_not_metric_ranking() -> None:
