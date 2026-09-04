@@ -6,11 +6,11 @@ claim: >
   production evidence has not shown that the absence of a dedicated semantic-directive Event blocks
   the first golden-root autonomy journey.
 falsifier: >
-  Run the real golden-root and adversarial multi-root canary through the protected W3C, C2-R1A,
-  MAT-S1, Stage-B1, Agent Dialogue, action-target, COO, and Control Room owners; this claim is
-  disproved if two otherwise-lawful CONTINUE/REPAIR/STOP/ESCALATE decisions both become effective,
-  or a stale/observer decision causes a downstream mutation despite exact-target and same-carrier
-  enforcement.
+  Under Mastermind #386, after #415, #350, and #326 are protected and installed, run the real
+  golden-root and adversarial multi-root canary through the protected W3C, C2-R1A, MAT-S1, Stage-B1,
+  Agent Dialogue, action-target, COO, and Control Room owners; this claim is disproved if two
+  otherwise-lawful CONTINUE/REPAIR/STOP/ESCALATE decisions both become effective, or a stale/observer
+  decision causes a downstream mutation despite exact-target and same-carrier enforcement.
 so_what: >
   Do not reopen Mastermind #437/#438 or start ACF-1 before the falsifier is reproduced. Finish the
   existing autonomy train, capture the exact canary receipts, and only then use the preserved
