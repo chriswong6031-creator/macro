@@ -1,9 +1,8 @@
 {
   "alibaba": {
     "date": "2026-09-03",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "9988.HK"
+    "rows": 0,
+    "status": "empty"
   },
   "tencent": {
     "date": "2026-09-03",
@@ -12,9 +11,8 @@
   },
   "meituan": {
     "date": "2026-09-03",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "3690.HK"
+    "rows": 0,
+    "status": "empty"
   },
   "xiaomi": {
     "date": "2026-09-03",
@@ -33,13 +31,13 @@
   },
   "kuaishou": {
     "date": "2026-09-03",
-    "rows": 0,
-    "status": "empty"
+    "rows": 86,
+    "status": "ok",
+    "ticker": "1024.HK"
   },
   "smic": {
     "date": "2026-09-03",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "0981.HK"
+    "rows": 0,
+    "status": "empty"
   }
 }
