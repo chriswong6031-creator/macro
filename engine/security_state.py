@@ -1,11 +1,12 @@
 """``security_state.v1`` — Market OS B1A pure, deterministic per-security compiler.
 
-Scope (Chairman-dispatched B1A commission, 2026-08-24). This module compiles the
-public, display-only ``security_state.v1`` contract (schema:
-``contracts/market_os/security_state.v1.schema.json``) for exactly one golden
-security — Apple Inc. common stock, ``SEC:US-XNAS-AAPL`` — over a plain-dict/
-plain-row input surface. It is deliberately **instance-scoped**, not a general
-identity resolver: see the ``NO_GENERAL_NAMESPACE_RENDERER`` disclosure below.
+Scope (Chairman-dispatched B1A commission, 2026-08-24; refusal-first second
+subject added 2026-09-04). This module compiles the public, display-only
+``security_state.v1`` contract (schema:
+``contracts/market_os/security_state.v1.schema.json``) for the producer's
+frozen AAPL/MSFT allowlist over a plain-dict/plain-row input surface. It is
+deliberately **subject-scoped**, not a general identity resolver: a caller must
+provide an immutable subject composed through the existing identity owners.
 
 ZERO I/O, ZERO WALL-CLOCK. Every input this module reads is injected by the
 caller (the producer stage, ``scripts/build_stock_library.py``) as a plain
@@ -29,8 +30,9 @@ Public entry points:
 * :func:`compile_security_state_failure` — a second pure builder the PRODUCER
   calls from its own exception-containment boundary when
   :func:`compile_security_state` itself raised. Never touches disk; the
-  producer is the one that reads a prior ``site/stockdata/AAPL.json`` and
-  passes its ``{generated_at, content_sha256}`` in as ``last_good``.
+  producer is the one that reads the subject's prior
+  ``site/stockdata/<ticker>.json`` and passes that full prior state for
+  subject-bound ``last_good`` derivation.
 
 Identity receipt chain (R1-R9) — adjudicated 2026-08-24, re-derived here
 exactly, never redesigned. See the docstring on :func:`_run_identity_chain`.
@@ -38,11 +40,11 @@ exactly, never redesigned. See the docstring on :func:`_run_identity_chain`.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from hashlib import sha256
 import json
 from pathlib import Path
-import re
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker, SchemaError
@@ -57,6 +59,7 @@ from lib.evidence_foundation import (
 )
 from lib.dataos.identity import IdentityError, parse_listing_key
 from lib.dataos.identity import security_id as _render_security_id
+from engine.company_intelligence.events import parse_canonical_event_id
 
 SCHEMA = "security_state.v1"
 VERSION = "1.0.0"
@@ -68,9 +71,8 @@ SCHEMA_PATH = (
 )
 
 # ---------------------------------------------------------------------------
-# Instance-scoped pinned identity. Per the adjudicated B1A identity chain, this
-# proof is scoped to the golden security ONLY (NO_GENERAL_NAMESPACE_RENDERER
-# below) — it is not a general company_identity.v1 <-> Data OS bridge.
+# AAPL remains the K1 semantic/ID stability control, while the producer now
+# composes the subject for every enabled ticker from the existing Data OS owners.
 # ---------------------------------------------------------------------------
 PINNED_SECURITY_ID = "SEC:US-XNAS-AAPL"
 PINNED_ISSUER_ID = "ISS:US-XNAS-AAPL"
@@ -80,9 +82,36 @@ PINNED_CIK = "0000320193"
 PINNED_MIC = "XNAS"
 PINNED_INCEPTION_CODE = "AAPL"
 
-SECURITY_STATE_TICKERS = (PINNED_TICKER,)
+SECURITY_STATE_TICKERS = (PINNED_TICKER, "MSFT")
 
-_EVENT_ID_RE = re.compile(r"^evt_cik0000320193_\d{4}(?:q[1-4]|fy)_[a-z0-9]+$")
+
+@dataclass(frozen=True, slots=True)
+class SecurityStateSubject:
+    """One immutable security identity composed by the producer's owner reads.
+
+    This is a value carrier, never a resolver.  The producer obtains every
+    identifier through ``VendorAliasTable``/``IssuerMaster`` on one injected
+    decision date; the pure compiler re-proves those values against its
+    injected receipt rows and refuses disagreement.
+    """
+
+    security_id: str
+    issuer_id: str
+    listing_key: str
+    ticker_display: str
+    issuer_cik: str
+    owner_evidence: tuple[tuple[str, str], ...]
+
+
+AAPL_SUBJECT = SecurityStateSubject(
+    security_id=PINNED_SECURITY_ID,
+    issuer_id=PINNED_ISSUER_ID,
+    listing_key=PINNED_LISTING_KEY,
+    ticker_display=PINNED_TICKER,
+    issuer_cik=PINNED_CIK,
+    owner_evidence=(("compatibility_control", "committed AAPL fixture"),),
+)
+
 _WORKSPACE_SCHEMA = "event_workspace.v1"
 _STALE_DAYS = 120
 # The estimated next-earnings WINDOW (never a single precise date -- Sol
@@ -95,18 +124,19 @@ _EARNINGS_WINDOW_BASIS = (
     "quarter; no canonical earnings-calendar owner exists"
 )
 
-_EARNINGS_CONSUMER = {
-    "workstream": "WS:MARKET-OS",
-    "job": "build security_state.v1 for AAPL",
-    "output_contract": "security_state.v1",
-}
+def _earnings_consumer(subject: SecurityStateSubject) -> dict[str, str]:
+    return {
+        "workstream": "WS:MARKET-OS",
+        "job": f"build security_state.v1 for {subject.ticker_display}",
+        "output_contract": "security_state.v1",
+    }
 
 DISCLOSURES: tuple[str, ...] = (
-    "CIK_LEG_UNOWNED_ACCESS: issuer_cik read from declared master artifacts "
-    "(identity_seams.yml master.artifacts); SecurityIssuerRow omits the column",
-    "NO_GENERAL_NAMESPACE_RENDERER: company_identity.v1 (xnas:AAPL) and Data OS "
-    "(SEC:US-XNAS-AAPL) grammars are disjoint; this proof is instance-scoped to "
-    "the golden security and refuses ambiguity",
+    "CIK_LEG_OWNER_BACKED_CURRENT_ONLY: issuer CIK read through canonical "
+    "IssuerMaster.cik_of_issuer; current registrant evidence only, not historical lineage",
+    "OWNER_COMPOSED_SUBJECT_CURRENT_ONLY: security_id, issuer_id, listing_key and "
+    "ticker_display composed through current VendorAliasTable and IssuerMaster readers "
+    "at one injected decision date",
     "ISSUERMASTER_CURRENT_IDENTITY_ONLY: no asof-scoped issuer lineage; proof is "
     "current-identity",
     "ALIAS_EPOCH_VALID_FROM: corroboration alias window start is a placeholder "
@@ -192,6 +222,35 @@ class SecurityStateCompilationError(ValueError):
     condition. The producer stage catches this and falls back to
     :func:`compile_security_state_failure`.
     """
+
+
+def _require_subject(subject: object) -> SecurityStateSubject:
+    """Refuse ticker strings or partial dicts at the compiler boundary."""
+    if not isinstance(subject, SecurityStateSubject):
+        raise SecurityStateCompilationError(
+            "an immutable owner-composed subject is required; a bare ticker is not identity"
+        )
+    scalar_values = (
+        subject.security_id,
+        subject.issuer_id,
+        subject.listing_key,
+        subject.ticker_display,
+        subject.issuer_cik,
+    )
+    if not all(isinstance(value, str) and value.strip() == value and value for value in scalar_values):
+        raise SecurityStateCompilationError("owner-composed subject fields must be non-empty strings")
+    if len(subject.issuer_cik) != 10 or not subject.issuer_cik.isdigit():
+        raise SecurityStateCompilationError("owner-composed subject issuer_cik must be ten digits")
+    if subject.ticker_display != subject.ticker_display.upper():
+        raise SecurityStateCompilationError("owner-composed subject ticker_display must be uppercase")
+    if not subject.owner_evidence or any(
+        not isinstance(item, tuple)
+        or len(item) != 2
+        or not all(isinstance(value, str) and value for value in item)
+        for item in subject.owner_evidence
+    ):
+        raise SecurityStateCompilationError("owner-composed subject requires immutable owner evidence")
+    return subject
 
 
 # ---------------------------------------------------------------------------
@@ -301,6 +360,7 @@ def _self_validate(state: Mapping[str, Any]) -> None:
 
 def _run_identity_chain(
     *,
+    subject: SecurityStateSubject,
     security_master_row: Mapping[str, Any] | None,
     issuer_master_rows: Sequence[Mapping[str, Any]],
     issuer_security_ids: Sequence[str],
@@ -328,7 +388,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R1", "security_master row exists, security_state/superseded_by both null",
         "data/reference/security_master.parquet",
-        "scripts/build_stock_library.py::_read_identity_rows (declared master artifact)",
+        "scripts/build_stock_library.py::_read_security_state_identity_rows (declared master artifact)",
         [
             ("row_present", security_master_row is not None),
             ("security_state", sec_state), ("superseded_by", superseded_by),
@@ -338,49 +398,55 @@ def _run_identity_chain(
     if not r1_pass:
         refusals.append("SECURITY_SUPERSEDED")
 
-    # R2 — row names the pinned issuer, RESOLVED -----------------------------
+    # R2 — row names the requested owner-composed issuer, RESOLVED -----------
     row_issuer_id = _null_to_none(row.get("issuer_id"))
     row_issuer_state = _null_to_none(row.get("issuer_state"))
-    r2_pass = row_issuer_id == PINNED_ISSUER_ID and row_issuer_state == "RESOLVED"
-    equalities.append(_equality("R2", "row.issuer_id", row_issuer_id, "expected_issuer_id", PINNED_ISSUER_ID))
+    r2_pass = row_issuer_id == subject.issuer_id and row_issuer_state == "RESOLVED"
+    equalities.append(_equality("R2", "row.issuer_id", row_issuer_id, "expected_issuer_id", subject.issuer_id))
     legs.append(_leg_receipt(
-        "R2", "security_master.issuer_id names the pinned issuer, issuer_state RESOLVED",
+        "R2", "security_master.issuer_id names the owner-composed issuer, issuer_state RESOLVED",
         "data/reference/security_master.parquet",
-        "scripts/build_stock_library.py::_read_identity_rows",
+        "scripts/build_stock_library.py::_read_security_state_identity_rows",
         [("issuer_id", row_issuer_id), ("issuer_state", row_issuer_state)],
         "pass" if r2_pass else "fail", None if r2_pass else "IDENTITY_UNRESOLVED",
     ))
     if not r2_pass:
         refusals.append("IDENTITY_UNRESOLVED")
 
-    # R3 — issuer_master carries exactly one active row for the pinned CIK --
-    matching = [r for r in issuer_master_rows if _null_to_none(r.get("cik")) == PINNED_CIK]
+    # R3 — one active issuer row binds both requested issuer and current CIK --
+    matching = [r for r in issuer_master_rows if _null_to_none(r.get("cik")) == subject.issuer_cik]
     r3_row = matching[0] if len(matching) == 1 else None
     r3_status = _null_to_none(r3_row.get("status")) if r3_row else None
-    r3_pass = r3_row is not None and r3_status == "active"
+    r3_issuer_id = _null_to_none(r3_row.get("issuer_id")) if r3_row else None
+    r3_pass = r3_row is not None and r3_status == "active" and r3_issuer_id == subject.issuer_id
     equalities.append(_equality(
         "R3", "issuer_master matching row count", len(matching), "expected_count", 1,
     ))
     legs.append(_leg_receipt(
-        "R3", "issuer_master carries exactly one active row for the pinned CIK",
+        "R3", "issuer_master carries exactly one active row binding the owner-composed issuer and CIK",
         "data/reference/issuer_master.parquet",
-        "scripts/build_stock_library.py::_read_identity_rows",
-        [("cik", PINNED_CIK), ("matching_row_count", len(matching)), ("status", r3_status)],
+        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        [
+            ("cik", subject.issuer_cik),
+            ("matching_row_count", len(matching)),
+            ("issuer_id", r3_issuer_id),
+            ("status", r3_status),
+        ],
         "pass" if r3_pass else "fail", None if r3_pass else "ISSUER_GROUP_AMBIGUOUS",
     ))
     if not r3_pass:
         refusals.append("ISSUER_GROUP_AMBIGUOUS")
 
-    # R4 — the issuer's current security set is exactly the pinned security -
+    # R4 — the issuer's current security set is exactly the requested security
     security_set = sorted({str(s) for s in issuer_security_ids})
-    r4_pass = security_set == [PINNED_SECURITY_ID]
+    r4_pass = security_set == [subject.security_id]
     equalities.append(_equality(
-        "R4", "issuer.security_set", security_set, "expected_security_set", [PINNED_SECURITY_ID],
+        "R4", "issuer.security_set", security_set, "expected_security_set", [subject.security_id],
     ))
     legs.append(_leg_receipt(
-        "R4", "the pinned issuer's CURRENT security set is exactly {SEC:US-XNAS-AAPL}",
+        "R4", f"the owner-composed issuer's CURRENT security set is exactly {{{subject.security_id}}}",
         "data/reference/security_master.parquet",
-        "scripts/build_stock_library.py::_read_identity_rows",
+        "scripts/build_stock_library.py::_read_security_state_identity_rows",
         [("security_set", security_set), ("count", len(security_set))],
         "pass" if r4_pass else "fail", None if r4_pass else "ISSUER_GROUP_AMBIGUOUS",
     ))
@@ -396,7 +462,12 @@ def _run_identity_chain(
             derived_security_id = _render_security_id(parse_listing_key(str(listing_key)))
         except IdentityError:
             derived_security_id = None
-    r5_pass = bool(listing_key) and derived_security_id is not None and derived_security_id == row_security_id
+    r5_pass = (
+        bool(listing_key)
+        and derived_security_id is not None
+        and derived_security_id == row_security_id == subject.security_id
+        and listing_key == subject.listing_key
+    )
     equalities.append(_equality(
         "R5", "parse_listing_key(row.listing_key)->security_id", derived_security_id,
         "row.security_id", row_security_id,
@@ -416,7 +487,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R6", "zero matching rows in issuer_migrations.parquet/security_migrations.parquet",
         "data/reference/issuer_migrations.parquet, data/reference/security_migrations.parquet",
-        "scripts/build_stock_library.py::_read_identity_rows",
+        "scripts/build_stock_library.py::_read_security_state_identity_rows",
         [
             ("issuer_migration_matches", len(issuer_migration_matches)),
             ("security_migration_matches", len(security_migration_matches)),
@@ -442,15 +513,22 @@ def _run_identity_chain(
     filing = completeness.get("filing") if isinstance(completeness.get("filing"), Mapping) else {}
     filing_key = filing.get("filing_key") if isinstance(filing.get("filing_key"), Mapping) else {}
     filing_cik = _null_to_none(filing_key.get("cik"))
-    event_id_ok = bool(event_id) and _EVENT_ID_RE.fullmatch(str(event_id)) is not None
-    company_id_ok = company_id == f"cik:{PINNED_CIK}"
-    filing_cik_ok = filing_cik == PINNED_CIK
+    parsed_event_company_id: str | None = None
+    if event_id:
+        try:
+            parsed_event_company_id, _period, _event_type = parse_canonical_event_id(event_id)
+        except Exception:  # canonical owner parser defines the refusal boundary
+            parsed_event_company_id = None
+    expected_company_id = f"cik:{subject.issuer_cik}"
+    event_id_ok = parsed_event_company_id == expected_company_id
+    company_id_ok = company_id == expected_company_id
+    filing_cik_ok = filing_cik == subject.issuer_cik
     r7_pass = (not workspace_available) or (event_id_ok and company_id_ok and filing_cik_ok)
     equalities.append(_equality("R7a", "workspace.event_id matches pattern", event_id_ok, "expected", True))
-    equalities.append(_equality("R7b", "workspace.issuer.company_id", company_id, "expected_company_id", f"cik:{PINNED_CIK}"))
-    equalities.append(_equality("R7c", "workspace.completeness.filing.filing_key.cik", filing_cik, "expected_cik", PINNED_CIK))
+    equalities.append(_equality("R7b", "workspace.issuer.company_id", company_id, "expected_company_id", expected_company_id))
+    equalities.append(_equality("R7c", "workspace.completeness.filing.filing_key.cik", filing_cik, "expected_cik", subject.issuer_cik))
     legs.append(_leg_receipt(
-        "R7", "workspace parity: event_id/company_id/filing cik all bind to the pinned CIK "
+        "R7", "workspace parity: event_id/company_id/filing cik all bind to the owner-composed CIK "
         "(vacuous pass when no workspace is available this cycle)",
         "event_workspace.v1 (owner-native workspace body)",
         "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
@@ -460,17 +538,24 @@ def _run_identity_chain(
     if not r7_pass:
         refusals.append("SUBJECT_NATIVE_PARITY_FAILED")
 
-    # R8 — master issuer_cik agrees with the workspace-native CIK -----------
-    # Same vacuous-pass rule as R7 when no workspace is available.
+    # R8 — master CIK always agrees with the owner-composed subject; a
+    # present workspace must additionally agree.  The owner-to-subject edge
+    # is never vacuous merely because no event is published this cycle.
     master_cik = _null_to_none(row.get("issuer_cik"))
-    r8_pass = (not workspace_available) or (master_cik == PINNED_CIK and filing_cik_ok)
-    equalities.append(_equality("R8", "master.issuer_cik", master_cik, "workspace_native_cik", filing_cik))
+    r8_pass = master_cik == subject.issuer_cik and (
+        not workspace_available or filing_cik_ok
+    )
+    equalities.append(_equality(
+        "R8", "master.issuer_cik", master_cik,
+        "owner_subject.issuer_cik", subject.issuer_cik,
+    ))
     legs.append(_leg_receipt(
-        "R8", "master issuer_cik agrees with the workspace-native CIK "
-        "(vacuous pass when no workspace is available this cycle)",
+        "R8", "master issuer_cik agrees with the owner-composed current CIK; "
+        "a present workspace also agrees",
         "data/reference/security_master.parquet + event_workspace.v1",
-        "scripts/build_stock_library.py::_read_identity_rows",
-        [("workspace_available", workspace_available), ("master_issuer_cik", master_cik), ("workspace_native_cik", filing_cik)],
+        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        [("workspace_available", workspace_available), ("master_issuer_cik", master_cik),
+         ("subject_issuer_cik", subject.issuer_cik), ("workspace_native_cik", filing_cik)],
         "pass" if r8_pass else "fail", None if r8_pass else "IDENTITY_BRIDGE_DISAGREEMENT",
     ))
     if not r8_pass:
@@ -525,7 +610,9 @@ def _run_identity_chain(
 # K1 (Evidence Foundation) runtime composition — earnings_change block only
 # ---------------------------------------------------------------------------
 
-def _build_k1_recipe(*, max_references: int = 1) -> dict[str, Any]:
+def _build_k1_recipe(
+    *, subject: SecurityStateSubject = AAPL_SUBJECT, max_references: int = 1,
+) -> dict[str, Any]:
     """The cik-native, zero-identity-join recipe proven by adjudication.
 
     ``max_references`` defaults to 1 (the production shape: one owner-native
@@ -541,8 +628,8 @@ def _build_k1_recipe(*, max_references: int = 1) -> dict[str, Any]:
         "version": "1.0.0",
         "recipe_id": "",
         "recipe_name": "security_state.v1.earnings_change",
-        "consumer": dict(_EARNINGS_CONSUMER),
-        "subject_instance": {"key_type": "cik", "key": PINNED_CIK},
+        "consumer": _earnings_consumer(subject),
+        "subject_instance": {"key_type": "cik", "key": subject.issuer_cik},
         "subject_key_types": ["cik"],
         "block_specs": [{
             "order": 1,
@@ -612,6 +699,7 @@ def _build_k1_recipe(*, max_references: int = 1) -> dict[str, Any]:
 
 def _build_k1_reference(
     *,
+    subject: SecurityStateSubject = AAPL_SUBJECT,
     generation_id: str,
     event_id: str,
     manifest_sha256: str | None,
@@ -643,7 +731,7 @@ def _build_k1_reference(
             if manifest_sha256 else {"state": "unknown", "sha256": None}
         ),
         "coverage_class": "immutable_generation",
-        "subject": {"key_type": "cik", "key": PINNED_CIK},
+        "subject": {"key_type": "cik", "key": subject.issuer_cik},
         "secondary_subjects": [],
         "clocks": [
             {
@@ -712,7 +800,9 @@ def _build_k1_reference(
     return reference
 
 
-def _build_k1_block(references: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def _build_k1_block(
+    references: Sequence[Mapping[str, Any]], *, subject: SecurityStateSubject = AAPL_SUBJECT,
+) -> dict[str, Any]:
     """The ``earnings_change`` EvidenceBlock over 1..N already-built references.
 
     A hand-derivation of ``lib.evidence_foundation``'s own (private)
@@ -771,10 +861,13 @@ def _build_k1_block(references: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "version": "1.0.0",
         "evidence_block_id": "",
         "block_key": "earnings_change",
-        "consumer": dict(_EARNINGS_CONSUMER),
+        "consumer": _earnings_consumer(subject),
         "supported_claim": {
             "kind": "claim",
-            "text": "The AAPL company-change leg is backed by owner-native event_workspace.v1 generation(s).",
+            "text": (
+                f"The {subject.ticker_display} company-change leg is backed by "
+                "owner-native event_workspace.v1 generation(s)."
+            ),
             "state": supported_state,
         },
         "reference_ids": reference_ids,
@@ -1176,6 +1269,7 @@ def _build_coverage_and_dominant(legs: Mapping[str, Mapping[str, Any]]) -> tuple
 
 def compile_security_state(
     *,
+    subject: SecurityStateSubject,
     now: str,
     security_master_row: Mapping[str, Any] | None,
     workspace: Mapping[str, Any] | None,
@@ -1187,15 +1281,20 @@ def compile_security_state(
     security_migration_matches: Sequence[Mapping[str, Any]] = (),
     manifest_sha256: str | None = None,
 ) -> dict[str, Any]:
-    """Compile ``security_state.v1`` for the pinned golden security (AAPL).
+    """Compile ``security_state.v1`` for one owner-composed security subject.
 
     Every argument is a plain dict/row/string the caller already read (or
     fabricated for a test) — this function performs no I/O and reads no wall
     clock; ``now`` is the injected "as of" instant. See the module docstring
     for the ZERO I/O boundary and :func:`_run_identity_chain` for R1-R9.
     """
+    subject = _require_subject(subject)
     if not isinstance(blob, Mapping):
         raise SecurityStateCompilationError("blob must be a mapping")
+    if str(blob.get("ticker") or "").strip().upper() != subject.ticker_display:
+        raise SecurityStateCompilationError(
+            "blob ticker does not match the immutable owner-composed subject"
+        )
     if workspace_disposition not in ("found", "not_published", "fetch_failed"):
         raise SecurityStateCompilationError(f"unknown workspace_disposition: {workspace_disposition!r}")
     try:
@@ -1205,6 +1304,7 @@ def compile_security_state(
 
     identity_workspace = workspace if workspace_disposition == "found" else None
     identity_proof = _run_identity_chain(
+        subject=subject,
         security_master_row=security_master_row,
         issuer_master_rows=issuer_master_rows,
         issuer_security_ids=issuer_security_ids,
@@ -1238,20 +1338,21 @@ def compile_security_state(
         }
 
     if identity_blocked or effective_workspace is None or event_id is None or generation_id is None:
-        recipe = _build_k1_recipe()
+        recipe = _build_k1_recipe(subject=subject)
         compilation = compile_recipe(recipe, blocks=[], references={})
         evidence_leg = _build_evidence_leg(recipe_id=recipe["recipe_id"], compilation=compilation)
     else:
         lifecycle = effective_workspace.get("lifecycle") if isinstance(effective_workspace.get("lifecycle"), Mapping) else {}
         reference = _build_k1_reference(
+            subject=subject,
             generation_id=str(generation_id), event_id=str(event_id),
             manifest_sha256=manifest_sha256,
             source_available_at=_null_to_none(lifecycle.get("source_available_at")),
             observed_at=_null_to_none(lifecycle.get("observed_at")),
             generated_at=_null_to_none(effective_workspace.get("generated_at")),
         )
-        block = _build_k1_block([reference])
-        recipe = _build_k1_recipe()
+        block = _build_k1_block([reference], subject=subject)
+        recipe = _build_k1_recipe(subject=subject)
         try:
             compilation = compile_recipe(recipe, blocks=[block], references={reference["reference_id"]: reference})
         except EvidenceFoundationError as exc:
@@ -1279,8 +1380,8 @@ def compile_security_state(
 
     state: dict[str, Any] = {
         "schema": SCHEMA, "version": VERSION,
-        "security_id": PINNED_SECURITY_ID, "issuer_id": PINNED_ISSUER_ID,
-        "listing_key": PINNED_LISTING_KEY, "ticker_display": PINNED_TICKER,
+        "security_id": subject.security_id, "issuer_id": subject.issuer_id,
+        "listing_key": subject.listing_key, "ticker_display": subject.ticker_display,
         "generated_at": now, "content_sha256": "0" * 64,
         "as_of": {
             "market_at": _null_to_none(blob.get("asof")),
@@ -1305,7 +1406,20 @@ def compile_security_state(
 _LAST_GOOD_REASON = "prior cycle's committed security_state.v1"
 
 
-def _is_last_good_eligible(prior: Mapping[str, Any] | None) -> bool:
+def _prior_matches_subject(
+    prior: Mapping[str, Any] | None, *, subject: SecurityStateSubject,
+) -> bool:
+    if not isinstance(prior, Mapping):
+        return False
+    return all(
+        prior.get(field) == getattr(subject, field)
+        for field in ("security_id", "issuer_id", "listing_key", "ticker_display")
+    )
+
+
+def _is_last_good_eligible(
+    prior: Mapping[str, Any] | None, *, subject: SecurityStateSubject,
+) -> bool:
     """Eligibility predicate for treating ``prior`` as this cycle's ``last_good``
     (Sol blocker 4).
 
@@ -1321,6 +1435,8 @@ def _is_last_good_eligible(prior: Mapping[str, Any] | None) -> bool:
     """
     if not isinstance(prior, Mapping):
         return False
+    if not _prior_matches_subject(prior, subject=subject):
+        return False
     if prior.get("schema") != SCHEMA:
         return False
     identity_proof = prior.get("identity_proof")
@@ -1331,7 +1447,9 @@ def _is_last_good_eligible(prior: Mapping[str, Any] | None) -> bool:
     return True
 
 
-def derive_last_good(prior: Mapping[str, Any] | None) -> dict[str, Any] | None:
+def derive_last_good(
+    prior: Mapping[str, Any] | None, *, subject: SecurityStateSubject,
+) -> dict[str, Any] | None:
     """The ``last_good`` a failure shell should carry, derived from the FULL
     prior ``security_state.v1`` read (Sol blocker 4).
 
@@ -1348,7 +1466,7 @@ def derive_last_good(prior: Mapping[str, Any] | None) -> dict[str, Any] | None:
        (its ``dominant_degradation`` is ``COMPILER_FAILURE``).
     3. Otherwise -> ``None`` (no usable last-good anywhere in the chain).
     """
-    if _is_last_good_eligible(prior):
+    if _is_last_good_eligible(prior, subject=subject):
         assert isinstance(prior, Mapping)  # narrows for the type checker
         return {
             "generated_at": str(prior["generated_at"]),
@@ -1356,7 +1474,8 @@ def derive_last_good(prior: Mapping[str, Any] | None) -> dict[str, Any] | None:
             "dominant_degradation": str(prior["dominant_degradation"]),
             "reason": _LAST_GOOD_REASON,
         }
-    if isinstance(prior, Mapping):
+    if _prior_matches_subject(prior, subject=subject):
+        assert isinstance(prior, Mapping)
         carried = prior.get("last_good")
         if isinstance(carried, Mapping):
             return dict(carried)
@@ -1364,7 +1483,8 @@ def derive_last_good(prior: Mapping[str, Any] | None) -> dict[str, Any] | None:
 
 
 def compile_security_state_failure(
-    *, now: str, reason: str, prior_state: Mapping[str, Any] | None = None,
+    *, subject: SecurityStateSubject, now: str, reason: str,
+    prior_state: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Pure fallback shell for the PRODUCER's own exception-containment boundary.
 
@@ -1379,6 +1499,7 @@ def compile_security_state_failure(
     never silently present as ``dominant_degradation: NONE`` (a mutation-kill
     this module is built to resist).
     """
+    subject = _require_subject(subject)
     blocked_summary = _bilingual(
         "This security's state could not be compiled this cycle (a compiler failure, not an absence).",
         "本次未能编译该证券的状态（属于编译失败，并非事件不存在）。",
@@ -1423,8 +1544,8 @@ def compile_security_state_failure(
     coverage, _leg_derived_dominant = _build_coverage_and_dominant(legs)
     state: dict[str, Any] = {
         "schema": SCHEMA, "version": VERSION,
-        "security_id": PINNED_SECURITY_ID, "issuer_id": PINNED_ISSUER_ID,
-        "listing_key": PINNED_LISTING_KEY, "ticker_display": PINNED_TICKER,
+        "security_id": subject.security_id, "issuer_id": subject.issuer_id,
+        "listing_key": subject.listing_key, "ticker_display": subject.ticker_display,
         "generated_at": now, "content_sha256": "0" * 64,
         "as_of": {"market_at": None, "source_frontier_at": None, "state_compiled_at": now},
         "authority": {
@@ -1435,7 +1556,7 @@ def compile_security_state_failure(
         "coverage": coverage,
         "dominant_degradation": "COMPILER_FAILURE",
         "legs": legs,
-        "last_good": derive_last_good(prior_state),
+        "last_good": derive_last_good(prior_state, subject=subject),
     }
     state["content_sha256"] = _content_sha256(state)
     _self_validate(state)

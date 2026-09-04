@@ -37,7 +37,44 @@ SCHEMA_PATH = ROOT / "contracts" / "market_os" / "security_state.v1.schema.json"
 
 
 def _load(name: str) -> dict:
-    return json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
+    payload = json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
+    if "now" in payload and "blob" in payload:
+        raw_subject = payload.pop("subject", None)
+        if raw_subject is None:
+            payload["subject"] = _subject()
+        else:
+            payload["subject"] = ss.SecurityStateSubject(
+                **{
+                    **raw_subject,
+                    "owner_evidence": tuple(
+                        tuple(item) for item in raw_subject.get("owner_evidence", ())
+                    ),
+                }
+            )
+    return payload
+
+
+def _subject(
+    *,
+    security_id: str = "SEC:US-XNAS-AAPL",
+    issuer_id: str = "ISS:US-XNAS-AAPL",
+    listing_key: str = "US-XNAS-AAPL",
+    ticker_display: str = "AAPL",
+    issuer_cik: str = "0000320193",
+) -> ss.SecurityStateSubject:
+    return ss.SecurityStateSubject(
+        security_id=security_id,
+        issuer_id=issuer_id,
+        listing_key=listing_key,
+        ticker_display=ticker_display,
+        issuer_cik=issuer_cik,
+        owner_evidence=(
+            ("decision_date", "2026-09-04"),
+            ("alias_reader", "VendorAliasTable.resolve(store)"),
+            ("issuer_reader", "IssuerMaster.issuer_of_security"),
+            ("cik_reader", "IssuerMaster.cik_of_issuer"),
+        ),
+    )
 
 
 def _schema() -> dict:
@@ -510,7 +547,8 @@ def test_case12_compiler_failure_with_last_good() -> None:
     assert prior["identity_proof"]["state"] == "PROVEN"
     assert prior["dominant_degradation"] != "COMPILER_FAILURE"
     state = ss.compile_security_state_failure(
-        now="2026-08-23T12:00:00Z", reason="unexpected KeyError", prior_state=prior,
+        subject=_subject(), now="2026-08-23T12:00:00Z", reason="unexpected KeyError",
+        prior_state=prior,
     )
     assert state["dominant_degradation"] == "COMPILER_FAILURE"
     assert state["last_good"] == {
@@ -527,7 +565,9 @@ def test_case12_compiler_failure_with_last_good() -> None:
 
 
 def test_case13_first_failure_no_last_good() -> None:
-    state = ss.compile_security_state_failure(now="2026-08-23T12:00:00Z", reason="unexpected KeyError")
+    state = ss.compile_security_state_failure(
+        subject=_subject(), now="2026-08-23T12:00:00Z", reason="unexpected KeyError",
+    )
     assert state["dominant_degradation"] == "COMPILER_FAILURE"
     assert state["last_good"] is None
     validator = _validator()
@@ -540,7 +580,10 @@ def test_compiler_failure_never_emits_dominant_degradation_none() -> None:
     read to derive last_good from."""
     eligible_prior = ss.compile_security_state(**_golden_input())
     for prior_state in (None, eligible_prior):
-        state = ss.compile_security_state_failure(now="2026-08-23T12:00:00Z", reason="boom", prior_state=prior_state)
+        state = ss.compile_security_state_failure(
+            subject=_subject(), now="2026-08-23T12:00:00Z", reason="boom",
+            prior_state=prior_state,
+        )
         assert state["dominant_degradation"] == "COMPILER_FAILURE"
         assert state["dominant_degradation"] != "NONE"
 
@@ -550,15 +593,20 @@ def test_compiler_failure_never_emits_dominant_degradation_none() -> None:
 # ---------------------------------------------------------------------------
 
 def test_last_good_eligibility_matrix() -> None:
+    subject = _subject()
     eligible_prior = {
         "schema": "security_state.v1",
+        "security_id": subject.security_id,
+        "issuer_id": subject.issuer_id,
+        "listing_key": subject.listing_key,
+        "ticker_display": subject.ticker_display,
         "identity_proof": {"state": "PROVEN"},
         "dominant_degradation": "PARTIAL",
         "generated_at": "2026-08-20T00:00:00Z",
         "content_sha256": "a" * 64,
     }
-    assert ss._is_last_good_eligible(eligible_prior) is True
-    assert ss.derive_last_good(eligible_prior) == {
+    assert ss._is_last_good_eligible(eligible_prior, subject=subject) is True
+    assert ss.derive_last_good(eligible_prior, subject=subject) == {
         "generated_at": "2026-08-20T00:00:00Z", "content_sha256": "a" * 64,
         "dominant_degradation": "PARTIAL", "reason": "prior cycle's committed security_state.v1",
     }
@@ -567,21 +615,21 @@ def test_last_good_eligibility_matrix() -> None:
     # dominant_degradation -- this is the half of the predicate a bare
     # dominant_degradation-only check would miss.
     blocked_prior = {**eligible_prior, "identity_proof": {"state": "BLOCKED_IDENTITY_BRIDGE"}}
-    assert ss._is_last_good_eligible(blocked_prior) is False
-    assert ss.derive_last_good(blocked_prior) is None
+    assert ss._is_last_good_eligible(blocked_prior, subject=subject) is False
+    assert ss.derive_last_good(blocked_prior, subject=subject) is None
 
     partial_identity_prior = {**eligible_prior, "identity_proof": {"state": "PARTIAL"}}
-    assert ss._is_last_good_eligible(partial_identity_prior) is False
+    assert ss._is_last_good_eligible(partial_identity_prior, subject=subject) is False
 
     compiler_failure_prior = {**eligible_prior, "dominant_degradation": "COMPILER_FAILURE"}
-    assert ss._is_last_good_eligible(compiler_failure_prior) is False
+    assert ss._is_last_good_eligible(compiler_failure_prior, subject=subject) is False
 
     wrong_schema_prior = {**eligible_prior, "schema": "something_else.v1"}
-    assert ss._is_last_good_eligible(wrong_schema_prior) is False
+    assert ss._is_last_good_eligible(wrong_schema_prior, subject=subject) is False
 
-    assert ss._is_last_good_eligible(None) is False
-    assert ss._is_last_good_eligible("not-a-mapping") is False  # type: ignore[arg-type]
-    assert ss.derive_last_good(None) is None
+    assert ss._is_last_good_eligible(None, subject=subject) is False
+    assert ss._is_last_good_eligible("not-a-mapping", subject=subject) is False  # type: ignore[arg-type]
+    assert ss.derive_last_good(None, subject=subject) is None
 
     # ineligible prior that itself carries a last_good -> carried forward
     # unchanged, never re-derived from the ineligible prior's own fields.
@@ -590,7 +638,7 @@ def test_last_good_eligibility_matrix() -> None:
         "dominant_degradation": "STALE", "reason": "prior cycle's committed security_state.v1",
     }
     blocked_with_last_good = {**blocked_prior, "last_good": carried}
-    assert ss.derive_last_good(blocked_with_last_good) == carried
+    assert ss.derive_last_good(blocked_with_last_good, subject=subject) == carried
 
 
 def test_last_good_blocked_identity_bridge_prior_is_never_eligible() -> None:
@@ -602,8 +650,8 @@ def test_last_good_blocked_identity_bridge_prior_is_never_eligible() -> None:
     blocked_state = ss.compile_security_state(**_load("identity_r1_superseded_input.json"))
     assert blocked_state["identity_proof"]["state"] == "BLOCKED_IDENTITY_BRIDGE"
     assert blocked_state["dominant_degradation"] != "COMPILER_FAILURE"
-    assert ss._is_last_good_eligible(blocked_state) is False
-    assert ss.derive_last_good(blocked_state) is None
+    assert ss._is_last_good_eligible(blocked_state, subject=_subject()) is False
+    assert ss.derive_last_good(blocked_state, subject=_subject()) is None
 
 
 def test_last_good_carries_forward_unchanged_across_two_consecutive_failures() -> None:
@@ -622,13 +670,15 @@ def test_last_good_carries_forward_unchanged_across_two_consecutive_failures() -
     }
 
     failure_1 = ss.compile_security_state_failure(
-        now="2026-08-24T12:00:00Z", reason="first failure", prior_state=success_state,
+        subject=_subject(), now="2026-08-24T12:00:00Z", reason="first failure",
+        prior_state=success_state,
     )
     assert failure_1["dominant_degradation"] == "COMPILER_FAILURE"
     assert failure_1["last_good"] == expected_snapshot
 
     failure_2 = ss.compile_security_state_failure(
-        now="2026-08-25T12:00:00Z", reason="second consecutive failure", prior_state=failure_1,
+        subject=_subject(), now="2026-08-25T12:00:00Z",
+        reason="second consecutive failure", prior_state=failure_1,
     )
     assert failure_2["dominant_degradation"] == "COMPILER_FAILURE"
     # F1 is COMPILER_FAILURE and therefore NEVER eligible on its own -- F2's
@@ -693,10 +743,240 @@ def test_identity_disclosures_are_the_four_verbatim_strings() -> None:
     state = ss.compile_security_state(**_golden_input())
     disclosures = set(state["identity_proof"]["disclosures"])
     assert disclosures == set(ss.DISCLOSURES)
-    assert any(d.startswith("CIK_LEG_UNOWNED_ACCESS:") for d in disclosures)
-    assert any(d.startswith("NO_GENERAL_NAMESPACE_RENDERER:") for d in disclosures)
+    assert any(d.startswith("CIK_LEG_OWNER_BACKED_CURRENT_ONLY:") for d in disclosures)
+    assert any(d.startswith("OWNER_COMPOSED_SUBJECT_CURRENT_ONLY:") for d in disclosures)
+    assert not any("CIK_LEG_UNOWNED_ACCESS" in d for d in disclosures)
+    assert not any("NO_GENERAL_NAMESPACE_RENDERER" in d for d in disclosures)
     assert any(d.startswith("ISSUERMASTER_CURRENT_IDENTITY_ONLY:") for d in disclosures)
     assert any(d.startswith("ALIAS_EPOCH_VALID_FROM:") for d in disclosures)
+
+
+# ---------------------------------------------------------------------------
+# MSFT second-subject parameterization and refusal-first identity
+# ---------------------------------------------------------------------------
+
+def test_msft_second_subject_compiles_with_subject_correct_identity_and_k1() -> None:
+    inp = _load("golden_msft_input.json")
+    subject = inp["subject"]
+    state = ss.compile_security_state(**inp)
+    assert state["security_id"] == "SEC:US-XNAS-MSFT"
+    assert state["issuer_id"] == "ISS:US-XNAS-MSFT"
+    assert state["listing_key"] == "US-XNAS-MSFT"
+    assert state["ticker_display"] == "MSFT"
+    assert state["identity_proof"]["state"] == "PROVEN"
+    r3 = next(leg for leg in state["identity_proof"]["legs"] if leg["check"] == "R3")
+    assert {row["field"]: row["value"] for row in r3["values_read"]}["issuer_id"] == (
+        "ISS:US-XNAS-MSFT"
+    )
+    assert state["legs"]["change"]["economic_episode_ref"] == (
+        "evt_cik0000789019_2026q4_results"
+    )
+    compilation = state["legs"]["evidence"]["compilation"]
+    assert compilation["state"] not in {"refused", "abstained"}
+    recipe = ss._build_k1_recipe(subject=subject)
+    assert recipe["subject_instance"] == {"key_type": "cik", "key": "0000789019"}
+    assert recipe["consumer"]["job"] == "build security_state.v1 for MSFT"
+
+    reference = ss._build_k1_reference(
+        subject=subject,
+        generation_id="789019789019789019789019",
+        event_id="evt_cik0000789019_2026q4_results",
+        manifest_sha256="b" * 64,
+        source_available_at="2026-07-30T20:30:28Z",
+        observed_at="2026-07-30T20:30:28Z",
+        generated_at="2026-07-30T20:30:28Z",
+    )
+    block = ss._build_k1_block([reference], subject=subject)
+    assert reference["subject"] == {"key_type": "cik", "key": "0000789019"}
+    assert "MSFT" in block["supported_claim"]["text"]
+    assert "AAPL" not in json.dumps({"recipe": recipe, "reference": reference, "block": block})
+    assert list(_validator().iter_errors(state)) == []
+
+
+def test_msft_clean_no_event_stays_proven_and_truthfully_not_published() -> None:
+    inp = _load("golden_msft_input.json")
+    inp["workspace"] = None
+    inp["workspace_disposition"] = "not_published"
+    inp["manifest_sha256"] = None
+    state = ss.compile_security_state(**inp)
+    assert state["identity_proof"]["state"] == "PROVEN"
+    assert state["legs"]["change"]["coverage_state"] == "UNAVAILABLE"
+    assert "No current earnings-change event is published" in state["legs"]["change"]["summary"]["en"]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected_code"),
+    [
+        (lambda inp: inp["security_master_row"].update(issuer_cik="0000320193"),
+         "IDENTITY_BRIDGE_DISAGREEMENT"),
+        (lambda inp: inp["issuer_master_rows"][0].update(issuer_id="ISS:US-XNAS-AAPL"),
+         "ISSUER_GROUP_AMBIGUOUS"),
+        (lambda inp: inp.update(issuer_security_ids=["SEC:US-XNAS-MSFT", "SEC:US-XNAS-MSFT.2"]),
+         "ISSUER_GROUP_AMBIGUOUS"),
+    ],
+)
+def test_msft_owner_conflicts_refuse_even_without_a_workspace(mutate, expected_code: str) -> None:
+    inp = _load("golden_msft_input.json")
+    inp["workspace"] = None
+    inp["workspace_disposition"] = "not_published"
+    mutate(inp)
+    state = ss.compile_security_state(**inp)
+    assert state["identity_proof"]["state"] == "BLOCKED_IDENTITY_BRIDGE"
+    assert expected_code in state["identity_proof"]["refusals"]
+
+
+def test_non_aapl_event_identity_is_parsed_canonically_and_wrong_subject_refuses() -> None:
+    inp = _load("golden_msft_input.json")
+    inp["workspace"]["event_id"] = "evt_cik0000320193_2026q4_results"
+    state = ss.compile_security_state(**inp)
+    assert state["identity_proof"]["state"] == "BLOCKED_IDENTITY_BRIDGE"
+    assert "SUBJECT_NATIVE_PARITY_FAILED" in state["identity_proof"]["refusals"]
+
+
+def test_bare_ticker_is_not_an_identity_subject() -> None:
+    inp = _golden_input()
+    inp["subject"] = "AAPL"
+    with pytest.raises(ss.SecurityStateCompilationError, match="owner-composed subject"):
+        ss.compile_security_state(**inp)
+
+
+@pytest.mark.parametrize(("source_name", "target"), [("AAPL", "MSFT"), ("MSFT", "AAPL")])
+def test_last_good_never_crosses_subjects_or_survives_via_a_wrong_subject_shell(
+    source_name: str, target: str,
+) -> None:
+    source_input = _golden_input() if source_name == "AAPL" else _load("golden_msft_input.json")
+    source = ss.compile_security_state(**source_input)
+    target_subject = (
+        _subject() if target == "AAPL" else _load("golden_msft_input.json")["subject"]
+    )
+
+    failure_1 = ss.compile_security_state_failure(
+        subject=target_subject,
+        now="2026-09-04T12:00:00Z",
+        reason="first failure",
+        prior_state=source,
+    )
+    failure_2 = ss.compile_security_state_failure(
+        subject=target_subject,
+        now="2026-09-05T12:00:00Z",
+        reason="second failure",
+        prior_state=failure_1,
+    )
+    assert failure_1["ticker_display"] == target
+    assert failure_1["last_good"] is None
+    assert failure_2["last_good"] is None
+    assert failure_2["security_id"] == target_subject.security_id
+
+
+def test_producer_batches_owner_reads_and_composes_both_subjects_once(monkeypatch) -> None:
+    pd = pytest.importorskip("pandas")
+    from scripts import build_stock_library as bsl
+
+    security_rows = [
+        {
+            "security_id": "SEC:US-XNAS-AAPL", "issuer_id": "ISS:US-XNAS-AAPL",
+            "issuer_state": "RESOLVED", "issuer_cik": "0000320193",
+            "listing_key": "US-XNAS-AAPL", "country": "US", "mic": "XNAS",
+            "inception_code": "AAPL", "security_state": None, "superseded_by": None,
+        },
+        {
+            "security_id": "SEC:US-XNAS-MSFT", "issuer_id": "ISS:US-XNAS-MSFT",
+            "issuer_state": "RESOLVED", "issuer_cik": "0000789019",
+            "listing_key": "US-XNAS-MSFT", "country": "US", "mic": "XNAS",
+            "inception_code": "MSFT", "security_state": None, "superseded_by": None,
+        },
+    ]
+    frames = {
+        "security_master.parquet": pd.DataFrame(security_rows),
+        "vendor_aliases.parquet": pd.DataFrame([
+            {"vendor": "store", "vendor_symbol": "AAPL", "security_id": "SEC:US-XNAS-AAPL", "valid_from": None, "valid_to": None},
+            {"vendor": "store", "vendor_symbol": "MSFT", "security_id": "SEC:US-XNAS-MSFT", "valid_from": None, "valid_to": None},
+        ]),
+        "issuer_master.parquet": pd.DataFrame([
+            {"issuer_id": "ISS:US-XNAS-AAPL", "cik": "0000320193", "status": "active"},
+            {"issuer_id": "ISS:US-XNAS-MSFT", "cik": "0000789019", "status": "active"},
+        ]),
+        "issuer_migrations.parquet": pd.DataFrame(columns=["security_id"]),
+        "security_migrations.parquet": pd.DataFrame(columns=["security_id"]),
+    }
+    read_names: list[str] = []
+
+    def fake_read(path):
+        read_names.append(Path(path).name)
+        return frames[Path(path).name].copy()
+
+    monkeypatch.setattr(bsl.pd, "read_parquet", fake_read)
+    inputs = bsl._read_security_state_identity_rows(
+        Path("/owner"), ("AAPL", "MSFT"), decision_date=datetime.date(2026, 9, 4)
+    )
+    assert read_names == [
+        "security_master.parquet", "vendor_aliases.parquet", "issuer_master.parquet",
+        "issuer_migrations.parquet", "security_migrations.parquet",
+    ]
+    assert set(inputs) == {"AAPL", "MSFT"}
+    assert inputs["MSFT"]["subject"].issuer_cik == "0000789019"
+    assert inputs["MSFT"]["issuer_security_ids"] == ("SEC:US-XNAS-MSFT",)
+    assert ("decision_date", "2026-09-04") in inputs["MSFT"]["subject"].owner_evidence
+
+
+def test_producer_classifies_event_discovery_failure_as_fetch_failed(monkeypatch) -> None:
+    from engine.neuralweb import company_intelligence_reader as reader
+    from scripts import build_stock_library as bsl
+
+    inp = _golden_input()
+    identity = {
+        key: value for key, value in inp.items()
+        if key not in {"now", "workspace", "workspace_disposition", "blob", "manifest_sha256"}
+    }
+    monkeypatch.setattr(
+        reader, "find_current_event_id_for_company",
+        lambda company_id: (_ for _ in ()).throw(reader.WorkspaceChainIntegrityError("marker mismatch")),
+    )
+    state = bsl._compile_security_state_for_ticker(
+        "AAPL", inp["blob"], now=inp["now"], identity=identity,
+    )
+    assert state["identity_proof"]["state"] == "PROVEN"
+    assert state["legs"]["state"]["coverage_state"] == "AVAILABLE"
+    assert "fetch failure, not an absence" in state["legs"]["change"]["summary"]["en"]
+
+
+def test_producer_clean_absence_and_workspace_fetch_failure_stay_distinct(monkeypatch) -> None:
+    from engine.neuralweb import company_intelligence_reader as reader
+    from scripts import build_stock_library as bsl
+
+    inp = _golden_input()
+    identity = {
+        key: value for key, value in inp.items()
+        if key not in {"now", "workspace", "workspace_disposition", "blob", "manifest_sha256"}
+    }
+    monkeypatch.setattr(reader, "find_current_event_id_for_company", lambda company_id: None)
+    absent = bsl._compile_security_state_for_ticker(
+        "AAPL", inp["blob"], now=inp["now"], identity=identity,
+    )
+    assert "No current earnings-change event is published" in absent["legs"]["change"]["summary"]["en"]
+
+    monkeypatch.setattr(
+        reader, "find_current_event_id_for_company",
+        lambda company_id: "evt_cik0000320193_2026q3_results",
+    )
+    monkeypatch.setattr(
+        reader, "load_workspace_with_disposition", lambda event_id: (None, "fetch_failed")
+    )
+    failed = bsl._compile_security_state_for_ticker(
+        "AAPL", inp["blob"], now=inp["now"], identity=identity,
+    )
+    assert "fetch failure, not an absence" in failed["legs"]["change"]["summary"]["en"]
+
+
+def test_unrelated_ticker_is_not_selected_for_security_state() -> None:
+    from scripts import build_stock_library as bsl
+
+    aapl, msft, goog = ({"ticker": ticker} for ticker in ("AAPL", "MSFT", "GOOG"))
+    selected = bsl._select_security_state_targets([
+        ("AAPL", aapl), ("MSFT", msft), ("GOOG", goog),
+    ])
+    assert selected == [("AAPL", aapl), ("MSFT", msft)]
+    assert "security_state" not in goog
 
 
 # ---------------------------------------------------------------------------

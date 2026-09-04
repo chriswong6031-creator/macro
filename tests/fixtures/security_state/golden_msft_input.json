@@ -1,0 +1,151 @@
+{
+  "subject": {
+    "security_id": "SEC:US-XNAS-MSFT",
+    "issuer_id": "ISS:US-XNAS-MSFT",
+    "listing_key": "US-XNAS-MSFT",
+    "ticker_display": "MSFT",
+    "issuer_cik": "0000789019",
+    "owner_evidence": [
+      ["decision_date", "2026-09-04"],
+      ["alias_reader", "VendorAliasTable.resolve(store)"],
+      ["issuer_reader", "IssuerMaster.issuer_of_security"],
+      ["cik_reader", "IssuerMaster.cik_of_issuer"]
+    ]
+  },
+  "now": "2026-09-04T12:00:00Z",
+  "security_master_row": {
+    "security_id": "SEC:US-XNAS-MSFT",
+    "issuer_id": "ISS:US-XNAS-MSFT",
+    "issuer_state": "RESOLVED",
+    "issuer_cik": "0000789019",
+    "listing_key": "US-XNAS-MSFT",
+    "country": "US",
+    "mic": "XNAS",
+    "inception_code": "MSFT",
+    "security_state": null,
+    "superseded_by": null
+  },
+  "issuer_master_rows": [
+    {
+      "issuer_id": "ISS:US-XNAS-MSFT",
+      "cik": "0000789019",
+      "legal_name": "MICROSOFT CORP",
+      "n_securities": 1,
+      "status": "active",
+      "era": "issuer_semantic_correction_v1"
+    }
+  ],
+  "issuer_security_ids": [
+    "SEC:US-XNAS-MSFT"
+  ],
+  "issuer_migration_matches": [],
+  "security_migration_matches": [],
+  "workspace": {
+    "schema": "event_workspace.v1",
+    "event_id": "evt_cik0000789019_2026q4_results",
+    "generation_id": "789019789019789019789019",
+    "issuer": {
+      "company_id": "cik:0000789019",
+      "display_name": "Microsoft Corp.",
+      "listings": [
+        {
+          "is_primary": true,
+          "mic": "XNAS",
+          "security_id": "xnas:MSFT",
+          "share_class": "common",
+          "ticker": "MSFT",
+          "trading_currency": "USD",
+          "valid_from": "1970-01-01",
+          "valid_to": null
+        }
+      ]
+    },
+    "fiscal_period": {
+      "calendar_end": "2026-06-30",
+      "quarter": 4,
+      "year": 2026
+    },
+    "lifecycle": {
+      "observed_at": "2026-07-30T20:30:28Z",
+      "source_available_at": "2026-07-30T20:30:28Z",
+      "state": "complete"
+    },
+    "generated_at": "2026-07-30T20:30:28Z",
+    "authority": "context_only",
+    "prophet_flags": {
+      "earnings_flagged": false
+    },
+    "claim_citations_pending": false,
+    "qa_exchanges": [],
+    "warnings": [
+      "collector_filing_unjoinable",
+      "consensus_unlicensed",
+      "questions_count_unstructured",
+      "reaction_not_joined",
+      "slides_absent",
+      "wire_record_not_found"
+    ],
+    "completeness": {
+      "filing": {
+        "filing_key": {
+          "accession": "0000789019-26-000001",
+          "cik": "0000789019"
+        }
+      }
+    },
+    "facts": [
+      {"k": 1},
+      {"k": 2}
+    ],
+    "deltas": [
+      {"k": 1}
+    ],
+    "guidance": [
+      {"k": 1}
+    ],
+    "claims": [],
+    "sources": [],
+    "aliases": {}
+  },
+  "workspace_disposition": "found",
+  "blob": {
+    "ticker": "MSFT",
+    "name": "Microsoft Corp.",
+    "sector": "Technology",
+    "asof": "2026-09-04",
+    "history_days": 500,
+    "tech": {
+      "chg_1d": -0.25,
+      "price": 510.1
+    },
+    "ladder": {
+      "state": "watch",
+      "dir": "up",
+      "entry": {
+        "text": "Watching for a pullback entry.",
+        "text_zh": "等待回调买点。"
+      }
+    },
+    "entry_signal": {
+      "score": 1,
+      "state": "watch"
+    },
+    "conviction": {
+      "cautions": [
+        "Cloud growth remains the key operating sensitivity."
+      ]
+    },
+    "alerts": {
+      "pinned": null,
+      "timeline": [],
+      "n_recent": 1,
+      "n_total": 4
+    },
+    "view": {},
+    "basket_alloc": {},
+    "alpha": {
+      "alpha": 0.05
+    }
+  },
+  "manifest_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

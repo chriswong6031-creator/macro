@@ -721,51 +721,142 @@ def _apply_delisting(rec: dict, disclosure: dict) -> None:
 
 # ---------------------------------------------------------------------------
 # Market OS B1A — security_state.v1 (frozen allowlist: engine.security_state.
-# SECURITY_STATE_TICKERS, AAPL only). Three narrow, import-lazy helpers for
-# the one-ticker owner-read + K1 compile stage wired below, right before the
+# SECURITY_STATE_TICKERS). Narrow, import-lazy helpers for the batched owner
+# reads + per-subject K1 compile stage wired below, right before the
 # site/stockdata write loop. The pure compile itself lives entirely in
 # engine/security_state.py — everything here is owner I/O + exception
 # containment, never business logic.
 # ---------------------------------------------------------------------------
 
-def _read_security_state_identity_rows(data_dir: Path) -> dict:
-    """Read the four DECLARED master identity artifacts (config/identity_seams.yml
-    ``master.artifacts``) into the plain dict/row shape
-    ``engine.security_state.compile_security_state`` consumes.
+def _read_security_state_identity_rows(
+    data_dir: Path,
+    tickers: tuple[str, ...],
+    *,
+    decision_date: date,
+) -> dict[str, dict]:
+    """Compose subject-bound compiler inputs from the canonical identity owners.
 
-    CIK_LEG_UNOWNED_ACCESS disclosure: ``issuer_cik`` is read directly off this
-    declared artifact column, not through ``lib.dataos.identity.IssuerMaster``
-    (whose ``SecurityIssuerRow`` deliberately omits it). Raises on a genuine
-    read failure (absent ``data/reference/`` in a sparse/CI checkout included)
-    — the caller treats that as an ordinary compile failure, never a build crash.
+    Each declared artifact is loaded exactly once for the whole allowlist. A
+    ticker is resolved through ``VendorAliasTable`` at one injected decision
+    date; its issuer and CIK are then read through ``IssuerMaster``. The raw
+    rows are retained only as compiler proof inputs — they never allocate or
+    infer an identity independently of those owner APIs.
     """
-    from engine.security_state import PINNED_ISSUER_ID, PINNED_SECURITY_ID
+    from engine.security_state import SecurityStateCompilationError, SecurityStateSubject
+    from lib.dataos.identity import IdentityError, IssuerMaster, VendorAliasTable
 
     ref = data_dir / "reference"
     security_master = pd.read_parquet(ref / "security_master.parquet")
+    vendor_aliases = pd.read_parquet(ref / "vendor_aliases.parquet")
     issuer_master = pd.read_parquet(ref / "issuer_master.parquet")
     issuer_migrations = pd.read_parquet(ref / "issuer_migrations.parquet")
     security_migrations = pd.read_parquet(ref / "security_migrations.parquet")
 
-    row_df = security_master[security_master["security_id"] == PINNED_SECURITY_ID]
-    security_master_row = row_df.iloc[0].to_dict() if len(row_df) else None
-    issuer_security_ids = security_master[
-        (security_master["issuer_id"] == PINNED_ISSUER_ID) & security_master["security_state"].isna()
-    ]["security_id"].astype(str).tolist()
-    return {
-        "security_master_row": security_master_row,
-        "issuer_master_rows": issuer_master.to_dict("records"),
-        "issuer_security_ids": issuer_security_ids,
-        "issuer_migration_matches": issuer_migrations[
-            issuer_migrations["security_id"] == PINNED_SECURITY_ID
-        ].to_dict("records"),
-        "security_migration_matches": security_migrations[
-            security_migrations["security_id"] == PINNED_SECURITY_ID
-        ].to_dict("records"),
-    }
+    security_records = security_master.to_dict("records")
+    alias_owner = VendorAliasTable.from_records(vendor_aliases.to_dict("records"))
+    issuer_owner = IssuerMaster.from_records(security_records)
+    security_rows: dict[str, dict] = {}
+    for row in security_records:
+        security_id = str(row.get("security_id") or "")
+        if not security_id:
+            continue
+        if security_id in security_rows:
+            raise SecurityStateCompilationError(
+                f"duplicate security master row for {security_id!r}"
+            )
+        security_rows[security_id] = row
+
+    issuer_master_rows = issuer_master.to_dict("records")
+    issuer_migration_rows = issuer_migrations.to_dict("records")
+    security_migration_rows = security_migrations.to_dict("records")
+    inputs: dict[str, dict] = {}
+    for ticker in tickers:
+        if not isinstance(ticker, str) or not ticker or ticker != ticker.upper():
+            raise SecurityStateCompilationError(
+                f"security_state ticker must be a non-empty uppercase string, got {ticker!r}"
+            )
+        try:
+            security_id = alias_owner.resolve("store", ticker, decision_date)
+        except IdentityError as exc:
+            raise SecurityStateCompilationError(
+                f"owner alias resolution failed for {ticker}: {exc}"
+            ) from exc
+        if security_id is None:
+            raise SecurityStateCompilationError(
+                f"VendorAliasTable has no current store binding for {ticker} on {decision_date}"
+            )
+        reverse_ticker = alias_owner.vendor_symbol_for("store", security_id, decision_date)
+        if reverse_ticker != ticker:
+            raise SecurityStateCompilationError(
+                f"VendorAliasTable round-trip mismatch for {ticker}: {reverse_ticker!r}"
+            )
+
+        security_master_row = security_rows.get(security_id)
+        if security_master_row is None:
+            raise SecurityStateCompilationError(
+                f"security master has no row for owner-resolved {security_id}"
+            )
+        try:
+            issuer_id = issuer_owner.issuer_of_security(security_id)
+            issuer_cik = issuer_owner.cik_of_issuer(issuer_id) if issuer_id else None
+            issuer_security_ids = issuer_owner.securities_of_issuer(issuer_id) if issuer_id else ()
+        except IdentityError as exc:
+            raise SecurityStateCompilationError(
+                f"IssuerMaster resolution failed for {ticker}: {exc}"
+            ) from exc
+        listing_key = security_master_row.get("listing_key")
+        if not issuer_id or not issuer_cik or not isinstance(listing_key, str) or not listing_key:
+            raise SecurityStateCompilationError(
+                f"owner identity is incomplete for {ticker}: "
+                f"issuer_id={issuer_id!r}, issuer_cik={issuer_cik!r}, listing_key={listing_key!r}"
+            )
+
+        subject = SecurityStateSubject(
+            security_id=security_id,
+            issuer_id=issuer_id,
+            listing_key=listing_key,
+            ticker_display=ticker,
+            issuer_cik=issuer_cik,
+            owner_evidence=(
+                ("decision_date", decision_date.isoformat()),
+                ("alias_reader", "VendorAliasTable.resolve(store)"),
+                ("issuer_reader", "IssuerMaster.issuer_of_security"),
+                ("cik_reader", "IssuerMaster.cik_of_issuer"),
+            ),
+        )
+        inputs[ticker] = {
+            "subject": subject,
+            "security_master_row": security_master_row,
+            "issuer_master_rows": issuer_master_rows,
+            "issuer_security_ids": issuer_security_ids,
+            "issuer_migration_matches": [
+                row for row in issuer_migration_rows if row.get("security_id") == security_id
+            ],
+            "security_migration_matches": [
+                row for row in security_migration_rows if row.get("security_id") == security_id
+            ],
+        }
+    return inputs
 
 
-def _compile_security_state_for_ticker(ticker: str, rec: dict, *, now: str) -> dict:
+def _select_security_state_targets(to_write: list[tuple[str, dict]]) -> list[tuple[str, dict]]:
+    """Return only the frozen allowlist, preserving the producer's row order."""
+    from engine.security_state import SECURITY_STATE_TICKERS
+
+    return [
+        (ticker, rec)
+        for ticker, rec in to_write
+        if rec.get("ticker") in SECURITY_STATE_TICKERS
+    ]
+
+
+def _compile_security_state_for_ticker(
+    ticker: str,
+    rec: dict,
+    *,
+    now: str,
+    identity: dict,
+) -> dict:
     """One security's ``security_state.v1``. Owner reads only — the compile
     itself is pure (``engine.security_state.compile_security_state``).
 
@@ -781,9 +872,18 @@ def _compile_security_state_for_ticker(ticker: str, rec: dict, *, now: str) -> d
         load_workspace_with_disposition,
     )
 
-    identity = _read_security_state_identity_rows(config.data_dir())
-    event_id = find_current_event_id_for_company(f"cik:{ss.PINNED_CIK}")
+    subject = identity.get("subject")
+    if not isinstance(subject, ss.SecurityStateSubject) or subject.ticker_display != ticker:
+        raise ss.SecurityStateCompilationError(
+            f"owner-composed subject does not match requested ticker {ticker!r}"
+        )
     workspace, disposition, manifest_sha256 = None, "not_published", None
+    try:
+        event_id = find_current_event_id_for_company(f"cik:{subject.issuer_cik}")
+    except Exception as discovery_exc:  # noqa: BLE001 — discovery failure is not clean absence
+        log.debug("security_state.v1 event discovery failed for %s (%s)", ticker, discovery_exc)
+        event_id = None
+        disposition = "fetch_failed"
     if event_id:
         workspace, disposition = load_workspace_with_disposition(event_id)
         generation_id = str((workspace or {}).get("generation_id") or "")
@@ -4527,9 +4627,9 @@ def main() -> int:
             log.info("B2 conviction accrual: archived conviction_us for %s", alpha_asof)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("B2 conviction accrual (us) failed (%s)", e)
-    # ---- Market OS B1A: security_state.v1 (frozen allowlist, AAPL only) ----
-    # One owner-backed identity+K1 compile per allow-listed ticker, attached to
-    # its rec BEFORE the write loop below. Exception-contained end to end: a
+    # ---- Market OS B1A: security_state.v1 (frozen AAPL + MSFT allowlist) ----
+    # Owner identity artifacts are loaded once, then one subject-bound K1 compile
+    # runs per allow-listed ticker before the write loop. Exception-contained: a
     # failure here degrades rec["security_state"] to a typed compiler-failure
     # shell, with ``last_good`` derived from the FULL prior cycle's committed
     # read via ``engine.security_state.derive_last_good`` (Sol blocker 4) —
@@ -4538,21 +4638,41 @@ def main() -> int:
     # has that receipt carried forward unchanged, never overwritten by the
     # failed prior itself — and never loses the rest of this ticker's blob write.
     try:
-        from engine.security_state import SECURITY_STATE_TICKERS, compile_security_state_failure
-        _ss_targets = [(t, r) for t, r in to_write if r.get("ticker") in SECURITY_STATE_TICKERS]
+        from engine.security_state import compile_security_state_failure
+        _ss_targets = _select_security_state_targets(to_write)
     except Exception as e:  # noqa: BLE001 — the whole stage is additive
         log.warning("security_state.v1 stage disabled this cycle (%s)", e)
         _ss_targets = []
     if _ss_targets:
-        _ss_now = pd.Timestamp.now(tz="UTC").isoformat()
+        _ss_now_timestamp = pd.Timestamp.now(tz="UTC")
+        _ss_now = _ss_now_timestamp.isoformat()
+        try:
+            _ss_identities = _read_security_state_identity_rows(
+                config.data_dir(),
+                tuple(ticker for ticker, _rec in _ss_targets),
+                decision_date=_ss_now_timestamp.date(),
+            )
+        except Exception as e:  # noqa: BLE001 — no identity means no honest subject shell
+            log.warning("security_state.v1 owner identity batch failed (%s)", e)
+            _ss_identities = {}
         for _ss_ticker, _ss_rec in _ss_targets:
+            _ss_identity = _ss_identities.get(_ss_ticker)
+            if _ss_identity is None:
+                log.warning(
+                    "security_state.v1 omitted for %s: no owner-composed identity",
+                    _ss_ticker,
+                )
+                continue
             try:
-                _ss_state = _compile_security_state_for_ticker(_ss_ticker, _ss_rec, now=_ss_now)
+                _ss_state = _compile_security_state_for_ticker(
+                    _ss_ticker, _ss_rec, now=_ss_now, identity=_ss_identity,
+                )
             except Exception as e:  # noqa: BLE001 — never lose the blob write to this stage
                 log.warning("security_state.v1 compile failed for %s (%s)", _ss_ticker, e)
                 _ss_prior = _read_prior_security_state(outdir, _ss_ticker)
                 _ss_state = compile_security_state_failure(
-                    now=_ss_now, reason=f"{type(e).__name__}: {e}", prior_state=_ss_prior,
+                    subject=_ss_identity["subject"], now=_ss_now,
+                    reason=f"{type(e).__name__}: {e}", prior_state=_ss_prior,
                 )
             _ss_rec["security_state"] = _ss_state
             for _ss_idx_row in index:
