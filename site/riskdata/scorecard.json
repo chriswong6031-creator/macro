@@ -1,6 +1,6 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-09-04T12:20:35+00:00",
+  "generated_at": "2026-09-04T16:52:18+00:00",
   "markets": {
     "us": {
       "asof_last_row": "2026-09-03",
@@ -259,12 +259,12 @@
       }
     },
     "kr": {
-      "asof_last_row": "2026-09-01",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 3,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 14,
+        "awaiting_maturity": 15,
         "backlog_cutoff_bd": 28,
         "graded_n": 8
       },
@@ -316,12 +316,12 @@
       }
     },
     "jp": {
-      "asof_last_row": "2026-09-01",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 3,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 14,
+        "awaiting_maturity": 15,
         "backlog_cutoff_bd": 28,
         "graded_n": 6
       },
@@ -387,12 +387,12 @@
       }
     },
     "tw": {
-      "asof_last_row": "2026-09-01",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 3,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 12,
+        "awaiting_maturity": 13,
         "backlog_cutoff_bd": 28,
         "graded_n": 9
       },
@@ -482,14 +482,14 @@
       }
     },
     "in": {
-      "asof_last_row": "2026-08-28",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 7,
+        "log_fresh": true,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
         "awaiting_maturity": 12,
         "backlog_cutoff_bd": 28,
-        "graded_n": 8
+        "graded_n": 9
       },
       "windows": {
         "full": {
@@ -506,9 +506,9 @@
             "precursor_rate": 0.0
           },
           "calm": {
-            "n": 1,
+            "n": 2,
             "dd_missed": 0,
-            "quiet": 1,
+            "quiet": 2,
             "quiet_rate": null
           },
           "by_scare": {
@@ -535,9 +535,9 @@
             "precursor_rate": 0.0
           },
           "calm": {
-            "n": 1,
+            "n": 2,
             "dd_missed": 0,
-            "quiet": 1,
+            "quiet": 2,
             "quiet_rate": null
           },
           "by_scare": {
@@ -553,12 +553,12 @@
       }
     },
     "au": {
-      "asof_last_row": "2026-09-01",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 3,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 14,
+        "awaiting_maturity": 15,
         "backlog_cutoff_bd": 28,
         "graded_n": 9
       },
@@ -610,14 +610,14 @@
       }
     },
     "gb": {
-      "asof_last_row": "2026-08-28",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 7,
+        "log_fresh": true,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
         "awaiting_maturity": 13,
         "backlog_cutoff_bd": 28,
-        "graded_n": 9
+        "graded_n": 10
       },
       "windows": {
         "full": {
@@ -628,9 +628,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 6,
+            "n": 7,
             "tp": 0,
-            "tn": 6,
+            "tn": 7,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -650,9 +650,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 6,
+            "n": 7,
             "tp": 0,
-            "tn": 6,
+            "tn": 7,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -667,14 +667,14 @@
       }
     },
     "ez": {
-      "asof_last_row": "2026-08-28",
+      "asof_last_row": "2026-09-02",
       "monitoring": {
-        "log_fresh": false,
-        "last_logged_days_ago": 7,
+        "log_fresh": true,
+        "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
         "awaiting_maturity": 13,
         "backlog_cutoff_bd": 28,
-        "graded_n": 9
+        "graded_n": 10
       },
       "windows": {
         "full": {
@@ -685,9 +685,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 9,
+            "n": 10,
             "tp": 0,
-            "tn": 9,
+            "tn": 10,
             "precursor_rate": 0.0
           },
           "calm": {
@@ -707,9 +707,9 @@
             "hit_rate": null
           },
           "watch_caution": {
-            "n": 9,
+            "n": 10,
             "tp": 0,
-            "tn": 9,
+            "tn": 10,
             "precursor_rate": 0.0
           },
           "calm": {

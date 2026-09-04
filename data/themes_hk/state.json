@@ -11,7 +11,14 @@
       "displayed": "hk_banks",
       "pending": null
     },
-    "reco": {}
+    "reco": {
+      "hk_energy": {
+        "bucket": "2026-09-04",
+        "count": 1,
+        "from": "trim",
+        "to": "accumulate"
+      }
+    }
   },
   "hk_banks": {
     "label": "dominant",
@@ -19,7 +26,7 @@
     "name_zh": "\u94f6\u884c",
     "rank": 1,
     "reco": "hold",
-    "score": 75
+    "score": 76
   },
   "hk_biotech": {
     "label": "neutral",
@@ -59,14 +66,14 @@
     "name_zh": "\u9ad8\u80a1\u606f\u84dd\u7b79",
     "rank": 2,
     "reco": "accumulate",
-    "score": 72
+    "score": 73
   },
   "hk_energy": {
-    "label": "fading",
+    "label": "dominant",
     "name": "Energy (H-shares)",
     "name_zh": "\u80fd\u6e90",
     "rank": 5,
-    "reco": "trim",
+    "reco": "accumulate",
     "score": 62
   },
   "hk_ev": {
@@ -75,7 +82,7 @@
     "name_zh": "\u4e2d\u8d44\u7535\u52a8\u8f66",
     "rank": 16,
     "reco": "avoid",
-    "score": 36
+    "score": 37
   },
   "hk_gaming": {
     "label": "emerging",
@@ -91,7 +98,7 @@
     "name_zh": "\u5de5\u4e1a\u4e0e\u57fa\u5efa",
     "rank": 12,
     "reco": "avoid",
-    "score": 47
+    "score": 48
   },
   "hk_insurers": {
     "label": "dominant",
@@ -147,6 +154,6 @@
     "name_zh": "\u7535\u4fe1\u4e0e\u516c\u7528\u4e8b\u4e1a",
     "rank": 9,
     "reco": "hold",
-    "score": 51
+    "score": 52
   }
 }
