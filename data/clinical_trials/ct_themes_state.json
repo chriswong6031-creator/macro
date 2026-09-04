@@ -1,7 +1,7 @@
 {
   "glp1_named_agents": {
     "last_ingest": "2026-09-04",
-    "api_total": 449
+    "api_total": 450
   },
   "glp1_incretin_mechanism": {
     "last_ingest": "2026-09-04",
@@ -17,15 +17,15 @@
   },
   "gene_editing_crispr": {
     "last_ingest": "2026-09-04",
-    "api_total": 94
+    "api_total": 95
   },
   "adc_antibody_drug_conjugate": {
     "last_ingest": "2026-09-04",
-    "api_total": 431
+    "api_total": 432
   },
   "car_t_cell_therapy": {
     "last_ingest": "2026-09-04",
-    "api_total": 732
+    "api_total": 733
   },
   "obesity_device": {
     "last_ingest": "2026-09-04",
@@ -33,6 +33,6 @@
   },
   "mrna_therapeutics": {
     "last_ingest": "2026-09-04",
-    "api_total": 369
+    "api_total": 370
   }
 }
