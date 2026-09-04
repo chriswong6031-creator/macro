@@ -2262,11 +2262,16 @@ jobs:
       # pair pins (visibility declarations, stance/lane inks, light-presence
       # fence, token cleanliness via scripts.check_design_system.scan_text —
       # repo-import only, no new deps), full checkout has site/. No new job.
+      # tests/test_stock_dashboard_first_frame.py (P0B zero-FOUC) rides the
+      # same HK/Canada dashboard subject: static template ownership, in-place
+      # composer enhancement, preserved owner populations, and no mounted
+      # visibility gate. Uses the existing bs4/jinja2 install. No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_canada_canonical_board.py
           tests/test_canada_v36_composer.py
+          tests/test_stock_dashboard_first_frame.py
           tests/test_stock_dashboard_css.py
           tests/test_hk_v37_composer.py
           tests/test_commodity_signals.py
