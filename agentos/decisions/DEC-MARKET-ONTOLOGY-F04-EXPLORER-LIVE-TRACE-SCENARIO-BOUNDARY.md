@@ -22,7 +22,11 @@ answer: >
   confidence filter, recursive coefficient multiplication, fourth graph, fused path score,
   opportunity authority or duplicate owner plane is permitted. WTI Live Trace is the
   first product vertical; a dormant or contradictory real path is acceptable truth and may
-  not be made visually active to satisfy a mockup.
+  not be made visually active to satisfy a mockup. Architecture Amendment 1 is binding and
+  separates the tenant-neutral snapshot, ephemeral scenario assumption/evaluation and
+  private session view; it also freezes same-cycle freshness, deterministic non-alpha
+  ordering, the X3 rates/inflation owner boundary, scenario overlay semantics, the X1/X6
+  boundary and real-data reference compositions.
 rationale: >
   The original serialized completion order protected owner semantics but delayed the user
   product behind every GMI dependency. Current Macro already contains a production TXI
@@ -34,7 +38,9 @@ rationale: >
   class prevents the reference composition's visual precision from becoming unsupported
   causality. Preserving /transmission.html avoids converting a live owner product and SEO
   route into a broad multi-owner shell. A distinct derived view model gives the product a
-  stable consumer contract without creating another truth store.
+  stable consumer contract without creating another truth store. Amendment 1 closes the
+  remaining privacy/freshness/ordering/owner ambiguities so the first vertical can be built
+  without forcing Brain, private overlays or a new response-model owner into X1.
 alternatives:
   - option: Wait for D2C, D2D, D2E, W3B, W3C, K3-D and K5 before building any explorer.
     why_not: >
@@ -76,6 +82,7 @@ evidence:
   - "config/plans.yml retains site_full as the estate-wide paid site feature; no F04-specific entitlement is needed."
   - "app/main.py, templates/theme.js and config/growth_events.yml provide the existing first-party analytics path; no new telemetry transport is needed."
   - "D2C PR #6809 remains a separate exact-carrier REQUEST_REPAIR after Sol review; K3-D PR #6514 remains Draft/Hold and unaccepted."
+  - "MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_1_2026-09-04.md closes exact-head Sol review 5111169860 and is binding for the four-layer state split, production freshness, deterministic ordering, X3 owner placement, scenario overlay, X1/X6 boundary and reference compositions."
 affects:
   - "WS:MARKET-OS"
   - "WS:GMI-THEME-GRAPH"
@@ -104,6 +111,23 @@ decided_at: 2026-09-04
 The operation `marketontology-f04-ontology-transmission-20260826-fable-001` remains the parent. No new Market Ontology program, F04 workstream or rival graph is created.
 
 The explorer may advance independently only when its exact child scope is genuinely disjoint from held owner paths. Every child performs a fresh current-main/open-PR/active-runtime collision census before writing.
+
+## Binding Amendment 1
+
+`research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_1_2026-09-04.md` is part of this ruling and controls where earlier architecture, handoff or plan wording is ambiguous.
+
+It freezes:
+
+- tenant-neutral `ontology_explorer_snapshot.v1` for the shared paid payload;
+- ephemeral `ontology_scenario_assumption.v1` and `ontology_scenario_eval.v1` with zero owner writes;
+- private `ontology_session_view.v1` for mode, selected state and user overlays;
+- per-node/edge/path owner-generation binding and same-cycle production freshness;
+- WTI as an explicit reference path rather than a machine-ranked `most material` path;
+- deterministic `first_blocking_leg` and non-alpha path ordering;
+- Rate & Inflation Transmission / RIC as the X3 response-research owner, with F04 consumer-only;
+- owner-native scenario calendars, units and TXI grammar reuse;
+- X1 browser product proof without Brain behavior; selected-path Brain integration remains X6;
+- real-data desktop/mobile/public/degraded compositions and their hostile tests.
 
 ## Product route
 
@@ -148,7 +172,7 @@ A path-level combined numerical effect requires one accepted owner that explicit
 
 The first vertical uses the current WTI chain exactly as emitted. At the archaeology base the root oil threshold and breakeven hop are false while downstream real-yield and QQQ-relative conditions are true. The path therefore remains dormant. F04 must expose that downstream observations do not prove the upstream oil mechanism.
 
-Historical hop frequencies may be shown with N/span/regime under `HISTORICAL_TRANSITION_RATE`. They are not named `confidence`. The terminal cohort event study remains separate and may contradict the mechanism without being hidden.
+Historical hop frequencies may be shown with numerator/N/span/regime under `HISTORICAL_TRANSITION_RATE`. They are not named `confidence`. When no valid null comparator exists, show `baseline_comparison: unavailable`. The terminal cohort event study remains separate and may contradict the mechanism without being hidden.
 
 ## Dependency law
 
@@ -183,4 +207,4 @@ EFFECT: NONE
 
 ## Completion
 
-This decision is satisfied only when the explorer's first real vertical is production-proven through the canonical producer, derived view model, gated payload, user surface and machine/Brain consumer. The decision document and its merge are `SPEC_ONLY`, not product completion.
+This decision is satisfied only when the explorer's first real vertical is production-proven through the canonical owner inputs, tenant-neutral snapshot producer, gated paid payload and real entitled browser surface. Selected-path Brain integration is an X6 completion requirement, not an X1 requirement. The decision, amendment and their merge are `SPEC_ONLY`, not product completion.
