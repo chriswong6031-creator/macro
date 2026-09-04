@@ -2100,6 +2100,14 @@ on:
       # report artifacts derived from data).
       - "scripts/research_flow_observatory_methods.py"
       - "tests/test_flow_observatory_methods.py"
+      # Flow Observatory V2 W6 (per-group history drawer, compare, prior episodes,
+      # Terminal links, watch-store decision, research/flow_observatory/W6_SPEC.md):
+      # workflow.py is already covered by the engine/flow_observatory/** glob above;
+      # its test file is listed explicitly per the same W1 contract-delta lesson —
+      # B1 repair (W6 review round): this entry was MISSING from the W6 landing PR
+      # (same defect class as W2/W3/W4/W5's own comments above), wired here in the
+      # SAME commit as the .github/ci/legacy-jobs.yml run: line.
+      - "tests/test_flow_observatory_workflow.py"
       # TOP ANATOMY OOT receipt harness (contract-delta unrun-suite finding,
       # wired 2026-09-02): the suite shipped in #6723 with no run: owner and sat
       # dark on main. Now carried by falsifier-tripwires; the receipt entrypoint,

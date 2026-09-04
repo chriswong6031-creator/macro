@@ -803,3 +803,40 @@ def test_theme_abs_column_colors_by_direction_not_raw_sign():
     row_html = next(r for r in _TR_RE.findall(table_html) if "cn_autos" in r or "Autos" in r)
     assert 'class="chg neu"' in row_html, "a neutral-direction abs value must use the muted 'neu' class"
     assert 'class="chg neg"' not in row_html, "a neutral-direction abs value must never render as 'neg'"
+
+
+# ── B1 structural kill (W6 review round) ───────────────────────────────────────────────
+# This program has now shipped FOUR waves (W2, W3, W4, W5 — see the "Wired ..." comments
+# stacked in .github/ci/legacy-jobs.yml immediately above its flow lane run: line) that
+# each landed a brand-new tests/test_flow_observatory_*.py suite with no job naming it
+# anywhere in CI, so the suite's own tests never actually ran despite being present and
+# green-looking in the PR's own local run. W6 (tests/test_flow_observatory_workflow.py)
+# was the FIFTH instance, caught only by independent review after merge. Every prior fix
+# was a one-off edit to the run: line; none of them closed the CLASS. This test does: it
+# reads the run: line directly off disk and fails the NEXT time a suite ships unwired,
+# in the same PR, before merge — the fourth-plus recurrence a mere code-review comment
+# evidently cannot prevent.
+def test_all_flow_observatory_suites_are_wired_into_the_ci_lane():
+    legacy_src = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
+    # Matched structurally (the pytest invocation naming test_flow_velocity.py, the
+    # oldest suite this lane has always carried) rather than by line number — line
+    # numbers drift on every unrelated ci edit, exactly the kind of edit this lane sees
+    # constantly.
+    m = re.search(r"run:\s*python -m pytest ([^\n]*\btests/test_flow_velocity\.py\b[^\n]*)\n", legacy_src)
+    assert m, ('the flow-velocity measure guards run: line (naming tests/test_flow_velocity.py) '
+              'was not found in .github/ci/legacy-jobs.yml — this test can no longer locate the '
+              'lane it is supposed to guard; update the regex above if the lane was legitimately '
+              'restructured, but do not simply delete this test')
+    run_line = m.group(1)
+    wired = set(re.findall(r"tests/test_flow_observatory_\w+\.py", run_line))
+    on_disk = {f"tests/{p.name}" for p in (ROOT / "tests").glob("test_flow_observatory_*.py")}
+    missing = on_disk - wired
+    assert not missing, (
+        f"{sorted(missing)} exist under tests/ but are NOT named on the flow-velocity "
+        "measure guards' run: line in .github/ci/legacy-jobs.yml — a new "
+        "tests/test_flow_observatory_*.py suite ships DARK (present, looks green locally, "
+        "NEVER actually executed by CI) until it is added to that run: line. This is the "
+        "SAME defect that shipped unwired in W2, W3, W4, W5, and W6 (5 waves in a row) — "
+        "add the new file to the run: command in .github/ci/legacy-jobs.yml (and its "
+        "matching path-gate entry in .github/workflows/ci.yml) in this SAME commit before "
+        "this test will pass.")

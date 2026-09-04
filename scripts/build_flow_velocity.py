@@ -28,6 +28,7 @@ from engine.flow_observatory import contract as fo_contract  # noqa: E402
 from engine.flow_observatory import groups as fo_groups  # noqa: E402
 from engine.flow_observatory import history as fo_history  # noqa: E402
 from engine.flow_observatory import quality as fo_quality  # noqa: E402
+from engine.flow_observatory import workflow as fo_workflow  # noqa: E402
 from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -144,6 +145,112 @@ def _official_sector_ledger_entities(rows: list[dict] | None, cn_status: str | N
                               "rank": r.get("rank"), "status": cn_status}
         for r in (rows or []) if r.get("id")
     }
+
+
+def _attach_group_histories(candidate: dict, ledger_rows: list[dict] | None) -> set[str]:
+    """W6 (``research/flow_observatory/W6_SPEC.md`` §1/§3): attach a per-group
+    ``row["history"]``/``row["episodes"]`` payload to every curated-theme row and, gated
+    on the official lens' own accrual readiness, every official-sector row —
+    ``engine.flow_observatory.workflow``'s pure functions do the actual computation;
+    this is wiring only.
+
+    S9 repair (W6 review round): also RETURNS the desk's own covered/scored ticker
+    universe (``kmap``'s keys — the same set every member ticker is checked against
+    below via ``t in kmap``) so the caller can thread it into the template render as
+    ``known_tickers`` for ``workflow.terminal_link`` (spec §4's own "closest available
+    proxy for has a Terminal page"). Reusing this function's own already-computed
+    ``kmap`` avoids a further recompute of the flow panel purely for this purpose — an
+    empty set on any early-return path (import failure, no flow panel) degrades to "no
+    ticker is known", which the template's ``nameln`` macro handles by rendering every
+    member unlinked rather than raising.
+
+    OWNED-FILES scope keeps this assembly OUT of engine/flow_velocity.py and
+    engine/flow_observatory/groups.py (same boundary ``_official_sectors_panel``
+    already documents), so ``wide``/``kmap``/membership are recomputed a THIRD time in
+    this build (once inside ``flow_velocity.snapshot()``, once inside
+    ``_official_sectors_panel``, once here) — the added wall-clock cost is measured and
+    reported in the PR body's performance note, matching the precedent
+    ``_official_sectors_panel``'s own docstring already accepts for the same reason.
+
+    Official-sector gate: a sector's row only gets a history/episodes panel when its
+    OWN ``spark_accrual.ready`` is true (or it already carries a ``spark``) — the W4
+    official lens applies TODAY's membership retroactively across the whole flow panel,
+    so a REPLAY drawn from that backfill before real accrual covers the window would
+    imply a composition depth the membership store has never actually held (the exact
+    thing ``engine.flow_observatory.groups.aggregate_lens`` already refuses for the
+    single-point spark — replay history for W6 refuses it identically, never a second,
+    laxer rule for the SAME data).
+    """
+    try:
+        import pandas as pd
+
+        from engine.baskets_china import _membership as _curated_membership
+        from engine.flow_velocity import WK, _flow_panel, _name_kinetics_map
+        from engine.flow_velocity import _THEMES_VIN, _THEMES_VOUT
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("flow_observatory workflow: import failed (non-fatal): %s", e)
+        return set()
+
+    wide = _flow_panel()
+    if wide is None:
+        return set()
+    kmap = _name_kinetics_map(wide)
+    wide_cols = set(wide.columns)
+    ledger_rows = ledger_rows or []
+
+    # ── curated themes (spec §1: every group gets a history panel) ──────────────────
+    theme_rows = (candidate.get("ashare_sectors") or {}).get("rows") or []
+    if theme_rows:
+        try:
+            mem = _curated_membership() or {}
+        except Exception as e:  # noqa: BLE001
+            log.debug("flow_observatory workflow: curated membership unavailable (%s)", e)
+            mem = {}
+        baskets = mem.get("baskets") or {}
+        for r in theme_rows:
+            bid = r.get("id")
+            b = baskets.get(bid)
+            if not b:
+                continue
+            members = [m["ticker"] for m in b.get("members", [])
+                      if isinstance(m, dict) and m.get("ticker") and not m.get("removed")]
+            covered = [t for t in members if t in wide_cols and t in kmap]
+            if len(covered) < fo_groups.MIN_COLS_FOR_KINETICS:
+                continue
+            sect_flow = wide[covered].mean(axis=1)
+            full = fo_workflow.compute_full_series(sect_flow, WK, _THEMES_VIN, _THEMES_VOUT)
+            hist = fo_workflow.history_panel(full, ledger_rows, "theme", bid)
+            r["history"] = hist
+            r["episodes"] = fo_workflow.select_episodes(full) if hist else []
+
+    # ── official (Shenwan L1) sectors — accrual-gated (see docstring) ───────────────
+    official_rows = (candidate.get("official_sectors") or {}).get("rows") or []
+    if official_rows:
+        p = config.data_dir() / "china_sectors" / "membership.parquet"
+        membership_df = None
+        if p.exists():
+            try:
+                membership_df = pd.read_parquet(p)
+            except Exception as e:  # noqa: BLE001
+                log.debug("flow_observatory workflow: sector membership unreadable (%s)", e)
+        if membership_df is not None and not membership_df.empty:
+            by_code, _ = fo_groups.resolve_active_membership(membership_df, as_of=None)
+            for r in official_rows:
+                accrual = r.get("spark_accrual") or {}
+                if not (r.get("spark") or accrual.get("ready")):
+                    continue  # not yet accrued — no replay before real history exists (spec §2A)
+                code = r.get("id")
+                members = by_code.get(code, [])
+                covered = [t for t in members if t in wide_cols and t in kmap]
+                if len(covered) < fo_groups.MIN_COLS_FOR_KINETICS:
+                    continue
+                sect_flow = wide[covered].mean(axis=1)
+                full = fo_workflow.compute_full_series(sect_flow, WK, 0.5, -0.5)
+                hist = fo_workflow.history_panel(full, ledger_rows, "sector", code)
+                r["history"] = hist
+                r["episodes"] = fo_workflow.select_episodes(full) if hist else []
+
+    return set(kmap.keys())
 
 
 def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
@@ -311,6 +418,11 @@ def main() -> int:
     ledger_rows: list = []
     ledger_path = fo_history.observations_path(data_root)
     theme_entities: dict = {}
+    # S9: the desk's own covered/scored ticker universe (see `_attach_group_histories`)
+    # — threaded into the render call below as `known_tickers` so `nameln` can refuse
+    # to link a ticker the desk never scored. `None` (never an empty set) is the safe
+    # "no filtering" default until `_attach_group_histories` actually runs.
+    known_tickers: set[str] | None = None
     # B1: a ledger that EXISTS but fails to parse must never be treated as an empty
     # bootstrap ledger — that reading is exactly what lets the ordinary append below
     # overwrite (destroy) a torn file's still-valid closed rows. Caught here, at the read
@@ -354,6 +466,16 @@ def main() -> int:
         official_rows = (candidate.get("official_sectors") or {}).get("rows") or []
         _apply_official_rank_change(official_rows, ledger_rows, candidate.get("market_session"),
                                     current_legs.get("cn_large_order_proxy"))
+        # W6: per-group 60-session history/episodes drawer (spec §1/§3) — additive,
+        # never fatal; a failure here must not sink a build that already produced a
+        # valid v1/v2 payload.
+        try:
+            t_hist0 = datetime.now(timezone.utc)
+            known_tickers = _attach_group_histories(candidate, ledger_rows) or None
+            log.info("flow_observatory workflow (history/episodes): attached in %.2fs",
+                     (datetime.now(timezone.utc) - t_hist0).total_seconds())
+        except Exception as e:  # noqa: BLE001
+            log.warning("flow_observatory workflow (history/episodes) failed (non-fatal): %s", e)
         # W3: theme observations this build would append to the ledger (the SAME shape
         # `_escalate_if_degraded`/state_log already read off `candidate` — status carries
         # cn_large_order_proxy's OWN current-session read, the input the ledger's
@@ -463,6 +585,11 @@ def main() -> int:
         env.globals.update(td=lambda en: en, tr=lambda en: en)
     from engine.flow_observatory.contract import QUADRANT_LABELS, STATUS_WORD
     env.globals.update(quadrant_labels=QUADRANT_LABELS, status_word=STATUS_WORD)
+    # S9: `terminal_link` as a template global + `known_tickers` as a render-context
+    # var — `nameln` gates on `terminal_link is defined` so a caller that never
+    # supplies either (this repo's own W2/W4 test suites' minimal `_render` helpers)
+    # keeps the pre-W6 always-linked behavior unchanged.
+    env.globals.update(terminal_link=fo_workflow.terminal_link)
 
     try:
         from scripts.build_vector import C  # shared palette
@@ -470,7 +597,8 @@ def main() -> int:
         C = {}
 
     try:
-        html = env.get_template("flow_velocity.html.j2").render(C=C, snap=snap, built=built)
+        html = env.get_template("flow_velocity.html.j2").render(
+            C=C, snap=snap, built=built, known_tickers=known_tickers)
     except Exception as e:  # noqa: BLE001 — a template error must not sink the China build
         log.error("flow_velocity render failed: %s", e)
         return 0
