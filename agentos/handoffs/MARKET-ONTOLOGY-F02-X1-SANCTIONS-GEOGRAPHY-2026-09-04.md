@@ -38,15 +38,25 @@ changed:
       narrative fields are excluded. The comprehensive current file owns current
       membership, official add/remove deltas provide recent change state, exact
       original observations are retained in a bounded supersession ledger, and
-      unresolved geography remains typed instead of being guessed.
-  - path: "scripts/build_sanctions_geography.py / site/sanctions-geography-data.json"
+      unresolved geography remains typed instead of being guessed. Review repair
+      rejects non-UTF-8/NUL/DTD/entity XML before parsing, bounds element depth,
+      compares the official record count to observed source rows before duplicate
+      collapse, preserves removed-only geographies, and exports the exact required
+      ten-state vocabulary.
+  - path: "scripts/build_sanctions_geography.py / site/sanctions-geography-data.json / site/sanctions-geography-entries/"
     what: >
-      Added the explicit manual builder, last-good degraded behavior, exact-byte
-      no-op behavior, and bounded machine-readable consumer. No workflow, cron,
-      service, database, queue, alternate event store, or private state was added.
+      Added the explicit manual builder, last-good degraded behavior, atomic
+      file replacement, stale-owned-shard cleanup limited to the exact shard
+      directory, and a lightweight first-load consumer. The full entry corpus is
+      split into 148 canonical geometry shards plus unresolved.json; every manifest
+      row is byte-count, entry-count, SHA-256, parser, source, and projection bound.
+      There is no data-only path that can advance the consumer without refreshing
+      the paired page and assets. No workflow, cron, service, database, queue,
+      alternate event store, or private state was added.
       The checked-in official projection is mastermind.sanctions_geography.v1,
-      parser ofac-sanctions-v1.0.3, source state CURRENT, capability
-      BUILT_NOT_PROVEN, and production state PRODUCTION_INERT.
+      parser ofac-sanctions-v1.0.4, source state CURRENT, capability
+      BUILT_NOT_PROVEN, production state PRODUCTION_INERT, direct-route-only, and
+      not globally discoverable.
   - path: "templates/sanctions_geography.html.j2 / templates/sanctions_geography.css / templates/sanctions_geography.js"
     what: >
       Added the original Mastermind synchronized map, table, country/entry detail,
@@ -56,16 +66,18 @@ changed:
       source-of-truth path; filtered map nodes leave the keyboard order and expose
       aria-disabled; dark and light use separate command-center and research-
       workspace material treatments; EN/ZH labels and accessibility names are
-      present at desktop 1440 and mobile 390.
+      present at desktop 1440 and mobile 390. Review repair gives id-less topology
+      shapes a distinct unavailable hatch instead of an honest-zero fill, exposes
+      child map buttons to assistive technology, translates their accessible names
+      on language change, and fetches at most one verified detail shard on selection.
   - path: "site/sanctions-geography.html / site/sanctions-geography.css / site/sanctions-geography.js / templates/_navlinks.html.j2 / templates/chat.html / site/chat.html"
     what: >
-      Rendered the paired static route and registered one smallest-possible shared
-      Research navigation link. The generated CSS and JavaScript are byte-exact
-      copies of their governed template sources. After the first pushed head,
-      `fence-pack` correctly identified that the shared nav inventory also owns the
-      generated chat header mirrors; the canonical sync command added the same one
-      link to `templates/chat.html` and copied it to `site/chat.html`, with no other
-      header, geometry, behavior, or styling change.
+      Rendered the paired static route. After independent review found that a global
+      navigation link would publish a permanently stale snapshot without an update
+      owner, Sol ruled on the exact carrier to remove/defer the link until F00 owns
+      integration and refresh. The direct route and artifacts remain explicitly
+      PRODUCTION_INERT / DIRECT_ROUTE_ONLY / NOT_GLOBALLY_DISCOVERABLE. The generated
+      CSS/JavaScript and chat header mirrors are byte-exact with their governed sources.
   - path: "tests/test_ofac_sanctions.py / tests/test_sanctions_geography_build.py / tests/test_sanctions_geography_ui.py"
     what: >
       Added hostile coverage for source ownership, signed URL removal, parser
@@ -73,15 +85,25 @@ changed:
       counting, unresolved geography, correction history, removal semantics,
       failed-source last-good behavior, deterministic builds, machine/page parity,
       authority refusals, responsive composition, bilingual states, filters,
-      selection synchronization, and accessible keyboard behavior.
+      selection synchronization, accessible keyboard behavior, on-demand network
+      count, shard tamper refusal, and reproducible degraded-state presentation.
+  - path: "scripts/sanctions_geography_dom_probe.js / scripts/capture_sanctions_geography_states.py"
+    what: >
+      Added committed dependency-free behavioral and real-browser evidence drivers.
+      They exercise selection clearing, filter keyboard exclusion, EN/ZH map names,
+      zero initial and one selection shard request, tampered-shard refusal, and
+      labelled synthetic SOURCE_STALE / SOURCE_UNAVAILABLE /
+      PARSER_SHAPE_CHANGED presentations without modifying the committed artifact.
   - path: "mockups/evidence/sanctions-geography/"
     what: >
       Sealed an eight-cell canonical dark/light by EN/ZH by desktop/mobile matrix
-      against source commit 449d7c3577d1cfea6eccefc796860c6455045099,
+      against exact source commit 05f3c05cc2f4e347f74d5acb4093ce78e92a53dd,
       plus 17 adversarial state screenshots and machine observations for selected
       boundary, NO_RESULTS, filtered map/table synchronization, unresolved register,
       stale last-good, unavailable last-good, and parser-shape-changed last-good.
-      Synthetic degraded fixtures are visibly and durably labelled as fixtures.
+      Synthetic degraded fixtures are visibly and durably labelled as fixtures;
+      the observation receipt binds the data, page, CSS, JS, capture driver,
+      projection, and source identities by SHA-256.
   - path: "GitHub PR #6834"
     what: >
       Opened the one authorized implementation carrier as Draft with an explicit
@@ -90,16 +112,18 @@ changed:
       nonauthor exact-head Opus/Claude PASS with no blocker/major, and a same-
       carrier Sol release all exist.
 verified:
-  - claim: "Official OFAC bytes traversed the real acquisition, parser, projection, machine consumer, and rendered route twice without source or projection drift."
+  - claim: "Official OFAC bytes traversed the real acquisition, parser, projection, sharded consumer, and rendered route without source or projection drift."
     command: >
-      python3 scripts/build_sanctions_geography.py --data-only; sha256sum
-      site/sanctions-geography-data.json; repeat the same build and hash command;
-      then python3 scripts/build_sanctions_geography.py
+      python3 scripts/build_sanctions_geography.py; inspect the main consumer,
+      every manifest-bound shard, parser/source identities, exact page asset pairs,
+      and repeat the fixture build no-op test in tests/test_sanctions_geography_build.py
     result: >
-      Both acquisitions produced projection SHA-256
-      e3c0ea76186a34b0b59c32ad3b63e691962798bb8c3f152e6535fa9cf6f17329
-      over 15,089,909 bytes and deterministic source identity
-      7f4265519c3f60eb8cd9ced3f5ccae6b9cdbcb89eaab530892c4e3da8f807534.
+      The 283,590-byte first-load consumer has SHA-256
+      9975c909c40682e7403ca3df1e6fa26bb8480d9188a10bcf45d64a124dc797b1,
+      carries no full entry corpus, and binds deterministic source/projection
+      identity e91a51346e6f833f31e92397007cbbe4abc661d66da72eeeaac4522cf6ecb647.
+      Its 149 projection-bound detail shards total 17,970,830 bytes and are not
+      requested on initial page load.
       Current SDN.XML is 28,973,302 bytes, raw SHA-256
       803bf565a934a4c6cd2f74e260bde5bed0eb5efe34ddca8b229f3b2429fc6d15,
       published 2026-09-03, with 19,326 current entries, 16,116 entries carrying
@@ -112,7 +136,30 @@ verified:
       python3 -m pytest tests/test_ofac_sanctions.py
       tests/test_sanctions_geography_build.py
       tests/test_sanctions_geography_ui.py tests/test_public_chrome.py -q
-    result: "110 passed in 7.82 seconds; warnings were pytest temporary Chromium cleanup warnings, not test failures."
+    result: "121 passed in 5.31 seconds; 75 warnings were pytest temporary Chromium cleanup warnings, not test failures."
+  - claim: "The exact hosted cn-standout-audit dependency and suite contract passes in a clean minimal environment."
+    command: >
+      Create a fresh temporary venv; install only pytest pandas numpy pyarrow
+      pyyaml markupsafe jinja2; run python -m pytest
+      tests/test_ofac_sanctions.py tests/test_sanctions_geography_build.py
+      tests/test_sanctions_geography_ui.py -q
+    result: >
+      114 passed with Jinja2 3.1.6. The test execution used the clean temporary
+      environment /private/tmp/f02x1-ci.8gqNh4 and therefore independently proved
+      the newly declared Jinja2 dependency rather than inheriting a workstation
+      package.
+  - claim: "The shared exclusive CI job covers the repaired suite's full import closure and remains a valid pack member."
+    command: >
+      python3 scripts/check_contract_delta.py --base
+      fdaf40910809de8da38e91c4696abfa22d2199e0; python3
+      scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml
+      --pack-index 1 --pack-count 12 --validate-only
+    result: >
+      contract-delta reported 0 introduced and 0 inherited findings. All 206
+      legacy jobs validated, and cn-standout-audit remained one of the 16 jobs
+      selected in pack 1. The red predecessor run named six missing transitive
+      closure files; the manifest was widened by exactly those six paths before
+      the green rerun.
   - claim: "The committed browser evidence covers the canonical matrix and required adverse states without hidden page failures."
     command: >
       /tmp/f02x1-pw/bin/python scripts/capture_page_evidence.py --site-dir site
@@ -120,15 +167,17 @@ verified:
       --themes dark,light --output-dir mockups/evidence/sanctions-geography
       --manifest mockups/evidence/sanctions-geography/manifest.json --smells
       mockups/evidence/sanctions-geography/ux-smells.json --settle-ms 2500
-      --timeout-s 60; /tmp/f02x1-pw/bin/python /private/tmp/f02x1_states.py;
+      --timeout-s 60; /tmp/f02x1-pw/bin/python
+      scripts/capture_sanctions_geography_states.py;
       inspect manifest.json and states/observations.json
     result: >
-      Eight of eight canonical states were captured with zero console errors and
-      no page-level horizontal overflow. Seventeen adverse-state captures passed
-      their exact DOM assertions, including 0 filtered-out map nodes left keyboard
-      reachable, 0 dimmed nodes missing aria-disabled, three eligible BALKANS
-      boundaries focusable, NO_RESULTS cause and state code visible, and real
-      19,326 last-good counts preserved in every synthetic degraded state.
+      Eight of eight canonical states were captured with zero console errors, no
+      page-level horizontal overflow, and 854,258 measured initial payload bytes.
+      Seventeen adverse-state captures passed their exact DOM/network assertions:
+      zero initial shard requests, exactly one 643.json request after selecting
+      Russia, a one-to-zero selection clear, three identityless shapes with no fake
+      zero count, translated map names, zero filtered nodes keyboard reachable,
+      NO_RESULTS cause/code, and 19,326 last-good counts in every synthetic degraded state.
   - claim: "Presentation, generated artifacts, governance records, and static syntax satisfy the repository gates."
     command: >
       python3 scripts/check_design_system.py --mode enforce-added --diff-file
@@ -140,7 +189,10 @@ verified:
       templates/sanctions_geography.js; node --check
       site/sanctions-geography.js; python3 -m py_compile
       collectors/ofac_sanctions.py engine/ofac_sanctions.py
-      scripts/build_sanctions_geography.py; git diff --check
+      scripts/build_sanctions_geography.py
+      scripts/capture_sanctions_geography_states.py; node
+      scripts/sanctions_geography_dom_probe.js templates/sanctions_geography.js;
+      git diff --check
     result: >
       Design-system added blockers 0; runtime-style guard pass; visual-evidence
       gate pass; 95 template/site pairs checked; chat-nav selftest and live sync
@@ -172,14 +224,12 @@ verified:
 unverified:
   - claim: "The exact final PR head has an independent nonauthor Opus/Claude review with no blocker or major finding."
     what_would_verify: >
-      After this handoff commit is pushed, ask the existing Secretary task
-      01a05a89-cb19-7162-99c4-54ffdc714cf1 to place one read-only reviewer on
-      PR #6834 and the exact remote SHA. The reviewer must independently verify
-      head/base/tree identity and return PASS or concrete findings across the full
-      diff, official-source receipts and rights, correction retention, geography
-      and identity law, parser/network security, machine/page parity, accessibility,
-      and every committed evidence cell. Any repair changes the head and requires
-      a fresh review.
+      The first immutable-head review on Claude8 session
+      63a8059d-e312-4ab8-8141-403165b639c1 returned REQUEST_REPAIR with one blocker
+      and eight major findings. After this replacement head is pushed and binding
+      checks are terminal, route a rereview through the existing Secretary task
+      01a05a89-cb19-7162-99c4-54ffdc714cf1 to that SAME reviewer session. It must
+      verify the replacement head/base/tree and return PASS with no blocker/major.
   - claim: "PR #6834 binding CI is green on the exact final head."
     what_would_verify: >
       Wait for every binding GitHub check on the final remote SHA and inspect any
@@ -195,9 +245,9 @@ unverified:
 unresolved:
   - >
     The implementation is intentionally PARKED / HOLD-FOR-SOL rather than shipped.
-    Independent exact-head review, binding CI, and a same-carrier Sol release remain
-    prerequisites; production proof and a natural OFAC source-change observation
-    remain post-release work.
+    Same-reviewer exact-head rereview, binding CI, and a same-carrier Sol release
+    remain prerequisites; production proof and a natural OFAC source-change
+    observation remain post-release work.
   - >
     The official delta catalog currently publishes some unauthenticated size values
     that differ slightly from downloaded file sizes. The adapter records
@@ -210,9 +260,9 @@ next_actions:
     and post an exact-head CHECKPOINT_VERIFIED receipt to Slack carrier
     C0BSBM78V1N/1788511297.035179.
   - >
-    Through the existing Secretary task only, commission one independent nonauthor
-    Opus/Claude full-diff review of PR #6834 at the exact pushed SHA. Repair every
-    blocker/major on the same branch and recommission review if the head moves.
+    Through the existing Secretary task only, recommission the same independent
+    Claude8 reviewer session on PR #6834 at the exact pushed SHA. Repair every
+    blocker/major on the same branch and rereview again if the head moves.
   - >
     Wait for binding CI. When CI and exact-head review both pass, keep PR #6834
     Draft with no merge-on-green label and native auto-merge null, post one
@@ -250,8 +300,10 @@ danger_areas:
     thirty-third distinct historical observation. Do not silently truncate it or
     replace it with only the latest record.
   - >
-    The page consumes a roughly 15 MB one-line JSON artifact. Keep it bounded and
-    use structured tools rather than dumping it into logs or reviewing it as prose.
+    The first-load page consumes a roughly 284 KB summary artifact and fetches at
+    most one projection-bound detail shard after a geography selection. Keep the
+    18 MB shard family manifest-bound and use structured tools rather than dumping
+    one-line JSON into logs or reviewing it as prose.
   - >
     Canonical screenshot filenames are content hashes and may change because the
     shared Ask Mastermind control animates. The manifest, exact image SHA-256, full

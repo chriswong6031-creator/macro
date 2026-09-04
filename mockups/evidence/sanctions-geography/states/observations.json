@@ -1,6 +1,16 @@
 {
-  "schema": "f02x1.state_evidence.v1",
-  "note": "Interaction states run against the real committed artifact. Degraded states run the real page code against a labelled synthetic projection fixture; no committed artifact was modified and no source fact invented.",
+  "schema": "f02x1.state_evidence.v2",
+  "driver": "scripts/capture_sanctions_geography_states.py",
+  "artifacts": {
+    "projection_id": "sha256:e91a51346e6f833f31e92397007cbbe4abc661d66da72eeeaac4522cf6ecb647",
+    "source_identity": "e91a51346e6f833f31e92397007cbbe4abc661d66da72eeeaac4522cf6ecb647",
+    "data_sha256": "9975c909c40682e7403ca3df1e6fa26bb8480d9188a10bcf45d64a124dc797b1",
+    "page_sha256": "faf8cf94b2cf41a80b669356bbe6e4e4041f53ccf3c3c7200aca323c7301970e",
+    "css_sha256": "52a6699d67e303def07da9e3c5dbf54fd33ff53b813419f4e014a67fa18fcc20",
+    "js_sha256": "eb3480ea04a3e9fa0cf48ffffad43b153af7895b9670645edd476a72cc2ebe39",
+    "driver_sha256": "d121ab3a959489d8d4b6560384161765e475ab0fa7c781fb5f6c9b5d693a9187"
+  },
+  "note": "Interaction states use the real committed artifact and shards. Degraded states use the real page code with a labelled synthetic projection fixture; no committed artifact is modified and no source outage is asserted.",
   "viewport": {
     "width": 1440,
     "height": 900
@@ -16,19 +26,13 @@
         "row_focusable": true,
         "row_selected": true,
         "map_path_selected": 1,
-        "entry_cards": 12
-      }
-    },
-    {
-      "state": "no-results",
-      "theme": "dark",
-      "locale": "en",
-      "file": "no-results-dark-en.png",
-      "observations": {
-        "rows": 0,
-        "empty_shown": 1,
-        "cause_stated": 1,
-        "state_code": "NO_RESULTS"
+        "entry_cards": 12,
+        "initial_shard_requests": 0,
+        "selection_shard_requests": 1,
+        "selected_shard_path": "643.json",
+        "zh_map_name_applied": true,
+        "identityless_paths": 3,
+        "identityless_paths_with_zero_count": 0
       }
     },
     {
@@ -41,10 +45,23 @@
         "rows": 3,
         "boundaries_dimmed": 145,
         "boundaries_lit": 32,
-        "selection_cleared": 0,
+        "selection_cleared": 1,
         "dimmed_still_keyboard_reachable": 0,
         "dimmed_missing_aria_disabled": 0,
-        "eligible_still_focusable": 3
+        "eligible_still_focusable": 3,
+        "shard_requests_after_filter": 1
+      }
+    },
+    {
+      "state": "no-results",
+      "theme": "dark",
+      "locale": "en",
+      "file": "no-results-dark-en.png",
+      "observations": {
+        "rows": 0,
+        "empty_shown": 1,
+        "cause_stated": 1,
+        "state_code": "NO_RESULTS"
       }
     },
     {
@@ -69,19 +86,13 @@
         "row_focusable": true,
         "row_selected": true,
         "map_path_selected": 1,
-        "entry_cards": 12
-      }
-    },
-    {
-      "state": "no-results",
-      "theme": "light",
-      "locale": "en",
-      "file": "no-results-light-en.png",
-      "observations": {
-        "rows": 0,
-        "empty_shown": 1,
-        "cause_stated": 1,
-        "state_code": "NO_RESULTS"
+        "entry_cards": 12,
+        "initial_shard_requests": 0,
+        "selection_shard_requests": 1,
+        "selected_shard_path": "643.json",
+        "zh_map_name_applied": true,
+        "identityless_paths": 3,
+        "identityless_paths_with_zero_count": 0
       }
     },
     {
@@ -94,10 +105,23 @@
         "rows": 3,
         "boundaries_dimmed": 145,
         "boundaries_lit": 32,
-        "selection_cleared": 0,
+        "selection_cleared": 1,
         "dimmed_still_keyboard_reachable": 0,
         "dimmed_missing_aria_disabled": 0,
-        "eligible_still_focusable": 3
+        "eligible_still_focusable": 3,
+        "shard_requests_after_filter": 1
+      }
+    },
+    {
+      "state": "no-results",
+      "theme": "light",
+      "locale": "en",
+      "file": "no-results-light-en.png",
+      "observations": {
+        "rows": 0,
+        "empty_shown": 1,
+        "cause_stated": 1,
+        "state_code": "NO_RESULTS"
       }
     },
     {
@@ -122,7 +146,7 @@
         "state_code_visible": true,
         "role": "status",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -135,7 +159,7 @@
         "state_code_visible": true,
         "role": "status",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -148,7 +172,7 @@
         "state_code_visible": true,
         "role": "status",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -161,7 +185,7 @@
         "state_code_visible": true,
         "role": "alert",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -174,7 +198,7 @@
         "state_code_visible": true,
         "role": "alert",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -187,7 +211,7 @@
         "state_code_visible": true,
         "role": "alert",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -200,7 +224,7 @@
         "state_code_visible": true,
         "role": "alert",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -213,7 +237,7 @@
         "state_code_visible": true,
         "role": "alert",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     },
     {
@@ -226,7 +250,7 @@
         "state_code_visible": true,
         "role": "alert",
         "counts_still_readable": "19,326",
-        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+        "fixture": "SYNTHETIC - source_state/freshness overridden locally"
       }
     }
   ]
