@@ -95,7 +95,7 @@ _SC_REPORT_PATH = "research/SYNTHETIC_CONTROL_PHASE0.md"
 _SC_REPORT_SHA256 = "a8d2e0023279ca241788b589af55bcedbe07117485cb3918a50d0e395a9ac587"
 _SC_SELECTION = "sp_pure_adds/sc_nnls/0_5"
 
-_HINCL2_ADAPTER_VERSION = "hincl2_event_study/v1"
+_HINCL2_ADAPTER_VERSION = "hincl2_event_study/v2"
 _HINCL2_RESULT_PATH = "data/experiments/hincl2_event_study_results.json"
 _HINCL2_RESULT_SHA256 = (
     "f415b2c4cf9b12fbc8e4dd9e3a30a51c736c93f4ffbc3f818392b4796ea81139"
@@ -115,10 +115,6 @@ _HINCL2_REPORT_SHA256 = (
 _HINCL2_ROSTER_PATH = "data/hk_connect_roster/roster.parquet"
 _HINCL2_ROSTER_SHA256 = (
     "b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148"
-)
-_HINCL2_BENCHMARK_PATH = "data/hk/_HSI.parquet"
-_HINCL2_BENCHMARK_SHA256 = (
-    "184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45"
 )
 _HINCL2_SELECTION = "announce/h20"
 
@@ -873,13 +869,6 @@ def adapt_hincl2_event_study(root: Path) -> dict[str, Any]:
             "此名册不适用单一截止日期；所有者名册记录的是带日期的纳入事件。",
         ),
     )
-    benchmark_receipt = _source_artifact(
-        root,
-        role="benchmark",
-        path=_HINCL2_BENCHMARK_PATH,
-        expected_sha256=_HINCL2_BENCHMARK_SHA256,
-        as_of="2026-07-03",
-    )
     artifact = _read_json(root / _HINCL2_RESULT_PATH)
     try:
         selected = artifact["trials"]["announce"]["h20"]
@@ -1134,6 +1123,10 @@ def adapt_hincl2_event_study(root: Path) -> dict[str, Any]:
                 "该结果属于描述性结果，并未识别因果处理效应。",
             ),
             _localized(
+                "The historical HSI benchmark input cannot be independently verified because the committed run artifact records its cutoff but no immutable digest or locator.",
+                "历史恒生指数基准输入无法独立复核，因为已提交的运行工件仅记录截止日期，未记录不可变摘要或定位信息。",
+            ),
+            _localized(
                 "A gitignored absolute hk_stocks_ext input was used without an immutable digest or rights receipt.",
                 "运行使用了被 Git 忽略的绝对路径 hk_stocks_ext 输入，但没有不可变摘要或权利凭据。",
             ),
@@ -1172,12 +1165,20 @@ def adapt_hincl2_event_study(root: Path) -> dict[str, Any]:
                 ),
                 "source": "research/HINCL2_PREREG.md",
             },
+            {
+                "code": "hsi_benchmark_digest",
+                "reason": "INPUT_DIGEST_MISSING",
+                "detail": _localized(
+                    "The committed HINCL2 run artifact records the HSI cutoff but no immutable benchmark digest or locator; mutable working-tree snapshots are not historical receipts.",
+                    "已提交的 HINCL2 运行工件记录了恒生指数截止日期，但未记录不可变基准摘要或定位信息；工作树中的可变快照不是历史运行凭据。",
+                ),
+                "source": "data/experiments/hincl2_event_study_results.json:hsi_end",
+            },
         ],
         "null_reasons": [],
         "source_artifacts": [
             result_receipt,
             roster_receipt,
-            benchmark_receipt,
             prereg_receipt,
             report_receipt,
         ],

@@ -23,7 +23,7 @@ Step 1: add the first failing real-artifact tests.
 
 The synthetic test loads the committed artifact through the public adapter and asserts the exact schema, selection, digest-derived ID, cutoff, selected CAR, monthly Newey-West t, placebo statistics, DIAGNOSTIC evidence tier, DIAGNOSTIC_FAILED quality, PC-2 failure, null effective_n with a matching null reason, and all-five false authority object.
 
-The event-study test loads the committed artifact and asserts selection announce/h20, cutoff, event sample_n 282, effective_n 74, exact HAC/CI90/DSR/BH-FDR values, ordered owner curve, ARTIFACT_INCOMPLETE quality, typed missing external input digest/rights receipts, descriptive language, and all-five false authority object.
+The event-study test loads the committed artifact and asserts selection announce/h20, cutoff, event sample_n 282, effective_n 74, exact HAC/CI90/DSR/BH-FDR values, ordered owner curve, ARTIFACT_INCOMPLETE quality, typed missing external input digest/rights receipts, typed missing historical HSI benchmark digest, descriptive language, and all-five false authority object. A hostile replay test proves that present, replaced, or absent mutable `data/hk/_HSI.parquet` bytes cannot change or prove the historical card.
 
 Step 2: run the focused test and observe RED because engine.research_implication_card does not exist.
 
@@ -45,7 +45,7 @@ Command:
 
 Step 5: implement the minimum HINCL2 event-study adapter.
 
-Require the exact frozen result, generator, prereg, and report digests. Select only announce/h20. Preserve event N and episode K separately. Copy the ordered event curve in artifact order and reject duplicated or non-monotonic horizons. Preserve missing external input receipt as typed missingness and force ARTIFACT_INCOMPLETE. Do not use causal-treatment phrasing.
+Require the exact frozen result, generator, prereg, report, and roster digests. Select only announce/h20. Preserve event N and episode K separately. Copy the ordered event curve in artifact order and reject duplicated or non-monotonic horizons. Preserve missing external input receipts as typed missingness and force ARTIFACT_INCOMPLETE. The committed run artifact has no immutable historical HSI benchmark digest or locator, so do not include mutable `data/hk/_HSI.parquet` bytes in `source_artifacts` or card identity. Do not use causal-treatment phrasing.
 
 Step 6: run both real-card tests and observe GREEN.
 

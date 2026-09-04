@@ -21,7 +21,7 @@ Project already-committed estimator result artifacts into one deterministic, clo
 
 ## Data flow
 
-1. A family-specific adapter verifies the immutable digest of each required committed source artifact.
+1. A family-specific adapter verifies the immutable digest of each required committed source artifact; an owner input without an immutable historical receipt is represented as typed missingness and is not replaced by mutable checkout bytes.
 2. The adapter selects one explicitly frozen result identity and performs family-specific shape and semantic checks.
 3. The adapter emits one card with schema mastermind.research_implication_card/v1.
 4. The shared validator rejects unknown keys, wrong types, inconsistent content identity, invalid quality states, missing typed-null reasons, and any true authority flag.
@@ -121,11 +121,11 @@ The card preserves the selected CAR, monthly Newey-West t statistic, placebo mea
 - Frozen selection: announce/h20
 - Panel cutoff: 2026-07-03
 - Roster hash: b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148
-- HSI hash: 184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45
+- HSI benchmark receipt: unresolved. The committed run artifact records the cutoff but no immutable historical digest or locator; `data/hk/_HSI.parquet` is a mutable collection snapshot and is never a substitute run receipt.
 
 The card preserves the Stock Connect inclusion announce-anchor +20-day result, event N, independent episode K, HAC result, the three owner interval quantiles, DSR, BH-FDR, panel coverage, exclusions, and the owner-provided ordered event curve. sample_n is the recorded event count. effective_n is the recorded episode_k, because this artifact explicitly names the distinct-episode count. The ordered path is permitted only because the artifact supplies ordered horizons. Its closed object also carries the owner's EXPLORATORY_NON_GATED status, the selected horizon, localized sample basis and comparison note, and a localized accessible name. The chart must distinguish the event-weighted full-window curve from the episode-clustered headline rather than inviting a same-estimator comparison.
 
-Quality is ARTIFACT_INCOMPLETE. The generator depended on a gitignored absolute hk_stocks_ext input whose immutable digest and rights receipt are absent. Outputs remain visible, while completion and decision implication are refused. Language stays descriptive and does not call the observation a causal treatment effect.
+Quality is ARTIFACT_INCOMPLETE. The generator depended on a gitignored absolute hk_stocks_ext input whose immutable digest and rights receipt are absent, and the historical HSI benchmark input has no immutable digest or locator in the committed run artifact. Outputs remain visible, while completion and decision implication are refused. Language stays descriptive and does not call the observation a causal treatment effect.
 
 ## Error and typed-incomplete behavior
 
@@ -150,7 +150,7 @@ Required evidence matrix is dark/light × EN/ZH × desktop 1440/mobile 390. Deta
 ## Verification gates
 
 - Focused adapter tests prove real synthetic-control and event-study cards.
-- Hostile tests prove digest mismatch, selected-result drift, missing-vs-zero, sample_n/effective_n separation, failed-diagnostic dominance, all-false authority, closed keys, deterministic replay, and mutation-sensitive identity.
+- Hostile tests prove digest mismatch, selected-result drift, missing-vs-zero, sample_n/effective_n separation, failed-diagnostic dominance, all-false authority, closed keys, deterministic replay, mutation-sensitive identity, and refusal to treat either known or arbitrary mutable HSI checkout bytes as a historical receipt.
 - Builder tests prove the human and machine projections consume the same cards and IDs.
 - UI tests prove the non-ranking filters, stable anchors, stance, localization, state treatments, details semantics, exact formatted value projection for every metric, outer-quantile interval rendering, typed receipt-date nulls, and absence of prohibited controls.
 - Headless browser evidence proves complete, diagnostic-only, incomplete/missing, failed-diagnostic, and stale fixture states in both themes, both languages, and both viewports.

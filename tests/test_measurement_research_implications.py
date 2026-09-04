@@ -507,6 +507,27 @@ def test_missingness_is_visible_for_the_incomplete_card(contract, real_section):
     )
 
 
+def test_unresolved_historical_hsi_receipt_is_visible_without_claiming_snapshot(
+    contract, real_section
+):
+    es = next(c for c in contract["cards"] if c["method_family"] == "event_study")
+    missing = {item["code"]: item for item in es["missingness"]}
+    receipt_gap = missing["hsi_benchmark_digest"]
+
+    assert receipt_gap["reason"] == "INPUT_DIGEST_MISSING"
+    assert receipt_gap["detail"]["en"] in real_section
+    assert receipt_gap["detail"]["zh"] in real_section
+    assert all(item["role"] != "benchmark" for item in es["source_artifacts"])
+    assert "data/hk/_HSI.parquet" not in json.dumps(es, ensure_ascii=False)
+    assert all(
+        digest not in json.dumps(es, ensure_ascii=False)
+        for digest in (
+            "184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45",
+            "31a4e6d27653484458265b86cfcac3c7d9cd79da047d8509e4f0e0ec64302eac",
+        )
+    )
+
+
 def test_limitations_are_rendered(contract, real_section):
     for card in contract["cards"]:
         for limitation in card["limitations"]:

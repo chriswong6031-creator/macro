@@ -7481,26 +7481,26 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <details class="ric-more">
             <summary><span class="l-en">Who is missing from this result</span><span class="l-zh">该结果遗漏了谁</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              
+
               <li><span class="ric-count">58</span> — <span class="l-en">Events dropped because the treated series lacked the required pre-window.</span><span class="l-zh">因处理序列缺少所需前窗而剔除的事件。</span></li>
-              
-              
+
+
             </ul></div>
           </details>
-          
+
 
           
           <details class="ric-more">
             <summary><span class="l-en">Limitations</span><span class="l-zh">局限性</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              
+
               <li><span class="l-en">PC-2 failed: the placebo mean was materially biased, so this estimator is not cleared for causal or trading use.</span><span class="l-zh">PC-2 未通过：安慰剂均值存在显著偏差，因此该估计器未获准用于因果判断或交易。</span></li>
-              
+
               <li><span class="l-en">No confidence interval or independent effective sample size is reported for this selected result.</span><span class="l-zh">该选定结果未报告置信区间或独立有效样本量。</span></li>
-              
+
             </ul></div>
           </details>
-          
+
 
           <details class="ric-more">
             <summary><span class="l-en">Receipts</span><span class="l-zh">凭证</span></summary>
@@ -7712,41 +7712,45 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <details class="ric-more">
             <summary><span class="l-en">Who is missing from this result</span><span class="l-zh">该结果遗漏了谁</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              
+
               <li><span class="ric-count">179</span> — <span class="l-en">The owner artifact reports these inclusion tickers as zero-imputed in the survivorship lower-bound diagnostic.</span><span class="l-zh">所有者工件报告这些纳入股票在幸存者偏差下界诊断中以零值填补。</span></li>
-              
-              
+
+
               <li><span class="l-en">The absolute gitignored hk_stocks_ext input has no immutable digest receipt in the committed run artifacts.</span><span class="l-zh">已提交的运行工件未包含绝对路径且被 Git 忽略的 hk_stocks_ext 输入的不可变摘要凭据。</span></li>
-              
+
               <li><span class="l-en">The committed run artifacts do not contain a rights receipt for hk_stocks_ext.</span><span class="l-zh">已提交的运行工件未包含 hk_stocks_ext 的权利凭据。</span></li>
-              
+
+              <li><span class="l-en">The committed HINCL2 run artifact records the HSI cutoff but no immutable benchmark digest or locator; mutable working-tree snapshots are not historical receipts.</span><span class="l-zh">已提交的 HINCL2 运行工件记录了恒生指数截止日期，但未记录不可变基准摘要或定位信息；工作树中的可变快照不是历史运行凭据。</span></li>
+
             </ul></div>
           </details>
-          
+
 
           
           <details class="ric-more">
             <summary><span class="l-en">Limitations</span><span class="l-zh">局限性</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              
+
               <li><span class="l-en">The result is descriptive and does not identify a causal treatment effect.</span><span class="l-zh">该结果属于描述性结果，并未识别因果处理效应。</span></li>
-              
+
+              <li><span class="l-en">The historical HSI benchmark input cannot be independently verified because the committed run artifact records its cutoff but no immutable digest or locator.</span><span class="l-zh">历史恒生指数基准输入无法独立复核，因为已提交的运行工件仅记录截止日期，未记录不可变摘要或定位信息。</span></li>
+
               <li><span class="l-en">A gitignored absolute hk_stocks_ext input was used without an immutable digest or rights receipt.</span><span class="l-zh">运行使用了被 Git 忽略的绝对路径 hk_stocks_ext 输入，但没有不可变摘要或权利凭据。</span></li>
-              
+
               <li><span class="l-en">The pre-registered run concluded NO-GO and is not wired to a signal or trading route.</span><span class="l-zh">预注册运行结论为 NO-GO，且未连接到信号或交易路径。</span></li>
-              
+
             </ul></div>
           </details>
-          
+
 
           <details class="ric-more">
             <summary><span class="l-en">Receipts</span><span class="l-zh">凭证</span></summary>
             <div class="ric-more-b">
               <dl class="ric-rc">
-                <dt><span class="l-en">Card</span><span class="l-zh">卡片</span></dt><dd>ric_50271081c93577dce12d3a69dca47a135aa4bb1313b264f8f81c697dc0db7d05</dd>
+                <dt><span class="l-en">Card</span><span class="l-zh">卡片</span></dt><dd>ric_9b430b2acf0b68ed64572e04640667b29f0409c4a5d95c096762567a10860d9a</dd>
                 <dt><span class="l-en">Run</span><span class="l-zh">运行</span></dt><dd>hincl2_event_study@2026-07-03</dd>
                 <dt><span class="l-en">Result</span><span class="l-zh">选定结果</span></dt><dd>announce/h20</dd>
-                <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>hincl2_event_study/v1</dd>
+                <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>hincl2_event_study/v2</dd>
                 <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>sha256:f3c6b5db4aef6c11c4e8105a163bd20ca750de98b56a16052eacd49fa0f9151d</dd>
                 
                 <dt>
@@ -7764,14 +7768,6 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
                 <dd>data/hk_connect_roster/roster.parquet<br>sha256:b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148 · <span class="l-en">as of</span><span class="l-zh">截至</span>
                   <span class="ric-null">—</span>
                   <span class="ric-why"><span class="l-en">No single as-of date applies; the owner roster records dated inclusion events.</span><span class="l-zh">此名册不适用单一截止日期；所有者名册记录的是带日期的纳入事件。</span></span>
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Benchmark series</span>
-                  <span class="l-zh">基准序列</span>
-                </dt>
-                <dd>data/hk/_HSI.parquet<br>sha256:184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-07-03
                   · REPOSITORY_INTERNAL</dd>
                 
                 <dt>
@@ -7827,7 +7823,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-09-04T10:57:08.544690Z</dd>
+        <dd>2026-09-04T16:56:47.010705Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">

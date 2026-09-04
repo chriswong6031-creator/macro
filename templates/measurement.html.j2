@@ -2306,26 +2306,26 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <details class="ric-more">
             <summary><span class="l-en">Who is missing from this result</span><span class="l-zh">该结果遗漏了谁</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              {% for ex in card.exclusions %}
+{% for ex in card.exclusions %}
               <li><span class="ric-count">{{ ex.count }}</span> — <span class="l-en">{{ ex.detail.en|e }}</span><span class="l-zh">{{ (ex.detail.zh or ex.detail.en)|e }}</span></li>
-              {% endfor %}
-              {% for ms in card.missingness %}
+{% endfor %}
+{% for ms in card.missingness %}
               <li><span class="l-en">{{ ms.detail.en|e }}</span><span class="l-zh">{{ (ms.detail.zh or ms.detail.en)|e }}</span></li>
-              {% endfor %}
+{% endfor %}
             </ul></div>
           </details>
-          {% endif %}
+{% endif %}
 
           {% if card.limitations %}
           <details class="ric-more">
             <summary><span class="l-en">Limitations</span><span class="l-zh">局限性</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
-              {% for lm in card.limitations %}
+{% for lm in card.limitations %}
               <li><span class="l-en">{{ lm.en|e }}</span><span class="l-zh">{{ (lm.zh or lm.en)|e }}</span></li>
-              {% endfor %}
+{% endfor %}
             </ul></div>
           </details>
-          {% endif %}
+{% endif %}
 
           <details class="ric-more">
             <summary><span class="l-en">Receipts</span><span class="l-zh">凭证</span></summary>

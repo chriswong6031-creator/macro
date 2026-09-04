@@ -51,6 +51,19 @@ SC_INPUTS = (
     "research/SYNTHETIC_CONTROL_PHASE0.md",
 )
 
+HINCL2_INPUTS = (
+    "data/experiments/hincl2_event_study_results.json",
+    "scripts/hincl2_event_study.py",
+    "research/HINCL2_PREREG.md",
+    "reports/hincl2-phase0.md",
+    "data/hk_connect_roster/roster.parquet",
+)
+
+MUTABLE_HSI_SNAPSHOT_DIGESTS = (
+    "184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45",
+    "31a4e6d27653484458265b86cfcac3c7d9cd79da047d8509e4f0e0ec64302eac",
+)
+
 
 def test_real_synthetic_control_card_preserves_failed_diagnostic_truth() -> None:
     card = adapt_synthetic_control(ROOT)
@@ -110,7 +123,10 @@ def test_real_event_study_card_preserves_episode_n_and_typed_incompleteness() ->
     card = adapt_hincl2_event_study(ROOT)
 
     assert card["schema"] == CARD_SCHEMA
-    assert re.fullmatch(r"ric_[0-9a-f]{64}", card["card_id"])
+    assert card["adapter_version"] == "hincl2_event_study/v2"
+    assert card["card_id"] == (
+        "ric_9b430b2acf0b68ed64572e04640667b29f0409c4a5d95c096762567a10860d9a"
+    )
     assert card["method_family"] == "event_study"
     assert card["study_run_id"] == "hincl2_event_study@2026-07-03"
     assert card["selected_result_id"] == "announce/h20"
@@ -153,6 +169,10 @@ def test_real_event_study_card_preserves_episode_n_and_typed_incompleteness() ->
     missing = {item["code"]: item for item in card["missingness"]}
     assert missing["hk_stocks_ext_digest"]["reason"] == "INPUT_DIGEST_MISSING"
     assert missing["hk_stocks_ext_rights"]["reason"] == "RIGHTS_RECEIPT_MISSING"
+    assert missing["hsi_benchmark_digest"]["reason"] == "INPUT_DIGEST_MISSING"
+    assert "no immutable benchmark digest" in missing["hsi_benchmark_digest"][
+        "detail"
+    ]["en"]
     assert all(
         "causal treatment" not in text.lower() for text in card["question"].values()
     )
@@ -187,16 +207,47 @@ def test_real_event_study_card_preserves_episode_n_and_typed_incompleteness() ->
     assert roster_receipt["sha256"] == (
         "b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148"
     )
-    benchmark_receipt = next(
-        artifact
+    assert all(
+        artifact["role"] != "benchmark"
+        and artifact["path"] != "data/hk/_HSI.parquet"
         for artifact in card["source_artifacts"]
-        if artifact["role"] == "benchmark"
     )
-    assert benchmark_receipt["path"] == "data/hk/_HSI.parquet"
-    assert benchmark_receipt["sha256"] == (
-        "184cbdcf2437c9d8de172535cd87515b020708c9c441406391faa4aa895a1e45"
+    serialized = json.dumps(card, ensure_ascii=False, sort_keys=True)
+    assert "data/hk/_HSI.parquet" not in serialized
+    assert all(digest not in serialized for digest in MUTABLE_HSI_SNAPSHOT_DIGESTS)
+    assert any(
+        "historical HSI benchmark input" in limitation["en"]
+        for limitation in card["limitations"]
     )
     _assert_closed_false_authority(card)
+
+
+def test_mutable_hsi_worktree_snapshot_cannot_change_or_prove_historical_card(
+    tmp_path: Path,
+) -> None:
+    _copy_inputs(ROOT, tmp_path, HINCL2_INPUTS)
+    benchmark = tmp_path / "data/hk/_HSI.parquet"
+    benchmark.parent.mkdir(parents=True, exist_ok=True)
+
+    benchmark.write_bytes((ROOT / "data/hk/_HSI.parquet").read_bytes())
+    card_with_old_snapshot = adapt_hincl2_event_study(tmp_path)
+
+    benchmark.write_bytes(b"a later mutable HSI collection snapshot\n")
+    card_with_later_snapshot = adapt_hincl2_event_study(tmp_path)
+
+    benchmark.unlink()
+    card_without_snapshot = adapt_hincl2_event_study(tmp_path)
+
+    def canonical(card: dict) -> str:
+        return json.dumps(
+            card,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+    assert canonical(card_with_old_snapshot) == canonical(card_with_later_snapshot)
+    assert canonical(card_with_later_snapshot) == canonical(card_without_snapshot)
 
 
 def test_real_card_localized_contract_text_has_actual_chinese_copy() -> None:
