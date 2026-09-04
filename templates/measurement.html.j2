@@ -537,6 +537,154 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   .mh-deck{font-size:.95rem}
   .mh-stand{font-size:.86rem}
 }
+
+/* ── Research Implications (F10-X1) ────────────────────────────────────────
+   Two frozen estimator runs whose honest headline is that NEITHER is usable:
+   one failed its own positive control, one is missing an input receipt. The
+   templated answer — big number, small label, coloured badge — is exactly
+   wrong here, because it makes the number the hero when the number is the one
+   thing the reader must not act on. So the state leads, and a full-height
+   verdict rail binds that state to every figure in the card: you cannot read a
+   value without the verdict sitting in peripheral vision.
+
+   Red vs amber is this section's real content, and the page had no vocabulary
+   for the difference before: --act = tested and FAILED; --warn = NOT JUDGED,
+   an input receipt is absent. Collapsing those two into one "bad" colour would
+   destroy the distinction the cards exist to make.
+
+   The two themes are two art directions, not one skin:
+   dark  = instrument panel — card lifted off the canvas by luminance, hairline
+           borders, the rail carries a soft bloom.
+   light = research sheet — white paper on the cool canvas, zero glow; depth
+           comes from a shadow and a crisper rule. Same structure, same
+           semantics, different material. */
+.ric-lede{font-size:.83rem;line-height:1.65;color:var(--muted);max-width:74ch;
+  margin:12px 0 18px;padding-left:15px}
+
+/* Filters hide, never reorder — a sort control would imply a ranking. */
+.ric-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 22px;padding:0;border:0}
+.ric-filter legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ric-fbtn{padding:5px 12px;border-radius:var(--r-pill,999px);border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:.76rem;cursor:pointer;
+  font-family:var(--font-ui);transition:color .15s,border-color .15s,background .15s}
+.ric-fbtn:hover{color:var(--text);border-color:color-mix(in srgb,var(--text) 28%,transparent)}
+.ric-fbtn[aria-pressed="true"]{background:var(--accent-deep);border-color:var(--accent-deep);
+  color:var(--text);font-weight:600}
+html[data-theme="light"] .ric-fbtn[aria-pressed="true"]{color:var(--panel)}
+.ric-fbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.ric-cards{display:flex;flex-direction:column;gap:20px}
+.ric-card{display:grid;grid-template-columns:3px minmax(0,1fr);
+  border:1px solid var(--border);border-radius:var(--r-card,12px);overflow:hidden;
+  background:var(--card)}
+.ric-card[hidden]{display:none}
+.ric-rail{background:var(--muted)}
+.ric-card.ric-s-failed  .ric-rail{background:var(--act)}
+.ric-card.ric-s-incomplete .ric-rail{background:var(--warn)}
+html[data-theme="dark"] .ric-card.ric-s-failed  .ric-rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--act) 55%,transparent)}
+html[data-theme="dark"] .ric-card.ric-s-incomplete .ric-rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--warn) 55%,transparent)}
+/* Light: paper, not panel — the glow is removed outright and depth is a shadow. */
+html[data-theme="light"] .ric-card{background:var(--panel);box-shadow:var(--card-shadow)}
+html[data-theme="light"] .ric-rail{box-shadow:none}
+
+.ric-body{padding:20px 22px;min-width:0}
+.ric-hd{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.ric-state{font-size:.78rem;font-weight:700;letter-spacing:.02em;color:var(--muted)}
+.ric-card.ric-s-failed  .ric-state{color:var(--act-ink)}
+.ric-card.ric-s-incomplete .ric-state{color:var(--warn-ink)}
+.ric-state-code,.ric-tier,.ric-fam{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
+  font-size:.66rem;letter-spacing:.06em;padding:3px 7px;border-radius:var(--r-ctl,8px);
+  background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted)}
+.ric-q{font-size:1rem;font-weight:700;line-height:1.45;margin:0 0 8px;color:var(--text)}
+.ric-estimand{font-size:.82rem;line-height:1.6;color:var(--muted);margin:0 0 16px;max-width:70ch}
+
+/* Figures: tabular, quiet, never competing with the state above them. */
+.ric-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:12px;margin:0 0 16px}
+.ric-fig{padding:10px 12px;border-radius:var(--r-ctl,8px);
+  background:color-mix(in srgb,var(--text) 4%,transparent)}
+html[data-theme="light"] .ric-fig{background:color-mix(in srgb,var(--text) 5%,transparent)}
+.ric-fig-l{display:block;font-size:.7rem;color:var(--muted);margin-bottom:4px;line-height:1.35}
+.ric-fig-v{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
+  font-size:.95rem;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.ric-fig-u{font-size:.68rem;color:var(--muted);margin-left:5px;font-weight:400}
+.ric-fig-sub{display:block;margin-top:3px;font-family:var(--font-sans,system-ui,sans-serif);
+  font-size:.65rem;line-height:1.4;color:var(--muted);font-weight:400}
+/* A null is typed, never zero: the em dash is the value, the reason is beside it. */
+.ric-null{color:var(--muted);font-weight:400}
+.ric-why{display:block;font-size:.68rem;color:var(--muted);margin-top:5px;line-height:1.45}
+
+/* Ordered effect path — drawn ONLY where the owner marked the horizons ordered. */
+.ric-path{margin:4px 0 18px;padding:14px 14px 10px;border-radius:var(--r-btn,10px);
+  border:1px solid var(--border);background:color-mix(in srgb,var(--text) 3%,transparent)}
+html[data-theme="light"] .ric-path{background:var(--panel)}
+.ric-path-t{font-size:.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45}
+.ric-path svg{display:block;width:100%;height:auto;overflow:visible}
+.ric-path-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
+.ric-path-anchor{stroke:color-mix(in srgb,var(--text) 30%,transparent);stroke-width:1}
+.ric-path-selected{stroke:var(--warn);stroke-width:1;stroke-dasharray:2 3}
+.ric-path-line{fill:none;stroke:var(--blue);stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.ric-path-dot{fill:var(--blue)}
+.ric-path-dot-selected{fill:var(--warn);stroke:var(--panel);stroke-width:1.5}
+.ric-path-ax{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
+  font-size:9px;fill:var(--muted)}
+.ric-path-callout{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;
+  margin-top:6px;font-size:.7rem;line-height:1.45;color:var(--muted)}
+.ric-path-callout code{font-size:.62rem;color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 12%,transparent);
+  padding:2px 6px;border-radius:var(--r-ctl,8px)}
+
+/* Gate outcomes: the PC-1/PC-2 story, in the contract's own pass/fail terms. */
+.ric-gates-l{font-size:.72rem;font-weight:600;letter-spacing:.04em;color:var(--muted);
+  text-transform:uppercase;margin:0 0 8px}
+.ric-gates{display:flex;flex-direction:column;gap:8px;margin:0 0 4px}
+.ric-gate{display:flex;gap:9px;align-items:flex-start;font-size:.78rem;line-height:1.55}
+.ric-gate-m{flex:0 0 auto;font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
+  font-size:.64rem;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:var(--r-ctl,8px);margin-top:2px}
+.ric-gate-pass{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok-ink)}
+.ric-gate-fail{background:color-mix(in srgb,var(--act) 16%,transparent);color:var(--act-ink)}
+.ric-gate-b{min-width:0}
+.ric-gate-n{color:var(--muted);display:block;margin-top:2px;font-size:.74rem}
+
+/* Progressive disclosure: the lab page may go deep, but not all at once. */
+.ric-more{border-top:1px solid var(--border);margin-top:4px}
+.ric-more>summary{list-style:none;cursor:pointer;padding:11px 2px 11px 0;
+  font-size:.78rem;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px}
+.ric-more>summary::-webkit-details-marker{display:none}
+.ric-more>summary:hover{color:var(--text)}
+.ric-more>summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:var(--r-ctl,8px)}
+.ric-more>summary::before{content:"+";font-family:var(--font-mono,ui-monospace,monospace);
+  font-size:.9rem;line-height:1;width:11px;color:var(--muted);transition:transform .18s}
+.ric-more[open]>summary::before{content:"−"}
+.ric-more-b{padding:2px 0 16px;font-size:.79rem;line-height:1.65;color:var(--muted)}
+.ric-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.ric-list li{padding-left:13px;position:relative}
+.ric-list li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:1px;background:var(--muted)}
+.ric-count{font-family:var(--font-mono,ui-monospace,monospace);color:var(--text);font-weight:600}
+
+/* Receipts: a citation without a digest is not a receipt. */
+.ric-rc{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;
+  font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:.68rem;line-height:1.6}
+.ric-rc dt{color:var(--muted)}
+.ric-rc dd{margin:0;color:var(--text);word-break:break-all}
+
+/* Zero authority is a claim the reader must be able to check, not an omission. */
+.ric-auth{margin-top:14px;padding-top:13px;border-top:1px solid var(--border);
+  font-size:.72rem;color:var(--muted);line-height:1.6}
+.ric-auth-f{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.ric-auth-f code{font-size:.64rem;padding:2px 6px;border-radius:var(--r-ctl,8px);
+  background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--muted)}
+
+@media (max-width:640px){
+  .ric-body{padding:16px 15px}
+  .ric-figs{grid-template-columns:1fr;gap:9px}
+  .ric-q{font-size:.94rem}
+  .ric-rc{grid-template-columns:1fr;gap:2px 0}
+  .ric-rc dt{margin-top:6px}
+}
+@media (prefers-reduced-motion:reduce){
+  .ric-fbtn,.ric-more>summary::before{transition:none}
+}
 </style>
 </head>
 <body>
@@ -1933,6 +2081,290 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     </div>
   </section>{# end #efw-section #}
 
+  {# ── RESEARCH IMPLICATIONS (F10-X1) ───────────────────────────────────────
+     Human projection of `mastermind.research_implication_cards/v1`. The exact
+     same card objects feed site/measurementdata/research_implication_cards.json,
+     so nothing may be enriched, reordered, inferred or defaulted here: a null
+     stays a null, a missing receipt stays missing, and the typed quality code
+     is printed verbatim beside its plain-word gloss. Owner of the contract is
+     engine/research_implication_card.py — read-only from this template. #}
+  {# Unit rendering. A value is shown in its declared unit or not at all; the
+     exact stored number is always available in the receipts block. #}
+  {%- macro ric_unit(u) -%}
+    {%- if u == 'months' -%}<span class="ric-fig-u"><span class="l-en">months</span><span class="l-zh">个月</span></span>
+    {%- elif u == 'events' -%}<span class="ric-fig-u"><span class="l-en">events</span><span class="l-zh">个事件</span></span>
+    {%- elif u == 'episodes' -%}<span class="ric-fig-u"><span class="l-en">episodes</span><span class="l-zh">个区间</span></span>
+    {%- elif u == 'draws' -%}<span class="ric-fig-u"><span class="l-en">draws</span><span class="l-zh">次抽样</span></span>
+    {%- elif u == 'tickers' -%}<span class="ric-fig-u"><span class="l-en">tickers</span><span class="l-zh">只标的</span></span>
+    {%- elif u == 't_statistic' -%}<span class="ric-fig-u"><span class="l-en">t</span><span class="l-zh">t 值</span></span>
+    {%- elif u == 'probability' -%}<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span>
+    {%- elif u == 'ratio' -%}<span class="ric-fig-u"><span class="l-en">ratio</span><span class="l-zh">比值</span></span>
+    {%- endif -%}
+  {%- endmacro -%}
+
+  {%- macro ric_value(item) -%}
+    {%- set v = item.get('value') -%}
+    {%- set u = item.get('unit') -%}
+    {%- if v is none -%}<span class="ric-null">—</span>
+    {%- elif u == 'boolean' -%}<span class="l-en">{{ 'Yes' if v else 'No' }}</span><span class="l-zh">{{ '是' if v else '否' }}</span>
+    {%- elif u == 'return_fraction_interval' and v is sequence and v is not string and v|length == 3 -%}
+      {{ '%.2f'|format(v[0] * 100) }}% … {{ '%.2f'|format(v[2] * 100) }}%
+      <span class="ric-fig-sub"><span class="l-en">bootstrap median</span><span class="l-zh">自助法中位数</span> {{ '%.2f'|format(v[1] * 100) }}%</span>
+    {%- elif u == 'return_fraction' or u == 'fraction' -%}{{ '%.3f'|format(v * 100) }}%
+    {%- elif u in ('months', 'events', 'episodes', 'draws', 'tickers') -%}{{ v }}{{ ric_unit(u) }}
+    {%- elif v is number -%}{{ '%.4f'|format(v) }}{{ ric_unit(u) }}
+    {%- else -%}{{ v|e }}
+    {%- endif -%}
+  {%- endmacro -%}
+
+  {% if research_implications and research_implications.get('cards') %}
+  {% set ric_cards = research_implications.get('cards') %}
+
+  <section class="mh-section" id="ric-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Research Implications</span><span class="l-zh">研究含义</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">What two frozen estimator runs actually produced</span><span class="l-zh">两次冻结的估计运行实际产出了什么</span></span>
+    </div>
+
+    <p class="mh-stand">
+      <span class="l-en"><strong>Research context — do not use as a trading signal.</strong>
+      Each card is a read-only projection of one already-committed result artifact: the owner's own
+      figures, its own missing pieces, and the state it earned. Neither card below is usable —
+      one failed its positive control, the other is missing an input receipt — and the cards say so
+      rather than rounding the gap away.</span>
+      <span class="l-zh"><strong>研究背景 — 请勿作为交易信号使用。</strong>
+      每张卡片都是对一份已提交结果文物的只读投影：所有者自己的数值、自己的缺口，以及它实际达到的状态。
+      下方两张卡片均不可用——其一未通过正向对照，其二缺少输入凭证——卡片如实呈现，不做抹平。</span>
+    </p>
+    <p class="ric-lede">
+      <span class="l-en">Values are printed in the unit the owner recorded. A quantity the owner did not
+      define is shown as “—” with the stated reason, never as zero. Filters hide cards; they never
+      reorder them.</span>
+      <span class="l-zh">数值按所有者记录的单位呈现。所有者未定义的量以“—”显示并附上说明原因，绝不记为零。
+      筛选器仅隐藏卡片，绝不重新排序。</span>
+    </p>
+
+    <fieldset class="ric-filter" id="ric-filter">
+      <legend><span class="l-en">Filter research implication cards</span><span class="l-zh">筛选研究含义卡片</span></legend>
+      <button type="button" class="ric-fbtn" data-ric-f="all" aria-pressed="true">
+        <span class="l-en">All</span><span class="l-zh">全部</span></button>
+      {% for fam in ric_cards|map(attribute='method_family')|unique|list %}
+      <button type="button" class="ric-fbtn" data-ric-f="fam:{{ fam }}" aria-pressed="false">
+        <span class="l-en">{{ fam|replace('_', ' ')|title }}</span><span class="l-zh">{{ '合成控制' if fam == 'synthetic_control' else ('事件研究' if fam == 'event_study' else fam) }}</span></button>
+      {% endfor %}
+      {% for q in ric_cards|map(attribute='quality')|unique|list %}
+      <button type="button" class="ric-fbtn" data-ric-f="q:{{ q }}" aria-pressed="false">
+        <span class="l-en">{{ 'Diagnostic failed' if q == 'DIAGNOSTIC_FAILED' else ('Receipts incomplete' if q == 'ARTIFACT_INCOMPLETE' else q) }}</span><span class="l-zh">{{ '诊断未通过' if q == 'DIAGNOSTIC_FAILED' else ('凭证不完整' if q == 'ARTIFACT_INCOMPLETE' else q) }}</span></button>
+      {% endfor %}
+    </fieldset>
+
+    <div class="ric-cards" id="ric-cards">
+      {% for card in ric_cards %}
+      {%- set q = card.quality -%}
+      {%- set scls = 'ric-s-failed' if q == 'DIAGNOSTIC_FAILED' else ('ric-s-incomplete' if q == 'ARTIFACT_INCOMPLETE' else 'ric-s-other') -%}
+      {%- set gates = card.diagnostics|selectattr('passed', 'defined')|list -%}
+      {%- set metrics = card.diagnostics|rejectattr('passed', 'defined')|list -%}
+      {%- set card_anchor = ('ric-' ~ card.method_family ~ '-' ~ card.study_run_id ~ '-' ~ card.selected_result_id)|replace('_', '-')|replace('/', '-')|replace('@', '-') -%}
+      <article class="ric-card {{ scls }}" id="{{ card_anchor }}"
+               data-ric-family="{{ card.method_family }}" data-ric-quality="{{ q }}">
+        <div class="ric-rail" aria-hidden="true"></div>
+        <div class="ric-body">
+
+          <div class="ric-hd">
+            <span class="ric-state">
+              <span class="l-en">{{ 'Diagnostic failed' if q == 'DIAGNOSTIC_FAILED' else ('Receipts incomplete' if q == 'ARTIFACT_INCOMPLETE' else 'State reported by the owner') }}</span>
+              <span class="l-zh">{{ '诊断未通过' if q == 'DIAGNOSTIC_FAILED' else ('凭证不完整' if q == 'ARTIFACT_INCOMPLETE' else '所有者报告的状态') }}</span>
+            </span>
+            <code class="ric-state-code">{{ q }}</code>
+            <span class="ric-tier">tier: {{ card.evidence_tier }}</span>
+            <span class="ric-fam">{{ card.method_family }}</span>
+          </div>
+
+          <h3 class="ric-q">
+            <span class="l-en">{{ card.question.en|e }}</span>
+            <span class="l-zh">{{ (card.question.zh or card.question.en)|e }}</span>
+          </h3>
+          <p class="ric-estimand">
+            <span class="l-en">{{ card.estimand.en|e }}</span>
+            <span class="l-zh">{{ (card.estimand.zh or card.estimand.en)|e }}</span>
+          </p>
+
+          <div class="ric-figs">
+            {% for out in card.outputs %}
+            <div class="ric-fig" data-ric-code="{{ out.code }}">
+              <span class="ric-fig-l"><span class="l-en">{{ out.label.en|e }}</span><span class="l-zh">{{ (out.label.zh or out.label.en)|e }}</span></span>
+              <span class="ric-fig-v">{{ ric_value(out) }}</span>
+            </div>
+            {% endfor %}
+            <div class="ric-fig" data-ric-code="sample_n">
+              <span class="ric-fig-l"><span class="l-en">Sample size</span><span class="l-zh">样本量</span></span>
+              <span class="ric-fig-v">{% if card.sample_n is none %}<span class="ric-null">—</span>{% else %}{{ card.sample_n }}{% endif %}</span>
+            </div>
+            <div class="ric-fig" data-ric-code="effective_n">
+              <span class="ric-fig-l"><span class="l-en">Effective sample size</span><span class="l-zh">有效样本量</span></span>
+              <span class="ric-fig-v">{% if card.effective_n is none %}<span class="ric-null">—</span>{% else %}{{ card.effective_n }}{% endif %}</span>
+              {% if card.effective_n is none %}
+              {% for nr in card.null_reasons if nr.code == 'effective_n' %}
+              <span class="ric-why"><span class="l-en">{{ nr.detail.en|e }}</span><span class="l-zh">{{ (nr.detail.zh or nr.detail.en)|e }}</span></span>
+              {% endfor %}
+              {% endif %}
+            </div>
+            <div class="ric-fig" data-ric-code="cutoff">
+              <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
+              <span class="ric-fig-v">{{ card.cutoff }}</span>
+            </div>
+          </div>
+
+          {# Ordered effect path — drawn ONLY when the owner marked the horizons
+             ordered. Drawing one for a card without `owner_supplied` would be an
+             invented effect curve, so the whole block is gated on the contract. #}
+          {% if card.ordered_effect_path and card.ordered_effect_path.owner_supplied and card.ordered_effect_path.points %}
+          {%- set pts = card.ordered_effect_path.points -%}
+          {%- set xs = pts|map(attribute='horizon')|list -%}
+          {%- set ys = pts|map(attribute='value')|list -%}
+          {%- set xmin = xs|min -%}{%- set xmax = xs|max -%}
+          {%- set ylo = [ys|min, 0]|min -%}{%- set yhi = [ys|max, 0]|max -%}
+          {%- set xr = (xmax - xmin) if (xmax - xmin) != 0 else 1 -%}
+          {%- set yr = (yhi - ylo) if (yhi - ylo) != 0 else 1 -%}
+          {%- set selected_points = pts|selectattr('horizon', 'equalto', card.ordered_effect_path.selected_horizon)|list -%}
+          {%- set selected_point = selected_points|first -%}
+          {%- set headline_points = card.outputs|selectattr('code', 'equalto', 'mean_cumulative_abnormal_return')|list -%}
+          {%- set headline_point = headline_points|first -%}
+          {%- set W = 560 -%}{%- set H = 150 -%}{%- set PL = 34 -%}{%- set PR = 8 -%}{%- set PT = 10 -%}{%- set PB = 20 -%}
+          <div class="ric-path">
+            <div class="ric-path-t">
+              <span class="l-en"><strong>{{ card.ordered_effect_path.evidence_status }}</strong> · Recorded path, {{ card.ordered_effect_path.y_unit|replace('_', ' ') }} by {{ card.ordered_effect_path.x_unit|replace('_', ' ') }}. {{ card.ordered_effect_path.sample_basis.en|e }} {{ card.ordered_effect_path.comparison_note.en|e }} Descriptive — the owner did not identify a cause.</span>
+              <span class="l-zh"><strong>{{ card.ordered_effect_path.evidence_status }}</strong> · 记录路径：纵轴为{{ '累计异常收益' if card.ordered_effect_path.y_unit == 'cumulative_abnormal_return' else card.ordered_effect_path.y_unit }}，横轴为公告后交易日。{{ card.ordered_effect_path.sample_basis.zh|e }} {{ card.ordered_effect_path.comparison_note.zh|e }} 属描述性结果，所有者未识别成因。</span>
+            </div>
+            <svg viewBox="0 0 {{ W }} {{ H }}" role="img" aria-labelledby="{{ card_anchor }}-path-title" preserveAspectRatio="xMidYMid meet">
+              <title id="{{ card_anchor }}-path-title">{{ card.ordered_effect_path.accessible_name.en|e }} / {{ card.ordered_effect_path.accessible_name.zh|e }}</title>
+              {%- set yzero = PT + ((yhi - 0) / yr) * (H - PT - PB) -%}
+              <line class="ric-path-zero" x1="{{ PL }}" y1="{{ '%.1f'|format(yzero) }}" x2="{{ W - PR }}" y2="{{ '%.1f'|format(yzero) }}"/>
+              {%- set xanchor = PL + ((0 - xmin) / xr) * (W - PL - PR) -%}
+              <line class="ric-path-anchor" x1="{{ '%.1f'|format(xanchor) }}" y1="{{ PT }}" x2="{{ '%.1f'|format(xanchor) }}" y2="{{ H - PB }}"/>
+              {%- set xselected = PL + ((selected_point.horizon - xmin) / xr) * (W - PL - PR) -%}
+              <line class="ric-path-selected" x1="{{ '%.1f'|format(xselected) }}" y1="{{ PT }}" x2="{{ '%.1f'|format(xselected) }}" y2="{{ H - PB }}"/>
+              <path class="ric-path-line" d="M{% for p in pts %}{{ '%.1f'|format(PL + ((p.horizon - xmin) / xr) * (W - PL - PR)) }},{{ '%.1f'|format(PT + ((yhi - p.value) / yr) * (H - PT - PB)) }}{% if not loop.last %}L{% endif %}{% endfor %}"/>
+              {% for p in pts %}
+              <circle class="ric-path-dot{% if p.horizon == card.ordered_effect_path.selected_horizon %} ric-path-dot-selected{% endif %}" cx="{{ '%.1f'|format(PL + ((p.horizon - xmin) / xr) * (W - PL - PR)) }}" cy="{{ '%.1f'|format(PT + ((yhi - p.value) / yr) * (H - PT - PB)) }}" r="{{ 4 if p.horizon == card.ordered_effect_path.selected_horizon else 2 }}"/>
+              {% endfor %}
+              <text class="ric-path-ax" x="0" y="{{ PT + 4 }}">{{ '%.1f'|format(yhi * 100) }}%</text>
+              <text class="ric-path-ax" x="0" y="{{ H - PB }}">{{ '%.1f'|format(ylo * 100) }}%</text>
+              <text class="ric-path-ax" x="{{ PL }}" y="{{ H - 6 }}">{{ xmin }}</text>
+              <text class="ric-path-ax" x="{{ '%.1f'|format(xanchor) }}" y="{{ H - 6 }}" text-anchor="middle">0</text>
+              <text class="ric-path-ax" x="{{ W - PR }}" y="{{ H - 6 }}" text-anchor="end">{{ xmax }}</text>
+            </svg>
+            <div class="ric-path-callout">
+              <code>{{ card.ordered_effect_path.evidence_status }}</code>
+              <span class="l-en">Curve at selected +{{ selected_point.horizon }}-day horizon: {{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} events. This is not the {{ '%.3f'|format(headline_point.value * 100) }}% episode-clustered headline.</span>
+              <span class="l-zh">曲线在所选 +{{ selected_point.horizon }} 日期限：{{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} 个事件；该数值并非按事件期聚类的 {{ '%.3f'|format(headline_point.value * 100) }}% 标题数值。</span>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if gates %}
+          <div class="ric-gates-l"><span class="l-en">Gate outcomes</span><span class="l-zh">门槛结果</span></div>
+          <div class="ric-gates">
+            {% for g in gates %}
+            <div class="ric-gate">
+              <span class="ric-gate-m {{ 'ric-gate-pass' if g.passed else 'ric-gate-fail' }}">{{ 'PASS' if g.passed else 'FAIL' }}</span>
+              <span class="ric-gate-b">
+                <span class="l-en">{{ g.label.en|e }}</span><span class="l-zh">{{ (g.label.zh or g.label.en)|e }}</span>
+                <span class="ric-gate-n"><span class="l-en">{{ g.detail.en|e }}</span><span class="l-zh">{{ (g.detail.zh or g.detail.en)|e }}</span></span>
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if card.uncertainty or metrics %}
+          <details class="ric-more">
+            <summary><span class="l-en">Uncertainty and diagnostics</span><span class="l-zh">不确定性与诊断</span></summary>
+            <div class="ric-more-b"><ul class="ric-list">
+              {% for it in card.uncertainty %}
+              <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              {% endfor %}
+              {% for it in metrics %}
+              <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              {% endfor %}
+            </ul></div>
+          </details>
+          {% endif %}
+
+          {% if card.placebos_or_counterexamples %}
+          <details class="ric-more">
+            <summary><span class="l-en">Placebos and counterexamples</span><span class="l-zh">安慰剂与反例</span></summary>
+            <div class="ric-more-b"><ul class="ric-list">
+              {%- for it in card.placebos_or_counterexamples %}
+              <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              {%- endfor %}
+            </ul></div>
+          </details>
+          {% endif %}
+
+          {% if card.exclusions or card.missingness %}
+          <details class="ric-more">
+            <summary><span class="l-en">Who is missing from this result</span><span class="l-zh">该结果遗漏了谁</span></summary>
+            <div class="ric-more-b"><ul class="ric-list">
+{% for ex in card.exclusions %}
+              <li><span class="ric-count">{{ ex.count }}</span> — <span class="l-en">{{ ex.detail.en|e }}</span><span class="l-zh">{{ (ex.detail.zh or ex.detail.en)|e }}</span></li>
+{% endfor %}
+{% for ms in card.missingness %}
+              <li><span class="l-en">{{ ms.detail.en|e }}</span><span class="l-zh">{{ (ms.detail.zh or ms.detail.en)|e }}</span></li>
+{% endfor %}
+            </ul></div>
+          </details>
+{% endif %}
+
+          {% if card.limitations %}
+          <details class="ric-more">
+            <summary><span class="l-en">Limitations</span><span class="l-zh">局限性</span></summary>
+            <div class="ric-more-b"><ul class="ric-list">
+{% for lm in card.limitations %}
+              <li><span class="l-en">{{ lm.en|e }}</span><span class="l-zh">{{ (lm.zh or lm.en)|e }}</span></li>
+{% endfor %}
+            </ul></div>
+          </details>
+{% endif %}
+
+          <details class="ric-more">
+            <summary><span class="l-en">Receipts</span><span class="l-zh">凭证</span></summary>
+            <div class="ric-more-b">
+              <dl class="ric-rc">
+                <dt><span class="l-en">Card</span><span class="l-zh">卡片</span></dt><dd>{{ card.card_id }}</dd>
+                <dt><span class="l-en">Run</span><span class="l-zh">运行</span></dt><dd>{{ card.study_run_id }}</dd>
+                <dt><span class="l-en">Result</span><span class="l-zh">选定结果</span></dt><dd>{{ card.selected_result_id }}</dd>
+                <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>{{ card.adapter_version }}</dd>
+                <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>{{ card.method_revision }}</dd>
+                {% for a in card.source_artifacts + card.code_identity %}
+                <dt>
+                  <span class="l-en">{{ {'result':'Result artifact','report':'Research report','event_roster':'Event roster','benchmark':'Benchmark series','preregistration':'Preregistration','generator':'Generator','estimator':'Estimator'}.get(a.role, a.role|replace('_', ' ')|title) }}</span>
+                  <span class="l-zh">{{ {'result':'结果文物','report':'研究报告','event_roster':'事件名册','benchmark':'基准序列','preregistration':'预注册','generator':'生成器','estimator':'估计器'}.get(a.role, '来源凭证') }}</span>
+                </dt>
+                <dd>{{ a.path }}<br>sha256:{{ a.sha256 }} · <span class="l-en">as of</span><span class="l-zh">截至</span>
+                  {% if a.as_of %}{{ a.as_of }}{% else %}<span class="ric-null">—</span>
+                  <span class="ric-why"><span class="l-en">{{ a.as_of_reason.en|e }}</span><span class="l-zh">{{ a.as_of_reason.zh|e }}</span></span>{% endif %}
+                  · {{ a.rights }}</dd>
+                {% endfor %}
+              </dl>
+            </div>
+          </details>
+
+          <div class="ric-auth">
+            <span class="l-en">This card carries no authority. It cannot forecast, rank, gate, size or trade, and nothing downstream reads it as permission.</span>
+            <span class="l-zh">本卡片不具备任何授权：不可用于预测、排序、门控、仓位或交易，下游系统亦不会将其视为许可。</span>
+            <span class="ric-auth-f">
+              {% for k, v in card.authority|dictsort %}<code>{{ k }}={{ 'true' if v else 'false' }}</code>{% endfor %}
+            </span>
+          </div>
+
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>{# end #ric-section #}
+  {% endif %}
+
   {# ── PROVENANCE FOOTER ────────────────────────────────────────────────── #}
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
@@ -2035,6 +2467,32 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     });
     console.log('measurement.html: sync gauge sparklines drawn for ' + sg.families.length + ' families');
   })();
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  // Research Implications filter. Hides cards; never reorders them — the
+  // contract's order is fixed and non-ranking, so a sort would be a claim.
+  var bar = document.getElementById('ric-filter');
+  var wrap = document.getElementById('ric-cards');
+  if(!bar || !wrap) return;
+  var btns = bar.querySelectorAll('.ric-fbtn');
+  var cards = wrap.querySelectorAll('.ric-card');
+  function apply(sel){
+    cards.forEach(function(card){
+      var show = sel === 'all'
+        || (sel.indexOf('fam:') === 0 && card.getAttribute('data-ric-family') === sel.slice(4))
+        || (sel.indexOf('q:') === 0 && card.getAttribute('data-ric-quality') === sel.slice(2));
+      card.hidden = !show;
+    });
+    btns.forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-ric-f') === sel));
+    });
+  }
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){ apply(b.getAttribute('data-ric-f')); });
+  });
 })();
 </script>
 <script src="theme.js"></script>

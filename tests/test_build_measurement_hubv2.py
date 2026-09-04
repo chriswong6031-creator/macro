@@ -98,6 +98,11 @@ def _render_measurement_template(**overrides) -> str:
         "trial_budgets": {"available": False},
         "rule_experiments": {"available": False},
         "qledger_reliability": {"available": False},
+        "research_implications": {
+            "schema": "mastermind.research_implication_cards/v1",
+            "cards": [],
+        },
+        "imce_prospective": {"available": False},
         # Seasonality forward record (hero line) — absent-state default.
         "seasonality_record": {
             "available": False,
