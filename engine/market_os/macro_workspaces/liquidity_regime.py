@@ -369,8 +369,9 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
                   low_en="Weak support", low_zh="弱支持", high_en="Strong support", high_zh="强支持",
                   weights_law="weighted mean of standardized components, weights renormalized over present; quality label 0.40, overlay level 0.35, net-liquidity RoC 0.25",
                   transformation="owner labels mapped to descriptive support levels (benign-expansion 85 ... contracting 20); RoC mapped 50+clamp(roc/500bn,-1,1)*50; "
-                                 f"RRP buffer disclosure (informational, not axis-weighted): 0 <= value <= {RRP_FLOOR_BN}bn is typed 'rrp_floor' (status stays PRESENT, "
-                                 "flagged in implications/drivers); a negative value is physically impossible for a facility balance and is typed SOURCE_FAILED",
+                                 f"RRP buffer disclosure (informational, not axis-weighted): a balance at or below {RRP_FLOOR_BN}bn carries an exhausted-floor flag in "
+                                 "the implications and drivers while the value itself remains published; a negative balance is physically impossible for a facility "
+                                 "and is treated as a failed source reading",
                   frequency_alignment="net-liquidity quantity/quality is weekly (Fed H.4.1 Wed, released Thu) with a 3-business-day owner lag; overlay/quality share the same cadence"),
         ]},
         "metrics": {"items": _metrics(r, lq, cond, stress_overlay, asof, vintages,

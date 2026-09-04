@@ -312,36 +312,30 @@
     "deltas": [
       {
         "current_value": 68.04,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "labor_demand",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 68.04
       },
       {
         "current_value": 74.15,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "labor_supply_tightness",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 74.15
       }
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "labor_markets-US-df609e7f6a52d7aa",
+    "prior_generation_id": "labor_markets-US-54a461f64bf7f7cc",
     "prior_method_version": "labor_markets.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [
-      "claims:claims_momentum:31a76e9d4d0f0146",
-      "indeed:job_postings_momentum:ca7612040f992c5b",
-      "recession_claims:claims_recession_subscore:d2eeef96ca68db5e",
-      "sahm:sahm_rule_level:e113d6671d2a0668",
-      "withheld_tax:income_growth_proxy:7e642ee43bb87a51"
-    ],
-    "correction_state": "superseded",
-    "note": "Same reference period as the predecessor print, but one or more owner-native source components changed value: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "labor_markets-US-df609e7f6a52d7aa"
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
+    "predecessor_generation_id": "labor_markets-US-54a461f64bf7f7cc"
   },
   "drivers": {
     "balance_sheet": [
@@ -420,21 +414,21 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T15:38:06Z",
+    "built_at": "2026-09-04T16:01:06Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "7b59eeff974997364e2046720899451d823dd469",
-    "content_sha256": "54a461f64bf7f7cca20648b80df6ed4fd58d7d2f308521fa73fe5c41419b6bf4",
-    "generation_id": "labor_markets-US-54a461f64bf7f7cc",
+    "code_version": "23cf73e9a101d95565aada49e9d26ec3cbe7faaa",
+    "content_sha256": "7f24b95331b4a21544a92a7719af07ef392ec7068fca761b2a4abeb4bbeee802",
+    "generation_id": "labor_markets-US-7f24b95331b4a215",
     "producer": "engine.market_os.macro_workspaces.labor",
     "rendered_at": null
   },
   "headline": {
     "effective_date": "2026-09-03",
     "hysteresis": {
-      "applied": false,
+      "applied": true,
       "band": 5.0,
       "held_prior": false,
-      "note": "no comparable prior print; raw threshold classification, hysteresis not applied"
+      "note": "raw classification already matches the prior print; no boundary crossing, hysteresis not engaged"
     },
     "method_version": "labor_markets.compose.v1",
     "nearest_boundary": {
@@ -444,15 +438,15 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": null,
-      "dy": null,
-      "null_reason": "INSUFFICIENT_HISTORY",
-      "status": "ABSENT"
+      "dx": 0.0,
+      "dy": 0.0,
+      "null_reason": null,
+      "status": "PRESENT"
     },
     "prior_state": {
       "effective_date": "2026-09-03",
       "method_version": "labor_markets.compose.v1",
-      "state_id": null
+      "state_id": "B"
     },
     "quadrant": {
       "x": 68.04,
@@ -470,7 +464,7 @@
       "en": "Labor demand / supply-tightness regime",
       "zh": "劳动力需求 / 供给紧张度状态"
     },
-    "transition_distance": null
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [
