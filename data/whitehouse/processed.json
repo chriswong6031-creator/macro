@@ -965,6 +965,30 @@
       "at": "2026-09-04T16:21:24.762994+00:00",
       "activated": false,
       "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49785": {
+      "id": "wh-2026-09-04-supporting-americas-ranchers",
+      "at": "2026-09-04T19:35:23.081103+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49783": {
+      "id": "wh-2026-09-04-promoting-fair-competition-in-livestock-markets-and-expanding-market-access-for-",
+      "at": "2026-09-04T19:35:51.154475+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49684": {
+      "id": "wh-2026-09-04-fact-sheet-president-donald-j-trump-supports-americas-ranchers",
+      "at": "2026-09-04T19:35:58.564340+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49685": {
+      "id": "wh-2026-09-04-fact-sheet-president-donald-j-trump-promotes-fair-competition-in-livestock-marke",
+      "at": "2026-09-04T19:36:07.122628+00:00",
+      "activated": false,
+      "importance": 0
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
