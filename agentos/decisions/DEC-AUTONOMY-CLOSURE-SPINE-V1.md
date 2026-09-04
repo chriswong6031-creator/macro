@@ -8,60 +8,55 @@ question: >
 answer: >
   Adopt Autonomy Closure Spine v1. Preserve the existing W3C -> C2 -> MAT-S1 -> Stage-B1 ->
   Control Room -> golden-root train, and add only ACF-1 Semantic Directive Convergence before
-  multi-Sol/fleet acceptance. ACF-1 uses one Executive Runtime Event command domain per terminal-
-  return revision; competing actors and CONTINUE/REPAIR/STOP/ESCALATE proposals collide rather
-  than minting parallel directives. Runtime revalidates the current target/actor and constructs the
-  closed machine decision body from canonical state. The current target may correct its own
-  unconsumed directive only under the same binding generation with downstream effect NONE;
-  Chairman may supersede any unconsumed directive with current authority and effect NONE. The
-  existing COO cycle consumes the effective Event and downstream mutation in one existing
-  transaction, using its ordinary Event as the consumption receipt. Consumed, applied, or
-  effect-unknown work requires reconciliation rather than post-consumption reversal. Keep ACF-2
-  through ACF-6 evidence-gated after the golden root and extend only their existing owners.
+  multi-Sol/fleet acceptance. ACF-1 uses one Executive Runtime Event command domain per exact
+  terminal-return revision. Runtime accepts exactly one actor class, ACTION_TARGET, through the
+  existing control_plane.sol_action_target.require_sol_action_authority owner; current Chairman
+  intent continues through the human/session layer and the then-current action target submits any
+  revision N+1. The directive body is an exact bounded discriminated union for CONTINUE, REPAIR,
+  STOP, or ESCALATE, with immutable CommissionRef for REPAIR and closed reason enums for STOP and
+  ESCALATE. The existing COO cycle consumes the effective Event exactly once and binds its ordinary
+  downstream Event as the consumption/effect receipt. Unconsumed same-generation correction is
+  allowed only with downstream effect NONE; consumed, applied, or effect-unknown work requires
+  reconciliation. Keep ACF-2 through ACF-6 evidence-gated after the golden root.
 rationale: >
   Mastermind already has target selection and transport semantics, but those are not decision
   convergence. Live W3C and C2 carriers demonstrated conflicting or stale action-looking Sol
-  instructions. Slack ordering cannot atomically reject an observer Sol, old target, changed
-  decision, or CONTINUE/STOP race. A command key containing actor, target generation, or decision
-  semantics would be unsafe because rivals could mint parallel IDs. Requiring Chairman for a
-  current Sol's pre-effect correction would preserve routine Chairman labor, while allowing a
-  consumed directive to be overwritten would risk duplicate or contradictory effects. The
-  smallest coherent repair is one return-revision key, Runtime-derived body, immutable directive
-  Event, bounded pre-consumption correction, and existing-COO transactional consumption.
+  instructions. Slack ordering cannot atomically reject an observer, stale target, changed body, or
+  CONTINUE/STOP race. Including actor, target generation, or decision in the command key would let
+  rivals mint parallel command IDs. A free-form decision body would create an undeclared model-authored
+  command language. A direct CHAIRMAN Runtime actor would fabricate an authority owner that does not
+  currently exist. The smallest lawful repair reuses the exact action-target owner, one return-revision
+  conflict key, one closed body union, one immutable Runtime Event, and one existing-COO consumer.
 alternatives:
-  - option: Finish every existing component independently and integrate later
+  - option: Finish every existing autonomy component independently and integrate later
     why_not: >
-      Locally correct components can still accept conflicting decisions, duplicate downstream action,
-      or require Chairman precedence repair.
-  - option: Build a new generic autonomy/orchestration platform
+      Locally correct components could still accept conflicting decisions or duplicate downstream work.
+  - option: Build a new generic autonomy platform
     why_not: >
-      It would duplicate Executive lifecycle, event, routing, retry, identity, and state owners.
-  - option: Treat the latest Slack instruction as the effective decision
+      It would duplicate Executive lifecycle, Event, routing, retry, identity, and state owners.
+  - option: Treat latest Slack prose as the effective decision
     why_not: >
-      Slack is transport, may arrive out of order, and cannot bind exact return, actor or consumption.
-  - option: Include actor, target generation, or decision in the idempotency key
+      Slack is transport and cannot bind exact return, actor generation, command conflict, or consumption.
+  - option: Include actor, target generation, or decision in the command identity
     why_not: >
       Rival proposals would derive different command IDs and could all commit.
-  - option: Make the model author the machine decision body
+  - option: Let the model author an arbitrary machine decision body
     why_not: >
-      Free-form model output would become an undeclared command language; Runtime must derive the body
-      from the closed decision and canonical state.
-  - option: Require Chairman for every pre-consumption correction
+      Free-form model content would become an unreviewed command language.
+  - option: Add a direct machine-authenticated Chairman actor in v1
     why_not: >
-      The current exact target can safely correct its own unconsumed same-generation directive when
-      downstream effect is proven NONE; forcing Chairman involvement would defeat the autonomy goal.
-  - option: Let later prose reverse a consumed directive
-    why_not: >
-      Consumed, applied, or effect-unknown work requires downstream reconciliation first.
+      No existing protected Runtime principal/receipt owner supports it; Chairman intent remains the
+      human/session authority that directs the current exact action target.
 evidence:
-  - "Mastermind issue #437 records the Chairman-approved architecture exception and ACF-1 contract."
-  - "Mastermind PR #438 is the exact three-path records-only source candidate on protected base 7022e70640637a4fa07f073442dc693301290e2a."
-  - "Final F0 head e3d049052a7c7f163ed90bde212d835a9bf3306e binds the return-revision conflict key, Runtime-derived body, same-generation target self-correction, downstream transactional consumption, and post-consumption reconciliation."
-  - "Mastermind PR #427 merged W3C-I1 source as a945e76befb34d15d0ab0e369b4197901883bb16 and remains default-disarmed."
+  - "Mastermind issue #437 is the single Chairman-approved architecture carrier."
+  - "Mastermind PR #438 remains the exact three-path F0 source carrier on protected base 7022e70640637a4fa07f073442dc693301290e2a."
+  - "Current F0 head 8d52eb61a2ef88d301382dd1f56131dd777bf0b9 is a same-carrier RED test -> design -> plan repair implementing PR comment 5535576267."
+  - "The current contract reuses mastermind.sol_action_target.v1 and SolActionTargetResolution.evidence_digest as the sole v1 actor authority receipt."
+  - "The current body schema is mastermind.executive_semantic_directive_body/v1 with exact CONTINUE/REPAIR/STOP/ESCALATE variants and 4096-byte canonical ceiling."
+  - "Mastermind PR #427 protected W3C source through merge a945e76befb34d15d0ab0e369b4197901883bb16."
   - "Mastermind PR #415 remains the active C2-R1A Runtime writer and gates ACF-1 implementation."
-  - "Mastermind PR #326 remains the active Control Room writer and gates later directive projection."
-  - "Mastermind issue #400 is closed duplicate; issue #386 remains canonical."
-  - "Protected-source search found no existing Event/consumer binding return + target + actor + revision + consumption."
+  - "Mastermind PR #326 remains the active Control Room projection writer."
+  - "Issue #400 is closed as duplicate; issue #386 remains canonical."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
   - WS:EXECUTIVE-CAPACITY-FABRIC
@@ -80,17 +75,17 @@ ACF-1 is the only newly authorized pre-fleet closure layer and remains
 `WAITING_ARCHITECTURE_PROTECTION / WAITING_RUNTIME_PATH_RELEASE / needs_placement`.
 No implementation worker, branch, provider action, Runtime effect, or production canary exists.
 
-## Owner boundary
+## Existing-owner boundary
 
-- Executive Runtime owns conflict identity, directive commit and lifecycle truth.
-- SessionTargetRegistry / RuntimeBinding / Stage B own the current target.
-- terminal-return owns source completion evidence.
-- W3C / Wake / Agent Relay own attention and delivery.
-- Agent Dialogue owns transport.
-- Runtime derives the closed decision body; model prose is not command authority.
-- the existing COO cycle owns one directive-bound downstream mutation and Event receipt.
-- Control Room later projects state but never authors it.
-- Agent OS records why and next action; GitHub records code/proof.
+- Executive Runtime owns command conflict, directive Event commit, readback, and lifecycle truth.
+- `control_plane.sol_action_target` plus SessionTargetRegistry/RuntimeBindingSnapshot owns the sole
+  v1 ACTION_TARGET actor authority.
+- terminal-return owns exact source completion evidence.
+- W3C/Wake/Agent Relay own attention and delivery; Agent Dialogue owns transport.
+- `common.commission_ref` owns immutable REPAIR source identity.
+- the existing COO cycle owns once-only directive consumption and downstream Event receipt.
+- Control Room may later project current directive state but never author it.
+- Agent OS records the ruling; GitHub records implementation and evidence.
 
-ACF-2 through ACF-6 may start only when golden-root or installed-fleet evidence proves a concrete
-existing-owner gap. This decision is not standing implementation authority.
+ACF-2 through ACF-6 may start only when a golden-root or installed-fleet falsifier proves a concrete
+existing-owner gap. This decision grants no standing authority to implement them.
