@@ -6,7 +6,7 @@
   "listing_key": "US-XNAS-AAPL",
   "ticker_display": "AAPL",
   "generated_at": "2026-08-23T12:00:00Z",
-  "content_sha256": "4c794b83cb0bb48ce0237d612fc97bc8f1a4c913265d55af00b662ba31a5b08b",
+  "content_sha256": "f859d495012f3768372797ccb9bad8d6893bdb16adf2cff774ca6ec648ba527e",
   "as_of": {
     "market_at": "2026-08-23",
     "source_frontier_at": "2026-07-30T20:30:28Z",
@@ -42,6 +42,22 @@
           {
             "field": "superseded_by",
             "value": null
+          },
+          {
+            "field": "owner_alias_reader",
+            "value": "VendorAliasTable.resolve(store)"
+          },
+          {
+            "field": "owner_cik_reader",
+            "value": "IssuerMaster.cik_of_issuer"
+          },
+          {
+            "field": "owner_decision_date",
+            "value": "2026-09-04"
+          },
+          {
+            "field": "owner_issuer_reader",
+            "value": "IssuerMaster.issuer_of_security"
           }
         ],
         "result": "pass",
@@ -199,7 +215,7 @@
       },
       {
         "check": "R9",
-        "description": "corroboration: workspace primary alias agrees with master (mic, inception_code)",
+        "description": "corroboration: workspace primary alias agrees with the owner subject's current alias and listing venue",
         "artifact": "event_workspace.v1 issuer.listings[]",
         "reader": "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
         "values_read": [
@@ -281,7 +297,7 @@
         "check": "R9",
         "left": "workspace primary alias (mic,ticker)",
         "left_value": "XNAS:AAPL",
-        "right": "master (mic,inception_code)",
+        "right": "owner subject current alias (listing mic,ticker_display)",
         "right_value": "XNAS:AAPL",
         "equal": true
       }

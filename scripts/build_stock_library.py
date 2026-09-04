@@ -733,7 +733,7 @@ def _read_security_state_identity_rows(
     tickers: tuple[str, ...],
     *,
     decision_date: date,
-) -> dict[str, dict]:
+) -> tuple[dict[str, dict], dict[str, str]]:
     """Compose subject-bound compiler inputs from the canonical identity owners.
 
     Each declared artifact is loaded exactly once for the whole allowlist. A
@@ -770,73 +770,70 @@ def _read_security_state_identity_rows(
     issuer_migration_rows = issuer_migrations.to_dict("records")
     security_migration_rows = security_migrations.to_dict("records")
     inputs: dict[str, dict] = {}
+    failures: dict[str, str] = {}
     for ticker in tickers:
-        if not isinstance(ticker, str) or not ticker or ticker != ticker.upper():
-            raise SecurityStateCompilationError(
-                f"security_state ticker must be a non-empty uppercase string, got {ticker!r}"
-            )
         try:
+            if not isinstance(ticker, str) or not ticker or ticker != ticker.upper():
+                raise SecurityStateCompilationError(
+                    f"security_state ticker must be a non-empty uppercase string, got {ticker!r}"
+                )
             security_id = alias_owner.resolve("store", ticker, decision_date)
-        except IdentityError as exc:
-            raise SecurityStateCompilationError(
-                f"owner alias resolution failed for {ticker}: {exc}"
-            ) from exc
-        if security_id is None:
-            raise SecurityStateCompilationError(
-                f"VendorAliasTable has no current store binding for {ticker} on {decision_date}"
-            )
-        reverse_ticker = alias_owner.vendor_symbol_for("store", security_id, decision_date)
-        if reverse_ticker != ticker:
-            raise SecurityStateCompilationError(
-                f"VendorAliasTable round-trip mismatch for {ticker}: {reverse_ticker!r}"
-            )
+            if security_id is None:
+                raise SecurityStateCompilationError(
+                    f"VendorAliasTable has no current store binding for {ticker} on {decision_date}"
+                )
+            reverse_ticker = alias_owner.vendor_symbol_for("store", security_id, decision_date)
+            if reverse_ticker != ticker:
+                raise SecurityStateCompilationError(
+                    f"VendorAliasTable round-trip mismatch for {ticker}: {reverse_ticker!r}"
+                )
 
-        security_master_row = security_rows.get(security_id)
-        if security_master_row is None:
-            raise SecurityStateCompilationError(
-                f"security master has no row for owner-resolved {security_id}"
-            )
-        try:
+            security_master_row = security_rows.get(security_id)
+            if security_master_row is None:
+                raise SecurityStateCompilationError(
+                    f"security master has no row for owner-resolved {security_id}"
+                )
             issuer_id = issuer_owner.issuer_of_security(security_id)
             issuer_cik = issuer_owner.cik_of_issuer(issuer_id) if issuer_id else None
             issuer_security_ids = issuer_owner.securities_of_issuer(issuer_id) if issuer_id else ()
-        except IdentityError as exc:
-            raise SecurityStateCompilationError(
-                f"IssuerMaster resolution failed for {ticker}: {exc}"
-            ) from exc
-        listing_key = security_master_row.get("listing_key")
-        if not issuer_id or not issuer_cik or not isinstance(listing_key, str) or not listing_key:
-            raise SecurityStateCompilationError(
-                f"owner identity is incomplete for {ticker}: "
-                f"issuer_id={issuer_id!r}, issuer_cik={issuer_cik!r}, listing_key={listing_key!r}"
-            )
+            listing_key = security_master_row.get("listing_key")
+            if not issuer_id or not issuer_cik or not isinstance(listing_key, str) or not listing_key:
+                raise SecurityStateCompilationError(
+                    f"owner identity is incomplete for {ticker}: "
+                    f"issuer_id={issuer_id!r}, issuer_cik={issuer_cik!r}, listing_key={listing_key!r}"
+                )
 
-        subject = SecurityStateSubject(
-            security_id=security_id,
-            issuer_id=issuer_id,
-            listing_key=listing_key,
-            ticker_display=ticker,
-            issuer_cik=issuer_cik,
-            owner_evidence=(
-                ("decision_date", decision_date.isoformat()),
-                ("alias_reader", "VendorAliasTable.resolve(store)"),
-                ("issuer_reader", "IssuerMaster.issuer_of_security"),
-                ("cik_reader", "IssuerMaster.cik_of_issuer"),
-            ),
-        )
-        inputs[ticker] = {
-            "subject": subject,
-            "security_master_row": security_master_row,
-            "issuer_master_rows": issuer_master_rows,
-            "issuer_security_ids": issuer_security_ids,
-            "issuer_migration_matches": [
-                row for row in issuer_migration_rows if row.get("security_id") == security_id
-            ],
-            "security_migration_matches": [
-                row for row in security_migration_rows if row.get("security_id") == security_id
-            ],
-        }
-    return inputs
+            subject = SecurityStateSubject(
+                security_id=security_id,
+                issuer_id=issuer_id,
+                listing_key=listing_key,
+                ticker_display=ticker,
+                issuer_cik=issuer_cik,
+                owner_evidence=(
+                    ("decision_date", decision_date.isoformat()),
+                    ("alias_reader", "VendorAliasTable.resolve(store)"),
+                    ("issuer_reader", "IssuerMaster.issuer_of_security"),
+                    ("cik_reader", "IssuerMaster.cik_of_issuer"),
+                ),
+            )
+            inputs[ticker] = {
+                "subject": subject,
+                "security_master_row": security_master_row,
+                "issuer_master_rows": issuer_master_rows,
+                "issuer_security_ids": issuer_security_ids,
+                "issuer_migration_matches": [
+                    row for row in issuer_migration_rows if row.get("security_id") == security_id
+                ],
+                "security_migration_matches": [
+                    row for row in security_migration_rows if row.get("security_id") == security_id
+                ],
+            }
+        except (IdentityError, SecurityStateCompilationError) as exc:
+            # Subject-specific owner refusal is isolated. The shared artifacts
+            # and owner indexes were already constructed above; failures there
+            # remain batch-fatal because no target can be trusted.
+            failures[ticker] = str(exc)
+    return inputs, failures
 
 
 def _select_security_state_targets(to_write: list[tuple[str, dict]]) -> list[tuple[str, dict]]:
@@ -846,8 +843,81 @@ def _select_security_state_targets(to_write: list[tuple[str, dict]]) -> list[tup
     return [
         (ticker, rec)
         for ticker, rec in to_write
-        if rec.get("ticker") in SECURITY_STATE_TICKERS
+        if ticker == rec.get("ticker") and ticker in SECURITY_STATE_TICKERS
     ]
+
+
+def _load_security_state_validator(schema_path: Path):
+    """Read and validate the canonical contract exactly once per producer run."""
+    from engine import security_state as ss
+
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        return ss.build_security_state_validator(schema)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ss.SecurityStateCompilationError) as exc:
+        raise ss.SecurityStateCompilationError(
+            f"security_state.v1 schema unreadable or invalid: {type(exc).__name__}"
+        ) from exc
+
+
+def _compile_security_state_failure_for_exception(
+    *, subject, now: str, diagnostic: Exception, validator, prior_state: dict | None,
+) -> dict:
+    """Keep private diagnostics out of the public failure object and its hash."""
+    from engine import security_state as ss
+
+    # The caller logs ``diagnostic`` at the private operator boundary. Only a
+    # fixed typed class crosses into the public compiler.
+    del diagnostic
+    return ss.compile_security_state_failure(
+        subject=subject, validator=validator, now=now,
+        prior_state=prior_state,
+    )
+
+
+def _prepare_security_state_k1_bundle(
+    *, subject, workspace: dict | None, disposition: str, manifest_sha256: str | None,
+) -> dict:
+    """Run Evidence Foundation validation at the producer I/O boundary.
+
+    The security-state compiler receives only the resulting in-memory receipt
+    and independently re-derives its subject-bearing IDs. This keeps schema
+    file acquisition out of the pure compiler without duplicating K1 logic.
+    """
+    from engine import security_state as ss
+    from lib.evidence_foundation import compile_recipe
+
+    recipe = ss._build_k1_recipe(subject=subject)
+    empty = compile_recipe(recipe, blocks=[], references={})
+    found = None
+    if disposition == "found" and isinstance(workspace, dict):
+        event_id = workspace.get("event_id")
+        generation_id = workspace.get("generation_id")
+        if event_id and generation_id:
+            lifecycle = workspace.get("lifecycle") if isinstance(workspace.get("lifecycle"), dict) else {}
+            reference = ss._build_k1_reference(
+                subject=subject,
+                generation_id=str(generation_id), event_id=str(event_id),
+                manifest_sha256=manifest_sha256,
+                source_available_at=lifecycle.get("source_available_at"),
+                observed_at=lifecycle.get("observed_at"),
+                generated_at=workspace.get("generated_at"),
+            )
+            block = ss._build_k1_block([reference], subject=subject)
+            compilation = compile_recipe(
+                recipe, blocks=[block], references={reference["reference_id"]: reference},
+            )
+            found = {
+                "reference_id": reference["reference_id"],
+                "block_id": block["evidence_block_id"],
+                "compilation": compilation,
+            }
+    return {
+        "subject_cik": subject.issuer_cik,
+        "recipe_id": recipe["recipe_id"],
+        "empty_compilation": empty,
+        "found": found,
+    }
 
 
 def _compile_security_state_for_ticker(
@@ -856,6 +926,7 @@ def _compile_security_state_for_ticker(
     *,
     now: str,
     identity: dict,
+    validator,
 ) -> dict:
     """One security's ``security_state.v1``. Owner reads only — the compile
     itself is pure (``engine.security_state.compile_security_state``).
@@ -895,9 +966,13 @@ def _compile_security_state_for_ticker(
                     manifest_sha256 = entry.get("sha256")
             except Exception as manifest_exc:  # noqa: BLE001 — digest degrades to unknown, never fatal
                 log.debug("security_state.v1 manifest fetch failed for %s (%s)", ticker, manifest_exc)
+    k1_bundle = _prepare_security_state_k1_bundle(
+        subject=subject, workspace=workspace, disposition=disposition,
+        manifest_sha256=manifest_sha256,
+    )
     return ss.compile_security_state(
-        now=now, workspace=workspace, workspace_disposition=disposition,
-        blob=rec, manifest_sha256=manifest_sha256, **identity,
+        validator=validator, now=now, workspace=workspace, workspace_disposition=disposition,
+        blob=rec, manifest_sha256=manifest_sha256, k1_bundle=k1_bundle, **identity,
     )
 
 
@@ -4638,8 +4713,9 @@ def main() -> int:
     # has that receipt carried forward unchanged, never overwritten by the
     # failed prior itself — and never loses the rest of this ticker's blob write.
     try:
-        from engine.security_state import compile_security_state_failure
+        from engine import security_state as _security_state
         _ss_targets = _select_security_state_targets(to_write)
+        _ss_validator = _load_security_state_validator(_security_state.SCHEMA_PATH)
     except Exception as e:  # noqa: BLE001 — the whole stage is additive
         log.warning("security_state.v1 stage disabled this cycle (%s)", e)
         _ss_targets = []
@@ -4647,7 +4723,7 @@ def main() -> int:
         _ss_now_timestamp = pd.Timestamp.now(tz="UTC")
         _ss_now = _ss_now_timestamp.isoformat()
         try:
-            _ss_identities = _read_security_state_identity_rows(
+            _ss_identities, _ss_identity_failures = _read_security_state_identity_rows(
                 config.data_dir(),
                 tuple(ticker for ticker, _rec in _ss_targets),
                 decision_date=_ss_now_timestamp.date(),
@@ -4655,24 +4731,27 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — no identity means no honest subject shell
             log.warning("security_state.v1 owner identity batch failed (%s)", e)
             _ss_identities = {}
+            _ss_identity_failures = {}
         for _ss_ticker, _ss_rec in _ss_targets:
             _ss_identity = _ss_identities.get(_ss_ticker)
             if _ss_identity is None:
                 log.warning(
-                    "security_state.v1 omitted for %s: no owner-composed identity",
-                    _ss_ticker,
+                    "security_state.v1 omitted for %s: no owner-composed identity (%s)",
+                    _ss_ticker, _ss_identity_failures.get(_ss_ticker, "batch unavailable"),
                 )
                 continue
             try:
                 _ss_state = _compile_security_state_for_ticker(
                     _ss_ticker, _ss_rec, now=_ss_now, identity=_ss_identity,
+                    validator=_ss_validator,
                 )
             except Exception as e:  # noqa: BLE001 — never lose the blob write to this stage
                 log.warning("security_state.v1 compile failed for %s (%s)", _ss_ticker, e)
                 _ss_prior = _read_prior_security_state(outdir, _ss_ticker)
-                _ss_state = compile_security_state_failure(
-                    subject=_ss_identity["subject"], now=_ss_now,
-                    reason=f"{type(e).__name__}: {e}", prior_state=_ss_prior,
+                _ss_state = _compile_security_state_failure_for_exception(
+                    subject=_ss_identity["subject"], now=_ss_now, diagnostic=e,
+                    prior_state=_ss_prior,
+                    validator=_ss_validator,
                 )
             _ss_rec["security_state"] = _ss_state
             for _ss_idx_row in index:

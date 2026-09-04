@@ -11,13 +11,10 @@ provide an immutable subject composed through the existing identity owners.
 ZERO I/O, ZERO WALL-CLOCK. Every input this module reads is injected by the
 caller (the producer stage, ``scripts/build_stock_library.py``) as a plain
 dict/row/string — no parquet read, no HTTP fetch, no reading the live system
-clock. The one narrow exception is loading this module's OWN frozen contract artifacts
-(the ``security_state.v1`` JSON Schema for self-validation, and
-``lib.evidence_foundation``'s own vocabulary/schema files, which that library
-reads internally as part of K1 semantic validation) — that is contract
-validation of a versioned, checked-in artifact, not owner/business I/O, and it
-is the same pattern every ``lib.evidence_foundation`` caller in this repo
-already depends on.
+clock and no contract-file read. The producer loads the canonical
+``security_state.v1`` schema once, prepares the Evidence Foundation K1 receipt
+at its I/O boundary, and injects both in memory. The compiler independently
+checks every subject-bearing K1 identity before using that receipt.
 
 Public entry points:
 
@@ -51,8 +48,6 @@ from jsonschema import Draft202012Validator, FormatChecker, SchemaError
 
 from lib.evidence_foundation import (
     ALL_FALSE_AUTHORITY,
-    EvidenceFoundationError,
-    compile_recipe,
     compute_block_id,
     compute_recipe_id,
     compute_reference_id,
@@ -109,7 +104,12 @@ AAPL_SUBJECT = SecurityStateSubject(
     listing_key=PINNED_LISTING_KEY,
     ticker_display=PINNED_TICKER,
     issuer_cik=PINNED_CIK,
-    owner_evidence=(("compatibility_control", "committed AAPL fixture"),),
+    owner_evidence=(
+        ("decision_date", "fixture"),
+        ("alias_reader", "VendorAliasTable.resolve(store)"),
+        ("issuer_reader", "IssuerMaster.issuer_of_security"),
+        ("cik_reader", "IssuerMaster.cik_of_issuer"),
+    ),
 )
 
 _WORKSPACE_SCHEMA = "event_workspace.v1"
@@ -250,6 +250,14 @@ def _require_subject(subject: object) -> SecurityStateSubject:
         for item in subject.owner_evidence
     ):
         raise SecurityStateCompilationError("owner-composed subject requires immutable owner evidence")
+    evidence_keys = [key for key, _value in subject.owner_evidence]
+    if len(set(evidence_keys)) != len(evidence_keys):
+        raise SecurityStateCompilationError("owner-composed subject evidence keys must be unique")
+    required_evidence = {"decision_date", "alias_reader", "issuer_reader", "cik_reader"}
+    if not required_evidence.issubset(evidence_keys):
+        raise SecurityStateCompilationError(
+            "owner-composed subject evidence is missing a canonical owner receipt"
+        )
     return subject
 
 
@@ -332,17 +340,46 @@ def _content_sha256(state: Mapping[str, Any]) -> str:
     as_of = payload.get("as_of")
     if isinstance(as_of, dict):
         as_of.pop("state_compiled_at", None)
+    # The injected alias decision date is an owner observation clock. Preserve
+    # it in the public receipt, but exclude it from semantic content identity:
+    # recompiling the same current bindings after midnight is a wall-clock-only
+    # change. Reader provenance and every resolved identity value remain hashed.
+    identity_proof = payload.get("identity_proof")
+    if isinstance(identity_proof, dict):
+        for leg in identity_proof.get("legs") or ():
+            if not isinstance(leg, dict):
+                continue
+            values = leg.get("values_read")
+            if isinstance(values, list):
+                leg["values_read"] = [
+                    value for value in values
+                    if not (
+                        isinstance(value, dict)
+                        and value.get("field") == "owner_decision_date"
+                    )
+                ]
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
     return sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def _self_validate(state: Mapping[str, Any]) -> None:
+def build_security_state_validator(schema: Mapping[str, Any]) -> Draft202012Validator:
+    """Compile the producer-injected canonical schema without performing I/O."""
+    if not isinstance(schema, Mapping):
+        raise SecurityStateCompilationError("security_state.v1 schema must be a mapping")
     try:
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(schema)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, SchemaError) as exc:
-        raise SecurityStateCompilationError(f"security_state.v1 schema unreadable: {exc}") from exc
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    except SchemaError as exc:
+        raise SecurityStateCompilationError(f"security_state.v1 schema invalid: {exc}") from exc
+    return Draft202012Validator(schema, format_checker=FormatChecker())
+
+
+def _self_validate(
+    state: Mapping[str, Any], *, validator: Draft202012Validator,
+) -> None:
+    if not isinstance(validator, Draft202012Validator):
+        raise SecurityStateCompilationError(
+            "security_state.v1 requires the producer-injected canonical validator"
+        )
     errors = sorted(validator.iter_errors(state), key=lambda e: tuple(str(p) for p in e.absolute_path))
     if errors:
         codes = [
@@ -385,6 +422,10 @@ def _run_identity_chain(
     sec_state = _null_to_none(row.get("security_state"))
     superseded_by = _null_to_none(row.get("superseded_by"))
     r1_pass = security_master_row is not None and sec_state is None and superseded_by is None
+    owner_receipt = [
+        (f"owner_{key}", value)
+        for key, value in sorted(subject.owner_evidence)
+    ]
     legs.append(_leg_receipt(
         "R1", "security_master row exists, security_state/superseded_by both null",
         "data/reference/security_master.parquet",
@@ -392,6 +433,7 @@ def _run_identity_chain(
         [
             ("row_present", security_master_row is not None),
             ("security_state", sec_state), ("superseded_by", superseded_by),
+            *owner_receipt,
         ],
         "pass" if r1_pass else "fail", None if r1_pass else "SECURITY_SUPERSEDED",
     ))
@@ -571,17 +613,20 @@ def _run_identity_chain(
     if primary is not None:
         alias_mic = _null_to_none(primary.get("mic"))
         alias_ticker = _null_to_none(primary.get("ticker"))
-        master_mic = _null_to_none(row.get("mic"))
-        master_inception = _null_to_none(row.get("inception_code"))
-        agrees = alias_mic == master_mic and alias_ticker == master_inception
+        try:
+            subject_mic = parse_listing_key(subject.listing_key).mic
+        except IdentityError:
+            subject_mic = None
+        agrees = alias_mic == subject_mic and alias_ticker == subject.ticker_display
         corroboration_state = "AVAILABLE" if agrees else "DIVERGENT"
         r9_divergent = not agrees
         equalities.append(_equality(
             "R9", "workspace primary alias (mic,ticker)", f"{alias_mic}:{alias_ticker}",
-            "master (mic,inception_code)", f"{master_mic}:{master_inception}",
+            "owner subject current alias (listing mic,ticker_display)",
+            f"{subject_mic}:{subject.ticker_display}",
         ))
     legs.append(_leg_receipt(
-        "R9", "corroboration: workspace primary alias agrees with master (mic, inception_code)",
+        "R9", "corroboration: workspace primary alias agrees with the owner subject's current alias and listing venue",
         "event_workspace.v1 issuer.listings[]",
         "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
         [("corroboration_state", corroboration_state)],
@@ -611,7 +656,7 @@ def _run_identity_chain(
 # ---------------------------------------------------------------------------
 
 def _build_k1_recipe(
-    *, subject: SecurityStateSubject = AAPL_SUBJECT, max_references: int = 1,
+    *, subject: SecurityStateSubject, max_references: int = 1,
 ) -> dict[str, Any]:
     """The cik-native, zero-identity-join recipe proven by adjudication.
 
@@ -699,7 +744,7 @@ def _build_k1_recipe(
 
 def _build_k1_reference(
     *,
-    subject: SecurityStateSubject = AAPL_SUBJECT,
+    subject: SecurityStateSubject,
     generation_id: str,
     event_id: str,
     manifest_sha256: str | None,
@@ -801,7 +846,7 @@ def _build_k1_reference(
 
 
 def _build_k1_block(
-    references: Sequence[Mapping[str, Any]], *, subject: SecurityStateSubject = AAPL_SUBJECT,
+    references: Sequence[Mapping[str, Any]], *, subject: SecurityStateSubject,
 ) -> dict[str, Any]:
     """The ``earnings_change`` EvidenceBlock over 1..N already-built references.
 
@@ -903,6 +948,60 @@ def _build_k1_block(
     }
     block["evidence_block_id"] = compute_block_id(block)
     return block
+
+
+def _consume_k1_bundle(
+    *,
+    bundle: Mapping[str, Any],
+    subject: SecurityStateSubject,
+    recipe: Mapping[str, Any],
+    reference: Mapping[str, Any] | None,
+    block: Mapping[str, Any] | None,
+) -> Mapping[str, Any]:
+    """Verify and consume a producer-prepared Evidence Foundation receipt.
+
+    Evidence Foundation's public compiler validates its schemas from disk. The
+    producer owns that I/O boundary and injects the resulting receipt here;
+    this pure compiler independently re-derives every subject-bearing K1 ID so
+    the receipt cannot switch security, CIK, reference, or block.
+    """
+    if not isinstance(bundle, Mapping):
+        raise SecurityStateCompilationError("producer-prepared K1 bundle must be a mapping")
+    expected_recipe_id = recipe["recipe_id"]
+    if bundle.get("subject_cik") != subject.issuer_cik:
+        raise SecurityStateCompilationError("producer-prepared K1 bundle subject CIK mismatch")
+    if bundle.get("recipe_id") != expected_recipe_id:
+        raise SecurityStateCompilationError("producer-prepared K1 bundle recipe mismatch")
+
+    if reference is None or block is None:
+        compilation = bundle.get("empty_compilation")
+        expected_block_ids: list[str] = []
+    else:
+        found = bundle.get("found")
+        if not isinstance(found, Mapping):
+            raise SecurityStateCompilationError("producer-prepared K1 found receipt is missing")
+        if found.get("reference_id") != reference["reference_id"]:
+            raise SecurityStateCompilationError("producer-prepared K1 reference mismatch")
+        if found.get("block_id") != block["evidence_block_id"]:
+            raise SecurityStateCompilationError("producer-prepared K1 block mismatch")
+        compilation = found.get("compilation")
+        expected_block_ids = [str(block["evidence_block_id"])]
+
+    if not isinstance(compilation, Mapping):
+        raise SecurityStateCompilationError("producer-prepared K1 compilation is missing")
+    if compilation.get("schema") != "evidence_foundation.recipe_compilation_receipt.v1":
+        raise SecurityStateCompilationError("producer-prepared K1 compilation schema mismatch")
+    if compilation.get("recipe_id") != expected_recipe_id:
+        raise SecurityStateCompilationError("producer-prepared K1 compilation recipe mismatch")
+    if compilation.get("consumer") != recipe["consumer"]:
+        raise SecurityStateCompilationError("producer-prepared K1 compilation consumer mismatch")
+    if compilation.get("block_ids") != expected_block_ids:
+        raise SecurityStateCompilationError("producer-prepared K1 compilation block mismatch")
+    if compilation.get("owner_payloads_persisted") is not False:
+        raise SecurityStateCompilationError("producer-prepared K1 compilation persisted owner payloads")
+    if compilation.get("authority") != ALL_FALSE_AUTHORITY:
+        raise SecurityStateCompilationError("producer-prepared K1 compilation authority mismatch")
+    return compilation
 
 
 def _build_evidence_leg(*, recipe_id: str | None, compilation: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -1270,6 +1369,8 @@ def _build_coverage_and_dominant(legs: Mapping[str, Mapping[str, Any]]) -> tuple
 def compile_security_state(
     *,
     subject: SecurityStateSubject,
+    validator: Draft202012Validator,
+    k1_bundle: Mapping[str, Any],
     now: str,
     security_master_row: Mapping[str, Any] | None,
     workspace: Mapping[str, Any] | None,
@@ -1322,13 +1423,13 @@ def compile_security_state(
     # Nothing downstream of an unproven identity may cite the workspace as
     # THIS security's evidence — "required change leg refuses" (frozen spec).
     effective_workspace = None if identity_blocked else workspace
-    effective_disposition = "not_published" if identity_blocked else workspace_disposition
+    effective_disposition = workspace_disposition
 
     change_leg = _build_change_leg(
         workspace=effective_workspace, workspace_disposition=effective_disposition,
         event_id=event_id, generation_id=generation_id, now_date=now_dt.date(),
     )
-    if identity_blocked:
+    if identity_blocked and workspace_disposition == "found":
         change_leg = {
             **change_leg,
             "summary": _bilingual(
@@ -1337,9 +1438,12 @@ def compile_security_state(
             ),
         }
 
+    recipe = _build_k1_recipe(subject=subject)
     if identity_blocked or effective_workspace is None or event_id is None or generation_id is None:
-        recipe = _build_k1_recipe(subject=subject)
-        compilation = compile_recipe(recipe, blocks=[], references={})
+        compilation = _consume_k1_bundle(
+            bundle=k1_bundle, subject=subject, recipe=recipe,
+            reference=None, block=None,
+        )
         evidence_leg = _build_evidence_leg(recipe_id=recipe["recipe_id"], compilation=compilation)
     else:
         lifecycle = effective_workspace.get("lifecycle") if isinstance(effective_workspace.get("lifecycle"), Mapping) else {}
@@ -1352,11 +1456,10 @@ def compile_security_state(
             generated_at=_null_to_none(effective_workspace.get("generated_at")),
         )
         block = _build_k1_block([reference], subject=subject)
-        recipe = _build_k1_recipe(subject=subject)
-        try:
-            compilation = compile_recipe(recipe, blocks=[block], references={reference["reference_id"]: reference})
-        except EvidenceFoundationError as exc:
-            raise SecurityStateCompilationError(f"K1 compilation failed: {exc}") from exc
+        compilation = _consume_k1_bundle(
+            bundle=k1_bundle, subject=subject, recipe=recipe,
+            reference=reference, block=block,
+        )
         evidence_leg = _build_evidence_leg(recipe_id=recipe["recipe_id"], compilation=compilation)
 
     state_leg = _build_state_leg(blob=blob)
@@ -1399,7 +1502,7 @@ def compile_security_state(
         "last_good": None,
     }
     state["content_sha256"] = _content_sha256(state)
-    _self_validate(state)
+    _self_validate(state, validator=validator)
     return state
 
 
@@ -1411,10 +1514,22 @@ def _prior_matches_subject(
 ) -> bool:
     if not isinstance(prior, Mapping):
         return False
-    return all(
+    if not all(
         prior.get(field) == getattr(subject, field)
         for field in ("security_id", "issuer_id", "listing_key", "ticker_display")
-    )
+    ):
+        return False
+    identity_proof = prior.get("identity_proof")
+    if not isinstance(identity_proof, Mapping):
+        return False
+    ciks = {
+        value.get("value")
+        for leg in identity_proof.get("legs") or ()
+        if isinstance(leg, Mapping) and leg.get("check") == "R8"
+        for value in leg.get("values_read") or ()
+        if isinstance(value, Mapping) and value.get("field") == "subject_issuer_cik"
+    }
+    return ciks == {subject.issuer_cik}
 
 
 def _is_last_good_eligible(
@@ -1483,7 +1598,8 @@ def derive_last_good(
 
 
 def compile_security_state_failure(
-    *, subject: SecurityStateSubject, now: str, reason: str,
+    *, subject: SecurityStateSubject, validator: Draft202012Validator,
+    now: str,
     prior_state: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Pure fallback shell for the PRODUCER's own exception-containment boundary.
@@ -1497,16 +1613,32 @@ def compile_security_state_failure(
     eligibility predicate (Sol blocker 4), so a failed prior state can never
     become the next failure's "last complete read", and a compiler failure can
     never silently present as ``dominant_degradation: NONE`` (a mutation-kill
-    this module is built to resist).
+    this module is built to resist). No exception string or caller-supplied
+    reason is accepted at this public-output boundary.
     """
     subject = _require_subject(subject)
+    public_reason = "security_state compiler failed after owner identity was composed"
     blocked_summary = _bilingual(
         "This security's state could not be compiled this cycle (a compiler failure, not an absence).",
         "本次未能编译该证券的状态（属于编译失败，并非事件不存在）。",
     )
     identity_proof = {
         "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
-        "legs": [], "equalities": [], "refusals": ["COMPILER_FAILURE"],
+        "legs": [_leg_receipt(
+            "R8", "failure shell retains the owner-composed current CIK without claiming a full identity-chain pass",
+            "SecurityStateSubject (producer-composed owner receipt)",
+            "scripts/build_stock_library.py::_read_security_state_identity_rows",
+            [
+                ("subject_issuer_cik", subject.issuer_cik),
+                *[(f"owner_{key}", value) for key, value in sorted(subject.owner_evidence)],
+            ],
+            "pass", None,
+        )],
+        "equalities": [_equality(
+            "R8", "failure_shell.subject.issuer_cik", subject.issuer_cik,
+            "owner_subject.issuer_cik", subject.issuer_cik,
+        )],
+        "refusals": ["COMPILER_FAILURE"],
         "disclosures": list(DISCLOSURES),
     }
     state_leg = {
@@ -1521,13 +1653,13 @@ def compile_security_state_failure(
     }
     opportunity_leg = {
         "prophet": {"ref": None, "state": "UNAVAILABLE", "reason": _PROPHET_REASON},
-        "entry": {"state": "UNAVAILABLE", "available": False, "null_reason": reason},
+        "entry": {"state": "UNAVAILABLE", "available": False, "null_reason": public_reason},
         "market_incorporation": {"ref": None, "state": "NOT_COVERED"},
         "dislocation": {"ref": None, "state": "NOT_COVERED"},
         "coverage_state": "UNAVAILABLE",
     }
     risk_leg = {
-        "risk_refs": [], "failed_gates": [{"code": "COMPILER_FAILURE", "reason": reason}],
+        "risk_refs": [], "failed_gates": [{"code": "COMPILER_FAILURE", "reason": public_reason}],
         "strongest_unresolved_fact": {"state": "unavailable", "leg": None, "code": None, "en": None, "zh": None},
         "coverage_state": "UNAVAILABLE",
     }
@@ -1559,5 +1691,5 @@ def compile_security_state_failure(
         "last_good": derive_last_good(prior_state, subject=subject),
     }
     state["content_sha256"] = _content_sha256(state)
-    _self_validate(state)
+    _self_validate(state, validator=validator)
     return state

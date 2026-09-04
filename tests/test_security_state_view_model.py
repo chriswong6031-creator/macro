@@ -19,6 +19,7 @@ Four things are pinned, all of them regressions this file exists to prevent:
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -41,6 +42,38 @@ def _axis(view: dict, key: str) -> dict:
         if a["key"] == key:
             return a
     raise AssertionError(f"axis {key!r} missing from the view model")
+
+
+def _k1_bundle(engine, subject, workspace, disposition: str, manifest_sha256: str | None) -> dict:
+    from lib.evidence_foundation import compile_recipe
+
+    recipe = engine._build_k1_recipe(subject=subject)
+    empty = compile_recipe(recipe, blocks=[], references={})
+    found = None
+    if disposition == "found" and isinstance(workspace, dict):
+        lifecycle = workspace.get("lifecycle") or {}
+        reference = engine._build_k1_reference(
+            subject=subject,
+            generation_id=workspace["generation_id"], event_id=workspace["event_id"],
+            manifest_sha256=manifest_sha256,
+            source_available_at=lifecycle.get("source_available_at"),
+            observed_at=lifecycle.get("observed_at"),
+            generated_at=workspace.get("generated_at"),
+        )
+        block = engine._build_k1_block([reference], subject=subject)
+        found = {
+            "reference_id": reference["reference_id"],
+            "block_id": block["evidence_block_id"],
+            "compilation": compile_recipe(
+                recipe, blocks=[block], references={reference["reference_id"]: reference},
+            ),
+        }
+    return {
+        "subject_cik": subject.issuer_cik,
+        "recipe_id": recipe["recipe_id"],
+        "empty_compilation": empty,
+        "found": found,
+    }
 
 
 def _render_section(view: dict, lang: str = "en") -> str:
@@ -156,14 +189,27 @@ GOLDEN_BLOB = {
 def _compile_golden() -> dict:
     """Compile the golden AAPL object with the real compiler."""
     engine = pytest.importorskip("engine.security_state")
+    subject = engine.SecurityStateSubject(
+        security_id="SEC:US-XNAS-AAPL",
+        issuer_id="ISS:US-XNAS-AAPL",
+        listing_key="US-XNAS-AAPL",
+        ticker_display="AAPL",
+        issuer_cik="0000320193",
+        owner_evidence=(
+            ("decision_date", "2026-09-04"),
+            ("alias_reader", "VendorAliasTable.resolve(store)"),
+            ("issuer_reader", "IssuerMaster.issuer_of_security"),
+            ("cik_reader", "IssuerMaster.cik_of_issuer"),
+        ),
+    )
     return engine.compile_security_state(
-        subject=engine.SecurityStateSubject(
-            security_id="SEC:US-XNAS-AAPL",
-            issuer_id="ISS:US-XNAS-AAPL",
-            listing_key="US-XNAS-AAPL",
-            ticker_display="AAPL",
-            issuer_cik="0000320193",
-            owner_evidence=(("decision_date", "2026-09-04"),),
+        validator=engine.build_security_state_validator(
+            json.loads(engine.SCHEMA_PATH.read_text(encoding="utf-8"))
+        ),
+        subject=subject,
+        k1_bundle=_k1_bundle(
+            engine, subject, GOLDEN_WORKSPACE, "found",
+            "c3b9495028c07e6bf1eb385f520f0b3c57064b84ea430540ba9a0808cd2d14db",
         ),
         now=GOLDEN_NOW,
         security_master_row=dict(GOLDEN_SECURITY_MASTER_ROW),
@@ -186,7 +232,12 @@ def test_compiled_msft_object_reaches_the_existing_view_model() -> None:
         listing_key="US-XNAS-MSFT",
         ticker_display="MSFT",
         issuer_cik="0000789019",
-        owner_evidence=(("decision_date", "2026-09-04"),),
+        owner_evidence=(
+            ("decision_date", "2026-09-04"),
+            ("alias_reader", "VendorAliasTable.resolve(store)"),
+            ("issuer_reader", "IssuerMaster.issuer_of_security"),
+            ("cik_reader", "IssuerMaster.cik_of_issuer"),
+        ),
     )
     row = {
         "security_id": subject.security_id, "issuer_id": subject.issuer_id,
@@ -196,7 +247,12 @@ def test_compiled_msft_object_reaches_the_existing_view_model() -> None:
     }
     blob = {**GOLDEN_BLOB, "ticker": "MSFT", "name": "Microsoft Corp."}
     compiled = engine.compile_security_state(
-        subject=subject, now=GOLDEN_NOW, security_master_row=row,
+        subject=subject,
+        validator=engine.build_security_state_validator(
+            json.loads(engine.SCHEMA_PATH.read_text(encoding="utf-8"))
+        ),
+        now=GOLDEN_NOW, security_master_row=row,
+        k1_bundle=_k1_bundle(engine, subject, None, "not_published", None),
         issuer_master_rows=[{
             "issuer_id": subject.issuer_id, "cik": subject.issuer_cik,
             "status": "active",
