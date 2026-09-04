@@ -235,8 +235,11 @@ _MM_EVENT_TYPES = {
     # instrumentation for templates/flow_velocity.html.j2 — nine typed events (trust_open,
     # changed_expand, quadrant_select, group_drill, history_open, compare_run,
     # episode_view, terminal_out, watch_note_view) rides in `meta` as
-    # {ev, lens, id, sess} (the SAME meta passthrough `click` already uses), privacy-clean
-    # (no holdings/research text/PII — group ids and lens names only).
+    # {ev, lens, id, sess} (the SAME meta passthrough `click` already uses). Privacy:
+    # group ids, lens names, and — for Terminal handoffs only — the instrument symbol
+    # the existing `click` event already carries; no holdings, no research text, no PII.
+    # (PR #6815 review: the prior wording "group ids and lens names only" overstated
+    # this — terminal_out's `id` field is a ticker, not a group id.)
     "flowobs",
 }
 

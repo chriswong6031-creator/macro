@@ -185,7 +185,12 @@ events:
       rather than nine, matching the frozen spec's single `t: "flowobs"` envelope.
     properties:
       ev: enum:flow_observatory_event
-      lens: enum:flow_lens
+      # `|null` (PR #6815 repair B3): spec §1 freezes `lens` as
+      # `theme|sector|aggregate|null` — five of the nine flowobs events carry no group
+      # (trust_open, changed_expand, compare_run, terminal_out, watch_note_view). Without
+      # this marker those five null payloads were technically out of contract with an
+      # `enum:` declaration that had no way to say "or null".
+      lens: enum:flow_lens|null
       id: string
       sess: string
 

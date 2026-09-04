@@ -1324,7 +1324,7 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
           </tr></thead>
           <tbody>
           
-          <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true">
+          <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true" data-cmp-lens="aggregate">
             <td class="snm"><span class="chev">▸</span> 🏆 <span class="l-en">All A-share names</span><span class="l-zh">全市场A股</span></td>
             <td>1520</td>
             <td></td><td></td><td></td>
@@ -10173,7 +10173,7 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     <b><span class="l-en">Method</span><span class="l-zh">方法</span>:</b>
     <span class="qm" data-tip-en="themes threshold recalibrated Sep 2026 — 0.75σ; names & Southbound unchanged at 0.5σ" data-tip-zh="主题阈值于2026年9月重校准——0.75σ；个股与南向维持0.5σ" role="button" tabindex="0">?</span>
     <span class="l-en">Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.</span><span class="l-zh">流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。</span>
-    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-04 03:46 UTC
+    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-09-04 04:49 UTC
   </div>
 </div>
 <script>
@@ -10371,13 +10371,15 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
   // Never a second transport, never a new URL. Fire-and-forget: window.mmTrack already
   // wraps its own body in try/catch; the try/catch below additionally covers a
   // stubbed/throwing mmTrack itself, so a blocked/broken beacon can never affect the
-  // page (spec §0 gate 3, §3 test 4). Dedup is per (ev,id) for the life of this
-  // pageview — a second render (e.g. re-opening a drawer) never double-counts.
+  // page (spec §0 gate 3, §3 test 4). Dedup is per (ev,lens,id) for the life of this
+  // pageview (review PR 6815 repair N2: lens joined the key so a curated-lens id and an
+  // official-lens id that happen to collide numerically no longer share one dedup
+  // slot) — a second render (e.g. re-opening a drawer) never double-counts.
   (function(){
     var SESS = "2026-09-03";
     var seen = new Set();
     function fire(ev, lens, id){
-      var key = ev + '|' + (id === undefined || id === null || id === '' ? '' : id);
+      var key = ev + '|' + (lens || '') + '|' + (id === undefined || id === null || id === '' ? '' : id);
       if (seen.has(key)) return;
       seen.add(key);
       try {
@@ -10386,13 +10388,36 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
     }
     window.__fvTrack = fire;
 
-    // trust_open (.fv-src chips), quadrant_select (.q-chip spans), watch_note_view
-    // (.fv-watch-note) and terminal_out (member Terminal links, nameln macro) are all
-    // plain clicks on an existing DOM hook carrying data-ev — one delegated listener.
+    // quadrant_select (.q-chip spans) and terminal_out (member Terminal links, nameln
+    // macro) are plain clicks on an existing DOM hook carrying data-ev — one delegated
+    // listener. trust_open and watch_note_view are excluded here on purpose (review PR 6815
+    // repair B1/B2): trust_open opens via hover/focus/tap below, never a bare click, and
+    // watch_note_view is now an impression event, not a click.
     document.addEventListener('click', function(e){
+      if (!e.target || !e.target.closest) return;
       var el = e.target.closest('[data-ev]');
       if (!el) return;
-      fire(el.getAttribute('data-ev'), el.getAttribute('data-ev-lens'), el.getAttribute('data-ev-id'));
+      var ev = el.getAttribute('data-ev');
+      if (ev === 'trust_open' || ev === 'watch_note_view') return;
+      fire(ev, el.getAttribute('data-ev-lens'), el.getAttribute('data-ev-id'));
+    });
+
+    // trust_open (review PR 6815 repair B1): the LENS controller (theme.js) opens a
+    // trust-strip chip's tip on pointerover (desktop hover, after its own open delay),
+    // focusin (keyboard tab), or — on touch — a tap whose synthesized click event a
+    // sheet-mode scrim can retarget to <body> before it ever reaches a delegated click
+    // listener (mousedown lands on the chip, the scrim mounts mid-tap, mouseup/click
+    // land on the scrim instead). Listening on pointerdown catches the tap at the
+    // instant it lands, before that retargeting happens. All three paths are delegated
+    // and funnel through the same fire() dedup Set, so a chip that opens via more than
+    // one path in one pageview still counts once.
+    ['pointerover', 'focusin', 'pointerdown'].forEach(function(type){
+      document.addEventListener(type, function(e){
+        if (!e.target || !e.target.closest) return;
+        var el = e.target.closest('.fv-src[data-ev]');
+        if (!el) return;
+        fire(el.getAttribute('data-ev'), el.getAttribute('data-ev-lens'), el.getAttribute('data-ev-id'));
+      }, true);
     });
 
     // changed_expand / history_open: native <details> toggle, fired only on open.
@@ -10404,7 +10429,13 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
 
     // group_drill: piggybacks the accordion click handler registered above (this
     // listener runs after it, so classList already reflects the post-toggle state) —
-    // reuses tr.sector-row's own data-sector/data-cmp-lens, no new markup needed.
+    // reuses tr.sector-row's own data-sector/data-cmp-lens, no new markup needed. The
+    // aggregate "__all__" row ships pre-open (class="...open" in the initial HTML), so
+    // its FIRST click toggles it CLOSED (no fire — drill events measure opens, not
+    // closes); its SECOND click reopens it and fires normally. Its data-cmp-lens is
+    // "aggregate" (review PR 6815 repair B3), not the null every other row would fall back
+    // to, so this one drill payload conforms to the registry's flow_lens enum instead
+    // of relying on the schema's separate null allowance.
     document.querySelectorAll('tr.sector-row').forEach(function(row){
       if (row.classList.contains('nodrill')) return;
       row.addEventListener('click', function(e){
@@ -10416,16 +10447,21 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
       });
     });
 
-    // episode_view: an episodes panel has zero box while its parent <details> is
-    // collapsed, so it can only intersect once actually laid out (open, or force_open
-    // for the top-3 themes) — first per group per pageview via the shared dedup Set.
+    // episode_view / watch_note_view (review PR 6815 repair B2): both are IMPRESSION events.
+    // An episodes panel has zero box while its parent <details> is collapsed, so it can
+    // only intersect once actually laid out (open, or force_open for the top-3 themes);
+    // the watch-limitation note is a static, always-visible paragraph with no click
+    // semantics of its own (there is no LENS tip to open on it — the full disclosure IS
+    // the paragraph text), so a click handler there only ever measured an accidental
+    // click on running text. Both fire the first time they are genuinely scrolled into
+    // view, first per element per pageview via the shared dedup Set.
     if ('IntersectionObserver' in window) {
-      var epIo = new IntersectionObserver(function(entries){
+      var viewIo = new IntersectionObserver(function(entries){
         entries.forEach(function(en){
-          if (en.isIntersecting) fire('episode_view', en.target.getAttribute('data-ev-lens'), en.target.getAttribute('data-ev-id'));
+          if (en.isIntersecting) fire(en.target.getAttribute('data-ev'), en.target.getAttribute('data-ev-lens'), en.target.getAttribute('data-ev-id'));
         });
       }, { threshold: 0.01 });
-      document.querySelectorAll('[data-ev="episode_view"]').forEach(function(el){ epIo.observe(el); });
+      document.querySelectorAll('[data-ev="episode_view"], [data-ev="watch_note_view"]').forEach(function(el){ viewIo.observe(el); });
     }
   })();
 })();

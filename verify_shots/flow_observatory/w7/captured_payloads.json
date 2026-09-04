@@ -1,17 +1,177 @@
 {
-  "trust_open": [
+  "_note_incidental_history_open_events": "history_open entries interleaved below (theme ids cn_autos/cn_soe_value/cn_defense) are a PRE-EXISTING, unrelated browser behavior, not a repair artifact: the top-3 themes' <details ... open data-ev=\"history_open\"> start OPEN in the server-rendered HTML (force_open), and browsers queue one initial 'toggle' event for a <details open> present at parse time. The W7 toggle listener (unchanged by this repair) fires on that queued event the first time any capture runs after load. Present in every context below; not specific to trust_open/B1 and not something this repair introduced or needed to change.",
+  "trust_open": {
+    "desktop_hover": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_autos",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_soe_value",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_defense",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "trust_open",
+            "lens": null,
+            "id": "cn_large_order_proxy",
+            "sess": "2026-09-03"
+          }
+        }
+      }
+    ],
+    "desktop_hover_second_hover_same_chip_no_new_events": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_autos",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_soe_value",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_defense",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "trust_open",
+            "lens": null,
+            "id": "cn_large_order_proxy",
+            "sess": "2026-09-03"
+          }
+        }
+      }
+    ],
+    "keyboard_focus_fresh_pageview": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "trust_open",
+            "lens": null,
+            "id": "sb_aggregate",
+            "sess": "2026-09-03"
+          }
+        }
+      }
+    ],
+    "keyboard_focus_chip_id": "sb_aggregate",
+    "mobile_390_touch_tap_fresh_pageview": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "trust_open",
+            "lens": null,
+            "id": "cn_large_order_proxy",
+            "sess": "2026-09-03"
+          }
+        }
+      }
+    ]
+  },
+  "compare_run": [
     {
       "type": "flowobs",
       "extra": {
         "meta": {
-          "ev": "trust_open",
-          "lens": null,
-          "id": "cn_large_order_proxy",
+          "ev": "compare_run",
+          "lens": "theme",
+          "id": null,
           "sess": "2026-09-03"
         }
       }
     }
   ],
+  "changed_expand": {
+    "captured": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_autos",
+            "sess": "2026-09-01"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "history_open",
+            "lens": "theme",
+            "id": "cn_gold",
+            "sess": "2026-09-01"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "changed_expand",
+            "lens": null,
+            "id": null,
+            "sess": "2026-09-01"
+          }
+        }
+      }
+    ],
+    "fixture": "verify_shots/flow_observatory/w7/_fv_w7_fixture.html (tests' _v2_with_everything() fixture — the real live site currently has no >8-item change day to exercise the overflow <details>)"
+  },
   "group_drill_and_episode_view": [
     {
       "type": "flowobs",
@@ -36,11 +196,57 @@
       }
     }
   ],
-  "dedup_second_click_on_same_chip": [],
-  "terminal_out_hook_present": true,
+  "aggregate_row_all_pre_open_then_reopen": {
+    "first_click_closes_no_fire": [],
+    "second_click_reopens_fires_lens_aggregate": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "group_drill",
+            "lens": "aggregate",
+            "id": "__all__",
+            "sess": "2026-09-03"
+          }
+        }
+      }
+    ]
+  },
+  "dedup_lens_keyed_direct_fvTrack_probe": {
+    "calls": [
+      "__fvTrack('quadrant_select','theme','cn_autos')",
+      "__fvTrack('quadrant_select','sector','cn_autos')",
+      "__fvTrack('quadrant_select','theme','cn_autos')  // dup of call 1 -> suppressed"
+    ],
+    "captured": [
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "quadrant_select",
+            "lens": "theme",
+            "id": "cn_autos",
+            "sess": "2026-09-03"
+          }
+        }
+      },
+      {
+        "type": "flowobs",
+        "extra": {
+          "meta": {
+            "ev": "quadrant_select",
+            "lens": "sector",
+            "id": "cn_autos",
+            "sess": "2026-09-03"
+          }
+        }
+      }
+    ]
+  },
   "indifference_test": {
     "page_errors_while_beacon_throws": [],
     "accordion_still_toggles_with_beacon_throwing": true,
-    "page_title_unaffected": "Capital Flow Velocity \u2014 China & Hong Kong"
-  }
+    "page_title_unaffected": "Capital Flow Velocity — China & Hong Kong"
+  },
+  "terminal_out_hook_present": true
 }

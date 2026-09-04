@@ -155,19 +155,70 @@ def test_every_event_declares_source_status_funnel_and_purpose():
         assert isinstance(event.get("properties"), dict), f"{n}: properties must be a mapping"
 
 
+def _enum_key_and_nullable(decl: str) -> tuple[str, bool]:
+    """`enum:<name>` or `enum:<name>|null` — the `|null` suffix (PR #6815 repair B3)
+    marks a property whose frozen spec explicitly allows a null value (e.g.
+    flow_observatory.interacted's `lens`, per research/flow_observatory/W7_SPEC.md §1:
+    `theme|sector|aggregate|null`)."""
+    key = decl.split(":", 1)[1]
+    if key.endswith("|null"):
+        return key[: -len("|null")], True
+    return key, False
+
+
 def test_property_types_are_scalars_or_declared_enums():
     reg = _registry()
     enums = reg["enums"]
     for event in reg["events"]:
         for prop, decl in event["properties"].items():
             if str(decl).startswith("enum:"):
-                key = str(decl).split(":", 1)[1]
+                key, _nullable = _enum_key_and_nullable(str(decl))
                 assert key in enums, f"{event['name']}.{prop}: unknown enum '{key}'"
             else:
                 assert decl in _SCALAR_TYPES, (
                     f"{event['name']}.{prop}: type '{decl}' is neither a scalar "
                     f"{sorted(_SCALAR_TYPES)} nor enum:<declared>"
                 )
+
+
+def test_flowobs_lens_property_is_declared_nullable():
+    """B3 (PR #6815 review): W7_SPEC.md §1 freezes `lens` as
+    `theme|sector|aggregate|null` — five of the nine flowobs events carry no group
+    (trust_open, changed_expand, compare_run, terminal_out, watch_note_view). Before
+    this, `enum:flow_lens` had no way to say "or null", so those five live null
+    payloads were technically out of contract with the registry."""
+    reg = _registry()
+    event = next(e for e in reg["events"] if e["name"] == "flow_observatory.interacted")
+    decl = str(event["properties"]["lens"])
+    assert decl.startswith("enum:"), f"lens declaration {decl!r} is not an enum"
+    key, nullable = _enum_key_and_nullable(decl)
+    assert key == "flow_lens"
+    assert nullable, f"lens declaration {decl!r} does not mark null allowed"
+
+
+def test_flowobs_sample_payloads_conform_to_the_registry():
+    """B3: a trust_open payload with lens:null passes (the frozen null allowance); the
+    __all__ aggregate row's group_drill payload carries lens:'aggregate' — a real
+    flow_lens member, not null, because the row is mapped to it directly in the
+    template rather than falling back to the registry's null allowance."""
+    reg = _registry()
+    enums = reg["enums"]
+    event = next(e for e in reg["events"] if e["name"] == "flow_observatory.interacted")
+    samples = [
+        {"ev": "trust_open", "lens": None, "id": "cn_large_order_proxy", "sess": "2026-09-03"},
+        {"ev": "group_drill", "lens": "aggregate", "id": "__all__", "sess": "2026-09-03"},
+    ]
+    for payload in samples:
+        for prop, value in payload.items():
+            decl = str(event["properties"][prop])
+            if decl.startswith("enum:"):
+                key, nullable = _enum_key_and_nullable(decl)
+                if value is None:
+                    assert nullable, f"{prop} received None but {decl!r} is not nullable"
+                else:
+                    assert value in enums[key], f"{prop}={value!r} not in enum {key}"
+            else:
+                assert value is None or isinstance(value, str), f"{prop}={value!r} not a string"
 
 
 def test_no_enum_carries_the_legacy_insider_tier():

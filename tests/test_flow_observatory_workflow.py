@@ -33,7 +33,7 @@ from engine import i18n
 from engine.flow_observatory import workflow as wf
 from engine.flow_observatory.contract import QUADRANT_LABELS, STATUS_WORD
 from scripts.build_vector import C
-from tests.test_flow_observatory_contract import ROOT, TMPL, _v2
+from tests.test_flow_observatory_contract import ROOT, TMPL, _member, _v2, market_read
 
 CFG = fv._WK
 
@@ -678,14 +678,27 @@ def test_w7_dedup_set_and_existing_envelope_reused_no_second_transport():
 
 def test_w7_payload_carries_no_field_beyond_the_frozen_schema():
     """spec §3 test 3 (and mutation M1's target): the payload builder's `meta` object
-    carries exactly {ev, lens, id, sess} — nothing else, per the frozen spec §1."""
+    carries exactly {ev, lens, id, sess} — nothing else, per the frozen spec §1.
+
+    PR #6815 review (GAPS-CLOSURE): the original assertion used `re.search`, which
+    only inspects the FIRST `window.mmTrack('flowobs', {...})` call site — a second
+    call site added later (bypassing the shared `fire()` builder) with an extra field
+    would pass silently. Switched to `re.findall` so every call site in the W7 block is
+    checked; today there is exactly one (inside `fire()`), so this also pins that
+    invariant — a second call site is a schema regression on its own."""
     v2 = _v2_with_everything()
     html = _render(v2, known_tickers={"600104.SS"})
     script = _w7_script_block(html)
-    m = re.search(r"window\.mmTrack\('flowobs',\s*\{\s*meta:\s*\{([^}]*)\}\s*\}\)", script)
-    assert m, "could not locate the flowobs payload builder (window.mmTrack('flowobs', {meta: {...}}))"
-    keys = set(re.findall(r"(\w+)\s*:", m.group(1)))
-    assert keys == {"ev", "lens", "id", "sess"}, f"payload carries unexpected field(s): {keys}"
+    w7_block = script[script.index(_W7_MARKER):]
+    matches = re.findall(r"window\.mmTrack\('flowobs',\s*\{\s*meta:\s*\{([^}]*)\}\s*\}\)", w7_block)
+    assert matches, "could not locate any flowobs payload builder (window.mmTrack('flowobs', {meta: {...}}))"
+    assert len(matches) == 1, (
+        f"expected exactly one window.mmTrack('flowobs', ...) call site (the shared "
+        f"fire() builder), found {len(matches)} — every call site must be schema-checked"
+    )
+    for body in matches:
+        keys = set(re.findall(r"(\w+)\s*:", body))
+        assert keys == {"ev", "lens", "id", "sess"}, f"payload carries unexpected field(s): {keys}"
 
 
 def test_w7_beacon_indifference_call_site_is_defensively_wrapped():
@@ -749,4 +762,98 @@ def test_w7_no_banned_vocabulary_and_visible_text_is_byte_identical_to_pre_w7():
     assert _visible_text(html_new) == _visible_text(html_old), (
         "W7 changed the page's visible text — this wave is telemetry-only "
         "(data-ev attributes + a new <script> block), never a copy change"
+    )
+
+
+# ═══════════════ W7 repair round (PR #6815 independent review, B1-B4/N1-N3) ═══════════
+# The initial W7 implementation shipped with trust_open wired to `click` only, while the
+# LENS controller (templates/theme.js) opens a trust-strip chip's tip on
+# pointerover/focusin/touch-tap — never click — so genuine opens emitted nothing (and a
+# mobile tap's synthesized click can be retargeted off the chip entirely by the
+# sheet-mode scrim). watch_note_view measured accidental clicks on a static paragraph
+# with no LENS tip to open. The tests below pin the repair at the source level (this
+# suite renders server-side Jinja HTML and asserts against the page's own <script>
+# text — it does not execute JS — so client-runtime behavior like "did pointerover
+# actually fire once" is proved separately by the Playwright probe in
+# verify_shots/flow_observatory/w7/).
+
+
+def test_w7_trust_open_listens_on_genuine_open_paths_not_click():
+    """B1: trust_open must be wired to pointerover/focusin/pointerdown, delegated on
+    the trust strip's own `.fv-src[data-ev]` hook, and the general click-delegated
+    handler must explicitly skip trust_open (it is no longer click-driven at all)."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    for event_type in ("pointerover", "focusin", "pointerdown"):
+        assert f"'{event_type}'" in w7_block, f"no {event_type} listener in the W7 block"
+    assert ".fv-src[data-ev]" in w7_block, "the pointer listeners must delegate on .fv-src[data-ev]"
+    assert "if (ev === 'trust_open' || ev === 'watch_note_view') return;" in w7_block, (
+        "the general click-delegated handler no longer excludes trust_open/watch_note_view "
+        "from firing on a bare click"
+    )
+
+
+def test_w7_watch_note_view_is_an_impression_event_not_a_click():
+    """B2: watch_note_view must be observed via the same IntersectionObserver used for
+    episode_view (first-visible, not first-clicked) — the watch-limitation note is a
+    static always-visible paragraph with no LENS tip, so a click on it only ever
+    measured an accidental click on running text."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    assert '[data-ev="episode_view"], [data-ev="watch_note_view"]' in w7_block, (
+        "watch_note_view must be observed by the shared impression IntersectionObserver"
+    )
+
+
+def test_w7_dedup_key_includes_lens():
+    """N2: the dedup key must be ev|lens|id, not ev|id — otherwise a curated-lens id and
+    an official-lens id that happen to collide numerically would silently share one
+    dedup slot and one of the two groups' events would never fire."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    assert "ev + '|' + (lens || '') + '|' + (" in w7_block, (
+        "dedup key does not appear to include lens"
+    )
+
+
+def test_w7_delegated_handlers_guard_e_target_closest():
+    """N3: every delegated handler in the W7 block must guard `e.target &&
+    e.target.closest` before calling `.closest(...)` — theme.js's own idiom for a
+    document-level listener, since e.target is not guaranteed to be an Element (e.g. a
+    text-node target, or e.target null in edge cases some browsers still produce)."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    guard_count = w7_block.count("if (!e.target || !e.target.closest) return;")
+    assert guard_count >= 2, (
+        f"expected the e.target guard in both the click handler and the pointer "
+        f"listeners, found {guard_count} occurrence(s)"
+    )
+
+
+def test_w7_aggregate_row_carries_data_cmp_lens_aggregate():
+    """B3: the __all__ (aggregate) row must carry data-cmp-lens="aggregate" so its
+    group_drill payload conforms to the registry's flow_lens enum instead of falling
+    back to null — W7_SPEC.md §1 explicitly reserves 'aggregate' for exactly this row,
+    and config/growth_events.yml's flow_lens enum already lists it."""
+    v2 = _v2_with_everything(ashare_names={
+        "cadence": "daily", "as_of": "2026-09-01", "n": 10, "n_unscored": 3,
+        "primary": "4wk", "note": "note", "note_zh": "note_zh",
+        "market_read": market_read(
+            [{"vel": 1.0, "rate_4wk": 0.5, "state": "above norm, rising"}] * 10, unscored=3),
+        "inflow": [_member()],
+        "outflow": [],
+    })
+    html = _render(v2, known_tickers={"600104.SS"})
+    row = re.search(r'<tr class="sector-row allnames open"[^>]*>', html)
+    assert row, "the __all__ (aggregate) row did not render — fixture needs ashare_names.inflow/outflow"
+    assert 'data-cmp-lens="aggregate"' in row.group(0), (
+        f"__all__ row missing data-cmp-lens=\"aggregate\": {row.group(0)}"
     )

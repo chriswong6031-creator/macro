@@ -29,7 +29,7 @@ automatically. NOTHING else.
 
 | ev | fired when |
 |---|---|
-| `trust_open` | a trust-strip chip's LENS tip is opened |
+| `trust_open` | a trust-strip chip's LENS tip opened via hover/focus/tap (amended post-#6815 review: not click — the LENS controller never opens on click, and a mobile tap's click event can be retargeted away from the chip by the sheet scrim) |
 | `changed_expand` | the what-changed section's overflow details is opened |
 | `quadrant_select` | a quadrant-cell chip is clicked |
 | `group_drill` | a group row is expanded (either lens) |
@@ -37,7 +37,7 @@ automatically. NOTHING else.
 | `compare_run` | a same-lens compare renders |
 | `episode_view` | an episodes panel becomes visible (first per group per pageview) |
 | `terminal_out` | a member Terminal link is clicked |
-| `watch_note_view` | the watch-limitation note's LENS is opened |
+| `watch_note_view` | the watch-limitation note becomes visible (first per pageview) (amended post-#6815 review: the note is a static always-visible paragraph with no LENS tip to open — this is an impression event, like `episode_view`, not a click) |
 
 Dedup: per (ev, id) per pageview (a Set in page JS). Fire-and-forget (sendBeacon or
 the envelope's existing transport; never block interaction; no retries).
