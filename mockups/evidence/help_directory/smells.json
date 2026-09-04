@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-09-04T09:50:00Z",
+  "generated_at": "2026-09-04T12:32:00Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -19,18 +19,18 @@
         "asof_present": false,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 1412,
+            "document_height_px": 1390,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 1937,
+            "document_height_px": 1918,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 1412,
+        "document_height_px": 1390,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -50,16 +50,16 @@
           "viewport": "desktop"
         },
         "panel_count": 21,
-        "payload_bytes_total": 571456,
+        "payload_bytes_total": 571360,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 13,
         "screenshot_completion": 1.0,
-        "section_count": 6,
+        "section_count": 5,
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 117
+        "visible_word_count": 116
       },
       "page_id": "help.html",
       "route": "/help.html"
@@ -70,7 +70,7 @@
     "base_url": null,
     "kind": "site_dir",
     "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/macro-main9",
-    "resolved_sha_or_none": "feec1fe60c4eb00fb5211636fe389a56974ef3fa",
+    "resolved_sha_or_none": "bcf657cd0f73ea5642105cf373734a1913b05095",
     "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/macro-main9 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
     "site_dir": "/Users/chriswong/.codex/worktrees/9549/macro-main/site"
   },
