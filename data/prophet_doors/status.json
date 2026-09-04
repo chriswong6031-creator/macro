@@ -1,53 +1,33 @@
 {
-  "appended": 3,
-  "asof": "2026-09-03",
+  "appended": 2,
+  "asof": "2026-09-04",
   "candidates": {
-    "R": 3,
-    "T": 2,
-    "W": 11
+    "R": 1,
+    "T": 1,
+    "W": 4
   },
   "deduped": {
-    "R": 2,
-    "T": 0,
-    "W": 11
+    "R": 0,
+    "T": 1,
+    "W": 3
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-09-04",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
       "consulted": true,
-      "null_reasons": {
-        "no_bar_on_flag_date": 43,
-        "ohlcv_absent": 10
-      },
-      "reason": "no flagged name resolved in the OHLCV store — coil and thrust null on every flag tonight",
+      "null_reasons": {},
+      "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Commodities Agriculture": {
-          "theme_thrust_frac": null,
-          "theme_thrust_reason": "no_covered_member",
-          "theme_thrust_state": null
-        },
-        "Commodities Energy": {
-          "theme_thrust_frac": null,
-          "theme_thrust_reason": "no_covered_member",
-          "theme_thrust_state": null
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 0,
-      "tickers_read": 53
+      "tickers_ok": 1,
+      "tickers_read": 1
     },
     "keys": [
       "relay_count_3d",
@@ -65,16 +45,11 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 115,
-      "n_covered": 68,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
       "consulted": true,
-      "last_session": "2026-09-03",
+      "last_session": "2026-09-04",
       "n_tickers": 1544,
       "ok": true,
       "reason": null,
@@ -84,9 +59,14 @@
   },
   "feature_source_w": {
     "atlas": {
-      "consulted": false,
-      "n_asked": 0,
-      "n_covered": 0
+      "consulted": true,
+      "direction": "bull",
+      "grid": "W",
+      "horizon": "13w",
+      "n_asked": 1,
+      "n_covered": 1,
+      "reason": null,
+      "source": "engine.event_atlas.receipt"
     },
     "enabled": true,
     "keys": [
@@ -108,13 +88,12 @@
   },
   "flag_tickers": {
     "R": [
-      "CLF"
+      "VYX"
     ],
-    "T": [
-      "ADM",
-      "BWXT"
-    ],
-    "W": []
+    "T": [],
+    "W": [
+      "IREN"
+    ]
   },
   "n_universe": 1496,
   "overflow": {
@@ -122,11 +101,11 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-09-04 13:18:43",
-  "runtime_s": 115.6,
+  "run_utc": "2026-09-04 20:19:38",
+  "runtime_s": 110.9,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 0,
+    "age_days": 1,
     "asof": "2026-09-03",
     "n_members": 115,
     "ok": true,
@@ -165,19 +144,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 11,
-    "asof_max": "2026-09-02",
-    "asof_mismatch": 11,
-    "asof_run": "2026-09-03",
+    "aligned": 4,
+    "asof_max": "2026-09-04",
+    "asof_mismatch": 0,
+    "asof_run": "2026-09-04",
     "evaluated": 713,
-    "fresh": 12,
+    "fresh": 4,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 21.1,
+    "runtime_s": 19.3,
     "skipped": 4,
     "source": "baskets/membership.json",
-    "state_turn": 89,
+    "state_turn": 88,
     "universe_n": 717
   }
 }
