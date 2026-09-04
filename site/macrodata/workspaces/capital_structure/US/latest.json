@@ -148,7 +148,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04T06:14:34.409360Z",
-    "prior_generation_id": "capital_structure-US-a64e0745a2ed35da",
+    "prior_generation_id": "capital_structure-US-d1a9fb4f14ad72dd",
     "prior_method_version": "capital_structure.compose.v1",
     "status": "PRESENT"
   },
@@ -156,18 +156,18 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "capital_structure-US-a64e0745a2ed35da"
+    "predecessor_generation_id": "capital_structure-US-d1a9fb4f14ad72dd"
   },
   "drivers": {
     "balance_sheet": [],
     "rate_side": []
   },
   "generation": {
-    "built_at": "2026-09-04T21:57:07Z",
+    "built_at": "2026-09-04T22:42:48Z",
     "calculation_as_of": "2026-09-04T06:19:48.233321Z",
-    "code_version": "b4968933bfc326a0367ce170f7ea4e85aead9ad2",
-    "content_sha256": "d1a9fb4f14ad72dd539eecabbe669fb056c3fed4471ee4a2c93a156c35bcf84a",
-    "generation_id": "capital_structure-US-d1a9fb4f14ad72dd",
+    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
+    "content_sha256": "95ba815e76625d601def73630540e026dc432b3033e4abfc9b9621d8236065bb",
+    "generation_id": "capital_structure-US-95ba815e76625d60",
     "producer": "engine.market_os.macro_workspaces.capital_structure",
     "rendered_at": null
   },

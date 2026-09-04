@@ -332,19 +332,48 @@
     "items": []
   },
   "changes": {
-    "comparability": "NO_PRIOR",
-    "deltas": [],
-    "null_reason": "WARMUP",
-    "prior_effective_date": null,
-    "prior_generation_id": null,
-    "prior_method_version": null,
-    "status": "ABSENT"
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 4.39,
+        "delta": 0.0,
+        "metric_id": "us2y_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 4.39
+      },
+      {
+        "current_value": 4.79,
+        "delta": 0.0,
+        "metric_id": "us10y_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 4.79
+      },
+      {
+        "current_value": 0.4,
+        "delta": 0.0,
+        "metric_id": "curve_2s10s_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.4
+      },
+      {
+        "current_value": 0.8751,
+        "delta": 0.0,
+        "metric_id": "term_premium_10y_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.8751
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-09-04",
+    "prior_generation_id": "rates_curves-US-bdfb0667dbec65b6",
+    "prior_method_version": "rates_curves.compose.v1",
+    "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
-    "predecessor_generation_id": null
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "rates_curves-US-bdfb0667dbec65b6"
   },
   "drivers": {
     "balance_sheet": [
@@ -479,11 +508,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T21:57:07Z",
+    "built_at": "2026-09-04T22:42:48Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "b4968933bfc326a0367ce170f7ea4e85aead9ad2",
-    "content_sha256": "bdfb0667dbec65b66a3fd603bacef217132de7adf5f0c2737e52f7858af8a0c5",
-    "generation_id": "rates_curves-US-bdfb0667dbec65b6",
+    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
+    "content_sha256": "6e41490d9a099c6793c400ef9ef8b9335a10139fe1b79eda1276d9f6001cbcf3",
+    "generation_id": "rates_curves-US-6e41490d9a099c67",
     "producer": "engine.market_os.macro_workspaces.rates_curves",
     "rendered_at": null
   },
@@ -509,8 +538,8 @@
       "status": "ABSENT"
     },
     "prior_state": {
-      "effective_date": null,
-      "method_version": null,
+      "effective_date": "2026-09-04",
+      "method_version": "rates_curves.compose.v1",
       "state_id": null
     },
     "quadrant": {
