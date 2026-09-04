@@ -9,8 +9,13 @@ answer: >
   section cue; sections whose ROLE cannot originate current consideration are disqualified
   outright (Background of the, Opinion of, Prior Proposals, Financing of the, Employment
   Agreements, Interests of, Certain Relationships, Risk Factors); `current_transaction_scope()`
-  is then the FIRST admissible section carrying an explicit current-transaction anchor, or the
-  first admissible section when none does. Every field is read only inside that span. A price
+  is then the FIRST admissible section carrying an explicit current-transaction anchor — and
+  ONLY that. When no admissible section carries an anchor the answer is None and the state is
+  TRANSACTION_SCOPE_UNRESOLVED: an unanchored section is not a proven current transaction, so
+  falling back to the first one would make DOCUMENT ORDER the authority for which deal a
+  published price belongs to (superseded 2026-09-04 by the Sol semantic addendum, carrier edge
+  1788494850.137529; the earlier text read "or the first admissible section when none does").
+  Every field is read only inside that span. A price
   outside it is still RECORDED — as a `deferred` observation noted
   `outside_current_transaction_scope` — so the evidence stays visible and can never become a
   live term. With no admissible section the extractor returns nothing and the state is

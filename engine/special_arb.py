@@ -731,11 +731,29 @@ _EXCLUDED_SECTION = re.compile(
     r"Certain\s+Relationships\b|Interests\s+of\b|Prior\s+[Pp]roposals?\b|"
     r"Financing\s+of\s+the\b|Employment\s+Agreements?\b", re.I)
 
-# an explicit statement that THIS document is describing a live transaction
+# An explicit statement that THIS document is describing a live transaction. CLOSED vocabulary:
+# every alternative is a phrase a filing uses to assert a transaction, never a proxy for one.
+#
+# Completeness here is load-bearing in a way it was not before 2026-09-04. While
+# `current_transaction_scope()` ended in `(anchored or admissible)[0]`, an unmatched-but-real
+# formulation still resolved — through the fallback — so a gap in this vocabulary was invisible.
+# Removing that fallback (Sol semantic addendum, carrier edge 1788494850.137529) made the gap
+# load-bearing and immediately exposed four corpus filings that state a current transaction in
+# words this pattern did not carry: "each common share WILL BE ACQUIRED for $32.00", "holders
+# WILL RECEIVE $9.00 in cash per share", and "the PREVIOUSLY ANNOUNCED MERGER providing for
+# $21.00". Those are current transactions by any reading; only the phrasing was uncovered.
+#
+# The distinction that matters, and the one Sol's ruling turns on: widening THIS vocabulary
+# still requires an explicit anchor, so scope remains something the document asserts. Restoring
+# the fallback would instead make DOCUMENT ORDER the authority. A missing phrase is a recall
+# bug; a fallback is a false-precision bug. Add phrases here when a real filing formulation is
+# missed — never a heuristic that resolves scope without one.
 _CURRENT_TXN_ANCHOR = re.compile(
     r"Agreement\s+and\s+Plan\s+of\b|merger\s+agreement\b|"
-    r"(?:will|shall)\s+be\s+(?:converted|cancelled|exchanged)\b|"
-    r"right\s+to\s+receive\b|tender\s+offer\b|offer\s+to\s+purchase\b|"
+    r"(?:will|shall)\s+be\s+(?:converted|cancelled|exchanged|acquired)\b|"
+    r"(?:will|shall)\s+receive\b|right\s+to\s+receive\b|"
+    r"previously\s+announced\s+(?:merger|transaction|offer|acquisition)\b|"
+    r"plan\s+of\s+arrangement\b|tender\s+offer\b|offer\s+to\s+purchase\b|"
     r"all[-\s]cash\b|all[-\s]stock\b|stock[-\s]for[-\s]stock\b|exchange\s+ratio\b|"
     r"business\s+combination\b|combination\b|has\s+agreed\s+to\s+acquire\b|"
     r"agreed\s+to\s+an\b|entered\s+into\b", re.I)
@@ -776,18 +794,26 @@ def document_sections(text: str) -> list[dict]:
 def current_transaction_scope(text: str) -> tuple[int, int] | None:
     """The ONE evidence span the current transaction's terms may be read from, or None.
 
-    First admissible section carrying an explicit current-transaction anchor; failing that, the
-    first admissible section. Never a disqualified section, and never "wherever the first price
-    happens to be". When no admissible section exists at all the answer is None — an honest
-    `TRANSACTION_SCOPE_UNRESOLVED` decline, not a guess.
+    The first admissible section carrying an explicit current-transaction ANCHOR — and nothing
+    else. Never a disqualified section, never "wherever the first price happens to be", and
+    never the first admissible section merely because it came first.
+
+    That last fallback used to be `(anchored or admissible)[0]`, which reads as conservative and
+    is not: an unanchored section is not a proven current transaction, so selecting it makes
+    DOCUMENT ORDER the authority for which deal a published price belongs to. A filing whose
+    only per-share number sits in an unanchored `Item` — a prior proposal, a competing bid, a
+    financing recital — would publish that number as the current offer. Low recall is lawful
+    here; publishing terms from an unanchored section is not, which is why the honest answer is
+    None and the caller's `TRANSACTION_SCOPE_UNRESOLVED` decline.
     """
     admissible = [sec for sec in document_sections(text) if not sec["excluded"]]
     if not admissible:
         return None
     anchored = [sec for sec in admissible
                 if _CURRENT_TXN_ANCHOR.search(text, sec["start"], sec["end"])]
-    chosen = (anchored or admissible)[0]
-    return chosen["start"], chosen["end"]
+    if not anchored:
+        return None
+    return anchored[0]["start"], anchored[0]["end"]
 
 
 def _neg_context(text: str, start: int, end: int) -> str | None:

@@ -143,6 +143,11 @@ verified:
   - claim: "Round 4 — the staged repair executes: the four owned suites are green on the first run they ever received."
     command: "python3 -m pytest tests/test_special_arb.py tests/test_special_situations.py tests/test_special_sits_intel.py tests/test_price_basis_graders.py -q -p no:randomly"
     result: "198 passed (197 before the M4 guard test was added). The staged tree had never been executed by its author."
+  - claim: "Both halves of the round-5 semantic repair are themselves mutant-pinned."
+    command: "matrix extended to 12: M11 restores the (anchored or admissible)[0] fallback; M12 narrows _CURRENT_TXN_ANCHOR back"
+    result: >
+      12/12 killed at 201 passed. M12 matters because the narrowed vocabulary is exactly the gap
+      the fallback used to hide, so without it the recall repair could be reverted silently.
   - claim: "Every repaired guard is pinned by a named test — proved by mutation, not by the suite being green."
     command: >
       10-mutant matrix, each re-introducing exactly one repaired defect into the real source,
@@ -176,6 +181,35 @@ verified:
   - claim: "No path collision anywhere in the repository."
     command: "blob-identity scan of all 1046 remote branch tips against origin/main on the six F09 owner paths"
     result: "0 branches differ on any of them; exactly one PR exists on this branch."
+  - claim: "contract-delta is genuinely candidate-caused, NOT the known stale-base artifact — tested, not assumed."
+    command: "git show origin/main:engine/special_situations.py | grep 'from collectors import'  (empty) vs HEAD line 715"
+    result: >
+      engine/special_situations.py gains `from collectors import special_situations as col`,
+      absent on origin/main; collectors/special_situations.py already imports
+      engine/qual_extraction.py on main. That one new edge widens six job closures, which is why
+      five findings name jobs F09 never touches. Job 100865703147: 8 introduced, 0 inherited.
+  - claim: "The bounded manifest widening clears contract-delta on the tree CI actually builds."
+    command: >
+      simulated merge ref — origin/main's .github/ci/legacy-jobs.yml plus the exact 8 authorized
+      additions, then scripts/check_contract_delta.py --base f72d6430ccab
+    result: >
+      0 introduced, 0 inherited. Running it against this branch's own (stale) manifest instead
+      reports 1 introduced for tests/test_top_anatomy_oot_receipt.py — a file present on BOTH
+      sides that main's manifest wires in 3 places and this branch's older manifest wires in 0.
+      That one is a stale-manifest artifact of the branch base, never a CI finding, and needs no
+      action. The effective manifest diff is 8 added lines, 0 removed.
+  - claim: "The current-transaction scope repair discriminates and does not become blanket refusal."
+    command: "revert `return None` to `(anchored or admissible)[0]`, run the three new scope tests"
+    result: >
+      2 failed, 1 passed — exactly the two decline cases die and the anchored-positive case
+      survives, which is the correct signature. Restored and re-verified byte-for-byte.
+  - claim: "Removing the fallback exposed anchor-vocabulary gaps, not regressions; the negatives still decline."
+    command: "corpus scope audit over all 22 cases before and after extending _CURRENT_TXN_ANCHOR"
+    result: >
+      dividend/redemption/exercise-price/aggregate-value still scope=None after the widening;
+      contingent_value_right, cross_currency_bare_dollar, explicit_foreign_currency and
+      terminated_offer resolve again because their real phrasing ("will receive", "will be
+      acquired for", "previously announced merger") is now carried. 201 passed.
 unverified:
   - claim: "Real-world extraction recall against live EDGAR filings."
     what_would_verify: >
@@ -245,7 +279,8 @@ discoveries: ["DSC:ARB-PLAUSIBILITY-BAND-ADMITTED-THE-DEFECT-IT-GUARDED",
               "DSC:A-DIGEST-OF-A-DERIVED-PROJECTION-IS-NOT-BYTE-BINDING",
               "DSC:A-RESEALED-ROW-IS-SELF-CONSISTENT-NOT-EVIDENCED",
               "DSC:A-PURE-REDUCER-THAT-TRUSTS-ITS-RECEIPT-HAS-NO-GATE",
-              "DSC:A-GREEN-SUITE-CANNOT-TELL-YOU-WHICH-GUARDS-IT-PINS"]
+              "DSC:A-GREEN-SUITE-CANNOT-TELL-YOU-WHICH-GUARDS-IT-PINS",
+              "DSC:A-FALLBACK-MAKES-ITS-PRIMARY-PATHS-COVERAGE-UNMEASURABLE"]
 ---
 
 ## Why this handoff says `blocked` rather than `complete`
@@ -349,3 +384,37 @@ Round 4 also closed a dangling forward reference the cut-off left: the staged re
 as separate sections on purpose — the useful fact about this wave is that a green suite, a
 CI pack sweep, and an exact-head review all held at once while three `VERIFIED`-reaching defects
 were still live.
+
+## Round 5 — the CI manifest and the last false-precision fallback
+
+Head `bb86d760` came back red on four checks, and the round is mostly an exercise in refusing to
+treat them as one thing. `contract-delta` was **candidate-caused**; `trusted-executor-pack-7` was
+an `npx` eslint fetch timing out at 180 s; `ci-gate` failed downloading zero semantic fragments
+the trusted packs had uploaded; `merge-queue-pilot` says `allowed:true` in its own payload and
+fails only on an inactive base context. Sol classified the last three as not-ours and explicitly
+forbade patching them from this carrier. They are not waived — a later natural run that
+reproduces a source-correlated failure reopens them.
+
+The contract-delta finding is the one worth remembering, because it looked exactly like the
+known artifact and wasn't. Five of eight findings named `engine/qual_extraction.py` against
+`biocatalyst-*`, `flow-surface` and `unrun-*` — jobs F09 never touches — which is the signature
+of `contract-delta` billing a PR for a main-side closure change its base predates. Tested
+instead of assumed: `engine/special_situations.py` gains `from collectors import
+special_situations as col`, absent on main, and `collectors/special_situations.py` already
+imports `qual_extraction` there. One new edge, six widened closures. Mine.
+
+The inverse then showed up on the same gate. Run locally against current main, contract-delta
+reports `tests/test_top_anatomy_oot_receipt.py` unwired — a file on both sides that main's
+manifest wires three times and this branch's older manifest wires zero times. *That* one is the
+stale-base artifact, it is invisible to CI because CI builds the merge ref, and the fix for it is
+nothing. Both readings of the same gate in one round is the reason the verification was run on a
+simulated merge ref (main's manifest + the 8 authorized additions → `0 introduced, 0 inherited`)
+rather than on the branch tree.
+
+The semantic half removed `(anchored or admissible)[0]`. Five tests failed instantly and the
+triage — not the count — was the finding: four negative corpus cases still declined correctly,
+and four *genuine* transactions had been living on the fallback because the anchor vocabulary
+never carried their phrasing. See
+`DSC:A-FALLBACK-MAKES-ITS-PRIMARY-PATHS-COVERAGE-UNMEASURABLE`. The distinction that governed the
+repair: extending a closed vocabulary still requires the document to assert a transaction, while
+the fallback required only that it have sections.

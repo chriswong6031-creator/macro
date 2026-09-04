@@ -492,8 +492,12 @@ def test_an_amendment_form_alone_does_not_merge_deal_lineage():
     supersession may form one lineage."""
     base = arb.extract_term_observations(_CASH_EXACT, source=_src_full(
         _CASH_EXACT, accession="0000000001-26-000001"), listing_currency="USD")
-    amend_text = ("Amendment No. 1. The consideration is increased to $27.50 in cash per share. "
-                  "The transaction is expected to close on December 15, 2026.")
+    # A real amendment names the agreement it amends; without that the body carries no
+    # current-transaction anchor at all and now yields no observations, which would make this
+    # test pass for the wrong reason (nothing to merge) instead of proving lineage is refused.
+    amend_text = ("Amendment No. 1 to the Agreement and Plan of Merger. The consideration is "
+                  "increased to $27.50 in cash per share. The transaction is expected to close "
+                  "on December 15, 2026.")
     amend = arb.extract_term_observations(amend_text, source=_src_full(
         amend_text, accession="0000000001-26-000002", filing_date="2026-09-20"),
         listing_currency="USD")
@@ -1001,6 +1005,86 @@ def test_a_background_price_is_never_the_only_admissible_candidate():
         arb.extract_term_observations(text, source=_complete_src(text),
                                       listing_currency="USD"), accession=_ACC_A)
     assert compiled["terms"].get("price_per_share") is None
+
+
+# --- an UNANCHORED admissible section is not a current transaction ----------
+# Sol semantic addendum (carrier 1788494850.137529): `(anchored or admissible)[0]` selected the
+# first admissible section when nothing carried a current-transaction anchor. That reads as
+# conservative and is not — it makes DOCUMENT ORDER the authority for which deal a published
+# price belongs to. None of these sections is `excluded`; the point is that admissible is not
+# the same as proven.
+
+_TWO_UNANCHORED_ITEMS = (
+    "Item 8.01 Other Events. In March 2025 the board reviewed and declined an unsolicited "
+    "indication of interest valuing the Company at $48.00 in cash per share. "
+    "Item 7.01 Regulation FD Disclosure. The Company continues to evaluate strategic "
+    "alternatives with a third party and has retained a financial adviser.")
+
+_ONE_UNANCHORED_ITEM = (
+    "Item 8.01 Other Events. The Company confirmed that the per share cash amount under "
+    "discussion with the counterparty is $52.00 per share in cash.")
+
+_ANCHORED_SECOND_ITEM = (
+    "Item 8.01 Other Events. In March 2025 the board reviewed and declined an unsolicited "
+    "indication of interest valuing the Company at $48.00 in cash per share. "
+    "Item 1.01 Entry into a Material Definitive Agreement. The Company entered into an "
+    "Agreement and Plan of Merger under which each share will be converted into the right to "
+    "receive $75.00 in cash per share. The transaction is expected to close on "
+    "December 15, 2026.")
+
+
+def test_two_unanchored_admissible_sections_emit_no_current_terms():
+    """Neither section carries an anchor, so the first one is not the current transaction."""
+    secs = arb.document_sections(_TWO_UNANCHORED_ITEMS)
+    assert len([s for s in secs if not s["excluded"]]) >= 2, "fixture must be admissible, not excluded"
+    assert arb.current_transaction_scope(_TWO_UNANCHORED_ITEMS) is None
+
+    compiled = arb.compile_current_terms(
+        arb.extract_term_observations(_TWO_UNANCHORED_ITEMS,
+                                      source=_complete_src(_TWO_UNANCHORED_ITEMS),
+                                      listing_currency="USD"), accession=_ACC_A)
+    assert compiled["terms"].get("price_per_share") is None
+    assert compiled["terms"].get("consideration") is None
+    econ = arb.reduce_cash_deal(compiled, category="Acquisitions", stage="pending",
+                                live_price=_us_price(value=40.0), now_utc=NOW)
+    assert econ["offer_price"] != 48.0, "document order selected a declined 2025 indication"
+    assert econ["quality_state"] != arb.QUALITY_VERIFIED
+    assert econ["live_gross_spread_pct"] is None
+
+
+def test_a_lone_unanchored_section_declines_rather_than_publishing_its_price():
+    """The document's only per-share number, in its only admissible section — still declined."""
+    assert arb.current_transaction_scope(_ONE_UNANCHORED_ITEM) is None
+    compiled = arb.compile_current_terms(
+        arb.extract_term_observations(_ONE_UNANCHORED_ITEM,
+                                      source=_complete_src(_ONE_UNANCHORED_ITEM),
+                                      listing_currency="USD"), accession=_ACC_A)
+    assert compiled["terms"].get("price_per_share") is None
+    econ = arb.reduce_cash_deal(compiled, category="Acquisitions", stage="pending",
+                                live_price=_us_price(value=40.0), now_utc=NOW)
+    assert econ["quality_state"] != arb.QUALITY_VERIFIED
+    assert econ["offer_price"] != 52.0
+
+
+def test_an_anchor_in_the_later_section_scopes_to_that_section_only():
+    """The repair must not degrade into blanket refusal — an anchored section still publishes.
+
+    Same two-section shape as above with a real anchor added to the SECOND section. The scope
+    must be that section, the $75.00 current offer must be the published price, and the $48.00
+    declined indication in the earlier unanchored section must not win on document order.
+    """
+    scope = arb.current_transaction_scope(_ANCHORED_SECOND_ITEM)
+    assert scope is not None, "an anchored section must still resolve"
+    start, end = scope
+    assert _ANCHORED_SECOND_ITEM.index("$75.00") >= start
+    assert _ANCHORED_SECOND_ITEM.index("$48.00") < start, "scope must exclude the earlier section"
+
+    compiled = arb.compile_current_terms(
+        arb.extract_term_observations(_ANCHORED_SECOND_ITEM,
+                                      source=_complete_src(_ANCHORED_SECOND_ITEM),
+                                      listing_currency="USD"), accession=_ACC_A)
+    assert compiled["terms"]["price_per_share"] == 75.0
+    assert compiled["terms"]["price_per_share"] != 48.0
 
 
 # --- quality semantics ------------------------------------------------------

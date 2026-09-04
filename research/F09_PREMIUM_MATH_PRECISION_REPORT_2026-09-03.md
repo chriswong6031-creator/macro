@@ -278,3 +278,77 @@ The failing sets are **identical, test for test**: 40 failures present on both s
 only on the branch, 0 present only on main. Zero regressions attributable to this repair, and the
 40 are pre-existing sparse-worktree artifacts in unrelated suites. Every F09 source file was
 restored from the index afterwards and re-verified by blob digest.
+
+## 9. CI repair and the current-transaction scope addendum
+
+Head `bb86d760`'s hosted authority came back red on four checks. They are not one class, and the
+distinction is the whole point of this section — a binding red is never waived, but neither is
+it inherited without reading its own payload.
+
+| check | classification | evidence |
+|---|---|---|
+| `contract-delta` | **candidate-caused** | job `100865703147`: `8 introduced, 0 inherited (base 3f8c1faa48a5)` |
+| `trusted-ci / trusted-executor-pack-7` | external infra transient | `admin-js-no-undef` timed out at 180 s on a cold `npx` eslint fetch; every other job in the pack passed |
+| `ci-gate` | aggregation boundary | downloaded zero semantic fragments although the trusted packs uploaded `trusted-ci-fragment-*` |
+| `ci-authority/codex/merge-queue-pilot` | inactive base context | own payload: `allowed:true`, `reason:same_repo_admin_authority_change`; fails only on `context_active:false / inactive_base_context` |
+
+**contract-delta is mine, and the trap here is that it might not have been.** The known failure
+mode of this gate is billing a PR for a main-side gap when the branch base predates the commits
+that widened some job's import closure. Five of the eight findings named `engine/qual_extraction.py`
+against `biocatalyst-*`, `flow-surface` and `unrun-*` — jobs F09 never touches — which is exactly
+what that artifact looks like. It was tested rather than assumed, and the answer was the other
+way: `engine/special_situations.py` gains `from collectors import special_situations as col`
+(line 715, absent on `origin/main`), `collectors/special_situations.py` already imports
+`engine/qual_extraction.py` on main, and that single new edge widens six job closures at once.
+Genuinely introduced.
+
+Repaired by the bounded widening Sol authorised for exactly one manifest path — eight added
+lines in `.github/ci/legacy-jobs.yml`, zero removed, no scope-mode change, no job-command edit.
+
+**Proving it on the right tree.** Running contract-delta locally against current main reports a
+*different* finding — `tests/test_top_anatomy_oot_receipt.py` unwired — which is neither mine nor
+real: that file exists on both sides, main's manifest wires it in three places, and this branch's
+older manifest carries none of them. CI never saw it because CI evaluates the **merge ref**,
+which carries main's manifest. So the verification was done on the tree CI will actually build:
+main's manifest plus the eight additions, contract-delta against main →
+**`0 introduced, 0 inherited`**. The local-only finding is a stale-manifest artifact of this
+branch's base and requires no action.
+
+### The scope fallback, and what removing it exposed
+
+Sol's semantic addendum removed the last false-precision fallback in the pure owner:
+
+```python
+chosen = (anchored or admissible)[0]      # -> return None when nothing is anchored
+```
+
+An unanchored section is not a proven current transaction, so selecting it made **document
+order** the authority for which deal a published price belongs to. Three hostile REDs pin the
+repair — two unanchored `Item` sections where the first holds a declined `$48.00` indication; a
+lone unanchored section holding the document's only per-share number; and the same shape with a
+real anchor in the *second* section, which must still publish `$75.00` and prove the change did
+not become blanket refusal. Reverting the fallback fails exactly the two decline cases and
+leaves the third passing, which is the correct discrimination signature.
+
+Removing it also made five previously-green tests fail at once, and the triage is the finding.
+The four **negative** corpus cases (dividend, redemption, exercise price, aggregate value) still
+declined correctly. The other four — `contingent_value_right`, `cross_currency_bare_dollar`,
+`explicit_foreign_currency`, `terminated_offer` — are *genuine* current transactions whose
+phrasing `_CURRENT_TXN_ANCHOR` simply never carried: "holders **will receive** $9.00", "each
+common share **will be acquired for** C$32.00", "the **previously announced merger** providing
+for $21.00". The fallback had been silently supplying scope for all four, so the vocabulary's
+real coverage was unmeasurable for as long as it existed.
+
+Extending a closed vocabulary is categorically different from restoring a fallback even though
+both turn tests green: **a missing phrase is a recall bug, a fallback is a false-precision bug.**
+The widened pattern still requires the document to assert a transaction; the fallback required
+only that the document have sections. The four negatives still declining is the proof the
+distinction held. Recorded as `DSC:A-FALLBACK-MAKES-ITS-PRIMARY-PATHS-COVERAGE-UNMEASURABLE`.
+
+Both repairs are pinned by mutants of their own. The matrix grew to twelve: **M11** restores the
+`(anchored or admissible)[0]` fallback, and **M12** narrows `_CURRENT_TXN_ANCHOR` back to its
+pre-round vocabulary — the exact gap the fallback had been hiding. Both are killed, so neither
+half of this repair can be silently undone.
+
+Final state: **201 passed** across the four owned suites, **12/12** mutants killed,
+`agentos validate` 0 errors.
