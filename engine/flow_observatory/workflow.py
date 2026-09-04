@@ -33,6 +33,14 @@ EPISODE_STORE_DEPTH = 250
 EPISODE_TRAILING_EXCLUDE = 5
 EPISODE_FORWARD_WINDOW = 10
 EPISODE_COUNT = 3
+# S5 repair (W6 review round): the original selection picked the k=3 CLOSEST
+# candidates by distance alone, with no rule stopping two picks from being
+# neighboring sessions (e.g. day T and day T+1) — two near-duplicate "episodes" that
+# are really the SAME regime read twice, inflating the apparent evidence base. A
+# minimum 5-session gap between any two picked episode sessions forces genuine
+# distinctness; when fewer than EPISODE_COUNT candidates survive that gate the card
+# ships the honest (smaller) count rather than padding it out with a near-duplicate.
+EPISODE_MIN_SEPARATION = 5
 
 # spec §1 REQUIRED pinned caption. `{ledger_start}` is filled with the entity's own
 # first ledger session when the ledger holds at least one row for it; a THIN-LEDGER
@@ -42,8 +50,15 @@ EPISODE_COUNT = 3
 # grammatically-broken fill (see :data:`NO_LEDGER_SENTENCE_EN`/`_ZH`). The first
 # sentence — the part that is unconditionally true regardless of ledger depth — is
 # NEVER altered.
-REPLAY_CAPTION_LEAD_EN = "Replayed under today's method — not what was published historically."
-REPLAY_CAPTION_LEAD_ZH = "按当前方法回放——非历史发布值。"
+# S6 repair (W6 review round): the first sentence is AMENDED to also name "today's
+# membership" — a replay drawn from `_attach_group_histories` averages the group's
+# CURRENT constituent set across its whole history window (spec §1's own replay
+# contract), so "today's method" alone under-discloses that the group COMPOSITION is
+# also current-day, not historical. Both languages amended together; the second
+# sentence (ledger-start / thin-ledger accrual) is unchanged.
+REPLAY_CAPTION_LEAD_EN = ("Replayed under today's method and today's membership — "
+                         "not what was published historically.")
+REPLAY_CAPTION_LEAD_ZH = "按当前方法与当前成分回放——非历史发布值。"
 REPLAY_CAPTION_TAIL_EN = "Published record accrues from {ledger_start}."
 REPLAY_CAPTION_TAIL_ZH = "发布记录自{ledger_start}起累积。"
 NO_LEDGER_SENTENCE_EN = "No published record yet — this desk's ledger is still accruing."
@@ -53,6 +68,12 @@ NO_LEDGER_SENTENCE_ZH = "尚无发布记录——本看板的台账仍在累积�
 # no predictive claim — spec §5 test 7).
 EPISODE_NOTE_EN = "similar setups, not forecasts"
 EPISODE_NOTE_ZH = "相似情形，非预测"
+# S5 repair: the honest-count heading rendered above the episode cards
+# (templates/flow_velocity.html.j2's `historyrow` macro — "%d distinct prior
+# episode%s" / "%d个相似历史情形", `n=len(episodes)`) always reflects the ACTUAL
+# selected count, never the EPISODE_COUNT target — a builder judgment call (not
+# itself a spec-pinned exact string beyond the review's own "2 distinct prior
+# episodes" / "2个相似历史情形" example) recorded in the PR body.
 _PRESSURE_WORDS = {"rose": ("rose", "回升"), "faded": ("faded", "回落"), "held": ("held", "持平")}
 _ABS_WORDS = {"improved": ("improved", "改善"), "worsened": ("worsened", "恶化"), "held": ("held", "持平")}
 _OUTCOME_EN = "over the next 10 sessions, pressure {pressure} and absolute flow {absf}"
@@ -119,15 +140,25 @@ def compute_full_series(flow: pd.Series, cfg: dict, vin: float, vout: float) -> 
 
 
 def _direction(state_en: str | None) -> str | None:
-    """"above norm, ..." -> up (up-tint band); "below norm, ..." -> down; neutral/no-data/
-    None -> no band (spec §1: "background tint bands ... where the replayed state is
-    non-neutral")."""
+    """"above norm, ..." -> "above"; "below norm, ..." -> "below"; neutral/no-data/None ->
+    no band (spec §1: "background tint bands ... where the replayed state is
+    non-neutral").
+
+    S8 repair (W6 review round): this used to return the COLOR names "up"/"down"
+    directly — a literal-color band class name that the template then rendered with a
+    fixed (never data-lang-flipped) --up/--down mapping, so a ZH reader saw the state
+    CHIP flip red<->green (the site-wide zh convention every other directional element
+    already follows) while the band underneath it did not, visibly disagreeing on the
+    same row. Returning the SEMANTIC direction ("above"/"below" the group's own norm —
+    never a color word) lets the template map it onto the SAME --up/--down-derived,
+    data-lang-aware tokens the state chips use, so the zh flip rides those tokens
+    automatically instead of needing a second, band-specific flip rule."""
     if not state_en:
         return None
     if state_en.startswith("above norm"):
-        return "up"
+        return "above"
     if state_en.startswith("below norm"):
-        return "down"
+        return "below"
     return None
 
 
@@ -175,6 +206,21 @@ def _state_bands(state_series: list[str | None]) -> list[dict[str, Any]]:
            for s, e, d in _contiguous_runs(dirs)]
 
 
+def _finite_positions(series: list[Any]) -> list[int]:
+    """Indices of ``series`` that are not ``None`` — the EXACT same filter
+    :func:`engine.flow_velocity.spark` applies internally (``[v for v in vals if v is
+    not None and np.isfinite(v)]``) before it lays points evenly across its 0..w box.
+    N10 repair (W6 review round): computing band geometry over the FULL (unfiltered)
+    session axis while the spark polyline plots only the finite subset means a single
+    NaN session compresses the spark (the line has no gap at all — the next finite
+    point is drawn immediately after the prior one) while `_pct_geometry` still divides
+    by the full, gapped length — the tint band then splits into two runs with a
+    colorless sliver in the middle of what is, on the actual rendered polyline, one
+    continuous line. Reusing spark's own finite-index space keeps the two visually
+    locked together."""
+    return [i for i, v in enumerate(series) if v is not None]
+
+
 def _published_segments(published_idx: list[int], n: int) -> list[dict[str, Any]]:
     """Contiguous ``{start, end, left_pct, width_pct}`` runs of ledger-covered
     sessions — spec §1 "sessions covered by real ledger rows get a thin baseline tick
@@ -212,6 +258,11 @@ def history_panel(full: pd.DataFrame | None, ledger_rows: list[dict[str, Any]] |
     rel_series = [_round(v, 2) for v in tail["vel"]]
     state_series = [(en if pd.notna(v) else None)
                     for en, v in zip(tail["state_en"], tail["vel"])]
+    # N10: bands are drawn on top of the REL spark (`spark_rel`, below) — geometry must
+    # therefore be computed over the SAME finite-filtered index space `_fv.spark` plots
+    # onto, never the full (possibly NaN-gapped) session axis. See `_finite_positions`.
+    _rel_finite = _finite_positions(rel_series)
+    _band_states = [state_series[i] for i in _rel_finite]
 
     ledger_rows = ledger_rows or []
     erows = fo_history.entity_rows(ledger_rows, entity_kind, entity_id)
@@ -235,7 +286,7 @@ def history_panel(full: pd.DataFrame | None, ledger_rows: list[dict[str, Any]] |
         "sessions": sessions, "abs_series": abs_series, "rel_series": rel_series,
         "state_series": state_series,
         "spark_abs": _fv.spark(abs_series), "spark_rel": _fv.spark(rel_series),
-        "bands": _state_bands(state_series),
+        "bands": _state_bands(_band_states),
         "revision_markers": revision_markers,
         "revision_marker_pct": [round(100.0 * (i + 0.5) / n_sess, 2) for i in revision_markers] if n_sess else [],
         "published_idx": published_idx,
@@ -257,17 +308,23 @@ def align_histories(a: dict[str, Any], b: dict[str, Any]) -> tuple[dict[str, Any
         n_new = len(keep)
         new_rev = [keep.index(i) for i in h["revision_markers"] if i in keep_set]
         new_pub = [keep.index(i) for i in h["published_idx"] if i in keep_set]
+        new_rel = [h["rel_series"][i] for i in keep]
+        new_states = [h["state_series"][i] for i in keep]
+        # N10 (see `_finite_positions`): band geometry rides the SAME finite-filtered
+        # index space the (trimmed) rel spark plots onto, not the trimmed-but-still-
+        # possibly-gapped session axis.
+        band_states = [new_states[i] for i in _finite_positions(new_rel)]
         return {
             **h,
             "sessions": [h["sessions"][i] for i in keep],
             "abs_series": [h["abs_series"][i] for i in keep],
-            "rel_series": [h["rel_series"][i] for i in keep],
-            "state_series": [h["state_series"][i] for i in keep],
+            "rel_series": new_rel,
+            "state_series": new_states,
             "revision_markers": new_rev,
             "revision_marker_pct": [round(100.0 * (i + 0.5) / n_new, 2) for i in new_rev] if n_new else [],
             "published_idx": new_pub,
             "published_segments": _published_segments(new_pub, n_new),
-            "bands": _state_bands([h["state_series"][i] for i in keep]),
+            "bands": _state_bands(band_states),
         }
     return _trim(a), _trim(b)
 
@@ -299,13 +356,24 @@ def compare_groups(a_kind: str, a_id: str, a_row: dict[str, Any],
 def select_episodes(full: pd.DataFrame | None, *, k: int = EPISODE_COUNT,
                     trailing_exclude: int = EPISODE_TRAILING_EXCLUDE,
                     forward_window: int = EPISODE_FORWARD_WINDOW,
-                    store_depth: int = EPISODE_STORE_DEPTH) -> list[dict[str, Any]]:
+                    store_depth: int = EPISODE_STORE_DEPTH,
+                    min_separation: int = EPISODE_MIN_SEPARATION) -> list[dict[str, Any]]:
     """The spec §3 "3 nearest historical sessions" for the group's CURRENT (last) row —
     L2 distance on the pair (rel_pressure, abs_rate) z-scored over the extended window
     (store depth, max ``store_depth`` sessions), excluding the trailing
     ``trailing_exclude`` sessions (no self-match) AND any candidate whose own
     ``forward_window``-session forward summary would cross the current session (no
     future leakage — spec §3 test).
+
+    S5 repair (W6 review round, "episode distinctness"): candidates are walked in
+    ascending-distance order and a pick is accepted only if it sits at least
+    ``min_separation`` sessions from EVERY already-picked episode — two candidates a
+    day or two apart are almost always the same regime read seen twice, not two
+    independent episodes, and counting both would overstate the evidence base. When
+    fewer than ``k`` candidates survive that gate (a thin or highly autocorrelated
+    pool), this returns the smaller, honest count rather than backfilling with a
+    near-duplicate — the caller renders "N distinct prior episodes" off
+    ``len(result)``, never a hardcoded ``k``.
 
     Descriptive-only summaries (spec §5 test 7: no %-return strings, no predictive
     words) — never a return figure, never "will"/"target"/"expect".
@@ -345,8 +413,23 @@ def select_episodes(full: pd.DataFrame | None, *, k: int = EPISODE_COUNT,
         candidates.append((dist, c))
     candidates.sort(key=lambda t: (t[0], -t[1]))
 
+    # S5: greedily accept candidates in ascending-distance order, skipping any that
+    # falls within `min_separation` sessions of an ALREADY-accepted pick — this is
+    # mutual separation among the k picks themselves, distinct from (and in addition
+    # to) the trailing-exclude/no-future-leakage filters above, which only compare
+    # each candidate against the CURRENT session.
+    picked_idx: list[int] = []
+    picked: list[tuple[float, int]] = []
+    for dist, c in candidates:
+        if len(picked) >= k:
+            break
+        if any(abs(c - p) < min_separation for p in picked_idx):
+            continue
+        picked_idx.append(c)
+        picked.append((dist, c))
+
     out = []
-    for dist, c in candidates[:k]:
+    for dist, c in picked:
         rel_delta = rel[c + forward_window] - rel[c]
         abs_delta = absr[c + forward_window] - absr[c]
         p_word = "rose" if rel_delta > OUTCOME_EPS_REL else ("faded" if rel_delta < -OUTCOME_EPS_REL else "held")

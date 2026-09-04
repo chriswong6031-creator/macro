@@ -147,12 +147,22 @@ def _official_sector_ledger_entities(rows: list[dict] | None, cn_status: str | N
     }
 
 
-def _attach_group_histories(candidate: dict, ledger_rows: list[dict] | None) -> None:
+def _attach_group_histories(candidate: dict, ledger_rows: list[dict] | None) -> set[str]:
     """W6 (``research/flow_observatory/W6_SPEC.md`` §1/§3): attach a per-group
     ``row["history"]``/``row["episodes"]`` payload to every curated-theme row and, gated
     on the official lens' own accrual readiness, every official-sector row —
     ``engine.flow_observatory.workflow``'s pure functions do the actual computation;
     this is wiring only.
+
+    S9 repair (W6 review round): also RETURNS the desk's own covered/scored ticker
+    universe (``kmap``'s keys — the same set every member ticker is checked against
+    below via ``t in kmap``) so the caller can thread it into the template render as
+    ``known_tickers`` for ``workflow.terminal_link`` (spec §4's own "closest available
+    proxy for has a Terminal page"). Reusing this function's own already-computed
+    ``kmap`` avoids a further recompute of the flow panel purely for this purpose — an
+    empty set on any early-return path (import failure, no flow panel) degrades to "no
+    ticker is known", which the template's ``nameln`` macro handles by rendering every
+    member unlinked rather than raising.
 
     OWNED-FILES scope keeps this assembly OUT of engine/flow_velocity.py and
     engine/flow_observatory/groups.py (same boundary ``_official_sectors_panel``
@@ -179,11 +189,11 @@ def _attach_group_histories(candidate: dict, ledger_rows: list[dict] | None) -> 
         from engine.flow_velocity import _THEMES_VIN, _THEMES_VOUT
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("flow_observatory workflow: import failed (non-fatal): %s", e)
-        return
+        return set()
 
     wide = _flow_panel()
     if wide is None:
-        return
+        return set()
     kmap = _name_kinetics_map(wide)
     wide_cols = set(wide.columns)
     ledger_rows = ledger_rows or []
@@ -239,6 +249,8 @@ def _attach_group_histories(candidate: dict, ledger_rows: list[dict] | None) -> 
                 hist = fo_workflow.history_panel(full, ledger_rows, "sector", code)
                 r["history"] = hist
                 r["episodes"] = fo_workflow.select_episodes(full) if hist else []
+
+    return set(kmap.keys())
 
 
 def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
@@ -406,6 +418,11 @@ def main() -> int:
     ledger_rows: list = []
     ledger_path = fo_history.observations_path(data_root)
     theme_entities: dict = {}
+    # S9: the desk's own covered/scored ticker universe (see `_attach_group_histories`)
+    # — threaded into the render call below as `known_tickers` so `nameln` can refuse
+    # to link a ticker the desk never scored. `None` (never an empty set) is the safe
+    # "no filtering" default until `_attach_group_histories` actually runs.
+    known_tickers: set[str] | None = None
     # B1: a ledger that EXISTS but fails to parse must never be treated as an empty
     # bootstrap ledger — that reading is exactly what lets the ordinary append below
     # overwrite (destroy) a torn file's still-valid closed rows. Caught here, at the read
@@ -454,7 +471,7 @@ def main() -> int:
         # valid v1/v2 payload.
         try:
             t_hist0 = datetime.now(timezone.utc)
-            _attach_group_histories(candidate, ledger_rows)
+            known_tickers = _attach_group_histories(candidate, ledger_rows) or None
             log.info("flow_observatory workflow (history/episodes): attached in %.2fs",
                      (datetime.now(timezone.utc) - t_hist0).total_seconds())
         except Exception as e:  # noqa: BLE001
@@ -568,6 +585,11 @@ def main() -> int:
         env.globals.update(td=lambda en: en, tr=lambda en: en)
     from engine.flow_observatory.contract import QUADRANT_LABELS, STATUS_WORD
     env.globals.update(quadrant_labels=QUADRANT_LABELS, status_word=STATUS_WORD)
+    # S9: `terminal_link` as a template global + `known_tickers` as a render-context
+    # var — `nameln` gates on `terminal_link is defined` so a caller that never
+    # supplies either (this repo's own W2/W4 test suites' minimal `_render` helpers)
+    # keeps the pre-W6 always-linked behavior unchanged.
+    env.globals.update(terminal_link=fo_workflow.terminal_link)
 
     try:
         from scripts.build_vector import C  # shared palette
@@ -575,7 +597,8 @@ def main() -> int:
         C = {}
 
     try:
-        html = env.get_template("flow_velocity.html.j2").render(C=C, snap=snap, built=built)
+        html = env.get_template("flow_velocity.html.j2").render(
+            C=C, snap=snap, built=built, known_tickers=known_tickers)
     except Exception as e:  # noqa: BLE001 — a template error must not sink the China build
         log.error("flow_velocity render failed: %s", e)
         return 0

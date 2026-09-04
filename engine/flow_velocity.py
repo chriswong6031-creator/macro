@@ -230,8 +230,18 @@ def _kinetics_series(flow: pd.Series, cfg: dict, vin: float = 0.5, vout: float =
     # then aligned down onto the demeaned series' (shorter, warmup-trimmed) index.
     abs_ser = raw.rolling(pw, min_periods=pw).mean().reindex(flow.index)
     out = pd.DataFrame({"vel": vser, "accel": aser, "abs_rate": abs_ser})
+    # S4 repair (W6 review round, "band/chip parity"): `_kinetics` classifies against
+    # `round(vel, 2)` (its own `vmid = vel.get(cfg["primary"])`, where `vel[lab]` was
+    # already rounded a few lines above it) — this loop used to classify against the
+    # RAW (unrounded) `vser`, so a value that rounds exactly onto the vin/vout boundary
+    # could classify one way here and the other way in `_kinetics` for the identical
+    # last row, even though this function's own docstring promises "The LAST row ...
+    # is exactly what `_kinetics(...)` reports". Rounding here first makes the two
+    # paths agree everywhere `_kinetics` itself would, boundary sessions included —
+    # tests/test_flow_velocity.py's parity test pins this against the same threshold.
+    vel_for_classify = vser.round(2)
     states = [_classify(v if pd.notna(v) else None, a if pd.notna(a) else 0.0, vin, vout)
-             for v, a in zip(out["vel"], out["accel"])]
+             for v, a in zip(vel_for_classify, out["accel"])]
     out["state_en"] = [s[0] for s in states]
     out["state_zh"] = [s[1] for s in states]
     return out

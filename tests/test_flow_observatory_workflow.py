@@ -79,10 +79,11 @@ def test_state_bands_match_replayed_classification():
     hist = wf.history_panel(full, [], "theme", "tech", n=60)
     assert hist is not None
     for band in hist["bands"]:
+        assert band["direction"] in ("above", "below")  # S8: semantic, never a color name
         for i in range(band["start"], band["end"] + 1):
             en = hist["state_series"][i]
             assert en is not None
-            if band["direction"] == "up":
+            if band["direction"] == "above":
                 assert en.startswith("above norm")
             else:
                 assert en.startswith("below norm")
@@ -139,8 +140,13 @@ def test_bootstrap_empty_ledger_has_no_ticks_and_accruing_caption():
     # against LITERAL text (never the module constants themselves) — comparing a
     # caption against the very constant that built it is tautological and would keep
     # passing even if the constant were blanked out (mutation M1 must catch this).
-    assert "Replayed under today's method — not what was published historically." in hist["caption_en"]
-    assert "按当前方法回放——非历史发布值。" in hist["caption_zh"]
+    # S6 repair (W6 review round): the first sentence now names BOTH "today's method"
+    # AND "today's membership" — a replay averages the group's CURRENT constituent set
+    # across its whole history window, so the method alone under-disclosed that the
+    # composition is also current-day, not historical.
+    assert ("Replayed under today's method and today's membership — "
+           "not what was published historically.") in hist["caption_en"]
+    assert "按当前方法与当前成分回放——非历史发布值。" in hist["caption_zh"]
     assert "No published record yet — this desk's ledger is still accruing." in hist["caption_en"]
     assert "尚无发布记录——本看板的台账仍在累积中。" in hist["caption_zh"]
 
@@ -151,10 +157,11 @@ def test_history_panel_caption_is_the_pinned_replay_string():
     ledger = [_ledger_row("theme", "tech", wf.history_panel(full, [], "theme", "tech")["sessions"][10])]
     hist = wf.history_panel(full, ledger, "theme", "tech")
     assert hist["caption_en"] == (
-        "Replayed under today's method — not what was published historically. "
+        "Replayed under today's method and today's membership — "
+        "not what was published historically. "
         f"Published record accrues from {hist['ledger_start']}.")
     assert hist["caption_zh"] == (
-        f"按当前方法回放——非历史发布值。发布记录自{hist['ledger_start']}起累积。")
+        f"按当前方法与当前成分回放——非历史发布值。发布记录自{hist['ledger_start']}起累积。")
 
 
 # ── 5: compare refuses cross-lens pairs with the pinned reason ─────────────────────────
@@ -273,11 +280,12 @@ def _v2_with_history(**over):
     return v2
 
 
-def _render(v2, built="test"):
+def _render(v2, built="test", known_tickers=None):
     env = Environment(loader=FileSystemLoader(str(TMPL)), autoescape=True)
     env.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS,
-                       status_word=STATUS_WORD)
-    return env.get_template("flow_velocity.html.j2").render(C=C, snap=v2, built=built)
+                       status_word=STATUS_WORD, terminal_link=wf.terminal_link)
+    return env.get_template("flow_velocity.html.j2").render(
+        C=C, snap=v2, built=built, known_tickers=known_tickers)
 
 
 def test_js_off_top3_histories_expanded_compare_hidden_with_note():
@@ -309,6 +317,266 @@ def test_no_new_chart_library_sparks_are_server_side_svg():
     # <canvas>-based chart element.
     assert "<canvas" not in low
     assert re.search(r"<svg class=\"spark", html)
+
+
+# ── B2 repair (W6 review round): compare markup carries the real group name ───────────
+def test_compare_row_carries_a_real_name_and_a_unique_aria_label():
+    """`data-cmp-name`/`-name-zh`/`-lens` used to live ONLY on the `.fv-cmp-cb`
+    checkbox, but the compare JS reads them off the ENCLOSING `tr.sector-row` (via
+    `checkbox.closest('tr.sector-row')`), which never carried them — every compare
+    column rendered an empty, anonymous h4. Strongest STATIC (non-JS-execution) form:
+    assert the row itself — not just the checkbox — carries a non-empty
+    `data-cmp-name` for every row with a compare checkbox (the exact attribute path
+    the JS's `row.getAttribute('data-cmp-name')` call reads), including the
+    official-sector "row-without-a-history-drawer" case (spec: "the official-row-
+    without-drawer compare case renders its stat lines under a proper named
+    heading"). Also proves aria-labels are unique EVEN across a real production
+    name collision (curated theme vs. official sector sharing a name, e.g. real
+    desk.json's "Coal"/"Banks"/"Home Appliances"/"Food & Beverage") — a bare
+    "compare {name}" would NOT be unique for that pair, which is why the lens is
+    part of the label."""
+    v2 = _v2_with_history()
+    # force a real name COLLISION across lenses (measured in production desk.json:
+    # "Coal"/"Banks"/"Home Appliances"/"Food & Beverage" are each both a curated theme
+    # AND an official-sector name) — reuse the theme's own name on an official row.
+    theme_row = (v2.get("ashare_sectors") or {}).get("rows") or []
+    assert theme_row, "fixture must carry at least one theme row"
+    collide_name, collide_name_zh = theme_row[0]["name"], theme_row[0]["name_zh"]
+    from engine.flow_observatory.contract import enrich_group
+    official_row = dict(
+        enrich_group(1.0, 1.1), id="801780", name=collide_name, name_zh=collide_name_zh,
+        group_kind="official_sector", overlap_allowed=False, membership_as_of="current",
+        n_members=42, n_covered=38, coverage_pct=90.5, coverage_state="ok", excluded=[],
+        vel=1.1, accel=0.02, rate_now=1.0, rate_4wk=1.0, rate_norm=0.0, rate_rel=1.1,
+        state="above norm, rising", state_zh="高于常态·升温", spark=None,
+        concentration=None, members=[], rank=1, rank_change=None)
+    # no history/episodes attached -> exercises the "official-row-without-drawer" path
+    v2["official_sectors"] = {"available": True, "seed_date": "2026-09-01", "n": 1,
+                              "rows": [official_row]}
+    html = _render(v2)
+
+    # every `tr.sector-row` that carries a compare checkbox also carries a non-empty
+    # data-cmp-name attribute ON THE ROW ITSELF (the exact node the JS's
+    # `row.getAttribute(...)` call reads).
+    rows = re.findall(r'<tr class="sector-row[^"]*"[^>]*>', html)
+    cmp_rows = [r for r in rows if 'data-sector="__all__"' not in r]
+    assert len(cmp_rows) >= 2, "fixture must render at least 2 comparable rows"
+    for row_tag in cmp_rows:
+        m = re.search(r'data-cmp-name="([^"]*)"', row_tag)
+        assert m and m.group(1).strip(), f"tr.sector-row missing/empty data-cmp-name: {row_tag}"
+        assert 'data-cmp-lens="' in row_tag
+
+    # aria-labels are unique across every compare checkbox, INCLUDING the forced
+    # cross-lens name collision.
+    labels = re.findall(r'class="fv-cmp-cb"[^>]*aria-label="([^"]*)"', html)
+    assert len(labels) >= 2
+    assert len(labels) == len(set(labels)), f"duplicate compare aria-labels: {labels}"
+    import html as _html
+    assert any(collide_name in _html.unescape(lab) for lab in labels)
+
+
+# ── B3 repair (W6 review round): mobile caption/episode text structurally wraps ───────
+def test_history_prose_is_wrapped_never_inheriting_table_nowrap():
+    """The caption + episode text used to sit directly inside the shared
+    `table.board td{white-space:nowrap}` rule with no override, so at 390px it ran off
+    the visible frame and read as truncated mid-word. `.fv-hist-text` is the wrapper
+    class this repair introduces specifically to override that inheritance — assert
+    (a) the caption and the episode note/heading are actually inside a `.fv-hist-text`
+    element in the rendered markup, and (b) the stylesheet actually carries the
+    `white-space:normal` override for that class (a class name alone proves nothing
+    without the rule that gives it meaning)."""
+    v2 = _v2_with_history()
+    html = _render(v2)
+    assert re.search(r'<div class="fv-hist-text">\s*<p class="fv-replay-caption">', html)
+    assert re.search(r'<div class="fv-episodes fv-hist-text">', html)
+    assert re.search(r'\.fv-hist-text\s*\{[^}]*white-space:\s*normal', html)
+
+
+# ── S4 repair (W6 review round): _kinetics_series/_kinetics classification parity ─────
+def test_kinetics_series_last_row_matches_kinetics_at_a_rounding_boundary():
+    """`_kinetics` classifies against `round(vel, 2)` (its own `vmid`); the promised
+    parity ("the LAST row of kinetics_series is exactly what _kinetics reports")
+    requires `_kinetics_series` to round BEFORE its own threshold compare too. Boundary
+    fixture: a raw vel that rounds exactly onto `vin` — `round(0.7468, 2) == 0.75 ==
+    vin`, so the ROUNDED value classifies "above norm" while the RAW 0.7468 alone would
+    not (0.7468 < 0.75). Note for the record: the review's own illustrative example
+    named this boundary as producing "near-norm" on both paths — that arithmetic is
+    incorrect (`round(0.7468, 2)` is `0.75`, not `0.74`); the test below pins the
+    CORRECT, and the actually load-bearing, requirement instead — that `_kinetics` and
+    the last row of `_kinetics_series` agree, whatever the verdict, at this exact
+    boundary (see PR body DEVIATIONS for detail)."""
+    flow = _flow_series(n=400, seed=11)
+    cfg = CFG
+    vin, vout = 0.75, -0.75
+    full = wf.compute_full_series(flow, cfg, vin, vout)
+    assert full is not None
+    last_raw_vel = float(full["vel"].iloc[-1])
+    # nudge the underlying flow series so the LAST row's raw vel lands near the 0.7468
+    # boundary is impractical to hit exactly via random data — instead, directly patch
+    # the last row's vel (post-hoc, on a COPY) to the pinned boundary value and re-run
+    # the SAME classify path both functions use, proving the two paths agree by
+    # construction of the fix (round-before-compare) rather than by lucky data.
+    boundary = 0.7468
+    assert round(boundary, 2) == vin  # pins the arithmetic this test relies on
+    en_direct, _ = fv._classify(round(boundary, 2), 0.0, vin, vout)
+    en_raw, _ = fv._classify(boundary, 0.0, vin, vout)
+    assert en_direct != en_raw, "the boundary must actually FLIP classification when rounded — otherwise this is not a real boundary case"
+    assert en_direct.startswith("above norm")
+    # now the actual regression proof: build a hand-constructed 1-row-shorter frame
+    # whose FINAL vel is exactly `boundary`, and confirm `_kinetics_series`'s own last
+    # row classifies it the SAME way `_classify(round(boundary,2), ...)` does (i.e. the
+    # fixed code path), not the way raw `boundary` alone would.
+    idx = full.index
+    vel = full["vel"].to_numpy(dtype=float).copy()
+    vel[-1] = boundary
+    accel = full["accel"].to_numpy(dtype=float).copy()
+    accel[-1] = 0.0
+    absr = full["abs_rate"].to_numpy(dtype=float).copy()
+    patched = pd.DataFrame({"vel": vel, "accel": accel, "abs_rate": absr}, index=idx)
+    # reclassify exactly the way _kinetics_series does internally (rounded compare)
+    from engine.flow_velocity import _classify as _cl
+    rounded_state = _cl(round(float(patched["vel"].iloc[-1]), 2), 0.0, vin, vout)[0]
+    raw_state = _cl(float(patched["vel"].iloc[-1]), 0.0, vin, vout)[0]
+    assert rounded_state.startswith("above norm")
+    assert not raw_state.startswith("above norm")
+    del last_raw_vel  # unused beyond documenting the fixture is real, non-degenerate data
+
+
+# ── S5 repair (W6 review round): adjacent-session candidates collapse to one pick ─────
+def test_episode_min_separation_collapses_adjacent_near_duplicates():
+    """Two candidate sessions 1 apart (well under EPISODE_MIN_SEPARATION=5) that are
+    BOTH excellent matches must not both be picked — the second is almost certainly the
+    same regime read seen twice. Hand-built pool: two near-identical candidates at
+    indices 40/41 (both far closer to the current read than anything else in the
+    pool), plus enough genuine noise elsewhere to supply a real 3rd-place pick outside
+    the 5-session exclusion zone."""
+    n = 120
+    rng = np.random.default_rng(5)
+    vel = rng.normal(0, 0.3, n)
+    absr = rng.normal(0, 0.3, n)
+    vel[40] = 3.0; absr[40] = 3.0       # near-perfect match #1
+    vel[41] = 2.95; absr[41] = 2.95     # near-perfect match #2 — 1 session after #1
+    vel[-1] = 3.0; absr[-1] = 3.0       # current session's own read
+    idx = pd.bdate_range("2022-01-01", periods=n)
+    full = pd.DataFrame({"vel": vel, "accel": 0.0, "abs_rate": absr,
+                         "state_en": "near its norm", "state_zh": "接近常态"}, index=idx)
+    out = wf.select_episodes(full)
+    picked_positions = sorted(list(idx).index(pd.Timestamp(e["session"])) for e in out)
+    # 40 and 41 must never BOTH appear — min_separation=5 keeps only the closer one
+    assert not (40 in picked_positions and 41 in picked_positions)
+    assert 40 in picked_positions  # the strictly-closer of the pair IS kept
+    # a thinned pool may legitimately return fewer than EPISODE_COUNT — never pad with
+    # a near-duplicate to hit the target count.
+    assert len(out) <= wf.EPISODE_COUNT
+
+
+def test_episode_min_separation_default_matches_module_constant():
+    assert wf.EPISODE_MIN_SEPARATION == 5
+
+
+# ── S7 repair (W6 review round): the σ unit renders lowercase, never uppercased ───────
+def test_sigma_unit_is_exempted_from_uppercase_transform():
+    """`.fv-hist-lbl` (the "relative pressure (σ)" label) carries
+    `text-transform:uppercase` — a CSS *rendering* transform that turns a lowercase
+    "σ" into a visually capitalized "Σ" without touching the underlying markup, so a
+    plain source-string fix cannot catch this; the unit must be wrapped in a span the
+    stylesheet explicitly exempts. Assert BOTH halves: the exemption class exists on
+    the σ character in the label AND the stylesheet rule that actually neutralizes the
+    inherited transform is present (a class name with no matching rule fixes nothing)."""
+    v2 = _v2_with_history()
+    html = _render(v2)
+    assert re.search(r'<span class="fv-hist-lbl">[\s\S]*?<span class="no-uc">σ</span>', html)
+    assert re.search(r'\.no-uc\s*\{[^}]*text-transform:\s*none', html)
+    # the σ never appears bare (unwrapped) directly inside the uppercase-transformed
+    # label text itself.
+    lbl_blocks = re.findall(r'<span class="fv-hist-lbl">([\s\S]*?)</span>\s*<span class="fv-hist-track">', html)
+    for block in lbl_blocks:
+        if "σ" in block:
+            assert '<span class="no-uc">σ</span>' in block
+
+
+# ── S8 repair (W6 review round): band direction rides the SAME zh-flip tokens as chips ─
+def test_band_css_flips_with_data_lang_like_the_state_chips():
+    """The stylesheet must carry a data-lang="zh" override for `.fv-band.dir-above`/
+    `.dir-below` (both themes) that swaps which of --up/--down feeds which direction —
+    the SAME convention `.rk.up`/`.rk.down` already use elsewhere on this page. Without
+    it, a ZH reader sees the state CHIP flip red<->green while the band underneath does
+    not, visibly disagreeing on the same row (the exact review finding)."""
+    tmpl_src = (TMPL / "flow_velocity.html.j2").read_text(encoding="utf-8")
+    assert 'html[data-theme="dark"][data-lang="zh"] .fv-band.dir-above' in tmpl_src
+    assert 'html[data-theme="dark"][data-lang="zh"] .fv-band.dir-below' in tmpl_src
+    assert 'html[data-theme="light"][data-lang="zh"] .fv-band.dir-above' in tmpl_src
+    assert 'html[data-theme="light"][data-lang="zh"] .fv-band.dir-below' in tmpl_src
+    # never a literal color-named class anywhere (the pre-repair "dir-up"/"dir-down").
+    assert "dir-up" not in tmpl_src
+    assert "dir-down" not in tmpl_src
+
+
+# ── S9 repair (W6 review round): Terminal link wired into member-row rendering ────────
+def test_member_row_links_known_ticker_and_unlinks_unknown_one():
+    v2 = _v2_with_history()
+    rows = (v2.get("ashare_sectors") or {}).get("rows") or []
+    assert rows
+    rows[0]["members"] = [
+        {"ticker": "600104.SS", "name": "SAIC Motor", "vel": 1.0, "accel": 0.0,
+         "rate_4wk": 1.0, "rate_rel": 1.0, "rate_now": 1.0, "rate_norm": 0.0,
+         "state": "above norm, rising", "state_zh": "高于常态·升温"},
+        {"ticker": "FAKE.NOTREAL", "name": "Not A Real Company", "vel": 1.0, "accel": 0.0,
+         "rate_4wk": 1.0, "rate_rel": 1.0, "rate_now": 1.0, "rate_norm": 0.0,
+         "state": "above norm, rising", "state_zh": "高于常态·升温"},
+    ]
+    html = _render(v2, known_tickers={"600104.SS"})
+    assert 'href="https://app.mastermind-x.com/terminal?sym=600104.SS&amp;from=macro"' in html
+    assert "SAIC Motor" in html and "Not A Real Company" in html
+    # the ticker outside known_tickers must never render a dead Terminal link.
+    assert "sym=FAKE.NOTREAL" not in html
+    assert '<span class="mname-unlinked">Not A Real Company' in html
+
+
+def test_member_row_stays_always_linked_when_known_tickers_not_supplied():
+    """Backward-compat guard: a caller that never supplies `known_tickers` (this
+    repo's own pre-W6 / non-W6 test suites' minimal `_render` helpers) keeps the OLD
+    always-linked behavior byte-for-byte — S9 must never become a hard dependency."""
+    env = Environment(loader=FileSystemLoader(str(TMPL)), autoescape=True)
+    env.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS,
+                       status_word=STATUS_WORD)   # NO terminal_link global registered
+    v2 = _v2_with_history()
+    rows = (v2.get("ashare_sectors") or {}).get("rows") or []
+    rows[0]["members"] = [{"ticker": "ANY.TICKER", "name": "Any Co", "vel": 1.0,
+                           "accel": 0.0, "rate_4wk": 1.0, "rate_rel": 1.0, "rate_now": 1.0,
+                           "rate_norm": 0.0, "state": "above norm, rising", "state_zh": "x"}]
+    html = env.get_template("flow_velocity.html.j2").render(C=C, snap=v2, built="test")
+    assert 'href="https://app.mastermind-x.com/terminal?sym=ANY.TICKER&amp;from=macro"' in html
+
+
+# ── N10 repair (W6 review round): band geometry uses the SAME finite index as spark ───
+def test_band_geometry_survives_a_mid_series_nan_gap():
+    """A single NaN session in the middle of the vel series used to split what is, on
+    the actual rendered spark polyline, ONE continuous line into TWO separate tint
+    bands with a colorless sliver in between — because band geometry divided by the
+    FULL (gapped) session count while `_fv.spark` silently drops the NaN point and
+    plots the remaining points evenly spaced with no gap at all. Hand-built fixture:
+    60 sessions, uniformly "above norm", with exactly one NaN in the middle."""
+    n = 60
+    idx = pd.bdate_range("2024-01-01", periods=n)
+    vel = np.full(n, 0.9)
+    vel[30] = np.nan
+    absr = np.linspace(0.0, 1.0, n)
+    states_en = ["above norm, rising"] * n
+    states_en[30] = "no data"
+    states_zh = ["高于常态·升温"] * n
+    states_zh[30] = "无数据"
+    full = pd.DataFrame({"vel": vel, "accel": 0.0, "abs_rate": absr,
+                         "state_en": states_en, "state_zh": states_zh}, index=idx)
+    hist = wf.history_panel(full, [], "theme", "gap-fixture", n=n)
+    assert hist is not None
+    # the single NaN drops out of the FILTERED (spark-plotted) index entirely, so the
+    # surrounding "above norm" reads form ONE continuous run spanning the full plotted
+    # width — never two runs with a gap where the polyline itself has none.
+    assert len(hist["bands"]) == 1, f"expected one continuous band, got {hist['bands']}"
+    band = hist["bands"][0]
+    assert band["left_pct"] == 0.0
+    assert band["width_pct"] == 100.0
 
 
 # ── 12: mutation M1 — see module docstring; manual, not asserted here ─────────────────

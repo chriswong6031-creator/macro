@@ -2691,8 +2691,18 @@ jobs:
       # harness itself (scripts/research_flow_observatory_methods.py) runs off this render
       # path entirely; only its primitive-level unit tests are gated here, same W1
       # contract-delta lesson, wired in the SAME commit as its ci.yml path-gate entries.
+      # B1 repair (W6 review round): tests/test_flow_observatory_workflow.py — the
+      # FOURTH wave in a row (after W2/W3/W4's own "wired ... same lesson" comments
+      # immediately above) to ship a new tests/test_flow_observatory_*.py suite with
+      # NO job naming it anywhere in CI, so all 13+ of its tests (history drawer, band
+      # geometry, compare, prior episodes, Terminal links, watch-store decision) sat
+      # dark from the W6 merge onward. Wired here, in the SAME commit that also adds
+      # its ci.yml path-gate entry AND the structural kill in
+      # tests/test_flow_observatory_contract.py
+      # (test_all_flow_observatory_suites_are_wired_into_the_ci_lane) that reads THIS
+      # run: line and fails closed the next time a sibling suite ships unwired.
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
-        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py tests/test_flow_observatory_quality.py tests/test_flow_observatory_history.py tests/test_flow_observatory_groups.py tests/test_flow_observatory_methods.py -q
+        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py tests/test_flow_observatory_quality.py tests/test_flow_observatory_history.py tests/test_flow_observatory_groups.py tests/test_flow_observatory_methods.py tests/test_flow_observatory_workflow.py -q
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so the render/engine guard lanes own it. It sits
       # here rather than in the sweep because it is one focused suite and because an

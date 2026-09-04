@@ -23,13 +23,25 @@
     "errors": [],
     "hscroll": 0
   },
-  "same_lens_compare_dark_en_1440": {
+  "band_chip_agreement_zh_dark_1440": {
     "errors": [],
     "hscroll": 0
   },
-  "official_sector_row_dark_en_1440": {
+  "same_lens_compare_dark_en_1440": {
     "errors": [],
-    "hscroll": 0
+    "hscroll": 0,
+    "h4_text": [
+      "Autos & NEV Makers",
+      "SOE Blue Chips (中特估)"
+    ]
+  },
+  "same_lens_compare_dark_zh_1440": {
+    "errors": [],
+    "hscroll": 0,
+    "h4_text": [
+      "汽车整车",
+      "中特估·央企"
+    ]
   },
   "cross_lens_refusal_dark_en_1440": {
     "errors": [],
