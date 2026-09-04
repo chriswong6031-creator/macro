@@ -1,6 +1,6 @@
 ---
 workstream: "WS:MARKET-OS"
-session: main-meta-ceo-ontology-continuation-20260903-r2
+session: main-meta-ceo-ontology-continuation-control-record-r3-repair-20260904
 model: sol
 ended_because: ci_handoff
 mission: >
@@ -9,12 +9,12 @@ mission: >
   integration and production-proof carrier; advance only exact non-duplicative operations;
   and leave a durable current-state checkpoint that a fresh Sol can execute without this chat.
 state_before: >
-  The prior control record had itself become stale after review. MOR-1 and F09-1 had been
-  rebound to exact Claude6 source sessions and advanced to new source heads; R1-T had passed
-  through multiple hosted falsifiers and moved to a new recursive-budget repair head; the Mac
-  host had fallen far below the disk floor again; and Fable had frozen the history-preserving
-  Terminal composition order and deployment preflight. Leaving the old record unchanged would
-  misroute a fresh Sol toward already-resolved RuntimeBinding disputes and superseded heads.
+  Exact-head review of the prior control record returned NOT PASS because MOR-1 was pinned to a
+  superseded head, R1-A3 and R1-C1 acceptance claims were not bound to their controlling Slack
+  rulings, and the disk and base observations were stale. During this bounded repair MOR-1,
+  F09-1 and R1-T advanced again on their existing carriers. The frozen architecture and
+  history-preserving Terminal composition order did not change; only the observed execution
+  state and the provenance of held source acceptance needed correction.
 changed:
   - path: agentos/handoffs/MARKET-ONTOLOGY-CONTINUATION-CONTROL-STATE-2026-09-03.md
     what: >
@@ -24,27 +24,27 @@ changed:
       and bound each active rail to one next admissible action. This remains one records-only
       carrier and creates no product, runtime, host, workflow, DDL, deployment or production effect.
 verified:
-  - claim: "The current protected Sol procedure was atomically loaded before this modifying records update."
-    command: "Read protected mastermindx-market-intelligence/Mastermind master and every required Skillpack/source-law file at 7022e70640637a4fa07f073442dc693301290e2a."
-    result: "mastermind.sol_skillpack.v1 version 1.0.1, minimum bootstrap major 1; compatible with bootstrap major 1."
+  - claim: "The current protected Sol procedure and compatibility surface were re-pinned before this modifying records update."
+    command: "Fresh-fetch protected mastermindx-market-intelligence/Mastermind master at 3055b499b87db19730e9a724e34f07f0d0af8755; read docs/sol_skills/INDEX.md and verify the skillpack schema/version headers."
+    result: "mastermind.sol_skillpack.v1 version 1.0.1, minimum bootstrap major 1; compatible with bootstrap major 1. The movement from the prior pin changed no schema or bootstrap version."
   - claim: "The September 2 Market Ontology architecture remains the governing product and ownership record."
     command: "Read research/market_intelligence_productization/MARKET_ONTOLOGY_POST_TIMEOUT_COMPLETION_ARCHITECTURE_2026-09-02.md and current Agent OS control records."
     result: "Terminal/Supabase own authenticated private Thesis state; Macro owns deterministic market truth; existing evidence, identity, calendar, correction, queue, scheduler, notification and Capital Structure owners remain canonical."
   - claim: "The Mac host is again below its immutable admission floor and runner 30 is not startable."
-    command: "Fresh-read Slack carrier C0BSBM78V1N/1788407647.423079 through HOLD_CONCURRENCY_MARGIN and the current read-only pressure-reattribution continuation."
-    result: "The prior six-file cleanup recovered about 44.7 GiB, but the latest accepted census reported 34,372,920 KiB free versus the 83,886,080 KiB floor while runner 28 remained busy; runner 30 remains offline."
-  - claim: "MOR-1 has a real immutable subject/evidence sequence but still fails exact-head review and current-base integration."
-    command: "Read Macro PR #6792 at 616f8809a7dfeded9502616591f421e92662df54 and independent GitHub review 5108611410 plus its Slack continuation."
-    result: "The 32-cell packet and 186 focused tests are material, but exact requested/final/search URL identity, recovery slug, journey transitions, render invocation and conflict-free current-base composition remain blocking."
+    command: "Fresh-read Slack carrier C0BSBM78V1N/1788407647.423079 through pressure-reattribution edge 1788494003.432939 and delivery-reconciliation edge 1788494891.440669; run df -k /System/Volumes/Data at 2026-09-04T05:43:58Z."
+    result: "The carrier has no pressure-reattribution result after the prior 34,372,920 KiB receipt. The direct point-in-time host read was 2,119,392 KiB free versus the 83,886,080 KiB floor at 100% capacity; runner 30 remains inadmissible."
+  - claim: "MOR-1 has a newer remote repair/evidence sequence, but no current-head immutable review."
+    command: "Read Macro PR #6792 and remote branch claude/mor1-integrity-repair-20260902 at 7853ffeaca41d4d8f33995b1453db2be134ce8a3, prior GitHub review 5108611410 at 616f8809a7dfeded9502616591f421e92662df54, and Slack carrier C0BSBM78V1N/1788407666.610799."
+    result: "Remote history through tree 47590118fcde9e6913e4d28d54751b2c60223b83 contains the current-base join and commits titled for the bounded review repair, deterministic replay/origin closure and packet recapture. No terminal same-carrier RESULT or non-author review at 7853ffea was visible, so those titles are not treated as acceptance."
   - claim: "F09-1 has one canonical replacement source session and one advanced Draft/Hold PR head."
-    command: "Read Slack carrier C0BSBM78V1N/1788407688.753659 and Macro PR #6793 at bb86d7604e9d26ac1788d6ba65292e674b708151."
-    result: "Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 ACKed and STARTed the preserved exact worktree/branch/PR; the remote head moved, but no terminal worker result or current-head acceptance exists."
+    command: "Read Slack carrier C0BSBM78V1N/1788407688.753659 through PROGRESS 1788497262.469879 and Macro PR #6793 at 29b60c1abeddc4fe4a5291609555f4ca3519ebf2."
+    result: "Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 consumed the three combined repair rulings and the remote head advanced to tree 195bc43f9a6b730394deb6f309d64ed8aac61f12. No terminal worker result or non-author current-head acceptance exists."
   - claim: "R1-T has moved beyond the rejected 8e125e87 head and is in one natural hosted run on the same sticky carrier."
-    command: "Read mastermind-terminal PR #496 at 7df555c6c0135644fc1d7a0052bc97937cfc5b98, its exact commit, Slack carrier C0BSBM78V1N/1788442224.010349 and check run set for Actions run 33834865110."
-    result: "The same task repaired recursive future-stage reservation in the existing two-path ceiling; CodeQL and Ingest are green and the Terminal/Quote Hub jobs are nonterminal. No composition or release authority exists yet."
-  - claim: "The other Terminal children remain immutable and held for one parent composition."
-    command: "Read PR #497 at 4ecf9a3cec93d2e258ece5c21886f484bf731f0f, PR #501 at dfc4db670b45b9ad31ea8b1f1325ef8f22761823 and PR #502 at 02e9a9fd3ec668382301879e5278b5cf7263c7c1."
-    result: "R1-A3 remains the sole render-liveness owner; R1-C1 remains source-accepted for its cold-settings race; F11 remains source-built but production-inert. All are Draft/Hold and unmerged."
+    command: "Read mastermind-terminal PR #496 at cfd6abe5979ea999ab7f769431829e83284a8aa0, Slack RESULT 1788498775.207599 and natural Actions run 33839590027."
+    result: "The same sticky task repaired W2-A call-site deadline binding on the existing six-path historical PR; CodeQL, Quote Hub and Ingest are green while Terminal typecheck/tests remain nonterminal at the repair census. No composition or release authority exists yet."
+  - claim: "R1-A3 and R1-C1 have exact Slack semantic acceptance at their current heads, while GitHub review state remains unresolved and release stays held."
+    command: "Read mastermind-terminal #497 at 4ecf9a3cec93d2e258ece5c21886f484bf731f0f with reviews 5075428416/5087077099 and controlling Sol ruling 1788462294.724449; read #501 at dfc4db670b45b9ad31ea8b1f1325ef8f22761823 with review 5102583408 and controlling Sol STOP 1788471383.036879; read #502 at 02e9a9fd3ec668382301879e5278b5cf7263c7c1."
+    result: "The exact Slack rulings accept #497's terminal implementation and #501's owned source capability, but GitHub still reports CHANGES_REQUESTED from stale-head reviews and neither child has independent merge authority. All three remain Draft/Hold dependencies; F11 remains production-inert."
   - claim: "A principal Fable preflight froze a history-preserving Terminal composition and deploy-proof order."
     command: "Read Slack carrier C0BSBM78V1N/1788472971.951159 and exact Fable session 6a5cfbb4-fb2f-4ddc-8e5d-bcffd61f87a6."
     result: "The required order is current Terminal master, then no-ff #497, #501, eligible repaired #496 and #502, preserving accepted heads as ancestors and requiring byte-preservation plus one first-attempt zero-failure/zero-flaky responsive matrix before F11 release work."
@@ -54,30 +54,30 @@ verified:
 unverified:
   - claim: "The current Mac pressure re-attribution has identified an owner-cleared reclaim set that restores the floor plus margin."
     what_would_verify: "The exact Claude6 host session returns a bounded PRESSURE_REATTRIBUTION result with canonical paths, bytes, owners, FD/lock proof and regenerability, followed by a separately authorized one-target cleanup and readback."
-  - claim: "MOR-1 closes review 5108611410 and becomes conflict-free on current Macro main."
-    what_would_verify: "The exact Claude6 source session returns a new immutable subject/evidence head with every named hostile mutant RED, current-base composition, green hosted checks and independent current-head re-review."
-  - claim: "F09-1 closes every false-precision path at bb86d760 or a later immutable head."
+  - claim: "MOR-1 head 7853ffeaca41d4d8f33995b1453db2be134ce8a3 closes every review and build-identity blocker."
+    what_would_verify: "The exact Claude6 source session returns the immutable subject/evidence result, green hosted checks and an independent non-author review anchored to 7853ffea or a later same-carrier head."
+  - claim: "F09-1 closes every false-precision path at 29b60c1a or a later immutable head."
     what_would_verify: "A terminal source return from exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43, full hostile proof, green current-head CI and independent provenance/financial-method review."
-  - claim: "R1-T head 7df555c6 is composition-eligible."
-    what_would_verify: "Natural run 33834865110 concludes with no candidate-owned responsive failures, followed by a genuine non-author immutable-head review that finds no blocker or major."
+  - claim: "R1-T head cfd6abe5 is composition-eligible."
+    what_would_verify: "Natural run 33839590027 concludes with no candidate-owned responsive failures, followed by a genuine non-author immutable-head review that finds no blocker or major."
   - claim: "F11-1 is schema-live, deployed and cross-user isolated in production."
     what_would_verify: "Green composed responsive authority, authorized Supabase catalog/DDL proof, exact deployed build identity, and two-user RLS plus stale-version/idempotency/history production proof."
   - claim: "This refreshed records head is valid and independently accurate."
     what_would_verify: "Fresh exact-head Agent OS validation/hosted CI and one non-author records review after this commit."
 unresolved:
-  - "Macro PR #6810 remains records-only, Draft/Hold; its previous green CI and review are superseded by this refreshed post-image."
-  - "Mac runner 28 is live but disk is far below floor; runner 30 remains offline and no second runner start is admissible."
-  - "MOR-1 PR #6792 remains OPEN/DRAFT/HOLD at 616f8809a7dfeded9502616591f421e92662df54; exact Claude6 session 50be9654-4f1e-4d5b-9143-01f6f21fa0a0 owns the review repair."
-  - "F09 PR #6793 remains OPEN/DRAFT/HOLD at bb86d7604e9d26ac1788d6ba65292e674b708151; exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 owns the in-flight source effect."
-  - "R1-T PR #496 remains OPEN/DRAFT/HOLD at 7df555c6c0135644fc1d7a0052bc97937cfc5b98; natural run 33834865110 and the worker return are nonterminal."
-  - "R1-A3 #497 and R1-C1 #501 remain held source dependencies; neither may merge independently before parent #485 composition."
+  - "Macro PR #6810 remains records-only, Draft/Hold; head cbbabbec passed CI but received NOT PASS at Slack 1788496627.014489, so this repaired post-image requires new exact-head CI and non-author review."
+  - "The latest carrier-confirmed Mac state kept runner 28 busy; direct disk read at 2026-09-04T05:43:58Z was 2,119,392 KiB free, runner 30 remains offline, and no second runner start is admissible."
+  - "MOR-1 PR #6792 remains OPEN/DRAFT/HOLD at remote head 7853ffeaca41d4d8f33995b1453db2be134ce8a3; the exact Claude6 carrier owes a terminal immutable result and current-head non-author review."
+  - "F09 PR #6793 remains OPEN/DRAFT/HOLD at 29b60c1abeddc4fe4a5291609555f4ca3519ebf2; exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 owns the in-flight combined repair and owes its terminal return."
+  - "R1-T PR #496 remains OPEN/DRAFT/HOLD at cfd6abe5979ea999ab7f769431829e83284a8aa0; natural run 33839590027 and current-head independent review are nonterminal/owed."
+  - "R1-A3 #497 and R1-C1 #501 have exact current-head Slack semantic acceptance, while GitHub reviewDecision remains CHANGES_REQUESTED from stale-head reviews; both remain held and neither may merge independently before parent #485 composition."
   - "F11 PR #502 remains OPEN/DRAFT/HOLD at 02e9a9fd3ec668382301879e5278b5cf7263c7c1 and has no production DDL or deployed-user effect."
   - "Retained P1 exact-byte admission, maturity-wall/covenant producers, K3-D/K2-C/D2C/Terminal #490 and other existing holds remain on their canonical carriers."
 next_actions:
   - "Consume the Mac PRESSURE_REATTRIBUTION return exactly once. If it proves one owner-cleared regenerable target, authorize only that exact cleanup in the same sticky host session and require two above-floor reads plus runner stability; otherwise preserve the typed hold."
-  - "Consume the MOR repair return from exact Claude6 session 50be9654-4f1e-4d5b-9143-01f6f21fa0a0, review the immutable head against review 5108611410, and either issue one bounded continuation or terminal STOP."
+  - "Consume the MOR terminal return from exact Claude6 session 50be9654-4f1e-4d5b-9143-01f6f21fa0a0, review remote head 7853ffea or its same-carrier successor against review 5108611410 and the build-identity addendum, and either issue one bounded continuation or terminal STOP."
   - "Consume the F09 source return from exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43, independently red-team transaction identity, byte binding, correction lineage, calendar/price receipts, current-transaction scoping and consumer wiring before acceptance."
-  - "Consume R1-T run 33834865110 and its exact worker return. If candidate-owned failures are absent, place one non-author review; if present, continue only the same task and two-path repair ceiling."
+  - "Consume R1-T run 33839590027 at head cfd6abe5. If candidate-owned failures are absent, place one non-author review; if present, continue only the same task and existing PR scope."
   - "Only after R1-T is source-accepted, create one temporary current-base composition in the Fable-frozen order: Terminal master -> #497 -> #501 -> eligible #496 -> #502. Preserve every accepted head as an ancestor and prove byte identity after each join."
   - "Require one ordinary first-attempt responsive matrix with zero failed and zero flaky product journeys on the immutable composed head; do not rerun to manufacture green."
   - "After composed authority is accepted, advance F11 through authorized Supabase preflight, controlled DDL/catalog readback, exact deployment identity and two-user production proof."
@@ -103,12 +103,13 @@ decisions:
 
 # Market Ontology Continuation Control State
 
-**Updated:** 2026-09-03 (America/New_York)  
+**Updated:** 2026-09-04 (America/New_York)
 **Status:** `ARCHITECTURE_FROZEN / EXECUTION_ACTIVE / NOT_COMPLETE`  
 **Program owner:** Main Meta-CEO Sol under current Chairman continuation intent  
-**Protected procedure:** `mastermindx-market-intelligence/Mastermind@7022e70640637a4fa07f073442dc693301290e2a`  
+**Protected procedure observed for repair:** `mastermindx-market-intelligence/Mastermind@3055b499b87db19730e9a724e34f07f0d0af8755`
 **Skillpack:** `mastermind.sol_skillpack.v1 / 1.0.1 / bootstrap-major 1 compatible`  
-**Macro main at refresh:** `f72d6430ccab5d67e9669c962e0334f46bb20d7b`  
+**Macro main observed for repair:** `5799cc2ad0f50d3c40f1731a4bdaf70f3b78ca8e`
+**PR merge-base observed for repair:** `0795a15b0249110a7eb35439123cd1af755e8397`
 **Terminal protected master:** `fadd8b82f03ecaabe8a86d693da89f27be096d9f`  
 **Records carrier:** Macro PR #6810 / branch `sol/market-ontology-continuation-control-20260903`  
 **Effect:** records/control state only; no source-product, runtime, host, workflow, DDL, deployment or production effect.
@@ -131,13 +132,13 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 | Capability / rail | State | Exact current truth |
 |---|---|---|
 | Frozen product/system architecture | `SPEC_ONLY / ACCEPTED_GOVERNING_ARCHITECTURE` | Terminal/Supabase private state, Macro truth and all existing source/evidence/control owners remain canonical. |
-| Mac authoritative daily route | `BROKEN / BELOW_FLOOR` | Runner 28 is live; latest accepted free space is 34,372,920 KiB versus the 83,886,080 KiB floor; read-only pressure re-attribution is active; runner 30 stays off. |
-| MOR-1 public reference | `BUILT_NOT_PROVEN / REPAIR_REQUIRED` | PR #6792 head `616f8809...`; independent review 5108611410 found exact URL/search, recovery-text, journey, render-command and current-base blockers. |
-| F09 grounded cash-deal economics | `BUILT_NOT_PROVEN / SOURCE_IN_FLIGHT` | PR #6793 head `bb86d760...`; exact Claude6 source session is STARTED; no accepted terminal return yet. |
+| Mac authoritative daily route | `BROKEN / BELOW_FLOOR` | Latest carrier-confirmed state keeps runner 28 busy; direct read at `2026-09-04T05:43:58Z` was 2,119,392 KiB free versus the 83,886,080 KiB floor at 100% capacity; pressure re-attribution has no returned result and runner 30 stays off. |
+| MOR-1 public reference | `BUILT_NOT_PROVEN / REPAIR_PUSHED / REVIEW_OWED` | PR #6792 remote head `7853ffea...`; prior review 5108611410 is anchored to stale `616f8809...`, and no terminal current-head result or review is visible. |
+| F09 grounded cash-deal economics | `BUILT_NOT_PROVEN / SOURCE_IN_FLIGHT` | PR #6793 remote head `29b60c1a...`; exact Claude6 source session owns the combined repair; no terminal worker result or current-head acceptance exists. |
 | F11 private Thesis Object | `BUILT_NOT_PROVEN / PRODUCTION_INERT` | PR #502 head `02e9a9fd...`; source/disposable-Postgres proof exists, but no production DDL, deployment or two-user proof. |
-| R1-A3 visual-ready liveness | `BUILT_NOT_PROVEN / SOURCE_REVIEW_PASS` | PR #497 head `4ecf9a3c...`; sole render-liveness owner, held for parent composition. |
-| R1-C1 scale/settings hydration | `BUILT_NOT_PROVEN / SOURCE_ACCEPTED` | PR #501 head `dfc4db67...`; cold left/percentage settings race closed, held for parent composition. |
-| R1-T toolbar budget contract | `BUILT_NOT_PROVEN / HOSTED_PROOF_IN_FLIGHT` | PR #496 head `7df555c6...`; recursive stage reservation repaired on the same sticky task; run 33834865110 is nonterminal. |
+| R1-A3 visual-ready liveness | `BUILT_NOT_PROVEN / SLACK_SOURCE_ACCEPTED / RELEASE_HOLD` | PR #497 head `4ecf9a3c...`; Sol ruling `1788462294.724449` terminally accepts the implementation under STOP, while GitHub remains CHANGES_REQUESTED from stale-head review 5075428416; held for parent composition. |
+| R1-C1 scale/settings hydration | `BUILT_NOT_PROVEN / SLACK_SOURCE_ACCEPTED / RELEASE_HOLD` | PR #501 head `dfc4db67...`; Sol STOP `1788471383.036879` accepts the owned source capability, while GitHub remains CHANGES_REQUESTED from stale-head review 5102583408; held for parent composition. |
+| R1-T toolbar budget contract | `BUILT_NOT_PROVEN / HOSTED_PROOF_IN_FLIGHT` | PR #496 head `cfd6abe5...`; W2-A call-site binding repair is pushed on the same sticky task; run 33839590027 is nonterminal. |
 | Parent Terminal responsive authority #485 | `PARTIAL / COMPOSITION_BLOCKED` | Composition begins only after R1-T acceptance and follows the frozen no-ff order. |
 | Retained P1 admission | `DARK_OR_DISCONNECTED / WAITING_EXTERNAL_SOURCE` | Exact original bytes and authoritative manifest are required; never reconstruct. |
 | Maturity wall and covenant headroom | `NOT_BUILT` | Still gated by canonical source producers under Capital Structure ownership; outside F09-1. |
@@ -150,7 +151,8 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Git carrier: Macro #6783
 - Slack carrier: `C0BSBM78V1N / 1788407647.423079`
 - Exact host session: Claude6 `8aa7dcc3-951a-40f1-9029-7d206004b05c`
-- Current edge: read-only disk-pressure re-attribution after `HOLD_CONCURRENCY_MARGIN`
+- Current edge: read-only disk-pressure re-attribution `1788494003.432939`, followed by delivery-state reconciliation `1788494891.440669`; no worker return is visible
+- Direct point-in-time read: `2,119,392 KiB` free at `2026-09-04T05:43:58Z`, 100% capacity; this is an observation, not a durable floor receipt
 - Frozen law: no runner-30 start, cleanup, service action or workflow action until the same session returns a typed owner-safe boundary and Sol issues one exact continuation.
 
 ### 3.2 MOR-1
@@ -159,9 +161,9 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Git carrier: Macro #6782 / PR #6792
 - Slack carrier: `C0BSBM78V1N / 1788407666.610799`
 - Exact source session: Claude6 `50be9654-4f1e-4d5b-9143-01f6f21fa0a0`
-- Current head/tree: `616f8809a7dfeded9502616591f421e92662df54 / f97627def2fee3b1e0f832df77f48eac4d116f3f`
-- Current review: `REQUEST_CHANGES`, GitHub review `5108611410`
-- Required closure: exact requested/final/search/query-cardinality identity, recovery slug, journey transitions, immutable render command/argv and conflict-free current-base subject/evidence rebuild.
+- Current remote head/tree: `7853ffeaca41d4d8f33995b1453db2be134ce8a3 / 47590118fcde9e6913e4d28d54751b2c60223b83`
+- Review provenance: GitHub `REQUEST_CHANGES` review `5108611410` is anchored to stale head `616f8809...`; no terminal carrier result or non-author review binds `7853ffea...`
+- Required closure: consume the exact-session terminal subject/evidence result, require green hosted proof and place one non-author immutable review on the exact returned head.
 
 ### 3.3 F09-1
 
@@ -169,8 +171,8 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Git carrier: Macro #6785 / PR #6793
 - Slack carrier: `C0BSBM78V1N / 1788407688.753659`
 - Exact source session: Claude6 `58d45b99-0a88-4722-9138-18e12805cf43`
-- Current head: `bb86d7604e9d26ac1788d6ba65292e674b708151`
-- Current state: source effect exists on the one existing branch/PR; terminal return and independent current-head review are owed.
+- Current head/tree: `29b60c1abeddc4fe4a5291609555f4ca3519ebf2 / 195bc43f9a6b730394deb6f309d64ed8aac61f12`
+- Current state: the combined CI-manifest, transaction-scope and source-clock/listing repair advanced on the one existing branch/PR; terminal return and independent current-head review are owed.
 - Frozen law: low recall is lawful; any unbound source bytes, transaction relation, price basis, calendar, correction link or current-transaction scope must decline rather than become VERIFIED.
 
 ### 3.4 R1-T and Terminal composition
@@ -179,8 +181,8 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Git carrier: Terminal #493 / PR #496
 - Slack carrier: `C0BSBM78V1N / 1788442224.010349`
 - Exact task: Codex `01a06789-df7e-7c43-84f3-f332e8e9b512`
-- Current head/tree: `7df555c6c0135644fc1d7a0052bc97937cfc5b98 / 6245376cff8b33ed8f0a0fd1b9f10a34759fb872`
-- Natural run: `33834865110`; CodeQL and Ingest green, required Terminal authority nonterminal at refresh time.
+- Current head/tree: `cfd6abe5979ea999ab7f769431829e83284a8aa0 / 65cf58c5700ed5dd1db6b1919195776945b90f8c`
+- Natural run: `33839590027`; CodeQL, Quote Hub and Ingest were green while required Terminal typecheck/tests remained nonterminal at the repair census.
 - Composition order frozen by Fable: current Terminal master -> no-ff #497 -> no-ff #501 -> eligible #496 -> no-ff #502.
 - Every accepted child head must remain an ancestor; after each join, prove owned blobs are byte-identical. The composed full responsive matrix must be first-attempt `0 failed / 0 flaky`.
 
@@ -218,7 +220,7 @@ The program must extend existing owners. It must not create:
 
 The next Sol action is event-driven but not passive:
 
-- first consume whichever arrives among Mac pressure re-attribution, MOR source return, F09 source return or R1-T hosted result;
+- first consume whichever arrives among Mac pressure re-attribution, MOR current-head result/review, F09 source return or R1-T run `33839590027`;
 - re-pin protected procedure and current repository head;
 - issue exactly one same-carrier `CONTINUE`, `REQUEST_REPAIR` or terminal `STOP`;
 - update this durable carrier when that ruling materially changes the program graph.
