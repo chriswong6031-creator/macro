@@ -1,19 +1,91 @@
 {
-  "generated_at": "2026-09-04T11:15:18Z",
+  "generated_at": "2026-09-04T15:38:06Z",
   "min_client_contract": "mastermind.macro_workspace_snapshot.v1@1.0.0",
   "schema": "mastermind.macro_workspace_manifest.v1",
   "workspaces": {
+    "business_activity/US": {
+      "availability_state": "CURRENT",
+      "build_state": "BUILT",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 61457,
+      "content_sha256": "1d983bfbcd64454edd6732a8b246f931f5fbbb106cb88e516dde6664bb9cccad",
+      "generation_id": "business_activity-US-1d983bfbcd64454e",
+      "headline_state": null,
+      "path": "workspaces/business_activity/US/latest.json",
+      "region": "US",
+      "workspace": "business_activity"
+    },
+    "financial_conditions/US": {
+      "availability_state": "CURRENT",
+      "build_state": "BUILT",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 64566,
+      "content_sha256": "adb2b9a65806410953f4d5e86ce3ea2afd6cc182901a2d736c2d19e66ccf56c0",
+      "generation_id": "financial_conditions-US-adb2b9a658064109",
+      "headline_state": "B",
+      "path": "workspaces/financial_conditions/US/latest.json",
+      "region": "US",
+      "workspace": "financial_conditions"
+    },
+    "growth_real_economy/US": {
+      "availability_state": "CURRENT",
+      "build_state": "BUILT",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 57245,
+      "content_sha256": "b0bd6cbdb614bd1465bc3961b727027e6de3829941cc29717c3be173aa3d22a4",
+      "generation_id": "growth_real_economy-US-b0bd6cbdb614bd14",
+      "headline_state": "B",
+      "path": "workspaces/growth_real_economy/US/latest.json",
+      "region": "US",
+      "workspace": "growth_real_economy"
+    },
+    "inflation_system/US": {
+      "availability_state": "LATE_WITHIN_TOLERANCE",
+      "build_state": "BUILT",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 45787,
+      "content_sha256": "9729b95c0811e1576de3e35fe732f36d05501a969bf517e59048fdd3153949d0",
+      "generation_id": "inflation_system-US-9729b95c0811e157",
+      "headline_state": "A",
+      "path": "workspaces/inflation_system/US/latest.json",
+      "region": "US",
+      "workspace": "inflation_system"
+    },
+    "labor_markets/US": {
+      "availability_state": "CURRENT",
+      "build_state": "BUILT",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 47202,
+      "content_sha256": "54a461f64bf7f7cca20648b80df6ed4fd58d7d2f308521fa73fe5c41419b6bf4",
+      "generation_id": "labor_markets-US-54a461f64bf7f7cc",
+      "headline_state": "B",
+      "path": "workspaces/labor_markets/US/latest.json",
+      "region": "US",
+      "workspace": "labor_markets"
+    },
     "liquidity_regime/US": {
       "availability_state": "CURRENT",
       "build_state": "BUILT",
-      "built_at": "2026-09-04T11:15:18Z",
-      "bytes": 34041,
-      "content_sha256": "e63031977e4f6499f8a073c157df8aee096576a4bd33bb7bbc04e501ac2912b3",
-      "generation_id": "liquidity_regime-US-e63031977e4f6499",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 34621,
+      "content_sha256": "2b9033a7dcf8d03abb893d54df75d55f1b881d362549bdab45066dc60b8b3518",
+      "generation_id": "liquidity_regime-US-2b9033a7dcf8d03a",
       "headline_state": "C",
       "path": "workspaces/liquidity_regime/US/latest.json",
       "region": "US",
       "workspace": "liquidity_regime"
+    },
+    "monetary_policy/US": {
+      "availability_state": "CURRENT",
+      "build_state": "BUILT",
+      "built_at": "2026-09-04T15:38:06Z",
+      "bytes": 51029,
+      "content_sha256": "7411ef4d558efdd11f8881f272e3b8789fc1d9c1e4ae057f5d26163eaa0177cf",
+      "generation_id": "monetary_policy-US-7411ef4d558efdd1",
+      "headline_state": null,
+      "path": "workspaces/monetary_policy/US/latest.json",
+      "region": "US",
+      "workspace": "monetary_policy"
     }
   }
 }

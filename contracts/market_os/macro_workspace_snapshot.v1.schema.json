@@ -440,7 +440,11 @@
         "revision_behavior", "authority_ceiling", "freshness"
       ],
       "properties": {
-        "axis_id": { "enum": ["funding_pressure", "balance_sheet_support"] },
+        "axis_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,40}$",
+          "description": "Workspace-native axis identifier (lowercase snake_case). Each workspace declares its own closed axis vocabulary in its composer and pins it with tests; this shared contract constrains only the shape. Widened 2026-09-04 from the R1A-only enum [funding_pressure, balance_sheet_support] so every workspace publishes its true axis identity instead of borrowing R1A's wire ids."
+        },
         "label": { "$ref": "#/$defs/bilingualText" },
         "direction_semantics": { "type": "string", "minLength": 1 },
         "value": { "type": ["number", "null"] },

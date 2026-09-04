@@ -35,16 +35,40 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
-from engine.market_os.macro_workspaces import contract, liquidity_regime, registry
+from engine.market_os.macro_workspaces import (
+    business_activity,
+    contract,
+    financial_conditions,
+    growth,
+    inflation,
+    labor,
+    liquidity_regime,
+    monetary_policy,
+    registry,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_OUT_ROOT = ROOT / "site" / "macrodata"
 DEFAULT_REGIME_LATEST = ROOT / "data" / "regime" / "latest.json"
+DEFAULT_INFLATION_INTEL = ROOT / "data" / "release_forecast" / "inflation_intelligence.json"
+DEFAULT_RATES_COMMAND = ROOT / "data" / "rates_command" / "latest.json"
+DEFAULT_INTL_RISK = ROOT / "data" / "intl_risk" / "latest.json"
 MIN_CLIENT_CONTRACT = f"{contract.CONTRACT_ID}@{contract.CONTRACT_VERSION}"
 
 
 def _load_json(path: Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _load_json_or_empty(path: Path) -> dict:
+    """Missing/unreadable owner artifact -> {} so the composer emits its own
+    typed SOURCE_FAILED states instead of the builder crashing. A malformed
+    (present but non-JSON) artifact still raises: silence there would launder
+    corruption into 'source absent'."""
+    p = Path(path)
+    if not p.exists():
+        return {}
+    return json.loads(p.read_text(encoding="utf-8"))
 
 
 def _atomic_write_bytes(path: Path, data: bytes) -> int:
@@ -134,16 +158,138 @@ def build_liquidity_regime(
     }
 
 
+def _compose_workspace(workspace_id: str, *, regime_latest: dict,
+                       inflation_intel: dict, rates_command: dict,
+                       intl_risk: dict, built_at: str,
+                       prior_snapshot: dict | None,
+                       code_version: str | None) -> dict:
+    """Route one BUILT workspace to its composer with its owner-native inputs.
+
+    Every composer degrades typed (SOURCE_FAILED / ABSENT) when its owner block
+    is missing; the builder never fabricates an input.
+    """
+    if workspace_id == "liquidity_regime":
+        return liquidity_regime.compose(
+            regime_latest, built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "growth_real_economy":
+        return growth.compose(
+            regime_latest, built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "business_activity":
+        return business_activity.compose(
+            regime_latest, built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "labor_markets":
+        return labor.compose(
+            regime_latest, built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "financial_conditions":
+        return financial_conditions.compose(
+            regime_latest, built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "inflation_system":
+        return inflation.compose(
+            inflation_intel, built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "monetary_policy":
+        return monetary_policy.compose(
+            rates_command,
+            (intl_risk.get("cb_desk") or {}),
+            (regime_latest.get("rate_inflation_transmission") or {}),
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    raise ValueError(f"no builder route for workspace id: {workspace_id!r}")
+
+
 def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
               regime_latest_path: Path | str = DEFAULT_REGIME_LATEST,
+              inflation_intel_path: Path | str = DEFAULT_INFLATION_INTEL,
+              rates_command_path: Path | str = DEFAULT_RATES_COMMAND,
+              intl_risk_path: Path | str = DEFAULT_INTL_RISK,
               built_at: str, code_version: str | None = None,
               prior_snapshot_path: Path | str | None = None,
               write: bool = True) -> dict:
-    """Build every ``BUILT`` workspace. R1A: liquidity_regime / US only."""
-    receipts = {
-        "liquidity_regime/US": build_liquidity_regime(
-            regime_latest_path=regime_latest_path, out_root=out_root, built_at=built_at,
-            prior_snapshot_path=prior_snapshot_path, code_version=code_version, write=write,
-        )
+    """Build every ``BUILT`` workspace (registry-driven) for region US.
+
+    All workspace bodies are written FIRST (each tmp + os.replace), then ONE
+    combined manifest covering every published workspace is written LAST — the
+    same one-directional torn-generation bound documented in the module
+    docstring, now suite-wide. ``prior_snapshot_path`` applies only to
+    liquidity_regime (R1A compatibility); other workspaces WARMUP on first
+    print and pick up their own priors once a publication history exists.
+    """
+    regime_latest = _load_json(Path(regime_latest_path))
+    inflation_intel = _load_json_or_empty(Path(inflation_intel_path))
+    rates_command = _load_json_or_empty(Path(rates_command_path))
+    intl_risk = _load_json_or_empty(Path(intl_risk_path))
+
+    out = Path(out_root)
+    manifest_entries: dict[str, dict] = {}
+    receipts: dict[str, dict] = {}
+    pending_bodies: list[tuple[Path, bytes]] = []
+
+    for wid in registry.built_ids():
+        prior = None
+        if wid == "liquidity_regime" and prior_snapshot_path:
+            prior = _load_json(Path(prior_snapshot_path))
+        else:
+            # Self-prior: the previously published artifact, when present and
+            # loadable, is this build's prior print (WARMUP otherwise).
+            prior_path = out / "workspaces" / wid / "US" / "latest.json"
+            if prior_path.exists():
+                try:
+                    prior = _load_json(prior_path)
+                except Exception:
+                    prior = None
+
+        body = _compose_workspace(
+            wid, regime_latest=regime_latest, inflation_intel=inflation_intel,
+            rates_command=rates_command, intl_risk=intl_risk, built_at=built_at,
+            prior_snapshot=prior, code_version=code_version)
+        snapshot = contract.finalize(body)
+        contract.validate(snapshot)
+
+        payload = _snapshot_bytes(snapshot)
+        digest = snapshot["generation"]["content_sha256"]
+        workspace_rel = Path("workspaces") / wid / "US" / "latest.json"
+        ws_path = out / workspace_rel
+
+        manifest_entries[f"{wid}/US"] = {
+            "workspace": wid,
+            "region": "US",
+            "path": str(workspace_rel).replace(os.sep, "/"),
+            "content_sha256": digest,
+            "bytes": len(payload),
+            "availability_state": snapshot["availability"]["state"],
+            "headline_state": snapshot["headline"]["state_id"],
+            "build_state": registry.entry(wid)["build_state"],
+            "generation_id": snapshot["generation"]["generation_id"],
+            "built_at": built_at,
+        }
+        receipts[f"{wid}/US"] = {
+            "snapshot": snapshot,
+            "digest": digest,
+            "bytes": len(payload),
+            "paths": {"workspace": str(ws_path) if write else None, "manifest": None},
+        }
+        pending_bodies.append((ws_path, payload))
+
+    manifest = {
+        "schema": "mastermind.macro_workspace_manifest.v1",
+        "generated_at": built_at,
+        "min_client_contract": MIN_CLIENT_CONTRACT,
+        "workspaces": manifest_entries,
     }
+    manifest_bytes = (json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    manifest_path = out / "workspaces" / "manifest.json"
+
+    if write:
+        for ws_path, payload in pending_bodies:   # every body first ...
+            _atomic_write_bytes(ws_path, payload)
+        _atomic_write_bytes(manifest_path, manifest_bytes)  # ... manifest last
+        for key in receipts:
+            receipts[key]["paths"]["manifest"] = str(manifest_path)
+
+    receipts["_manifest"] = {"manifest": manifest, "path": str(manifest_path) if write else None}
     return receipts

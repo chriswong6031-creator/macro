@@ -13648,9 +13648,15 @@ jobs:
       - "engine/market_os/**"
       - "scripts/build_macro_workspaces.py"
       - "tests/test_macro_workspace_build.py"
+      - "tests/test_macro_workspace_business_activity.py"
       - "tests/test_macro_workspace_consumer.py"
       - "tests/test_macro_workspace_contract.py"
+      - "tests/test_macro_workspace_financial_conditions.py"
+      - "tests/test_macro_workspace_growth.py"
+      - "tests/test_macro_workspace_inflation.py"
+      - "tests/test_macro_workspace_labor.py"
       - "tests/test_macro_workspace_liquidity_regime.py"
+      - "tests/test_macro_workspace_monetary_policy.py"
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -13664,7 +13670,13 @@ jobs:
         run: >-
           python -m pytest
           tests/test_macro_workspace_build.py
+          tests/test_macro_workspace_business_activity.py
           tests/test_macro_workspace_consumer.py
           tests/test_macro_workspace_contract.py
+          tests/test_macro_workspace_financial_conditions.py
+          tests/test_macro_workspace_growth.py
+          tests/test_macro_workspace_inflation.py
+          tests/test_macro_workspace_labor.py
           tests/test_macro_workspace_liquidity_regime.py
+          tests/test_macro_workspace_monetary_policy.py
           -q
