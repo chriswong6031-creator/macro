@@ -564,17 +564,18 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 /* Filters hide, never reorder — a sort control would imply a ranking. */
 .ric-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 22px;padding:0;border:0}
 .ric-filter legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.ric-fbtn{padding:5px 12px;border-radius:999px;border:1px solid var(--border);
+.ric-fbtn{padding:5px 12px;border-radius:var(--r-pill,999px);border:1px solid var(--border);
   background:transparent;color:var(--muted);font-size:.76rem;cursor:pointer;
-  font-family:inherit;transition:color .15s,border-color .15s,background .15s}
+  font-family:var(--font-ui);transition:color .15s,border-color .15s,background .15s}
 .ric-fbtn:hover{color:var(--text);border-color:color-mix(in srgb,var(--text) 28%,transparent)}
 .ric-fbtn[aria-pressed="true"]{background:var(--accent-deep);border-color:var(--accent-deep);
-  color:#fff;font-weight:600}
+  color:var(--text);font-weight:600}
+html[data-theme="light"] .ric-fbtn[aria-pressed="true"]{color:var(--panel)}
 .ric-fbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 .ric-cards{display:flex;flex-direction:column;gap:20px}
 .ric-card{display:grid;grid-template-columns:3px minmax(0,1fr);
-  border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  border:1px solid var(--border);border-radius:var(--r-card,12px);overflow:hidden;
   background:var(--card)}
 .ric-card[hidden]{display:none}
 .ric-rail{background:var(--muted)}
@@ -583,8 +584,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 html[data-theme="dark"] .ric-card.ric-s-failed  .ric-rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--act) 55%,transparent)}
 html[data-theme="dark"] .ric-card.ric-s-incomplete .ric-rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--warn) 55%,transparent)}
 /* Light: paper, not panel — the glow is removed outright and depth is a shadow. */
-html[data-theme="light"] .ric-card{background:#fff;
-  box-shadow:0 1px 2px rgba(15,22,41,.06),0 6px 18px -12px rgba(15,22,41,.28)}
+html[data-theme="light"] .ric-card{background:var(--panel);box-shadow:var(--card-shadow)}
 html[data-theme="light"] .ric-rail{box-shadow:none}
 
 .ric-body{padding:20px 22px;min-width:0}
@@ -593,7 +593,7 @@ html[data-theme="light"] .ric-rail{box-shadow:none}
 .ric-card.ric-s-failed  .ric-state{color:var(--act-ink)}
 .ric-card.ric-s-incomplete .ric-state{color:var(--warn-ink)}
 .ric-state-code,.ric-tier,.ric-fam{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
-  font-size:.66rem;letter-spacing:.06em;padding:3px 7px;border-radius:4px;
+  font-size:.66rem;letter-spacing:.06em;padding:3px 7px;border-radius:var(--r-ctl,8px);
   background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted)}
 .ric-q{font-size:1rem;font-weight:700;line-height:1.45;margin:0 0 8px;color:var(--text)}
 .ric-estimand{font-size:.82rem;line-height:1.6;color:var(--muted);margin:0 0 16px;max-width:70ch}
@@ -601,7 +601,7 @@ html[data-theme="light"] .ric-rail{box-shadow:none}
 /* Figures: tabular, quiet, never competing with the state above them. */
 .ric-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
   gap:12px;margin:0 0 16px}
-.ric-fig{padding:10px 12px;border-radius:8px;
+.ric-fig{padding:10px 12px;border-radius:var(--r-ctl,8px);
   background:color-mix(in srgb,var(--text) 4%,transparent)}
 html[data-theme="light"] .ric-fig{background:color-mix(in srgb,var(--text) 5%,transparent)}
 .ric-fig-l{display:block;font-size:.7rem;color:var(--muted);margin-bottom:4px;line-height:1.35}
@@ -613,9 +613,9 @@ html[data-theme="light"] .ric-fig{background:color-mix(in srgb,var(--text) 5%,tr
 .ric-why{display:block;font-size:.68rem;color:var(--muted);margin-top:5px;line-height:1.45}
 
 /* Ordered effect path — drawn ONLY where the owner marked the horizons ordered. */
-.ric-path{margin:4px 0 18px;padding:14px 14px 10px;border-radius:10px;
+.ric-path{margin:4px 0 18px;padding:14px 14px 10px;border-radius:var(--r-btn,10px);
   border:1px solid var(--border);background:color-mix(in srgb,var(--text) 3%,transparent)}
-html[data-theme="light"] .ric-path{background:#fff}
+html[data-theme="light"] .ric-path{background:var(--panel)}
 .ric-path-t{font-size:.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45}
 .ric-path svg{display:block;width:100%;height:auto;overflow:visible}
 .ric-path-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
@@ -632,7 +632,7 @@ html[data-theme="light"] .ric-path{background:#fff}
 .ric-gates{display:flex;flex-direction:column;gap:8px;margin:0 0 4px}
 .ric-gate{display:flex;gap:9px;align-items:flex-start;font-size:.78rem;line-height:1.55}
 .ric-gate-m{flex:0 0 auto;font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
-  font-size:.64rem;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-top:2px}
+  font-size:.64rem;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:var(--r-ctl,8px);margin-top:2px}
 .ric-gate-pass{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok-ink)}
 .ric-gate-fail{background:color-mix(in srgb,var(--act) 16%,transparent);color:var(--act-ink)}
 .ric-gate-b{min-width:0}
@@ -644,7 +644,7 @@ html[data-theme="light"] .ric-path{background:#fff}
   font-size:.78rem;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px}
 .ric-more>summary::-webkit-details-marker{display:none}
 .ric-more>summary:hover{color:var(--text)}
-.ric-more>summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+.ric-more>summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:var(--r-ctl,8px)}
 .ric-more>summary::before{content:"+";font-family:var(--font-mono,ui-monospace,monospace);
   font-size:.9rem;line-height:1;width:11px;color:var(--muted);transition:transform .18s}
 .ric-more[open]>summary::before{content:"−"}
@@ -664,7 +664,7 @@ html[data-theme="light"] .ric-path{background:#fff}
 .ric-auth{margin-top:14px;padding-top:13px;border-top:1px solid var(--border);
   font-size:.72rem;color:var(--muted);line-height:1.6}
 .ric-auth-f{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.ric-auth-f code{font-size:.64rem;padding:2px 6px;border-radius:4px;
+.ric-auth-f code{font-size:.64rem;padding:2px 6px;border-radius:var(--r-ctl,8px);
   background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--muted)}
 
 @media (max-width:640px){
