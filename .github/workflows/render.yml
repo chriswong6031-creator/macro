@@ -1321,6 +1321,7 @@ jobs:
           # 2026-07-24: run 30057066815 cancelled mid-push-loop landed b6386adb4af, sync gate
           # red on every PR until #3358). Heal BEFORE staging so the first commit is never
           # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
+          python -m scripts.bake_landing_preview --fix || true
           python -m scripts.check_template_site_sync --fix || true
           python3 scripts/check_conflict_markers.py --file site/start.html
           # start runtimes single-instance (ui.start_runtime_single_instance): a stale-
@@ -1419,6 +1420,7 @@ jobs:
               scripts/externalize_css.py
               scripts/optimize_assets.py
               scripts/check_template_site_sync.py
+              scripts/bake_landing_preview.py
             )
             # Common path: main advanced only in code/data while this run changed
             # site/templates. Keep the metadata shortcut inside that exact contract:
@@ -1494,6 +1496,7 @@ jobs:
               # ~11s over 3.2k pages; runs BEFORE the --fix below so the plain-copy pairs are
               # healed from an already-re-stamped templates/ rather than reverting to a stale one.
               python -m scripts.optimize_assets || echo "::warning::post-rebase asset optimize FAILED — ?v= stamps may be stale"
+              python -m scripts.bake_landing_preview --fix || true
               python -m scripts.check_template_site_sync --fix || true
               # ms-board coherence guard (ui.ms_board_coherence): -X theirs resolves whole
               # conflict REGIONS toward this run's replayed render, so racing a mid-render

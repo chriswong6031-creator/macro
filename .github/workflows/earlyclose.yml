@@ -363,6 +363,7 @@ jobs:
           # 2026-07-24: run 30057066815 cancelled mid-push-loop landed b6386adb4af, sync gate
           # red on every PR until #3358). Heal BEFORE staging so the first commit is never
           # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
+          python -m scripts.bake_landing_preview --fix || true
           python -m scripts.check_template_site_sync --fix || true
           # Stage site/ FIRST (order mirrors intraday-fastpath.yml lines 71-77).
           # templates/ too, and ONLY for the plain-copy HTML pairs (index.html, chat.html):
@@ -434,6 +435,7 @@ jobs:
               # site/us_track_record.html with a bare `theme.css` this way). Idempotent, ~11s over
               # 3.2k pages, and BEFORE the --fix so the pairs heal from a re-stamped templates/.
               python -m scripts.optimize_assets || echo "::warning::post-rebase asset optimize FAILED — ?v= stamps may be stale"
+              python -m scripts.bake_landing_preview --fix || true
               python -m scripts.check_template_site_sync --fix || true
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete"
