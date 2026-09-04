@@ -51,6 +51,7 @@ from engine.market_os.macro_workspaces import (
     national_debt,
     rates_curves,
     registry,
+    trade_flows,
 )
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -112,6 +113,19 @@ _BIS_US_COLUMNS = {
 # workspace — FRED parquets only, deliberately NO rates_command input (that
 # owner projection already lives in monetary_policy; see rates_curves.py's
 # seam disclosure). All daily observation-dated CMT/corridor series.
+# Trade Flows (expansion, 2026-09-04): FT-900 BoP dollar flows + BLS trade
+# price indexes. None collected before the config.yml `trade_flows:` group
+# append that ships in the same commit — every frame is None until the nightly
+# keyless collect lands the parquets, and the composer self-heals (the
+# consumer_payments precedent taken to its all-absent extreme).
+_TRADE_FRED_COLUMNS = {
+    "BOPGSTB": "trade_balance_goods_services",
+    "BOPTEXP": "exports_goods_services",
+    "BOPTIMP": "imports_goods_services",
+    "IR": "import_price_index",
+    "IQ": "export_price_index",
+}
+
 _RATES_FRED_COLUMNS = {
     "DGS3MO": "us3m",
     "DGS6MO": "us6m",
@@ -302,6 +316,7 @@ def _compose_workspace(workspace_id: str, *, regime_latest: dict,
                        bis_frames: dict,
                        bonds_latest: dict | None,
                        rates_fred_frames: dict,
+                       trade_fred_frames: dict,
                        built_at: str,
                        prior_snapshot: dict | None,
                        code_version: str | None) -> dict:
@@ -373,6 +388,11 @@ def _compose_workspace(workspace_id: str, *, regime_latest: dict,
             rates_fred_frames,
             built_at=built_at,
             prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "trade_flows":
+        return trade_flows.compose(
+            trade_fred_frames,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
     raise ValueError(f"no builder route for workspace id: {workspace_id!r}")
 
 
@@ -434,6 +454,10 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
         sid: _load_series_rows(Path(fred_dir) / f"{sid}.parquet", column)
         for sid, column in _RATES_FRED_COLUMNS.items()
     }
+    trade_fred_frames = {
+        sid: _load_series_rows(Path(fred_dir) / f"{sid}.parquet", column)
+        for sid, column in _TRADE_FRED_COLUMNS.items()
+    }
 
     out = Path(out_root)
     manifest_entries: dict[str, dict] = {}
@@ -467,6 +491,7 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
             bis_frames=bis_frames,
             bonds_latest=bonds_latest,
             rates_fred_frames=rates_fred_frames,
+            trade_fred_frames=trade_fred_frames,
             built_at=built_at,
             prior_snapshot=prior, code_version=code_version)
         snapshot = contract.finalize(body)

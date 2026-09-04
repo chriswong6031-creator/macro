@@ -13695,8 +13695,9 @@ jobs:
       - "tests/test_macro_workspace_liquidity_regime.py"
       - "tests/test_macro_workspace_monetary_policy.py"
       - "tests/test_macro_workspace_national_debt.py"
-      # Expansion 2026-09-04: Rates & Curves composer suite.
+      # Expansion 2026-09-04: Rates & Curves + Trade Flows composer suites.
       - "tests/test_macro_workspace_rates_curves.py"
+      - "tests/test_macro_workspace_trade_flows.py"
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -13725,6 +13726,7 @@ jobs:
           tests/test_macro_workspace_monetary_policy.py
           tests/test_macro_workspace_national_debt.py
           tests/test_macro_workspace_rates_curves.py
+          tests/test_macro_workspace_trade_flows.py
           -q
 
   market-os-macro-suite-pages:
@@ -13769,8 +13771,9 @@ jobs:
       # R6 2026-09-04: Consumer & Household + National Debt pages.
       - "templates/macro_consumer_payments.html.j2"
       - "templates/macro_national_debt_liabilities.html.j2"
-      # Expansion 2026-09-04: Rates & Curves page.
+      # Expansion 2026-09-04: Rates & Curves + Trade Flows pages.
       - "templates/macro_rates_curves.html.j2"
+      - "templates/macro_trade_flows.html.j2"
       - "templates/macro_suite.css"
       - "templates/macro_suite.js"
       - "templates/macro_suite_boot.js"

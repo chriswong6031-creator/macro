@@ -220,6 +220,18 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
             "and same-day-disciplined."
         ),
     ),
+    SuitePage(
+        workspace_id="trade_flows",
+        region="US",
+        template="macro_trade_flows.html.j2",
+        output="macro_trade_flows.html",
+        seo_title="US Trade Flows — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "The US trade balance, exports, imports and trade prices on a "
+            "balance-of-payments basis — collection state shown honestly while "
+            "the source lanes come online."
+        ),
+    ),
 )
 
 

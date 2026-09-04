@@ -174,4 +174,4 @@ def test_workspace_id_is_from_the_closed_registry() -> None:
     allowed = set(schema["$defs"]["workspaceId"]["enum"])
     assert snap["workspace"]["id"] in allowed
     assert allowed == set(registry.WORKSPACE_IDS)
-    assert len(allowed) == 13
+    assert len(allowed) == 14

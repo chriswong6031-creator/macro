@@ -1201,6 +1201,9 @@ pages:
   macro:macro_rates_curves:
     archetype: "regime_dashboard"
 
+  macro:macro_trade_flows:
+    archetype: "regime_dashboard"
+
   # Pre-existing stragglers healed in passing (2026-09-04, R2 pages wave):
   # both rows sat unclassified on main's committed registry — the
   # product-experience classification tests were dark under pack starvation.

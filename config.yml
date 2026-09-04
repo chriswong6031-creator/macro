@@ -503,6 +503,17 @@ fred:
       DSPIC96: real_disposable_income         # real disposable personal income (chained $bn SAAR, monthly SA)
       DRCCLACBS: cc_delinquency_rate          # credit-card delinquency rate, all commercial banks (%, quarterly SA, ~70d after quarter end)
       DRSFRMACBS: mortgage_delinquency_rate   # single-family mortgage delinquency rate (%, quarterly SA)
+    # Expansion (2026-09-04): trade_flows workspace composable core — the FT-900
+    # BoP-basis dollar flows + BLS trade price indexes, all keyless-CSV
+    # reachable. None collected before this append: the workspace publishes an
+    # honestly-degraded first print and self-heals when the nightly collect
+    # lands the parquets. Additive only — no other lane reads them yet.
+    trade_flows:
+      BOPGSTB: trade_balance_goods_services   # trade balance, goods+services, BoP basis ($M SA monthly; negative = deficit; FT-900 ~35-40d after month end)
+      BOPTEXP: exports_goods_services         # exports of goods+services, BoP basis ($M SA monthly)
+      BOPTIMP: imports_goods_services         # imports of goods+services, BoP basis ($M SA monthly)
+      IR: import_price_index                  # import price index, all commodities (index, NSA monthly, BLS ~mid-M+1)
+      IQ: export_price_index                  # export price index, all commodities (index, NSA monthly)
   # NOTE (2026-07-16): a header-less copy of the OLD yahoo ticker block (retries/
   # backoff_base_s/batch_size + a stale tickers: map) used to sit right here — a
   # remnant of the 2026-06-29 "KeyError: 'yahoo'" incident, absorbed into fred: when

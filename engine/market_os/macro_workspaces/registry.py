@@ -31,6 +31,7 @@ WORKSPACE_IDS: tuple[str, ...] = (
     # Beyond-F01 expansion (Chairman-authorized 2026-09-04): the closed F01 set
     # is the twelve above; expansion ids are appended, never interleaved.
     "rates_curves",
+    "trade_flows",
 )
 
 # Build state of the *dedicated workspace* (never the substrate).
@@ -261,6 +262,27 @@ REGISTRY: dict[str, dict] = {
             "effr",
             "sofr",
             "iorb",
+        ),
+    },
+    "trade_flows": {
+        "id": "trade_flows",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.trade_flows",
+        "method_version": "trade_flows.compose.v1",
+        "title_en": "Trade Flows",
+        "title_zh": "贸易流动",
+        "subtitle_en": "Goods & services dollar flows x import/export price indexes",
+        "subtitle_zh": "货物与服务美元贸易流量 × 进出口价格指数",
+        # All five are config-appended and uncollected at ship time: the first
+        # print honestly reads SOURCE_FAILED / coverage 0.0 and self-heals the
+        # day the nightly collect lands the parquets (by design, disclosed).
+        "required_components": (
+            "trade_balance",
+            "exports",
+            "imports",
+            "import_price_index",
+            "export_price_index",
         ),
     },
 }

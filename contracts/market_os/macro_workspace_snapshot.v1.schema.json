@@ -338,7 +338,7 @@
         "business_activity", "labor_markets", "inflation_system", "monetary_policy",
         "financial_conditions", "liquidity_central_banks", "housing_real_estate",
         "consumer_payments", "national_debt_liabilities",
-        "rates_curves"
+        "rates_curves", "trade_flows"
       ]
     },
     "freshnessState": {
