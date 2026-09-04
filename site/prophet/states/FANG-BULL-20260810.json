@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FANG-BULL-20260810",
-  "asof": "2026-09-03",
+  "asof": "2026-09-04",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 45.8,
-  "raw_confidence": 46.0,
-  "delta_vs_base": -14.2,
+  "management_confidence": 45.6,
+  "raw_confidence": 45.4,
+  "delta_vs_base": -14.4,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
     "progress": 7.3,
-    "pace": 17.4,
+    "pace": 14.7,
     "retention": 50.0,
     "overlay": 64.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.077,
     "dist_to_t1_r": 1.423,
     "dist_to_t2_r": 2.923,
-    "horizon_pct_used": 48.9,
+    "horizon_pct_used": 51.1,
     "p1": 0.0514,
     "p2": 0.0257,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 22,
-  "tau": 0.4889
+  "days_elapsed": 23,
+  "tau": 0.5111
 }

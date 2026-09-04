@@ -1,17 +1,17 @@
 {
   "schema": "options.prophet_shadow/v1",
-  "as_of": "2026-08-31",
-  "built_at": "2026-09-01T05:23:21.108944Z",
+  "as_of": "2026-09-03",
+  "built_at": "2026-09-04T11:07:58.002630Z",
   "decision_at": null,
-  "available_at": "2026-09-01T05:23:21.108944Z",
+  "available_at": "2026-09-04T11:07:58.002630Z",
   "pit_provenance": {
     "clock": "UTC",
     "decision_at_required_for_issued_portfolio": true,
     "decision_at_status": "not_available_in_current_pick_lab_contract",
     "available_at_status": "exact_projection_publication_time",
     "source_available_at": {
-      "flow_leaders": "2026-09-01T05:22:21.905654Z",
-      "pick_lab": "2026-09-01T05:23:20.784460Z"
+      "flow_leaders": "2026-09-04T11:06:56.731319Z",
+      "pick_lab": "2026-09-04T11:07:57.687570Z"
     },
     "promotion_ready": false,
     "reason": "An issued position requires exact decision_at and available_at on every fire. Current Pick Lab fires expose exact artifact availability when present but not an exact decision clock."
@@ -67,14 +67,14 @@
           },
           "options_dislocation": {
             "schema": "options_dislocation.gate.v1",
-            "status": "insufficient_history (have 41/120 dates, 392/15 names)",
+            "status": "insufficient_history (have 48/120 dates, 408/15 names)",
             "scored": false,
             "weight": 0.0,
             "scored_primitives": []
           },
           "coverage": {
             "schema": "options_entry_coverage.v1",
-            "as_of": "2026-09-01",
+            "as_of": "2026-09-04",
             "n_rows": 419,
             "n_features": 31,
             "absent_stores": [],
@@ -498,7 +498,7 @@
     "pick_lab": {
       "path": "site/labdata/pick_lab.json",
       "schema": "implicit",
-      "as_of": "2026-08-31",
+      "as_of": "2026-09-03",
       "available": true,
       "error": null
     },
@@ -512,21 +512,21 @@
     "options_entry_gate": {
       "path": "data/options_entry/gate.json",
       "schema": "options_entry.gate.v3",
-      "as_of": "2026-08-31 05:52 UTC",
+      "as_of": "2026-09-01 06:46 UTC",
       "available": true,
       "error": null
     },
     "options_entry_coverage": {
       "path": "data/options_entry/coverage.json",
       "schema": "options_entry_coverage.v1",
-      "as_of": "2026-09-01",
+      "as_of": "2026-09-04",
       "available": true,
       "error": null
     },
     "options_dislocation_gate": {
       "path": "data/options_dislocation/validation_gate.json",
       "schema": "options_dislocation.gate.v1",
-      "as_of": "2026-08-05 11:29 UTC",
+      "as_of": "2026-09-01 11:17 UTC",
       "available": true,
       "error": null
     },

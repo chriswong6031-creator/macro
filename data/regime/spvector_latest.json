@@ -1,15 +1,15 @@
 {
-  "date": "2026-08-31",
-  "score": 12,
-  "band": "low",
-  "band_label": "LOW \u2014 fully invested",
+  "date": "2026-09-03",
+  "score": 26,
+  "band": "elevated",
+  "band_label": "ELEVATED \u2014 trim",
   "equity_w": 66,
   "cash_w": 34,
   "stance": "66% equity",
-  "cagr": 12.53,
-  "sharpe": 0.88,
-  "maxdd": -36.2,
+  "cagr": 12.35,
+  "sharpe": 0.87,
+  "maxdd": -37.4,
   "equity_weight": 66,
-  "risk_score": 12,
-  "asof": "2026-08-31"
+  "risk_score": 26,
+  "asof": "2026-09-03"
 }

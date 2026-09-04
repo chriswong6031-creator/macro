@@ -6441,6 +6441,34 @@ jobs:
       - name: pick lab liquidity gate regression tests
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
+  global-liquidity-transmission:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # W-LIQ.1 state-only producer. Both suites are offline and use synthetic
+    # inputs: the legacy global-liquidity calculations plus the new causal
+    # release-alignment, missing-data, contract-envelope, immutable-hash,
+    # historical-fixture, and walk-forward purge invariants. This lane has no
+    # trading, alerting, routing, or downstream transmission authority.
+    paths:
+      - "config/global_liquidity_transmission_v1.yml"
+      - "engine/global_liquidity.py"
+      - "engine/global_liquidity_transmission.py"
+      - "scripts/build_global_liquidity_transmission.py"
+      - "tests/fixtures/global_liquidity_transmission_wliq1_window.json"
+      - "tests/test_global_liquidity.py"
+      - "tests/test_global_liquidity_transmission.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install state-producer test dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: global liquidity state producers — legacy parity and W-LIQ.1 contract
+        run: python -m pytest tests/test_global_liquidity.py tests/test_global_liquidity_transmission.py -q
+
   ric-w2-surface:
     if: ${{ false }}
     gate: code
@@ -13609,3 +13637,50 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: Cell B V2 buyback source-capacity census
         run: python -m pytest tests/test_cell_b_v2_buyback_source_census.py -q
+
+  market-os-macro-workspaces:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # Market Ontology F01 R1A: mastermind.macro_workspace_snapshot.v1 producer
+    # (US Liquidity Regime composer), fail-closed contract validator, atomic
+    # publisher, CLI exit-code law, and the bounded read-only machine consumer.
+    # All four suites are offline and synthetic-fixture driven; the only real
+    # input ever read at build time is data/regime/latest.json. This lane has
+    # no trading, alerting, routing, or downstream authority.
+    paths:
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
+      - "engine/market_os/**"
+      - "scripts/build_macro_workspaces.py"
+      - "tests/test_macro_workspace_build.py"
+      - "tests/test_macro_workspace_business_activity.py"
+      - "tests/test_macro_workspace_consumer.py"
+      - "tests/test_macro_workspace_contract.py"
+      - "tests/test_macro_workspace_financial_conditions.py"
+      - "tests/test_macro_workspace_growth.py"
+      - "tests/test_macro_workspace_inflation.py"
+      - "tests/test_macro_workspace_labor.py"
+      - "tests/test_macro_workspace_liquidity_regime.py"
+      - "tests/test_macro_workspace_monetary_policy.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install workspace-producer test dependencies
+        run: pip install pytest pyyaml jsonschema==4.26.0
+      - name: Market OS macro workspaces — contract, composer, publisher, consumer
+        run: >-
+          python -m pytest
+          tests/test_macro_workspace_build.py
+          tests/test_macro_workspace_business_activity.py
+          tests/test_macro_workspace_consumer.py
+          tests/test_macro_workspace_contract.py
+          tests/test_macro_workspace_financial_conditions.py
+          tests/test_macro_workspace_growth.py
+          tests/test_macro_workspace_inflation.py
+          tests/test_macro_workspace_labor.py
+          tests/test_macro_workspace_liquidity_regime.py
+          tests/test_macro_workspace_monetary_policy.py
+          -q

@@ -1,0 +1,255 @@
+{
+  "as_of": "2026-09-04",
+  "coverage": {
+    "end": "2026-09-03",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-23 to 2026-09-03; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-23"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-09-03",
+      "events": [
+        {
+          "date": "2026-09-03",
+          "id": "cev-regime_flip-0ced0faa0211",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-09-03#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "events": []
+    },
+    {
+      "date": "2026-09-01",
+      "events": []
+    },
+    {
+      "date": "2026-08-31",
+      "events": [
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-2b71e9b9c0b4",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q1 Goldilocks → Q3 Stagflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-582af2b47649",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q4 Growth-scare → Q1 Goldilocks",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "events": []
+    },
+    {
+      "date": "2026-08-27",
+      "events": []
+    },
+    {
+      "date": "2026-08-26",
+      "events": []
+    },
+    {
+      "date": "2026-08-25",
+      "events": []
+    },
+    {
+      "date": "2026-08-24",
+      "events": [
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-2874cacaea1a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-x6dm5a4kmqa-490e9f",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intelligence | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-23",
+      "events": [
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-c2ea10d320f9",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gabxqgofm8o-a977ff",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Semis CHIPS IV China Semis self sufficiency builds",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-c7080ac5b587",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-aueifxab5ps-878832",
+          "tickers": [],
+          "title": "Goldman Sachs: Kweichow Moutai (600519)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-cb7be5d6d6ee",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-euxmbzckgqm-a53508",
+          "tickers": [],
+          "title": "WEF: WEF Intelligent Industrial Ecosystems Turning Proximity into Intelligence 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-df2220900ef5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-g6uqrtgtpmh-7a25a3",
+          "tickers": [],
+          "title": "Week Ahead: Week in Focus 24 28th August 2026 1",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-e1bfc776a1b7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ztg4alfhtdp-3a05df",
+          "tickers": [],
+          "title": "Goldman Sachs: European Week Ahead August 24 August 30",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-e1dfe6ac9fc7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-wvwffwoochk-149ec1",
+          "tickers": [],
+          "title": "Morgan Stanley: Article selectivitytakesthelead ltr",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-e2ce77d8f6f4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kuwlcsctckn-43814b",
+          "tickers": [],
+          "title": "Goldman Sachs: South Korea Technology Korea WFE Substrate CCL Chip testing HBM Supply Chain Check reinforces our positive view on Samsung E...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-e53fea1807c9",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ukvha8hzjmw-8a9b3b",
+          "tickers": [],
+          "title": "Morgan Stanley: MS $40T of Debt Brake or Break",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-e6b48f759915",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nbeniyipz2s-6bd58c",
+          "tickers": [],
+          "title": "Morgan Stanley: MS AI Sovereignty Policy, Market, and Economic Implications",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-ed9b389c1613",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-uk6aa7lglx8-febc1a",
+          "tickers": [],
+          "title": "Goldman Sachs: Faratronic (600563)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-eed63f05d81d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vtnswtypufq-c211c2",
+          "tickers": [],
+          "title": "Other: DynamicMarkets",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-f23f989cf972",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-xckjnt7knxj-a3da8e",
+          "tickers": [],
+          "title": "Eastspring: Investment bulletin weekly week 33",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-f2a21dc11da2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-64rlvdkdgeu-0aa6c6",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Mike Wilson Weekly Warm up Broadening Persists Amid a Quality Rotation",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-f4addfdf961e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-flq07yaokbx-7170ac",
+          "tickers": [],
+          "title": "Northern Trust: • Keeping The Pace Up",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-f844a106b05f",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-axmryvuuony-6ccb9c",
+          "tickers": [],
+          "title": "Goldman Sachs: Nantong Jianghai Capacitor Co. (002484.SZ) 2Q26 results below GSe, limited shipment or customer certification progress despi...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-23",
+          "id": "cev-research_vault-fc70e7a1f726",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-1qwfryuot2l-fe0505",
+          "tickers": [],
+          "title": "Week Ahead: Weekly US Earnings Estimates 24 28th August 2026",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {
-  "as_of": "2026-08-31",
-  "data_session": "2026-08-31",
-  "state": "off",
-  "k_count": 0,
+  "as_of": "2026-09-04",
+  "data_session": "2026-09-03",
+  "state": "warming",
+  "k_count": 1,
   "chips": [
     {
       "key": "thrust_confluence",
@@ -55,8 +55,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=50.4% (was 61.4% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=50.4%\uff0810\u65e5\u524d61.4%\uff09",
+      "detail_en": "pct_above_50=51.2% (was 54.2% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=51.2%\uff0810\u65e5\u524d54.2%\uff09",
       "source": "breadth"
     },
     {
@@ -66,19 +66,19 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "10d mean(nh-nl)=9.5 (was 22.8 10d ago)",
-      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=9.5\uff0810\u65e5\u524d22.8\uff09",
+      "detail_en": "10d mean(nh-nl)=7.9 (was 19.0 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=7.9\uff0810\u65e5\u524d19.0\uff09",
       "source": "breadth"
     },
     {
       "key": "rsp_confirm",
       "label_en": "Equal-weight RS (RSP/SPY)",
       "label_zh": "\u7b49\u6743RS\uff08RSP/SPY\uff09",
-      "lit": false,
-      "fresh": false,
-      "since": null,
-      "detail_en": "20d log-RS slope=-0.0019 (negative)",
-      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=-0.0019\uff08\u8d1f\u5411\uff09",
+      "lit": true,
+      "fresh": true,
+      "since": "2026-09-01",
+      "detail_en": "20d log-RS slope=0.0007 (positive); turned positive 3bd ago",
+      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0007\uff08\u6b63\u5411\uff09\uff1b3\u65e5\u524d\u8f6c\u6b63",
       "source": "yahoo/RSP,SPY"
     },
     {
@@ -94,17 +94,40 @@
     }
   ],
   "regime": {
-    "label_en": "Narrow ignition \u2014 SMH; fragile until participation broadens",
-    "label_zh": "\u5c40\u90e8\u70b9\u706b \u2014 SMH\uff1b\u9700\u53c2\u4e0e\u5ea6\u6269\u6563\u65b9\u53ef\u786e\u8ba4",
-    "fragile": true,
-    "do_en": "Theme-level evidence only. Fragile until RSP or sector breadth confirms. Evidence read, not a buy call.",
-    "do_zh": "\u4ec5\u4e3b\u9898\u7ea7\u8bc1\u636e\uff0cRSP\u6216\u677f\u5757\u5e7f\u5ea6\u672a\u786e\u8ba4\u524d\u5b58\u5728\u8106\u5f31\u6027\u3002\u8bc1\u636e\u8bfb\u53d6\uff0c\u975e\u4e70\u5165\u4fe1\u53f7\u3002"
+    "label_en": "Theme ignition \u2014 Non-AI Tech & Hardware, participation OK",
+    "label_zh": "\u4e3b\u9898\u70b9\u706b \u2014 Non-AI Tech & Hardware\uff0c\u53c2\u4e0e\u5ea6\u5c1a\u53ef",
+    "fragile": false,
+    "do_en": "Theme ignition with adequate participation. Evidence read, not a buy call \u2014 confluence with your own entry process.",
+    "do_zh": "\u4e3b\u9898\u70b9\u706b\u4e14\u53c2\u4e0e\u5ea6\u5c1a\u53ef\u3002\u8bc1\u636e\u8bfb\u53d6\uff0c\u975e\u4e70\u5165\u4fe1\u53f7 \u2014 \u8bf7\u7ed3\u5408\u60a8\u7684\u5165\u573a\u6d41\u7a0b\u7efc\u5408\u5224\u65ad\u3002"
   },
   "narrow": {
     "items": [
       {
-        "id": "SMH",
-        "ignition_score": 0.9943,
+        "id": "non_ai_tech",
+        "ignition_score": 1.0,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 1.0,
+          "breadth_n": [
+            1,
+            1
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.79805,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Non-AI Tech & Hardware",
+        "name_zh": "\u975eAI\u79d1\u6280\u4e0e\u786c\u4ef6",
+        "category": "Semiconductors & Hardware",
+        "type": "basket",
+        "rs_new_high": true,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLV",
+        "ignition_score": 0.9321,
         "state": "igniting",
         "components": {
           "breadth_thrust": null,
@@ -112,22 +135,22 @@
             0,
             0
           ],
-          "rs_slope_change": 0.9915,
-          "rs_slope_raw": 0.11888,
+          "rs_slope_change": 0.8981,
+          "rs_slope_raw": 0.05441,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "SMH",
-        "name_zh": "SMH",
+        "name": "XLV",
+        "name_zh": "XLV",
         "category": "Sector ETF",
         "type": "etf",
         "rs_new_high": false,
         "above_200d_rising": true
       },
       {
-        "id": "XLK",
-        "ignition_score": 0.9661,
+        "id": "XLU",
+        "ignition_score": 0.9137,
         "state": "igniting",
         "components": {
           "breadth_thrust": null,
@@ -135,8 +158,54 @@
             0,
             0
           ],
-          "rs_slope_change": 0.9492,
-          "rs_slope_raw": 0.07318,
+          "rs_slope_change": 0.8705,
+          "rs_slope_raw": 0.04764,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLU",
+        "name_zh": "XLU",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": false
+      },
+      {
+        "id": "XLC",
+        "ignition_score": 0.8444,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.7667,
+          "rs_slope_raw": 0.02974,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLC",
+        "name_zh": "XLC",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": false
+      },
+      {
+        "id": "XLK",
+        "ignition_score": 0.7918,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.6878,
+          "rs_slope_raw": 0.01974,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -149,139 +218,70 @@
         "above_200d_rising": true
       },
       {
-        "id": "cybersecurity",
-        "ignition_score": 0.8681,
+        "id": "managed_care",
+        "ignition_score": 0.6867,
         "state": "igniting",
         "components": {
-          "breadth_thrust": 0.7,
+          "breadth_thrust": 0.2222,
           "breadth_n": [
-            7,
-            10
+            2,
+            9
           ],
-          "rs_slope_change": 0.9702,
-          "rs_slope_raw": 0.08704,
+          "rs_slope_change": 0.9945,
+          "rs_slope_raw": 0.13003,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "Cybersecurity",
-        "name_zh": "\u7f51\u7edc\u5b89\u5168",
-        "category": "Software",
+        "name": "Managed Care & Insurers",
+        "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
+        "category": "Healthcare",
         "type": "basket",
         "rs_new_high": false,
         "above_200d_rising": true
       },
       {
-        "id": "us_sector_tech",
-        "ignition_score": 0.6283,
+        "id": "nuclear_power",
+        "ignition_score": 0.6603,
         "state": "igniting",
         "components": {
-          "breadth_thrust": 0.1622,
+          "breadth_thrust": 0.2222,
           "breadth_n": [
-            12,
-            74
+            2,
+            9
           ],
-          "rs_slope_change": 0.9086,
-          "rs_slope_raw": 0.05741,
+          "rs_slope_change": 0.9286,
+          "rs_slope_raw": 0.06414,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "Technology (Equal-Weight)",
-        "name_zh": "\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09",
-        "category": "US Sectors (EW)",
+        "name": "Nuclear & SMR Power",
+        "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
+        "category": "Energy & Power",
         "type": "basket",
         "rs_new_high": false,
-        "above_200d_rising": true
+        "above_200d_rising": false
       },
       {
-        "id": "non_ai_tech",
-        "ignition_score": 0.6242,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.0769,
-          "breadth_n": [
-            1,
-            13
-          ],
-          "rs_slope_change": 0.9836,
-          "rs_slope_raw": 0.10234,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Non-AI Tech & Hardware",
-        "name_zh": "\u975eAI\u79d1\u6280\u4e0e\u786c\u4ef6",
-        "category": "Semiconductors & Hardware",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "ai_infra",
-        "ignition_score": 0.6092,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.125,
-          "breadth_n": [
-            3,
-            24
-          ],
-          "rs_slope_change": 0.898,
-          "rs_slope_raw": 0.05439,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "AI Infrastructure",
-        "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
-        "category": "AI & Technology",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "ai_software",
-        "ignition_score": 0.6031,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.1765,
-          "breadth_n": [
-            3,
-            17
-          ],
-          "rs_slope_change": 0.8312,
-          "rs_slope_raw": 0.03985,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "AI Software & Platforms",
-        "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
-        "category": "AI & Technology",
-        "type": "basket",
-        "rs_new_high": true,
-        "above_200d_rising": true
-      },
-      {
-        "id": "crypto",
+        "id": "critical_minerals",
         "ignition_score": 0.6,
         "state": "igniting",
         "components": {
           "breadth_thrust": 0.0,
           "breadth_n": [
             0,
-            7
+            11
           ],
           "rs_slope_change": 1.0,
-          "rs_slope_raw": 0.38481,
+          "rs_slope_raw": 0.2672,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "Crypto & Digital Assets",
-        "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-        "category": "Crypto & Digital Assets",
+        "name": "Critical Minerals & Rare Earths",
+        "name_zh": "\u5173\u952e\u77ff\u4ea7\u4e0e\u7a00\u571f",
+        "category": "Materials & Mining",
         "type": "basket",
         "rs_new_high": false,
         "above_200d_rising": false
@@ -292,52 +292,52 @@
         "id": "XLE",
         "name": "XLE",
         "name_zh": "XLE",
-        "ignition_score": 0.5356,
-        "state": "running",
-        "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
-      },
-      {
-        "id": "energy_complex",
-        "name": "US Energy Complex",
-        "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
-        "ignition_score": 0.5119,
-        "state": "running",
-        "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
-      },
-      {
-        "id": "gold_miners",
-        "name": "Gold Miners",
-        "name_zh": "\u9ec4\u91d1\u77ff\u4e1a",
-        "ignition_score": 0.4,
-        "state": "running",
+        "ignition_score": 0.9492,
+        "state": "igniting",
         "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
       },
       {
         "id": "us_sector_energy",
         "name": "Energy (Equal-Weight)",
         "name_zh": "\u80fd\u6e90\uff08\u7b49\u6743\uff09",
-        "ignition_score": 0.3628,
+        "ignition_score": 0.6732,
+        "state": "igniting",
+        "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
+      },
+      {
+        "id": "energy_complex",
+        "name": "US Energy Complex",
+        "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
+        "ignition_score": 0.6542,
+        "state": "igniting",
+        "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
+      },
+      {
+        "id": "gold_miners",
+        "name": "Gold Miners",
+        "name_zh": "\u9ec4\u91d1\u77ff\u4e1a",
+        "ignition_score": 0.3875,
         "state": "running",
         "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
       }
     ],
     "n_scored": 61,
-    "n_qualifying": 24,
+    "n_qualifying": 26,
     "null": false,
     "floor": "state in igniting/running (pre-registered ALERT_STATES); empty when nothing clears \u2014 honest null",
-    "as_of": "2026-08-31"
+    "as_of": "2026-09-04"
   },
   "narrow_top": {
-    "basket_id": "SMH",
-    "name": "SMH",
-    "name_zh": "SMH",
-    "score": 0.9943,
+    "basket_id": "non_ai_tech",
+    "name": "Non-AI Tech & Hardware",
+    "name_zh": "\u975eAI\u79d1\u6280\u4e0e\u786c\u4ef6",
+    "score": 1.0,
     "streak_sessions": 2
   },
   "radar_xref": {
-    "state": "calm",
+    "state": "watch",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.2
+  "_timing_s": 4.83
 }

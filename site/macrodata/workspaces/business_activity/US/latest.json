@@ -1,0 +1,1671 @@
+{
+  "alert_contract": {
+    "eligible_conditions": [
+      {
+        "condition_id": "leading_tier_rollover",
+        "kind": "state_transition",
+        "label": {
+          "en": "Leading-tier rollover",
+          "zh": "领先层转向"
+        },
+        "params": [
+          "direction"
+        ]
+      },
+      {
+        "condition_id": "coincident_confirmation",
+        "kind": "state_transition",
+        "label": {
+          "en": "Coincident-tier confirmation",
+          "zh": "同步层确认"
+        },
+        "params": [
+          "direction"
+        ]
+      },
+      {
+        "condition_id": "breadth_break",
+        "kind": "boundary_approach",
+        "label": {
+          "en": "Breadth break",
+          "zh": "广度突破"
+        },
+        "params": [
+          "tier",
+          "threshold"
+        ]
+      },
+      {
+        "condition_id": "recession_signal_transition",
+        "kind": "state_transition",
+        "label": {
+          "en": "Recession-signal transition",
+          "zh": "衰退信号转变"
+        },
+        "params": [
+          "target_state"
+        ]
+      },
+      {
+        "condition_id": "source_stale_or_failed",
+        "kind": "source_stale_or_failed",
+        "label": {
+          "en": "Source stale or failed",
+          "zh": "数据源过期或失败"
+        },
+        "params": [
+          "source_id"
+        ]
+      }
+    ],
+    "note": "Eligible condition types are declared; R2 writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    "service_available": false,
+    "status": "ABSENT"
+  },
+  "authority": {
+    "axis_authority_ceiling": "DESCRIPTIVE",
+    "can_execute": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "class": "context_only",
+    "display_only": true
+  },
+  "availability": {
+    "contradiction": {
+      "components": [],
+      "en": null,
+      "kind": null,
+      "present": false,
+      "zh": null
+    },
+    "coverage_ratio": 1.0,
+    "degraded": [],
+    "reasons": [],
+    "required": [
+      {
+        "component_id": "leading_tier",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Leading tier",
+          "zh": "领先层"
+        },
+        "null_reason": "COMPUTATION_REFUSED",
+        "required": true,
+        "source_asof": "2026-09-30",
+        "status": "PARTIAL"
+      },
+      {
+        "component_id": "coincident_tier",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Coincident tier",
+          "zh": "同步层"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-07-31",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "lagging_tier",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Lagging tier",
+          "zh": "滞后层"
+        },
+        "null_reason": null,
+        "required": false,
+        "source_asof": "2026-07-31",
+        "status": "PRESENT"
+      }
+    ],
+    "state": "CURRENT",
+    "worst_freshness": "CURRENT"
+  },
+  "axes": {
+    "items": []
+  },
+  "changes": {
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": null,
+        "delta": null,
+        "metric_id": "leading_tier_momentum_6m",
+        "note": "same method version; numeric comparison permitted when both values are present",
+        "prior_value": null
+      },
+      {
+        "current_value": -0.21765857550346368,
+        "delta": 0.0,
+        "metric_id": "coincident_tier_momentum_6m",
+        "note": "same method version; numeric comparison permitted when both values are present",
+        "prior_value": -0.21765857550346368
+      },
+      {
+        "current_value": 0.585355949054545,
+        "delta": 0.0,
+        "metric_id": "lagging_tier_momentum_6m",
+        "note": "same method version; numeric comparison permitted when both values are present",
+        "prior_value": 0.585355949054545
+      },
+      {
+        "current_value": -0.6816793530719565,
+        "delta": 0.0,
+        "metric_id": "coincident_lagging_ratio_momentum_6m",
+        "note": "same method version; numeric comparison permitted when both values are present",
+        "prior_value": -0.6816793530719565
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-09-30",
+    "prior_generation_id": "business_activity-US-1d983bfbcd64454e",
+    "prior_method_version": "business_activity.compose.v1",
+    "status": "PRESENT"
+  },
+  "corrections": {
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked tier field changed value (no-change republication).",
+    "predecessor_generation_id": "business_activity-US-1d983bfbcd64454e"
+  },
+  "drivers": {
+    "balance_sheet": [],
+    "rate_side": []
+  },
+  "generation": {
+    "built_at": "2026-09-04T16:01:06Z",
+    "calculation_as_of": "2026-09-30",
+    "code_version": "23cf73e9a101d95565aada49e9d26ec3cbe7faaa",
+    "content_sha256": "14eba9be22b13d5b37f19e5ef39530fd8e9a1f4b86e8b1b6fe9e3f75788a3b71",
+    "generation_id": "business_activity-US-14eba9be22b13d5b",
+    "producer": "engine.market_os.macro_workspaces.business_activity",
+    "rendered_at": null
+  },
+  "headline": {
+    "effective_date": "2026-09-30",
+    "hysteresis": {
+      "applied": false,
+      "band": 0.0,
+      "held_prior": false,
+      "note": "no dual-axis quadrant is computed for business_activity: the blueprinted new-demand/orders x production/utilization decomposition is not separable from the currently published engine.business_cycle tier composites (legs are blended within leading/coincident/lagging, never individually published); see metrics[*_tier_*] for the real available composite reads and implications[headline_unavailable] for the full disclosure"
+    },
+    "method_version": "business_activity.compose.v1",
+    "nearest_boundary": {
+      "axis": null,
+      "distance": null,
+      "null_reason": "COMPUTATION_REFUSED"
+    },
+    "null_reason": "COMPUTATION_REFUSED",
+    "one_month_vector": {
+      "dx": null,
+      "dy": null,
+      "null_reason": "COMPUTATION_REFUSED",
+      "status": "ABSENT"
+    },
+    "prior_state": {
+      "effective_date": "2026-09-30",
+      "method_version": "business_activity.compose.v1",
+      "state_id": null
+    },
+    "quadrant": {
+      "x": null,
+      "x_status": "ABSENT",
+      "y": null,
+      "y_status": "ABSENT"
+    },
+    "state_id": null,
+    "state_label": {
+      "en": null,
+      "zh": null
+    },
+    "status": "ABSENT",
+    "subtitle": {
+      "en": "New demand/orders x production/utilization",
+      "zh": "新增需求/订单 × 生产/产能利用"
+    },
+    "transition_distance": null
+  },
+  "implications": {
+    "items": [
+      {
+        "channels": [
+          "orders",
+          "production",
+          "inventory"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "headline_unavailable",
+        "text": {
+          "en": "No dual-axis Business Activity state (new demand/orders x production/utilization) is asserted: the owner-published engine.business_cycle artifact exposes only blended leading/coincident/lagging tier composites, not the individual orders/production/inventory legs the blueprinted headline needs. Rather than estimate a fabricated split, the real tier-level reads are published as metrics instead.",
+          "zh": "未给出双轴商业活动状态（新增需求/订单 × 生产/产能利用）：所有者发布的 engine.business_cycle 制品仅公开了混合的领先/同步/滞后层综合指数，而非蓝图所需的独立订单/生产/库存分项。为避免虚构拆分，改以指标形式发布真实的分层读数。"
+        },
+        "trace_ref": "data/regime/latest.json#business_cycle"
+      },
+      {
+        "channels": [
+          "orders",
+          "production",
+          "inventory"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "leading_tier_read",
+        "text": {
+          "en": "Leading tier: 6-month momentum 0.7426750855886297, direction rising, breadth 100.0 (share of legs rising over the diffusion window, 0-100).",
+          "zh": "领先层：6个月动量 0.7426750855886297，方向 rising，广度 100.0（扩散窗口内上升分项占比，0-100）。"
+        },
+        "trace_ref": "data/regime/latest.json#business_cycle.tiers.leading"
+      },
+      {
+        "channels": [
+          "orders",
+          "production",
+          "inventory"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "coincident_tier_read",
+        "text": {
+          "en": "Coincident tier: 6-month momentum -0.21765857550346368, direction falling, breadth 66.66666666666667 (share of legs rising over the diffusion window, 0-100).",
+          "zh": "同步层：6个月动量 -0.21765857550346368，方向 falling，广度 66.66666666666667（扩散窗口内上升分项占比，0-100）。"
+        },
+        "trace_ref": "data/regime/latest.json#business_cycle.tiers.coincident"
+      },
+      {
+        "channels": [
+          "inventory",
+          "credit"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "lagging_tier_read",
+        "text": {
+          "en": "Lagging tier: 6-month momentum 0.585355949054545, direction rising, breadth 50.0 (share of legs rising over the diffusion window, 0-100).",
+          "zh": "滞后层：6个月动量 0.585355949054545，方向 rising，广度 50.0（扩散窗口内上升分项占比，0-100）。"
+        },
+        "trace_ref": "data/regime/latest.json#business_cycle.tiers.lagging"
+      },
+      {
+        "channels": [
+          "orders",
+          "production"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "phase_clock_read",
+        "text": {
+          "en": "Owner four-phase cycle clock reads 'recovery' from the sign of leading vs coincident 6-month momentum. This read is shared substrate with the future Growth & Real Economy workspace; it is disclosed here for context, not claimed as a business_activity-exclusive state.",
+          "zh": "所有者四阶段周期时钟读数为“recovery”，依据领先层与同步层6个月动量的符号得出。该读数与未来的“增长与实体经济”工作区共享同一底层数据，此处仅作背景披露，不作为商业活动专属状态。"
+        },
+        "trace_ref": "data/regime/latest.json#business_cycle.phase"
+      },
+      {
+        "channels": [
+          "orders",
+          "production",
+          "credit"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "HISTORICAL_ASSOCIATION",
+        "horizon": "months",
+        "implication_id": "recession_signal_read",
+        "text": {
+          "en": "Owner recession-risk signal (Conference-Board '3 D's' on the leading tier) reads 'off'. Calibrated leave-one-recession-out on a tiny (~3 endogenous) modern-recession sample -- a recession-RISK timeline, not a crash oracle.",
+          "zh": "所有者衰退风险信号（基于领先层的Conference-Board“三要素”规则）读数为“off”。已在极小样本（约3次内生衰退）上做留一法样本外校准——这是衰退风险时间线，并非崩盘预言。"
+        },
+        "trace_ref": "data/regime/latest.json#business_cycle.recession_signal"
+      },
+      {
+        "channels": [
+          "orders",
+          "production"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "survey_lane_unavailable",
+        "text": {
+          "en": "The survey lane (ISM/regional-Fed manufacturing & services PMIs) is not shown: no lawful survey collector is wired in this repository (RIGHTS_BLOCKED). Only the hard-data lane (engine.business_cycle tier composites) is published; a preliminary/final print distinction is not invented in its absence.",
+          "zh": "调查分项（ISM/地区联储制造业与服务业PMI）未展示：本仓库未接入任何合法的调查数据采集器（权利受限，RIGHTS_BLOCKED）。仅发布硬数据分项（engine.business_cycle 分层综合指数），不会在缺失时臆造初值/终值的区分。"
+        },
+        "trace_ref": null
+      }
+    ]
+  },
+  "learning": {
+    "event_names": [
+      "macro_workspace_opened",
+      "macro_state_changed_seen",
+      "macro_driver_expanded",
+      "macro_source_opened",
+      "macro_degraded_state_seen",
+      "macro_unknown_or_refusal_seen"
+    ],
+    "instrumentation": "first_party",
+    "privacy_note": "Event definitions reuse the existing first-party analytics owner; no second analytics store, no user identity copied into the artifact."
+  },
+  "metrics": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "rebased_100_composite",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": 0.375,
+        "definition_id": "business_cycle.tiers.leading.index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_stronger",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "leading_tier_index",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#leading_tier_index",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "ABSENT",
+        "transformation": "leading tier: standardized-leg cumulative composite, rebased to 100 at first valid month (Conference-Board method)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": null,
+        "value_type": "index"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "6m_change",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": 0.375,
+        "definition_id": "business_cycle.tiers.leading.mom6",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_accelerating",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "leading_tier_momentum_6m",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#leading_tier_momentum_6m",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "ABSENT",
+        "transformation": "tier index level minus its value 6 months prior (CB '6-month change', red line)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "ema_of_6m_change",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": 0.375,
+        "definition_id": "business_cycle.tiers.leading.trend",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_accelerating",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "leading_tier_trend",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#leading_tier_trend",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "ABSENT",
+        "transformation": "EMA smoothing of the 6-month momentum series (blue line)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "share_of_legs_rising_6m",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": 0.375,
+        "definition_id": "business_cycle.tiers.leading.diffusion",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "leading_tier_diffusion",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#leading_tier_diffusion",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "ABSENT",
+        "transformation": "share of the tier's sign-adjusted legs that rose over the diffusion window (CB breadth, 0-100)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct",
+        "value": null,
+        "value_type": "score_0_100"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "sign_of_6m_momentum",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": 0.375,
+        "definition_id": "business_cycle.tiers.leading.direction",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "leading_tier_direction",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#leading_tier_direction",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "ABSENT",
+        "transformation": "'rising' if 6-month momentum > 0 else 'falling'",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "count_of_available_legs",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": 0.375,
+        "definition_id": "business_cycle.tiers.leading.n_legs",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader_input_coverage",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "leading_tier_leg_count",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#leading_tier_leg_count",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-published live leg count out of 8 configured legs -- never refused by the coverage floor; the count itself is the ragged-edge honesty flag",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "legs",
+        "value": 3,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "rebased_100_composite",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.75,
+        "definition_id": "business_cycle.tiers.coincident.index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_stronger",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_tier_index",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_tier_index",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "coincident tier: standardized-leg cumulative composite, rebased to 100 at first valid month (Conference-Board method)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": 35.43241699664992,
+        "value_type": "index"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "6m_change",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.75,
+        "definition_id": "business_cycle.tiers.coincident.mom6",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_accelerating",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_tier_momentum_6m",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_tier_momentum_6m",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "tier index level minus its value 6 months prior (CB '6-month change', red line)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": -0.21765857550346368,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "ema_of_6m_change",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.75,
+        "definition_id": "business_cycle.tiers.coincident.trend",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_accelerating",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_tier_trend",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_tier_trend",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "EMA smoothing of the 6-month momentum series (blue line)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": -0.3589929839734258,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "share_of_legs_rising_6m",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.75,
+        "definition_id": "business_cycle.tiers.coincident.diffusion",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_tier_diffusion",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_tier_diffusion",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "share of the tier's sign-adjusted legs that rose over the diffusion window (CB breadth, 0-100)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct",
+        "value": 66.66666666666667,
+        "value_type": "score_0_100"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "sign_of_6m_momentum",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.75,
+        "definition_id": "business_cycle.tiers.coincident.direction",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_tier_direction",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_tier_direction",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "'rising' if 6-month momentum > 0 else 'falling'",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "falling",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "count_of_available_legs",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.75,
+        "definition_id": "business_cycle.tiers.coincident.n_legs",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader_input_coverage",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_tier_leg_count",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_tier_leg_count",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-published live leg count out of 4 configured legs -- never refused by the coverage floor; the count itself is the ragged-edge honesty flag",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "legs",
+        "value": 3,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "rebased_100_composite",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.8,
+        "definition_id": "business_cycle.tiers.lagging.index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_stronger",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "lagging_tier_index",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#lagging_tier_index",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "lagging tier: standardized-leg cumulative composite, rebased to 100 at first valid month (Conference-Board method)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": 92.865513387041,
+        "value_type": "index"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "6m_change",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.8,
+        "definition_id": "business_cycle.tiers.lagging.mom6",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_accelerating",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "lagging_tier_momentum_6m",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#lagging_tier_momentum_6m",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "tier index level minus its value 6 months prior (CB '6-month change', red line)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": 0.585355949054545,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "ema_of_6m_change",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.8,
+        "definition_id": "business_cycle.tiers.lagging.trend",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_accelerating",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "lagging_tier_trend",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#lagging_tier_trend",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "EMA smoothing of the 6-month momentum series (blue line)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_pt",
+        "value": 0.21482105300304088,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "share_of_legs_rising_6m",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.8,
+        "definition_id": "business_cycle.tiers.lagging.diffusion",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "lagging_tier_diffusion",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#lagging_tier_diffusion",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "share of the tier's sign-adjusted legs that rose over the diffusion window (CB breadth, 0-100)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct",
+        "value": 50.0,
+        "value_type": "score_0_100"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "sign_of_6m_momentum",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.8,
+        "definition_id": "business_cycle.tiers.lagging.direction",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "lagging_tier_direction",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#lagging_tier_direction",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "'rising' if 6-month momentum > 0 else 'falling'",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "rising",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "count_of_available_legs",
+        "calculation_as_of": "2026-07-31",
+        "collected_at": null,
+        "coverage": 0.8,
+        "definition_id": "business_cycle.tiers.lagging.n_legs",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader_input_coverage",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "lagging_tier_leg_count",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-31",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#lagging_tier_leg_count",
+        "reference_period": "2026-07-31",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-published live leg count out of 5 configured legs -- never refused by the coverage floor; the count itself is the ragged-edge honesty flag",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "legs",
+        "value": 4,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "6m_change_of_ratio",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.cl_ratio_mom6",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_stronger",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "coincident_lagging_ratio_momentum_6m",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#coincident_lagging_ratio_momentum_6m",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "6-month change in (coincident_index / lagging_index), rebased to 100 at first valid month; itself a classic leading read",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_pt",
+        "value": -0.6816793530719565,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "three_ds_rule",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.recession_signal.state",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "recession_signal_state",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#recession_signal_state",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "Conference-Board '3 D's' (Depth+Duration AND Diffusion) rule on the leading tier, held N months",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "off",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leading_mom6_below_threshold",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.recession_signal.conditions.depth",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "recession_signal_depth",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#recession_signal_depth",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": false,
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "diffusion_at_or_below_cutoff",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.recession_signal.conditions.breadth",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "recession_signal_breadth",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#recession_signal_breadth",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": false,
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "consecutive_months_in_state",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.recession_signal.months_active",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "recession_signal_months_active",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#recession_signal_months_active",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "months",
+        "value": 40.0,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leading_x_coincident_momentum_sign",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.phase.label",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "business_cycle_phase",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#business_cycle_phase",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "four-phase clock from the sign of leading/coincident 6-month momentum (expansion/slowdown/contraction/recovery)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "recovery",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leave_one_recession_out",
+        "calculation_as_of": "2026-09-30",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "business_cycle.measured.oos_catch_rate",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_reliable",
+        "freshness": "HISTORICAL_AS_KNOWN",
+        "market_session": null,
+        "metric_id": "recession_signal_oos_catch_rate",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-30",
+        "owner_ref": "engine.business_cycle",
+        "reference_id": "mastermind.market_reference/v1#recession_signal_oos_catch_rate",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle"
+        ],
+        "status": "PRESENT",
+        "transformation": "out-of-sample (leave-one-recession-out) catch rate on ~3 endogenous modern recessions; tiny sample, see caveat",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio",
+        "value": 0.667,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "diffusion_index",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_expansion_below50_contraction",
+        "freshness": "RIGHTS_BLOCKED",
+        "market_session": null,
+        "metric_id": "survey_composite_pmi",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "RIGHTS_BLOCKED",
+        "observed_at": null,
+        "owner_ref": "engine.business_cycle (no survey collector)",
+        "reference_id": "mastermind.market_reference/v1#survey_composite_pmi",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "RIGHTS_BLOCKED",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle (no survey collector)"
+        ],
+        "status": "ABSENT",
+        "transformation": "ISM/regional-Fed manufacturing & services PMIs are 50-line diffusion indexes (>50 expansion, <50 contraction), NOT a zero-line series; no lawful collector for this survey family is wired in this repository -- typed RIGHTS_BLOCKED, never estimated from hard data",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "diffusion_index_50_line",
+        "value": null,
+        "value_type": "score_0_100"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leg_level_not_separable",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "new_orders_demand",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "new_orders_demand",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": null,
+        "owner_ref": "engine.business_cycle (blended; not separately published)",
+        "reference_id": "mastermind.market_reference/v1#new_orders_demand",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle (blended; not separately published)"
+        ],
+        "status": "ABSENT",
+        "transformation": "New demand / orders is blended inside the published leading/coincident/lagging tier composites (engine.business_cycle mixes multiple legs per tier and publishes only the tier-level aggregate); the individual leg is not separately published -- refused rather than estimated. See the *_tier_index / *_tier_momentum_6m / *_tier_diffusion metrics for the real available reads.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leg_level_not_separable",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "production_utilization",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "production_utilization",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": null,
+        "owner_ref": "engine.business_cycle (blended; not separately published)",
+        "reference_id": "mastermind.market_reference/v1#production_utilization",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle (blended; not separately published)"
+        ],
+        "status": "ABSENT",
+        "transformation": "Production / capacity utilization is blended inside the published leading/coincident/lagging tier composites (engine.business_cycle mixes multiple legs per tier and publishes only the tier-level aggregate); the individual leg is not separately published -- refused rather than estimated. See the *_tier_index / *_tier_momentum_6m / *_tier_diffusion metrics for the real available reads.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leg_level_not_separable",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "inventory_cycle_phase",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "inventory_cycle_phase",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": null,
+        "owner_ref": "engine.business_cycle (blended; not separately published)",
+        "reference_id": "mastermind.market_reference/v1#inventory_cycle_phase",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle (blended; not separately published)"
+        ],
+        "status": "ABSENT",
+        "transformation": "Inventory cycle (destocking/restocking) is blended inside the published leading/coincident/lagging tier composites (engine.business_cycle mixes multiple legs per tier and publishes only the tier-level aggregate); the individual leg is not separately published -- refused rather than estimated. See the *_tier_index / *_tier_momentum_6m / *_tier_diffusion metrics for the real available reads.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leg_level_not_separable",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "capex_orders_growth",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "capex_orders_growth",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": null,
+        "owner_ref": "engine.business_cycle (blended; not separately published)",
+        "reference_id": "mastermind.market_reference/v1#capex_orders_growth",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle (blended; not separately published)"
+        ],
+        "status": "ABSENT",
+        "transformation": "Capex / cap-goods orders growth is blended inside the published leading/coincident/lagging tier composites (engine.business_cycle mixes multiple legs per tier and publishes only the tier-level aggregate); the individual leg is not separately published -- refused rather than estimated. See the *_tier_index / *_tier_momentum_6m / *_tier_diffusion metrics for the real available reads.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "leg_level_not_separable",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "shipments_sales_growth",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "shipments_sales_growth",
+        "model_version": "business_activity.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": null,
+        "owner_ref": "engine.business_cycle (blended; not separately published)",
+        "reference_id": "mastermind.market_reference/v1#shipments_sales_growth",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.business_cycle (blended; not separately published)"
+        ],
+        "status": "ABSENT",
+        "transformation": "Manufacturing & trade shipments/sales growth is blended inside the published leading/coincident/lagging tier composites (engine.business_cycle mixes multiple legs per tier and publishes only the tier-level aggregate); the individual leg is not separately published -- refused rather than estimated. See the *_tier_index / *_tier_momentum_6m / *_tier_diffusion metrics for the real available reads.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      }
+    ]
+  },
+  "region": {
+    "code": "US",
+    "display_name": "United States",
+    "supported": true
+  },
+  "scenario_contract": {
+    "assumptions": [
+      {
+        "assumption_id": "leading_tier_momentum_bp",
+        "label": {
+          "en": "Leading-tier momentum",
+          "zh": "领先层动量"
+        },
+        "max": 500.0,
+        "min": -500.0,
+        "owner_field": "business_cycle.tiers.leading.mom6",
+        "step": 25.0,
+        "unit": "bp"
+      },
+      {
+        "assumption_id": "coincident_tier_momentum_bp",
+        "label": {
+          "en": "Coincident-tier momentum",
+          "zh": "同步层动量"
+        },
+        "max": 500.0,
+        "min": -500.0,
+        "owner_field": "business_cycle.tiers.coincident.mom6",
+        "step": 25.0,
+        "unit": "bp"
+      },
+      {
+        "assumption_id": "leading_breadth_pct",
+        "label": {
+          "en": "Leading-tier breadth",
+          "zh": "领先层广度"
+        },
+        "max": 100.0,
+        "min": 0.0,
+        "owner_field": "business_cycle.tiers.leading.diffusion",
+        "step": 5.0,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "inventory_sales_ratio_chg",
+        "label": {
+          "en": "Inventory/sales ratio change",
+          "zh": "库存/销售比变化"
+        },
+        "max": 1.0,
+        "min": -1.0,
+        "owner_field": null,
+        "step": 0.05,
+        "unit": "ratio"
+      },
+      {
+        "assumption_id": "cap_goods_orders_pct",
+        "label": {
+          "en": "Cap-goods orders growth",
+          "zh": "资本品订单增长"
+        },
+        "max": 20.0,
+        "min": -20.0,
+        "owner_field": null,
+        "step": 0.5,
+        "unit": "pct"
+      }
+    ],
+    "execution_available": false,
+    "note": "Assumption vocabulary is declared and closed; R2 ships no scenario execution endpoint (non-goal). inventory_sales_ratio_chg / cap_goods_orders_pct have no owner_field because engine.business_cycle does not publish those legs individually (see the module docstring); a future owner-native pure scenario function produces mastermind.macro_workspace_scenario_result.v1 with no canonical write.",
+    "result_schema": "mastermind.macro_workspace_scenario_result.v1",
+    "status": "PARTIAL"
+  },
+  "schema": {
+    "contract": "mastermind.macro_workspace_snapshot.v1",
+    "version": "1.0.0"
+  },
+  "series": {
+    "items": [],
+    "null_reason": "INSUFFICIENT_HISTORY",
+    "status": "ABSENT"
+  },
+  "sources": {
+    "items": [
+      {
+        "artifact_ref": "data/regime/latest.json#business_cycle",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Business-cycle Leading/Coincident/Lagging composite",
+          "zh": "商业周期领先/同步/滞后综合指数"
+        },
+        "owner_ref": "engine.business_cycle",
+        "provider": "FRED / Yahoo (Conference-Board-style standardized-leg composite; see engine/business_cycle.py)",
+        "reference_period": "2026-09-30",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "business_cycle",
+        "transform": "tier-level standardized-leg cumulative composite; individual legs are not separately published"
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "RIGHTS_BLOCKED",
+        "label": {
+          "en": "ISM / regional-Fed manufacturing & services surveys",
+          "zh": "ISM/地区联储制造业与服务业调查"
+        },
+        "owner_ref": "NONE -- no lawful ISM/PMI or regional-Fed survey collector is wired in this repository",
+        "provider": null,
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "RIGHTS_BLOCKED",
+        "source_id": "survey_pmi",
+        "transform": null
+      }
+    ]
+  },
+  "workspace": {
+    "id": "business_activity",
+    "subtitle": {
+      "en": "New demand/orders x production/utilization",
+      "zh": "新增需求/订单 × 生产/产能利用"
+    },
+    "title": {
+      "en": "Business Activity",
+      "zh": "商业活动"
+    }
+  }
+}

@@ -959,6 +959,12 @@
       "at": "2026-09-03T01:07:35.492707+00:00",
       "activated": false,
       "importance": 45
+    },
+    "https://www.whitehouse.gov/?p=49671": {
+      "id": "wh-2026-09-04-made-in-america-manufacturing-private-hiring-power-explosive-august-jobs-report",
+      "at": "2026-09-04T16:21:24.762994+00:00",
+      "activated": false,
+      "importance": 0
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
