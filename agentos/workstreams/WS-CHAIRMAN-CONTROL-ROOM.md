@@ -52,16 +52,24 @@ waves:
       Codex-01a06846-1b1b-7212-aa67-e6d303802489 plus a prior clean detached-checkout and approved-host
       readback, but no lifecycle, Keychain, vendor, profile, account or browser effect. Its controlling
       state is PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE. Issue #431 is the CLOSED terminal
-      duplicate with effect=NONE. Canonical issue #432's bound worker returned source-only Draft PR #435
-      head 62eaf50af3b18b8ea165de2213393223f9e16f57 as `DRAFT / HOLD-FOR-SOL` and
-      `BUILT_NOT_PROVEN / PRODUCTION_INERT`; its listed hosted `test` and CodeQL analyses are green,
-      but no non-author exact-head review or protected-master readback exists. Profile_A
-      remains the only proven disposable profile; profile_B and any account realm remain unproven. Wait
-      for #432 to be independently reviewed, protected and read back, then require a fresh same-root Sol
-      continuation before re-running only the
-      exact no-effect host gate. PF-1 A/B, INSTALL1, PF-1 C15-C18 and intended-seat foreground proof
-      remain ordered downstream gates; #355 remains architecture/semantic-readiness work only, with no
-      implementation start or account ceremony child.
+      duplicate with effect=NONE. Canonical issue #432 is OPEN / STARTED / SOURCE_ONLY. Its worker
+      published a GitHub source checkpoint in #432 comment 5533580505 for Draft PR #435 head
+      `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
+      `BUILT_NOT_PROVEN / PRODUCTION_INERT`; that checkpoint is not a reciprocal Slack completion.
+      The Slack root ends at 1788475247.999589 without a worker RESULT / HOLD; that exact root is
+      C0BSBM78V1N/1788472184.797999. GitHub #432 comment 5533655499 records the exact-head
+      `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in the best-effort census producer; comment
+      5533704747's green hosted `test` and CodeQL receipts are mechanical only and do not clear it.
+      The immediate upstream next action is a Sol path-ceiling ruling for the same #432 task, branch and
+      Draft PR #435 to repair the source scope through at least
+      `integrations/mastermind_slack_app/chatgpt.py`. Independent review or protection of the current
+      five-path head alone is not a release condition. This Macro PR remains exact-two Agent OS paths
+      and does not add that upstream source path. Profile_A remains the only proven disposable profile;
+      profile_B and any account realm remain unproven. Keep #359 PRE_START until the path-widened source
+      repair is independently reviewed, protected and read back, then require a fresh same-root Sol
+      continuation before re-running only the exact no-effect host gate. PF-1 A/B, INSTALL1, PF-1
+      C15-C18 and intended-seat foreground proof remain ordered downstream gates; #355 remains
+      architecture/semantic-readiness work only, with no implementation start or account ceremony child.
   - id: ASD-F0
     title: Active-Session Dialogue architecture and authority freeze
     status: done
@@ -161,7 +169,7 @@ landmines:
   - "Historical P0B receipts include a Multilogin HTTP 501/non-JSON cloud-search result and a rejected launcher bearer. They remain valid adverse evidence but are superseded as the current start gate by later protected Mastermind repairs and must not be replayed as current capability truth."
   - "The fixed-port MAS-115 profile update is a one-profile, one-policy mutation. Any changed profile, port, payload, pre-state or ambiguous effect requires reconciliation; never blind-retry EFFECT_UNKNOWN."
   - "Mastermind PR #396 merge 771a9558 is source proof only. It does not prove profile_B, Keychain readiness, a vendor effect, a ChatGPT account realm, PF-1, INSTALL1 or production behavior."
-  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432 has independent review and protected-master readback, and a fresh same-root continuation arrives."
+  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432's Sol-approved path-ceiling repair eliminates LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING at least through integrations/mastermind_slack_app/chatgpt.py, then earns applicable independent review and protected-master readback, and a fresh same-root continuation arrives."
   - "PF-1 A/B precedes INSTALL1, while PF-1 C15-C18 requires the exact installed generation after INSTALL1. Collapsing PF-1 into one pre-install prerequisite creates a circular gate."
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
@@ -186,14 +194,20 @@ do_not_redo:
   - "Do not blind-retry a profile update, lifecycle bootstrap, release-receipt, Keychain or vendor effect after uncertainty; reconcile the same operation/task/host and exact fixed coordinates."
 next_action: >
   Keep the exact #359 host child at PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while the
-  sole source repair, issue #432 / Draft PR #435, remains an unprotected Draft/Hold source return.
-  Do not recreate a host child, revive #431, rerun the attended ceremony, or start a host gate from a
-  source-only checkpoint. After #432 has independent review and protected-master readback, wait for one
-  fresh same-root Sol continuation to re-read the protected
-  source and run the packet's no-effect HOST_PROFILE_GATE. Only a later PROFILE_B_PROVEN
-  return can release the separate non-sensitive account ceremony; no account child or paid-plan
-  default exists now. PF-1, INSTALL1 and real-seat proof remain separate ordered gates, while #355
-  remains architecture-only and ASD-A2/A3 remain independent lanes.
+  sole #432 source repair remains blocked by the exact-head
+  LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING hold. The current five-path Draft PR #435 checkpoint
+  is a GitHub receipt, not a Slack worker result, and green hosted checks do not make it protectable.
+  The next upstream action is a Sol path-ceiling ruling for the same #432 task, branch and Draft PR #435
+  to add at least integrations/mastermind_slack_app/chatgpt.py; this exact-two-record Macro PR must not
+  carry that source change. Do not recreate a host child, revive #431, rerun the attended ceremony, or
+  start a host gate from a source-only checkpoint. Only after the path-widened source repair has
+  independent exact-head review and protected-master readback may one fresh same-root Sol continuation
+  re-read protected source and run the packet's no-effect HOST_PROFILE_GATE. Only a later
+  PROFILE_B_PROVEN return can release the separate non-sensitive account ceremony: the Chairman then
+  makes one closed choice between an eligible existing dedicated account and one explicitly approved
+  free account; no account child or paid-plan authority exists now. PF-1, INSTALL1 and real-seat proof
+  remain separate ordered gates, while #355 remains architecture-only and ASD-A2/A3 remain independent
+  lanes.
 ---
 
 ## Capability state
@@ -202,11 +216,16 @@ next_action: >
 transport path remain unproven. P0A plus H0 is `PROVEN_LIVE` on the persistent Chairman path, X1 is
 `ACCEPTED / PROVEN_LIVE_LOCAL`, and MAS-114 is complete. Mastermind PR #396 merge
 `771a95586c7a31933ee612eafaa4d1471f57527b` remains source proof for the bounded Realm1-C1 lifecycle,
-not profile capability. The current canonical source repair is issue #432: its bound worker returned
-Draft PR #435 head `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
-`BUILT_NOT_PROVEN / PRODUCTION_INERT` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`. Its listed
-hosted exact-head checks are green, but it remains source-only without non-author review or protected-master
-readback, and is therefore neither `PROTECTED` nor `PROVEN_LIVE`. The #359 host task
+not profile capability. The current canonical source repair is issue #432: GitHub comment 5533580505
+records its worker's source checkpoint for Draft PR #435 head
+`62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
+`BUILT_NOT_PROVEN / PRODUCTION_INERT` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`. Slack root
+`C0BSBM78V1N/1788472184.797999` ends at 1788475247.999589 without a worker `RESULT / HOLD`. The
+reproduced `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in GitHub comment 5533655499 means
+the current five-path head cannot be made protected merely by review/readback; comment 5533704747's
+green hosted checks establish mechanical evidence only. It remains at most `BUILT_NOT_PROVEN /
+PRODUCTION_INERT` and neither `PROTECTED` nor `PROVEN_LIVE` pending a Sol path-ceiling ruling and
+same-task/branch/PR repair through at least `integrations/mastermind_slack_app/chatgpt.py`. The #359 host task
 `01a06846-1b1b-7212-aa67-e6d303802489` has an ACK plus prior clean detached-checkout and approved-host
 proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE`; no host, Keychain, vendor,
 profile, account or browser effect has occurred. Exactly profile_A is proven; profile_B and the
@@ -340,8 +359,8 @@ separately authorized real canaries pass.
 
 1. Current GUI-started Chairman managed-browser seats are not automation-adoptable under a documented vendor contract.
 2. No supported programmatic OS-window foreground operation has been accepted; Open Sol therefore remains incomplete even if exact URL navigation can be proven on an automation-owned disposable profile.
-3. Exactly one of two required disposable profiles is proven. Profile_B has no live bootstrap/create/reconciliation/provision receipt. The canonical #359 carrier has a receiver ACK plus prior no-effect checkout/approved-host proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE`; that is neither execution nor profile capability.
-4. No dedicated non-sensitive ChatGPT test account is proven or normally signed into both disposable profiles; terms, CAPTCHA, email/phone verification and 2FA remain separate human/secret-owner gates.
+3. Exactly one of two required disposable profiles is proven. Profile_B has no live bootstrap/create/reconciliation/provision receipt. The canonical #359 carrier has a receiver ACK plus prior no-effect checkout/approved-host proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE` while #432 needs a Sol-authorized path-widened repair, then independent review and protected-source readback; that is neither execution nor profile capability.
+4. No dedicated non-sensitive ChatGPT test account is proven or normally signed into both disposable profiles. A secret owner may later perform an authorized credential ceremony, but cannot authorize account creation or any paid plan: after profile_B is proven and released, the Chairman alone makes the closed existing-account versus explicitly approved one-free-account choice. Terms, CAPTCHA, email/phone verification and 2FA remain separate human gates.
 5. PF-1 A/B, INSTALL1 and PF-1 C15-C18 have not started on the required disposable realm sequence. No Web-Sol generation is installed or proven on the two-profile matrix.
 6. The removed ASD fixture is not a production principal, and no production Agent Relay app or credential is installed. No real `MMX/AGENT_DIALOGUE_V1` exchange has occurred; A2/A3/A4 remain unstarted.
 7. The protected fixed-port/T1/Realm1 source lineage remains implementation proof only. Current action-time credential readiness, host/profile identity, local lifecycle bootstrap, live vendor effect and complete installed fault/cleanup proof have not been established together.
