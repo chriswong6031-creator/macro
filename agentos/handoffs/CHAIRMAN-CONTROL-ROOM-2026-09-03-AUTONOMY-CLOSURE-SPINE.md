@@ -20,13 +20,13 @@ changed:
     what: Created the single records-only Closure Spine architecture carrier under #386.
   - path: mastermindx-market-intelligence/Mastermind PR #438
     what: >
-      Current exact three-path F0 candidate is f8aa76ec389db7109da4273836423e2c32fc98f8.
-      It preserves ACTION_TARGET-only Runtime authority, one return-revision conflict domain, exact
-      directive body variants, safe unconsumed supersession, once-only COO consumption, and now uses
-      the real control_plane.wake_events.canonical_json_bytes owner instead of a nonexistent
-      ceo_intent symbol.
+      Current exact three-path F0 candidate is f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7.
+      It preserves ACTION_TARGET-only authority, one return-revision conflict domain, exact body
+      variants, safe unconsumed supersession, once-only COO consumption, the real wake_events
+      canonical JSON owner, replay-first no-effect readback after target rotation, and source-child-
+      only STOP semantics.
   - path: agentos/decisions/DEC-AUTONOMY-CLOSURE-SPINE-V1.md
-    what: Records current contract, canonicalizer owner, sequencing, and no-rebuild boundaries.
+    what: Records the current exact contract, sequencing, and no-rebuild boundaries.
   - path: agentos/discoveries/DSC-AUTONOMY-TARGET-AUTHORITY-DOES-NOT-CONVERGE-SEMANTIC-DIRECTIVES.md
     what: Records the falsifiable gap between action-target authority and effective directive truth.
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-03-AUTONOMY-CLOSURE-SPINE.md
@@ -50,37 +50,45 @@ verified:
     command: GitHub read Mastermind PR #438.
     result: >
       PR #438 is open/draft/mergeable on protected base 7022e70640637a4fa07f073442dc693301290e2a,
-      current head f8aa76ec389db7109da4273836423e2c32fc98f8, changed_files=3.
-  - claim: Current contract reuses real protected owners.
+      current head f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7, changed_files=3.
+  - claim: Current actor/body/canonicalizer owners are protected existing source.
     command: >
       Read current design/plan/test plus protected sol_action_target.py, wake_events.py, and
       common/commission_ref.py.
     result: >
-      Sole actor class ACTION_TARGET uses require_sol_action_authority and evidence_digest;
-      canonical bytes use control_plane.wake_events.canonical_json_bytes; REPAIR uses normalized
-      CommissionRef; STOP/ESCALATE reasons are closed; no direct Chairman Runtime actor exists.
-  - claim: Prior 8d52 current-head source contained a concrete canonicalizer defect.
-    command: Search protected control_plane/ceo_intent.py and control_plane/wake_events.py.
+      Sole actor ACTION_TARGET uses require_sol_action_authority/evidence_digest; canonical bytes
+      use control_plane.wake_events.canonical_json_bytes; REPAIR uses normalized CommissionRef;
+      STOP/ESCALATE reasons are closed; no direct Chairman Runtime actor exists.
+  - claim: Replay-first readback is required to preserve effect certainty after target rotation.
+    command: Read current F0 contract and protected Runtime command/Event patterns.
     result: >
-      ceo_intent.py has no canonical_json_bytes definition; wake_events.py defines the existing
-      canonical_json_bytes owner. The same three-path carrier was repaired test -> design -> plan.
-  - claim: The independent review carrier remains single and unconsumed for the current head.
+      Command lookup precedes current actor authorization for exact existing Event readback; immutable
+      Event bytes and recorded authority receipt are validated; new append/supersession still requires
+      current action-target authority. No-effect replay grants no new action authority.
+  - claim: STOP scope is now deterministic and non-destructive to the root.
+    command: Read current F0 consumer fixed meanings and source-law test.
+    result: >
+      STOP closes only source_job_id's returned child boundary; root terminalization remains existing
+      COO cycle / Executive Runtime law.
+  - claim: Prior canonicalizer defect is closed.
+    command: Search protected ceo_intent.py and wake_events.py.
+    result: >
+      ceo_intent has no canonical_json_bytes definition; wake_events owns it. Current F0 uses the real owner.
+  - claim: The independent review carrier remains single.
     command: Slack read C0BSBM78V1N/1788495922.483179.
     result: >
-      Reviewer mastermindx-3 returned STALE_HEAD / REVIEW_NOT_STARTED / effect=NONE for the old target.
-      No duplicate review carrier was created; the same root awaits a fresh terminal-check target edge.
-  - claim: ACF-1 can remain Event-only under current Runtime patterns.
+      Reviewer mastermindx-3 returned STALE_HEAD / REVIEW_NOT_STARTED / effect=NONE for an old target.
+      The same root remains the only review carrier and awaits a fresh terminal-check target edge.
+  - claim: No schema migration or new table is justified by current Runtime source.
     command: >
       Read RuntimeStore transaction/get_event_by_command_id/append_event, commit_coo_retry_decision,
-      and CooCycle patterns at protected Mastermind.
-    result: >
-      Existing BEGIN IMMEDIATE, command replay, and atomic mutation+Event patterns are sufficient in
-      principle; no directive or consumption table is justified absent a later contradiction.
+      and CooCycle patterns.
+    result: Existing command replay and atomic mutation+Event patterns are sufficient in principle.
 unverified:
-  - claim: Mastermind PR #438 current head has terminal-green repository and security proof.
+  - claim: Mastermind PR #438 current head has terminal-green repository/security proof.
     what_would_verify: >
-      Require all current-head checks on f8aa76ec389db7109da4273836423e2c32fc98f8 to finish SUCCESS;
-      fetch logs and repair only the same three paths if a concrete failure appears.
+      Require CI run for f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7 to finish SUCCESS; fetch logs and
+      repair only the same three paths if a concrete failure appears.
   - claim: Mastermind PR #438 has independent current-head approval.
     what_would_verify: >
       After checks are terminal, issue one fresh exact-head edge on existing review root
@@ -97,19 +105,19 @@ unverified:
       the exact current target commits, COO consumes once, and the next same-root transition occurs
       with zero Chairman operational action.
 unresolved:
-  - "Mastermind PR #438 current f8aa76ec head requires terminal exact-head CI/security proof."
-  - "The existing review carrier must be retargeted to f8aa76ec only after terminal checks."
+  - "Mastermind PR #438 current f0c5caca head requires terminal exact-head CI/security proof."
+  - "The existing review carrier must be retargeted to f0c5caca only after terminal checks."
   - "Macro PR #6814 requires current-head validation and independent review."
   - "C2-R1A PR #415 still owns executive_runtime.py; no ACF-1 implementation may begin."
   - "MAT-S1, Stage-B1 and Control Room remain separate prerequisites/carriers."
   - "ACF-2 through ACF-6 remain evidence-gated and unauthorized."
 next_actions:
   - >
-    Poll current checks for Mastermind head f8aa76ec389db7109da4273836423e2c32fc98f8. If failed, fetch
+    Poll current checks for Mastermind head f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7. If failed, fetch
     logs and repair only the exact three F0 paths. If successful, post one fresh target edge under
     existing Slack review root C0BSBM78V1N/1788495922.483179.
   - >
-    Require mastermindx-3 to ACK/START/review f8aa76ec on that same root. After APPROVE, re-pin
+    Require mastermindx-3 to ACK/START/review f0c5caca on that same root. After APPROVE, re-pin
     protected procedure and perform expected-head F0 release.
   - >
     Validate Macro PR #6814 after this reconciliation, obtain current-head non-author review, and
@@ -120,9 +128,11 @@ next_actions:
     Only after F0 protection and Runtime path release, create one fresh ACF-1 implementation child,
     PREFERRED_AVENUE CTO Sol, CAPACITY_SELECTABLE / needs_placement, with fresh pickup/watch/START.
 do_not_redo:
-  - "Do not reset or replace current PR #438 head f8aa76ec without a concrete current-head defect."
+  - "Do not reset or replace current PR #438 head f0c5caca without a concrete current-head defect."
   - "Do not reopen #400 or create another autonomy incident, workstream, lifecycle, queue, retry plane, target registry, or controller."
   - "Do not restore the nonexistent control_plane.ceo_intent.canonical_json_bytes reference."
+  - "Do not require current actor authority merely to read back an exact already-committed Event."
+  - "Do not let STOP ambiguously terminalize the root."
   - "Do not fabricate a direct CHAIRMAN Runtime actor in v1."
   - "Do not treat Slack/browser/model/provider/carrier_reference as Runtime actor authority."
   - "Do not let REPAIR originate a successor or ESCALATE create a Job/queue/watcher/provider call."
@@ -133,9 +143,10 @@ do_not_redo:
 danger_areas:
   - "Current Chairman authority is human/session-level, not a Runtime-authenticated principal."
   - "A stale review target is not transferable; retarget the same carrier with a fresh exact-head edge."
-  - "All earlier-head CI/reviews are historical after f8aa76ec."
+  - "All earlier-head CI/reviews are historical after f0c5caca."
   - "A free-form body recreates model-authored executable authority."
   - "Actor/target/decision entropy in command identity defeats convergence."
+  - "New append requires current actor authority; exact readback does not, because it creates no effect."
   - "Response loss after Runtime commit requires Event readback, never resend/failover."
   - "PR #415 and #326 are active writers and must not be collided with."
 prs: [438, 427, 415, 326, 6814]
@@ -147,6 +158,6 @@ discoveries:
 
 # Return point
 
-Current Mastermind F0 candidate is `f8aa76ec389db7109da4273836423e2c32fc98f8`. The immediate
+Current Mastermind F0 candidate is `f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7`. The immediate
 mission is current-head CI and independent review only. ACF-1 remains unassigned and blocked on F0
 protection plus C2 Runtime path release. The existing autonomy train continues independently.
