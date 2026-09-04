@@ -1,0 +1,406 @@
+/* F02-X1 — Official sanctions geography desk.
+   Owned by the presentation lane; paired byte-for-byte with site/sanctions_geography.css.
+
+   ART DIRECTION — two designs, one information architecture.
+
+   The subject is a public REGISTER, not a threat board. Every count on this page
+   is "entries whose published address field names this country" — a fact about
+   paperwork. So the loud colour is deliberately NOT spent on the sanctioned
+   parties: --act (red) is reserved for OUR source failing, and the intensity
+   ramp is built from --warn, which reads as a stamp or an annotation on a
+   document rather than as an alarm. Reserving red for our own uncertainty is
+   the whole editorial position of this surface.
+
+   DARK — night desk. Land emerges from a near-black void: the map's base fill is
+   LIGHTER than the canvas, depth comes from luminance, and selection carries a
+   restrained bloom. The amber --warn rung lights up on graphite.
+
+   LIGHT — paper register. The figure/ground relationship INVERTS: the map's base
+   fill is DARKER than the white panel, ink on paper. Depth comes from hairline
+   borders and a shallow shadow; the selection bloom becomes a ring, because a
+   bloom on white is a stain. The clay --warn rung stamps onto white, and the
+   ramp tops out lower (62% vs 76%) because saturated clay above that muddies
+   against white instead of deepening.
+
+   Mechanisms that intentionally differ: figure/ground inversion, bloom vs ring,
+   luminance depth vs border+shadow depth, ramp endpoint. Everything else —
+   ordering, density, spacing, type scale, state meaning, interaction — is shared.
+
+   Every colour derives from theme.css tokens; --up/--down are deliberately never
+   used, because they swap in ZH (红涨绿跌) and a sanctions add is not "up".      */
+
+/* ---------- page frame ---------------------------------------------------- */
+
+.sg { max-width: 1360px; margin: 0 auto; padding: 0 18px 72px; }
+.sg *, .sg *::before, .sg *::after { box-sizing: border-box; }
+.sg .tnum { font-variant-numeric: tabular-nums; }
+
+/* The register voice: machine facts are monospace, human meaning is UI text.
+   That split is the page's epistemic line, drawn in type rather than in copy. */
+.sg-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.sg-sec { margin: 26px 0 0; }
+.sg-sec > h2 {
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted); margin: 0 0 10px;
+}
+.sg-eyebrow {
+  font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); display: block; margin: 0 0 6px;
+}
+
+/* ---------- desk header --------------------------------------------------- */
+
+.sg-head { padding: 22px 0 4px; }
+.sg-head h1 {
+  font-size: var(--fs-h1); line-height: 1.15; margin: 0 0 8px; letter-spacing: -.01em;
+}
+.sg-lede { color: var(--muted); font-size: var(--fs-body); max-width: 68ch; margin: 0 0 14px; }
+.sg-headmeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* ---------- the provenance rail — this page's signature device -------------
+   One monospace strip binding every visible count to the bytes it came from.
+   It reappears in miniature inside entry detail, so a reader can always walk
+   from a number back to its source identity without leaving the page.        */
+
+.sg-prov {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px;
+  font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted);
+  background: color-mix(in srgb, var(--panel2) 60%, transparent);
+  border: 1px solid var(--line); border-left-width: 3px;
+  border-radius: var(--r-ctl, 8px);
+  padding: 9px 13px; margin: 14px 0 0; line-height: 1.9;
+}
+.sg-prov b { color: var(--text); font-weight: 600; }
+.sg-prov .sg-hash { word-break: break-all; }
+.sg-prov--ok   { border-left-color: color-mix(in srgb, var(--ok) 70%, var(--line)); }
+.sg-prov--warn { border-left-color: color-mix(in srgb, var(--warn) 78%, var(--line)); }
+.sg-prov--bad  { border-left-color: var(--act); }
+
+/* ---------- the read ------------------------------------------------------ */
+
+.sg-read {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr));
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden;
+}
+.sg-fig { background: var(--panel); padding: 15px 17px 16px; min-width: 0; }
+.sg-fig-k {
+  font-size: var(--fs-micro); letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); display: block; margin: 0 0 6px;
+}
+.sg-fig-v {
+  font-family: var(--font-mono); font-size: var(--fs-num-lg); font-weight: 600;
+  font-variant-numeric: tabular-nums; line-height: 1.05; display: block;
+}
+.sg-fig-m { font-size: var(--fs-sm); color: var(--muted); display: block; margin: 6px 0 0; line-height: 1.45; }
+
+/* The caveat sits BESIDE the headline, never demoted to a hover: it changes how
+   every number above it must be read (density law §9.8). */
+.sg-caveat {
+  margin: 12px 0 0; padding: 11px 14px; font-size: var(--fs-sm); line-height: 1.55;
+  border: 1px solid var(--line); border-left: 3px solid color-mix(in srgb, var(--warn) 76%, var(--line));
+  border-radius: var(--r-ctl, 8px);
+  background: color-mix(in srgb, var(--warn) 7%, var(--panel));
+  color: var(--text);
+}
+.sg-caveat b { font-weight: 650; }
+
+/* ---------- atlas: map + table share one section -------------------------- */
+
+.sg-atlas { display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+
+.sg-panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r-card, 12px); padding: 14px 15px 15px; min-width: 0;
+}
+.sg-panel-h {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 10px; padding: 0 0 9px; border-bottom: 1px solid var(--line);
+}
+.sg-panel-h h3 { font-size: var(--fs-md); font-weight: 650; margin: 0; }
+.sg-panel-h .sg-asof { margin-left: auto; font-size: var(--fs-micro); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* map ------------------------------------------------------------------- */
+
+.sg-mapwrap { position: relative; }
+.sg-map { display: block; width: 100%; height: auto; touch-action: manipulation; }
+
+/* Base landmass — DARK: lighter than the void, land emerging.
+   The intensity ramp then lifts a country out of that base.                */
+.sg-geo {
+  fill: color-mix(in srgb, var(--text) 12%, transparent);
+  stroke: color-mix(in srgb, var(--text) 20%, transparent);
+  stroke-width: .35; outline: none;
+  transition: fill .18s ease, stroke .18s ease;
+}
+.sg-geo[data-step="1"] { fill: color-mix(in srgb, var(--warn) 22%, var(--panel)); }
+.sg-geo[data-step="2"] { fill: color-mix(in srgb, var(--warn) 38%, var(--panel)); }
+.sg-geo[data-step="3"] { fill: color-mix(in srgb, var(--warn) 54%, var(--panel)); }
+.sg-geo[data-step="4"] { fill: color-mix(in srgb, var(--warn) 70%, var(--panel)); }
+.sg-geo[data-step="5"] { fill: color-mix(in srgb, var(--warn) 86%, var(--panel)); }
+
+/* A boundary the projection never names carries the base fill and nothing more:
+   that is an honest zero ("no published address names this country"). It is NOT
+   the same as an address we could not place at all — that value has no boundary
+   to colour, so it is registered off-map in the coverage section instead of
+   being quietly folded into a neighbour. */
+
+.sg-geo[data-count="0"] { cursor: default; }
+.sg-geo.is-pick { cursor: pointer; }
+.sg-geo.is-pick:hover { stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: .8; }
+
+/* DARK selection: a bright ring plus a restrained bloom — the instrument cue. */
+.sg-geo.is-on {
+  stroke: var(--link); stroke-width: 1.15;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--link) 52%, transparent));
+}
+.sg-map:focus-visible, .sg-geo:focus-visible {
+  outline: 2px solid var(--link); outline-offset: 2px;
+}
+
+.sg-legend {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+  margin: 11px 0 0; font-size: var(--fs-micro); color: var(--muted);
+}
+.sg-ramp { display: flex; gap: 2px; }
+.sg-ramp i {
+  width: 22px; height: 9px; display: block; border: 1px solid var(--line);
+  border-radius: 0;
+}
+.sg-ramp i:nth-child(1) { background: color-mix(in srgb, var(--warn) 22%, var(--panel)); }
+.sg-ramp i:nth-child(2) { background: color-mix(in srgb, var(--warn) 38%, var(--panel)); }
+.sg-ramp i:nth-child(3) { background: color-mix(in srgb, var(--warn) 54%, var(--panel)); }
+.sg-ramp i:nth-child(4) { background: color-mix(in srgb, var(--warn) 70%, var(--panel)); }
+.sg-ramp i:nth-child(5) { background: color-mix(in srgb, var(--warn) 86%, var(--panel)); }
+.sg-legend-hatch { width: 22px; height: 9px; display: inline-block; border: 1px solid var(--line);
+  background: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--muted) 55%, transparent) 3px 4px); }
+
+/* table ----------------------------------------------------------------- */
+
+.sg-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+.sg-filters input, .sg-filters select {
+  font: inherit; font-size: var(--fs-sm); color: var(--text);
+  background: var(--panel2); border: 1px solid var(--line);
+  border-radius: var(--r-ctl, 8px); padding: 7px 10px; min-height: 40px; min-width: 0;
+}
+.sg-filters input { flex: 1 1 150px; }
+.sg-filters input:focus-visible, .sg-filters select:focus-visible {
+  outline: 2px solid var(--link); outline-offset: 1px; border-color: var(--link);
+}
+
+/* Assistive-tech-only text. The estate has no shared utility for this, so it is
+   scoped to this surface rather than added to the global token layer. */
+.sg-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+.sg-tblnote { margin: 0 0 9px; }
+
+/* The box scrolls, never the page — at any viewport. */
+.sg-tblwrap { overflow: auto; max-height: 520px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px); }
+.sg-tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); min-width: 380px; }
+.sg-tbl th {
+  position: sticky; top: 0; z-index: 1; text-align: left; font-size: var(--fs-micro);
+  letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 700;
+  background: var(--panel2); border-bottom: 1px solid var(--line); padding: 8px 11px; white-space: nowrap;
+}
+.sg-tbl th.sg-r, .sg-tbl td.sg-r { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.sg-tbl td { padding: 8px 11px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); vertical-align: baseline; }
+.sg-tbl tbody tr { cursor: pointer; }
+.sg-tbl tbody tr:hover { background: var(--panel2); }
+.sg-tbl tbody tr.is-on { background: color-mix(in srgb, var(--warn) 11%, var(--panel)); box-shadow: inset 3px 0 0 0 color-mix(in srgb, var(--warn) 82%, var(--line)); }
+.sg-tbl tbody tr:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
+.sg-tbl .sg-unres { color: var(--muted); }
+
+/* ---------- entry detail rail --------------------------------------------- */
+
+.sg-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.sg-entry { border: 1px solid var(--line); border-radius: var(--r-ctl, 8px); padding: 12px 13px; background: var(--panel2); }
+.sg-entry + .sg-entry { margin-top: 9px; }
+.sg-entry-n { font-size: var(--fs-md); font-weight: 650; margin: 0 0 3px; line-height: 1.3; }
+.sg-entry-uid { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted); }
+.sg-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 9px 0 0; font-size: var(--fs-sm); }
+.sg-kv dt { color: var(--muted); font-size: var(--fs-micro); letter-spacing: .05em; text-transform: uppercase; padding-top: 2px; }
+.sg-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* State chips. The word is always present — colour is never the only carrier. */
+.sg-chip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-micro);
+  font-weight: 650; letter-spacing: .04em; padding: 3px 8px; margin: 0 4px 4px 0;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: color-mix(in srgb, var(--panel2) 70%, transparent); color: var(--muted);
+  white-space: nowrap;
+}
+.sg-chip::before { content: ""; width: 6px; height: 6px; flex: none; border-radius: 0; background: currentColor; }
+.sg-chip--added   { color: var(--ink-info, var(--info)); border-color: color-mix(in srgb, var(--info) 45%, var(--line)); }
+.sg-chip--removed { color: var(--muted); border-style: dashed; }
+.sg-chip--corrected { color: var(--ink-warn, var(--warn)); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.sg-chip--unres   { color: var(--muted); border-style: dotted; }
+.sg-chip--prog    { color: var(--text); }
+
+/* A change is a one-line fact: who, what action, when. Printing 211 of them as
+   full cards made this section outweigh the map it was supposed to annotate. */
+.sg-crow {
+  display: grid; grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 2px 10px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.sg-crow-n { font-size: var(--fs-sm); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.sg-crow-m { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted); white-space: nowrap; }
+.sg-crow-s { grid-column: 1 / -1; }
+.sg-more { display: block; margin: 11px 0 0; font-size: var(--fs-sm); color: var(--muted); }
+
+/* ---------- coverage / what we cannot place -------------------------------- */
+
+/* A second heading inside one panel: the off-map register is a subordinate
+   claim under coverage, not a section of its own. */
+.sg-subhead { margin-top: 18px; }
+
+.sg-cov { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 9px; }
+.sg-cov-item { border: 1px solid var(--line); border-radius: var(--r-ctl, 8px); padding: 10px 12px; background: var(--panel2); }
+.sg-cov-item b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- provenance disclosure ------------------------------------------ */
+
+.sg-disc { border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--panel); padding: 0; }
+.sg-disc > summary {
+  cursor: pointer; padding: 13px 15px; font-size: var(--fs-sm); font-weight: 600; list-style: none;
+  display: flex; align-items: center; gap: 9px; min-height: 44px;
+}
+.sg-disc > summary::-webkit-details-marker { display: none; }
+.sg-disc > summary::after { content: "+"; margin-left: auto; color: var(--muted); font-family: var(--font-mono); }
+.sg-disc[open] > summary::after { content: "\2212"; }
+.sg-disc > summary:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; border-radius: var(--r-card, 12px); }
+.sg-disc-body { padding: 0 15px 15px; font-size: var(--fs-sm); color: var(--muted); line-height: 1.65; }
+.sg-disc-body dl { margin: 0 0 12px; }
+.sg-src-row { border-top: 1px solid var(--line); padding: 9px 0 0; margin: 9px 0 0; }
+.sg-src-row a { color: var(--ink-link, var(--link)); overflow-wrap: anywhere; }
+
+/* ---------- designed loading / empty / degraded states ---------------------- */
+
+/* Loading is a skeleton at true geometry and carries no words: words here would
+   be read as content that then vanishes. */
+.sg-skel { background: var(--panel2); border-radius: var(--r-ctl, 8px); position: relative; overflow: hidden; }
+.sg-skel::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 20%, color-mix(in srgb, var(--text) 8%, transparent) 50%, transparent 80%);
+  animation: sg-sheen 1.25s linear infinite;
+}
+.sg-skel--map { aspect-ratio: 2 / 1; width: 100%; }
+.sg-skel--row { height: 34px; margin: 0 0 6px; }
+@keyframes sg-sheen { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* Empty is a sentence with a mandatory cause — never a bare dash. */
+.sg-empty { padding: 22px 16px; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
+.sg-empty-t { color: var(--text); font-size: var(--fs-md); display: block; margin: 0 0 5px; }
+.sg-empty-why { display: block; max-width: 46ch; margin: 0 auto; line-height: 1.6; }
+
+/* DARK degraded: a solid high-contrast rail. Text + code + colour, never colour alone. */
+.sg-degraded {
+  display: flex; gap: 11px; align-items: flex-start; margin: 14px 0 0;
+  padding: 12px 14px; border-radius: var(--r-ctl, 8px);
+  border: 1px solid color-mix(in srgb, var(--act) 40%, var(--line));
+  border-left: 4px solid var(--act);
+  background: color-mix(in srgb, var(--act) 10%, var(--panel));
+  font-size: var(--fs-sm); line-height: 1.55;
+}
+.sg-degraded--stale { border-left-color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line));
+  background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+.sg-degraded code { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text); }
+.sg-degraded-t { display: block; font-weight: 650; color: var(--text); margin: 0 0 3px; }
+
+/* =========================================================================
+   LIGHT — the paper register. Not a recolor: the map's figure/ground inverts,
+   the selection bloom becomes a ring, and depth moves from luminance to
+   border + shadow. Panels sit white on a perceptibly deeper canvas.
+   ========================================================================= */
+
+html[data-theme="light"] .sg-panel,
+html[data-theme="light"] .sg-disc {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent);
+}
+html[data-theme="light"] .sg-read { box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent); }
+
+/* Ink on paper: the base landmass is now DARKER than its panel, and the
+   borders sharpen — hairline discipline replaces the dark field's glow. */
+html[data-theme="light"] .sg-geo {
+  fill: color-mix(in srgb, var(--text) 6%, var(--panel));
+  stroke: color-mix(in srgb, var(--text) 24%, transparent);
+  stroke-width: .4;
+}
+
+/* The clay ramp tops out lower than amber does on black: past ~62% a saturated
+   clay stops deepening against white and starts to muddy. */
+html[data-theme="light"] .sg-geo[data-step="1"] { fill: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
+html[data-theme="light"] .sg-geo[data-step="2"] { fill: color-mix(in srgb, var(--warn) 24%, var(--panel)); }
+html[data-theme="light"] .sg-geo[data-step="3"] { fill: color-mix(in srgb, var(--warn) 38%, var(--panel)); }
+html[data-theme="light"] .sg-geo[data-step="4"] { fill: color-mix(in srgb, var(--warn) 50%, var(--panel)); }
+html[data-theme="light"] .sg-geo[data-step="5"] { fill: color-mix(in srgb, var(--warn) 62%, var(--panel)); }
+
+/* Ring, not glow — a bloom on white is a stain. */
+html[data-theme="light"] .sg-geo.is-on {
+  stroke: var(--link); stroke-width: 1.4; filter: none;
+}
+html[data-theme="light"] .sg-geo.is-pick:hover { stroke: color-mix(in srgb, var(--text) 62%, transparent); }
+
+html[data-theme="light"] .sg-ramp i:nth-child(1) { background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
+html[data-theme="light"] .sg-ramp i:nth-child(2) { background: color-mix(in srgb, var(--warn) 24%, var(--panel)); }
+html[data-theme="light"] .sg-ramp i:nth-child(3) { background: color-mix(in srgb, var(--warn) 38%, var(--panel)); }
+html[data-theme="light"] .sg-ramp i:nth-child(4) { background: color-mix(in srgb, var(--warn) 50%, var(--panel)); }
+html[data-theme="light"] .sg-ramp i:nth-child(5) { background: color-mix(in srgb, var(--warn) 62%, var(--panel)); }
+
+/* Selected row: quiet tint + rail + deepened ink, never a highlighter smear. */
+html[data-theme="light"] .sg-tbl tbody tr.is-on {
+  background: color-mix(in srgb, var(--warn) 8%, var(--panel));
+  box-shadow: inset 3px 0 0 0 var(--warn);
+}
+html[data-theme="light"] .sg-tbl th { background: color-mix(in srgb, var(--panel2) 70%, var(--panel)); }
+
+/* LIGHT degraded: a bordered sheet rather than a filled rail — a heavy fill on
+   white reads as an error page, not as a caveat on live material. */
+html[data-theme="light"] .sg-degraded {
+  background: color-mix(in srgb, var(--act) 5%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--act) 55%, var(--line));
+  border-left-width: 4px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent);
+}
+html[data-theme="light"] .sg-degraded--stale {
+  background: color-mix(in srgb, var(--warn) 6%, var(--panel));
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+  border-left-color: var(--warn);
+}
+html[data-theme="light"] .sg-caveat { box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 6%, transparent); }
+html[data-theme="light"] .sg-prov { background: var(--panel); }
+
+/* =========================================================================
+   Responsive — deliberate recomposition, not the desktop stack squeezed.
+   At 980 the atlas unstacks to one column (map first: it is the orientation
+   device, and the table it filters follows it). At 640 the detail rail
+   unstacks, figures go two-up, and the map gives up height so the table —
+   the keyboard path to the same counts — is reachable within one swipe.
+   ========================================================================= */
+
+@media (max-width: 980px) {
+  .sg-atlas { grid-template-columns: minmax(0, 1fr); }
+  .sg-tblwrap { max-height: 380px; }
+}
+
+@media (max-width: 640px) {
+  .sg { padding: 0 13px 56px; }
+  .sg-detail { grid-template-columns: minmax(0, 1fr); }
+  .sg-read { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sg-head h1 { font-size: var(--fs-h2); }
+  .sg-tblwrap { max-height: 320px; }
+  .sg-prov { line-height: 1.75; gap: 0 10px; }
+  .sg-panel { padding: 12px 12px 13px; }
+  .sg-kv { grid-template-columns: minmax(0, 1fr); gap: 1px; }
+  .sg-kv dd { margin: 0 0 7px; }
+}
+
+/* Breathing sheens and fill transitions are decoration; the map must still be
+   fully usable without them. */
+@media (prefers-reduced-motion: reduce) {
+  .sg-geo { transition: none; }
+  .sg-skel::after { animation: none; }
+}

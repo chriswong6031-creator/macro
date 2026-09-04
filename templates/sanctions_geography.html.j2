@@ -1,0 +1,203 @@
+{#
+  F02-X1 — Official sanctions geography desk.
+
+  Rendered by scripts/build_sanctions_geography.py::render() through a bare
+  Jinja Environment with StrictUndefined. That environment passes EXACTLY four
+  names — active_section, active_page, source_state, projection_id — so any
+  fifth reference raises at build time. Everything else on this page arrives
+  client-side from the frozen projection artifact.
+
+  This is a context and research surface over a public register. It is not a
+  compliance-screening tool, not a location claim, and not a trading view. The
+  one reading that must never be available here is "these are the places where
+  sanctioned parties are" — every count is a fact about an address field on a
+  form, so the caveat sits beside the headline rather than under a hover.
+
+  Chrome is the canonical product family (_site_nav.html.j2); no third header.
+  The site-side asset names are HYPHENATED (sanctions-geography.css/.js) because
+  that is what scripts/build_sanctions_geography.py's ASSET_MAP copies the
+  underscored templates/ sources to. Linking the template spelling here would
+  404 the page's own stylesheet and script.
+
+  All styling lives in sanctions_geography.css: this template carries no inline
+  stylesheet block, no style attribute, and the page script injects no rules at
+  runtime, so every visual decision stays inside the governed layer.
+#}
+{#- The house t() macro. `|safe` is load-bearing and matches report_base.html.j2
+    and _navlinks.html.j2: without it a caveat written with <b> ships its own
+    tags as visible text, which is exactly what the first browser pass caught. -#}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sanctions Geography — where the official OFAC list's published addresses point</title>
+{% set seo_title = "Sanctions Geography — Mastermind" %}
+{% set seo_desc = "Every country named by a published address on the U.S. Treasury OFAC Specially Designated Nationals list, with the source receipt behind each count." %}
+{% set seo_path = "sanctions_geography.html" %}
+{%- include "_seo_head.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="sanctions-geography.css">
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<div class="sg" data-sg-root data-source-state="{{ source_state }}" data-active-section="{{ active_section }}" data-active-page="{{ active_page }}">
+
+  <header class="sg-head">
+    <span class="sg-eyebrow">{{ t('Official register · U.S. Treasury OFAC', '官方登记册 · 美国财政部 OFAC') }}</span>
+    <h1>{{ t('Sanctions geography', '制裁地理') }}</h1>
+    <p class="sg-lede">{{ t(
+      'Every country named by a published address on the Specially Designated Nationals list — read straight from the official file, with the bytes it came from shown beside it.',
+      '「特别指定国民」名单中，每一条公开地址所提及的国家/地区 — 直接读取自官方文件，并在旁列出其原始字节凭证。') }}</p>
+    <div class="sg-headmeta">
+      <span class="sg-chip sg-chip--prog">{{ t('Context surface — not a screening service', '情境参考 — 非筛查服务') }}</span>
+      <span class="sg-chip sg-chip--prog">{{ t('Read the register, then check the receipt', '先看登记，再核凭证') }}</span>
+    </div>
+    <div class="sg-headmeta"><span class="dtp-asof sg-asof" data-sg-asof></span></div>
+    <div class="sg-prov sg-mono" data-sg-prov></div>
+    <div data-sg-banner></div>
+  </header>
+
+  <section class="sg-sec" aria-labelledby="sg-h-read">
+    <h2 id="sg-h-read">{{ t('The read', '概览') }}</h2>
+    <div class="sg-read" data-sg-figures>
+      <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
+      <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
+      <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
+      <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
+    </div>
+    <p class="sg-caveat">{{ t(
+      '<b>These are addresses on a form, not a current location.</b> A count means the entry has at least one published address whose country field names that place. Nationality, citizenship, a vessel’s flag and a place of birth are separate fields on the same record and none of them is used here. A person or company listed with an address in a country need not be there now, or ever.',
+      '<b>这些是表单上的地址，并非当前位置。</b>某地的计数表示该条目至少有一条公开地址的国家字段指向该地。国籍、公民身份、船舶船旗与出生地是同一记录上的不同字段，本页一律不予采用。以某国地址列名的个人或公司，未必现在身处该地，也未必曾经身处该地。') }}</p>
+  </section>
+
+  <section class="sg-sec" aria-labelledby="sg-h-atlas">
+    <h2 id="sg-h-atlas">{{ t('Where the published addresses point', '公开地址指向何处') }}</h2>
+    <div class="sg-atlas">
+
+      <div class="sg-panel sg-mapwrap">
+        <div class="sg-panel-h">
+          <h3 id="sg-map-title">{{ t('Boundaries named by a published address', '被公开地址提及的边界') }}</h3>
+        </div>
+        <div class="sg-skel sg-skel--map" data-sg-mapskel></div>
+        <svg class="sg-map" data-sg-map role="img" aria-labelledby="sg-map-title sg-map-desc" hidden></svg>
+        <p id="sg-map-desc" class="sg-fig-m">{{ t(
+          'Shading is the number of listed entries with at least one published address naming that boundary. A plain boundary means no published address names it — an honest zero, not missing data. Boundaries are schematic, drawn from the Natural Earth public-domain 110m dataset, and may reflect disputed-boundary choices we did not make.',
+          '底色深浅表示：有多少名单条目至少有一条公开地址提及该边界。未着色的边界表示没有任何公开地址提及它 — 这是真实的零值，而非数据缺失。边界为示意性绘制，来源为 Natural Earth 公有领域 110m 数据集，可能反映并非由我们作出的争议边界处理方式。') }}</p>
+        <div class="sg-legend" data-sg-legend></div>
+      </div>
+
+      <div class="sg-panel">
+        <div class="sg-panel-h">
+          <h3>{{ t('Every named boundary', '全部被提及的边界') }}</h3>
+        </div>
+        <div class="sg-filters">
+          {#- An <option> may contain text only: a dual-emit .l-en/.l-zh pair inside
+              one renders as BOTH languages concatenated ("Most entries条目最多"),
+              which the first browser pass caught. Form controls therefore use the
+              house data-label-en/zh attribute idiom (biocatalyst.html.j2) and are
+              swapped by this page's script on boot and on theme.js's `langchange`. -#}
+          <input type="search" data-sg-search
+                 aria-label="Filter boundaries by country or program name"
+                 placeholder="Filter by country or program…"
+                 data-ph-en="Filter by country or program…"
+                 data-ph-zh="按国家或项目名称筛选…">
+          <select data-sg-sort aria-label="Sort boundaries">
+            <option value="entries" data-label-en="Most entries" data-label-zh="条目最多">Most entries</option>
+            <option value="changed" data-label-en="Most recent change" data-label-zh="近期变更最多">Most recent change</option>
+            <option value="name" data-label-en="Name" data-label-zh="按名称">Name</option>
+          </select>
+        </div>
+        <p class="sg-fig-m sg-tblnote">{{ t(
+          'Counts of listed entries and of published address records, with additions and removals from the official delta files. Country and program names are reproduced exactly as the official file publishes them, in English — translating them here would create a second naming authority this page is not allowed to hold.',
+          '名单条目数与公开地址记录数，并附官方增量文件中的新增与移除。国家与项目名称完全按官方文件发布的英文原样呈现 — 在此翻译等同于另立一套命名权威，而本页无权持有。') }}</p>
+        <div class="sg-tblwrap" data-sg-tablebox tabindex="0">
+          <table class="sg-tbl">
+            <caption class="sg-sr">{{ t(
+              'Boundaries named by a published address, with entry counts, address counts, official additions and removals, and programs.',
+              '被公开地址提及的边界，含条目数、地址数、官方新增与移除，以及项目。') }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ t('Boundary', '边界') }}</th>
+                <th scope="col" class="sg-r">{{ t('Entries', '条目') }}</th>
+                <th scope="col" class="sg-r">{{ t('Addresses', '地址') }}</th>
+                <th scope="col" class="sg-r">{{ t('Added / removed', '新增 / 移除') }}</th>
+                <th scope="col">{{ t('Programs', '项目') }}</th>
+              </tr>
+            </thead>
+            <tbody data-sg-tbody>
+              <tr><td colspan="5"><span class="sg-skel sg-skel--row"></span></td></tr>
+              <tr><td colspan="5"><span class="sg-skel sg-skel--row"></span></td></tr>
+              <tr><td colspan="5"><span class="sg-skel sg-skel--row"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="sg-sec" aria-labelledby="sg-h-detail">
+    <h2 id="sg-h-detail">{{ t('Entries and official changes', '条目与官方变更') }}</h2>
+    <div class="sg-detail">
+      <div class="sg-panel">
+        <div class="sg-panel-h">
+          <h3 data-sg-entries-head>{{ t('Selected boundary', '所选边界') }}</h3>
+        </div>
+        <div data-sg-entries></div>
+      </div>
+      <div class="sg-panel">
+        <div class="sg-panel-h">
+          <h3>{{ t('Recent official changes', '近期官方变更') }}</h3>
+        </div>
+        <p class="sg-fig-m">{{ t(
+          'Additions and removals come only from an explicit action in an official OFAC delta file. A quiet delta is never read as a removal, and the current full snapshot always decides who is on the list.',
+          '新增与移除仅来自 OFAC 官方增量文件中的明确动作。增量文件未提及某条目时，绝不据此判定其已被移除；名单归属始终以当前完整快照为准。') }}</p>
+        <div data-sg-changes></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-sec" aria-labelledby="sg-h-cov">
+    <h2 id="sg-h-cov">{{ t('What the map cannot show', '地图无法呈现的部分') }}</h2>
+    <div class="sg-panel">
+      <p class="sg-fig-m">{{ t(
+        'Two things are true of this map and both are stated rather than hidden. An address whose country we could not match to a boundary stays unresolved and is registered below instead of being folded into a neighbour. And many sanctions programs are thematic rather than country-tied — cyber, narcotics and proliferation programs reach parties anywhere — so a pale map is never evidence that a program is inactive.',
+        '关于这张地图有两点事实，我们选择明示而非隐藏。其一，若某条地址的国家无法匹配到边界，则保持未解析状态并登记于下方，绝不并入邻国。其二，许多制裁项目按主题而非按国别设立 — 网络、毒品与扩散类项目可触及任何地方的对象 — 因此地图颜色浅淡，绝不能作为某项目不活跃的证据。') }}</p>
+      <div class="sg-cov" data-sg-coverage></div>
+      <div class="sg-panel-h sg-subhead">
+        <h3>{{ t('Registered off-map', '未上图登记') }}</h3>
+      </div>
+      <div class="sg-cov" data-sg-offmap></div>
+    </div>
+  </section>
+
+  <section class="sg-sec" aria-labelledby="sg-h-src">
+    <h2 id="sg-h-src">{{ t('Provenance', '来源凭证') }}</h2>
+    <details class="sg-disc" data-source>
+      <summary>{{ t('Source files, hashes and rights behind every count above',
+                     '上述所有计数背后的来源文件、哈希值与权利声明') }}</summary>
+      <div class="sg-disc-body">
+        <p>{{ t(
+          'The only sanctions source is the U.S. Department of the Treasury Office of Foreign Assets Control Sanctions List Service. Boundary geometry is the tracked Natural Earth 110m asset already in this site, recorded by the project as public domain. Nothing on this page is generated by a model.',
+          '制裁数据的唯一来源是美国财政部外国资产控制办公室（OFAC）制裁名单服务。边界几何来自本站已有的 Natural Earth 110m 资源，该项目将其数据列为公有领域。本页所有内容均非由模型生成。') }}</p>
+        <p class="sg-mono">{{ t('Projection identity', '投影标识') }} {{ projection_id }}</p>
+        <div data-sg-source></div>
+      </div>
+    </details>
+  </section>
+
+</div>
+
+<script src="vendor/d3-array.min.js"></script>
+<script src="vendor/d3-geo.min.js"></script>
+<script src="vendor/topojson-client.min.js"></script>
+<script src="theme.js"></script>
+<script src="sanctions-geography.js"></script>
+</body>
+</html>
