@@ -26,38 +26,42 @@
     {
       "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
       "stamp_date": "2026-08-14"
+    },
+    {
+      "reason": "fallback/degraded/unpaired session excluded from the paired race; not a zero and not a tie",
+      "stamp_date": "2026-09-02"
     }
   ],
   "first_eligible_paired_stamp": "2026-08-17",
   "first_lawful_comparison_read": "PENDING until 20 matured H=10 sessions",
   "honest_n_floor": 20,
   "last_run": {
-    "board_as_of": "2026-08-31",
+    "board_as_of": "2026-09-03",
     "coverage": {
-      "identical": 8,
+      "identical": 0,
       "matured": 0,
       "revisions_refused": 0,
-      "stamps": 0,
-      "written": 0
+      "stamps": 1,
+      "written": 8
     },
     "dry_run": false,
     "failures": [],
     "family": {
-      "identical": 8,
+      "identical": 0,
       "matured": 0,
       "revisions_refused": 0,
-      "stamps": 0,
-      "written": 0
+      "stamps": 1,
+      "written": 8
     },
     "n_coverage_rows": 8,
     "n_family_rows": 8,
-    "n_paired_rows": 619,
+    "n_paired_rows": 683,
     "paired": {
-      "identical": 513,
-      "matured": 106,
+      "identical": 563,
+      "matured": 56,
       "revisions_refused": 0,
       "stamps": 2,
-      "written": 106
+      "written": 120
     },
     "reconstruction_refused": [
       "2026-07-31",
@@ -67,25 +71,25 @@
       "2026-08-12",
       "2026-08-14"
     ],
-    "require_stamp": "2026-08-31",
+    "require_stamp": "2026-09-03",
     "same_stamp_revisions_refused": [],
     "sessions_written": {
       "identical": 11,
       "matured": 0,
       "refused": 0,
-      "written": 0
+      "written": 2
     }
   },
   "latest_session": {
     "liveness": "unmatured",
     "reason": "paired observation accrued; H=10 outcome pending (not zero)",
-    "stamp_date": "2026-08-31"
+    "stamp_date": "2026-09-03"
   },
   "matured_h10_sessions": 0,
   "missing_sessions": [],
-  "n_degraded_or_unpaired": 6,
+  "n_degraded_or_unpaired": 7,
   "n_missing": 0,
-  "paired_sessions_accrued": 11,
+  "paired_sessions_accrued": 12,
   "same_stamp_revisions_refused": [
     {
       "changed_fields": [
@@ -1067,10 +1071,10 @@
   ],
   "schema": "us.prophet_w3_status/v1",
   "structural": {
-    "n_coverage_rows": 88,
-    "n_family_rows": 88,
+    "n_coverage_rows": 96,
+    "n_family_rows": 96,
     "outcome_blind": true,
     "schema": "prophet_fusion.w3_structural.v1"
   },
-  "unmatured_sessions": 11
+  "unmatured_sessions": 12
 }
