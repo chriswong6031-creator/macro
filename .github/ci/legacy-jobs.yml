@@ -1842,6 +1842,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
       - "engine/sector_pulse.py"
@@ -6827,6 +6828,7 @@ jobs:
       - "engine/qledger.py"
       - "engine/qledger_validity.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/rebalance_calendar.py"
       - "engine/regime.py"
       - "engine/regime_conditioning_coverage.py"
@@ -7369,6 +7371,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/residual_alpha.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
@@ -10721,6 +10724,7 @@ jobs:
       - "engine/qledger_validity.py"
       - "engine/quant_lab/**"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/rebalance_calendar.py"
       - "engine/reflexivity.py"
       - "engine/regime.py"
@@ -11431,7 +11435,7 @@ jobs:
       # borrowed reason.  No dependency widened: probed at RUN time it loads only
       # pandas/numpy/pyarrow/pyyaml, all already on the install line above.
       - name: commodities / forex / rates / news / policy panels and their calibration guards
-        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
+        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_yield_momentum.py tests/test_inputs_yield_curve.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
 
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
@@ -12502,6 +12506,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/residual_alpha.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
