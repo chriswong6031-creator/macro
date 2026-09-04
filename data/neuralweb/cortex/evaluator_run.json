@@ -1,26 +1,84 @@
 {
-  "as_of": "2026-08-18",
-  "evaluator_version": "W7b-PR2",
+  "as_of": "2026-09-04",
+  "evaluator_version": "W7b-PR3",
   "dry_run": false,
-  "n_due": 1,
+  "n_due": 3,
   "results": [
     {
-      "id": "cortex-2026-07-30-within-q1-labeled-periods-simultaneous-11690f",
+      "id": "cortex-2026-08-05-h2-high-alibi-flag-fires-have-lower-p-c-898d24",
       "claim_shape": "conditional_regime",
-      "verdict": "insufficient-n",
+      "verdict": "invalid-gate",
       "n": 0,
       "metric_value": null,
       "detail": {
-        "total_spine_rows": 2,
-        "pre_reg_dropped": 2,
-        "post_reg_n": 0,
-        "note": "No post-registration graded rows found. All data predates registration \u2014 anti-mining law enforced."
+        "metric_space": "absolute",
+        "gate_error": "threshold -0.05 is outside the attainable range of hit_rate [0.0, 1.0] in absolute space \u2014 structurally unpassable, so no sample can inform this gate",
+        "attainable_range": [
+          0.0,
+          1.0
+        ],
+        "remediation": "the threshold was almost certainly minted as a difference or a ratio; re-register against a contrast metric (hit_rate_difference, excess_mean_difference, hit_rate_ratio, stop_out_rate_difference)",
+        "evaluator_version": "W7b-PR3"
       },
       "gate": {
-        "metric": "mean_10d_excess_difference_vs_q1_no_conjunction",
-        "threshold": -0.01,
+        "metric": "hit_rate",
+        "threshold": -0.05,
         "min_n": 25,
-        "horizon_d": 10,
+        "horizon_d": 21,
+        "direction_expected": -1
+      },
+      "note": null
+    },
+    {
+      "id": "cortex-2026-08-05-h3-p-stopped-at-21d-is-heterogeneous-a-b2727c",
+      "claim_shape": "conditional_regime",
+      "verdict": "invalid-gate",
+      "n": 0,
+      "metric_value": null,
+      "detail": {
+        "metric_space": "absolute",
+        "gate_error": "threshold 1.01 is outside the attainable range of hit_rate [0.0, 1.0] in absolute space \u2014 structurally unpassable, so no sample can inform this gate",
+        "attainable_range": [
+          0.0,
+          1.0
+        ],
+        "remediation": "the threshold was almost certainly minted as a difference or a ratio; re-register against a contrast metric (hit_rate_difference, excess_mean_difference, hit_rate_ratio, stop_out_rate_difference)",
+        "evaluator_version": "W7b-PR3"
+      },
+      "gate": {
+        "metric": "hit_rate",
+        "threshold": 1.01,
+        "min_n": 25,
+        "horizon_d": 21,
+        "direction_expected": 1
+      },
+      "note": null
+    },
+    {
+      "id": "cortex-2026-08-21-when-the-confirmed-us-macro-quad-remains-4a6d7e",
+      "claim_shape": "conditional_regime",
+      "verdict": "uncomputable-metric",
+      "n": 0,
+      "metric_value": null,
+      "detail": {
+        "gate_error": "metric 'difference_in_mean_5d_signed_excess' is not computable by this evaluator",
+        "supported_metrics": [
+          "excess_mean",
+          "excess_mean_difference",
+          "hit_rate",
+          "hit_rate_difference",
+          "hit_rate_ratio",
+          "stop_out_rate",
+          "stop_out_rate_difference"
+        ],
+        "remediation": "re-register with a supported metric name; the evaluator will not substitute a different metric for the one that was pre-committed",
+        "evaluator_version": "W7b-PR3"
+      },
+      "gate": {
+        "metric": "difference_in_mean_5d_signed_excess",
+        "threshold": -0.005,
+        "min_n": 30,
+        "horizon_d": 5,
         "direction_expected": -1
       },
       "note": null
@@ -28,5 +86,5 @@
   ],
   "n_passed": 0,
   "n_failed": 0,
-  "n_insufficient": 1
+  "n_insufficient": 0
 }
