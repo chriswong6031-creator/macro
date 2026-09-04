@@ -2,6 +2,7 @@
 
 **Architecture:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_FREEZE_2026-09-04.md`  
 **Amendment 1:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_1_2026-09-04.md`  
+**Amendment 2:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_2_ACCESS_TRANSPORT_2026-09-04.md`  
 **Decision:** `DEC:MARKET-ONTOLOGY-F04-EXPLORER-LIVE-TRACE-SCENARIO-BOUNDARY`  
 **Parent:** `marketontology-f04-ontology-transmission-20260826-fable-001`  
 **Records operation:** `marketontology-f04-explorer-architecture-20260904-sol-001`  
@@ -9,7 +10,7 @@
 **Historical procedure pin:** `Mastermind@22b36b830bd5560942186ada7597508f918696af`  
 **Historical Macro base:** `0007d955278c0456507bb4854eb85ddb41e2874e`
 
-> Re-pin protected procedure, current default branches, owner contracts, open PRs, active carriers and production state before every modifying child. This plan's pins are archaeology receipts, not permanent write authority. Amendment 1 controls wherever this plan's earlier wording is broader or ambiguous.
+> Re-pin protected procedure, current default branches, owner contracts, open PRs, active carriers and production state before every modifying child. Historical pins are receipts, not permanent authority. Amendment 1 controls state/privacy/freshness/method wording; Amendment 2 controls access and transport wording.
 
 ---
 
@@ -18,19 +19,21 @@
 The program is complete only when one coherent premium workflow is production-proven:
 
 ```text
-observed fact or explicit assumption
+public-safe discoverable shell
++ authenticated current market snapshot
+-> observed fact or explicit assumption
 -> exact identity and owner resolution
 -> typed relationship/path composition
 -> evidence, clocks, rights, corrections and invalidators
--> optional personal exposure
+-> optional private personal exposure
 -> grounded Brain explanation
 -> saved/reopened/shared/replayed research where supported
 -> product-learning telemetry
 ```
 
-Every unsupported value remains typed unavailable. No child may create another graph, scenario owner, identity/evidence/user/portfolio store, AI gateway, analytics transport, queue or authority plane.
+Every unsupported value remains typed unavailable. No child may create another graph, model owner, identity/evidence/user/portfolio store, AI gateway, analytics transport, queue or authority plane.
 
-The four state layers from Amendment 1 remain separate:
+The four state layers remain separate:
 
 ```text
 tenant-neutral ontology_explorer_snapshot.v1
@@ -38,6 +41,8 @@ tenant-neutral ontology_explorer_snapshot.v1
 + ephemeral ontology_scenario_eval.v1
 + private ontology_session_view.v1
 ```
+
+The current tenant-neutral snapshot is **not a public static file**. X1 delivers it through the existing authenticated Macro API/site_full/private-no-store pattern. `/ontology.html` and presentation assets remain public-safe.
 
 ## Global authority
 
@@ -47,7 +52,7 @@ Every F04 artifact and child remains:
 {"can_rank": false, "can_gate": false, "can_size": false, "can_trade": false}
 ```
 
-Historical frequency, empirical sensitivity, model output, scenario assumption and narrative are never silently promoted into Prophet, `ENTRY_OPEN`, origination or portfolio action.
+Historical frequency, empirical sensitivity, model output, assumption and narrative are never silently promoted into Prophet, `ENTRY_OPEN`, origination or portfolio action.
 
 ## Global child law
 
@@ -58,14 +63,14 @@ Each child has:
 - one concrete receiver before `PICKUP_ACK`;
 - `PICKUP_ACK` distinct from `START`;
 - current protected source and owner/path collision census;
-- RED-first hostile tests for its load-bearing semantics;
-- source continuity checkpoint before long CI/review/context exposure;
+- RED-first hostile tests for load-bearing semantics;
+- source-continuity checkpoint before long CI/review/context exposure;
 - immutable return under Hold;
 - independent exact-head review where practical;
 - production/browser/machine proof when owed;
 - explicit terminal STOP before the next independent child.
 
-Fable is the parent principal and integrator. Architecture-frozen child implementation routes to the least-scarce capable worker.
+Fable is the parent principal/integrator. Architecture-frozen implementation routes to the least-scarce capable worker.
 
 ---
 
@@ -73,358 +78,322 @@ Fable is the parent principal and integrator. Architecture-frozen child implemen
 
 ## Task P0.1 — Records validation
 
-**Files:** the five records in operation `marketontology-f04-explorer-architecture-20260904-sol-001`.
+**Files:** exactly six records in `marketontology-f04-explorer-architecture-20260904-sol-001`:
 
-- [ ] Confirm the branch contains exactly the architecture, Amendment 1, decision, handoff and plan.
-- [ ] Confirm the decision and this plan bind Amendment 1's supersession map.
-- [ ] Validate Agent OS schema and repository fences on the exact head.
-- [ ] Obtain one independent architecture review that attacks product usefulness, owner duplication, four-layer state/privacy separation, scenario semantics, same-cycle freshness, deterministic ordering, point-in-time behavior, access leakage, X3 owner placement, X1/X6 scope and implementation feasibility.
-- [ ] Reconcile current Macro main without rewriting the reviewed semantic head merely to remove ancestry distance; use current integration proof under protected review-reuse law.
-- [ ] Keep Draft/Hold until Sol explicitly accepts the exact records head.
+1. architecture freeze;
+2. Amendment 1;
+3. Amendment 2;
+4. decision;
+5. Fable handoff;
+6. this plan.
 
-**Acceptance:** records are durable and current-source compatible. This creates no product, worker, route, runtime or production effect.
+- [ ] Decision, handoff and plan bind both amendments.
+- [ ] Agent OS schema and repository fences pass on one immutable head.
+- [ ] Independent review attacks product usefulness, owner duplication, four-layer state/privacy split, scenario semantics, same-cycle freshness, deterministic ordering, PIT/corrections, Git/Pages/R2/browser-cache leakage, X3 owner placement, X1/X6 scope and feasibility.
+- [ ] Current Macro main is reconciled through current integration proof without rewriting semantic source merely to reach ancestry zero.
+- [ ] PR remains Draft/Hold until Sol explicitly accepts the exact head.
+
+**Acceptance:** durable records only; no product/worker/route/runtime effect.
 
 ## Task P0.2 — Existing-parent Fable placement
 
-**Parent operation:** `marketontology-f04-ontology-transmission-20260826-fable-001`.
+**Parent:** `marketontology-f04-ontology-transmission-20260826-fable-001`.
 
-- [ ] Read the complete existing parent carrier and consume any newer opposite-side semantic edge.
-- [ ] Confirm no concrete Fable RuntimeBinding is already active or effect-unknown.
-- [ ] If no receiver exists, preserve `WAITING_CAPACITY / needs_placement`; do not create an `OPEN_PICKUP` dead letter.
-- [ ] When a concrete eligible Fable session is lawfully assigned, require actual-identity `PICKUP_ACK`, complete source read, continuation setup and separate `START`.
-- [ ] Re-run current owner/PR/branch/worktree/collision archaeology before commissioning X1.
+- [ ] Read the complete existing carrier and consume any newer opposite-side edge.
+- [ ] Confirm no concrete Fable RuntimeBinding is active/effect-unknown.
+- [ ] Without a receiver, preserve `WAITING_CAPACITY / needs_placement`; no `OPEN_PICKUP` dead letter.
+- [ ] Concrete eligible assignment -> actual-identity `PICKUP_ACK` -> full source read -> continuation setup -> separate `START`.
+- [ ] Re-run owner/PR/branch/worktree/access collision archaeology before X1.
 
 **WHY FABLE:** sustained cross-owner architecture, authority, product and cross-repository continuity.  
-**Non-goal:** Fable does not personally implement every child.
+**Non-goal:** Fable does not personally code every child.
 
 ---
 
 # Phase X1 — WTI Live Trace
 
-**Recommended operation key:** `marketontology-f04-explorer-x1-wti-live-trace-20260904-fable-001`  
-**Preferred avenue:** `CTO Sol` or `Terra` after current placement evidence  
-**Capability after acceptance:** one real end-to-end Ontology Explorer vertical
+**Recommended operation:** `marketontology-f04-explorer-x1-wti-live-trace-20260904-fable-001`  
+**Preferred avenue:** CTO Sol or Terra after placement evidence  
+**Accepted capability:** one real end-to-end Ontology Explorer vertical
 
-## Task X1.0 — Freeze exact current owner reads and write surface
+## Task X1.0 — Current owner, transport and collision freeze
 
-**Required reads:**
+Read current:
 
-- current `engine/transmission_chains.py` owner contract and pure test grammar/evaluator seam;
-- `engine/transmission_publish.py`, including its documented prior-night publication lag;
-- `scripts/build_transmission.py` and the actual production DAG/order;
+- `engine/transmission_chains.py` and its pure grammar/evaluator seam;
+- `engine/transmission_publish.py`, including documented prior-night static-publication lag;
+- `scripts/build_transmission.py` and actual production DAG;
 - `data/transmission/chain_state.json`;
 - `data/transmission/chain_calibration.json`;
 - `data/transmission/latest.json`;
 - WTI and inverse-chain YAML through the existing loader;
-- current nav/theme/tier-preview/site-access/Caddy/build/SEO patterns;
-- current Brain page-context seam only to preserve the X1/X6 boundary — no X1 behavior change;
-- current open PRs touching transmission, policy, nav, analytics, access or shared templates.
+- `app/prophet_lab.py`, `app/capital_structure.py`, `app/main.py`, `app/paywall.py` and current private API conventions;
+- current site-access/Caddy/Pages/public-R2/public-git exposure records;
+- nav/theme/build/SEO patterns;
+- current Brain context seam only to preserve the X1/X6 boundary;
+- open PRs touching transmission, policy, API/auth, nav, analytics, access or shared templates.
 
-**Expected creates/modifies after archaeology:**
+Expected conceptual paths after archaeology:
 
-- pure F04 snapshot composer under an owner-approved namespace such as `engine/ontology_explorer/`;
-- `scripts/build_ontology_explorer.py`;
-- `templates/ontology.html.j2`;
-- presentation/client assets following current template/site convention;
-- gated tenant-neutral `/premiumdata/ontology_explorer.json`;
-- focused tests and evidence harness;
-- minimal current nav/SEO/site-access/Caddy/DAG changes required to serve the shell, gate the payload and guarantee same-cycle owner closure.
+```text
+engine/ontology_explorer/             # pure tenant-neutral projection only
+app/ontology_explorer.py               # authenticated read-only transport
+app/main.py                            # minimal canonical router registration
+scripts/build_ontology_explorer.py?    # validation/runtime-private precompute only; no public payload
+site/ontology.html + public-safe assets
+focused tests and evidence harness
+minimal current nav/SEO/DAG/API wiring
+```
 
-**Protected:**
+Explicitly prohibited:
 
-- TXI chain state/episode/calibration truth;
-- GMI/D2C paths;
-- K3-D paths;
-- Portfolio/Watchlist persistence and private contents;
-- RiskCore math;
-- Brain gateway behavior;
-- private User Plane;
-- rank/gate/size/trade owners.
+```text
+site/premiumdata/ontology_explorer.json
+any current F04 snapshot committed under site/** or public data/**
+public R2 current snapshot
+inline current snapshot in HTML/JS/source maps
+service-worker/localStorage/IndexedDB persistence of the response
+```
 
-- [ ] Run a current planned-write census against every open PR/started carrier/worktree.
-- [ ] Confirm `/ontology.html` does not already exist under another owner.
-- [ ] Freeze exact read adapters; no JSON-shape scraping duplicated in the frontend if an owner reader exists.
-- [ ] Freeze exact owner-generation identifiers and producer order before UI implementation.
-- [ ] If a required owner contract or protected path outside the amended scope is necessary, return `DECISION_REQUEST` before editing.
+- [ ] Current planned-write census against every open PR/started carrier/worktree.
+- [ ] Confirm `/ontology.html` and `/api/ontology/explorer/v1` are not owned elsewhere.
+- [ ] Freeze exact owner readers; no frontend JSON-shape reimplementation.
+- [ ] Freeze per-node/edge/path owner generations and request-time source-manifest identity.
+- [ ] Confirm existing API can support pure request-time composition without a new durable store/secret; otherwise return `DECISION_REQUEST`.
 
-## Task X1.1 — RED contract and semantic tests
+## Task X1.1 — RED semantic, privacy and access tests
 
-Write failing tests that prove:
+Write failing tests proving:
 
-- [ ] `ontology_explorer_snapshot.v1` is tenant-neutral and has separate effective-as-of and knowledge-cutoff fields.
-- [ ] the shared snapshot refuses `mode`, `assumption`, `user_overlay`, raw holdings, weights and user IDs.
-- [ ] every material node/edge/path has owner/native identity, owner-generation reference and method/relationship class.
-- [ ] the snapshot producer cannot run before the required TXI/rates owner generations; typed lag is required when same-cycle closure is unavailable.
-- [ ] a true downstream node cannot activate a false upstream path.
-- [ ] WTI's current root remains false at the frozen real values while real-yield/duration nodes may be true.
-- [ ] WTI is an explicit reference/default path, never an inferred `most material` path.
-- [ ] `first_blocking_leg` is the first false/unknown/stale/restricted/invalidated/expired/unresolved leg in declared path order.
-- [ ] `p_confirm` serializes only as historical transition context with numerator/N/span/regime and baseline-comparison availability, never `confidence`.
-- [ ] terminal cohort outcome distribution remains a different object from hop transition frequency.
-- [ ] inverse oil path remains separate from the selected path.
-- [ ] `coverage` is structured with denominator and missing buckets rather than one confidence-like scalar.
-- [ ] an unresolved/missing invalidator, clock, right or owner ref creates a typed degradation.
-- [ ] repeated owner evidence and cycles cannot double-count or advance state.
-- [ ] public HTML/JS contains no current premium owner values or serialized paid snapshot body.
-- [ ] anonymous and Free payload access fail while `site_full` succeeds.
-- [ ] EN/ZH keys and deterministic ordering/layout remain complete.
-- [ ] mobile vertical path remains complete without graph-canvas JavaScript.
-- [ ] no live Brain/page-context consumer is required or changed in X1.
+### Snapshot and path truth
 
-Run and record the intended RED behavior before implementation.
+- [ ] `ontology_explorer_snapshot.v1` is tenant-neutral with effective-as-of and knowledge cutoff.
+- [ ] It refuses `mode`, `assumption`, `user_overlay`, holdings, weights and user IDs.
+- [ ] Every material node/edge/path has owner/native identity, owner-generation and method/relationship class.
+- [ ] Same-cycle owner generations are used; typed per-owner lag is mandatory otherwise.
+- [ ] True downstream nodes cannot activate a false upstream path.
+- [ ] Current WTI root and breakeven hop remain false while real-yield/duration may be true.
+- [ ] WTI is explicit reference/default, never inferred `most material`.
+- [ ] `first_blocking_leg` is deterministic path order, not a score.
+- [ ] Historical follow-through carries exact numerator/N/span/regime and baseline-comparison availability, never `confidence`.
+- [ ] Terminal cohort outcomes remain separate from transition frequency.
+- [ ] Inverse path remains separate.
+- [ ] Coverage is structured with denominator/missing buckets.
+- [ ] Missing invalidator, clock, right or owner ref produces typed degradation.
+- [ ] Cycles/repeated evidence cannot inflate state.
+
+### Authenticated transport and mirror boundary
+
+- [ ] Public shell builds with zero current response bytes.
+- [ ] Anonymous/missing/malformed/expired auth -> `401` with private headers.
+- [ ] Authenticated user without `site_full` -> `403` even while global paywall is observe/staged.
+- [ ] Essential/Pro `site_full` -> `200` validated snapshot.
+- [ ] Success and every error carry `private, no-store`, `Vary: Authorization`, `nosniff`, `noindex, noarchive`.
+- [ ] No current snapshot is tracked in Git, Pages/static artifacts or public-R2 publisher config.
+- [ ] Shell, bundles, source maps and preload/precache manifests contain no response body/current values.
+- [ ] Browser Cache Storage, localStorage and IndexedDB do not persist the response.
+- [ ] Owner source failure returns typed `503`, never an old static fallback.
+- [ ] Router executes no owner/model/user writes and rejects private/scenario/action-authority fields.
+- [ ] Response size/path/node bounds fail closed.
+- [ ] Mutation writing the response under `site/premiumdata/` turns the guard red.
+
+### UX and scope
+
+- [ ] EN/ZH and deterministic ordering/layout are complete.
+- [ ] Mobile vertical path works without graph-canvas JavaScript.
+- [ ] No live Brain/page-context behavior is required or changed.
+
+Record intended RED before implementation.
 
 ## Task X1.2 — Pure owner composition
 
-- [ ] Build the smallest pure composer for current TXI chain, calibration and owner-state data.
-- [ ] Preserve owner values and units verbatim where the contract permits; never recompute TXI state.
-- [ ] Emit immutable tenant-neutral `ontology_explorer_snapshot.v1` with exact owner-generation/content references.
-- [ ] Add WTI reference path, inverse path, node/hop receipts, mechanisms, conditions, lag windows, invalidators, historical rates and outcome context.
-- [ ] Derive the historical numerator exactly or mark it unavailable; never fabricate a rounded count.
-- [ ] Expose `first_blocking_leg`, structured coverage and `no_combined_estimate_reason` deterministically.
-- [ ] Set all authority axes false and fail closed on caller-injected privileged/private/scenario fields.
-- [ ] Do not write owner ledgers, current market state, session state or user data.
+- [ ] Build smallest pure composer over exact current TXI/calibration/rates owner bytes.
+- [ ] Preserve owner values/units; never recompute TXI state.
+- [ ] Produce deterministic `snapshot_id` and `source_manifest_hash` from owner bytes/generations + method version.
+- [ ] Add WTI reference/inverse paths, receipts, mechanisms, conditions, lag windows, invalidators, historical rates and terminal outcome context.
+- [ ] Derive exact historical numerator or mark unavailable.
+- [ ] Emit `first_blocking_leg`, structured coverage and `no_combined_estimate_reason` deterministically.
+- [ ] Authority axes false; private/scenario fields refused.
+- [ ] Zero owner/user/session writes.
 
-## Task X1.3 — Product shell and interaction
+## Task X1.3 — Authenticated read API
 
-- [ ] Create `/ontology.html` with canonical shared header, theme, language and account patterns; preserve Brain behavior untouched.
-- [ ] Render useful public methodology/shell content before JavaScript succeeds without embedding current paid payload.
-- [ ] Load the entitled tenant-neutral snapshot through the existing paid static-asset path.
-- [ ] Implement deterministic layered path layout, path rail, trace narrative and node/edge inspector.
-- [ ] Implement WTI selection, inverse-path selection, invalidator inspection and evidence/source links.
-- [ ] Use `Observed`, `Historical`, `Hypothesis`, `Unavailable` method labels rather than confidence colors.
-- [ ] Treat `dormant`, `arming`, `propagating`, `expressed`, `halted` and `expired` as path-state vocabulary; do not turn internal falsifier vocabulary into front-facing alarm copy contrary to existing TXI product law.
-- [ ] Keep `/transmission.html` unchanged except a separately justified deep link if collision-free.
+- [ ] Add one existing-Macro-API route, preferably `GET /api/ontology/explorer/v1`.
+- [ ] Reuse `require_user -> enforce_site_full(always=True)` dependency pattern.
+- [ ] Attach mandatory private headers on all success/error responses.
+- [ ] Resolve exact owner paths/generations, invoke pure composer and validate response.
+- [ ] Prefer request-time composition; optional in-process cache only by full source manifest, tenant-neutral, invalidated on change, never durable truth.
+- [ ] No static/full-response fallback.
+- [ ] No raw source bodies or unbounded owner dump.
 
-## Task X1.4 — Responsive and accessible states
+## Task X1.4 — Public shell and interaction
 
-- [ ] Implement Amendment 1's desktop paid WTI composition.
-- [ ] Implement the mobile vertical-hop composition; no horizontal graph is required to complete the task.
-- [ ] Tablet uses canvas with sheet inspector.
-- [ ] Implement public/Free shell, stale-owner, unavailable-method and PIT-unavailable compositions.
-- [ ] Keyboard traversal follows path order.
-- [ ] Focus, selected and inspector states are visible in dark and light themes.
-- [ ] Reduced-motion mode remains complete.
-- [ ] EN/ZH copy includes states, nulls, invalidators, evidence and errors.
+- [ ] Create `/ontology.html` with canonical header/theme/language/account patterns.
+- [ ] Render useful methodology/locked state without JavaScript or current data.
+- [ ] Resolve existing browser session/token and fetch API only after auth is available.
+- [ ] Distinguish `401`, `403`, contract refusal and `503` usefully.
+- [ ] Keep last-good only in page memory; mark stale after refresh failure; reload requires authorized fetch.
+- [ ] Implement deterministic layered path, path rail, trace narrative and inspector.
+- [ ] Implement WTI/inverse/invalidator/evidence/source interactions.
+- [ ] Use `Observed`, `Historical`, `Hypothesis`, `Unavailable`; no confidence palette.
+- [ ] Preserve TXI state vocabulary and user-facing scope.
+- [ ] Keep `/transmission.html` unchanged except separately justified deep link.
+
+## Task X1.5 — Responsive and accessible states
+
+- [ ] Amendment 1 desktop paid WTI composition.
+- [ ] Mobile vertical-hop sequence; canvas is optional/secondary.
+- [ ] Tablet canvas + sheet inspector.
+- [ ] Public/Free shell, stale-owner, unavailable-method and PIT-unavailable compositions.
+- [ ] Keyboard path order, visible focus, reduced motion, EN/ZH parity, dark/light.
 - [ ] No horizontal overflow at relevant breakpoints.
 
-## Task X1.5 — Real proof and acceptance
+## Task X1.6 — Real production proof
 
-- [ ] Run focused and repository-owned tests, template/site parity, access-boundary tests, DAG/order tests and Agent OS/fences.
-- [ ] Build after required current owner generations in the same production cycle, or prove typed per-owner lag with exact generation IDs.
-- [ ] Prove snapshot source-manifest hash and producer build identity resolve to exact owner inputs.
-- [ ] Prove exact current WTI values and truthful dormancy in snapshot and browser.
-- [ ] Prove one real contradiction/abstention: downstream conditions do not backfill the inactive upstream oil mechanism.
-- [ ] Prove historical hop rates carry numerator/N/span/regime and baseline-comparison state; terminal outcomes remain separately caveated.
-- [ ] Prove structured coverage and first-blocking-leg behavior.
-- [ ] Prove anonymous and Free denial; Essential and Pro success; public HTML/JS contains no paid current values.
-- [ ] Capture EN/ZH, dark/light and desktop/tablet/mobile evidence from the exact candidate.
-- [ ] Capture stale-owner, unavailable-method and PIT-unavailable product states.
-- [ ] Capture console, failed-request, overflow, accessibility and build-identity receipts.
-- [ ] Prove producer → immutable snapshot → entitled browser consumer. Selected-path Brain behavior remains X6.
-- [ ] Obtain independent adversarial review.
-- [ ] Merge/deploy only under current release law, then repeat proof against the exact production subject.
+- [ ] Focused/repository tests, template parity, API/auth/access, DAG/order and Agent OS/fences.
+- [ ] Exact owner generations/source-manifest/producer build identity.
+- [ ] Real current WTI dormancy and downstream-without-upstream contradiction.
+- [ ] Historical numerator/N/span/regime/baseline state; terminal outcomes separately caveated.
+- [ ] Structured coverage and first-blocking-leg proof.
+- [ ] Anonymous and Free API denial; Essential and Pro success.
+- [ ] Raw Git, anonymous clone, Pages/static mirror and public R2 contain no current F04 snapshot.
+- [ ] Shell/bundle/source-map/storage/network inspection shows no current response leak or browser persistence.
+- [ ] Public evidence contains no full response/token/holdings/user IDs; record hashes/generation IDs instead.
+- [ ] EN/ZH, dark/light, desktop/tablet/mobile and degraded states.
+- [ ] Zero console errors, failed required responses or overflow.
+- [ ] Producer -> pure snapshot -> authenticated API -> entitled browser consumer.
+- [ ] Independent adversarial review; exact production re-proof after deploy.
 
-**X1 stop:** WTI Live Trace is production-proven. Do not absorb Scenario evaluation, Brain behavior, Portfolio, GMI/K3-D or saves.
-
----
-
-# Phase X2 — Explicit Scenario contract and real-rate numeric vertical
-
-**Prerequisite:** X1 production acceptance and terminal child STOP.  
-**Observable mission:** a user can switch from current state to an explicit assumption, see exactly what the assumption satisfies, and receive one lawful numeric rate-shock response without mutating owner state.
-
-## Task X2.0 — Scenario contract RED
-
-- [ ] Freeze `ontology_scenario_assumption.v1`: node, shock definition, magnitude, unit, horizon, explicit path shape, origin class, baseline effective-at and knowledge cutoff.
-- [ ] Freeze pure `ontology_scenario_eval.v1` plus a zero-side-effect receipt.
-- [ ] Add deterministic `assumption_id`/`scenario_eval_id` derived from normalized input, immutable snapshot and owner method versions.
-- [ ] Reject ambiguous units, unknown horizons, duplicate parameters, unsupported ranges and missing/incompatible path shapes.
-- [ ] Prove `terminal_only` WTI does not imply MA50 slope, persistence or volatility.
-- [ ] Prove WTI +20% does not satisfy a +25%/60-session trigger.
-- [ ] Prove WTI +30% cannot confirm downstream observed nodes in Scenario mode.
-- [ ] Prove scenario evaluation cannot append TXI episodes, modify owner artifacts or enter historical calibration.
-- [ ] Prove arbitrary coefficient multiplication and caller-supplied path totals fail closed.
-- [ ] Prove current data cannot substitute for a historical knowledge cutoff.
-
-## Task X2.1 — Scenario evaluator
-
-- [ ] Implement a pure F04 scenario dispatcher keyed to explicit owner adapters.
-- [ ] Reuse a reviewed pure interface over the existing TXI node-test grammar; do not copy its parser/evaluator.
-- [ ] Apply assumed points only to an ephemeral copy of the owner-native series using owner-native sessions/calendars/units.
-- [ ] Support `terminal_only`, `linear_sessions` and `step_at_start`; hold `custom_points` until a later bounded security/validation review.
-- [ ] Support `THRESHOLD_STATE_ONLY`, `HISTORICAL_TRANSITION_RATE`, `HYPOTHESIS_MECHANISM`, `EMPIRICAL_SAME_WINDOW_BETA` and `UNAVAILABLE` only.
-- [ ] Add WTI threshold/path-shape evaluation without numerical response magnitude.
-- [ ] Adopt one real-rate 63-session scenario from the existing owner, preserving same-window, illustrative, regime-dependent and unscored semantics.
-- [ ] Return hop-level results and explicit absence of a joint path estimate.
-
-## Task X2.2 — Scenario UX
-
-- [ ] Add `LIVE TRACE` / `SCENARIO` mode switch in private `ontology_session_view.v1`.
-- [ ] Visually distinguish observed nodes, assumed root and projected/contextual outputs.
-- [ ] Add magnitude/unit/horizon/path-shape/origin controls only when selected owner supports them.
-- [ ] Show validation/refusal inline rather than coercing values.
-- [ ] Add Compare to Live and Reset.
-- [ ] Keep Save disabled until X7 rather than storing locally as a rival truth.
-
-## Task X2.3 — Proof
-
-- [ ] WTI +20% terminal-only refuses arm and numerical propagation; MA slope is typed unknown.
-- [ ] WTI +30% linear/supply assumption can satisfy the root only when every declared root condition is explicit/resolved; downstream remains historical/hypothesis context.
-- [ ] Real 10Y +50bp/63-session produces owner-identical empirical sensitivities with exact method caveat.
-- [ ] Out-of-range, horizon mismatch, origin ambiguity, invalid session and unsupported instrument states render usefully.
-- [ ] Owner artifacts are byte-identical before/after scenario tests.
-- [ ] No scenario field serializes as observed or enters the shared static snapshot.
-- [ ] Production browser and bounded machine-contract proof.
-
-**X2 stop:** explicit scenario semantics plus one lawful numeric owner path. No WTI response kernel, private saves or portfolio P&L.
+**X1 stop:** WTI Live Trace production-proven with no new public mirror twin. Do not absorb Scenario, Brain, Portfolio, GMI/K3-D, saves or estate-wide access repair.
 
 ---
 
-# Phase X3 — Rates-owner WTI magnitude-sensitive response research and kernel
+# Phase X2 — Explicit Scenario and real-rate numeric vertical
 
-**Prerequisite:** X2 accepted. This phase is a dependency request under the existing Rate & Inflation Transmission / Rates-Inflation Command owner and may conclude `REJECTED_BY_DESIGN` or `NOT_ESTIMABLE`.
+**Prerequisite:** X1 accepted and terminal STOP.  
+**Mission:** explicit assumption, lawful threshold evaluation and one existing numeric rate-shock response, with zero owner writes.
+
+## Task X2.0 — RED contract
+
+- [ ] `ontology_scenario_assumption.v1`: node, definition, magnitude, unit, horizon, path shape, origin, baseline effective-at/knowledge cutoff.
+- [ ] Pure `ontology_scenario_eval.v1` plus zero-side-effect receipt.
+- [ ] Deterministic IDs over normalized input, snapshot and method versions.
+- [ ] Reject ambiguous units/horizons/duplicate params/ranges/path shapes.
+- [ ] `terminal_only` WTI cannot imply MA slope/persistence/volatility.
+- [ ] WTI +20% does not satisfy >25%/60-session trigger.
+- [ ] WTI +30% cannot confirm downstream observed nodes.
+- [ ] No TXI episode/owner/calibration writes.
+- [ ] No arbitrary coefficient multiplication or historical-cutoff substitution.
+- [ ] Scenario request/response never enters public URL, analytics or browser-persistent storage.
+
+## Task X2.1 — Pure evaluator
+
+- [ ] Explicit owner adapters only.
+- [ ] Reviewed pure interface over existing TXI grammar; no copied parser.
+- [ ] Ephemeral copy of owner-native series using native sessions/calendars/units.
+- [ ] Initial path shapes: `terminal_only`, `linear_sessions`, `step_at_start`; hold `custom_points`.
+- [ ] Supported outputs: threshold state, historical transition/outcome, hypothesis mechanism, same-window beta, unavailable.
+- [ ] WTI threshold/path-shape evaluation without response magnitude.
+- [ ] Existing real-10Y 63-session scenario with exact same-window/illustrative/unscored caveat.
+- [ ] No joint path estimate without one accepted joint owner.
+
+## Task X2.2 — UX and proof
+
+- [ ] Mode switch lives in private/session view, not shared snapshot.
+- [ ] Observed/assumed/projected/contextual are visually distinct.
+- [ ] Controls appear only where owner supports them.
+- [ ] Compare to Live and Reset; Save remains disabled until X7.
+- [ ] WTI +20% terminal-only refuses arm/numeric propagation; MA slope unknown.
+- [ ] WTI +30% linear/supply satisfies root only when every root condition is explicit/resolved.
+- [ ] Real 10Y +50bp reproduces owner-identical empirical response/caveat.
+- [ ] Owner artifacts byte-identical before/after.
+- [ ] No scenario serializes as observed or enters shared/static/public state.
+
+**X2 stop:** explicit scenario semantics plus one lawful numeric owner path. No WTI response kernel, saves or Portfolio P&L.
+
+---
+
+# Phase X3 — Rates-owner WTI response research
+
+**Prerequisite:** X2 accepted.  
+**Owner:** existing Rate & Inflation Transmission / Rates-Inflation Command.  
+**Valid terminal results:** accepted research/display contract, `NOT_ESTIMABLE`, `INSUFFICIENT_IDENTIFICATION`, `UNSTABLE_ACROSS_ERAS`, `RIGHTS_OR_VINTAGE_INADEQUATE`, or `REJECTED_BY_DESIGN`.
 
 ## Task X3.0 — Owner/source/method freeze
 
-- [ ] Confirm the existing rates/inflation owner can lawfully adopt this research; otherwise return `DECISION_REQUEST / OWNER_BOUNDARY_UNRESOLVED`.
-- [ ] Keep any estimator/output in the canonical rates/inflation owner namespace, never under `engine/ontology_explorer/` model authority.
-- [ ] Define the actual WTI variable: futures/front-month/spot, roll behavior, return/level and path.
-- [ ] Separate supply, demand and residual shock origins using a lawful reproducible method; `unspecified` remains its own low-authority class.
-- [ ] Define output constructs for breakeven, headline inflation contribution, real/nominal yields and any terminal cohort response.
-- [ ] Preserve release/observation/first-known clocks and revision behavior.
-- [ ] Define horizons and state/era/regime partitions before outcome inspection.
-- [ ] Define minimum N/effective N, concentration and uncertainty display.
-- [ ] Record data rights and availability.
+- [ ] Confirm current owner can adopt research; otherwise `DECISION_REQUEST / OWNER_BOUNDARY_UNRESOLVED`.
+- [ ] Estimator/output remains in rates owner namespace, never F04 model namespace.
+- [ ] Define WTI series/roll/return/level/path and supply/demand/residual origin method.
+- [ ] Define outputs, units, horizons, clocks/vintages, eras/regimes, minimum/effective N and uncertainty.
+- [ ] Record rights/availability before estimation.
 
-## Task X3.1 — Baselines and falsification
+## Task X3.1 — Baselines/falsification
 
-- [ ] Compare against no-response, unconditional-history, pooled beta and owner-current scenario baselines.
-- [ ] Test asymmetry, nonlinear magnitude, path shape, state dependence and structural breaks.
-- [ ] Use leakage-safe estimation/evaluation appropriate to the claim.
-- [ ] Report full distributions and counterexamples, not only average direction.
-- [ ] Refuse cells with inadequate coverage or unstable identification.
+- [ ] Compare no-response, unconditional, pooled-beta and current owner-scenario baselines.
+- [ ] Test asymmetry, nonlinear magnitude, path shape, state dependence and breaks.
+- [ ] Leakage-safe estimation/evaluation; full distributions/counterexamples.
+- [ ] Refuse unstable or thin cells.
 
 ## Task X3.2 — Owner contract or rejection
 
-- [ ] If the method earns a stable research/display contract, publish a versioned rates/inflation-owner output with exact source/method/clocks/uncertainty/coverage.
-- [ ] If it does not, record `NOT_ESTIMABLE` or reject the response kernel and preserve threshold/historical context only.
-- [ ] F04 consumes the accepted or rejected owner result by reference; it does not absorb the model.
-- [ ] F04 refuses an unaccepted, unversioned or owner-ambiguous response artifact.
+- [ ] Publish versioned owner output with source/method/clocks/uncertainty/coverage, or durable rejection.
+- [ ] F04 consumes by immutable owner reference only.
+- [ ] F04 refuses unaccepted/unversioned/owner-ambiguous response artifacts.
+- [ ] Product shows compatible intervals or explicit unavailability; no generic WTI coefficient.
 
-## Task X3.3 — Product adoption
-
-- [ ] Add compatible distributions/intervals to the edge inspector and scenario results.
-- [ ] Never collapse origin cells or print a single generic WTI coefficient.
-- [ ] No rank/gate/size/trade authority.
-- [ ] Production proof includes at least one estimable and one refused cell when an owner output is accepted.
-
-**X3 stop:** magnitude-sensitive WTI rates/inflation owner output accepted or explicitly rejected. No broad all-shock model.
+**X3 stop:** owner output accepted or explicitly rejected. No universal shock model.
 
 ---
 
-# Phase X4 — Portfolio and Watchlist overlay
+# Phase X4 — Private Portfolio and Watchlist overlay
 
-**Prerequisites:** X1; X2 when scenario overlay is included.  
-**Observable mission:** a user sees which canonical holdings/watch items intersect the selected path and exactly how much of their book is covered.
+**Mission:** show which canonical holdings/watch items intersect the selected path and exact coverage, without exposing private state.
 
-## Task X4.0 — User-owner archaeology
+- [ ] Re-read current Portfolio/Watchlist API/auth/generation/degraded/privacy contracts and RiskCore boundary.
+- [ ] Join exact listing/security identity; no label/ticker guessing.
+- [ ] Mode/selection/private overlay remain in `ontology_session_view.v1`, never tenant-neutral snapshot/API cache/public evidence.
+- [ ] Structured covered/uncovered/unresolved counts and value shares where canonical.
+- [ ] Exposure source declared: direct node, blast, per-name sensitivity, theme membership or contextual similarity.
+- [ ] No projected P&L without compatible owner model.
+- [ ] Private data absent from static assets, logs, URLs, analytics and committed evidence.
+- [ ] Cross-user/auth failure and partial-first-read states fail closed.
 
-- [ ] Re-read current Portfolio/Watchlist API, auth, state-generation, degraded-last-good and privacy contracts.
-- [ ] Confirm whether weights are canonical, assumed or absent per position.
-- [ ] Re-read current TXI blast/exposure and `stock_macro_sensitivity` consumers.
-- [ ] Re-read RiskCore and preserve its book-structure-only boundary.
-
-## Task X4.1 — Overlay contract
-
-- [ ] Join exact listing/security identity; no label/ticker guessing across venues.
-- [ ] Keep mode, selected state and private overlay in `ontology_session_view.v1`, never the shared snapshot.
-- [ ] Emit structured covered/uncovered/unresolved counts and market-value shares where known.
-- [ ] Show exposure source: direct node, blast channel, per-name sensitivity, theme membership or contextual similarity.
-- [ ] Do not infer projected P&L without a compatible owner response model.
-- [ ] Keep private user data out of static payloads, committed evidence and telemetry.
-
-## Task X4.2 — UX and proof
-
-- [ ] My Portfolio and My Watchlist filters.
-- [ ] Most exposed means the largest **covered declared exposure** under explicit deterministic ordering, not the best trade.
-- [ ] Partial and first-read-unknown states.
-- [ ] Authenticated cloud failure never silently falls back to anonymous/local truth.
-- [ ] Real test identity, exact cleanup/restoration and privacy proof.
-
-**X4 stop:** path-to-user exposure works. No alerts, automatic thesis creation or trading.
+**X4 stop:** path-to-user exposure works. No alert/thesis/trade automation.
 
 ---
 
 # Phase X5 — Cross-channel explorer
 
-**Observable mission:** the same workspace can trace rates, credit, dollar and equity-duration paths through native owner adapters without changing their truth.
+**Mission:** trace rates, credit, dollar and equity-duration through native owner adapters without changing their truth.
 
-## Task X5.0 — Owner adoption matrix refresh
+For each owner freeze exact construct, reader, units/horizons, clocks, corrections, rights, method/relationship class, scenario compatibility and proof state.
 
-For each channel record:
-
-- exact input/output construct;
-- owner/read method;
-- units and horizons;
-- effective/known/generated clocks;
-- correction and stale behavior;
-- rights/display tier;
-- relationship/method class;
-- scenario compatibility;
-- current proof state.
-
-## Task X5.1 — Channel children
-
-Commission separately where path/collision risk warrants:
+Commission separately:
 
 - [ ] Rate Path;
 - [ ] Credit Channel;
 - [ ] Dollar Regime;
 - [ ] Equity Duration;
-- [ ] Commodity/supply chain only after source and rights owner proof.
+- [ ] Commodity/supply only after source/rights proof.
 
-Each child adds one useful real path plus one abstention. Do not create one universal adapter that normalizes away owner semantics.
+Each adds one useful real path plus abstention. Search uses exact owner identities/aliases, bounded depth/node count, deterministic cycle handling and Graph 1/2/3 distinction. Suggestions never expose gated data.
 
-## Task X5.2 — Search and traversal
-
-- [ ] Exact owner-native search and declared aliases only.
-- [ ] No model/fuzzy canonical mapping.
-- [ ] Bounded path depth/node count and deterministic cycle handling.
-- [ ] Graph 1/2/3 filters and visual distinction.
-- [ ] Global search never exposes gated data in suggestion payloads.
-
-**X5 stop:** four core channel views production-proven. No Transmission Gap or K3-D adoption unless separately accepted.
+**X5 stop:** four core channel views production-proven. No Transmission Gap/K3-D adoption unless separately accepted.
 
 ---
 
 # Phase X6 — Inspector and Ask Mastermind
 
-**Observable mission:** a user selects any visible object and asks a grounded question whose answer cites exact owner evidence and preserves every abstention.
+**Mission:** selected visible object -> grounded answer citing exact owner evidence, preserving abstention.
 
-## Task X6.0 — Context contract
-
-- [ ] Use the existing Brain gateway/page-context seam.
-- [ ] Send selected IDs, method/relationship classes, evidence refs, invalidators and displayed assumption only.
-- [ ] Do not send an unbounded graph dump, raw private holdings or source bodies.
-- [ ] Preserve monotonic context revision and stale-selection replacement semantics.
-
-## Task X6.1 — AI authority attacks
-
-- [ ] Model cannot create a node/edge/coefficient.
-- [ ] Model cannot overwrite owner value/correction/rights state.
-- [ ] Model cannot convert historical rate into confidence or forecast.
-- [ ] Model cannot rank, gate, size, originate or trade.
-- [ ] Unsupported questions answer with typed missing evidence, not fabricated reasoning.
-- [ ] Exact citations resolve to visible inspector/source references.
-
-## Task X6.2 — UX and proof
-
-- [ ] Ask why active/dormant/invalidated.
-- [ ] Ask what would change the read.
-- [ ] Compare two paths with preserved owner distinctions.
-- [ ] Ask how a covered holding connects.
-- [ ] AI down/throttled state leaves deterministic product usable.
-- [ ] Essential/Pro lane behavior follows existing Brain entitlements and quotas.
+- [ ] Existing Brain gateway/page-context seam only.
+- [ ] Send selected IDs/classes/evidence/invalidators/displayed assumption; no unbounded graph/raw holdings/source bodies.
+- [ ] Monotonic context revision and stale-selection replacement.
+- [ ] Model cannot create node/edge/coefficient, overwrite owner state, convert history to confidence, or rank/gate/size/trade.
+- [ ] Unsupported question -> typed missing evidence.
+- [ ] Citations resolve to visible inspector/source refs.
+- [ ] AI down/throttled leaves deterministic product usable.
+- [ ] Existing Brain entitlements/quotas respected.
 
 **X6 stop:** grounded explanation only. No automatic save/monitor/alert.
 
@@ -432,82 +401,37 @@ Each child adds one useful real path plus one abstention. Do not create one univ
 
 # Phase X7 — Save, share and replay
 
-**Repositories:** Macro plus Terminal only after exact cross-repository contract freeze.  
-**Observable mission:** an authenticated user immutably saves and reopens an explorer view, sees owner corrections since save, shares a sanitized rights-safe snapshot and replays historical knowledge where owner PIT permits it.
+**Repositories:** Macro + Terminal only after cross-repo contract freeze.  
+**Mission:** immutable private saved view, correction-aware reopen, sanitized share and PIT replay where supported.
 
-## Task X7.0 — User Plane architecture
+- [ ] Re-read Terminal `/analysis`, Supabase RLS, private revision/idempotency/conflict patterns.
+- [ ] One user-scoped object; no premature workspace tenancy abstraction.
+- [ ] Store session-view state, snapshot/owner refs and normalized assumptions — not copied market truth or cached eval output.
+- [ ] Immutable revisions, archive/reopen, CAS, idempotent client request ID, owner-only RLS.
+- [ ] Open-as-saved uses frozen refs/cutoff; refresh-current is explicit new revision.
+- [ ] Recompute scenario eval from references/method versions.
+- [ ] Corrected/superseded refs and delta visible; missing history -> unavailable, never current substitution.
+- [ ] Share is immutable/read-only, entitlement/rights safe, private Portfolio omitted by default.
+- [ ] Replay separates effective-as-of and knowledge cutoff and adopts accepted PIT readers only.
 
-- [ ] Re-read current Terminal `/analysis`, Supabase RLS, private-object revision, idempotency and conflict patterns.
-- [ ] Freeze one user-scoped v1 object without premature workspace tenancy abstraction.
-- [ ] Store `ontology_session_view.v1`, owner/snapshot references and normalized assumptions, not copied market truth or cached eval outputs.
-- [ ] Immutable revisions; explicit archive/reopen; compare-and-swap; idempotent client request ID.
-- [ ] Owner-only RLS; no service-role browser credential.
-
-## Task X7.1 — Reopen/correction behavior
-
-- [ ] `Open as saved` uses frozen references/knowledge cutoff where available.
-- [ ] `Refresh to current` is explicit and creates a new revision only on user action.
-- [ ] Recompute `ontology_scenario_eval.v1` from frozen references/method versions rather than treating cached output as truth.
-- [ ] Show corrected/superseded owner refs and delta.
-- [ ] Missing historical generation becomes typed unavailable rather than current substitution.
-
-## Task X7.2 — Share
-
-- [ ] Immutable read-only share identity.
-- [ ] Entitlement and source-rights enforcement.
-- [ ] Private Portfolio/Watchlist context omitted by default and never inferred from URL.
-- [ ] Recipient without entitlement sees a lawful shell/summary, not the protected payload.
-
-## Task X7.3 — Replay
-
-- [ ] Separate effective-as-of and knowledge cutoff.
-- [ ] Adopt accepted GMI/TXI/owner PIT readers only.
-- [ ] Reject current membership/correction backdating.
-- [ ] Show reconstruction versus observed-era status.
-
-**X7 stop:** saved-view workflow production-proven. No collaboration comments, team workspaces or alert automation.
+**X7 stop:** saved-view workflow production-proven. No collaboration/team/alert expansion.
 
 ---
 
 # Phase X8 — Transmission Gap and second order
 
-**Prerequisites:** exact owner availability, including accepted D2C/D2D/D2E/W3B/W3C features where used and accepted K3-D where used. K5/Eval-OS remains separate for calibrated opportunity authority.
+**Prerequisites:** exact accepted owner availability, including GMI/K3-D features actually used. K5/Eval-OS remains separate for calibrated opportunity authority.
 
-## Task X8.0 — Gap definition
+A Transmission Gap must state initiating observation, expected next condition/lag, method support, elapsed time, observed target, invalidators, missing/rights/identity state, expiry/failure and authority ceiling.
 
-A `Transmission Gap` is not “the model expected X but X did not happen” unless an accepted owner defines the expectation. Each gap must state:
-
-- initiating observed event/state;
-- declared expected next condition and lag window;
-- method class and historical/model support;
-- elapsed time;
-- observed target state;
-- current invalidators;
-- missing/rights/identity state;
-- expiry/failure semantics;
-- authority ceiling.
-
-## Task X8.1 — Gap monitor
-
-- [ ] Start from TXI/K3-D/native owner declarations, not inferred graph topology.
+- [ ] Start from TXI/K3-D/native declarations, not inferred topology.
 - [ ] Separate waiting, stalled, contradicted, invalidated, expired and unavailable.
-- [ ] Do not interpret lack of data as failure to transmit.
+- [ ] Missing data is not failure to transmit.
 - [ ] No opaque severity/opportunity score.
-- [ ] Real positive and abstention proof.
-
-## Task X8.2 — Second order
-
-- [ ] Traverse only typed owner-approved relationships.
-- [ ] Preserve Graph 1/2/3 and repeated-evidence/double-count guards.
-- [ ] Keep mechanism, exposure, similarity and residual context distinct.
-- [ ] Add themes/securities only through accepted identity/PIT owners.
-- [ ] Show alternatives and invalidators.
-
-## Task X8.3 — Opportunity research context
-
-- [ ] Plain transparent research-priority ordering may exist only under the accepted F00C ruling.
-- [ ] No direction/confidence/expected-impact/priced percentage or arbitrage authority without K2-C + K3-D acceptance, K5 and Eval-OS promotion.
-- [ ] No direct Prophet, Availability, `ENTRY_OPEN`, sizing or trade effect.
+- [ ] Traverse only typed approved relationships; preserve Graph 1/2/3 and double-count guards.
+- [ ] Theme/security expansion only through accepted identity/PIT owners.
+- [ ] Transparent research-priority ordering only under accepted F00C law.
+- [ ] No direction/confidence/expected-impact/priced percentage/arbitrage authority without K2-C + K3-D acceptance, K5 and Eval-OS promotion.
 
 **X8 stop:** useful gap/second-order research workflow, zero unearned authority.
 
@@ -515,78 +439,61 @@ A `Transmission Gap` is not “the model expected X but X did not happen” unle
 
 # Phase X9 — Integrated production acceptance and learning
 
-## Task X9.0 — End-to-end product proof
+## Task X9.0 — End-to-end proof
 
-Prove with real production data and exact deployed identity:
+Prove exact production subject for:
 
-- [ ] current observed path;
-- [ ] dormant/partial path;
-- [ ] halted/expired/invalidated path;
-- [ ] no economic path;
-- [ ] scenario threshold only;
-- [ ] lawful empirical numeric scenario;
-- [ ] unsupported scenario;
-- [ ] Portfolio full and partial coverage;
+- [ ] public shell + authenticated current API;
+- [ ] no Git/Pages/R2/static/browser-cache F04 snapshot twin;
+- [ ] observed current, dormant/partial, halted/expired/invalidated and no-economic-path states;
+- [ ] scenario threshold, lawful empirical numeric and unsupported scenario;
+- [ ] Portfolio full/partial coverage;
 - [ ] evidence/inspector and Brain answer;
 - [ ] save/reopen/correction delta;
-- [ ] share entitlement/rights behavior;
-- [ ] PIT replay and PIT unavailable;
-- [ ] EN/ZH, dark/light, desktop/tablet/mobile, keyboard/reduced-motion;
-- [ ] anonymous/Free/Essential/Pro access;
-- [ ] source stale/failure/correction behavior;
+- [ ] share entitlement/rights;
+- [ ] PIT replay/unavailable;
+- [ ] EN/ZH, dark/light, desktop/tablet/mobile, keyboard/reduced motion;
+- [ ] anonymous/Free/Essential/Pro;
+- [ ] source stale/failure/correction;
 - [ ] zero console/network/overflow defects.
 
 ## Task X9.1 — Telemetry
 
 - [ ] Reuse `window.mmTrack` and `/api/collect`.
-- [ ] One closed wire type with closed event enum and bounded metadata.
-- [ ] No raw prompt/query, holdings/weights, watchlist contents, source bodies or full scenario payload.
-- [ ] Registry/whitelist invariant tests.
-- [ ] Production beacon proof with exact expected payloads and dedup.
+- [ ] One closed wire type/event enum and bounded metadata.
+- [ ] No raw prompt/query, holdings/weights, source bodies, full snapshot or scenario payload.
+- [ ] Registry/whitelist/dedup and production beacon proof.
 
-## Task X9.2 — Learning review
+## Task X9.2 — Learning
 
-Measure:
-
-- time to first meaningful path;
-- evidence and invalidator inspection;
-- scenario completion versus refusal;
-- Portfolio overlay use;
-- save and reopen rate;
-- grounded Ask Mastermind use;
-- repeat visits/retention;
-- correction/stale-state interaction;
-- confusion/abandonment around abstentions;
-- incidents of unsupported numerical or relationship claims.
-
-Do not optimize for clicks, graph expansion or scenario volume without evidence that those improve research outcomes.
+Measure time to meaningful path, evidence/invalidator use, scenario completion/refusal, Portfolio use, save/reopen, grounded Brain use, repeat visits, stale/correction behavior, abstention confusion and unsupported-claim incidents. Do not optimize graph expansion/clicks without research-outcome evidence.
 
 ## Task X9.3 — Durable closeout
 
-- [ ] Update `WS:MARKET-OS`, dependent workstreams, decisions, discoveries and handoffs.
-- [ ] Update MAS-145 as a projection of actual accepted capability, not architecture merge.
-- [ ] Record exact production and learning receipts.
-- [ ] Close each child with terminal STOP and remove exact watcher sources.
-- [ ] State any held K5/authority work separately.
-- [ ] Record the exact next improvement hypothesis.
+- [ ] Update owning workstreams, decisions, discoveries and handoffs.
+- [ ] Update MAS-145 only to actual accepted capability.
+- [ ] Record production/learning receipts.
+- [ ] Terminal STOP and watcher removal for every child.
+- [ ] Keep held K5/authority and estate-wide access repair separate.
+- [ ] Record exact next improvement hypothesis.
 
 ---
 
 # Program stop conditions
 
-Stop and return to Sol/Chairman when any child encounters:
+Return to Sol/Chairman for:
 
-- a need for a new canonical graph/model/store/identity/evidence/user/portfolio owner;
-- external data licensing or material spend;
-- a request for rank/gate/size/trade/Availability/Prophet authority;
-- an unresolved cross-owner write collision;
-- an effect-unknown started carrier;
-- a destructive or non-rollback production action outside the packet;
-- a requirement to expose private data or credentials;
-- evidence that the architecture's product thesis or scenario-method boundary is wrong.
+- need for a new canonical graph/model/store/identity/evidence/user/portfolio owner;
+- new private bucket/secret/access framework or material external spend;
+- rank/gate/size/trade/Availability/Prophet authority;
+- unresolved cross-owner write collision;
+- effect-unknown started carrier;
+- destructive/non-rollback production action outside packet;
+- private data/credential exposure;
+- evidence the product thesis or scenario-method boundary is wrong.
 
-Routine implementation questions, tests and repairs stay within the parent/child dialogue and do not become Chairman message-shuttling.
+Routine implementation/tests/repair stay within parent-child dialogue and do not become Chairman message-shuttling.
 
 # Final completion claim
 
-Only claim `PROVEN_LIVE` for the complete Ontology Explorer when the primary persona can complete the full real production journey and telemetry demonstrates the product is functioning as a research workflow. Architecture, schemas, adapters, merged code, current data, screenshots and green CI are necessary evidence, never sufficient individually.
+Claim `PROVEN_LIVE` only when the primary persona completes the real production journey and learning telemetry shows a functioning research workflow. Architecture, schemas, adapters, merged code, current data, screenshots and green CI are necessary evidence, never individually sufficient. X1 may claim its own no-widening/authenticated transport; it may not claim the pre-existing estate-wide Git/Pages/R2 access debt is solved.
