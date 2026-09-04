@@ -22,6 +22,7 @@ What is pinned:
 
 House rules obeyed: no network, no git, no ledger writes, no estimator run.
 """
+
 from __future__ import annotations
 
 import copy
@@ -54,6 +55,7 @@ AUTHORITY_KEYS = (
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _render(**overrides) -> str:
     """Render measurement.html.j2 with an all-absent context.
@@ -157,6 +159,7 @@ def real_section(real_html) -> str:
 # 1. Absent / empty states
 # ---------------------------------------------------------------------------
 
+
 def test_empty_envelope_renders_no_section():
     """Zero cards must render nothing — not an empty shell promising content."""
     html = _render(
@@ -178,6 +181,7 @@ def test_missing_envelope_key_does_not_crash_the_page():
 # ---------------------------------------------------------------------------
 # 2. The two real frozen cards
 # ---------------------------------------------------------------------------
+
 
 def test_both_real_cards_render_with_stable_family_anchors(contract, real_section):
     assert real_section, "Research Implications section did not render"
@@ -201,9 +205,9 @@ def test_anchor_is_family_derived_not_card_id(contract, real_section):
 def test_typed_quality_code_is_shown_verbatim(contract, real_section):
     """The machine's own word must be visible — no re-labelling of state."""
     for card in contract["cards"]:
-        assert card["quality"] in real_section, (
-            f"typed quality {card['quality']} not surfaced verbatim"
-        )
+        assert (
+            card["quality"] in real_section
+        ), f"typed quality {card['quality']} not surfaced verbatim"
 
 
 def test_evidence_tier_is_disclosed(contract, real_section):
@@ -223,6 +227,7 @@ def test_card_ids_in_html_match_the_machine_contract(contract, real_section):
 # ---------------------------------------------------------------------------
 # 3. Stance and authority
 # ---------------------------------------------------------------------------
+
 
 def test_required_stance_line_present_in_both_languages(real_section):
     assert STANCE_EN in real_section
@@ -261,6 +266,7 @@ def test_no_ranking_or_trade_language_in_section(real_section):
 # 4. Null discipline — typed, never zero
 # ---------------------------------------------------------------------------
 
+
 def test_null_effective_n_is_not_rendered_as_zero(contract, real_section):
     """The synthetic-control card has effective_n=null with a stated reason.
 
@@ -272,9 +278,9 @@ def test_null_effective_n_is_not_rendered_as_zero(contract, real_section):
 
     card_html = _isolate_card(real_section, "synthetic_control")
     assert re.search(r"effective[^<]{0,40}</\w+>\s*<[^>]*>\s*0\s*<", card_html) is None
-    assert ">0<" not in card_html.replace(" ", ""), (
-        "a null effective_n appears to have been rendered as 0"
-    )
+    assert ">0<" not in card_html.replace(
+        " ", ""
+    ), "a null effective_n appears to have been rendered as 0"
     assert "—" in card_html, "null not rendered with an explicit em-dash placeholder"
 
 
@@ -308,6 +314,7 @@ def test_synthetic_null_is_never_coerced_to_zero():
 # ---------------------------------------------------------------------------
 # 5. Ordered effect path — only where the owner marked it ordered
 # ---------------------------------------------------------------------------
+
 
 def test_ordered_path_renders_only_for_the_owner_supplied_card(contract, real_section):
     es = next(c for c in contract["cards"] if c["method_family"] == "event_study")
@@ -356,6 +363,7 @@ def test_ordered_path_is_not_described_as_causal(real_section):
 # 6. Receipts and provenance
 # ---------------------------------------------------------------------------
 
+
 def test_source_artifact_digests_are_shown(contract, real_section):
     for card in contract["cards"]:
         for artifact in card["source_artifacts"]:
@@ -390,6 +398,7 @@ def test_limitations_are_rendered(contract, real_section):
 # ---------------------------------------------------------------------------
 # 7. Bilingual parity and house copy rules
 # ---------------------------------------------------------------------------
+
 
 def test_every_en_label_has_a_zh_sibling(real_section):
     en = len(re.findall(r'class="l-en"', real_section))
@@ -435,6 +444,7 @@ def test_no_falsifier_vocabulary_as_a_state_chip(real_section):
 # 8. Filters are non-ranking
 # ---------------------------------------------------------------------------
 
+
 def test_filter_controls_exist_for_family_and_state(real_section):
     assert "ric-filter" in real_section, "no method/state filter controls"
 
@@ -446,9 +456,9 @@ def test_dom_order_equals_contract_order(contract, real_section):
         idx = real_section.find(f'id="ric-{card["method_family"]}"')
         assert idx != -1
         positions.append(idx)
-    assert positions == sorted(positions), (
-        "cards are not in the contract's fixed non-ranking order"
-    )
+    assert positions == sorted(
+        positions
+    ), "cards are not in the contract's fixed non-ranking order"
 
 
 def test_filters_are_not_sort_controls(real_section):
@@ -468,6 +478,7 @@ def test_filters_are_not_sort_controls(real_section):
 # 9. Hostile fixtures — states the real pair does not cover
 # ---------------------------------------------------------------------------
 
+
 def test_unknown_quality_state_degrades_without_inventing_a_verdict():
     """An unrecognised typed state must still render, neutrally.
 
@@ -481,7 +492,9 @@ def test_unknown_quality_state_degrades_without_inventing_a_verdict():
 
 
 def test_card_with_no_outputs_renders_an_honest_empty_state():
-    card = _minimal_card(family="event_study", quality="ARTIFACT_INCOMPLETE", outputs=[])
+    card = _minimal_card(
+        family="event_study", quality="ARTIFACT_INCOMPLETE", outputs=[]
+    )
     section = _section(_render(research_implications=_envelope([card])))
     assert section
     assert "0.00%" not in section
@@ -490,7 +503,9 @@ def test_card_with_no_outputs_renders_an_honest_empty_state():
 def test_html_in_artifact_text_is_escaped():
     """autoescape is off in this builder — free text must be escaped explicitly."""
     card = _minimal_card(family="event_study", quality="ARTIFACT_INCOMPLETE")
-    card["limitations"] = [{"en": "<script>alert(1)</script>", "zh": "<script>x</script>"}]
+    card["limitations"] = [
+        {"en": "<script>alert(1)</script>", "zh": "<script>x</script>"}
+    ]
     section = _section(_render(research_implications=_envelope([card])))
     assert "<script>alert(1)</script>" not in section
     assert "&lt;script&gt;" in section
@@ -506,6 +521,7 @@ def test_single_card_envelope_renders(contract):
 # ---------------------------------------------------------------------------
 # Fixture builders
 # ---------------------------------------------------------------------------
+
 
 def _envelope(cards: list[dict]) -> dict:
     return {"schema": "mastermind.research_implication_cards/v1", "cards": cards}
