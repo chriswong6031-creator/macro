@@ -2,6 +2,40 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
+{#- R1A-M Market Pulse quote cluster (reactive-projection freeze §8/§9). ONE
+    visible price per eligible roster row. `region_for()` gates non-US
+    symbols out entirely — they carry no cluster and never enter the request
+    set (freeze §4/§6). Deliberately NOT .nb-px/.nb-chg: that selector is the
+    GENERIC templates/live.js owner, and this route's whole point is that its
+    roster rows are owned by ONE route-scoped controller
+    (site/assets/js/intelligence-hub-market-pulse.js) instead — the generic
+    class is removed from these rows entirely, not merely left unused, so the
+    rendered page carries zero `.nb-px[data-sym]` quote nodes (freeze §10).
+    `data-ihmp-price/-abs/-pct` start baked with the nightly close (price) and
+    empty/hidden (abs/pct — no baked move exists for these rows today); the
+    controller fills all three from one accepted quote tuple, together,
+    inside one requestAnimationFrame.
+
+    ROSTER LAW (freeze review BLOCKER d1): a cluster is emitted ONLY for a
+    ticker that is a member of `market_pulse_roster` (the exact set
+    `compute_market_pulse_roster(hub)` computed — scripts/build_intel_hub.py).
+    The three loops below iterate their FULL panel lists (not roster-capped
+    slices), so region_for() alone was never a sufficient gate — a US-routable
+    name past the 30/14/14 per-panel cap, or a US-routable name the roster's
+    own cross-panel de-dupe already counted from an earlier panel, must still
+    render NOTHING here: the client controller's request set is the roster,
+    and a rendered `data-ihmp-symbol` outside that set is a target the
+    controller can never honestly fill. `market_pulse_roster` is read from
+    this template's own render context (same-template macros share it — no
+    explicit parameter needed) and defaults to empty so a caller that omits
+    it (a unit test rendering the macro in isolation) fails CLOSED to no
+    clusters, never open to an unfiltered one. -#}
+{% macro ihmp(ticker, price) -%}
+{%- set roster = market_pulse_roster|default([]) -%}
+{%- if ticker and (ticker|upper in roster) and region_for(ticker) == 'us' -%}
+<span class="ihmp-px" data-ihmp-symbol="{{ ticker }}"><span class="f" data-ihmp-price>{% if price is not none %}${{ '%.2f'|format(price) }}{% else %}—{% endif %}</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
+{%- endif -%}
+{%- endmacro %}
 {#- inline SVG icons (Lucide-style, currentColor). Icons carry exactly ONE meaning on
     this page — "a desk" — plus the two inline markers (a dated event, a data channel).
     Section marks use the accent tick instead, so an icon always means something. -#}
@@ -124,7 +158,7 @@
     letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
   .eyebrow time{ font-family:var(--fig); letter-spacing:.04em; }
   .live{ width:6px; height:6px; border-radius:50%; background:var(--ok); position:relative; flex:none; }
-  .live::after{ content:""; position:absolute; inset:-4px; border-radius:50%;
+  .live::after{ content:""; position:absolute; inset:-4px; border-radius:var(--r-pill, 999px);
     border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
   @keyframes hp{ 0%{ transform:scale(.55); opacity:.55 } 100%{ transform:scale(1.75); opacity:0 } }
   .hh h1{ font-size:clamp(29px,3.7vw,41px); font-weight:800; letter-spacing:-.033em; line-height:1.03;
@@ -146,7 +180,7 @@
 
   /* ── desk rail: six links, one container, hairline cells ── */
   .rail{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); margin:18px 0 2px;
-    border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+    border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card); overflow:hidden; }
   .rl{ display:flex; align-items:center; gap:8px; min-width:0; padding:11px 13px;
     text-decoration:none; color:var(--text); font-size:12.5px; font-weight:600;
     border-left:1px solid var(--hair-soft); transition:background .16s ease, color .16s ease; }
@@ -178,6 +212,138 @@
     .rl .gw{ display:none; }
   }
 
+  /* ── R1A-M Market Pulse instrument (reactive-projection freeze §8/§12) ──
+     Dark = graphite command instrument: hairline card, restrained semantic
+     luminance, a pulse ONLY for the live+regular state (same idiom as the
+     existing hero `.live::after` dot above — no new glow language). Light =
+     white research material on the page's cool canvas: the identical
+     hairline/card tokens read as a flat, shadow-quiet strip once theme.css
+     swaps `--card`/`--hair`/`--text` for their light values — no dark-only
+     glow value is hardcoded here, so light never inherits the pulse's box-
+     shadow bloom. Semantic tokens only: --ink-up/--ink-down keep Chinese
+     direction-color correct; no new token root, no literal palette, no
+     runtime stylesheet. */
+  .ihmp-bar{ display:flex; align-items:center; gap:9px; margin:14px 0 0; padding:9px 14px;
+    border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card);
+    font-size:11.5px; color:var(--muted); }
+  .ihmp-dot{ width:6px; height:6px; border-radius:var(--r-pill, 999px); flex:none; background:var(--muted); }
+  .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot{
+    background:var(--ok); position:relative; }
+  .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+    content:""; position:absolute; inset:-4px; border-radius:var(--r-pill, 999px);
+    border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
+  .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{ background:var(--warn); }
+  /* --act, not --down — that one is a market-direction token that flips to GREEN
+     under zh 红涨绿跌 — a health state must stay direction-neutral */
+  .ihmp-bar[data-ihmp-availability="unavailable"] .ihmp-dot,
+  .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot{ background:var(--act); }
+  .ihmp-bar time{ font-family:var(--fig); margin-left:auto; font-size:10px; }
+  /* per-row quote cluster — the ONE visible price on a roster row */
+  .ihmp-px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    color:var(--muted); white-space:nowrap; display:inline-flex; align-items:baseline; gap:4px; }
+  .ihmp-delta{ font-size:10px; }
+  .ihmp-delta.pos{ color:var(--ink-up, var(--up)); }
+  .ihmp-delta.neg{ color:var(--ink-down, var(--down)); }
+  @media (prefers-reduced-motion:reduce){
+    .ihmp-bar .ihmp-dot::after{ animation:none; }
+    /* restated at the live rule's own specificity — media queries add none, and
+       the (0,2,1) rule above loses to the (0,5,1) live rule */
+    .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+      animation:none; opacity:.5; }
+  }
+
+  /* ── R1A-M Market Pulse — LIGHT art direction ──────────────────────────────
+     Dark is a command center: depth by luminance, a green LED emitting an
+     expanding ring. Light is a research workspace: depth by material, and the
+     instrument is a bead SEATED on paper — white strip, full-weight hairline,
+     one soft card shadow, and a ring drawn as shadow spread rather than a bloom.
+     Four mechanisms differ on purpose: (1) material — dark leans on --card's
+     translucency over a dark field, light takes the full --panel white + --line
+     + --card-shadow (panel≈bg is the flatness bug, doctrine §5.8); (2) liveness
+     — dark's ring EXPANDS and fades out, light's ring holds a fixed radius and
+     breathes opacity in place, so nothing blooms on white; (3) degraded states —
+     light carries them in the BAR's own material (4–5% wash + a hue-warmed
+     hairline), a channel dark cannot use because a 4% tint on a near-black panel
+     is invisible; dark can only tint the dot; (4) resting states — light draws
+     settled as a HOLLOW bead (pale fill + grey ring), a distinction white ground
+     can hold and a 6px disc on dark cannot. Colour is spent only where something
+     is wrong: a healthy bar stays white, and live is carried by the LED, not by
+     paint. Tokens only, no new custom properties, no page-local palette. */
+
+  /* material: white research card on the cooler canvas (design system §12 E1) */
+  html[data-theme="light"] .ihmp-bar{
+    background:var(--panel); border-color:var(--line); box-shadow:var(--card-shadow); }
+
+  /* the readout itself — the sentence stops being the quietest ink on the page.
+     No letter-spacing, deliberately: the same rule sets the ZH sentence. */
+  html[data-theme="light"] .ihmp-bar [data-ihmp-status]{
+    color:var(--text); font-weight:600; }
+
+  /* the as-of stamp stays a fact, not a verdict: secondary in every state, and
+     deliberately NOT taking the state ink the sentence beside it takes */
+  html[data-theme="light"] .ihmp-bar time{ color:var(--muted); }
+
+  /* resting bead — settled build, loading, and any out-of-hours live print.
+     7px, not dark's 6px: a dark mark on white reads optically smaller than the
+     same mark glowing on a dark field. */
+  html[data-theme="light"] .ihmp-bar .ihmp-dot{
+    width:7px; height:7px;
+    background:color-mix(in srgb,var(--muted) 26%,var(--panel));
+    box-shadow:0 0 0 1.5px color-mix(in srgb,var(--muted) 55%,transparent); }
+
+  /* live + regular session — solid LED, ring breathing in place.
+     Ring geometry is FIXED (no scale, no fade-out): light seats, dark emits.
+     `dtp-pulse` is the estate's shipped live cadence (theme.css), the house
+     live idiom — not a second motion vocabulary. */
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot{
+    background:var(--ok); box-shadow:none; }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+    inset:-3px; border:1.5px solid color-mix(in srgb,var(--ok) 70%,transparent);
+    opacity:1; animation:dtp-pulse 1.4s ease-in-out infinite; }
+
+  /* delayed — the whole strip warms by 4%: readable peripherally, silent up close */
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="delayed"]{
+    background:color-mix(in srgb,var(--warn) 4%,var(--panel));
+    border-color:color-mix(in srgb,var(--warn) 42%,var(--line)); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{
+    background:var(--warn);
+    box-shadow:0 0 0 2.5px color-mix(in srgb,var(--warn) 20%,transparent); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="delayed"] [data-ihmp-status]{
+    color:var(--ink-warn); }
+
+  /* stale / unavailable — same mechanism, one step firmer.
+     --act, NOT --down — this is a data-health state, and --down flips to GREEN
+     under zh 红涨绿跌. --act/--ok/--warn are the tokens theme.css keeps
+     direction-neutral for exactly this reason. */
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="stale"],
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="unavailable"]{
+    background:color-mix(in srgb,var(--act) 5%,var(--panel));
+    border-color:color-mix(in srgb,var(--act) 42%,var(--line)); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot,
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="unavailable"] .ihmp-dot{
+    background:var(--act);
+    box-shadow:0 0 0 2.5px color-mix(in srgb,var(--act) 20%,transparent); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="stale"] [data-ihmp-status],
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="unavailable"] [data-ihmp-status]{
+    color:var(--ink-act); }
+
+  /* per-row cluster — on paper, rank is weight, not luminance.
+     Dark separates level from move with raw hue saturation; light deepens those
+     inks toward --text and loses that separation, so light restores the ladder
+     with weight: the level at 600, the move — the only figure that changes
+     intraday — at 700. .pos/.neg keep --ink-up/--ink-down untouched: those are
+     the measured light rungs and the only route that survives the zh flip. */
+  html[data-theme="light"] .ihmp-px{ font-weight:600; }
+  html[data-theme="light"] .ihmp-delta.pos,
+  html[data-theme="light"] .ihmp-delta.neg{ font-weight:700; }
+
+  /* reduced motion — stated at the light live rule's own specificity, so it
+     actually lands over the (0,5,1) live rule above. */
+  @media (prefers-reduced-motion:reduce){
+    html[data-theme="light"] .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+      animation:none; opacity:1; }
+  }
+
   /* ── section mark: an accent tick, a label, a rule, a count ── */
   .band{ display:flex; align-items:center; gap:11px; margin:34px 0 12px; }
   .band .tick{ width:3px; height:14px; border-radius:2px; flex:none;
@@ -195,7 +361,7 @@
   @media(max-width:620px){ .band .legend{ display:none } }
 
   /* ── one card system ── */
-  .card{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); }
+  .card{ border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card); }
   .empty{ font-size:12.5px; color:var(--muted); padding:11px 0; }
   /* Stance line — every signal band answers "so what do I do" ONCE, here, in plain
      words (DESIGN_DOCTRINE Law 1 + Law 4). This is what the stage-templated sentence
@@ -320,7 +486,7 @@
      move is still ahead — so scrolling the ledger shows the edge draining away.
      The bar is the shape; the mono figure beside the score keeps the precision.
      ─────────────────────────────────────────────────────────────────────────── */
-  .led{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+  .led{ border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card); overflow:hidden; }
   .led-row{ display:grid; grid-template-columns:26px 150px 52px 55px minmax(0,1fr);
     align-items:center; gap:0 14px; padding:10px 15px 10px 0; min-height:58px; }
   .led > .led-row + .led-row{ border-top:1px solid var(--hair-soft); }
@@ -414,6 +580,25 @@
     </div>
   </header>
 
+  {# ── R1A-M Market Pulse — one compact page-level instrument (freeze §8/§11).
+        Baked by default (nightly build); the route-scoped controller
+        (site/assets/js/intelligence-hub-market-pulse.js) is the only writer
+        of the four state-axis attributes below and of `.l-en`/`.l-zh` inside
+        `[data-ihmp-status]`. `aria-live="polite"` on the ROOT, not a spammy
+        per-row announcement — one status line for the whole roster. ── #}
+  <div class="ihmp-bar" data-ihmp-root data-ihmp-availability="" data-ihmp-freshness=""
+       data-ihmp-session="" data-ihmp-coverage="" data-ihmp-baseline-at="{{ hub.as_of or '' }}"
+       aria-live="polite">
+    <span class="ihmp-dot" aria-hidden="true"></span>
+    <span data-ihmp-status>{{ t('Prices from the latest settled build', '价格来自最近一次结算构建') }}</span>
+    {#- d3: a visible baseline as-of — baked with the nightly build time; the
+        controller repaints it to the accepted projection's own as-of on a
+        successful refresh (site/assets/js/intelligence-hub-market-pulse.js).
+        The CSS already styles `.ihmp-bar time`; this creates the element it
+        was styling nothing for. -#}
+    <time data-ihmp-asof datetime="{{ built or '' }}">{{ (built or '')|replace('T',' ')|truncate(19, True, '') }}{% if built %} UTC{% endif %}</time>
+  </div>
+
   {# ── desk rail. Purpose + grading receipt ride the hover; Tier 1 keeps the
         name, the live lamp and the translated grading state. ── #}
   <div class="rail">
@@ -444,7 +629,7 @@
   <div class="ecards">
     {% for d in EM %}
     <div class="card ecard lead" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' }}">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{{ ihmp(d.ticker, d.price) }}
         {{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}{{ tstate(d.trajectory) }}
         <span class="score">{{ d.opportunity_score|round|int }}</span></div>
       {% if d.name and d.name != d.ticker %}<div class="nm">{{ d.name|e }}</div>{% endif %}
@@ -468,7 +653,7 @@
   <div class="ecards lst-collapse lst-cap4 is-collapsed">
     {% for d in hub.discovery %}{% set dd = d.discovery or {} %}
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{{ ihmp(d.ticker, d.price) }}
         <span class="chip src">{{ (dd.source or '')|replace('_',' ')|e }}</span>
         {% if dd.off_desk %}<span class="chip good">{{ t('off-desk','非台内') }}</span>{% endif %}
         <span class="dscore">{{ ((dd.disc_score or 0)*100)|round|int }}</span></div>
@@ -531,7 +716,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:{{ acc }};--sp-p:{{ ((d.edge_remaining or 0)*100)|round|int }}%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}</div>
+        <div class="tkline"><span class="tk">{{ d.ticker }}</span>{{ ihmp(d.ticker, d.price) }}</div>
         {% if d.name and d.name != d.ticker %}<div class="nm">{{ d.name|e }}</div>{% endif %}
       </div>
       <div><div class="score">{{ d.opportunity_score|round|int }}</div>
@@ -624,7 +809,10 @@
   </footer>
 </div>
 <script src="theme.js"></script>
-{# intraday progressive enhancement: live (~15-min) prices on the surfaced names.
-   No-ops if not configured/served — the slow-brain scores stay nightly. #}
+{# R1A-M: the ONE route-scoped controller for every [data-ihmp-symbol] node on
+   this page (reactive-projection freeze §9/§10). No-ops if the page rendered
+   no roster targets or the live-prices setting is off — the baked page stays
+   fully usable either way. #}
+<script defer src="assets/js/intelligence-hub-market-pulse.js?v=20260902a"></script>
 </body>
 </html>

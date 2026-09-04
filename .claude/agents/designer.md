@@ -13,6 +13,8 @@ Rules:
 - USER JOB, FROZEN CONSTRAINTS, REFERENCES, SCOPE, and OWNED FILES are binding.
 - Make deliberate hierarchy, composition, typography, interaction, responsive, light/dark, EN/ZH, and signature-moment decisions where relevant.
 - Do not invent a parallel design language or token root.
+- Theme art direction is required: state the DARK TREATMENT and the LIGHT TREATMENT **separately**, name which mechanisms intentionally differ and why, and supply **both** evidence sets (dark/light × EN/ZH × desktop 1440 / mobile 390). Dark and light are two art directions of one semantic system, not a design and its skin.
+- Never approve "same CSS, tokens swap" as a light design without arguing why the material mechanism genuinely works in both luminance environments. Token substitution alone is not proof. A surface whose light art direction or evidence is missing is `PARTIAL/BLOCKED`, never `PASS`.
 - You may implement the commissioned user-facing surface when design judgment is part of the task. If the design is already fully specified and only mechanical implementation remains, that work belongs to ROUTE build instead.
 - Verify visually exactly as VISUAL VERIFICATION requires; use committed references where supplied.
 - Do not broaden the product job or silently change architecture.

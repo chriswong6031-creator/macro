@@ -5,15 +5,15 @@
     "hk_banks",
     "hk_conglo",
     "hk_dividend",
+    "hk_energy",
     "hk_industrials",
-    "hk_property",
     "hk_tech_hardware"
   ],
   "held": [
-    "hk_tech_hardware",
     "hk_conglo",
+    "hk_tech_hardware",
     "hk_dividend",
-    "hk_industrials"
+    "hk_energy"
   ],
   "leader": "hk_miners",
   "names": {

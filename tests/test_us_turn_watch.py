@@ -857,6 +857,48 @@ def test_beyond_cap_rows_carry_their_reason_not_a_bare_ticker(tmp_path):
     json.loads(json.dumps(art, default=str))
 
 
+def test_compute_deck_with_candidates_keeps_private_uncapped_rows_out_of_public_artifact(tmp_path):
+    """A cap must hide full rows only from the public document, never from the intake.
+
+    MUTATION CHECK: returning ``deck`` here, or adding ``all_triggered`` to the public
+    artifact, makes this test fail.  The six equal synthetic closes all trigger through
+    their turning basket; cap=2 therefore gives this seam four full private rows to protect.
+    """
+    root = tmp_path / "data"
+    site = tmp_path / "site"
+    (root / TW.DECK_STORE).mkdir(parents=True)
+    (root / "baskets").mkdir(parents=True)
+
+    def _write(stem, values):
+        idx = pd.date_range(end=_FIXTURE_END, periods=len(values), freq="B")
+        pd.DataFrame({"close": values}, index=idx).to_parquet(
+            root / TW.DECK_STORE / f"{stem}.parquet")
+
+    members = []
+    for i in range(6):
+        ticker = f"SIDE{i}"
+        _write(ticker, _WASHOUT)
+        members.append({"ticker": ticker, "added": "2020-01-01", "removed": None})
+    _write(TW.BENCHMARK, [100.0 * (1.0 + 0.0002) ** i for i in range(len(_UPTREND))])
+    (root / "baskets" / "membership.json").write_text(json.dumps({"baskets": {
+        "test_theme": {"name": "Test Theme", "name_zh": "测试主题", "members": members}}}))
+    (site / "basketdata").mkdir(parents=True)
+    (site / "basketdata" / "us_basket_turn.json").write_text(json.dumps({"baskets": {
+        "test_theme": {"state": "TURNING", "days_in_state": 3, "data_session": _FIXTURE_END}}}))
+
+    artifact, rows = TW.compute_deck_with_candidates(root, site, cap=2, lane_floor=1)
+    public = TW.compute_deck(root, site, cap=2, lane_floor=1)
+    assert {key: value for key, value in artifact.items() if key != "runtime_seconds"} == {
+        key: value for key, value in public.items() if key != "runtime_seconds"}
+    assert len(rows) == artifact["coverage"]["triggered"] == 6
+    assert len(artifact["deck"]) == 2
+    assert {row["ticker"] for row in rows} == {f"SIDE{i}" for i in range(6)}
+    assert all("triggers" in row and "context_score" in row for row in rows)
+    assert all(set(row) == {"ticker", "triggers_fired", "basket"}
+               for row in artifact["beyond_cap"])
+    assert "all_triggered" not in artifact
+
+
 def test_write_artifact_lands_at_the_documented_path(tmp_path):
     p = TW.write_artifact({"schema": TW.SCHEMA, "deck": []}, tmp_path)
     assert p == tmp_path / "turn_watch" / "turn_watch.json"

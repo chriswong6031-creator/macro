@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AEE-BULL-20260622",
-  "asof": "2026-08-22",
+  "asof": "2026-09-03",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 57.3,
-  "raw_confidence": 53.5,
-  "delta_vs_base": -2.7,
+  "management_confidence": 48.0,
+  "raw_confidence": 45.9,
+  "delta_vs_base": -12.0,
   "recommended_action": "wait",
-  "human_state": "Awaiting Trigger",
+  "human_state": "Approaching Trigger",
   "components": {
-    "validity": 47.9,
+    "validity": 44.8,
     "progress": 0.0,
-    "pace": 98.5,
+    "pace": 41.0,
     "retention": 50.0,
-    "overlay": 55.0
+    "overlay": 58.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.58,
+    "dist_to_stop_r": 0.552,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 8.9,
-    "p1": -0.28,
-    "p2": -0.14,
+    "horizon_pct_used": 35.6,
+    "p1": -0.2988,
+    "p2": -0.1494,
     "p3": null,
-    "move_r": -0.42,
+    "move_r": -0.448,
     "mfe_r": 0.0,
-    "mae_r": -0.42
+    "mae_r": -0.448
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Weakening",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -3.570002746582034,
+  "_mae": -3.8100006103515653,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 4,
-  "tau": 0.0889
+  "days_elapsed": 16,
+  "tau": 0.3556
 }

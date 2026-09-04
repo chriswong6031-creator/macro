@@ -1,0 +1,146 @@
+{
+  "schema": "evidence_foundation.product_fixture_manifest.v1",
+  "version": "1.0.0",
+  "fixtures": [
+    {
+      "file": "theme_graph_evidence_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3366,
+      "sha256": "b3cbca366eeec8c6d66b9fce49e0878d2e511aa63eaff87bcc7d039d6ebcbe65"
+    },
+    {
+      "file": "theme_graph_shared_upstream_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 4227,
+      "sha256": "3424370078fb8adeab8e56f9e89c5b51184225ac01ecb46a53b8f92b9155e968"
+    },
+    {
+      "file": "theme_graph_conflicting_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 5131,
+      "sha256": "ed413361be584dea1c1d0b474471d1c8c5f9d1df5763109e902589b402726947"
+    },
+    {
+      "file": "qledger_claim_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3031,
+      "sha256": "2c58180aa57c9c5ca6cabb316544229a17de3b5ea91206e8122f4b46ceca7b55"
+    },
+    {
+      "file": "rights_blocked_reference_valid.json",
+      "kind": "reference",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3254,
+      "sha256": "e068146a5c50afcfc4534794d3719641f2c9e16c55b6f0707a6b2f5ded14b28f"
+    },
+    {
+      "file": "aapl_earnings_change_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 2784,
+      "sha256": "2e9a8da2afea0fb1d8a38a209dfdc3e77fa5853919fd78dbd5aab661b69ff416"
+    },
+    {
+      "file": "aapl_fundamental_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3077,
+      "sha256": "d22ea2b14b48ee8e8f28ab676ac838232f76db2ab630272368c08a9b73ad512d"
+    },
+    {
+      "file": "aapl_theme_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3255,
+      "sha256": "94985db98b5eea8e7bc2dd37c84e74c8753b33fd3c19942f17b1c827ae37720a"
+    },
+    {
+      "file": "aapl_forward_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3041,
+      "sha256": "54364537a417504145652365dccf1e63b0931bc3dc62a88f50710e3e4d0936ca"
+    },
+    {
+      "file": "shared_upstream_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 4997,
+      "sha256": "db3b24fd181a526f1a06868598f8003e14882f3947e1ba2d9f4b74cc5fef558d"
+    },
+    {
+      "file": "conflicting_observations_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 5137,
+      "sha256": "d6843edaac97ab6571ce55044601344dc2b827f5e41ee9ce34c46439faa15fc3"
+    },
+    {
+      "file": "rights_blocked_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3042,
+      "sha256": "a490ffbdb6cfbb88701d7aef27ea6470e5152c9c0ea45d9d763eea8ea1a1856f"
+    },
+    {
+      "file": "corrected_context_block_valid.json",
+      "kind": "block",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 3053,
+      "sha256": "3c90c07a6157c110c2bfd66632f2b3e0c278582173dcf73e36bcc96aa376672b"
+    },
+    {
+      "file": "belief_as_fact_block_hostile.json",
+      "kind": "block",
+      "expected": "invalid",
+      "expected_violations": [
+        "block_evidence_class_masquerade"
+      ],
+      "size_bytes": 3040,
+      "sha256": "370dd499a456dcc4bbef7fcf0fd01b7f229cfafa529678a1f6262b8b632195bd"
+    },
+    {
+      "file": "aapl_security_state_recipe_valid.json",
+      "kind": "recipe",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 5493,
+      "sha256": "caca44490a48f4c6e5d7fde47033642ee868f1a4af920a97ac302c70d8c943d4"
+    },
+    {
+      "file": "forbidden_cik_join_recipe_hostile.json",
+      "kind": "recipe",
+      "expected": "invalid",
+      "expected_violations": [
+        "recipe_identity_join_forbidden:0"
+      ],
+      "size_bytes": 5462,
+      "sha256": "2f9ea0a80536709798edbc054dcf219b5414d70319becd1fcbd57952ce8696c8"
+    },
+    {
+      "file": "aapl_security_state_compilation_expected.json",
+      "kind": "receipt",
+      "expected": "valid",
+      "expected_violations": [],
+      "size_bytes": 979,
+      "sha256": "f5ba12b7b845ea65436e4552c0e20064798ed6cea6e6750f556a1bddee43aaf1"
+    }
+  ]
+}

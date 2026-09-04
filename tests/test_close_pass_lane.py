@@ -346,7 +346,17 @@ def test_the_public_live_exceptions_are_exactly_the_reviewed_files():
     """A prefix would have swept this artifact in with them. There is no prefix —
     each entry is an individually reviewed file."""
     live_public = sorted(p for p in _caddy_public_exclusions() if p.startswith("/live/"))
-    assert live_public == ["/live/breadth.json", "/live/quotes.json",
+    # flow_pulse.json and intraday_quotes.json were added to the Caddyfile by
+    # #6105 "Restore Intraday Flow live transport truth" (2026-08-20), which
+    # deliberately made both anonymously fetchable so the Intraday Flow surface
+    # could read them — but that PR never updated this reviewed-inventory list or
+    # its twin in tests/test_entry_radar_w4_lane.py, so BOTH have been red on main
+    # ever since. CI's path scoping hid it: this suite only runs when the
+    # close-pass / entry-radar lanes are touched, so main's routine data pushes
+    # never triggered it. Recorded here as reviewed rather than re-litigated —
+    # the exposure was the intent of a merged PR, not an accident.
+    assert live_public == ["/live/breadth.json", "/live/flow_pulse.json",
+                           "/live/intraday_quotes.json", "/live/quotes.json",
                            "/live/release_publications.json", "/live/staleness.json"]
     assert not any(p.startswith("/live/") for p in POLICY["public"]["prefixes"])
 
@@ -1106,6 +1116,166 @@ def test_the_strip_annotation_can_be_switched_off():
     assert M.STATE_KEY == "board_state"
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# run()'s material/benign classification (FROZEN SPEC Part B). Before this fix
+# run() called annotate_live_strip and discarded its boolean outright, so an
+# absent served target — the exact shape of the 27-day 2026-07-30→08-26 US
+# Prophet Live freeze — produced the SAME silence as every benign reason to
+# write nothing. These pin the caller, not the CAS mechanics (already covered
+# above by the annotate_live_strip-level tests, unchanged).
+# ─────────────────────────────────────────────────────────────────────────────
+def _warnings(out: str) -> list[str]:
+    return [ln for ln in out.splitlines() if "::warning" in ln]
+
+
+def test_run_emits_a_loud_annotation_when_the_target_is_absent(tmp_path, capsys):
+    """Area 7. The served target never existing at all — literally the shape of
+    the incident this fix closes."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"          # never created
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    assert M.run(served=str(served), plv=str(plv),
+                 fetch=lambda key, **kw: payload) == 0
+    warn = _warnings(capsys.readouterr().out)
+    assert warn, "a material failure must not stay silent"
+    assert warn[0].startswith("::warning title=close-pass::")
+    assert "absent" in warn[0]
+    assert not plv.exists()          # still never creates the artifact
+
+
+def test_run_emits_a_loud_annotation_when_the_target_is_unparseable(tmp_path, capsys):
+    """Area 8. A half-written file, an error shell — malformed JSON is just as
+    material as the file not existing at all."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"
+    plv.write_text('{"states": ')                  # broken JSON
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    assert M.run(served=str(served), plv=str(plv),
+                 fetch=lambda key, **kw: payload) == 0
+    warn = _warnings(capsys.readouterr().out)
+    assert warn and "unparseable" in warn[0]
+    assert plv.read_text() == '{"states": '        # left exactly as it is, not repaired
+
+
+def test_run_emits_a_loud_annotation_when_publish_served_fails(tmp_path, monkeypatch,
+                                                                capsys):
+    """Area 9. The read/CAS half succeeds; the write itself fails."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"
+    plv.write_text(json.dumps({"states": {}}))
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    monkeypatch.setattr(M, "publish_served", lambda *a, **kw: False)
+    assert M.run(served=str(served), plv=str(plv),
+                 fetch=lambda key, **kw: payload) == 0
+    warn = _warnings(capsys.readouterr().out)
+    assert warn and "publish_served" in warn[0]
+
+
+def test_run_stays_silent_when_the_strip_is_already_annotated(tmp_path, capsys):
+    """Area 10. The common tick — ~40 passes a day, one write. Must never page."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    plv.write_text(json.dumps({"states": {}}))
+    assert M.run(served=str(served), plv=str(plv), fetch=lambda key, **kw: payload) == 0
+    capsys.readouterr()  # the first pass writes the key — discard its output
+    assert M.run(served=str(served), plv=str(plv), fetch=lambda key, **kw: payload) == 0
+    assert _warnings(capsys.readouterr().out) == []
+
+
+def test_run_dry_run_never_emits_a_material_warning(tmp_path, capsys):
+    """Area 11. dry-run prints its own plain notice, never a ::warning."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    plv.write_text(json.dumps({"states": {}}))
+    assert M.run(served=str(served), plv=str(plv), dry_run=True,
+                 fetch=lambda key, **kw: payload) == 0
+    out = capsys.readouterr().out
+    assert _warnings(out) == []
+    assert "dry-run: would annotate" in out
+
+
+def test_run_stays_silent_on_a_cas_skip_and_does_not_clobber(tmp_path, monkeypatch,
+                                                              capsys):
+    """Area 12. The concurrent-rewrite skip is CORRECT behaviour, not a failure —
+    paging on it would be exactly the false-alarm factory the falsifier law
+    forbids. The evaluator's fresh document must also survive untouched."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"
+    stale = {"schema": "prophet_live.states/v1", "states": {"AAA": {"state": "forming"}}}
+    plv.write_text(json.dumps(stale))
+    fresh = {"schema": "prophet_live.states/v1",
+             "states": {"AAA": {"state": "buyable"}}}
+
+    real = CB.board_state
+    def evaluator_wins(payload, **kw):
+        plv.write_text(json.dumps(fresh))           # the evaluator's whole rewrite
+        return real(payload, **kw)
+    monkeypatch.setattr(M.CB, "board_state", evaluator_wins)
+
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    assert M.run(served=str(served), plv=str(plv), fetch=lambda key, **kw: payload) == 0
+    out = capsys.readouterr().out
+    assert _warnings(out) == []
+    landed = json.loads(plv.read_text())
+    assert landed == fresh                # the evaluator's document, untouched
+    assert M.STATE_KEY not in landed
+
+
+def test_run_success_writes_board_state_and_emits_no_warning(tmp_path, capsys):
+    """Area 13. The ordinary evening pass: a healthy annotate must never trip
+    the material-failure path, and the write itself is unchanged."""
+    served = tmp_path / "us_board_provisional.json"
+    plv = tmp_path / "prophet_live.json"
+    payload = _payload()
+    served.write_text(json.dumps(payload))
+    plv.write_text(json.dumps({"states": {}}))
+    assert M.run(served=str(served), plv=str(plv), fetch=lambda key, **kw: payload) == 0
+    out = capsys.readouterr().out
+    assert _warnings(out) == []
+    assert json.loads(plv.read_text())[M.STATE_KEY] == CB.board_state(payload)
+
+
+def test_the_outcome_helper_is_the_single_source_of_truth_for_both_callers(tmp_path):
+    """The classification split (Part B) reads off the SAME single read/CAS
+    pass annotate_live_strip always performed — never a second read — proven
+    directly against the private helper both the public wrapper and run() now
+    share, and that its outcome vocabulary matches MATERIAL_ANNOTATE_OUTCOMES."""
+    plv = tmp_path / "prophet_live.json"
+    plv.write_text(json.dumps({"states": {}}))
+    payload = _payload()
+
+    wrote, outcome = M._annotate_live_strip_outcome(plv, payload)
+    assert wrote is True and outcome == M.ANNOTATE_OUTCOME_ANNOTATED
+    assert json.loads(plv.read_text())[M.STATE_KEY] == CB.board_state(payload)
+    # The public wrapper agrees — same call, same file, same result.
+    assert M.annotate_live_strip(plv, payload) is False   # already annotated now
+
+    # Second pass, unchanged document: benign, no write, outcome says why.
+    wrote2, outcome2 = M._annotate_live_strip_outcome(plv, payload)
+    assert wrote2 is False and outcome2 == M.ANNOTATE_OUTCOME_ALREADY_ANNOTATED
+
+    # Absent and unparseable are both MATERIAL, and distinguishably so.
+    missing = tmp_path / "missing.json"
+    wrote3, outcome3 = M._annotate_live_strip_outcome(missing, payload)
+    assert wrote3 is False and outcome3 == M.ANNOTATE_OUTCOME_ABSENT
+    broken = tmp_path / "broken.json"
+    broken.write_text('{"states": ')
+    wrote4, outcome4 = M._annotate_live_strip_outcome(broken, payload)
+    assert wrote4 is False and outcome4 == M.ANNOTATE_OUTCOME_UNPARSEABLE
+    assert M.MATERIAL_ANNOTATE_OUTCOMES == {
+        M.ANNOTATE_OUTCOME_ABSENT, M.ANNOTATE_OUTCOME_UNPARSEABLE,
+        M.ANNOTATE_OUTCOME_PUBLISH_FAILED,
+    }
+
+
 def test_an_empty_plane_is_a_notice_not_an_alarm(monkeypatch, tmp_path, capsys):
     """Absent is the ORDINARY state before the evening pass runs. An alarm that
     fires forty times a day trains the operator to ignore the channel."""
@@ -1752,7 +1922,13 @@ def test_macro_update_never_restarts_the_closepass_oneshot():
 def test_live_setup_installs_and_arms_the_mirror():
     """A fresh provision must not need a second manual step to arm the lane."""
     assert "macro-live-closepass.service macro-live-closepass.timer" in LIVE_SETUP
-    assert "macro-live-closepass.timer >/dev/null" in LIVE_SETUP
+    # Assert the lane is inside the `systemctl enable --now` batch, NOT that its
+    # line happens to be the one carrying the trailing `>/dev/null`. The original
+    # assertion pinned that redirect, which only ever sat on the LAST timer in the
+    # batch, so it silently broke the moment macro-live-breadth.timer was appended
+    # after closepass — testing list order, not the arming it means to guarantee.
+    enable_block = LIVE_SETUP.split("systemctl enable --now", 1)[1].split("\n\n", 1)[0]
+    assert "macro-live-closepass.timer" in enable_block
 
 
 # ─────────────────────────────────────────────────────────────────────────────

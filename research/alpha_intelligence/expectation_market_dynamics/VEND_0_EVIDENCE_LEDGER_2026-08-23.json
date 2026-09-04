@@ -1,0 +1,141 @@
+{
+  "schema": "k3e.vend0.evidence_ledger.v1",
+  "status": "SAMPLE_REQUIRED",
+  "accessed_at": "2026-08-23",
+  "scope": "Research-only institutional estimates vendor comparison. This is neither procurement authority nor a provider integration or selection.",
+  "required_dimensions": [
+    "point_in_time_as_of_reconstructability",
+    "estimate_levels_and_revisions",
+    "fiscal_period_mapping",
+    "contributor_and_analyst_coverage",
+    "source_and_observation_clocks",
+    "corrections_and_restated_history",
+    "identifiers_and_corporate_actions",
+    "history_depth_and_universe",
+    "null_partial_and_rights_semantics",
+    "operability_rate_limits",
+    "redistribution_derived_data_model_training_display_rights",
+    "sample_reproducibility_and_cost"
+  ],
+  "estate_probe": {
+    "provider_specific_runtime_client_found": false,
+    "provider_specific_configured_capability_found": false,
+    "authorized_representative_sample_found": false,
+    "method": "Searched tracked engine/, scripts/, and config/ sources and inspected only environment-variable names for the candidate vendor names; no values were read or recorded.",
+    "interpretation": "This establishes only that VEND-0 had no locally authorized sample or installed provider adapter at the probe time. It is not a statement about organization-wide subscriptions or a vendor's capability."
+  },
+  "candidates": [
+    {
+      "id": "lseg_ibes",
+      "vendor": "LSEG",
+      "product": "I/B/E/S Estimates / I/B/E/S Point-in-Time",
+      "inclusion_reason": "Primary LSEG materials identify analyst detail, consensus, aggregates, KPIs, global coverage, named history feeds, and a point-in-time package.",
+      "evidence": [
+        {
+          "class": "PRIMARY_PRODUCT_PAGE",
+          "url": "https://www.lseg.com/en/data-analytics/financial-data/company-data/ibes-estimates",
+          "accessed_at": "2026-08-23",
+          "supports": ["analyst_detail_claim", "consensus_claim", "kpi_claim", "history_claim", "delivery_claim"]
+        },
+        {
+          "class": "PRIMARY_VENDOR_BROCHURE",
+          "url": "https://www.lseg.com/content/dam/data-analytics/en_us/documents/brochures/data-for-quant-research.pdf",
+          "accessed_at": "2026-08-23",
+          "supports": ["point_in_time_daily_snapshot_claim", "history_claim", "delivery_claim"]
+        },
+        {
+          "class": "PRIMARY_DEVELOPER_CATALOG",
+          "url": "https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/rdp-data-exploration/quickstart/company",
+          "accessed_at": "2026-08-23",
+          "supports": ["api_access_claim", "sample_availability_claim", "rate_limit_claim"]
+        }
+      ],
+      "disposition": "COMPARABLE_PENDING_SAMPLE"
+    },
+    {
+      "id": "factset_estimates",
+      "vendor": "FactSet",
+      "product": "FactSet Estimates and FactSet Estimates Point-in-Time Consensus",
+      "inclusion_reason": "Primary FactSet sources identify consensus and broker-detail estimate families, historical PIT consensus, fiscal-period request controls, and source-availability/last-modified fields in its API documentation.",
+      "evidence": [
+        {
+          "class": "PRIMARY_DEVELOPER_DOCUMENTATION",
+          "url": "https://developer.factset.com/api-catalog/factset-estimates-api",
+          "accessed_at": "2026-08-23",
+          "supports": ["broker_detail_claim", "source_available_clock_claim", "last_modified_clock_claim", "api_rate_limit_claim", "fiscal_period_request_claim"]
+        },
+        {
+          "class": "PRIMARY_PRODUCT_PAGE",
+          "url": "https://insight.factset.com/resources/at-a-glance-factset-estimates-point-in-time-consensus",
+          "accessed_at": "2026-08-23",
+          "supports": ["point_in_time_daily_snapshot_claim", "historical_cutoff_claim", "non_retroactive_snapshot_method_claim"]
+        },
+        {
+          "class": "PRIMARY_PRODUCT_PAGE",
+          "url": "https://insight.factset.com/resources/factset-consensus-estimates-datafeed",
+          "accessed_at": "2026-08-23",
+          "supports": ["detail_history_claim", "guidance_claim", "analyst_identity_linkage_claim"]
+        }
+      ],
+      "disposition": "COMPARABLE_PENDING_SAMPLE"
+    },
+    {
+      "id": "spg_ciq_estimates",
+      "vendor": "S&P Global Market Intelligence",
+      "product": "S&P Capital IQ Estimates",
+      "inclusion_reason": "Primary S&P materials describe estimates snapshots with effective/to-date fields, detailed current and historical estimates, revisions, broker/analyst coverage, and multi-channel delivery.",
+      "evidence": [
+        {
+          "class": "PRIMARY_PRODUCT_PAGE",
+          "url": "https://www.spglobal.com/market-intelligence/en/solutions/capital-iq-estimates",
+          "accessed_at": "2026-08-23",
+          "supports": ["point_in_time_snapshot_claim", "effective_and_to_date_clock_claim", "broker_analyst_coverage_claim", "revisions_claim", "history_claim", "fiscal_period_claim"]
+        },
+        {
+          "class": "PRIMARY_PRODUCT_PAGE",
+          "url": "https://www.spglobal.com/market-intelligence/en/solutions/products/fundamental-data",
+          "accessed_at": "2026-08-23",
+          "supports": ["point_in_time_history_claim", "consensus_revision_claim", "history_claim"]
+        },
+        {
+          "class": "PRIMARY_MARKETPLACE_QUERY_LIBRARY",
+          "url": "https://www.marketplace.spglobal.com/en/support/query-library/query-%281008%29",
+          "accessed_at": "2026-08-23",
+          "supports": ["specific_observation_date_query_claim"]
+        }
+      ],
+      "disposition": "COMPARABLE_PENDING_SAMPLE"
+    },
+    {
+      "id": "visible_alpha",
+      "vendor": "Visible Alpha, within S&P Global Market Intelligence offering",
+      "product": "Visible Alpha Estimates",
+      "inclusion_reason": "The combined S&P offering presents Visible Alpha as a distinct contributor-model/KPI dataset with different history and horizon claims; it must be separately entitled and sampled rather than assumed included in Capital IQ Estimates.",
+      "evidence": [
+        {
+          "class": "PRIMARY_PRODUCT_PAGE",
+          "url": "https://www.spglobal.com/market-intelligence/en/solutions/products/estimates",
+          "accessed_at": "2026-08-23",
+          "supports": ["contributor_model_claim", "kpi_claim", "broker_timestamp_claim", "history_claim", "horizon_claim"]
+        }
+      ],
+      "disposition": "COMPARABLE_PENDING_SEPARATE_ENTITLEMENT_AND_SAMPLE"
+    }
+  ],
+  "excluded_from_institutional_bakeoff": [
+    {
+      "candidate": "current free/snapshot sources",
+      "reason": "Current-estate records identify snapshots/accrual but no licensed multi-horizon PIT estimate history; they remain the baseline, not a comparable institutional vendor."
+    },
+    {
+      "candidate": "crowdsourced or marketing-only estimate offerings",
+      "reason": "Not admitted without primary evidence of the required PIT, correction, rights, and representative-record dimensions."
+    }
+  ],
+  "decision": {
+    "recommendation": "PROBE_FURTHER",
+    "winner": null,
+    "reason": "No authorized representative sample, field dictionary, contract-rights schedule, or reproducible as-of replay was available. Public product pages establish a credible candidate set but cannot prove usable record semantics or lawful rights."
+  },
+  "required_external_gate": "Obtain a procurement-neutral, time-limited evaluation entitlement or vendor-supplied redacted representative export for the frozen sample design, plus the applicable license/data-rights schedule. Do not contact vendors, start a trial, accept terms, purchase, or upload data under VEND-0 authority."
+}

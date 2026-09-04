@@ -1,0 +1,59 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_downstream_invalidation.v2",
+  "status": "INVALIDATED_AND_REPLACED_FTS_MATCHED_DOCUMENT_REPAIR",
+  "reason": "The filing identities remain the frozen exact twenty, but the prior source plane substituted filing primary documents for exact FTS-matched archive members. Every proposal, audit, relationship, and K artifact bound to those superseded bytes is non-admissible.",
+  "superseded_selection": {
+    "file_sha256": "2635a5f040556602ced6db5818518d65bb7a89decc8def1288b23f93d775b35c",
+    "manifest_sha256": "f44f37d5f44b4c3eabb5098004afa4aed8c40a173404709084a82152741d36bf"
+  },
+  "new_source_selection_manifest_sha256": "e436c6e87870468d0df0449c86cc9b69a9d23aa1396885fffdfcbfcf6398852e",
+  "invalidated_chain": {
+    "source_manifest": {
+      "file_sha256": "e4f92b48abc9b2c5dbd07e366c82189eca314a1bff3532841f2ea7f5bcc5ac25",
+      "manifest_sha256": "a82394fdedf85de1104c602adab21ccd3532e769c245d796bdbd7c597d2e411c"
+    },
+    "proposal": {
+      "file_sha256": "bf5f914a14a41b332ff0f0d914b4a8e2cad6d74843b47fc5f3df9a0837176bff"
+    },
+    "audit": {
+      "file_sha256": "b8173cf6a19486a996659d73e1f9d47dfe41cbb13ce855453dd6befb91fa79ef"
+    },
+    "disagreement_matrix": {
+      "file_sha256": "d96415d950cac1aba7f4f4c5769f9fcce243531a3241dab205f95b65a4f4799f"
+    },
+    "episode_linkage": {
+      "file_sha256": "c8239aacf25f3fa368338a29bc5b63b911d5ec5f3a9c0d6dd95953495d4e7f06"
+    },
+    "k_packet": {
+      "file_sha256": "9dec536bd23962fe5423ae804a71fda96575234e1cb533faf50cb14f273cad0e"
+    }
+  },
+  "replacement_required": {
+    "fresh_grok_all_twenty": true,
+    "fresh_opus_all_twenty": true,
+    "regenerate_disagreement_matrix": true,
+    "regenerate_episode_linkage": true,
+    "regenerate_k_packet": true
+  },
+  "replacement_chain": {
+    "source_manifest": {
+      "file_sha256": "03355ff15941750f3d26f3bbf5783c536cc16fefd47692296f1331e062216ea4",
+      "manifest_sha256": "97c2d8f7d518a6ae7ec25f23cb6f796f201c601277647b0bee9e917eb1add667"
+    },
+    "proposal": {
+      "file_sha256": "98383da61ac11c072a1c0cc10a00218164fb95446c277cf4da212121250fbee2"
+    },
+    "audit": {
+      "file_sha256": "7c01072dafa92e7f2c4e31723317351694e575f6947185b8112a29a12923a88a"
+    },
+    "disagreement_matrix": {
+      "file_sha256": "2c9ec159318103f4f92a9d5891302aba25fc56f3fc7e1ebbc96d42f57ee8fef2"
+    },
+    "episode_linkage": {
+      "file_sha256": "b7df15236399b545ec0ea86ad43afa0663eae80b5df2e5358117e6418dac42f8"
+    },
+    "k_packet": {
+      "file_sha256": "665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e"
+    }
+  }
+}

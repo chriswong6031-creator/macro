@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CSR-BULL-20260729",
-  "asof": "2026-08-22",
+  "asof": "2026-09-03",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 24.9,
+  "management_confidence": 22.0,
   "raw_confidence": 24.0,
-  "delta_vs_base": -35.1,
+  "delta_vs_base": -38.0,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 24.3,
+    "validity": 0.7,
     "progress": 0.0,
-    "pace": 8.2,
+    "pace": 0.8,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.35,
+    "dist_to_stop_r": 0.063,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 53.3,
-    "p1": -0.4331,
-    "p2": -0.2165,
+    "horizon_pct_used": 80.0,
+    "p1": -0.6245,
+    "p2": -0.3122,
     "p3": null,
-    "move_r": -0.65,
+    "move_r": -0.937,
     "mfe_r": 0.066,
-    "mae_r": -0.65
+    "mae_r": -1.01
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Phase: invalidated \u2192 triggered_pre_t1",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.2700015258789037,
-  "_mae": -2.6700009155273463,
+  "_mae": -4.150000457763674,
   "_max_p1": 0.043795867944672134,
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 24,
-  "tau": 0.5333
+  "days_elapsed": 36,
+  "tau": 0.8
 }

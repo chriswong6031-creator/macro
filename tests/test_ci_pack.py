@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -13,6 +14,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts import audit_unrun_tests as AUDIT
+from scripts import ci_scope_dependencies as DEPS
 from scripts.ci_scope_dependencies import suite_dependency_closure
 # Plain package import (not the importlib-from-path PACK below) so this test and
 # scripts/check_contract_delta.py's own import of the same names resolve to the
@@ -912,6 +915,16 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
         "engine/*",                     # single-level subset of engine/**
+        # SINGLE-LEVEL SUFFIX GLOB (2026-08-26).  SUFFIX_NARROWED_RE requires a
+        # `**/` before the suffix, and the bare-`/*` test does not fire on a
+        # pattern ending `*.py`, so these fell through to False despite being as
+        # strictly contained in `engine/**` as `engine/*` is.  `defense-rail-laws`
+        # derived exactly this shape and reported an unstartable gap against a
+        # trigger list carrying `engine/**`.  ci-pack is path-scoped, so only a PR
+        # touching .github/ci/ ever ran the test that noticed.
+        "engine/*.py",
+        "data/*.parquet",
+        "data/smart_money/*.py",        # ancestor proof: ⊂ data/smart_money/** ⊂ data/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -920,6 +933,8 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
         "app/*",                        # single-level, but app/** is not a trigger
+        "app/*.py",                     # same, suffixed — must NOT be relaxed
+        "*/engine/*.py",                # a glob in the PARENT proves nothing
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
@@ -970,6 +985,33 @@ def test_a_named_suite_edit_does_not_select_peer_pytest_jobs() -> None:
     packs = PACK.partition_jobs(selected, 12)
     nonempty = [index for index, pack in enumerate(packs) if pack]
     assert len(nonempty) < 12, nonempty
+
+
+def test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate() -> None:
+    """D5's hermetic real-reader chain suite must run before a PR can merge.
+
+    A path-only owner is insufficient: the selected ``gate: code`` job must
+    also name the suite in an executing ``run:`` step.
+    """
+    manifest = _yaml(MANIFEST)
+    prophet_lab = manifest["jobs"]["prophet-lab"]
+    suite = "tests/test_company_intelligence_workspace_chain.py"
+    assert prophet_lab["gate"] == "code"
+    assert suite in prophet_lab["paths"]
+    assert any(
+        suite in str(step.get("run") or "")
+        for step in prophet_lab["steps"]
+    )
+    assert {"requests", "pyarrow"} <= _job_pip_packages(prophet_lab), (
+        "prophet-lab's executing D5 suite imports requests and pyarrow in a clean "
+        "Python 3.12 job; keep those dependencies on this owning job's install line"
+    )
+
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    code_jobs = [job for job in jobs if job.gate == "code"]
+    selected, reason = PACK.select_jobs(code_jobs, [suite])
+    assert "prophet-lab" in {job.job_id for job in selected}, reason
+    assert "unowned path" not in reason, reason
 
 
 def test_unscoped_hook_diff_does_not_pull_the_full_suite() -> None:
@@ -1060,6 +1102,312 @@ def test_empty_successful_diff_fails_closed(monkeypatch: pytest.MonkeyPatch) -> 
         lambda *args, **kwargs: SimpleNamespace(stdout=""),
     )
     assert PACK.changed_files("deadbeef") is None
+
+
+def _git_in(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        check=check,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _commit_fixture(repo: Path, message: str) -> str:
+    _git_in(repo, "add", "-A")
+    _git_in(repo, "commit", "-m", message)
+    return _git_in(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def _seed_tracked_path_repo(tmp_path: Path) -> tuple[Path, str, Path]:
+    repo = tmp_path / "tracked-path-repo"
+    repo.mkdir()
+    _git_in(repo, "init", "-b", "main")
+    _git_in(repo, "config", "user.email", "ci@example.invalid")
+    _git_in(repo, "config", "user.name", "CI Fixture")
+    for directory in ("engine", "tests", "site", "data"):
+        (repo / directory).mkdir()
+    (repo / "engine" / "__init__.py").write_text("", encoding="utf-8")
+    (repo / "engine" / "core.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (repo / "tests" / "test_owner.py").write_text(
+        "from pathlib import Path\n"
+        "from engine import core\n\n"
+        "def test_owner():\n"
+        "    assert core.VALUE and Path('site/owner.json').read_text()\n",
+        encoding="utf-8",
+    )
+    (repo / "tests" / "test_opaque.py").write_text(
+        "from pathlib import Path\n\n"
+        "def test_opaque():\n"
+        "    assert list(Path('data').rglob('*.json'))\n",
+        encoding="utf-8",
+    )
+    (repo / "site" / "owner.json").write_text('{"owner":true}\n', encoding="utf-8")
+    (repo / "site" / "old.json").write_text('{"old":true}\n', encoding="utf-8")
+    (repo / "site" / "omitted.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (repo / "data" / "feed.json").write_text("[]\n", encoding="utf-8")
+    sha = _commit_fixture(repo, "seed exact tree")
+    inventory = tmp_path / "tracked-paths.v1"
+    DEPS.write_tracked_path_inventory(inventory, sha, root=repo)
+    return repo, sha, inventory
+
+
+def test_depth_two_merge_needs_no_parent1_parent2_merge_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The authoritative diff is parent1...merge, not parent1...parent2.
+
+    A depth-two checkout has the exact synthetic merge and both direct parents,
+    but their common ancestor is deliberately outside the shallow boundary. The
+    current planner diff still resolves exactly; progressive ancestry acquisition
+    (the rejected #6261 design) is neither called nor needed.
+    """
+    source = tmp_path / "source"
+    source.mkdir()
+    _git_in(source, "init", "-b", "main")
+    _git_in(source, "config", "user.email", "ci@example.invalid")
+    _git_in(source, "config", "user.name", "CI Fixture")
+    (source / "base.txt").write_text("base\n", encoding="utf-8")
+    _commit_fixture(source, "base")
+    _git_in(source, "switch", "-c", "feature")
+    (source / "tests").mkdir()
+    (source / "tests" / "feature.py").write_text("FEATURE = True\n", encoding="utf-8")
+    _commit_fixture(source, "feature")
+    _git_in(source, "switch", "main")
+    (source / "engine").mkdir()
+    (source / "engine" / "main.py").write_text("MAIN = True\n", encoding="utf-8")
+    _commit_fixture(source, "main")
+    _git_in(source, "merge", "--no-ff", "feature", "-m", "synthetic merge")
+    _git_in(source, "branch", "candidate", "HEAD")
+
+    shallow = tmp_path / "depth-two"
+    subprocess.run(
+        [
+            "git", "clone", "--depth", "2", "--branch", "candidate",
+            f"file://{source}", str(shallow),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    fields = _git_in(shallow, "rev-list", "--parents", "-n", "1", "HEAD").stdout.split()
+    assert len(fields) == 3
+    merge_sha, parent1, parent2 = fields
+    assert _git_in(shallow, "rev-parse", "HEAD").stdout.strip() == merge_sha
+    assert _git_in(shallow, "merge-base", parent1, parent2, check=False).returncode == 1
+    assert _git_in(shallow, "merge-base", parent1, "HEAD").stdout.strip() == parent1
+
+    monkeypatch.chdir(shallow)
+    assert PACK.changed_files(parent1) == ["tests/feature.py"]
+
+
+def test_exact_tree_inventory_rejects_missing_malformed_wrong_and_mutated_inputs(
+    tmp_path: Path,
+) -> None:
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    loaded = DEPS.load_tracked_path_inventory(inventory, sha, root=repo)
+    assert loaded.tested_tree_sha == sha
+    assert "site/owner.json" in loaded.files
+    assert "site" in loaded.directories
+
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="unreadable"):
+        DEPS.load_tracked_path_inventory(tmp_path / "missing.v1", sha, root=repo)
+
+    malformed = tmp_path / "malformed.v1"
+    malformed.write_bytes(b"not-json\nsite/owner.json\0")
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="header is malformed"):
+        DEPS.load_tracked_path_inventory(malformed, sha, root=repo)
+
+    header_raw, _, payload = inventory.read_bytes().partition(b"\n")
+    header = json.loads(header_raw)
+    wrong_tree = tmp_path / "wrong-tree.v1"
+    wrong_header = {**header, "tested_tree_sha": "0" * 40}
+    wrong_tree.write_bytes(
+        json.dumps(wrong_header, sort_keys=True, separators=(",", ":")).encode()
+        + b"\n"
+        + payload
+    )
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="does not match expected"):
+        DEPS.load_tracked_path_inventory(wrong_tree, sha, root=repo)
+
+    # Remove a real tracked path AND repair the mutation's own count/digest. The
+    # independent exact-tree comparison must still catch this, rather than
+    # trusting self-consistent but incomplete metadata.
+    records = payload[:-1].split(b"\0")
+    records.remove(b"site/owner.json")
+    truncated_payload = b"\0".join(records) + b"\0"
+    truncated_header = {
+        **header,
+        "path_count": len(records),
+        "paths_sha256": DEPS.hashlib.sha256(truncated_payload).hexdigest(),
+    }
+    truncated = tmp_path / "missing-path.v1"
+    truncated.write_bytes(
+        json.dumps(truncated_header, sort_keys=True, separators=(",", ":")).encode()
+        + b"\n"
+        + truncated_payload
+    )
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="not byte-identical"):
+        DEPS.load_tracked_path_inventory(truncated, sha, root=repo)
+
+
+def test_exact_tree_inventory_rejects_checkout_identity_drift(tmp_path: Path) -> None:
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    (repo / "engine" / "later.py").write_text("LATER = True\n", encoding="utf-8")
+    later = _commit_fixture(repo, "move checkout")
+    assert later != sha
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="checkout HEAD"):
+        DEPS.load_tracked_path_inventory(inventory, sha, root=repo)
+
+
+def test_inventory_preserves_omitted_tracked_existence_but_never_fakes_content(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    shutil.rmtree(repo / "site")
+    monkeypatch.setattr(DEPS, "ROOT", repo)
+    DEPS._selector_file_analysis.cache_clear()
+
+    with DEPS.planner_tracked_path_inventory(inventory, sha, root=repo):
+        reads = DEPS.direct_reads(repo / "tests" / "test_owner.py")
+        assert "site/owner.json" in reads
+        assert DEPS.pytest_invocation_ambiguities("pytest site") == (
+            "directory pytest target 'site'",
+        )
+        with pytest.raises(DEPS.ScopeMaterializationError, match="omitted.py"):
+            DEPS.suite_dependency_closure("site/omitted.py")
+
+
+def test_invalid_inventory_enters_the_existing_full_suite_planner_fallback(
+    tmp_path: Path,
+) -> None:
+    """Inventory doubt launches every pack; it can never publish no-work."""
+    output = tmp_path / "github-output"
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert PACK.main(
+        [
+            "--workflow", str(MANIFEST),
+            "--pack-count", "12",
+            "--plan-only",
+            "--github-output", str(output),
+            "--tracked-paths-file", str(tmp_path / "missing.v1"),
+            "--tested-tree-sha", sha,
+        ]
+    ) == 0
+    outputs = _parse_github_output(output.read_text(encoding="utf-8"))
+    assert json.loads(outputs["matrix"]) == {
+        "include": [{"pack": index} for index in range(12)]
+    }
+    assert outputs["has_work"] == "true"
+    assert outputs["plan_sha"] == ""
+    assert "tracked-path inventory" in outputs["reason"]
+
+
+def test_virtual_existence_oracle_is_confined_to_planner_scope_derivation() -> None:
+    """The W3 oracle must never become a product/runtime filesystem law."""
+    tree = ast.parse((ROOT / "scripts" / "run_ci_pack.py").read_text())
+    oracle_calls = {
+        "planner_path_exists": set(),
+        "planner_path_is_file": set(),
+        "planner_tracked_path_inventory": set(),
+    }
+    for function in (
+        node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ):
+        for node in ast.walk(function):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                if node.func.id in oracle_calls:
+                    oracle_calls[node.func.id].add(function.name)
+    assert oracle_calls == {
+        "planner_path_exists": {"_scope_coverage_findings"},
+        # `infer_job_paths` is the nested implementation inside
+        # `infer_job_scopes`; ast.walk reports both lexical owners.
+        "planner_path_is_file": {"infer_job_paths", "infer_job_scopes"},
+        "planner_tracked_path_inventory": {"plan_from_workflow"},
+    }
+
+
+def test_full_and_sparse_planners_are_field_and_byte_identical_over_replay_corpus(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Selection, partition, semantic identity, and plan hash survive sparsity.
+
+    The corpus covers the handoff's distinct decision shapes. Changed path order
+    is intentionally preserved, including both rename/copy sides; exact Git
+    decoding is independently pinned by the hostile depth-two regression above.
+    """
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(DEPS, "ROOT", repo)
+    monkeypatch.setattr(AUDIT, "ROOT", repo)
+
+    def job(job_id: str, ordinal: int, suite: str, weight: int) -> object:
+        return PACK.LegacyJob(
+            job_id=job_id,
+            definition={
+                "if": PACK.DISABLED_IF,
+                "runs-on": "ubuntu-latest",
+                "steps": [
+                    {
+                        "name": f"{job_id} semantic proof",
+                        "run": f"python -m pytest {suite}",
+                    }
+                ],
+            },
+            ordinal=ordinal,
+            weight=weight,
+        )
+
+    jobs = [
+        job("literal-owner", 0, "tests/test_owner.py", 5),
+        job("opaque-data-owner", 1, "tests/test_opaque.py", 3),
+    ]
+    corpus = [
+        ["tests/test_owner.py"],
+        ["engine/core.py"],
+        ["site/owner.json"],
+        ["data/feed.json"],
+        ["site/old.json", "site/owner.json"],
+        [".github/ci/legacy-jobs.yml"],
+        ["research/PASSIVE_NOTE.md"],
+        ["brand_new_root/unknown.xyz"],
+    ]
+    identity = {
+        "changed_from": sha,
+        "scope_mode": "active",
+        "pack_count": 3,
+        "workflow_run_id": "replay",
+        "workflow": "ci",
+        "event": "pull_request",
+        "role": "pr_head",
+        "tested_tree_sha": sha,
+        "subject_head_sha": sha,
+        "base_sha": sha,
+    }
+    AUDIT._classify.cache_clear()
+    DEPS._selector_file_analysis.cache_clear()
+    full = [PACK.build_plan(jobs, changed, **identity) for changed in corpus]
+
+    shutil.rmtree(repo / "data")
+    shutil.rmtree(repo / "site")
+    AUDIT._classify.cache_clear()
+    DEPS._selector_file_analysis.cache_clear()
+    with DEPS.planner_tracked_path_inventory(inventory, sha, root=repo):
+        sparse = [PACK.build_plan(jobs, changed, **identity) for changed in corpus]
+
+    assert len(full) == len(sparse) == len(corpus)
+    for changed, full_plan, sparse_plan in zip(corpus, full, sparse, strict=True):
+        assert sparse_plan.changed_paths == full_plan.changed_paths == tuple(changed)
+        assert sparse_plan.changed_files_sha256 == PACK.changed_files_digest(changed)
+        assert sparse_plan.to_dict() == full_plan.to_dict()
+        assert sparse_plan.plan_sha256 == full_plan.plan_sha256
 
 
 def test_scope_mode_kill_switch_defaults_and_can_be_disabled(
@@ -1167,6 +1515,94 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
         line for line in out.splitlines() if line.startswith("CI_PACK_FAILED_JOBS=")
     )
     assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
+
+
+def test_execution_timing_observations_do_not_change_semantic_fragment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Timing is useful evidence, never an input to semantic proof authority."""
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
+    job = PACK.LegacyJob("demo", definition, 0, 1, ("engine/**",))
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(PACK, "_dependency_environment", lambda *_args, **_kwargs: {})
+
+    def fake_run(current, **_kwargs):
+        specs = PACK.semantic_step_specs(current)
+        return PACK.JobExecution(
+            logical_job_id=current.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(current),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=None,
+        )
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    without_timing = tmp_path / "without-timing.json"
+    with_timing = tmp_path / "with-timing.json"
+    observations = tmp_path / "timing-observations.jsonl"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    unwritable_observations = blocked_parent / "timing-observations.jsonl"
+    with_unwritable_timing = tmp_path / "with-unwritable-timing.json"
+
+    assert PACK.execute_pack([job], emit_semantic_fragment=without_timing) == 0
+    ticks = iter((1_000, 1_100, 1_200, 1_500, 1_600, 1_700, 1_800, 2_100))
+    monkeypatch.setattr(PACK.time, "monotonic_ns", lambda: next(ticks))
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_timing,
+            emit_timing_observations=observations,
+        )
+        == 0
+    )
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_unwritable_timing,
+            emit_timing_observations=unwritable_observations,
+        )
+        == 0
+    )
+
+    assert with_timing.read_bytes() == without_timing.read_bytes()
+    assert with_unwritable_timing.read_bytes() == without_timing.read_bytes()
+    assert not unwritable_observations.exists()
+    assert "::warning title=ci timing telemetry degraded::" in capsys.readouterr().out
+    assert [
+        json.loads(line)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    ] == [
+        {
+            "duration_ns": 100,
+            "ended_monotonic_ns": 1_100,
+            "logical_job_id": "demo",
+            "phase": "dependency_install",
+            "started_monotonic_ns": 1_000,
+            "status": "observed",
+        },
+        {
+            "duration_ns": 300,
+            "ended_monotonic_ns": 1_500,
+            "logical_job_id": "demo",
+            "phase": "test",
+            "started_monotonic_ns": 1_200,
+            "status": "observed",
+        },
+    ]
 
 
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
@@ -1453,6 +1889,222 @@ def test_the_supported_role_event_set_stays_closed() -> None:
     # cannot drift into disagreeing about what a legal plan is.
     source = (ROOT / "scripts" / "run_ci_pack.py").read_text()
     assert source.count("(role, event) not in SUPPORTED_PLAN_ROLE_EVENTS") == 2
+
+
+def test_runner_contract_is_the_v2_linux_x86_64_string() -> None:
+    """RUNNER_CONTRACT v2 (#6351 P0R bridge): a truthful logical claim about
+    the runtime `attest_execution_profile` enforces, replacing the
+    "ubuntu-latest" image name the v1 string aspirationally described.
+    """
+    assert PACK.RUNNER_CONTRACT == "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
+
+
+def test_diagnostic_canary_workflow_constant_names_the_exact_workflow() -> None:
+    assert PACK.DIAGNOSTIC_CANARY_WORKFLOW == "infrastructure-selfhosted-ci-canary"
+    assert PACK.TRUSTED_EXECUTOR_WORKFLOW == "trusted-ci-executor"
+    assert PACK.DIAGNOSTIC_PR_WORKFLOWS == frozenset(
+        {PACK.DIAGNOSTIC_CANARY_WORKFLOW, PACK.TRUSTED_EXECUTOR_WORKFLOW}
+    )
+
+
+def test_runner_contract_v2_participates_in_the_job_semantic_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Changing the runtime contract must change what every job's digest
+    means — that is the whole point of a semantic contract version bump.
+    """
+    job = _plan_job("demo", 0)
+    before = PACK.semantic_job_digest(job)
+    monkeypatch.setattr(
+        PACK, "RUNNER_CONTRACT", "ci-pack/linux-x86_64/python-3.12.13/node-20/v3"
+    )
+    after = PACK.semantic_job_digest(job)
+    assert before != after
+
+
+def test_build_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``(pr_head, workflow_dispatch)`` is admitted ONLY when ``workflow``
+    equals the exact canary name — SUPPORTED_PLAN_ROLE_EVENTS itself stays
+    closed (pinned separately by test_the_supported_role_event_set_stays_closed).
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    base = "b" * 40
+    plan = PACK.build_plan(
+        jobs,
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
+    assert plan.workflow == PACK.DIAGNOSTIC_CANARY_WORKFLOW
+
+    for other_workflow in ("ci", "some-other-workflow"):
+        with pytest.raises(PACK.ManifestError, match="unsupported"):
+            PACK.build_plan(
+                jobs,
+                ["engine/example.py"],
+                changed_from=base,
+                scope_mode="active",
+                pack_count=1,
+                workflow=other_workflow,
+                event="workflow_dispatch",
+                role="pr_head",
+                tested_tree_sha="a" * 40,
+                subject_head_sha="c" * 40,
+                base_sha=base,
+            )
+
+
+def test_p3a_executor_uses_the_same_closed_diagnostic_plan_admission(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    base = "b" * 40
+    plan = PACK.build_plan(
+        [_plan_job("demo", 0)],
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.TRUSTED_EXECUTOR_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.workflow == PACK.TRUSTED_EXECUTOR_WORKFLOW
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
+
+
+def test_build_plan_still_requires_every_pr_head_invariant_for_the_diagnostic_pair(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The diagnostic pair is a narrower ADMISSION, not a relaxed invariant:
+    exact changed-file inventory and changed_from == base_sha still apply
+    (spec item A.2).
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    with pytest.raises(PACK.ManifestError, match="exact changed-file inventory"):
+        PACK.build_plan(
+            jobs,
+            None,
+            changed_from="b" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="pr_head",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="c" * 40,
+            base_sha="b" * 40,
+        )
+    with pytest.raises(PACK.ManifestError, match="changed_from must equal"):
+        PACK.build_plan(
+            jobs,
+            ["engine/example.py"],
+            changed_from="b" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="pr_head",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="c" * 40,
+            base_sha="f" * 40,
+        )
+
+
+def test_build_plan_refuses_the_old_broken_main_dispatch_with_changed_from(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mutation-lock (#6351 addendum): the pre-fix canary passed
+    ``--changed-from`` unconditionally, including for the ``pr_number=0``
+    main dispatch. That shape must stay refused — the fix is to stop
+    sending it for pr0, never to admit it.
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    with pytest.raises(PACK.ManifestError, match="main semantic plan"):
+        PACK.build_plan(
+            jobs,
+            ["engine/example.py"],
+            changed_from="a" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="main",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="a" * 40,
+            base_sha="a" * 40,
+        )
+
+
+def test_attest_execution_profile_refuses_on_a_non_linux_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The real guard refuses a deterministically simulated non-Linux host."""
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
+    with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
+        PACK.attest_execution_profile(None)
+
+
+def test_attest_execution_profile_checks_system_machine_python_node_in_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
+    with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "arm64")
+    with pytest.raises(PACK.ExecutionProfileError, match="x86_64"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.14")
+    with pytest.raises(PACK.ExecutionProfileError, match="3.12.13"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.13")
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 18)
+    with pytest.raises(PACK.ExecutionProfileError, match="node 20"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 20)
+    # All four checks satisfied and no plan -> success (tree-sha check skipped).
+    PACK.attest_execution_profile(None)
+
+
+def test_attest_execution_profile_checks_checkout_head_against_the_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.13")
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 20)
+    plan = _full_plan()
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: Path("/tmp"))
+    monkeypatch.setattr(PACK, "_current_commit_sha", lambda root: "0" * 40)
+    with pytest.raises(PACK.ExecutionProfileError, match="does not match attested"):
+        PACK.attest_execution_profile(plan)
+
+    monkeypatch.setattr(PACK, "_current_commit_sha", lambda root: plan.tested_tree_sha)
+    PACK.attest_execution_profile(plan)  # no raise
 
 
 def test_plan_is_deterministic() -> None:
@@ -2248,7 +2900,7 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_anchors_or_fork_packs() -> None:
     workflow = _yaml(WORKFLOW)
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
@@ -2266,14 +2918,24 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # scripts/check_contract_delta.py's module docstring). Adding it here is
     # the same class of change as ci-plan/ci-gate joining originally; it does
     # not reopen the 86-VM fan-out this test exists to prevent.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
+    # `trusted-ci` (P3B-B) is one protected-main reusable call, not another
+    # planner, pack fan-out or scheduler. Its PC jobs are defined only by the
+    # called main workflow; the caller's ci-pack matrix remains the stable hosted
+    # anchor set and retains the full implementation only for forks.
+    assert set(workflow["jobs"]) <= {
+        "ci-plan",
+        "trusted-ci",
+        "ci-pack",
+        "contract-delta",
+        "ci-gate",
+    }
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
-    # runners, never one job per legacy suite (86 VMs), and the matrix must
-    # agree with the --pack-count handed to the runner or some packs' jobs
-    # would execute nowhere.
+    # SHAPE is the contract: a small ordered matrix of stable hosted anchors
+    # (or full hosted fork packs), never one job per legacy suite (86 VMs), and
+    # the matrix must agree with the --pack-count handed to the runner or some
+    # packs' jobs would execute nowhere.
     #
     # Wave B made the matrix the PLANNER's, so the list of indices is no longer
     # in this file — `--pack-count 12` below is now the only place the twelve-way
@@ -2321,7 +2983,12 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    assert pack["if"] == "needs.ci-plan.outputs.has_work == 'true'"
+    assert pack["if"] == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
@@ -2405,7 +3072,8 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
     once put ci-pack-1 in "Checking out the ref" for 31 minutes. Packs consume
     ci-plan's changed-file list and only need the current working tree (legacy
     suites inspect committed site/ artifacts, not historical blobs). Do not
-    replace this with sparse checkout.
+    replace the PACK checkout with sparse checkout. W3 contains only ci-plan's
+    working tree; ci-pack materialization remains W4.
     """
     workflow = _yaml(WORKFLOW)
     pack = workflow["jobs"]["ci-pack"]
@@ -2424,6 +3092,14 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert plan_checkout["with"]["fetch-depth"] == 0
+    assert plan_checkout["with"]["sparse-checkout-cone-mode"] is False
+    assert plan_checkout["with"]["sparse-checkout"].splitlines() == [
+        "/*",
+        "!/data/",
+        "!/site/",
+        "!/mockups/",
+        "!/verify_shots/",
+    ]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
@@ -2869,6 +3545,19 @@ CURATED_EXCLUSIVE = {
     # this file's pin does not drift from the manifest (no fix required, the
     # job's own paths: already cover its full closure).
     "dislocation-p0-a1-blind-harvest",
+    # 2026-08-26 (PR #6454): the D6-A + D6-B1 defense rail batteries moved
+    # onto the merge gate (they sat in gate:data unrun-government-revenue,
+    # which ci.yml never plans, so both commissioned merge-binding suites
+    # were dark). tests/test_fms_ui.py imports app.government_revenue for
+    # its route-boundary tests, whose closure's opaque edges smear whole-tree
+    # fallback claims (app/**, templates/**, site/**) — measured
+    # fallback-matching all four probes below and pushing
+    # templates/index.html to 130 > 129. Curated at the source, same
+    # treatment as stock-dossiers / cn-standout-audit / govrev-company-bridge:
+    # the declaration names the earned 563-file closure (flat engine/*.py +
+    # the read subpackages, deliberately not engine/**), the frozen fixture
+    # trees, and the sha-frozen staged goldens.
+    "defense-rail-laws",
 }
 
 
@@ -2912,6 +3601,70 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
         "in .github/ci/legacy-jobs.yml to cover the listed files — widening is "
         "always the safe direction."
     )
+
+
+def test_d5_route_closure_keeps_affected_curated_jobs_selecting_dependencies() -> None:
+    """D5's Prophet Lab route closure must not become a five-job false green.
+
+    These are the concrete dependencies introduced through ``app/prophet_lab.py``.
+    The generic closure audit above re-derives the complete graph; this regression
+    independently pins the exact five-job D5 repair so a future inference change
+    cannot silently erase the manifest ownership that this branch requires.
+    """
+    required = {
+        "biocatalyst-history": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "biocatalyst-serving": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "defense-rail-laws": (
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+        ),
+        "flow-surface": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "unrun-government-revenue-grader": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+    }
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+
+    for job_id, dependencies in required.items():
+        job = jobs[job_id]
+        assert job.exclusive, job_id
+        for dependency in dependencies:
+            selected, reason = PACK.select_jobs([job], [dependency])
+            assert [item.job_id for item in selected] == [job_id], (
+                job_id,
+                dependency,
+                reason,
+            )
+            match = PACK._job_diff_match(job, [dependency])
+            assert match and match[1] == "declared", (job_id, dependency, match)
 
 
 def test_curated_exclusivity_drops_only_the_opaque_fallback_tier() -> None:
@@ -3133,12 +3886,59 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     5,600 and 10 packs): weights are 5,420 / 5,173 / 5,175, and a fallback-
     tier regression is still ~1,550 weight-seconds above them, so the bound
     this file exists to hold is untouched.
+
+    JOB COUNTS RE-BASED to 131/127/122 (wave 8, 2026-08-28, TP-1 repair edge
+    theme-parity-tp1-canada-20260828-sol-001). Measured on main a8075391fa89,
+    diffing selected-job NAME sets per probe against the wave-7 green
+    baseline manifest (48bfd3c97e8a):
+
+        templates/index.html          130 jobs / 5,560 weight (was ceiling 129)
+          entrants: regwall-boundary (declared — wave 7's own funded entrant),
+                    design-governance (fallback, w16),
+                    board-shadow-substrate (fallback, w7)
+        scripts/build_free_content.py 126 jobs / 5,313 weight (was ceiling 125)
+          entrants: design-governance, board-shadow-substrate,
+                    reference-integrity (all fallback)
+        engine/prophet/plan_book.py   121 jobs / 5,299 weight (AT ceiling —
+          the zero-headroom defect again)
+          entrants: board-shadow-substrate, reference-integrity
+
+    Every unfunded entrant is a DELIBERATELY-UNSCOPED always-on gate, i.e.
+    the ``reference-integrity`` class wave 6 already adjudicated ("ratcheting
+    the ceiling is the correct-risk response, not curation"):
+    ``design-governance`` is TP-0's forward-only design ratchet (#6579) —
+    a diff gate over user-facing templates/site whose entire purpose is to
+    run on exactly the PRs these probes model, so its match on
+    templates/index.html is its subject, not smear; ``board-shadow-substrate``
+    documents itself "Left UNSCOPED … always-on is correct for this job, not
+    lazy" (its K6 kill is a repo-wide string walk inference cannot narrow);
+    ``reference-integrity``'s breadth was adjudicated in wave 6 and its
+    growth onto build_free_content.py is the same mockups/research/registry
+    namespace closure firing as designed. Curating any of the three
+    ``scope: exclusive`` would lie about coverage or degenerate back to
+    fallback breadth — the dataos-identity-seams rejection, verbatim. The
+    non-smear finding is affirmative: TP-1's own manifest edit (adding
+    tests/test_stock_dashboard_css.py to the render-guard step, merge
+    e2091032ad1f) adds ZERO probe matches — the selected-name-set delta
+    across that merge is empty on all three probes, so the earned Canada CSS
+    coverage rides a job that already owned-matched its subjects and costs
+    these ceilings nothing.
+
+    Ceilings are set at measurement + 1 per the wave-3 rule (131/127/122),
+    re-funding the headroom promise on all three axes — plan_book.py sat AT
+    its ceiling again, the exact silent-main-red mechanism the wave-7 note
+    describes. WEIGHT and PACK ceilings stay unmoved (5,800 / 5,600 / 5,600
+    and 10 packs): measured weights are 5,560 / 5,313 / 5,299 and a
+    fallback-tier regression is still ~1,550 weight-seconds above them.
+    The companion test below pins all three always-on gates so the OPPOSITE
+    regression — a future curation silently narrowing a deliberate whole-tree
+    gate off its subject — reds loudly instead of shipping a false green.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 129, 5_800),
-        ("scripts/build_free_content.py", 125, 5_600),
-        ("engine/prophet/plan_book.py", 121, 5_600),
+        ("templates/index.html", 131, 5_800),
+        ("scripts/build_free_content.py", 127, 5_600),
+        ("engine/prophet/plan_book.py", 122, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
@@ -3149,6 +3949,59 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
         # runner cut. Twelve packs per shape was the pre-curation measurement.
         packs = max(1, min(12, -(-weight // PACK.PACK_TARGET_SECONDS)))
         assert packs <= 10, (probe, packs, weight, reason)
+
+
+def test_deliberately_unscoped_gates_stay_always_on() -> None:
+    """The wave-8 entrants are always-on BY DESIGN — pin both directions.
+
+    Each of these gates carries a header comment documenting deliberate
+    unscoped breadth (a repo-wide walk, a diff ratchet over user-facing
+    trees, a namespace-closure gate). Two regressions would be silent
+    without this pin: (a) someone declares ``scope: exclusive``/``paths:``
+    on one of them to buy back a probe ceiling — the job stops running on
+    the PRs that are its actual subject, a false green the wave-2/wave-6
+    notes reject by name; (b) inference drift stops selecting one of them
+    on an ordinary user-facing PR. Both now red here, with the probe named.
+    """
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+    scoped_jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    # Measured membership at wave 8 (main a8075391fa89): each gate pinned on
+    # the probes that are its SUBJECT. design-governance is a user-facing
+    # diff ratchet, so it rides the template and site-builder probes but has
+    # no claim on engine internals; the other two walk trees that include
+    # engine/**, so they ride all three.
+    expected = {
+        "design-governance": ("templates/index.html",
+                              "scripts/build_free_content.py"),
+        "board-shadow-substrate": ("templates/index.html",
+                                   "scripts/build_free_content.py",
+                                   "engine/prophet/plan_book.py"),
+        "reference-integrity": ("templates/index.html",
+                                "scripts/build_free_content.py",
+                                "engine/prophet/plan_book.py"),
+    }
+    problems: list[str] = []
+    for job_id in expected:
+        job = jobs.get(job_id)
+        if job is None:
+            problems.append(f"{job_id}: missing from manifest")
+            continue
+        if job.exclusive:
+            problems.append(
+                f"{job_id}: gained scope:exclusive — deliberate always-on "
+                "breadth curated away; see the wave-8 note")
+    selected_names = {}
+    for probe in ("templates/index.html", "scripts/build_free_content.py",
+                  "engine/prophet/plan_book.py"):
+        sel, _ = PACK.select_jobs(scoped_jobs, [probe])
+        selected_names[probe] = {job.job_id for job in sel}
+    for job_id, probes in expected.items():
+        if job_id not in jobs:
+            continue
+        for probe in probes:
+            if job_id not in selected_names[probe]:
+                problems.append(f"{job_id}: no longer selected for {probe}")
+    assert not problems, problems
 
 
 def test_inline_js_owns_the_rendered_tree_it_lints() -> None:

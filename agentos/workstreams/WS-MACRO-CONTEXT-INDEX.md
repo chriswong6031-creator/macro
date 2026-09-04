@@ -22,14 +22,30 @@ waves:
   - id: W1
     title: Benchmark gates to green so the index stops being advisory
     status: in_progress
-    next_action: Work the red gates in research/context_index/BENCHMARK_RESULTS.md.
+    next_action: >
+      Superseded in structure by the Sol C0->C8 completion program
+      (research/MACRO_CONTEXT_INDEX_COMPLETION_MASTERPLAN_BY_SOL.md); gate-green
+      work now lands as waves C1-C3 under Sol operation keys.
   - id: W2
     title: "Add agentos/** as a corpus (Agent OS Phase 3 dependency)"
-    status: todo
-    depends_on: [W1]
+    status: done
+    next_action: >
+      CORRECTED 2026-08-28 (was a stale todo): the agentos/** corpus already
+      landed via Agent OS Phase 3 / PR #5561 (Sol capability ledger:
+      BUILT_NOT_PROVEN). Integration PROOF is wave C4 of the completion program.
+  - id: C0
+    title: "Benchmark Truth Recovery (Sol op macro-context-index-completion-20260828-sol-001)"
+    status: done
+    next_action: >
+      Sol adversarial review of the C0 recovery head (PR #6600 held
+      HOLD-FOR-SOL). Evidence: agentos/handoffs/WS-MACRO-CONTEXT-INDEX-2026-08-28.md;
+      baselines v6/v7 in research/context_index/BENCHMARK_RESULTS.md. After
+      terminal C0 acceptance, C1 requires a fresh child operation, carrier, and
+      commission; it may not reuse this C0 pickup.
 landmines:
   - "Advisory status is load-bearing: cited sources must be opened before acting on them, per CXI-R19."
-next_action: Drive the benchmark gates green (W1).
+  - "Retrieval ranking frozen under the C0 carrier; C1 requires fresh post-acceptance operation/carrier/commission."
+next_action: Await Sol review of C0 recovery; after terminal C0 acceptance, commission C1 separately for deterministic relevance + abstention on frozen v1.6 gold.
 ---
 
 ## Context

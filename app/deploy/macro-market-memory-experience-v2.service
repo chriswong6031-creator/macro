@@ -55,9 +55,13 @@ ReadOnlyPaths=/var/lib/macro-market-memory/state/technicals-v2
 ReadWritePaths=/var/lib/macro-market-memory/state/experience-v2
 # Credential dir, v1 stores, and CPI sources are inaccessible
 InaccessiblePaths=/etc/macro-market-memory-spy-rest
-InaccessiblePaths=/var/lib/macro-market-memory/state/sources
-InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v1
-InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
+# The root tmpfs is mounted before systemd applies these nested defence-in-depth
+# masks, so every unbound sibling is absent from the service namespace.  A
+# leading "-" prevents that intentional absence from aborting namespace setup;
+# if a target is visible without the tmpfs, systemd still makes it inaccessible.
+InaccessiblePaths=-/var/lib/macro-market-memory/state/sources
+InaccessiblePaths=-/var/lib/macro-market-memory/state/technicals-v1
+InaccessiblePaths=-/var/lib/macro-market-memory/state/experience-v1
 InaccessiblePaths=/var/lib/macro-market-memory-options
 InaccessiblePaths=/etc/macro-market-memory-options
 InaccessiblePaths=-/etc/macro-api.env

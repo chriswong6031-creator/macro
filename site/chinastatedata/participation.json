@@ -1,42 +1,37 @@
 {
-  "date": "2026-08-19",
+  "date": "2026-09-02",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": 0.8429518710284244,
-  "turnover_z60": -0.6100044949129332,
-  "margin_balance": 26676.04577747,
-  "margin_chg_5d": -0.20830187783331677,
-  "margin_to_mcap": 2.668862,
-  "southbound_net": -10620.78,
-  "southbound_z": -1.6742202635636956,
-  "etf_share_chg": 0.7071067811865475,
+  "turnover_z20": -1.4503476490364553,
+  "turnover_z60": -1.533234711670475,
+  "margin_balance": 26609.90075385,
+  "margin_chg_5d": 0.29457404444712676,
+  "margin_to_mcap": 2.636338,
+  "southbound_net": 4093.27,
+  "southbound_z": 0.3829057414676801,
+  "etf_share_chg": 0.3206999623152428,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 20.35,
-  "qvix_z": -0.3648700981332773,
-  "broker_rs": 0.04405717744679545,
+  "qvix": 18.56,
+  "qvix_z": -1.281997322411899,
+  "broker_rs": 0.06306790055792066,
   "regime": "unclear",
   "who_controls": "mixed",
   "risk": "normal",
   "evidence": [
-    "turnover_z20=0.84",
-    "fin_pct_float=2.67%",
-    "broker_rs=0.0441 (positive, sector leading)",
-    "qvix_z=-0.36 (inverted-semantics: high=stress)"
+    "turnover_z20=-1.45",
+    "margin_chg_5d=0.29% (rising)",
+    "fin_pct_float=2.64%",
+    "broker_rs=0.0631 (positive, sector leading)",
+    "qvix_z=-1.28 (inverted-semantics: high=stress)"
   ],
-  "contradictions": [
-    {
-      "a": "southbound_z=-1.67 (outflow)",
-      "b": "turnover_z20=0.84 (hot)",
-      "detail": "offshore selling into retail-driven volume — potential distribution"
-    }
-  ],
+  "contradictions": [],
   "data_gaps": [
-    "zt_breadth:null on 2026-08-19",
+    "zt_breadth:null on 2026-09-02",
     "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-08-19 is 3d behind tape tail 2026-08-22; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "snapshot_staleness:published row 2026-09-02 is 1d behind tape tail 2026-09-03; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ],
   "backfill": false,
-  "snapshot_note": "core legs null on 2026-08-22; publishing last fully-populated row (2026-08-19)"
+  "snapshot_note": "core legs null on 2026-09-03; publishing last fully-populated row (2026-09-02)"
 }

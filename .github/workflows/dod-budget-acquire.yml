@@ -1,0 +1,88 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# DoD Comptroller P-1/R-1 official budget acquisition — DISPATCH-ONLY lane.
+#
+# Defense D6-A (Sol authorization: PR #6355 comment 5395051048). Runs the live
+# acquisition CLI (collectors/dod_budget_live.py) on the self-hosted runner,
+# where the R2 credentials exist: fetch the official comptroller.war.gov PDFs,
+# write them content-addressed to the EXISTING canonical R2 object store, prove
+# the readback, extract/parse deterministically, and commit the append-only
+# source triad back to the dispatched ref.
+#
+# Deliberately NO schedule: P-1/R-1 are annual/supplemental documents — the
+# commission forbids a high-frequency budget poll. Re-dispatching against
+# unchanged official bytes is an idempotent no-op (the CLI refuses to append a
+# duplicate observation). The canary URLs live in reviewed code, NOT in
+# dispatch inputs, so a dispatch cannot point the collector anywhere new.
+#
+# This lane publishes NOTHING: it only commits the three collector-owned triad
+# source files to the given ref. Graph/twin publication remains exclusively
+# owned by government-revenue-live.yml (single-publisher law).
+# ─────────────────────────────────────────────────────────────────────────────
+name: dod-budget-acquire
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch to run the acquisition from and commit the triad back to"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shares the government-revenue-live group so an acquisition can never race
+  # the serialized Government Revenue persist/publish cycle.
+  group: government-revenue-live
+  cancel-in-progress: false
+
+jobs:
+  acquire:
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+
+      - name: acquire official P-1/R-1 (fetch → R2 write → readback proof → extract → triad)
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: python -m collectors.dod_budget_live acquire
+
+      - name: commit triad back to the dispatched ref (triad files only)
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "::notice title=dod-budget-acquire::no new observation — official bytes unchanged (idempotent no-op)"
+            exit 0
+          fi
+          # Fail closed if the CLI touched anything beyond the three
+          # collector-owned triad files — nothing else may ride this commit.
+          UNEXPECTED="$(git status --porcelain | grep -vE '^(\?\?| ?[AM]+) +"?data/government_revenue/dod_budget_(line_snapshots\.jsonl|collection_receipts\.jsonl|projection_state\.json)"?$' || true)"
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::error title=dod-budget-acquire::unexpected working-tree changes; refusing to commit"
+            echo "$UNEXPECTED"
+            exit 1
+          fi
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add \
+            data/government_revenue/dod_budget_line_snapshots.jsonl \
+            data/government_revenue/dod_budget_collection_receipts.jsonl \
+            data/government_revenue/dod_budget_projection_state.json
+          git commit -m "dod-budget: official P-1/R-1 acquisition $(date -u +%FT%H:%MZ)"
+          git push origin "HEAD:${{ inputs.ref }}"

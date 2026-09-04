@@ -4712,6 +4712,17 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
                   "— no receipt rendered", flush=True)
     except Exception as _bse:  # noqa: BLE001 — additive, never fatal
         log.warning("W-L1 board state attach failed (%s)", _bse)
+    # Per-candidate Added / 入榜 date: current continuous published-board membership
+    # start (engine/prophet_board_since.py). Display-only; reads the existing
+    # data/us_board_ledger/snapshots.jsonl fossil (memoized per-process, so the
+    # post-build_library re-render below does not re-parse the 33MB file). Threaded
+    # through this ONE shared attach so both call sites (the first-pass render and
+    # the post-build_library re-render) can never silently diverge.
+    try:
+        from engine.prophet_board_since import stamp_us_board_since_fail_open
+        doc = stamp_us_board_since_fail_open(doc, data_dir=config.data_dir(), log=log)
+    except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+        log.warning("us board_since stamp failed (%s)", _bse)
     return doc
 
 
@@ -5753,7 +5764,9 @@ def main() -> int:
                   # portfolio cockpit, and the market-books derived view. These shipped
                   # ONLY as committed templates/->site/ pairs; copying them here too means
                   # a render self-heals them like every other page asset.
-                  "watchstore.js", "portfolio.js", "market_books.js",
+                  "portfolio_import.css", "portfolio_import.js", "watchstore.js", "portfolio.js",
+                  "portfolio_import_ui.js",
+                  "market_books.js",
                   "tablesort.js", "charts.js",
                   "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",

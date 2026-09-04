@@ -1,24 +1,24 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-08-22",
-  "scored_total": 0,
-  "open": 23,
+  "as_of": "2026-08-31",
+  "scored_total": 6,
+  "open": 35,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 0,
-    "hits": 0,
-    "misses": 0,
-    "hit_rate": null,
-    "dir_accuracy": null
+    "n": 6,
+    "hits": 4,
+    "misses": 2,
+    "hit_rate": 0.667,
+    "dir_accuracy": 0.333
   },
   "by_conviction": {
     "high": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 4,
+      "hits": 2,
+      "misses": 2,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.25
     },
     "medium": {
       "n": 0,
@@ -37,11 +37,11 @@
   },
   "by_kind": {
     "rel_return": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 6,
+      "hits": 4,
+      "misses": 2,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.333
     },
     "level": {
       "n": 0,
@@ -51,8 +51,71 @@
       "dir_accuracy": null
     }
   },
-  "by_regime": {},
-  "calibration_note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
-  "recent": [],
-  "calibration_note_zh": "\u5c1a\u65e0\u5224\u65ad\u88ab\u8bc4\u5206 \u2014\u2014 \u5f85\u9996\u6279\u6838\u67e5\u65e5\u5230\u671f\u540e\u5f00\u59cb\u7d2f\u79ef\u6218\u7ee9\uff1b\u5728\u6b64\u4e4b\u524d\u7f6e\u4fe1\u4fdd\u6301\u514b\u5236\u3002"
+  "by_regime": {
+    "Reflation": {
+      "n": 6,
+      "hits": 4,
+      "misses": 2,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.333
+    }
+  },
+  "calibration_note": "6 scored, hit-rate 0.667 (directional accuracy 0.333). High-conviction calls: 2/4 holding. Sample is tiny \u2014 treat conviction as provisional and lean low.",
+  "recent": [
+    {
+      "id": "2026-07-31-nb-memory_storage",
+      "subject": "memory_storage",
+      "lean": "cautious",
+      "conviction": "high",
+      "outcome": "hit",
+      "realized": -0.024,
+      "check_by": "2026-08-31"
+    },
+    {
+      "id": "2026-07-31-nb-us_sector_comm",
+      "subject": "us_sector_comm",
+      "lean": "constructive",
+      "conviction": "med",
+      "outcome": "hit",
+      "realized": 0.0045,
+      "check_by": "2026-08-31"
+    },
+    {
+      "id": "2026-07-31-nb-us_sector_health",
+      "subject": "us_sector_health",
+      "lean": "cautious",
+      "conviction": "med",
+      "outcome": "hit",
+      "realized": 0.0424,
+      "check_by": "2026-08-31"
+    },
+    {
+      "id": "2026-07-31-nb-ai_software",
+      "subject": "ai_software",
+      "lean": "cautious",
+      "conviction": "high",
+      "outcome": "hit",
+      "realized": 0.0034,
+      "check_by": "2026-08-31"
+    },
+    {
+      "id": "2026-07-31-nb-obesity_glp1",
+      "subject": "obesity_glp1",
+      "lean": "cautious",
+      "conviction": "high",
+      "outcome": "miss",
+      "realized": 0.0576,
+      "check_by": "2026-08-31"
+    },
+    {
+      "id": "2026-07-31-nb-managed_care",
+      "subject": "managed_care",
+      "lean": "cautious",
+      "conviction": "high",
+      "outcome": "miss",
+      "realized": 0.0576,
+      "check_by": "2026-08-31"
+    }
+  ],
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 6 \u6761\uff0c\u547d\u4e2d\u7387 0.667\uff08\u65b9\u5411\u51c6\u786e\u7387 0.333\uff09\u3002\u9ad8\u7f6e\u4fe1\u5224\u65ad\uff1a2/4 \u4ecd\u6210\u7acb\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
 }

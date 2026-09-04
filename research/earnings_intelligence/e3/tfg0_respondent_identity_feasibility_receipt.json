@@ -1,0 +1,66 @@
+{
+  "schema": "tfg0.respondent_identity_feasibility.v1",
+  "operation_key": "tfg0-transcript-format-census-20260827-v1",
+  "development_corpus": "research/earnings_intelligence/e3/tfg0_transcript_format_development_corpus_selection.json",
+  "method": "post-freeze exact held-source role vocabulary + transcript-local participant/title evidence census; no model/external biography",
+  "calls": 16,
+  "calls_with_nonblank_management_role_metadata": 14,
+  "calls_with_only_operator_plus_blank_role_vocabulary": [
+    "SCCO/2026Q2",
+    "COF/2026Q2"
+  ],
+  "roleless_call_source_support": [
+    {
+      "pair": "SCCO/2026Q2",
+      "evidence": [
+        {
+          "segment_index": 0,
+          "speaker": "Operator",
+          "text": "With us this morning, we have Southern Copper Corporation's Mr. Raúl Jacob, Vice President of Finance, Treasurer, and CFO..."
+        },
+        {
+          "segment_index": 3,
+          "speaker": "Raúl Jacob Ruisánchez",
+          "text": "At today's conference, I'm accompanied by Mr. Leonardo Contreras, CEO of Southern Copper and also a board member."
+        }
+      ],
+      "identity_note": "Structured house speaker is `Raúl Jacob Ruisánchez`; the exact same transcript provides the unique source-native prefix `Raúl Jacob` plus an explicit title. This is the class the frozen unique contiguous multi-token prefix law is designed to support."
+    },
+    {
+      "pair": "COF/2026Q2",
+      "evidence": [
+        {
+          "segment_index": 1,
+          "speaker": "Jeff Norris",
+          "text": "With me this evening are Mr. Richard Fairbank, Capital One's Chairman and Chief Executive Officer, and Mr. Andrew Young, Capital One's Chief Financial Officer..."
+        }
+      ],
+      "identity_note": "Richard Fairbank and Andrew Young have blank segment roles throughout, but the same exact transcript revision explicitly names their titles before Q&A."
+    }
+  ],
+  "explicit_source_conflict_calls": [
+    {
+      "pair": "ARRY/2026Q2",
+      "finding": "Transcript text identifies Keith Jennings as CFO and Neil Manning as President/COO while structured segment role metadata labels those speakers CEO and CFO respectively."
+    },
+    {
+      "pair": "CTRE/2026Q2",
+      "finding": "Transcript text identifies James Callister as Chief Investment Officer while structured segment role metadata labels his speech CFO."
+    }
+  ],
+  "ruling_support": {
+    "strict_source_supported_role_is_feasible_for_tfg1": true,
+    "nullable_role_not_justified_by_current_evidence": true,
+    "segment_role_cannot_be_unquestioned_authority": true,
+    "transcript_local_roster_evidence_needed": true,
+    "source_conflict_must_fail_closed": true,
+    "external_person_title_inference_needed": false
+  },
+  "projection_law": "When a nonblank segment role is compatible with any transcript-local title evidence, preserve that existing role string. When segment role is blank and an exact same-revision roster/title declaration is the support, preserve the normalized source title phrase itself; do not collapse it to generic Management and do not invent an abbreviation absent from source. Never truncate a source title to satisfy a consumer bound: if a later production consumer cannot represent the frozen supported title safely, that is a contract/consumer blocker to adjudicate before publication.",
+  "evidence": {
+    "structural_census_run_id": 33043092699,
+    "structural_census_job_id": 98420881749,
+    "structural_census_artifact_id": 9634595572,
+    "structural_census_artifact_sha256": "688f7c70bb97c31cf35227c317e7516c89f3ebf0e0bbb17cf994d9e121df5bf5"
+  }
+}

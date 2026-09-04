@@ -3,6 +3,42 @@
   "note": "Candidates land in `pending` automatically. A numbered `versions` entry is minted ONLY by exemplar_store.promote_pending(), and the writer reads ONLY the version pinned at config/marketing.yml intel.exemplar_store.active_version.",
   "pending": [
     {
+      "added": "2026-08-31T00:03:02Z",
+      "author": "unusual_whales",
+      "created_at": "Fri Aug 28 17:17:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.03757058,
+        "likes": 8202,
+        "replies": 151,
+        "retweets": 384,
+        "views": 232549
+      },
+      "post_id": "2093387383748301193",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "General Mills has announced that it has officially removed artificial colors from all its cereals in the U.S.",
+      "text_key": "b91a057f84e9f5ac",
+      "url": "https://x.com/unusual_whales/status/2093387383748301193"
+    },
+    {
+      "added": "2026-08-31T00:03:02Z",
+      "author": "unusual_whales",
+      "created_at": "Tue Aug 25 15:37:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.0289159,
+        "likes": 5677,
+        "replies": 253,
+        "retweets": 361,
+        "views": 217562
+      },
+      "post_id": "2092275054625312879",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "BREAKING: \"Canada sees little chance of resuming talks with the US before the midterms and is preparing to ride out Donald Trump's term,\" per Bloomberg",
+      "text_key": "d41ff1fe46231f9b",
+      "url": "https://x.com/unusual_whales/status/2092275054625312879"
+    },
+    {
       "added": "2026-08-09T22:20:21Z",
       "author": "unusual_whales",
       "created_at": "Fri Aug 07 14:57:00 +0000 2026",
@@ -19,6 +55,24 @@
       "text": "90% of Americans polled say groceries and food prices are a top cost concern, per CNBC",
       "text_key": "810a3e92a87ab9e2",
       "url": "https://x.com/unusual_whales/status/2085742006593311208"
+    },
+    {
+      "added": "2026-08-31T00:03:02Z",
+      "author": "Barchart",
+      "created_at": "Mon Aug 24 05:44:08 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02600809,
+        "likes": 1978,
+        "replies": 51,
+        "retweets": 222,
+        "views": 86550
+      },
+      "post_id": "2091763469175427432",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "Gold hits $4,700 for the first time in more than 3 months 📈 📈 https://t.co/nhFU46Fzc0",
+      "text_key": "ffd6937a7c2871a1",
+      "url": "https://x.com/Barchart/status/2091763469175427432"
     },
     {
       "added": "2026-08-09T22:20:21Z",
@@ -39,6 +93,24 @@
       "url": "https://x.com/unusual_whales/status/2086528186893074486"
     },
     {
+      "added": "2026-08-31T00:03:02Z",
+      "author": "unusual_whales",
+      "created_at": "Fri Aug 28 15:58:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.0247262,
+        "likes": 4302,
+        "replies": 181,
+        "retweets": 703,
+        "views": 209737
+      },
+      "post_id": "2093367503548297222",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "US corporate profits have hit a record, but as worker payouts have decreased to the lowest level since the 1950s, per FT",
+      "text_key": "a5bd207c5439383b",
+      "url": "https://x.com/unusual_whales/status/2093367503548297222"
+    },
+    {
       "added": "2026-08-09T22:20:21Z",
       "author": "RyanDetrick",
       "created_at": "Sun Aug 09 14:41:05 +0000 2026",
@@ -55,6 +127,24 @@
       "text": "Good time to remember that when the S&P 500 gains >5% in May (like 2026) the next 12 months have never been lower and gains 21% on average. \n\nYes, June/July was a sideways chop, but things are now moving higher as expected. https://t.co/9kOdnTunj1",
       "text_key": "cae6ac302ff46bee",
       "url": "https://x.com/RyanDetrick/status/2086462777749651549"
+    },
+    {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "Barchart",
+      "created_at": "Wed Aug 19 20:04:25 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02421337,
+        "likes": 1214,
+        "replies": 37,
+        "retweets": 128,
+        "views": 56952
+      },
+      "post_id": "2090168026041651247",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "JUST IN 🚨: Gold $GLD back above its 200-day moving average for the first time in 10 weeks 📈 📈 https://t.co/3LfuO1hBiI",
+      "text_key": "123cde0ba24fc5c2",
+      "url": "https://x.com/Barchart/status/2090168026041651247"
     },
     {
       "added": "2026-07-31T23:47:24Z",
@@ -93,6 +183,60 @@
       "url": "https://x.com/charliebilello/status/2082842541003612279"
     },
     {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "Barchart",
+      "created_at": "Thu Aug 20 02:39:57 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02289006,
+        "likes": 1069,
+        "replies": 35,
+        "retweets": 88,
+        "views": 52075
+      },
+      "post_id": "2090267566388187466",
+      "register": "aggregator",
+      "shape": "caption",
+      "text": "Ethereum $ETH Breakout 🚀 🚀 https://t.co/f9sFl4NYqA",
+      "text_key": "4a4641edd172eae8",
+      "url": "https://x.com/Barchart/status/2090267566388187466"
+    },
+    {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "Barchart",
+      "created_at": "Tue Aug 11 03:19:49 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02287151,
+        "likes": 1683,
+        "replies": 37,
+        "retweets": 172,
+        "views": 82723
+      },
+      "post_id": "2087016108071031289",
+      "register": "aggregator",
+      "shape": "caption",
+      "text": "Gold - We Have Liftoff 🚀 🚀 https://t.co/F6Y1al4lAd",
+      "text_key": "71ed72b56a494656",
+      "url": "https://x.com/Barchart/status/2087016108071031289"
+    },
+    {
+      "added": "2026-08-31T00:03:02Z",
+      "author": "unusual_whales",
+      "created_at": "Fri Aug 28 20:58:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02286741,
+        "likes": 5414,
+        "replies": 200,
+        "retweets": 342,
+        "views": 260458
+      },
+      "post_id": "2093443000328224952",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "Mark Cuban: If founders don't share the wealth generated by their companies with their employees, they should give back through taxes.",
+      "text_key": "5702e03f04810ae1",
+      "url": "https://x.com/unusual_whales/status/2093443000328224952"
+    },
+    {
       "added": "2026-07-31T23:47:24Z",
       "author": "RyanDetrick",
       "created_at": "Fri Jul 31 17:48:53 +0000 2026",
@@ -129,6 +273,42 @@
       "url": "https://x.com/unusual_whales/status/2083245556621529120"
     },
     {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "Barchart",
+      "created_at": "Wed Aug 19 03:59:25 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02125261,
+        "likes": 1383,
+        "replies": 47,
+        "retweets": 342,
+        "views": 83378
+      },
+      "post_id": "2089925177568104933",
+      "register": "aggregator",
+      "shape": "two_part",
+      "text": "BREAKING 🚨: Private Credit \n\nPercentage of loans from borrowers that have stopped paying or are on the brink of default is at its highest level in a decade 🤯 👀 https://t.co/sOPdHt5mYs",
+      "text_key": "81e64f5e16c5ae04",
+      "url": "https://x.com/Barchart/status/2089925177568104933"
+    },
+    {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "unusual_whales",
+      "created_at": "Fri Jul 31 23:22:04 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02100577,
+        "likes": 5645,
+        "replies": 94,
+        "retweets": 263,
+        "views": 285731
+      },
+      "post_id": "2083332396691382353",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "BREAKING: FIFA has scrapped $20 billion World Cup sell-off plan following European boycott, per NYP",
+      "text_key": "b811e2e6b190278f",
+      "url": "https://x.com/unusual_whales/status/2083332396691382353"
+    },
+    {
       "added": "2026-08-09T22:20:21Z",
       "author": "Barchart",
       "created_at": "Sat Aug 08 02:26:10 +0000 2026",
@@ -147,6 +327,42 @@
       "url": "https://x.com/Barchart/status/2085915440635613230"
     },
     {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "Barchart",
+      "created_at": "Fri Aug 21 05:14:18 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02080443,
+        "likes": 4567,
+        "replies": 162,
+        "retweets": 324,
+        "views": 242881
+      },
+      "post_id": "2090668798164549790",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "Jim Cramer dumped all his Bitcoin $BTC a few weeks ago so that we all could enjoy the bull market 🙏 Thank you for your sacrifice Jim 🫡 https://t.co/fXp9pngOfA",
+      "text_key": "f9d39409cc795062",
+      "url": "https://x.com/Barchart/status/2090668798164549790"
+    },
+    {
+      "added": "2026-08-31T00:03:02Z",
+      "author": "Barchart",
+      "created_at": "Mon Aug 24 00:06:50 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02043251,
+        "likes": 1911,
+        "replies": 44,
+        "retweets": 169,
+        "views": 103952
+      },
+      "post_id": "2091678584926609487",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "JUST IN 🚨: Bitcoin $BTC scores biggest weekly gain in 3.5 years 📈 📈 https://t.co/yHYLT7LFuS",
+      "text_key": "4ecd09c63d5653b5",
+      "url": "https://x.com/Barchart/status/2091678584926609487"
+    },
+    {
       "added": "2026-07-31T23:47:24Z",
       "author": "RyanDetrick",
       "created_at": "Fri Jul 31 20:07:33 +0000 2026",
@@ -163,6 +379,24 @@
       "text": "July tried, but finished down 0.1%.\n\nPrepare to hear a LOT about this from the bears, but down in June and July has been weak for the rest of the year historically. https://t.co/W0GKHoxQWD",
       "text_key": "d191cb81bba4bf0f",
       "url": "https://x.com/RyanDetrick/status/2083283444692341081"
+    },
+    {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "unusual_whales",
+      "created_at": "Wed Aug 12 17:48:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02012677,
+        "likes": 2869,
+        "replies": 80,
+        "retweets": 185,
+        "views": 155713
+      },
+      "post_id": "2087596979270427003",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "BREAKING: Trump sued over scheme to sell instant access to Truth Social posts, per BBC",
+      "text_key": "a5f8d46d721f49a6",
+      "url": "https://x.com/unusual_whales/status/2087596979270427003"
     },
     {
       "added": "2026-08-09T22:20:21Z",
@@ -201,6 +435,42 @@
       "url": "https://x.com/RyanDetrick/status/2083286729725809077"
     },
     {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "Barchart",
+      "created_at": "Mon Aug 10 19:26:12 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01963411,
+        "likes": 909,
+        "replies": 53,
+        "retweets": 196,
+        "views": 58979
+      },
+      "post_id": "2086896917091426738",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "JUST IN 🚨: U.S. Strategic Petroleum Reserve falls to lowest level since 1983 🤯 👀 https://t.co/UpQKdBi6TM",
+      "text_key": "d343fc083b0f8a70",
+      "url": "https://x.com/Barchart/status/2086896917091426738"
+    },
+    {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "unusual_whales",
+      "created_at": "Sun Aug 23 02:12:31 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01952166,
+        "likes": 17736,
+        "replies": 312,
+        "retweets": 2121,
+        "views": 1033160
+      },
+      "post_id": "2091347823052861715",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "BREAKING: The number of U.S. service members reported wounded or killed in the Iran war has jumped to 774, per WaPo",
+      "text_key": "775aca53732f551a",
+      "url": "https://x.com/unusual_whales/status/2091347823052861715"
+    },
+    {
       "added": "2026-07-31T23:47:24Z",
       "author": "RyanDetrick",
       "created_at": "Fri Jul 31 13:37:54 +0000 2026",
@@ -217,6 +487,24 @@
       "text": "In 2007, banks were the warning, as they peaked early that year, even as the overall market didn't peak until October.\n\nWell, now we have banks breaking out after years of basing, once again sending a warning. \n\nOnly this warning is this bull is alive and well.\n\nNice chart from @JC_ParetsX here.",
       "text_key": "32aab812688e3c08",
       "url": "https://x.com/RyanDetrick/status/2083185386499575890"
+    },
+    {
+      "added": "2026-08-23T22:12:06Z",
+      "author": "unusual_whales",
+      "created_at": "Thu Aug 13 16:57:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01892818,
+        "likes": 3075,
+        "replies": 177,
+        "retweets": 334,
+        "views": 189453
+      },
+      "post_id": "2087946532775428585",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "\"Canadians spent more on taxes than basic necessities in 2025,\" per Toronto Sun",
+      "text_key": "04844bf0f766cc79",
+      "url": "https://x.com/unusual_whales/status/2087946532775428585"
     },
     {
       "added": "2026-08-09T22:20:21Z",
@@ -433,297 +721,9 @@
       "text": "\"EA’s CEO got an $8 million raise thanks to how well Battlefield 6 performed, four months after the devs responsible for making the game got laid off,\" per IGN",
       "text_key": "b340889250d266c9",
       "url": "https://x.com/unusual_whales/status/2083296140183892104"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "charliebilello",
-      "created_at": "Thu Jul 30 14:33:26 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01507473,
-        "likes": 1182,
-        "replies": 137,
-        "retweets": 204,
-        "views": 101030
-      },
-      "post_id": "2082836973425664338",
-      "register": "commentary",
-      "shape": "stack",
-      "text": "64.\n\nAs in 64 consecutive months with US core inflation above the Fed's 2% target.\n\nThe Fed has lost all credibility when it comes to fighting inflation.\n\nKevin Warsh talks a big game, but talk is cheap. The Fed should have hiked rates yesterday and ended QE. https://t.co/HvimqfW6WW",
-      "text_key": "ded8051bd0eeef27",
-      "url": "https://x.com/charliebilello/status/2082836973425664338"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "Barchart",
-      "created_at": "Fri Jul 31 17:54:44 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01500218,
-        "likes": 433,
-        "replies": 11,
-        "retweets": 37,
-        "views": 32062
-      },
-      "post_id": "2083250021395263980",
-      "register": "aggregator",
-      "shape": "one_liner",
-      "text": "JUST IN 🚨: Amazon $AMZN on track for its biggest gain in more than 14 years 📈 📈 What a beautiful rip above its 200-day moving average 😍 https://t.co/SjEKYAdBKg",
-      "text_key": "4a8ff23fd41e0114",
-      "url": "https://x.com/Barchart/status/2083250021395263980"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "alphatrends",
-      "created_at": "Thu Jul 30 20:27:41 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.0148289,
-        "likes": 947,
-        "replies": 99,
-        "retweets": 46,
-        "views": 73640
-      },
-      "post_id": "2082926122904527000",
-      "register": "trader",
-      "shape": "stack",
-      "text": "such a great story\n\nLeopold Aschenbrenner just got the full “little kid steps up to the big table” experience.\n\nWrites the AI manifesto, raises a couple hundred mil, runs it up to $20-45B with max leverage on memory/chips/power names + software shorts. \n\nUp 439% through June. Feeling invincible.\nThen July happens. \n\nPositions get smoked 30-55%. Margin calls hit. Entire public book gets packaged and sold to Citadel in one trade.\n\nHe thought he was playing poker. The house just took the chips.\n\nthanks for playing!",
-      "text_key": "30a5aabb6e729e9f",
-      "url": "https://x.com/alphatrends/status/2082926122904527000"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "Barchart",
-      "created_at": "Fri Jul 31 19:10:53 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01467218,
-        "likes": 690,
-        "replies": 43,
-        "retweets": 125,
-        "views": 58478
-      },
-      "post_id": "2083269185157677413",
-      "register": "aggregator",
-      "shape": "one_liner",
-      "text": "U.S. 30-Year Treasury Yield jumps to highest level since the run-up to the Global Financial Crisis 🚨 🚨 https://t.co/5q9La2uvYZ",
-      "text_key": "7cf85a00132f807f",
-      "url": "https://x.com/Barchart/status/2083269185157677413"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "KobeissiLetter",
-      "created_at": "Fri Jul 31 20:07:45 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01399851,
-        "likes": 2738,
-        "replies": 121,
-        "retweets": 165,
-        "views": 216023
-      },
-      "post_id": "2083283494675837114",
-      "register": "aggregator",
-      "shape": "two_part",
-      "text": "BREAKING: Amazon, $AMZN, ends the day +15.3% higher, posting its best day in 14 years.\n\nThe stock added +$390 billion in market cap today. https://t.co/kdf9PzB0Bn",
-      "text_key": "6134caadefcf753d",
-      "url": "https://x.com/KobeissiLetter/status/2083283494675837114"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "Barchart",
-      "created_at": "Thu Jul 30 21:10:53 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.0139414,
-        "likes": 937,
-        "replies": 113,
-        "retweets": 93,
-        "views": 81986
-      },
-      "post_id": "2082936994842239440",
-      "register": "aggregator",
-      "shape": "caption",
-      "text": "Dear God 😱😨🫂 https://t.co/KXboj7LGaT",
-      "text_key": "24c0e3d8bffd0c3a",
-      "url": "https://x.com/Barchart/status/2082936994842239440"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "KobeissiLetter",
-      "created_at": "Thu Jul 30 20:02:20 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01376213,
-        "likes": 2613,
-        "replies": 78,
-        "retweets": 162,
-        "views": 207308
-      },
-      "post_id": "2082919746077389265",
-      "register": "aggregator",
-      "shape": "two_part",
-      "text": "BREAKING: Microsoft stock, $MSFT, closes the day +15.5% higher, officially posting its best day since October 2008.\n\nThe stock added +$455 billion in market cap today. https://t.co/iFOqdH597k",
-      "text_key": "48933d7d69b8fd20",
-      "url": "https://x.com/KobeissiLetter/status/2082919746077389265"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 17:17:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01364276,
-        "likes": 1801,
-        "replies": 99,
-        "retweets": 271,
-        "views": 159132
-      },
-      "post_id": "2083240523566113096",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "BREAKING: The US Strategic Petroleum Reserve is at its lowest level since 1983, with its 18th week of drawdown, per Reuters",
-      "text_key": "e4138d4837ad05f1",
-      "url": "https://x.com/unusual_whales/status/2083240523566113096"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "alphatrends",
-      "created_at": "Wed Jul 29 16:23:18 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01339348,
-        "likes": 844,
-        "replies": 99,
-        "retweets": 22,
-        "views": 72050
-      },
-      "post_id": "2082502233791541735",
-      "register": "trader",
-      "shape": "one_liner",
-      "text": "Interesting, I haven't seen many PnL screenshots in several weeks.  🤪",
-      "text_key": "8e8d02a88b8e38d6",
-      "url": "https://x.com/alphatrends/status/2082502233791541735"
-    },
-    {
-      "added": "2026-08-02T22:45:58Z",
-      "author": "KobeissiLetter",
-      "created_at": "Fri Jul 31 13:09:13 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01298495,
-        "likes": 2847,
-        "replies": 146,
-        "retweets": 606,
-        "views": 277167
-      },
-      "post_id": "2083178168815395313",
-      "register": "aggregator",
-      "shape": "stack",
-      "text": "BREAKING: The Strategic Petroleum Reserve (SPR) fell -3.8 million barrels last week, to 308 million barrels, the lowest since March 1983.\n\nThis marks the 18th consecutive weekly decline, the longest since 2023, per Zerohedge.\n\nDuring this period, US oil reserves in the SPR have fallen -108 million barrels, or -26%.\n\nMeanwhile, commercial crude oil stocks excluding the SPR dropped -7.2 million barrels, to 405 million barrels, the lowest since October 2018.\n\nThis is also ~7% below the 5-year average for this time of the year.\n\nAmerica's oil buffer is evaporating.",
-      "text_key": "ab7de3216a9ff2cd",
-      "url": "https://x.com/KobeissiLetter/status/2083178168815395313"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "KobeissiLetter",
-      "created_at": "Fri Jul 31 00:17:49 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.0129397,
-        "likes": 10867,
-        "replies": 407,
-        "retweets": 1041,
-        "views": 951722
-      },
-      "post_id": "2082984040651514230",
-      "register": "aggregator",
-      "shape": "two_part",
-      "text": "BREAKING: South Korea’s KOSPI surges nearly +15% as global chip stocks rally.\n\nCountries’ indices are moving like meme stocks now. https://t.co/GeBw6pWw92",
-      "text_key": "4fafb5256fff940d",
-      "url": "https://x.com/KobeissiLetter/status/2082984040651514230"
-    },
-    {
-      "added": "2026-08-02T22:45:58Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 23:56:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01285203,
-        "likes": 3349,
-        "replies": 118,
-        "retweets": 282,
-        "views": 291705
-      },
-      "post_id": "2083340935165861981",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "BREAKING: \"The Justice Department is admitting that a $14 million renovation on the Lincoln Memorial Reflecting Pool in Washington, DC, was flawed, and is dropping the criminal case against a former Olympian that accused him of damaging the pool,\" per CNN",
-      "text_key": "005d2bfd57ad8e55",
-      "url": "https://x.com/unusual_whales/status/2083340935165861981"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "StockMKTNewz",
-      "created_at": "Fri Jul 31 14:50:44 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01276044,
-        "likes": 554,
-        "replies": 18,
-        "retweets": 19,
-        "views": 46315
-      },
-      "post_id": "2083203714135871871",
-      "register": "aggregator",
-      "shape": "two_part",
-      "text": "Google $GOOGL stock is now up by 5% so far today\n\n🟢 https://t.co/9K8D0gCLFt",
-      "text_key": "48bae3b8ef7ff1f1",
-      "url": "https://x.com/StockMKTNewz/status/2083203714135871871"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "StockMKTNewz",
-      "created_at": "Fri Jul 31 14:16:18 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01275877,
-        "likes": 449,
-        "replies": 37,
-        "retweets": 28,
-        "views": 40286
-      },
-      "post_id": "2083195048548540621",
-      "register": "aggregator",
-      "shape": "two_part",
-      "text": "NVIDIA $NVDA IS BACK TO BEING THE LARGEST COMPANY IN THE WORLD\n\nNvidia is back to having a larger market cap than Apple $AAPL and has reclaimed its spot as the largest public company in the world https://t.co/RTDOCjdati",
-      "text_key": "efa9adb34a907d45",
-      "url": "https://x.com/StockMKTNewz/status/2083195048548540621"
-    },
-    {
-      "added": "2026-08-02T22:45:58Z",
-      "author": "unusual_whales",
-      "created_at": "Sat Aug 01 18:01:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01247141,
-        "likes": 3181,
-        "replies": 302,
-        "retweets": 138,
-        "views": 290344
-      },
-      "post_id": "2083613984444576149",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "Mark Cuban: AI data centers are being massively overbuilt and could end up as pickleball courts.",
-      "text_key": "1eae4835f00007d4",
-      "url": "https://x.com/unusual_whales/status/2083613984444576149"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "PeterLBrandt",
-      "created_at": "Wed Jul 29 22:57:51 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01224981,
-        "likes": 552,
-        "replies": 13,
-        "retweets": 25,
-        "views": 48164
-      },
-      "post_id": "2082601526317744539",
-      "register": "trader",
-      "shape": "stack",
-      "text": "The best reason to learn risk management:\n\nSo you do not have to make the same dollar over and over again\n\nI like to earn it, then keep it, or most of it",
-      "text_key": "a4e62853bf4d551d",
-      "url": "https://x.com/PeterLBrandt/status/2082601526317744539"
     }
   ],
   "schema": "marketing.x_exemplar_store/v1",
-  "updated_at": "2026-08-09T22:20:21Z",
+  "updated_at": "2026-08-31T00:03:02Z",
   "versions": []
 }

@@ -1,0 +1,111 @@
+{
+ "files": [
+  {
+   "bytes": 64958,
+   "path": "tests/fixtures/fms/dsca/dsca-4394629.html",
+   "sha256": "d53b9e978aaf5019df381265b27a82278e819f26f7e93395b8c82c9a66cecc6b"
+  },
+  {
+   "bytes": 63198,
+   "path": "tests/fixtures/fms/dsca/dsca-4399552.html",
+   "sha256": "f3981f7c94217ed8f0ae54737238aff1367bd5adf55a0c0599a31241df2ff70a"
+  },
+  {
+   "bytes": 2233,
+   "path": "tests/fixtures/fms/dsca/manifest.json",
+   "sha256": "0054279ef78875a37d49dac9ef3e1c45595a03f3788fd1774e44aa8b8096822a"
+  },
+  {
+   "bytes": 133064,
+   "path": "tests/fixtures/fms/dsca/saudi-arabia-26-13-cn.pdf",
+   "sha256": "c7e3bcadda94f4f9014bd9eac70827f57bc1e60fe67c20a273074732a8af9c55"
+  },
+  {
+   "bytes": 393,
+   "path": "tests/fixtures/fms/dsca/state-listing.html",
+   "sha256": "e672638fabfb375919fa0d121b9f6d3008f2500e836b1b6c6a1415433ecc00a1"
+  },
+  {
+   "bytes": 175525,
+   "path": "tests/fixtures/fms/dsca/state-sweden-m142.html",
+   "sha256": "af39ea6f7a01e9f1491fd649211a4eb171f478307bfcb549ea2830f64996e884"
+  },
+  {
+   "bytes": 881,
+   "path": "tests/fixtures/fms/dsca/state_manifest.json",
+   "sha256": "6a6f7daf4323bd3bd8bb0d18995e51100023ad4f5dbf906f2578767f09a11ef5"
+  },
+  {
+   "bytes": 2371,
+   "path": "tests/fixtures/fms/fr/2026-00029.txt",
+   "sha256": "b217212255b98f0967229f70122db41736e68b5ebafa274f5c6f885521db1b55"
+  },
+  {
+   "bytes": 13961,
+   "path": "tests/fixtures/fms/fr/2026-07237.txt",
+   "sha256": "d64ae8f732bb1dc40537984e24ec7922fee5a2800724570cbeed852997a3ca7c"
+  },
+  {
+   "bytes": 7518,
+   "path": "tests/fixtures/fms/fr/2026-07278.txt",
+   "sha256": "82c815924153b2e498057e76c83caa6ea2078aaf0754759414d519d80ab65a4f"
+  },
+  {
+   "bytes": 7426,
+   "path": "tests/fixtures/fms/fr/2026-09003.txt",
+   "sha256": "c57f9491646bc701b145283a34e8c6c2c82749725184f24a1ea47faf38507925"
+  },
+  {
+   "bytes": 7183,
+   "path": "tests/fixtures/fms/fr/2026-09109.txt",
+   "sha256": "d63fbbbbff248ed6794946c7542cde8e7bd3198ea1ab89b2c5a8ee4692c5fea8"
+  },
+  {
+   "bytes": 7943,
+   "path": "tests/fixtures/fms/fr/2026-11403.txt",
+   "sha256": "a36c573b2064f849ec647dbb42ea79464b98395445f70f5ef5c9ec9a5abbeec3"
+  },
+  {
+   "bytes": 178470,
+   "path": "tests/fixtures/fms/state/australia-f-a-18f-ea-18g-growler-aircraft-training.html",
+   "sha256": "1bed7b22a2c513c89cf9220109889e5cfaef31c3ca90690c4665263b7e1faaeb"
+  },
+  {
+   "bytes": 176147,
+   "path": "tests/fixtures/fms/state/kuwait-lower-tier-air-and-missile-defense-sensor-radars.html",
+   "sha256": "e8248fee5e107eeea5562457753bda6cb6e11c091b401c0bc3a54d831db0c671"
+  },
+  {
+   "bytes": 193528,
+   "path": "tests/fixtures/fms/state/listing_page1.html",
+   "sha256": "11bb73f772af1897f50dce932db4c8ac147292d98985df57762a3d42606387c1"
+  },
+  {
+   "bytes": 174602,
+   "path": "tests/fixtures/fms/state/new-zealand-mk-54-torpedoes.html",
+   "sha256": "b6214b23475ce132eab47781a6ba28102cbe77220a15c7e49d99cc7b31d21637"
+  },
+  {
+   "bytes": 175588,
+   "path": "tests/fixtures/fms/state/singapore-hellfire-missiles.html",
+   "sha256": "8c9d0df8e5661f266bed63fb26519805509696917be3e8671e5b7e0b6212a847"
+  },
+  {
+   "bytes": 175525,
+   "path": "tests/fixtures/fms/state/sweden-m142-high-mobility-artillery-rocket-systems.html",
+   "sha256": "af39ea6f7a01e9f1491fd649211a4eb171f478307bfcb549ea2830f64996e884"
+  },
+  {
+   "bytes": 175599,
+   "path": "tests/fixtures/fms/state/tunisia-border-security-project-phase-iii.html",
+   "sha256": "238e7e9aaec58507375475774ed1e3f37d5c3fd34f24c11cbc3764a0480fa4e3"
+  }
+ ],
+ "sources": {
+  "dsca": "data/government_revenue/fms_staged_objects/ (committed browser-acquired staged bytes, D6-B0 freeze R2/R3 + this session's census cross-check)",
+  "fr": "session scratchpad fr_sweep/cache/<doc>.txt (FR API raw-text fetches, receipted in research/defense_intelligence/evidence/fms_d6b1_full_scope_census_2026-08-25.json)",
+  "state": "session scratchpad state_corpus/ (State PM-Bureau CLI fetches)",
+  "state_staged_fixture_2026_08_26": "state-sweden-m142.html is a byte copy of the receipted census capture tests/fixtures/fms/state/sweden-m142-high-mobility-artillery-rocket-systems.html; state-listing.html is a minimal one-entry listing derived from the real www.state.gov collection-result markup, used only as staged-replay plumbing (the parse grammar itself stays proven against the real listing_page1.html); state_manifest.json pins both by sha256."
+ },
+ "what": "D6-B1 packet-1 FMS test fixtures: real receipted bytes copied from this session's deterministic acquisitions (FR raw texts, State PM-Bureau articles, DSCA staged objects committed on this branch). No fixture bytes are synthesized."
+}

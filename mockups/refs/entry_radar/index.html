@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Entry Radar · W8 reference (not production)</title>
+<!--
+  LIVE ENTRY RADAR — W8 UI reference.
+  AUTHORITY: REFERENCE ONLY. No production template, engine path, or site/
+  file is touched by this directory. Do not copy this tree into
+  templates/entry_radar.html.j2 or site/entry_radar.html (that is W9).
+
+  Sister language of the R4-resolved Prophet Board, pinned at session start:
+    origin/main              cc6f53f619f439683a4da7aa366843aef6079768
+    R4 merge (#5560)         168a9be006914441051cff393927ce465e39138e
+    us_stocks ref tree       d540f493a097cb37f3f91e4c7bc81a39b876d069
+
+  HARNESS:
+    ?theme=dark|light  ?lang=en|zh  ?chrome=0|1
+    ?state=board|quiet|g0|c1|c2|c3|c5|multi|expired|invalidated|history|
+           stale|unavailable|raw|degraded|partial|anon|ipo|lobe
+    ?life=probing|pre_candidate|candidate|invalidated|expired
+    ?lane=all|best|g0|c1|c2|c3|c5
+    ?drawer=1
+-->
+<link rel="stylesheet" href="radar.css">
+</head>
+<body>
+  <div class="er-refbanner" data-reference-banner="1">
+    <span class="l-en">REFERENCE · SYNTHETIC FIXTURES · NOT PRODUCTION</span>
+    <span class="l-zh">参考稿 · 合成夹具 · 非生产</span>
+  </div>
+  <div id="harness"></div>
+  <div class="wrap">
+    <main id="board"></main>
+  </div>
+  <script src="radar-data.js"></script>
+  <script src="radar.js"></script>
+</body>
+</html>

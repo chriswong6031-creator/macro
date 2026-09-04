@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-23",
+ "as_of": "2026-09-04",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -44,12 +44,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "MPWR",
@@ -78,12 +78,12 @@
      "name": "Shopify Inc"
     },
     {
-     "ticker": "ADP",
-     "name": "Automatic Data Processing Inc"
-    },
-    {
      "ticker": "ADBE",
      "name": "Adobe Inc"
+    },
+    {
+     "ticker": "ADP",
+     "name": "Automatic Data Processing Inc"
     },
     {
      "ticker": "INTU",
@@ -398,12 +398,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "MPWR",
@@ -520,12 +520,12 @@
      "name": "Shopify Inc"
     },
     {
-     "ticker": "ADP",
-     "name": "Automatic Data Processing Inc"
-    },
-    {
      "ticker": "ADBE",
      "name": "Adobe Inc"
+    },
+    {
+     "ticker": "ADP",
+     "name": "Automatic Data Processing Inc"
     },
     {
      "ticker": "INTU",

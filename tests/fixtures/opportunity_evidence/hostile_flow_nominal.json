@@ -1,0 +1,414 @@
+{
+  "asof": {
+    "grain": "date",
+    "t0_evidence_ref": {
+      "native_digest": {
+        "sha256": null,
+        "state": "unknown"
+      },
+      "native_identity": {
+        "date": "2026-08-14",
+        "direction": "up",
+        "ticker": "IMXI"
+      },
+      "owner_store": "data/price_pressure/",
+      "recorded_clock": {
+        "clock_class": "observed",
+        "grain": "date",
+        "native_field": "harvested_asof",
+        "state": "known",
+        "value": "2026-08-14"
+      }
+    },
+    "t0_mode": "live",
+    "t0_source": "drl_event_date",
+    "value": "2026-08-14"
+  },
+  "authority": {
+    "can_gate": false,
+    "can_open_entry": false,
+    "can_originate": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "compilation_state": "partial",
+  "content_sha256": "49f3b378c6e534a79efe5d3debb042c440c919bd47bc2cc13b24fcdfb6655cd7",
+  "denominator": {
+    "conflicted": 0,
+    "excluded": 3,
+    "identity_unresolved": 0,
+    "included": 2,
+    "missing": 3,
+    "rights_blocked": 0,
+    "stale": 0,
+    "total": 5,
+    "unknown": 0,
+    "unsupported": 0
+  },
+  "display_only": true,
+  "dominant_degradation": "missing",
+  "economic_cause_hypothesis": null,
+  "generated_at": "2026-08-14T00:00:00Z",
+  "permitted_consumers": [
+    "research_session"
+  ],
+  "projection": {
+    "entry_availability": {
+      "composition_law": "owner_read_only_never_computed",
+      "entry_signal": {
+        "slot_refs": [],
+        "state": "unknown",
+        "verdict_class": "owner_entry_actionability"
+      },
+      "radar_probe_coverage": {
+        "slot_refs": [],
+        "state": "missing",
+        "verdict_class": "probe_coverage_state_not_trade_entry"
+      }
+    },
+    "failed_or_unavailable_gates": {
+      "denominator": {
+        "excluded": 0,
+        "included": 0,
+        "total": 0
+      },
+      "gates": []
+    },
+    "inferred": {
+      "denominator": {
+        "excluded": 0,
+        "included": 1,
+        "total": 1
+      },
+      "label": "owner_derived_system_belief",
+      "slot_refs": [
+        "drl_resid_shock"
+      ]
+    },
+    "market_reflection": {
+      "denominator": {
+        "excluded": 6,
+        "included": 1,
+        "total": 7
+      },
+      "incorporation_legs": [
+        {
+          "leg": "I1_anticipation",
+          "slot_refs": [],
+          "state": "missing"
+        },
+        {
+          "leg": "I2_immediate_response",
+          "slot_refs": [
+            "drl_resid_shock"
+          ],
+          "state": "observed"
+        },
+        {
+          "leg": "I3_estimate_revision",
+          "slot_refs": [],
+          "state": "missing"
+        },
+        {
+          "leg": "I4_options_repricing",
+          "slot_refs": [],
+          "state": "missing"
+        },
+        {
+          "leg": "I5_attention",
+          "slot_refs": [
+            "attention_views"
+          ],
+          "state": "missing"
+        },
+        {
+          "leg": "I6_peer_response",
+          "slot_refs": [],
+          "state": "missing"
+        },
+        {
+          "leg": "I7_persistence_rejection",
+          "slot_refs": [],
+          "state": "ex_post_excluded"
+        }
+      ]
+    },
+    "next_observable": {
+      "expected_by": null,
+      "expected_clock_class": null,
+      "observable": null,
+      "state": "none"
+    },
+    "observed": {
+      "denominator": {
+        "excluded": 0,
+        "included": 1,
+        "total": 1
+      },
+      "slot_refs": [
+        "etf_flow_shares_outstanding"
+      ]
+    },
+    "strongest_unresolved_fact": {
+      "fact": "attention_views unresolved: source_missing",
+      "slot_refs": [
+        "attention_views"
+      ],
+      "state": "named"
+    }
+  },
+  "schema": "opportunity_evidence.vector.v1",
+  "slots": [
+    {
+      "asof": {
+        "clock_class": "world_valid",
+        "grain": "date",
+        "native_field": "date",
+        "state": "known",
+        "value": "2026-08-14"
+      },
+      "basis": {
+        "peer_basis": "market"
+      },
+      "construct": "drl_resid_shock",
+      "coverage_flag": {
+        "note": null,
+        "state": "full"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": null,
+      "family_binding": {
+        "family_id": null,
+        "kind": "research_only",
+        "routed_to": null
+      },
+      "included_in_composition": true,
+      "known_at": {
+        "clock_class": "observed",
+        "grain": "date",
+        "native_field": "harvested_asof",
+        "state": "known",
+        "value": "2026-08-14"
+      },
+      "missingness": {
+        "reason": null,
+        "state": "present",
+        "zero_substituted": false
+      },
+      "object_class": "derived_view",
+      "owner_ref": {
+        "artifact": "data/price_pressure/events.parquet (+ latest.json display mirror)",
+        "evidence_ref_id": null,
+        "owner": "engine/price_pressure/",
+        "reader": "engine.price_pressure.ledger.read_ledger"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "observed",
+      "value_or_null": {
+        "peer_ret": 0.0014,
+        "resid": 0.2456,
+        "resid_z": 11.85,
+        "ret": 0.247
+      },
+      "variation_receipt": null
+    },
+    {
+      "asof": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "basis": null,
+      "construct": "attention_views",
+      "coverage_flag": {
+        "note": null,
+        "state": "not_applicable"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": "source_missing",
+      "family_binding": {
+        "family_id": "F8_ATTENTION_CROWDING",
+        "kind": "governed_family",
+        "routed_to": null
+      },
+      "included_in_composition": false,
+      "known_at": {
+        "clock_class": "knowable",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "missingness": {
+        "reason": "source_missing",
+        "state": "absent",
+        "zero_substituted": false
+      },
+      "object_class": "world_observation",
+      "owner_ref": {
+        "artifact": "data/us_prophet_rank/candidates/ columns attention__views, attention__log_views",
+        "evidence_ref_id": null,
+        "owner": "attention/altdata owners",
+        "reader": "engine.us_context_vector.load_candidates"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "missing",
+      "value_or_null": null,
+      "variation_receipt": null
+    },
+    {
+      "asof": {
+        "clock_class": "world_valid",
+        "grain": "date",
+        "native_field": "date",
+        "state": "known",
+        "value": "2026-08-14"
+      },
+      "basis": null,
+      "construct": "etf_flow_shares_outstanding",
+      "coverage_flag": {
+        "note": null,
+        "state": "unknown"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": null,
+      "family_binding": {
+        "family_id": null,
+        "kind": "candidate_new_family",
+        "routed_to": "k5_eval_os_gauntlet"
+      },
+      "included_in_composition": true,
+      "known_at": {
+        "clock_class": "knowable",
+        "grain": "date",
+        "native_field": "date",
+        "state": "known",
+        "value": "2026-08-14"
+      },
+      "missingness": {
+        "reason": null,
+        "state": "present",
+        "zero_substituted": false
+      },
+      "object_class": "world_observation",
+      "owner_ref": {
+        "artifact": "data/flows/<FUND>.parquet columns so_mn, aum_mn, nav",
+        "evidence_ref_id": null,
+        "owner": "data/flows/ ingest",
+        "reader": "owner parquet read"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "observed",
+      "value_or_null": {
+        "so_mn": 900.0
+      },
+      "variation_receipt": {
+        "distinct_values": 1,
+        "field": "so_mn",
+        "observations": 25,
+        "window_days": 35
+      }
+    },
+    {
+      "asof": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "basis": null,
+      "construct": "prophet_board_lane",
+      "coverage_flag": {
+        "note": null,
+        "state": "unknown"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": "source_missing",
+      "family_binding": {
+        "family_id": null,
+        "kind": "research_only",
+        "routed_to": null
+      },
+      "included_in_composition": false,
+      "known_at": {
+        "clock_class": "knowable",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "missingness": {
+        "reason": "source_missing",
+        "state": "absent",
+        "zero_substituted": false
+      },
+      "object_class": "system_belief",
+      "owner_ref": {
+        "artifact": "data/us_prophet_rank/candidates/ frame columns lane, buyable, eligible",
+        "evidence_ref_id": null,
+        "owner": "Prophet US (engine/us_board_rank.py + nightly stamp)",
+        "reader": "engine.us_context_vector.load_candidates"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "missing",
+      "value_or_null": null,
+      "variation_receipt": null
+    },
+    {
+      "asof": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "basis": null,
+      "construct": "radar_probe_admission",
+      "coverage_flag": {
+        "note": null,
+        "state": "unknown"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": "source_missing",
+      "family_binding": {
+        "family_id": null,
+        "kind": "research_only",
+        "routed_to": null
+      },
+      "included_in_composition": false,
+      "known_at": {
+        "clock_class": "knowable",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "missingness": {
+        "reason": "source_missing",
+        "state": "absent",
+        "zero_substituted": false
+      },
+      "object_class": "derived_view",
+      "owner_ref": {
+        "artifact": "mastermind.entry_probe_set.v1 ProbeSet (per-name ProbeRecord) + data/entry_radar/ledger_state.json",
+        "evidence_ref_id": null,
+        "owner": "engine/entry_radar/ (WS:LIVE-ENTRY-RADAR)",
+        "reader": "owner ProbeSet readers"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "missing",
+      "value_or_null": null,
+      "variation_receipt": null
+    }
+  ],
+  "subject": {
+    "identity_bridge": null,
+    "identity_state": "single_owner_native",
+    "subject_type": "us_listing_symbol",
+    "value": "SPY"
+  },
+  "version": "1.0.0"
+}

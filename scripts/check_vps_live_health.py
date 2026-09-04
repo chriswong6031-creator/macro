@@ -63,6 +63,25 @@ def _source_age_min(breadth: dict[str, Any], now: datetime) -> float | None:
         return None
 
 
+def _abs_age_min(raw: Any, now: datetime) -> float | None:
+    """Minutes between an ABSOLUTE ISO stamp and `now`; None when unusable.
+
+    Absolute stamps are the only clocks that keep ageing after a producer dies.
+    A build-time scalar (`age_min`, `*_age_min` baked into the payload) freezes
+    the moment the writer stops and therefore reads healthy forever -- the exact
+    mechanism that let the US Prophet Live lane sit dead for 27 days in 2026-08.
+    """
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return (now - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+
+
 def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[str]:
     """Return human-readable health failures; an empty list is healthy."""
     current = now or datetime.now(timezone.utc)
@@ -243,6 +262,90 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
                 failures.append("breadth: missing producer (unowned)")
         # else: weekday, session open, but outside the expected live window —
         # require only that the key parses (already true); report nothing.
+    # ---- US Prophet Live: THE US product lane -------------------------------
+    # Deliberately NOT the ABSENT-OK precedent used by cn_prophet_live and
+    # breadth above. Those lanes may legitimately not be deployed on a given box.
+    # This one is the US product lane, and "the key simply isn't there" is
+    # exactly how the 2026-07-30 -> 2026-08-26 freeze stayed invisible: the
+    # evaluator ran every 5 minutes, published nothing (credentials were never
+    # seeded at cutover), exited 0, and this dead-man printed "VPS live plane
+    # healthy" for 27 days across ~18 lost sessions.
+    #
+    # `expected_now` is computed SERVER-SIDE from the repo's own NYSE calendar and
+    # window law (engine.prophet_live.live_states), so this stdlib-only monitor
+    # never mints a second holiday calendar. The coarse UTC guard below decides
+    # only WHETHER to demand the key when the key is missing entirely -- it never
+    # decides a freshness verdict.
+    prophet = checks.get("prophet_live")
+    coarse_us_window = weekday and 14 <= hour <= 20
+    if not isinstance(prophet, dict):
+        if coarse_us_window:
+            failures.append(
+                "prophet_live: check absent from /api/status during the US session "
+                "— the product lane is ungraded (deploy the status projection)"
+            )
+    else:
+        expected = prophet.get("expected_now")
+        if expected is None and coarse_us_window:
+            failures.append(
+                "prophet_live: expected_now unavailable — the status surface could "
+                "not evaluate the session law (failing closed)"
+            )
+        elif expected:
+            status = prophet.get("status")
+            reason = prophet.get("reason")
+            if status == "absent":
+                failures.append(
+                    "prophet_live: no served artifact during an expected session"
+                    + (f" ({reason})" if reason else "")
+                )
+            elif status == "unparseable":
+                failures.append("prophet_live: served artifact is unparseable")
+            else:
+                # Absolute pass clock. The producer fires every 5 minutes, so 15
+                # minutes is three missed passes -- inside the two-cadence
+                # (20 min) detection budget with headroom for scheduler jitter.
+                pass_age = _abs_age_min(prophet.get("pass_ts"), current)
+                if pass_age is None:
+                    failures.append("prophet_live: missing or invalid pass_ts")
+                elif pass_age > 15:
+                    failures.append(
+                        f"prophet_live: last pass {pass_age:.1f}m ago (limit 15.0m) "
+                        "— the producer stopped writing or cannot publish"
+                    )
+                # Quote clock, graded against the lane's own 25m freshness gate.
+                quote_age = _abs_age_min(prophet.get("quote_asof"), current)
+                if quote_age is None:
+                    failures.append("prophet_live: missing or invalid quote_asof")
+                elif quote_age > 25:
+                    failures.append(
+                        f"prophet_live: quote source stale at {quote_age:.1f}m "
+                        "(limit 25.0m)"
+                    )
+                # Pack basis. A same-day or weekend `as_of` darkens the whole
+                # session; that defect alone darkened 11 of the 18 sessions lost
+                # in the 2026-08 incident, so it is graded by name.
+                if prophet.get("pack_ok") is False:
+                    failures.append(
+                        "prophet_live: armed pack is not the last completed session "
+                        f"(as_of={prophet.get('pack_as_of')!r}, "
+                        f"expected={prophet.get('pack_expected')!r})"
+                    )
+                elif prophet.get("pack_ok") is None:
+                    failures.append("prophet_live: pack basis could not be established")
+                # A globally dark artifact during an expected session is an
+                # outage, not a market condition. Per-name darkness is normal and
+                # lives in state_counts, never in the top-level status.
+                if status == "dark":
+                    failures.append(
+                        "prophet_live: artifact globally dark during an expected session"
+                        + (f" ({reason})" if reason else "")
+                    )
+                producer = prophet.get("producer")
+                if not isinstance(producer, str) or not producer.strip():
+                    failures.append("prophet_live: missing producer (unowned lane)")
+        # else: not an expected session — no freshness is required, and a stale
+        # last-session artifact is legitimate evidence of nothing being wrong.
     return failures
 
 

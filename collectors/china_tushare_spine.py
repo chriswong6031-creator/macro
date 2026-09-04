@@ -5,20 +5,19 @@ canonical/old-BSE aliases, an SSE=SZSE market-session clock, post-2016 exact-day
 ``bak_basic`` universe witnesses, effective-dated names, and daily quote/limit/
 suspension/ST partitions.  It does not score signals or claim alpha.
 
-No request is permitted without both ``--authorization-receipt`` and a separately
-controlled ``--authorization-trust-allowlist``.  The allowlist must pin the exact
-receipt/document hashes; an institutional grant must also bind the vendor
-entitlement and delegation documents.  A token, injected query, self-authored
-receipt, or boolean flag is not an authorization substitute.  The token itself is
-read only through ``collectors.tushare_client`` and is never accepted, persisted,
-hashed, or logged by this module.
+TuShare licensing/compliance is ``CHAIRMAN_VERIFIED_PRIVATE / SATISFIED``
+(``DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE``).  The controlling
+agreement and its supporting evidence are confidential and outside coding/agent
+scope under NDA/privacy constraints: no runtime path, CLI flag, manifest field,
+or test in this repository may request, inspect, persist, hash, quote, or gate on
+them.  What this module does enforce is technical -- the token is read only
+through ``collectors.tushare_client`` and is never accepted, persisted, hashed, or
+logged here, and every response must bind to its exact request.
 
 The default store is private and outside the repository:
 ``~/.local/share/macro-dashboard/china_tushare_spine`` (override only with
 ``CN_TUSHARE_SPINE_STORE`` or ``--store``).  Its principal layout is::
 
-    authorization_scope_receipt.json
-    authorization_trust_allowlist.json
     reference/current_generation.json
     reference/generations/<generation>/
         source_{bse_mapping,stock_basic,fund_basic}/...
@@ -44,8 +43,8 @@ an uncovered ticker-range campaign block completeness.  Capped whole-market
 responses are discarded as non-authoritative probes before deterministic
 ticker-by-date-range recovery.  Range leaves split below the endpoint cap,
 transpose back to exact-day partitions, and keep each attempt immutable.  The
-operational gate nevertheless remains false pending licensed live canary and
-throughput evidence.
+operational gate nevertheless remains false pending live canary, throughput, and
+correctness evidence.
 
 ``daily`` is unadjusted nominal price authority and retains zero-volume rows with
 ``positive_volume = volume_lots > 0``.  A traded/listing-session claim must filter
@@ -53,22 +52,27 @@ that flag.  ``stk_limit`` is exact legal-band authority.  Canonical event prices
 are integer CNY cents; OHLC must remain inside published bounds and touch/seal
 flags use integer equality.  The Decimal half-up calculator is validator-only.
 
-Usage (no implicit full-history or live authorization)::
+Usage (no implicit full-history collection)::
 
     python -m collectors.china_tushare_spine --start 20110101 --end 20260807 \
-        --authorization-receipt /private/path/tushare-authorization.json \
-        --authorization-trust-allowlist /controlled/path/tushare-grant-pins.json \
         --max-requests 50
     python -m collectors.china_tushare_spine --start 20110101 --end 20260807 \
         --dry-run
 
 The default request cap is intentionally small.  Re-running resumes incomplete
 units.  ``--allow-bulk`` is required above the safety ceiling or for unlimited
-collection.  This code wave made no live vendor call and grants no permission to
-run one.  The code-reviewed trust-root hash set is deliberately empty in this
-foundation commit; a real allowlist hash requires a separate reviewed code change.
-The operational backfill gate is also deliberately false until a separately
-reviewed authority wave proves the range implementation against licensed data.
+collection.  ``BULK_HISTORICAL_BACKFILL_READY`` is deliberately false until a
+separately reviewed wave proves the range implementation against live data with
+canary, throughput, and correctness evidence.  It is a technical readiness gate
+and must never be read, restored, or re-titled as a licensing gate.
+
+Because that gate waits on canary evidence, the canary itself must be runnable
+first: ``--canary`` performs real bounded collection while the gate is still
+false, capped at ``CANARY_MAX_REQUESTS`` requests over ``CANARY_MAX_RANGE_DAYS``
+calendar days, never with ``--allow-bulk``, and refusing rather than starting the
+unproven ticker-range campaign if a documented row cap fires.  The three modes
+are therefore ``--dry-run`` (network-free plan), ``--canary`` (real, hard-bounded)
+and the default bulk/backfill path (still gated).
 """
 from __future__ import annotations
 
@@ -99,16 +103,26 @@ log = logging.getLogger(__name__)
 
 MANIFEST_SCHEMA_VERSION = "cn_tushare_a_share_spine_manifest.v1"
 STATE_SCHEMA_VERSION = "cn_tushare_a_share_spine_state.v2"
-AUTHORIZATION_SCHEMA_VERSION = "cn_tushare_written_authorization.v1"
-AUTHORIZATION_TRUST_SCHEMA_VERSION = "cn_tushare_authorization_trust_allowlist.v1"
-# Deliberately empty in this foundation-only commit.  A real allowlist file can
-# become a trust root only by adding its exact SHA-256 in a reviewed code change;
-# no CLI flag or environment variable can mint a runtime pin.
-CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256: frozenset[str] = frozenset()
-# Scalable range shards are implemented and synthetic-tested, but no licensed
-# live parity/throughput canary has run.  Keep every network path fail-closed
-# until a separate reviewed authority change flips this immutable gate.
+# TECHNICAL READINESS GATE -- NOT a licensing gate.  Scalable range shards are
+# implemented and synthetic-tested, but no live parity/throughput canary has run,
+# so bulk historical collection stays fail-closed on engineering evidence alone:
+# canary parity, sustained throughput, and range/completeness correctness.  Flip
+# it only in a separate reviewed change that cites those measurements.  Licensing
+# and compliance are settled outside this repository and are never re-litigated
+# here (see the module docstring).
 BULK_HISTORICAL_BACKFILL_READY = False
+# The canary is the evidence that gate wants, so it must be runnable BEFORE the
+# gate opens -- otherwise the sequence is circular and the gate can never be
+# retired on measurement.  ``collect(..., canary=True)`` therefore performs real
+# bounded collection while ``BULK_HISTORICAL_BACKFILL_READY`` is still False,
+# under hard ceilings enforced below and with every technical control unchanged
+# (exact request/schema binding, PIT, source-row accounting, receipts, locking).
+# What the canary may NOT do is exercise the unproven scalable path: a documented
+# row cap refuses instead of starting a ticker-range campaign, and bulk/unlimited
+# budgets stay forbidden.  Opening the bulk gate remains a separate reviewed
+# change that cites canary receipts.
+CANARY_MAX_REQUESTS = 12
+CANARY_MAX_RANGE_DAYS = 5
 AUTHORITY = "context_only"
 SOURCE_NAME = "tushare_pro"
 
@@ -128,20 +142,35 @@ SAFE_MAX_REQUESTS = 100
 ST_DAILY_START = date(2016, 1, 1)
 PIT_UNIVERSE_START = date(2016, 1, 1)
 BSE_LAUNCH = date(2021, 11, 15)
-CALENDAR_HISTORY_START = date(1991, 1, 1)
+# --- Mainland session-clock epoch (frozen, definition-versioned) -------------
+# The canonical mainland session axis begins at a FROZEN epoch, not at the first
+# date any venue happens to publish.  The epoch is the earliest calendar year for
+# which TuShare `trade_cal` supplies a JOINTLY complete SSE+SZSE calendar; it is
+# frozen in source and is never selected at runtime, so two runs over the same
+# store can never disagree about which date owns which ordinal.
+#
+# 1992-01-01 was established by an outcome-blind source census over the landed
+# calendar partitions (`scripts/research/cn_limit_calendar_epoch_census.py`):
+# SSE and SZSE each return 366 of 366 unique civil dates for 1992, every year
+# 1992..2023 is jointly complete with zero open/closed parity mismatches, and
+# both exchanges show zero `pretrade_date` chain violations and zero missing
+# civil dates.  1991 fails only because TuShare returns 182 of 365 days for SZSE.
+#
+# That 182-day shortfall is SOURCE-HISTORY TRUNCATION, not evidence that the
+# missing civil dates fell outside the trading system.  Pre-epoch history is
+# therefore typed `PRE_EPOCH_SOURCE_UNSUPPORTED`: it is never imputed as closed,
+# never assigned an ordinal, and SSE history is never borrowed as exact SZSE
+# history.  Bump the definition string, never mutate the date in place, if a
+# future authority moves the epoch — artifacts stamped under different
+# definitions must stay distinguishable.
+MAINLAND_CALENDAR_EPOCH_DEFINITION = "mainland-joint-complete-v1"
+MAINLAND_CALENDAR_EPOCH = date(1992, 1, 1)
+PRE_EPOCH_SOURCE_STATE = "PRE_EPOCH_SOURCE_UNSUPPORTED"
+CALENDAR_HISTORY_START = MAINLAND_CALENDAR_EPOCH
 NAME_HISTORY_START_YEAR = 1990
 NAMECHANGE_MAX_PER_RUN = 5
 FUND_STATUSES = ("L", "D", "I")
 
-AUTHORIZATION_REQUIRED_SCOPE = (
-    "api_access",
-    "bulk_local_retention",
-    "quantitative_strategy_research",
-    "commercial_use",
-    "private_internal_derivatives",
-)
-AUTHORIZATION_RECORDED_SCOPE = (*AUTHORIZATION_REQUIRED_SCOPE, "redistribution", "public_derivatives")
-TUSHARE_SERVICE_AGREEMENT_URL = "https://tushare.pro/document/2?doc_id=405"
 TUSHARE_BAK_BASIC_DOC_URL = "https://tushare.pro/document/2?doc_id=262"
 TUSHARE_FUND_BASIC_DOC_URL = "https://tushare.pro/document/2?doc_id=19"
 SSE_SECURITY_CODE_GUIDE_URL = (
@@ -241,6 +270,7 @@ KEY_COLUMNS: dict[str, list[str]] = {
 _ST_PREFIX = re.compile(r"^(?:N?\*ST|N?ST|S\*ST|SST|PT)", re.IGNORECASE)
 _COMPACT_DATE = re.compile(r"^\d{8}$")
 _TUSHARE_CODE = re.compile(r"^(?P<code>\d{6})\.(?P<suffix>SH|SS|SZ|BJ)$", re.IGNORECASE)
+_T_PREFIXED_LEGACY_VENDOR_CODE = re.compile(r"^T\d{6}\.[A-Z]{2}$")
 
 
 class SpineError(RuntimeError):
@@ -249,39 +279,6 @@ class SpineError(RuntimeError):
 
 class RequestBudgetExhausted(SpineError):
     """Internal control-flow signal for a clean resumable stop."""
-
-
-@dataclass(frozen=True)
-class AuthorizationGrant:
-    """Out-of-band-pinned written permission; only non-sensitive evidence persists."""
-
-    receipt_sha256: str
-    grant_document_sha256: str
-    trust_allowlist_sha256: str
-    trust_entry_sha256: str
-    trust_allowlist_payload_json: str
-    vendor_entitlement_document_sha256: str | None
-    vendor_delegation_document_sha256: str | None
-    issued_on: str
-    expires_on: str
-    granted_by: str
-    scope: Mapping[str, bool]
-
-    def public_receipt(self) -> dict[str, Any]:
-        return {
-            "schema_version": AUTHORIZATION_SCHEMA_VERSION,
-            "receipt_sha256": self.receipt_sha256,
-            "grant_document_sha256": self.grant_document_sha256,
-            "trust_allowlist_sha256": self.trust_allowlist_sha256,
-            "trust_entry_sha256": self.trust_entry_sha256,
-            "vendor_entitlement_document_sha256": self.vendor_entitlement_document_sha256,
-            "vendor_delegation_document_sha256": self.vendor_delegation_document_sha256,
-            "issued_on": self.issued_on,
-            "expires_on": self.expires_on,
-            "granted_by": self.granted_by,
-            "scope": dict(self.scope),
-            "required_scope_satisfied": all(self.scope[name] for name in AUTHORIZATION_REQUIRED_SCOPE),
-        }
 
 
 @dataclass(frozen=True)
@@ -400,6 +397,35 @@ def _quote_price_cents(
     return int(tick_price * A_SHARE_PRICE_SCALE)
 
 
+def _stk_limit_price_or_sentinel_absent(value: Any) -> Any:
+    """Map TuShare's ``stk_limit`` non-trading zero sentinel to an absent value.
+
+    ``stk_limit`` publishes rows for instruments that did not trade the
+    session and spells their absent price fields (``pre_close``, ``up_limit``,
+    ``down_limit``) as ``0`` rather than null. Scoped to the ``stk_limit``
+    branch only -- a zero ``daily`` OHLC price stays a hard failure via
+    ``_quote_price_cents`` directly. Only a value that parses cleanly as a
+    non-positive finite decimal is treated as the sentinel; anything else
+    (None/NaN pass through unchanged, and unparseable values are left for
+    ``_quote_price_cents`` to reject with its own error) is returned as-is so
+    genuine corruption still surfaces.
+    """
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    try:
+        parsed = value if isinstance(value, Decimal) else Decimal(str(value).strip())
+    except (InvalidOperation, ValueError):
+        return value
+    if parsed.is_finite() and parsed <= 0:
+        return None
+    return value
+
+
 def a_share_limit_price_bounds(
     previous_close: str | float | Decimal,
     limit_ratio: str | float | Decimal,
@@ -453,6 +479,23 @@ def _iso(value: Any) -> str | None:
         pass
     text = str(value).strip()
     if not text or text.lower() in {"none", "nan", "nat"}:
+        return None
+    # TuShare's ZERO SENTINEL for an unpublished date.  `stock_basic` returns an
+    # empty string, already covered above, but `bak_basic` returns "0" -- which
+    # reached this function as a hard SpineError the first time pit_universe ever
+    # ran against the real vendor, killing the whole unit over one descriptive
+    # field on an otherwise valid A-share row.
+    #
+    # This is fail-CLOSED, not an imputation.  A null date is an EXPECTED state
+    # the callers already model: a row whose list_date is null "remains in the
+    # master but cannot enter a historical eligible universe" (see the
+    # effective_from branch in the stock_basic normaliser).  Nulling the sentinel
+    # therefore narrows eligibility; inventing a date would have widened it.
+    #
+    # An all-zero run is the only safe spelling of this test: every real date has
+    # a non-zero digit in its year, so this can never swallow one.  A malformed
+    # date that is merely wrong ("202401", "0000-00-00") still raises below.
+    if set(text) == {"0"}:
         return None
     return _parse_date(text).isoformat()
 
@@ -527,6 +570,49 @@ def canonical_identity(
         code=code,
         board=_board_for(code, source_exchange),
     )
+
+
+def _is_canonical_ts_code(ts_code: Any) -> bool:
+    """True unless ``ts_code`` fails ``canonical_identity`` (legacy/delisted vendor codes)."""
+    try:
+        canonical_identity(ts_code)
+    except SpineError:
+        return False
+    return True
+
+
+def _known_excluded_noncanonical_code_family(raw_ts_code: Any) -> str | None:
+    """Provenance for a non-canonical ``ts_code`` that is independently classifiable.
+
+    Matches exactly one tight, observed pattern (exemplar ``'T600018.SS'``): a
+    T-prefixed legacy vendor code.  The claim is narrow -- only that the raw
+    string sits outside the official 6-digit A-share coding scheme
+    (``_TUSHARE_CODE``), never an assertion about what the security is or
+    was.  Any other non-canonical shape returns ``None`` and stays
+    quarantined as genuinely unknown.
+    """
+    text = str(raw_ts_code or "")
+    if _T_PREFIXED_LEGACY_VENDOR_CODE.fullmatch(text):
+        return "official_A_code_scheme_excludes_T_prefixed_legacy_vendor_code"
+    return None
+
+
+def _stock_basic_ts_code_classification(ts_code: Any) -> str:
+    """Classify one raw stock_basic ``ts_code`` into its accounting role.
+
+    One of ``'landed_A'`` (canonical), ``'known_excluded'`` (non-canonical
+    but independently classifiable, e.g. a T-prefixed legacy vendor code), or
+    ``'quarantined_unknown'`` (non-canonical and genuinely unknown).  Shared
+    by every stock_basic accounting/verification path -- collect_reference's
+    unit accounting, the artifact-receipt role recomputation, and
+    compile_security_master -- so the three-way split is drawn identically
+    everywhere.
+    """
+    if _is_canonical_ts_code(ts_code):
+        return "landed_A"
+    if _known_excluded_noncanonical_code_family(ts_code) is not None:
+        return "known_excluded"
+    return "quarantined_unknown"
 
 
 def is_st_name(name: Any) -> bool:
@@ -607,395 +693,6 @@ def _receipt_bytes(path: Path, store: Path) -> bytes:
     raw = path.read_bytes()
     _assert_configured_token_absent(raw, artifact=path.relative_to(store).as_posix())
     return raw
-
-
-def _verified_authorization_document(
-    path_value: Any,
-    expected_hash_value: Any,
-    *,
-    label: str,
-) -> str:
-    document_path = Path(str(path_value)).expanduser()
-    if not document_path.is_absolute() or not document_path.is_file():
-        raise SpineError(f"written authorization {label} must be an existing absolute file")
-    document_raw = document_path.read_bytes()
-    _assert_configured_token_absent(document_raw, artifact=f"authorization_{label}")
-    expected_hash = str(expected_hash_value or "").lower()
-    if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
-        raise SpineError(f"written authorization {label} hash is invalid")
-    if hashlib.sha256(document_raw).hexdigest() != expected_hash:
-        raise SpineError(f"written authorization {label} hash does not match")
-    return expected_hash
-
-
-def _authorization_claim_sha256(
-    *,
-    receipt_sha256: str,
-    grant_document_sha256: str,
-    vendor_entitlement_document_sha256: str | None,
-    vendor_delegation_document_sha256: str | None,
-    issued_on: str,
-    expires_on: str,
-    granted_by: str,
-    scope: Mapping[str, bool],
-) -> str:
-    """Bind the manifest-visible authorization claims to the pinned grant entry."""
-    if (
-        not isinstance(scope, Mapping)
-        or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE)
-        or any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE)
-    ):
-        raise SpineError("authorization claim has invalid scope values")
-    claim = {
-        "receipt_sha256": receipt_sha256,
-        "grant_document_sha256": grant_document_sha256,
-        "vendor_entitlement_document_sha256": vendor_entitlement_document_sha256,
-        "vendor_delegation_document_sha256": vendor_delegation_document_sha256,
-        "issued_on": issued_on,
-        "expires_on": expires_on,
-        "granted_by": granted_by,
-        "scope": {name: bool(scope[name]) for name in AUTHORIZATION_RECORDED_SCOPE},
-    }
-    return hashlib.sha256(_canonical_json_bytes(claim)).hexdigest()
-
-
-def load_authorization_grant(
-    path: Path,
-    *,
-    trust_allowlist: Path,
-    as_of: date,
-) -> AuthorizationGrant:
-    """Validate a written vendor/institution grant before any network or store write.
-
-    The JSON receipt is not an operator terms-accepted switch: it must bind to an
-    independently stored written grant whose SHA-256 matches, and its separate
-    allowlist file must itself be pinned by the immutable code-reviewed trust root.
-    Identity/path text stays outside the spine; only hashes, dates, grant class,
-    and scope booleans are copied into the manifest.
-    """
-    receipt_path = Path(path).expanduser().resolve()
-    trust_path = Path(trust_allowlist).expanduser().resolve()
-    if not receipt_path.is_file():
-        raise SpineError("written TuShare authorization receipt is absent")
-    if not trust_path.is_file() or trust_path == receipt_path:
-        raise SpineError("out-of-band TuShare authorization trust allowlist is absent")
-    raw = receipt_path.read_bytes()
-    _assert_configured_token_absent(raw, artifact="authorization_receipt")
-    trust_raw = trust_path.read_bytes()
-    _assert_configured_token_absent(trust_raw, artifact="authorization_trust_allowlist")
-    trust_allowlist_hash = hashlib.sha256(trust_raw).hexdigest()
-    if trust_allowlist_hash not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
-        raise SpineError(
-            "authorization trust allowlist is not pinned by the code-reviewed trust root"
-        )
-    try:
-        payload = json.loads(raw.decode("utf-8"))
-    except Exception as exc:
-        raise SpineError("written TuShare authorization receipt is invalid JSON") from exc
-    _assert_configured_token_absent_logical(payload, artifact="authorization_receipt")
-    if not isinstance(payload, dict) or payload.get("schema_version") != AUTHORIZATION_SCHEMA_VERSION:
-        raise SpineError("written TuShare authorization receipt has an unsupported schema")
-    exact_keys = {
-        "schema_version", "authorization_id", "vendor", "grantee", "grantor",
-        "granted_by", "issued_on", "expires_on", "grant_document_path",
-        "grant_document_sha256", "entitlement_chain", "scope",
-    }
-    if set(payload) != exact_keys:
-        raise SpineError("written TuShare authorization receipt fields are incomplete or unexpected")
-    for field in ("authorization_id", "vendor", "grantee", "grantor"):
-        if not isinstance(payload[field], str) or not payload[field].strip():
-            raise SpineError(f"written TuShare authorization receipt requires {field}")
-    if str(payload["vendor"]).strip().lower() not in {"tushare", "tushare pro"}:
-        raise SpineError("written authorization receipt is not for TuShare")
-    granted_by = str(payload["granted_by"]).strip().lower()
-    if granted_by not in {"vendor", "institution"}:
-        raise SpineError("written authorization must be granted by vendor or institution")
-    issued = _parse_date(payload["issued_on"])
-    expires = _parse_date(payload["expires_on"])
-    if issued > as_of or expires < as_of or expires < issued:
-        raise SpineError("written TuShare authorization is not effective on the collection date")
-    scope = payload.get("scope")
-    if not isinstance(scope, dict) or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE):
-        raise SpineError("written TuShare authorization scope is incomplete")
-    if any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE):
-        raise SpineError("written TuShare authorization scope values must be booleans")
-    missing_scope = [name for name in AUTHORIZATION_REQUIRED_SCOPE if not scope[name]]
-    if missing_scope:
-        raise SpineError(
-            "written TuShare authorization lacks required collection scope: "
-            + ",".join(missing_scope)
-        )
-    expected_hash = _verified_authorization_document(
-        payload["grant_document_path"], payload["grant_document_sha256"],
-        label="grant_document",
-    )
-    chain = payload.get("entitlement_chain")
-    chain_keys = {
-        "vendor_entitlement_document_path", "vendor_entitlement_document_sha256",
-        "vendor_delegation_document_path", "vendor_delegation_document_sha256",
-    }
-    if not isinstance(chain, dict) or set(chain) != chain_keys:
-        raise SpineError("written authorization entitlement chain is incomplete")
-    entitlement_hash: str | None = None
-    delegation_hash: str | None = None
-    if granted_by == "vendor":
-        if any(chain[name] is not None for name in chain_keys):
-            raise SpineError("direct vendor grant must not self-declare an institutional chain")
-    else:
-        entitlement_hash = _verified_authorization_document(
-            chain["vendor_entitlement_document_path"],
-            chain["vendor_entitlement_document_sha256"],
-            label="vendor_entitlement_document",
-        )
-        delegation_hash = _verified_authorization_document(
-            chain["vendor_delegation_document_path"],
-            chain["vendor_delegation_document_sha256"],
-            label="vendor_delegation_document",
-        )
-
-    try:
-        trust_payload = json.loads(trust_raw.decode("utf-8"))
-    except Exception as exc:
-        raise SpineError("authorization trust allowlist is invalid JSON") from exc
-    _assert_configured_token_absent_logical(
-        trust_payload, artifact="authorization_trust_allowlist",
-    )
-    if (
-        not isinstance(trust_payload, dict)
-        or set(trust_payload) != {"schema_version", "trusted_grants"}
-        or trust_payload.get("schema_version") != AUTHORIZATION_TRUST_SCHEMA_VERSION
-        or not isinstance(trust_payload.get("trusted_grants"), list)
-        or not trust_payload["trusted_grants"]
-    ):
-        raise SpineError("authorization trust allowlist has an unsupported schema")
-    receipt_hash = hashlib.sha256(raw).hexdigest()
-    expected_entry = {
-        "receipt_sha256": receipt_hash,
-        "grant_document_sha256": expected_hash,
-        "granted_by": granted_by,
-        "vendor_entitlement_document_sha256": entitlement_hash,
-        "vendor_delegation_document_sha256": delegation_hash,
-        "authorization_claim_sha256": _authorization_claim_sha256(
-            receipt_sha256=receipt_hash,
-            grant_document_sha256=expected_hash,
-            vendor_entitlement_document_sha256=entitlement_hash,
-            vendor_delegation_document_sha256=delegation_hash,
-            issued_on=issued.isoformat(),
-            expires_on=expires.isoformat(),
-            granted_by=granted_by,
-            scope=scope,
-        ),
-    }
-    entry_keys = set(expected_entry)
-    matching_entries: list[dict[str, Any]] = []
-    for candidate in trust_payload["trusted_grants"]:
-        if not isinstance(candidate, dict) or set(candidate) != entry_keys:
-            raise SpineError("authorization trust allowlist contains a malformed grant pin")
-        for name in (
-            "receipt_sha256", "grant_document_sha256", "authorization_claim_sha256",
-        ):
-            if not re.fullmatch(r"[0-9a-f]{64}", str(candidate[name] or "").lower()):
-                raise SpineError("authorization trust allowlist contains an invalid hash pin")
-        for name in (
-            "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-        ):
-            value = candidate[name]
-            if value is not None and not re.fullmatch(r"[0-9a-f]{64}", str(value).lower()):
-                raise SpineError("authorization trust allowlist contains an invalid chain hash pin")
-        canonical_candidate = {
-            **candidate,
-            "receipt_sha256": str(candidate["receipt_sha256"]).lower(),
-            "grant_document_sha256": str(candidate["grant_document_sha256"]).lower(),
-            "vendor_entitlement_document_sha256": (
-                str(candidate["vendor_entitlement_document_sha256"]).lower()
-                if candidate["vendor_entitlement_document_sha256"] is not None else None
-            ),
-            "vendor_delegation_document_sha256": (
-                str(candidate["vendor_delegation_document_sha256"]).lower()
-                if candidate["vendor_delegation_document_sha256"] is not None else None
-            ),
-        }
-        if canonical_candidate == expected_entry:
-            matching_entries.append(canonical_candidate)
-    if len(matching_entries) != 1:
-        raise SpineError(
-            "written authorization is not uniquely pinned by the out-of-band trust allowlist"
-        )
-    trust_entry_hash = hashlib.sha256(
-        _canonical_json_bytes(matching_entries[0])
-    ).hexdigest()
-    return AuthorizationGrant(
-        receipt_sha256=receipt_hash,
-        grant_document_sha256=expected_hash,
-        trust_allowlist_sha256=trust_allowlist_hash,
-        trust_entry_sha256=trust_entry_hash,
-        trust_allowlist_payload_json=trust_raw.decode("utf-8"),
-        vendor_entitlement_document_sha256=entitlement_hash,
-        vendor_delegation_document_sha256=delegation_hash,
-        issued_on=issued.isoformat(),
-        expires_on=expires.isoformat(),
-        granted_by=granted_by,
-        scope={name: bool(scope[name]) for name in AUTHORIZATION_RECORDED_SCOPE},
-    )
-
-
-def _authorization_path(store: Path) -> Path:
-    return store / "authorization_scope_receipt.json"
-
-
-def _authorization_trust_path(store: Path) -> Path:
-    return store / "authorization_trust_allowlist.json"
-
-
-def _validate_public_authorization_trust(
-    public_receipt: Mapping[str, Any], trust_raw: bytes,
-) -> None:
-    trust_hash = hashlib.sha256(trust_raw).hexdigest()
-    if (
-        trust_hash != public_receipt.get("trust_allowlist_sha256")
-        or trust_hash not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256
-    ):
-        raise SpineError("authorization allowlist is not bound to the code-reviewed trust root")
-    try:
-        trust = json.loads(trust_raw.decode("utf-8"))
-    except Exception as exc:
-        raise SpineError("persisted authorization trust allowlist is unreadable") from exc
-    _assert_configured_token_absent_logical(trust, artifact="authorization_trust_allowlist")
-    if (
-        not isinstance(trust, dict)
-        or set(trust) != {"schema_version", "trusted_grants"}
-        or trust.get("schema_version") != AUTHORIZATION_TRUST_SCHEMA_VERSION
-        or not isinstance(trust.get("trusted_grants"), list)
-        or not trust["trusted_grants"]
-    ):
-        raise SpineError("persisted authorization trust allowlist has an unsupported schema")
-    expected = {
-        "receipt_sha256": public_receipt.get("receipt_sha256"),
-        "grant_document_sha256": public_receipt.get("grant_document_sha256"),
-        "granted_by": public_receipt.get("granted_by"),
-        "vendor_entitlement_document_sha256": public_receipt.get(
-            "vendor_entitlement_document_sha256"
-        ),
-        "vendor_delegation_document_sha256": public_receipt.get(
-            "vendor_delegation_document_sha256"
-        ),
-    }
-    expected["authorization_claim_sha256"] = _authorization_claim_sha256(
-        receipt_sha256=str(expected["receipt_sha256"] or ""),
-        grant_document_sha256=str(expected["grant_document_sha256"] or ""),
-        vendor_entitlement_document_sha256=expected[
-            "vendor_entitlement_document_sha256"
-        ],
-        vendor_delegation_document_sha256=expected[
-            "vendor_delegation_document_sha256"
-        ],
-        issued_on=str(public_receipt.get("issued_on") or ""),
-        expires_on=str(public_receipt.get("expires_on") or ""),
-        granted_by=str(expected["granted_by"] or ""),
-        scope=public_receipt.get("scope", {}),
-    )
-    expected_hash = hashlib.sha256(_canonical_json_bytes(expected)).hexdigest()
-    if expected_hash != public_receipt.get("trust_entry_sha256"):
-        raise SpineError("persisted authorization trust-entry hash is inconsistent")
-    matches = 0
-    for candidate in trust["trusted_grants"]:
-        if not isinstance(candidate, dict) or set(candidate) != set(expected):
-            raise SpineError("persisted authorization allowlist contains a malformed entry")
-        for name in (
-            "receipt_sha256", "grant_document_sha256", "authorization_claim_sha256",
-        ):
-            if not re.fullmatch(r"[0-9a-f]{64}", str(candidate.get(name) or "")):
-                raise SpineError("persisted authorization allowlist contains an invalid hash")
-        for name in (
-            "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-        ):
-            item = candidate.get(name)
-            if item is not None and not re.fullmatch(r"[0-9a-f]{64}", str(item)):
-                raise SpineError("persisted authorization allowlist contains an invalid chain hash")
-        matches += int(candidate == expected)
-    if matches != 1:
-        raise SpineError("persisted authorization is not uniquely present in its pinned allowlist")
-
-
-def _persist_authorization_grant(store: Path, grant: AuthorizationGrant) -> None:
-    if grant.trust_allowlist_sha256 not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
-        raise SpineError("authorization grant is not bound to the code-reviewed trust root")
-    public = grant.public_receipt()
-    trust_raw = grant.trust_allowlist_payload_json.encode("utf-8")
-    _validate_public_authorization_trust(public, trust_raw)
-    _atomic_bytes(_authorization_trust_path(store), trust_raw)
-    _atomic_json(_authorization_path(store), public)
-
-
-def _load_persisted_authorization(store: Path) -> dict[str, Any] | None:
-    path = _authorization_path(store)
-    if not path.exists():
-        return None
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        raise SpineError("persisted authorization scope receipt is unreadable") from exc
-    _assert_configured_token_absent_logical(value, artifact=path.name)
-    required = {
-        "schema_version", "receipt_sha256", "grant_document_sha256", "issued_on",
-        "trust_allowlist_sha256", "trust_entry_sha256",
-        "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-        "expires_on", "granted_by", "scope", "required_scope_satisfied",
-    }
-    if not isinstance(value, dict) or set(value) != required:
-        raise SpineError("persisted authorization scope receipt is malformed")
-    if value.get("schema_version") != AUTHORIZATION_SCHEMA_VERSION:
-        raise SpineError("persisted authorization scope receipt schema is unsupported")
-    for name in (
-        "receipt_sha256", "grant_document_sha256", "trust_allowlist_sha256",
-        "trust_entry_sha256",
-    ):
-        if not re.fullmatch(r"[0-9a-f]{64}", str(value.get(name) or "")):
-            raise SpineError("persisted authorization scope receipt contains an invalid hash")
-    for name in (
-        "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
-    ):
-        item = value.get(name)
-        if item is not None and not re.fullmatch(r"[0-9a-f]{64}", str(item)):
-            raise SpineError("persisted authorization scope receipt contains an invalid chain hash")
-    if value["trust_allowlist_sha256"] not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
-        raise SpineError("persisted authorization is not bound to the code-reviewed trust root")
-    scope = value.get("scope")
-    if (
-        not isinstance(scope, dict)
-        or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE)
-        or any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE)
-    ):
-        raise SpineError("persisted authorization scope receipt has invalid scope values")
-    derived_scope_satisfied = all(scope[name] for name in AUTHORIZATION_REQUIRED_SCOPE)
-    if type(value.get("required_scope_satisfied")) is not bool or (
-        value["required_scope_satisfied"] != derived_scope_satisfied
-    ):
-        raise SpineError("persisted authorization scope satisfaction is inconsistent")
-    if not derived_scope_satisfied:
-        raise SpineError("persisted authorization scope receipt does not satisfy required scope")
-    issued = _parse_date(value.get("issued_on"))
-    expires = _parse_date(value.get("expires_on"))
-    if expires < issued:
-        raise SpineError("persisted authorization effective dates are inconsistent")
-    granted_by = value.get("granted_by")
-    entitlement = value.get("vendor_entitlement_document_sha256")
-    delegation = value.get("vendor_delegation_document_sha256")
-    if granted_by == "vendor":
-        if entitlement is not None or delegation is not None:
-            raise SpineError("persisted direct vendor grant contains a false delegation chain")
-    elif granted_by == "institution":
-        if entitlement is None or delegation is None:
-            raise SpineError("persisted institutional grant lacks its vendor delegation chain")
-    else:
-        raise SpineError("persisted authorization grant class is invalid")
-    trust_path = _authorization_trust_path(store)
-    if not trust_path.is_file():
-        raise SpineError("persisted authorization trust allowlist is absent")
-    trust_raw = trust_path.read_bytes()
-    _assert_configured_token_absent(trust_raw, artifact=trust_path.name)
-    _validate_public_authorization_trust(value, trust_raw)
-    return value
 
 
 def _json_safe(value: Any) -> Any:
@@ -1325,8 +1022,18 @@ def _expected_unit_partition_path(
 
 def _unit_artifact_receipt(
     store: Path, endpoint: str, unit: str, record: Mapping[str, Any],
+    *, role: str = "landed_A",
 ) -> dict[str, Any]:
-    """Recompute the exact landed subset represented by one terminal state unit."""
+    """Recompute the exact landed subset represented by one terminal state unit.
+
+    ``role`` only matters for ``stock_basic`` (one of ``'landed_A'``,
+    ``'known_excluded'``, or ``'quarantined_unknown'``): unlike the
+    daily-cadence endpoints, a non-canonical (legacy/delisted vendor code)
+    row is never split into a separate ``source_row_classification``
+    partition -- the raw response parquet is stored verbatim (raw parquet is
+    raw truth) and every role is recomputed from that one file via
+    ``_stock_basic_ts_code_classification``.
+    """
     base = endpoint.removesuffix("_shard")
     expected_path = _expected_unit_partition_path(store, endpoint, unit, record)
     recorded_relative = record.get("partition")
@@ -1374,6 +1081,9 @@ def _unit_artifact_receipt(
             "stock_basic": ["ts_code"],
             "fund_basic": ["ts_code"],
         }.get(base, list(subset.columns))
+        if base == "stock_basic" and not subset.empty:
+            row_roles = subset["ts_code"].map(_stock_basic_ts_code_classification)
+            subset = subset[row_roles == role].reset_index(drop=True)
     if subset.empty:
         duplicate_rows = 0
     elif not keys:
@@ -1437,14 +1147,28 @@ def _unit_artifact_receipts(
     if endpoint == FUND_REFERENCE_ENDPOINT:
         landed = _empty_unit_artifact_receipt()
         known_excluded = primary
+        quarantined = _classification_unit_artifact_receipt(
+            store, endpoint, unit, "quarantined_unknown",
+        )
+    elif endpoint == "stock_basic":
+        # stock_basic has no source_row_classification partition of its own
+        # (raw parquet is raw truth); every role is recomputed from the same
+        # raw file the landed role above already read.
+        landed = primary
+        known_excluded = _unit_artifact_receipt(
+            store, endpoint, unit, record, role="known_excluded",
+        )
+        quarantined = _unit_artifact_receipt(
+            store, endpoint, unit, record, role="quarantined_unknown",
+        )
     else:
         landed = primary
         known_excluded = _classification_unit_artifact_receipt(
             store, endpoint, unit, "known_excluded",
         )
-    quarantined = _classification_unit_artifact_receipt(
-        store, endpoint, unit, "quarantined_unknown",
-    )
+        quarantined = _classification_unit_artifact_receipt(
+            store, endpoint, unit, "quarantined_unknown",
+        )
     return {
         "landed_A": landed,
         "known_excluded": known_excluded,
@@ -1705,6 +1429,8 @@ def _set_unit(
     source_row_count: int = 0,
     known_excluded_row_count: int = 0,
     quarantined_unknown_row_count: int = 0,
+    witness_missing_row_count: int = 0,
+    namechange_only_row_count: int = 0,
     unmatched_master_row_count: int = 0,
     revised_key_count: int = 0,
     partition: Path | None = None,
@@ -1733,6 +1459,15 @@ def _set_unit(
         "landed_a_row_count": int(row_count),
         "known_excluded_row_count": int(known_excluded_row_count),
         "quarantined_unknown_row_count": int(quarantined_unknown_row_count),
+        # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- telemetry only, a SUBSET of
+        # landed_a_row_count above, never a fourth term in the source-row
+        # equation and never a completion gate (C3).
+        "witness_missing_row_count": int(witness_missing_row_count),
+        # Sol RETURN-GATE 10B -- exact mirror of witness_missing_row_count
+        # above, for the namechange endpoint: telemetry only, a SUBSET of
+        # landed_a_row_count, never a fourth term in the source-row equation
+        # and never a completion gate.
+        "namechange_only_row_count": int(namechange_only_row_count),
         "source_accounting_complete": source_accounting_complete,
         "unmatched_master_row_count": int(unmatched_master_row_count),
         "revised_key_count": int(revised_key_count),
@@ -1773,8 +1508,18 @@ def _bse_alias_map(frame: pd.DataFrame) -> dict[str, str]:
     for row in frame.itertuples(index=False):
         old = _source_ts_code(row.o_code)
         new = _source_ts_code(row.n_code)
-        old_identity = canonical_identity(old)
-        new_identity = canonical_identity(new)
+        try:
+            old_identity = canonical_identity(old)
+            new_identity = canonical_identity(new)
+        except SpineError:
+            # A non-canonical bse_mapping vendor code (same defect class as
+            # the stock_basic/fund_basic legacy-code shapes) simply cannot
+            # alias; excluding it from the alias map is correct on its own
+            # terms, not a tolerated error -- it never participates in BSE
+            # old-code resolution either way.  This is a whole-table fetch
+            # with no per-row request literal to bind against, so there is
+            # no fatal check being weakened here.
+            continue
         if old_identity.source_exchange != "BSE" or new_identity.source_exchange != "BSE":
             raise SpineError(f"non-BSE row in bse_mapping: {old!r} -> {new!r}")
         if not new_identity.code.startswith("920"):
@@ -1910,8 +1655,35 @@ def compile_security_master(
         raise SpineError(f"stock_basic source missing columns {sorted(missing)}")
 
     rows: list[dict[str, Any]] = []
+    non_canonical_classification_rows: list[dict[str, Any]] = []
     for item in raw.to_dict(orient="records"):
-        ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
+        try:
+            ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
+        except SpineError:
+            # Same try/except pattern as normalise_bak_basic: a legacy/
+            # delisted-era vendor code (T-prefix, old .SS suffix) is a real
+            # payload in TuShare's delisted universe.  The reference call
+            # already accounted for this row's presence in the raw source
+            # unit (collect_reference/_set_unit); the master itself must not
+            # contain a row for an unparseable code.  A tight, independently
+            # classifiable non-canonical pattern lands known_out_of_scope
+            # with its narrow provenance claim; anything else stays
+            # quarantined_unknown -- the same three-way split as everywhere
+            # else in this file (_stock_basic_ts_code_classification).
+            raw_code = str(item.get("ts_code") or "")
+            provenance = _known_excluded_noncanonical_code_family(raw_code)
+            non_canonical_classification_rows.append({
+                "source_ts_code": raw_code,
+                "ticker": raw_code,
+                "security_class": "unclassified",
+                "scope_classification": (
+                    "known_out_of_scope" if provenance is not None else "quarantined_unknown"
+                ),
+                "classification_source": provenance or "tushare.stock_basic_non_canonical_ts_code",
+                "effective_from": _iso(item.get("list_date")),
+                "effective_to": _iso(item.get("delist_date")),
+            })
+            continue
         declared_exchange = str(item.get("exchange") or "").upper()
         if declared_exchange and declared_exchange != ident.source_exchange:
             raise SpineError(
@@ -1986,8 +1758,15 @@ def compile_security_master(
             "source": "tushare.stock_basic",
         })
     for item in mapping.to_dict(orient="records"):
-        old_ident = canonical_identity(item["o_code"])
-        new_ident = canonical_identity(item["n_code"])
+        try:
+            old_ident = canonical_identity(item["o_code"])
+            new_ident = canonical_identity(item["n_code"])
+        except SpineError:
+            # Mirrors _bse_alias_map: a non-canonical bse_mapping code cannot
+            # alias, so it contributes no alias_frame row instead of crashing
+            # the compile on the same raw source _bse_alias_map already
+            # tolerated.
+            continue
         alias_rows.append({
             "alias_ticker": old_ident.ticker,
             "canonical_ticker": new_ident.ticker,
@@ -2021,7 +1800,27 @@ def compile_security_master(
             raise SpineError(f"fund_basic reference unit absent: E/{status}")
         funds = _read_parquet_strict(fund_path)
         for item in funds.to_dict(orient="records"):
-            ident = canonical_identity(item.get("ts_code"))
+            try:
+                ident = canonical_identity(item.get("ts_code"))
+            except SpineError:
+                # Same non-canonical-vendor-code shape as stock_basic
+                # (exemplar '1610221.SZ'): every fund_basic row is already
+                # known_out_of_scope regardless of ts_code parseability
+                # (collect_reference's fund loop already accounts for its
+                # presence wholesale as known_excluded), so the raw code
+                # stands in for the identity columns instead of dropping the
+                # row or crashing the compile.
+                raw_code = str(item.get("ts_code") or "")
+                classification_rows.append({
+                    "source_ts_code": raw_code,
+                    "ticker": raw_code,
+                    "security_class": "exchange_fund",
+                    "scope_classification": "known_out_of_scope",
+                    "classification_source": "tushare.fund_basic_non_canonical_ts_code",
+                    "effective_from": _iso(item.get("list_date")),
+                    "effective_to": _iso(item.get("delist_date")),
+                })
+                continue
             classification_rows.append({
                 "source_ts_code": ident.source_ts_code,
                 "ticker": ident.ticker,
@@ -2031,6 +1830,11 @@ def compile_security_master(
                 "effective_from": _iso(item.get("list_date")),
                 "effective_to": _iso(item.get("delist_date")),
             })
+    # Quarantined non-canonical stock_basic rows are excluded from the master
+    # itself (above) but still accounted for in the classification artifact
+    # this function emits, so their presence in the raw source is never a
+    # silent drop.
+    classification_rows.extend(non_canonical_classification_rows)
     classifications = pd.DataFrame(classification_rows).drop_duplicates(
         ["ticker", "scope_classification"], keep="last",
     )
@@ -2111,6 +1915,40 @@ def compile_market_sessions(store: Path, start: date, end: date) -> pd.DataFrame
     calendar = pd.concat(frames, ignore_index=True)
     calendar = calendar.drop_duplicates(["exchange", "cal_date"], keep="last")
     calendar["cal_date"] = calendar["cal_date"].astype(str)
+
+    # The epoch bounds the AXIS, not merely the request.  Every set below was
+    # previously derived from all landed partitions regardless of the requested
+    # range, so a pre-epoch partition sitting on disk would silently occupy the
+    # low ordinals and shift every position -- moving the collection constant
+    # alone would not re-anchor anything.  Pre-epoch rows are therefore removed
+    # here, by definition, and reported rather than silently dropped.
+    epoch_iso = MAINLAND_CALENDAR_EPOCH.isoformat()
+    if start < MAINLAND_CALENDAR_EPOCH:
+        raise SpineError(
+            f"{PRE_EPOCH_SOURCE_STATE}: the mainland session axis is frozen at "
+            f"{epoch_iso} under definition {MAINLAND_CALENDAR_EPOCH_DEFINITION}; "
+            f"refusing to compile from {start.isoformat()}. Pre-epoch history is "
+            "unsupported source, not closed sessions -- it is never imputed and "
+            "never assigned a session position."
+        )
+    pre_epoch = calendar[calendar["cal_date"] < epoch_iso]
+    if not pre_epoch.empty:
+        excluded = {
+            exchange: int((pre_epoch["exchange"] == exchange).sum())
+            for exchange in CALENDAR_EXCHANGES
+        }
+        log.info(
+            "%s: excluded %d landed calendar row(s) before epoch %s from the "
+            "session axis (%s)",
+            PRE_EPOCH_SOURCE_STATE, len(pre_epoch), epoch_iso, excluded,
+        )
+        calendar = calendar[calendar["cal_date"] >= epoch_iso]
+        if calendar.empty:
+            raise SpineError(
+                f"every landed calendar row precedes the {epoch_iso} epoch; "
+                "no session axis can be compiled"
+            )
+
     requested_dates = {d.date().isoformat() for d in pd.date_range(start, end, freq="D")}
     calendar_dates: dict[str, set[str]] = {}
     opens: dict[str, set[str]] = {}
@@ -2146,12 +1984,19 @@ def compile_market_sessions(store: Path, start: date, end: date) -> pd.DataFrame
                 )
             previous = current
 
+    # Safe to read one venue: the equality checks above already proved
+    # opens["SSE"] == opens["SZSE"], so this is a proven-identical set rather
+    # than SSE history standing in for SZSE history.
     all_calendar_dates = sorted(opens["SSE"])
     position = {session: idx for idx, session in enumerate(all_calendar_dates)}
     sessions = pd.DataFrame({"trade_date": all_calendar_dates})
     sessions["market_session_position"] = sessions["trade_date"].map(position).astype("int64")
     sessions["calendar_provenance"] = "tushare.trade_cal:SSE=SZSE"
     sessions["bse_calendar_provenance"] = "derived_from_attested_SSE_SZSE_consensus"
+    # Stamp the axis definition so an artifact can never be silently compared
+    # against one minted under a different epoch.
+    sessions["calendar_epoch"] = epoch_iso
+    sessions["calendar_epoch_definition"] = MAINLAND_CALENDAR_EPOCH_DEFINITION
     _atomic_parquet(store / "reference" / "market_sessions.parquet", sessions)
     return sessions
 
@@ -2370,23 +2215,50 @@ def _validate_response_binding(
     endpoint: str,
     frame: pd.DataFrame,
     params: Mapping[str, Any],
-) -> None:
-    """Require exact returned fields and prove every row belongs to the request."""
+) -> tuple[list[int], list[int]]:
+    """Require exact returned fields and prove every row belongs to the request.
+
+    Returns ``(known_excluded_ordinals, quarantined_unknown_ordinals)`` for
+    ``stock_basic``/``fund_basic`` rows whose ``ts_code`` is not a canonical
+    SH/SZ/BJ identity -- legacy/delisted-era vendor codes (a T-prefix, an old
+    ``.SS`` suffix, a non-6-digit fund code such as ``'1610221.SZ'``) are
+    real payloads in TuShare's reference universe.  Those rows still must
+    bind to the requested literal params (exchange/list_status for
+    stock_basic, market/status for fund_basic) exactly as before; every
+    other, identity-dependent check (the venue/board/currency checks that
+    require a parsed ``Identity``) is skipped for them.  A non-canonical row
+    matching a tight, independently classifiable pattern (see
+    ``_known_excluded_noncanonical_code_family``, e.g. a T-prefixed legacy
+    vendor code) is reported as known-excluded; every other non-canonical
+    row is reported as quarantined-unknown.  Both lists are empty for every
+    other endpoint.
+    """
     expected_columns = ENDPOINT_FIELDS[endpoint].split(",")
     if list(frame.columns) != expected_columns:
         raise SpineError(
             f"{endpoint} returned schema does not exactly match requested fields: "
             f"expected={expected_columns} actual={list(frame.columns)}"
         )
+    known_excluded_rows: list[int] = []
+    quarantined_rows: list[int] = []
     if endpoint == "stock_basic":
         exchange = str(params.get("exchange") or "").upper()
         status = str(params.get("list_status") or "").upper()
-        for item in frame.to_dict(orient="records"):
-            ident = canonical_identity(item["ts_code"])
-            if str(item["exchange"] or "").upper() != exchange or ident.source_exchange != exchange:
+        for ordinal, item in enumerate(frame.to_dict(orient="records")):
+            if str(item["exchange"] or "").upper() != exchange:
                 raise SpineError("stock_basic response does not bind to requested exchange")
             if str(item["list_status"] or "").upper() != status:
                 raise SpineError("stock_basic response does not bind to requested list_status")
+            try:
+                ident = canonical_identity(item["ts_code"])
+            except SpineError:
+                if _known_excluded_noncanonical_code_family(item["ts_code"]) is not None:
+                    known_excluded_rows.append(ordinal)
+                else:
+                    quarantined_rows.append(ordinal)
+                continue
+            if ident.source_exchange != exchange:
+                raise SpineError("stock_basic response does not bind to requested exchange")
             if str(item["curr_type"] or "").upper() != "CNY":
                 raise SpineError("stock_basic response contains a non-CNY instrument")
             if str(item["symbol"] or "").zfill(6) != ident.code:
@@ -2401,12 +2273,28 @@ def _validate_response_binding(
     elif endpoint == "fund_basic":
         market = str(params.get("market") or "")
         status = str(params.get("status") or "")
-        for item in frame.to_dict(orient="records"):
-            ident = canonical_identity(item["ts_code"])
-            if ident.source_exchange not in {"SSE", "SZSE"}:
-                raise SpineError("fund_basic response contains a non-SH/SZ venue")
+        for ordinal, item in enumerate(frame.to_dict(orient="records")):
             if str(item["market"] or "") != market or str(item["status"] or "") != status:
                 raise SpineError("fund_basic response does not bind to requested market/status")
+            try:
+                ident = canonical_identity(item["ts_code"])
+            except SpineError:
+                # A legacy/non-6-digit vendor fund code (exemplar
+                # '1610221.SZ') is a real fund_basic payload row.  The
+                # literal market/status binding above is still proved for
+                # it; the venue check is identity-dependent and is skipped,
+                # matching the stock_basic treatment above.  fund_basic rows
+                # are already wholesale known_excluded in
+                # collect_reference's fund loop (row_count=0,
+                # known_excluded_row_count=len(frame)), so this only feeds
+                # the per-call receipt counts, not the unit accounting.
+                if _known_excluded_noncanonical_code_family(item["ts_code"]) is not None:
+                    known_excluded_rows.append(ordinal)
+                else:
+                    quarantined_rows.append(ordinal)
+                continue
+            if ident.source_exchange not in {"SSE", "SZSE"}:
+                raise SpineError("fund_basic response contains a non-SH/SZ venue")
     elif endpoint == "trade_cal":
         exchange = str(params.get("exchange") or "").upper()
         declared = set(frame["exchange"].dropna().astype(str).str.upper())
@@ -2433,6 +2321,7 @@ def _validate_response_binding(
             expected_code = _source_ts_code(requested_code)
             if any(_source_ts_code(value) != expected_code for value in frame["ts_code"]):
                 raise SpineError(f"{endpoint} ticker shard crossed the requested ts_code")
+    return known_excluded_rows, quarantined_rows
 
 
 def _strict_numeric(
@@ -2521,17 +2410,26 @@ def normalise_bak_basic(
                 classification_source=code_exclusion, expected_date=expected_date,
             ))
             continue
-        if (
-            ident is None
-            or not _is_a_share_identity(ident)
-            or ident.ticker not in known_a
-        ):
+        if ident is None:
             unknown.append(_classified_source_row(
                 item, ordinal=ordinal, classification="quarantined_unknown",
-                classification_source="bak_basic_absent_from_stock_basic_A_witness",
+                classification_source="bak_basic_unparseable_ts_code",
                 expected_date=expected_date,
             ))
             continue
+        if not _is_a_share_identity(ident):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="bak_basic_non_a_share_identity",
+                expected_date=expected_date,
+            ))
+            continue
+        # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- the current stock_basic
+        # snapshot is a lifecycle/reference WITNESS, not exhaustive historical
+        # membership authority.  A parseable A-share identity this PIT row
+        # observes but the current snapshot no longer publishes still LANDS as
+        # a legal union member; the current-snapshot miss is recorded as
+        # telemetry on the row, never as a reason to quarantine it.
         row = {
             **_identity_columns(ident),
             "trade_date": expected_date,
@@ -2541,6 +2439,7 @@ def normalise_bak_basic(
             "area": str(item.get("area") or ""),
             "list_date": _iso(item.get("list_date")),
             "source": "tushare.bak_basic_exact_daily",
+            "current_stock_basic_witness_missing": bool(ident.ticker not in known_a),
         }
         for field in numeric_fields:
             minimum = 0.0 if field in {
@@ -2586,6 +2485,7 @@ def normalise_name_history(
     if not required.issubset(frame.columns) and not frame.empty:
         raise SpineError(f"namechange missing columns {sorted(required - set(frame.columns))}")
     rows: list[dict[str, Any]] = []
+    row_sources: list[tuple[int, Mapping[str, Any]]] = []
     excluded: list[dict[str, Any]] = []
     unknown: list[dict[str, Any]] = []
     for ordinal, item in enumerate(frame.to_dict(orient="records")):
@@ -2601,29 +2501,97 @@ def normalise_name_history(
                 expected_date=expected_date,
             ))
             continue
-        if ident is None or ident.ticker not in known_a:
+        # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- Sol RETURN-GATE 10B: a valid
+        # namechange row is itself sufficient source evidence of a historical
+        # listing-key/name observation; it does not additionally require a
+        # contemporary stock_basic/bak_basic/PIT witness merely to EXIST in the
+        # name-history plane.  `known_a` membership used to do double duty as
+        # both that witness check AND the only thing keeping non-A-share
+        # identities out of the A-share name plane.  This split (mirrors C1 in
+        # normalise_bak_basic) keeps the scope gate below while removing the
+        # witness gate; witness membership becomes row-level telemetry (N2)
+        # instead of a landing precondition.
+        if ident is None:
             unknown.append(_classified_source_row(
                 item, ordinal=ordinal, classification="quarantined_unknown",
-                classification_source="namechange_absent_from_A_universe_witness",
+                classification_source="namechange_unparseable_ts_code",
+                expected_date=expected_date,
+            ))
+            continue
+        if not _is_a_share_identity(ident):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="namechange_non_a_share_identity",
                 expected_date=expected_date,
             ))
             continue
         name = str(item.get("name") or "")
+        effective_from = _iso(item.get("start_date"))
+        effective_to = _iso(item.get("end_date"))
+        # N3 -- a contradictory lifecycle interval is a row-level source defect,
+        # fail-closed by quarantine (not a frame-level raise) so the accounting
+        # equation stays balanced.
+        if (
+            effective_from is not None
+            and effective_to is not None
+            and _parse_date(effective_to) < _parse_date(effective_from)
+        ):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="namechange_contradictory_lifecycle_interval",
+                expected_date=expected_date,
+            ))
+            continue
         rows.append({
             **_identity_columns(ident),
             "name": name,
-            "effective_from": _iso(item.get("start_date")),
-            "effective_to": _iso(item.get("end_date")),
+            "effective_from": effective_from,
+            "effective_to": effective_to,
             "announced_date": _iso(item.get("ann_date")),
             "change_reason": str(item.get("change_reason") or ""),
             "is_st_name": is_st_name(name),
             "st_provenance": "namechange_name_inference_partial",
             "source": "tushare.namechange",
+            # N2 -- corroboration disposition; metadata only, deliberately NOT
+            # part of KEY_COLUMNS["name_history"] (the key is the observation
+            # identity, not its corroboration state).
+            "source_disposition": (
+                "externally_corroborated" if ident.ticker in known_a else "namechange_only"
+            ),
         })
+        row_sources.append((ordinal, item))
+
+    # N4 -- CORRECTED 2026-08-27: an unresolved same-key name conflict is the
+    # explicit-conflict/quarantine disposition, not a frame-level raise -- a
+    # raise would leave the offending rows with no disposition at all and would
+    # kill the whole 35-year collection run instead of blocking one year-unit.
+    # Two rows sharing (ticker, effective_from) but asserting different `name`
+    # values are an unresolved source conflict; every row in that group moves
+    # to quarantine.  Rows that differ only in `announced_date` (a
+    # re-announcement of the same name) are NOT a conflict and are untouched.
+    names_by_key: dict[tuple[str, str | None], set[str]] = {}
+    for row in rows:
+        names_by_key.setdefault((row["ticker"], row["effective_from"]), set()).add(row["name"])
+    conflicting_keys = {key for key, names in names_by_key.items() if len(names) > 1}
+    if conflicting_keys:
+        kept_rows: list[dict[str, Any]] = []
+        kept_sources: list[tuple[int, Mapping[str, Any]]] = []
+        for row, (ordinal, item) in zip(rows, row_sources):
+            if (row["ticker"], row["effective_from"]) in conflicting_keys:
+                unknown.append(_classified_source_row(
+                    item, ordinal=ordinal, classification="quarantined_unknown",
+                    classification_source="namechange_conflicting_names_same_effective_from",
+                    expected_date=expected_date,
+                ))
+            else:
+                kept_rows.append(row)
+                kept_sources.append((ordinal, item))
+        rows, row_sources = kept_rows, kept_sources
+
     columns = [
         "security_id", "ticker", "source_ts_code", "exchange", "board", "name",
         "effective_from", "effective_to", "announced_date", "change_reason",
-        "is_st_name", "st_provenance", "source",
+        "is_st_name", "st_provenance", "source", "source_disposition",
     ]
     out = pd.DataFrame(rows, columns=columns)
     if not out.empty and _duplicates(out, KEY_COLUMNS["name_history"]):
@@ -2755,21 +2723,48 @@ def normalise_daily_endpoint(
                 integral=True, allowed=set(range(7)),
             )
         elif endpoint == "stk_limit":
-            pre_close_cents = _quote_price_cents(
-                item.get("pre_close"), field="stk_limit.pre_close",
-            )
-            up_missing = item.get("up_limit") is None or pd.isna(item.get("up_limit"))
-            down_missing = item.get("down_limit") is None or pd.isna(item.get("down_limit"))
+            raw_pre_close = _stk_limit_price_or_sentinel_absent(item.get("pre_close"))
+            raw_up_limit = _stk_limit_price_or_sentinel_absent(item.get("up_limit"))
+            raw_down_limit = _stk_limit_price_or_sentinel_absent(item.get("down_limit"))
+            up_missing = raw_up_limit is None
+            down_missing = raw_down_limit is None
             if up_missing != down_missing:
                 raise SpineError("stk_limit must publish both upper/lower prices or neither")
+            pre_close_cents = _quote_price_cents(
+                raw_pre_close, field="stk_limit.pre_close", allow_missing=True,
+            )
             up_limit_cents = _quote_price_cents(
-                item.get("up_limit"), field="stk_limit.up_limit", allow_missing=True,
+                raw_up_limit, field="stk_limit.up_limit", allow_missing=True,
             )
             down_limit_cents = _quote_price_cents(
-                item.get("down_limit"), field="stk_limit.down_limit", allow_missing=True,
+                raw_down_limit, field="stk_limit.down_limit", allow_missing=True,
             )
-            if up_limit_cents is not None and not (
-                up_limit_cents > pre_close_cents >= down_limit_cents
+            if pre_close_cents is None and up_limit_cents is not None:
+                # MEASURED CORRECTION 2026-08-27, canary run 33037449419.
+                # This branch used to raise, on the theory that a published band
+                # with no anchoring pre_close was a contradiction. The live
+                # vendor says otherwise: on 2018-01-02 it is the DOMINANT shape,
+                # and it killed the whole 3,466-row unit. The exchange still
+                # announces a legal band for an instrument that did not trade
+                # while the vendor spells the un-republished prior close as 0 --
+                # the third instance of that zero-as-null idiom.
+                #
+                # So the row LANDS. What is still checkable is still checked:
+                # the band's own ordering below, and the full three-way
+                # invariant whenever the anchor IS present. The case that
+                # actually matters -- a security that TRADED whose pre_close is
+                # absent -- stays FAIL-CLOSED in build_canonical_event_substrate,
+                # which raises when any positive-volume daily row lacks a
+                # non-null stk_limit.pre_close. That guard is what makes landing
+                # here safe rather than fail-open, so the two must never be
+                # separated.
+                if down_limit_cents is not None and up_limit_cents <= down_limit_cents:
+                    raise SpineError("stk_limit upper/lower band ordering is inconsistent")
+            if (
+                pre_close_cents is not None
+                and up_limit_cents is not None
+                and down_limit_cents is not None
+                and not (up_limit_cents > pre_close_cents >= down_limit_cents)
             ):
                 raise SpineError("stk_limit upper/pre-close/lower ordering is inconsistent")
             for column, cents in (
@@ -2926,20 +2921,20 @@ class TushareAShareSpineCollector:
         query: Callable[..., pd.DataFrame | None] | None = None,
         now: Callable[[], datetime] = _utc_now,
         max_requests: int = DEFAULT_MAX_REQUESTS,
-        authorization: AuthorizationGrant | None = None,
+        canary: bool = False,
     ) -> None:
-        if authorization is None:
-            raise SpineError("collector requires a verified written authorization grant")
-        if (
-            authorization.trust_allowlist_sha256
-            not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256
-        ):
-            raise SpineError("collector authorization is not bound to the code-reviewed trust root")
-        if not BULK_HISTORICAL_BACKFILL_READY:
+        if not BULK_HISTORICAL_BACKFILL_READY and not canary:
             raise SpineError(
                 "full-A collector is foundation-only: scalable ticker-range cap fallback "
-                "has not been code-reviewed, so live/injected collection is disabled"
+                "has not been code-reviewed, so live/injected collection is disabled "
+                "outside a bounded canary window (canary=True)"
             )
+        if canary and int(max_requests) > CANARY_MAX_REQUESTS:
+            raise SpineError(
+                f"canary window is capped at {CANARY_MAX_REQUESTS} requests; "
+                f"got max_requests={max_requests}"
+            )
+        self.canary = bool(canary)
         self.store = _validate_private_store_path(Path(store))
         self.query = query or tc.query
         self.now = now
@@ -2947,7 +2942,6 @@ class TushareAShareSpineCollector:
         self.requests_made = 0
         self.failures: list[dict[str, str]] = []
         self.state = load_state(self.store)
-        self.authorization = authorization
         # Generations are immutable after atomic promotion.  Verify the pointer
         # and every generation artifact once for this collector operation, then
         # pass the pinned id through hot-path lookups instead of reopening the
@@ -2989,6 +2983,8 @@ class TushareAShareSpineCollector:
             "response_row_count": 0,
             "response_columns": [],
             "response_semantic_sha256": None,
+            "non_canonical_identity_row_count": 0,
+            "known_excluded_noncanonical_row_count": 0,
         }
         if frame is not None:
             try:
@@ -3003,7 +2999,15 @@ class TushareAShareSpineCollector:
                     "response_columns": list(frame.columns),
                     "response_semantic_sha256": _raw_response_semantic_sha256(frame),
                 })
-                _validate_response_binding(endpoint, frame, params)
+                known_excluded_noncanonical_rows, quarantined_noncanonical_rows = (
+                    _validate_response_binding(endpoint, frame, params)
+                )
+                receipt["known_excluded_noncanonical_row_count"] = len(
+                    known_excluded_noncanonical_rows
+                )
+                receipt["non_canonical_identity_row_count"] = (
+                    len(known_excluded_noncanonical_rows) + len(quarantined_noncanonical_rows)
+                )
             except SpineError:
                 receipt["response_status"] = "rejected_contract"
                 _atomic_json(_request_receipt_path(self.store, endpoint, unit, request_id), receipt)
@@ -3027,6 +3031,8 @@ class TushareAShareSpineCollector:
         row_count: int = 0,
         known_excluded_row_count: int = 0,
         quarantined_unknown_row_count: int = 0,
+        witness_missing_row_count: int = 0,
+        namechange_only_row_count: int = 0,
         unmatched_master_row_count: int = 0,
         collection_method: str = "whole_market",
         generation_id: str | None = None,
@@ -3038,6 +3044,8 @@ class TushareAShareSpineCollector:
             request_receipts=request_receipts, source_row_count=source_row_count,
             row_count=row_count, known_excluded_row_count=known_excluded_row_count,
             quarantined_unknown_row_count=quarantined_unknown_row_count,
+            witness_missing_row_count=witness_missing_row_count,
+            namechange_only_row_count=namechange_only_row_count,
             unmatched_master_row_count=unmatched_master_row_count,
             collection_method=collection_method, generation_id=generation_id,
         )
@@ -3137,11 +3145,29 @@ class TushareAShareSpineCollector:
                         request_receipts=[response.receipt], generation_id=staging,
                     )
                     continue
+                # Raw parquet is raw truth: store the frame verbatim even
+                # though some rows may carry a non-canonical (legacy/delisted
+                # vendor) ts_code.  Classify it the same three-way split
+                # _validate_response_binding already applied (canonical /
+                # independently classifiable known-excluded / genuinely
+                # unknown quarantined), so the unit's row_count/
+                # known_excluded_row_count/quarantined_unknown_row_count
+                # equation balances against exactly what was stored.
                 _atomic_parquet(path, frame)
+                row_roles = [
+                    _stock_basic_ts_code_classification(item.get("ts_code"))
+                    for item in frame.to_dict(orient="records")
+                ]
+                known_excluded_count = row_roles.count("known_excluded")
+                quarantined_count = row_roles.count("quarantined_unknown")
                 _set_unit(
                     self.state, self.store, "stock_basic", unit,
                     status="empty" if frame.empty else "complete", observed_at=self.observed_at,
-                    row_count=len(frame), source_row_count=len(frame), partition=path,
+                    row_count=len(frame) - known_excluded_count - quarantined_count,
+                    source_row_count=len(frame),
+                    known_excluded_row_count=known_excluded_count,
+                    quarantined_unknown_row_count=quarantined_count,
+                    partition=path,
                     request_receipts=[response.receipt], generation_id=staging,
                 )
 
@@ -3213,35 +3239,35 @@ class TushareAShareSpineCollector:
                 if not _unit_done(self.state, self.store, "trade_cal", unit):
                     retry = 1 if _unit_record(self.state, "trade_cal", unit) else 0
                     work.append((retry, -year, exchange, segment_start, segment_end))
-        for _, _, exchange, segment_start, segment_end in sorted(work):
-                unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
-                response = self._call(
-                    "trade_cal", unit, exchange=exchange,
-                    start_date=_compact(segment_start), end_date=_compact(segment_end),
-                )
-                frame = response.frame
-                if frame is None:
-                    self._mark_failed(
-                        "trade_cal", unit, "vendor_unavailable_or_unlicensed",
-                        request_receipts=[response.receipt],
-                    )
-                    continue
-                try:
-                    normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
-                except SpineError:
-                    self._mark_failed("trade_cal", unit, "calendar_contract_failed")
-                    raise
-                path = _calendar_partition(self.store, year)
-                rows, revised = _upsert_partition(
-                    path, normal, keys=KEY_COLUMNS["trade_calendar"],
-                )
-                _set_unit(
-                    self.state, self.store, "trade_cal", unit, status="complete",
-                    observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
-                    revised_key_count=revised, partition=path,
+        for _, neg_sort_year, exchange, segment_start, segment_end in sorted(work):
+            unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
+            response = self._call(
+                "trade_cal", unit, exchange=exchange,
+                start_date=_compact(segment_start), end_date=_compact(segment_end),
+            )
+            frame = response.frame
+            if frame is None:
+                self._mark_failed(
+                    "trade_cal", unit, "vendor_unavailable_or_unlicensed",
                     request_receipts=[response.receipt],
                 )
-                log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
+                continue
+            try:
+                normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
+            except SpineError:
+                self._mark_failed("trade_cal", unit, "calendar_contract_failed")
+                raise
+            path = _calendar_partition(self.store, segment_start.year)
+            rows, revised = _upsert_partition(
+                path, normal, keys=KEY_COLUMNS["trade_calendar"],
+            )
+            _set_unit(
+                self.state, self.store, "trade_cal", unit, status="complete",
+                observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
+                revised_key_count=revised, partition=path,
+                request_receipts=[response.receipt],
+            )
+            log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
         ready = all(
             _unit_done(
                 self.state, self.store, "trade_cal",
@@ -3318,6 +3344,9 @@ class TushareAShareSpineCollector:
                 path, normal.landed_a, keys=KEY_COLUMNS["bak_basic"],
                 unit_column="trade_date", units=[trade_date.isoformat()],
             )
+            witness_missing_row_count = int(normal.landed_a.get(
+                "current_stock_basic_witness_missing", pd.Series(dtype=bool),
+            ).sum())
             if not normal.quarantined_unknown.empty:
                 self._mark_failed(
                     PIT_UNIVERSE_ENDPOINT, unit, "quarantined_unknown_source_rows",
@@ -3325,6 +3354,7 @@ class TushareAShareSpineCollector:
                     row_count=len(normal.landed_a),
                     known_excluded_row_count=len(normal.known_excluded),
                     quarantined_unknown_row_count=len(normal.quarantined_unknown),
+                    witness_missing_row_count=witness_missing_row_count,
                     collection_method="whole_market",
                 )
                 continue
@@ -3333,6 +3363,7 @@ class TushareAShareSpineCollector:
                 observed_at=self.observed_at, row_count=len(normal.landed_a),
                 source_row_count=len(frame), partition=path,
                 known_excluded_row_count=len(normal.known_excluded),
+                witness_missing_row_count=witness_missing_row_count,
                 request_receipts=[response.receipt],
             )
         expected = [_compact(day) for day in sorted(dates)]
@@ -3383,14 +3414,27 @@ class TushareAShareSpineCollector:
             self._replace_source_classifications("namechange", segment_end, normal)
             path = _name_partition(self.store, year)
             _atomic_parquet(path, normal.landed_a)
+            # N5 -- Sol RETURN-GATE 10B: telemetry only, a SUBSET of landed_a,
+            # never a fourth term in the source-row equation.
+            namechange_only_row_count = int((
+                normal.landed_a.get("source_disposition", pd.Series(dtype=str))
+                == "namechange_only"
+            ).sum())
             if not normal.quarantined_unknown.empty:
+                # N6 -- renamed from namechange_orphans_absent_from_A_universe_witness:
+                # after N1 that reason is factually wrong, quarantine no longer
+                # means "absent from witness" (a witness-absent row now lands as
+                # namechange_only). Quarantine now means an unresolved row-level
+                # source disposition (unparseable code, non-A identity,
+                # contradictory lifecycle interval, or a same-key name conflict).
                 self._mark_failed(
-                    "namechange", unit, "namechange_orphans_absent_from_A_universe_witness",
+                    "namechange", unit, "namechange_unresolved_source_dispositions",
                     request_receipts=[response.receipt], source_row_count=len(frame),
                     row_count=len(normal.landed_a),
                     known_excluded_row_count=len(normal.known_excluded),
                     quarantined_unknown_row_count=len(normal.quarantined_unknown),
                     unmatched_master_row_count=len(normal.quarantined_unknown),
+                    namechange_only_row_count=namechange_only_row_count,
                 )
                 continue
             if normal.landed_a.empty:
@@ -3398,6 +3442,7 @@ class TushareAShareSpineCollector:
                     self.state, self.store, "namechange", unit, status="empty",
                     observed_at=self.observed_at, source_row_count=len(frame),
                     known_excluded_row_count=len(normal.known_excluded),
+                    namechange_only_row_count=namechange_only_row_count,
                     partition=path, request_receipts=[response.receipt],
                 )
                 continue
@@ -3406,6 +3451,7 @@ class TushareAShareSpineCollector:
                 observed_at=self.observed_at, row_count=len(normal.landed_a),
                 source_row_count=len(frame),
                 known_excluded_row_count=len(normal.known_excluded),
+                namechange_only_row_count=namechange_only_row_count,
                 unmatched_master_row_count=0, revised_key_count=0, partition=path,
                 request_receipts=[response.receipt],
             )
@@ -3443,6 +3489,15 @@ class TushareAShareSpineCollector:
     ) -> dict[str, Any]:
         if endpoint not in DENSE_ENDPOINTS:
             raise SpineError(f"range campaigns are unavailable for {endpoint}")
+        if self.canary and not BULK_HISTORICAL_BACKFILL_READY:
+            # The scalable ticker-range path is exactly what the bulk gate is
+            # still withholding, so a canary must never be the thing that first
+            # exercises it live.  Refuse and let the operator shrink the window.
+            raise SpineError(
+                f"canary window hit the documented {endpoint} row cap; the ticker-range "
+                "campaign stays refused until BULK_HISTORICAL_BACKFILL_READY is promoted "
+                "in a separate reviewed change. Narrow the canary range and re-run."
+            )
         existing = self._active_range_campaign(endpoint, start, end)
         if existing is not None:
             return existing
@@ -4044,6 +4099,26 @@ def build_canonical_event_substrate(
             status, on=["trade_date", "ticker"], how="left", validate="one_to_one",
         )
 
+        # S3 fail-open guard: the cross-check below only compares rows where
+        # BOTH pre_close_cents columns are non-null, so a nulled stk_limit
+        # zero-sentinel (S1) would otherwise silently drop that ticker out of
+        # the audit's scope instead of failing loud. Assert directly that
+        # every positive-volume daily row still carries a non-null
+        # stk_limit.pre_close -- a vendor zero on a stock that actually
+        # traded is genuine corruption, not the non-trading sentinel, and
+        # must not be allowed to exit the cross-check unnoticed.
+        traded_missing_limit_pre_close = merged[
+            merged["positive_volume"].fillna(False).astype(bool)
+            & merged["limit_pre_close_cents"].isna()
+        ]
+        if not traded_missing_limit_pre_close.empty:
+            sample = traded_missing_limit_pre_close[
+                ["trade_date", "ticker"]
+            ].head(20).to_dict(orient="records")
+            raise SpineError(
+                f"positive-volume daily rows have no stk_limit.pre_close: {sample}"
+            )
+
         compared = merged[
             merged["pre_close_cents"].notna() & merged["limit_pre_close_cents"].notna()
         ]
@@ -4225,14 +4300,26 @@ def _pit_lifecycle_reconciliation(
     start: date,
     end: date,
 ) -> dict[str, Any]:
-    """Prove bak_basic corroborates, rather than replaces, lifecycle eligibility."""
+    """Prove PIT rows are a legal union member, not a lifecycle intersection.
+
+    DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- a PIT ticker absent from the
+    current stock_basic-derived security master ("witness-missing") is a
+    legal union member and never blocks; a PIT ticker that IS in the master
+    but whose lifecycle window does not cover the observed trade_date is an
+    unresolved source contradiction and keeps blocking.  A lifecycle-eligible
+    ticker missing from the PIT witness (``missing_in_pit``) is unchanged --
+    not ruled on by this decision -- and keeps blocking exactly as before.
+    """
     requested = [
         value for value in sessions.get("trade_date", pd.Series(dtype=str)).astype(str)
         if max(start, PIT_UNIVERSE_START).isoformat() <= value <= end.isoformat()
     ]
+    master_tickers = set(master["ticker"].astype(str)) if not master.empty else set()
     missing_sessions: list[str] = []
     missing_in_pit: list[tuple[str, str]] = []
     extra_in_pit: list[tuple[str, str]] = []
+    absent_from_master: list[tuple[str, str]] = []
+    window_conflict: list[tuple[str, str]] = []
     lifecycle_observations = 0
     pit_observations = 0
     union_observations = 0
@@ -4255,11 +4342,21 @@ def _pit_lifecycle_reconciliation(
         pit_observations += len(pit)
         union_observations += len(union)
         missing_in_pit.extend((trade_date, ticker) for ticker in sorted(lifecycle - pit))
-        extra_in_pit.extend((trade_date, ticker) for ticker in sorted(pit - lifecycle))
+        pit_not_in_lifecycle_window = sorted(pit - lifecycle)
+        extra_in_pit.extend((trade_date, ticker) for ticker in pit_not_in_lifecycle_window)
+        for ticker in pit_not_in_lifecycle_window:
+            if ticker not in master_tickers:
+                absent_from_master.append((trade_date, ticker))
+            else:
+                window_conflict.append((trade_date, ticker))
         union_hasher.update(trade_date.encode("ascii"))
         union_hasher.update(b"\0")
         union_hasher.update("\n".join(sorted(union)).encode("utf-8"))
         union_hasher.update(b"\n")
+    omission_denominator = union_observations
+    current_snapshot_omission_rate = (
+        len(absent_from_master) / omission_denominator if omission_denominator else 0.0
+    )
     return {
         "not_applicable": not requested,
         "required_session_count": len(requested),
@@ -4270,6 +4367,8 @@ def _pit_lifecycle_reconciliation(
         "union_observation_count": union_observations,
         "lifecycle_missing_from_pit_count": len(missing_in_pit),
         "pit_missing_from_lifecycle_count": len(extra_in_pit),
+        "pit_absent_from_master_count": len(absent_from_master),
+        "pit_lifecycle_window_conflict_count": len(window_conflict),
         "missing_pit_session_sample": missing_sessions[:20],
         "lifecycle_missing_from_pit_sample": [
             {"trade_date": trade_date, "ticker": ticker}
@@ -4279,11 +4378,20 @@ def _pit_lifecycle_reconciliation(
             {"trade_date": trade_date, "ticker": ticker}
             for trade_date, ticker in extra_in_pit[:20]
         ],
+        "pit_absent_from_master_sample": [
+            {"trade_date": trade_date, "ticker": ticker}
+            for trade_date, ticker in absent_from_master[:20]
+        ],
+        "pit_lifecycle_window_conflict_sample": [
+            {"trade_date": trade_date, "ticker": ticker}
+            for trade_date, ticker in window_conflict[:20]
+        ],
+        "current_snapshot_omission_rate": current_snapshot_omission_rate,
         "frozen_union_semantic_sha256": union_hasher.hexdigest(),
         "complete": bool(
             len(missing_sessions) == 0
             and len(missing_in_pit) == 0
-            and len(extra_in_pit) == 0
+            and len(window_conflict) == 0
         ),
     }
 
@@ -4306,10 +4414,12 @@ def build_daily_security_coverage(
     columns = [
         "trade_date", "eligible_n", "daily_n", "positive_volume_n", "suspended_n",
         "unexplained_missing_n", "unexpected_daily_n", "suspension_state_known",
+        "pit_only_without_daily_n",
     ]
     if not master_path.exists() or not session_path.exists():
         return pd.DataFrame(columns=columns)
     master = _read_parquet_strict(master_path)
+    master_tickers = set(master["ticker"].astype(str)) if not master.empty else set()
     sessions = _read_parquet_strict(session_path)
     requested = [
         value for value in sessions["trade_date"].astype(str)
@@ -4347,7 +4457,20 @@ def build_daily_security_coverage(
                 suspended = set()
             eligible = _eligible_tickers_with_pit(store, master, trade_date)
             missing = eligible - actual
-            unexplained = missing - suspended if suspension_known else missing
+            # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- a witness-missing PIT
+            # ticker (absent from the current stock_basic-derived security
+            # master) with no daily observation is not an unexplained coverage
+            # gap: "the vendor's daily tape omitted it" and "it did not trade"
+            # are not separable from these sources, so it is recorded as its
+            # own telemetry bucket rather than promoted to event-eligible or
+            # silently dropped.  A ticker that IS in the master with a
+            # lifecycle window covering this date, and is missing from daily,
+            # is unaffected and keeps blocking exactly as before.
+            pit_only_without_daily = {ticker for ticker in missing if ticker not in master_tickers}
+            explainable_missing = missing - pit_only_without_daily
+            unexplained = (
+                explainable_missing - suspended if suspension_known else explainable_missing
+            )
             rows.append({
                 "trade_date": trade_date,
                 "eligible_n": len(eligible),
@@ -4357,6 +4480,7 @@ def build_daily_security_coverage(
                 "unexplained_missing_n": len(unexplained),
                 "unexpected_daily_n": len(actual - eligible),
                 "suspension_state_known": bool(suspension_known),
+                "pit_only_without_daily_n": len(pit_only_without_daily),
             })
     coverage = pd.DataFrame(rows, columns=columns)
     if not coverage.empty:
@@ -4450,7 +4574,6 @@ def _collector_provenance() -> dict[str, Any]:
     query_contract = {
         "endpoint_fields": ENDPOINT_FIELDS,
         "row_caps": SOURCE_ROW_CAPS,
-        "required_authorization_scope": AUTHORIZATION_REQUIRED_SCOPE,
         "normalization_contract": "exact_schema_request_binding_lossless_scope_accounting_v2",
     }
     return {
@@ -4960,6 +5083,11 @@ def build_completeness_manifest(
         "unexpected_daily_observations": int(coverage.get(
             "unexpected_daily_n", pd.Series(dtype=int)
         ).sum()),
+        # Telemetry only (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION C6) -- never
+        # part of the `complete` conjunction below.
+        "pit_only_without_daily_observations": int(coverage.get(
+            "pit_only_without_daily_n", pd.Series(dtype=int)
+        ).sum()),
     }
     coverage_receipt["complete"] = bool(
         len(coverage)
@@ -4990,20 +5118,33 @@ def build_completeness_manifest(
     )
     session_receipt = _file_receipt(sessions_path, store, ["trade_date"])
     name_history_partitions, name_history_rows, name_history_semantic = _name_history_receipts(store)
-    state_receipt = _json_file_receipt(store / "collection_state.json", store)
-    try:
-        authorization = _load_persisted_authorization(store)
-    except SpineError:
-        # Publish an explicit incomplete receipt instead of leaving an older
-        # complete manifest as the apparent last word after auth tampering.
-        authorization = None
-    authorization_as_of = _parse_date(generated_at[:10])
-    authorization_ready = bool(
-        authorization
-        and authorization.get("required_scope_satisfied")
-        and _parse_date(authorization["issued_on"]) <= authorization_as_of
-        and _parse_date(authorization["expires_on"]) >= authorization_as_of
+    # N9 -- Sol RETURN-GATE 10B: telemetry only (never a threshold/gate). Every
+    # source row lands with exactly one disposition (N2); this is the store-wide
+    # count and rate of the namechange_only disposition across all landed
+    # name_history rows.
+    name_history_namechange_only_row_count = 0
+    for _name_history_path in sorted((store / "name_history").glob("year=*.parquet")):
+        _name_history_frame = _read_parquet_strict(_name_history_path)
+        if "source_disposition" not in _name_history_frame.columns:
+            # FAIL CLOSED, never skip. After Sol RETURN-GATE 10B every landed row
+            # carries exactly one disposition, so a partition without the column
+            # is a pre-ruling artifact and a schema contradiction. Skipping it
+            # would silently DILUTE the rate -- name_history_row_count counts its
+            # rows in the denominator while the numerator ignores them -- and a
+            # quietly wrong telemetry number is worse than none, because the
+            # whole point of the telemetry clause is that omission stays visible.
+            raise SpineError(
+                "name_history partition predates the source-disposition law and "
+                f"cannot be reconciled: {_name_history_path.name}"
+            )
+        name_history_namechange_only_row_count += int((
+            _name_history_frame["source_disposition"] == "namechange_only"
+        ).sum())
+    name_history_external_witness_missing_rate = (
+        name_history_namechange_only_row_count / name_history_rows
+        if name_history_rows else 0.0
     )
+    state_receipt = _json_file_receipt(store / "collection_state.json", store)
     request_receipts = _request_receipts_summary(store)
     provenance = _collector_provenance()
     lifecycle = _lifecycle_edge_reconciliation(store, master, start, end)
@@ -5035,15 +5176,12 @@ def build_completeness_manifest(
             else "foundation_only_range_shards_synthetic_no_live_canary"
         ),
         "bulk_historical_backfill_ready": BULK_HISTORICAL_BACKFILL_READY,
-        "authorization": authorization,
-        "authorization_ready": authorization_ready,
         "provenance": provenance,
         "request_receipts": request_receipts,
         "collection_state": state_receipt,
         "requested_range": {"start": start.isoformat(), "end": end.isoformat()},
         "complete": bool(
             BULK_HISTORICAL_BACKFILL_READY
-            and authorization_ready
             and reference_ready
             and endpoints_complete
             and pit_lifecycle["complete"]
@@ -5074,6 +5212,8 @@ def build_completeness_manifest(
             "name_history_partitions": name_history_partitions,
             "name_history_row_count": name_history_rows,
             "name_history_semantic_sha256": name_history_semantic,
+            "name_history_namechange_only_row_count": name_history_namechange_only_row_count,
+            "name_history_external_witness_missing_rate": name_history_external_witness_missing_rate,
         },
         "endpoints": endpoint_receipts,
         "range_campaigns": range_campaigns,
@@ -5113,10 +5253,33 @@ def build_completeness_manifest(
                 "exact_daily_start": PIT_UNIVERSE_START.isoformat(),
                 "pre_2016_completeness": "no_independent_daily_universe_witness",
                 "reconciliation_law": (
-                    "bak_basic corroborates lifecycle eligibility; expected daily/shard universe "
-                    "is lifecycle union PIT and post-2016 mismatches block completeness"
+                    "universe is lifecycle union PIT; a PIT row the current stock_basic "
+                    "snapshot omits is a legal union member recorded as telemetry; "
+                    "lifecycle-eligible securities missing from PIT and PIT rows "
+                    "contradicting their own master lifecycle window block completeness. "
+                    "A PIT observation alone grants no trading/event or canonical-identity "
+                    "authority; positive-volume plus exact legal-band evidence is what "
+                    "proves historical trading."
                 ),
                 "contract": TUSHARE_BAK_BASIC_DOC_URL,
+            },
+            "name_history": {
+                # N9 -- Sol RETURN-GATE 10B (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION
+                # sibling, applied to the name-history plane).
+                "source": "tushare.namechange",
+                "reconciliation_law": (
+                    "name history is a source-assertion plane; a valid namechange "
+                    "row is sufficient source evidence of the observation and "
+                    "needs no external witness to exist. Every source row "
+                    "carries exactly one deterministic disposition -- "
+                    "externally_corroborated, namechange_only, or quarantined "
+                    "conflict. Completeness requires every source row "
+                    "deterministically reconciled with zero unresolved "
+                    "conflicts, NOT 100% external corroboration. A "
+                    "namechange_only observation grants no PIT membership, "
+                    "trading, exact-event, canonical-identity, rank or score "
+                    "authority."
+                ),
             },
             "source_row_accounting": {
                 "equation": "source_rows = landed_A_rows + known_excluded_rows + quarantined_unknown_rows",
@@ -5129,13 +5292,10 @@ def build_completeness_manifest(
                 "sse_code_contract": SSE_SECURITY_CODE_GUIDE_URL,
                 "szse_code_contract": SZSE_SECURITY_CODE_RANGE_URL,
             },
-            "authorization": {
-                "gate": (
-                    "written vendor grant or complete institution entitlement/delegation chain, "
-                    "pinned by a separately controlled out-of-band hash allowlist before first request"
-                ),
-                "service_agreement": TUSHARE_SERVICE_AGREEMENT_URL,
-                "boolean_bypass": False,
+            "compliance": {
+                "status": "CHAIRMAN_VERIFIED_PRIVATE / SATISFIED",
+                "evidence_scope": "confidential_outside_coding_scope_nda_privacy",
+                "runtime_gate": False,
             },
             "cap_fallback": {
                 "endpoints": ["daily", "daily_basic", "stk_limit"],
@@ -5159,7 +5319,7 @@ def build_completeness_manifest(
                 "request_estimate_formula": "H_e + I_e * ceil(S/(C_e-1)) + R_e",
                 "range_shard_implemented": True,
                 "synthetic_verification_complete": True,
-                "licensed_live_canary_complete": False,
+                "live_canary_complete": False,
                 "live_canary_required_for_promotion": True,
             },
             "price_basis": {
@@ -5196,7 +5356,6 @@ def build_completeness_manifest(
         "ore_ledger": {
             "constructed": [
                 "listed+delisted+paused+approved security lifecycle by exchange/status",
-                "written authorization grant-document hash/scope/expiry gate before network",
                 "atomic immutable reference generations plus fund-based out-of-scope identities",
                 "post-2016 exact-day bak_basic PIT A-share universe witness",
                 "lossless source row accounting with unknown quarantine",
@@ -5248,8 +5407,7 @@ def collect(
     allow_bulk: bool = False,
     refresh_reference: bool = False,
     dry_run: bool = False,
-    authorization_receipt: Path | None = None,
-    authorization_trust_allowlist: Path | None = None,
+    canary: bool = False,
     query: Callable[..., pd.DataFrame | None] | None = None,
     require_token: bool = True,
     now: Callable[[], datetime] = _utc_now,
@@ -5257,8 +5415,18 @@ def collect(
     """Run one bounded/resumable collection wave and publish a manifest.
 
     A missing token is an honest no-op before any store write.  Every real or
-    injected request path still requires a hash-bound written authorization;
-    ``require_token=False`` is not an authorization bypass.
+    injected request path stays bounded by the technical gates: request budget,
+    the safety ceiling, exact request/schema binding, and
+    ``BULK_HISTORICAL_BACKFILL_READY``.  ``require_token=False`` is a test seam
+    for injected responses, not a bypass of those gates.
+
+    ``canary=True`` is the one execution path permitted while the bulk gate is
+    still False, because the canary is the evidence that gate is waiting for.  It
+    is hard-bounded before any store or network use -- at most
+    ``CANARY_MAX_REQUESTS`` requests over at most ``CANARY_MAX_RANGE_DAYS``
+    calendar days, never with ``allow_bulk``, and a documented row cap refuses
+    rather than starting the unproven ticker-range campaign.  It is not a bulk
+    backfill and does not promote anything.
     """
     start_date = _parse_date(start)
     end_date = _parse_date(end)
@@ -5275,6 +5443,21 @@ def collect(
             f"max_requests={max_requests} exceeds the {SAFE_MAX_REQUESTS}-call safety ceiling; "
             "pass allow_bulk=True explicitly"
         )
+    if canary:
+        # Hard canary ceilings, checked before any store or network use.  These
+        # are what make a real run safe while the bulk gate is still shut.
+        if allow_bulk:
+            raise SpineError("canary windows are never bulk runs; drop allow_bulk")
+        if max_requests <= 0 or max_requests > CANARY_MAX_REQUESTS:
+            raise SpineError(
+                f"canary max_requests must be 1..{CANARY_MAX_REQUESTS}; got {max_requests}"
+            )
+        span_days = (end_date - start_date).days + 1
+        if span_days > CANARY_MAX_RANGE_DAYS:
+            raise SpineError(
+                f"canary range is capped at {CANARY_MAX_RANGE_DAYS} calendar days; "
+                f"requested {span_days}"
+            )
     if dry_run:
         state = load_state(Path(store))
         return {
@@ -5296,27 +5479,18 @@ def collect(
             "requests_made": 0,
             "error": "TUSHARE_TOKEN is not configured; spine collection made no writes",
         }
-    if authorization_receipt is None or authorization_trust_allowlist is None:
-        raise SpineError(
-            "--authorization-receipt and --authorization-trust-allowlist are required "
-            "before any TuShare request"
-        )
-    grant = load_authorization_grant(
-        Path(authorization_receipt), trust_allowlist=Path(authorization_trust_allowlist),
-        as_of=now().astimezone(timezone.utc).date(),
-    )
-    if not BULK_HISTORICAL_BACKFILL_READY:
+    if not BULK_HISTORICAL_BACKFILL_READY and not canary:
         raise SpineError(
             "full-A collector is foundation-only: scalable ticker-range cap fallback "
-            "has not been code-reviewed, so collection is disabled before store/network use"
+            "has not been code-reviewed, so collection is disabled before store/network "
+            "use outside a bounded canary window (--canary / canary=True)"
         )
 
     store_path = _validate_private_store_path(Path(store))
     with spine_store_lock(store_path):
-        _persist_authorization_grant(store_path, grant)
         collector = TushareAShareSpineCollector(
             store_path, query=query, now=now, max_requests=max_requests,
-            authorization=grant,
+            canary=canary,
         )
         capped = False
         stage = "reference"
@@ -5354,6 +5528,8 @@ def collect(
     return {
         "dry_run": False,
         "no_op": False,
+        "canary": bool(canary),
+        "bulk_historical_backfill_ready": BULK_HISTORICAL_BACKFILL_READY,
         "requests_made": collector.requests_made,
         "capped": capped,
         "stage": stage,
@@ -5385,20 +5561,20 @@ def _main() -> None:
     parser.add_argument("--dry-run", action="store_true",
                         help="network-free/no-write plan summary")
     parser.add_argument(
-        "--authorization-receipt", type=Path,
-        help="JSON receipt bound to a written vendor/institution authorization grant",
-    )
-    parser.add_argument(
-        "--authorization-trust-allowlist", type=Path,
-        help="separately controlled allowlist pinning the receipt and complete grant chain",
+        "--canary", action="store_true",
+        help=(
+            f"bounded real canary window permitted while the bulk readiness gate is "
+            f"still closed: at most {CANARY_MAX_REQUESTS} requests over "
+            f"{CANARY_MAX_RANGE_DAYS} calendar days, never with --allow-bulk, and a "
+            "documented row cap refuses instead of starting a range campaign"
+        ),
     )
     args = parser.parse_args()
     result = collect(
         start=args.start, end=args.end, store=args.store, endpoints=args.endpoints,
         max_requests=args.max_requests, allow_bulk=args.allow_bulk,
         refresh_reference=args.refresh_reference, dry_run=args.dry_run,
-        authorization_receipt=args.authorization_receipt,
-        authorization_trust_allowlist=args.authorization_trust_allowlist,
+        canary=args.canary,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 

@@ -106,9 +106,11 @@ def _candidates(**over):
 
 
 def _flow(as_of="2026-08-04"):
+    # vocabulary v2 (masterplan §6): flow_velocity._classify no longer emits the old
+    # absolute-sounding "accelerating in"/"balanced" family for a RELATIVE measure.
     return {"ashare_sectors": {"as_of": as_of, "rows": [
-        {"id": "cn_gold", "state": "accelerating in", "state_zh": "加速流入"},
-        {"id": "cn_metals", "state": "balanced", "state_zh": "均衡"},
+        {"id": "cn_gold", "state": "above norm, rising", "state_zh": "高于常态·升温"},
+        {"id": "cn_metals", "state": "near its norm", "state_zh": "接近常态"},
     ]}}
 
 
@@ -227,14 +229,29 @@ def test_a_stale_flow_desk_is_dropped_rather_than_printed_beside_todays_board():
     """The desk declares a daily cadence; on 2026-08-05 it stood at 2026-07-24."""
     fresh = _build(flow=_flow("2026-08-04"))
     assert fresh["flow_live"] is True
-    assert _row(fresh, "cn_gold")["flow_en"] == "accelerating in"
-    assert _row(fresh, "cn_gold")["flow_zh"] == "加速流入"
+    assert _row(fresh, "cn_gold")["flow_en"] == "above norm, rising"
+    assert _row(fresh, "cn_gold")["flow_zh"] == "高于常态·升温"
 
     stale = _dt.date(2026, 8, 5) - _dt.timedelta(days=FLOW_MAX_AGE_DAYS + 1)
     aged = _build(flow=_flow(stale.isoformat()))
     assert aged is not None, "a stale feed must not cost the panel"
     assert aged["flow_live"] is False
     assert all(r["flow_en"] is None for r in aged["rows"])
+
+
+def test_the_rendered_flow_chip_carries_the_v2_vocabulary_verbatim():
+    """Consumer-sweep addendum (Flow Observatory V2 W1): flow_velocity._classify's new
+    vocabulary (masterplan §6) is relayed VERBATIM by build_cn_theme_tape as flow_en/
+    flow_zh (engine/cn_theme_tape.py :465-466) and printed as-is by the partial
+    (`{{ ct_t(_r.flow_en, _r.flow_zh) }}`, :364) — this pins that passthrough at the
+    template layer, not just the join layer, so a template regression that stops
+    printing the chip (or a future engine change that reintroduces the old vocabulary)
+    is caught here too."""
+    out = _render(_build(flow=_flow("2026-08-04")))
+    assert "above norm, rising" in out
+    assert "高于常态·升温" in out
+    assert "accelerating in" not in out
+    assert "加速流入" not in out
 
 
 def test_an_empty_continuation_watch_ledger_is_a_normal_state():

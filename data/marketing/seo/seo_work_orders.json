@@ -1,6 +1,6 @@
 {
   "schema": "seo_work_orders.v1",
-  "as_of": "2026-08-09T15:34:44Z",
+  "as_of": "2026-08-30T18:25:47Z",
   "orders": [
     {
       "id": "missing_description",
@@ -104,8 +104,22 @@
       "falsifiable_check": "Open Graph debugger or grep meta property=og: — all three present"
     },
     {
-      "id": "desc_length",
+      "id": "title_length",
       "priority": 6,
+      "title": "Adjust title length to 15-70 chars",
+      "class": "title_length",
+      "severity": "medium",
+      "pages": [
+        "stock_seasonality.html",
+        "watchlist.html"
+      ],
+      "pages_count": 2,
+      "suggested_fix": "Adjust title length to 15-70 chars",
+      "falsifiable_check": "Measure len(title) for each page; assert 15 <= len <= 70"
+    },
+    {
+      "id": "desc_length",
+      "priority": 7,
       "title": "Adjust description length to 50-170 chars",
       "class": "desc_length",
       "severity": "medium",
@@ -118,7 +132,7 @@
     },
     {
       "id": "duplicate_description",
-      "priority": 7,
+      "priority": 8,
       "title": "Make meta descriptions unique across pages",
       "class": "duplicate_description",
       "severity": "medium",
@@ -128,19 +142,6 @@
       "pages_count": 1,
       "suggested_fix": "Make meta descriptions unique across pages",
       "falsifiable_check": "Run duplicate-desc check: zero duplicates expected"
-    },
-    {
-      "id": "missing_from_sitemap",
-      "priority": 8,
-      "title": "Add public pages to sitemap",
-      "class": "missing_from_sitemap",
-      "severity": "medium",
-      "pages": [
-        "market_memory.html"
-      ],
-      "pages_count": 1,
-      "suggested_fix": "Add public pages to sitemap",
-      "falsifiable_check": "Run sitemap audit: zero public pages missing"
     },
     {
       "id": "missing_lang",
@@ -154,19 +155,6 @@
       "pages_count": 1,
       "suggested_fix": "Add lang attribute to <html> element",
       "falsifiable_check": "grep '<html' in page — should include lang= attribute"
-    },
-    {
-      "id": "title_length",
-      "priority": 10,
-      "title": "Adjust title length to 15-70 chars",
-      "class": "title_length",
-      "severity": "medium",
-      "pages": [
-        "stock_seasonality.html"
-      ],
-      "pages_count": 1,
-      "suggested_fix": "Adjust title length to 15-70 chars",
-      "falsifiable_check": "Measure len(title) for each page; assert 15 <= len <= 70"
     }
   ]
 }

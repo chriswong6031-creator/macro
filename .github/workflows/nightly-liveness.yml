@@ -75,6 +75,7 @@ jobs:
             config
             site/prophet/index.json
             site/factordata/us_standouts.json
+            site/premiumdata/us_stocks.json
             site/factordata/china_standouts.json
             site/factordata/hk_standouts.json
             site/factordata/canada_standouts.json

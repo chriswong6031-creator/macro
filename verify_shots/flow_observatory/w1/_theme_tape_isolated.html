@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CN Theme Tape — W1 vocabulary evidence (isolated partial render)</title>
+<script>document.documentElement.setAttribute('data-theme', new URLSearchParams(location.search).get('theme') || 'dark');</script>
+<style>
+:root{--bg:#F7F8FA;--card:#FFFFFF;--grid:#EAECF0;--ink:#0B1733;--text:#344054;--muted:#4C5A6C;--green:#1FA971;--red:#D30B0B;--blue:#285FFF;--amber:#F5AD42;}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Inter,sans-serif;padding:24px}
+.note{font-size:13px;color:var(--muted);margin-bottom:18px;padding:10px 14px;border:1px dashed var(--grid);border-radius:8px}
+</style>
+</head><body class="page-china-stocks">
+<p class="note">Isolated render of templates/_cn_theme_tape.html.j2 against real committed
+CN artifacts + the REAL rebuilt site/flowdata/desk.json (flow_observatory.v2, W1
+vocabulary). china_stocks.html itself could not be rebuilt in this checkout (missing
+yfinance/hmmlearn — unrelated to this change); this proves the consumer passthrough at
+the template layer instead.</p>
+<style id="cn-theme-tape-css">
+  /* ── CN THEME TAPE (W-C) ───────────────────────────────────────────────────
+     Every value resolves from an existing theme.css token. No new hex, theme.css
+     untouched, so light / dark / zh all repaint at color-mix time with nothing to
+     keep in sync. Light is a design target here, not a translation (DOCTRINE
+     §5.8): the two things that would break on white are the rail's inactive
+     segments (a neutral fill vanishes) and the panel-on-canvas depth, so the rail
+     segments carry a mixed INK rather than a tint, and the panel keeps the page's
+     own .panel chrome instead of inventing a surface. */
+
+  /* THE TRACK WIDTHS, DECLARED ONCE. The header row and every theme row are
+     separate grid containers that must agree on their column edges; the only
+     thing making them agree is that these numbers are identical. Sized for the
+     CLAMPED label, not the authored one: these labels are 10px, below the
+     browser's minimum-font-size preference (commonly 12–16px), which raises the
+     rendered text while the track stays where the CSS put it. The US tape shipped
+     that exact defect (#4553) — "watching" overran its 58px track at a 12px
+     clamp. `overflow-wrap` below makes containment a guarantee rather than a
+     margin, whatever the clamp. Reproduce with
+     `.ctt-k{font-size:13px!important}` before changing anything here. */
+  body.page-china-stocks #cn-theme-tape{padding:15px 18px 14px;
+    --ctt-col:70px;--ctt-quiet:74px;--ctt-cyc:150px;--ctt-gk:78px}
+  body.page-china-stocks .ctt-hd{display:flex;align-items:baseline;gap:6px 12px;
+    flex-wrap:wrap;margin:0 0 4px}
+  body.page-china-stocks .ctt-eyebrow{margin:0;font-size:11px;font-weight:800;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);line-height:1.2}
+  /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
+     call for headings; the eyebrow keeps its rhythm from weight and colour. */
+  html[data-lang="zh"] body.page-china-stocks .ctt-eyebrow{letter-spacing:.06em}
+  body.page-china-stocks .ctt-asof{margin-left:auto;font-family:var(--font-mono,monospace);
+    font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.page-china-stocks .ctt-sub{font-size:11.5px;line-height:1.5;color:var(--muted);
+    margin:0 0 10px;max-width:74ch}
+
+  /* THE LADDER GRID. One template shared by the header and every row, so the
+     columns cannot drift apart. Fixed numeric widths (not max-content) are what
+     make a column a COLUMN: the header holds WORDS and the rows hold single
+     digits, so max-content would size the two grids from different content and
+     the figures would never line up under their labels. */
+  body.page-china-stocks .ctt-cols,
+  body.page-china-stocks .ctt-row{display:grid;
+    grid-template-columns:minmax(0,1fr) var(--ctt-cyc) repeat(4,var(--ctt-col)) var(--ctt-quiet);
+    gap:0 6px;align-items:baseline}
+  /* end-aligned, not baseline: a label that wraps under a clamp hangs its second
+     line BELOW a first baseline, straight through the rule this row sits on. */
+  body.page-china-stocks .ctt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);
+    margin:0 0 2px;align-items:end}
+  body.page-china-stocks .ctt-k{font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);text-align:right;line-height:1.25;min-width:0;overflow-wrap:break-word}
+  html[data-lang="zh"] body.page-china-stocks .ctt-k{letter-spacing:0}
+  body.page-china-stocks .ctt-k-cyc{text-align:left}
+
+  /* Each theme is one <details>. The summary holds BOTH glance lines, so the whole
+     row is the disclosure control — a large, obvious tap target on a phone, and a
+     native one, so there is no hover dependency and nothing to trap a popover. */
+  body.page-china-stocks .ctt-i{border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+  body.page-china-stocks .ctt-i:last-of-type{border-bottom:0}
+  body.page-china-stocks .ctt-s{list-style:none;cursor:pointer;padding:9px 0 8px}
+  body.page-china-stocks .ctt-s::-webkit-details-marker{display:none}
+  body.page-china-stocks .ctt-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
+    outline-offset:2px;border-radius:3px}
+  body.page-china-stocks .ctt-nm{font-size:13px;font-weight:700;color:var(--text);min-width:0}
+  /* The caret is a pseudo, so it stays out of any copy a vocabulary scan reads and
+     needs no translation. It rotates by being REPLACED, not by a transform, so
+     there is nothing here for reduced-motion to gate and no containing block. */
+  body.page-china-stocks .ctt-s .ctt-nm::before{content:"▸";color:var(--muted);font-size:10px;
+    margin-right:6px;display:inline-block;vertical-align:1px}
+  body.page-china-stocks .ctt-i[open] .ctt-s .ctt-nm::before{content:"▾"}
+
+  /* ── THE CYCLE RAIL — the panel's signature ────────────────────────────────
+     Five segments in cycle order, one marked. Position, not magnitude: the
+     segments are equal and fixed, so nothing here can read as a quantity, which
+     is what separates this from the vetoed fake-magnitude bars (#2232).
+     It is monochrome BY DESIGN — see the header note. The inactive segments take
+     a mixed INK (not an opacity on a tint) because a neutral tint is exactly what
+     vanishes against white in light mode (DOCTRINE §5.8), and the 2px gaps are
+     the same ruling's "add 1px gaps" made a little more generous at this size.
+     The whole rail is aria-hidden: the state word beside it carries the identical
+     fact, so a screen reader gets it once, in words, rather than as five boxes. */
+  body.page-china-stocks .ctt-cyc{display:flex;align-items:center;gap:7px;min-width:0}
+  body.page-china-stocks .ctt-rail{display:inline-flex;gap:2px;flex:0 0 auto}
+  body.page-china-stocks .ctt-rail i{display:block;width:7px;height:4px;border-radius:1px;
+    background:color-mix(in srgb,var(--text) 20%,transparent)}
+  body.page-china-stocks .ctt-rail i.on{background:var(--text);height:8px}
+  body.page-china-stocks .ctt-state{font-size:11px;color:var(--muted);line-height:1.3;
+    min-width:0;overflow-wrap:break-word}
+  /* The flow chip rides the theme NAME, not the cycle column: it is a fact about
+     money moving, not about where the cycle sits, and the two must not read as one
+     reading. Outline, no fill, no hue — same restraint as the rail, and for the
+     same reason (it is context, and it is the least confirmed thing on the row). */
+  body.page-china-stocks .ctt-flow{display:inline-block;vertical-align:1px;margin-left:7px;
+    padding:1px 5px;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+    border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);white-space:nowrap}
+  html[data-lang="zh"] body.page-china-stocks .ctt-flow{letter-spacing:0}
+
+  /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple the
+     column, and the house rule is mono for FIGURES, never for words — the header
+     above stays body-face. The right edge is set on the CELL, which is the grid
+     item; setting it on the figure inside would align nothing, because the figure
+     is only as wide as it needs to be. */
+  body.page-china-stocks .ctt-c{text-align:right;min-width:0}
+  body.page-china-stocks .ctt-v{font-family:var(--font-mono,monospace);font-size:13px;
+    font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+  /* The ONLY colour on the panel, and only ever on a non-zero `live` count — the one
+     cell that means "there is something to do today". --ink-up is the text-grade form
+     of the state palette (raw --up is fill-grade and misses the contrast floor as
+     light-theme text); the var() fallback keeps a cache-stale theme.css rendering
+     today's colour rather than an invalid declaration. */
+  body.page-china-stocks .ctt-v.is-live{color:var(--ink-up,var(--up))}
+  /* A printed absence, at the weight of an absence. */
+  body.page-china-stocks .ctt-v.is-zero{color:var(--muted);opacity:.5;font-weight:600}
+  body.page-china-stocks .ctt-quiet{font-family:var(--font-mono,monospace);font-size:12.5px;
+    font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  body.page-china-stocks .ctt-say{font-size:12.5px;line-height:1.5;color:var(--text);
+    padding-left:16px;margin-top:3px}
+  body.page-china-stocks .ctt-stance{font-weight:650}
+
+  /* Tier 3 — the member lists. Indented under the row they belong to, and quiet:
+     this is a reference list, not a second board. */
+  body.page-china-stocks .ctt-det{padding:2px 0 12px 16px}
+  /* The stance for a row that did not earn the glance-tier line — the opening line of
+     an EXPANDED row, so it takes .ctt-det's indent and adds none of its own. */
+  body.page-china-stocks .ctt-heat{display:block;font-size:11.5px;font-weight:400;
+    color:var(--muted);margin:0 0 7px;line-height:1.5}
+  /* The label column GROWS rather than overflows — `minmax(k, max-content)` keeps
+     the alignment in every normal render and lets the track widen in the clamped
+     state that would otherwise paint a label across the names beside it. Bounding
+     it instead (max-width + overflow:hidden) is worse: it clips a two-word label. */
+  body.page-china-stocks .ctt-g{display:grid;
+    grid-template-columns:minmax(var(--ctt-gk),max-content) minmax(0,1fr);gap:0 10px;
+    align-items:baseline;padding:3px 0}
+  body.page-china-stocks .ctt-gk{font-size:10.5px;font-weight:700;color:var(--muted);
+    text-align:right;line-height:1.5}
+  /* FLEX, and this is load-bearing — an inline run here loses members. The .ctt-n
+     spans are emitted adjacent with no whitespace between them and a ticker is
+     nowrap, so as an inline run the whole list is ONE unbreakable word with no
+     break opportunity: on a 390px phone it overruns the viewport and the tail is
+     sheared off — members silently deleted from a shipped surface (the US tape's
+     own #4488 fix-up commit). `overflow-wrap:anywhere` is the WRONG patch: it
+     breaks INSIDE tokens and tears "+4" apart. A flex line box takes its break
+     opportunities between ITEMS, so every member wraps whole. */
+  body.page-china-stocks .ctt-names{display:flex;flex-wrap:wrap;align-items:baseline;
+    row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
+    overflow-wrap:break-word}
+  body.page-china-stocks .ctt-n{min-width:0}
+  /* The separator TRAILS its name rather than leading the next one, so a wrapped
+     line never opens with an orphan middot. :not(:last-child) keeps it off the end
+     while still printing before a group-level reason, which is a sibling here. */
+  body.page-china-stocks .ctt-names > .ctt-n:not(:last-child)::after{content:"·";
+    color:var(--muted);padding:0 5px 0 6px;opacity:.6}
+  body.page-china-stocks .ctt-sym{font-family:var(--font-mono,monospace);font-weight:700;
+    letter-spacing:.02em;white-space:nowrap}
+  body.page-china-stocks .ctt-zh{color:var(--muted);font-size:11px;padding-left:5px}
+  /* The reason hangs off the name behind a middot, not a dash: several reasons carry
+     their own em-dash, and two dashes in one phrase read as one muddled clause. A
+     middot needs no translation, so both languages take the same rule, and it is a
+     pseudo so it keeps its spacing however the markup wraps. */
+  body.page-china-stocks .ctt-why{color:var(--muted);font-size:11px}
+  body.page-china-stocks .ctt-why::before{content:"·";padding:0 5px 0 4px;opacity:.5}
+  /* A GROUP-level reason is a sibling of the names, so the last name's trailing
+     separator has already printed and this one would double it. A PER-NAME reason
+     lives inside its .ctt-n, where no separator precedes it, so it keeps its own. */
+  body.page-china-stocks .ctt-names > .ctt-why::before{content:none}
+  body.page-china-stocks .ctt-more{color:var(--muted);font-weight:600;white-space:nowrap}
+
+  /* THE THEME VEHICLE. The panel's one genuinely CN-specific object, and the honest
+     answer to "so what do I do" on a theme whose members are all still waiting: the
+     basket trades as one instrument, and naming it is not the same as recommending
+     it. Reads as a sentence, at the weight of a note — deliberately NOT a chip or a
+     button, because a chip is an affordance and this is a fact. */
+  body.page-china-stocks .ctt-veh{margin:6px 0 0;font-size:11px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  body.page-china-stocks .ctt-veh .ctt-sym{color:var(--text)}
+  body.page-china-stocks .ctt-more-link{display:block;margin:7px 0 0;font-size:11px}
+  body.page-china-stocks .ctt-more-link a{color:var(--muted);text-decoration:underline;
+    text-underline-offset:2px}
+
+  body.page-china-stocks .ctt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
+  body.page-china-stocks .ctt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);
+    max-width:74ch}
+  /* The link is one token. Left to break, the zh label split after 主 and stranded
+     "题 →" on its own line, which reads as a fragment rather than a destination; the
+     line breaks BEFORE it instead. Same reason the stance is held whole below. */
+  body.page-china-stocks .ctt-foot a{color:inherit;text-decoration:underline;
+    text-underline-offset:2px;white-space:nowrap}
+  /* The stance is one token, like a count chip is: broken across a line, "— don't
+     chase." reads as a fragment rather than an instruction. */
+  body.page-china-stocks .ctt-nb{white-space:nowrap}
+
+  @media (max-width:900px){
+    body.page-china-stocks #cn-theme-tape .ctt-asof{margin-left:0}
+    body.page-china-stocks #cn-theme-tape{--ctt-cyc:126px;--ctt-col:62px;--ctt-quiet:66px}
+  }
+  /* ── phones (≤680px, the board's own mobile break) ─────────────────────────
+     The seven-column alignment is a desktop luxury: it exists so a reader can scan
+     one column down eight themes. On a phone you read one theme at a time, so the
+     ladder becomes a flowing line of "N label" pairs and the header row — whose
+     only job was to label those columns — is dropped. Each cell then shows its own
+     label, and a ZERO cell is removed entirely: a printed en-dash is honest inside
+     a column, but "0 blocked" in a sentence is just noise. Nothing here scrolls
+     sideways; the row wraps. */
+  @media (max-width:680px){
+    body.page-china-stocks #cn-theme-tape{padding:13px 14px}
+    body.page-china-stocks .ctt-cols{display:none}
+    body.page-china-stocks .ctt-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+    body.page-china-stocks .ctt-nm{flex:1 0 100%}
+    body.page-china-stocks .ctt-cyc{flex:1 0 100%;margin:1px 0 2px}
+    body.page-china-stocks .ctt-c{display:inline-flex;align-items:baseline;gap:4px}
+    body.page-china-stocks .ctt-c.is-zero-cell{display:none}
+    body.page-china-stocks .ctt-c .ctt-ik{font-size:10.5px;font-weight:600;color:var(--muted);
+      font-style:normal}
+    body.page-china-stocks .ctt-v,body.page-china-stocks .ctt-quiet{text-align:left;font-size:12.5px}
+    body.page-china-stocks .ctt-g{grid-template-columns:minmax(0,1fr);gap:0}
+    body.page-china-stocks .ctt-gk{text-align:left}
+  }
+  /* The per-cell label is redundant wherever the header row is visible. */
+  @media (min-width:681px){
+    body.page-china-stocks .ctt-c .ctt-ik{display:none}
+  }
+  </style>
+  <div class="panel span12" id="cn-theme-tape">
+    <div class="ctt-hd">
+      <h2 class="ctt-eyebrow"><span class="l-en">Theme cycles</span><span class="l-zh">主题周期</span></h2><span class="help">?<span class="tip tip-wide"><span class="l-en">Each theme is a curated basket of A-shares with its own turn model, and the rail shows where that basket sits in its cycle. Every member is then placed in exactly one column, so a row adds up to the whole basket; a name counts once, at its most actionable state, and a name can sit in more than one theme. The cycle read is a place to look, not a measured edge — no horizon of it has cleared a significance bar. Nothing on this panel ranks, gates or sizes anything, and the board above is identical with it present or absent.</span><span class="l-zh">每个主题都是一篮精选A股，各自带有转向模型，刻度条显示该篮子在周期中的位置。每只成分股被归入且仅归入一列，因此整行相加等于该篮子全部成分股；同一只股票按其最可操作的状态计入一次，且可能同时属于多个主题。周期研判只用于确定观察方向，并非经检验的优势——尚无周期通过显著性检验。本面板不参与任何排名、筛选或仓位决定，上方看板有无本面板都完全相同。</span></span></span>
+      <span class="ctt-asof"><span class="l-en">as of 2026-08-31</span><span class="l-zh">截至 2026-08-31</span></span>
+    </div><p class="ctt-sub"><span class="l-en">Each theme’s place in its cycle, and what the board does with its names.</span><span class="l-zh">每个主题在周期中的位置，以及本榜对其成分股的处理。</span></p><div class="ctt-cols">
+      <span></span>
+      <span class="ctt-k ctt-k-cyc"><span class="l-en">cycle</span><span class="l-zh">周期</span></span><span class="ctt-k"><span class="l-en">live</span><span class="l-zh">可操作</span></span><span class="ctt-k"><span class="l-en">almost</span><span class="l-zh">接近</span></span><span class="ctt-k"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span><span class="ctt-k"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+      <span class="ctt-k"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+    </div>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Autos & NEV Makers — this basket's cycle reads Early turn, turning up at 4 on its own oscillator. 16 names in the basket: 1 live, 0 close, 6 held out, 1 already moved, 8 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Autos & NEV Makers — 该篮子周期读数为初现拐点，其振荡指标向上 4。篮内共 16 只：可操作 1、接近 0、受阻 6、已启动 1、无形态 8。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Autos & NEV Makers</span><span class="l-zh">汽车整车</span><span class="ctt-flow"><span class="l-en">above norm, cooling</span><span class="l-zh">高于常态·降温</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Early turn</span><span class="l-zh">初现拐点</span></span>
+          </span>
+          <span class="ctt-c"><b class="ctt-v is-live">1</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">6</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">1</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">8/16</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Act — 1 live in this theme today.</span><span class="l-zh">可操作 — 本主题今日有 1 只。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">live</span><span class="l-zh">可操作</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">002126.SZ</span><span class="ctt-zh">银轮股份</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">002594.SZ</span><span class="ctt-zh">比亚迪</span></span><span class="ctt-n"><span class="ctt-sym">600104.SS</span><span class="ctt-zh">上汽集团</span></span><span class="ctt-n"><span class="ctt-sym">600660.SS</span><span class="ctt-zh">福耀玻璃</span><span class="ctt-why"><span class="l-en">Momentum diverging</span><span class="l-zh">动能背离</span></span></span><span class="ctt-n"><span class="ctt-sym">002920.SZ</span><span class="ctt-zh">德赛西威</span><span class="ctt-why"><span class="l-en">Cannot fill today</span><span class="l-zh">今日无法成交</span></span></span><span class="ctt-n"><span class="ctt-sym">600741.SS</span><span class="ctt-zh">华域汽车</span></span><span class="ctt-n"><span class="ctt-sym">600418.SS</span><span class="ctt-zh">江淮汽车</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600066.SS</span><span class="ctt-zh">宇通客车</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601633.SS</span><span class="ctt-zh">长城汽车</span></span><span class="ctt-n"><span class="ctt-sym">000625.SZ</span><span class="ctt-zh">长安汽车</span></span><span class="ctt-n"><span class="ctt-sym">601127.SS</span><span class="ctt-zh">赛力斯</span></span><span class="ctt-n"><span class="ctt-sym">601238.SS</span><span class="ctt-zh">广汽集团</span></span><span class="ctt-n"><span class="ctt-sym">601689.SS</span><span class="ctt-zh">拓普集团</span></span><span class="ctt-n"><span class="ctt-sym">000338.SZ</span><span class="ctt-zh">潍柴动力</span></span><span class="ctt-n ctt-more">+2</span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <p class="ctt-veh">
+          <span class="l-en">Traded as one, this theme is <span class="ctt-sym">515250.SS</span> — context, not a recommendation. The names above are being watched, not bought.</span>
+          <span class="l-zh">作为整体交易时，本主题对应 <span class="ctt-sym">515250.SS</span> — 仅供参考，非推荐。上列个股处于观察中，并非买入对象。</span>
+        </p>
+        <span class="ctt-more-link"><a href="basket_china/cn_autos.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Banks — this basket's cycle reads Running, turning up at 16 on its own oscillator. 18 names in the basket: 1 live, 2 close, 4 held out, 5 already moved, 6 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Banks — 该篮子周期读数为上行中，其振荡指标向上 16。篮内共 18 只：可操作 1、接近 2、受阻 4、已启动 5、无形态 6。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Banks</span><span class="l-zh">银行</span><span class="ctt-flow"><span class="l-en">near its norm</span><span class="l-zh">接近常态</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i></i><i class="on"></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Running</span><span class="l-zh">上行中</span></span>
+          </span>
+          <span class="ctt-c"><b class="ctt-v is-live">1</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">2</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">4</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">5</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">6/18</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Act — 1 live in this theme today.</span><span class="l-zh">可操作 — 本主题今日有 1 只。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">live</span><span class="l-zh">可操作</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600016.SS</span><span class="ctt-zh">民生银行</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">almost</span><span class="l-zh">接近</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600036.SS</span><span class="ctt-zh">招商银行</span></span><span class="ctt-n"><span class="ctt-sym">601328.SS</span><span class="ctt-zh">交通银行</span></span><span class="ctt-why"><span class="l-en">Turn not confirmed</span><span class="l-zh">转向未确认</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601288.SS</span><span class="ctt-zh">农业银行</span></span><span class="ctt-n"><span class="ctt-sym">601658.SS</span><span class="ctt-zh">邮储银行</span><span class="ctt-why"><span class="l-en">Cannot fill today</span><span class="l-zh">今日无法成交</span></span></span><span class="ctt-n"><span class="ctt-sym">002142.SZ</span><span class="ctt-zh">宁波银行</span></span><span class="ctt-n"><span class="ctt-sym">601169.SS</span><span class="ctt-zh">北京银行</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601398.SS</span><span class="ctt-zh">工商银行</span><span class="ctt-why"><span class="l-en">Already ran</span><span class="l-zh">已经拉升</span></span></span><span class="ctt-n"><span class="ctt-sym">000001.SZ</span><span class="ctt-zh">平安银行</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span><span class="ctt-n"><span class="ctt-sym">601998.SS</span><span class="ctt-zh">中信银行</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span><span class="ctt-n"><span class="ctt-sym">600919.SS</span><span class="ctt-zh">江苏银行</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span><span class="ctt-n"><span class="ctt-sym">601009.SS</span><span class="ctt-zh">南京银行</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601939.SS</span><span class="ctt-zh">建设银行</span></span><span class="ctt-n"><span class="ctt-sym">601988.SS</span><span class="ctt-zh">中国银行</span></span><span class="ctt-n"><span class="ctt-sym">601166.SS</span><span class="ctt-zh">兴业银行</span></span><span class="ctt-n"><span class="ctt-sym">600000.SS</span><span class="ctt-zh">浦发银行</span></span><span class="ctt-n"><span class="ctt-sym">601818.SS</span><span class="ctt-zh">光大银行</span></span><span class="ctt-n"><span class="ctt-sym">601229.SS</span><span class="ctt-zh">上海银行</span></span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <span class="ctt-more-link"><a href="basket_china/cn_banks.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Brokers & Securities — this basket's cycle reads Still bottoming, turning down at 9 on its own oscillator. 15 names in the basket: 1 live, 7 close, 0 held out, 1 already moved, 6 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Brokers & Securities — 该篮子周期读数为仍在筑底，其振荡指标向下 9。篮内共 15 只：可操作 1、接近 7、受阻 0、已启动 1、无形态 6。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Brokers & Securities</span><span class="l-zh">券商</span><span class="ctt-flow"><span class="l-en">above norm, rising</span><span class="l-zh">高于常态·升温</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Still bottoming</span><span class="l-zh">仍在筑底</span></span>
+          </span>
+          <span class="ctt-c"><b class="ctt-v is-live">1</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">7</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">1</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">6/15</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Act — 1 live in this theme today.</span><span class="l-zh">可操作 — 本主题今日有 1 只。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">live</span><span class="l-zh">可操作</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601881.SS</span><span class="ctt-zh">中国银河</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">almost</span><span class="l-zh">接近</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601688.SS</span><span class="ctt-zh">华泰证券</span></span><span class="ctt-n"><span class="ctt-sym">000776.SZ</span><span class="ctt-zh">广发证券</span></span><span class="ctt-n"><span class="ctt-sym">600958.SS</span><span class="ctt-zh">东方证券</span></span><span class="ctt-n"><span class="ctt-sym">000166.SZ</span><span class="ctt-zh">申万宏源</span></span><span class="ctt-n"><span class="ctt-sym">002736.SZ</span><span class="ctt-zh">国信证券</span></span><span class="ctt-n"><span class="ctt-sym">601788.SS</span><span class="ctt-zh">光大证券</span></span><span class="ctt-n"><span class="ctt-sym">601377.SS</span><span class="ctt-zh">兴业证券</span></span><span class="ctt-why"><span class="l-en">Turn not confirmed</span><span class="l-zh">转向未确认</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">300059.SZ</span><span class="ctt-zh">东方财富</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600030.SS</span><span class="ctt-zh">中信证券</span></span><span class="ctt-n"><span class="ctt-sym">601211.SS</span><span class="ctt-zh">国泰海通</span></span><span class="ctt-n"><span class="ctt-sym">600999.SS</span><span class="ctt-zh">招商证券</span></span><span class="ctt-n"><span class="ctt-sym">601066.SS</span><span class="ctt-zh">中信建投</span></span><span class="ctt-n"><span class="ctt-sym">601995.SS</span><span class="ctt-zh">中金公司</span></span><span class="ctt-n"><span class="ctt-sym">000783.SZ</span><span class="ctt-zh">长江证券</span></span><span class="ctt-why"><span class="l-en">no setup here yet</span><span class="l-zh">此处尚无形态</span></span></span>
+        </div>
+        <span class="ctt-more-link"><a href="basket_china/cn_brokers.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Robotics & Automation — this basket's cycle reads Still bottoming, turning down at 10 on its own oscillator. 11 names in the basket: 1 live, 0 close, 3 held out, 0 already moved, 7 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Robotics & Automation — 该篮子周期读数为仍在筑底，其振荡指标向下 10。篮内共 11 只：可操作 1、接近 0、受阻 3、已启动 0、无形态 7。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Robotics & Automation</span><span class="l-zh">机器人与自动化</span><span class="ctt-flow"><span class="l-en">near its norm</span><span class="l-zh">接近常态</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Still bottoming</span><span class="l-zh">仍在筑底</span></span>
+          </span>
+          <span class="ctt-c"><b class="ctt-v is-live">1</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">3</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">7/11</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Act — 1 live in this theme today.</span><span class="l-zh">可操作 — 本主题今日有 1 只。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">live</span><span class="l-zh">可操作</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">300124.SZ</span><span class="ctt-zh">汇川技术</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">688017.SS</span><span class="ctt-zh">绿的谐波</span><span class="ctt-why"><span class="l-en">Momentum diverging</span><span class="l-zh">动能背离</span></span></span><span class="ctt-n"><span class="ctt-sym">002046.SZ</span><span class="ctt-zh">国机精工</span></span><span class="ctt-n"><span class="ctt-sym">688322.SS</span><span class="ctt-zh">奥比中光</span><span class="ctt-why"><span class="l-en">Momentum diverging</span><span class="l-zh">动能背离</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">002747.SZ</span><span class="ctt-zh">埃斯顿</span></span><span class="ctt-n"><span class="ctt-sym">300024.SZ</span><span class="ctt-zh">机器人</span></span><span class="ctt-n"><span class="ctt-sym">002472.SZ</span><span class="ctt-zh">双环传动</span></span><span class="ctt-n"><span class="ctt-sym">002050.SZ</span><span class="ctt-zh">三花智控</span></span><span class="ctt-n"><span class="ctt-sym">601689.SS</span><span class="ctt-zh">拓普集团</span></span><span class="ctt-n"><span class="ctt-sym">601100.SS</span><span class="ctt-zh">恒立液压</span></span><span class="ctt-n ctt-more">+1</span><span class="ctt-why"><span class="l-en">no setup here yet</span><span class="l-zh">此处尚无形态</span></span></span>
+        </div>
+        <span class="ctt-more-link"><a href="basket_china/cn_robotics.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Semiconductors — this basket's cycle reads Still bottoming, turning down at 28 on its own oscillator. 22 names in the basket: 1 live, 2 close, 2 held out, 1 already moved, 16 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Semiconductors — 该篮子周期读数为仍在筑底，其振荡指标向下 28。篮内共 22 只：可操作 1、接近 2、受阻 2、已启动 1、无形态 16。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span><span class="ctt-flow"><span class="l-en">near its norm</span><span class="l-zh">接近常态</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Still bottoming</span><span class="l-zh">仍在筑底</span></span>
+          </span>
+          <span class="ctt-c"><b class="ctt-v is-live">1</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">2</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">2</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">1</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">16/22</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Act — 1 live in this theme today.</span><span class="l-zh">可操作 — 本主题今日有 1 只。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">live</span><span class="l-zh">可操作</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">300782.SZ</span><span class="ctt-zh">卓胜微</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">almost</span><span class="l-zh">接近</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">688347.SS</span><span class="ctt-zh">华虹宏力</span></span><span class="ctt-n"><span class="ctt-sym">603986.SS</span><span class="ctt-zh">兆易创新</span></span><span class="ctt-why"><span class="l-en">Turn not confirmed</span><span class="l-zh">转向未确认</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">688981.SS</span><span class="ctt-zh">中芯国际</span></span><span class="ctt-n"><span class="ctt-sym">688126.SS</span><span class="ctt-zh">沪硅产业</span><span class="ctt-why"><span class="l-en">Momentum diverging</span><span class="l-zh">动能背离</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">002049.SZ</span><span class="ctt-zh">紫光国微</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">688256.SS</span><span class="ctt-zh">寒武纪</span></span><span class="ctt-n"><span class="ctt-sym">002371.SZ</span><span class="ctt-zh">北方华创</span></span><span class="ctt-n"><span class="ctt-sym">688041.SS</span><span class="ctt-zh">海光信息</span></span><span class="ctt-n"><span class="ctt-sym">688012.SS</span><span class="ctt-zh">中微公司</span></span><span class="ctt-n"><span class="ctt-sym">688008.SS</span><span class="ctt-zh">澜起科技</span></span><span class="ctt-n"><span class="ctt-sym">688082.SS</span><span class="ctt-zh">盛美上海</span></span><span class="ctt-n ctt-more">+10</span><span class="ctt-why"><span class="l-en">no setup here yet</span><span class="l-zh">此处尚无形态</span></span></span>
+        </div>
+        <span class="ctt-more-link"><a href="basket_china/cn_semis.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Software & AI Apps — this basket's cycle reads Early turn, turning up at 12 on its own oscillator. 15 names in the basket: 0 live, 2 close, 4 held out, 1 already moved, 8 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Software & AI Apps — 该篮子周期读数为初现拐点，其振荡指标向上 12。篮内共 15 只：可操作 0、接近 2、受阻 4、已启动 1、无形态 8。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Software & AI Apps</span><span class="l-zh">软件与AI应用</span><span class="ctt-flow"><span class="l-en">above norm, cooling</span><span class="l-zh">高于常态·降温</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Early turn</span><span class="l-zh">初现拐点</span></span>
+          </span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">2</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">4</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">1</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">8/15</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Get ready — 2 close, none has triggered.</span><span class="l-zh">准备 — 2 只接近，均未触发。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">almost</span><span class="l-zh">接近</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">300496.SZ</span><span class="ctt-zh">中科创达</span></span><span class="ctt-n"><span class="ctt-sym">601360.SS</span><span class="ctt-zh">三六零</span></span><span class="ctt-why"><span class="l-en">Turn not confirmed</span><span class="l-zh">转向未确认</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">688111.SS</span><span class="ctt-zh">金山办公</span></span><span class="ctt-n"><span class="ctt-sym">002230.SZ</span><span class="ctt-zh">科大讯飞</span><span class="ctt-why"><span class="l-en">Momentum diverging</span><span class="l-zh">动能背离</span></span></span><span class="ctt-n"><span class="ctt-sym">301236.SZ</span><span class="ctt-zh">软通动力</span></span><span class="ctt-n"><span class="ctt-sym">300803.SZ</span><span class="ctt-zh">指南针</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">300418.SZ</span><span class="ctt-zh">昆仑万维</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600570.SS</span><span class="ctt-zh">恒生电子</span></span><span class="ctt-n"><span class="ctt-sym">300454.SZ</span><span class="ctt-zh">深信服</span></span><span class="ctt-n"><span class="ctt-sym">600845.SS</span><span class="ctt-zh">宝信软件</span></span><span class="ctt-n"><span class="ctt-sym">300033.SZ</span><span class="ctt-zh">同花顺</span></span><span class="ctt-n"><span class="ctt-sym">600588.SS</span><span class="ctt-zh">用友网络</span></span><span class="ctt-n"><span class="ctt-sym">688692.SS</span><span class="ctt-zh">达梦数据</span></span><span class="ctt-n ctt-more">+2</span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <span class="ctt-more-link"><a href="basket_china/cn_software.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Solar / Photovoltaics — this basket's cycle reads Early turn, turning up at 10 on its own oscillator. 15 names in the basket: 0 live, 0 close, 7 held out, 2 already moved, 6 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Solar / Photovoltaics — 该篮子周期读数为初现拐点，其振荡指标向上 10。篮内共 15 只：可操作 0、接近 0、受阻 7、已启动 2、无形态 6。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Solar / Photovoltaics</span><span class="l-zh">光伏</span><span class="ctt-flow"><span class="l-en">above norm, rising</span><span class="l-zh">高于常态·升温</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Early turn</span><span class="l-zh">初现拐点</span></span>
+          </span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">7</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">2</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">6/15</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+      </summary>
+      <div class="ctt-det">
+        <p class="ctt-heat"><span class="ctt-stance"><span class="l-en">Watch — don’t chase. The sector turned; no name has.</span><span class="l-zh">观望，勿追高。板块已转向，个股尚未。</span></span></p>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601012.SS</span><span class="ctt-zh">隆基绿能</span></span><span class="ctt-n"><span class="ctt-sym">600438.SS</span><span class="ctt-zh">通威股份</span></span><span class="ctt-n"><span class="ctt-sym">300274.SZ</span><span class="ctt-zh">阳光电源</span></span><span class="ctt-n"><span class="ctt-sym">002129.SZ</span><span class="ctt-zh">TCL中环</span></span><span class="ctt-n"><span class="ctt-sym">688303.SS</span><span class="ctt-zh">大全能源</span></span><span class="ctt-n"><span class="ctt-sym">688390.SS</span><span class="ctt-zh">固德威</span><span class="ctt-why"><span class="l-en">Momentum diverging</span><span class="l-zh">动能背离</span></span></span><span class="ctt-n"><span class="ctt-sym">300316.SZ</span><span class="ctt-zh">晶盛机电</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">605117.SS</span><span class="ctt-zh">德业股份</span><span class="ctt-why"><span class="l-en">Rolled over</span><span class="l-zh">已回落</span></span></span><span class="ctt-n"><span class="ctt-sym">300751.SZ</span><span class="ctt-zh">迈为股份</span><span class="ctt-why"><span class="l-en">Already ran</span><span class="l-zh">已经拉升</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">688223.SS</span><span class="ctt-zh">晶科能源</span></span><span class="ctt-n"><span class="ctt-sym">603806.SS</span><span class="ctt-zh">福斯特</span></span><span class="ctt-n"><span class="ctt-sym">688472.SS</span><span class="ctt-zh">阿特斯</span></span><span class="ctt-n"><span class="ctt-sym">688599.SS</span><span class="ctt-zh">天合光能</span></span><span class="ctt-n"><span class="ctt-sym">002459.SZ</span><span class="ctt-zh">晶澳科技</span></span><span class="ctt-n"><span class="ctt-sym">300763.SZ</span><span class="ctt-zh">锦浪科技</span></span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <p class="ctt-veh">
+          <span class="l-en">Traded as one, this theme is <span class="ctt-sym">515790.SS</span> — context, not a recommendation. The names above are being watched, not bought.</span>
+          <span class="l-zh">作为整体交易时，本主题对应 <span class="ctt-sym">515790.SS</span> — 仅供参考，非推荐。上列个股处于观察中，并非买入对象。</span>
+        </p>
+        <span class="ctt-more-link"><a href="basket_china/cn_solar.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Industrial Metals — this basket's cycle reads Early turn, turning up at 9 on its own oscillator. 13 names in the basket: 0 live, 0 close, 8 held out, 3 already moved, 2 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Industrial Metals — 该篮子周期读数为初现拐点，其振荡指标向上 9。篮内共 13 只：可操作 0、接近 0、受阻 8、已启动 3、无形态 2。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Industrial Metals</span><span class="l-zh">有色金属</span><span class="ctt-flow"><span class="l-en">near its norm</span><span class="l-zh">接近常态</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Early turn</span><span class="l-zh">初现拐点</span></span>
+          </span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">8</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">3</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">2/13</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+      </summary>
+      <div class="ctt-det">
+        <p class="ctt-heat"><span class="ctt-stance"><span class="l-en">Watch — don’t chase. The sector turned; no name has.</span><span class="l-zh">观望，勿追高。板块已转向，个股尚未。</span></span></p>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">603993.SS</span><span class="ctt-zh">洛阳钼业</span><span class="ctt-why"><span class="l-en">Cannot fill today</span><span class="l-zh">今日无法成交</span></span></span><span class="ctt-n"><span class="ctt-sym">000807.SZ</span><span class="ctt-zh">云铝股份</span></span><span class="ctt-n"><span class="ctt-sym">002379.SZ</span><span class="ctt-zh">宏桥控股</span></span><span class="ctt-n"><span class="ctt-sym">601899.SS</span><span class="ctt-zh">紫金矿业</span></span><span class="ctt-n"><span class="ctt-sym">000878.SZ</span><span class="ctt-zh">云南铜业</span></span><span class="ctt-n"><span class="ctt-sym">601958.SS</span><span class="ctt-zh">金钼股份</span></span><span class="ctt-n"><span class="ctt-sym">000960.SZ</span><span class="ctt-zh">锡业股份</span></span><span class="ctt-n"><span class="ctt-sym">000060.SZ</span><span class="ctt-zh">中金岭南</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">ran</span><span class="l-zh">已启动</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600362.SS</span><span class="ctt-zh">江西铜业</span><span class="ctt-why"><span class="l-en">Already ran</span><span class="l-zh">已经拉升</span></span></span><span class="ctt-n"><span class="ctt-sym">000630.SZ</span><span class="ctt-zh">铜陵有色</span><span class="ctt-why"><span class="l-en">Already ran</span><span class="l-zh">已经拉升</span></span></span><span class="ctt-n"><span class="ctt-sym">601168.SS</span><span class="ctt-zh">西部矿业</span><span class="ctt-why"><span class="l-en">Already topping</span><span class="l-zh">已见顶</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">601600.SS</span><span class="ctt-zh">中国铝业</span></span><span class="ctt-n"><span class="ctt-sym">002532.SZ</span><span class="ctt-zh">天山铝业</span></span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <p class="ctt-veh">
+          <span class="l-en">Traded as one, this theme is <span class="ctt-sym">512400.SS</span> — context, not a recommendation. The names above are being watched, not bought.</span>
+          <span class="l-zh">作为整体交易时，本主题对应 <span class="ctt-sym">512400.SS</span> — 仅供参考，非推荐。上列个股处于观察中，并非买入对象。</span>
+        </p>
+        <span class="ctt-more-link"><a href="basket_china/cn_metals.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Home Appliances — this basket's cycle reads Early turn, turning up at 7 on its own oscillator. 8 names in the basket: 0 live, 1 close, 3 held out, 0 already moved, 4 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Home Appliances — 该篮子周期读数为初现拐点，其振荡指标向上 7。篮内共 8 只：可操作 0、接近 1、受阻 3、已启动 0、无形态 4。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Home Appliances</span><span class="l-zh">家电</span><span class="ctt-flow"><span class="l-en">near its norm</span><span class="l-zh">接近常态</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Early turn</span><span class="l-zh">初现拐点</span></span>
+          </span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">1</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">3</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">4/8</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+        <div class="ctt-say"><span class="ctt-stance"><span class="l-en">Get ready — 1 close, none has triggered.</span><span class="l-zh">准备 — 1 只接近，均未触发。</span></span></div>
+      </summary>
+      <div class="ctt-det">
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">almost</span><span class="l-zh">接近</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">600060.SS</span><span class="ctt-zh">海信视像</span><span class="ctt-why"><span class="l-en">Turn not confirmed</span><span class="l-zh">转向未确认</span></span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">000333.SZ</span><span class="ctt-zh">美的集团</span></span><span class="ctt-n"><span class="ctt-sym">002032.SZ</span><span class="ctt-zh">苏泊尔</span></span><span class="ctt-n"><span class="ctt-sym">603486.SS</span><span class="ctt-zh">科沃斯</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">000651.SZ</span><span class="ctt-zh">格力电器</span></span><span class="ctt-n"><span class="ctt-sym">600690.SS</span><span class="ctt-zh">海尔智家</span></span><span class="ctt-n"><span class="ctt-sym">000921.SZ</span><span class="ctt-zh">海信家电</span></span><span class="ctt-n"><span class="ctt-sym">600839.SS</span><span class="ctt-zh">四川长虹</span></span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <span class="ctt-more-link"><a href="basket_china/cn_appliances.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details>
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="Battery & Lithium — this basket's cycle reads Early turn, turning up at 5 on its own oscillator. 16 names in the basket: 0 live, 0 close, 8 held out, 0 already moved, 8 with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="Battery & Lithium — 该篮子周期读数为初现拐点，其振荡指标向上 5。篮内共 16 只：可操作 0、接近 0、受阻 8、已启动 0、无形态 8。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm"><span class="l-en">Battery & Lithium</span><span class="l-zh">锂电池</span><span class="ctt-flow"><span class="l-en">near its norm</span><span class="l-zh">接近常态</span></span></span><span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i></span>
+            <span class="ctt-state"><span class="l-en">Early turn</span><span class="l-zh">初现拐点</span></span>
+          </span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">live</span><span class="l-zh">可操作</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">almost</span><span class="l-zh">接近</span></i></span>
+          <span class="ctt-c"><b class="ctt-v">8</b><i class="ctt-ik"><span class="l-en">blocked</span><span class="l-zh">受阻</span></i></span>
+          <span class="ctt-c is-zero-cell"><b class="ctt-v is-zero">–</b><i class="ctt-ik"><span class="l-en">ran</span><span class="l-zh">已启动</span></i></span>
+          <span class="ctt-c"><b class="ctt-quiet">8/16</b><i class="ctt-ik"><span class="l-en">quiet</span><span class="l-zh">未触发</span></i></span>
+        </div>
+      </summary>
+      <div class="ctt-det">
+        <p class="ctt-heat"><span class="ctt-stance"><span class="l-en">Watch — don’t chase. The sector turned; no name has.</span><span class="l-zh">观望，勿追高。板块已转向，个股尚未。</span></span></p>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">blocked</span><span class="l-zh">受阻</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">002594.SZ</span><span class="ctt-zh">比亚迪</span></span><span class="ctt-n"><span class="ctt-sym">300014.SZ</span><span class="ctt-zh">亿纬锂能</span></span><span class="ctt-n"><span class="ctt-sym">002460.SZ</span><span class="ctt-zh">赣锋锂业</span></span><span class="ctt-n"><span class="ctt-sym">603659.SS</span><span class="ctt-zh">璞泰来</span></span><span class="ctt-n"><span class="ctt-sym">300919.SZ</span><span class="ctt-zh">中伟新材</span></span><span class="ctt-n"><span class="ctt-sym">301358.SZ</span><span class="ctt-zh">湖南裕能</span></span><span class="ctt-n"><span class="ctt-sym">603799.SS</span><span class="ctt-zh">华友钴业</span></span><span class="ctt-n"><span class="ctt-sym">002340.SZ</span><span class="ctt-zh">格林美</span></span></span>
+        </div>
+        <div class="ctt-g">
+          <span class="ctt-gk"><span class="l-en">quiet</span><span class="l-zh">未触发</span></span>
+          <span class="ctt-names"><span class="ctt-n"><span class="ctt-sym">300750.SZ</span><span class="ctt-zh">宁德时代</span></span><span class="ctt-n"><span class="ctt-sym">002466.SZ</span><span class="ctt-zh">天齐锂业</span></span><span class="ctt-n"><span class="ctt-sym">300207.SZ</span><span class="ctt-zh">欣旺达</span></span><span class="ctt-n"><span class="ctt-sym">002074.SZ</span><span class="ctt-zh">国轩高科</span></span><span class="ctt-n"><span class="ctt-sym">002812.SZ</span><span class="ctt-zh">恩捷股份</span></span><span class="ctt-n"><span class="ctt-sym">002709.SZ</span><span class="ctt-zh">天赐材料</span></span><span class="ctt-n ctt-more">+2</span><span class="ctt-why"><span class="l-en">Still below trend</span><span class="l-zh">仍在趋势下方</span></span></span>
+        </div>
+        <p class="ctt-veh">
+          <span class="l-en">Traded as one, this theme is <span class="ctt-sym">515030.SS</span> — context, not a recommendation. The names above are being watched, not bought.</span>
+          <span class="l-zh">作为整体交易时，本主题对应 <span class="ctt-sym">515030.SS</span> — 仅供参考，非推荐。上列个股处于观察中，并非买入对象。</span>
+        </p>
+        <span class="ctt-more-link"><a href="basket_china/cn_battery.html"><span class="l-en">This theme in full →</span><span class="l-zh">查看本主题详情 →</span></a></span>
+      </div>
+    </details><hr class="ctt-rule">
+    <p class="ctt-foot">
+      <span class="l-en">Theme cycles point you at where to look, not at what to buy — the picks above are unchanged by this panel. <a href="china_sector_desk.html">All 22 themes →</a></span>
+      <span class="l-zh">主题周期指出值得关注的方向，而非买入对象 — 上方选股不受本面板影响。<a href="china_sector_desk.html">查看全部 22 个主题 →</a></span>
+    </p>
+  </div>
+</body></html>

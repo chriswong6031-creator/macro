@@ -53,15 +53,27 @@ def main() -> int:
         asof = closes.index[-1] if not closes.empty else pd.Timestamp.utcnow()
         matured = SB.mature(asof, closes)
         grade = SB.grade(matured, key="percentile")
+        booked = set(book["ticker"].dropna())
+        resolvable = booked & set(closes.columns)
         out = {"schema": "shadow_audit.v1",
                "n_booked": int(len(book)),
                "booked_dates": [str(book["date"].min()), str(book["date"].max())],
                "asof": str(pd.Timestamp(asof).date()),
                **grade,
+               "coverage": {
+                   "n_tickers_booked": len(booked),
+                   "n_tickers_resolvable": len(resolvable),
+                   "note": ("booked names absent from the free price panel never mature — "
+                            "part of the survivorship bound, not a maturation lag "
+                            "(prereg §4.3)")},
+               "price_basis": ("raw closes — price-only forward return, not the total "
+                               "return the prereg names; dividend payers are penalized "
+                               "(tests/test_price_basis_graders.py)"),
                "interpretation": (
                    "Realized forward cross-sectional IC of the FROZEN stock score per horizon. "
                    "Empty/thin until horizons elapse. Honest prior: likely ≈0 — and knowing that "
-                   "is the institutional win."),
+                   "is the institutional win. Verdicts stay 'building' until the FROZEN "
+                   "pre-registration's §3 sample floor (research/SHADOW_BOOK_PREREGISTRATION.md)."),
                "survivorship": "OPTIMISTIC bound — free prices serve listed names only."}
     out["generated_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     os.makedirs("site/shadow", exist_ok=True)
@@ -72,8 +84,12 @@ def main() -> int:
           f"wrote site/shadow/audit.json")
     if nm and out.get("by_horizon"):
         for h, g in out["by_horizon"].items():
-            print(f"  {h}: forward IC {g['ic'].get('mean_ic')} (t {g['ic'].get('t_hac')}, "
-                  f"{g['n_dates']} dates)")
+            cw = g.get("clark_west") or {}
+            print(f"  {h} [{g.get('verdict')}]: forward IC {g['ic'].get('mean_ic')} "
+                  f"(t {g['ic'].get('t_hac')}, "
+                  f"lags {g['ic'].get('hac_lags')}/{g['ic'].get('hac_lags_requested')}, "
+                  f"{g['n_dates']} dates, {g.get('n_indep_windows')} indep); "
+                  f"CW t {cw.get('cw_t')} ({cw.get('n_dates', 0)} dates)")
     return 0
 
 

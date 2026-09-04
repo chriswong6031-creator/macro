@@ -333,6 +333,132 @@ def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bo
     assert next(row for row in after if row["term"]["name"] == "registration_fee")["reported"]["value"] == "1237.1"
 
 
+def test_incremental_compile_reuses_exact_dependencies_without_source_reads_and_matches_full_rebuild():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    initial = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+
+    incremental_reads: list[str] = []
+
+    def incremental_reader(row):
+        incremental_reads.append(str(row["manifest_id"]))
+        return raw
+
+    incremental = compile_document_term_records(
+        [manifest], source_reader=incremental_reader,
+        existing_observations=initial, generated_at="2026-08-04T00:00:00Z",
+    )
+    assert incremental_reads == []
+    assert incremental["observations"] == initial
+    expected_counts = {
+        "eligible_complete_submissions": 1,
+        "processed_complete_submissions": 0,
+        "reused_complete_submissions": 1,
+        "source_reads": 0,
+        "dependency_validated_observations": 5,
+        "source_validated_observations": 0,
+        "parser_version_invalidations": 0,
+    }
+    for name, expected in expected_counts.items():
+        assert incremental["counts"][name] == expected
+
+    rebuilt = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), existing_observations=initial,
+        generated_at="2026-08-04T00:00:00Z", rebuild=True,
+    )
+    assert rebuilt["observations"] == incremental["observations"]
+    assert rebuilt["new_observations"] == incremental["new_observations"] == []
+
+
+def test_incremental_compile_does_not_reuse_detached_evidence_dependency():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    initial = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    detached = deepcopy(initial)
+    detached[0]["evidence"]["source_document_sha256"] = "f" * 64
+    detached[0]["observation_id"] = observation_id_for(detached[0])
+    reads: list[str] = []
+
+    def reader(row):
+        reads.append(str(row["manifest_id"]))
+        return raw
+
+    with pytest.raises(ValueError, match="source dependency"):
+        compile_document_term_records(
+            [manifest], source_reader=reader, existing_observations=detached,
+            generated_at="2026-08-04T00:00:00Z",
+        )
+    assert reads == []
+
+
+def test_new_evidence_identity_reads_only_the_new_root_and_never_stale_reuses():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    initial = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+
+    corrected_raw = raw.replace(b"1,250,000", b"1,260,000")
+    corrected = _manifest(corrected_raw)
+    corrected["document"]["document_version"] = 2
+    corrected["retrieval"]["retrieved_at"] = "2026-08-04T12:00:00Z"
+    corrected["retrieval"]["first_seen_at"] = "2026-08-04T12:00:00Z"
+    corrected["manifest_id"] = manifest_id_for(corrected)
+    payloads = {
+        manifest["manifest_id"]: raw,
+        corrected["manifest_id"]: corrected_raw,
+    }
+    reads: list[str] = []
+
+    def reader(row):
+        manifest_id = str(row["manifest_id"])
+        reads.append(manifest_id)
+        return payloads[manifest_id]
+
+    result = compile_document_term_records(
+        [manifest, corrected], source_reader=reader,
+        existing_observations=initial, generated_at="2026-08-05T00:00:00Z",
+    )
+    assert reads == [corrected["manifest_id"]]
+    assert result["counts"]["processed_complete_submissions"] == 1
+    assert result["counts"]["reused_complete_submissions"] == 1
+    assert result["counts"]["source_reads"] == 1
+    assert len(result["new_observations"]) == 5
+    assert {
+        row["document"]["source_manifest_id"] for row in result["new_observations"]
+    } == {corrected["manifest_id"]}
+
+
+def test_parser_version_change_forces_one_root_read_and_append_only_corrections():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    prior_version, lane, capability = _fixture_prior_parser_lane()
+    original = document_terms._compile_document_term_records_test_lane(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+        parser_lane=lane, parser_version=prior_version, capability=capability,
+    )["observations"]
+    reads: list[str] = []
+
+    def reader(row):
+        reads.append(str(row["manifest_id"]))
+        return raw
+
+    result = document_terms._compile_document_term_records_test_lane(
+        [manifest], source_reader=reader, existing_observations=original,
+        generated_at="2026-08-04T00:00:00Z",
+        parser_lane=lane, parser_version="capital-structure-document-terms/1.1.0",
+        capability=capability,
+    )
+    assert reads == [manifest["manifest_id"]]
+    assert result["counts"]["parser_version_invalidations"] == 1
+    assert result["counts"]["processed_complete_submissions"] == 1
+    assert len(result["new_observations"]) == 5
+
+
 def test_unknown_or_phantom_parser_correction_fails_closed_against_retained_bytes():
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
@@ -827,7 +953,7 @@ def test_cold_tracked_source_export_import_is_repeatable_without_bytecode(tmp_pa
     assert outputs == [outputs[0]] * 3
     assert outputs[0] == (
         "263 d47515272069bfc3f3f768b84b94a218f7f66e7c746e36a8702efd97c26af645 "
-        "a5f1ef92d101b0028d234219247613b7812350e9938a768f606ceade9d3db4ba "
+        "b08d50df113550f4faea3ff676e48718355e04b95c89b5b1a7ff53ae4e09b32f "
         "7adefd79136224d8c0ca0c84cd4ef41bd206690f9ec28622cdf95f682c811b28"
     )
     assert not list(export_root.rglob("__pycache__"))
@@ -838,12 +964,12 @@ def test_released_authority_policy_has_independent_golden_closure():
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         policy.entrypoints,
     )
-    assert len(manifest) == 426
+    assert len(manifest) == 432
     assert manifest_sha256 == (
-        "52b07cecee3990eba3d059ad5cce51f5d1b75a1d278af06db13a56bacbaee23a"
+        "ce4537defd873c1f1406ea8b4e3709ef0e33c8e034c9d6c2b632b3af546c0425"
     )
     assert implementation_sha256 == (
-        "a5f1ef92d101b0028d234219247613b7812350e9938a768f606ceade9d3db4ba"
+        "b08d50df113550f4faea3ff676e48718355e04b95c89b5b1a7ff53ae4e09b32f"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -852,6 +978,7 @@ def test_released_authority_policy_has_independent_golden_closure():
         "source_identity.validate_manifest_retained_bytes_binding",
         "._validate_document_term_records_contract",
         "._assert_zero_authority",
+        "._validate_observation_source_dependency_core",
         "._validate_observation_source_binding_core",
         "._validate_document_term_history_core",
         "._validate_document_term_source_authority_core",
@@ -1768,6 +1895,55 @@ def test_disk_compiler_requires_matching_store_namespace_and_writes_canonical_le
         )
 
 
+def test_disk_incremental_and_full_rebuild_are_byte_identical_without_rewriting_history(tmp_path):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    _write_ledger(source_ledger_path(tmp_path), [manifest])
+
+    class Store:
+        store_id = "r2_shared"
+
+        def __init__(self):
+            self.reads = 0
+
+        def get_verified(self, object_key: str, expected_sha256: str) -> bytes | None:
+            self.reads += 1
+            assert object_key == manifest["storage"]["object_key"]
+            assert expected_sha256 == manifest["document"]["content_sha256"]
+            return raw
+
+    first_store = Store()
+    first = compile_from_disk(
+        root=tmp_path, generated_at="2026-08-03T00:00:00Z", source_store=first_store,
+    )
+    ledger_path = tmp_path / "document_term_observations.parquet"
+    first_bytes = ledger_path.read_bytes()
+    first_rows = pd.read_parquet(ledger_path)["observation_json"].tolist()
+    assert first["source_reads"] == 1
+
+    class NoReadStore(Store):
+        def get_verified(self, object_key: str, expected_sha256: str) -> bytes | None:
+            raise AssertionError("unchanged dependency must not read retained source bytes")
+
+    incremental = compile_from_disk(
+        root=tmp_path, generated_at="2026-08-04T00:00:00Z", source_store=NoReadStore(),
+    )
+    assert incremental["source_reads"] == 0
+    assert incremental["reused_complete_submissions"] == 1
+    assert ledger_path.read_bytes() == first_bytes
+    assert pd.read_parquet(ledger_path)["observation_json"].tolist() == first_rows
+
+    rebuild_store = Store()
+    rebuilt = compile_from_disk(
+        root=tmp_path, generated_at="2026-08-04T00:00:00Z",
+        source_store=rebuild_store, rebuild=True,
+    )
+    assert rebuilt["source_reads"] == 1
+    assert rebuilt["new_observations"] == 0
+    assert ledger_path.read_bytes() == first_bytes
+    assert pd.read_parquet(ledger_path)["observation_json"].tolist() == first_rows
+
+
 def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path):
     raw = FIXTURE.read_bytes()
     shared = _manifest(raw)
@@ -1867,36 +2043,26 @@ def test_disk_compiler_binds_root_span_only_rows_against_their_retained_bytes(tm
     )
 
 
-def test_lineage_validation_reads_retained_bytes_for_every_row_shape(tmp_path):
-    """The lineage pass must ASK for the bytes, not decide the row is exempt.
-
-    Pinned on the reader rather than on the outcome: the compiler's memoized
-    reader means a byte read is a dict hit by the time lineage runs, so a
-    re-introduced shortcut would be invisible to timing or to a store call
-    count. Asking is the behaviour under test.
-    """
+def test_lineage_validation_reuses_only_exact_manifest_dependencies(tmp_path):
+    """The post-compile pass must not repeat the sealed retained-byte gate."""
     raw, manifest = _root_span_only_fixture()
     observations = compile_document_term_records(
         [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z"
     )["observations"]
     assert observations, "fixture must produce rows"
 
-    asked: list[str] = []
-
-    def spy(record):
-        asked.append(str(record["manifest_id"]))
-        return raw
-
     compile_capital_structure_document_terms._validate_observation_lineage(
-        observations, [manifest], _contract(), source_reader=spy,
+        observations, [manifest], _contract(),
+        source_reader=lambda record: pytest.fail("lineage reread retained bytes"),
     )
-    assert asked == [str(manifest["manifest_id"])]
 
-    # Genuinely absent bytes stay a hard, named refusal -- the all-or-nothing
-    # law: no partial ledger, and never a quiet pass on unbound evidence.
-    with pytest.raises(ValueError, match="source bytes are unavailable"):
+    detached = deepcopy(observations)
+    detached[0]["evidence"]["source_document_sha256"] = "f" * 64
+    detached[0]["observation_id"] = observation_id_for(detached[0])
+    with pytest.raises(ValueError, match="detached source evidence"):
         compile_capital_structure_document_terms._validate_observation_lineage(
-            observations, [manifest], _contract(), source_reader=lambda record: None,
+            detached, [manifest], _contract(),
+            source_reader=lambda record: pytest.fail("lineage reread retained bytes"),
         )
 
 

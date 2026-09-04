@@ -2393,13 +2393,61 @@
   <div class="panel span12" id="stocks-header">
     {% set _stk_hdr_su = us_standouts if (us_standouts is defined and us_standouts) else none %}
     {% set _stk_hdr_delayed = (_stk_hdr_su.get('staleness') or {}).get('delayed') if _stk_hdr_su else false %}
+    {#- ── THE BOARD'S ONE VINTAGE STAMP (2026-08-26, PR-2 of the US permanence program).
+        This chip used to read "Fresh 2026-08-25": a self-assessment plus an UNLABELLED
+        date. A bare date answers no question on its own, so the reader had to guess what
+        it was the date OF — and the nearest competing date on the page (the per-card
+        zone-row chip, now removed in _us_board_cards.html.j2) was a board-wide 3-session
+        signal-bucket constant four days older. On 2026-08-26 the older one was read as
+        the board's freshness and the board was declared five days stale while `as_of` had
+        in fact advanced every night.
+
+        The fix is to make the ONE authoritative stamp say what it is (DESIGN_DOCTRINE
+        Law 3 — a number on Tier 1 arrives with its interpretation; Law 4 — one as-of
+        stamp per panel). "Data through <as_of>" is the whole answer to "how fresh is
+        this?", and it needs no arithmetic to read.
+
+        The bare word "Fresh" is deliberately gone: the green dot already carries the
+        healthy state non-verbally, and a labelled date is a fact the reader can check
+        rather than a claim they must trust. The alarm side keeps its word — a delayed
+        board still says "Delayed" in text, because colour must never be the only carrier
+        of a warning.
+
+        ISO, not a prettified "Aug 25": this is the stamp a reader compares against
+        today's date, and it is the one the CN twin (china.html.j2 #stocks-header) also
+        prints, so the shared header family stays consistent.
+
+        The signal-bucket clock is NOT deleted, it is demoted to this chip's Tier-2 LENS
+        hover, which is where a board-level constant belongs. It is derived defensively:
+        the clause renders only when the whole board agrees on ONE signal date, so if a
+        future artifact ever makes signal.asof per-card, the sentence silently stops
+        rather than generalising one row's value to all of them. -#}
+    {%- set _sig_ns = namespace(vals=[]) -%}
+    {%- if _stk_hdr_su -%}
+      {%- for _r in ((_stk_hdr_su.get('buy') or []) + (_stk_hdr_su.get('watch') or [])) -%}
+        {%- set _v = (_r.get('signal') or {}).get('asof') -%}
+        {%- if _v and _v not in _sig_ns.vals %}{% set _sig_ns.vals = _sig_ns.vals + [_v] %}{% endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+    {%- set _sig_asof = _sig_ns.vals[0] if (_sig_ns.vals | length) == 1 else none -%}
+    {%- set _vint_tip_en = 'The date is the last session this board has data for. Prices, buy zones and the ranking are rebuilt from scratch every session, so they are all as of this date.'
+         ~ (' Entry signals are re-scored on their own slower cycle; the current set dates from ' ~ _sig_asof ~ ', which is why a card can carry a signal older than the board.' if _sig_asof else '')
+         ~ (' A delayed board keeps showing its last good data rather than nothing — check a live quote before you act.' if _stk_hdr_delayed else '') -%}
+    {%- set _vint_tip_zh = '此日期是本榜单最后一个有数据的交易日。价格、买区和排序每个交易日都会完全重算，因此都截至该日期。'
+         ~ ('入场信号按各自较慢的周期重新评分，当前这一批的日期是 ' ~ _sig_asof ~ '，所以卡片上的信号可能比榜单更早。' if _sig_asof else '')
+         ~ ('数据延迟时，榜单会继续显示最后一批有效数据，而不是留空——操作前请先看一下实时报价。' if _stk_hdr_delayed else '') -%}
     <div class="stk-headline">
       <h1>{{ t('US Stocks', '美国股票') }}</h1>
       <div class="stk-head-meta">
-        <span class="stk-status{{ ' is-delayed' if _stk_hdr_delayed else '' }}">
+        <span class="stk-status{{ ' is-delayed' if _stk_hdr_delayed else '' }}"
+              {%- if _stk_hdr_su and _stk_hdr_su.get('as_of') %} data-tip-en="{{ _vint_tip_en|e }}" data-tip-zh="{{ _vint_tip_zh|e }}"{% endif %}>
           <span class="stk-fresh-dot" aria-hidden="true"></span>
+          {%- if _stk_hdr_su and _stk_hdr_su.get('as_of') %}
+          <span class="l-en">{{ 'Delayed · data through' if _stk_hdr_delayed else 'Data through' }}</span><span class="l-zh">{{ '已延迟 · 数据截至' if _stk_hdr_delayed else '数据截至' }}</span>
+          <strong>{{ _stk_hdr_su.as_of }}</strong>
+          {%- else %}
           <span class="l-en">{{ 'Delayed' if _stk_hdr_delayed else 'Fresh' }}</span><span class="l-zh">{{ '延迟' if _stk_hdr_delayed else '新鲜' }}</span>
-          {% if _stk_hdr_su and _stk_hdr_su.get('as_of') %}<strong>{{ _stk_hdr_su.as_of }}</strong>{% endif %}
+          {%- endif %}
         </span>
         <span class="stk-status"><span class="l-en">Regime</span><span class="l-zh">周期</span> <strong>{{ td(latest.quad_name) }}</strong></span>
         {% if pb and pb.dial %}<span class="stk-status"><span class="l-en">Posture</span><span class="l-zh">姿态</span> <strong>{{ td(pb.dial.posture) }}</strong></span>{% endif %}
@@ -6237,91 +6285,154 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   .fbm-row-state{min-width:82px;font-size:11.5px;}
 }
 
-/* ══ RISK CLUSTER — dlg-risk rebuild (rkc-* = Risk Cluster) ═══════════════════
-   The 10+ session complaint: crowded text fatigue. Wave C kills the stacks with
-   ONE visual anchor per zone, coherent with Wave B's fbm family (glance rows,
-   ? tips, chart draw-in gated on .mx5-dlg-in). Signature = the Overseas severity
-   ring (conic-gradient 0-100 arc — a non-verbal encoding, doctrine-canon). Accent
-   = --isle-risk. All animation reduced-motion guarded. Scoped to #dlg-risk so the
-   SHARED radar-card partial keeps its default look on every other consumer. */
+/* ══ RISK RADAR MODAL — Sol freeze (verdict → why → watch → context) ════════
+   Scoped to #dlg-risk. Shared _risk_radar_card / country clones are untouched.
+   rlx-* stay global because LENS clones live on body. No parallel :root tokens. */
 
-/* The dialog is also embedded in narrow Moon Check shells. Its layout therefore
-   responds to the panel, not the browser viewport. This prevents desktop media
-   queries from leaving mobile-width content in a desktop-shaped layout. */
 #dlg-risk .mx5-dlg-panel{
   container: risk-dialog / inline-size;
-  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+  font-family:var(--font-ui);
+  max-width:min(900px, calc(100vw - 48px));
+  width:calc(100% - 48px);
+  max-height:min(88vh, 900px);
+  overflow-x:hidden;
 }
 #dlg-risk .mx5-dlg-body,#dlg-risk .mx5-dlg-body *{min-width:0;}
-#dlg-risk .mx5-dlg-title,#dlg-risk .mx5-dlg-eyebrow,#dlg-risk .mx5-dlg-driver-label{
-  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+#dlg-risk .mx5-dlg-title{
+  font-family:var(--font-ui);
+  font-size:var(--fs-md);font-weight:650;letter-spacing:0;text-transform:none;
+  color:var(--ink-2);
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
 }
-
-/* — 1. Radar card: pullback-odds mini bar chart (dlg-risk-scoped OVERRIDE only) —
-   The .rrx partial is shared; these overrides restyle its odds ramp into a proper
-   labelled bar chart WITHOUT touching its default (china/hk/canada/stocks) look. */
-#dlg-risk .rrx{background:color-mix(in srgb,var(--rc) 5%,var(--panel));border-color:color-mix(in srgb,var(--rc) 22%,var(--line));
-  box-shadow:none;border-left-width:3px;}
-[data-theme="light"] #dlg-risk .rrx{background:color-mix(in srgb,var(--rc) 6%,var(--panel));border-color:color-mix(in srgb,var(--rc) 24%,var(--line));}
-#dlg-risk .rrx .rrx-ramp{padding-top:24px;gap:14px;max-width:none;}
-#dlg-risk .rrx .rrx-tk{height:78px;max-width:60px;}
-#dlg-risk .rrx .rrx-fill{background:linear-gradient(180deg,var(--rc),color-mix(in srgb,var(--rc) 42%,transparent));
-  box-shadow:0 0 12px -3px color-mix(in srgb,var(--rc) 70%,transparent);}
-#dlg-risk .rrx .rrx-v{font-size:13px;}
-/* "vs normal" ghost caption above the ramp */
-#dlg-risk .rrx .rrx-leg{top:6px;font-size:10px;}
-/* The partial's stacked prose rows (Leading / Do / cycle / audit / overseas / correlation /
-   track) are the "six text signals" complaint. In dlg-risk they are REBUILT below the card as
-   the .rkc-sig tile grid (plain words + full sentence on hover), so suppress the partial's own
-   copies here ONLY — the shared default (china/hk/canada/stocks) is untouched. */
-#dlg-risk .rrx .rrx-side{display:none;}
-#dlg-risk .rrx .rrx-ev,#dlg-risk .rrx .rrx-do{display:none;}
-/* draw-in: bars grow from the baseline when the dialog settles */
+#dlg-risk .riskdlg-asof{
+  font:500 var(--fs-label)/1 var(--font-ui);letter-spacing:0;text-transform:none;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;
+}
+#dlg-risk .mx5-dlg-close{width:44px;height:44px;font-size:22px;}
+#dlg-risk .mx5-dlg-header{padding:14px 22px 12px;}
+#dlg-risk .mx5-dlg-body{padding:6px 22px 22px;}
+@media(max-width:899px){
+  #dlg-risk .mx5-dlg-panel{max-width:calc(100vw - 32px);width:calc(100vw - 32px);}
+}
+@media(max-width:700px){
+  #dlg-risk .mx5-dlg-header{padding:14px 16px 10px;}
+  #dlg-risk .mx5-dlg-body{padding:4px 16px 20px;}
+}
 @media(prefers-reduced-motion:no-preference){
-  #dlg-risk .rrx .rrx-fill,#dlg-risk .rrx .rrx-norm{transform:scaleY(0);transform-origin:50% 100%;
-    transition:transform 640ms cubic-bezier(.22,.9,.26,1.02);}
-  #dlg-risk.mx5-dlg-in .rrx .rrx-fill{transition-delay:.28s;}
-  #dlg-risk.mx5-dlg-in .rrx .rrx-norm{transition-delay:.18s;}
-  #dlg-risk.mx5-dlg-in .rrx .rrx-fill,#dlg-risk.mx5-dlg-in .rrx .rrx-norm{transform:scaleY(1);}
+  #dlg-risk .mx5-dlg-body > *{opacity:1;transform:none;transition:none;}
 }
+[data-theme="light"] #dlg-risk .mx5-dlg-title{color:var(--ink-2);}
+[data-theme="light"] #dlg-risk .riskdlg-asof{color:var(--ink-3);}
 
-/* — 2. Signal-tile grid (the six stacked prose rows → 2-col icon tiles) — */
-.rkc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;}
-.rkc-sig{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:11px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
-  min-width:0;transition:border-color .2s ease,transform .16s ease,background .2s ease;}
-[data-theme="light"] .rkc-sig{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);}
-.rkc-sig[data-tip-en]{cursor:help;}
-.rkc-sig:hover{border-color:color-mix(in srgb,var(--isle-risk,#e05c5c) 34%,var(--line,rgba(255,255,255,.1)));
-  transform:translateY(-1px);background:rgba(255,255,255,.045);}
-[data-theme="light"] .rkc-sig:hover{background:rgba(0,0,0,.035);}
-.rkc-sig-ico{flex:0 0 auto;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-  color:var(--rkc-c,var(--isle-risk,#e05c5c));background:color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 12%,transparent);}
+/* — Risk Brief (one hero) — */
+#dlg-risk .riskdlg-brief{
+  padding:14px 16px 12px;border-radius:var(--r-card);
+  background:color-mix(in srgb, var(--text) 4%, transparent);
+  border:1px solid var(--line);
+  border-left:2px solid var(--rkc-c,var(--ok));
+}
+#dlg-risk .riskdlg-brief[data-rk-state="calm"],
+#dlg-risk .riskdlg-brief[data-rk-state="unknown"]{--rkc-c:var(--ok);}
+#dlg-risk .riskdlg-brief[data-rk-state="watch"]{--rkc-c:var(--info);}
+#dlg-risk .riskdlg-brief[data-rk-state="elevated"],
+#dlg-risk .riskdlg-brief[data-rk-state="caution"]{--rkc-c:var(--warn);}
+#dlg-risk .riskdlg-brief[data-rk-state="risk-off"],
+#dlg-risk .riskdlg-brief[data-rk-state="high"]{--rkc-c:var(--down);}
+[data-theme="light"] #dlg-risk .riskdlg-brief{background:var(--panel);}
+#dlg-risk .riskdlg-brief-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+#dlg-risk .riskdlg-state{
+  font:700 var(--fs-sm)/1 var(--font-ui);letter-spacing:.02em;text-transform:none;
+  color:var(--rkc-c,var(--ok));
+}
+#dlg-risk .riskdlg-score{
+  font:800 var(--fs-h1)/.9 var(--font-ui);font-variant-numeric:tabular-nums;
+  color:var(--ink-1);letter-spacing:-.02em;
+}
+#dlg-risk .riskdlg-score small{font-size:var(--fs-sm);font-weight:600;color:var(--ink-3);margin-left:2px;}
+#dlg-risk .riskdlg-domain{font:650 var(--fs-md)/1.35 var(--font-ui);color:var(--ink-1);margin-top:6px;}
+#dlg-risk .riskdlg-stance{font:500 var(--fs-body)/1.45 var(--font-ui);color:var(--ink-2);margin-top:4px;}
+#dlg-risk .riskdlg-authority{font:500 var(--fs-label)/1.4 var(--font-ui);color:var(--ink-3);margin-top:6px;}
+#dlg-risk .riskdlg-odds{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);}
+#dlg-risk .riskdlg-odds-k{font:600 var(--fs-label)/1.2 var(--font-ui);color:var(--ink-3);margin-bottom:6px;}
+#dlg-risk .riskdlg-odds-h{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;}
+#dlg-risk .riskdlg-odds-h span{font:500 var(--fs-sm)/1 var(--font-ui);color:var(--ink-2);}
+#dlg-risk .riskdlg-odds-h b{font-weight:750;font-variant-numeric:tabular-nums;margin-left:4px;color:var(--ink-1);}
+#dlg-risk .riskdlg-odds-h .is-lead{font-size:var(--fs-body);color:var(--ink-1);}
+#dlg-risk .riskdlg-odds-h .is-lead b{font-size:var(--fs-num-lg);font-weight:800;}
+#dlg-risk .riskdlg-odds-rail{position:relative;height:10px;margin-top:8px;}
+#dlg-risk .riskdlg-odds-track{display:block;height:2px;border-radius:0;position:absolute;left:0;right:0;top:4px;
+  background:var(--line);}
+#dlg-risk .riskdlg-odds-dot{position:absolute;top:1px;width:8px;height:8px;border-radius:var(--r-pill);
+  background:var(--ink-3);transform:translateX(-50%);}
+#dlg-risk .riskdlg-odds-dot.is-lead{width:10px;height:10px;top:0;background:var(--rkc-c,var(--ok));}
+#dlg-risk .riskdlg-odds-norm{position:absolute;top:-1px;width:1px;height:12px;opacity:.55;
+  background:var(--ink-3);transform:translateX(-50%);}
+#dlg-risk .riskdlg-odds-note{font:500 var(--fs-label)/1.3 var(--font-ui);color:var(--ink-3);margin-top:6px;font-variant-numeric:tabular-nums;}
+#dlg-risk .riskdlg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+#dlg-risk .riskdlg-chip{
+  font:600 var(--fs-label)/1 var(--font-ui);padding:5px 8px;border-radius:var(--r-btn);
+  border:1px solid var(--line);color:var(--ink-2);
+  background:transparent;
+}
+#dlg-risk .riskdlg-chip.is-accent{color:var(--rkc-c);border-color:color-mix(in srgb,var(--rkc-c) 32%,transparent);}
+#dlg-risk .riskdlg-chip[data-fed="hawkish"],
+#dlg-risk .riskdlg-chip[data-fed="very-hawkish"]{--rkc-c:var(--down);}
+#dlg-risk .riskdlg-chip[data-fed="dovish"],
+#dlg-risk .riskdlg-chip[data-fed="very-dovish"]{--rkc-c:var(--up);}
+#dlg-risk .riskdlg-chip[data-fed="neutral"]{--rkc-c:var(--warn);}
+
+#dlg-risk .riskdlg-sec-h{
+  font:650 var(--fs-body)/1.3 var(--font-ui);color:var(--ink-1);
+  margin:16px 0 8px;letter-spacing:0;text-transform:none;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+}
+#dlg-risk .riskdlg-sec-h small{font:500 var(--fs-label)/1 var(--font-ui);color:var(--ink-3);text-transform:none;letter-spacing:0;}
+
+#dlg-risk .riskdlg-drv-list{
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:color-mix(in srgb, var(--text) 3%, transparent);overflow:hidden;
+}
+[data-theme="light"] #dlg-risk .riskdlg-drv-list{background:var(--panel);}
+#dlg-risk .riskdlg-drv{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:40px;
+  border-bottom:1px solid var(--line);min-width:0;
+}
+#dlg-risk .riskdlg-drv:last-child{border-bottom:none;}
+#dlg-risk .riskdlg-drv[data-tip-en]{cursor:help;}
+#dlg-risk .riskdlg-drv[data-isle="risk"]{--rkc-c:var(--isle-risk);}
+#dlg-risk .riskdlg-drv[data-isle="events"]{--rkc-c:var(--isle-events);}
+#dlg-risk .riskdlg-drv[data-isle="markets"]{--rkc-c:var(--isle-markets);}
+#dlg-risk .riskdlg-drv[data-isle="news"]{--rkc-c:var(--isle-news);}
+#dlg-risk .riskdlg-drv[data-pressure="high"]{--rkc-c:var(--down);}
+#dlg-risk .riskdlg-drv[data-pressure="moderate"]{--rkc-c:var(--warn);}
+#dlg-risk .riskdlg-drv[data-pressure="low"]{--rkc-c:var(--up);}
+#dlg-risk .riskdlg-drv .rlx-viz{--rlx-c:var(--rkc-c);}
+#dlg-risk .riskdlg-drv .lens-ill{color:var(--rkc-c);}
+#dlg-risk .riskdlg-drv .rkc-sig-ico{
+  width:20px;height:20px;border-radius:0;background:transparent;
+}
+#dlg-risk .riskdlg-drv .rkc-sig-ico svg{width:16px;height:16px;}
+#dlg-risk .riskdlg-drv .rkc-sig-body{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+#dlg-risk .riskdlg-drv .rkc-sig-lbl{font:650 var(--fs-label)/1.25 var(--font-ui);color:var(--ink-3);flex:0 0 auto;min-width:4.6em;}
+#dlg-risk .riskdlg-drv .rkc-sig-state{margin:0;font-size:var(--fs-sm);flex:1;min-width:0;}
+#dlg-risk .riskdlg-drv .rkc-sig-tip{width:44px;height:44px;border-radius:var(--r-pill);}
+.rkc-sig-ico{flex:0 0 auto;width:26px;height:26px;border-radius:var(--r-btn);display:flex;align-items:center;justify-content:center;
+  color:var(--rkc-c,var(--isle-risk));background:color-mix(in srgb,var(--rkc-c,var(--isle-risk)) 12%,transparent);}
 .rkc-sig-ico svg{width:15px;height:15px;display:block;}
 .rkc-sig-body{min-width:0;flex:1;}
-.rkc-sig-lbl{font:700 12px/1.25 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
-.rkc-sig-state{font-size:11px;line-height:1.45;color:var(--ink-2,rgba(255,255,255,.62));margin-top:2px;
+.rkc-sig-lbl{font:700 12px/1.25 var(--font-ui);color:var(--ink-1);}
+.rkc-sig-state{font-size:11px;line-height:1.45;color:var(--ink-2);margin-top:2px;
   display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;}
-.rkc-sig-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-ui,inherit);
-  letter-spacing:.03em;padding:2px 6px;border-radius:5px;white-space:nowrap;
-  color:var(--rkc-c,var(--isle-risk,#e05c5c));
-  background:color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 13%,transparent);
-  border:1px solid color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 32%,transparent);}
+.rkc-sig-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-ui);
+  letter-spacing:.03em;padding:2px 6px;border-radius:var(--r-ctl);white-space:nowrap;
+  color:var(--rkc-c,var(--isle-risk));
+  background:color-mix(in srgb,var(--rkc-c,var(--isle-risk)) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--rkc-c,var(--isle-risk)) 32%,transparent);}
 .rkc-sig-tip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;
-  border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
-  font:700 10px/1 var(--font-ui,inherit);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
-.rkc-sig-tip:hover{border-color:var(--isle-risk,#e05c5c);color:var(--isle-risk,#e05c5c);}
-[data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.62);}
-@media(prefers-reduced-motion:no-preference){
-  #dlg-risk .rkc-sig{opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,.9,.26,1.02),border-color .2s ease,background .2s ease;}
-  #dlg-risk.mx5-dlg-in .rkc-sig{opacity:1;transform:translateY(0);}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(1){transition-delay:.10s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(2){transition-delay:.16s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(3){transition-delay:.22s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(4){transition-delay:.28s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(5){transition-delay:.34s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(n+6){transition-delay:.40s;}
-}
+  border-radius:var(--r-pill);border:1px solid var(--line);color:var(--ink-3);
+  font:700 10px/1 var(--font-ui);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
+.rkc-sig-tip:hover{border-color:var(--isle-risk);color:var(--isle-risk);}
+[data-theme="light"] .rkc-sig-tip{border-color:var(--line);color:var(--ink-2);}
 
 /* ── rlx-* : rich-lens popover anatomy (Tier-2 rework 2026-07-20) ────────────
    Illustrated hover cards for the six dlg-risk signal tiles (+ any heavy tip).
@@ -6337,6 +6448,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   background:color-mix(in srgb,var(--lens-text,#d7dce3) 4%,transparent);
   border:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 9%,transparent);}
 .rlx-viz-cap{font:600 10px/1.4 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);margin-top:8px;}
+.rlx-viz.is-news{--rlx-c:var(--isle-news);}
 /* comparison bars — a label ABOVE each full-width bar. (Was a 64px label column, which
    crushed descriptive leg names like "Cyclicals fading vs defensives" into 4-line,
    mid-word-broken wraps — the "bad layout". Stacking gives the name full width and the
@@ -6491,41 +6603,46 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-tx-verdict.v-warn{color:var(--ink-warn, var(--warn,#f59e0b));background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 30%,transparent);}
 .rkc-tx-verdict.v-ok{color:var(--ink-up, var(--up,#22c55e));background:color-mix(in srgb,var(--up,#22c55e) 12%,transparent);border:1px solid color-mix(in srgb,var(--up,#22c55e) 30%,transparent);}
 
-/* — 5. Risk ladder: leading stroke glyph + gradient severity bar (restyle) — */
-body.page-macro #dlg-risk .scare-ladder{gap:7px;}
-body.page-macro #dlg-risk .scare-row{grid-template-columns:26px minmax(130px,1fr) 1.1fr 46px 62px;padding:10px 13px;
-  background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);}
-[data-theme="light"] body.page-macro #dlg-risk .scare-row{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);}
-.rkc-sc-ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-  color:var(--rkc-c,var(--muted));}
-.rkc-sc-ico svg{width:18px;height:18px;display:block;}
-body.page-macro #dlg-risk .sc-bar-track{height:8px;background:rgba(255,255,255,.06);}
-[data-theme="light"] body.page-macro #dlg-risk .sc-bar-track{background:rgba(0,0,0,.06);}
-body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
+/* — 5. Scare ladder: one flat instrument, not seven cards — */
+#dlg-risk .riskdlg-scare-list.scare-ladder{
+  gap:0;margin:0;border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;
+}
+#dlg-risk .riskdlg-scare{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(72px,1fr) 40px 58px;
+  align-items:center;gap:10px;min-height:34px;padding:4px 12px;
+  background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;
+}
+#dlg-risk .riskdlg-scare:last-child{border-bottom:0;}
+#dlg-risk .riskdlg-scare[data-band="sc-band-high"]{--rkc-c:var(--down);}
+#dlg-risk .riskdlg-scare[data-band="sc-band-watch"]{--rkc-c:var(--warn);}
+#dlg-risk .riskdlg-scare[data-band="sc-band-elev"]{--rkc-c:var(--info);}
+#dlg-risk .riskdlg-scare[data-band="sc-band-calm"]{--rkc-c:var(--muted);}
+#dlg-risk .rkc-sc-ico{display:none;}
+#dlg-risk .sc-name{font-size:var(--fs-sm);font-weight:650;}
+#dlg-risk .sc-score{font-size:var(--fs-body);font-weight:750;}
+#dlg-risk .sc-bar-track{height:5px;background:color-mix(in srgb, var(--text) 8%, transparent);}
+#dlg-risk .sc-bar-fill{height:5px;transform-origin:0 50%;
   background:linear-gradient(90deg,color-mix(in srgb,var(--rkc-c,var(--muted)) 45%,transparent),var(--rkc-c,var(--muted)))!important;}
 @media(prefers-reduced-motion:no-preference){
-  #dlg-risk .sc-bar-fill{transform:scaleX(0);transition:transform 620ms cubic-bezier(.22,.9,.26,1.02);}
+  #dlg-risk .sc-bar-fill{transform:scaleX(0);transition:transform 420ms cubic-bezier(.22,.9,.26,1.02);}
   #dlg-risk.mx5-dlg-in .sc-bar-fill{transform:scaleX(1);}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(2) .sc-bar-fill{transition-delay:.05s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(3) .sc-bar-fill{transition-delay:.10s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(4) .sc-bar-fill{transition-delay:.15s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(5) .sc-bar-fill{transition-delay:.20s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(n+6) .sc-bar-fill{transition-delay:.25s;}
+}
+@media(prefers-reduced-motion:reduce){
+  #dlg-risk .sc-bar-fill{transform:none;}
 }
 @container risk-dialog (max-width:700px){
-  body.page-macro #dlg-risk .scare-row{grid-template-columns:24px minmax(0,1fr) 42px 58px;}
-  body.page-macro #dlg-risk .scare-row .sc-bar-track{display:none;}
+  #dlg-risk .riskdlg-scare{grid-template-columns:minmax(0,1fr) 40px 58px;}
+  #dlg-risk .riskdlg-scare .sc-bar-track{display:none;}
 }
 @container risk-dialog (max-width:390px){
-  body.page-macro #dlg-risk .scare-row{
-    grid-template-columns:24px minmax(0,1fr) auto;
-    grid-template-areas:"icon copy score" "icon copy band";
-    align-items:start;gap:3px 9px;padding:10px;
+  #dlg-risk .riskdlg-scare{
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"copy score" "copy band";
+    align-items:start;gap:2px 8px;padding:8px 12px;min-height:44px;
   }
-  body.page-macro #dlg-risk .rkc-sc-ico{grid-area:icon;}
-  body.page-macro #dlg-risk .sc-name{grid-area:copy;}
-  body.page-macro #dlg-risk .sc-score{grid-area:score;text-align:right;}
-  body.page-macro #dlg-risk .sc-band{grid-area:band;justify-self:end;}
+  #dlg-risk .sc-name{grid-area:copy;}
+  #dlg-risk .sc-score{grid-area:score;text-align:right;}
+  #dlg-risk .sc-band{grid-area:band;justify-self:end;}
 }
 
 /* — 6. Mood check: two independent instruments.
@@ -6564,8 +6681,7 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
 }
 @media(prefers-reduced-motion:reduce){
   #dlg-risk .rkc-mood-pin{left:var(--rkc-pos,50%);}
-  #dlg-risk .rkc-ldr-fill,#dlg-risk .sc-bar-fill,#dlg-risk .rrx .rrx-fill,#dlg-risk .rrx .rrx-norm{transform:none;}
-  #dlg-risk .rkc-sig{opacity:1;transform:none;}
+  #dlg-risk .rkc-ldr-fill,#dlg-risk .sc-bar-fill{transform:none;}
   #dlg-risk .rkc-ov-ring{--rkc-anim:var(--rkc-v,0);}
 }
 
@@ -6576,15 +6692,58 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
 .rsx-froth-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
 .rsx-froth-provisional{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.4));}
 
+/* — Leadership rows + method disclosure — */
+#dlg-risk .rkc-rot-head{
+  font:650 var(--fs-sm)/1.3 var(--font-ui);letter-spacing:0;text-transform:none;
+  color:var(--ink-2);
+}
+#dlg-risk .rkc-mood-lens-name{letter-spacing:0;text-transform:none;font:650 var(--fs-label)/1.25 var(--font-ui);}
+#dlg-risk .riskdlg-rot{
+  display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;
+}
+#dlg-risk .riskdlg-theme{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:7px 12px;min-height:34px;text-decoration:none;
+  color:var(--ink-2);background:transparent;
+  border-bottom:1px solid var(--line);
+}
+#dlg-risk .riskdlg-theme:last-child,#dlg-risk .riskdlg-rot > .riskdlg-fold{border-bottom:0;}
+#dlg-risk .riskdlg-tn{font:650 var(--fs-sm)/1.3 var(--font-ui);min-width:0;}
+#dlg-risk .riskdlg-tm{font:700 var(--fs-label)/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--ink-3);flex:0 0 auto;}
+#dlg-risk .riskdlg-theme.up .riskdlg-tm{color:var(--ink-up,var(--up));}
+#dlg-risk .riskdlg-theme.down .riskdlg-tm{color:var(--ink-down,var(--down));}
+#dlg-risk .riskdlg-ldr-caveat{font:500 var(--fs-sm)/1.45 var(--font-ui);color:var(--ink-3);margin:8px 0 4px;}
+#dlg-risk .riskdlg-fold > summary,
+#dlg-risk .riskdlg-method > summary{
+  cursor:pointer;list-style:none;font:600 var(--fs-sm)/1.3 var(--font-ui);
+  color:var(--ink-2);padding:8px 12px;min-height:44px;
+  display:flex;align-items:center;gap:6px;
+}
+#dlg-risk .riskdlg-fold > summary::-webkit-details-marker,
+#dlg-risk .riskdlg-method > summary::-webkit-details-marker{display:none;}
+#dlg-risk .riskdlg-fold > summary::before,
+#dlg-risk .riskdlg-method > summary::before{content:"+";font-weight:700;color:var(--ink-3);width:1em;}
+#dlg-risk .riskdlg-fold[open] > summary::before,
+#dlg-risk .riskdlg-method[open] > summary::before{content:"–";}
+#dlg-risk .riskdlg-method{
+  margin-top:14px;border:1px solid var(--line);border-radius:var(--r-card);
+}
+#dlg-risk .riskdlg-method-note{font:500 var(--fs-sm)/1.45 var(--font-ui);color:var(--ink-3);padding:0 12px 12px;margin:0;}
+#dlg-risk .rsx-dlg-footer{font:500 var(--fs-label)/1.5 var(--font-ui);color:var(--ink-3);margin-top:10px;}
+#dlg-risk .riskdlg-rot > .riskdlg-fold{padding:0;}
+#dlg-risk .riskdlg-rot > .riskdlg-fold > summary{border-top:1px solid var(--line);}
+
 /* — narrow embedded-panel bleed checks — */
 @container risk-dialog (max-width:520px){
-  .rkc-sig-grid{grid-template-columns:1fr;}
   .rkc-mood-board{grid-template-columns:1fr;}
   .rkc-ov-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
   .rkc-ov-ring{width:46px;height:46px;}
   .rkc-ov-val{font-size:14px;}
   .rkc-ldr-row{grid-template-columns:46px 1fr 42px;gap:7px;}
   #dlg-risk .rsx-froth-bar-lbl{width:92px;}
+  #dlg-risk .riskdlg-drv .rkc-sig-body{flex-direction:column;gap:2px;align-items:flex-start;}
+  #dlg-risk .riskdlg-odds-h{gap:12px;}
 }
 @container risk-dialog (max-width:340px){
   .rkc-mood-axis span:nth-child(2),.rkc-mood-axis span:nth-child(4){visibility:hidden;}
@@ -12275,66 +12434,105 @@ html[data-theme="light"] :is(
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
+        <span class="mx5-dlg-title"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
+        {% set _rk_asof = (latest.date if (latest is defined and latest.date is defined and latest.date) else none) %}
+        {% if _rk_asof %}<span class="riskdlg-asof">{{ _rk_asof }}</span>{% endif %}</span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
 
-        {# — 1. Dominant driver banner — #}
+        {# — Risk Brief: one hero, not two — #}
         {% set _dlgr_rdr = market_state.radar if market_state.radar is defined else {} %}
-        {% set _dlgr_state = _dlgr_rdr.state if _dlgr_rdr else 'unknown' %}
-        {% set _dlgr_col = 'var(--down)' if _dlgr_state in ('risk-off','high') else ('var(--warn)' if _dlgr_state in ('elevated','caution') else 'var(--up)') %}
+        {% set _dlgr_state = _dlgr_rdr.state if (_dlgr_rdr and _dlgr_rdr.state is defined and _dlgr_rdr.state) else 'unknown' %}
         {# _dlgr_has = a real radar reading exists. When it doesn't (degraded/no-radar),
            the content blocks below all gate off, so the header must still carry a
-           plain-word stance — a bare "Unknown" enum here would fail Law 1/Law 2.
-           (This replaces the "No active risk readings" fallback the old scorecard
-           popover carried, now that the button opens this dialog directly.) #}
-        {% set _dlgr_has = _dlgr_rdr and _dlgr_rdr.state and _dlgr_state not in ('unknown','none') %}
-        <div class="mx5-dlg-driver-hd">
-          <div class="mx5-dlg-driver-icon" style="background:color-mix(in srgb,{{ _dlgr_col }} 13%,transparent)">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ _dlgr_col }}" stroke-width="2" stroke-linecap="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </div>
-          <div>
-            <div class="mx5-dlg-driver-label" style="color:{{ _dlgr_col }}">
-              {% if _dlgr_has %}
-              <span class="l-en">{{ (_dlgr_rdr.label_en if _dlgr_rdr.label_en is defined else _dlgr_state) | title }}</span>
-              <span class="l-zh">{{ _dlgr_rdr.label_zh if (_dlgr_rdr.label_zh is defined and _dlgr_rdr.label_zh) else (_dlgr_rdr.label_en if _dlgr_rdr.label_en is defined else _dlgr_state) }}</span>
-              {% else %}
-              <span class="l-en">No active risk readings</span><span class="l-zh">暂无活跃风险读数</span>
-              {% endif %}
-            </div>
-            {% if _dlgr_rdr.do_en is defined and _dlgr_rdr.do_en %}
-            <div class="mx5-dlg-driver-sub">
-              <span class="l-en">{{ _dlgr_rdr.do_en }}</span>
-              <span class="l-zh">{{ _dlgr_rdr.do_zh if (_dlgr_rdr.do_zh is defined and _dlgr_rdr.do_zh) else _dlgr_rdr.do_en }}</span>
-            </div>
-            {% elif not _dlgr_has %}
-            <div class="mx5-dlg-driver-sub">
-              <span class="l-en">Nothing to chase right now — watch.</span><span class="l-zh">当前无需追高 — 观望。</span>
-            </div>
-            {% endif %}
-            {% if _dlgr_rdr.top_score is defined and _dlgr_rdr.top_score is not none %}
-            <div class="mx5-dlg-driver-sub" style="margin-top:3px">
-              <span class="l-en">Intensity {{ _dlgr_rdr.top_score }}/100</span>
-              <span class="l-zh">强度 {{ _dlgr_rdr.top_score }}/100</span>
-            </div>
+           plain-word stance — a bare "Unknown" enum here would fail Law 1/Law 2. #}
+        {% set _dlgr_has = _dlgr_rdr and _dlgr_rdr.state is defined and _dlgr_rdr.state and _dlgr_state not in ('unknown','none') %}
+        {% set _rd = _dlgr_rdr %}
+        {% set _base = (_rd.dd_base if (_rd.dd_base is defined and _rd.dd_base and _rd.dd_base.h21 is defined and _rd.dd_base.h21 is not none) else none) %}
+        <section class="riskdlg-brief" data-rk-state="{{ _dlgr_state }}">
+          {% if _dlgr_has %}
+          <div class="riskdlg-brief-top">
+            <span class="riskdlg-state">{% if _rd.state_zh is defined and _rd.state_zh %}{{ t(_rd.state|upper, _rd.state_zh) }}{% else %}{{ t(_rd.state|upper, _rd.state) }}{% endif %}</span>
+            {% if _rd.top_score is defined and _rd.top_score is not none %}
+            <span class="riskdlg-score">{{ _rd.top_score }}<small>/100</small></span>
             {% endif %}
           </div>
-        </div>
+          {% if _rd.label_en is defined and _rd.label_en %}<div class="riskdlg-domain">{{ t(_rd.label_en, _rd.label_zh if (_rd.label_zh is defined and _rd.label_zh) else _rd.label_en) }}</div>{% endif %}
+          {% if _rd.do_en is defined and _rd.do_en %}
+          <div class="riskdlg-stance"><span class="l-en">{{ _rd.do_en }}</span><span class="l-zh">{{ _rd.do_zh if (_rd.do_zh is defined and _rd.do_zh) else _rd.do_en }}</span></div>
+          {% endif %}
+          {% if _rd.binding is defined and _rd.binding and _rd.authority is defined and _rd.authority %}
+          <div class="riskdlg-authority">{{ t(_rd.authority.note_en, _rd.authority.note_zh) }}</div>
+          {% endif %}
+          {% if _rd.dd21 is defined and _rd.dd21 is not none %}
+          {% set _h5 = ((_rd.dd5*100)|round|int) if (_rd.dd5 is defined and _rd.dd5 is not none) else none %}
+          {% set _h10 = ((_rd.dd10*100)|round|int) if (_rd.dd10 is defined and _rd.dd10 is not none) else none %}
+          {% set _h21 = ((_rd.dd21*100)|round|int) %}
+          {% set _bn = ((_base.h21*100)|round|int) if (_base and _base.h21 is defined and _base.h21 is not none) else none %}
+          {% set _odds_ns = namespace(mx=_h21) %}
+          {% if _h5 is not none %}{% set _odds_ns.mx = [_odds_ns.mx, _h5]|max %}{% endif %}
+          {% if _h10 is not none %}{% set _odds_ns.mx = [_odds_ns.mx, _h10]|max %}{% endif %}
+          {% if _bn is not none %}{% set _odds_ns.mx = [_odds_ns.mx, _bn]|max %}{% endif %}
+          {% set _span = _odds_ns.mx if _odds_ns.mx > 0 else none %}
+          <div class="riskdlg-odds">
+            <div class="riskdlg-odds-k">{{ t('Pullback odds ≥5%','回撤概率 ≥5%') }}</div>
+            <div class="riskdlg-odds-h">
+              {% if _h5 is not none %}<span>{{ t('5d','5日') }} <b>{{ _h5 }}%</b></span>{% endif %}
+              {% if _h10 is not none %}<span>{{ t('10d','10日') }} <b>{{ _h10 }}%</b></span>{% endif %}
+              <span class="is-lead">{{ t('21d','21日') }} <b>{{ _h21 }}%</b></span>
+            </div>
+            {% if _span is not none %}
+            <div class="riskdlg-odds-rail" role="img" aria-label="Pullback odds versus normal">
+              <span class="riskdlg-odds-track"></span>
+              {% if _h5 is not none %}<i class="riskdlg-odds-dot" style="left:{{ (_h5 / _span * 100)|round(1) }}%"></i>{% endif %}
+              {% if _h10 is not none %}<i class="riskdlg-odds-dot" style="left:{{ (_h10 / _span * 100)|round(1) }}%"></i>{% endif %}
+              <i class="riskdlg-odds-dot is-lead" style="left:{{ (_h21 / _span * 100)|round(1) }}%"></i>
+              {% if _bn is not none %}<i class="riskdlg-odds-norm" style="left:{{ (_bn / _span * 100)|round(1) }}%"></i>{% endif %}
+            </div>
+            {% endif %}
+            {% if _bn is not none %}
+            <div class="riskdlg-odds-note">{% if _rd.dd_lift is defined and _rd.dd_lift is not none %}{{ _rd.dd_lift }}× {% endif %}{{ t('vs normal','对比常态') }} {{ _bn }}%</div>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% set _dlgr_fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
+          {% set _rk_cy_chip = (_rd.cycle if (_rd.cycle is defined and _rd.cycle and _rd.cycle.show is defined and _rd.cycle.show) else none) %}
+          {% set _rk_cg_chip = (_rd.contagion if (_rd.contagion is defined and _rd.contagion) else none) %}
+          {% if _dlgr_fed_st or _rk_cy_chip or (_rk_cg_chip and _rk_cg_chip.level is defined and _rk_cg_chip.level) %}
+          <div class="riskdlg-chips">
+            {% if _dlgr_fed_st %}
+            {% set _dlgr_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral'} %}
+            {% set _dlgr_fszh = {'hawkish':'鹰派','very-hawkish':'强鹰派','dovish':'鸽派','very-dovish':'强鸽派','neutral':'中性'} %}
+            <span class="riskdlg-chip is-accent" data-fed="{{ _dlgr_fed_st }}">
+              <span class="l-en">Fed: {{ _dlgr_fsl.get(_dlgr_fed_st, _dlgr_fed_st) }}</span>
+              <span class="l-zh">美联储：{{ _dlgr_fszh.get(_dlgr_fed_st, _dlgr_fed_st) }}</span>
+            </span>
+            {% endif %}
+            {% if _rk_cy_chip %}
+            <span class="riskdlg-chip">
+              <span class="l-en">{{ 'Seasonal caution' if (_rk_cy_chip.in_drawdown_window is defined and _rk_cy_chip.in_drawdown_window) else (_rk_cy_chip.label_en if (_rk_cy_chip.label_en is defined and _rk_cy_chip.label_en) else 'Calendar') }}</span>
+              <span class="l-zh">{{ '季节谨慎' if (_rk_cy_chip.in_drawdown_window is defined and _rk_cy_chip.in_drawdown_window) else (_rk_cy_chip.label_zh if (_rk_cy_chip.label_zh is defined and _rk_cy_chip.label_zh) else '日历') }}</span>
+            </span>
+            {% endif %}
+            {% if _rk_cg_chip and _rk_cg_chip.level is defined and _rk_cg_chip.level %}
+            {% set _rk_cg_lv = _rk_cg_chip.level %}
+            {% set _rk_cg_en = 'High' if _rk_cg_lv == 'high' else ('Building' if _rk_cg_lv == 'moderate' else 'Low') %}
+            {% set _rk_cg_zh = '高' if _rk_cg_lv == 'high' else ('升温' if _rk_cg_lv == 'moderate' else '低') %}
+            <span class="riskdlg-chip">
+              <span class="l-en">Overseas {{ _rk_cg_en|lower }}</span>
+              <span class="l-zh">境外{{ _rk_cg_zh }}</span>
+            </span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="riskdlg-state">{{ t('No active risk readings','暂无活跃风险读数') }}</div>
+          <div class="riskdlg-stance">{{ t('Nothing to chase right now — watch.','当前无需追高 — 观望。') }}</div>
+          {% endif %}
+        </section>
 
-        {# — 2. Risk Radar card (show_threats=false — scare chips suppressed here; Risk Ladder below is the single canonical list) — #}
-        {% if MS.radar and MS.radar.state %}{{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none, show_threats=false) }}{% endif %}
-
-        {# — 2b. Signal tiles (Wave C) — the partial's six stacked prose rows (.rrx-side)
-           are hidden in dlg-risk scope (CSS) and REBUILT here as a 2-column icon-tile grid:
-           glyph + 2-word label + one plain line + optional chip; the full sentence + receipts
-           move to hover (data-tip-en/zh). Plain words replace the "72th/66th" percentile leak
-           (doctrine Law 3). All fields null-safe off MS.radar; the whole grid gates off when
-           the radar is absent. #}
-        {% set _rk_rd = MS.radar if (MS.radar is defined and MS.radar) else none %}
+{% set _rk_rd = MS.radar if (MS.radar is defined and MS.radar) else none %}
         {% if _rk_rd and _rk_rd.state %}
         {%- set _rk_scares = latest.risk_radar.scares if (latest.risk_radar and latest.risk_radar.scares) else none -%}
         {#- Leading tile: the dominant scare's two firing legs, plain-word magnitude from percentile.
@@ -12355,8 +12553,9 @@ html[data-theme="light"] :is(
         {%- set _pp = (p*100)|round|int if p is not none else 0 -%}
         {%- if _pp >= 85 -%}{{ '显著' if lang=='zh' else 'sharply' }}{%- elif _pp >= 65 -%}{{ '明显' if lang=='zh' else 'clearly' }}{%- elif _pp >= 50 -%}{{ '温和' if lang=='zh' else 'moderately' }}{%- else -%}{{ '轻微' if lang=='zh' else 'mildly' }}{%- endif -%}
         {%- endmacro %}
-        <div class="rkc-sig-grid">
-
+        <section class="riskdlg-drivers">
+          <div class="riskdlg-sec-h">{{ t("What's driving it?",'原因是什么？') }}</div>
+          <div class="riskdlg-drv-list">
           {# Tile 1 — Leading signal (which scare is driving; plain magnitude word) #}
           {% if _rk_lead and _rk_lead.firing_legs %}
           {%- set _l0 = _rk_lead.firing_legs[0] -%}
@@ -12372,7 +12571,7 @@ html[data-theme="light"] :is(
              below carries the two-leg percentile position bars (built from _l0p/_l1p). -#}
           {%- set _rk_lead_tip_en = 'Leading leg at the ' ~ _l0p ~ _l0ord ~ ' percentile of its trailing 504-session range — higher = more stretched.' -%}
           {%- set _rk_lead_tip_zh = '领先因素处于其过去 504 个交易日区间的 ' ~ _l0p ~ ' 分位——越高越极端。' -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-risk,#e05c5c)" data-lens-kind="caution" data-tip-en="{{ _rk_lead_tip_en }}" data-tip-zh="{{ _rk_lead_tip_zh }}">
+          <div class="riskdlg-drv" data-isle="risk" data-lens-kind="caution" data-tip-en="{{ _rk_lead_tip_en }}" data-tip-zh="{{ _rk_lead_tip_zh }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('leading') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Leading','领先信号') }}</div>
@@ -12418,20 +12617,6 @@ html[data-theme="light"] :is(
           </div>
           {% endif %}
 
-          {# Tile 2 — What to do (the radar's action line, verbatim engine copy) #}
-          {% if _rk_rd.do_en is defined and _rk_rd.do_en %}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-brief,#22c55e)">
-            <span class="rkc-sig-ico">{{ rkc_sig_glyph('do') }}</span>
-            <div class="rkc-sig-body">
-              <div class="rkc-sig-lbl">{{ t('What to do','应对') }}</div>
-              <div class="rkc-sig-state">
-                <span class="l-en">{{ _rk_rd.do_en }}</span>
-                <span class="l-zh">{{ _rk_rd.do_zh if (_rk_rd.do_zh is defined and _rk_rd.do_zh) else _rk_rd.do_en }}</span>
-              </div>
-            </div>
-          </div>
-          {% endif %}
-
           {# Tile 3 — Calendar window (election cycle). Rich LENS popover (Tier-2 rework
              2026-07-20): built from election_cycle.py fields (label / in_drawdown_window /
              sector_bias.favor+avoid), NOT re-typed prose. The mini-visual encodes the
@@ -12444,7 +12629,7 @@ html[data-theme="light"] :is(
           {% if _rk_cy %}
           {%- set _rk_cy_fallback_en -%}Midterm Apr–Oct tends to run weaker — a lean-carefully season, not a sell signal. Nothing fires from the calendar alone.{%- endset -%}
           {%- set _rk_cy_fallback_zh -%}中期选举年 4–10 月往往偏弱——是「谨慎一些」的季节，而非卖出信号。日历本身绝不单独触发操作。{%- endset -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-lens-kind="record" data-tip-en="{{ _rk_cy_fallback_en|trim }}" data-tip-zh="{{ _rk_cy_fallback_zh|trim }}">
+          <div class="riskdlg-drv" data-isle="events" data-lens-kind="record" data-tip-en="{{ _rk_cy_fallback_en|trim }}" data-tip-zh="{{ _rk_cy_fallback_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('window') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Calendar','日历') }}</div>
@@ -12515,7 +12700,7 @@ html[data-theme="light"] :is(
           {#- plain fallback (trigger hook + JS-off): engine line verbatim, short. -#}
           {%- set _rk_cg_fallback_en %}{% if _rk_cg.line_en is defined and _rk_cg.line_en %}{{ _rk_cg.line_en }}{% else %}Stress from overseas markets, gauged by how far big exporters have fallen.{% endif %}{% endset -%}
           {%- set _rk_cg_fallback_zh %}{% if _rk_cg.line_zh is defined and _rk_cg.line_zh %}{{ _rk_cg.line_zh }}{% elif _rk_cg.line_en is defined and _rk_cg.line_en %}{{ _rk_cg.line_en }}{% else %}来自海外市场的压力，以主要出口市场的下跌幅度衡量。{% endif %}{% endset -%}
-          <div class="rkc-sig" style="--rkc-c:{{ _rk_cg_col }}" data-lens-kind="{{ _rk_cg_kind }}" data-tip-en="{{ _rk_cg_fallback_en|trim }}" data-tip-zh="{{ _rk_cg_fallback_zh|trim }}">
+          <div class="riskdlg-drv" data-pressure="{{ _rk_cg_lv or 'low' }}" data-lens-kind="{{ _rk_cg_kind }}" data-tip-en="{{ _rk_cg_fallback_en|trim }}" data-tip-zh="{{ _rk_cg_fallback_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('overseas') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Overseas','境外') }}</div>
@@ -12576,7 +12761,7 @@ html[data-theme="light"] :is(
           {#- plain fallback (trigger hook + JS-off): the plain-word core, short. -#}
           {%- set _rk_cx_fallback_en -%}Markets are moving together — one shock hits everything at once, so spreading bets helps less.{%- endset -%}
           {%- set _rk_cx_fallback_zh -%}各市场正同步波动——单一冲击会同时打击各类资产，分散配置的作用下降。{%- endset -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-lens-kind="caution" data-tip-en="{{ _rk_cx_fallback_en|trim }}" data-tip-zh="{{ _rk_cx_fallback_zh|trim }}">
+          <div class="riskdlg-drv" data-isle="markets" data-lens-kind="caution" data-tip-en="{{ _rk_cx_fallback_en|trim }}" data-tip-zh="{{ _rk_cx_fallback_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('corr') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Correlation','相关性') }}</div>
@@ -12624,185 +12809,14 @@ html[data-theme="light"] :is(
           </div>
           {% endif %}
 
-          {# Tile 6 — Track record / self-audit (accrual honesty), plain-word state #}
-          {%- set _rk_hit = none -%}
-          {%- if _rk_tr and _rk_tr.get is defined -%}
-            {%- set _rk_w = _rk_tr.get('windows', {}).get('y1', {}) -%}
-            {%- set _rk_al = _rk_w.get('alerts', {}) if _rk_w.get is defined else {} -%}
-            {%- set _rk_hit = _rk_al.get('hit_rate') if _rk_al.get is defined else none -%}
-            {%- set _rk_tp = _rk_al.get('tp', 0) if _rk_al.get is defined else 0 -%}
-            {%- set _rk_n = _rk_al.get('n', 0) if _rk_al.get is defined else 0 -%}
-          {%- endif -%}
-          {%- set _rk_hit_pct = ([4,[100,((_rk_tp/_rk_n*100)|round|int)]|min]|max) if (_rk_hit is not none and _rk_n) else 0 -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-news,#7a8494)"
-            {% if _rk_hit is not none %}data-lens-kind="record" data-tip-en="Over the past year, {{ _rk_tp }} of {{ _rk_n }} elevated-alert days were followed by a ≥5% drop within a month." data-tip-zh="过去一年，{{ _rk_n }} 个警报日中有 {{ _rk_tp }} 天在一个月内出现 ≥5% 下跌。"{% endif %}>
-            <span class="rkc-sig-ico">{{ rkc_sig_glyph('audit') }}</span>
-            <div class="rkc-sig-body">
-              <div class="rkc-sig-lbl">{{ t('Track record','历史记录') }}</div>
-              <div class="rkc-sig-state">
-                {% if _rk_hit is not none %}
-                <span class="l-en">{{ _rk_tp }} of {{ _rk_n }} alerts led to a drop</span>
-                <span class="l-zh">{{ _rk_n }} 次警报中 {{ _rk_tp }} 次先于下跌</span>
-                {% else %}
-                <span class="l-en">Grading calls as they mature</span>
-                <span class="l-zh">评分随信号成熟展开</span>
-                {% endif %}
-              </div>
-            </div>
-            {% if _rk_hit is not none %}<span class="rkc-sig-tip">?</span>{% endif %}
-            {% if _rk_hit is not none %}
-            {# — rich LENS payload: hit-rate progress bar (built from tp / n) — #}
-            <span class="lens-src" data-lens-kind="record" hidden>
-              <div class="lens-hd">
-                <span class="lens-ill" style="color:var(--isle-news,#7a8494)">{{ rkc_sig_glyph('audit') }}</span>
-                <span class="lens-hgroup">
-                  <span class="lens-kick"><span class="l-en">SELF-AUDIT</span><span class="l-zh">自我复盘</span></span>
-                  <span class="lens-title"><span class="l-en">How past alerts played out</span><span class="l-zh">历史警报的兑现情况</span></span>
-                </span>
-              </div>
-              <div class="rlx-viz" style="--rlx-c:var(--isle-news,#7a8494)">
-                <div class="rlx-prog"><span class="rlx-prog-fill" style="--rlx-w:{{ _rk_hit_pct }}%"></span></div>
-                <div class="rlx-viz-cap"><span class="l-en"><b>{{ _rk_tp }}</b> of <b>{{ _rk_n }}</b> elevated-alert days were followed by a &ge;5% drop within a month.</span><span class="l-zh"><b>{{ _rk_n }}</b> 个警报日中有 <b>{{ _rk_tp }}</b> 天在一个月内出现 &ge;5% 下跌。</span></div>
-              </div>
-              <div class="rlx-rows">
-                <div class="rlx-row">
-                  <span class="rlx-k"><span class="l-en">How to read it</span><span class="l-zh">如何解读</span></span>
-                  <span class="rlx-v"><span class="l-en">Our own honesty check — kept in the open, whether it flatters the read or not.</span><span class="l-zh">我们自己的诚实核对——无论结果好坏都如实公开。</span></span>
-                </div>
-              </div>
-              <div class="lens-receipt">
-                <span class="l-en">{{ _rk_tp }} / {{ _rk_n }} alert days · past year · daily readings overlap · accrual display</span>
-                <span class="l-zh">{{ _rk_tp }} / {{ _rk_n }} 警报日 · 过去一年 · 按日读数相互重叠 · 积累展示</span>
-              </div>
-            </span>{# end .lens-src #}
-            {% endif %}
           </div>
-
-        </div>
-        {% endif %}
-
-        {# — 3. Context chip row (Fed stance + turning point, moved after radar card) — #}
-        {% set _dlgr_fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
-        {% set _dlgr_tp = (latest.turning_point if (latest.turning_point is defined and latest.turning_point and latest.turning_point.present is defined and latest.turning_point.present) else none) %}
-        {% if _dlgr_fed_st or _dlgr_tp %}
-        <div class="mx5-dlg-chips-row" style="margin-top:12px">
-          <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));align-self:center"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-          {% if _dlgr_fed_st %}
-          {% set _dlgr_fsc = 'var(--down)' if _dlgr_fed_st in ('hawkish','very-hawkish') else ('var(--up)' if _dlgr_fed_st in ('dovish','very-dovish') else 'var(--warn)') %}
-          {% set _dlgr_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral'} %}
-          {% set _dlgr_fszh = {'hawkish':'鹰派','very-hawkish':'强鹰派','dovish':'鸽派','very-dovish':'强鸽派','neutral':'中性'} %}
-          <span class="mx5-dlg-chip" style="border-color:{{ _dlgr_fsc }};color:{{ _dlgr_fsc }}">
-            <span class="l-en">Fed: {{ _dlgr_fsl.get(_dlgr_fed_st, _dlgr_fed_st) }}</span>
-            <span class="l-zh">美联储：{{ _dlgr_fszh.get(_dlgr_fed_st, _dlgr_fed_st) }}</span>
-          </span>
-          {% endif %}
-          {% if _dlgr_tp %}
-          <span class="mx5-dlg-chip" style="border-color:var(--warn);color:var(--ink-warn, var(--warn))">
-            <span class="l-en">Turning point watch</span>
-            <span class="l-zh">拐点观察中</span>
-          </span>
-          {% endif %}
-        </div>
-        {% endif %}
-
-        {# — 4. Current rotation + tracked AI-hardware damage cohort — #}
-        {% set _rot = (sector_heat.get('rotation') or []) if (sector_heat is defined and sector_heat) else [] %}
-        {% set _show_lc = leadership_crack is defined and leadership_crack and leadership_crack.state is defined and leadership_crack.state != 'INTACT' %}
-        {% if _rot or _show_lc %}
-        {% set _lc = leadership_crack if _show_lc else none %}
-        <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow">{{ t('Leadership & rotation','领涨与轮动') }}</div>
-        <div class="rsx-leaders">
-          {# Current theme pulse: this is today's rotation read. It is deliberately separate from
-             the tracked damage cohort below, which preserves continuity through a washout. #}
-          {% if _rot %}
-          <div class="rkc-rot-head">
-            <span>{{ t('Current theme pulse','当前主题脉搏') }}</span>
-            {% if sector_heat.get('as_of') %}<small>{{ t('as of','截至') }} {{ sector_heat.as_of }}</small>{% endif %}
-          </div>
-          <div class="rkc-rot-grid">
-            {% for rt in _rot %}
-            {% set _rt_tone = 'up' if rt.heat in ['heating','hot'] else ('down' if rt.heat in ['cooling','broken'] else 'flat') %}
-            <a class="rkc-rot-chip {{ _rt_tone }}" href="basket/{{ rt.id }}.html">
-              <span class="rkc-rot-name"><span class="l-en">{{ rt.short_name }}</span><span class="l-zh">{{ rt.short_name_zh or rt.short_name }}</span></span>
-              <span class="rkc-rot-meta">#{{ rt.rank if rt.rank is not none else '—' }}{% if rt.rank_delta_5d is not none %} · {{ '▲' if rt.rank_delta_5d > 0 else ('▼' if rt.rank_delta_5d < 0 else '•') }}{{ rt.rank_delta_5d|abs }} 5d{% endif %}</span>
-            </a>
-            {% endfor %}
-          </div>
-          <div class="rkc-ldr-sub"><span class="l-en">Compare live rank and five-session momentum across software, semis and prior hardware leaders. Descriptive rotation only — not a forecast or Market-State input.</span><span class="l-zh">对比软件、半导体与此前硬件龙头的实时排名及五个交易日动量。仅描述轮动——不是预测，也不参与市场状态评分。</span></div>
-          {% endif %}
-
-          {% if _show_lc %}
-          <div class="rkc-cohort-kicker">{{ t('Tracked AI-hardware damage cohort','跟踪中的 AI 硬件受损群组') }}{% if _lc.asof is defined and _lc.asof %}<small>{{ t('as of','截至') }} {{ _lc.asof }}</small>{% endif %}</div>
-          {# Header row: engine state line (verbatim) + count chip (N names 30%+ off) #}
-          {% set _lc_n30h = ((_lc.share30 * _lc.n_total) | round | int) if (_lc.share30 is defined and _lc.share30 is not none and _lc.n_total is defined) else none %}
-          <div class="rkc-ldr-head">
-            <div class="rkc-ldr-state">
-              {% if _lc.state == 'BROKEN' %}
-              <span class="l-en">Residual damage — this tracked cohort's median name is {% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}well{% endif %} below its {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session high. It is not today's leader roster or a broad-market veto.</span>
-              <span class="l-zh">残余受损——该跟踪群组中位数较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点回撤{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}明显{% endif %}。它不是当下龙头名单，也不否决大盘状态。</span>
-              {% else %}
-              <span class="l-en">Damage watch — early stress remains in the tracked AI-hardware cohort{% if _lc.med_dd is defined and _lc.med_dd is not none %}, with the median name {{ (_lc.med_dd * 100)|abs|round|int }}% below its {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session high{% endif %}.</span>
-              <span class="l-zh">受损观察——跟踪中的 AI 硬件群组仍有早期压力{% if _lc.med_dd is defined and _lc.med_dd is not none %}，中位数较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点回撤 {{ (_lc.med_dd * 100)|abs|round|int }}%{% endif %}。</span>
-              {% endif %}
-            </div>
-            {% if _lc_n30h is not none %}
-            <span class="rkc-ldr-count">{{ _lc_n30h }}<small><span class="l-en">names ≥30% off</span><span class="l-zh">只跌超30%</span></small></span>
-            {% endif %}
-          </div>
-          {% if _lc.worst_members is defined and _lc.worst_members %}
-          {# ── Worst-member drawdown chart: mono tickers, animated gradient bars, index tick ── #}
-          {% set _lc_idx_dd = _lc.index_dd if (_lc.index_dd is defined and _lc.index_dd is not none) else none %}
-          {% set _lc_idx_pct = ((_lc_idx_dd * -100) | round | int) if _lc_idx_dd is not none else none %}
-          <div class="rkc-ldr-bars">
-            {% for wm in _lc.worst_members[:6] %}
-            {% set _wm_dd_pct = ((wm.dd * -100) | round | int) if (wm.dd is defined and wm.dd is not none) else none %}
-            <div class="rkc-ldr-row">
-              <div class="rkc-ldr-tkr">{{ wm.ticker }}</div>
-              <div class="rkc-ldr-track">
-                {% if _wm_dd_pct is not none %}
-                <div class="rkc-ldr-fill" style="width:{{ [_wm_dd_pct, 100] | min }}%"></div>
-                {% endif %}
-                {# Index reference tick at |index_dd|% of bar width — first row only, labelled #}
-                {% if loop.first and _lc_idx_pct is not none %}
-                <div class="rkc-ldr-idx{{ ' at-start' if _lc_idx_pct < 12 else '' }}" style="left:{{ [_lc_idx_pct, 99] | min }}%">
-                  <span class="rkc-ldr-idx-lbl"><span class="l-en">index</span><span class="l-zh">指数</span></span>
-                </div>
-                {% endif %}
-              </div>
-              {% if _wm_dd_pct is not none %}
-              <div class="rkc-ldr-pct">−{{ _wm_dd_pct }}%</div>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-          {# ── Plain breadth line (counts, not raw fractions) — engine copy verbatim ── #}
-          {% if _lc.share10 is defined and _lc.share10 is not none and _lc.share30 is defined and _lc.share30 is not none and _lc.n_total is defined %}
-          {% set _lc_n10 = (_lc.share10 * _lc.n_total) | round | int %}
-          {% set _lc_n30 = (_lc.share30 * _lc.n_total) | round | int %}
-          <div class="rkc-ldr-sub">
-            <span class="l-en"><b>{{ _lc_n10 }}</b> of {{ _lc.n_total }} tracked names are 10%+ below their {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session highs — residual cohort damage, not current market breadth.</span>
-            <span class="l-zh">{{ _lc.n_total }} 个跟踪标的中有 <b>{{ _lc_n10 }}</b> 个较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点下跌逾 10%——这是群组残余受损，并非当前大盘广度。</span>
-          </div>
-          {% endif %}
-          {# Receipt fields in data-tip-en/zh #}
-          {% set _lc_tip_en %}State since {{ _lc.state_since if (_lc.state_since is defined and _lc.state_since) else '—' }}. Velocity z={{ ((_lc.z_vel)|round(1)) if (_lc.z_vel is defined and _lc.z_vel is not none) else '—' }}. Carnage share EMA {{ ((_lc.carnage_share_ema * 100)|round|int ~ '%') if (_lc.carnage_share_ema is defined and _lc.carnage_share_ema is not none) else '—' }}. Accrual-only display — see pick-lab for forward grading.{% endset %}
-          {% set _lc_tip_zh %}自{{ _lc.state_since if (_lc.state_since is defined and _lc.state_since) else '—' }}起。速度 z={{ ((_lc.z_vel)|round(1)) if (_lc.z_vel is defined and _lc.z_vel is not none) else '—' }}。灾情份额 EMA {{ ((_lc.carnage_share_ema * 100)|round|int ~ '%') if (_lc.carnage_share_ema is defined and _lc.carnage_share_ema is not none) else '—' }}。仅积累展示，前瞻评分见选股实验室。{% endset %}
-          <div class="rkc-ldr-sub" style="margin-top:5px" data-tip-en="{{ _lc_tip_en | trim }}" data-tip-zh="{{ _lc_tip_zh | trim }}">
-            <span class="l-en">Continuity monitor — compare with the current rotation pulse above.</span>
-            <span class="l-zh">连续性监测——请与上方当前轮动脉搏对照。</span>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
-
         {# — 5. Overseas section — #}
         {% set _dlgr_iov_n = (intl_cascade.n_alert if (intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none) else 0) %}
         {% set _dlgr_iov_det = (det_cascade.state if (det_cascade is defined and det_cascade and det_cascade.state is defined) else 'STEADY') %}
         {% set _dlgr_iov_spill = (intl_spillover.state if (intl_spillover is defined and intl_spillover and intl_spillover.state is defined) else 'quiet') %}
         {% if (_dlgr_iov_n > 0) or (_dlgr_iov_det != 'STEADY') or (_dlgr_iov_spill in ('watching','transmitting')) %}
-        <div class="mx5-dlg-sep"></div>
+        <details class="riskdlg-fold" id="riskdlg-overseas-more">
+        <summary>{{ t('Tracked overseas markets','追踪中的海外市场') }}</summary>
         <div class="mx5-dlg-eyebrow">
           {{ t('Overseas','海外') }}
           {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band — the odds a fresh drop is brewing, not a grade of today\'s trend. The hover card carries the trend read, which can point the other way: a market already deep in a selloff can sit beside a mid ring.','仅供参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色——衡量的是新一轮下跌酝酿的可能，而非当前趋势的评级。悬停卡片显示趋势解读，两者方向可能相反：已深度下跌的市场也可能配上中等的环形。') }}
@@ -13006,30 +13020,25 @@ html[data-theme="light"] :is(
         </div>
         {% endif %}
         {# Task 8: footer removed — honesty now lives in the eyebrow help() tip above #}
-        {% else %}
-        <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow">{{ t('Overseas','海外') }}</div>
-        <div class="mx5-pop-intl-fallback">
-          <span class="l-en">Overseas: quiet — no tracked market in risk-off.</span>
-          <span class="l-zh">海外：平静——追踪市场均无避险警报。</span>
-        </div>
+        </details>
+        {% endif %}
+
+        </section>
         {% endif %}
 
         {# — 6. Risk Ladder (single canonical scare list; show_threats=false removed the in-card chip dupe) — #}
         {% if latest.risk_radar and latest.risk_radar.scares %}
-        <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Risk Ladder — What to Watch</span><span class="l-zh">风险梯度 — 需关注的因素</span></div>
-        <div class="scare-ladder" style="margin-bottom:0">
+        <div class="riskdlg-ladder">
+        <div class="riskdlg-sec-h"><span class="l-en">Scare ladder</span><span class="l-zh">压力梯度</span><small>{{ t('highest first','由高到低') }}</small></div>
+        <div class="scare-ladder riskdlg-scare-list" style="margin-bottom:0">
           {% for sc in latest.risk_radar.scares %}
-          {% set _sc_s2 = sc.score if (sc.score is defined and sc.score is not none) else 0 %}
-          {% set _scc = ('sc-band-high' if _sc_s2 >= 70 else ('sc-band-watch' if _sc_s2 >= 50 else ('sc-band-elev' if _sc_s2 >= 35 else 'sc-band-calm'))) %}
-          {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if _sc_s2 >= 50 else ('ELEVATED' if _sc_s2 >= 35 else 'CALM'))) %}
+          {% set _sc_s2 = sc.score if (sc.score is defined and sc.score is not none) else none %}
+          {% set _scc = ('sc-band-high' if (_sc_s2 is not none and _sc_s2 >= 70) else ('sc-band-watch' if (_sc_s2 is not none and _sc_s2 >= 50) else ('sc-band-elev' if (_sc_s2 is not none and _sc_s2 >= 35) else 'sc-band-calm'))) %}
+          {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if (_sc_s2 is not none and _sc_s2 >= 50) else ('ELEVATED' if (_sc_s2 is not none and _sc_s2 >= 35) else 'CALM'))) %}
           {# lookup by |upper — engine bands are lowercase ('calm','caution','risk-off'), the old
              uppercase-keyed map silently fell through to raw EN in the ZH view #}
           {% set _scband_zh = {'WATCH':'警惕','ELEVATED':'走高','CALM':'平静','HIGH':'高危','CAUTION':'谨慎','RISK-OFF':'避险'}.get(_scband|upper, _scband) %}
-          {# Wave C: per-row band colour drives the leading glyph + the gradient severity bar #}
-          {% set _sc_col = 'var(--down,#ef4444)' if _sc_s2 >= 70 else ('var(--warn,#f59e0b)' if _sc_s2 >= 35 else 'var(--muted,#8a93a3)') %}
-          <div class="scare-row" style="--rkc-c:{{ _sc_col }}">
+          <div class="riskdlg-scare" data-band="{{ _scc }}">
             <span class="rkc-sc-ico">{{ rkc_scare_glyph(rkc_scare_fam(sc)|trim) }}</span>
             <span class="sc-name">
               <span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span>
@@ -13044,8 +13053,8 @@ html[data-theme="light"] :is(
               </div>
               {% endif %}
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [_sc_s2,100]|min }}%;background:{{ 'var(--down)' if _sc_s2 >= 70 else ('var(--warn)' if _sc_s2 >= 35 else 'var(--muted)') }}"></div></div>
-            <span class="sc-score" style="color:{{ 'var(--down)' if _sc_s2 >= 70 else ('var(--warn)' if _sc_s2 >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
+            {% if _sc_s2 is not none %}<div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [_sc_s2,100]|min }}%;background:{{ 'var(--down)' if _sc_s2 >= 70 else ('var(--warn)' if _sc_s2 >= 35 else 'var(--muted)') }}"></div></div>
+            <span class="sc-score" style="color:{{ 'var(--down)' if _sc_s2 >= 70 else ('var(--warn)' if _sc_s2 >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>{% else %}<span class="sc-score">—</span>{% endif %}
             <span class="sc-band {{ _scc }}">
               <span class="l-en">{{ _scband }}</span>
               <span class="l-zh">{{ _scband_zh }}</span>
@@ -13054,12 +13063,12 @@ html[data-theme="light"] :is(
           {% endfor %}
         </div>
         {% endif %}
+        </div>{# /riskdlg-ladder #}
 
-        {# — 7. Mood check — two lenses (rebuilt; replaces dead mx2-sent-* block) — #}
-        {# MX2-SENTIMENT-START #}{# slice markers are a TEST CONTRACT — test_froth_fragility /
+{# MX2-SENTIMENT-START #}{# slice markers are a TEST CONTRACT — test_froth_fragility /
            test_fear_euphoria / test_fear_greed render exactly this region; keep them wrapping
            the mood section + the merged footer #}
-        <div class="mx5-dlg-sep"></div>
+        <div class="riskdlg-sentiment">
         {% set ff = froth_fragility if froth_fragility is defined else none %}
         {% set fe = fear_euphoria if fear_euphoria is defined else none %}
         {% set fg = fear_greed if fear_greed is defined else none %}
@@ -13071,7 +13080,7 @@ html[data-theme="light"] :is(
         {% set _fg_label = (fg.label_en if (fg is not none and fg.label_en is defined) else '') %}
         {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜','Extreme Fear':'极度恐惧','Extreme Greed':'极度贪婪'} %}
         <div class="rsx-mood" id="sentiment-regime">
-          <div class="mx5-dlg-eyebrow">{{ t('Mood check — two lenses','情绪核对——两把尺') }}
+          <div class="riskdlg-sec-h">{{ t('Sentiment','情绪') }}
             {{ help('Two sentiment lenses on one 0-100 scale: risk appetite (5-yr percentile of the risk-on/risk-off composite) and the broader sentiment mix. Internal name: Fear ↔ Euphoria: regime synthesis. Display-only.','同一0-100刻度上的两把情绪尺：风险偏好（风险偏好/避险合成的5年百分位）与广义情绪合成。内部名称：恐惧 ↔ 欣喜：周期综合。仅供展示。') }}
           </div>
 
@@ -13139,6 +13148,8 @@ html[data-theme="light"] :is(
           {% set _ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if (ff.band is defined and ff.band in ('watch','elevated')) else 'var(--down)') %}
           {% set ax = ((ff.face_a.score | round | int) if (ff.face_a is defined and ff.face_a.score is defined and ff.face_a.score is not none) else none) if ff is not none else none %}
           {% set bx = ((ff.face_b.score | round | int) if (ff.face_b is defined and ff.face_b.score is defined and ff.face_b.score is not none) else none) if ff is not none else none %}
+          <details class="riskdlg-fold" id="riskdlg-advanced-sentiment">
+            <summary>{{ t('Advanced sentiment context','进阶情绪背景') }}</summary>
           <div class="rsx-froth" id="froth-fragility">
             <div class="rsx-froth-hd">
               <span class="rsx-froth-title" style="color:{{ _ffc }}">
@@ -13194,19 +13205,187 @@ html[data-theme="light"] :is(
             </div>
             {% endif %}
           </div>
+          </details>
           {% endif %}
         </div>
         {% endif %}
 
         {# — 8. One merged dialog footer (single as-of for the whole dialog + one caveat line) — #}
-        {% set _rk_asof = (latest.date if (latest is defined and latest.date is defined and latest.date) else (intl_cascade.asof if (intl_cascade is defined and intl_cascade and intl_cascade.asof is defined and intl_cascade.asof) else none)) %}
-        <div class="mx5-dlg-sep"></div>
         <div class="rsx-dlg-footer">
-          {% if _rk_asof %}<span class="l-en">As of {{ _rk_asof }}. </span><span class="l-zh">数据截至 {{ _rk_asof }}。</span>{% endif %}
           <span class="l-en">Model estimates and mood gauges are display-only context — not forecasts; the response is sizing, not selection; forward records accruing.</span>
           <span class="l-zh">以上模型估计与情绪读数仅为参考——非预测；应对是仓位控制而非选股；前瞻记录积累中。</span>
         </div>
-        {# MX2-SENTIMENT-END #}
+        </div>{# /riskdlg-sentiment #}
+        {# MX2-SENTIMENT-END #}        {# — 4. Current rotation + tracked AI-hardware damage cohort — #}
+        {% set _rot = (sector_heat.get('rotation') or []) if (sector_heat is defined and sector_heat) else [] %}
+        {% set _show_lc = leadership_crack is defined and leadership_crack and leadership_crack.state is defined and leadership_crack.state != 'INTACT' %}
+        {% if _rot or _show_lc %}
+        {% set _lc = leadership_crack if _show_lc else none %}
+        <div class="riskdlg-leadership">
+        <div class="riskdlg-sec-h">{{ t('Leadership context','领涨背景') }}{% if sector_heat is defined and sector_heat and sector_heat.get('as_of') %}<small>{{ t('as of','截至') }} {{ sector_heat.as_of }}</small>{% endif %}</div>
+        <div class="rsx-leaders">
+          {# Current theme pulse: this is today's rotation read. It is deliberately separate from
+             the tracked damage cohort below, which preserves continuity through a washout. #}
+          {% if _rot %}
+          <div class="rkc-rot-head">
+            <span>{{ t('Current theme pulse','当前主题脉搏') }}</span>
+            {% if sector_heat.get('as_of') %}<small>{{ t('as of','截至') }} {{ sector_heat.as_of }}</small>{% endif %}
+          </div>
+          <div class="riskdlg-rot">
+            {% for rt in _rot %}
+            {% if loop.index == 4 %}
+            <details class="riskdlg-fold" id="riskdlg-themes-more">
+              <summary>{{ t('View all 7 themes','查看全部 7 个主题') }}</summary>
+            {% endif %}
+            {% set _rt_tone = 'up' if rt.heat in ['heating','hot'] else ('down' if rt.heat in ['cooling','broken'] else 'flat') %}
+            <a class="riskdlg-theme {{ _rt_tone }}{% if loop.index > 3 %} riskdlg-theme-more{% endif %}" href="basket/{{ rt.id }}.html">
+              <span class="riskdlg-tn"><span class="l-en">{{ rt.short_name }}</span><span class="l-zh">{{ rt.short_name_zh or rt.short_name }}</span></span>
+              <span class="riskdlg-tm">#{{ rt.rank if rt.rank is not none else '—' }}{% if rt.rank_delta_5d is not none %} · {{ '▲' if rt.rank_delta_5d > 0 else ('▼' if rt.rank_delta_5d < 0 else '•') }}{{ rt.rank_delta_5d|abs }} 5d{% endif %}</span>
+            </a>
+            {% if loop.last and (_rot|length) > 3 %}
+            </details>
+            {% endif %}
+            {% endfor %}
+          </div>
+          <div class="rkc-ldr-sub"><span class="l-en">Compare live rank and five-session momentum across software, semis and prior hardware leaders. Descriptive rotation only — not a forecast or Market-State input.</span><span class="l-zh">对比软件、半导体与此前硬件龙头的实时排名及五个交易日动量。仅描述轮动——不是预测，也不参与市场状态评分。</span></div>
+          {% endif %}
+
+          {% if _show_lc %}
+          <p class="riskdlg-ldr-caveat">
+            <span class="l-en">It is not today's leader roster or a broad-market veto.</span>
+            <span class="l-zh">它不是当下龙头名单，也不否决大盘状态。</span>
+          </p>
+          <details class="riskdlg-fold" id="riskdlg-damage-more">
+          <summary>{{ t('Residual hardware damage','残余硬件受损') }}{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ t(' — median ','——中位数回撤 ') }}{{ (_lc.med_dd * 100)|abs|round|int }}%{{ t(' below ','较过去 ') }}{{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}{{ t('-session high',' 个交易日高点') }}{% endif %}</summary>
+          <div class="rkc-cohort-kicker">{{ t('Tracked AI-hardware damage cohort','跟踪中的 AI 硬件受损群组') }}{% if _lc.asof is defined and _lc.asof %}<small>{{ t('as of','截至') }} {{ _lc.asof }}</small>{% endif %}</div>
+          {# Header row: engine state line (verbatim) + count chip (N names 30%+ off) #}
+          {% set _lc_n30h = ((_lc.share30 * _lc.n_total) | round | int) if (_lc.share30 is defined and _lc.share30 is not none and _lc.n_total is defined) else none %}
+          <div class="rkc-ldr-head">
+            <div class="rkc-ldr-state">
+              {% if _lc.state == 'BROKEN' %}
+              <span class="l-en">Residual damage — this tracked cohort's median name is {% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}well{% endif %} below its {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session high. It is not today's leader roster or a broad-market veto.</span>
+              <span class="l-zh">残余受损——该跟踪群组中位数较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点回撤{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}明显{% endif %}。它不是当下龙头名单，也不否决大盘状态。</span>
+              {% else %}
+              <span class="l-en">Damage watch — early stress remains in the tracked AI-hardware cohort{% if _lc.med_dd is defined and _lc.med_dd is not none %}, with the median name {{ (_lc.med_dd * 100)|abs|round|int }}% below its {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session high{% endif %}.</span>
+              <span class="l-zh">受损观察——跟踪中的 AI 硬件群组仍有早期压力{% if _lc.med_dd is defined and _lc.med_dd is not none %}，中位数较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点回撤 {{ (_lc.med_dd * 100)|abs|round|int }}%{% endif %}。</span>
+              {% endif %}
+            </div>
+            {% if _lc_n30h is not none %}
+            <span class="rkc-ldr-count">{{ _lc_n30h }}<small><span class="l-en">names ≥30% off</span><span class="l-zh">只跌超30%</span></small></span>
+            {% endif %}
+          </div>
+          {% if _lc.worst_members is defined and _lc.worst_members %}
+          {# ── Worst-member drawdown chart: mono tickers, animated gradient bars, index tick ── #}
+          {% set _lc_idx_dd = _lc.index_dd if (_lc.index_dd is defined and _lc.index_dd is not none) else none %}
+          {% set _lc_idx_pct = ((_lc_idx_dd * -100) | round | int) if _lc_idx_dd is not none else none %}
+          <div class="rkc-ldr-bars">
+            {% for wm in _lc.worst_members[:6] %}
+            {% set _wm_dd_pct = ((wm.dd * -100) | round | int) if (wm.dd is defined and wm.dd is not none) else none %}
+            <div class="rkc-ldr-row">
+              <div class="rkc-ldr-tkr">{{ wm.ticker }}</div>
+              <div class="rkc-ldr-track">
+                {% if _wm_dd_pct is not none %}
+                <div class="rkc-ldr-fill" style="width:{{ [_wm_dd_pct, 100] | min }}%"></div>
+                {% endif %}
+                {# Index reference tick at |index_dd|% of bar width — first row only, labelled #}
+                {% if loop.first and _lc_idx_pct is not none %}
+                <div class="rkc-ldr-idx{{ ' at-start' if _lc_idx_pct < 12 else '' }}" style="left:{{ [_lc_idx_pct, 99] | min }}%">
+                  <span class="rkc-ldr-idx-lbl"><span class="l-en">index</span><span class="l-zh">指数</span></span>
+                </div>
+                {% endif %}
+              </div>
+              {% if _wm_dd_pct is not none %}
+              <div class="rkc-ldr-pct">−{{ _wm_dd_pct }}%</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {# ── Plain breadth line (counts, not raw fractions) — engine copy verbatim ── #}
+          {% if _lc.share10 is defined and _lc.share10 is not none and _lc.share30 is defined and _lc.share30 is not none and _lc.n_total is defined %}
+          {% set _lc_n10 = (_lc.share10 * _lc.n_total) | round | int %}
+          {% set _lc_n30 = (_lc.share30 * _lc.n_total) | round | int %}
+          <div class="rkc-ldr-sub">
+            <span class="l-en"><b>{{ _lc_n10 }}</b> of {{ _lc.n_total }} tracked names are 10%+ below their {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }}-session highs — residual cohort damage, not current market breadth.</span>
+            <span class="l-zh">{{ _lc.n_total }} 个跟踪标的中有 <b>{{ _lc_n10 }}</b> 个较过去 {{ _lc.high_window_sessions if (_lc.high_window_sessions is defined and _lc.high_window_sessions) else 63 }} 个交易日高点下跌逾 10%——这是群组残余受损，并非当前大盘广度。</span>
+          </div>
+          {% endif %}
+          {# Receipt fields in data-tip-en/zh #}
+          {% set _lc_tip_en %}State since {{ _lc.state_since if (_lc.state_since is defined and _lc.state_since) else '—' }}. Velocity z={{ ((_lc.z_vel)|round(1)) if (_lc.z_vel is defined and _lc.z_vel is not none) else '—' }}. Carnage share EMA {{ ((_lc.carnage_share_ema * 100)|round|int ~ '%') if (_lc.carnage_share_ema is defined and _lc.carnage_share_ema is not none) else '—' }}. Accrual-only display — see pick-lab for forward grading.{% endset %}
+          {% set _lc_tip_zh %}自{{ _lc.state_since if (_lc.state_since is defined and _lc.state_since) else '—' }}起。速度 z={{ ((_lc.z_vel)|round(1)) if (_lc.z_vel is defined and _lc.z_vel is not none) else '—' }}。灾情份额 EMA {{ ((_lc.carnage_share_ema * 100)|round|int ~ '%') if (_lc.carnage_share_ema is defined and _lc.carnage_share_ema is not none) else '—' }}。仅积累展示，前瞻评分见选股实验室。{% endset %}
+          <div class="rkc-ldr-sub" style="margin-top:5px" data-tip-en="{{ _lc_tip_en | trim }}" data-tip-zh="{{ _lc_tip_zh | trim }}">
+            <span class="l-en">Continuity monitor — compare with the current rotation pulse above.</span>
+            <span class="l-zh">连续性监测——请与上方当前轮动脉搏对照。</span>
+          </div>
+          </details>
+          {% endif %}
+        </div>
+        {% endif %}
+        </div>{# /riskdlg-leadership #}
+
+        <details class="riskdlg-method" id="riskdlg-method">
+          <summary>{{ t('Method & track record','方法与历史记录') }}</summary>
+          {% if _rk_rd and _rk_rd.state %}
+          {# Tile 6 — Track record / self-audit (accrual honesty), plain-word state #}
+          {%- set _rk_hit = none -%}
+          {%- if _rk_tr and _rk_tr.get is defined -%}
+            {%- set _rk_w = _rk_tr.get('windows', {}).get('y1', {}) -%}
+            {%- set _rk_al = _rk_w.get('alerts', {}) if _rk_w.get is defined else {} -%}
+            {%- set _rk_hit = _rk_al.get('hit_rate') if _rk_al.get is defined else none -%}
+            {%- set _rk_tp = _rk_al.get('tp', 0) if _rk_al.get is defined else 0 -%}
+            {%- set _rk_n = _rk_al.get('n', 0) if _rk_al.get is defined else 0 -%}
+          {%- endif -%}
+          {%- set _rk_hit_pct = ([4,[100,((_rk_tp/_rk_n*100)|round|int)]|min]|max) if (_rk_hit is not none and _rk_n) else 0 -%}
+          <div class="riskdlg-drv" data-isle="news"
+            {% if _rk_hit is not none %}data-lens-kind="record" data-tip-en="Over the past year, {{ _rk_tp }} of {{ _rk_n }} elevated-alert days were followed by a ≥5% drop within a month." data-tip-zh="过去一年，{{ _rk_n }} 个警报日中有 {{ _rk_tp }} 天在一个月内出现 ≥5% 下跌。"{% endif %}>
+            <span class="rkc-sig-ico">{{ rkc_sig_glyph('audit') }}</span>
+            <div class="rkc-sig-body">
+              <div class="rkc-sig-lbl">{{ t('Track record','历史记录') }}</div>
+              <div class="rkc-sig-state">
+                {% if _rk_hit is not none %}
+                <span class="l-en">{{ _rk_tp }} of {{ _rk_n }} alerts led to a drop</span>
+                <span class="l-zh">{{ _rk_n }} 次警报中 {{ _rk_tp }} 次先于下跌</span>
+                {% else %}
+                <span class="l-en">Grading calls as they mature</span>
+                <span class="l-zh">评分随信号成熟展开</span>
+                {% endif %}
+              </div>
+            </div>
+            {% if _rk_hit is not none %}<span class="rkc-sig-tip">?</span>{% endif %}
+            {% if _rk_hit is not none %}
+            {# — rich LENS payload: hit-rate progress bar (built from tp / n) — #}
+            <span class="lens-src" data-lens-kind="record" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill">{{ rkc_sig_glyph('audit') }}</span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">SELF-AUDIT</span><span class="l-zh">自我复盘</span></span>
+                  <span class="lens-title"><span class="l-en">How past alerts played out</span><span class="l-zh">历史警报的兑现情况</span></span>
+                </span>
+              </div>
+              <div class="rlx-viz is-news">
+                <div class="rlx-prog"><span class="rlx-prog-fill" style="width:{{ _rk_hit_pct }}%"></span></div>
+                <div class="rlx-viz-cap"><span class="l-en"><b>{{ _rk_tp }}</b> of <b>{{ _rk_n }}</b> elevated-alert days were followed by a &ge;5% drop within a month.</span><span class="l-zh"><b>{{ _rk_n }}</b> 个警报日中有 <b>{{ _rk_tp }}</b> 天在一个月内出现 &ge;5% 下跌。</span></div>
+              </div>
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">How to read it</span><span class="l-zh">如何解读</span></span>
+                  <span class="rlx-v"><span class="l-en">Our own honesty check — kept in the open, whether it flatters the read or not.</span><span class="l-zh">我们自己的诚实核对——无论结果好坏都如实公开。</span></span>
+                </div>
+              </div>
+              <div class="lens-receipt">
+                <span class="l-en">{{ _rk_tp }} / {{ _rk_n }} alert days · past year · daily readings overlap · accrual display</span>
+                <span class="l-zh">{{ _rk_tp }} / {{ _rk_n }} 警报日 · 过去一年 · 按日读数相互重叠 · 积累展示</span>
+              </div>
+            </span>{# end .lens-src #}
+            {% endif %}
+          </div>
+
+          {% endif %}
+          {% if _rd.authority is defined and _rd.authority and not (_rd.binding is defined and _rd.binding) %}
+          <p class="riskdlg-method-note">{{ t(_rd.authority.note_en, _rd.authority.note_zh) }}</p>
+          {% endif %}
+        </details>
+
 
 
       </div>
@@ -15891,8 +16070,18 @@ html[data-theme="light"] :is(
     {#- publish-together fence: the per-card `Adjusted` mark and the receipt line it is a
         receipt FOR ship as one thing or not at all (spec §7 invariants). -#}
     {% set _bs_adj = (_bs.get('note') == 'confirmed') if _bs else false %}
+    {#- `data-board-asof` is the board's vintage in machine-readable form, on the board
+        container itself, so a monitor can grade the RENDERED page rather than inferring
+        freshness from the artifact it hoped the page was built from (2026-08-26, PR-2 of
+        the US permanence program). It is the same value the header chip prints in words,
+        read from the same key — one clock, two readers. `data-board-delayed` carries the
+        engine's own verdict alongside it so a monitor never has to re-derive "is this
+        late?" with client-side calendar arithmetic and mistake a weekend for an outage.
+        Both are absent when the board has no artifact, which is itself the honest signal. -#}
     <div class="panel span12 notable" id="us-standouts"
          data-prophet-src="{{ 'candidates' if _su else 'plans' }}"
+         {%- if _su and _su.get('as_of') %} data-board-asof="{{ _su.as_of|e }}"{% endif %}
+         {%- if _su and _su.get('staleness') %} data-board-delayed="{{ '1' if _su.staleness.get('delayed') else '0' }}"{% endif %}
          {%- if _bs and _bs.get('rel') %} data-boardstate="{{ _bs.rel }}"{% endif %}>
       <div class="pb-hdrow" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0">{{ t('Prophet Stock Signals', 'Prophet 选股') }}</h2>

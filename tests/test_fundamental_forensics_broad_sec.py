@@ -21,17 +21,28 @@ from collectors.edgar_forensics import (
     full_master_index_url,
     historical_submissions_url,
 )
+import engine.fundamental_forensics.broad_sec_store as broad_sec_store
 from engine.fundamental_forensics.broad_sec_store import (
+    ISSUER_MANIFEST_MAX_BYTES,
     MAX_HISTORICAL_SUBMISSIONS_BYTES_PER_RUN,
     MAX_SUBMISSIONS_BYTES,
     MAX_UNIVERSE_ISSUERS,
+    POINTER_MAX_BYTES,
     UNIVERSE_RELATIVE_PATH,
     BroadSecError,
     PollClocks,
+    _component_identity,
+    _encode_issuer_manifest,
+    _legacy_issuer_source_identity,
+    _put_issuer_manifest,
+    _put_pointer,
+    _read_issuer_manifest,
     calendar_quarter,
     count_source_objects,
     index_latest_key,
     index_snapshot_key,
+    issuer_manifest_key,
+    issuer_source_identity,
     issuer_latest_key,
     latest_complete_key,
     latest_observation_key,
@@ -43,6 +54,7 @@ from engine.fundamental_forensics.broad_sec_store import (
     run_key,
     PREFIX,
 )
+from engine.fundamental_forensics.models import canonical_json
 from engine.research_vault.r2_store import LocalStore
 from scripts.run_fundamental_forensics_broad_sec import main as broad_sec_main
 
@@ -2157,6 +2169,141 @@ def test_ff1r_conflicting_recent_and_historical_duplicate_accession_fails_closed
     )["next_ordinal"] == 0
 
 
+def test_duplicate_filing_acceptance_datetime_compares_by_instant_only() -> None:
+    """Duplicate facts retain first source text, except equal UTC instants."""
+    accession = "0001628280-26-048138"
+
+    def row(**changes: object) -> dict[str, object]:
+        base: dict[str, object] = {
+            "accession_number": accession,
+            "cik": "0001275187",
+            "ticker": "ANGO",
+            "form": "10-Q",
+            "filing_date": "2026-07-14",
+            "report_date": "2026-06-30",
+            "acceptance_datetime": "2026-07-14T19:42:40Z",
+            "primary_document": "ango-20250630.htm",
+            "is_xbrl": True,
+            "is_inline_xbrl": True,
+        }
+        return {**base, **changes}
+
+    first = row()
+    millis = row(acceptance_datetime="2026-07-14T19:42:40.000Z")
+    tenth = row(acceptance_datetime="2026-07-14T19:42:40.1Z")
+    hundredth = row(acceptance_datetime="2026-07-14T19:42:40.100Z")
+
+    assert broad_sec_store._merge_filing_rows([first, millis]) == [first]
+    assert broad_sec_store._merge_filing_rows([millis, first]) == [millis]
+    assert broad_sec_store._merge_filing_rows([tenth, hundredth]) == [tenth]
+    assert broad_sec_store._merge_filing_rows([first, dict(first)]) == [first]
+    broad_sec_store._assert_no_duplicate_filing_conflicts([first], [millis])
+    assert broad_sec_store._parse_acceptance("2026-07-14T19:42:40.000Z") == (
+        "2026-07-14T19:42:40.000Z"
+    )
+
+    for incompatible in (
+        row(acceptance_datetime="2026-07-14T19:42:40.001Z"),
+        row(acceptance_datetime="2026-07-14T19:42:41Z"),
+        row(acceptance_datetime="not-an-instant"),
+        *[
+            row(**{field: value})
+            for field, value in (
+                ("cik", "0000320193"),
+                ("ticker", "AAPL"),
+                ("form", "10-K"),
+                ("filing_date", "2026-07-15"),
+                ("report_date", "2026-06-29"),
+                ("primary_document", "ango-alternate.htm"),
+                ("is_xbrl", False),
+                ("is_inline_xbrl", False),
+            )
+        ],
+    ):
+        with pytest.raises(BroadSecError) as err:
+            broad_sec_store._merge_filing_rows([first, incompatible])
+        assert err.value.reason_code == "historical_submissions_conflict"
+
+
+def test_ff1r_ango_timestamp_representation_reconciles_without_rewriting_legacy_evidence(
+    tmp_path: Path,
+) -> None:
+    """The production-shaped ANGO duplicate advances only the lawful cursor."""
+    cik = "0001275187"
+    ticker = "ANGO"
+    accession = "0001628280-26-048138"
+    second_cik = "0001275188"
+    second_accession = "0001275188-26-000001"
+    repo, universe, store = _layout(tmp_path, [(ticker, int(cik)), ("SECOND", int(second_cik))])
+    fake = FakeSec()
+    index_rows = [
+        _idx_row(cik, "10-Q", "2026-07-14", accession, name="ANGO"),
+        _idx_row(second_cik, "10-Q", "2026-07-20", second_accession, name="SECOND"),
+    ]
+    assert index_rows[0]["cik"] == cik
+    assert index_rows[0]["filename"] == f"edgar/data/{int(cik)}/{accession}.txt"
+    assert accession[:10] == "0001628280"
+    assert accession[:10] != cik
+    fake.set_index(index_rows)
+    assert _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo).exit_code == 0
+    legacy_accepted = "2026-07-14T19:42:40Z"
+    current_accepted = "2026-07-14T19:42:40.000Z"
+    current_body = _submissions_bytes(
+        cik,
+        [_filing(accession, "10-Q", accepted=current_accepted, filed="2026-07-14")],
+    )
+    current_sha, current_created = broad_sec_store.admit_source_bytes(store, current_body)
+    assert current_created is True
+    legacy = _manifest_transport_fixture(cik, ticker, accessions=[accession])
+    legacy["relevant_filings"][0].update(
+        {
+            "filing_date": "2026-07-14",
+            "report_date": "2026-07-14",
+            "acceptance_datetime": legacy_accepted,
+        }
+    )
+    legacy["submissions_sha256"] = current_sha
+    legacy["submissions_object_key"] = object_key(current_sha)
+    del legacy["submissions_components"]
+    del legacy["submissions_source_set_sha256"]
+    legacy_id = _legacy_issuer_source_identity(legacy)
+    legacy["manifest_id"] = legacy_id
+    legacy_raw = canonical_json(legacy).encode()
+    legacy_key = issuer_manifest_key(cik, legacy_id)
+    assert store.put_bytes_strict_conditional(legacy_key, legacy_raw, expected_version=None)
+    _put_pointer(store, issuer_latest_key(cik), _issuer_pointer(cik, ticker, legacy_id, legacy))
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+    assert pointer_before is not None
+    assert legacy["submissions_sha256"] == sha256(current_body).hexdigest()
+    fake.submissions[cik] = current_body
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_in_progress"
+    assert result.receipt["recovery"]["candidate_cik_count"] == 2
+    assert result.receipt["recovery"]["selected_ciks"] == [cik]
+    assert result.receipt["recovery"]["completed_this_run"] == 1
+    assert result.receipt["recovery"]["completed_total"] == 1
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 1
+    assert store.get_bytes_strict(issuer_latest_key(cik)) == pointer_before
+    assert store.get_bytes_strict(legacy_key) == legacy_raw
+    assert legacy_accepted.encode() in legacy_raw
+    assert current_accepted.encode() not in legacy_raw
+
+
 def test_ff1r_post_cutoff_historical_accession_is_withheld_and_not_consumed(
     tmp_path: Path,
 ) -> None:
@@ -2853,3 +3000,899 @@ def test_ff1r_forged_anchor_observation_binding_fails_before_network_or_prefix_m
     assert fake.historical_fetches == []
     assert fake.facts_fetches == []
     assert {key: store.get_bytes_strict(key) for key in store.list_prefix(PREFIX)} == bytes_before
+
+
+# ── FF-1 / FF-1R immutable issuer-manifest transport boundary ────────────────
+
+def _manifest_transport_fixture(
+    cik: str,
+    ticker: str,
+    *,
+    accessions: list[str] | None = None,
+    previous_manifest_id: str | None = None,
+) -> dict:
+    numbers = accessions or [f"{cik}-26-000001"]
+    filings = [
+        {
+            "cik": cik,
+            "ticker": ticker,
+            "accession_number": accession,
+            "form": "10-Q",
+            "filing_date": "2026-07-20",
+            "report_date": "2026-07-20",
+            "acceptance_datetime": ACCEPT_RECOVERY,
+            "primary_document": "a.htm",
+            "is_xbrl": True,
+            "is_inline_xbrl": True,
+        }
+        for accession in numbers
+    ]
+    submissions_sha = "1" * 64
+    component = {
+        "source_kind": "recent",
+        "source_name": None,
+        "url": endpoint_url(cik, "submissions"),
+        "sha256": submissions_sha,
+        "bytes": 123,
+        "object_key": object_key(submissions_sha),
+        "retrieved_at": "2026-08-23T04:03:40Z",
+        "http_etag": None,
+        "http_last_modified": None,
+        "filing_from": None,
+        "filing_to": None,
+    }
+    components = [component]
+    return {
+        "schema": "fundamental_forensics.broad_sec.issuer_manifest.v1",
+        "cik": cik,
+        "ticker": ticker,
+        "submissions_sha256": submissions_sha,
+        "submissions_url": endpoint_url(cik, "submissions"),
+        "submissions_object_key": object_key(submissions_sha),
+        "submissions_retrieved_at": "2026-08-23T04:03:40Z",
+        "submissions_components": components,
+        "submissions_source_set_sha256": _component_identity(components),
+        "companyfacts_sha256": None,
+        "companyfacts_url": None,
+        "companyfacts_object_key": None,
+        "companyfacts_retrieved_at": None,
+        "companyfacts_snapshot_kind": "not_fetched",
+        "relevant_filings": filings,
+        "withheld_filings": [],
+        "cumulative_relevant_accessions": list(numbers),
+        "previous_manifest_id": previous_manifest_id,
+        "recorded_at": "2026-08-23T04:03:41Z",
+        "sec_accepted_at": ACCEPT_RECOVERY,
+        "filed_on": "2026-07-20",
+    }
+
+
+def _encode_manifest_at_size(manifest: dict, target: int) -> tuple[dict, str, bytes]:
+    candidate = json.loads(canonical_json(manifest))
+    # Exercise the transport envelope without altering filing facts that the
+    # public poll path must reconcile against a fresh SEC body.
+    candidate["withheld_filings"] = [
+        {
+            "cik": candidate["cik"],
+            "ticker": candidate["ticker"],
+            "accession_number": None,
+            "form": "10-Q",
+            "filing_date": None,
+            "report_date": None,
+            "acceptance_datetime": None,
+            "primary_document": "",
+            "is_xbrl": None,
+            "is_inline_xbrl": None,
+            "withheld_reason": "invalid_sec_json",
+            "withheld_cause": "transport_boundary_fixture",
+        }
+    ]
+    _manifest_id, raw = _encode_issuer_manifest(candidate)
+    growth = target - len(raw)
+    assert growth >= 0
+    candidate["withheld_filings"][0]["primary_document"] = "x" * growth
+    manifest_id, raw = _encode_issuer_manifest(candidate)
+    assert len(raw) == target
+    return candidate, manifest_id, raw
+
+
+def _issuer_pointer(cik: str, ticker: str, manifest_id: str, manifest: dict) -> dict:
+    return {
+        "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
+        "cik": cik,
+        "ticker": ticker,
+        "manifest_id": manifest_id,
+        "manifest_key": issuer_manifest_key(cik, manifest_id),
+        "submissions_sha256": manifest["submissions_sha256"],
+        "companyfacts_sha256": manifest["companyfacts_sha256"],
+    }
+
+
+def _install_manifest(
+    store: LocalStore,
+    manifest: dict,
+    *,
+    target_size: int | None = None,
+) -> tuple[dict, dict, bytes]:
+    if target_size is None:
+        manifest_id, raw = _encode_issuer_manifest(manifest)
+        installed = {**manifest, "manifest_id": manifest_id}
+    else:
+        installed, manifest_id, raw = _encode_manifest_at_size(manifest, target_size)
+        installed = {**installed, "manifest_id": manifest_id}
+    key = issuer_manifest_key(installed["cik"], manifest_id)
+    _put_issuer_manifest(store, key, raw)
+    pointer = _issuer_pointer(installed["cik"], installed["ticker"], manifest_id, installed)
+    _put_pointer(store, issuer_latest_key(installed["cik"]), pointer)
+    return installed, pointer, raw
+
+
+def test_manifest_transport_ceiling_is_census_derived_and_pointer_ceiling_stays_compact() -> None:
+    assert POINTER_MAX_BYTES == 16 * 1024
+    assert ISSUER_MANIFEST_MAX_BYTES == 128 * 1024
+    assert ISSUER_MANIFEST_MAX_BYTES > 2 * 43_665
+    assert ISSUER_MANIFEST_MAX_BYTES <= 256 * 1024
+
+
+def test_compact_pointer_cannot_borrow_the_manifest_transport_envelope(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    pointer = {
+        "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
+        "cik": AAPL[1],
+        "ticker": AAPL[0],
+        "manifest_id": "a" * 64,
+        "manifest_key": issuer_manifest_key(AAPL[1], "a" * 64),
+        "submissions_sha256": "1" * 64,
+        "companyfacts_sha256": None,
+        "forbidden_padding": "x" * POINTER_MAX_BYTES,
+    }
+
+    with pytest.raises(BroadSecError) as err:
+        _put_pointer(store, issuer_latest_key(AAPL[1]), pointer)
+
+    assert err.value.reason_code == "store_write_failure"
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) is None
+
+
+def test_ango_sized_legacy_manifest_reads_without_rewriting_identity_or_lineage(
+    tmp_path: Path,
+) -> None:
+    store = LocalStore(tmp_path / "store")
+    manifest = _manifest_transport_fixture("0001275187", "ANGO")
+    del manifest["submissions_components"]
+    del manifest["submissions_source_set_sha256"]
+    manifest["relevant_filings"][0]["primary_document"] = ""
+    legacy_id = _legacy_issuer_source_identity(manifest)
+    manifest["manifest_id"] = legacy_id
+    baseline = canonical_json(manifest).encode()
+    manifest["relevant_filings"][0]["primary_document"] = "x" * (20_779 - len(baseline))
+    raw = canonical_json(manifest).encode()
+    assert len(raw) == 20_779
+    assert _legacy_issuer_source_identity(manifest) == legacy_id
+    assert issuer_source_identity(manifest) != legacy_id
+    key = issuer_manifest_key(manifest["cik"], legacy_id)
+    assert store.put_bytes_strict_conditional(key, raw, expected_version=None)
+    pointer = _issuer_pointer(manifest["cik"], manifest["ticker"], legacy_id, manifest)
+    _put_pointer(store, issuer_latest_key(manifest["cik"]), pointer)
+    pointer_before = store.get_bytes_strict(issuer_latest_key(manifest["cik"]))
+
+    loaded = _read_issuer_manifest(
+        store,
+        pointer=pointer,
+        expected_cik=manifest["cik"],
+        expected_ticker=manifest["ticker"],
+    )
+
+    assert loaded["manifest_id"] == legacy_id
+    assert loaded["previous_manifest_id"] is None
+    assert loaded["cumulative_relevant_accessions"] == manifest[
+        "cumulative_relevant_accessions"
+    ]
+    assert store.get_bytes_strict(key) == raw
+    assert store.get_bytes_strict(issuer_latest_key(manifest["cik"])) == pointer_before
+
+
+def test_incremental_reads_valid_manifest_larger_than_pointer_envelope(tmp_path: Path) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    fake.set_index([])
+    assert _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo).exit_code == 0
+    prior_accession = "0000320193-26-000010"
+    prior_fixture = _manifest_transport_fixture(
+        AAPL[1], AAPL[0], accessions=[prior_accession]
+    )
+    prior_fixture["relevant_filings"][0].update(
+        {
+            "filing_date": "2026-06-15",
+            "report_date": "2026-06-15",
+            "acceptance_datetime": ACCEPT_Q,
+        }
+    )
+    prior, prior_pointer, prior_raw = _install_manifest(
+        store,
+        prior_fixture,
+        target_size=20_779,
+    )
+    pointer_raw = store.get_bytes_strict(issuer_latest_key(AAPL[1]))
+    assert pointer_raw is not None and len(pointer_raw) < POINTER_MAX_BYTES < len(prior_raw)
+
+    new_accession = "0000320193-26-000044"
+    filings = [
+        _filing(prior_accession, "10-Q", accepted="2026-06-15T20:11:00.000Z", filed="2026-06-15"),
+        _filing(new_accession, "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12"),
+    ]
+    fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], filings)
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "larger-manifest")
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", new_accession)])
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+
+    assert result.exit_code == 0
+    assert result.receipt["reason_code"] == "complete"
+    assert all(failure["reason_code"] != "source_binding_failure" for failure in result.receipt["failures"])
+    assert fake.facts_fetches == [AAPL[1]]
+    current_pointer = _load_json(store, issuer_latest_key(AAPL[1]))
+    current = _load_json(store, current_pointer["manifest_key"])
+    assert current["previous_manifest_id"] == prior_pointer["manifest_id"]
+    assert current["cumulative_relevant_accessions"][:1] == prior[
+        "cumulative_relevant_accessions"
+    ]
+    assert store.get_bytes_strict(prior_pointer["manifest_key"]) == prior_raw
+    by_accession = {row["accession_number"]: row for row in current["relevant_filings"]}
+    assert by_accession[prior_accession]["acceptance_datetime"] == ACCEPT_Q
+    assert by_accession[new_accession]["acceptance_datetime"] == ACCEPT_NEW
+
+
+def test_recovery_reads_valid_manifest_larger_than_pointer_envelope(tmp_path: Path) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    ticker = "R0000"
+    prior, pointer, raw = _install_manifest(
+        store,
+        _manifest_transport_fixture(cik, ticker),
+        target_size=20_779,
+    )
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+
+    assert len(raw) > POINTER_MAX_BYTES
+    assert result.exit_code == 0
+    assert result.receipt["reason_code"] == "complete"
+    assert result.receipt["recovery"]["completed_total"] == 1
+    assert all(failure["reason_code"] != "source_binding_failure" for failure in result.receipt["failures"])
+    current_pointer = _load_json(store, issuer_latest_key(cik))
+    if current_pointer != pointer:
+        current = _load_json(store, current_pointer["manifest_key"])
+        assert current["previous_manifest_id"] == prior["manifest_id"]
+    assert pointer_before is not None
+    assert store.get_bytes_strict(latest_complete_key()) != complete_before
+
+
+def test_manifest_exact_ceiling_succeeds_and_one_byte_above_refuses_before_put(
+    tmp_path: Path,
+) -> None:
+    store = LocalStore(tmp_path / "store")
+    manifest = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    at_limit, manifest_id, raw = _encode_manifest_at_size(
+        manifest, ISSUER_MANIFEST_MAX_BYTES
+    )
+    key = issuer_manifest_key(AAPL[1], manifest_id)
+    _put_issuer_manifest(store, key, raw)
+    pointer = _issuer_pointer(AAPL[1], AAPL[0], manifest_id, at_limit)
+    loaded = _read_issuer_manifest(
+        store,
+        pointer=pointer,
+        expected_cik=AAPL[1],
+        expected_ticker=AAPL[0],
+    )
+    assert loaded["manifest_id"] == manifest_id
+
+    too_large = _manifest_transport_fixture(MSFT[1], MSFT[0])
+    with pytest.raises(BroadSecError) as err:
+        _encode_manifest_at_size(too_large, ISSUER_MANIFEST_MAX_BYTES + 1)
+    assert err.value.reason_code == "store_write_failure"
+    assert store.get_bytes_strict(issuer_latest_key(MSFT[1])) is None
+    assert not any(f"/issuers/{MSFT[1]}/manifests/" in item for item in store.list_prefix(PREFIX))
+
+
+def test_overlimit_manifest_read_is_storage_failure_and_recovery_cursor_stays_zero(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    manifest_id = "a" * 64
+    key = issuer_manifest_key(cik, manifest_id)
+    oversized = b"{" + (b" " * ISSUER_MANIFEST_MAX_BYTES) + b"}"
+    assert len(oversized) == ISSUER_MANIFEST_MAX_BYTES + 2
+    assert store.put_bytes_strict_conditional(key, oversized, expected_version=None)
+    pointer = {
+        "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
+        "cik": cik,
+        "ticker": "R0000",
+        "manifest_id": manifest_id,
+        "manifest_key": key,
+        "submissions_sha256": "1" * 64,
+        "companyfacts_sha256": None,
+    }
+    _put_pointer(store, issuer_latest_key(cik), pointer)
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    manifests_before = [item for item in store.list_prefix(PREFIX) if "/manifests/" in item]
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "store_readback_failure"
+    assert result.receipt["reason_code"] != "source_binding_failure"
+    assert result.receipt["recovery"]["completed_this_run"] == 0
+    assert result.receipt["recovery"]["completed_total"] == 0
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+    assert continuation["last_successful_run_receipt"] is None
+    assert fake.facts_fetches == []
+    assert fake.historical_fetches == []
+    assert store.get_bytes_strict(issuer_latest_key(cik)) == pointer_before
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+    assert [item for item in store.list_prefix(PREFIX) if "/manifests/" in item] == manifests_before
+
+
+def test_overlimit_manifest_read_fails_incremental_without_pointer_or_complete_movement(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
+    fake = FakeSec()
+    fake.set_index([])
+    assert _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo).exit_code == 0
+
+    manifest_id = "a" * 64
+    key = issuer_manifest_key(AAPL[1], manifest_id)
+    oversized = b"{" + (b" " * ISSUER_MANIFEST_MAX_BYTES) + b"}"
+    assert store.put_bytes_strict_conditional(key, oversized, expected_version=None)
+    pointer = {
+        "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
+        "cik": AAPL[1],
+        "ticker": AAPL[0],
+        "manifest_id": manifest_id,
+        "manifest_key": key,
+        "submissions_sha256": "1" * 64,
+        "companyfacts_sha256": None,
+    }
+    _put_pointer(store, issuer_latest_key(AAPL[1]), pointer)
+    pointer_before = store.get_bytes_strict(issuer_latest_key(AAPL[1]))
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    manifests_before = [item for item in store.list_prefix(PREFIX) if "/manifests/" in item]
+
+    accession = "0000320193-26-000044"
+    fake.submissions[AAPL[1]] = _submissions_bytes(
+        AAPL[1],
+        [_filing(accession, "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12")],
+    )
+    fake.facts[AAPL[1]] = _facts_bytes(AAPL[1], "overlimit-prior")
+    fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-08-12", accession)])
+
+    result = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "store_readback_failure"
+    assert result.receipt["reason_code"] != "source_binding_failure"
+    assert fake.facts_fetches == []
+    assert store.get_bytes_strict(issuer_latest_key(AAPL[1])) == pointer_before
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+    assert [item for item in store.list_prefix(PREFIX) if "/manifests/" in item] == manifests_before
+
+
+@pytest.mark.parametrize("corruption", ("unhashable_accession", "invalid_utf8"))
+def test_readable_manifest_corruption_stays_integrity_failure_in_public_recovery(
+    tmp_path: Path,
+    corruption: str,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    _installed, pointer, raw = _install_manifest(
+        store, _manifest_transport_fixture(cik, "R0000")
+    )
+    if corruption == "unhashable_accession":
+        forged = json.loads(raw)
+        forged["cumulative_relevant_accessions"] = [{}]
+        corrupt_raw = canonical_json(forged).encode()
+    else:
+        corrupt_raw = b"\xff"
+    versioned = store.get_bytes_strict_bounded_versioned(
+        pointer["manifest_key"], ISSUER_MANIFEST_MAX_BYTES
+    )
+    assert versioned.version is not None
+    assert store.put_bytes_strict_conditional(
+        pointer["manifest_key"],
+        corrupt_raw,
+        expected_version=versioned.version,
+    )
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    manifests_before = [item for item in store.list_prefix(PREFIX) if "/manifests/" in item]
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "issuer_manifest_invalid"
+    assert result.receipt["reason_code"] != "source_binding_failure"
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+    assert continuation["last_successful_run_receipt"] is None
+    assert fake.facts_fetches == []
+    assert store.get_bytes_strict(issuer_latest_key(cik)) == pointer_before
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+    assert [item for item in store.list_prefix(PREFIX) if "/manifests/" in item] == manifests_before
+
+
+def test_missing_manifest_schema_authority_is_typed_storage_failure_in_recovery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    _installed, _pointer, _raw = _install_manifest(
+        store, _manifest_transport_fixture(cik, "R0000")
+    )
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+    complete_before = store.get_bytes_strict(latest_complete_key())
+    manifests_before = [item for item in store.list_prefix(PREFIX) if "/manifests/" in item]
+    _populate_ff1r_current_sources(fake, candidate_ciks)
+
+    broad_sec_store._issuer_manifest_validator.cache_clear()
+    monkeypatch.setattr(
+        broad_sec_store,
+        "ISSUER_MANIFEST_SCHEMA_PATH",
+        tmp_path / "missing-issuer-manifest.schema.json",
+    )
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+    broad_sec_store._issuer_manifest_validator.cache_clear()
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "store_readback_failure"
+    assert result.receipt["reason_code"] != "source_binding_failure"
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+    assert continuation["last_successful_run_receipt"] is None
+    assert fake.facts_fetches == []
+    assert store.get_bytes_strict(issuer_latest_key(cik)) == pointer_before
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+    assert [item for item in store.list_prefix(PREFIX) if "/manifests/" in item] == manifests_before
+
+
+def test_overlimit_new_recovery_manifest_writes_no_manifest_pointer_or_cursor(
+    tmp_path: Path,
+) -> None:
+    repo, universe, store, fake, candidate_ciks = _seed_ff1r_recovery_anchor(
+        tmp_path, candidate_count=1
+    )
+    cik = candidate_ciks[0]
+    huge = _filing(
+        f"{cik}-26-000001",
+        "10-Q",
+        accepted=ACCEPT_RECOVERY,
+        filed="2026-07-20",
+        document="x" * ISSUER_MANIFEST_MAX_BYTES,
+    )
+    fake.submissions[cik] = _submissions_bytes(cik, [huge])
+    fake.facts[cik] = _facts_bytes(cik)
+    complete_before = store.get_bytes_strict(latest_complete_key())
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+    )
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "store_write_failure"
+    assert result.receipt["recovery"]["completed_this_run"] == 0
+    assert result.receipt["recovery"]["completed_total"] == 0
+    continuation = _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )
+    assert continuation["next_ordinal"] == 0
+    assert continuation["last_successful_run_receipt"] is None
+    assert store.get_bytes_strict(issuer_latest_key(cik)) is None
+    assert not any(f"/issuers/{cik}/manifests/" in item for item in store.list_prefix(PREFIX))
+    assert store.get_bytes_strict(latest_complete_key()) == complete_before
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "body_cik",
+        "body_ticker",
+        "body_manifest_id",
+        "previous_manifest_id",
+        "relevant_accession",
+        "cumulative_accession",
+        "cumulative_unhashable",
+        "component_set_sha",
+        "recent_component_sha",
+        "recent_component_key",
+        "zero_recent",
+        "two_recent",
+        "withheld_not_array",
+        "missing_recorded_at",
+        "extra_top_level",
+        "pointer_manifest_id",
+        "pointer_manifest_key",
+        "pointer_submissions_sha",
+        "pointer_companyfacts_sha",
+    ),
+)
+def test_manifest_identity_and_component_mutations_fail_closed(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    store = LocalStore(tmp_path / "store")
+    manifest, pointer, raw = _install_manifest(
+        store, _manifest_transport_fixture(AAPL[1], AAPL[0])
+    )
+    key = pointer["manifest_key"]
+    forged_pointer = dict(pointer)
+    forged_manifest = json.loads(raw)
+    body_mutations = {
+        "body_cik",
+        "body_ticker",
+        "body_manifest_id",
+        "previous_manifest_id",
+        "relevant_accession",
+        "cumulative_accession",
+        "cumulative_unhashable",
+        "component_set_sha",
+        "recent_component_sha",
+        "recent_component_key",
+        "zero_recent",
+        "two_recent",
+        "withheld_not_array",
+        "missing_recorded_at",
+        "extra_top_level",
+    }
+    if mutation == "body_cik":
+        forged_manifest["cik"] = MSFT[1]
+    elif mutation == "body_ticker":
+        forged_manifest["ticker"] = MSFT[0]
+    elif mutation == "body_manifest_id":
+        forged_manifest["manifest_id"] = "b" * 64
+    elif mutation == "previous_manifest_id":
+        forged_manifest["previous_manifest_id"] = "b" * 64
+    elif mutation == "relevant_accession":
+        forged_manifest["relevant_filings"][0]["accession_number"] = "0000320193-26-000002"
+    elif mutation == "cumulative_accession":
+        forged_manifest["cumulative_relevant_accessions"].append("0000320193-26-000002")
+    elif mutation == "cumulative_unhashable":
+        forged_manifest["cumulative_relevant_accessions"] = [{}]
+    elif mutation == "component_set_sha":
+        forged_manifest["submissions_source_set_sha256"] = "b" * 64
+    elif mutation == "recent_component_sha":
+        forged_manifest["submissions_components"][0]["sha256"] = "b" * 64
+    elif mutation == "recent_component_key":
+        forged_manifest["submissions_components"][0]["object_key"] = object_key("b" * 64)
+    elif mutation == "zero_recent":
+        forged_manifest["submissions_components"][0]["source_kind"] = "historical"
+    elif mutation == "two_recent":
+        forged_manifest["submissions_components"].append(
+            dict(forged_manifest["submissions_components"][0])
+        )
+    elif mutation == "withheld_not_array":
+        forged_manifest["withheld_filings"] = "schema-invalid"
+    elif mutation == "missing_recorded_at":
+        del forged_manifest["recorded_at"]
+    elif mutation == "extra_top_level":
+        forged_manifest["unexpected"] = True
+    elif mutation == "pointer_manifest_id":
+        forged_pointer["manifest_id"] = "b" * 64
+    elif mutation == "pointer_manifest_key":
+        forged_pointer["manifest_key"] = issuer_manifest_key(AAPL[1], "b" * 64)
+    elif mutation == "pointer_submissions_sha":
+        forged_pointer["submissions_sha256"] = "b" * 64
+    elif mutation == "pointer_companyfacts_sha":
+        forged_pointer["companyfacts_sha256"] = "b" * 64
+    else:  # pragma: no cover - parameter list is the security inventory.
+        raise AssertionError(mutation)
+
+    if mutation in body_mutations:
+        versioned = store.get_bytes_strict_bounded_versioned(key, ISSUER_MANIFEST_MAX_BYTES)
+        assert versioned.version is not None
+        assert store.put_bytes_strict_conditional(
+            key,
+            canonical_json(forged_manifest).encode(),
+            expected_version=versioned.version,
+        )
+
+    with pytest.raises(BroadSecError) as err:
+        _read_issuer_manifest(
+            store,
+            pointer=forged_pointer,
+            expected_cik=AAPL[1],
+            expected_ticker=AAPL[0],
+        )
+    assert err.value.reason_code == "issuer_manifest_invalid"
+    assert err.value.reason_code != "source_binding_failure"
+    assert manifest["manifest_id"] == pointer["manifest_id"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_reason"),
+    ((None, "store_readback_failure"), (b"{not-json", "issuer_manifest_invalid")),
+)
+def test_missing_or_malformed_manifest_has_precise_failure_taxonomy(
+    tmp_path: Path,
+    payload: bytes | None,
+    expected_reason: str,
+) -> None:
+    store = LocalStore(tmp_path / "store")
+    manifest_id = "a" * 64
+    pointer = {
+        "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
+        "cik": AAPL[1],
+        "ticker": AAPL[0],
+        "manifest_id": manifest_id,
+        "manifest_key": issuer_manifest_key(AAPL[1], manifest_id),
+        "submissions_sha256": "1" * 64,
+        "companyfacts_sha256": None,
+    }
+    if payload is not None:
+        assert store.put_bytes_strict_conditional(
+            pointer["manifest_key"], payload, expected_version=None
+        )
+    with pytest.raises(BroadSecError) as err:
+        _read_issuer_manifest(
+            store,
+            pointer=pointer,
+            expected_cik=AAPL[1],
+            expected_ticker=AAPL[0],
+        )
+    assert err.value.reason_code == expected_reason
+    assert err.value.reason_code != "source_binding_failure"
+
+
+def test_new_writer_cannot_downgrade_to_legacy_or_partial_component_identity() -> None:
+    legacy = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    del legacy["submissions_components"]
+    del legacy["submissions_source_set_sha256"]
+    with pytest.raises(BroadSecError) as absent:
+        _encode_issuer_manifest(legacy)
+    assert absent.value.reason_code == "store_write_failure"
+
+    partial = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    del partial["submissions_source_set_sha256"]
+    with pytest.raises(BroadSecError) as xor:
+        _encode_issuer_manifest(partial)
+    assert xor.value.reason_code == "store_write_failure"
+
+
+def test_one_hop_lineage_accepts_legacy_predecessor_ticker_change(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    cik = AAPL[1]
+    predecessor = _manifest_transport_fixture(cik, "OLD")
+    del predecessor["submissions_components"]
+    del predecessor["submissions_source_set_sha256"]
+    predecessor_id = _legacy_issuer_source_identity(predecessor)
+    predecessor["manifest_id"] = predecessor_id
+    predecessor_raw = canonical_json(predecessor).encode()
+    predecessor_key = issuer_manifest_key(cik, predecessor_id)
+    assert store.put_bytes_strict_conditional(
+        predecessor_key, predecessor_raw, expected_version=None
+    )
+
+    current = _manifest_transport_fixture(
+        cik,
+        AAPL[0],
+        accessions=[f"{cik}-26-000001", f"{cik}-26-000002"],
+        previous_manifest_id=predecessor_id,
+    )
+    installed, pointer, _raw = _install_manifest(store, current)
+    loaded = _read_issuer_manifest(
+        store,
+        pointer=pointer,
+        expected_cik=cik,
+        expected_ticker=AAPL[0],
+    )
+    assert loaded["manifest_id"] == installed["manifest_id"]
+    assert loaded["previous_manifest_id"] == predecessor_id
+
+
+def test_broken_one_hop_lineage_fails_closed(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    missing_predecessor = "b" * 64
+    current = _manifest_transport_fixture(
+        AAPL[1],
+        AAPL[0],
+        previous_manifest_id=missing_predecessor,
+    )
+    _installed, pointer, _raw = _install_manifest(store, current)
+    with pytest.raises(BroadSecError) as err:
+        _read_issuer_manifest(
+            store,
+            pointer=pointer,
+            expected_cik=AAPL[1],
+            expected_ticker=AAPL[0],
+        )
+    assert err.value.reason_code == "issuer_manifest_invalid"
+
+
+def test_nonmonotone_one_hop_lineage_fails_closed(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    cik = AAPL[1]
+    _predecessor, predecessor_pointer, _raw = _install_manifest(
+        store,
+        _manifest_transport_fixture(
+            cik,
+            AAPL[0],
+            accessions=[f"{cik}-26-000001"],
+        ),
+    )
+    current = _manifest_transport_fixture(
+        cik,
+        AAPL[0],
+        accessions=[f"{cik}-26-000002"],
+        previous_manifest_id=predecessor_pointer["manifest_id"],
+    )
+    _installed, pointer, _raw = _install_manifest(store, current)
+
+    with pytest.raises(BroadSecError) as err:
+        _read_issuer_manifest(
+            store,
+            pointer=pointer,
+            expected_cik=cik,
+            expected_ticker=AAPL[0],
+        )
+
+    assert err.value.reason_code == "issuer_manifest_invalid"
+
+
+def test_manifest_transport_never_uses_unbounded_read_for_manifest_keys(tmp_path: Path) -> None:
+    backing = LocalStore(tmp_path / "store")
+
+    class NoUnboundedManifestReads:
+        def get_bytes_strict(self, key):
+            if "/manifests/" in key:
+                raise AssertionError("unbounded issuer-manifest read")
+            return backing.get_bytes_strict(key)
+
+        def __getattr__(self, name):
+            return getattr(backing, name)
+
+    store = NoUnboundedManifestReads()
+    manifest = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    manifest_id, raw = _encode_issuer_manifest(manifest)
+    key = issuer_manifest_key(AAPL[1], manifest_id)
+    _put_issuer_manifest(store, key, raw)
+    installed = {**manifest, "manifest_id": manifest_id}
+    pointer = _issuer_pointer(AAPL[1], AAPL[0], manifest_id, installed)
+    loaded = _read_issuer_manifest(
+        store,
+        pointer=pointer,
+        expected_cik=AAPL[1],
+        expected_ticker=AAPL[0],
+    )
+    assert loaded["manifest_id"] == manifest_id
+
+
+def test_manifest_writer_bounds_preexisting_immutable_object(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    manifest = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    manifest_id, raw = _encode_issuer_manifest(manifest)
+    key = issuer_manifest_key(AAPL[1], manifest_id)
+    oversized = b"{" + (b" " * ISSUER_MANIFEST_MAX_BYTES) + b"}"
+    assert store.put_bytes_strict_conditional(key, oversized, expected_version=None)
+
+    with pytest.raises(BroadSecError) as err:
+        _put_issuer_manifest(store, key, raw)
+
+    assert err.value.reason_code == "store_readback_failure"
+
+
+def test_manifest_writer_bounds_conditional_create_race(tmp_path: Path) -> None:
+    backing = LocalStore(tmp_path / "store")
+    manifest = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    manifest_id, raw = _encode_issuer_manifest(manifest)
+    key = issuer_manifest_key(AAPL[1], manifest_id)
+    oversized = b"{" + (b" " * ISSUER_MANIFEST_MAX_BYTES) + b"}"
+
+    class OversizedRaceStore:
+        def put_bytes_strict_conditional(self, candidate_key, _data, **_kwargs):
+            assert candidate_key == key
+            assert backing.put_bytes_strict_conditional(
+                candidate_key, oversized, expected_version=None
+            )
+            return False
+
+        def __getattr__(self, name):
+            return getattr(backing, name)
+
+    with pytest.raises(BroadSecError) as err:
+        _put_issuer_manifest(OversizedRaceStore(), key, raw)
+
+    assert err.value.reason_code == "store_readback_failure"
+
+
+def test_manifest_writer_bounds_post_create_readback(tmp_path: Path) -> None:
+    backing = LocalStore(tmp_path / "store")
+    manifest = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    manifest_id, raw = _encode_issuer_manifest(manifest)
+    key = issuer_manifest_key(AAPL[1], manifest_id)
+
+    class OversizedReadbackStore:
+        reads = 0
+
+        def get_bytes_strict_bounded(self, candidate_key, maximum_bytes):
+            assert candidate_key == key
+            assert maximum_bytes == ISSUER_MANIFEST_MAX_BYTES
+            self.reads += 1
+            if self.reads == 1:
+                return None
+            raise ValueError("object exceeds bounded read ceiling")
+
+        def __getattr__(self, name):
+            return getattr(backing, name)
+
+    with pytest.raises(BroadSecError) as err:
+        _put_issuer_manifest(OversizedReadbackStore(), key, raw)
+
+    assert err.value.reason_code == "store_readback_failure"
+    assert backing.get_bytes_strict(key) == raw
+
+
+def test_manifest_writer_refuses_key_body_identity_disagreement(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    manifest = _manifest_transport_fixture(AAPL[1], AAPL[0])
+    manifest_id, raw = _encode_issuer_manifest(manifest)
+    wrong_key = issuer_manifest_key(MSFT[1], manifest_id)
+
+    with pytest.raises(BroadSecError) as err:
+        _put_issuer_manifest(store, wrong_key, raw)
+
+    assert err.value.reason_code == "store_write_failure"
+    assert store.get_bytes_strict(wrong_key) is None

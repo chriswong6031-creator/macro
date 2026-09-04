@@ -1451,10 +1451,37 @@ def test_live_rollback_is_non_destructive_and_restores_legacy_writer():
     assert "rm -rf" not in text
 
 
+#: The instant every caller of :func:`_healthy_vps_status` grades against. Named so
+#: the prophet_live clocks below are stamped RELATIVE to it: that grader reads absolute
+#: `pass_ts`/`quote_asof` (deliberately — a frozen "age" scalar stops ageing the moment
+#: the producer dies, which is the shape of the 2026-08 silent freeze), so a hardcoded
+#: literal here would rot into a scheduled red the way this file's header warns about.
+_HEALTHY_STATUS_NOW = datetime(2026, 7, 20, 15, 0, tzinfo=timezone.utc)
+
+
 def _healthy_vps_status() -> dict:
+    # prophet_live was added to the dead-man by #6464 but this fixture was not given a
+    # healthy entry, so the four tests below asserted "no failures" against a payload the
+    # new grader correctly failed — red on main from that merge. Healed here rather than
+    # by loosening the grader: the grader is right, the fixture was simply incomplete.
+    _fresh = (_HEALTHY_STATUS_NOW - timedelta(minutes=2)).isoformat().replace("+00:00", "Z")
     return {
         "status": "ok",
         "checks": {
+            "prophet_live": {
+                "schema": "prophet_live.states/v1",
+                "expected_now": True,
+                "status": "live",
+                "reason": None,
+                "pass_ts": _fresh,
+                "quote_asof": _fresh,
+                "session_et": "2026-07-20",
+                "pack_ok": True,
+                "pack_as_of": "2026-07-17",
+                "pack_expected": "2026-07-17",
+                "producer": "vps:macro-live-prophet",
+                "state_counts": {"dormant": 1203, "near": 340, "forming": 12},
+            },
             "quotes": {"age_min": 1, "requested": 25, "resolved": 20},
             "release_publications": {
                 "schema": "release_publications.v2",

@@ -1,0 +1,103 @@
+{
+  "schema": "tfg1.development_boundary_identity_adjudication.r2",
+  "status": "sol_ratified_amendment",
+  "ratified_at": "2026-08-27",
+  "ratified_by": "sol",
+  "source_operation_key": "tfg1-deterministic-transcript-format-hardening-20260827-v1",
+  "successor_operation_key": "tfg1-r2-deterministic-transcript-format-hardening-20260827-v1",
+  "amends": {
+    "path": "research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json",
+    "git_blob_sha": "190cad1a69823fb29016f56aae50a6af3668fdaf",
+    "scope": "only three omitted combined Q&A-opener-plus-first-question structural handoffs and the mechanically resulting direct/supported/unresolved/source-clean counts"
+  },
+  "falsifier_evidence": {
+    "pr": 6555,
+    "review_id": 5041312981,
+    "reviewed_head_sha": "0b98a2c9c0ff234549bb64aec40b3868255441bf",
+    "receipt": "research/earnings_intelligence/e3/tfg1_development_separator_falsifier_receipt.json",
+    "measurement": "research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py"
+  },
+  "method_law_unchanged": true,
+  "holdout_law_unchanged": true,
+  "holdout_bodies_inspected": 0,
+  "model_calls": 0,
+  "summary": {
+    "calls": 16,
+    "true_question_handoffs": 113,
+    "direct_operator_next_speaker_matches": 97,
+    "explicit_full_name_proxy_handoffs": 6,
+    "source_supported_questioner_handoffs": 103,
+    "unresolved_questioner_handoffs": 10,
+    "calls_with_explicit_management_role_conflict": 2,
+    "source_clean_calls_for_full_call_reconstruction": 9,
+    "source_clean_call_pairs": [
+      "OCSL/2026Q3",
+      "GEF/2026Q3",
+      "ARQQ/2026Q2",
+      "UPBD/2026Q2",
+      "SCCO/2026Q2",
+      "AGM/2026Q2",
+      "FANG/2026Q2",
+      "COF/2026Q2",
+      "KREF/2026Q2"
+    ],
+    "source_conflicted_or_identity_refusal_pairs": [
+      "MBLY/2026Q2",
+      "TRVI/2026Q2",
+      "CTRE/2026Q2",
+      "LTH/2026Q2",
+      "BANR/2026Q2",
+      "HTGC/2026Q2",
+      "ARRY/2026Q2"
+    ]
+  },
+  "three_omissions": [
+    {
+      "pair": "MBLY/2026Q2",
+      "segment_index": 21,
+      "classification": "structural_separator_unresolved_questioner",
+      "operator_named": "Joshua Buchalter",
+      "next_speaker": "Speaker 4",
+      "first_utterance": "Hi. Good morning. This is Lanny on for Josh. Can you hear me okay?",
+      "reason": "structured speaker placeholder plus first-name-only self-identification; frozen proxy law requires a full-name next speaker"
+    },
+    {
+      "pair": "ARRY/2026Q2",
+      "segment_index": 31,
+      "classification": "structural_separator_direct_questioner",
+      "operator_named": "Joe Osha",
+      "next_speaker": "Joe Osha",
+      "reason": "exact source-name match under frozen direct-questioner law"
+    },
+    {
+      "pair": "KREF/2026Q2",
+      "segment_index": 15,
+      "classification": "structural_separator_direct_questioner",
+      "operator_named": "Tom Catherwood",
+      "next_speaker": "Tom Catherwood",
+      "reason": "exact source-name match under frozen direct-questioner law"
+    }
+  ],
+  "proxy_law": "unchanged from DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT",
+  "structural_separator_law": "All 113 ratified development question handoffs are structural separators. The 10 unresolved questioner handoffs still split neighboring Q&A windows but cannot mint canonical qa_exchange.v1 objects.",
+  "development_gate": "R2 must recover 113/113 structural separators with zero opening/queue/closing false positives; resolve 103/103 source-supported direct/proxy questioners; preserve 10/10 unresolved handoffs as separator-only refusals; reconstruct all 9 source-clean calls; make the remaining 7 calls fail only for their frozen source identity/conflict reason; preserve AAPL exactly 7 exchanges / 26 management answer turns / 68 replay spans; accepted unsupported=0, cross-event contamination=0, accepted replay=100%.",
+  "holdout_gate": "unchanged: ranks 17-24 stay unopened until every corrected development gate is green and an exact implementation head is frozen; source-only holdout adjudication must be frozen before compiler output; <6/8 source-clean means INSUFFICIENT_HOLDOUT_POWER; if powered, every source-clean slot must pass; no replacement/skip/rerank and no code change after holdout unseal.",
+  "per_call": [
+    {"pair":"OCSL/2026Q3","true_question_handoff_indices":[29,35,47],"direct_next_speaker_match_indices":[29,35,47],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"MBLY/2026Q2","true_question_handoff_indices":[21,31,44,54,65,72,79,89,98],"direct_next_speaker_match_indices":[31,44,54,65,72,79,89,98],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[21],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false,"expected_refusal":"unresolved_questioner at structural separator 21"},
+    {"pair":"GEF/2026Q3","true_question_handoff_indices":[25,30],"direct_next_speaker_match_indices":[25],"explicit_full_name_proxy_indices":[30],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"ARQQ/2026Q2","true_question_handoff_indices":[22],"direct_next_speaker_match_indices":[22],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"TRVI/2026Q2","true_question_handoff_indices":[12,25,41,46,51,58,65,74,85],"direct_next_speaker_match_indices":[12,25,41,51,74,85],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[46,58,65],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"CTRE/2026Q2","true_question_handoff_indices":[17,24,31,37,45,53,59,72,79,87,94],"direct_next_speaker_match_indices":[17,24,37,45,53,59,72,87,94],"explicit_full_name_proxy_indices":[31],"unresolved_questioner_indices":[79],"management_role_conflict":true,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"LTH/2026Q2","true_question_handoff_indices":[10,18,31,39,49,59,70,81,92,104,113],"direct_next_speaker_match_indices":[10,18,31,39,49,70,92],"explicit_full_name_proxy_indices":[59],"unresolved_questioner_indices":[81,104,113],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"UPBD/2026Q2","true_question_handoff_indices":[32,44,53,64,74,79,84],"direct_next_speaker_match_indices":[32,44,53,64,74,79,84],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"SCCO/2026Q2","true_question_handoff_indices":[53,66,91,109,117],"direct_next_speaker_match_indices":[53,66,91,109,117],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"AGM/2026Q2","true_question_handoff_indices":[30,36,49,64],"direct_next_speaker_match_indices":[30,36,49,64],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"BANR/2026Q2","true_question_handoff_indices":[20,34,45,55,71,83],"direct_next_speaker_match_indices":[20,55,83],"explicit_full_name_proxy_indices":[34,45],"unresolved_questioner_indices":[71],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"FANG/2026Q2","true_question_handoff_indices":[4,15,31,40,51,62,73,81,89,96,104,112,124,133],"direct_next_speaker_match_indices":[4,15,31,40,51,62,73,81,89,96,104,112,124,133],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"HTGC/2026Q2","true_question_handoff_indices":[33,40,52,61,69,76,83,92],"direct_next_speaker_match_indices":[33,40,52,69,76,83,92],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[61],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"COF/2026Q2","true_question_handoff_indices":[20,33,43,53,62,71,80,93,103,114,120],"direct_next_speaker_match_indices":[20,33,43,53,62,71,80,93,103,114,120],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"ARRY/2026Q2","true_question_handoff_indices":[31,36,46,63,76,84,89],"direct_next_speaker_match_indices":[31,36,46,76,84,89],"explicit_full_name_proxy_indices":[63],"unresolved_questioner_indices":[],"management_role_conflict":true,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"KREF/2026Q2","true_question_handoff_indices":[15,25,40,51,60],"direct_next_speaker_match_indices":[15,25,40,51,60],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true}
+  ]
+}

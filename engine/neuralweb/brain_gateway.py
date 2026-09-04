@@ -49,10 +49,13 @@ import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Generator, Iterable
 
+from engine import quote_resolution as _quote_resolution
+from engine.neuralweb import native_facts as _native_facts
 from lib.tiers import normalize_tier
 from engine.fundamental_forensics.private_state import load_state
 from engine.fundamental_forensics.context_projection import compact_disclosure_context
@@ -1120,32 +1123,7 @@ def _safe_symbol(symbol: str) -> str:
     them to the Yahoo/artifact convention (``600036.SS``). Dots remain valid
     for tickers such as BRK.B; traversal-like repeated dots are collapsed.
     """
-    raw = str(symbol or "").strip().upper()
-    prefixed = re.fullmatch(r"(SSE|SHSE|SZSE|HKEX|TSX|TSXV):([A-Z0-9.\-]+)", raw)
-    if prefixed:
-        exchange, ticker = prefixed.groups()
-        suffix = {
-            "SSE": "SS",
-            "SHSE": "SS",
-            "SZSE": "SZ",
-            "HKEX": "HK",
-            "TSX": "TO",
-            "TSXV": "V",
-        }[exchange]
-        raw = f"{ticker}.{suffix}"
-
-    clean = re.sub(r"[^A-Z0-9.\-]", "", raw)
-    # Collapse repeated dots (prevent path traversal artifacts like '..')
-    clean = re.sub(r"\.{2,}", ".", clean)
-    # Strip leading/trailing dots
-    clean = clean.strip(".")
-    if clean.endswith(".SH"):
-        clean = clean[:-3] + ".SS"
-    if clean.endswith(".HK"):
-        stem = clean[:-3]
-        if stem.isdigit():
-            clean = f"{stem.zfill(4)}.HK"
-    return clean[:24]
+    return _quote_resolution.safe_symbol(symbol)
 
 
 _QUALIFIED_SYMBOL_RE = re.compile(
@@ -1680,158 +1658,10 @@ def _symbol_grounding_digest(
 
 
 def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str, root: Path) -> dict:
-    """Try the quote-hub /quotes batch endpoint, then the VPS quotes_full state
-    snapshot, then the manifest row, then site/live/quotes.json."""
-    symbol = _safe_symbol(params.get("symbol") or "")
-    if not symbol:
-        return {"error": "symbol required"}
-
-    # 1. Live hub — the charting-app quote-hub's /quotes BATCH endpoint. That hub
-    #    (hub/hub.js) exposes ONLY /health and /quotes?syms=CSV; the /quote/{symbol}
-    #    this leg used to call has never existed on any host, and the
-    #    {"error": "not found"} the VPS returned was simply its catch-all 404.
-    try:
-        url = f"{terminal_hub_url.rstrip('/')}/quotes?syms={urllib.parse.quote(symbol)}"
-        req = urllib.request.Request(url, headers={"User-Agent": "brain-gateway/1.0"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            payload = json.loads(resp.read())
-        # Body is a {SYM: row} map; a symbol the hub has no data for is simply ABSENT
-        # (empty body when it has nothing at all). An error payload or a missing row
-        # is a MISS, not a quote, and must not mask the local fallbacks below.
-        if not isinstance(payload, dict) or payload.get("error"):
-            raise ValueError("hub miss")
-        row = payload.get(symbol)
-        if not isinstance(row, dict) or row.get("last") is None:
-            raise ValueError("hub miss")
-        # TRAP: on a symbol's FIRST request the hub cold-subscribes and writes a
-        # manifest-EOD placeholder whose ts is the SUBSCRIBE time — an old close
-        # stamped with the current clock. Serving it would launder a stale price under
-        # a fresh as-of. The discriminator is regularSessionDate, written only once a
-        # real Polygon AM bar has landed. Crypto rows never carry it, but their WS ts
-        # is genuinely real-time, so the guard is US-only. Falling through to the
-        # quotes_full snapshot (honest Yahoo regularMarketTime) is strictly more
-        # truthful, and this request already armed the subscribe, so the NEXT ask gets
-        # real delayed bars.
-        if row.get("market") == "us" and not row.get("regularSessionDate"):
-            raise ValueError("hub cold placeholder")
-        # Hub ts is epoch SECONDS (the quotes_full leg below is milliseconds).
-        ts_s = row.get("ts")
-        as_of = None
-        if isinstance(ts_s, (int, float)) and not isinstance(ts_s, bool) and ts_s > 0:
-            as_of = datetime.fromtimestamp(ts_s, tz=timezone.utc).isoformat(timespec="seconds")
-        out = {
-            "symbol": symbol,
-            "price": row.get("last"),
-            "prev_close": row.get("prevClose"),
-            "change_pct": row.get("chg"),
-            "as_of": as_of or datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "live": row.get("live"),
-            "source": "terminal_hub",
-        }
-        # Same plain-word delay vocabulary as the quotes_full leg below: the
-        # model-visible payload gets a number it can verbalize ("about 15 minutes
-        # delayed"), never the raw basis slug ("DELAYED_15M" is banned vocab).
-        basis = str(row.get("basis") or "")
-        basis_delay = re.search(r"(\d+)", basis)
-        if basis.upper().startswith("DELAYED") and basis_delay:
-            out["delayed_min"] = int(basis_delay.group(1))
-        return {k: v for k, v in out.items() if v is not None}
-    except Exception:  # noqa: BLE001
-        pass
-
-    # 2. VPS live-plane full snapshot (~2,100 symbols, refreshed ~every 5 min by the
-    #    macro-live snapshot lane via scripts/build_live_quotes.py).
-    #    WHY a local file read and not an HTTP fetch: the served site/live/quotes.json
-    #    at step 4 is the 34-symbol DISPLAY set; the full universe is deliberately NOT
-    #    web-addressable and lives root-side in the state dir. This gateway runs
-    #    root-side (macro-api.service), so it reads the file directly — that is what
-    #    gives the instant-fact lane and the deep loop single-stock coverage on the VPS.
-    full_env = os.environ.get("MACRO_QUOTES_FULL_PATH")
-    quotes_full_path = (
-        Path(full_env) if full_env
-        else Path(os.environ.get("MACRO_LIVE_STATE_DIR", "/var/lib/macro-live/state"))
-        / "quotes_full.json"
+    """Resolve through the neutral quote waterfall shared by typed consumers."""
+    return _quote_resolution.resolve_quote(
+        params.get("symbol") or "", terminal_data_dir, terminal_hub_url, root
     )
-    try:
-        if quotes_full_path.exists():
-            snap = json.loads(quotes_full_path.read_text(encoding="utf-8"))
-            row = (snap.get("quotes") or {}).get(symbol) or {}
-            if row.get("price") is not None:
-                # Per-quote ts (epoch ms) is the honest as-of; the snapshot's own asof
-                # only says when the batch was written.
-                as_of = None
-                ts_ms = row.get("ts")
-                if isinstance(ts_ms, (int, float)) and not isinstance(ts_ms, bool) and ts_ms > 0:
-                    as_of = datetime.fromtimestamp(
-                        ts_ms / 1000, tz=timezone.utc
-                    ).isoformat(timespec="seconds")
-                out = {
-                    "symbol": symbol,
-                    "price": row.get("price"),
-                    "prev_close": row.get("prevClose"),
-                    "change_pct": row.get("changePct"),
-                    "as_of": as_of or snap.get("asof"),
-                    "source": "live_plane_full",
-                }
-                delayed_min = (snap.get("meta") or {}).get("delayed_min")
-                if delayed_min:
-                    out["delayed_min"] = delayed_min
-                return {k: v for k, v in out.items() if v is not None}
-    except Exception:  # noqa: BLE001
-        pass
-
-    # 3. manifest.json fallback
-    manifest_path = terminal_data_dir / "manifest.json"
-    try:
-        if manifest_path.exists():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            syms = manifest.get("symbols") or {}
-            row = syms.get(symbol) or {}
-            if row:
-                return {
-                    "symbol": symbol,
-                    "price": row.get("price"),
-                    "verdict": row.get("verdict"),
-                    "wr": row.get("wr"),
-                    "as_of": manifest.get("as_of"),
-                    "source": "manifest",
-                }
-    except Exception:  # noqa: BLE001
-        pass
-
-    # 4. site/live/quotes.json fallback
-    quotes_path = root / "site" / "live" / "quotes.json"
-    try:
-        if quotes_path.exists():
-            quotes = json.loads(quotes_path.read_text(encoding="utf-8"))
-            row = (quotes.get("quotes") or quotes.get("symbols") or {}).get(symbol) or {}
-            if row:
-                # W5.1: the live plane writes per-row `ts` (epoch ms) and file-level
-                # `asof` — this reader asked for `as_of`, which the file never carries,
-                # so every quote from this source shipped DATELESS (and the instant
-                # lane's dateless-refuse gate correctly rejected all of them).
-                _row_ts = row.get("ts")
-                _as_of = None
-                if isinstance(_row_ts, (int, float)) and _row_ts > 0:
-                    try:
-                        _as_of = datetime.fromtimestamp(
-                            float(_row_ts) / 1000.0, tz=timezone.utc
-                        ).isoformat(timespec="seconds")
-                    except (OverflowError, OSError, ValueError):
-                        _as_of = None
-                return {
-                    "symbol": symbol,
-                    "price": row.get("price") or row.get("last"),
-                    "change_pct": row.get("changePct"),
-                    "prev_close": row.get("prevClose"),
-                    "as_of": _as_of or quotes.get("asof") or quotes.get("as_of"),
-                    "source": "site_quotes",
-                }
-    except Exception:  # noqa: BLE001
-        pass
-
-    return {"symbol": symbol, "available": False, "note": "quote not available from any source"}
-
 
 def _tool_get_symbol_intel(params: dict, terminal_data_dir: Path) -> dict:
     """Read TERMINAL_DATA_DIR/{SYM}.intel.json."""
@@ -3649,6 +3479,55 @@ def _earnings_evidence_allowed(user_id: str, root: Path | None = None) -> bool:
     """Boolean form used by model-schema and capability-disclosure filters."""
     allowed, _ = _earnings_evidence_entitlement(user_id, root)
     return allowed
+
+
+@dataclass(frozen=True)
+class _ExactSourceAttachment:
+    """One request-scoped result; resolved bytes never enter Brain persistence/log context."""
+
+    resolved: Any | None
+    failure: str | None
+    receipt_json: str
+
+
+def _resolve_company_source_attachment(
+    reference: object,
+    user_id: str,
+    root: Path,
+    tx_root: Path,
+) -> _ExactSourceAttachment:
+    """Enforce entitlement before archive I/O, then resolve the fixed Terminal receipt.
+
+    This is intentionally a request-time seam: it has no cache, thread/global state,
+    fuzzy retrieval, or ticker-only fallback.  The exact-source resolver owns all
+    identity/hash/UTF-8 checks and returns only an ephemeral prompt block + receipt.
+    """
+
+    allowed, entitlement = _earnings_evidence_entitlement(user_id, root)
+    if not allowed:
+        receipt = {
+            "schema": "mastermind.exact-source-receipt/v1",
+            "state": "refused",
+            "code": "entitlement_denied",
+            "tier": str(entitlement.get("tier") or "free"),
+            "status": str(entitlement.get("status") or "none"),
+        }
+        return _ExactSourceAttachment(None, "entitlement_denied", json.dumps(receipt, sort_keys=True))
+    from engine import earnings_transcript_intake as _transcripts  # noqa: PLC0415
+    try:
+        resolved = _transcripts.resolve_company_source_span(reference, tx_root)
+    except _transcripts.CompanySourceSpanError as exc:
+        receipt = {
+            "schema": "mastermind.exact-source-receipt/v1",
+            "state": "refused",
+            "code": exc.code,
+        }
+        return _ExactSourceAttachment(None, exc.code, json.dumps(receipt, sort_keys=True))
+    return _ExactSourceAttachment(
+        resolved,
+        None,
+        json.dumps(resolved.receipt, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+    )
 
 
 def _dispatch_brain_tool(
@@ -5970,7 +5849,7 @@ def _cache_control_last_message(messages: list[dict]) -> None:
 # Every number here is a time.monotonic() diff measured from the loop's own t0 — no new
 # dependency, no I/O, and nothing on this path may ever raise into the turn.
 #
-#   route        'instant' | 'deep'  — which lane served the turn
+#   route        'instant' | 'instant/native-fact' | 'deep' — serving route
 #   ttfv_ms      time to FIRST visible answer byte (the first `delta` yield); None on
 #                the non-streaming entrypoint, which has no wire to be first on
 #   rounds       [{"model_ms": int, "tools": [{"name": str, "ms": int}]}] — one per
@@ -6047,6 +5926,7 @@ def _run_brain_loop(
     effort: str | None = None,
     thinking_mode: str | None = None,
     deepseek_thinking: str | None = None,
+    source_prompt: str = "",
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -6137,6 +6017,8 @@ def _run_brain_loop(
     if _digests:
         _combined_digest = "\n\n".join(_digests)
         user_content = f"{_combined_digest}\n\n[USER QUESTION]\n{user_content}"
+    if source_prompt:
+        user_content = f"{source_prompt}\n\n[USER QUESTION]\n{user_content}"
 
     # Fix #4: filter client history — only role in {user,assistant} with non-empty str content
     def _filter_history(h: list[dict]) -> list[dict]:
@@ -6345,6 +6227,7 @@ def _run_brain_loop(
 # moment the answer actually starts being written.
 _STAGE_LABELS: dict[str, tuple[str, str]] = {
     "start":      ("Reading your question",          "正在读懂您的问题"),
+    "native":     ("Checking the canonical facts",   "核对权威数据"),
     "grounding":  ("Catching up on today's tape",    "先看今天的盘面"),
     "model.fast": ("Thinking it through",            "正在推演"),
     "model.pro":  ("Thinking it through properly",   "深入推演中"),
@@ -6823,11 +6706,22 @@ def _run_brain_loop_stream(
     effort: str | None = None,
     thinking_mode: str | None = None,
     deepseek_thinking: str | None = None,
+    context_receipt: dict | None = None,
+    source_prompt: str = "",
+    source_receipt: dict | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) →
+    Event sequence: meta (first) → context_receipt (W1-C, 0/1 — only when the
+    caller supplies one; see below) → status*/tool*/annotate*/command*/chart* (0+) →
     delta+ (1 or more, W5) → retract (0/1) → suggest (0/1, W6d) → done (last).
+
+    context_receipt: optional pre-compiled `ai_context_receipt.v1` body (see
+        `engine/intelligence_workspace/context_compiler.py`). When provided, it is
+        yielded as one `{"type": "context_receipt", ...}` event immediately after
+        `meta` and before any status/tool event — every real `chat_stream()` deep
+        turn supplies one. Defaults to `None` (no event emitted) so every existing
+        direct caller of this generator keeps today's exact event sequence.
     `status` events are ADDITIVE reasoning transparency; their copy comes from
     _STAGE_LABELS/_TOOL_LABELS and costs no network or file I/O — see the leak note above
     those tables.
@@ -6898,8 +6792,16 @@ def _run_brain_loop_stream(
         return "data: " + json.dumps({"type": "done", "route": timing["route"],
                                       "usage": usage, **fields}) + "\n\n"
 
+    source_receipt_event = (
+        "data: " + json.dumps({"type": "exact_source_receipt", **source_receipt}) + "\n\n"
+        if source_receipt else ""
+    )
     # Emit meta first (always)
     yield f"data: {json.dumps(meta_event)}\n\n"
+    if context_receipt is not None:
+        yield "data: " + json.dumps({"type": "context_receipt", **context_receipt}) + "\n\n"
+    if source_receipt_event:
+        yield source_receipt_event
     yield _status_event("start", _t0, _STAGE_LABELS["start"])
 
     annotations: list[dict] = []
@@ -6975,6 +6877,8 @@ def _run_brain_loop_stream(
         user_content = f"{_combined_digest}\n\n[USER QUESTION]\n{user_content}"
         # Digest text itself NEVER goes on the wire — only that we loaded it.
         yield _status_event("grounding", _t0, _STAGE_LABELS["grounding"])
+    if source_prompt:
+        user_content = f"{source_prompt}\n\n[USER QUESTION]\n{user_content}"
 
     # Fix #4: filter client history — only role in {user,assistant} with non-empty str content
     def _filter_history_stream(h: list[dict]) -> list[dict]:
@@ -7508,6 +7412,8 @@ def _run_brain_loop_stream(
     # consumer contradicts this: mm_brain.js's finalizeDone reads only `citations` and
     # `quota`, and the response log never sees this turn (_log_brain_response drops
     # empty answers, and answer_out below still carries the REAL empty answer).
+    if source_receipt:
+        citations = citations + [source_receipt]
     yield _done_event(citations=citations, quota=meta_event.get("quota", {}),
                       usage=usage_dict, filtered=was_filtered, degraded=stub_shipped,
                       is_context_only=True)
@@ -8500,6 +8406,52 @@ def _instant_answer(
     return {"text": screened, "usage": usage, "model": used_model or "", "symbol": symbol}
 
 
+def _native_fact_citations(receipt: dict) -> list[str]:
+    """Subscriber-safe source IDs, de-duplicated in visible fact order."""
+    sources: list[str] = []
+    for fact in receipt.get("facts") or []:
+        source = fact.get("source") if isinstance(fact, dict) else None
+        source_id = source.get("source_id") if isinstance(source, dict) else None
+        if isinstance(source_id, str) and source_id and source_id not in sources:
+            sources.append(source_id)
+    relation = receipt.get("relationship_receipt")
+    relation_source = relation.get("source") if isinstance(relation, dict) else None
+    relation_source_id = (
+        relation_source.get("source_id") if isinstance(relation_source, dict) else None
+    )
+    if (isinstance(relation_source_id, str) and relation_source_id
+            and relation_source_id not in sources):
+        sources.append(relation_source_id)
+    return sources
+
+
+def _native_fact_latency(receipt: dict, route_started: float) -> dict:
+    """Merge measured native stages into the existing additive latency contract."""
+    timing = _new_turn_timing(_native_facts.NATIVE_FACT_ROUTE)
+    native_timing = receipt.get("timing")
+    if isinstance(native_timing, dict):
+        for key in (
+            "route_decision_ms", "context_assembly_ms",
+            "registry_context_assembly_ms", "render_ms",
+        ):
+            value = native_timing.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                timing[key] = value
+    timing["total_ms"] = _ms_since(route_started)
+    return timing
+
+
+def _native_fact_stream_chunks(execution: Any) -> list[str]:
+    """First delta already contains a typed fact; later clauses append incrementally."""
+    clauses = list(execution.clauses or ())
+    if not clauses:
+        return [execution.answer]
+    symbol = str((execution.receipt.get("effective_context") or {}).get("symbol") or "")
+    chunks = [f"{symbol} — {clauses[0]['text']}"]
+    chunks.extend(f"; {clause['text']}" for clause in clauses[1:])
+    return chunks
+
+
 # ---------------------------------------------------------------------------
 # Public: chat() — non-streaming entrypoint
 # ---------------------------------------------------------------------------
@@ -8511,6 +8463,7 @@ def chat(
     thread_id: str | None = None,
     history: list[dict] | None = None,
     context: dict | None = None,
+    company_source_span: dict | None = None,
     root: Path | None = None,
     mode: str = "chat",
     images: list[str] | None = None,
@@ -8608,6 +8561,22 @@ def chat(
             "is_context_only": True,
         }
 
+    # Exact source grounding is a request-scoped authorization + deterministic
+    # resolution gate.  It deliberately precedes quota/provider work and keeps
+    # resolved source bytes outside `context`, thread persistence, and response logs.
+    source_attachment = None
+    if company_source_span is not None:
+        source_attachment = _resolve_company_source_attachment(
+            company_source_span, user_id, root, terminal_data_dir / "tx"
+        )
+        if source_attachment.failure:
+            return {
+                "ok": False, "error": source_attachment.failure,
+                "exact_source_receipt": json.loads(source_attachment.receipt_json),
+                "lane": lane, "thread_id": None, "quota": {}, "citations": [],
+                "filtered": False, "degraded": True, "is_context_only": True,
+            }
+
     # 2. Tier resolution (guests never touch Supabase — they are a synthetic 'guest' tier).
     if is_guest:
         tier, status, cpe = "guest", "active", None
@@ -8672,13 +8641,86 @@ def chat(
             "screened": True,
         }
 
-    # 3c. Instant-fact routing decision (W5 Contract I). Pure + no I/O, taken HERE —
-    #     after quota/prescreen, before a provider exists — so the two lanes see
-    #     byte-identical inputs and the instant lane can never skip a gate. The turn is
-    #     SERVED further down, once a client has been resolved; an image turn is never
-    #     a price lookup, so attachments opt out.
+    # 3c. W1-C: compile the deterministic visible-context envelope ONCE per request,
+    #     at the same point `context` is first consumed for routing — see
+    #     research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. Lazy import:
+    #     `engine.intelligence_workspace` pulls in the W1-A registry/jsonschema
+    #     validators, so this is deferred to first actual request exactly like the
+    #     existing native-fact execution import below (never at API import time).
+    from engine.intelligence_workspace import context_compiler as _ctx_compiler  # noqa: PLC0415
+    _ctx_envelope = _ctx_compiler.compile_envelope(clean_msg, context)
+    _ctx_receipt = _ctx_compiler.compile_receipt(_ctx_envelope)
+
+    # 3d. Instant routing decision. W1-B plans registered native facts first; the
+    #     existing quote-only W5 route remains the non-US compatibility island. Both
+    #     decisions are pure and happen after quota/prescreen but before providers.
     _instant_t0 = time.monotonic()
-    _instant_route_hit = None if images else _instant_route(clean_msg, context)
+    _native_plan_t0 = time.monotonic()
+    _native_plan_hit = (
+        None if images or mode == "research" or source_attachment is not None
+        else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
+    )
+    _native_route_decision_ms = _ms_since(_native_plan_t0)
+    _instant_route_hit = (
+        None if images or source_attachment is not None or _native_plan_hit is not None
+        else _instant_route(clean_msg, context)
+    )
+
+    # 3e. W1-B deterministic native serve. This branch intentionally precedes
+    #     provider construction: canonical local truth cannot depend on model health,
+    #     and a typed stale/null/rights-blocked result must not fall into a model loop.
+    if _native_plan_hit is not None:
+        _nf_exec = _native_facts.execute_native_fact_plan(
+            _native_plan_hit,
+            repo_root=root,
+            route_decision_ms=_native_route_decision_ms,
+        )
+        _nf_receipt = _nf_exec.receipt
+        _nf_timing = _native_fact_latency(_nf_receipt, _instant_t0)
+        _nf_receipt["timing"] = {
+            key: value for key, value in _nf_timing.items()
+            if key not in {"rounds", "synthesis_ms"}
+        }
+        _nf_thread_id: str | None = None
+        if not is_guest:
+            _nf_thread_id = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
+            if _nf_thread_id:
+                try:
+                    from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+                    _append_message(_nf_thread_id, "user", clean_msg)
+                    _append_message(
+                        _nf_thread_id, "assistant", _nf_exec.answer,
+                        meta=_bum.assistant_meta(None, _nf_exec.answer),
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+        _record_token_usage(user_id, lane, 0, 0)
+        _log_brain_response(
+            question=clean_msg, answer=_nf_exec.answer, model="native-fact.v1",
+            lane=lane, mode=mode, thread_id=_nf_thread_id, user_id=user_id,
+            user_email=user_email, is_guest=is_guest,
+            latency_ms=int(_nf_timing["total_ms"]),
+            input_tokens=0, output_tokens=0, context=context, latency=_nf_timing,
+            flags={"native_fact": True},
+        )
+        return {
+            "ok": True,
+            "reply": _nf_exec.answer,
+            "citations": _native_fact_citations(_nf_receipt),
+            "lane": lane,
+            "model": "native-fact.v1",
+            "thread_id": _nf_thread_id,
+            "quota": quota_info,
+            "latency": _nf_timing,
+            "usage": {"input_tokens": 0, "output_tokens": 0, "latency": _nf_timing},
+            "filtered": False,
+            "degraded": bool(_nf_receipt.get("failure")),
+            "is_context_only": True,
+            "route": _native_facts.NATIVE_FACT_ROUTE,
+            "symbol": _native_plan_hit.symbol,
+            "native_fact_receipt": _nf_receipt,
+            "context_receipt": _ctx_receipt,
+        }
 
     # 4. Build providers
     providers = _build_lane_providers(lane, root)
@@ -8809,12 +8851,15 @@ def chat(
                 "is_context_only": True,
                 "route": "instant",
                 "latency": _i_timing,
+                "context_receipt": _ctx_receipt,
             }
             if _i_res.get("symbol"):
                 _i_result["symbol"] = _i_res["symbol"]
             return _i_result
 
     # 6. Run the tool loop
+    loop_source_kwargs = ({"source_prompt": source_attachment.resolved.prompt_block}
+                          if source_attachment else {})
     try:
         answer_text, citations, annotations, final_messages, usage_dict, commands, charts = _run_brain_loop(
             clean_msg, lane, active_history, context or {},
@@ -8824,6 +8869,7 @@ def chat(
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
             deepseek_thinking=deepseek_thinking,
+            **loop_source_kwargs,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -8864,6 +8910,11 @@ def chat(
     # 9. Cost settlement from response.usage (fix #1: real tokens, never zeros)
     in_tok = int(usage_dict.get("input_tokens") or 0)
     out_tok = int(usage_dict.get("output_tokens") or 0)
+    stream_source_kwargs = (
+        {"source_prompt": source_attachment.resolved.prompt_block,
+         "source_receipt": source_attachment.resolved.receipt}
+        if source_attachment else {}
+    )
     try:
         _ac.record_usage(
             lane=usage_lane,
@@ -8893,7 +8944,7 @@ def chat(
     result: dict = {
         "ok": True,
         "reply": answer_text,
-        "citations": citations,
+        "citations": citations + ([source_attachment.resolved.receipt] if source_attachment else []),
         "lane": lane,
         "model": model,
         "thread_id": effective_thread_id,
@@ -8905,6 +8956,8 @@ def chat(
         # hands the record back on the usage dict; see _run_brain_loop's docstring).
         "route": "deep",
         "latency": usage_dict.get("latency") or _new_turn_timing("deep"),
+        "context_receipt": _ctx_receipt,
+        "exact_source_receipt": source_attachment.resolved.receipt if source_attachment else None,
     }
     if all_annotations:
         result["annotations"] = all_annotations
@@ -8936,6 +8989,7 @@ def chat_stream(
     thread_id: str | None = None,
     history: list[dict] | None = None,
     context: dict | None = None,
+    company_source_span: dict | None = None,
     root: Path | None = None,
     mode: str = "chat",
     images: list[str] | None = None,
@@ -9012,6 +9066,18 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
         return
 
+    source_attachment = None
+    if company_source_span is not None:
+        source_attachment = _resolve_company_source_attachment(
+            company_source_span, user_id, root, terminal_data_dir / "tx"
+        )
+        if source_attachment.failure:
+            receipt = json.loads(source_attachment.receipt_json)
+            yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'none', 'thread_id': None, 'quota': {}})}\n\n"
+            yield f"data: {json.dumps({'type': 'exact_source_receipt', **receipt})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True, 'exact_source_receipt': receipt})}\n\n"
+            return
+
     # 2. Tier + quota (guests never touch Supabase — synthetic 'guest' tier).
     if is_guest:
         tier, status, cpe = "guest", "active", None
@@ -9058,10 +9124,88 @@ def chat_stream(
             flags={"screened": True})
         return
 
-    # 2c. Instant-fact routing decision (W5 Contract I) — see chat()'s 3c. Pure, no I/O,
-    #     taken after quota/prescreen and before any provider exists; served at 5b below.
+    # 2c. W1-C: compile the deterministic visible-context envelope ONCE per request
+    #     — see research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. Lazy
+    #     import for the same reason as chat(): defer the W1-A registry/jsonschema
+    #     pull to first actual request, never API import time.
+    from engine.intelligence_workspace import context_compiler as _ctx_compiler  # noqa: PLC0415
+    _ctx_envelope = _ctx_compiler.compile_envelope(clean_msg, context)
+    _ctx_receipt = _ctx_compiler.compile_receipt(_ctx_envelope)
+    _ctx_receipt_event = "data: " + json.dumps({"type": "context_receipt", **_ctx_receipt}) + "\n\n"
+
+    # 2d. Instant routing decision — W1-B native facts first, then the preserved
+    #     quote-only compatibility route. Both remain behind quota and prescreen.
     _instant_t0 = time.monotonic()
-    _instant_route_hit = None if images else _instant_route(clean_msg, context)
+    _native_plan_t0 = time.monotonic()
+    _native_plan_hit = (
+        None if images or mode == "research" or source_attachment is not None
+        else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
+    )
+    _native_route_decision_ms = _ms_since(_native_plan_t0)
+    _instant_route_hit = (
+        None if images or source_attachment is not None or _native_plan_hit is not None
+        else _instant_route(clean_msg, context)
+    )
+
+    # 2e. Deterministic W1-B native stream. Meta/status go out before owner I/O;
+    #     the first delta already contains a typed fact, so TTFV is never gamed by
+    #     content-free progress. Typed unavailability stays on this route.
+    if _native_plan_hit is not None:
+        _nf_thread_id: str | None = None
+        if not is_guest:
+            _nf_thread_id = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
+            if _nf_thread_id:
+                _append_message(_nf_thread_id, "user", clean_msg)
+        yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'native-fact.v1', 'thread_id': _nf_thread_id, 'quota': quota_info})}\n\n"
+        yield _ctx_receipt_event
+        yield _status_event("native", _instant_t0, _STAGE_LABELS["native"],
+                            detail=_native_plan_hit.symbol)
+        _nf_exec = _native_facts.execute_native_fact_plan(
+            _native_plan_hit,
+            repo_root=root,
+            route_decision_ms=_native_route_decision_ms,
+        )
+        _nf_receipt = _nf_exec.receipt
+        _nf_timing = _native_fact_latency(_nf_receipt, _instant_t0)
+        for _nf_chunk in _native_fact_stream_chunks(_nf_exec):
+            yield _delta_sse(_nf_chunk, _nf_timing, _instant_t0)
+        _nf_timing["total_ms"] = _ms_since(_instant_t0)
+        _nf_receipt["timing"] = {
+            key: value for key, value in _nf_timing.items()
+            if key not in {"rounds", "synthesis_ms"}
+        }
+        _nf_usage = {"input_tokens": 0, "output_tokens": 0, "latency": _nf_timing}
+        yield "data: " + json.dumps({
+            "type": "done",
+            "route": _native_facts.NATIVE_FACT_ROUTE,
+            "citations": _native_fact_citations(_nf_receipt),
+            "quota": quota_info,
+            "usage": _nf_usage,
+            "filtered": False,
+            "degraded": bool(_nf_receipt.get("failure")),
+            "is_context_only": True,
+            "native_fact_receipt": _nf_receipt,
+            "context_receipt": _ctx_receipt,
+        }) + "\n\n"
+        if _nf_thread_id:
+            try:
+                from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+                _append_message(
+                    _nf_thread_id, "assistant", _nf_exec.answer,
+                    meta=_bum.assistant_meta(None, _nf_exec.answer),
+                )
+            except Exception:  # noqa: BLE001
+                pass
+        _record_token_usage(user_id, lane, 0, 0)
+        _log_brain_response(
+            question=clean_msg, answer=_nf_exec.answer, model="native-fact.v1",
+            lane=lane, mode=mode, thread_id=_nf_thread_id, user_id=user_id,
+            user_email=user_email, is_guest=is_guest,
+            latency_ms=int((time.time() - _t0) * 1000), input_tokens=0,
+            output_tokens=0, context=context, latency=_nf_timing,
+            flags={"native_fact": True},
+        )
+        return
 
     # 3. Providers
     providers = _build_lane_providers(lane, root)
@@ -9140,7 +9284,6 @@ def chat_stream(
         "thread_id": effective_thread_id,
         "quota": quota_info,
     }
-
     # 5b. Instant-fact serve (W5 Contract I). Event shape is the contract's own minimum:
     #     meta → delta → done, exactly like the pre-screen path the widget already
     #     handles. ANY failure inside _instant_answer returns None and the deep loop
@@ -9158,11 +9301,13 @@ def chat_stream(
             _i_model = _i_res.get("model") or model
             _i_usage = dict(_i_res.get("usage") or {})
             yield f"data: {json.dumps({**meta_event, 'model': _i_model})}\n\n"
+            yield _ctx_receipt_event
             yield _delta_sse(_i_res["text"], _i_timing, _instant_t0)
             _timing_stamp(_i_timing, "total_ms", _instant_t0)
             _i_usage["latency"] = _i_timing
             yield "data: " + json.dumps({
                 "type": "done", "route": "instant", "citations": [],
+                "context_receipt": _ctx_receipt,
                 "quota": quota_info, "usage": _i_usage, "filtered": False,
                 "degraded": False, "is_context_only": True}) + "\n\n"
 
@@ -9208,6 +9353,11 @@ def chat_stream(
     usage_out: list = []
     answer_out: list = []
     thinking_out: list = []
+    stream_source_kwargs = (
+        {"source_prompt": source_attachment.resolved.prompt_block,
+         "source_receipt": source_attachment.resolved.receipt}
+        if source_attachment else {}
+    )
     try:
         yield from _run_brain_loop_stream(
             clean_msg, lane, active_history, context or {},
@@ -9221,6 +9371,8 @@ def chat_stream(
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
             deepseek_thinking=deepseek_thinking,
+            context_receipt=_ctx_receipt,
+            **stream_source_kwargs,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)

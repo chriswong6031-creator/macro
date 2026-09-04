@@ -1,17 +1,17 @@
 {
   "schema": "seo_audit.v1",
-  "as_of": "2026-08-09T15:34:44Z",
-  "health_score": 91,
+  "as_of": "2026-08-30T18:25:47Z",
+  "health_score": 90,
   "census": {
-    "total_pages": 1997,
+    "total_pages": 2390,
     "by_family": {
       "core": {
-        "pages": 151,
-        "with_canonical": 138,
-        "with_desc": 137,
-        "with_og": 137,
+        "pages": 152,
+        "with_canonical": 139,
+        "with_desc": 138,
+        "with_og": 138,
         "with_jsonld": 7,
-        "in_sitemap": 16
+        "in_sitemap": 18
       },
       "products": {
         "pages": 5,
@@ -38,10 +38,10 @@
         "in_sitemap": 0
       },
       "report": {
-        "pages": 6,
-        "with_canonical": 6,
-        "with_desc": 6,
-        "with_og": 6,
+        "pages": 7,
+        "with_canonical": 7,
+        "with_desc": 7,
+        "with_og": 7,
         "with_jsonld": 0,
         "in_sitemap": 0
       },
@@ -54,7 +54,7 @@
         "in_sitemap": 0
       },
       "stocks": {
-        "pages": 1733,
+        "pages": 2124,
         "sampled": 25,
         "with_canonical": 25,
         "with_title": 25,
@@ -66,23 +66,21 @@
     }
   },
   "sitemap": {
-    "total_urls": 2601,
-    "core": 1006,
+    "total_urls": 3924,
+    "core": 1914,
     "products": 5,
-    "stocks": 1590,
+    "stocks": 2005,
     "host_ok": true,
     "bad_host_count": 0,
     "apex_host_count": 0,
     "orphans_in_sitemap": [],
-    "missing_from_sitemap": [
-      "market_memory.html"
-    ],
-    "missing_from_sitemap_count": 1,
+    "missing_from_sitemap": [],
+    "missing_from_sitemap_count": 0,
     "excluded_public": [
       "unsubscribe.html"
     ],
     "excluded_public_count": 1,
-    "non_public_absent_count": 236,
+    "non_public_absent_count": 237,
     "duplicates": []
   },
   "crawl_infra": {
@@ -90,7 +88,7 @@
     "robots_sitemap_host_ok": true,
     "llms_txt_present": true,
     "brand_facts_present": true,
-    "brand_facts_age_days": 13
+    "brand_facts_age_days": 34
   },
   "issues": [
     {
@@ -486,6 +484,13 @@
       "detail": "Canonical points to different page: https://www.mastermind-x.com/crypto.html"
     },
     {
+      "id": "title_length_watchlist_html",
+      "severity": "medium",
+      "class": "title_length",
+      "page": "watchlist.html",
+      "detail": "Title length 72 chars (expected 15-70): Portfolio Intelligence — what you hold, what changed, what it adds up to"
+    },
+    {
       "id": "missing_description_strategy_cm_copper_active_html",
       "severity": "medium",
       "class": "missing_description",
@@ -764,13 +769,6 @@
       "class": "duplicate_description",
       "page": "flow_desk.html",
       "detail": "Duplicate description across 3 pages. Others: ['flow_leaders.html', 'options_screener.html']"
-    },
-    {
-      "id": "missing_from_sitemap_market_memory_html",
-      "severity": "medium",
-      "class": "missing_from_sitemap",
-      "page": "market_memory.html",
-      "detail": "Public page not in sitemap: market_memory.html"
     }
   ],
   "issue_counts_by_class": {
@@ -778,12 +776,11 @@
     "missing_description": 27,
     "missing_og": 27,
     "missing_canonical": 26,
-    "title_length": 1,
+    "title_length": 2,
     "desc_length": 1,
     "missing_lang": 1,
     "missing_title": 1,
-    "duplicate_description": 1,
-    "missing_from_sitemap": 1
+    "duplicate_description": 1
   },
   "issue_counts_by_severity": {
     "critical": 0,

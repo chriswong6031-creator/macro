@@ -3557,12 +3557,23 @@
       },
       {
         "date": "2026-08-31",
-        "sync": 0.121,
-        "n": 154,
+        "sync": 0.1123,
+        "n": 231,
         "frac": {
-          "trough": 0.214,
-          "advance": 0.318,
-          "peak": 0.195,
+          "trough": 0.203,
+          "advance": 0.273,
+          "peak": 0.251,
+          "decline": 0.273
+        }
+      },
+      {
+        "date": "2026-09-30",
+        "sync": 0.1136,
+        "n": 11,
+        "frac": {
+          "trough": 0.182,
+          "advance": 0.182,
+          "peak": 0.364,
           "decline": 0.273
         }
       }
@@ -7475,13 +7486,24 @@
       },
       {
         "date": "2026-08-31",
-        "sync": 0.0382,
-        "n": 336,
+        "sync": 0.0343,
+        "n": 504,
         "frac": {
-          "trough": 0.289,
-          "advance": 0.199,
-          "peak": 0.298,
-          "decline": 0.214
+          "trough": 0.262,
+          "advance": 0.226,
+          "peak": 0.28,
+          "decline": 0.232
+        }
+      },
+      {
+        "date": "2026-09-30",
+        "sync": 0.0217,
+        "n": 24,
+        "frac": {
+          "trough": 0.208,
+          "advance": 0.292,
+          "peak": 0.25,
+          "decline": 0.25
         }
       }
     ],
@@ -10799,17 +10821,28 @@
       },
       {
         "date": "2026-08-31",
-        "sync": 0.8071,
-        "n": 434,
+        "sync": 0.7942,
+        "n": 589,
         "frac": {
-          "trough": 0.836,
-          "advance": 0.164,
-          "peak": 0.0,
+          "trough": 0.808,
+          "advance": 0.188,
+          "peak": 0.003,
           "decline": 0.0
+        }
+      },
+      {
+        "date": "2026-09-30",
+        "sync": 0.8088,
+        "n": 31,
+        "frac": {
+          "trough": 0.806,
+          "advance": 0.065,
+          "peak": 0.0,
+          "decline": 0.129
         }
       }
     ]
   },
   "definition": "sync = 1 \u2212 circ_var(2\u03c0\u00b7pos/100); mean resultant length of phase angles",
-  "updated_at": "2026-08-22T04:43:02Z"
+  "updated_at": "2026-09-01T05:53:12Z"
 }

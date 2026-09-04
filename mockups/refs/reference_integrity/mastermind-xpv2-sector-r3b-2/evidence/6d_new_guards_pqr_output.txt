@@ -1,0 +1,6 @@
+# XPV2-SC-R3B.2 — Lane G verification-hardening guards (p)/(q)/(r) console output
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+[PASS] (p) B2-01 producer-path -> customer-label map (from committed artifact) — 2 cell(s) (en/zh), 8 sites/cell censused, 0 cell(s) with an empty-census site, 0 failing assertion(s) (reproduce with `<playwright-python> label_map_audit.py`)
+[PASS] (q) B2-12 thin/reliability semantic-collision guard (from committed artifact) — 2 cell(s) (en/zh), 10 reliability chip(s) censused, 0 cell(s) with zero chip census, 0 failing assertion(s) (reproduce with `<playwright-python> thin_reliability_audit.py`)
+[PASS] (r) B2-13 methodology-receipt aria-controls census (from committed artifact) — 2 cell(s) (en/zh), expected 4 shared-panel control(s)/cell, 0 cell(s) with zero [aria-expanded] census, 0 cell(s) with wrong shared-panel count, 0 failing assertion(s) (reproduce with `<playwright-python> aria_receipt_audit.py`)

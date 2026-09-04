@@ -48,6 +48,7 @@ from engine.options_signal_episode import (
 from engine.session_digest import session_window_et
 from lib import nyse_calendar
 from scripts import audit_options_market_memory_context as options_context_audit
+from scripts import workflow_run_source
 
 
 def _event(**overrides) -> dict:
@@ -2856,7 +2857,11 @@ def test_committed_options_pit_ledgers_are_strict_valid_joined_shadow_data() -> 
 
 def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay() -> None:
     repo = Path(__file__).resolve().parents[1]
-    workflow = (repo / ".github/workflows/daily.yml").read_text()
+    # 512KB-cap diet: engine bodies live in scripts/ci/ — splice them back IN
+    # PLACE so the positional index() slicing below keeps its meaning.
+    workflow = workflow_run_source.resolved_workflow_text(
+        repo / ".github/workflows/daily.yml", repo
+    )
     helper = (repo / "scripts/ci/options_signal_nightly.sh").read_text()
     builder_name = (
         "      - name: OIP PIT — durable episodes + H+60 and "
@@ -5602,3 +5607,122 @@ def test_episode_builder_preserves_legacy_campaign_bytes_and_has_no_campaign_sum
     assert (ledger_root / "campaigns.jsonl").read_bytes() == legacy_bytes
     assert not any(key.startswith("campaign") for key in summary)
     assert (ledger_root / "checkpoint.json").exists()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OA-1T — additive measured microstructure on the frozen v1 contracts
+# ─────────────────────────────────────────────────────────────────────────────
+
+MICRO_FIXTURE = {
+    "schema": "options.trade_nbbo_microstructure/v1",
+    "source_print_count": 4,
+    "nbbo_valid_print_count": 3,
+    "source_premium_usd": 1_000_000.0,
+    "nbbo_covered_premium_usd": 900_000.0,
+    "nbbo_print_coverage": 0.75,
+    "nbbo_premium_coverage": 0.9,
+    "at_ask_share": 0.6,
+    "at_bid_share": 0.2,
+    "inside_share": 0.15,
+    "outside_share": 0.05,
+    "aggression_share": 0.8,
+    "aggression_balance": 0.4,
+    "spread_median_usd": 0.05,
+    "spread_median_pct": 0.02,
+    "quote_age_median_ms": 110.0,
+    "quote_age_max_ms": 250.0,
+    "bid_size_median": 40.0,
+    "ask_size_median": 45.0,
+}
+
+
+def _measured_event(**overrides) -> dict:
+    """A live event carrying the additive OA-1T fields, stripped of the durable
+    keys the stager assigns itself."""
+    event = _event(
+        microstructure=json.loads(json.dumps(MICRO_FIXTURE)),
+        vol_gt_oi_ratio=1.5,
+        **overrides,
+    )
+    for key in ("available_at", "published_at", "source_snapshot_asof", "anchor_strategy"):
+        event.pop(key, None)
+    event["observed_at"] = "2026-07-02T14:31:00Z"
+    event["decision_at"] = "2026-07-02T14:33:00Z"
+    return event
+
+
+def test_event_stage_preserves_additive_microstructure_and_vol_gt_oi_ratio(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    """The v1 decision receipt carries the nested measured block through
+    unchanged, while availability stays a separate receipt."""
+    from scripts import live_flow_poller as poller
+
+    monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(tmp_path))
+    source_event = _measured_event()
+    clock = lambda: datetime(2026, 7, 2, 14, 34, tzinfo=timezone.utc)
+
+    staged_event = poller._stage_raw_events("2026-07-02", [source_event], now_fn=clock)[0]
+
+    assert staged_event["id"] == source_event["id"]
+    assert staged_event["microstructure"] == source_event["microstructure"]
+    assert staged_event["vol_gt_oi_ratio"] == source_event["vol_gt_oi_ratio"]
+    assert staged_event["available_at"] == "2026-07-02T14:34:00Z"
+
+    receipts = [
+        json.loads(line)
+        for line in (tmp_path / "2026-07-02.jsonl").read_text().splitlines()
+    ]
+    assert [receipt["kind"] for receipt in receipts] == ["decision", "availability"]
+    # The durable decision receipt — not just the in-memory return — holds the
+    # measured block, and availability remains its own receipt.
+    assert receipts[0]["event"]["microstructure"] == MICRO_FIXTURE
+    assert receipts[0]["event"]["vol_gt_oi_ratio"] == 1.5
+    assert "microstructure" not in receipts[1]
+
+
+def test_event_stage_replay_is_idempotent_but_microstructure_drift_fails_shut(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    from scripts import live_flow_poller as poller
+
+    monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(tmp_path))
+    clock = lambda: datetime(2026, 7, 2, 14, 34, tzinfo=timezone.utc)
+    first = poller._stage_raw_events("2026-07-02", [_measured_event()], now_fn=clock)[0]
+
+    # Same event id, same causal payload, later processing clocks → the first
+    # durable clocks are reused and no second decision receipt is written.
+    replay = _measured_event()
+    replay["observed_at"] = "2026-07-02T14:35:00Z"
+    replay["decision_at"] = "2026-07-02T14:36:00Z"
+    replayed = poller._stage_raw_events(
+        "2026-07-02", [replay],
+        now_fn=lambda: datetime(2026, 7, 2, 14, 37, tzinfo=timezone.utc),
+    )[0]
+    assert replayed["available_at"] == first["available_at"]
+    assert replayed["observed_at"] == first["observed_at"]
+    assert replayed["microstructure"] == MICRO_FIXTURE
+    assert len((tmp_path / "2026-07-02.jsonl").read_text().splitlines()) == 2
+
+    # Changing a measured value behind the same staged event id is feature drift.
+    drifted = _measured_event()
+    drifted["microstructure"]["at_ask_share"] = 0.99
+    with pytest.raises(RuntimeError, match="staged event drift"):
+        poller._stage_raw_events("2026-07-02", [drifted], now_fn=clock)
+
+
+def test_episode_v1_ignores_additive_source_microstructure_without_identity_drift() -> None:
+    base_episode = _episode(microstructure=None, vol_gt_oi_ratio=None)
+    rich_episode = _episode(
+        microstructure=json.loads(json.dumps(MICRO_FIXTURE)),
+        vol_gt_oi_ratio=1.5,
+    )
+
+    assert rich_episode["episode_id"] == base_episode["episode_id"]
+    assert rich_episode["schema"] == "options.signal_episode/v1"
+    validate_episode(rich_episode)
+    # v1 does not consume the additive source fields, so its field contract is
+    # byte-identical either way. A v2 that wants them is a separate adjudication.
+    assert rich_episode == base_episode
+    assert "microstructure" not in rich_episode["feature_snapshot"]
+    assert "vol_gt_oi_ratio" not in rich_episode["feature_snapshot"]

@@ -1,29 +1,31 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-23T05:46:13+00:00",
-  "summary": "Context-only committee read: the measured tape remains risk-on with healthy breadth and normalizing volatility, but the macro label is internally unstable and credit is the principal unresolved watch. The confirmed US regime remains Q2 Reflation while its own axes read Q3, pending 5 of 7 confirmation sessions. Credit stress is the rising dominant radar component, yet the radar\u2019s measured 21-session pullback frequency is 13.0% versus a 17.8% base rate, so this is not a validated bearish edge or an all-clear. Liquidity is contracting in an orderly drain, while systematic flows are aligned adding and dealer gamma is long. Factor evidence is immature: only 10 panel dates, no Pair G records, no factor-attention history, and no tradeable composite. No signal, trade, ranking change, or escalation is originated here.",
+  "as_of": "2026-09-01T07:19:07+00:00",
+  "summary": "Context-only shadow deliberation as of 2026-09-01. The measured tape remains risk-on and the risk radar is calm, with its 21-day pullback rate below base (13.0% versus 17.8%); this does not support originating or escalating a risk claim. The more important context is transition risk: the confirmed US regime remains Q2 Reflation, but the current axes indicate raw Q3 (growth -0.40, inflation +0.24), only 1 of 7 required confirmation sessions. Liquidity is neutral-hollow rather than stressed: the RRP buffer is exhausted, but credit is tight, financial conditions are loose, and no stress confirmation is present. Factor evidence is immature: only 11 panel dates, no surviving scorecard factors, composite untradeable, Pair G dormant, and zero graded factor-attention firings. The graded spine extract is dominated by unsigned MFE proxy records, often marked STOPPED despite positive MFE, so it is unsuitable for directional inference. Kernel evidence reinforces restraint: no engine shown is armed; US-board and radar signed-excess estimates are negative in Q2, while several apparently strong board estimates use unsigned MFE proxies or vacuous held-out tests. No new hypothesis was staked because the available evidence did not justify spending the limited weekly budget on a properly specified causal or conditional claim.",
   "what_fired": [
-    "Four shadow attention items were recorded: the pending Q2-to-Q3 label transition; credit-versus-tape divergence; rising put-skew contradiction across nine US buy-lane names; and review of the open China-equities overweight thesis.",
-    "One metabolism hypothesis was registered for later testing: under risk-on breadth with credit-dominant radar deterioration, credit-sensitive relative performance may weaken before an index drawdown. Its pre-committed gate requires a median lead of at least 3 days across at least 20 comparable observations."
+    "Four shadow attention items were recorded: confirmed-Q2 versus raw-Q3 transition; the growth-over-value thesis versus its bull-flattener falsifier; overdue open master-brain theses; and stale options-skew contradictions affecting five buy-lane names.",
+    "No Pair G factor contradiction fired; the ledger is absent until the panel reaches at least 60 distinct dates.",
+    "No calibrated risk escalation fired. Risk radar is calm, credit health is healthy, and volatility is normalizing."
   ],
-  "contradictions_review": "The confluence graph reports two current contradictions. First, 18 ticker-level demand-versus-supply divergences are reflected in the briefing; this is a note-level descriptive conflict. Second, nine buy-lane names have five-day-rising OTM-put skew as of 2026-08-13; this can only de-escalate confidence and is stale relative to the 2026-08-21 tape. Pair G factor contradictions are dormant because the panel has not reached 60 distinct dates. The broader macro tension is risk-on price/breadth and aligned systematic adding versus contracting liquidity, restrictive real yields, and rising credit-radar intensity. The risk radar itself remains below its measured pullback base rate and has no validated firing leg, limiting the interpretation to attention context. The open China-equities overweight thesis conflicts with current China/HK Q4 contracting-liquidity states, weak-side HK peg context, and southbound outflow into hot turnover; this deserves review, not a contrary position.",
+  "contradictions_review": "The confluence graph contains two current tensions. First, ticker-level demand/tape evidence opposes the intelligence briefing across 23 divergences; this is display-only and requires reconciliation rather than directional use. Second, GLXY, HOOD, NXPI, QCOM, and TSLA were simultaneously in the buy lane and showing five-day rising OTM-put skew as of 2026-08-21. That options witness is stale relative to this deliberation and is legal only as de-escalation context. ADB-W3 review also found that the open growth-over-value underweight thesis explicitly names bull flattening as a falsifier, while the current curve regime is bull flattener. Numerous master-brain theses remain open after their check-by dates, weakening their present evidentiary value. The confirmed Q2 label is also in tension with raw Q3 axes, but confirmation is only 1/7 sessions, so this is transition attention rather than a regime claim.",
   "decaying_families": [
-    "Radar: Q2 five-day and 21-day signed-excess estimates are negative; the engine is unarmed despite large samples.",
-    "US board: Q2 five-day and ten-day signed-excess estimates are negative, and pooled out-of-sample performance loses; unarmed.",
-    "Policy and White House families: negative signed-excess estimates with limited or modest effective samples; unarmed.",
-    "AI, stock, and thematic desks: negative 63-day signed-excess estimates in Q2 and overall; all unarmed.",
-    "Factor composite: non-tradeable, with investment, low-volatility, low-beta, and composite legs carrying negative historical IC in a survivorship-biased scorecard."
+    "Open master-brain theses past their stated check-by dates, including semiconductors, Bitcoin, China equities, long Treasuries, high-yield credit, and US equities.",
+    "Options-skew contradiction snapshot dated 2026-08-21; refresh is required before continued reliance.",
+    "Factor intelligence panel: history floor not met at 11 dates; Pair G remains dormant below 60 dates.",
+    "Policy, stock-desk, thematic-desk, AI-desk, radar, and altdata families show negative signed-excess estimates at one or more horizons and remain unarmed.",
+    "Risk-radar forward log has 25 graded observations but zero actual alerts, so alert precision remains unmeasurable."
   ],
   "deserves_operator": [
-    "US regime label transition: verify whether raw Q3 completes 7 of 7 sessions while growth remains negative and inflation positive; otherwise resolve the attention item if growth returns non-negative before confirmation.",
-    "Credit-versus-tape divergence: retain attention only if the credit sub-score reaches 70 or HY OAS widens at least 25 bp while breadth remains above 65% over the 200-day average; remove if credit falls below 50 and HY OAS stays at or below 2.75% without a positive 20-day change.",
-    "Options contradiction: on the next refresh, resolve if at least 7 of 9 affected buy-lane names no longer show rising five-day put skew; retain only if at least 6 remain skew-rising and their median ten-day excess return is negative.",
-    "Master-brain China-equities overweight thesis mb-2026-07-09-1: review because current China/HK context conflicts with it. Resolve if China moves to Q1/Q2, southbound flow improves above -0.5 z, and the HK peg leaves weak-side; retain if China stays Q4 while southbound flow remains below -1 z or FXI underperforms SPY by 5% through the thesis window.",
-    "Ledger hygiene: multiple open master-brain theses are past their check-by dates but remain unscored, including semiconductor, Bitcoin, China, Treasury, credit, and US-equity theses. This is an accountability and decay issue, not evidence for a new view."
+    "Review the Q2-to-Q3 transition only if raw Q3 persists through the seven-session confirmation rule; clear if the axes revert first.",
+    "Review master-brain growth-over-value theses because bull flattening\u2014the stated falsifier\u2014is currently present; do not preserve the lean without explicit human disposition.",
+    "Close, score, or formally extend every thesis whose check-by date has passed; open-ended retention is inconsistent with its pre-commitment.",
+    "Refresh the five-name options-skew contradiction set and clear it if simultaneous buy-lane membership plus rising put skew no longer holds.",
+    "Reconcile the 23 briefing-versus-tape directional divergences before using the briefing as current explanatory context.",
+    "Treat the factor scorecard and Pair G ledger as coverage gaps, not evidence of agreement or absence of borrowed strength."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-22",
+    "as_of": "2026-08-31",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -35,8 +37,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 2,
-      "total_rows": 10
+      "ungradeable": 27,
+      "total_rows": 35
     },
     "is_context_only": true
   },
@@ -49,7 +51,6 @@
     "read_kernel": 1,
     "read_master_brain_theses": 1,
     "flag_attention": 1,
-    "stake_hypothesis": 1,
     "write_memo": 1
   },
   "is_context_only": true,
@@ -59,14 +60,6 @@
     "degradation_reason": null,
     "model_used": "claude-opus-4-8",
     "provider_attempts": [
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeK9jspVoGipcBJNwcoDj'}"
-      },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
@@ -117,9 +110,9 @@
       }
     ],
     "tool_call_batches": 5,
-    "individual_tool_calls": 10,
+    "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-23T04:54:34Z"
+    "context_as_of": "2026-09-01T07:05:15Z"
   }
 }

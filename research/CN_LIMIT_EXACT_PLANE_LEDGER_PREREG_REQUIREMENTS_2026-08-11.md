@@ -112,10 +112,20 @@ Required behaviors:
   grade can be re-derived against the exact calendar that produced it.
 
 Under the exact plane the calendar must additionally reconcile with the substrate contract's
-canonical market clock (fixed 1991-01-01 anchor, exact SSE/SZSE calendar-day and
-open-session equality, `pretrade_date` adjacency, one immutable `market_session_position`),
+canonical market clock (frozen definition-versioned epoch `mainland-joint-complete-v1` at
+`1992-01-01`, exact SSE/SZSE calendar-day and open-session equality, `pretrade_date`
+adjacency, one immutable `market_session_position` counted from that epoch),
 with BSE inheriting the documented consensus from launch. Where the attested artifact and
 the spine clock disagree, the run fails; it does not pick a winner.
+
+The epoch supersedes the previous fixed 1991-01-01 anchor; history before it is typed
+`PRE_EPOCH_SOURCE_UNSUPPORTED` and carries no session position. This costs the frozen
+evaluation nothing: the adopted split begins at train 2011, whose deepest lookback is the
+21-session reset window reaching late 2010 — nineteen years after the epoch — so no frozen
+construction requires an authority-grade outcome dated before it. Because re-anchoring
+shifts every ordinal by a constant, window and horizon boundaries must be expressed as
+session-position DIFFERENCES; no construction may attach economic or target meaning to an
+absolute ordinal magnitude.
 
 ### §2.2 Monthly-partitioned Parquet with atomic installation
 
@@ -225,16 +235,19 @@ Fillability is a **first-class recorded field**, never folded into the outcome.
 
 ## §3 Substrate contract — the reopen precondition
 
-The ledger may be built only on the authorized exact plane defined by
+The ledger may be built only on the exact plane defined by
 `research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md`. Required, per that contract:
 
-1. **Authorized, unadjusted TuShare `daily` prices.** Collection is gated on the contract's
-   authorization receipt gate: a private receipt (authorization ID, vendor, grantee, grantor,
-   grant origin, issued/expiry dates, hashed written grant, explicit scope booleans) pinned by
-   a separately controlled, hash-pinned trust allowlist whose own hash must appear in the
-   immutable, code-reviewed trust set. Runtime arguments and environment variables cannot add
-   a trust root, and a self-authored receipt cannot unlock collection. This charter does not
-   weaken, reinterpret, or provide an alternative to that gate.
+1. **Unadjusted TuShare `daily` prices from the technically gated collector.** TuShare
+   licensing/compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`
+   (`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`); the controlling agreement
+   and its evidence are confidential and outside coding/agent scope under NDA/privacy
+   constraints, and no coding session or runtime gate may request or verify them. The former
+   authorization-receipt / trust-allowlist gate this section previously required is NULL and
+   removed from the runtime. Collection remains gated on `BULK_HISTORICAL_BACKFILL_READY`, a
+   TECHNICAL readiness gate (live canary parity, throughput, range/completeness correctness),
+   plus token hygiene, the bounded request budget, and exact request/schema binding. This
+   charter does not weaken, reinterpret, or provide an alternative to those technical gates.
 2. **Same-key vendor `stk_limit` upper/lower limits as the event authority.** Limits are read
    from the vendor, joined one-to-one on the same key as `daily`. Limits are never
    reconstructed from a ratio: effective-dated IPO/ST/board/no-limit state must not be guessed,
@@ -249,11 +262,17 @@ The ledger may be built only on the authorized exact plane defined by
    daily-vs-daily-basic close equality; OHLC bounded inside the exact source interval; and
    `daily_basic.limit_status` domain, direction, and one-price semantics.
 5. **PIT full-universe and effective-date completeness receipts.** The contract's
-   `completeness_manifest.json` must close on its own terms — authorization pins valid at
-   collection time; the operational-backfill code gate separately promoted; reference
+   `completeness_manifest.json` must close on its own terms — the operational-backfill code
+   gate separately promoted on canary/throughput/correctness evidence; reference
    generation, exact calendar, and every required source unit request-bound and complete;
-   zero unknown and zero name-orphan counts; post-2016 `bak_basic` witnesses with lifecycle
-   and PIT sets reconciling exactly; duplicate-key, dense-key, lifecycle, exact-session,
+   zero unknown counts, and every `namechange` source row deterministically reconciled with
+   zero unresolved conflicts — NOT 100% external corroboration, since a valid namechange row
+   is its own source evidence and `NAMECHANGE_ONLY` is terminal source completeness
+   (`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`); post-2016 `bak_basic` witnesses with lifecycle
+   and PIT sets reconciling under the source-union law (every lifecycle-eligible security
+   witnessed in PIT and no PIT row contradicting its own master lifecycle window; a PIT row
+   the current `stock_basic` snapshot omits is a legal union member counted as telemetry —
+   `DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`); duplicate-key, dense-key, lifecycle, exact-session,
    suspension, and daily security coverage checks closing; and the canonical exact-price event
    join closing. Manifest artifacts are private and must not be committed; only the
    contract's sanitized hash/date/scope fields propagate.
@@ -266,6 +285,29 @@ The ledger may be built only on the authorized exact plane defined by
 suspended-to-delisting, and never-listed-yet names must be present in the PIT universe for
 every date they were actually listed. Any cohort statistic computed later must name who is
 missing before its means are trusted.
+
+This is enforced at the collector, not merely asserted here. The current `stock_basic`
+snapshot is a lifecycle/reference witness, not exhaustive historical membership authority,
+so historical PIT construction is **source-union, never current-snapshot intersection**
+(`DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`). Intersecting a current snapshot against
+historical sessions is precisely the survivorship filter this section forbids, and its error
+points one way: a security the vendor later stops publishing would become unclassifiable on
+every past date it actually traded. A security with a complete same-session positive-volume
+observation and the required exact legal-band evidence is in the historical exact universe
+whether or not the current snapshot still carries it. The current-snapshot omission rate is
+the "name who is missing" telemetry this section demands — it is reported, never thresholded.
+
+The same law governs the name-history plane, where the PIT witness cannot reach: it begins
+2016-01-01, so requiring corroboration for an earlier `namechange` row would restore the
+current snapshot as sole authority for exactly the securities most likely to have vanished
+from it. A valid `namechange` row is therefore **its own sufficient source evidence**
+(`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`). It lands as `NAMECHANGE_ONLY` with zero
+PIT membership, trading, exact-event, canonical-identity, rank or score authority — existence
+in the source plane and authority over the universe are granted separately. The rule is
+applied row by row across the frozen epoch: pre-2016 is not special-cased and the
+witness-missing percentage is not an admission threshold, because a threshold would make a
+row's disposition depend on its neighbours rather than on its own evidence, which is the
+survivorship filter re-entering as a tunable.
 
 ---
 

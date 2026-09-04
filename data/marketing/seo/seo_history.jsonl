@@ -9,3 +9,5 @@
 {"as_of": "2026-08-02T21:41:09Z", "health_score": 86, "issues": {"critical": 0, "high": 47, "medium": 303, "low": 1}, "total_pages": 1955}
 {"as_of": "2026-08-02T23:27:14Z", "health_score": 86, "issues": {"critical": 0, "high": 47, "medium": 303, "low": 1}, "total_pages": 1955}
 {"as_of": "2026-08-09T15:34:44Z", "health_score": 91, "issues": {"critical": 0, "high": 48, "medium": 49, "low": 0}, "total_pages": 1997}
+{"as_of": "2026-08-23T15:21:51Z", "health_score": 90, "issues": {"critical": 0, "high": 48, "medium": 49, "low": 0}, "total_pages": 2339}
+{"as_of": "2026-08-30T18:25:47Z", "health_score": 90, "issues": {"critical": 0, "high": 48, "medium": 49, "low": 0}, "total_pages": 2390}
