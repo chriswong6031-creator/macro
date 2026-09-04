@@ -119,7 +119,7 @@ danger_areas:
   - "F00 consumption or a records-only repair merge can be mistaken for X1 execution authority."
   - "A stale recommended X1 path list can collide with F00G/shared-shell or API/access work that lands before START."
   - "The exact F00 root is the reciprocal dialogue carrier; a new top-level Slack status post is not equivalent."
-prs: [6820, 6809, 6827]
+prs: [6820, 6809, 6827, 6841]
 ---
 
 # F04 return integration ruling
