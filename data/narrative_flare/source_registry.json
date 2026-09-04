@@ -7,9 +7,9 @@
     "accruing": true
   },
   "polygon": {
-    "calls": 5946,
-    "hits": 3433,
-    "cred": 0.57702,
+    "calls": 5949,
+    "hits": 3436,
+    "cred": 0.577233,
     "last_resolved": "2026-09-03",
     "accruing": true
   }
