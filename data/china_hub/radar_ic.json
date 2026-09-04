@@ -1,8 +1,8 @@
 {
   "schema": "china_radar_ic.v1",
   "as_of": "2026-09-03",
-  "generated_at": "2026-09-03T12:03:57.761190+00:00",
-  "n_events": 37,
+  "generated_at": "2026-09-03T21:50:35.072192+00:00",
+  "n_events": 38,
   "n_matured": 27,
   "ic_all": 0.0344,
   "note": "ACCRUING / DORMANT \u2014 horizon=5d, 27 matured sector events. Daily-HAC: 0 dated cross-sections so far (need \u22656 each with \u226510 events). Pooled IC=0.0344 is PROVISIONAL (overlap-inflated; not used by governor). Governor stays at trust=1.0 until the HAC gate clears. CONTEXT-ONLY \u2014 never a trade signal.",
@@ -48,16 +48,16 @@
       "note": "ACCRUING / DORMANT \u2014 horizon=10d, 25 matured sector events. Daily-HAC: 0 dated cross-sections so far (need \u22656 each with \u226510 events). Pooled IC=-0.0673 is PROVISIONAL (overlap-inflated; not used by governor). Governor stays at trust=1.0 until the HAC gate clears. CONTEXT-ONLY \u2014 never a trade signal."
     },
     "21": {
-      "n_matured": 25,
-      "ic_all": -0.0769,
+      "n_matured": 24,
+      "ic_all": -0.073,
       "ic_daily_hac": {
         "n_days": 0
       },
       "by_sign": {
         "positive": {
-          "n": 16,
-          "dir_accuracy": 0.562,
-          "mean_signed_fwd_ret": -0.003
+          "n": 15,
+          "dir_accuracy": 0.6,
+          "mean_signed_fwd_ret": -0.0013
         },
         "negative": {
           "n": 9,
@@ -65,7 +65,7 @@
           "mean_signed_fwd_ret": 0.0396
         }
       },
-      "note": "ACCRUING / DORMANT \u2014 horizon=21d, 25 matured sector events. Daily-HAC: 0 dated cross-sections so far (need \u22656 each with \u226510 events). Pooled IC=-0.0769 is PROVISIONAL (overlap-inflated; not used by governor). Governor stays at trust=1.0 until the HAC gate clears. CONTEXT-ONLY \u2014 never a trade signal."
+      "note": "ACCRUING / DORMANT \u2014 horizon=21d, 24 matured sector events. Daily-HAC: 0 dated cross-sections so far (need \u22656 each with \u226510 events). Pooled IC=-0.073 is PROVISIONAL (overlap-inflated; not used by governor). Governor stays at trust=1.0 until the HAC gate clears. CONTEXT-ONLY \u2014 never a trade signal."
     }
   }
 }
