@@ -2,6 +2,40 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-09-04",
+      "tickers": [
+        "ACLOX",
+        "ADBE",
+        "AESI",
+        "BA",
+        "BGC",
+        "BLDR",
+        "CE",
+        "CRCL",
+        "CWST",
+        "DFIN",
+        "DY",
+        "EZPW",
+        "FCFS",
+        "FTCI",
+        "GNW",
+        "KMI",
+        "KVYO",
+        "MPT",
+        "NBIX",
+        "NNN",
+        "PG",
+        "PPC",
+        "PWR",
+        "SGI",
+        "SON",
+        "VIR",
+        "VYX",
+        "WHR",
+        "XRAY"
+      ]
+    },
+    {
       "as_of": "2026-09-01",
       "tickers": [
         "AEO",
@@ -134,35 +168,6 @@
         "HD",
         "MLAB",
         "TMUS"
-      ]
-    },
-    {
-      "as_of": "2026-08-14",
-      "tickers": [
-        "ADAM",
-        "AGNT",
-        "AMRC",
-        "BKSY",
-        "BWA",
-        "CAVA",
-        "CB",
-        "DFH",
-        "ESS",
-        "FSLR",
-        "FTI",
-        "GTES",
-        "IREN",
-        "MBC",
-        "META",
-        "NVR",
-        "OZK",
-        "PTEN",
-        "QBTS",
-        "QUBT",
-        "RKLB",
-        "TMUS",
-        "TTC",
-        "XRN"
       ]
     }
   ]
