@@ -87,7 +87,7 @@ affects:
   - "MO-PAID-043"
   - "MO-PAID-044"
 confidence: high
-reversibility: medium
+reversibility: costly
 decided_by: sol
 source_authority: >
   Current live Chairman instruction to perform a deep Pro architecture run for the missing
