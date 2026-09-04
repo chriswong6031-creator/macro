@@ -57,11 +57,15 @@ changed:
       aria-disabled; dark and light use separate command-center and research-
       workspace material treatments; EN/ZH labels and accessibility names are
       present at desktop 1440 and mobile 390.
-  - path: "site/sanctions-geography.html / site/sanctions-geography.css / site/sanctions-geography.js / templates/_navlinks.html.j2"
+  - path: "site/sanctions-geography.html / site/sanctions-geography.css / site/sanctions-geography.js / templates/_navlinks.html.j2 / templates/chat.html / site/chat.html"
     what: >
       Rendered the paired static route and registered one smallest-possible shared
       Research navigation link. The generated CSS and JavaScript are byte-exact
-      copies of their governed template sources.
+      copies of their governed template sources. After the first pushed head,
+      `fence-pack` correctly identified that the shared nav inventory also owns the
+      generated chat header mirrors; the canonical sync command added the same one
+      link to `templates/chat.html` and copied it to `site/chat.html`, with no other
+      header, geometry, behavior, or styling change.
   - path: "tests/test_ofac_sanctions.py / tests/test_sanctions_geography_build.py / tests/test_sanctions_geography_ui.py"
     what: >
       Added hostile coverage for source ownership, signed URL removal, parser
@@ -131,16 +135,17 @@ verified:
       /tmp/f02x1-full.diff; python3 scripts/check_runtime_style_injection.py;
       python3 scripts/check_ui_visual_evidence.py --diff-file
       /tmp/f02x1-full.diff; python3 scripts/check_template_site_sync.py;
-      python3 scripts/agentos.py validate; node --check
+      python3 scripts/sync_chat_nav.py --selftest; python3
+      scripts/sync_chat_nav.py; python3 scripts/agentos.py validate; node --check
       templates/sanctions_geography.js; node --check
       site/sanctions-geography.js; python3 -m py_compile
       collectors/ofac_sanctions.py engine/ofac_sanctions.py
       scripts/build_sanctions_geography.py; git diff --check
     result: >
       Design-system added blockers 0; runtime-style guard pass; visual-evidence
-      gate pass; 95 template/site pairs checked; Agent OS 0 errors with 45
-      pre-existing estate warnings; JavaScript and Python syntax pass; diff
-      whitespace clean.
+      gate pass; 95 template/site pairs checked; chat-nav selftest and live sync
+      pass; Agent OS 0 errors with 45 pre-existing estate warnings; JavaScript and
+      Python syntax pass; diff whitespace clean.
   - claim: "No credential-bearing redirect or signed query entered production source or the checked-in machine artifact."
     command: >
       Scan the production source diff and every string in
