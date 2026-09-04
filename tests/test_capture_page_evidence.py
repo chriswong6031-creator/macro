@@ -1322,3 +1322,51 @@ def test_annotations_start_the_line_as_bare_prints():
 
     assert found >= 3, "the module should still carry its annotation emissions"
     assert "log.warning" not in source and "logger.warning" not in source
+
+
+def test_mor1_journey_script_performs_real_back_and_forward():
+    source = MODULE_PATH.read_text(encoding="utf-8")
+    assert "history.forward()" in source
+    assert "history.back()" in source
+    assert "matches_final: true" not in source
+    # The stamped version is provenance: it must be the module's own constant,
+    # and it moves whenever the emitted shape moves.
+    assert f'TOOL_VERSION = "{cpe.TOOL_VERSION}"' in source
+    assert cpe.TOOL_VERSION >= "1.5.0"
+    assert "back_forward" not in cpe._MOR1_JOURNEY_SCRIPT
+
+
+def test_mor1_journey_script_uses_caller_supplied_non_empty_probes():
+    """The retired journeyprobe/navprobe pair matched nothing, so a handler that
+    hid every row satisfied both change and forward."""
+
+    script = cpe._MOR1_JOURNEY_SCRIPT
+    assert "journeyprobe" not in script
+    assert "navprobe" not in script
+    assert "args.changeQuery" in script and "args.forwardQuery" in script
+    assert "args.emptyQuery" in script
+    # pre_push is what `back` is proven against — an exact route, not "not the probe".
+    assert "pre_push" in script
+
+
+def test_mor1_journey_steps_record_parsed_route_and_count_pair():
+    script = cpe._MOR1_JOURNEY_SCRIPT
+    for field in (
+        "pathname",
+        "search",
+        "hash",
+        "url_q",
+        "visible_entry_ids",
+        "count_label_numerator",
+        "count_label_denominator",
+    ):
+        assert field in script, field
+
+
+def test_route_state_reports_count_label_numerator_and_denominator():
+    """A label reading ``3 of 99`` beside three rows must be detectable."""
+
+    script = cpe._ROUTE_STATE_SCRIPT
+    assert "count_label_numerator" in script
+    assert "count_label_denominator" in script
+    assert "data-count-visible" in script

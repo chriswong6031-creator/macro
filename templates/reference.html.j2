@@ -141,7 +141,7 @@ html[data-theme="light"] .rf-grp-h { background:var(--panel2); border-bottom:0;
 html[data-lang="zh"] .rf-grp-h { letter-spacing:0; text-transform:none; }
 
 /* ── the index line ─────────────────────────────────────────────────────────── */
-.rf-e { position:relative; scroll-margin-top:84px; border-radius:var(--r-card,12px); }
+.rf-e { position:relative; scroll-margin-top:120px; border-radius:var(--r-card,12px); }
 .rf-e + .rf-e > .rf-sum { border-top:1px solid var(--line); }
 .rf-sum { display:grid; grid-template-columns:auto minmax(0,max-content) auto minmax(0,1fr);
   align-items:baseline; gap:var(--sp-2,8px); min-height:40px;
@@ -688,6 +688,25 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     history.replaceState(null, "", location.pathname + location.search);
   }
 
+  // Sync the address-bar `q` with visible search state (MOR-1, issue 6782 —
+  // issue numbers are written bare here: a hash-prefixed four-digit number
+  // reads as a hex colour literal and the forward-only design ratchet blocks
+  // it).
+  // Initial URL remains the source of initial state; keystrokes replaceState
+  // (no history spam); clear removes `q`; popstate rehydrates filters.
+  // Mode/family/letter stay non-addressable and reset on popstate.
+  function syncQueryToUrl(){
+    try {
+      var url = new URL(location.href);
+      var next = (state.q || "").trim();
+      if (next) url.searchParams.set("q", next);
+      else url.searchParams.delete("q");
+      var nextHref = url.pathname + url.search + url.hash;
+      var cur = location.pathname + location.search + location.hash;
+      if (nextHref !== cur) history.replaceState(null, "", nextHref);
+    } catch (e) {}
+  }
+
   function setPressed(group, activeEl){
     Array.prototype.forEach.call(group, function(b){ b.setAttribute("aria-pressed", b === activeEl ? "true" : "false"); });
   }
@@ -737,6 +756,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
       Array.prototype.forEach.call(root.querySelectorAll(".rf-fam"), function(b){ b.setAttribute("aria-pressed", "false"); });
       Array.prototype.forEach.call(root.querySelectorAll(".rf-azb"), function(b){ b.setAttribute("aria-pressed", "false"); });
       clearHashToBrowse();
+      syncQueryToUrl();
       applyFilters();
       if (qEl) qEl.focus();
       return;
@@ -751,7 +771,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     }
   });
 
-  // 4 · Search — debounced 120ms, applied in one rAF.
+  // 4 · Search — debounced 120ms, applied in one rAF; URL `q` stays in sync.
   var qInputEl = root.querySelector("#rf-q");
   var searchTimer = null;
   if (qInputEl) qInputEl.addEventListener("input", function(){
@@ -760,11 +780,31 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     searchTimer = setTimeout(function(){
       state.q = val;
       if (val) clearHashToBrowse();
+      syncQueryToUrl();
       window.requestAnimationFrame(applyFilters);
     }, 120);
   });
 
-  // 5 · ?q= is READ, never written.
+  function rehydrateFromUrl(){
+    var q = "";
+    try {
+      q = new URLSearchParams(location.search).get("q") || "";
+    } catch (e) { q = ""; }
+    state.mode = "all";
+    state.family = null;
+    state.letter = null;
+    state.q = q;
+    if (qInputEl) qInputEl.value = q;
+    Array.prototype.forEach.call(root.querySelectorAll(".rf-seg .segbtn"), function(b){
+      b.setAttribute("aria-pressed", b.getAttribute("data-mode") === "all" ? "true" : "false");
+    });
+    Array.prototype.forEach.call(root.querySelectorAll(".rf-fam"), function(b){ b.setAttribute("aria-pressed", "false"); });
+    Array.prototype.forEach.call(root.querySelectorAll(".rf-azb"), function(b){ b.setAttribute("aria-pressed", "false"); });
+    applyFilters();
+    handleHash();
+  }
+
+  // 5 · ?q= seeds state on load; later edits write via replaceState (see syncQueryToUrl).
   try {
     var sp = new URLSearchParams(location.search);
     var initialQ = sp.get("q");
@@ -773,6 +813,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
       state.q = initialQ;
     }
   } catch(e) {}
+  window.addEventListener("popstate", rehydrateFromUrl);
 
   // 7 · Deep-link on load + hashchange.
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -800,7 +841,28 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
       target.classList.remove("rf-closed");
       if (missEl) missEl.hidden = true;
       window.requestAnimationFrame(function(){
-        target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+        // Offset for the sticky mobile filter bar so the opened entry is not
+        // occluded after scroll-into-view (MOR-1 focus/visibility proof).
+        var bar = root.querySelector(".rf-bar");
+        var offset = 0;
+        if (bar){
+          var bcs = window.getComputedStyle(bar);
+          if (bcs.display !== "none" && bcs.visibility !== "hidden"){
+            offset = bar.getBoundingClientRect().height || 0;
+          }
+        }
+        var top = target.getBoundingClientRect().top + window.pageYOffset - offset - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? "auto" : "smooth" });
+        // MOR-1: scroll is not focus. Move keyboard focus to the existing
+        // summary (preferred) or a temporarily-focusable article so the
+        // opened term is the activeElement and not trapped in a loop.
+        var focusEl = target.querySelector(".rf-sum") || target;
+        if (focusEl === target && !target.hasAttribute("tabindex")) {
+          target.setAttribute("tabindex", "-1");
+        }
+        try { focusEl.focus({ preventScroll: true }); } catch (e) {
+          try { focusEl.focus(); } catch (e2) {}
+        }
       });
     } else {
       if (missEl){
