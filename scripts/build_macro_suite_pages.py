@@ -149,6 +149,65 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
             "uncovered legs typed honestly and every source clock shown."
         ),
     ),
+    SuitePage(
+        workspace_id="liquidity_central_banks",
+        region="US",
+        template="macro_liquidity_central_banks.html.j2",
+        output="macro_liquidity_central_banks.html",
+        seo_title="Liquidity & Central Banks — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Global monetary impulse against Fed, ECB and BoJ balance-sheet stance, "
+            "with the weekly grid clock, warmup windows and typed gaps shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="capital_structure",
+        region="US",
+        template="macro_capital_structure.html.j2",
+        output="macro_capital_structure.html",
+        seo_title="US Capital Structure — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "A read-only census of the US corporate capital-structure event "
+            "projection — coverage, classification and review backlog, with "
+            "everything the owner does not publish typed honestly."
+        ),
+    ),
+    SuitePage(
+        workspace_id="housing_real_estate",
+        region="US",
+        template="macro_housing_real_estate.html.j2",
+        output="macro_housing_real_estate.html",
+        seo_title="US Housing & Real Estate — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Mortgage rates, starts, permits and home prices for the United States, "
+            "with rights-blocked and uncovered legs typed honestly and every "
+            "release clock shown."
+        ),
+    ),
+    SuitePage(
+        workspace_id="consumer_payments",
+        region="US",
+        template="macro_consumer_payments.html.j2",
+        output="macro_consumer_payments.html",
+        seo_title="US Consumer & Payments — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Retail sales, consumer sentiment, household credit, saving and "
+            "delinquencies for the United States — payments panels and sources "
+            "still being collected are typed honestly, never imputed."
+        ),
+    ),
+    SuitePage(
+        workspace_id="national_debt_liabilities",
+        region="US",
+        template="macro_national_debt_liabilities.html.j2",
+        output="macro_national_debt_liabilities.html",
+        seo_title="US National Debt & Liabilities — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Treasury cash balance, net issuance, auction demand and BIS debt-service "
+            "reads for the United States, with the missing debt-stock lanes disclosed "
+            "rather than fabricated."
+        ),
+    ),
 )
 
 

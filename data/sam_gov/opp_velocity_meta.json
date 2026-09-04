@@ -1,11 +1,11 @@
 {
   "as_of": {
     "critical_minerals": "2026-09-01",
-    "semicap_equipment": "2026-08-31",
-    "ai_semiconductors": "2026-08-31",
-    "defense": "2026-08-31",
-    "space_economy": "2026-08-31",
-    "quantum_computing": "2026-08-31",
+    "semicap_equipment": "2026-09-04",
+    "ai_semiconductors": "2026-09-04",
+    "defense": "2026-09-04",
+    "space_economy": "2026-09-04",
+    "quantum_computing": "2026-09-04",
     "power_grid": "2026-09-01",
     "data_center_power": "2026-09-01",
     "ai_infra": "2026-09-01",

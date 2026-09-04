@@ -490,6 +490,19 @@ fred:
       # MRI-W11 Track S data adoptions (context series; no champion spec change — chartered for future use):
       TRMMEANCPIM158SFRBCLE: trimmed_mean_cpi  # Cleveland Fed 16% trimmed-mean CPI (monthly, % change SA) — alternative core inflation measure
       JTSQUR: jolts_quits_rate              # JOLTS quits rate (monthly, %) — voluntary separation signal; leading labor-market health indicator
+    # F01 R6 (2026-09-04): consumer_payments workspace composable core — the census-
+    # sanctioned "trivial config completeness" appends (R5/R6 source census section
+    # Consumer). The nightly keyless-CSV collect creates data/fred/<ID>.parquet on its
+    # next run; until then the workspace composer types these SOURCE_FAILED and
+    # self-heals when the parquets land. Additive only — no other lane reads them yet.
+    consumer_household:
+      TOTALSL: consumer_credit_total          # G.19 total consumer credit owned & securitized ($bn SA, monthly, ~5th business day of M+2)
+      REVOLSL: consumer_credit_revolving      # G.19 revolving consumer credit ($bn SA, monthly)
+      NONREVSL: consumer_credit_nonrevolving  # G.19 nonrevolving consumer credit ($bn SA, monthly)
+      PSAVERT: personal_saving_rate           # personal saving rate (% of DPI, monthly SA, BEA ~end of M+1)
+      DSPIC96: real_disposable_income         # real disposable personal income (chained $bn SAAR, monthly SA)
+      DRCCLACBS: cc_delinquency_rate          # credit-card delinquency rate, all commercial banks (%, quarterly SA, ~70d after quarter end)
+      DRSFRMACBS: mortgage_delinquency_rate   # single-family mortgage delinquency rate (%, quarterly SA)
   # NOTE (2026-07-16): a header-less copy of the OLD yahoo ticker block (retries/
   # backoff_base_s/batch_size + a stale tickers: map) used to sit right here — a
   # remnant of the 2026-06-29 "KeyError: 'yahoo'" incident, absorbed into fred: when

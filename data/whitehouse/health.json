@@ -1,14 +1,32 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-09-04T16:21:24.765445+00:00",
-  "posts_seen": 11,
-  "seen_total": 161,
-  "evaluated": 1,
+  "as_of": "2026-09-04T19:36:07.125510+00:00",
+  "posts_seen": 13,
+  "seen_total": 165,
+  "evaluated": 4,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-09-04-made-in-america-manufacturing-private-hiring-power-explosive-august-jobs-report",
+      "id": "wh-2026-09-04-supporting-americas-ranchers",
+      "importance": 0,
+      "activated": false,
+      "degraded_reason": "served_by:codex"
+    },
+    {
+      "id": "wh-2026-09-04-promoting-fair-competition-in-livestock-markets-and-expanding-market-access-for-",
+      "importance": 0,
+      "activated": false,
+      "degraded_reason": null
+    },
+    {
+      "id": "wh-2026-09-04-fact-sheet-president-donald-j-trump-supports-americas-ranchers",
+      "importance": 0,
+      "activated": false,
+      "degraded_reason": null
+    },
+    {
+      "id": "wh-2026-09-04-fact-sheet-president-donald-j-trump-promotes-fair-competition-in-livestock-marke",
       "importance": 0,
       "activated": false,
       "degraded_reason": null

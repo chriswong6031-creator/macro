@@ -37,13 +37,18 @@ from typing import Any, Mapping
 
 from engine.market_os.macro_workspaces import (
     business_activity,
+    capital_structure,
+    consumer_payments,
     contract,
     financial_conditions,
     growth,
+    housing,
     inflation,
     labor,
+    liquidity_central_banks,
     liquidity_regime,
     monetary_policy,
+    national_debt,
     registry,
 )
 
@@ -53,7 +58,106 @@ DEFAULT_REGIME_LATEST = ROOT / "data" / "regime" / "latest.json"
 DEFAULT_INFLATION_INTEL = ROOT / "data" / "release_forecast" / "inflation_intelligence.json"
 DEFAULT_RATES_COMMAND = ROOT / "data" / "rates_command" / "latest.json"
 DEFAULT_INTL_RISK = ROOT / "data" / "intl_risk" / "latest.json"
+DEFAULT_GLT_LATEST = ROOT / "site" / "liquiditydata" / "global_liquidity_transmission.json"
+DEFAULT_GLT_HISTORY_META = ROOT / "data" / "global_liquidity_transmission" / "state_history_meta.json"
+DEFAULT_FRED_DIR = ROOT / "data" / "fred"
+DEFAULT_ZORI_NATIONAL = ROOT / "data" / "zori" / "national.parquet"
+DEFAULT_CAPITAL_STRUCTURE_PROJECTION = ROOT / "data" / "capital_structure" / "projection.json"
+DEFAULT_TREASURY_DIR = ROOT / "data" / "treasury"
+DEFAULT_TREASURY_AUCTIONS = ROOT / "data" / "treasury_auctions" / "auctions.parquet"
+DEFAULT_BIS_DIR = ROOT / "data" / "bis"
+DEFAULT_BONDS_LATEST = ROOT / "data" / "bonds" / "latest.json"
 MIN_CLIENT_CONTRACT = f"{contract.CONTRACT_ID}@{contract.CONTRACT_VERSION}"
+
+# Housing core: FRED series id -> the parquet's value column (the column names
+# come from the collector config, config.yml fred.series entries).
+_HOUSING_FRED_COLUMNS = {
+    "MORTGAGE30US": "mortgage_30y",
+    "HOUST": "housing_starts",
+    "PERMIT": "building_permits",
+    "CSUSHPISA": "case_shiller_sa",
+}
+
+# Consumer core (F01 R6): same convention. RSAFS/UMCSENT are collected today;
+# the config.yml `consumer_household` group ids land on the next nightly keyed
+# collect — until then their parquets are absent and the loader hands the
+# composer None (typed SOURCE_FAILED, self-healing when the files appear).
+_CONSUMER_FRED_COLUMNS = {
+    "RSAFS": "retail_sales",
+    "UMCSENT": "umich_sentiment",
+    "TOTALSL": "consumer_credit_total",
+    "REVOLSL": "consumer_credit_revolving",
+    "NONREVSL": "consumer_credit_nonrevolving",
+    "PSAVERT": "personal_saving_rate",
+    "DSPIC96": "real_disposable_income",
+    "DRCCLACBS": "cc_delinquency_rate",
+    "DRSFRMACBS": "mortgage_delinquency_rate",
+}
+
+# National-debt collected lanes: store key -> (filename under its dir, column).
+# The _mn suffixes are the unit contract ($ millions, Daily Treasury Statement).
+_TREASURY_COLUMNS = {
+    "tga": ("tga.parquet", "tga_mn"),
+    "net_issuance": ("net_issuance.parquet", "net_issuance_mn"),
+    "withheld_taxes": ("withheld_taxes.parquet", "withheld_tax_mn"),
+}
+# BIS US panels are quarterly, period-END dated, attribution-only rights.
+_BIS_US_COLUMNS = {
+    "dsr": ("us_dsr.parquet", "dsr"),
+    "gap": ("us_gap.parquet", "gap"),
+}
+
+
+def _load_series_rows(path: Path, column: str) -> list | None:
+    """Load one series parquet into plain ``[(iso_date, float), ...]`` rows.
+
+    Missing file -> ``None`` (the composer emits its own typed absence).
+    A PRESENT-but-unreadable file, or a missing pandas/pyarrow runtime, RAISES:
+    laundering either into "source absent" would hide corruption or an
+    environment defect behind an honest-looking typed null (same law as
+    ``_load_json_or_empty``). pandas is imported lazily so importing this
+    module never requires it (the CI suites monkeypatch the loaders)."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    import pandas as pd  # noqa: PLC0415 — lazy: only a real build needs it
+
+    frame = pd.read_parquet(p)
+    frame.index = pd.to_datetime(frame.index)
+    series = frame[column].dropna().sort_index()
+    return [(idx.date().isoformat(), float(value)) for idx, value in series.items()]
+
+
+def _load_auction_rows(path: Path) -> list | None:
+    """``data/treasury_auctions/auctions.parquet`` -> plain row dicts holding
+    exactly the five columns the national_debt composer consumes, ascending by
+    auction_date. Missing file -> ``None``; a present-but-unreadable file
+    RAISES (same no-laundering law as ``_load_series_rows``)."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    import pandas as pd  # noqa: PLC0415 — lazy: only a real build needs it
+
+    def _num(row, name):
+        value = row.get(name)
+        return None if value is None or pd.isna(value) else float(value)
+
+    frame = pd.read_parquet(p)
+    rows: list[dict] = []
+    for _, row in frame.iterrows():
+        raw_date = row.get("auction_date")
+        if raw_date is None or pd.isna(raw_date):
+            continue
+        sec_type = row.get("security_type")
+        rows.append({
+            "auction_date": pd.Timestamp(raw_date).date().isoformat(),
+            "security_type": None if sec_type is None or pd.isna(sec_type) else str(sec_type),
+            "tenor_years": _num(row, "tenor_years"),
+            "bid_to_cover": _num(row, "bid_to_cover"),
+            "high_yield": _num(row, "high_yield"),
+        })
+    rows.sort(key=lambda r: r["auction_date"])
+    return rows
 
 
 def _load_json(path: Path) -> dict:
@@ -160,7 +264,17 @@ def build_liquidity_regime(
 
 def _compose_workspace(workspace_id: str, *, regime_latest: dict,
                        inflation_intel: dict, rates_command: dict,
-                       intl_risk: dict, built_at: str,
+                       intl_risk: dict, glt_latest: dict,
+                       glt_history_meta: dict,
+                       housing_fred_frames: dict,
+                       housing_zori_rows: list | None,
+                       capital_structure_projection: dict,
+                       consumer_fred_frames: dict,
+                       treasury_frames: dict,
+                       auction_rows: list | None,
+                       bis_frames: dict,
+                       bonds_latest: dict | None,
+                       built_at: str,
                        prior_snapshot: dict | None,
                        code_version: str | None) -> dict:
     """Route one BUILT workspace to its composer with its owner-native inputs.
@@ -199,6 +313,33 @@ def _compose_workspace(workspace_id: str, *, regime_latest: dict,
             (regime_latest.get("rate_inflation_transmission") or {}),
             built_at=built_at,
             prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "liquidity_central_banks":
+        return liquidity_central_banks.compose(
+            glt_latest,
+            (intl_risk.get("cb_desk") or {}),
+            glt_history_meta,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "housing_real_estate":
+        return housing.compose(
+            housing_fred_frames, housing_zori_rows,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "capital_structure":
+        return capital_structure.compose(
+            capital_structure_projection,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "consumer_payments":
+        return consumer_payments.compose(
+            consumer_fred_frames,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "national_debt_liabilities":
+        return national_debt.compose(
+            treasury_frames, auction_rows, bis_frames, bonds_latest,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
     raise ValueError(f"no builder route for workspace id: {workspace_id!r}")
 
 
@@ -207,6 +348,15 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
               inflation_intel_path: Path | str = DEFAULT_INFLATION_INTEL,
               rates_command_path: Path | str = DEFAULT_RATES_COMMAND,
               intl_risk_path: Path | str = DEFAULT_INTL_RISK,
+              glt_latest_path: Path | str = DEFAULT_GLT_LATEST,
+              glt_history_meta_path: Path | str = DEFAULT_GLT_HISTORY_META,
+              fred_dir: Path | str = DEFAULT_FRED_DIR,
+              zori_path: Path | str = DEFAULT_ZORI_NATIONAL,
+              capital_structure_projection_path: Path | str = DEFAULT_CAPITAL_STRUCTURE_PROJECTION,
+              treasury_dir: Path | str = DEFAULT_TREASURY_DIR,
+              treasury_auctions_path: Path | str = DEFAULT_TREASURY_AUCTIONS,
+              bis_dir: Path | str = DEFAULT_BIS_DIR,
+              bonds_latest_path: Path | str = DEFAULT_BONDS_LATEST,
               built_at: str, code_version: str | None = None,
               prior_snapshot_path: Path | str | None = None,
               write: bool = True) -> dict:
@@ -223,6 +373,30 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
     inflation_intel = _load_json_or_empty(Path(inflation_intel_path))
     rates_command = _load_json_or_empty(Path(rates_command_path))
     intl_risk = _load_json_or_empty(Path(intl_risk_path))
+    glt_latest = _load_json_or_empty(Path(glt_latest_path))
+    glt_history_meta = _load_json_or_empty(Path(glt_history_meta_path))
+    housing_fred_frames = {
+        sid: _load_series_rows(Path(fred_dir) / f"{sid}.parquet", column)
+        for sid, column in _HOUSING_FRED_COLUMNS.items()
+    }
+    housing_zori_rows = _load_series_rows(Path(zori_path), "zori")
+    capital_structure_projection = _load_json_or_empty(Path(capital_structure_projection_path))
+    consumer_fred_frames = {
+        sid: _load_series_rows(Path(fred_dir) / f"{sid}.parquet", column)
+        for sid, column in _CONSUMER_FRED_COLUMNS.items()
+    }
+    treasury_frames = {
+        key: _load_series_rows(Path(treasury_dir) / fname, column)
+        for key, (fname, column) in _TREASURY_COLUMNS.items()
+    }
+    auction_rows = _load_auction_rows(Path(treasury_auctions_path))
+    bis_frames = {
+        key: _load_series_rows(Path(bis_dir) / fname, column)
+        for key, (fname, column) in _BIS_US_COLUMNS.items()
+    }
+    # The national_debt composer's contract is dict-or-None (an owner artifact
+    # that is absent is None, never {}): normalize the empty-load sentinel.
+    bonds_latest = _load_json_or_empty(Path(bonds_latest_path)) or None
 
     out = Path(out_root)
     manifest_entries: dict[str, dict] = {}
@@ -245,7 +419,17 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
 
         body = _compose_workspace(
             wid, regime_latest=regime_latest, inflation_intel=inflation_intel,
-            rates_command=rates_command, intl_risk=intl_risk, built_at=built_at,
+            rates_command=rates_command, intl_risk=intl_risk,
+            glt_latest=glt_latest, glt_history_meta=glt_history_meta,
+            housing_fred_frames=housing_fred_frames,
+            housing_zori_rows=housing_zori_rows,
+            capital_structure_projection=capital_structure_projection,
+            consumer_fred_frames=consumer_fred_frames,
+            treasury_frames=treasury_frames,
+            auction_rows=auction_rows,
+            bis_frames=bis_frames,
+            bonds_latest=bonds_latest,
+            built_at=built_at,
             prior_snapshot=prior, code_version=code_version)
         snapshot = contract.finalize(body)
         contract.validate(snapshot)
