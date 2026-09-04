@@ -1077,15 +1077,15 @@ def test_compiler_refuses_subject_switches_in_producer_prepared_k1_bundle(
 
 
 def test_public_failure_reason_is_bounded_and_host_independent() -> None:
-    from scripts import build_stock_library as bsl
+    import scripts.security_state_producer as producer
 
     hostile_a = "/Users/private/key.txt https://example.test/?token=secret user@example.com\nleak"
     hostile_b = "C:\\private\\different.txt https://elsewhere.test/?auth=other\nother"
-    first = bsl._compile_security_state_failure_for_exception(
+    first = producer._compile_security_state_failure_for_exception(
         subject=_subject(), now="2026-09-04T12:00:00Z",
         diagnostic=RuntimeError(hostile_a), validator=_validator(), prior_state=None,
     )
-    second = bsl._compile_security_state_failure_for_exception(
+    second = producer._compile_security_state_failure_for_exception(
         subject=_subject(), now="2026-09-04T12:00:00Z",
         diagnostic=RuntimeError(hostile_b), validator=_validator(), prior_state=None,
     )
@@ -1098,7 +1098,7 @@ def test_public_failure_reason_is_bounded_and_host_independent() -> None:
 def test_producer_loads_canonical_validator_once_and_refuses_unreadable_or_invalid_schema(
     monkeypatch,
 ) -> None:
-    from scripts import build_stock_library as bsl
+    import scripts.security_state_producer as producer
 
     schema_text = json.dumps(_schema())
     reads: list[Path] = []
@@ -1108,19 +1108,19 @@ def test_producer_loads_canonical_validator_once_and_refuses_unreadable_or_inval
         return schema_text
 
     monkeypatch.setattr(Path, "read_text", valid_read)
-    validator = bsl._load_security_state_validator(Path("/canonical/security-state.json"))
+    validator = producer._load_security_state_validator(Path("/canonical/security-state.json"))
     assert isinstance(validator, Draft202012Validator)
     assert reads == [Path("/canonical/security-state.json")]
 
     monkeypatch.setattr(Path, "read_text", lambda *args, **kwargs: "{not json")
     with pytest.raises(ss.SecurityStateCompilationError, match="schema unreadable or invalid"):
-        bsl._load_security_state_validator(Path("/canonical/security-state.json"))
+        producer._load_security_state_validator(Path("/canonical/security-state.json"))
 
     monkeypatch.setattr(
         Path, "read_text", lambda *args, **kwargs: (_ for _ in ()).throw(OSError("unreadable")),
     )
     with pytest.raises(ss.SecurityStateCompilationError, match="schema unreadable or invalid"):
-        bsl._load_security_state_validator(Path("/canonical/security-state.json"))
+        producer._load_security_state_validator(Path("/canonical/security-state.json"))
 
 
 def _producer_owner_frames(pd):
@@ -1156,7 +1156,7 @@ def _producer_owner_frames(pd):
 
 def test_producer_batches_owner_reads_and_composes_both_subjects_once(monkeypatch) -> None:
     pd = pytest.importorskip("pandas")
-    from scripts import build_stock_library as bsl
+    import scripts.security_state_producer as producer
 
     frames = _producer_owner_frames(pd)
     read_names: list[str] = []
@@ -1165,8 +1165,8 @@ def test_producer_batches_owner_reads_and_composes_both_subjects_once(monkeypatc
         read_names.append(Path(path).name)
         return frames[Path(path).name].copy()
 
-    monkeypatch.setattr(bsl.pd, "read_parquet", fake_read)
-    inputs, failures = bsl._read_security_state_identity_rows(
+    monkeypatch.setattr(producer.pd, "read_parquet", fake_read)
+    inputs, failures = producer._read_security_state_identity_rows(
         Path("/owner"), ("AAPL", "MSFT"), decision_date=datetime.date(2026, 9, 4)
     )
     assert read_names == [
@@ -1185,16 +1185,16 @@ def test_producer_isolates_target_specific_owner_failure(
     monkeypatch, invalid_ticker: str, valid_ticker: str,
 ) -> None:
     pd = pytest.importorskip("pandas")
-    from scripts import build_stock_library as bsl
+    import scripts.security_state_producer as producer
 
     frames = _producer_owner_frames(pd)
     aliases = frames["vendor_aliases.parquet"]
     frames["vendor_aliases.parquet"] = aliases[aliases["vendor_symbol"] != invalid_ticker]
     monkeypatch.setattr(
-        bsl.pd, "read_parquet", lambda path: frames[Path(path).name].copy(),
+        producer.pd, "read_parquet", lambda path: frames[Path(path).name].copy(),
     )
 
-    inputs, failures = bsl._read_security_state_identity_rows(
+    inputs, failures = producer._read_security_state_identity_rows(
         Path("/owner"), ("AAPL", "MSFT"), decision_date=datetime.date(2026, 9, 4)
     )
     assert set(inputs) == {valid_ticker}
@@ -1203,81 +1203,86 @@ def test_producer_isolates_target_specific_owner_failure(
 
 
 def test_producer_keeps_shared_artifact_unreadability_batch_fatal(monkeypatch) -> None:
-    from scripts import build_stock_library as bsl
+    import scripts.security_state_producer as producer
 
     monkeypatch.setattr(
-        bsl.pd, "read_parquet", lambda path: (_ for _ in ()).throw(OSError("owner unreadable")),
+        producer.pd, "read_parquet", lambda path: (_ for _ in ()).throw(OSError("owner unreadable")),
     )
     with pytest.raises(OSError, match="owner unreadable"):
-        bsl._read_security_state_identity_rows(
+        producer._read_security_state_identity_rows(
             Path("/owner"), ("AAPL", "MSFT"), decision_date=datetime.date(2026, 9, 4)
         )
 
 
-def test_producer_classifies_event_discovery_failure_as_fetch_failed(monkeypatch) -> None:
-    from engine.neuralweb import company_intelligence_reader as reader
-    from scripts import build_stock_library as bsl
+def test_producer_classifies_event_discovery_failure_as_fetch_failed() -> None:
+    import scripts.security_state_producer as producer
 
     inp = _golden_input()
     identity = {
         key: value for key, value in inp.items()
         if key not in {"validator", "k1_bundle", "now", "workspace", "workspace_disposition", "blob", "manifest_sha256"}
     }
-    monkeypatch.setattr(
-        reader, "find_current_event_id_for_company",
-        lambda company_id: (_ for _ in ()).throw(reader.WorkspaceChainIntegrityError("marker mismatch")),
-    )
-    state = bsl._compile_security_state_for_ticker(
+    state = producer._compile_security_state_for_ticker(
         "AAPL", inp["blob"], now=inp["now"], identity=identity,
         validator=inp["validator"],
+        find_event_id=lambda company_id: (_ for _ in ()).throw(RuntimeError("marker mismatch")),
+        load_workspace=lambda event_id: (_ for _ in ()).throw(
+            AssertionError("fetch must not follow failed discovery")
+        ),
+        fetch_manifest=lambda generation_id: (_ for _ in ()).throw(
+            AssertionError("manifest must not follow failed discovery")
+        ),
     )
     assert state["identity_proof"]["state"] == "PROVEN"
     assert state["legs"]["state"]["coverage_state"] == "AVAILABLE"
     assert "fetch failure, not an absence" in state["legs"]["change"]["summary"]["en"]
 
 
-def test_producer_clean_absence_and_workspace_fetch_failure_stay_distinct(monkeypatch) -> None:
-    from engine.neuralweb import company_intelligence_reader as reader
-    from scripts import build_stock_library as bsl
+def test_producer_clean_absence_and_workspace_fetch_failure_stay_distinct() -> None:
+    import scripts.security_state_producer as producer
 
     inp = _golden_input()
     identity = {
         key: value for key, value in inp.items()
         if key not in {"validator", "k1_bundle", "now", "workspace", "workspace_disposition", "blob", "manifest_sha256"}
     }
-    monkeypatch.setattr(reader, "find_current_event_id_for_company", lambda company_id: None)
-    absent = bsl._compile_security_state_for_ticker(
+    absent = producer._compile_security_state_for_ticker(
         "AAPL", inp["blob"], now=inp["now"], identity=identity,
         validator=inp["validator"],
+        find_event_id=lambda company_id: None,
+        load_workspace=lambda event_id: (_ for _ in ()).throw(
+            AssertionError("clean absence must not load a workspace")
+        ),
+        fetch_manifest=lambda generation_id: (_ for _ in ()).throw(
+            AssertionError("clean absence must not fetch a manifest")
+        ),
     )
     assert "No current earnings-change event is published" in absent["legs"]["change"]["summary"]["en"]
 
-    monkeypatch.setattr(
-        reader, "find_current_event_id_for_company",
-        lambda company_id: "evt_cik0000320193_2026q3_results",
-    )
-    monkeypatch.setattr(
-        reader, "load_workspace_with_disposition", lambda event_id: (None, "fetch_failed")
-    )
-    failed = bsl._compile_security_state_for_ticker(
+    failed = producer._compile_security_state_for_ticker(
         "AAPL", inp["blob"], now=inp["now"], identity=identity,
         validator=inp["validator"],
+        find_event_id=lambda company_id: "evt_cik0000320193_2026q3_results",
+        load_workspace=lambda event_id: (None, "fetch_failed"),
+        fetch_manifest=lambda generation_id: (_ for _ in ()).throw(
+            AssertionError("missing workspace must not fetch a manifest")
+        ),
     )
     assert "fetch failure, not an absence" in failed["legs"]["change"]["summary"]["en"]
 
 
 def test_unrelated_ticker_is_not_selected_for_security_state() -> None:
-    from scripts import build_stock_library as bsl
+    import scripts.security_state_producer as producer
 
     aapl, msft, goog = ({"ticker": ticker} for ticker in ("AAPL", "MSFT", "GOOG"))
-    selected = bsl._select_security_state_targets([
+    selected = producer._select_security_state_targets([
         ("AAPL", aapl), ("MSFT", msft), ("GOOG", goog),
     ])
     assert selected == [("AAPL", aapl), ("MSFT", msft)]
     assert "security_state" not in goog
 
     mismatched = {"ticker": "MSFT"}
-    assert bsl._select_security_state_targets([("AAPL", mismatched)]) == []
+    assert producer._select_security_state_targets([("AAPL", mismatched)]) == []
     assert "security_state" not in mismatched
 
 
