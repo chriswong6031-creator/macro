@@ -3,6 +3,7 @@
   "columns": [
     "monetary_stance",
     "monetary_impulse",
+    "monetary_impulse_z",
     "orthogonalised_impulse",
     "liquidity_breadth",
     "usd_funding_impulse",
@@ -18,20 +19,20 @@
     "funding_component_z__high_yield_oas"
   ],
   "comparison_receipt": "data/global_liquidity_transmission/factor_comparison_btc_4w.json",
-  "config_hash": "dbfa64b5e60a72dec9fa5d2769ec60e68bb8d94da7ffebbbbdfc56fa327e3cc1",
+  "config_hash": "f02d493baed5f6cc54464583552bb51384f8f81288b47ea978f6224bc07a487b",
   "contract_schema": "global_liquidity_transmission.v1",
-  "current_first_known_at": "2026-08-23T06:38:59.710239Z",
-  "data_version": "glt_data:7de86d608602fe1c",
+  "current_first_known_at": "2026-09-04T11:03:41.497178Z",
+  "data_version": "glt_data:361611bc7ba7fb7e",
   "first_asof": "1998-04-03",
   "first_complete_state": "2004-12-10",
-  "generated_at": "2026-08-23T06:46:58.038474+00:00",
+  "generated_at": "2026-09-04T11:03:41.497178+00:00",
   "historical_clock_law": {
     "2023_2026_exact_episode_chronology": [],
     "chronology_status": "unavailable_do_not_infer_from_backfill",
     "first_known": "not reconstructable before the W-LIQ.1 producer existed; historical rows are not episode timestamps",
     "observation_and_release": "reconstructed conservatively from economic reference dates and configured date-only lags"
   },
-  "last_asof": "2026-08-21",
+  "last_asof": "2026-08-28",
   "model_version": "glt_state.v1",
   "pit_policy": "economic reference date plus conservative business-day release lag; expanding transforms use only prior observations",
   "producer_version": "w-liq.1.0",
@@ -41,7 +42,7 @@
     "exact_retry": "same hash is the same immutable source snapshot and preserves its earliest published first_known_at",
     "snapshot_identity": "source_snapshot_hash"
   },
-  "rows": 1482,
+  "rows": 1483,
   "schema": "global_liquidity_transmission.history_meta.v1",
-  "source_snapshot_hash": "7de86d608602fe1c6944b69f5561a35b0e1fa863354fe8cfda1a5e5a9930e8d2"
+  "source_snapshot_hash": "361611bc7ba7fb7e46dcdef9aaf13b4ea1b0bd4cefc0949a210c4d9d88bb0002"
 }
