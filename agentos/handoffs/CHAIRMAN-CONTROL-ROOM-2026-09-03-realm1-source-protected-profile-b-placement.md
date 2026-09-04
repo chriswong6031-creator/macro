@@ -43,8 +43,8 @@ verified:
       issue #432 is OPEN / STARTED / SOURCE_ONLY. Its bound worker returned Draft PR #435 head
       62eaf50af3b18b8ea165de2213393223f9e16f57 (tree 25b5066de1ec528809911e5806fe81b3068543aa) as
       `DRAFT / HOLD-FOR-SOL` and `BUILT_NOT_PROVEN / PRODUCTION_INERT`; its source-only result has no
-      protected-master readback. At this read, CodeQL had concluded SUCCESS, hosted `test` was in
-      progress, and no non-author exact-head review existed.
+      protected-master readback. At this read, the listed hosted `test` and CodeQL analyses had
+      concluded SUCCESS, but no non-author exact-head review existed.
   - claim: >
       The protected merge contains exactly the five independently reviewed semantic blobs from the
       accepted Realm1 candidate.
@@ -111,12 +111,12 @@ verified:
       the three text-matching open PRs add separate handoffs/decisions or unrelated workstreams.
 unverified:
   - claim: >
-      The active #432 source repair will obtain terminal checks, independent exact-head review and
-      protected current-source readback.
+      The active #432 source repair will obtain independent exact-head review and protected current-source
+      readback.
     what_would_verify: >
-      Draft PR #435 must reach a reviewed exact head with terminal green required checks, merge into
-      current Mastermind master, and be read back from the protected source; a Draft/Hold source
-      return or source merge alone is insufficient.
+      Draft PR #435's current head has green listed hosted checks; it must still receive a non-author
+      exact-head review, merge into current Mastermind master, and be read back from the protected source.
+      A Draft/Hold source return or source merge alone is insufficient.
   - claim: >
       The approved Mac host, exact v3 profile_A anchor, fixed private lifecycle coordinates,
       Multilogin launcher and Keychain-owned credential route still satisfy every refreshed pre-START
@@ -142,14 +142,14 @@ unverified:
       terms/verification/2FA, and a bounded host operation proves both profile realms without copying
       cookies or storage. No account child or paid-plan default exists now.
 unresolved:
-  - "Issue #432 has a source-return head in Draft/Hold: its reported capability is BUILT_NOT_PROVEN / PRODUCTION_INERT, and terminal hosted exact-head checks, non-author review and protected-master readback remain absent."
+  - "Issue #432 has a source-return head in Draft/Hold: its listed hosted exact-head checks are green, but its reported capability remains BUILT_NOT_PROVEN / PRODUCTION_INERT until non-author review and protected-master readback exist."
   - "The #359 host task is ACKed and has prior clean-checkout/approved-host proof, but remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE."
   - "Profile_A is proven; profile_B has no live capability receipt, and no account realm is proven or signed into both profiles."
   - "No account child, account selection, account creation, payment choice, PF-1, INSTALL1 or browser action is authorized by this record."
   - "PF-1 A/B, INSTALL1, PF-1 C15-C18, final intended-seat foreground proof and #355 implementation remain unstarted or unproven."
 next_actions:
   - "Keep #359 PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while #432's Draft/Hold source return remains unprotected; do not create another host task, branch, PR, watcher or lifecycle."
-  - "Require #432's current-source protection, terminal checks and independent exact-head review; after readback, wait for one fresh Sol same-root continuation before any #359 preflight refresh."
+  - "Require #432's independent exact-head review and protected current-source readback; after readback, wait for one fresh Sol same-root continuation before any #359 preflight refresh."
   - "On that continuation, the existing #359 task alone re-reads protected source and returns the exact no-effect HOST_PROFILE_GATE; no bootstrap, Keychain, vendor, profile, account or browser action occurs first."
   - "Only after PROFILE_B_PROVEN can Sol close/update #359 and authorize a separate finite account-selection/sign-in ceremony with no paid-plan default."
   - "Only after both profiles and the account realm are independently released may PF-1 A/B, target release, INSTALL1 and the same PF-1 evidence epoch for C15-C18 proceed."
@@ -190,8 +190,8 @@ Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20` on Slack root
 `C0BSBM78V1N/1788472184.797999`. The bound worker returned Draft PR #435 head
 `62eaf50af3b18b8ea165de2213393223f9e16f57` (tree `25b5066de1ec528809911e5806fe81b3068543aa`) as
 `DRAFT / HOLD-FOR-SOL` with `BUILT_NOT_PROVEN / PRODUCTION_INERT`; the effect remains source-only.
-Its terminal exact-head hosted evidence, non-author review and protected-master readback remain absent,
-so it is neither protected nor live.
+Its listed hosted `test` and CodeQL analyses are green, but non-author review and protected-master
+readback remain absent, so it is neither protected nor live.
 
 The canonical profile_B host child
 `web-sol-realm1-profile-b-host-provision-20260902-sol-001` remains bound to
