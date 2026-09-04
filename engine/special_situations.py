@@ -726,6 +726,9 @@ def _load_observations() -> tuple[dict[str, list[dict]], dict]:
         log.warning("special_situations: observation ledger unreadable: %s", e)
         census["integrity_failed"] = True
         return {}, census
+    # the SAME canonical authority the collector's reader uses: clock and listing come from the
+    # event owner and the price owner, never from the untrusted row
+    authority = col.canonical_event_authority()
     verified_cache: dict[str, tuple[bytes, dict] | None] = {}
     # re-extraction is per (document, listing currency), not per row: a ledger with hundreds of
     # rows over a handful of accessions would otherwise re-parse each document once per row
@@ -756,13 +759,17 @@ def _load_observations() -> tuple[dict[str, list[dict]], dict]:
             census["unbound"] += 1            # a row citing bytes this host does not retain
             continue
         raw, receipt = bound
-        akey = (accession, o.get("currency"))
+        event = authority.get(accession)
+        # the CANONICAL listing currency decides whether a bare `$` may be USD. Keying this on
+        # `o.get("currency")` let the untrusted row nominate the authority that then blessed it.
+        canonical_ccy = (event or {}).get("currency")
+        akey = (accession, canonical_ccy)
         if akey not in authored_cache:
             authored_cache[akey] = arb.authored_terms(
                 arb.normalized_projection(raw.decode("utf-8", "replace")),
-                listing_currency=o.get("currency"))
+                listing_currency=canonical_ccy)
         if arb.rebind_observation(o, raw_bytes=raw, receipt=receipt, accession=accession,
-                                  authored=authored_cache[akey]):
+                                  authored=authored_cache[akey], event=event):
             census["unbound"] += 1            # a row that does not descend from those bytes
             continue
         out.setdefault(accession, []).append(o)

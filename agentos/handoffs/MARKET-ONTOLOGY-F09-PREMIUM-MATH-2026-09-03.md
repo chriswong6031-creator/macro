@@ -143,6 +143,18 @@ verified:
   - claim: "Round 4 — the staged repair executes: the four owned suites are green on the first run they ever received."
     command: "python3 -m pytest tests/test_special_arb.py tests/test_special_situations.py tests/test_special_sits_intel.py tests/test_price_basis_graders.py -q -p no:randomly"
     result: "198 passed (197 before the M4 guard test was added). The staged tree had never been executed by its author."
+  - claim: "The ledger clock/listing bypass is closed on BOTH readers, and each defence layer is pinned separately."
+    command: "15-mutant matrix; 6 hostile REDs asserting collector read_ledger_strict AND engine _load_observations reject every resealed tamper"
+    result: >
+      15/15 killed at 209 passed. Extending the matrix exposed that this repair had itself
+      un-pinned three things: M9 (malformed-line counter) had been KILLED before and now
+      survived, because a corrupt ledger reaches ok=False through the new unbound path too, so
+      "census is unhealthy" assertions passed either way; M14 (meaning-bearing fields dropped
+      from observation_id) and M15 (authored_terms back on the row's own currency) survived
+      because the independent rebind catches those mutants first. Three tests now pin each layer
+      alone: malformed counted AS malformed, an unresealed edit rejected on identity (invalid,
+      not unbound), and authored_terms proved to receive the canonical currency via a row that
+      omits its own.
   - claim: "Both halves of the round-5 semantic repair are themselves mutant-pinned."
     command: "matrix extended to 12: M11 restores the (anchored or admissible)[0] fallback; M12 narrows _CURRENT_TXN_ANCHOR back"
     result: >
@@ -418,3 +430,31 @@ never carried their phrasing. See
 `DSC:A-FALLBACK-MAKES-ITS-PRIMARY-PATHS-COVERAGE-UNMEASURABLE`. The distinction that governed the
 repair: extending a closed vocabulary still requires the document to assert a transaction, while
 the fallback required only that it have sections.
+
+## Round 6 — the ledger clock and listing authority
+
+The third Sol addendum is the sharpest of the wave because nothing in CI could have found it:
+the JSON Schema is exercised only by tests, while the two production readers call
+`validate_observation()`, which re-derives a row's id from the row's OWN fields. A row could
+therefore rewrite its acceptance clock, its filing date, or its resolved listing, reseal, and
+survive — changing which session a filing-reference premium is drawn from, which observation is
+current, or whether a bare `$` becomes USD. `_load_observations()` even passed
+`authored_terms(listing_currency=o.get("currency"))`, so the untrusted row nominated the
+authority that then blessed it.
+
+The repair is one law over both readers: the three fields inside the closed digest, and — since
+resealing is not authorization — each re-bound to an owner outside the row (the retained
+acquisition receipt for the clock, `canonical_event_authority()` for filing date and listing,
+with the listing admitted only where the per-ticker Yahoo `close_price` owner proves it). No
+event authority means fail closed.
+
+The lesson worth carrying forward is the mutation result, not the repair. Extending the matrix
+to fifteen showed this repair had **un-pinned three existing behaviours**: M9's malformed-line
+counter had been killed in the previous round and now survived, because a corrupt ledger reaches
+`ok is False` through the new unbound path as well, so every "the census is unhealthy" assertion
+passed with or without it. M14 and M15 survived for the same structural reason — the new,
+stronger gate catches those mutants first. Adding a defence-in-depth layer silently converts the
+layers beneath it into decoration unless something still fails when you remove each one alone.
+That is [[A-GREEN-SUITE-CANNOT-TELL-YOU-WHICH-GUARDS-IT-PINS]] arriving from the opposite
+direction, and it is why the matrix is re-run in full after every layer rather than extended
+once at the end.

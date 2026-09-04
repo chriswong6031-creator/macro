@@ -350,5 +350,51 @@ Both repairs are pinned by mutants of their own. The matrix grew to twelve: **M1
 pre-round vocabulary — the exact gap the fallback had been hiding. Both are killed, so neither
 half of this repair can be silently undone.
 
-Final state: **201 passed** across the four owned suites, **12/12** mutants killed,
+## 10. Ledger clock and listing authority
+
+Sol's third addendum found a runtime authority bypass the JSON Schema never covered: the schema
+is exercised only by tests, while the two production readers call `validate_observation()`, which
+re-derives a row's id **from the row's own fields**. Three source fields decide real outcomes and
+none of them was bound to anything outside the row:
+
+| field | what it decides | bypass |
+|---|---|---|
+| `acceptance_datetime` | which session `_reference_price()` draws the filing-reference premium from | premarket vs after-close resolve to different sessions |
+| `filing_date` | which observation is CURRENT — `compile_current_terms()` orders on it | a superseded term can be made current |
+| `resolved_listing` / `currency` | whether a bare `$` may become USD | `_load_observations()` passed `authored_terms(listing_currency=o.get("currency"))`, so the untrusted row nominated the authority that then blessed it |
+
+Repaired with one law, consumed by **both** readers so neither is the lenient one. The three
+fields are now inside the closed `observation_id` digest, and — because resealing is not
+authorization — each is additionally re-bound to a party with no reason to agree with the row:
+`acceptance_datetime` to the retained acquisition receipt's own parsed canonical UTC,
+`filing_date` and `resolved_listing` to `canonical_event_authority()`, built from the Special
+Situations event table and admitted only where the per-ticker Yahoo `close_price` owner actually
+proves the listing. Missing event authority fails closed. `authored_terms()` is keyed on the
+canonical currency, never the row's.
+
+Six hostile REDs, each resealed after tampering and each asserted against **both** the collector
+readback and the engine runtime: acceptance clock flipped premarket↔after-close; `filing_date`
+moved so a stale term would sort current; listing receipt stripped while the row asserts USD; a
+listing promoted to one the canonical event never had; plus positive controls proving the
+untampered ledger still rebinds idempotently and the legitimate U.S. fixed-cash case still
+reaches the reducer at `offer_price == 25.0`.
+
+### Three mutants the new law itself hid
+
+Extending the matrix to fifteen caught something worth recording: **three previously-killed or
+assumed-covered behaviours had become unpinned, and the cause was this repair.** Once a corrupt
+ledger could reach `ok is False` through the new *unbound* path, every assertion phrased as "the
+census is unhealthy" was satisfied either way — so deleting the malformed-line counter changed
+nothing (M9, previously killed). Likewise the independent rebind is thorough enough that dropping
+the three fields from `observation_id()` (M14) and reverting `authored_terms()` to the row's own
+currency (M15) both broke no test, because the coarser gate caught those mutants first.
+
+That is the same shape as §8's M4, arriving from the opposite direction: there a guard was never
+pinned, here a *stronger* guard un-pinned weaker ones that had been fine. A defence-in-depth layer
+is only real if something fails when you remove it alone. Three tests now pin each layer
+separately — malformed counted *as malformed*, an unresealed edit rejected on identity alone
+(`invalid`, not merely `unbound`), and `authored_terms` proved to receive the canonical currency
+via a row that simply omits its own.
+
+Final state: **209 passed** across the four owned suites, **15/15** mutants killed,
 `agentos validate` 0 errors.

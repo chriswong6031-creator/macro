@@ -959,6 +959,34 @@ def verified_projection(accession: str) -> tuple[str, dict] | None:
     return projection, receipt
 
 
+def canonical_event_authority() -> dict[str, dict]:
+    """accession -> the owner-native facts an observation may NOT author for itself.
+
+    One authority, consumed by BOTH ledger readers (this module's `read_ledger_strict()` and
+    `engine.special_situations._load_observations()`), so neither path is the lenient one. The
+    values come from the canonical Special Situations event table and the per-ticker Yahoo
+    `close_price` owner — never from the observation row, which is untrusted input.
+    """
+    from engine import special_arb as arb
+    out: dict[str, dict] = {}
+    df = _read_events()
+    if df is None or getattr(df, "empty", True):
+        return out
+    for _, r in df.iterrows():
+        accession = str(r.get("accession") or "")
+        if not accession:
+            continue
+        ticker = r.get("ticker")
+        currency = _resolved_listing_currency(ticker)
+        out[accession] = {
+            "filing_date": str(r.get("date_filed") or "") or None,
+            # a listing is only "resolved" when the price owner actually proves it
+            "resolved_listing": arb.resolve_us_listing(ticker) if currency else None,
+            "currency": currency,
+        }
+    return out
+
+
 def read_ledger_strict() -> tuple[list[dict], dict]:
     """The whole observation ledger, validated row by row. Returns (rows, census).
 
@@ -974,6 +1002,7 @@ def read_ledger_strict() -> tuple[list[dict], dict]:
     if not path.exists():
         return [], census
     rows: list[dict] = []
+    authority = canonical_event_authority()
     for line in path.read_text(errors="replace").splitlines():
         line = line.strip()
         if not line:
@@ -994,7 +1023,8 @@ def read_ledger_strict() -> tuple[list[dict], dict]:
             continue
         projection, receipt = verified
         if arb.rebind_observation(o, raw_bytes=projection_source_bytes(receipt) or b"",
-                                  receipt=receipt, accession=accession):
+                                  receipt=receipt, accession=accession,
+                                  event=authority.get(accession)):
             census["unbound"] += 1
             continue
         rows.append(o)

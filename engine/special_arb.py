@@ -282,9 +282,53 @@ def authored_terms(projection: str, *, listing_currency: str | None = None) -> s
                                       listing_currency=listing_currency)}
 
 
+def _source_authority_reasons(obs: dict, receipt: dict, event: dict | None) -> list[str]:
+    """Re-bind the meaning-bearing source fields to owners OUTSIDE the row. [] when clean.
+
+    Sealing a field into `observation_id` stops a silent edit; it does not stop a forger who
+    edits and reseals. Resealing is not authorization, so each of these is compared against a
+    party that has no reason to agree with the row:
+
+    * `acceptance_datetime` -> the retained ACQUISITION RECEIPT's own parsed canonical UTC. This
+      is the clock `_reference_price()` uses to pick the session before the filing, so premarket
+      and after-close resolve to different sessions and a row that can move it can move the
+      published filing-reference premium.
+    * `filing_date` -> the canonical Special Situations EVENT for that exact accession.
+      `compile_current_terms()` orders candidates by this value, so a row that can move it can
+      make a superseded term current.
+    * `resolved_listing` (and the row's own `currency`) -> the canonical event listing, itself
+      admitted only when the per-ticker Yahoo `close_price` owner proves it. Otherwise a row
+      could assert a U.S. listing for a foreign target and let a bare `$` self-authorize as USD.
+
+    Absent an event this fails CLOSED: an observation whose accession has no canonical event is
+    not a row whose clock and listing anyone can vouch for.
+    """
+    src = obs.get("source") or {}
+    reasons: list[str] = []
+
+    def _s(v):
+        return str(v) if v not in (None, "") else None
+
+    if _s(src.get("acceptance_datetime")) != _s(receipt.get("acceptance_datetime")):
+        reasons.append("SOURCE_CLOCK_MISMATCH")
+    if event is None:
+        reasons.append("EVENT_AUTHORITY_UNAVAILABLE")
+        return sorted(set(reasons))
+    if _s(src.get("filing_date")) != _s(event.get("filing_date")):
+        reasons.append("SOURCE_CLOCK_MISMATCH")
+    if _s(src.get("resolved_listing")) != _s(event.get("resolved_listing")):
+        reasons.append("LISTING_AUTHORITY_MISMATCH")
+    # the row's own currency may never exceed what the canonical listing proves
+    row_ccy, canon_ccy = _s(obs.get("currency")), _s(event.get("currency"))
+    if row_ccy is not None and row_ccy != canon_ccy:
+        reasons.append("LISTING_AUTHORITY_MISMATCH")
+    return sorted(set(reasons))
+
+
 def rebind_observation(obs: dict, *, raw_bytes: bytes, receipt: dict,
                        accession: object = None,
-                       authored: set[tuple] | None = None) -> list[str]:
+                       authored: set[tuple] | None = None,
+                       event: dict | None = None) -> list[str]:
     """Re-open the retained bytes and prove the row descends from them. [] when clean.
 
     This is the check the old runtime did not have. `validate_observation()` proves a row is
@@ -318,6 +362,9 @@ def rebind_observation(obs: dict, *, raw_bytes: bytes, receipt: dict,
         reasons.append("IDENTITY_UNRESOLVED")
     if str(src.get("doc_id") or "") != str(receipt.get("doc_id") or src.get("doc_id") or ""):
         reasons.append("IDENTITY_UNRESOLVED")
+    # clock and listing authority, re-derived from the receipt and the canonical event rather
+    # than accepted from the row. Runs on BOTH runtime readers so neither is the lenient one.
+    reasons.extend(_source_authority_reasons(obs, receipt, event))
     if reasons:
         return sorted(set(reasons))
 
@@ -384,6 +431,16 @@ def observation_id(*, source: dict, field: str, locator: dict, normalized: objec
         source.get("raw_sha256"),
         source.get("body_sha256"),
         source.get("projection_revision"),
+        # MEANING-BEARING source fields. These three decide which session a filing-reference
+        # premium is drawn from (`acceptance_datetime`), which observation is CURRENT when two
+        # compete (`filing_date`), and whether a bare `$` may become USD (`resolved_listing`).
+        # While they sat outside the digest a row could rewrite its own clock or listing and
+        # keep a valid id. Being inside the digest is necessary and NOT sufficient — a forger
+        # can reseal — which is why `rebind_observation()` additionally re-binds each of them to
+        # an owner outside the row: the retained acquisition receipt and the canonical event.
+        source.get("filing_date"),
+        source.get("acceptance_datetime"),
+        source.get("resolved_listing"),
         locator.get("doc_id"),
         locator.get("start"),
         locator.get("end"),

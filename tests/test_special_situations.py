@@ -1017,8 +1017,17 @@ def test_the_broad_adjusted_panels_are_never_read_by_the_arb_lane(tmp_path, monk
         tmp_path / "breadth" / "_closes_cache.parquet")
     sits = [_sit()]
     sse._enrich_arb(sits, now_utc=NOW_UTC)
-    assert sits[0]["arb"]["quality_state"] != arb.QUALITY_VERIFIED
-    assert "PRICE_MISSING" in sits[0]["arb"]["reasons"]
+    econ = sits[0]["arb"]
+    assert econ["quality_state"] != arb.QUALITY_VERIFIED
+    # The subject is that the breadth number never becomes a price — assert THAT, not the
+    # particular reason. Since the clock/listing rebind, deleting the per-ticker Yahoo store
+    # also removes the canonical listing proof, so the lane now fails closed one step earlier
+    # (INTEGRITY_FAILED: the retained rows claim a USD listing no owner can still vouch for)
+    # rather than reaching PRICE_MISSING. Pinning the old reason would pin the shallower gate.
+    assert econ["live_price"] is None
+    assert econ["live_gross_spread_pct"] is None and econ["annualized_pct"] is None
+    assert 15.19 not in [econ.get("live_price"), econ.get("reference_price")]
+    assert econ["orderable"] is False
 
 
 def test_the_price_receipt_digest_is_the_artifact_bytes(tmp_path, monkeypatch):
@@ -1378,3 +1387,196 @@ def test_the_real_build_path_calls_the_producer_and_no_refresh_stays_source_iner
     # and it must be allowed to REACQUIRE, or every pre-existing cached filing stays ineligible
     assert "fetch_missing=True" in refresh_block, \
         "the refresh producer cannot reacquire a legacy cache, so coverage stays structurally 0"
+
+
+# ===========================================================================
+# Sol CRITICAL SOURCE-AUTHORITY ADDENDUM (carrier 1788495129.504909) —
+# the ledger clock and listing must be RE-BOUND to owners outside the row.
+# Sealing a field into observation_id stops a silent edit; it does not stop a
+# forger who edits and reseals. Every mutant below reseals.
+# ===========================================================================
+
+def _ledger_rows(tmp_path):
+    import json
+    p = ss._observations_path()
+    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()], p
+
+
+def _reseal(o):
+    """Recompute the row's own id from its own (mutated) fields — a forger's move."""
+    from engine import special_arb as arb
+    o["observation_id"] = arb.observation_id(
+        source=o.get("source") or {}, field=o.get("field"),
+        locator=o.get("locator") or {}, normalized=o.get("normalized"),
+        extraction_revision=o.get("extraction_revision") or arb.EXTRACTION_REVISION,
+        prior_observation_id=o.get("prior_observation_id"),
+        supersedes_observation_id=o.get("supersedes_observation_id"),
+        correction_reason=o.get("correction_reason"))
+    return o
+
+
+def _rewrite(p, rows):
+    import json
+    p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+
+
+def _both_readers_reject(tmp_path):
+    """The collector readback AND the engine runtime must BOTH refuse. Neither may be lenient."""
+    from engine import special_arb as arb  # noqa: F401
+    _, col_census = ss.read_ledger_strict()
+    _, eng_census = sse._load_observations()
+    return col_census, eng_census
+
+
+def test_a_resealed_acceptance_clock_is_rejected_by_both_readers(tmp_path, monkeypatch):
+    """Premarket -> after-close moves the filing-reference SESSION, so a row that can rewrite
+    its own acceptance clock can move a published premium."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"], accepted="20260617073000")
+    rows, p = _ledger_rows(tmp_path)
+    assert rows, "producer wrote no observations"
+    for r in rows:
+        r["source"]["acceptance_datetime"] = "2026-06-17T21:31:00+00:00"   # after-close
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0 and col_census["unbound"] >= 1 and col_census["ok"] is False
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+
+
+def test_a_resealed_filing_date_cannot_reorder_current_terms(tmp_path, monkeypatch):
+    """`compile_current_terms()` orders candidates by source.filing_date."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    rows, p = _ledger_rows(tmp_path)
+    for r in rows:
+        r["source"]["filing_date"] = "2099-01-01"        # sort it to the front of any lineage
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    assert "INTEGRITY_FAILED" in sits[0]["arb"]["reasons"]
+    assert sits[0]["arb"]["offer_price"] is None
+
+
+def test_a_row_cannot_self_authorize_its_listing_currency(tmp_path, monkeypatch):
+    """Strip the listing receipt, assert USD anyway, reseal: a bare `$` must not self-authorize."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    rows, p = _ledger_rows(tmp_path)
+    for r in rows:
+        r["source"]["resolved_listing"] = None
+        r["currency"] = "USD"
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+
+
+def test_a_row_cannot_promote_a_foreign_target_to_a_us_listing(tmp_path, monkeypatch):
+    """The canonical event owner is unchanged; only the row claims the U.S. listing."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    rows, p = _ledger_rows(tmp_path)
+    for r in rows:
+        r["source"]["resolved_listing"] = "XYZ"          # a listing this event never had
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+
+
+def test_the_untampered_ledger_rebinds_idempotently_and_still_reaches_the_reducer(
+        tmp_path, monkeypatch):
+    """Positive control — the law must not be satisfied by refusing everything."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    col_rows, col_census = ss.read_ledger_strict()
+    eng_rows, eng_census = sse._load_observations()
+    assert col_census["kept"] >= 1 and col_census["ok"] is True
+    assert eng_census["kept"] >= 1 and eng_census["integrity_failed"] is False
+    # idempotent: a second read of untouched bytes binds identically
+    again_rows, again_census = ss.read_ledger_strict()
+    assert again_census["kept"] == col_census["kept"]
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    econ = sits[0]["arb"]
+    assert "INTEGRITY_FAILED" not in econ["reasons"]
+    assert econ["offer_price"] == 25.0
+
+
+def test_a_malformed_ledger_line_is_counted_as_malformed_not_merely_unhealthy(
+        tmp_path, monkeypatch):
+    """Found by mutation: deleting `census["malformed"] += 1` changed nothing.
+
+    Once the clock/listing rebind existed, a corrupt ledger reached `ok is False` through the
+    *unbound* path as well, so every assertion phrased as "the census is unhealthy" was
+    satisfied either way and the malformed counter itself was pinned by nothing. A truncated
+    final write is a distinct, nameable failure and the census has to say so.
+    """
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    p = ss._observations_path()
+    p.write_text(p.read_text() + '{"schema": "truncated last write, no closing brace"\n')
+    _, census = ss.read_ledger_strict()
+    assert census["malformed"] >= 1, "a truncated JSONL line was not counted as malformed"
+    assert census["ok"] is False
+
+
+def test_a_meaning_bearing_field_edited_without_resealing_fails_on_identity_alone(
+        tmp_path, monkeypatch):
+    """The three meaning-bearing source fields are INSIDE the closed digest.
+
+    The independent rebind catches a resealed forgery, which is why this needs its own test:
+    with the rebind in place, dropping these fields from `observation_id()` changed no test at
+    all. Identity is the cheap first gate and must hold on its own — an edit with no reseal is
+    `invalid` (the id no longer matches its row), not merely `unbound`.
+    """
+    import json
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    p = ss._observations_path()
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    for r in rows:
+        r["source"]["filing_date"] = "2099-01-01"        # NO reseal: id must stop this
+    p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+    _, census = ss.read_ledger_strict()
+    assert census["invalid"] >= 1, "an unresealed edit survived the closed observation identity"
+    assert census["kept"] == 0
+
+
+def test_authored_terms_receives_the_canonical_listing_currency_not_the_rows(
+        tmp_path, monkeypatch):
+    """The untrusted row must not nominate the authority that then blesses its own bare `$`.
+
+    Also found by mutation: reverting to `o.get("currency")` broke nothing, because a row whose
+    currency contradicts the canonical listing is now rejected by the rebind first. The case
+    that still discriminates is a row that simply OMITS currency — the old code would then
+    re-extract with `listing_currency=None` and authorize a different term set.
+    """
+    import json
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    p = ss._observations_path()
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    for r in rows:
+        r.pop("currency", None)
+    p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+
+    seen = []
+    real = arb.authored_terms
+    monkeypatch.setattr(arb, "authored_terms",
+                        lambda proj, **kw: (seen.append(kw.get("listing_currency")),
+                                            real(proj, **kw))[1])
+    sse._load_observations()
+    assert seen, "the runtime never re-derived the authored term set"
+    assert set(seen) == {"USD"}, (
+        f"authored_terms was keyed on {seen} — the canonical event listing proves USD, and the "
+        "row (which omits currency) must not be the authority")
