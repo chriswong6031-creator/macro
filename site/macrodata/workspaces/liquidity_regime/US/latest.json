@@ -325,7 +325,7 @@
             "zh": "弱支持"
           }
         },
-        "transformation": "owner labels mapped to descriptive support levels (benign-expansion 85 ... contracting 20); RoC mapped 50+clamp(roc/500bn,-1,1)*50; RRP buffer disclosure (informational, not axis-weighted): 0 <= value <= 1.0bn is typed 'rrp_floor' (status stays PRESENT, flagged in implications/drivers); a negative value is physically impossible for a facility balance and is typed SOURCE_FAILED",
+        "transformation": "owner labels mapped to descriptive support levels (benign-expansion 85 ... contracting 20); RoC mapped 50+clamp(roc/500bn,-1,1)*50; RRP buffer disclosure (informational, not axis-weighted): a balance at or below 1.0bn carries an exhausted-floor flag in the implications and drivers while the value itself remains published; a negative balance is physically impossible for a facility and is treated as a failed source reading",
         "value": 25.12,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of standardized components, weights renormalized over present; quality label 0.40, overlay level 0.35, net-liquidity RoC 0.25"
@@ -352,7 +352,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "liquidity_regime-US-628bad5c6a1b534d",
+    "prior_generation_id": "liquidity_regime-US-2b9033a7dcf8d03a",
     "prior_method_version": "liquidity_regime.compose.v1",
     "status": "PRESENT"
   },
@@ -360,7 +360,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
-    "predecessor_generation_id": "liquidity_regime-US-628bad5c6a1b534d"
+    "predecessor_generation_id": "liquidity_regime-US-2b9033a7dcf8d03a"
   },
   "drivers": {
     "balance_sheet": [
@@ -467,11 +467,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T15:38:06Z",
+    "built_at": "2026-09-04T16:01:06Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "7b59eeff974997364e2046720899451d823dd469",
-    "content_sha256": "2b9033a7dcf8d03abb893d54df75d55f1b881d362549bdab45066dc60b8b3518",
-    "generation_id": "liquidity_regime-US-2b9033a7dcf8d03a",
+    "code_version": "23cf73e9a101d95565aada49e9d26ec3cbe7faaa",
+    "content_sha256": "f2d9a3c0925a2eaf144dedef318d0d6d816cabe1322537b3bb2a5ae2bb7f2fcf",
+    "generation_id": "liquidity_regime-US-f2d9a3c0925a2eaf",
     "producer": "engine.market_os.macro_workspaces.liquidity_regime",
     "rendered_at": null
   },
