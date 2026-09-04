@@ -174,3 +174,6 @@
 {"date": "2026-09-01", "ticker": "3690.HK", "slug": "meituan", "name_en": "Meituan", "attention_shock_z": -0.727, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-09-01", "ticker": "9888.HK", "slug": "baidu", "name_en": "Baidu", "attention_shock_z": 0.369, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-09-01", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": -0.459, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-09-03", "ticker": "3690.HK", "slug": "meituan", "name_en": "Meituan", "attention_shock_z": -0.727, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-09-03", "ticker": "9888.HK", "slug": "baidu", "name_en": "Baidu", "attention_shock_z": 0.369, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-09-03", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": -0.459, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}

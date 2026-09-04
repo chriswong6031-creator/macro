@@ -25,11 +25,143 @@ from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 from engine.flow_observatory import changes as fo_changes  # noqa: E402
 from engine.flow_observatory import contract as fo_contract  # noqa: E402
+from engine.flow_observatory import groups as fo_groups  # noqa: E402
+from engine.flow_observatory import history as fo_history  # noqa: E402
 from engine.flow_observatory import quality as fo_quality  # noqa: E402
 from engine.flow_observatory.contract import ContractError, build_v2, validate  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_flow_velocity")
+
+
+# ── W4: official (Shenwan L1) sector lens — wired here, not engine.flow_velocity.py
+# (OWNED-FILES scope: flow_velocity.py exposes reusable rollup HELPERS only; the lens
+# itself, and its enrich_group/assign_ranks pass, are "lens wiring" and live here). ──
+def _l1_names() -> dict[str, tuple[str, str]]:
+    """The official-sector lens' code -> ``(name_en, name_zh)`` map, built from
+    ``collectors.china_sectors.SW_L1`` (``code: (cn, en)``).
+
+    SF/W4 repair: this used to be inlined as a one-line dict comprehension inside
+    ``_official_sectors_panel`` — the ZH-name regression test could only exercise
+    ``engine.flow_observatory.groups.aggregate_lens`` with a HAND-WRITTEN
+    ``l1_names`` fixture, which pins ``aggregate_lens``' own plumbing but not the
+    real CALLER that builds this dict in production; an EN-only revert here
+    (``{code: (en, en)}``) would have shipped without failing anything. Extracted so
+    a test can import and assert on THIS function directly."""
+    from collectors.china_sectors import SW_L1
+    return {code: (en, cn) for code, (cn, en) in SW_L1.items()}
+
+
+def _official_sectors_panel() -> dict | None:
+    """Build the official-sector lens payload, or ``None`` when there is nothing to
+    show (2B spike-failure shape — this build's spike SUCCEEDED, §1, so ``None`` here
+    only means the membership store has not collected yet, e.g. a fresh checkout
+    before the china_sectors collector's first run). Recomputes ``wide``/``kmap`` —
+    the same shared kinetics primitives ``engine.flow_velocity.snapshot()`` already
+    built for the theme lens — because OWNED-FILES scope keeps this assembly OUT of
+    flow_velocity.py itself; the recompute's wall-time cost is measured in the PR
+    body's performance note (spec §7)."""
+    import pandas as pd
+
+    from engine.flow_velocity import _flow_panel, _name_kinetics_map, _name_map
+
+    p = config.data_dir() / "china_sectors" / "membership.parquet"
+    if not p.exists():
+        return None
+    try:
+        membership_df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("official-sector membership store unreadable (%s)", e)
+        return None
+    wide = _flow_panel()
+    if wide is None:
+        return None
+    kmap = _name_kinetics_map(wide)
+    l1_names = _l1_names()
+    # M3/W4 repair: thread the SAME ticker->display-name map the curated lens already
+    # uses so an official-sector excluded/missing entry shows a real name (the ticker
+    # slug rides along in the entry's own LENS tip only) rather than a bare ticker.
+    result = fo_groups.aggregate_lens(wide, kmap, membership_df, l1_names=l1_names,
+                                      name_map=_name_map())
+    if not result.get("available"):
+        return result
+    # same abs/rel/quadrant/rank contract the theme lens gets from contract.build_v2
+    # (spec §2A "emitting the same per-row contract as themes") — reused here via
+    # contract.py's PUBLIC functions, never a re-implementation.
+    rows = result["rows"]
+    for row in rows:
+        row.update(fo_contract.enrich_group(row.get("rate_4wk"), row.get("vel"),
+                                            abs_unit="pct_rate", abs_period="20d",
+                                            reference_window=126))
+    fo_contract.assign_ranks(rows)
+    return result
+
+
+def _apply_official_rank_change(rows: list[dict], ledger_rows: list[dict] | None,
+                                market_session: str | None, cn_status: str | None) -> None:
+    """M1/W4 repair: official_sectors rows never got ``rank_change``/``state_*`` —
+    those fields are assigned to theme rows INSIDE ``contract.build_v2``'s own
+    per-row loop, but ``official_sectors`` isn't part of that loop (it lives
+    entirely in THIS builder, per OWNED-FILES scope: contract.py owns only the
+    ``validate()`` extension this wave, never ``build_v2`` itself). Mutates ``rows``
+    in place with the SAME ledger-derived shape themes get
+    (``engine.flow_observatory.history.state_for_session``, entity_kind ``"sector"``,
+    entity_id = the SW L1 code) once the ledger holds >=2 distinct sector sessions;
+    until then every row gets ``rank_change=None`` + ``state_note="first tracked
+    session"`` — a real value that stays honest as history accrues, NEVER a
+    permanent dash by construction (there is no legacy sector state_log to fall back
+    to, unlike themes, so there is only the one branch)."""
+    from engine.flow_observatory import history as fo_history
+
+    ledger_rows = ledger_rows or []
+    ledger_ready = bool(ledger_rows) and fo_history.ledger_session_count(ledger_rows, "sector") >= 2
+    for row in rows:
+        rid = row.get("id")
+        if ledger_ready and market_session and rid:
+            hist = fo_history.state_for_session(
+                ledger_rows, "sector", rid, market_session, row.get("quadrant"),
+                current_rank=row.get("rank"), current_status=cn_status)
+        else:
+            hist = {"state_started": None, "state_age_sessions": None, "prior_state": None,
+                   "rank_change": None, "note": "first tracked session"}
+        row["rank_change"] = hist["rank_change"]
+        row["state_started"] = hist["state_started"]
+        row["state_age_sessions"] = hist["state_age_sessions"]
+        row["prior_state"] = hist["prior_state"]
+        row["state_note"] = hist["note"]
+
+
+def _official_sector_ledger_entities(rows: list[dict] | None, cn_status: str | None) -> dict:
+    """M1/W4 repair: official-sector observations for the append-only ledger —
+    entity_kind ``"sector"``, entity_id = the SW L1 code — same
+    ``{(entity_kind, entity_id): {<subset of FIELDS>}}`` shape ``theme_entities``
+    already builds below, so both flow through the SAME guarded
+    ``fo_history.append_observations`` call in ``main()`` (spec M1 "in the
+    builder's guarded append", never a second append path)."""
+    return {
+        ("sector", r["id"]): {"vel": r.get("vel"), "abs_value": (r.get("abs") or {}).get("value"),
+                              "quadrant": r.get("quadrant"), "state": r.get("state"),
+                              "rank": r.get("rank"), "status": cn_status}
+        for r in (rows or []) if r.get("id")
+    }
+
+
+def _strip_unpersisted_revisions(v2_snap: dict) -> bool:
+    """M11: never publish ``change_summary.source_revisions[]`` receipts the ledger does not
+    actually hold. ``preview_revisions`` runs BEFORE ``validate()`` (spec §2 ordering) so a
+    valid payload's ``change_summary`` can already name this build's corrections — but the
+    REAL, disk-writing append happens later, after validate() passes, and can itself fail
+    (disk full, a monotonicity refusal, an I/O error) after some, none, or an unknown subset
+    of its per-session calls already landed. Call this from that append's own except block:
+    it zeroes the previewed receipts rather than guess which (if any) survived, so desk.json
+    never claims a correction the ledger cannot back up. Returns True iff there was anything
+    to strip (so the caller knows whether to also emit its own annotation).
+    """
+    cs = v2_snap.get("change_summary")
+    if isinstance(cs, dict) and cs.get("source_revisions"):
+        cs["source_revisions"] = []
+        return True
+    return False
 
 
 def _leg_map(snap: dict) -> dict:
@@ -145,6 +277,18 @@ def main() -> int:
         log.warning("no flow-velocity data (run the China/Tushare collectors first) — skipping")
         return 0
 
+    # W4: official (Shenwan L1) sector lens — additive, never fatal; a build with no
+    # membership store yet (fresh checkout) still ships the curated-theme lens alone.
+    try:
+        t0 = datetime.now(timezone.utc)
+        official = _official_sectors_panel()
+        if official is not None:
+            snap["official_sectors"] = official
+        log.info("official-sector lens: %s (%.2fs)", "built" if official else "unavailable",
+                 (datetime.now(timezone.utc) - t0).total_seconds())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("official-sector lens failed (non-fatal): %s", e)
+
     # Before the render: a template error returns 0 early (below), and the
     # staleness of the DATA is worth saying even on a night the page fails to
     # draw. Never fatal — an alarm that can sink the build is an alarm someone
@@ -164,15 +308,34 @@ def main() -> int:
     v2_snap = None
     run_date = None
     log_rows: list = []
+    ledger_rows: list = []
+    ledger_path = fo_history.observations_path(data_root)
+    theme_entities: dict = {}
+    # B1: a ledger that EXISTS but fails to parse must never be treated as an empty
+    # bootstrap ledger — that reading is exactly what lets the ordinary append below
+    # overwrite (destroy) a torn file's still-valid closed rows. Caught here, at the read
+    # boundary, so both the revisions PREVIEW (further below) and the real append (much
+    # further below, after validate()) skip together — never one without the other.
+    ledger_unavailable = False
     try:
         log_rows = fo_changes.read_state_log(data_root)
+        try:
+            ledger_rows = fo_history.read_ledger(ledger_path)
+        except fo_history.LedgerCorrupt as e:
+            ledger_unavailable = True
+            ledger_rows = []
+            log.error("flow_observatory: observations ledger unreadable — refusing to "
+                     "append; publishing without ledger features: %s", e)
+            print("::warning title=flow-observatory-ledger::unreadable ledger — refusing "
+                 "to append; publishing without ledger features", flush=True)
         generated_at_dt = datetime.now(timezone.utc)
         generated_at = generated_at_dt.isoformat(timespec="seconds")
         run_date = generated_at[:10]
         # B1: `now=generated_at_dt` — a real tz-aware UTC datetime, routed through the
         # calendars' own settle-buffer-aware expected_last_session (never a bare
         # `.date()` fed straight to an Asia calendar — the exact forbidden shape B1 closes).
-        candidate = build_v2(snap, log_rows=log_rows, market_session=snap.get("as_of"),
+        candidate = build_v2(snap, log_rows=log_rows, ledger_rows=ledger_rows,
+                             market_session=snap.get("as_of"),
                              generated_at=generated_at, seats_as_of=snap.get("seats_as_of"),
                              now=generated_at_dt)
         current_themes = {
@@ -183,9 +346,34 @@ def main() -> int:
             if r.get("id")
         }
         current_legs = {s["source_id"]: s.get("status") for s in (candidate.get("sources") or [])}
+        # M1/W4 repair: official_sectors rows never flow through build_v2's own
+        # per-row loop (that assembly lives entirely in THIS builder, see
+        # _official_sectors_panel — contract.py's build_v2 is out of OWNED-FILES
+        # scope this wave) — apply the SAME ledger-derived rank_change/state_*
+        # fields here, in place, before validate() sees the final payload.
+        official_rows = (candidate.get("official_sectors") or {}).get("rows") or []
+        _apply_official_rank_change(official_rows, ledger_rows, candidate.get("market_session"),
+                                    current_legs.get("cn_large_order_proxy"))
+        # W3: theme observations this build would append to the ledger (the SAME shape
+        # `_escalate_if_degraded`/state_log already read off `candidate` — status carries
+        # cn_large_order_proxy's OWN current-session read, the input the ledger's
+        # stale-freeze rule needs, spec §3 test 6). Built here (before validate()) so a
+        # PREVIEW of any resulting revision can feed change_summary.source_revisions
+        # without writing anything yet (spec §2 ordering — the real append happens only
+        # after validate() passes, further below).
+        theme_entities = {
+            ("theme", tid): {"vel": rec.get("vel"), "abs_value": rec.get("abs"),
+                             "quadrant": rec.get("quadrant"), "state": rec.get("state"),
+                             "rank": rec.get("rank"), "status": current_legs.get("cn_large_order_proxy")}
+            for tid, rec in current_themes.items()
+        }
+        # B1: a corrupt ledger skips BOTH the preview and the real append (below) — never
+        # preview a "revision" against a ledger we have already refused to trust.
+        revisions_preview = [] if ledger_unavailable else fo_history.preview_revisions(
+            ledger_rows, candidate.get("market_session"), theme_entities, generated_at_dt)
         candidate["change_summary"] = fo_changes.compute_changes(
             {"session": candidate.get("market_session"), "themes": current_themes,
-             "legs": current_legs}, log_rows)
+             "legs": current_legs}, log_rows, ledger_rows=ledger_rows, revisions=revisions_preview)
         validate(candidate)
         v2_snap = candidate
     except ContractError as e:
@@ -201,6 +389,70 @@ def main() -> int:
         # B2: log_rows here are the PRIOR runs (read before this run's candidate was built,
         # so they never include the current run) + run_date names the CURRENT run explicitly.
         _escalate_if_degraded(v2_snap, log_rows=log_rows, run_date=run_date)
+
+    # W3: observations ledger append — AFTER validate() passes, BEFORE desk.json write
+    # (spec §2 ordering); same lane gate as state_log (asia-close/US-nightly only,
+    # append_observations is a no-op elsewhere); best-effort, never fatal — a ledger write
+    # failure logs + annotates but must not sink a build that already produced a valid
+    # payload. Appends every entity this build observed: the 22 themes (market_session),
+    # the southbound aggregate (market_session), and each of the 5 source legs at ITS OWN
+    # effective_date (never market_session — a leg's own date is what sources[].
+    # first_known_at keys on, spec §1/§2).
+    # B1: never attempt an append against a ledger already known to be unreadable this
+    # build — `append_observations` would just re-raise LedgerCorrupt from its own
+    # `read_ledger` call, and the point is to refuse cleanly, not to retry into the same
+    # exception a second time.
+    if v2_snap is not None and v2_snap.get("market_session") and theme_entities and not ledger_unavailable:
+        try:
+            agg_entities: dict = {}
+            for chan in v2_snap.get("aggregate") or []:
+                if chan.get("key") == "southbound" and chan.get("live"):
+                    agg_entities[("aggregate", "southbound")] = {
+                        "vel": chan.get("vel_primary"),
+                        "abs_value": (chan.get("abs") or {}).get("value"),
+                        "quadrant": chan.get("quadrant"), "state": chan.get("state"),
+                        "status": current_legs.get("sb_aggregate")}
+            # M1/W4 repair: official-sector observations ride the SAME guarded append
+            # as themes — entity_kind "sector", entity_id = the SW L1 code, keyed on
+            # market_session (the sector rollup is computed off the same daily flow
+            # panel as the theme rollup, same effective session).
+            sector_entities = _official_sector_ledger_entities(
+                (v2_snap.get("official_sectors") or {}).get("rows"),
+                current_legs.get("cn_large_order_proxy"))
+            by_session: dict[str, dict] = {}
+            by_session.setdefault(v2_snap["market_session"], {}).update(theme_entities)
+            by_session.setdefault(v2_snap["market_session"], {}).update(sector_entities)
+            by_session.setdefault(v2_snap["market_session"], {}).update(agg_entities)
+            for s in v2_snap.get("sources") or []:
+                sid, ed = s.get("source_id"), s.get("effective_date")
+                if sid and ed:
+                    by_session.setdefault(ed, {})[("market", sid)] = {
+                        "status": s.get("status"),
+                        "coverage_n": (s.get("coverage") or {}).get("n_observed")}
+            total_added = 0
+            for sess, ents in by_session.items():
+                if not sess or not ents:
+                    continue
+                res = fo_history.append_observations(ledger_path, sess, ents, generated_at_dt)
+                if res.get("written"):
+                    total_added += res.get("rows_added", 0)
+            if total_added:
+                log.info("flow_observatory: observations ledger advanced (+%d rows)", total_added)
+        except Exception as e:  # noqa: BLE001 — additive lane law, same as state_log below
+            log.warning("flow_observatory observations ledger append failed (non-fatal): %s", e)
+            print("::warning title=flow-observatory-ledger::observations ledger append "
+                 f"failed ({e}) — desk.json publishes normally this build; state age/"
+                 "replay history may lag one build.", flush=True)
+            # M11: `revisions_preview` (computed BEFORE validate(), spec §2 ordering) already
+            # sits inside v2_snap["change_summary"]["source_revisions"] — but the append that
+            # was SUPPOSED to actually persist those corrections just failed above (possibly
+            # partway through the per-session loop, so some, none, or all of them may have
+            # landed). Publishing the previewed receipts anyway would claim the ledger holds
+            # a correction it may not — strip them rather than guess which (if any) survived.
+            if _strip_unpersisted_revisions(v2_snap):
+                print("::warning title=flow-observatory-ledger::append failure — "
+                     "source_revisions[] stripped from this build's change_summary (the "
+                     "ledger does not hold what was previewed)", flush=True)
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)

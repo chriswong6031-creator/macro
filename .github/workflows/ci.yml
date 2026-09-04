@@ -2074,6 +2074,32 @@ on:
       # listed explicitly per the W1 contract-delta lesson (wire the new file + its path
       # gate in the SAME commit).
       - "tests/test_flow_observatory_quality.py"
+      # Flow Observatory V2 W3 (append-only observations ledger + revision-safe
+      # corrections + replay): history.py is already covered by the
+      # engine/flow_observatory/** glob above; its test file is listed explicitly per the
+      # same W1 contract-delta lesson (wire the new file + its path gate in the SAME
+      # commit — data/flow_observatory/observations.parquet itself is NOT a path gate
+      # subject, per house law "data files are not CI path subjects").
+      - "tests/test_flow_observatory_history.py"
+      # Flow Observatory V2 W4 (official/curated lenses, coverage floor, overlap,
+      # concentration): groups.py is already covered by the engine/flow_observatory/**
+      # glob above; its test file and the new collectors/china_sectors.py collector
+      # (the official lens' membership source) are listed explicitly — B1 repair, same
+      # W1 contract-delta lesson (wire the new file + its path gate in the SAME commit;
+      # the W4 landing PR omitted BOTH this entry and the ci/legacy-jobs.yml run: line,
+      # leaving the whole suite dark). data/china_sectors/** is NOT a path-gate subject
+      # (house law "data files are not CI path subjects") — code files only.
+      - "collectors/china_sectors.py"
+      - "tests/test_flow_observatory_groups.py"
+      # Flow Observatory V2 W5 (preregistered descriptive method evaluation + threshold
+      # calibration harness, research/flow_observatory/W5_PREREG.md): pure-read,
+      # off-render-path research script + its unit-test guard, wired here in the SAME
+      # commit per the standing W1 contract-delta lesson. Never imported by engine/ or
+      # any builder — reports/flow_observatory_w5_methods.{md,json} are NOT path-gate
+      # subjects (house law "data files are not CI path subjects" extends to committed
+      # report artifacts derived from data).
+      - "scripts/research_flow_observatory_methods.py"
+      - "tests/test_flow_observatory_methods.py"
       # TOP ANATOMY OOT receipt harness (contract-delta unrun-suite finding,
       # wired 2026-09-02): the suite shipped in #6723 with no run: owner and sat
       # dark on main. Now carried by falsifier-tripwires; the receipt entrypoint,

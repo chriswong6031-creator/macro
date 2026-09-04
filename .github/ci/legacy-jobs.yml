@@ -1842,6 +1842,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
       - "engine/sector_pulse.py"
@@ -2673,8 +2674,26 @@ jobs:
       # UNAVAILABLE/HISTORICAL_ONLY/REVISED classification, the desk-wide wall-clock
       # backstop, worst-of publication_state, and the ::error escalation annotation) — the
       # W1 contract-delta lesson applies again: wired in the SAME commit that adds the file.
+      # Wired 2026-09-03 (W3): tests/test_flow_observatory_history.py guards the new
+      # engine/flow_observatory/history.py append-only observations ledger — byte-identical
+      # idempotent append, revision-safe corrections, deterministic replay, ledger-derived
+      # state age/onset/prior-state/rank-change with the stale-freeze and skip-gap rules,
+      # and the lane gate — same W1 contract-delta lesson, wired in the SAME commit.
+      # B1 repair (W4 review round): tests/test_flow_observatory_groups.py — the 416-line
+      # guard for official/curated lenses, coverage floor, overlap disclosure, and
+      # concentration/contribution — shipped in the W4 PR with NO job naming it in EITHER
+      # ci.yml or here, so all 20+ of its tests were dark from the merge onward and the
+      # PR's own "wired" claim was false (independent review, 2026-09-03). Wired here, in
+      # the SAME commit that also adds its ci.yml path-gate entries, per the standing W1
+      # contract-delta lesson this comment block already names three times over.
+      # Wired 2026-09-03 (W5): tests/test_flow_observatory_methods.py — small unit tests
+      # on the preregistered method-evaluation harness's math primitives (winsorization
+      # bounds, median/MAD scale, probit mapping, floor application, determinism). The
+      # harness itself (scripts/research_flow_observatory_methods.py) runs off this render
+      # path entirely; only its primitive-level unit tests are gated here, same W1
+      # contract-delta lesson, wired in the SAME commit as its ci.yml path-gate entries.
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
-        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py tests/test_flow_observatory_quality.py -q
+        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py tests/test_flow_observatory_quality.py tests/test_flow_observatory_history.py tests/test_flow_observatory_groups.py tests/test_flow_observatory_methods.py -q
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so the render/engine guard lanes own it. It sits
       # here rather than in the sweep because it is one focused suite and because an
@@ -6799,6 +6818,7 @@ jobs:
       - "engine/qledger.py"
       - "engine/qledger_validity.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/rebalance_calendar.py"
       - "engine/regime.py"
       - "engine/regime_conditioning_coverage.py"
@@ -7341,6 +7361,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/residual_alpha.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
@@ -10693,6 +10714,7 @@ jobs:
       - "engine/qledger_validity.py"
       - "engine/quant_lab/**"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/rebalance_calendar.py"
       - "engine/reflexivity.py"
       - "engine/regime.py"
@@ -11403,7 +11425,7 @@ jobs:
       # borrowed reason.  No dependency widened: probed at RUN time it loads only
       # pandas/numpy/pyarrow/pyyaml, all already on the install line above.
       - name: commodities / forex / rates / news / policy panels and their calibration guards
-        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
+        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_yield_momentum.py tests/test_inputs_yield_curve.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
 
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
@@ -12474,6 +12496,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/residual_alpha.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"

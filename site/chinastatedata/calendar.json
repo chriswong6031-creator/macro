@@ -1,33 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-09-01",
-  "generated_at_utc": "2026-09-01T12:38:45.380561+00:00",
+  "asof": "2026-09-03",
+  "generated_at_utc": "2026-09-03T21:50:35.722095+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-09-01",
-      "window_end": null,
-      "etype": "CAIXIN_M",
-      "label_en": "Caixin Manufacturing PMI",
-      "label_zh": "财新制造业 PMI",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-09-01",
-      "window_end": null,
-      "etype": "HK_PMI",
-      "label_en": "S&P Global HK PMI",
-      "label_zh": "标普全球香港 PMI",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.hk_event_calendar",
-      "approx": false
-    },
     {
       "date": "2026-09-03",
       "window_end": null,

@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from engine.flow_observatory import history
 from engine.flow_observatory import quality as fo_quality
 
 SCHEMA = "flow_observatory.v2"
@@ -52,8 +53,25 @@ _ACCEL_BUCKET: dict[str, str] = {
     "no data": NEUTRAL_OR_UNKNOWN,
 }
 
-# provisional (W5 calibrates) thresholds — spec §1.2
-REL_THRESH = 0.5                                  # ±0.5σ velocity
+# W5-calibrated thresholds — spec §1.2 (research/flow_observatory/W5_PREREG.md;
+# DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+# DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION). REL_THRESH stays the shared default AND
+# southbound's post-W5 cutoff (R1's threshold re-sweep excluded every improving tau via the
+# <2% held-out-reach sanity bound — a current-regime degeneracy — so the incumbent 0.5
+# stayed numerically unchanged; R2 additionally reverted southbound's METHOD back to M0
+# after an independent review found the M1 adoption rested on a single unreplicated seeded
+# draw). THEMES is the only lens whose W5 threshold survived R2 review; it recalibrates per
+# the frozen §4 procedure. NAMES also reverted to the incumbent under R2 (the R1 tau=0.3
+# pick was computed on the breadth-tilt state series and misapplied to the per-name
+# surface, breaching the frozen 25% neutral floor) — there is no separate NAMES_REL_THRESH
+# constant; names callers use REL_THRESH like southbound (removed as a dead duplicate: it
+# was never read outside its own definition even in R1, since engine.flow_velocity's names
+# lens always passed its own module-level threshold explicitly).
+REL_THRESH = 0.5                                  # ±0.5σ velocity — southbound AND (as of
+                                                   # R2) names too
+THEMES_REL_THRESH = 0.75                          # themes: in the honest-neutral band, flip
+                                                   # strictly improves (not a tie)
+SOUTHBOUND_REL_THRESH = REL_THRESH                # explicit alias — see comment above
 ABS_DEMINIMIS: dict[str, float] = {"pct_rate": 0.1, "cny_b": 0.5}
 
 
@@ -115,18 +133,24 @@ def abs_field(value: float | None, *, period: str, unit: str) -> dict[str, Any]:
             "direction": direction_from_value(value, unit)}
 
 
-def rel_field(value: float | None, *, reference_window: int = 126) -> dict[str, Any]:
-    return {"value": value, "unit": "sigma", "direction": rel_direction(value),
+def rel_field(value: float | None, *, reference_window: int = 126,
+             thresh: float = REL_THRESH) -> dict[str, Any]:
+    return {"value": value, "unit": "sigma", "direction": rel_direction(value, thresh=thresh),
             "reference_window": reference_window}
 
 
 def enrich_group(abs_value: float | None, rel_value: float | None, *,
                   abs_unit: str = "pct_rate", abs_period: str = "20d",
-                  reference_window: int = 126) -> dict[str, Any]:
+                  reference_window: int = 126, rel_thresh: float = REL_THRESH) -> dict[str, Any]:
     """The additive ``{abs, rel, quadrant, quadrant_en, quadrant_zh}`` block for one
-    group/aggregate row — the anti-conflation device every W1 gate hinges on."""
+    group/aggregate row — the anti-conflation device every W1 gate hinges on.
+
+    ``rel_thresh`` defaults to the legacy/southbound/names ±0.5σ cutoff; the only
+    W5-adjudicated override still live is ``THEMES_REL_THRESH``
+    (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION — R2 reverted names to the default)."""
     a = abs_field(abs_value, period=abs_period, unit=abs_unit)
-    r = rel_field(rel_value, reference_window=reference_window)
+    r = rel_field(rel_value, reference_window=reference_window, thresh=rel_thresh)
     q = quadrant(a["direction"], r["direction"])
     en, zh = quadrant_labels(q)
     return {"abs": a, "rel": r, "quadrant": q, "quadrant_en": en, "quadrant_zh": zh}
@@ -145,11 +169,18 @@ def assign_ranks(rows: list[dict[str, Any]]) -> None:
 # ── market_read (spec §1.4) — reusable for the theme lens AND the names lens ──────────
 def market_read(rows: list[dict[str, Any]], unscored: int = 0, *,
                  abs_key: str = "rate_4wk", rel_key: str = "vel", state_key: str = "state",
-                 abs_unit: str = "pct_rate") -> dict[str, dict[str, int]]:
+                 abs_unit: str = "pct_rate", rel_thresh: float = REL_THRESH) -> dict[str, dict[str, int]]:
     """absolute_breadth / relative_breadth / acceleration_breadth, each declaring its own
     denominator = scored + unscored (§4 law: every cross-sectional statistic declares
     denominator + coverage). ``unscored`` folds the previously-silent kin-None drops into
-    ``missing`` rather than letting them vanish from the count entirely."""
+    ``missing`` rather than letting them vanish from the count entirely.
+
+    ``rel_thresh`` defaults to the legacy/southbound/names ±0.5σ cutoff; the themes caller
+    in :func:`build_v2` passes its own W5-adjudicated ``THEMES_REL_THRESH``
+    (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) — ``engine.flow_velocity.
+    ashare_name_velocity`` passes its own module-level ``_NAMES_VIN``, which R2 reverted to
+    the same default value."""
     denom = len(rows) + unscored
     abs_c = {"positive": 0, "negative": 0, "neutral": 0, "missing": unscored, "denominator": denom}
     rel_c = {"positive": 0, "negative": 0, "neutral": 0, "missing": unscored, "denominator": denom}
@@ -158,7 +189,7 @@ def market_read(rows: list[dict[str, Any]], unscored: int = 0, *,
     for r in rows:
         ad = direction_from_value(r.get(abs_key), abs_unit)
         abs_c["missing" if ad == "unknown" else ad] += 1
-        rd = rel_direction(r.get(rel_key))
+        rd = rel_direction(r.get(rel_key), thresh=rel_thresh)
         rel_c["missing" if rd == "unknown" else rd] += 1
         accel_c[_ACCEL_BUCKET.get(r.get(state_key) or "no data", NEUTRAL_OR_UNKNOWN)] += 1
     return {"absolute_breadth": abs_c, "relative_breadth": rel_c, "acceleration_breadth": accel_c}
@@ -396,6 +427,7 @@ def state_log_legs_snapshot(sources: list[dict[str, Any]]) -> dict[str, dict[str
 def build_sources(snap: dict[str, Any], *, newest_session: str | None,
                   seats_as_of: str | None = None,
                   log_rows: list[dict[str, Any]] | None = None,
+                  ledger_rows: list[dict[str, Any]] | None = None,
                   now=None) -> list[dict[str, Any]]:
     """One block per masterplan §3 leg — ALWAYS all five W1 legs (S7 repair): a leg whose
     panel did not build this run still gets its identity row so the trust strip shows
@@ -422,6 +454,12 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     it.
     ``log_rows`` (state_log history) feeds the coverage-collapse/REVISED inputs; omitted or
     empty degrades those two checks to their honest "insufficient/no history" no-ops.
+
+    ``ledger_rows`` (W3 — the observations ledger, ``engine.flow_observatory.history``)
+    feeds each leg's ``first_known_at`` (spec §2: "closes the W1 limitation" — previously
+    always ``None``): the ``entity_kind='market'`` row's own ``revision_id==0`` first-known
+    time for that leg's effective date. Omitted/empty ledger degrades to the honest
+    ``None`` every pre-W3 caller already saw (bootstrap: the ledger starts empty).
 
     HK-market legs (S8): ``sb_aggregate``/``hk_sb_holdings`` anchor their freshness gap
     against the newest HK-family date (sb_aggregate's own effective_date) rather than the
@@ -494,25 +532,35 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
     # so a total freeze floors every live leg's chip together (spec §1 last bullet).
     leg_results = fo_quality.apply_desk_backstop(leg_results, leg_effective_dates, today)
 
+    # W3: each leg's first-known time from the observations ledger (None until the ledger
+    # actually holds this leg's key — honest bootstrap, spec §2/§5).
+    def _fk(source_id: str, effective_date: str | None) -> str | None:
+        if not ledger_rows or not effective_date:
+            return None
+        return history.first_known_at(ledger_rows, "market", source_id, effective_date)
+
     legs: list[dict[str, Any]] = []
 
     legs.append(_source_leg(
         "cn_large_order_proxy", source_kind="large_order_size_proxy",
         provider="Tushare moneyflow_dc", market="CN", effective_date=names_asof,
         expected_availability="T+0 after CN close", coverage=cn_coverage,
-        quality_result=leg_results["cn_large_order_proxy"]))
+        quality_result=leg_results["cn_large_order_proxy"],
+        first_known_at=_fk("cn_large_order_proxy", names_asof)))
 
     legs.append(_source_leg(
         "sb_aggregate", source_kind="official_connect_aggregate",
         provider="Eastmoney RPT_MUTUAL_DEAL_HISTORY", market="HK",
         effective_date=sb_effective, expected_availability="T+0 after HK close",
-        coverage=sb_coverage, quality_result=leg_results["sb_aggregate"]))
+        coverage=sb_coverage, quality_result=leg_results["sb_aggregate"],
+        first_known_at=_fk("sb_aggregate", sb_effective)))
 
     legs.append(_source_leg(
         "hk_sb_holdings", source_kind="official_connect_holdings",
         provider="Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS", market="HK",
         effective_date=hk_effective, expected_availability="expected T−1",
-        coverage=hk_coverage, quality_result=leg_results["hk_sb_holdings"]))
+        coverage=hk_coverage, quality_result=leg_results["hk_sb_holdings"],
+        first_known_at=_fk("hk_sb_holdings", hk_effective)))
 
     legs.append(_source_leg(
         "nb_aggregate", source_kind="official_connect_aggregate",
@@ -521,23 +569,27 @@ def build_sources(snap: dict[str, Any], *, newest_session: str | None,
         expected_availability=(f"discontinued {nb.get('frozen_since')}" if nb and nb.get("frozen_since")
                                else "discontinued"),
         coverage={"n_observed": None, "n_sized": None, "pct_names": None},
-        quality_result=leg_results["nb_aggregate"]))
+        quality_result=leg_results["nb_aggregate"],
+        first_known_at=_fk("nb_aggregate", nb_effective)))
 
     legs.append(_source_leg(
         "lhb_inst_seats", source_kind="event_selected_institution_seat",
         provider="Eastmoney 龙虎榜 机构专用", market="CN",
         effective_date=seats_effective, expected_availability="event-window",
-        coverage=seats_coverage, quality_result=leg_results["lhb_inst_seats"]))
+        coverage=seats_coverage, quality_result=leg_results["lhb_inst_seats"],
+        first_known_at=_fk("lhb_inst_seats", seats_effective)))
 
     return legs
 
 
 # ── build_v2 assembly (spec §1.7) ──────────────────────────────────────────────────
 def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = None,
+            ledger_rows: list[dict[str, Any]] | None = None,
             market_session: str | None = None, generated_at: str | None = None,
             seats_as_of: str | None = None, now=None,
             state_history=None) -> dict[str, Any]:
-    """Merge the W1+W2 ``flow_observatory.v2`` additive fields into the existing desk payload.
+    """Merge the W1+W2+W3 ``flow_observatory.v2`` additive fields into the existing desk
+    payload.
 
     Pure assembly — no I/O. ``log_rows`` is the already-read ``state_log.jsonl`` content
     (pass ``[]``/``None`` when unavailable — history fields degrade to honest nulls, never
@@ -549,8 +601,17 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     with a real ``now``. ``state_history`` is an injectable ``changes.theme_state_history``
     callable (defaults to importing :mod:`engine.flow_observatory.changes` lazily, keeping
     this module import-cycle-free for tests that only need the pure math).
+
+    ``ledger_rows`` (W3 — the already-read ``observations.parquet`` content,
+    ``engine.flow_observatory.history``) becomes the per-row state_started/
+    state_age_sessions/prior_state/rank_change source, AND feeds ``sources[]``'
+    ``first_known_at``, once it holds ≥2 distinct theme sessions (spec §2: "state_log
+    summaries stay as fallback until the ledger has ≥2 sessions" — both paths tested).
+    ``None``/empty (the bootstrap state and every pre-W3 caller) keeps the exact W1/W2
+    state_log-derived behavior.
     """
     log_rows = log_rows or []
+    ledger_rows = ledger_rows or []
     market_session = market_session or snap.get("as_of")
     # B2: the escalation streak's "current run" is identified by BUILD date (generated_at's
     # own date), never the market session — a frozen market_session must not also freeze
@@ -565,6 +626,16 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     out["generated_at"] = generated_at
     out["market_session"] = market_session
 
+    # §1.5 — sources[] (hoisted ahead of the per-row loop below, W3): the per-row age walk
+    # needs cn_large_order_proxy's OWN current-session status to know whether TODAY's read
+    # must freeze (spec §3 test 6) — build_sources has no dependency on the enriched rows,
+    # so calling it first changes nothing about its own output, only its ORDER.
+    out["sources"] = build_sources(snap, newest_session=market_session, seats_as_of=seats_as_of,
+                                   log_rows=log_rows, ledger_rows=ledger_rows, now=now)
+    leg_statuses = {s["source_id"]: s.get("status") for s in out["sources"]}
+    cn_status = leg_statuses.get("cn_large_order_proxy")
+    ledger_ready = bool(ledger_rows) and history.ledger_session_count(ledger_rows, "theme") >= 2
+
     # §1.3 — per-row abs/rel/quadrant/rank/rank_change/state_* on ashare_sectors.rows[]
     sectors = snap.get("ashare_sectors")
     enriched_rows: list[dict[str, Any]] = []
@@ -572,23 +643,30 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
         for row in sectors["rows"]:
             row = dict(row)
             row.update(enrich_group(row.get("rate_4wk"), row.get("vel"),
-                                    abs_unit="pct_rate", abs_period="20d", reference_window=126))
+                                    abs_unit="pct_rate", abs_period="20d", reference_window=126,
+                                    rel_thresh=THEMES_REL_THRESH))
             enriched_rows.append(row)
         assign_ranks(enriched_rows)
         prev_ranks = _previous_ranks(log_rows, market_session)
         for row in enriched_rows:
-            hist = (state_history(row["id"], row["quadrant"], log_rows, market_session)
-                    if market_session else
-                    {"state_started": None, "state_age_sessions": None, "prior_state": None,
-                     "note": "first tracked session"})
+            if ledger_ready and market_session:
+                hist = history.state_for_session(
+                    ledger_rows, "theme", row["id"], market_session, row["quadrant"],
+                    current_rank=row.get("rank"), current_status=cn_status)
+                row["rank_change"] = hist["rank_change"]
+            else:
+                hist = (state_history(row["id"], row["quadrant"], log_rows, market_session)
+                        if market_session else
+                        {"state_started": None, "state_age_sessions": None, "prior_state": None,
+                         "note": "first tracked session"})
+                prev_rank = prev_ranks.get(row["id"]) if prev_ranks is not None else None
+                row["rank_change"] = (row["rank"] - prev_rank) \
+                    if (prev_ranks is not None and row["rank"] is not None and prev_rank is not None) \
+                    else None
             row["state_started"] = hist["state_started"]
             row["state_age_sessions"] = hist["state_age_sessions"]
             row["prior_state"] = hist["prior_state"]
             row["state_note"] = hist["note"]
-            prev_rank = prev_ranks.get(row["id"]) if prev_ranks is not None else None
-            row["rank_change"] = (row["rank"] - prev_rank) \
-                if (prev_ranks is not None and row["rank"] is not None and prev_rank is not None) \
-                else None
         out["ashare_sectors"] = {**sectors, "rows": enriched_rows}
 
     # southbound aggregate — the SAME abs+rel+quadrant treatment (spec §1.3 last line)
@@ -599,7 +677,8 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
             chan = dict(chan)
             if chan.get("key") == "southbound" and chan.get("live"):
                 chan.update(enrich_group(chan.get("flow_1m_b"), chan.get("vel_primary"),
-                                         abs_unit="cny_b", abs_period="1m", reference_window=126))
+                                         abs_unit="cny_b", abs_period="1m", reference_window=126,
+                                         rel_thresh=SOUTHBOUND_REL_THRESH))
             new_agg.append(chan)
         out["aggregate"] = new_agg
 
@@ -615,18 +694,14 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     # dropping them from market_read.themes' denominator, the exact "missing != zero" gap
     # this program's contract law exists to close.
     themes_unscored = (sectors or {}).get("n_unscored") or 0
-    themes_mr = market_read(enriched_rows, unscored=themes_unscored)
+    themes_mr = market_read(enriched_rows, unscored=themes_unscored, rel_thresh=THEMES_REL_THRESH)
     names_mr = names.get("market_read") or market_read([], names.get("n_unscored") or 0)
     out["market_read"] = {"themes": themes_mr, "names": names_mr}
 
-    # §1.5 — sources[], now carrying the W2 quality classification per leg.
-    out["sources"] = build_sources(snap, newest_session=market_session, seats_as_of=seats_as_of,
-                                   log_rows=log_rows, now=now)
-
-    # §2 — publication_state (worst-of live legs) + the desk-wide health block. Computed
-    # AFTER sources[] so both read the SAME per-leg statuses the trust strip renders —
-    # machine contract and UI can never disagree on what "worst" means (W2_SPEC.md §0.1).
-    leg_statuses = {s["source_id"]: s.get("status") for s in out["sources"]}
+    # §2 — publication_state (worst-of live legs) + the desk-wide health block. sources[]
+    # (and leg_statuses) were already built above, ahead of the per-row loop (W3) — machine
+    # contract and UI still read the SAME per-leg statuses the trust strip renders
+    # (W2_SPEC.md §0.1); only the ORDER of assembly moved, not the values.
     pub_state = fo_quality.publication_state(leg_statuses)
     out["publication_state"] = pub_state
     leg_results_by_id = {s["source_id"]: s for s in out["sources"]}
@@ -662,6 +737,53 @@ def _previous_ranks(log_rows: list[dict[str, Any]], before_session: str | None) 
         return None
     themes = rows[0].get("themes") or {}
     return {tid: rec.get("rank") for tid, rec in themes.items() if isinstance(rec, dict)}
+
+
+# M1/W4 repair: the coverage_state enum both group lenses (curated ashare_sectors AND
+# official_sectors) may carry — engine.flow_observatory.groups.INSUFFICIENT_COVERAGE_EN
+# is display prose, not this machine value; kept here (not imported from groups.py) so
+# contract.py stays the sole owner of every enum validate() checks, matching the
+# STATUS_ENUM/QUADRANT pattern already established in this module.
+COVERAGE_STATE_ENUM = {"ok", "insufficient_coverage"}
+
+
+def _validate_group_rows(lens: dict[str, Any], label: str, *,
+                          rel_thresh: float = REL_THRESH) -> None:
+    """Shared per-row check for a group lens (``{"rows": [...]}}``-shaped, curated
+    OR official): abs/rel/quadrant axis-consistency (spec §1.7, previously
+    ashare_sectors-only) plus the coverage_state enum (W4 M1 repair — previously
+    unchecked for BOTH lenses).
+
+    ``rel_thresh`` must match whatever threshold :func:`enrich_group` used to compute the
+    row's own ``rel.direction`` (themes rows are W5-recalibrated to ``THEMES_REL_THRESH``;
+    the official-sector lens is untouched by W5 and keeps the legacy default) — otherwise
+    this independent recomputation would flag a row that was built correctly."""
+    for row in (lens or {}).get("rows") or []:
+        cs = row.get("coverage_state")
+        if cs is not None and cs not in COVERAGE_STATE_ENUM:
+            raise ContractError(
+                f"{label} row {row.get('id')}: coverage_state {cs!r} is not in the known "
+                f"enum {sorted(COVERAGE_STATE_ENUM)}")
+        a, r, q = row.get("abs"), row.get("rel"), row.get("quadrant")
+        if a is None or r is None or q is None:
+            continue
+        av, ad = a.get("value"), a.get("direction")
+        expected_ad = direction_from_value(av, a.get("unit"))
+        if expected_ad != ad:
+            raise ContractError(
+                f"{label} row {row.get('id')}: abs.direction {ad!r} disagrees with abs.value "
+                f"{av!r} (expected {expected_ad!r})")
+        rv, rd = r.get("value"), r.get("direction")
+        expected_rd = rel_direction(rv, thresh=rel_thresh)
+        if expected_rd != rd:
+            raise ContractError(
+                f"{label} row {row.get('id')}: rel.direction {rd!r} disagrees with rel.value "
+                f"{rv!r} (expected {expected_rd!r})")
+        expected_q = quadrant(ad, rd)
+        if expected_q != q:
+            raise ContractError(
+                f"{label} row {row.get('id')}: quadrant {q!r} inconsistent with abs={ad!r} "
+                f"rel={rd!r} (expected {expected_q!r})")
 
 
 # ── validate() (spec §1.7) ──────────────────────────────────────────────────────────
@@ -710,27 +832,17 @@ def validate(desk: dict[str, Any]) -> None:
             if "denominator" not in (breadth or {}):
                 raise ContractError(f"market_read.{lens_name}.{breadth_name} missing denominator")
 
-    for row in (desk.get("ashare_sectors") or {}).get("rows") or []:
-        a, r, q = row.get("abs"), row.get("rel"), row.get("quadrant")
-        if a is None or r is None or q is None:
-            continue
-        av, ad = a.get("value"), a.get("direction")
-        expected_ad = direction_from_value(av, a.get("unit"))
-        if expected_ad != ad:
-            raise ContractError(
-                f"row {row.get('id')}: abs.direction {ad!r} disagrees with abs.value {av!r} "
-                f"(expected {expected_ad!r})")
-        rv, rd = r.get("value"), r.get("direction")
-        expected_rd = rel_direction(rv)
-        if expected_rd != rd:
-            raise ContractError(
-                f"row {row.get('id')}: rel.direction {rd!r} disagrees with rel.value {rv!r} "
-                f"(expected {expected_rd!r})")
-        expected_q = quadrant(ad, rd)
-        if expected_q != q:
-            raise ContractError(
-                f"row {row.get('id')}: quadrant {q!r} inconsistent with abs={ad!r} rel={rd!r} "
-                f"(expected {expected_q!r})")
+    _validate_group_rows(desk.get("ashare_sectors") or {}, "ashare_sectors",
+                        rel_thresh=THEMES_REL_THRESH)
+    # M1/W4 repair: official_sectors (the Shenwan L1 lens) never got its own
+    # validate() coverage — contract.py was untouched in the W4 landing (its rows
+    # reuse contract.enrich_group/assign_ranks, but nothing checked the RESULT).
+    # Minimal extension: the SAME abs/rel/quadrant axis-consistency check every
+    # ashare_sectors row already gets, plus the coverage_state enum (both lenses —
+    # a group's coverage_state must be a known value, never an unchecked free string).
+    os_lens = desk.get("official_sectors")
+    if isinstance(os_lens, dict) and os_lens.get("available"):
+        _validate_group_rows(os_lens, "official_sectors")
 
     generated_at = desk.get("generated_at")
     sources = desk.get("sources") or []

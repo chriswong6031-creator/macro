@@ -34,30 +34,30 @@
   "last_run": {
     "board_as_of": "2026-08-31",
     "coverage": {
-      "identical": 0,
+      "identical": 8,
       "matured": 0,
       "revisions_refused": 0,
-      "stamps": 1,
-      "written": 8
+      "stamps": 0,
+      "written": 0
     },
     "dry_run": false,
     "failures": [],
     "family": {
-      "identical": 0,
+      "identical": 8,
       "matured": 0,
       "revisions_refused": 0,
-      "stamps": 1,
-      "written": 8
+      "stamps": 0,
+      "written": 0
     },
     "n_coverage_rows": 8,
     "n_family_rows": 8,
     "n_paired_rows": 619,
     "paired": {
-      "identical": 579,
-      "matured": 0,
+      "identical": 513,
+      "matured": 106,
       "revisions_refused": 0,
-      "stamps": 1,
-      "written": 40
+      "stamps": 2,
+      "written": 106
     },
     "reconstruction_refused": [
       "2026-07-31",
@@ -70,10 +70,10 @@
     "require_stamp": "2026-08-31",
     "same_stamp_revisions_refused": [],
     "sessions_written": {
-      "identical": 10,
+      "identical": 11,
       "matured": 0,
       "refused": 0,
-      "written": 1
+      "written": 0
     }
   },
   "latest_session": {
