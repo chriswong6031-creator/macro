@@ -1,20 +1,10 @@
-"""Byte-level pins for the Canada Stock Dashboard V3.6 client composer.
+"""Static-shell and enhancement pins for the Canada Stock Dashboard.
 
-The composer (site/canada-stock-v36.js, entitled-only, no template pair) hides
-grid cards and the grid container with the HTML ``hidden`` attribute
-(``card.hidden = !show``).  The UA sheet's ``[hidden]{display:none}`` loses to
-ANY author display rule, and both hidden targets carry one: the page stylesheet
-sets ``.pvcard{display:flex}`` and the (now governed) stock-dashboard stylesheet
-sets ``.ca-v36-card-grid{display:grid}``.  Production consequence (found in the
-2026-08-25 entitled acceptance matrix): the Top Picks segment, the leadership
-filter's grid hiding, and the grid/table view switch were all visually inert —
-state, counters, aria and the empty-state message updated while every card
-stayed painted.  The repair scopes explicit ``[hidden]`` overrides into the
-governed stylesheet (tests/test_stock_dashboard_css.py); this file pins that
-the hide mechanism THOSE overrides depend on is still the one the composer
-uses, and that the composer itself owns no runtime CSS at all (TP-1: theme
-parity moved every presentation rule out of injectCss() into
-templates/stock-dashboard.css + site/stock-dashboard.css).
+The server-rendered template owns the canonical ``main`` and every outer
+landmark in the first frame.  The entitled composer binds those existing nodes
+and may enrich their typed slots, but it must not create a second page shell,
+move owner DOM into a replacement tree, or gate paint on optional JSON/CSS.
+Presentation remains in the governed ``stock-dashboard.css`` source/site pair.
 """
 
 import re
@@ -22,13 +12,19 @@ from pathlib import Path
 
 import pytest
 
-COMPOSER = Path(__file__).resolve().parents[1] / "site" / "canada-stock-v36.js"
+ROOT = Path(__file__).resolve().parents[1]
+COMPOSER = ROOT / "site" / "canada-stock-v36.js"
+TEMPLATE = ROOT / "templates" / "canada.html.j2"
 
 
 def _composer_text() -> str:
     if not COMPOSER.exists():
         pytest.skip("sparse checkout omits site/ (needs_full_checkout)")
     return COMPOSER.read_text(encoding="utf-8")
+
+
+def _template_text() -> str:
+    return TEMPLATE.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -61,54 +57,32 @@ def test_composer_never_authors_runtime_css():
         )
 
 
-def test_composer_mounts_canonical_stockdash_classes():
-    """The composer's mount point carries both the shared stock-dashboard
-    family class and the Canada variant modifier, so the governed stylesheet
-    (scoped under .mx-stockdash / .mx-stockdash--ca) actually applies."""
-    text = _composer_text()
-    assert "mx-stockdash" in text
-    assert "mx-stockdash--ca" in text
+def test_template_owns_canonical_stockdash_mount_and_composer_binds_it():
+    """The first frame owns the styled mount; JS only binds that exact node."""
+    template = _template_text()
+    composer = _composer_text()
+    assert '<main class="ca-v36 mx-stockdash mx-stockdash--ca" id="ca-v36">' in template
+    assert 'var main = qs("#ca-v36")' in composer
+    assert 'createElement("main")' not in composer
 
 
-def test_canada_loader_gates_composer_on_shared_stylesheet_seam():
-    """TP-1 Task 2: the Canada loader must call one shared, idempotent
-    ensureStockDashCss() seam before it injects the composer script, and
-    that seam's link.onload must be what starts the composer while
-    link.onerror leaves the legacy page untouched (fail-soft: an entitled
-    visitor who hits a stylesheet 404 must never be left on a half-styled
-    composer mount)."""
+def test_canada_template_owns_css_and_loader_only_retries_enhancement():
+    """CSS is a parser-discovered asset; its load cannot admit or hide HTML."""
+    template = _template_text()
+    assert '<link id="mx-stockdash-css" rel="stylesheet" href="stock-dashboard.css">' in template
     loader_path = Path(__file__).resolve().parents[1] / "templates" / "dashboard-icons.js"
     site_loader_path = loader_path.parents[1] / "site" / "dashboard-icons.js"
     for path in [loader_path, site_loader_path]:
         if not path.exists():
             continue  # sparse checkout omits site/; templates/ always present
         text = path.read_text(encoding="utf-8")
-        assert text.count("function ensureStockDashCss(") == 1, (
-            f"{path.name}: expected exactly one shared ensureStockDashCss() "
-            "seam definition, not a per-composer copy"
-        )
+        assert "ensureStockDashCss" not in text
         loader_start = text.find("__mmCanadaStockV36Loader")
         assert loader_start != -1, f"{path.name}: Canada loader guard flag missing"
         hk_start = text.find("__mmHKStockV36Loader")
         canada_block = text[loader_start:hk_start] if hk_start != -1 else text[loader_start:]
-        assert "ensureStockDashCss(" in canada_block, (
-            f"{path.name}: the Canada composer's bounded retry no longer "
-            "gates script injection on ensureStockDashCss()"
-        )
-        seam = re.search(r"function ensureStockDashCss\b.*?\n\}", text, re.S)
-        assert seam, f"{path.name}: could not locate the ensureStockDashCss() body"
-        seam_body = seam.group(0)
-        assert "link.onload" in seam_body and "onReady" in seam_body, (
-            f"{path.name}: ensureStockDashCss() must start the composer via "
-            "link.onload calling onReady()"
-        )
-        onerror = re.search(r"link\.onerror\s*=\s*function\s*\([^)]*\)\s*\{.*?\};", seam_body, re.S)
-        assert onerror, f"{path.name}: ensureStockDashCss() lost its onerror handler"
-        assert "onReady(" not in onerror.group(0), (
-            f"{path.name}: link.onerror must NOT call onReady() — a "
-            "stylesheet load failure must fail soft (legacy page stays "
-            "visible), never start the composer half-styled"
-        )
+        assert "inject();" in canada_block
+        assert "script.onerror" in canada_block and "attempt < 3" in canada_block
 
 
 LOADER = Path(__file__).resolve().parents[1] / "templates" / "dashboard-icons.js"
@@ -209,48 +183,21 @@ def test_lane_labels_are_the_owner_native_act_now_vocabulary():
 
 
 def test_evidence_and_record_section_restores_track_record():
-    """Change 3 restores Track Record (deleted in V3.6) as a compact
-    'Evidence & Record' panel that MOVES the legacy `.trk`/`#trd-btn` chip
-    via appendChild — the same owner-DOM-move pattern already used for
-    #stocktable-wrap — rather than recomputing or re-fetching anything.
-
-    Three mutations this pin kills that a looser check would miss:
-    - deleting the `appendChild(trk)` call (section renders but stays
-      empty, since nothing ever moves the chip into it) — killed by the
-      literal `appendChild(trk)` assertion, not just "trk" appearing
-      somewhere in the move-pattern comments;
-    - renaming the section id off `ca-v36-evidence` while leaving the
-      `.ca-v36-evidence-body` CSS class behind — killed by asserting the
-      exact `id="ca-v36-evidence"` markup, which the CSS class text alone
-      does not satisfy;
-    - defining `evidenceSectionHtml()` but never splicing its call into
-      `buildShell()`'s section string (section never renders even when
-      `.trk` exists) — killed by requiring the function name to appear at
-      least twice (its definition AND its `trk ? evidenceSectionHtml() : ''`
-      call site).
-    """
-    text = _composer_text()
-    assert 'id="ca-v36-evidence"' in text, (
-        "Evidence & Record section markup missing its exact id="
-        '"ca-v36-evidence" — the .ca-v36-evidence-body CSS class alone '
-        "does not prove the <section> exists"
-    )
-    assert "Evidence &amp; Record" in text or "Evidence & Record" in text, (
-        "Evidence & Record EN heading missing"
-    )
-    assert "证据与往绩" in text, "Evidence & Record ZH heading missing"
-    assert "appendChild(trk)" in text, (
-        "composer no longer moves the legacy .trk chip via appendChild(trk); "
-        "Track Record must be MOVED into the section body, never recomputed "
-        "or left unattached"
-    )
-    assert text.count("evidenceSectionHtml()") >= 2, (
-        "evidenceSectionHtml() must appear at least twice: once where it is "
-        "defined and once where buildShell() splices its call "
-        "(`trk ? evidenceSectionHtml() : ''`) into the panel sequence — "
-        "otherwise the section can be defined but never rendered"
-    )
-    assert "measurement.html" in text, "Methodology link to measurement.html missing"
+    """Evidence and its owner record render in place before enhancement."""
+    template = _template_text()
+    composer = _composer_text()
+    start = template.index('<section class="ca-v36-panel" id="ca-v36-evidence">')
+    end = template.index("</section>", start)
+    section = template[start:end]
+    macro_start = template.index("{% macro ca_track_record_surface() %}")
+    macro_end = template.index("{% endmacro %}", macro_start)
+    macro = template[macro_start:macro_end]
+    assert "Evidence & Record" in section and "证据与往绩" in section
+    assert "measurement.html" in section
+    assert "ca_track_record_surface()" in section
+    assert 'id="ca-track-record"' in macro and "_track_record_dlg.html.j2" in macro
+    assert "appendChild(trk)" not in composer
+    assert "evidenceSectionHtml" not in composer
 
 
 def test_no_new_fetch_urls_and_no_track_ledger_fetch():
@@ -272,33 +219,25 @@ def test_no_new_fetch_urls_and_no_track_ledger_fetch():
 
 
 def test_act_now_panel_renders_at_rest_above_prophet_never_modal_only():
-    """V3.8 (§13.1): the owner-lane group-action map renders AT REST above
-    Prophet — never (only) inside the Expand-leadership modal. Pins (a) the
-    #ca-v36-actnow section inside buildShell()'s composition BEFORE
-    #ca-v36-prophet; (b) renderActNow() actually called on the mount path;
-    (c) the V3.7 modal group-action band (ca-v36-modal-lanes) is GONE — the
-    at-rest panel is the one home; (d) at-rest action rows reuse the SAME
-    data-ca-lead-kind/-id activation the leadership rows use (one path,
-    activate() only — never a parallel mechanism)."""
-    text = _composer_text()
-    m = re.search(r"main\.innerHTML = .*?researchToolsHtml\(\)|main\.innerHTML = .*?</section>';", text, re.S)
-    assert m, "could not locate buildShell()'s main.innerHTML composition"
-    shell = m.group(0)
-    actnow_idx = shell.find('id="ca-v36-actnow"')
-    prophet_idx = shell.find('id="ca-v36-prophet"')
-    assert actnow_idx != -1, "buildShell() no longer composes #ca-v36-actnow at rest"
-    assert prophet_idx != -1, "buildShell() lost the #ca-v36-prophet section"
+    """The template—not ``main.innerHTML``—owns Action above Prophet."""
+    template = _template_text()
+    composer = _composer_text()
+    actnow_idx = template.find('id="ca-v36-actnow"')
+    prophet_idx = template.find('id="ca-v36-prophet"')
+    assert actnow_idx != -1
+    assert prophet_idx != -1
     assert actnow_idx < prophet_idx, (
         "What to Act On Now must render ABOVE Prophet (§4 page grammar)"
     )
-    assert "renderActNow()" in text.split("main.innerHTML")[1], (
-        "renderActNow() is never called after the shell mounts"
-    )
-    assert "ca-v36-modal-lanes" not in text, (
+    owner = template[actnow_idx:prophet_idx]
+    assert 'id="act-now"' in owner
+    assert "main.innerHTML" not in composer
+    assert "appendChild" not in composer and "insertBefore" not in composer
+    assert "ca-v36-modal-lanes" not in composer, (
         "the V3.7 modal group-action band is back — the at-rest panel is "
         "the one home for group action"
     )
-    m2 = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    m2 = re.search(r"function anRowHtml\b.*?(?=\n  function )", composer, re.S)
     assert m2, "could not locate anRowHtml() function body via regex"
     an_body = m2.group(0)
     assert 'data-ca-lead-kind="sector" data-ca-lead-id="\' + esc(x.id)' in an_body, (
@@ -589,8 +528,8 @@ def test_fresh_cue_lives_in_prophet_header_and_is_absent_when_zero():
         "renderFresh() no longer hides the cue at zero — an empty "
         "placeholder is forbidden"
     )
-    assert 'id="ca-v36-fresh"' in text, (
-        "the Prophet-header fresh-cue slot is gone from buildShell() markup"
+    assert 'id="ca-v36-fresh"' in _template_text(), (
+        "the server-owned Prophet header lost its fresh-cue slot"
     )
 
 

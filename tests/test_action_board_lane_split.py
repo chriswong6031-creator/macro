@@ -143,7 +143,7 @@ def _canada_block() -> str:
     # extracted block is balanced Jinja.
     src = (ROOT / "templates" / "canada.html.j2").read_text()
     start = src.index("<!-- ===== Act-Now v2 — four-lane board")
-    end = src.index("\n{% endif %}\n\n{% if mode != 'stocks' %}", start)
+    end = src.index("\n{% endif %}\n\n{% if mode == 'stocks' %}", start)
     return src[start:end]
 
 
@@ -151,7 +151,7 @@ def _hk_board_block() -> str:
     """Extract the self-contained four-lane grid (outside the HK leadership banner)."""
     src = (ROOT / "templates" / "hk.html.j2").read_text()
     start = src.index("{% set _hk_buy = actions.get('buy_now', []) %}")
-    end = src.index("\n  </div>\n  {% endif %}\n  {% endif %}", start)
+    end = src.index("\n  {% else %}\n  <div class=\"panel span12 anv2-board hk-v37-empty", start)
     return src[start:end]
 
 

@@ -38,9 +38,7 @@ SITE_CSS = ROOT / "site" / "stock-dashboard.css"
 # class rather than the deleted composer-owned ``.ca-v36-card-grid`` bare
 # selector.
 REQUIRED_CANADA_VISIBILITY = (
-    ".mx-stockdash--ca .ca-v36-card-grid[hidden]",
     ".mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden]",
-    ".mx-stockdash--ca .ca-v36-card-grid .sm-hidden",
 )
 
 # selector -> exact expected declaration (whitespace-tolerant). A bare
@@ -49,9 +47,7 @@ REQUIRED_CANADA_VISIBILITY = (
 # declaration is what actually proves the override still defeats the
 # author display rule it exists to beat.
 REQUIRED_CANADA_VISIBILITY_DECLARATIONS: dict[str, str] = {
-    ".mx-stockdash--ca .ca-v36-card-grid[hidden]": "display:none!important",
     ".mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden]": "display:none!important",
-    ".mx-stockdash--ca .ca-v36-card-grid .sm-hidden": "display:flex!important",
 }
 
 
@@ -95,11 +91,11 @@ def _extract_balanced_media_block(text: str, media_query_pattern: str) -> str:
 def test_stylesheet_owns_canada_hidden_attribute_visibility():
     """The composer's ``card.hidden = !show`` mechanism (pinned in
     test_canada_v36_composer.py::test_composer_still_hides_via_hidden_attribute)
-    is defeated by author display rules (``.pvcard{display:flex}`` /
-    ``.ca-v36-card-grid{display:grid}``) unless an explicit [hidden] override
-    ships with at-least-equal specificity. That CSS now belongs here, scoped
-    under the canonical .mx-stockdash--ca mount, not in the deleted
-    composer-owned injectCss()."""
+    is defeated by ``.pvcard{display:flex}`` unless an explicit [hidden]
+    override ships with at-least-equal specificity. The outer owner board is
+    no longer hidden or moved, and its ``sm-hidden`` show-more state must not
+    be overridden. The live card override belongs here, scoped under the
+    canonical .mx-stockdash--ca mount."""
     text = _css_text()
     normalized = re.sub(r"\s+", "", text)
     for rule in REQUIRED_CANADA_VISIBILITY:
@@ -115,6 +111,8 @@ def test_stylesheet_owns_canada_hidden_attribute_visibility():
             "alone (matched above) is not proof the override still defeats "
             "the author display rule it exists to beat"
         )
+    assert ".ca-v36-card-grid[hidden]" not in text
+    assert ".ca-v36-card-grid .sm-hidden" not in text
 
 
 def test_stylesheet_roots_canonical_mount_semantics():
@@ -451,30 +449,19 @@ def test_light_plane_never_reintroduces_a_glow_halo():
     )
 
 
-def test_modal_family_stays_sibling_scoped_to_the_mount():
-    """The composer mounts the leadership modal with
-    ``document.body.appendChild(modal)``, so it is a following SIBLING of the
-    .mx-stockdash--ca <main>, never a descendant. The Task-3 extraction scoped
-    it as a descendant and the whole family went dead in BOTH themes (measured
-    on that head: position:static, display:block, no scrim — the dialog never
-    overlaid and its rows rendered as a stray block at the foot of the page).
-    Pin the combinator so a later "tidy the selectors" pass cannot silently
-    re-break the dialog: the checker cannot see a selector that matches
-    nothing, and neither can a passing unit test."""
+def test_modal_family_is_descendant_scoped_to_static_mount():
+    """The template owns the modal inside ``main``, so descendant rules match."""
     # Comments must be stripped first: this file's own header explains the bug
     # by quoting the broken descendant selector, and a naive scan reads that
     # prose as a live rule.
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
-    assert ".mx-stockdash--ca ~ .ca-v36-modal" in text, (
-        "the modal family lost its sibling combinator; .mx-stockdash--ca "
-        ".ca-v36-modal matches nothing in the shipped DOM"
-    )
-    bad = re.findall(r"\.mx-stockdash--ca\s+\.ca-v36-modal", text)
-    assert not bad, (
-        f"{len(bad)} modal selector(s) use the descendant combinator "
-        "(.mx-stockdash--ca .ca-v36-modal); the modal is a SIBLING of the "
-        "mount, so those rules are dead CSS"
-    )
+    assert ".mx-stockdash--ca .ca-v36-modal" in text
+    assert ".mx-stockdash--ca ~ .ca-v36-modal" not in text
+    template = (Path(__file__).resolve().parents[1] / "templates" / "canada.html.j2").read_text(encoding="utf-8")
+    main_start = template.index('<main class="ca-v36 mx-stockdash mx-stockdash--ca" id="ca-v36">')
+    modal_start = template.index('id="ca-v36-modal"', main_start)
+    main_end = template.index("</main>", main_start)
+    assert main_start < modal_start < main_end
 
 
 def test_stylesheet_is_token_clean():

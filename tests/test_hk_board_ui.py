@@ -52,6 +52,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -1868,12 +1869,14 @@ def test_health_banner_survives_the_rebuild(legacy_html, prio_html):
         assert "部分数据本次未更新" in html
 
 
-def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
-    """The strongest form of the fail-soft proof: render the LEGACY artifact through
-    this template and through the base branch's, and compare the element streams.
-    Skipped (never failed) when the base ref is unreachable — a shallow or sparse CI
-    checkout has no business reddening main — because every observable half of the
-    same contract is pinned unconditionally by the tests above."""
+def test_legacy_owner_board_is_tag_stream_identical_to_the_base_branch():
+    """The protected legacy owner board keeps its internal element stream.
+
+    P0B deliberately adds a server-owned outer shell around that board, so a
+    whole-document comparison would now forbid the exact static composition it
+    exists to prove.  Compare ``#standouts`` itself instead: wrappers and typed
+    enhancement slots may change around it, but the owner subtree may not.
+    """
     base = None
     for ref in ("origin/main", "main"):
         try:
@@ -1914,8 +1917,11 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
     assert base_quote_count in (0, len(art["buy"])), (
         "base render contains a partial live quote migration: %d/%d cards" % (
             base_quote_count, len(art["buy"])))
-    mine, theirs = _tags(normalized), _tags(base_normalized)
-    assert mine == theirs, "legacy render changed shape vs the base branch (%d vs %d tags)" % (
+    mine_node = BeautifulSoup(normalized, "html.parser").find(id="standouts")
+    base_node = BeautifulSoup(base_normalized, "html.parser").find(id="standouts")
+    assert mine_node is not None and base_node is not None
+    mine, theirs = _tags(str(mine_node)), _tags(str(base_node))
+    assert mine == theirs, "legacy owner board changed shape vs the base branch (%d vs %d tags)" % (
         len(mine), len(theirs))
 
 

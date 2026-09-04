@@ -14,9 +14,9 @@
    Terminal routes, the two artifact fetches.
 
    This file owns no ranking, signal, quote, lifecycle, entitlement, or persistence
-   semantics. It re-composes already-published Canada stock surfaces and reads the
-   existing Canada thematic-basket and sector-pulse artifacts. If anything required
-   is unavailable, the legacy page remains visible and functional. */
+   semantics. The server-rendered page owns the canonical shell and every owner
+   surface; this file binds interactions in place and reads the existing Canada
+   thematic-basket and sector-pulse artifacts as optional enhancement only. */
 (function () {
   "use strict";
 
@@ -88,10 +88,7 @@
     if (!host) return [];
     var cards = qsa(".pvcard", host);
     cards.forEach(function (card, i) {
-      /* V3 owns inventory visibility; legacy show-more state must not survive the move. */
-      card.classList.remove("sm-hidden");
-      card.hidden = false;
-      card.style.removeProperty("display");
+      /* Presentation markers only: owner order and membership stay untouched. */
       card.classList.toggle("ca-v36-top-pick", i < 5);
       card.setAttribute("data-ca-v36-order", String(i + 1));
     });
@@ -315,7 +312,7 @@
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var result = qs("#ca-v36-result"); if (result) result.innerHTML = bi(shown + " shown · " + state.cards.length + " on board", "显示 " + shown + " 只 · 榜单共 " + state.cards.length + " 只");
     var pill = qs("#ca-v36-filter"), item = itemForFilter();
-    if (pill) { pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi(item.kind === "theme" ? "Theme" : "Sector", item.kind === "theme" ? "主题" : "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
+    if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi(item.kind === "theme" ? "Theme" : "Sector", item.kind === "theme" ? "主题" : "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();
   }
 
@@ -362,7 +359,9 @@
     state.view = value === "table" ? "table" : "grid";
     try { localStorage.setItem("mdx_stocktable_ca_view", state.view); } catch (e) {}
     qsa("[data-ca-view]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-ca-view") === state.view)); });
-    var grid = qs("#ca-v36-card-grid"), table = qs("#ca-v36-table"); if (grid) grid.hidden = state.view !== "grid"; if (table) table.hidden = state.view !== "table";
+    var board = qs("#standouts");
+    if (window.StockTable && typeof window.StockTable._setView === "function") window.StockTable._setView(state.view);
+    else if (board) board.classList.toggle("st-table-mode", state.view === "table");
     if (state.view === "table") { enhanceTableQuotes(); applyTableFilter(); }
   }
   /* Sol adversarial gate: leadership activation sets the filter only — it
@@ -409,59 +408,19 @@
     });
   }
 
-  /* Evidence & Record (change 3, restores Track Record). The legacy `.trk`
-     wrapper (server-rendered by _track_record_dlg.html.j2, `#trd-btn` +
-     `#trd-dlg`) is owner DOM the composer relocates — never rebuilt, never
-     computed, never fetched. board_track is a conditional include, so `.trk`
-     (or its `#trd-btn` button) can legitimately be absent; that degrades
-     quietly to no section rather than a placeholder. */
-  function evidenceTrk() {
-    var trk = qs(".trk");
-    return (trk && qs("#trd-btn", trk)) ? trk : null;
-  }
-  function evidenceSectionHtml() {
-    return '<section class="ca-v36-panel" id="ca-v36-evidence"><div class="ca-v36-sec-hd"><h2>' + bi("Evidence & Record", "证据与往绩") + '</h2><span class="ca-v36-sec-spacer"></span><a class="ca-v36-link" href="measurement.html">' + bi("Methodology →", "方法论 →") + '</a></div><div class="ca-v36-evidence-body" id="ca-v36-evidence-body"></div></section>';
-  }
-
   function buildShell(payload) {
-    var nav = qs(".site-nav"), standouts = qs("#standouts"), tableWrap = qs("#stocktable-wrap");
-    if (!nav || !standouts || !tableWrap || !state.cards.length) return false;
-    var trk = evidenceTrk();
-    var bd = boardDate(payload.as_of || ""), ld = liveDate(), main = document.createElement("main");
-    /* TP-1 theme-parity extraction: presentation moved out of this file's
-       deleted injectCss() into the governed templates/stock-dashboard.css
-       pair, gated on it via dashboard-icons.js's ensureStockDashCss() seam.
-       mx-stockdash is the shared stock-dashboard mount family; mx-stockdash--ca
-       is the Canada variant the governed stylesheet scopes every rule under. */
-    main.className = "ca-v36 mx-stockdash mx-stockdash--ca"; main.id = "ca-v36";
-    /* V3.8 page grammar (§4): Market Header → What to Act On Now → Prophet →
-       Leadership & Rotation → Evidence & Record → Research Tools. The
-       Act-Now panel renders only when the owner's action lanes populated at
-       least one sector (action owner missing → omit; never synthesize
-       action from leadership rank). */
-    var hasActNow = state.sectors.some(function (x) {
-      return LANE_DEFS.some(function (lane) { return lane.tone === x.tone; });
-    });
-    main.innerHTML = '<header class="ca-v36-head"><h1>' + bi("Canada Stocks", "加拿大股票") + '</h1><span class="ca-v36-head-spacer"></span><span class="ca-v36-chip">' + bi("Screen · evidence accruing", "筛选 · 证据积累中") + '</span><span class="ca-v36-chip">' + bi("Board " + bd.en, "榜单 " + bd.zh) + '</span><span class="ca-v36-live"><span class="ca-v36-live-dot"></span><b>LIVE</b><span>·</span>' + bi(ld.en, ld.zh) + '</span></header>' +
-      (hasActNow ? '<section class="ca-v36-panel" id="ca-v36-actnow"><div class="ca-v36-sec-hd"><h2>' + bi("What to Act On Now", "现在行动") + '</h2></div><div class="ca-v36-an-body" id="ca-v36-an-body"></div></section>' : '') +
-      '<section class="ca-v36-panel" id="ca-v36-prophet"><div class="ca-v36-sec-hd"><h2>Prophet</h2><span class="ca-v36-result" id="ca-v36-result"></span><span class="ca-v36-fresh" id="ca-v36-fresh" hidden></span><span class="ca-v36-sec-spacer"></span><div class="ca-v36-controls"><button class="ca-v36-filter" id="ca-v36-filter" type="button"></button><span class="ca-v36-seg"><button type="button" data-ca-source="top" aria-selected="true">' + bi("Top Picks", "首选") + '</button><button type="button" data-ca-source="all" aria-selected="false">' + bi("All Candidates", "全部候选") + '</button></span><span class="ca-v36-seg"><button type="button" data-ca-view="grid" aria-selected="true">' + bi("Grid", "卡片") + '</button><button type="button" data-ca-view="table" aria-selected="false">' + bi("Table", "表格") + '</button></span></div></div><div class="ca-v36-card-grid" id="ca-v36-card-grid"><div class="ca-v36-empty" id="ca-v36-grid-empty" hidden>' + bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。") + '</div></div><div class="ca-v36-table" id="ca-v36-table" hidden></div></section>' +
-      '<section class="ca-v36-panel" id="ca-v36-leadership"><div class="ca-v36-sec-hd"><h2>' + bi("Leadership & Rotation", "领先与轮动") + '</h2><span class="ca-v36-sec-spacer"></span><a class="ca-v36-link" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a></div><div class="ca-v36-lead-cols" id="ca-v36-lead-cols"></div><div class="ca-v36-expand-wrap"><button class="ca-v36-expand" id="ca-v36-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
-      (trk ? evidenceSectionHtml() : '') +
-      '<section class="ca-v36-panel"><div class="ca-v36-tools"><b>' + bi("Research tools", "研究工具") + '</b><a class="ca-v36-tool" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a><a class="ca-v36-tool" href="canada.html">' + bi("Canada Macro", "加拿大宏观") + ' ↗</a></div></section>';
-    nav.insertAdjacentElement("afterend", main);
-    var grid = qs("#ca-v36-card-grid", main), empty = qs("#ca-v36-grid-empty", grid);
-    state.cards.forEach(function (card) { grid.insertBefore(card, empty); });
-    qs("#ca-v36-table", main).appendChild(tableWrap);
-    if (trk) qs("#ca-v36-evidence-body", main).appendChild(trk);
-
-    var modal = document.createElement("div"); modal.className = "ca-v36-modal"; modal.id = "ca-v36-modal"; modal.setAttribute("aria-hidden", "true");
-    modal.innerHTML = '<div class="ca-v36-modal-card" role="dialog" aria-modal="true" aria-labelledby="ca-v36-modal-title"><div class="ca-v36-modal-hd"><h3 id="ca-v36-modal-title">' + bi("Leadership & Rotation", "领先与轮动") + '</h3><button class="ca-v36-modal-x" type="button" data-ca-modal-close aria-label="Close">×</button></div><div class="ca-v36-modal-body" id="ca-v36-modal-body"></div></div>';
-    document.body.appendChild(modal);
-    modal.addEventListener("click", function (e) { if (e.target === modal || e.target.closest("[data-ca-modal-close]")) return closeModal(); var r = e.target.closest("[data-ca-modal-kind][data-ca-modal-id]"); if (r) activate(r.getAttribute("data-ca-modal-kind"), r.getAttribute("data-ca-modal-id")); });
-    modal.addEventListener("keydown", function (e) { var r = e.target.closest("[data-ca-modal-kind][data-ca-modal-id]"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); activate(r.getAttribute("data-ca-modal-kind"), r.getAttribute("data-ca-modal-id")); } });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
-
-    bind(main); document.body.classList.add("ca-v36-mounted"); renderActNow(); renderLeadership(); renderFresh(); applyFilter();
+    var main = qs("#ca-v36"), modal = qs("#ca-v36-modal");
+    if (!main) return false;
+    if (main.getAttribute("data-ca-enhanced") !== "true") {
+      main.setAttribute("data-ca-enhanced", "true");
+      bind(main);
+      if (modal) {
+        modal.addEventListener("click", function (e) { if (e.target === modal || e.target.closest("[data-ca-modal-close]")) return closeModal(); var r = e.target.closest("[data-ca-modal-kind][data-ca-modal-id]"); if (r) activate(r.getAttribute("data-ca-modal-kind"), r.getAttribute("data-ca-modal-id")); });
+        modal.addEventListener("keydown", function (e) { var r = e.target.closest("[data-ca-modal-kind][data-ca-modal-id]"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); activate(r.getAttribute("data-ca-modal-kind"), r.getAttribute("data-ca-modal-id")); } });
+      }
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+    }
+    renderLeadership(); renderFresh(); applyFilter();
     try { state.view = localStorage.getItem("mdx_stocktable_ca_view") === "table" ? "table" : "grid"; } catch (e) { state.view = "grid"; }
     setView(state.view); observeTable(); return true;
   }
@@ -471,24 +430,20 @@
   }
   function start() {
     if (!document.body.classList.contains("page-canada")) return;
-    var payload = parseRows(); if (!payload || !state.rows.length) return;
-    state.cards = collectCards(); if (!state.cards.length) return;
+    var payload = parseRows() || { rows: [], as_of: "" };
+    state.cards = collectCards();
     state.sectors = collectSectors();
+    buildShell(payload);
 
-    /* The old page stays visible during this bounded read. `sector_pulse_canada`
+    /* The canonical product is already painted and bound. `sector_pulse_canada`
        is the current published theme rank/reco owner; baskets.json owns members.
-       No client-side score or rank is computed. */
-    var done = false, timer = setTimeout(function () { if (!done) { done = true; buildShell(payload); } }, 2500);
+       Either optional source may fail without changing shell admission. */
     Promise.all([
-      getJson("canadabasketdata/baskets.json"),
+      getJson("canadabasketdata/baskets.json").catch(function () { return null; }),
       getJson("canadabasketdata/sector_pulse_canada.json").catch(function () { return null; })
     ]).then(function (parts) {
-      if (done) return;
-      done = true; clearTimeout(timer);
       state.themes = collectThemes(parts[0], parts[1]);
-      buildShell(payload);
-    }).catch(function () {
-      if (!done) { done = true; clearTimeout(timer); buildShell(payload); }
+      renderLeadership();
     });
   }
 

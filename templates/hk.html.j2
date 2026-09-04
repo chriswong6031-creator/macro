@@ -21,7 +21,7 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
-{% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
+{% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css"><link id="mx-stockdash-css" rel="stylesheet" href="stock-dashboard.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 <link rel="stylesheet" href="illus.css">
 <style>
@@ -1558,6 +1558,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
 
 {% include "_site_nav.html.j2" %}
 
+{% if mode == 'stocks' %}<main class="hk-v37 mx-stockdash mx-stockdash--hk" id="hk-v37">{% endif %}
 <div class="grid">
 
   {# FRESHNESS SENTINEL BANNER — shown at page top in BOTH modes when HK data is stale
@@ -3121,6 +3122,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {% set _namp = (M.amplifiers|length) if M and M.amplifiers else 0 %}
   {% set _ncush = (M.cushions|length) if M and M.cushions else 0 %}
   {% set _nmid = (_nall - _namp - _ncush) if _nall else 0 %}
+  <header class="hk-v37-head span12" id="hk-v37-head">
   <div class="panel span12" id="stocks-header">
     <div class="deskhero">
       <div>
@@ -3195,9 +3197,11 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       </div>
     </div>
   </div>
+  </header>
   {# 1D VELOCITY DESK moved to AFTER Prophet (IA revamp 2026-07-22) — see #hk-velocity-desk below. #}
 
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
+  <section class="hk-v37-panel hk-v37-owner-panel span12" id="hk-v37-actnow">
   {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
   <style>
   /* ---- HKRV-W3: leadership banner + turn chip ---- */
@@ -3479,10 +3483,33 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       {{ _hk_anlane('red', 'red', 'Reduce / Avoid', '减仓 / 回避', 'Trend weakening — take profits or stay away', '趋势转弱 — 止盈或回避', _hk_red, 'anv2-red') }}
     </div>
   </div>
+  {% else %}
+  <div class="panel span12 anv2-board hk-v37-empty hk-v37-static-state" id="act-now">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</div>
   {% endif %}
+  </section>
   {% endif %}
 
   <!-- ===================== PROPHET — HK stock signals (relative-strength cards) ===================== -->
+  {% if mode == 'stocks' %}
+  <section class="hk-v37-panel span12" id="hk-v37-prophet">
+    <div class="hk-v37-sec-hd">
+      <h2>Prophet</h2>
+      <span class="hk-v37-result" id="hk-v37-result">{{ t('Full owner board', '完整原生榜单') }}</span>
+      <span class="hk-v37-sec-spacer"></span>
+      <div class="hk-v37-controls">
+        <button class="hk-v37-filter" id="hk-v37-filter" type="button" hidden></button>
+        <span class="hk-v37-seg" role="group" aria-label="Candidate population">
+          <button type="button" data-hk-source="top" aria-selected="true">{{ t('Top Picks', '首选') }}</button>
+          <button type="button" data-hk-source="all" aria-selected="false">{{ t('All Candidates', '全部候选') }}</button>
+        </span>
+        <span class="hk-v37-seg" role="group" aria-label="View">
+          <button type="button" data-hk-view="grid" aria-selected="true">{{ t('Grid', '卡片') }}</button>
+          <button type="button" data-hk-view="table" aria-selected="false">{{ t('Table', '表格') }}</button>
+        </span>
+      </div>
+    </div>
+    <div class="hk-v37-card-grid" id="hk-v37-card-grid">
+  {% endif %}
   {# THE PANEL GATE IS ALSO ARTIFACT-LEVEL on the v1 path. `setups.buy` alone put the
      whole board — filter, leaders, ran, vetoed, laggards, footnote — behind a lane
      that is allowed to be EMPTY, so a v1 night on which the cascade admits nobody
@@ -4524,9 +4551,39 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   })();
   </script>
   {% endif %}
+  {% elif mode == 'stocks' %}
+    <div class="hk-v37-empty hk-v37-static-state">{{ t('No Prophet candidates are published for this board.', '本期榜单暂无 Prophet 候选。') }}</div>
+  {% endif %}
+  {% if mode == 'stocks' %}
+    </div>{# /#hk-v37-card-grid — every owner stage stays in place #}
+    <div class="hk-v37-empty" id="hk-v37-grid-empty" hidden>{{ t('No actionable cards match this filter; the full stage board remains below.', '当前筛选无可操作卡片；完整阶段榜单仍保留在下方。') }}</div>
+  </section>
+
+  <section class="hk-v37-panel span12" id="hk-v37-leadership">
+    <div class="hk-v37-sec-hd">
+      <h2>{{ t('Leadership & Rotation', '领先与轮动') }}</h2>
+      <span class="hk-v37-lead-basis" id="hk-v37-lead-basis" hidden>{{ t('Relative strength vs HSI', '相对恒生指数') }}</span>
+      <span class="hk-v37-flow" id="hk-v37-flow"></span>
+      <span class="hk-v37-sec-spacer"></span>
+      <a class="hk-v37-link" href="sector_ranking.html">{{ t('Sector ranking', '板块排名') }} ↗</a>
+    </div>
+    <div class="hk-v37-lead-list" id="hk-v37-lead-list">
+      <div class="hk-v37-empty hk-v37-static-state">{{ t('Leadership detail is unavailable until enhancement runs; the owner boards above remain complete.', '增强脚本运行前，领先详情暂不可用；上方原生榜单保持完整。') }}</div>
+    </div>
+    <div class="hk-v37-expand-wrap"><button class="hk-v37-expand" id="hk-v37-expand" type="button">{{ t('Expand leadership', '展开领先排名') }} ↗</button></div>
+  </section>
   {% endif %}
 
   <!-- ===================== TRACK RECORD — receipt chip + popup (shared partial) — sits with Prophet ===================== -->
+  {% if mode == 'stocks' %}
+  <section class="hk-v37-panel span12" id="hk-v37-evidence">
+    <div class="hk-v37-sec-hd">
+      <h2>{{ t('Evidence & Record', '证据与往绩') }}</h2>
+      <span class="hk-v37-sec-spacer"></span>
+      <a class="hk-v37-link" href="measurement.html">{{ t('Methodology →', '方法论 →') }}</a>
+    </div>
+    <div class="hk-v37-evidence-body" id="hk-v37-evidence-body">
+  {% endif %}
   {% if mode == 'stocks' and track_record %}
   {% set TR = track_record %}
   {% set _hk_h21 = (TR.horizons | selectattr('h', 'equalto', '21d') | list | first) if TR.horizons else none %}
@@ -4568,6 +4625,34 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
     'note_zh': '每晚榜单都会记录，并按相对恒指的前瞻超额收益评分。暂无退市名库——消失的个股会离开样本，因此亏损可能被低估。',
   } %}
   <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px">{% include '_track_record_dlg.html.j2' %}</div>
+  {% endif %}
+  {% if mode == 'stocks' %}
+    {% if not track_record %}<div class="hk-v37-empty hk-v37-static-state">{{ t('Track record is currently unavailable.', '往绩记录目前暂不可用。') }}</div>{% endif %}
+    </div>
+  </section>
+
+  <section class="hk-v37-panel span12" id="hk-v37-tools">
+    <div class="hk-v37-tools">
+      <b>{{ t('Research tools', '研究工具') }}</b>
+      <a class="hk-v37-tool" href="hk_stocks_lab.html">{{ t('Pick Lab', '选股实验室') }} ↗</a>
+      <a class="hk-v37-tool" href="hk.html">{{ t('HK Macro', '香港宏观') }} ↗</a>
+      <a class="hk-v37-tool" href="sector_ranking.html">{{ t('Sector ranking', '板块排名') }} ↗</a>
+      <a class="hk-v37-tool" href="#hk-velocity-desk">{{ t('Fast Movers', '快速异动') }} ↓</a>
+      <a class="hk-v37-tool" href="#washout-watch">{{ t('Washout Watch', '洗盘观察站') }} ↓</a>
+      <a class="hk-v37-tool" href="#mainland-money">{{ t('Mainland Money', '内地资金') }} ↓</a>
+      <a class="hk-v37-tool" href="#hk-screener">{{ t('Screener', '筛选器') }} ↓</a>
+    </div>
+  </section>
+
+  <div class="hk-v37-modal" id="hk-v37-modal" aria-hidden="true">
+    <div class="hk-v37-modal-card" role="dialog" aria-modal="true" aria-labelledby="hk-v37-modal-title">
+      <div class="hk-v37-modal-hd">
+        <h3 id="hk-v37-modal-title">{{ t('Leadership & Rotation', '领先与轮动') }}</h3>
+        <button class="hk-v37-modal-x" type="button" data-hk-modal-close aria-label="Close">×</button>
+      </div>
+      <div class="hk-v37-modal-body" id="hk-v37-modal-body"></div>
+    </div>
+  </div>
   {% endif %}
 
   {# ======= 1D VELOCITY DESK — fast movers (hk_stocks.html only) — moved AFTER Prophet (IA revamp 2026-07-22)
@@ -5042,6 +5127,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
   {# Southbound & A/H combined panel REMOVED 2026-07-22 — merged into #mainland-money above. #}
 
 </div>
+{% if mode == 'stocks' %}</main>{% endif %}
 
 <div class="foot">
   {{ t('Built', '生成于') }} {{ built }}<br>

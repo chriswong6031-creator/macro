@@ -1,18 +1,15 @@
-/* Stock Dashboard governed presentation — TP-1 Canada theme-parity extraction
-   (theme-parity-tp1-canada-20260828-sol-001).
+/* Stock Dashboard governed presentation — canonical HK/Canada static shell.
+   Canada extraction: theme-parity-tp1-canada-20260828-sol-001.
+   Static-shell migration: prophet-cockpit-p0b-zero-fouc-20260904-sol-001.
    research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md §4-5.
 
-   This file owns every presentation rule the Canada V3.8 composer
-   (site/canada-stock-v36.js) used to author itself as a runtime <style> tag
-   (the deleted injectCss()). It is a paired plain-copy asset — byte-identical
-   to site/stock-dashboard.css (scripts/check_template_site_sync.py) — loaded
-   by templates/dashboard-icons.js's ensureStockDashCss() seam BEFORE the
-   composer script is injected, so the composer never mounts unstyled.
+   This paired plain-copy asset is loaded directly by both stock templates,
+   before deferred enhancement. The generated HTML therefore owns a visible,
+   styled product even when JavaScript or optional Canada evidence fails.
 
-   Scope: everything lives under .mx-stockdash (the shared stock-dashboard
-   mount family) and .mx-stockdash--ca (the Canada variant). The composer
-   keeps its existing .ca-v36-* child class names this wave (V3.8 semantic
-   naming is unchanged) — only the STYLE OWNERSHIP moved.
+   Scope: everything lives under .mx-stockdash and its market modifiers.
+   The composers keep their existing child class names and semantic adapters;
+   outer-shell and owner-surface placement belong to server-rendered HTML.
 
    Token notes:
    - --r-ctl / --r-btn / --r-card / --r-panel / --r-pill are the DS-PR-0
@@ -95,10 +92,7 @@
         var(--pv-avoid)) — measured dark dE76 about 8. Same rationale as
         item 6; all four lane hues remain mutually distinct (minimum
         pairwise dE76 above 60 on both planes).
-   The modal family's sibling combinator (.mx-stockdash--ca ~ .ca-v36-modal)
-   is a separate regression repair, documented at that rule below — it is
-   not a dark-only change (both themes were affected) so it is not counted
-   above. */
+   The modal is now a descendant of the one static canonical main. */
 
 .mx-stockdash {
   box-sizing: border-box;
@@ -110,9 +104,6 @@
 .mx-stockdash *::after { box-sizing: border-box; }
 
 /* ---- Canada shell / head / Board+LIVE chips ------------------------------ */
-
-body.page-canada.ca-v36-mounted { background: var(--bg); color: var(--text); }
-body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 
 .mx-stockdash--ca {
   width: min(1480px, calc(100% - 32px));
@@ -160,6 +151,12 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 .mx-stockdash--ca .ca-v36-sec-spacer { flex: 1; }
 .mx-stockdash--ca .ca-v36-link { color: var(--ink-link, var(--link)); font-size: 13px; font-weight: 600; text-decoration: none; }
 .mx-stockdash--ca .ca-v36-link:hover { text-decoration: underline; }
+.mx-stockdash--ca .ca-v36-owner-panel > .panel,
+.mx-stockdash--ca .ca-v36-card-grid > #standouts,
+.mx-stockdash--ca .ca-v36-evidence-body > .panel {
+  margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.mx-stockdash--ca .ca-v36-static-state { min-height: 72px; display: grid; place-items: center; }
 
 /* ---- What to Act On Now: segmented control / lanes / rows / counts / routes / empty / View-all --- */
 
@@ -303,11 +300,10 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 
 /* ---- Hidden overrides (card.hidden = !show defeats author display rules) --- */
 
-.mx-stockdash--ca .ca-v36-card-grid[hidden] { display: none !important; }
 .mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden] { display: none !important; }
 
 .mx-stockdash--ca .ca-v36-card-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; padding: 14px;
+  display: block; padding: 14px;
 }
 .mx-stockdash--ca .ca-v36-card-grid .pvcard {
   min-width: 0; height: 100%; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif);
@@ -315,8 +311,7 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 }
 .mx-stockdash--ca .ca-v36-card-grid .pvcard:hover { transform: translateY(-2px); }
 
-/* .sm-hidden rescue: legacy "show more" hidden state must not survive the move. */
-.mx-stockdash--ca .ca-v36-card-grid .sm-hidden { display: flex !important; }
+/* The owner board remains in place, so its show-more state stays authoritative. */
 
 .mx-stockdash--ca .ca-v36-card-grid .pv-chart svg { height: 82px !important; }
 .mx-stockdash--ca .ca-v36-card-grid .pv-bd { padding: 14px 14px 12px !important; }
@@ -372,7 +367,7 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 .mx-stockdash--ca .ca-v36-table-live { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
 .mx-stockdash--ca .ca-v36-table-live .nb-px { font-size: 14.8px; font-weight: 700; }
 .mx-stockdash--ca .ca-v36-table-live .nb-chg { font-size: 12.7px; font-weight: 750; }
-.mx-stockdash--ca .ca-v36-table tr.ca-v36-hidden { display: none !important; }
+.mx-stockdash--ca #stocktable-wrap tr.ca-v36-hidden { display: none !important; }
 
 /* ---- Research Tools --------------------------------------------------------- */
 
@@ -390,50 +385,35 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 .mx-stockdash--ca .ca-v36-evidence-body { display: flex; justify-content: center; padding: 13px 14px 15px; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
 .mx-stockdash--ca .ca-v36-evidence-body .trk { margin: 0; padding: 9px 12px; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
 
-/* ---- Modal (Expand leadership) ----------------------------------------------
-   SIBLING, not descendant — and that is load-bearing, not style. The composer
-   mounts the leadership modal with `document.body.appendChild(modal)`, so it is
-   a following SIBLING of the .mx-stockdash--ca <main>, never a child of it
-   (verified in-browser: body children are [… 2:MAIN.mx-stockdash--ca …
-   25:DIV#ca-v36-modal]). The Task-3 extraction scoped this family as
-   `.mx-stockdash--ca .ca-v36-modal…`, which matches nothing: the pre-extraction
-   injectCss() wrote these selectors BARE, and the scoping pass did not account
-   for the one subtree that lives outside the mount. Measured on this branch
-   before the fix, in BOTH themes: the modal computed position:static,
-   display:block, background:none — i.e. the whole family was dead, the "Expand
-   leadership" dialog never overlaid, and its 16 rows rendered as a stray block
-   at the foot of the page. `.mx-stockdash--ca ~ .ca-v36-modal` keeps the
-   governed namespace root (architecture §4.2 — no bare page-global selectors)
-   while actually matching the shipped DOM. This restores the ACCEPTED V3.8
-   production rendering; it is not a new dark decision. */
+/* ---- Modal (Expand leadership) — static descendant, JS fills the body. ----- */
 
-.mx-stockdash--ca ~ .ca-v36-modal {
+.mx-stockdash--ca .ca-v36-modal {
   position: fixed; inset: 0; z-index: 2147481000; display: none; align-items: center; justify-content: center;
   padding: 20px; background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(8px);
 }
-.mx-stockdash--ca ~ .ca-v36-modal.is-open { display: flex; }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
+.mx-stockdash--ca .ca-v36-modal.is-open { display: flex; }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-card {
   width: min(1180px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 36px));
   display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-panel, 14px);
   background: var(--panel); overflow: hidden;
   box-shadow: 0 30px 90px color-mix(in srgb, var(--bg) 50%, transparent);
 }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-hd { min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x {
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-hd { min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x {
   margin-left: auto; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
   background: var(--panel2); color: var(--text); font-size: 21px; cursor: pointer;
 }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-body { overflow: auto; padding: 14px; }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr { cursor: pointer; }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .num,
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-body { overflow: auto; padding: 14px; }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-pane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2); }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table tbody tr { cursor: pointer; }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table .num,
+.mx-stockdash--ca .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
 
 /* ============================================================================
    LIGHT ART DIRECTION — "institutional research workspace"
@@ -656,19 +636,19 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-expand {
 
 /* ---- Light: modal — cool scrim, white material, no nested grey boxes -------- */
 
-html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-modal {
   background: color-mix(in srgb, var(--text) 22%, transparent);
 }
-html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-card {
   background: var(--panel);
   box-shadow: var(--popover-shadow);
 }
 /* The pane stays white and keeps only its structural hairline; the tint moves
    to the caption band, which is the same canvas-grade header device the
    Leadership list uses — one table grammar in both places. */
-html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane { background: var(--panel); }
-html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { background: var(--bg); }
-html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x:hover {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-pane { background: var(--panel); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-pane h4 { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   border-color: color-mix(in srgb, var(--text) 30%, var(--line));
 }
 
@@ -714,7 +694,234 @@ html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x:hover {
   .mx-stockdash--ca .ca-v36-card-grid .pv-tk { font-size: 16.3px !important; }
   .mx-stockdash--ca .ca-v36-card-grid .nb-px.pv-px { font-size: 15.5px !important; }
   .mx-stockdash--ca .ca-v36-card-grid .nb-chg.pv-chg { font-size: 13.1px !important; }
-  .mx-stockdash--ca ~ .ca-v36-modal { padding: 8px; }
-  .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
+  .mx-stockdash--ca .ca-v36-modal { padding: 8px; }
+  .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
   .mx-stockdash--ca .ca-v36-evidence-body { padding: 11px 10px 13px; }
+}
+
+/* ============================================================================
+   HONG KONG STATIC SHELL — server-owned first frame, in-place enhancement.
+   The existing HK template remains the owner of all 39 lifecycle rows and its
+   specialist panels. These rules frame that owner DOM; they never hide a
+   precursor page or wait for an enhancer class.
+   ========================================================================== */
+
+.mx-stockdash--hk {
+  width: 100%; margin: 0; color: var(--text); font-size: 16.2px; line-height: 1.48;
+}
+.mx-stockdash--hk button,
+.mx-stockdash--hk input,
+.mx-stockdash--hk select {
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif);
+}
+.mx-stockdash--hk .hk-v37-head,
+.mx-stockdash--hk .hk-v37-panel { grid-column: span 12; min-width: 0; }
+.mx-stockdash--hk .hk-v37-head > #stocks-header { margin: 0; }
+.mx-stockdash--hk .hk-v37-panel {
+  border: 1px solid var(--line); border-radius: var(--r-panel, 14px);
+  background: var(--panel); box-shadow: var(--card-shadow); overflow: hidden;
+}
+.mx-stockdash--hk .hk-v37-owner-panel > .panel,
+.mx-stockdash--hk .hk-v37-card-grid > #standouts,
+.mx-stockdash--hk .hk-v37-evidence-body > #track-record {
+  margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.mx-stockdash--hk .hk-v37-static-state {
+  min-height: 72px; display: grid; place-items: center; padding: 18px; color: var(--muted); text-align: center;
+}
+.mx-stockdash--hk .hk-v37-sec-hd {
+  min-height: 54px; display: flex; align-items: center; gap: 10px;
+  padding: 0 15px; border-bottom: 1px solid var(--line);
+}
+.mx-stockdash--hk .hk-v37-sec-hd h2 {
+  margin: 0; color: var(--text); font-size: 18px; font-weight: 650;
+  letter-spacing: -.012em; text-transform: none;
+}
+.mx-stockdash--hk .hk-v37-sec-spacer { flex: 1; }
+.mx-stockdash--hk .hk-v37-link {
+  color: var(--ink-link, var(--link)); font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.mx-stockdash--hk .hk-v37-link:hover { text-decoration: underline; }
+.mx-stockdash--hk .hk-v37-flow {
+  max-width: 38%; overflow: hidden; color: var(--muted); font-size: 12.2px;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.mx-stockdash--hk .hk-v37-lead-basis {
+  height: 26px; display: inline-flex; align-items: center; padding: 0 9px;
+  border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 650; white-space: nowrap;
+}
+.mx-stockdash--hk .hk-v37-lead-basis[hidden] { display: none !important; }
+
+.mx-stockdash--hk .hk-v37-controls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mx-stockdash--hk .hk-v37-seg {
+  display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line);
+  border-radius: var(--r-btn, 10px); background: var(--panel2);
+}
+.mx-stockdash--hk .hk-v37-seg button {
+  height: 36px; padding: 0 14px; border: 1px solid transparent;
+  border-radius: var(--r-ctl, 8px); background: transparent; color: var(--muted);
+  font-size: 13.1px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--hk .hk-v37-seg button[aria-selected=true] {
+  background: var(--panel); border-color: var(--line); color: var(--text);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--bg) 12%, transparent);
+}
+.mx-stockdash--hk .hk-v37-result { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.mx-stockdash--hk .hk-v37-filter {
+  display: none; height: 32px; align-items: center; padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--link) 35%, var(--line));
+  border-radius: var(--r-pill, 999px); background: color-mix(in srgb, var(--link) 7%, transparent);
+  color: var(--text); font-size: 12px; cursor: pointer;
+}
+.mx-stockdash--hk .hk-v37-filter.is-on { display: inline-flex; }
+.mx-stockdash--hk .hk-v37-card-grid { display: block; padding: 14px; }
+.mx-stockdash--hk .hk-v37-card-grid .pvcard[hidden] { display: none !important; }
+.mx-stockdash--hk .hk-v37-empty {
+  padding: 24px 16px; color: var(--muted); font-size: 13px; text-align: center;
+}
+.mx-stockdash--hk .hk-v37-empty-switch {
+  display: block; margin: 10px auto 0; height: 31px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--text); font-size: 11.8px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--hk #stocktable-wrap tr.hk-v37-hidden { display: none !important; }
+
+.mx-stockdash--hk .hk-v37-lead-list { padding: 2px 0; }
+.mx-stockdash--hk .hk-v37-lead-list-h {
+  display: flex; justify-content: space-between; padding: 11px 14px 10px;
+  color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+}
+.mx-stockdash--hk .hk-v37-lead-row {
+  position: relative; width: 100%; min-height: 58px; display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto 34px; align-items: center; gap: 9px;
+  padding: 10px 14px; border: 0; border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: transparent; color: inherit; text-align: left; cursor: pointer; overflow: hidden;
+}
+.mx-stockdash--hk .hk-v37-lead-row::after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: var(--breadth, 8%); height: 1px;
+  background: color-mix(in srgb, var(--link) 44%, transparent); opacity: .5;
+}
+.mx-stockdash--hk .hk-v37-lead-row:hover,
+.mx-stockdash--hk .hk-v37-lead-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--hk .hk-v37-rank { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.mx-stockdash--hk .hk-v37-lead-name {
+  display: block; overflow: hidden; font-size: 14.7px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap;
+}
+.mx-stockdash--hk .hk-v37-leaders,
+.mx-stockdash--hk .hk-v37-cycle {
+  display: inline-block; max-width: 100%; margin-top: 3px; overflow: hidden;
+  color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap;
+}
+.mx-stockdash--hk .hk-v37-count { color: var(--muted); font-size: 11.7px; font-variant-numeric: tabular-nums; text-align: right; }
+.mx-stockdash--hk .hk-v37-stance {
+  height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
+  border: 1px solid currentColor; border-radius: var(--r-ctl, 8px);
+  font-size: 10px; font-weight: 750; text-transform: uppercase; white-space: nowrap;
+}
+.mx-stockdash--hk .hk-v37-stance.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+.mx-stockdash--hk .hk-v37-stance.near { color: var(--ink-link, var(--link)); }
+.mx-stockdash--hk .hk-v37-stance.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--hk .hk-v37-stance.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+.mx-stockdash--hk .hk-v37-stance.none { color: var(--muted); }
+.mx-stockdash--hk .hk-v37-expand-wrap {
+  display: flex; justify-content: center; padding: 9px 12px 11px;
+  border-top: 1px solid var(--line); background: color-mix(in srgb, var(--panel2) 32%, transparent);
+}
+.mx-stockdash--hk .hk-v37-expand {
+  height: 35px; padding: 0 14px; border: 1px solid var(--line);
+  border-radius: var(--r-ctl, 8px); background: var(--panel2); color: var(--text);
+  font-size: 12.5px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--hk .hk-v37-evidence-body {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 13px 14px 15px;
+}
+.mx-stockdash--hk .hk-v37-tools {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 11px 14px;
+}
+.mx-stockdash--hk .hk-v37-tools b { margin-right: 2px; font-size: 12.8px; }
+.mx-stockdash--hk .hk-v37-tool {
+  height: 37px; display: inline-flex; align-items: center; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--muted); font-size: 12.1px; font-weight: 600; text-decoration: none;
+}
+.mx-stockdash--hk .hk-v37-tool:hover {
+  color: var(--text); border-color: color-mix(in srgb, var(--text) 28%, var(--line)); transform: translateY(-1px);
+}
+
+.mx-stockdash--hk .hk-v37-modal {
+  position: fixed; inset: 0; z-index: 2147481000; display: none; align-items: center; justify-content: center;
+  padding: 20px; background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(8px);
+}
+.mx-stockdash--hk .hk-v37-modal.is-open { display: flex; }
+.mx-stockdash--hk .hk-v37-modal-card {
+  width: min(1180px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 36px));
+  display: flex; flex-direction: column; border: 1px solid var(--line);
+  border-radius: var(--r-panel, 14px); background: var(--panel); overflow: hidden;
+  box-shadow: 0 30px 90px color-mix(in srgb, var(--bg) 50%, transparent);
+}
+.mx-stockdash--hk .hk-v37-modal-hd {
+  min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line);
+}
+.mx-stockdash--hk .hk-v37-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
+.mx-stockdash--hk .hk-v37-modal-x {
+  margin-left: auto; width: 36px; height: 36px; border: 1px solid var(--line);
+  border-radius: var(--r-ctl, 8px); background: var(--panel2); color: var(--text); font-size: 21px; cursor: pointer;
+}
+.mx-stockdash--hk .hk-v37-modal-body { overflow: auto; padding: 14px; }
+.mx-stockdash--hk .hk-v37-modal-pane,
+.mx-stockdash--hk .hk-v37-modal-sb {
+  border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2);
+}
+.mx-stockdash--hk .hk-v37-modal-pane h4,
+.mx-stockdash--hk .hk-v37-modal-sb h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mx-stockdash--hk .hk-v37-modal-table,
+.mx-stockdash--hk .hk-v37-modal-sb table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+.mx-stockdash--hk .hk-v37-modal-table th,
+.mx-stockdash--hk .hk-v37-modal-table td,
+.mx-stockdash--hk .hk-v37-modal-sb td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.mx-stockdash--hk .hk-v37-modal-table th { color: var(--muted); font-size: 10.8px; }
+.mx-stockdash--hk .hk-v37-modal-table tbody tr { cursor: pointer; }
+.mx-stockdash--hk .hk-v37-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--hk .hk-v37-modal-table .num,
+.mx-stockdash--hk .hk-v37-modal-table .leaders,
+.mx-stockdash--hk .hk-v37-sb-label { color: var(--muted); }
+
+/* Light uses white research material, hairline structure, and shadow rather
+   than the dark plane's luminance depth and restrained bloom. */
+html[data-theme=light] .mx-stockdash--hk .hk-v37-panel {
+  background: var(--panel); border-color: var(--line); box-shadow: var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--hk .hk-v37-card-grid { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-seg { background: color-mix(in srgb, var(--text) 6%, var(--panel2)); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-seg button[aria-selected=true] {
+  background: var(--panel); border-color: var(--line); box-shadow: var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--hk .hk-v37-lead-row.is-active { box-shadow: inset 3px 0 0 var(--link); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-lead-row::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line);
+}
+html[data-theme=light] .mx-stockdash--hk .hk-v37-lead-row::after {
+  height: 2px; background: color-mix(in srgb, var(--link) 55%, transparent); opacity: 1;
+}
+html[data-theme=light] .mx-stockdash--hk .hk-v37-stance { background: color-mix(in srgb, currentColor 7%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-expand-wrap { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-expand { background: var(--panel); box-shadow: var(--card-shadow); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-modal { background: color-mix(in srgb, var(--text) 22%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-card { background: var(--panel); box-shadow: var(--popover-shadow); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-pane,
+html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-sb { background: var(--panel); }
+
+@media (max-width: 680px) {
+  .mx-stockdash--hk { font-size: 15.8px; }
+  .mx-stockdash--hk .hk-v37-sec-hd { align-items: flex-start; flex-wrap: wrap; padding: 11px 12px; }
+  .mx-stockdash--hk .hk-v37-sec-hd h2 { font-size: 17px; }
+  .mx-stockdash--hk .hk-v37-flow { width: 100%; max-width: none; white-space: normal; }
+  .mx-stockdash--hk .hk-v37-controls { width: 100%; }
+  .mx-stockdash--hk .hk-v37-card-grid { padding: 10px; }
+  .mx-stockdash--hk .hk-v37-lead-row { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .mx-stockdash--hk .hk-v37-count { display: none; }
+  .mx-stockdash--hk .hk-v37-modal { padding: 8px; }
+  .mx-stockdash--hk .hk-v37-modal-card { width: 100%; max-height: calc(100vh - 16px); }
+  .mx-stockdash--hk .hk-v37-evidence-body { padding: 11px 10px 13px; }
 }

@@ -25,7 +25,7 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
-{% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
+{% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css"><link id="mx-stockdash-css" rel="stylesheet" href="stock-dashboard.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 <link rel="stylesheet" href="illus.css">
 <style>
@@ -840,15 +840,15 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% include "_site_nav.html.j2" %}
 
 {% if mode == 'stocks' %}
-<div class="panel">
-  <div class="row">
-    <h1>{{ t('TSX Stock Dashboard', '标普/TSX 个股看板') }}</h1>
-    <span style="flex:1"></span>
-    <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
-  </div>
-  <p class="muted small" style="margin:6px 0 0">{{ t('A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.', '一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。') }}
-    <a href="canada.html" style="color:var(--ink-link, var(--link));font-weight:600">← {{ t('Canada macro dashboard', '加拿大宏观看板') }}</a></p>
-</div>
+<main class="ca-v36 mx-stockdash mx-stockdash--ca" id="ca-v36">
+<header class="ca-v36-head" id="ca-v36-head">
+  <h1>{{ t('Canada Stocks', '加拿大股票') }}</h1>
+  <span class="ca-v36-head-spacer"></span>
+  <span class="ca-v36-chip">{{ t('Screen · evidence accruing', '筛选 · 证据积累中') }}</span>
+  <span class="ca-v36-chip">{{ t('Board', '榜单') }} {{ latest.date }}</span>
+  <span class="ca-v36-live"><span class="ca-v36-live-dot" aria-hidden="true"></span><b>{{ t('LIVE QUOTES', '实时报价') }}</b></span>
+</header>
+<section class="ca-v36-panel ca-v36-owner-panel" id="ca-v36-actnow">
 {% endif %}
 
 {% if mode == 'stocks' and actions and (actions.get('buy_now') or actions.get('buy_soon') or actions.get('on_the_run') or actions.get('take_profits') or actions.get('hold') or actions.get('avoid')) %}
@@ -999,6 +999,13 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     {{ _ca_anlane('red', 'red', 'Reduce / Avoid', '减仓 / 回避', 'Trend weakening — take profits or stay away', '趋势转弱 — 止盈或回避', _ca_red, 'anv2-red') }}
   </div>
 </div>
+{% endif %}
+
+{% if mode == 'stocks' %}
+{% if not actions or not (actions.get('buy_now') or actions.get('buy_soon') or actions.get('on_the_run') or actions.get('take_profits') or actions.get('hold') or actions.get('avoid')) %}
+<div class="panel anv2-board ca-v36-empty ca-v36-static-state" id="act-now">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</div>
+{% endif %}
+</section>
 {% endif %}
 
 {% if mode != 'stocks' %}{# ===== MX5 CANADA GLANCE — macro mode ===== #}
@@ -2216,7 +2223,28 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% endif %}{# /macro mode #}
 
 <!-- ===== Standout stocks (BRANCH B ripe-list contract) — the TSX Stock Dashboard headline ===== -->
-{% if mode == 'stocks' and setups and setups.buy %}
+{% if mode == 'stocks' %}
+{% set _ca_board_n = setups.buy|length if (setups and setups.buy) else 0 %}
+<section class="ca-v36-panel" id="ca-v36-prophet">
+  <div class="ca-v36-sec-hd">
+    <h2>Prophet</h2>
+    <span class="ca-v36-result" id="ca-v36-result">{{ _ca_board_n }} {{ t('shown ·', '已显示 ·') }} {{ _ca_board_n }} {{ t('on board', '只在榜') }}</span>
+    <span class="ca-v36-fresh" id="ca-v36-fresh" hidden></span>
+    <span class="ca-v36-sec-spacer"></span>
+    <div class="ca-v36-controls">
+      <button class="ca-v36-filter" id="ca-v36-filter" type="button" hidden></button>
+      <span class="ca-v36-seg" role="group" aria-label="Candidate population">
+        <button type="button" data-ca-source="top" aria-selected="true">{{ t('Top Picks', '首选') }}</button>
+        <button type="button" data-ca-source="all" aria-selected="false">{{ t('All Candidates', '全部候选') }}</button>
+      </span>
+      <span class="ca-v36-seg" role="group" aria-label="View">
+        <button type="button" data-ca-view="grid" aria-selected="true">{{ t('Grid', '卡片') }}</button>
+        <button type="button" data-ca-view="table" aria-selected="false">{{ t('Table', '表格') }}</button>
+      </span>
+    </div>
+  </div>
+  <div class="ca-v36-card-grid" id="ca-v36-card-grid">
+{% if setups and setups.buy %}
 {# ── W8-G: JSON data block — feeds StockTable.init(); serialized in system (board) order.
    NO re-sorting here: _branch_b_order already delivered the correct system order; this
    block copies fields verbatim, preserving the delivered sequence (CN no-ordering-mutation
@@ -2311,6 +2339,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       {% for s, n in sc.counts.items() %}<span class="muted">{{ s }} {{ n }}{{ '' if loop.last else ' ·' }}</span> {% endfor %}</span>
   </p>
   {% endif %}
+  {% macro ca_track_record_surface() %}
   {# ===== TRACK-RECORD — receipt chip + popup (shared partial, 2026-07-20) — the desk's
      accountability centerpiece. Ships 'accruing' with the honest first-read date; flips to a
      scored 21d hit-rate read once ≥5 IC-dates mature (≈ late-Aug 21d). ===== #}
@@ -2354,8 +2383,9 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     'note_en': 'Every nightly board is logged to a forward ledger and graded against realized excess return vs the TSX — no cherry-picking, no hindsight. No delisting archive yet — names that vanish leave the sample, so losses can be understated.',
     'note_zh': '每晚榜单都会写入前瞻账本，并按相对多伦多指数的实际超额收益评分——不挑样本、不事后诸葛。暂无退市名库——消失的个股会离开样本，因此亏损可能被低估。',
   } %}
-  <div class="trk" style="display:flex;justify-content:center">{% include '_track_record_dlg.html.j2' %}</div>
+  <div class="trk" id="ca-track-record" style="display:flex;justify-content:center">{% include '_track_record_dlg.html.j2' %}</div>
   {% endif %}
+  {% endmacro %}
   {# hard freshness gate banner (deliverable 4): tailwind axis suppressed when the
      canada_search panel is >3 trading days staler than the board's own price date. #}
   {% if setups.tailwind_suppressed %}
@@ -2528,6 +2558,54 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {% endif %}
   </div>{# /.nb-grid-section #}
 </div>
+{% else %}
+  <div class="ca-v36-empty ca-v36-static-state">{{ t('No Prophet candidates are published for this board.', '本期榜单暂无 Prophet 候选。') }}</div>
+{% endif %}
+  </div>{# /#ca-v36-card-grid — owner-rendered board stays in place #}
+  <div class="ca-v36-empty" id="ca-v36-grid-empty" hidden>{{ t('No names match this leadership filter.', '当前领先筛选下暂无匹配个股。') }}</div>
+</section>
+
+<section class="ca-v36-panel" id="ca-v36-leadership">
+  <div class="ca-v36-sec-hd">
+    <h2>{{ t('Leadership & Rotation', '领先与轮动') }}</h2>
+    <span class="ca-v36-sec-spacer"></span>
+    <a class="ca-v36-link" href="baskets_canada.html">{{ t('Thematic Baskets', '主题篮子') }} ↗</a>
+  </div>
+  <div class="ca-v36-lead-cols" id="ca-v36-lead-cols">
+    <div class="ca-v36-empty ca-v36-static-state">{{ t('Theme leadership is unavailable until the optional evidence feed arrives.', '可选证据源到达前，主题领先数据暂不可用。') }}</div>
+  </div>
+  <div class="ca-v36-expand-wrap"><button class="ca-v36-expand" id="ca-v36-expand" type="button">{{ t('Expand leadership', '展开领先排名') }} ↗</button></div>
+</section>
+
+<section class="ca-v36-panel" id="ca-v36-evidence">
+  <div class="ca-v36-sec-hd">
+    <h2>{{ t('Evidence & Record', '证据与往绩') }}</h2>
+    <span class="ca-v36-sec-spacer"></span>
+    <a class="ca-v36-link" href="measurement.html">{{ t('Methodology →', '方法论 →') }}</a>
+  </div>
+  <div class="ca-v36-evidence-body" id="ca-v36-evidence-body">
+    {% if setups and setups.buy and setups.board_track %}{{ ca_track_record_surface() }}{% else %}<div class="ca-v36-empty ca-v36-static-state">{{ t('Track record is currently unavailable.', '往绩记录目前暂不可用。') }}</div>{% endif %}
+  </div>
+</section>
+
+<section class="ca-v36-panel" id="ca-v36-tools">
+  <div class="ca-v36-tools">
+    <b>{{ t('Research tools', '研究工具') }}</b>
+    <a class="ca-v36-tool" href="baskets_canada.html">{{ t('Thematic Baskets', '主题篮子') }} ↗</a>
+    <a class="ca-v36-tool" href="canada.html">{{ t('Canada Macro', '加拿大宏观') }} ↗</a>
+  </div>
+</section>
+
+<div class="ca-v36-modal" id="ca-v36-modal" aria-hidden="true">
+  <div class="ca-v36-modal-card" role="dialog" aria-modal="true" aria-labelledby="ca-v36-modal-title">
+    <div class="ca-v36-modal-hd">
+      <h3 id="ca-v36-modal-title">{{ t('Leadership & Rotation', '领先与轮动') }}</h3>
+      <button class="ca-v36-modal-x" type="button" data-ca-modal-close aria-label="Close">×</button>
+    </div>
+    <div class="ca-v36-modal-body" id="ca-v36-modal-body"></div>
+  </div>
+</div>
+</main>
 {% endif %}
 
 <script src="mtf.js"></script>
