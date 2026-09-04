@@ -231,6 +231,16 @@ _MM_EVENT_TYPES = {
     # anything the client sends — which is what keeps the denominator honest when
     # the client is the thing choosing the arm. Read by engine/marketing/ad_ingest.py.
     "ad_exposure",
+    # Flow Observatory V2 W7 (research/flow_observatory/W7_SPEC.md): product-learning
+    # instrumentation for templates/flow_velocity.html.j2 — nine typed events (trust_open,
+    # changed_expand, quadrant_select, group_drill, history_open, compare_run,
+    # episode_view, terminal_out, watch_note_view) rides in `meta` as
+    # {ev, lens, id, sess} (the SAME meta passthrough `click` already uses). Privacy:
+    # group ids, lens names, and — for Terminal handoffs only — the instrument symbol
+    # the existing `click` event already carries; no holdings, no research text, no PII.
+    # (PR #6815 review: the prior wording "group ids and lens names only" overstated
+    # this — terminal_out's `id` field is a ticker, not a group id.)
+    "flowobs",
 }
 
 

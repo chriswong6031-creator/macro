@@ -21,6 +21,7 @@ after temporarily blanking ``REPLAY_CAPTION_LEAD_EN``/``_ZH`` in
 from __future__ import annotations
 
 import re
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -32,7 +33,7 @@ from engine import i18n
 from engine.flow_observatory import workflow as wf
 from engine.flow_observatory.contract import QUADRANT_LABELS, STATUS_WORD
 from scripts.build_vector import C
-from tests.test_flow_observatory_contract import ROOT, TMPL, _v2
+from tests.test_flow_observatory_contract import ROOT, TMPL, _member, _v2, market_read
 
 CFG = fv._WK
 
@@ -388,7 +389,10 @@ def test_history_prose_is_wrapped_never_inheriting_table_nowrap():
     v2 = _v2_with_history()
     html = _render(v2)
     assert re.search(r'<div class="fv-hist-text">\s*<p class="fv-replay-caption">', html)
-    assert re.search(r'<div class="fv-episodes fv-hist-text">', html)
+    # W7 (research/flow_observatory/W7_SPEC.md) added data-ev/-lens/-id telemetry
+    # attributes to this div — tolerate any trailing attributes, the assertion's own
+    # subject is the two classes, not an exhaustive attribute list.
+    assert re.search(r'<div class="fv-episodes fv-hist-text"[^>]*>', html)
     assert re.search(r'\.fv-hist-text\s*\{[^}]*white-space:\s*normal', html)
 
 
@@ -580,3 +584,276 @@ def test_band_geometry_survives_a_mid_series_nan_gap():
 
 
 # ── 12: mutation M1 — see module docstring; manual, not asserted here ─────────────────
+
+
+# ═══════════════════════ W7: product-learning telemetry ═══════════════════════════════
+# research/flow_observatory/W7_SPEC.md — nine typed events through the EXISTING
+# /api/collect beacon (templates/theme.js's window.mmTrack). Six numbered tests below
+# correspond 1:1 to spec §3's numbered list; each test's docstring names its bullet.
+# Mutation M1 (spec §3 item 6 — "add a forbidden field to the payload builder -> test 3
+# fails") is a manual verification, not a permanent test: paste the failing output of
+# test_w7_payload_carries_no_field_beyond_the_frozen_schema into the PR body/EVIDENCE
+# after temporarily adding a forbidden field (e.g. `tickers: ['AAPL']`) to the `meta: {…}`
+# object literal in templates/flow_velocity.html.j2's W7 telemetry block, then revert.
+
+_W7_EVENTS = [
+    "trust_open", "changed_expand", "quadrant_select", "group_drill", "history_open",
+    "compare_run", "episode_view", "terminal_out", "watch_note_view",
+]
+# Events that render as a static `data-ev="<name>"` HTML attribute — the render harness
+# can assert these directly. group_drill/compare_run have no such attribute (they reuse
+# the accordion's own data-sector/data-cmp-lens and the compare button's own click
+# handler respectively) — asserted instead as literal fire() call-site strings in the
+# page's own <script> block below.
+_W7_ATTR_EVENTS = [e for e in _W7_EVENTS if e not in ("group_drill", "compare_run")]
+
+BANNED_VOCAB = ["big money", "institutions are buying", "institutional accumulation",
+               "smart money", "大资金", "机构买入"]
+
+
+def _v2_with_everything(**over):
+    """A fixture that exercises every one of the nine W7 hooks in one render: history +
+    episodes (from `_v2_with_history`), a linked member (terminal_out), and a >8-item
+    change list (the changed_expand overflow `<details>`)."""
+    v2 = _v2_with_history(**over)
+    rows = (v2.get("ashare_sectors") or {}).get("rows") or []
+    assert rows, "fixture must carry at least one theme row"
+    rows[0]["members"] = [
+        {"ticker": "600104.SS", "name": "SAIC Motor", "vel": 1.0, "accel": 0.0,
+         "rate_4wk": 1.0, "rate_rel": 1.0, "rate_now": 1.0, "rate_norm": 0.0,
+         "state": "above norm, rising", "state_zh": "高于常态·升温"},
+    ]
+    v2["change_summary"] = {
+        "material_change": True, "previous_valid_session": "2026-08-31",
+        "transitions": [{"id": rows[0]["id"], "from_quadrant": "true_accumulation",
+                         "to_quadrant": "true_distribution"}] * 9,
+        "rank_movers": [], "quality_transitions": [], "source_revisions": [],
+    }
+    return v2
+
+
+_W7_MARKER = "W7 (research/flow_observatory/W7_SPEC.md)"
+
+
+def _w7_script_block(html: str) -> str:
+    """The page's own inline `<script>` block that carries the W7 telemetry IIFE — the
+    page ships a SECOND, unrelated bootstrap `<script>` (theme/lang, in <head>) and a
+    `<script src="theme.js">` tag, so this picks the bare `<script>...</script>` block
+    that actually contains the W7 marker comment, not just "the first one"."""
+    blocks = re.findall(r"<script>(.*?)</script>", html, re.S)
+    for b in blocks:
+        if _W7_MARKER in b:
+            return b
+    raise AssertionError("no inline <script> block carries the W7 telemetry marker")
+
+
+def test_w7_every_event_hook_renders_for_a_fully_populated_page():
+    """spec §3 test 1: every data-ev hook renders in the page for each event type."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    for ev in _W7_ATTR_EVENTS:
+        assert f'data-ev="{ev}"' in html, f"no data-ev=\"{ev}\" hook rendered"
+    script = _w7_script_block(html)
+    # group_drill / compare_run: fired from JS, not a static attribute — the literal
+    # fire()-call string must be present in the page's own script.
+    assert "'group_drill'" in script
+    assert "'compare_run'" in script
+
+
+def test_w7_dedup_set_and_existing_envelope_reused_no_second_transport():
+    """spec §3 test 2: the JS block contains a dedup structure and uses the existing
+    envelope call — no second transport URL/sendBeacon/fetch of its own."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    # dedup: "a Set in page JS" (spec §1), scoped to the W7 block specifically.
+    w7_block = script[script.index(_W7_MARKER):]
+    assert "new Set()" in w7_block
+    # reuses the EXISTING envelope call — never a second transport.
+    assert "window.mmTrack(" in w7_block
+    assert "sendBeacon" not in w7_block
+    assert "fetch(" not in w7_block
+    assert re.search(r"['\"]/api/", w7_block) is None, "W7 block names its own endpoint URL"
+
+
+def test_w7_payload_carries_no_field_beyond_the_frozen_schema():
+    """spec §3 test 3 (and mutation M1's target): the payload builder's `meta` object
+    carries exactly {ev, lens, id, sess} — nothing else, per the frozen spec §1.
+
+    PR #6815 review (GAPS-CLOSURE): the original assertion used `re.search`, which
+    only inspects the FIRST `window.mmTrack('flowobs', {...})` call site — a second
+    call site added later (bypassing the shared `fire()` builder) with an extra field
+    would pass silently. Switched to `re.findall` so every call site in the W7 block is
+    checked; today there is exactly one (inside `fire()`), so this also pins that
+    invariant — a second call site is a schema regression on its own."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    matches = re.findall(r"window\.mmTrack\('flowobs',\s*\{\s*meta:\s*\{([^}]*)\}\s*\}\)", w7_block)
+    assert matches, "could not locate any flowobs payload builder (window.mmTrack('flowobs', {meta: {...}}))"
+    assert len(matches) == 1, (
+        f"expected exactly one window.mmTrack('flowobs', ...) call site (the shared "
+        f"fire() builder), found {len(matches)} — every call site must be schema-checked"
+    )
+    for body in matches:
+        keys = set(re.findall(r"(\w+)\s*:", body))
+        assert keys == {"ev", "lens", "id", "sess"}, f"payload carries unexpected field(s): {keys}"
+
+
+def test_w7_beacon_indifference_call_site_is_defensively_wrapped():
+    """spec §3 test 4: the page renders + interacts with the beacon stubbed to throw —
+    via the existing (Jinja, non-JS-executing) render harness, this is asserted
+    structurally: the actual mmTrack call site is wrapped in try/catch AND gated on
+    `window.mmTrack` truthiness, so a stubbed/throwing/absent beacon can never reach the
+    page. Nothing about the SERVER-rendered HTML depends on any client analytics
+    state — the render is byte-identical to the same fixture whether or not the beacon
+    ever loads, which is inherent (no template logic branches on it) and confirmed by
+    the fixture's normal 200-style successful render above."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    # the actual beacon call is gated on existence...
+    assert "if (window.mmTrack)" in w7_block
+    # ...and the whole fire() body (existence check + call) sits inside try/catch, so a
+    # STUBBED mmTrack that itself throws synchronously (window.mmTrack = function(){throw})
+    # can never escape into the rest of the page's event handlers.
+    fire_fn = re.search(r"function fire\(ev, lens, id\)\{(.*?)\n    \}", w7_block, re.S)
+    assert fire_fn, "could not locate the fire() function body"
+    body = fire_fn.group(1)
+    assert "try {" in body and "} catch (e)" in body
+    try_idx, mmtrack_idx = body.index("try {"), body.index("window.mmTrack")
+    catch_idx = body.index("} catch (e)")
+    assert try_idx < mmtrack_idx < catch_idx, "the mmTrack call sits outside the try/catch"
+
+
+def test_w7_no_banned_vocabulary_and_visible_text_is_byte_identical_to_pre_w7():
+    """spec §3 test 5: no banned vocabulary introduced; EN/ZH untouched — this wave adds
+    no visible copy, so the rendered page's VISIBLE TEXT (tags and <script> blocks
+    stripped) must be byte-identical to the pre-W7 committed template
+    (fa48c606c33c — the commit that landed the frozen spec, immediately before this
+    wave's implementation), rendered against the identical fixture."""
+    from jinja2 import ChoiceLoader, DictLoader
+
+    v2 = _v2_with_everything()
+    html_new = _render(v2, known_tickers={"600104.SS"})
+    for bad in BANNED_VOCAB:
+        assert bad not in html_new, f"banned vocabulary {bad!r} in the W7-instrumented page"
+
+    old_src = subprocess.run(
+        ["git", "show", "fa48c606c33c:templates/flow_velocity.html.j2"],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    ).stdout
+    env_old = Environment(
+        loader=ChoiceLoader([DictLoader({"flow_velocity.html.j2": old_src}), FileSystemLoader(str(TMPL))]),
+        autoescape=True,
+    )
+    env_old.globals.update(td=i18n.td, tr=i18n.tr, quadrant_labels=QUADRANT_LABELS,
+                           status_word=STATUS_WORD, terminal_link=wf.terminal_link)
+    html_old = env_old.get_template("flow_velocity.html.j2").render(
+        C=C, snap=v2, built="test", known_tickers={"600104.SS"})
+
+    def _visible_text(h: str) -> str:
+        h = re.sub(r"<script\b.*?</script>", "", h, flags=re.S)
+        h = re.sub(r"<[^>]+>", "\n", h)
+        return re.sub(r"\s+", " ", h).strip()
+
+    assert _visible_text(html_new) == _visible_text(html_old), (
+        "W7 changed the page's visible text — this wave is telemetry-only "
+        "(data-ev attributes + a new <script> block), never a copy change"
+    )
+
+
+# ═══════════════ W7 repair round (PR #6815 independent review, B1-B4/N1-N3) ═══════════
+# The initial W7 implementation shipped with trust_open wired to `click` only, while the
+# LENS controller (templates/theme.js) opens a trust-strip chip's tip on
+# pointerover/focusin/touch-tap — never click — so genuine opens emitted nothing (and a
+# mobile tap's synthesized click can be retargeted off the chip entirely by the
+# sheet-mode scrim). watch_note_view measured accidental clicks on a static paragraph
+# with no LENS tip to open. The tests below pin the repair at the source level (this
+# suite renders server-side Jinja HTML and asserts against the page's own <script>
+# text — it does not execute JS — so client-runtime behavior like "did pointerover
+# actually fire once" is proved separately by the Playwright probe in
+# verify_shots/flow_observatory/w7/).
+
+
+def test_w7_trust_open_listens_on_genuine_open_paths_not_click():
+    """B1: trust_open must be wired to pointerover/focusin/pointerdown, delegated on
+    the trust strip's own `.fv-src[data-ev]` hook, and the general click-delegated
+    handler must explicitly skip trust_open (it is no longer click-driven at all)."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    for event_type in ("pointerover", "focusin", "pointerdown"):
+        assert f"'{event_type}'" in w7_block, f"no {event_type} listener in the W7 block"
+    assert ".fv-src[data-ev]" in w7_block, "the pointer listeners must delegate on .fv-src[data-ev]"
+    assert "if (ev === 'trust_open' || ev === 'watch_note_view') return;" in w7_block, (
+        "the general click-delegated handler no longer excludes trust_open/watch_note_view "
+        "from firing on a bare click"
+    )
+
+
+def test_w7_watch_note_view_is_an_impression_event_not_a_click():
+    """B2: watch_note_view must be observed via the same IntersectionObserver used for
+    episode_view (first-visible, not first-clicked) — the watch-limitation note is a
+    static always-visible paragraph with no LENS tip, so a click on it only ever
+    measured an accidental click on running text."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    assert '[data-ev="episode_view"], [data-ev="watch_note_view"]' in w7_block, (
+        "watch_note_view must be observed by the shared impression IntersectionObserver"
+    )
+
+
+def test_w7_dedup_key_includes_lens():
+    """N2: the dedup key must be ev|lens|id, not ev|id — otherwise a curated-lens id and
+    an official-lens id that happen to collide numerically would silently share one
+    dedup slot and one of the two groups' events would never fire."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    assert "ev + '|' + (lens || '') + '|' + (" in w7_block, (
+        "dedup key does not appear to include lens"
+    )
+
+
+def test_w7_delegated_handlers_guard_e_target_closest():
+    """N3: every delegated handler in the W7 block must guard `e.target &&
+    e.target.closest` before calling `.closest(...)` — theme.js's own idiom for a
+    document-level listener, since e.target is not guaranteed to be an Element (e.g. a
+    text-node target, or e.target null in edge cases some browsers still produce)."""
+    v2 = _v2_with_everything()
+    html = _render(v2, known_tickers={"600104.SS"})
+    script = _w7_script_block(html)
+    w7_block = script[script.index(_W7_MARKER):]
+    guard_count = w7_block.count("if (!e.target || !e.target.closest) return;")
+    assert guard_count >= 2, (
+        f"expected the e.target guard in both the click handler and the pointer "
+        f"listeners, found {guard_count} occurrence(s)"
+    )
+
+
+def test_w7_aggregate_row_carries_data_cmp_lens_aggregate():
+    """B3: the __all__ (aggregate) row must carry data-cmp-lens="aggregate" so its
+    group_drill payload conforms to the registry's flow_lens enum instead of falling
+    back to null — W7_SPEC.md §1 explicitly reserves 'aggregate' for exactly this row,
+    and config/growth_events.yml's flow_lens enum already lists it."""
+    v2 = _v2_with_everything(ashare_names={
+        "cadence": "daily", "as_of": "2026-09-01", "n": 10, "n_unscored": 3,
+        "primary": "4wk", "note": "note", "note_zh": "note_zh",
+        "market_read": market_read(
+            [{"vel": 1.0, "rate_4wk": 0.5, "state": "above norm, rising"}] * 10, unscored=3),
+        "inflow": [_member()],
+        "outflow": [],
+    })
+    html = _render(v2, known_tickers={"600104.SS"})
+    row = re.search(r'<tr class="sector-row allnames open"[^>]*>', html)
+    assert row, "the __all__ (aggregate) row did not render — fixture needs ashare_names.inflow/outflow"
+    assert 'data-cmp-lens="aggregate"' in row.group(0), (
+        f"__all__ row missing data-cmp-lens=\"aggregate\": {row.group(0)}"
+    )

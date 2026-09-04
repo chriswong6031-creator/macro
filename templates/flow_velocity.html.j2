@@ -94,7 +94,7 @@
 {%- else %}{% set _url = ('https://app.mastermind-x.com/terminal?sym=' + m.ticker + '&from=macro') if m.ticker else none %}
 {%- endif -%}
 {%- if _url -%}
-<a href="{{ _url }}" target="_blank" rel="noopener">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a>
+<a href="{{ _url }}" target="_blank" rel="noopener" data-ev="terminal_out" data-ev-id="{{ m.ticker }}">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a>
 {%- else -%}
 <span class="mname-unlinked">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></span>
 {%- endif -%}
@@ -238,9 +238,12 @@
 {% if r.history %}
 {% set h = r.history %}
 {% set sid = sector_id if sector_id is not none else r.id %}
+{# W7 (spec §2): lens for this drawer's telemetry, derived from the SAME "off-"
+   prefix convention the official lens already uses for sector_id (no new field). #}
+{% set _w7_lens = 'sector' if (sid or '').startswith('off-') else 'theme' %}
 <tr class="mrow fv-hist-row" data-sector="{{ sid }}">
   <td colspan="{{ colspan }}">
-    <details class="fv-disc fv-hist"{{ ' open' if force_open }}>
+    <details class="fv-disc fv-hist"{{ ' open' if force_open }} data-ev="history_open" data-ev-lens="{{ _w7_lens }}" data-ev-id="{{ r.id }}">
       <summary>{{ t('60-session history','60日历史') }}</summary>
       <div class="fv-disc-body">
         {# B3 repair (W6 review round): `.fv-hist-text` wraps every piece of PROSE in
@@ -286,7 +289,7 @@
         </div>
         {% endif %}
         {% if r.episodes %}
-        <div class="fv-episodes fv-hist-text">
+        <div class="fv-episodes fv-hist-text" data-ev="episode_view" data-ev-lens="{{ _w7_lens }}" data-ev-id="{{ r.id }}">
           {# S5: the honest-count heading — ALWAYS reflects the actual number of
              distinct (>=5-session-separated) episodes selected, never the target
              EPISODE_COUNT — a thinned pool (e.g. 2 instead of 3) ships that smaller
@@ -1193,7 +1196,8 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <div class="fv-trust-row">
       {% for s in (snap.sources or []) %}
       <div class="fv-src fv-src--{{ s.ui_state }}"
-           data-tip-en="{{ s.tip_en }}" data-tip-zh="{{ s.tip_zh }}" role="button" tabindex="0">
+           data-tip-en="{{ s.tip_en }}" data-tip-zh="{{ s.tip_zh }}" role="button" tabindex="0"
+           data-ev="trust_open" data-ev-id="{{ s.source_id }}">
         <span class="s-name">{{ t(s.name_en, s.name_zh) }}</span>
         <span class="s-meta tnum">{{ s.effective_date or '—' }} · {{ s.coverage_line }}</span>
         <span class="s-state">{{ t(s.state_word_en, s.state_word_zh) }}</span>
@@ -1232,7 +1236,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
         {% endfor %}
       </ul>
       {% if all_changes|length > 8 %}
-      <details class="fv-disc"><summary>{{ t('all %d changes'|format(all_changes|length), '全部 %d 项变化'|format(all_changes|length)) }}</summary>
+      <details class="fv-disc" data-ev="changed_expand"><summary>{{ t('all %d changes'|format(all_changes|length), '全部 %d 项变化'|format(all_changes|length)) }}</summary>
         <ul class="fv-chg-list">
           {% for c in all_changes[8:] %}
           {{ chg_row(c, _theme_names, _src_by_id) }}
@@ -1271,16 +1275,16 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
          NEGATIVE absolute flow (the common case), so a bare "none" there is unremarkable
          and stays as-is. Pinned strings, exact. #}
       <div class="q-cell q-acc"><h3>{{ t('real inflow, above norm','真实流入·高于常态') }}</h3>
-        {% for r in q_acc %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none today — rare for this proxy; exceptional when a theme appears here','今日无——该口径下罕见，出现即为异常信号') }}</span>{% endfor %}
+        {% for r in q_acc %}<span class="q-chip" data-ev="quadrant_select" data-ev-lens="theme" data-ev-id="{{ r.id }}"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none today — rare for this proxy; exceptional when a theme appears here','今日无——该口径下罕见，出现即为异常信号') }}</span>{% endfor %}
       </div>
       <div class="q-cell q-imp"><h3>{{ t('still selling, pressure easing','仍净流出·压力改善') }}</h3>
-        {% for r in q_imp %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none','无') }}</span>{% endfor %}
+        {% for r in q_imp %}<span class="q-chip" data-ev="quadrant_select" data-ev-lens="theme" data-ev-id="{{ r.id }}"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none','无') }}</span>{% endfor %}
       </div>
       <div class="q-cell q-weak"><h3>{{ t('still buying, pace fading','仍净流入·动能转弱') }}</h3>
-        {% for r in q_weak %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none today','今日无') }}</span>{% endfor %}
+        {% for r in q_weak %}<span class="q-chip" data-ev="quadrant_select" data-ev-lens="theme" data-ev-id="{{ r.id }}"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none today','今日无') }}</span>{% endfor %}
       </div>
       <div class="q-cell q-dist"><h3>{{ t('real outflow, below norm','真实流出·低于常态') }}</h3>
-        {% for r in q_dist %}<span class="q-chip"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none','无') }}</span>{% endfor %}
+        {% for r in q_dist %}<span class="q-chip" data-ev="quadrant_select" data-ev-lens="theme" data-ev-id="{{ r.id }}"><b>{{ t(r.name, r.name_zh) }}</b> <span class="tnum">{{ '%+.1f'|format(r.abs.value) }}% · {{ '%+.1f'|format(r.rel.value) }}σ</span></span>{% else %}<span class="q-empty">{{ t('none','无') }}</span>{% endfor %}
       </div>
     </div>
     <p class="q-neutral">{{ t('quiet / insufficient data','平静/数据不足') }}: {% if q_neu %}{% for r in q_neu %}{{ t(r.name, r.name_zh) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}{{ t('none','无') }}{% endif %}</p>
@@ -1348,7 +1352,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           </tr></thead>
           <tbody>
           {% if leaders %}
-          <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true">
+          <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true" data-cmp-lens="aggregate">
             <td class="snm"><span class="chev">▸</span> 🏆 {{ t('All A-share names','全市场A股') }}</td>
             <td>{{ snap.ashare_names.n }}</td>
             <td></td><td></td><td></td>
@@ -1539,7 +1543,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
        existing watch stores are a single priced-ticker list shared with the
        Watchlist page, so writing a non-ticker group key would corrupt that page
        rather than extend the store — shipped as a recorded dependency instead). #}
-    <p class="fv-watch-note">★ {{ t('Watching a theme or sector isn\'t available yet — the existing watch list is a stock-ticker list shared with the Watchlist page, and a non-ticker group key would corrupt it rather than extend it. Recorded as a dependency for the watchlist-sentinel owner (server-side alerts on a state onset are a separate, not-yet-built system).', '暂不支持关注主题或行业——现有关注列表是与"关注列表"页面共用的股票代码列表，写入非股票代码的分组键会污染该页面，而非扩展该存储。已记录为关注列表哨兵负责人的依赖项（状态变化时的服务器端提醒是另一套尚未构建的系统）。') }}</p>
+    <p class="fv-watch-note" data-ev="watch_note_view">★ {{ t('Watching a theme or sector isn\'t available yet — the existing watch list is a stock-ticker list shared with the Watchlist page, and a non-ticker group key would corrupt it rather than extend it. Recorded as a dependency for the watchlist-sentinel owner (server-side alerts on a state onset are a separate, not-yet-built system).', '暂不支持关注主题或行业——现有关注列表是与"关注列表"页面共用的股票代码列表，写入非股票代码的分组键会污染该页面，而非扩展该存储。已记录为关注列表哨兵负责人的依赖项（状态变化时的服务器端提醒是另一套尚未构建的系统）。') }}</p>
     {% endif %}
 
     {# ---- momentum + confluence — demoted into collapsed detail blocks (spec §2.5) ---- #}
@@ -1889,6 +1893,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       }
       panel.innerHTML='<div class="fv-compare-cols">'+buildCol(a)+buildCol(b)+'</div>';
       panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+      // W7 (spec §1): compare_run fires only for a same-lens compare that actually
+      // rendered — never for the cross-lens refusal branch above.
+      if(window.__fvTrack) window.__fvTrack('compare_run', lensA, null);
     }
     document.querySelectorAll('.fv-cmp-cb').forEach(function(cb){ cb.addEventListener('change', refresh); });
     goBtn.addEventListener('click', doCompare);
@@ -1898,6 +1905,108 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       refresh();
     });
     refresh();
+  })();
+
+  // ---- W7 (research/flow_observatory/W7_SPEC.md): product-learning telemetry ----
+  // Rides the EXISTING first-party /api/collect beacon (window.mmTrack, defined by
+  // theme.js below — envelope field `type`; our nine events all ride `type: "flowobs"`
+  // with the frozen ev/lens/id/sess fields nested under the envelope's own existing
+  // `meta` passthrough, the SAME idiom the beacon already uses for `click` events).
+  // Never a second transport, never a new URL. Fire-and-forget: window.mmTrack already
+  // wraps its own body in try/catch; the try/catch below additionally covers a
+  // stubbed/throwing mmTrack itself, so a blocked/broken beacon can never affect the
+  // page (spec §0 gate 3, §3 test 4). Dedup is per (ev,lens,id) for the life of this
+  // pageview (review PR 6815 repair N2: lens joined the key so a curated-lens id and an
+  // official-lens id that happen to collide numerically no longer share one dedup
+  // slot) — a second render (e.g. re-opening a drawer) never double-counts.
+  (function(){
+    var SESS = {{ (snap.market_session or snap.as_of or '') | tojson }};
+    var seen = new Set();
+    function fire(ev, lens, id){
+      var key = ev + '|' + (lens || '') + '|' + (id === undefined || id === null || id === '' ? '' : id);
+      if (seen.has(key)) return;
+      seen.add(key);
+      try {
+        if (window.mmTrack) window.mmTrack('flowobs', { meta: { ev: ev, lens: lens || null, id: id || null, sess: SESS } });
+      } catch (e) { /* telemetry must never break the page */ }
+    }
+    window.__fvTrack = fire;
+
+    // quadrant_select (.q-chip spans) and terminal_out (member Terminal links, nameln
+    // macro) are plain clicks on an existing DOM hook carrying data-ev — one delegated
+    // listener. trust_open and watch_note_view are excluded here on purpose (review PR 6815
+    // repair B1/B2): trust_open opens via hover/focus/tap below, never a bare click, and
+    // watch_note_view is now an impression event, not a click.
+    document.addEventListener('click', function(e){
+      if (!e.target || !e.target.closest) return;
+      var el = e.target.closest('[data-ev]');
+      if (!el) return;
+      var ev = el.getAttribute('data-ev');
+      if (ev === 'trust_open' || ev === 'watch_note_view') return;
+      fire(ev, el.getAttribute('data-ev-lens'), el.getAttribute('data-ev-id'));
+    });
+
+    // trust_open (review PR 6815 repair B1): the LENS controller (theme.js) opens a
+    // trust-strip chip's tip on pointerover (desktop hover, after its own open delay),
+    // focusin (keyboard tab), or — on touch — a tap whose synthesized click event a
+    // sheet-mode scrim can retarget to <body> before it ever reaches a delegated click
+    // listener (mousedown lands on the chip, the scrim mounts mid-tap, mouseup/click
+    // land on the scrim instead). Listening on pointerdown catches the tap at the
+    // instant it lands, before that retargeting happens. All three paths are delegated
+    // and funnel through the same fire() dedup Set, so a chip that opens via more than
+    // one path in one pageview still counts once.
+    ['pointerover', 'focusin', 'pointerdown'].forEach(function(type){
+      document.addEventListener(type, function(e){
+        if (!e.target || !e.target.closest) return;
+        var el = e.target.closest('.fv-src[data-ev]');
+        if (!el) return;
+        fire(el.getAttribute('data-ev'), el.getAttribute('data-ev-lens'), el.getAttribute('data-ev-id'));
+      }, true);
+    });
+
+    // changed_expand / history_open: native <details> toggle, fired only on open.
+    document.querySelectorAll('details[data-ev="changed_expand"], details[data-ev="history_open"]').forEach(function(d){
+      d.addEventListener('toggle', function(){
+        if (d.open) fire(d.getAttribute('data-ev'), d.getAttribute('data-ev-lens'), d.getAttribute('data-ev-id'));
+      });
+    });
+
+    // group_drill: piggybacks the accordion click handler registered above (this
+    // listener runs after it, so classList already reflects the post-toggle state) —
+    // reuses tr.sector-row's own data-sector/data-cmp-lens, no new markup needed. The
+    // aggregate "__all__" row ships pre-open (class="...open" in the initial HTML), so
+    // its FIRST click toggles it CLOSED (no fire — drill events measure opens, not
+    // closes); its SECOND click reopens it and fires normally. Its data-cmp-lens is
+    // "aggregate" (review PR 6815 repair B3), not the null every other row would fall back
+    // to, so this one drill payload conforms to the registry's flow_lens enum instead
+    // of relying on the schema's separate null allowance.
+    document.querySelectorAll('tr.sector-row').forEach(function(row){
+      if (row.classList.contains('nodrill')) return;
+      row.addEventListener('click', function(e){
+        if (e.target.closest('a')) return;
+        if (row.classList.contains('open')) {
+          var id = (row.getAttribute('data-sector') || '').replace(/^off-/, '');
+          fire('group_drill', row.getAttribute('data-cmp-lens'), id);
+        }
+      });
+    });
+
+    // episode_view / watch_note_view (review PR 6815 repair B2): both are IMPRESSION events.
+    // An episodes panel has zero box while its parent <details> is collapsed, so it can
+    // only intersect once actually laid out (open, or force_open for the top-3 themes);
+    // the watch-limitation note is a static, always-visible paragraph with no click
+    // semantics of its own (there is no LENS tip to open on it — the full disclosure IS
+    // the paragraph text), so a click handler there only ever measured an accidental
+    // click on running text. Both fire the first time they are genuinely scrolled into
+    // view, first per element per pageview via the shared dedup Set.
+    if ('IntersectionObserver' in window) {
+      var viewIo = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if (en.isIntersecting) fire(en.target.getAttribute('data-ev'), en.target.getAttribute('data-ev-lens'), en.target.getAttribute('data-ev-id'));
+        });
+      }, { threshold: 0.01 });
+      document.querySelectorAll('[data-ev="episode_view"], [data-ev="watch_note_view"]').forEach(function(el){ viewIo.observe(el); });
+    }
   })();
 })();
 </script>
