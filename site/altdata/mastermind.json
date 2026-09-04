@@ -1,17 +1,17 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-09-04",
-  "generated_utc": "2026-09-04T00:47:00.624352+00:00",
+  "generated_utc": "2026-09-04T12:42:22.564457+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
-  "regime_read": "Convergence is concentrated in semiconductors, AI software and idiosyncratic corporate situations, but much of it mixes fundamental signals with sentiment or affiliations rather than independent capital-flow confirmation. With no completed track-record observations, conviction remains modest and near-extended names warrant patience.",
+  "regime_read": "The strongest measured alignment is concentrated in semiconductors, enterprise AI, and selected idiosyncratic situations, but several signals rely partly on sentiment or affiliations rather than confirmed capital flows. With no completed track record, conviction remains modest and near-extended PLTR is a watch rather than a chase.",
   "brain_present": true,
   "brain_usable": true,
   "article3": {
     "granted": false,
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
-    "evidence_asof": "2026-09-01",
-    "evaluated_at": "2026-09-01T06:48:45+00:00"
+    "evidence_asof": "2026-09-04",
+    "evaluated_at": "2026-09-04T12:41:13+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -21,68 +21,11 @@
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
   "n_signals": 88,
-  "n_broken": 30,
+  "n_broken": 28,
   "signals": [
     {
-      "ticker": "PLTR",
-      "signal_score": 86,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "long",
-      "source": "brain",
-      "weighted_score": 2.1,
-      "convergence_score": 6,
-      "channels": [
-        "affiliation",
-        "analyst_upgrade_cluster",
-        "gov_contract",
-        "retail_buzz",
-        "stocktwits_bull",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 30.0,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -11.9,
-      "ret_20d": 17.1,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Cathie Wood",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 2,
-      "thesis": "PLTR combines accelerating federal-contract activity with a uniformly bullish analyst cluster and disclosed political/fund relationships [gov_contract] [analyst_upgrade_cluster] [actor:Marjorie Taylor Greene] [actor:Cathie Wood]. Retail and Stocktwits enthusiasm broaden the convergence but are correlated sentiment channels [retail_buzz] [stocktwits_bull]. The strongest caution is positioning: relative performance is already +30 percentage points versus SPY over 60 days, close enough to the extension boundary to favor WATCH rather than a fresh entry.",
-      "second_order": [
-        "MSFT \u2014 enterprise AI and cloud infrastructure may benefit if government AI-software adoption broadens",
-        "BA \u2014 broader federal technology and defense spending can support adjacent government contractors"
-      ],
-      "falsifier": {
-        "text": "Federal-contract acceleration reverses and subsequent analyst revisions turn predominantly negative.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "PLTR",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 45
-        }
-      },
-      "clamped": null
-    },
-    {
       "ticker": "MSFT",
-      "signal_score": 81,
+      "signal_score": 82,
       "conviction": "medium",
       "action": "ACCUMULATE",
       "direction": "long",
@@ -96,7 +39,7 @@
         "patent_cluster"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 17.2,
+      "rs_vs_spy_60d": 21.5,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
@@ -117,14 +60,13 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": "MSFT shows diversified product and developer adoption through app demand, GitHub momentum and model-download activity, reinforced by a large patent cluster [app_demand] [github_momentum] [hf_model_momentum] [patent_cluster]. The factual Sam Altman partnership connects these usage signals to the AI ecosystem, while the Bill Ackman affiliation is supportive but qualitative [actor:Sam Altman] [actor:Bill Ackman]. Relative strength is positive without breaching the extension threshold.",
+      "thesis": "MSFT's alignment spans end-user demand, developer activity, model-download momentum, and a broad patent cluster [app_demand] [github_momentum] [patent_cluster]. The factual Sam Altman partnership connects that activity to the enterprise-AI distribution channel [actor:Sam Altman], while the disclosed Bill Ackman affiliation is supportive but qualitative [actor:Bill Ackman].",
       "second_order": [
-        "NVDA \u2014 cloud and model-usage growth can pull through demand for AI accelerators",
-        "AMD \u2014 broader cloud AI deployment can support demand for alternative compute hardware",
-        "MU \u2014 expanding AI workloads can increase demand for high-performance memory"
+        "NVDA \u2014 expanding enterprise-AI workloads can increase accelerator demand",
+        "Data-center infrastructure \u2014 cloud and model usage require additional compute, networking, and power capacity"
       ],
       "falsifier": {
-        "text": "App engagement, developer momentum and model downloads all roll over for a sustained period.",
+        "text": "Developer and model-download momentum decelerates without corresponding improvement in enterprise AI demand.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MSFT",
@@ -137,99 +79,77 @@
       "clamped": null
     },
     {
-      "ticker": "MRK",
-      "signal_score": 59,
+      "ticker": "PLTR",
+      "signal_score": 74,
       "conviction": "low",
       "action": "WATCH",
       "direction": "long",
       "source": "brain",
-      "weighted_score": 1.6,
-      "convergence_score": 4,
+      "weighted_score": 2.1,
+      "convergence_score": 6,
       "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion",
-        "special_situation",
+        "affiliation",
+        "analyst_upgrade_cluster",
+        "gov_contract",
+        "retail_buzz",
+        "stocktwits_bull",
         "trump"
       ],
       "trump_linked": true,
-      "rs_vs_spy_60d": 22.2,
+      "rs_vs_spy_60d": 33.0,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -2.6,
-      "ret_20d": 18.7,
+      "off_high_252": -11.9,
+      "ret_20d": 17.1,
       "above_50dma": true,
       "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": "MRK has a potentially meaningful healthcare catalyst stack: multiple Phase 3 starts and an FDA label-expansion signal align with a special-situation channel [clinical_phase3_start] [fda_label_expansion] [special_situation]. The Trump-linked buy adds an unusual political datapoint [trump], but eleven trial starts are counterbalanced by four clinical halts, and the relevant healthcare bills are only introduced rather than enacted [bill:HR10087] [bill:S5180]. With relative strength already elevated, WATCH is more appropriate than treating the pipeline count as a confirmed payoff.",
+      "affiliations": [
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Cathie Wood",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": "PLTR has the broadest channel count, led by accelerating government contracts and a fully bullish analyst cluster, with retail and Stocktwits sentiment reinforcing attention [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull]. However, the Trump-linked signal is explicitly on the sell side and the stock is only narrowly below the desk's extended threshold, so the convergence does not justify chasing [trump]. Cathie Wood's disclosed affiliation and Marjorie Taylor Greene's disclosed stake are secondary context [actor:Cathie Wood] [actor:Marjorie Taylor Greene].",
       "second_order": [
-        "Oncology-care services \u2014 expanded cancer-treatment planning coverage could support coordination demand if HR10087 advances",
-        "Clinical-research organizations \u2014 a larger late-stage trial slate can increase outsourced development activity"
+        "MSFT \u2014 broader government and enterprise AI adoption can support cloud-compute demand",
+        "Government AI software \u2014 contract acceleration may indicate wider agency adoption of operational analytics"
       ],
       "falsifier": {
-        "text": "Clinical halts increase or the anticipated label expansion fails to produce a commercially meaningful opportunity.",
+        "text": "Government-contract acceleration reverses or relative strength moves above the extended threshold without a reset.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "MRK",
+          "subject_ticker": "PLTR",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 90
+          "horizon_d": 45
         }
       },
       "clamped": null
     },
     {
-      "ticker": "BRK.B",
-      "signal_score": 57,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.7,
-      "convergence_score": 3,
-      "channels": [
-        "13f_add",
-        "affiliation",
-        "congress_cluster"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 2.4,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -0.5,
-      "ret_20d": 5.7,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Warren Buffett",
-          "rel": "CONTROLS",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "NVDA",
-      "signal_score": 55,
+      "signal_score": 61,
       "conviction": "high",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.35,
-      "convergence_score": 4,
+      "weighted_score": 1.55,
+      "convergence_score": 5,
       "channels": [
         "affiliation",
         "github_momentum",
         "patent_cluster",
-        "retail_buzz"
+        "retail_buzz",
+        "special_situation"
       ],
       "trump_linked": false,
       "rs_vs_spy_60d": 4.6,
@@ -273,6 +193,73 @@
         }
       ],
       "n_affiliated_actors": 6,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MRK",
+      "signal_score": 59,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.6,
+      "convergence_score": 4,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion",
+        "special_situation",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": 23.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -2.6,
+      "ret_20d": 18.7,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BRK.B",
+      "signal_score": 57,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.7,
+      "convergence_score": 3,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "congress_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 2.4,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -0.5,
+      "ret_20d": 5.7,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Warren Buffett",
+          "rel": "CONTROLS",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -324,48 +311,6 @@
         }
       ],
       "n_affiliated_actors": 4,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "GOOGL",
-      "signal_score": 47,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.45,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "cnbc_pick",
-        "github_momentum"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -11.2,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -14.9,
-      "ret_20d": -4.3,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Nancy Pelosi",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Paul Pelosi",
-          "rel": "AFFILIATES_WITH",
-          "kind": "influencer"
-        }
-      ],
-      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -718,7 +663,7 @@
       "off_high_252": -42.9,
       "ret_20d": 11.1,
       "above_50dma": true,
-      "entry_tier": "T3",
+      "entry_tier": "T2",
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,
@@ -1110,6 +1055,57 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
+    },
+    {
+      "ticker": "MU",
+      "signal_score": 31,
+      "conviction": "low",
+      "action": "AVOID",
+      "direction": "short",
+      "source": "brain",
+      "weighted_score": 2.4,
+      "convergence_score": 5,
+      "channels": [
+        "affiliation",
+        "congress_cluster",
+        "insider_mspr",
+        "patent_cluster",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -2.8,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -21.0,
+      "ret_20d": 8.7,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Ro Khanna",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": "MU has the clearest non-extended alignment: net congressional buying by multiple members, strongly positive insider purchase activity, a large patent cluster, and bullish community sentiment all point in the same direction [congress_cluster] [insider_mspr] [patent_cluster] [stocktwits_bull]. Its recent relative underperformance leaves a more favorable entry than the crowded AI leaders, while the disclosed Ro Khanna affiliation adds context but is not treated as a stand-alone signal [actor:Ro Khanna].",
+      "second_order": [
+        "AMAT \u2014 memory-capacity investment would support semiconductor-equipment demand",
+        "Semiconductor manufacturing equipment \u2014 higher memory investment can propagate upstream to fabrication tools"
+      ],
+      "falsifier": {
+        "text": "Congressional and insider buying reverses while patent activity fails to translate into improving memory investment.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MU",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); conviction 'medium' \u2192 'low' (deterministic ceiling); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)"
     }
   ],
   "broken_signals": [
@@ -1269,56 +1265,6 @@
       "clamped": null
     },
     {
-      "ticker": "LUV",
-      "signal_score": 22,
-      "conviction": "low",
-      "action": "AVOID",
-      "direction": "short",
-      "source": "brain",
-      "weighted_score": 1.65,
-      "convergence_score": 4,
-      "channels": [
-        "activist_13d",
-        "affiliation",
-        "app_demand",
-        "material_8k"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -7.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -28.7,
-      "ret_20d": -17.5,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Paul Singer",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": "LUV's signal is event-driven: activist involvement associated with Paul Singer aligns with multiple recent material filings, while strong app ratings and a large review base indicate an established customer channel [activist_13d] [actor:Paul Singer] [material_8k] [app_demand]. Negative relative performance means the setup is not extended, but the evidence does not yet show that activism or app engagement is improving operating economics.",
-      "second_order": [
-        "Airline suppliers \u2014 successful operational restructuring could modestly improve fleet and service spending",
-        "Domestic travel platforms \u2014 stronger Southwest customer engagement could support broader U.S. leisure-travel demand"
-      ],
-      "falsifier": {
-        "text": "Activist involvement ends without measurable operational changes and app-demand indicators deteriorate.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "LUV",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 60
-        }
-      },
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)"
-    },
-    {
       "ticker": "DJT",
       "signal_score": 21,
       "conviction": "medium",
@@ -1339,7 +1285,7 @@
       "off_high_252": -55.3,
       "ret_20d": -13.6,
       "above_50dma": false,
-      "entry_tier": "T1",
+      "entry_tier": null,
       "affiliations": [
         {
           "actor": "Eric Trump",
@@ -1354,33 +1300,54 @@
       "clamped": null
     },
     {
-      "ticker": "VRT",
+      "ticker": "LUV",
       "signal_score": 20,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.75,
-      "convergence_score": 2,
+      "conviction": "low",
+      "action": "AVOID",
+      "direction": "short",
+      "source": "brain",
+      "weighted_score": 1.65,
+      "convergence_score": 4,
       "channels": [
-        "insider_mspr",
-        "special_situation"
+        "activist_13d",
+        "affiliation",
+        "app_demand",
+        "material_8k"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": -12.3,
+      "rs_vs_spy_60d": -15.1,
       "no_price_data": false,
       "extended": false,
       "rolling_over": true,
-      "off_high_252": -28.5,
-      "ret_20d": -2.3,
+      "off_high_252": -28.7,
+      "ret_20d": -17.5,
       "above_50dma": false,
       "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
+      "affiliations": [
+        {
+          "actor": "Paul Singer",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": "LUV combines an activist-linked catalyst, repeated material disclosures, and measured consumer engagement through app demand [activist_13d] [material_8k] [app_demand]. The disclosed Paul Singer affiliation supplies a credible change-agent channel [actor:Paul Singer], while substantial relative underperformance suggests expectations are not already elevated.",
+      "second_order": [
+        "Airline suppliers \u2014 successful operational restructuring could stabilize fleet and service spending",
+        "Domestic travel ecosystem \u2014 stronger execution at a major carrier would support airports and travel services"
+      ],
+      "falsifier": {
+        "text": "Material disclosures produce no observable operating changes and app-demand momentum weakens.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "LUV",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); conviction 'medium' \u2192 'low' (deterministic ceiling); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)"
     },
     {
       "ticker": "TXT",
@@ -1714,35 +1681,6 @@
       "clamped": null
     },
     {
-      "ticker": "AVGO",
-      "signal_score": 16,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.65,
-      "convergence_score": 2,
-      "channels": [
-        "congress_buy",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -14.0,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -25.7,
-      "ret_20d": -15.1,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "GPRO",
       "signal_score": 16,
       "conviction": "medium",
@@ -1763,7 +1701,7 @@
       "off_high_252": -78.7,
       "ret_20d": -10.1,
       "above_50dma": false,
-      "entry_tier": null,
+      "entry_tier": "T2",
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,

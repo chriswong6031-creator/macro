@@ -245,3 +245,15 @@
 {"asof": "2026-09-01", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Extended \u2014 late cycle", "to_value": "Neutral", "macro_context_id": "f3d5a242fd6d3e27"}
 {"asof": "2026-09-01", "domain": "hk", "field": "hk_quad", "from_value": "Q4", "to_value": "Q1", "macro_context_id": "f3d5a242fd6d3e27"}
 {"asof": "2026-09-01", "domain": "canada", "field": "canada_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-04", "domain": "us", "field": "us_risk_radar", "from_value": "calm", "to_value": "watch", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "us", "field": "us_liquidity_quality", "from_value": "neutral-hollow", "to_value": "contracting", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "us", "field": "us_liquidity_overlay", "from_value": "neutral", "to_value": "contracting", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bull_flattener", "to_value": "bear_flattener", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "fx", "field": "usd_regime", "from_value": "US growth premium", "to_value": "Global reflation", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "fx", "field": "fx_usdchf_action", "from_value": "FLAT", "to_value": "LONG", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "commodity", "field": "commodity_shock_state", "from_value": "blowoff", "to_value": "normal", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "hk", "field": "hk_quad", "from_value": "Q1", "to_value": "Q4", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "hk", "field": "hk_risk_state", "from_value": "Risk-on", "to_value": "Neutral", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "dispersion", "field": "dispersion_state", "from_value": "lean_in", "to_value": "neutral", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "intl", "field": "intl_ez_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "ecbe233166b07540"}
+{"asof": "2026-09-04", "domain": "intl", "field": "intl_in_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "ecbe233166b07540"}

@@ -1,27 +1,22 @@
 {
-  "37ebb97f2592": {
-    "name_en": "Cross-sector cluster \u00b7 Real Estate + Consumer Staples",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Real Estate + Consumer Staples",
-    "score": 48.0
+  "18a12e16e5db": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Financials",
+    "score": 58.7
   },
   "56cb6c1bb716": {
     "name_en": "Cross-sector cluster \u00b7 Health Care + Consumer Discretionary",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Consumer Discretionary",
-    "score": 52.3
+    "score": 49.6
   },
-  "58e508dfe824": {
+  "d7ce62e7b1b1": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Staples + Real Estate",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Staples + Real Estate",
+    "score": 46.6
+  },
+  "e22931475909": {
     "name_en": "Cross-sector cluster \u00b7 Communication + Consumer Staples",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Consumer Staples",
-    "score": 56.6
-  },
-  "c22064e27349": {
-    "name_en": "Emerging Industrials cluster",
-    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
-    "score": 44.2
-  },
-  "d7085c868000": {
-    "name_en": "Emerging Health Care cluster",
-    "name_zh": "\u65b0\u5174 Health Care \u96c6\u7fa4",
-    "score": 43.3
+    "score": 57.2
   }
 }

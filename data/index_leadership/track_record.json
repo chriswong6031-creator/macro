@@ -1,79 +1,79 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-28",
-  "generated_at": "2026-09-01T05:22:20.289602+00:00",
+  "as_of": "2026-08-31",
+  "generated_at": "2026-09-04T11:06:54.849994+00:00",
   "is_context_only": true,
-  "n_snapshots": 535,
-  "n_days": 18,
+  "n_snapshots": 551,
+  "n_days": 19,
   "horizons": {
     "5": {
-      "n_matured": 396,
+      "n_matured": 442,
       "by_stage": {
         "running": {
-          "n": 350,
-          "mean_fwd_rel": -0.0015,
-          "hit_rate": 0.503
+          "n": 386,
+          "mean_fwd_rel": -0.0029,
+          "hit_rate": 0.477
         },
         "coiling": {
-          "n": 20,
-          "mean_fwd_rel": 0.0082,
-          "hit_rate": 0.7
+          "n": 26,
+          "mean_fwd_rel": 0.0039,
+          "hit_rate": 0.615
         },
         "coiling_primed": {
-          "n": 26,
-          "mean_fwd_rel": 0.0217,
-          "hit_rate": 0.846
+          "n": 30,
+          "mean_fwd_rel": 0.0163,
+          "hit_rate": 0.733
         }
       },
-      "running_ic": 0.1163,
-      "running_ic_t_hac": 3.702,
+      "running_ic": 0.0963,
+      "running_ic_t_hac": 2.408,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 298,
+      "n_matured": 369,
       "by_stage": {
         "running": {
-          "n": 262,
-          "mean_fwd_rel": -0.0017,
-          "hit_rate": 0.5
+          "n": 324,
+          "mean_fwd_rel": -0.002,
+          "hit_rate": 0.494
         },
         "coiling": {
-          "n": 16,
-          "mean_fwd_rel": -0.0109,
-          "hit_rate": 0.312
+          "n": 20,
+          "mean_fwd_rel": -0.0084,
+          "hit_rate": 0.3
         },
         "coiling_primed": {
-          "n": 20,
-          "mean_fwd_rel": 0.0447,
-          "hit_rate": 0.85
+          "n": 25,
+          "mean_fwd_rel": 0.0342,
+          "hit_rate": 0.72
         }
       },
-      "running_ic": 0.0095,
-      "running_ic_t_hac": 0.253,
+      "running_ic": 0.0915,
+      "running_ic_t_hac": 2.226,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 202,
+      "n_matured": 203,
       "by_stage": {
         "running": {
-          "n": 186,
-          "mean_fwd_rel": 0.003,
-          "hit_rate": 0.548
+          "n": 187,
+          "mean_fwd_rel": 0.0029,
+          "hit_rate": 0.551
         },
         "coiling": {
           "n": 8,
-          "mean_fwd_rel": -0.0258,
+          "mean_fwd_rel": -0.0256,
           "hit_rate": 0.625
         },
         "coiling_primed": {
           "n": 8,
-          "mean_fwd_rel": 0.0652,
+          "mean_fwd_rel": 0.0649,
           "hit_rate": 0.625
         }
       },
-      "running_ic": -0.1745,
+      "running_ic": -0.1772,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
@@ -88,10 +88,10 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.1163,
+  "peak_ic": 0.0963,
   "proven": {
     "5": true,
-    "10": false,
+    "10": true,
     "21": false,
     "63": false
   },
@@ -128,7 +128,7 @@
       "id": "russell:specialty-retail",
       "name": "Specialty Retail",
       "stage": "running",
-      "fwd_rel": -0.0865,
+      "fwd_rel": -0.0831,
       "horizon_d": 21
     },
     {
