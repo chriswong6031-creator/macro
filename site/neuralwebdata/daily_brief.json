@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-09-03T10:13:16.279203+00:00",
+  "produced_at": "2026-09-04T00:40:30.842828+00:00",
   "as_of": "2026-08-28",
   "status": "warn",
   "phase": "final",
@@ -713,13 +713,13 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-09-01",
+    "as_of": "2026-09-03",
     "phase": "REPAIR",
     "phase_confidence": 0.667,
     "who_controls": "mixed",
     "policy_impulse": "neutral",
     "top_contradiction": null,
-    "data_gaps_count": 4,
+    "data_gaps_count": 3,
     "display_only": true
   },
   "thematic_line": {
