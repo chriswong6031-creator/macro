@@ -3,153 +3,101 @@ schema: agentos.handoff.v1
 workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/autonomy-closure-spine-agentos-20260903
 model: sol
-ended_because: ci_handoff
+ended_because: complete
 mission: >
-  Preserve Chairman-approved Autonomy Closure Spine v1 while its exact three-path Mastermind F0
-  source proceeds through current-head CI and independent review. Keep W3C/C2/MAT-S1/Stage-B1/
-  Control Room on their existing carriers, avoid a duplicate autonomy platform, and leave ACF-1
-  unassigned until architecture protection and Runtime path release.
+  Close the records-only Autonomy Closure Spine F0 without adding it to the pre-canary critical path,
+  preserve its repaired architecture as advisory evidence, and redirect execution to the existing
+  W3C/C2-R1A/MAT-S1/Stage-B1/Control Room golden-root train.
 state_before: >
-  Mastermind had lifecycle, terminal-return, retry-safety, action-target and W3C primitives, but no
-  Runtime-owned contract binding one exact return, one current actor, one directive revision, and
-  one once-only downstream consumption. Issue #386 remained canonical; #400 was a closed duplicate;
-  C2-R1A owned executive_runtime.py; MAT-S1 and Stage-B1 remained prerequisites; Control Room #326
-  remained active. No ACF-1 implementation existed.
+  Mastermind issue #437 and PR #438 proposed ACF-1 Semantic Directive Convergence before the first
+  golden-root canary. The three-path candidate had been repaired at d6ffac38108c5d59f6cba02140068924e444d2b2,
+  but no Runtime implementation, provider effect, deployment, or real production falsifier existed.
 changed:
   - path: mastermindx-market-intelligence/Mastermind issue #437
-    what: Created the single records-only Closure Spine architecture carrier under #386.
+    what: >
+      Closed NOT_PLANNED and retained as post-golden-root evidence only.
   - path: mastermindx-market-intelligence/Mastermind PR #438
     what: >
-      Current exact three-path F0 candidate is f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7.
-      It preserves ACTION_TARGET-only authority, one return-revision conflict domain, exact body
-      variants, safe unconsumed supersession, once-only COO consumption, the real wake_events
-      canonical JSON owner, replay-first no-effect readback after target rotation, and source-child-
-      only STOP semantics.
+      Closed unmerged at d6ffac38108c5d59f6cba02140068924e444d2b2; branch, checks, repaired
+      contracts, and review history remain preserved but grant no implementation authority.
   - path: agentos/decisions/DEC-AUTONOMY-CLOSURE-SPINE-V1.md
-    what: Records the current exact contract, sequencing, and no-rebuild boundaries.
+    what: >
+      Records the Chairman ruling that ACF-1 is deferred until a real golden-root/adversarial canary
+      reproduces the exact decision-convergence failure.
   - path: agentos/discoveries/DSC-AUTONOMY-TARGET-AUTHORITY-DOES-NOT-CONVERGE-SEMANTIC-DIRECTIVES.md
-    what: Records the falsifiable gap between action-target authority and effective directive truth.
+    what: >
+      Reclassifies the conceptual target-versus-decision distinction as an evidence-gated hypothesis
+      rather than a pre-canary implementation requirement.
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-03-AUTONOMY-CLOSURE-SPINE.md
-    what: Leaves current heads, gates, review carrier, proof state and exact next actions recoverable.
+    what: >
+      Leaves the terminal ruling, preserved evidence, active critical path, and exact falsifier
+      recoverable without this chat.
 verified:
-  - claim: Protected Mastermind procedure was loaded atomically before modification.
-    command: Read protected master and same-SHA Sol Skillpack at 7022e70640637a4fa07f073442dc693301290e2a.
-    result: Skillpack mastermind.sol_skillpack.v1 1.0.1 is bootstrap-major-1 compatible.
-  - claim: W3C source is protected but not production-proven.
-    command: GitHub read Mastermind PR #427.
-    result: Merged through a945e76befb34d15d0ab0e369b4197901883bb16; default-disarmed, no host canary.
-  - claim: C2-R1A still gates ACF-1 Runtime implementation.
-    command: GitHub read Mastermind PR #415 and Slack root C0BSBM78V1N/1788422487.650919.
-    result: >
-      PR #415 remains open/draft at remote head 520acc408c212d926ec23d11b393c1caa3c3e04f;
-      its existing worker owns the Runtime continuation. No replacement was created.
-  - claim: Control Room remains a separate active writer.
-    command: GitHub read Mastermind PR #326.
-    result: PR #326 remains open/draft with ten projection/UI paths.
-  - claim: Current F0 source remains exactly three paths.
-    command: GitHub read Mastermind PR #438.
-    result: >
-      PR #438 is open/draft/mergeable on protected base 7022e70640637a4fa07f073442dc693301290e2a,
-      current head f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7, changed_files=3.
-  - claim: Current actor/body/canonicalizer owners are protected existing source.
+  - claim: The current protected Mastermind source includes W3C-R2 and MAT-C1 without ACF-1.
     command: >
-      Read current design/plan/test plus protected sol_action_target.py, wake_events.py, and
-      common/commission_ref.py.
+      Read protected Mastermind master and same-SHA Skillpack at
+      22b36b830bd5560942186ada7597508f918696af.
     result: >
-      Sole actor ACTION_TARGET uses require_sol_action_authority/evidence_digest; canonical bytes
-      use control_plane.wake_events.canonical_json_bytes; REPAIR uses normalized CommissionRef;
-      STOP/ESCALATE reasons are closed; no direct Chairman Runtime actor exists.
-  - claim: Replay-first readback is required to preserve effect certainty after target rotation.
-    command: Read current F0 contract and protected Runtime command/Event patterns.
-    result: >
-      Command lookup precedes current actor authorization for exact existing Event readback; immutable
-      Event bytes and recorded authority receipt are validated; new append/supersession still requires
-      current action-target authority. No-effect replay grants no new action authority.
-  - claim: STOP scope is now deterministic and non-destructive to the root.
-    command: Read current F0 consumer fixed meanings and source-law test.
-    result: >
-      STOP closes only source_job_id's returned child boundary; root terminalization remains existing
-      COO cycle / Executive Runtime law.
-  - claim: Prior canonicalizer defect is closed.
-    command: Search protected ceo_intent.py and wake_events.py.
-    result: >
-      ceo_intent has no canonical_json_bytes definition; wake_events owns it. Current F0 uses the real owner.
-  - claim: The independent review carrier remains single.
-    command: Slack read C0BSBM78V1N/1788495922.483179.
-    result: >
-      Reviewer mastermindx-3 returned STALE_HEAD / REVIEW_NOT_STARTED / effect=NONE for an old target.
-      The same root remains the only review carrier and awaits a fresh terminal-check target edge.
-  - claim: No schema migration or new table is justified by current Runtime source.
+      W3C-R2 is protected through 13c9f2918988c5ba654e311c941f8707071ea2c4; MAT-C1 PR #436 is
+      protected through 22b36b830bd5560942186ada7597508f918696af; Skillpack v1 1.0.1 is compatible.
+  - claim: F0 and its review child are terminal.
     command: >
-      Read RuntimeStore transaction/get_event_by_command_id/append_event, commit_coo_retry_decision,
-      and CooCycle patterns.
-    result: Existing command replay and atomic mutation+Event patterns are sufficient in principle.
+      Read Slack thread C0BSBM78V1N/1788495922.483179 through Chairman STOP
+      1788508703.540179.
+    result: >
+      Both operations are terminal; PR #438 must remain closed unmerged and no ACF-1 successor is
+      authorized before the stated post-golden-root falsifier.
+  - claim: GitHub reflects the terminal disposition.
+    command: >
+      Read Mastermind PR #438 and issue #437.
+    result: >
+      PR #438 is CLOSED_UNMERGED at d6ffac38108c5d59f6cba02140068924e444d2b2; issue #437 is
+      CLOSED / NOT_PLANNED.
+  - claim: The pre-canary train still has active source carriers.
+    command: >
+      Read Mastermind PRs #415, #350, and #326.
+    result: >
+      C2-R1A, CAP-S1, and Control Room remain open carriers; their completion and the real golden-root
+      proof are not replaced by the closed F0 records.
 unverified:
-  - claim: Mastermind PR #438 current head has terminal-green repository/security proof.
+  - claim: The existing owner train completes one real golden-root journey without ACF-1.
     what_would_verify: >
-      Require CI run for f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7 to finish SUCCESS; fetch logs and
-      repair only the same three paths if a concrete failure appears.
-  - claim: Mastermind PR #438 has independent current-head approval.
+      Protect and integrate C2-R1A, CAP-S1, Stage-B1, and Control Room, then run one real root through
+      exact target attention, worker materialization, terminal return, continuation, and truthful
+      projection with zero routine Chairman shuttle.
+  - claim: ACF-1 is unnecessary after multi-root adverse proof.
     what_would_verify: >
-      After checks are terminal, issue one fresh exact-head edge on existing review root
-      C0BSBM78V1N/1788495922.483179; mastermindx-3 must ACK, START, and submit one anchored verdict.
-  - claim: Macro PR #6814 current records are green and independently approved.
-    what_would_verify: Require current-head Agent OS fences/CI and one non-author exact-head review.
-  - claim: ACF-1 implementation is path-clear.
-    what_would_verify: >
-      PR #438 protects, PR #415 releases executive_runtime.py, and a fresh collision/semantic census
-      proves the expected Runtime/COO functions remain compatible.
-  - claim: ACF-1 is production-live.
-    what_would_verify: >
-      Protect/install it and run one real return observed by multiple Sol-capable surfaces where only
-      the exact current target commits, COO consumes once, and the next same-root transition occurs
-      with zero Chairman operational action.
+      Run observer, stale-target, conflicting-continuation, response-loss, and restart scenarios and
+      observe exactly one lawful downstream effect under existing owner enforcement.
 unresolved:
-  - "Mastermind PR #438 current f0c5caca head requires terminal exact-head CI/security proof."
-  - "The existing review carrier must be retargeted to f0c5caca only after terminal checks."
-  - "Macro PR #6814 requires current-head validation and independent review."
-  - "C2-R1A PR #415 still owns executive_runtime.py; no ACF-1 implementation may begin."
-  - "MAT-S1, Stage-B1 and Control Room remain separate prerequisites/carriers."
-  - "ACF-2 through ACF-6 remain evidence-gated and unauthorized."
+  - "C2-R1A PR #415 still requires its exact started task to complete and release Runtime paths."
+  - "CAP-S1 PR #350 still requires exact-session/local-effect reconciliation and current-base completion after MAT-C1 protection."
+  - "Control Room PR #326 still requires its four real-owner joins and production browser proof."
+  - "The golden-root and adversarial multi-root canaries have not run."
 next_actions:
   - >
-    Poll current checks for Mastermind head f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7. If failed, fetch
-    logs and repair only the exact three F0 paths. If successful, post one fresh target edge under
-    existing Slack review root C0BSBM78V1N/1788495922.483179.
+    Continue the exact existing C2-R1A, CAP-S1, and Control Room carriers; do not create ACF-1 or
+    reopen #437/#438.
   - >
-    Require mastermindx-3 to ACK/START/review f0c5caca on that same root. After APPROVE, re-pin
-    protected procedure and perform expected-head F0 release.
+    After those owners are protected and installed, run one golden-root canary and capture exact
+    Runtime, target, dialogue, Wake, terminal-return, downstream, and Control Room receipts.
   - >
-    Validate Macro PR #6814 after this reconciliation, obtain current-head non-author review, and
-    release only the three durable records.
-  - >
-    Continue C2-R1A, MAT-S1, Stage-B1, and Control Room on existing carriers.
-  - >
-    Only after F0 protection and Runtime path release, create one fresh ACF-1 implementation child,
-    PREFERRED_AVENUE CTO Sol, CAPACITY_SELECTABLE / needs_placement, with fresh pickup/watch/START.
+    Run the adverse multi-root matrix. Reopen the closure-spine architecture only if the recorded
+    falsifier is reproduced under current protected source.
 do_not_redo:
-  - "Do not reset or replace current PR #438 head f0c5caca without a concrete current-head defect."
-  - "Do not reopen #400 or create another autonomy incident, workstream, lifecycle, queue, retry plane, target registry, or controller."
-  - "Do not restore the nonexistent control_plane.ceo_intent.canonical_json_bytes reference."
-  - "Do not require current actor authority merely to read back an exact already-committed Event."
-  - "Do not let STOP ambiguously terminalize the root."
-  - "Do not fabricate a direct CHAIRMAN Runtime actor in v1."
-  - "Do not treat Slack/browser/model/provider/carrier_reference as Runtime actor authority."
-  - "Do not let REPAIR originate a successor or ESCALATE create a Job/queue/watcher/provider call."
-  - "Do not include decision or actor facts in the return-revision command identity."
-  - "Do not reverse consumed/applied/effect-unknown work through later prose."
-  - "Do not start ACF-1 before #438 protects and #415 releases Runtime."
-  - "Do not start ACF-2 through ACF-6 merely because they are named."
+  - "Do not reopen or merge Mastermind #438 merely because its repaired checks later pass."
+  - "Do not create an ACF-1 task, branch, Event family, consumer, or Control Room projection before canary evidence."
+  - "Do not delete the #438 branch or review history; they are preserved advisory evidence."
+  - "Do not treat conflicting Slack prose, watcher delivery, or model output as Runtime authority."
+  - "Do not create a duplicate lifecycle, queue, retry plane, target registry, directive store, or Slack command bus."
+  - "Do not call protected source, CI, or merge production proof."
 danger_areas:
-  - "Current Chairman authority is human/session-level, not a Runtime-authenticated principal."
-  - "A stale review target is not transferable; retarget the same carrier with a fresh exact-head edge."
-  - "All earlier-head CI/reviews are historical after f0c5caca."
-  - "A free-form body recreates model-authored executable authority."
-  - "Actor/target/decision entropy in command identity defeats convergence."
-  - "New append requires current actor authority; exact readback does not, because it creates no effect."
-  - "Response loss after Runtime commit requires Event readback, never resend/failover."
-  - "PR #415 and #326 are active writers and must not be collided with."
-prs: [438, 427, 415, 326, 6814]
+  - "A conceptual architecture gap is not automatically a production blocker."
+  - "The closed F0 records may look implementation-ready but carry no current implementation authority."
+  - "A later canary failure must be reproduced against current protected source before reusing the old design."
+  - "C2-R1A owns Runtime paths; CAP-S1 and Control Room retain their own sticky carriers and effects."
+  - "Golden CI, merge, Slack delivery, Runtime execution, and final production acceptance remain distinct."
+prs: [438, 415, 350, 326, 436, 6814]
 decisions:
   - DEC:AUTONOMY-CLOSURE-SPINE-V1
 discoveries:
@@ -158,6 +106,10 @@ discoveries:
 
 # Return point
 
-Current Mastermind F0 candidate is `f0c5cacab01ae5de7f09c9462fb16d2f2a210fe7`. The immediate
-mission is current-head CI and independent review only. ACF-1 remains unassigned and blocked on F0
-protection plus C2 Runtime path release. The existing autonomy train continues independently.
+Autonomy Closure Spine F0 is terminal and preserved as post-golden-root evidence only. The current
+critical path is the existing owner train. ACF-1 has no active operation, worker, branch, Runtime
+effect, provider action, deployment, or production claim.
+
+The exact trigger for reopening is a reproduced golden-root/adversarial canary failure showing that
+more than one otherwise-lawful semantic decision becomes effective despite current exact-target and
+same-carrier enforcement.
