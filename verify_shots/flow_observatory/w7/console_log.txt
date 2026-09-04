@@ -1,0 +1,3 @@
+CAPTURED_BEACON_CALL flowobs {"meta":{"ev":"trust_open","lens":null,"id":"cn_large_order_proxy","sess":"2026-09-03"}}
+CAPTURED_BEACON_CALL flowobs {"meta":{"ev":"group_drill","lens":"theme","id":"cn_autos","sess":"2026-09-03"}}
+CAPTURED_BEACON_CALL flowobs {"meta":{"ev":"episode_view","lens":"theme","id":"cn_autos","sess":"2026-09-03"}}

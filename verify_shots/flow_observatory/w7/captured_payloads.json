@@ -1,0 +1,46 @@
+{
+  "trust_open": [
+    {
+      "type": "flowobs",
+      "extra": {
+        "meta": {
+          "ev": "trust_open",
+          "lens": null,
+          "id": "cn_large_order_proxy",
+          "sess": "2026-09-03"
+        }
+      }
+    }
+  ],
+  "group_drill_and_episode_view": [
+    {
+      "type": "flowobs",
+      "extra": {
+        "meta": {
+          "ev": "group_drill",
+          "lens": "theme",
+          "id": "cn_autos",
+          "sess": "2026-09-03"
+        }
+      }
+    },
+    {
+      "type": "flowobs",
+      "extra": {
+        "meta": {
+          "ev": "episode_view",
+          "lens": "theme",
+          "id": "cn_autos",
+          "sess": "2026-09-03"
+        }
+      }
+    }
+  ],
+  "dedup_second_click_on_same_chip": [],
+  "terminal_out_hook_present": true,
+  "indifference_test": {
+    "page_errors_while_beacon_throws": [],
+    "accordion_still_toggles_with_beacon_throwing": true,
+    "page_title_unaffected": "Capital Flow Velocity \u2014 China & Hong Kong"
+  }
+}

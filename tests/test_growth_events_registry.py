@@ -111,8 +111,12 @@ def test_names_and_wires_are_unique_and_well_formed():
 
 #: The live name↔wire pairs, pinned explicitly. Set equality alone cannot catch a SWAP
 #: (exchanging two live entries' wires keeps the set identical while silently re-pointing
-#: two metrics at each other's history). These eleven are frozen: the rows already in
-#: `analytics_events` carry these strings.
+#: two metrics at each other's history). These are frozen: the rows already in
+#: `analytics_events` carry these strings. Adding a genuinely NEW live pair (a new wire
+#: type app/main.py starts accepting) is fine — append it here in the SAME commit; what
+#: this pins is that none of the EXISTING pairs silently swaps to a different wire.
+#: Flow Observatory V2 W7 (research/flow_observatory/W7_SPEC.md) added
+#: flow_observatory.interacted/flowobs 2026-09.
 _LIVE_PAIRS = {
     "session.start": "session_start",
     "page.viewed": "pageview",
@@ -125,6 +129,7 @@ _LIVE_PAIRS = {
     "page.scrolled": "scroll",
     "session.heartbeat": "heartbeat",
     "session.exit": "exit",
+    "flow_observatory.interacted": "flowobs",
 }
 
 

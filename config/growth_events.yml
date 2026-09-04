@@ -70,6 +70,21 @@ enums:
   channel:         [push, email, in_product]
   cadence:         [daily, weekly]
   failure_kind:    [card_declined, auth_required, abandoned, error]
+  # Flow Observatory V2 W7 (research/flow_observatory/W7_SPEC.md §1): the nine typed
+  # product-learning events and the three lens values a Flow Velocity interaction can
+  # carry — closed enums so the wire's `meta.ev`/`meta.lens` values can never drift
+  # from the frozen spec.
+  flow_observatory_event:
+    - trust_open
+    - changed_expand
+    - quadrant_select
+    - group_drill
+    - history_open
+    - compare_run
+    - episode_view
+    - terminal_out
+    - watch_note_view
+  flow_lens:       [theme, sector, aggregate]
   cancel_reason:
     - value_vs_price
     - too_expensive
@@ -155,6 +170,24 @@ events:
       surface_group: enum:surface_group
       tier_seen: enum:tier
       rows_visible: int
+
+  - name: flow_observatory.interacted
+    wire: flowobs
+    status: live
+    source: client
+    funnel: intelligence_experienced
+    purpose: >
+      Product-learning instrumentation for the Flow Observatory surfaces (Flow
+      Velocity's trust strip, quadrant board, group drilldowns, history/compare,
+      episodes, and Terminal handoffs) — whether a reader actually drills into
+      evidence rather than glancing at a single verdict number
+      (research/flow_observatory/W7_SPEC.md). Nine `ev` values share one wire type
+      rather than nine, matching the frozen spec's single `t: "flowobs"` envelope.
+    properties:
+      ev: enum:flow_observatory_event
+      lens: enum:flow_lens
+      id: string
+      sess: string
 
   # ---- engagement / activation ----
   - name: ticker.viewed
