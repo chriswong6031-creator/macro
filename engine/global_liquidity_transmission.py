@@ -34,7 +34,20 @@ STATE_COLUMNS = (
     "orthogonalised_impulse",
     "liquidity_breadth",
     "usd_funding_impulse",
+    "monetary_impulse_z",
 )
+
+# Two separate closed vocabularies.  They are NEVER interchangeable and no prose
+# in this repository may describe one using the words of the other.
+#   STATE_LABEL_ENUM   answers "which way is the global monetary state moving?"
+#   QUALITY_LABEL_ENUM answers "do the global state and the canonical US
+#                               liquidity-quality read agree, and in which sense?"
+STATE_LABEL_ENUM = ("expanding", "flat", "contracting", "unknown")
+QUALITY_LABEL_ENUM = ("easing", "tightening", "mixed", "unknown")
+
+# Truthful unit strings for the two published impulse magnitudes.
+MONETARY_IMPULSE_UNIT = "weekly_change_in_expanding_z_score"
+MONETARY_IMPULSE_Z_UNIT = "prior_only_expanding_z_score_of_weekly_change_in_expanding_z_score"
 
 
 @dataclass(frozen=True)
@@ -218,6 +231,11 @@ def build_state_history(
         float(producer_cfg["min_monetary_coverage_ratio"]),
     )
     impulse = stance.diff()
+    # B2: a genuinely standardized shock magnitude, built with the SAME causal
+    # expanding-z idiom used for every component score above.  Mean and standard
+    # deviation at t contain only impulses strictly before t, so a future impulse
+    # can never restate a past `monetary_impulse_z`.
+    impulse_z = causal_expanding_z(impulse, int(producer_cfg["min_history_periods"]))
     orthogonal = causal_orthogonal_residual(
         impulse,
         stance,
@@ -258,6 +276,7 @@ def build_state_history(
         {
             "monetary_stance": stance,
             "monetary_impulse": impulse,
+            "monetary_impulse_z": impulse_z,
             "orthogonalised_impulse": orthogonal,
             "liquidity_breadth": breadth,
             "usd_funding_impulse": funding,
@@ -323,17 +342,31 @@ def _series_hash(series: pd.Series) -> str:
     return digest.hexdigest()
 
 
-def _state_label(impulse: float | None, threshold: float) -> str:
+def _state_label(impulse: float | None, flat_band: float) -> str:
+    """Direction of the global monetary state.  Returns a ``STATE_LABEL_ENUM`` member.
+
+    ``flat_band`` is an absolute band in RAW ``monetary_impulse`` units
+    (``MONETARY_IMPULSE_UNIT``), not in shock-z units.  It is deliberately not
+    applied to ``monetary_impulse_z``: this label is a direction reading, and
+    materiality/eventization thresholds belong to the separately ratified
+    W-LIQ.3 policy.
+    """
     if impulse is None:
         return "unknown"
-    if impulse > threshold:
+    if impulse > flat_band:
         return "expanding"
-    if impulse < -threshold:
+    if impulse < -flat_band:
         return "contracting"
     return "flat"
 
 
 def _quality_label(state_label: str, us_quality: Mapping[str, Any] | None) -> str:
+    """Agreement between the global state and canonical US liquidity quality.
+
+    Returns a ``QUALITY_LABEL_ENUM`` member.  This is a *different* vocabulary
+    from ``STATE_LABEL_ENUM``; ``easing`` is not a synonym for ``expanding`` and
+    ``tightening`` is not a synonym for ``contracting``.
+    """
     us_label = str((us_quality or {}).get("label", "unknown"))
     if state_label == "expanding" and us_label == "benign-expansion":
         return "easing"
@@ -399,6 +432,55 @@ def _load_us_quality(root: Path, asof: pd.Timestamp) -> dict[str, Any] | None:
         return None
     quality_asof = pd.Timestamp(value.get("asof")) if value.get("asof") else None
     return value if quality_asof is not None and quality_asof <= asof else None
+
+
+def _us_quality_available_lower_bound(us_quality: Mapping[str, Any] | None) -> str | None:
+    """Conservative availability lower bound for the embedded US-quality leg.
+
+    ``data/regime/latest.json``'s ``liquidity_quality`` object exposes only
+    ``asof`` — it carries no separate publication/availability stamp.  The
+    object therefore cannot have been available *before* its own ``asof`` date,
+    and that date is the earliest defensible availability we may claim for it.
+    It is a lower bound, not a measured release time: the real publication
+    happened at or after this date.  Using it keeps the combined evidence clock
+    conservative (never earlier than the evidence it carries) rather than
+    precise.
+    """
+    stamp = (us_quality or {}).get("asof")
+    if not stamp:
+        return None
+    return str(pd.Timestamp(stamp).date())
+
+
+def _evidence_available_at(
+    monetary_receipts: Mapping[str, Mapping[str, Any]],
+    funding_receipts: Mapping[str, Mapping[str, Any]],
+    us_quality: Mapping[str, Any] | None,
+) -> tuple[str | None, dict[str, str | None]]:
+    """The conservative availability clock for the whole event envelope.
+
+    B1 repair law: the envelope may never claim an observed/release time earlier
+    than the latest availability of ANY field it copies downstream.  The event
+    reference carries three families of evidence, so the clock is the maximum
+    over all three:
+
+    1. every monetary component receipt (drives ``monetary_*`` and the label);
+    2. every USD-funding component receipt (drives ``conditions.usd_funding_impulse``
+       and the funding component snapshot);
+    3. the embedded ``us_liquidity_quality`` leg (drives ``event_reference.quality``
+       and ``conditions.us_liquidity_quality``), via its conservative lower bound.
+
+    Component receipts are included whether or not they are ``usable``: their
+    dates are copied into ``component_snapshot`` verbatim, so they are part of
+    the evidence envelope either way.
+    """
+    contributions: dict[str, str | None] = {}
+    for family, receipts in (("monetary", monetary_receipts), ("usd_funding", funding_receipts)):
+        dates = [row["available_date"] for row in receipts.values() if row.get("available_date")]
+        contributions[family] = max(dates) if dates else None
+    contributions["us_liquidity_quality"] = _us_quality_available_lower_bound(us_quality)
+    known = [value for value in contributions.values() if value]
+    return (max(known) if known else None), contributions
 
 
 def _credit_context(root: Path, asof: pd.Timestamp) -> dict[str, Any]:
@@ -471,7 +553,10 @@ def build_contract(
     latest_index = usable_history.index[-1]
     latest = history.loc[latest_index]
     current_impulse = _finite(latest["monetary_impulse"])
-    threshold = float(producer_cfg["quality_thresholds"]["monetary_impulse_z"])
+    current_impulse_z = _finite(latest["monetary_impulse_z"])
+    # Truthfully named: this band is in RAW monetary_impulse units and gates the
+    # raw weekly delta, not a standardized shock.  The old key name claimed "_z".
+    flat_band = float(producer_cfg["quality_thresholds"]["monetary_impulse_flat_band"])
     monetary_receipts = _latest_component_receipts(
         monetary_aligned, producer_cfg["monetary_components"], latest_index
     )
@@ -534,7 +619,7 @@ def build_contract(
     source_snapshot_hash = canonical_hash(snapshot_material)
     model_version = "glt_state.v1"
     data_version = f"glt_data:{source_snapshot_hash[:16]}"
-    state_label = _state_label(current_impulse, threshold)
+    state_label = _state_label(current_impulse, flat_band)
     monetary_coverage = _finite(latest["monetary_coverage_ratio"])
     funding_coverage = _finite(latest["funding_coverage_ratio"])
     state_confidence = _confidence(
@@ -558,14 +643,40 @@ def build_contract(
     )
     usable_monetary = [row for row in monetary_receipts.values() if row["status"] == "usable"]
     latest_observed = max(row["reference_date"] for row in usable_monetary)
-    latest_release = max(row["available_date"] for row in usable_monetary)
+    monetary_release = max(row["available_date"] for row in usable_monetary)
+    evidence_available, evidence_contributions = _evidence_available_at(
+        monetary_receipts, funding_receipts, us_quality
+    )
+    # Never backdate the envelope to the monetary-only release while carrying
+    # later funding/quality evidence.  `release_at` is the conservative
+    # all-evidence clock and is exactly `evidence_available_at`; the narrower
+    # monetary-only fact is preserved separately as `monetary_release_at`.
+    latest_release = max(filter(None, [monetary_release, evidence_available]))
     clocks = {
         "state_asof": f"{latest_index.date().isoformat()}T00:00:00Z",
         "latest_component_observed_at": f"{latest_observed}T00:00:00Z",
+        "monetary_release_at": f"{monetary_release}T00:00:00Z",
+        "evidence_available_at": f"{latest_release}T00:00:00Z",
+        "evidence_available_at_contributions": {
+            family: None if value is None else f"{value}T00:00:00Z"
+            for family, value in evidence_contributions.items()
+        },
+        "evidence_available_at_law": (
+            "no earlier than the latest availability of every field copied into "
+            "state.event_reference: all monetary receipts, all usd_funding receipts, "
+            "and the embedded us_liquidity_quality asof taken as its conservative "
+            "availability lower bound"
+        ),
+        "evidence_available_at_excludes": (
+            "quality.global_credit is outside state.event_reference and keeps its own "
+            "per-component reference/availability stamps; it is separately timestamped "
+            "rather than folded into this clock"
+        ),
         "release_at": f"{latest_release}T00:00:00Z",
+        "release_at_semantics": "alias of evidence_available_at; never the monetary-only release",
         "first_known_at": generated_at_utc.isoformat().replace("+00:00", "Z"),
         "release_clock_precision": "conservative_date_only",
-        "adapter_observed_at_field": "release_at",
+        "adapter_observed_at_field": "evidence_available_at",
         "adapter_known_at_field": "first_known_at",
     }
 
@@ -598,9 +709,18 @@ def build_contract(
         "state": {
             "asof": str(latest_index.date()),
             "label": state_label,
-            "label_enum": ["expanding", "flat", "contracting", "unknown"],
+            "label_enum": list(STATE_LABEL_ENUM),
+            "label_vocabulary": "state_direction",
+            "label_rule": {
+                "field": "state.monetary_impulse",
+                "unit": MONETARY_IMPULSE_UNIT,
+                "flat_band_abs": flat_band,
+                "config_key": "quality_thresholds.monetary_impulse_flat_band",
+                "note": "direction reading only; it is not applied to monetary_impulse_z and mints no event",
+            },
             "monetary_stance": _finite(latest["monetary_stance"]),
             "monetary_impulse": current_impulse,
+            "monetary_impulse_z": current_impulse_z,
             "orthogonalised_impulse": _finite(latest["orthogonalised_impulse"]),
             "liquidity_breadth": _finite(latest["liquidity_breadth"]),
             "credit_impulse_global": None,
@@ -608,12 +728,13 @@ def build_contract(
             "policy_liquidity_impulse": current_impulse,
             "units": {
                 "monetary_stance": "expanding_z_score",
-                "monetary_impulse": "weekly_change_in_expanding_z_score",
+                "monetary_impulse": MONETARY_IMPULSE_UNIT,
+                "monetary_impulse_z": MONETARY_IMPULSE_Z_UNIT,
                 "orthogonalised_impulse": "causal_regression_residual_z_units",
                 "liquidity_breadth": "share_0_to_1",
                 "credit_impulse_global": "null_until_comparable_pit_coverage",
                 "usd_funding_impulse": "expanding_z_score_positive_is_easier",
-                "policy_liquidity_impulse": "weekly_change_in_expanding_z_score",
+                "policy_liquidity_impulse": MONETARY_IMPULSE_UNIT,
             },
             "event_reference": {
                 "producer_schema": CONTRACT_SCHEMA,
@@ -624,9 +745,32 @@ def build_contract(
                 "shock_type": "policy_liquidity_impulse",
                 "direction": direction_sign,
                 "direction_label": state_label,
-                "magnitude_z": current_impulse,
+                "direction_label_enum": list(STATE_LABEL_ENUM),
+                # B2: two magnitudes, each with its own truthful unit.  `magnitude`
+                # is the raw weekly delta the producer measures; `magnitude_z` is
+                # the prior-only standardized shock, and is the ONLY field a
+                # downstream materiality threshold expressed in z units may gate.
+                "magnitude": current_impulse,
+                "magnitude_unit": MONETARY_IMPULSE_UNIT,
+                "magnitude_field": "state.monetary_impulse",
+                "magnitude_z": current_impulse_z,
+                "magnitude_z_unit": MONETARY_IMPULSE_Z_UNIT,
+                "magnitude_z_field": "state.monetary_impulse_z",
+                "magnitude_semantics": (
+                    "magnitude is a first difference of a z-scored stance and is NOT standardized; "
+                    "magnitude_z is the causal expanding-z standardization of that difference; "
+                    "direction is the raw sign of magnitude"
+                ),
                 "breadth": _finite(latest["liquidity_breadth"]),
                 "quality": quality_label,
+                "quality_enum": list(QUALITY_LABEL_ENUM),
+                "quality_vocabulary": "state_vs_us_quality_agreement",
+                "vocabulary_law": (
+                    "direction_label_enum and quality_enum are two separate closed vocabularies "
+                    "whose only shared member is 'unknown'; 'easing'/'tightening' are "
+                    "state-vs-US-quality agreement labels and are never synonyms for "
+                    "'expanding'/'contracting'"
+                ),
                 "confidence": state_confidence,
                 "confidence_semantics": "monetary coverage times mean disclosed PIT reliability; data confidence only, not predictive confidence",
                 "coverage": monetary_coverage,
@@ -647,6 +791,7 @@ def build_contract(
             "us_liquidity_quality": us_quality,
             "global_credit": credit,
             "event_quality": quality_label,
+            "event_quality_enum": list(QUALITY_LABEL_ENUM),
             "confidence": {
                 "value": state_confidence,
                 "kind": "data_lineage_and_coverage_only",

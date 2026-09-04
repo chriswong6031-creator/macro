@@ -56,20 +56,64 @@ window, full-sample normalisation, backfill from future releases, or zero fill.
 
 The event-reference clock object distinguishes:
 
+- `state_asof`: the W-FRI decision grid stamp;
 - `latest_component_observed_at`: newest economic reference date among the
   monetary inputs;
-- `release_at`: latest conservative availability date among those inputs;
-- `state_asof`: the W-FRI decision grid stamp;
+- `monetary_release_at`: latest conservative availability date among the usable
+  **monetary** inputs only — a narrow diagnostic, never the envelope clock;
+- `evidence_available_at`: the conservative **all-evidence** availability clock
+  (see the law below);
+- `release_at`: an alias of `evidence_available_at`, kept for field-name
+  continuity;
 - `first_known_at`: the timestamp when this exact producer payload was first
   generated; and
 - `release_clock_precision=conservative_date_only`: the repository does not
   claim intraday release timestamps.
 
-The W-LIQ.3 adapter maps its `observed_at` to producer `release_at` and its
-`known_at` to `first_known_at`. `known_at` therefore cannot precede the usable
-release date. The historical backfill reconstructs observation and conservative
-release dates but **cannot** reconstruct exact first-known payload timestamps
-before this producer existed.
+### The evidence-availability law
+
+An event envelope may never claim an observed/release time earlier than the
+latest availability of **any** field it carries downstream. `state.event_reference`
+carries three families of evidence, so `evidence_available_at` is the maximum
+over all three, and `clocks.evidence_available_at_contributions` publishes each
+family's contribution so the binding leg is always visible:
+
+1. every **monetary** component receipt — drives `monetary_*` and the direction
+   label;
+2. every **USD-funding** component receipt — drives `conditions.usd_funding_impulse`
+   and the funding half of `component_snapshot`;
+3. the embedded **`us_liquidity_quality`** leg — drives `event_reference.quality`
+   and `conditions.us_liquidity_quality`.
+
+Component receipts are counted whether or not they are `usable`, because their
+dates are copied into `component_snapshot` verbatim either way.
+
+`quality.global_credit` is deliberately **outside** this clock: it is not part of
+`state.event_reference`, and it already carries its own per-component
+`reference_date` / `available_date` stamps. It is kept separately timestamped
+rather than folded into the envelope clock, which is the other option the repair
+law permits for evidence that is not copied into the event reference.
+`clocks.evidence_available_at_excludes` says so in the payload.
+
+The `us_liquidity_quality` object in `data/regime/latest.json` exposes only an
+`asof` and carries no separate publication stamp. That `asof` is therefore taken
+as a **conservative availability lower bound**: the object cannot have existed
+before its own as-of date, and the true publication happened at or after it.
+This is deliberately a bound, not a measurement — it keeps the combined clock
+safe against look-ahead rather than precise.
+
+Before this repair, the envelope derived its release clock from the monetary
+inputs alone. On 2026-08-21 that published `release_at=2026-08-20` while the same
+envelope already carried HY-OAS and real-yield receipts available 2026-08-21 and
+a `us_liquidity_quality` object with `asof=2026-08-21`. The repaired clock reads
+2026-08-21 for that row.
+
+The W-LIQ.3 adapter maps its `observed_at` to producer `evidence_available_at`
+(`clocks.adapter_observed_at_field` names it) and its `known_at` to
+`first_known_at`. `known_at` therefore cannot precede the availability of any
+evidence in the envelope. The historical backfill reconstructs observation and
+conservative release dates but **cannot** reconstruct exact first-known payload
+timestamps before this producer existed.
 
 ## 3. Candidate factor semantics
 
@@ -93,15 +137,44 @@ First weekly difference of `monetary_stance`:
 I_t = S_t - S_{t-1}
 \]
 
-Positive means the composite relative stance improved during the week. The
-contract label uses a small frozen ±0.05 z-unit threshold: `expanding`, `flat`,
-`contracting`, or `unknown`.
+Positive means the composite relative stance improved during the week.
 
-The adapter-ready `direction` is the raw sign of the supplied magnitude (`-1`
-or `1` when finite), while `direction_label` is the thresholded contract label.
-Thus a tiny negative observation can truthfully be `direction=-1` and
-`direction_label=flat`; W-LIQ.3's separately ratified materiality policy decides
-whether it can mint an episode. W-LIQ.1 does not make that decision.
+`monetary_impulse` is **not standardized**. It is a first difference of an
+already-z-scored stance, so its unit is
+`weekly_change_in_expanding_z_score` — a change in z, not a z. Nothing may
+threshold it as if it were a shock z-score.
+
+The contract label reads `flat` inside a small frozen ±0.05 band expressed in
+those raw units, and otherwise `expanding` or `contracting` (or `unknown` when
+the impulse is unavailable). The band lives at
+`quality_thresholds.monetary_impulse_flat_band` and is republished, with its
+unit and config key, at `state.label_rule`. It was previously named
+`monetary_impulse_z`, which claimed a standardization the quantity does not have.
+
+### `monetary_impulse_z`
+
+The prior-only causal expanding z-score of `monetary_impulse`, built with the
+same `causal_expanding_z` transform used for every component score:
+
+\[
+Z_t = \frac{I_t - \mu(I_{<t})}{\sigma(I_{<t})}
+\]
+
+Mean and standard deviation at `t` contain only impulses strictly before `t`
+(minimum 52 prior weekly observations), so a future impulse can never restate a
+past `monetary_impulse_z`. Unit:
+`prior_only_expanding_z_score_of_weekly_change_in_expanding_z_score`.
+
+This is the **only** field a downstream materiality threshold expressed in
+z units may gate. It is published as `state.monetary_impulse_z` and copied to
+`state.event_reference.magnitude_z`; the raw delta remains available and
+separately united as `state.event_reference.magnitude`.
+
+The adapter-ready `direction` is the raw sign of `magnitude` (`-1` or `1` when
+finite), while `direction_label` is the thresholded contract label. Thus a tiny
+negative observation can truthfully be `direction=-1` and `direction_label=flat`;
+W-LIQ.3's separately ratified materiality policy decides whether it can mint an
+episode. W-LIQ.1 does not make that decision.
 
 ### `orthogonalised_impulse`
 
@@ -167,11 +240,32 @@ dual read, not a forced consensus.
 usable and the canonical US quality object is present. It is not statistical
 validation, product acceptance, or live/deployed status.
 
-`state.event_reference.quality` is a closed adapter label:
+### The two closed label vocabularies
 
-- `easing` only when the global impulse is expanding and canonical US quality
-  is benign expansion;
-- `tightening` only when both scopes contract;
+The contract publishes two closed vocabularies that answer different questions.
+Their only shared member is `unknown`, and **no sentence in this repository may
+describe one using the words of the other**:
+
+| Vocabulary | Question it answers | Members | Published enum |
+|---|---|---|---|
+| state direction | which way is the global monetary state moving? | `expanding`, `flat`, `contracting`, `unknown` | `state.label_enum`, `state.event_reference.direction_label_enum` |
+| state-vs-US-quality agreement | do the global state and the canonical US liquidity-quality read agree, and in which sense? | `easing`, `tightening`, `mixed`, `unknown` | `state.event_reference.quality_enum`, `quality.event_quality_enum` |
+
+`easing` is **not** a synonym for `expanding` and `tightening` is **not** a
+synonym for `contracting`. `state.label` and `direction_label` never take a
+value from the agreement vocabulary, and `event_reference.quality` never takes a
+value from the direction vocabulary. `engine/global_liquidity_transmission.py`
+freezes both as `STATE_LABEL_ENUM` and `QUALITY_LABEL_ENUM`, and
+`test_every_emitted_label_belongs_to_its_own_closed_vocabulary` proves every
+emitted label is a member of its own enum and that every declared member is
+reachable.
+
+`state.event_reference.quality` is assigned as:
+
+- `easing` only when the global state label is `expanding` and canonical US
+  quality is `benign-expansion`;
+- `tightening` only when the global state label is `contracting` and canonical
+  US quality is `contracting`;
 - `unknown` only when both are unknown;
 - `mixed` for every conflicting or non-confirming combination.
 
@@ -205,10 +299,14 @@ The event seam maps the fields exactly as follows:
 | data version | `meta.data_version` | `glt_data:<16 hash chars>` derived from the full source snapshot hash |
 | state family | `state.event_reference.state_family` | `monetary_impulse` |
 | shock/source type | `state.event_reference.shock_type` | `policy_liquidity_impulse`; a source type, not a minted shock |
-| direction | `state.event_reference.direction` | raw sign of magnitude, null only if magnitude is unavailable/exactly zero |
-| magnitude | `state.event_reference.magnitude_z` | copied `monetary_impulse` in weekly z-score-change units |
+| direction | `state.event_reference.direction` | raw sign of `magnitude`, null only if `magnitude` is unavailable/exactly zero |
+| direction label | `state.event_reference.direction_label` | state-direction vocabulary: `expanding` / `flat` / `contracting` / `unknown`, per `direction_label_enum` |
+| raw magnitude | `state.event_reference.magnitude` | copied `state.monetary_impulse`; unit in `magnitude_unit` = `weekly_change_in_expanding_z_score`; **not standardized** |
+| standardized magnitude | `state.event_reference.magnitude_z` | copied `state.monetary_impulse_z`; unit in `magnitude_z_unit`; prior-only causal expanding z of the raw delta; the only field a z-unit materiality threshold may gate |
 | breadth | `state.event_reference.breadth` | copied 0–1 monetary breadth |
-| quality | `state.event_reference.quality` | `easing` / `tightening` / `mixed` / `unknown` rule above |
+| quality | `state.event_reference.quality` | agreement vocabulary: `easing` / `tightening` / `mixed` / `unknown`, per `quality_enum` and the rule above |
+| observed clock | `state.event_reference.clocks.evidence_available_at` | conservative maximum availability over monetary, USD-funding, and US-quality evidence; `release_at` is its alias; named by `clocks.adapter_observed_at_field` |
+| known clock | `state.event_reference.clocks.first_known_at` | first generation of this exact payload; named by `clocks.adapter_known_at_field` |
 | confidence | `state.event_reference.confidence` | 0–1 lineage/coverage confidence, never predictive confidence |
 | coverage | `state.event_reference.coverage` | monetary weighted usable coverage ratio |
 | freshness | `state.event_reference.freshness` | `fresh`, `degraded`, or `unknown` from current monetary inputs |
@@ -238,6 +336,16 @@ data/model version. It must be published as a new observation; it never rewrites
 a previously persisted first-known shock. W-LIQ.3 owns append-only episode and
 amendment ledgers. W-LIQ.1 owns source snapshots and does not duplicate those
 ledgers.
+
+**Note on `model_version` across the Sol semantic repair.** The repair that added
+`monetary_impulse_z`, split the magnitude seam, renamed the flat-band config key,
+and widened the availability clock changed factor semantics, which normally
+requires a `model_version` bump. `model_version` is deliberately held at
+`glt_state.v1`: this producer has never been accepted, merged, or published, so
+no consumer has ever observed a different `glt_state.v1`. There is no prior
+published episode to protect and bumping would falsely imply one existed. The
+`data_version` and `source_snapshot_hash` did change, because the producer config
+changed. Sol may overrule this and require a bump as a condition of acceptance.
 
 ## 7. Historical artifact and validation receipt
 

@@ -55,7 +55,7 @@ def _cfg() -> dict:
         "min_funding_coverage_ratio": 2 / 3,
         "monetary_components": monetary,
         "usd_funding_components": funding,
-        "quality_thresholds": {"monetary_impulse_z": 0.05},
+        "quality_thresholds": {"monetary_impulse_flat_band": 0.05},
     }
 
 
@@ -175,8 +175,9 @@ def test_contract_is_state_only_and_reports_null_global_credit(monkeypatch, tmp_
     assert event["freshness"] == "fresh"
     assert len(event["source_snapshot_hash"]) == 64
     assert event["data_version"].startswith("glt_data:")
-    assert event["clocks"]["adapter_observed_at_field"] == "release_at"
+    assert event["clocks"]["adapter_observed_at_field"] == "evidence_available_at"
     assert event["clocks"]["adapter_known_at_field"] == "first_known_at"
+    assert event["clocks"]["release_at"] == event["clocks"]["evidence_available_at"]
     assert "transmission" not in payload
     assert "repricing_gap" not in payload
     assert history["orthogonalised_impulse"].notna().any()
@@ -262,3 +263,208 @@ def test_walk_forward_receipt_has_purge_gap_and_no_promotion_authority() -> None
         assert result["oos_n"] > 0
         for fold in result["folds"]:
             assert (pd.Timestamp(fold["test_start"]) - pd.Timestamp(fold["train_end"])).days >= 28
+
+
+# --------------------------------------------------------------------------
+# B1 — the combined evidence clock is never earlier than the evidence carried
+# --------------------------------------------------------------------------
+
+
+def _daily_funding(periods: int = 1200) -> dict[str, pd.Series]:
+    """Business-daily funding, so its release lands after every weekly monetary one."""
+    idx = pd.date_range("2018-01-03", periods=periods, freq="B")
+    d = np.arange(periods, dtype=float)
+    return {
+        "broad_dollar": pd.Series(100 + np.sin(d / 25), index=idx),
+        "real_yield_10y": pd.Series(1.0 + np.cos(d / 40), index=idx),
+        "high_yield_oas": pd.Series(3.0 + np.sin(d / 30), index=idx),
+    }
+
+
+def test_evidence_clock_moves_when_a_funding_input_postdates_all_monetary_inputs(
+    monkeypatch, tmp_path
+) -> None:
+    cfg = _cfg()
+    monetary, fx, _ = _inputs()
+    funding = _daily_funding()
+    monkeypatch.setattr(glt, "load_inputs", lambda _cfg: (monetary, fx, funding))
+
+    payload, _ = glt.build_contract(
+        producer_cfg=cfg,
+        root=tmp_path,
+        generated_at=datetime(2026, 8, 22, tzinfo=timezone.utc),
+    )
+
+    components = payload["freshness"]["components"]
+    latest_monetary = max(row["available_date"] for row in components["monetary"].values())
+    latest_funding = max(row["available_date"] for row in components["usd_funding"].values())
+    # Premise of the test: without it the assertions below prove nothing.
+    assert latest_funding > latest_monetary
+
+    clocks = payload["state"]["event_reference"]["clocks"]
+    assert clocks["monetary_release_at"] == f"{latest_monetary}T00:00:00Z"
+    assert clocks["evidence_available_at"] == f"{latest_funding}T00:00:00Z"
+    assert clocks["evidence_available_at"] > clocks["monetary_release_at"]
+    # The published adapter clock must be the conservative one, not the narrow one.
+    assert clocks["release_at"] == clocks["evidence_available_at"]
+    assert clocks["adapter_observed_at_field"] == "evidence_available_at"
+    contributions = clocks["evidence_available_at_contributions"]
+    assert contributions["usd_funding"] == f"{latest_funding}T00:00:00Z"
+    assert contributions["monetary"] == f"{latest_monetary}T00:00:00Z"
+    assert payload["freshness"]["clocks"] == clocks
+
+
+def test_embedded_us_quality_asof_also_raises_the_evidence_clock(monkeypatch, tmp_path) -> None:
+    """The exact 2026-08-21 shape Sol flagged: quality newer than the monetary release."""
+    cfg = _cfg()
+    monetary, fx, funding = _inputs()
+    monkeypatch.setattr(glt, "load_inputs", lambda _cfg: (monetary, fx, funding))
+    generated_at = datetime(2026, 8, 22, tzinfo=timezone.utc)
+
+    without, _ = glt.build_contract(
+        producer_cfg=cfg, root=tmp_path, generated_at=generated_at
+    )
+    baseline = without["state"]["event_reference"]["clocks"]
+    state_asof = without["state"]["asof"]
+    assert baseline["evidence_available_at"] < f"{state_asof}T00:00:00Z"
+
+    regime = tmp_path / "data/regime/latest.json"
+    regime.parent.mkdir(parents=True, exist_ok=True)
+    regime.write_text(
+        json.dumps({"liquidity_quality": {"asof": state_asof, "label": "contracting"}})
+    )
+    with_quality, _ = glt.build_contract(
+        producer_cfg=cfg, root=tmp_path, generated_at=generated_at
+    )
+
+    clocks = with_quality["state"]["event_reference"]["clocks"]
+    assert with_quality["quality"]["us_liquidity_quality"]["asof"] == state_asof
+    assert clocks["evidence_available_at_contributions"]["us_liquidity_quality"] == (
+        f"{state_asof}T00:00:00Z"
+    )
+    assert clocks["evidence_available_at"] == f"{state_asof}T00:00:00Z"
+    assert clocks["evidence_available_at"] > baseline["evidence_available_at"]
+    assert clocks["release_at"] == clocks["evidence_available_at"]
+    # The narrow monetary-only fact is preserved, not deleted.
+    assert clocks["monetary_release_at"] == baseline["monetary_release_at"]
+
+
+# --------------------------------------------------------------------------
+# B2 — the standardized shock magnitude is real and prior-only
+# --------------------------------------------------------------------------
+
+
+def test_monetary_impulse_z_is_prior_only_and_is_not_the_raw_delta() -> None:
+    cfg = _cfg()
+    monetary, fx, funding = _inputs()
+    cutoff = pd.Timestamp("2020-12-25")
+    before, *_ = glt.build_state_history(monetary, fx, funding, cfg, asof=cutoff)
+
+    mutated = {name: series.copy() for name, series in monetary.items()}
+    mutated["fed"].loc[mutated["fed"].index > cutoff] *= 50.0
+    after, *_ = glt.build_state_history(mutated, fx, funding, cfg)
+
+    pd.testing.assert_series_equal(
+        before["monetary_impulse_z"],
+        after.loc[before.index, "monetary_impulse_z"],
+        check_exact=False,
+        rtol=1e-12,
+        atol=1e-12,
+    )
+
+    standardized = before["monetary_impulse_z"].dropna()
+    assert not standardized.empty
+    raw = before["monetary_impulse"].reindex(standardized.index)
+    # A genuine standardization, not the raw weekly delta wearing a "_z" name.
+    assert not np.allclose(standardized.to_numpy(), raw.to_numpy())
+    assert standardized.abs().max() > raw.abs().max()
+
+
+def test_event_reference_publishes_both_magnitudes_with_their_own_units(
+    monkeypatch, tmp_path
+) -> None:
+    cfg = _cfg()
+    monetary, fx, funding = _inputs()
+    monkeypatch.setattr(glt, "load_inputs", lambda _cfg: (monetary, fx, funding))
+
+    payload, _ = glt.build_contract(
+        producer_cfg=cfg,
+        root=tmp_path,
+        generated_at=datetime(2026, 8, 22, tzinfo=timezone.utc),
+    )
+
+    state = payload["state"]
+    event = state["event_reference"]
+    assert event["magnitude"] == state["monetary_impulse"]
+    assert event["magnitude_z"] == state["monetary_impulse_z"]
+    assert event["magnitude"] != event["magnitude_z"]
+    assert event["magnitude_unit"] == glt.MONETARY_IMPULSE_UNIT
+    assert event["magnitude_z_unit"] == glt.MONETARY_IMPULSE_Z_UNIT
+    assert event["magnitude_unit"] != event["magnitude_z_unit"]
+    assert state["units"]["monetary_impulse"] == glt.MONETARY_IMPULSE_UNIT
+    assert state["units"]["monetary_impulse_z"] == glt.MONETARY_IMPULSE_Z_UNIT
+    # The direction/flat band gates the raw delta and says so.
+    assert state["label_rule"]["field"] == "state.monetary_impulse"
+    assert state["label_rule"]["unit"] == glt.MONETARY_IMPULSE_UNIT
+    assert state["label_rule"]["config_key"] == "quality_thresholds.monetary_impulse_flat_band"
+    assert event["direction"] == (1 if state["monetary_impulse"] > 0 else -1)
+
+
+# --------------------------------------------------------------------------
+# B3 — two closed vocabularies, never conflated
+# --------------------------------------------------------------------------
+
+
+def test_every_emitted_label_belongs_to_its_own_closed_vocabulary() -> None:
+    us_labels = [
+        None,
+        "benign-expansion",
+        "stress-expansion",
+        "neutral",
+        "neutral-hollow",
+        "contracting",
+        "unknown",
+        "some-future-label",
+    ]
+    impulses = [None, -5.0, -0.06, -0.05, 0.0, 0.05, 0.06, 5.0]
+
+    emitted_state: set[str] = set()
+    emitted_quality: set[str] = set()
+    for impulse in impulses:
+        state_label = glt._state_label(impulse, 0.05)
+        assert state_label in glt.STATE_LABEL_ENUM
+        emitted_state.add(state_label)
+        for us_label in us_labels:
+            us_quality = None if us_label is None else {"label": us_label}
+            quality_label = glt._quality_label(state_label, us_quality)
+            assert quality_label in glt.QUALITY_LABEL_ENUM
+            emitted_quality.add(quality_label)
+
+    # Every declared member is reachable, so the enums are exact, not aspirational.
+    assert emitted_state == set(glt.STATE_LABEL_ENUM)
+    assert emitted_quality == set(glt.QUALITY_LABEL_ENUM)
+    # The vocabularies overlap in exactly one member and no other.
+    assert set(glt.STATE_LABEL_ENUM) & set(glt.QUALITY_LABEL_ENUM) == {"unknown"}
+
+
+def test_contract_self_documents_both_vocabularies(monkeypatch, tmp_path) -> None:
+    cfg = _cfg()
+    monetary, fx, funding = _inputs()
+    monkeypatch.setattr(glt, "load_inputs", lambda _cfg: (monetary, fx, funding))
+
+    payload, _ = glt.build_contract(
+        producer_cfg=cfg,
+        root=tmp_path,
+        generated_at=datetime(2026, 8, 22, tzinfo=timezone.utc),
+    )
+
+    state = payload["state"]
+    event = state["event_reference"]
+    assert state["label_enum"] == list(glt.STATE_LABEL_ENUM)
+    assert event["direction_label_enum"] == list(glt.STATE_LABEL_ENUM)
+    assert event["quality_enum"] == list(glt.QUALITY_LABEL_ENUM)
+    assert payload["quality"]["event_quality_enum"] == list(glt.QUALITY_LABEL_ENUM)
+    assert state["label"] in state["label_enum"]
+    assert event["direction_label"] in event["direction_label_enum"]
+    assert event["quality"] in event["quality_enum"]
+    assert payload["quality"]["event_quality"] in payload["quality"]["event_quality_enum"]

@@ -159,7 +159,9 @@ do_not_redo:
   - "Do not arm merge-on-green, mark PR #6296 ready, auto-merge, merge, deploy, or start W-LIQ.2+ without Sol release."
 danger_areas:
   - "Availability alignment is not vintage reconstruction; ECB/BoJ revision risk remains medium and explicit."
-  - "state.event_reference.direction is raw sign while direction_label is the ±0.05 threshold label; materiality belongs to the later Sol-ratified event policy."
+  - "state.event_reference.direction is the raw sign of `magnitude` while direction_label is the ±0.05 flat-band label in raw weekly-change units; materiality belongs to the later Sol-ratified event policy and may only be thresholded against `magnitude_z`."
+  - "direction_label_enum (expanding|flat|contracting|unknown) and quality_enum (easing|tightening|mixed|unknown) are separate closed vocabularies sharing only `unknown`; never describe one with the other's words."
+  - "The envelope clock is `evidence_available_at` (max over monetary + usd_funding + us_liquidity_quality availability); `release_at` is its alias and is never the monetary-only release."
   - "source_snapshot_hash excludes generated/first-known clocks; exact retries must preserve the earliest published first_known_at."
   - "The primary Macro and Mastermind checkouts are shared/dirty; continue only in isolated worktrees and re-fetch origin/main before any review action."
 ---
@@ -184,12 +186,29 @@ is implemented; full vintage truth remains unverified and is not inferred.
 ## Frozen semantic seam
 
 W-LIQ.3 copies `state.event_reference` without calculation. Its observed clock is
-producer `release_at`; its known clock is `first_known_at`. The source snapshot,
-model/data versions, family/type, raw sign, signed magnitude, breadth, mixed/easing/
-tightening/unknown quality, data-only confidence, monetary coverage, freshness,
-conditions, empty regional gates, and component snapshot all have exact meanings
-in the methodology note. `credit_impulse_global=null` means insufficient comparable
-PIT coverage, never zero.
+producer `evidence_available_at` (the conservative all-evidence availability clock,
+of which `release_at` is an alias); its known clock is `first_known_at`.
+
+Two **separate closed vocabularies** are published, and no sentence anywhere may
+describe one using the words of the other. Their only shared member is `unknown`:
+
+- `state.label` and `state.event_reference.direction_label` — direction of the
+  global monetary state — are `expanding`, `flat`, `contracting`, or `unknown`
+  (`direction_label_enum`). They are never `easing` or `tightening`.
+- `state.event_reference.quality` — agreement between the global state and the
+  canonical US liquidity-quality read — is `easing`, `tightening`, `mixed`, or
+  `unknown` (`quality_enum`). It is never `expanding` or `contracting`.
+
+Two **separate magnitudes** are published, each with its own `unit` field:
+`magnitude` is the raw `monetary_impulse` in `weekly_change_in_expanding_z_score`
+units, and `magnitude_z` is its prior-only causal expanding-z standardization.
+Only `magnitude_z` may be gated by a downstream threshold expressed in z units.
+`direction` is the raw sign of `magnitude`.
+
+The source snapshot, model/data versions, family/type, breadth, data-only
+confidence, monetary coverage, freshness, conditions, empty regional gates, and
+component snapshot all have exact meanings in the methodology note.
+`credit_impulse_global=null` means insufficient comparable PIT coverage, never zero.
 
 ## Gaps and Sol decisions
 

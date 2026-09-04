@@ -126,7 +126,15 @@ usd_funding_components:
     revision_risk: low
 
 quality_thresholds:
-  monetary_impulse_z: 0.05
+  # Absolute band, in RAW `monetary_impulse` units
+  # (weekly_change_in_expanding_z_score), inside which `state.label` reads
+  # `flat`.  It is NOT a z-score threshold: the field it gates,
+  # `state.monetary_impulse`, is a first difference of a z-scored stance.  The
+  # standardized shock magnitude lives in `state.monetary_impulse_z` and is
+  # deliberately not gated here — materiality belongs to the separately
+  # ratified W-LIQ.3 eventization policy.  (Renamed from `monetary_impulse_z`,
+  # which claimed a standardization this quantity does not have.)
+  monetary_impulse_flat_band: 0.05
   usd_funding_impulse_z: 0.25
   us_ci_loans_yoy_pct: 0.5
   china_tsf_impulse_pct: 0.0
