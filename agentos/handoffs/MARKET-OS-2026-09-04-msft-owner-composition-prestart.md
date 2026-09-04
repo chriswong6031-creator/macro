@@ -10,8 +10,9 @@ mission: >
   Recover the Market OS Security Truth expansion after the planning session,
   correct the stale missing-identity-primitive assumption against current source,
   create one concrete canonical Git carrier for the MSFT vertical, test the available
-  Executive admission surface once, and leave an exact collision-safe continuation
-  without pretending that issue creation, planning, fixture submission, or delivery is
+  Executive admission surface once, reconcile the lawful manual capacity route to one
+  exact Codex task, and leave an exact collision-safe continuation without pretending
+  that issue creation, planning, fixture submission, placement, or delivery is
   implementation.
 state_before: >
   B1A AAPL was DONE / PROVEN_LIVE, but current WS:MARKET-OS still described universe
@@ -33,8 +34,8 @@ changed:
   - path: agentos/handoffs/MARKET-OS-2026-09-04-msft-owner-composition-prestart.md
     what: >
       This exact PRE_START continuation, canonical source, fixture-only admission result,
-      lawful placement alternatives, collision census, execution packet boundary, and
-      next action.
+      lawful placement receipt, collision census, execution packet boundary, and next
+      action.
 verified:
   - claim: >
       The current protected Sol procedure was loaded from one protected commit and is
@@ -86,8 +87,8 @@ verified:
       Create issue #6824 with exact operation, current pins, mission, owner boundaries,
       RED sequence, production proof, collision law, and stop condition.
     result: >
-      Issue #6824 is OPEN and PRE_START / NO_RUNTIME_EFFECT. It assigns no receiver and
-      creates no implementation branch or PR.
+      Issue #6824 is OPEN and PRE_START / NO_RUNTIME_EFFECT. It creates no implementation
+      branch or PR.
   - claim: >
       The available Executive MCP is deliberately not a production admission surface.
     command: >
@@ -124,6 +125,18 @@ verified:
       reconciliation. An unspecified receiver or retrieved packet remains unassigned;
       manual transport must not be mislabeled as Executive lifecycle truth.
   - claim: >
+      Exactly one fresh Codex/CTO-Sol task is now the concrete receiver candidate for the
+      implementation operation.
+    command: >
+      Read the sole placement root C0BSBM78V1N/1788512916.722649 and its ChatGPT2
+      materialization reply 1788513778.561419.
+    result: >
+      PLACED to account ChatGPT2, native task
+      01a06bb8-5c20-7a83-9071-b2df4144c138, runtime gpt-5.6-sol / xhigh,
+      worktree /Users/chriswong/.codex/worktrees/2b41/macro-main, direct delivery native
+      Codex task. The receipt is TASK_AND_PROMPT_DELIVERY_ONLY: it proves no pickup ACK,
+      watcher, START, branch, source, product, runtime, or production effect.
+  - claim: >
       The records paths in this branch have no open-PR path collision found by the
       current Market OS PR census.
     command: >
@@ -135,24 +148,33 @@ verified:
       None owns either new path in this branch. No claim is made about unpushed local
       worktrees, so a fresh START-time collision census remains mandatory.
   - claim: >
-      The records candidate has passed the fast hosted repository fences at its first
-      two-file head.
+      The committed Data OS identity generation is current enough to support an action-time
+      owner preflight, without proving the MSFT row itself in this records wave.
     command: >
-      Read GitHub Actions fences run 33855955282 for PR #6825 head
-      c3ff3c4ac6f2ab18f1733b9b6b58bb70389f188b.
+      Inspect data/reference/_receipt.json on Macro main feec1fe60c4eb00fb5211636fe389a56974ef3fa.
     result: >
-      fence-pack completed SUCCESS, including self-mod-fence, capability-redline,
-      grader-manifest, and chat-nav checks. This file has since advanced on the same
-      branch, so fresh exact-head checks remain required and the earlier green run is
-      supporting history only.
+      The canonical identity generation reports generated_at 2026-09-04T00:35:59,
+      symbol-directory snapshot 2026-09-03, CIK-map snapshot 2026-08-31, 2374 security
+      rows, 1212 issuer rows, 6026 aliases, one superseded duplicate, and the closed set
+      of known multi-security issuers. This is generation-level evidence only; the worker
+      still owes exact MSFT row/alias/CIK/cardinality/migration proof.
+  - claim: >
+      The records candidate has passed hosted fast fences on earlier immutable heads.
+    command: >
+      Read GitHub Actions fences runs 33855955282, 33856482245, and 33857161396 for PR
+      #6825's successive exact heads.
+    result: >
+      Each completed SUCCESS. The handoff changed again to record exact placement, so
+      fresh exact-head checks remain required and earlier greens are supporting history
+      only.
 unverified:
   - claim: >
       The exact current MSFT security row, issuer row, CIK, active-security cardinality,
       migrations, and current store alias satisfy the B1A refusal-first identity chain.
     what_would_verify: >
-      A worker-side current-artifact preflight over the committed Data OS Parquets using
-      the canonical readers, before any compiler edit. A mismatch returns a typed owner
-      blocker with no source change.
+      The placed worker's current-artifact preflight over the committed Data OS Parquets
+      using the canonical readers, before any compiler edit. A mismatch returns a typed
+      owner blocker with no source change.
   - claim: >
       A current MSFT event_workspace.v1 exists and is sufficiently fresh for an AVAILABLE
       change/evidence leg.
@@ -161,6 +183,13 @@ unverified:
       existing Company Intelligence reader, preserving found/not_published/fetch_failed
       and the owner's clocks. A truthful degraded object is allowed; invented
       availability is not.
+  - claim: >
+      The placed Codex task has consumed the packet, armed a continuation source, or
+      started repository work.
+    what_would_verify: >
+      The task's own exact-root PICKUP_ACK, watcher disposition, fresh source/path/effect
+      census, contract/path freeze, and separate START. Placement and prompt delivery do
+      not prove any of these.
   - claim: >
       The authenticated Executive App/CeoIngress production route is installed,
       authenticated, current, and able to admit this operation.
@@ -176,13 +205,13 @@ unverified:
       desktop/tablet/mobile with AAPL and unrelated-ticker controls.
 unresolved:
   - >-
-    No production-proven automated Executive/Capacity admission and placement path was
-    accessible from this session. The connected MCP is fixture-only by source law, so
-    restoring its temporary service would not convert it into production authority.
+    The connected MCP remains fixture-only; no production-proven automated Executive
+    admission path is available from this session. The manual placement is truthful
+    transport/assignment evidence only and does not create an Executive Job/Attempt.
   - >-
-    No concrete eligible CTO Sol receiver is currently assigned. The implementation
-    remains WAITING_CAPACITY / needs_placement; the active CEO Sol session is not silently
-    reclassified as a CTO Sol worker merely because it can write GitHub records.
+    The exact Codex task is placed but has not yet posted its own pickup ACK, watcher
+    disposition, START, or source effect. Do not create a second receiver, Slack root,
+    branch, or PR while this task's effect remains unresolved.
   - >-
     Current WS:MARKET-OS still carries the older missing-primitive wording. This branch
     records the correction without rewriting that large owner record; the owner record
@@ -195,20 +224,15 @@ unresolved:
     ingestion repair.
 next_actions:
   - >-
-    Do not retry the fixture MCP. Reconcile one lawful receiver route for the same
-    operation key: either (a) a production-proven authenticated Executive App/CeoIngress
-    plus existing Capacity placement, or (b) deliberate current live DIRECT_TARGETED
-    delivery by the Chairman or an authorized Sol handoff to one exact concrete eligible
-    CTO Sol session. The manual route is transport/assignment only and must not be called
-    Executive dispatch.
+    Read the placed task only through the sole carrier
+    C0BSBM78V1N/1788512916.722649. Require its own PICKUP_ACK with exact task/runtime,
+    truthful watcher disposition, fresh current protected/main/artifact/path/effect
+    census, and a separate START before source modification.
   - >-
-    Preserve issue #6824 as the sole implementation source. Do not mint a replacement
-    operation key, duplicate issue, anonymous OPEN_PICKUP, implementation branch, or PR
-    before a concrete receiver ACKs and the START-time source/path/effect census is clean.
-  - >-
-    The assigned receiver must ACK with its actual identity, read the canonical packet,
-    arm the exact continuation path or truthfully report WATCH_UNAVAILABLE, and emit a
-    separate START before source modification.
+    Preserve issue #6824 as the sole implementation source and native task
+    01a06bb8-5c20-7a83-9071-b2df4144c138 as the sole receiver candidate. Do not mint a
+    replacement operation key, duplicate issue, anonymous OPEN_PICKUP, second task,
+    implementation branch, or PR while pickup/start/effect remains unresolved.
   - >-
     The first worker act is the current owner-artifact MSFT preflight. Only after it
     passes may the worker add RED tests and generalize the pure
@@ -221,8 +245,8 @@ do_not_redo:
   - Do not modify Evidence Foundation/K1 to duplicate top-level owner identity proof.
   - Do not hardcode MSFT security, issuer, CIK, event, or availability to make the test pass.
   - Do not interpret issue creation, this records branch, a future Draft PR, green CI, or merge as production proof.
-  - Do not deliver a packet to a nonexistent or unspecified worker. A valid current live direct assignment to one concrete eligible session is allowed and does not require a redundant Executive Job.
-  - Do not treat the fixture MCP failure as authority for anonymous OPEN_PICKUP, a duplicate lifecycle, or a different operation. A manual route is lawful only through exact deliberate delivery and truthful manual-carrier semantics.
+  - Do not deliver a second packet or materialize another worker while native task 01a06bb8-5c20-7a83-9071-b2df4144c138 remains unresolved.
+  - Do not treat the fixture MCP failure as authority for anonymous OPEN_PICKUP, a duplicate lifecycle, or a different operation. This manual route is direct task placement, not Executive dispatch.
   - Do not widen SECURITY_STATE_TICKERS beyond AAPL before issue #6824's identity/source gates and RED sequence pass.
 danger_areas:
   - >-
@@ -249,21 +273,26 @@ danger_areas:
 canonical implementation source: Macro issue #6824
 implementation operation: market-os-b1a-r1-msft-security-truth-20260903-sol-001
 capability: NOT_BUILT
-placement: WAITING_CAPACITY / needs_placement
-concrete receiver: NONE
-connected Executive MCP: FIXTURE_ONLY / NO_PRODUCTION_ADMISSION
-fixture submit probe: FAILED_BEFORE_EFFECT / NO RETRY
-authenticated Executive App/CeoIngress source: EXISTS
-production Executive App deployment/canary: UNPROVEN
+placement: PLACED / TASK_AND_PROMPT_DELIVERY_ONLY
+account: ChatGPT2
+native task: 01a06bb8-5c20-7a83-9071-b2df4144c138
+runtime: gpt-5.6-sol / xhigh
+worktree: /Users/chriswong/.codex/worktrees/2b41/macro-main
+placement carrier: C0BSBM78V1N/1788512916.722649
+worker pickup ACK: NONE
+watcher disposition: NONE
+START: NONE
 implementation branch/PR: NONE
-runtime/product/production effect: NONE
+source/runtime/product/production effect: NONE
+connected Executive MCP: FIXTURE_ONLY / NO_PRODUCTION_ADMISSION
 ```
 
-The architecture is no longer waiting on invention of identity primitives. It is waiting
-on lawful placement and execution of one bounded composition vertical and then real
-production proof. The source goal remains: current owner alias -> canonical
-security/issuer/current CIK -> one immutable subject -> existing security_state.v1 ->
-normal stock-library/R2 publication -> existing MSFT dossier Decision Spine.
+The architecture is no longer waiting on invention of identity primitives or capacity
+selection. It is waiting on the exact placed task to consume the source, complete its
+no-effect preflight, and truthfully START one bounded composition vertical. The source
+goal remains: current owner alias -> canonical security/issuer/current CIK -> one
+immutable subject -> existing security_state.v1 -> normal stock-library/R2 publication
+-> existing MSFT dossier Decision Spine.
 
 ## Completion boundary
 
