@@ -6,9 +6,9 @@
       "available": true,
       "root": "/private/tmp/f01-r1b-wt",
       "ref": "HEAD",
-      "sha": "8e59a413018d0f1563b86ccfbb7e0b4b688eed72",
+      "sha": "001f1af4a2d1d6022d9ab291796373606e8c202e",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 8925,
+      "tracked_html_pages": 8926,
       "write_page_sites": 151,
       "write_page_unresolved": 35,
       "unresolved_write_sites": [
@@ -6583,6 +6583,49 @@
         "config/site_access.yml:1",
         "site/macro_labor_markets.html",
         "templates/macro_labor_markets.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_liquidity_central_banks",
+      "repo": "macro",
+      "route": "/macro_liquidity_central_banks.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_liquidity_central_banks.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_liquidity_central_banks.html",
+        "templates/macro_liquidity_central_banks.html.j2"
       ],
       "notes": [
         "template attributed by name match; no write_page() call site names it",
