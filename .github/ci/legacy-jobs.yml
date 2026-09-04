@@ -9519,8 +9519,12 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
-      - name: factor hypothesis registry + intelligence state + measurement evidence gap
-        run: python -m pytest tests/test_register_factor_hypotheses.py tests/test_factor_intelligence_state.py tests/test_build_measurement_evidence_gap.py -q
+      # F10-X1 implication-card contract and rendered Measurement projection
+      # stay in the existing factor/measurement owner lane. Register both new
+      # suites on arrival so their artifact-identity, zero-authority, bilingual,
+      # generated-page and hostile-null pins never sit outside CI.
+      - name: factor registry + measurement evidence and research implications
+        run: python -m pytest tests/test_register_factor_hypotheses.py tests/test_factor_intelligence_state.py tests/test_build_measurement_evidence_gap.py tests/test_research_implication_card.py tests/test_measurement_research_implications.py -q
       - name: look-ahead tripwire over engine/ + collectors/ (feature-leak guard)
         run: python -m pytest tests/test_no_lookahead.py -q
       - name: study + trial lanes (OOS, divergence, drift, fingerprints, gauntlets)
