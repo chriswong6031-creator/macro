@@ -404,6 +404,54 @@ def test_every_required_filter_control_exists_and_is_labelled(html, hook, label)
     assert "aria-label=" in tag.group(0), f"the {label} control has no accessible name"
 
 
+def test_the_filter_inventory_is_visibly_complete(html):
+    """#6821 names list / program / entry type / change state / geography
+    resolution. This vertical reads exactly ONE list, so that control is fixed
+    and disabled rather than omitted — an absent control reads as a missing
+    capability, a disabled one states the truth."""
+    tag = re.search(r"<select[^>]*data-sg-list[^>]*>", html)
+    assert tag, "no list control — the filter inventory looks incomplete"
+    assert "disabled" in tag.group(0), (
+        "one list means the control must be fixed, not a chooser implying a choice")
+    assert "OFAC SDN" in html
+
+
+def test_map_and_table_show_the_same_filtered_register(js_text, css_text):
+    """A map left fully lit beside a twelve-row table contradicts the list next
+    to it, and a selection the filter excluded is a claim about an invisible row."""
+    assert "syncMap" in js_text, "the map is never synchronized with the filters"
+    assert "is-off" in js_text and "is-off" in css_text
+    assert "model.selected = null" in js_text, (
+        "a selection filtered out of view must be cleared")
+
+
+def test_a_dimmed_boundary_is_not_styled_as_an_honest_zero(css_text):
+    """Filtered-out and no-data must stay visually distinct, or the map starts
+    reporting zeros it does not have."""
+    off = re.search(r"\.sg-geo\.is-off\s*\{[^}]*\}", css_text)
+    assert off and "opacity" in off.group(0)
+    assert 'html[data-theme="light"] .sg-geo.is-off' in css_text, (
+        "a dim tuned for a dark field is nearly invisible on paper")
+
+
+@pytest.mark.parametrize("hook", [
+    "data-sg-search", "data-sg-list", "data-sg-view",
+    "data-sg-program", "data-sg-type", "data-sg-change", "data-sg-sort",
+])
+def test_every_control_carries_a_bilingual_accessible_name(html, hook):
+    """An accessible name left in English is still an untranslated string — it is
+    just one only a screen-reader user hears."""
+    tag = re.search(r"<(?:select|input)[^>]*%s[^>]*>" % re.escape(hook), html)
+    assert tag, f"missing control {hook}"
+    assert "data-aria-en=" in tag.group(0) and "data-aria-zh=" in tag.group(0), (
+        f"{hook} has no bilingual accessible name")
+
+
+def test_locale_switch_applies_accessible_names_not_only_visible_text(js_text):
+    assert "data-aria-zh" in js_text
+    assert 'setAttribute("aria-label"' in js_text
+
+
 def test_filters_are_disabled_rather_than_silently_ignored(js_text):
     """A control the current view cannot apply must say so, or the UI is
     claiming a filter it is not honouring."""
@@ -681,8 +729,9 @@ def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
     assert log.is_file(), "no state-evidence log"
     payload = json.loads(log.read_text(encoding="utf-8"))
     captured = {c["state"] for c in payload["captures"]}
-    for required in ("selected-boundary", "no-results", "unresolved-register",
-                     "stale-derived", "unavailable", "parser-shape-changed"):
+    for required in ("selected-boundary", "no-results", "filtered-map-sync",
+                     "unresolved-register", "stale-derived", "unavailable",
+                     "parser-shape-changed"):
         assert required in captured, f"no browser evidence for {required}"
     for cap in payload["captures"]:
         assert (EVIDENCE_DIR / "states" / cap["file"]).is_file(), cap["file"]
@@ -691,6 +740,10 @@ def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
     assert by_state["selected-boundary"]["row_focusable"] is True
     assert by_state["selected-boundary"]["map_path_selected"] == 1
     assert by_state["unresolved-register"]["program_filter_disabled"] is True
+    sync = by_state["filtered-map-sync"]
+    assert sync["boundaries_dimmed"] > 0, "a filter left every boundary lit"
+    assert sync["selection_cleared"] == 0, (
+        "a selection the filter excluded was left standing")
     for degraded in ("stale-derived", "unavailable", "parser-shape-changed"):
         assert by_state[degraded]["state_code_visible"] is True
         assert by_state[degraded]["banner_shown"] == 1

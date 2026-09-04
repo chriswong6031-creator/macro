@@ -32,6 +32,19 @@
       }
     },
     {
+      "state": "filtered-map-sync",
+      "theme": "dark",
+      "locale": "en",
+      "file": "filtered-map-sync-dark-en.png",
+      "observations": {
+        "program": "BALKANS",
+        "rows": 3,
+        "boundaries_dimmed": 145,
+        "boundaries_lit": 32,
+        "selection_cleared": 0
+      }
+    },
+    {
       "state": "unresolved-register",
       "theme": "dark",
       "locale": "en",
@@ -66,6 +79,19 @@
         "empty_shown": 1,
         "cause_stated": 1,
         "state_code": "NO_RESULTS"
+      }
+    },
+    {
+      "state": "filtered-map-sync",
+      "theme": "light",
+      "locale": "en",
+      "file": "filtered-map-sync-light-en.png",
+      "observations": {
+        "program": "BALKANS",
+        "rows": 3,
+        "boundaries_dimmed": 145,
+        "boundaries_lit": 32,
+        "selection_cleared": 0
       }
     },
     {

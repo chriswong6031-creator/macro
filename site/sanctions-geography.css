@@ -1,5 +1,6 @@
 /* F02-X1 — Official sanctions geography desk.
-   Owned by the presentation lane; paired byte-for-byte with site/sanctions_geography.css.
+   Owned by the presentation lane; copied byte-for-byte to site/sanctions-geography.css
+   by the builder's ASSET_MAP (underscored template source, hyphenated site output).
 
    ART DIRECTION — two designs, one information architecture.
 
@@ -158,6 +159,11 @@ body {
    being quietly folded into a neighbour. */
 
 .sg-geo[data-count="0"] { cursor: default; }
+
+/* Filtered OUT of the current view — deliberately not the same treatment as an
+   honest zero. A dimmed boundary still carries its fill, so a reader can see it
+   has data that this filter is hiding; a plain boundary has none to show. */
+.sg-geo.is-off { opacity: .22; pointer-events: none; }
 .sg-geo.is-pick { cursor: pointer; }
 .sg-geo.is-pick:hover { stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: .8; }
 
@@ -356,6 +362,8 @@ html[data-theme="light"] .sg-geo.is-on {
   stroke: var(--link); stroke-width: 1.4; filter: none;
 }
 html[data-theme="light"] .sg-geo.is-pick:hover { stroke: color-mix(in srgb, var(--text) 62%, transparent); }
+/* On paper a 22% ink is nearly gone; light dims less far to stay legible. */
+html[data-theme="light"] .sg-geo.is-off { opacity: .34; }
 
 html[data-theme="light"] .sg-ramp i:nth-child(1) { background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
 html[data-theme="light"] .sg-ramp i:nth-child(2) { background: color-mix(in srgb, var(--warn) 24%, var(--panel)); }

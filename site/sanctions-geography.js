@@ -1,5 +1,6 @@
 /* F02-X1 — Official sanctions geography desk.
-   Paired byte-for-byte with site/sanctions_geography.js.
+   Copied byte-for-byte to site/sanctions-geography.js by the builder's ASSET_MAP
+   (underscored template source, hyphenated site output).
 
    Reads two artifacts and invents nothing:
      * sanctions-geography-data.json — the frozen projection
@@ -66,6 +67,7 @@
     program: root.querySelector("[data-sg-program]"),
     type: root.querySelector("[data-sg-type]"),
     change: root.querySelector("[data-sg-change]"),
+    list: root.querySelector("[data-sg-list]"),
     thead: root.querySelector("[data-sg-thead]"),
     entries: root.querySelector("[data-sg-entries]"),
     entriesHead: root.querySelector("[data-sg-entries-head]"),
@@ -517,6 +519,36 @@
     ui.thead.appendChild(tr);
   }
 
+  /* The map is a view of the same filtered register as the table. Leaving every
+     boundary lit while the table shows twelve rows would make the map contradict
+     the list beside it — and a selection that the filter has excluded is a claim
+     about a row the reader can no longer see, so it is cleared. */
+  function syncMap(rows) {
+    if (!ui.map) { return; }
+    var unresolvedView = currentView() === "unresolved";
+    var visible = {};
+    if (!unresolvedView) {
+      rows.forEach(function (r) { visible[String(r.geo_id)] = true; });
+    }
+    var total = (model.projection.countries || []).length;
+    var filtered = unresolvedView || rows.length !== total;
+    var nodes = ui.map.querySelectorAll(".sg-geo");
+    Array.prototype.forEach.call(nodes, function (node) {
+      var id = node.getAttribute("data-geo-id");
+      var named = !!model.byGeo[id];
+      var off = filtered && named && !visible[id];
+      node.classList.toggle("is-off", !!off);
+    });
+    if (model.selected && !visible[model.selected]) {
+      model.selected = null;
+      Array.prototype.forEach.call(nodes, function (node) {
+        node.classList.remove("is-on");
+        if (node.hasAttribute("aria-pressed")) { node.setAttribute("aria-pressed", "false"); }
+      });
+      renderEntries();
+    }
+  }
+
   function renderTable() {
     if (!ui.tbody) { return; }
     syncControls();
@@ -524,6 +556,7 @@
     var unresolvedView = currentView() === "unresolved";
     var columns = unresolvedView ? 3 : 5;
     var rows = visibleRows();
+    syncMap(rows);
     clear(ui.tbody);
 
     if (!rows.length) {
@@ -1006,13 +1039,21 @@
       var ph = ui.search.getAttribute(zh ? "data-ph-zh" : "data-ph-en");
       if (ph) { ui.search.setAttribute("placeholder", ph); }
     }
-    [ui.view, ui.program, ui.type, ui.change, ui.sort].forEach(function (select) {
+    [ui.list, ui.view, ui.program, ui.type, ui.change, ui.sort].forEach(function (select) {
       if (!select) { return; }
       Array.prototype.forEach.call(select.options, function (opt) {
         var label = opt.getAttribute(zh ? "data-label-zh" : "data-label-en");
         if (label) { opt.textContent = label; }
       });
     });
+    /* An accessible name left in English is still an untranslated string — it is
+       simply one only a screen-reader user hears. */
+    [ui.search, ui.list, ui.view, ui.program, ui.type, ui.change, ui.sort]
+      .forEach(function (control) {
+        if (!control) { return; }
+        var name = control.getAttribute(zh ? "data-aria-zh" : "data-aria-en");
+        if (name) { control.setAttribute("aria-label", name); }
+      });
   }
 
   function wire() {

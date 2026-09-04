@@ -335,7 +335,7 @@
         </div>
         <div class="sg-skel sg-skel--map" data-sg-mapskel></div>
         <svg class="sg-map" data-sg-map role="img" aria-labelledby="sg-map-title sg-map-desc" hidden></svg>
-        <p id="sg-map-desc" class="sg-fig-m"><span class="l-en">Shading is the number of listed entries with at least one published address naming that boundary. A plain boundary means no published address names it — an honest zero, not missing data. Boundaries are schematic, drawn from the Natural Earth public-domain 110m dataset, and may reflect disputed-boundary choices we did not make.</span><span class="l-zh">底色深浅表示：有多少名单条目至少有一条公开地址提及该边界。未着色的边界表示没有任何公开地址提及它 — 这是真实的零值，而非数据缺失。边界为示意性绘制，来源为 Natural Earth 公有领域 110m 数据集，可能反映并非由我们作出的争议边界处理方式。</span></p>
+        <p id="sg-map-desc" class="sg-fig-m"><span class="l-en">Shading is the number of listed entries with at least one published address naming that boundary. A plain boundary means no published address names it — an honest zero, not missing data. When a filter is active the boundaries it excludes are dimmed, which means filtered out of the current view, never that the count is zero. Boundaries are schematic, drawn from the Natural Earth public-domain 110m dataset, and may reflect disputed-boundary choices we did not make.</span><span class="l-zh">底色深浅表示：有多少名单条目至少有一条公开地址提及该边界。未着色的边界表示没有任何公开地址提及它 — 这是真实的零值，而非数据缺失。当筛选生效时，被排除的边界会变暗，这表示「不在当前视图内」，而非计数为零。边界为示意性绘制，来源为 Natural Earth 公有领域 110m 数据集，可能反映并非由我们作出的争议边界处理方式。</span></p>
         <div class="sg-legend" data-sg-legend></div>
       </div>
 
@@ -343,27 +343,35 @@
         <div class="sg-panel-h">
           <h3><span class="l-en">Every named boundary</span><span class="l-zh">全部被提及的边界</span></h3>
         </div>
-        <div class="sg-filters" role="group" aria-label="Filter and sort boundaries"><input type="search" data-sg-search
+        <div class="sg-filters" role="group" aria-label="Filter and sort boundaries"><select data-sg-list disabled
+                  aria-label="Sanctions list — this vertical reads one list"
+                  data-aria-en="Sanctions list — this vertical reads one list"
+                  data-aria-zh="制裁名单 — 本模块仅读取一份名单">
+            <option value="SDN" data-label-en="OFAC SDN list" data-label-zh="OFAC SDN 名单">OFAC SDN list</option>
+          </select>
+          <input type="search" data-sg-search
                  aria-label="Filter boundaries by country or program name"
+                 data-aria-en="Filter boundaries by country or program name"
+                 data-aria-zh="按国家或项目名称筛选边界"
                  placeholder="Filter by country or program…"
                  data-ph-en="Filter by country or program…"
                  data-ph-zh="按国家或项目名称筛选…">
-          <select data-sg-view aria-label="Choose which register the table shows">
+          <select data-sg-view aria-label="Choose which register the table shows" data-aria-en="Choose which register the table shows" data-aria-zh="选择表格显示的登记册">
             <option value="resolved" data-label-en="On the map" data-label-zh="已上图边界">On the map</option>
             <option value="unresolved" data-label-en="Could not be placed" data-label-zh="无法定位">Could not be placed</option>
           </select>
-          <select data-sg-program aria-label="Filter by sanctions program">
+          <select data-sg-program aria-label="Filter by sanctions program" data-aria-en="Filter by sanctions program" data-aria-zh="按制裁项目筛选">
             <option value="" data-label-en="Any program" data-label-zh="全部项目">Any program</option>
           </select>
-          <select data-sg-type aria-label="Filter by entry type">
+          <select data-sg-type aria-label="Filter by entry type" data-aria-en="Filter by entry type" data-aria-zh="按条目类型筛选">
             <option value="" data-label-en="Any entry type" data-label-zh="全部条目类型">Any entry type</option>
           </select>
-          <select data-sg-change aria-label="Filter by official change in this window">
+          <select data-sg-change aria-label="Filter by official change in this window" data-aria-en="Filter by official change in this window" data-aria-zh="按本窗口内的官方变更筛选">
             <option value="" data-label-en="Any change state" data-label-zh="全部变更状态">Any change state</option>
             <option value="changed" data-label-en="Changed in this window" data-label-zh="本窗口内有变更">Changed in this window</option>
             <option value="unchanged" data-label-en="No change in this window" data-label-zh="本窗口内无变更">No change in this window</option>
           </select>
-          <select data-sg-sort aria-label="Sort boundaries">
+          <select data-sg-sort aria-label="Sort boundaries" data-aria-en="Sort boundaries" data-aria-zh="边界排序">
             <option value="entries" data-label-en="Most entries" data-label-zh="条目最多">Most entries</option>
             <option value="changed" data-label-en="Most recent change" data-label-zh="近期变更最多">Most recent change</option>
             <option value="name" data-label-en="Name" data-label-zh="按名称">Name</option>
