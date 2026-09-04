@@ -8,7 +8,9 @@ happened to be quiet", and they say nothing at all about whether the renderer
 stayed outside the slice.
 
 Each candidate therefore derives its OWN cgroup from /proc/self/cgroup and must
-bind to the immutable ``/mastermind-ci.slice/<unit>.service`` hierarchy. A
+bind as one direct service under the immutable
+``/mastermind.slice/mastermind-ci.slice/<unit>.service`` hierarchy. Aggregate
+counters and limits are read only from the parent slice node. A
 candidate still sitting in ``system.slice``, in a foreign slice, or with
 unreadable slice files produces an explicit ``refused``/``degraded`` sample with
 no metric values at all — never a host-global substitute. A green produced from
@@ -36,6 +38,7 @@ from pathlib import Path
 
 
 EXPECTED_SLICE = "mastermind-ci.slice"
+EXPECTED_AGGREGATE_CGROUP = "/mastermind.slice/mastermind-ci.slice"
 
 _SLICE_INT_FILES = {
     "memory.current": ("memory", "current"),
@@ -52,6 +55,16 @@ _SLICE_PRESSURE_FILES = {
     "cpu.pressure": "cpu",
     "memory.pressure": "memory",
     "io.pressure": "io",
+}
+_REQUIRED_KEYED_FIELDS = {
+    "cpu": {"usage_usec", "nr_periods", "nr_throttled", "throttled_usec"},
+    "memory_events": {"high", "max", "oom", "oom_kill"},
+    "pids_events": {"max"},
+}
+_REQUIRED_PRESSURE_KINDS = {
+    "cpu": {"some", "full"},
+    "memory": {"some", "full"},
+    "io": {"some", "full"},
 }
 
 running = True
@@ -157,22 +170,63 @@ def candidate_cgroup(proc_self_cgroup: Path) -> str | None:
     return None
 
 
-def _is_bound_to_ci_slice(cgroup: str) -> bool:
-    """Exact ANCHORED match: the candidate sits directly under the slice root.
+def expected_slice_chain(slice_name: str = EXPECTED_SLICE) -> list[str]:
+    """The cgroup component chain systemd creates for a slice unit name.
 
-    Component-anywhere matching accepted a nested look-alike such as
-    /user.slice/user-1000.slice/mastermind-ci.slice/evil.service, and an
-    unnormalised `..` let a forged cgroup assemble fully "bound" evidence from a
-    directory outside the slice entirely. A systemd top-level slice always
-    produces /mastermind-ci.slice/<unit>.service, so anchoring costs nothing.
+    systemd treats `-` in a slice name as a PATH SEPARATOR, so
+    `mastermind-ci.slice` is a child of an implicit `mastermind.slice` and lives
+    at /mastermind.slice/mastermind-ci.slice/. Discovered on the real host
+    2026-09-02 when a correctly configured pc-ci-1 was refused exit 78 and could
+    not start: the previous matcher required the slice at component 0.
     """
 
+    stem = slice_name[: -len(".slice")] if slice_name.endswith(".slice") else slice_name
+    parts = stem.split("-")
+    return ["-".join(parts[: i + 1]) + ".slice" for i in range(len(parts))]
+
+
+def _is_bound_to_ci_slice(cgroup: str) -> bool:
+    """Accept exactly one direct service below the real systemd slice chain."""
+
+    if not cgroup.startswith("/") or cgroup.endswith("/") or "//" in cgroup:
+        return False
     components = [item for item in cgroup.split("/") if item]
     if any(item in {"..", "."} for item in components):
         return False
-    if len(components) < 2 or components[0] != EXPECTED_SLICE:
+    chain = expected_slice_chain(EXPECTED_SLICE)
+    # Anchored on the FULL systemd-derived parent chain: this accepts the real
+    # /mastermind.slice/mastermind-ci.slice/<unit>.service while still refusing
+    # /user.slice/user-1000.slice/mastermind-ci.slice/... and every other nested
+    # look-alike, which is what anchoring was introduced to stop.
+    if components[: len(chain)] != chain or len(components) != len(chain) + 1:
         return False
-    return any(item.endswith(".service") for item in components[1:])
+    service = components[-1]
+    return len(service) > len(".service") and service.endswith(".service")
+
+
+def _identity(path: Path) -> dict[str, int] | None:
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return {"device": stat.st_dev, "inode": stat.st_ino}
+
+
+def _canonical_cgroup_nodes(cgroup_root: Path, cgroup: str) -> tuple[Path, Path] | None:
+    root = Path(cgroup_root)
+    candidate = root / cgroup.lstrip("/")
+    aggregate = root / EXPECTED_AGGREGATE_CGROUP.lstrip("/")
+    if root.is_symlink() or candidate.is_symlink() or aggregate.is_symlink():
+        return None
+    try:
+        canonical_root = root.resolve(strict=True)
+        if candidate.resolve(strict=True) != canonical_root / cgroup.lstrip("/"):
+            return None
+        if aggregate.resolve(strict=True) != canonical_root / EXPECTED_AGGREGATE_CGROUP.lstrip("/"):
+            return None
+    except OSError:
+        return None
+    return candidate, aggregate
 
 
 def _empty_slice_sample(status: str, cgroup: str | None, reason: str | None) -> dict:
@@ -180,6 +234,11 @@ def _empty_slice_sample(status: str, cgroup: str | None, reason: str | None) -> 
         "status": status,
         "expected_slice": EXPECTED_SLICE,
         "cgroup": cgroup,
+        "candidate_cgroup": cgroup,
+        "aggregate_cgroup": EXPECTED_AGGREGATE_CGROUP,
+        "candidate_identity": None,
+        "aggregate_identity": None,
+        "aggregate_metric_source": "parent_slice",
         "reason": reason,
         "cpu": None,
         "cpu_max": None,
@@ -188,6 +247,8 @@ def _empty_slice_sample(status: str, cgroup: str | None, reason: str | None) -> 
         "pids": None,
         "pids_events": None,
         "pressure": None,
+        "limits": None,
+        "slice_cgroup": None,
     }
 
 
@@ -210,8 +271,29 @@ def slice_sample(cgroup_root: Path, proc_self_cgroup: Path) -> dict:
             "refusing to substitute host-global metrics",
         )
 
-    node = Path(cgroup_root) / cgroup.lstrip("/")
+    # Membership is the CANDIDATE's; the aggregate evidence is the SLICE's.
+    # cgroup-v2 puts CPUQuota/MemoryMax and the summed counters on the slice
+    # node, while a candidate's leaf `.service` carries only its own usage and
+    # no ceilings at all (measured on the host 2026-09-02: the slice node had
+    # cpu.max "800000 100000", the leaf had none). Reading the leaf and calling
+    # it aggregate would report one candidate's numbers as the whole envelope.
+    slice_cgroup = EXPECTED_AGGREGATE_CGROUP
+    nodes = _canonical_cgroup_nodes(cgroup_root, cgroup)
+    if nodes is None:
+        return _empty_slice_sample(
+            "refused",
+            cgroup,
+            "candidate or aggregate cgroup node is symlinked, noncanonical, missing, or outside the fixed parent slice",
+        )
+    candidate_node, node = nodes
     sample = _empty_slice_sample("bound", cgroup, None)
+    sample["slice_cgroup"] = slice_cgroup
+    sample["candidate_identity"] = _identity(candidate_node)
+    sample["aggregate_identity"] = _identity(node)
+    if sample["candidate_identity"] is None or sample["aggregate_identity"] is None:
+        return _empty_slice_sample(
+            "degraded", cgroup, "missing stable candidate or aggregate cgroup identity"
+        )
     sample["memory"] = {"current": None, "peak": None, "swap_current": None}
     sample["pids"] = {"current": None}
     for name, (group, key) in _SLICE_INT_FILES.items():
@@ -220,6 +302,12 @@ def slice_sample(cgroup_root: Path, proc_self_cgroup: Path) -> dict:
         sample[key] = _read_keyed(node / name)
     raw_max = _read_text(node / "cpu.max")
     sample["cpu_max"] = raw_max.strip() if raw_max is not None else None
+    sample["limits"] = {
+        "cpu.max": sample["cpu_max"],
+        "memory.high": (_read_text(node / "memory.high") or "").strip() or None,
+        "memory.max": (_read_text(node / "memory.max") or "").strip() or None,
+        "memory.swap.max": (_read_text(node / "memory.swap.max") or "").strip() or None,
+    }
     pressure: dict[str, dict[str, dict[str, float]]] = {}
     for name, key in _SLICE_PRESSURE_FILES.items():
         parsed = _read_pressure(node / name)
@@ -242,9 +330,25 @@ def slice_sample(cgroup_root: Path, proc_self_cgroup: Path) -> dict:
         )
         if value is None
     ]
+    for field, required in _REQUIRED_KEYED_FIELDS.items():
+        value = sample[field]
+        if not isinstance(value, dict) or not required.issubset(value):
+            missing.append(f"{field} required keys")
+    for resource, required_kinds in _REQUIRED_PRESSURE_KINDS.items():
+        resource_pressure = (sample["pressure"] or {}).get(resource)
+        if not isinstance(resource_pressure, dict):
+            missing.append(f"{resource}.pressure required keys")
+            continue
+        for kind in required_kinds:
+            values = resource_pressure.get(kind)
+            if not isinstance(values, dict) or "total" not in values:
+                missing.append(f"{resource}.pressure {kind}.total")
     if missing:
         sample["status"] = "degraded"
-        sample["reason"] = f"unreadable cgroup evidence under {node}: {missing}"
+        sample["reason"] = (
+            f"unreadable or missing required aggregate evidence under "
+            f"{slice_cgroup}: {missing}"
+        )
     return sample
 
 

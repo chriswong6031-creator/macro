@@ -34,7 +34,14 @@ def scrub_pc_state(
     temporary_roots: tuple[Path, ...] = (Path("/tmp"), Path("/var/tmp")),
 ) -> int:
     work = runner_root / "_work"
-    if runner_root not in PC_CI_ROOTS or not work.is_dir() or work.is_symlink():
+    if (
+        runner_root not in PC_CI_ROOTS
+        or runner_root.is_symlink()
+        or runner_root.resolve(strict=False) != runner_root
+        or not work.is_dir()
+        or work.is_symlink()
+        or work.resolve(strict=True).parent != runner_root
+    ):
         raise RuntimeError("runner work root is outside the sealed PC CI allowlist")
     scrubbed = 0
     for entry in work.iterdir():
