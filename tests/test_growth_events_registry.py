@@ -4,12 +4,11 @@ The registry's job is to stop six implementation waves from inventing six vocabu
 (research/MASTERMIND_GROWTH_INSTRUMENTATION_SPEC.md). A registry nothing checks would
 drift from the running beacon on day one, so this file pins three properties:
 
-1. **It cannot start out of step with production.** Every event type
-   `app/main.py::_MM_EVENT_TYPES` already accepts appears in the registry with
-   `status: live`, keyed on the WIRE value that is actually in `analytics_events`.
-   (The reverse direction — whitelist ⊇ registry — becomes true in wave W2-1, when the
-   whitelist is generated from this file. Asserting it now would red on every planned
-   event, so it is deliberately not asserted yet.)
+1. **It cannot drift from production — in either direction (W2-1, landed by
+   WS:COMMERCIAL-ACTIVATION CA1A).** The whitelist `app/main.py::_MM_EVENT_TYPES` is
+   now DERIVED from this file via lib/growth_registry: the beacon accepts a wire IFF
+   the registry marks it `status: live`. Both directions are asserted below, plus an
+   AST guard that no hardcoded set literal creeps back in.
 2. **It is well-formed.** Unique names, unique wire values, closed enums, a declared
    funnel stage, typed properties, and a stated purpose — because "no transition, no
    event" is only enforceable if `purpose` is mandatory.
@@ -36,15 +35,26 @@ def _registry() -> dict:
 
 
 def _live_beacon_types() -> set[str]:
-    """The whitelist, read from source rather than re-typed or imported.
+    """The whitelist, read from the SAME derivation the beacon uses (W2-1, CA1A).
 
-    Parsed with `ast` rather than a regex: importing app.main would pull FastAPI and the
-    whole request stack into a config test, and a regex is not safe here — the set
-    literal's own comment contains `{arena, creative}`, so a non-greedy `\\{(.*?)\\}`
-    closes on the comment's brace and silently drops every member declared after it
-    (measured: it lost `ad_exposure`). An absence produced by a broken instrument looks
-    exactly like a real absence, so the instrument has to be exact.
+    Before CA1A this parsed app/main.py's hardcoded set literal with `ast` (importing
+    app.main would pull FastAPI into a config test). W2-1 removed the literal: the
+    whitelist is now derived from the registry via lib/growth_registry — yaml + stdlib
+    only, so importing it here keeps this a config test while reading production's
+    actual derivation rather than a re-typed copy.
+    `test_whitelist_is_derived_from_the_registry_not_hardcoded` guards the other half:
+    that app/main.py really binds _MM_EVENT_TYPES to this derivation and no set literal
+    has crept back in.
     """
+    from lib import growth_registry
+
+    value = growth_registry.accepted_wires()
+    assert isinstance(value, frozenset) and value
+    return set(value)
+
+
+def _mm_event_types_assignment() -> "object":
+    """The ast node assigned to _MM_EVENT_TYPES in app/main.py (source-level, no import)."""
     import ast
 
     tree = ast.parse((ROOT / "app" / "main.py").read_text(encoding="utf-8"))
@@ -52,10 +62,51 @@ def _live_beacon_types() -> set[str]:
         if isinstance(node, ast.Assign) and any(
             isinstance(t, ast.Name) and t.id == "_MM_EVENT_TYPES" for t in node.targets
         ):
-            value = ast.literal_eval(node.value)
-            assert isinstance(value, (set, frozenset)) and value
-            return set(value)
+            return node.value
     raise AssertionError("could not locate _MM_EVENT_TYPES in app/main.py — was it renamed?")
+
+
+def test_whitelist_is_derived_from_the_registry_not_hardcoded():
+    """W2-1 mutation guard (CA1A acceptance test 28): reintroducing a hardcoded-only
+    whitelist — `_MM_EVENT_TYPES = {...}` — turns this red. The assignment must be a
+    call into lib/growth_registry, because a hand-typed set is exactly the second
+    vocabulary this registry exists to forbid.
+    """
+    import ast
+
+    value = _mm_event_types_assignment()
+    assert not isinstance(value, (ast.Set, ast.SetComp, ast.List, ast.Tuple)), (
+        "_MM_EVENT_TYPES is a literal again — the whitelist must be derived from "
+        "config/growth_events.yml via lib/growth_registry (W2-1)"
+    )
+    assert isinstance(value, ast.Call), "_MM_EVENT_TYPES must be bound to a derivation call"
+    func = value.func
+    assert isinstance(func, ast.Attribute) and func.attr == "accepted_wires" and (
+        isinstance(func.value, ast.Name) and func.value.id == "growth_registry"
+    ), "_MM_EVENT_TYPES must come from growth_registry.accepted_wires()"
+
+
+def test_accepted_wires_are_exactly_the_live_registry_wires(tmp_path):
+    """W2-1 both directions (supersedes the pre-CA1A 'deliberately not asserted yet'):
+    the beacon accepts a wire IFF the registry marks it live — proven against the real
+    registry AND against a fixture flip, so the derivation is live, not a frozen copy.
+    """
+    from lib import growth_registry
+
+    reg = _registry()
+    live = {e["wire"] for e in reg["events"] if e["status"] == "live"}
+    assert set(growth_registry.accepted_wires()) == live
+
+    fixture = tmp_path / "growth_events.yml"
+    fixture.write_text(
+        "schema: growth_events.v1\nenums: {}\nfunnel: [{id: none}]\n"
+        "events:\n"
+        "  - {name: a.live, wire: a_live, status: live, source: client, funnel: none, purpose: p, properties: {}}\n"
+        "  - {name: b.planned, wire: b_planned, status: planned, source: client, funnel: none, purpose: p, properties: {}}\n",
+        encoding="utf-8",
+    )
+    assert set(growth_registry.accepted_wires(fixture)) == {"a_live"}
+    assert set(growth_registry.envelope_v1_wires(fixture)) == set()
 
 
 def test_schema_and_shape():
@@ -130,6 +181,12 @@ _LIVE_PAIRS = {
     "session.heartbeat": "heartbeat",
     "session.exit": "exit",
     "flow_observatory.interacted": "flowobs",
+    # WS:COMMERCIAL-ACTIVATION CA1A (2026-09): the four early-funnel envelope-v1
+    # events. Planned wires had no history to orphan, so name == wire by design.
+    "intelligence.viewed": "intelligence.viewed",
+    "personal.act": "personal.act",
+    "watchlist.symbol_added": "watchlist.symbol_added",
+    "watchlist.saved": "watchlist.saved",
 }
 
 

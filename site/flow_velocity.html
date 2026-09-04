@@ -10369,6 +10369,33 @@ html[data-theme="light"] { --green:#15764f; --amber:#8a5c00; }
       } catch (e) { /* telemetry must never break the page */ }
     }
     window.__fvTrack = fire;
+// ---- CA1A intelligence.viewed (WS:COMMERCIAL-ACTIVATION, config/growth_events.yml
+// `envelope: v1`): fires ONCE per tab session, and ONLY when this page actually
+// delivered a genuine read. The discriminator is the server-BAKED board itself —
+// `tr.sector-row` rows exist in the HTML only when the render lane had real
+// ashare_sectors rows; an empty/none build bakes its honest empty states and zero
+// such rows, so this block never emits on locked/empty/error (near-miss law, CA1A
+// handoff §9). tier_seen is the tier of the DELIVERED read: this surface is public
+// and ungated, so every viewer received the anon-visible read regardless of their
+// wallet. mmTrackGrowth is defined by theme.js which loads BELOW this script, so
+// emission retries briefly instead of firing into the void; no sessionStorage means
+// no once-per-session latch, so we skip rather than risk double-counting.
+(function ivEmit() {
+  var ivRows = 0;
+  try { ivRows = document.querySelectorAll('tr.sector-row').length; } catch (e) { return; }
+  if (!(ivRows > 0)) return;
+  try {
+    if (sessionStorage.getItem('mm.iv.flow_velocity')) return;
+    if (window.mmTrackGrowth) {
+      sessionStorage.setItem('mm.iv.flow_velocity', '1');
+      window.mmTrackGrowth('intelligence.viewed',
+        { surface: 'flow_velocity', surface_group: 'read', tier_seen: 'anon', rows_visible: ivRows });
+      return;
+    }
+  } catch (e) { return; }
+  ivEmit._n = (ivEmit._n || 0) + 1;
+  if (ivEmit._n < 40) setTimeout(ivEmit, 250);
+})();
 
     // quadrant_select (.q-chip spans) and terminal_out (member Terminal links, nameln
     // macro) are plain clicks on an existing DOM hook carrying data-ev — one delegated
