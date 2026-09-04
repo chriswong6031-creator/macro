@@ -32,8 +32,8 @@ verified:
     command: "Read research/market_intelligence_productization/MARKET_ONTOLOGY_POST_TIMEOUT_COMPLETION_ARCHITECTURE_2026-09-02.md and current Agent OS control records."
     result: "Terminal/Supabase own authenticated private Thesis state; Macro owns deterministic market truth; existing evidence, identity, calendar, correction, queue, scheduler, notification and Capital Structure owners remain canonical."
   - claim: "The Mac host is again below its immutable admission floor and runner 30 is not startable."
-    command: "Fresh-read Slack carrier C0BSBM78V1N/1788407647.423079 through pressure-reattribution edge 1788494003.432939 and delivery-reconciliation edge 1788494891.440669; run df -k /System/Volumes/Data at 2026-09-04T06:39:40Z."
-    result: "The carrier has no pressure-reattribution result after the prior 34,372,920 KiB receipt. The direct point-in-time host read was 1,481,204 KiB free versus the 83,886,080 KiB floor at 100% capacity; runner 30 remains inadmissible."
+    command: "Fresh-read Slack carrier C0BSBM78V1N/1788407647.423079 through pressure-reattribution edge 1788494003.432939 and delivery-reconciliation edge 1788494891.440669; run df -k /System/Volumes/Data at 2026-09-04T06:58:45Z."
+    result: "The carrier has no pressure-reattribution result after the prior 34,372,920 KiB receipt. The direct point-in-time host read was 2,638,648 KiB free versus the 83,886,080 KiB floor at 100% capacity; runner 30 remains inadmissible."
   - claim: "MOR-1 has a newer remote repair/evidence sequence, but no current-head immutable review."
     command: "Read Macro PR #6792 and remote branch claude/mor1-integrity-repair-20260902 at 7853ffeaca41d4d8f33995b1453db2be134ce8a3, prior GitHub review 5108611410 at 616f8809a7dfeded9502616591f421e92662df54, and Slack carrier C0BSBM78V1N/1788407666.610799."
     result: "Remote history through tree 47590118fcde9e6913e4d28d54751b2c60223b83 contains the current-base join and commits titled for the bounded review repair, deterministic replay/origin closure and packet recapture. No terminal same-carrier RESULT or non-author review at 7853ffea was visible, so those titles are not treated as acceptance."
@@ -67,7 +67,7 @@ unverified:
     what_would_verify: "Fresh exact-head Agent OS validation/hosted CI and one non-author records review after this commit."
 unresolved:
   - "Macro PR #6810 remains records-only, Draft/Hold; head cbbabbec passed CI but received NOT PASS at Slack 1788496627.014489, so this repaired post-image requires new exact-head CI and non-author review."
-  - "The latest carrier-confirmed Mac state kept runner 28 busy; direct disk read at 2026-09-04T06:39:40Z was 1,481,204 KiB free, runner 30 remains offline, and no second runner start is admissible."
+  - "The latest carrier-confirmed Mac state kept runner 28 busy; direct disk read at 2026-09-04T06:58:45Z was 2,638,648 KiB free, runner 30 remains offline, and no second runner start is admissible."
   - "MOR-1 PR #6792 remains OPEN/DRAFT/HOLD at remote head 7853ffeaca41d4d8f33995b1453db2be134ce8a3; the exact Claude6 carrier owes a terminal immutable result and current-head non-author review."
   - "F09 PR #6793 remains OPEN/DRAFT/HOLD at 29b60c1abeddc4fe4a5291609555f4ca3519ebf2; exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 owns the in-flight combined repair and owes its terminal return."
   - "R1-T PR #496 remains OPEN/DRAFT/HOLD at cfd6abe5979ea999ab7f769431829e83284a8aa0; natural run 33839590027 concluded FAILURE with 12 failed, 5 flaky, 554 passed and 260 skipped, including candidate-owned Saved Layouts/W2-A failures, so same-carrier repair and a later current-head independent review are owed."
@@ -109,8 +109,8 @@ decisions:
 **Program owner:** Main Meta-CEO Sol under current Chairman continuation intent  
 **Protected procedure observed for repair:** `mastermindx-market-intelligence/Mastermind@3055b499b87db19730e9a724e34f07f0d0af8755`
 **Skillpack:** `mastermind.sol_skillpack.v1 / 1.0.1 / bootstrap-major 1 compatible`  
-**Repair census (UTC):** `2026-09-04T06:39:40Z`
-**Macro main observed for repair census:** `765c96798075984f87807033f46575e11432540c`
+**Repair census (UTC):** `2026-09-04T06:58:45Z`
+**Macro main observed for repair census:** `ce976afadf132e55aebc3ca1734808590d4d60c8`
 **PR merge-base observed for repair:** `0795a15b0249110a7eb35439123cd1af755e8397`
 **Terminal protected master:** `fadd8b82f03ecaabe8a86d693da89f27be096d9f`  
 **Records carrier:** Macro PR #6810 / branch `sol/market-ontology-continuation-control-20260903`  
@@ -134,7 +134,7 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 | Capability / rail | State | Exact current truth |
 |---|---|---|
 | Frozen product/system architecture | `SPEC_ONLY / ACCEPTED_GOVERNING_ARCHITECTURE` | Terminal/Supabase private state, Macro truth and all existing source/evidence/control owners remain canonical. |
-| Mac authoritative daily route | `BROKEN / BELOW_FLOOR` | Latest carrier-confirmed state keeps runner 28 busy; direct read at `2026-09-04T06:39:40Z` was 1,481,204 KiB free versus the 83,886,080 KiB floor at 100% capacity; pressure re-attribution has no returned result and runner 30 stays off. |
+| Mac authoritative daily route | `BROKEN / BELOW_FLOOR` | Latest carrier-confirmed state keeps runner 28 busy; direct read at `2026-09-04T06:58:45Z` was 2,638,648 KiB free versus the 83,886,080 KiB floor at 100% capacity; pressure re-attribution has no returned result and runner 30 stays off. |
 | MOR-1 public reference | `BUILT_NOT_PROVEN / REPAIR_PUSHED / REVIEW_OWED` | PR #6792 remote head `7853ffea...`; prior review 5108611410 is anchored to stale `616f8809...`, and no terminal current-head result or review is visible. |
 | F09 grounded cash-deal economics | `BUILT_NOT_PROVEN / SOURCE_IN_FLIGHT` | PR #6793 remote head `29b60c1a...`; exact Claude6 source session owns the combined repair; no terminal worker result or current-head acceptance exists. |
 | F11 private Thesis Object | `BUILT_NOT_PROVEN / PRODUCTION_INERT` | PR #502 head `02e9a9fd...`; source/disposable-Postgres proof exists, but no production DDL, deployment or two-user proof. |
@@ -154,7 +154,7 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Slack carrier: `C0BSBM78V1N / 1788407647.423079`
 - Exact host session: Claude6 `8aa7dcc3-951a-40f1-9029-7d206004b05c`
 - Current edge: read-only disk-pressure re-attribution `1788494003.432939`, followed by delivery-state reconciliation `1788494891.440669`; no worker return is visible
-- Direct point-in-time read: `1,481,204 KiB` free at `2026-09-04T06:39:40Z`, 100% capacity; this is an observation, not a durable floor receipt
+- Direct point-in-time read: `2,638,648 KiB` free at `2026-09-04T06:58:45Z`, 100% capacity; this is an observation, not a durable floor receipt
 - Frozen law: no runner-30 start, cleanup, service action or workflow action until the same session returns a typed owner-safe boundary and Sol issues one exact continuation.
 
 ### 3.2 MOR-1
