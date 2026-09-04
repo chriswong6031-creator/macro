@@ -37,6 +37,12 @@ BUILT_AT = "2026-09-04T12:00:00Z"
 
 _TEMPLATE_NAMES = (
     "macro_liquidity_regime.html.j2",
+    "macro_growth_real_economy.html.j2",
+    "macro_business_activity.html.j2",
+    "macro_labor_markets.html.j2",
+    "macro_inflation_system.html.j2",
+    "macro_monetary_policy.html.j2",
+    "macro_financial_conditions.html.j2",
     "_macro_suite_shell.html.j2",
     "_seo_head.html.j2",
     "_site_nav.html.j2",
