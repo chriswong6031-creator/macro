@@ -78,7 +78,8 @@ verified:
       four-byte margin (`_PS_SNAPSHOT_MAX_BYTES + 4`, accepted limit still exactly 4 MiB), superseding
       the earlier `+1` wording and the earlier strict_contract_digest
       2b632cd37017919bf0acb378752979a8c90abdb3c9b603ddc1e0754781a27eeb with
-      4b4c77c81a19dafdd6c0ecbed58f14025a41eea77efb2ec070a537e52c999f49. Comment 5535684208 then
+      4b4c77c81a19dafdd6c0ecbed58f14025a41eea77efb2ec070a537e52c999f49. Comment 5535684208, carried on
+      carrier edge 1788496349.357249, then
       corrected the inventory boundary — a valid 201st row is accepted and returned in full by the
       strict producer, which refuses only at the 1,001st valid identity, while the legacy API keeps its
       historical 200-row prefix — and comment 5535685009 pinned the exact closed `/bin/ps` result shape
@@ -269,7 +270,7 @@ Historic Mastermind `771a95586c7a31933ee612eafaa4d1471f57527b` remains the indep
 Realm1-C1 source release. It does not release the current host child. The sole current source repair
 is issue #432, `web-sol-realm1-live-seat-census-gate-repair-20260903-sol-001`, bound to
 Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20` on Slack root
-`C0BSBM78V1N/1788472184.797999`, which now runs through edge `1788494921.091209` and still carries no
+`C0BSBM78V1N/1788472184.797999`, which now runs through edge `1788496383.612629` and still carries no
 post-build worker `RESULT / HOLD`. The worker's GitHub source checkpoint is #432 comment 5533580505
 for Draft PR #435 head `62eaf50af3b18b8ea165de2213393223f9e16f57` (tree
 `25b5066de1ec528809911e5806fe81b3068543aa`) as `DRAFT / HOLD-FOR-SOL` with
@@ -288,7 +289,8 @@ enumeration, timeout, malformed or oversize evidence. Comment 5535485976 adds th
 comment 5535513439 corrects the truncation sentinel to a four-byte margin
 (`_PS_SNAPSHOT_MAX_BYTES + 4`, accepted limit still exactly 4 MiB), superseding the earlier `+1`
 wording; the controlling strict_contract_digest is
-`4b4c77c81a19dafdd6c0ecbed58f14025a41eea77efb2ec070a537e52c999f49`. Comment 5535684208 keeps a valid
+`4b4c77c81a19dafdd6c0ecbed58f14025a41eea77efb2ec070a537e52c999f49`. Comment 5535684208, carried on
+carrier edge `1788496349.357249`, keeps a valid
 201st row visible — the strict producer returns it in full and refuses only at the 1,001st valid
 identity, while the legacy API keeps its 200-row prefix — and comment 5535685009 pins the exact closed
 `/bin/ps` result shape plus the process-to-directory identity join, barring reuse of the tolerant

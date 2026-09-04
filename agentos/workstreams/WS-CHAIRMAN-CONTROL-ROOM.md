@@ -56,7 +56,7 @@ waves:
       published a GitHub source checkpoint in #432 comment 5533580505 for Draft PR #435 head
       `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
       `BUILT_NOT_PROVEN / PRODUCTION_INERT`; that checkpoint is not a reciprocal Slack completion.
-      That exact root is C0BSBM78V1N/1788472184.797999; it now runs through edge 1788494921.091209 and
+      That exact root is C0BSBM78V1N/1788472184.797999; it now runs through edge 1788496383.612629 and
       still carries no post-build worker RESULT / HOLD. GitHub #432 comment 5533655499 records the
       exact-head `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in the best-effort census
       producer; comment 5533704747's green hosted `test` and CodeQL receipts are mechanical only and do
@@ -68,7 +68,8 @@ waves:
       acquisition owner reserved to the trusted live MAS-115 boundary. Comment 5535485976 adds the
       execution note, comment 5535513439 corrects the truncation sentinel to a four-byte margin (making
       `4b4c77c81a19dafdd6c0ecbed58f14025a41eea77efb2ec070a537e52c999f49` the controlling strict contract
-      digest), comment 5535684208 keeps a valid 201st inventory row visible with refusal only at the
+      digest), comment 5535684208 with carrier edge 1788496349.357249 keeps a valid 201st inventory row
+      visible with refusal only at the
       1,001st identity, and comment 5535685009 pins the exact closed `/bin/ps` result shape and
       process-to-directory identity join. Sol further issued an ACCELERATED CONTINUE / CONDITIONAL
       EXPANDED START at carrier edge 1788495816.349859, letting the bound task post
@@ -243,12 +244,13 @@ not profile capability. The current canonical source repair is issue #432: GitHu
 records its worker's source checkpoint for Draft PR #435 head
 `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
 `BUILT_NOT_PROVEN / PRODUCTION_INERT` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`. Slack root
-`C0BSBM78V1N/1788472184.797999` runs through edge 1788494921.091209 and still carries no post-build
+`C0BSBM78V1N/1788472184.797999` runs through edge 1788496383.612629 and still carries no post-build
 worker `RESULT / HOLD`. The reproduced `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in
 GitHub comment 5533655499 means that candidate head cannot be made protected merely by
 review/readback; comment 5533704747's green hosted checks establish mechanical evidence only. Sol's
 path-ceiling ruling (comment 5535426302, with execution note 5535485976, sentinel correction
-5535513439, 201st-row correction 5535684208 and process-result review note 5535685009) has since
+5535513439, 201st-row correction 5535684208 at carrier edge 1788496349.357249, and process-result
+review note 5535685009) has since
 expanded the ceiling to exactly six paths by adding
 `integrations/chairman_surfaces/chatgpt.py` and requires a strict all-or-nothing acquisition owner
 alongside the retained legacy best-effort discovery API — on the same task, branch and PR #435. A
