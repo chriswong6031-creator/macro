@@ -27,10 +27,10 @@ import unicodedata
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping, Sequence
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, parse_qsl, urlparse
 
 SCHEMA = "mastermind.p0_evidence.v2"
-MIN_TOOL_VERSION = (1, 5, 0)
+MIN_TOOL_VERSION = (1, 6, 0)
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 # Mirrors templates/reference.html.j2 ``normalize()``.
 _JS_STRIP = re.compile(r"[\s　-〿＀-￯!-\/:-@\[-`{-~]")
@@ -150,6 +150,7 @@ REQUIRED_ROUTE_STATE_KEYS = frozenset(
         "query_q",
         "rf_q_value",
         "miss_visible",
+        "miss_q_text",
         "selected_id",
         "visible_result_count",
         "visible_entry_ids",
@@ -177,6 +178,11 @@ REQUIRED_BINDING_KEYS = frozenset(
 )
 
 REQUIRED_RENDER_INPUTS = ("templates/reference.html.j2", "config/market_reference.yml")
+
+# The render is frozen by exact shape, not by "the string mentions the builder".
+RENDER_MODULE = "scripts.build_market_reference"
+RENDER_COMMAND = "python -m scripts.build_market_reference"
+_PYTHON_EXE_RE = re.compile(r"python(?:\d+(?:\.\d+)?)?(?:\.exe)?$")
 
 # One axes-bound journey per page. ``initial``/``pre_push``/``pushed`` are
 # context steps; the rest are the proven transitions.
@@ -500,22 +506,124 @@ def parse_href(href: Any) -> tuple[str, str | None, str] | None:
     return path, q, frag
 
 
-def _route_matches(href: Any, route: str, *, label: str) -> list[str]:
-    """Exact parsed comparison. Substring matching is retired: ``…?q=navprobe``
-    contains ``reference.html`` and used to pass as the route itself."""
+def _origin_of(url: Any) -> str | None:
+    if not isinstance(url, str) or not url:
+        return None
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return None
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return f"{parsed.scheme}://{parsed.netloc}"
 
-    want = parse_route(route)
-    got = parse_href(href)
-    if got is None:
-        return [f"{label} href is missing or unparseable: {href!r}"]
+
+def canonical_search(query: str | None) -> str:
+    return f"?q={query}" if query else ""
+
+
+def _validate_url(
+    url: Any,
+    *,
+    label: str,
+    expect_path: str,
+    expect_q: str | None,
+    expect_hash: str,
+    origin: str | None,
+) -> list[str]:
+    """Closed URL identity: origin, pathname, EXACT query multiset, fragment.
+
+    Substring matching is retired (``…?q=navprobe`` contains ``reference.html``
+    and used to pass as the route). So is per-key ``parse_qs`` lookup, which
+    silently tolerated extra keys, a duplicated ``q``, and a blank ``?q=`` on a
+    route whose query must be absent. The query is compared as an ordered list
+    of pairs with blanks kept, so all three are caught. A cross-origin URL is
+    rejected outright: evidence must come from the capture's own loopback
+    server, never from production or a third party.
+    """
+
     errors: list[str] = []
-    if got[0] != want[0]:
-        errors.append(f"{label} pathname {got[0]!r} != expected {want[0]!r}")
-    if (got[1] or None) != (want[1] or None):
-        errors.append(f"{label} query q {got[1]!r} != expected {want[1]!r}")
-    if got[2] != want[2]:
-        errors.append(f"{label} hash {got[2]!r} != expected {want[2]!r}")
+    if not isinstance(url, str) or not url:
+        return [f"{label} is missing: {url!r}"]
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return [f"{label} is unparseable: {url!r}"]
+    got_origin = _origin_of(url)
+    if origin is not None:
+        if got_origin is None:
+            errors.append(f"{label} {url!r} has no absolute origin; expected {origin}")
+        elif got_origin != origin:
+            errors.append(
+                f"{label} origin {got_origin!r} != capture serve_root {origin!r} "
+                "(cross-origin evidence URL)"
+            )
+    path = parsed.path or ""
+    if not path.startswith("/"):
+        path = "/" + path
+    if path != expect_path:
+        errors.append(f"{label} pathname {path!r} != expected {expect_path!r}")
+    pairs = parse_qsl(parsed.query, keep_blank_values=True)
+    want_pairs = [] if expect_q is None else [("q", expect_q)]
+    if pairs != want_pairs:
+        errors.append(f"{label} query {pairs!r} != expected exactly {want_pairs!r}")
+    frag = f"#{parsed.fragment}" if parsed.fragment else ""
+    if frag != expect_hash:
+        errors.append(f"{label} hash {frag!r} != expected {expect_hash!r}")
     return errors
+
+
+def _validate_recorded_url(
+    payload: Mapping[str, Any],
+    *,
+    label: str,
+    expect_path: str,
+    expect_q: str | None,
+    expect_hash: str,
+    origin: str | None,
+    href_key: str = "href",
+) -> list[str]:
+    """Validate a recorded URL AND the parsed fields recorded beside it.
+
+    A step that reports ``pathname``/``search``/``hash``/``url_q`` disagreeing
+    with its own ``href`` is self-inconsistent, so both are checked against the
+    same expectation rather than trusting either.
+    """
+
+    errors = _validate_url(
+        payload.get(href_key),
+        label=f"{label} {href_key}",
+        expect_path=expect_path,
+        expect_q=expect_q,
+        expect_hash=expect_hash,
+        origin=origin,
+    )
+    if "pathname" in payload and str(payload.get("pathname") or "") != expect_path:
+        errors.append(f"{label} pathname field {payload.get('pathname')!r} != {expect_path!r}")
+    if "search" in payload:
+        want_search = canonical_search(expect_q)
+        if str(payload.get("search") or "") != want_search:
+            errors.append(f"{label} search field {payload.get('search')!r} != {want_search!r}")
+    if "hash" in payload and str(payload.get("hash") or "") != expect_hash:
+        errors.append(f"{label} hash field {payload.get('hash')!r} != {expect_hash!r}")
+    if "url_q" in payload:
+        got_q = payload.get("url_q")
+        got_q = got_q if isinstance(got_q, str) and got_q else None
+        if got_q != expect_q:
+            errors.append(f"{label} url_q field {got_q!r} != {expect_q!r}")
+    return errors
+
+
+def _route_matches(href: Any, route: str, *, label: str, origin: str | None = None) -> list[str]:
+    want_path, want_q, want_hash = parse_route(route)
+    return _validate_url(
+        href,
+        label=label,
+        expect_path=want_path,
+        expect_q=want_q,
+        expect_hash=want_hash,
+        origin=origin,
+    )
 
 
 def _exact_membership(
@@ -575,6 +683,7 @@ def _validate_journey(
     journey: Mapping[str, Any],
     *,
     probes: Mapping[str, Any],
+    origin: str | None,
 ) -> list[str]:
     errors: list[str] = []
     expect = case["expect"]
@@ -661,13 +770,42 @@ def _validate_journey(
             str(payload.get("hash") or ""),
         )
 
+    # Every step's pathname/query/hash is bound EXACTLY, href included. Binding
+    # only the fields a step happened to be asked about let `change.hash=#stale`
+    # and `empty_probe.url_q=<a real query>` validate with zero errors.
+    #
+    # The hash is empty on every post-interaction step: the page clears
+    # location.hash when a search interaction dismisses the open entry
+    # (close-affordance replaceState in templates/reference.html.j2), and it
+    # returns on `reload` and `share`, which are fresh loads of the route.
+    step_contract: dict[str, tuple[str, str | None, str]] = {
+        "initial": (want_path, want_q, want_hash),
+        "change": (want_path, probes["change_query"], ""),
+        "empty_probe": (want_path, probes["empty_query"], ""),
+        "clear": (want_path, None, ""),
+        "pre_push": (want_path, want_q, ""),
+        "pushed": (want_path, probes["forward_query"], ""),
+        "back": (want_path, want_q, ""),
+        "forward": (want_path, probes["forward_query"], ""),
+        "reload": (want_path, want_q, want_hash),
+    }
+    for name, (exp_path, exp_q, exp_hash) in step_contract.items():
+        payload = steps.get(name)
+        if not isinstance(payload, Mapping):
+            continue
+        errors.extend(
+            _validate_recorded_url(
+                payload,
+                label=f"journey {name}",
+                expect_path=exp_path,
+                expect_q=exp_q,
+                expect_hash=exp_hash,
+                origin=origin,
+            )
+        )
+
     initial = step("initial")
     if initial is not None:
-        got = route_of(initial)
-        if got != (want_path, want_q, want_hash):
-            errors.append(
-                f"journey initial route {got!r} != expected {(want_path, want_q, want_hash)!r}"
-            )
         errors.extend(
             _exact_membership(initial, case_ids, label="journey initial", full_total=full_total)
         )
@@ -677,14 +815,6 @@ def _validate_journey(
         if change.get("input") != probes["change_query"]:
             errors.append(
                 f"journey change input {change.get('input')!r} != {probes['change_query']!r}"
-            )
-        if change.get("url_q") != probes["change_query"]:
-            errors.append(
-                f"journey change url_q {change.get('url_q')!r} != {probes['change_query']!r}"
-            )
-        if str(change.get("pathname") or "") != want_path:
-            errors.append(
-                f"journey change pathname {change.get('pathname')!r} != {want_path!r}"
             )
         errors.extend(
             _exact_membership(
@@ -713,8 +843,6 @@ def _validate_journey(
 
     clear = step("clear")
     if clear is not None:
-        if clear.get("url_q") not in (None, ""):
-            errors.append(f"journey clear left a stale q in the URL: {clear.get('url_q')!r}")
         if clear.get("input") not in (None, ""):
             errors.append(f"journey clear left a stale input: {clear.get('input')!r}")
         errors.extend(
@@ -740,10 +868,6 @@ def _validate_journey(
             )
         errors.extend(
             _exact_membership(pre_push, case_ids, label="journey pre_push", full_total=full_total)
-        )
-    if pushed is not None and pushed.get("url_q") != probes["forward_query"]:
-        errors.append(
-            f"journey pushed url_q {pushed.get('url_q')!r} != {probes['forward_query']!r}"
         )
 
     back = step("back")
@@ -772,10 +896,6 @@ def _validate_journey(
     if forward is not None:
         if forward.get("performed") is not True:
             errors.append(f"journey forward was not performed: {forward!r}")
-        if forward.get("url_q") != probes["forward_query"]:
-            errors.append(
-                f"journey forward url_q {forward.get('url_q')!r} != {probes['forward_query']!r}"
-            )
         if forward.get("input") != probes["forward_query"]:
             errors.append(
                 f"journey forward input {forward.get('input')!r} != "
@@ -802,7 +922,7 @@ def _validate_journey(
 
     reload_step = step("reload")
     if reload_step is not None:
-        errors.extend(_route_matches(reload_step.get("href"), route, label="journey reload"))
+
         if reload_step.get("input") != (want_q or ""):
             errors.append(
                 f"journey reload input {reload_step.get('input')!r} != rehydrated {want_q or ''!r}"
@@ -814,7 +934,7 @@ def _validate_journey(
     share = step("share")
     if share is not None:
         href = share.get("href")
-        errors.extend(_route_matches(href, route, label="journey share"))
+        errors.extend(_route_matches(href, route, label="journey share", origin=origin))
         final_href = share.get("final_href")
         # Recomputed here from the two recorded URLs — the declared flag is never
         # trusted, and the two URLs must come from a real reopen, not from
@@ -838,7 +958,12 @@ def _validate_journey(
             )
         else:
             errors.extend(
-                _route_matches(reopened.get("final_href"), route, label="journey share.reopened")
+                _route_matches(
+                    reopened.get("final_href"),
+                    route,
+                    label="journey share.reopened",
+                    origin=origin,
+                )
             )
             if reopened.get("input") != (want_q or ""):
                 errors.append(
@@ -1036,12 +1161,29 @@ def _authenticate_binding(
         cwd = invocation.get("cwd")
         inputs = invocation.get("input_digests")
         outputs = invocation.get("output_digests")
-        if not isinstance(command, str) or "build_market_reference" not in command:
+        # FROZEN, not merely "mentions the builder". A substring test accepted
+        # command="echo build_market_reference but do nothing" with
+        # argv=["/bin/false"]: the string named the builder and the list was
+        # non-empty, so a render that never ran validated clean.
+        if command != RENDER_COMMAND:
             errors.append(
-                f"render_invocation.command does not name the market-reference builder: {command!r}"
+                f"render_invocation.command {command!r} != frozen {RENDER_COMMAND!r}"
             )
-        if not isinstance(argv, list) or not argv:
-            errors.append("render_invocation.argv missing")
+        if not isinstance(argv, list) or len(argv) != 3:
+            errors.append(
+                f"render_invocation.argv must be exactly [<python>, '-m', "
+                f"'{RENDER_MODULE}']; got {argv!r}"
+            )
+        else:
+            interpreter = str(argv[0] or "")
+            if not _PYTHON_EXE_RE.fullmatch(Path(interpreter).name):
+                errors.append(
+                    f"render_invocation.argv[0] {interpreter!r} is not a python interpreter"
+                )
+            if list(argv[1:]) != ["-m", RENDER_MODULE]:
+                errors.append(
+                    f"render_invocation.argv[1:] {list(argv[1:])!r} != ['-m', '{RENDER_MODULE}']"
+                )
         if cwd != str(repo_root.resolve()):
             errors.append(
                 f"render_invocation.cwd {cwd!r} != repo root {str(repo_root.resolve())!r}"
@@ -1176,6 +1318,10 @@ def validate_manifest_route_matrix(
             )
         )
 
+    serve_root_origin = (
+        _origin_of(binding.get("serve_root")) if isinstance(binding, Mapping) else None
+    )
+
     # Order comes from the SUBJECT-COMMIT rendered page, not from disk and not
     # from registry order (which the builder regroups).
     dom_order: list[str] | None = None
@@ -1284,7 +1430,9 @@ def validate_manifest_route_matrix(
             else:
                 errors.extend(
                     f"page {page_id!r}: {err}"
-                    for err in _validate_journey(case, journey, probes=probes)
+                    for err in _validate_journey(
+                        case, journey, probes=probes, origin=serve_root_origin
+                    )
                 )
 
         states = page.get("states")
@@ -1361,6 +1509,7 @@ def validate_manifest_route_matrix(
                 probes=probes,
                 full_library_ids=full_library_ids,
                 full_total=full_total,
+                origin=serve_root_origin,
             )
             errors.extend(f"page {page_id!r} cell {key}: {err}" for err in route_errs)
             if "unknown_state" in state and state.get("unknown_state"):
@@ -1446,6 +1595,7 @@ def _validate_route_state(
     probes: Mapping[str, Any],
     full_library_ids: Sequence[str],
     full_total: int,
+    origin: str | None,
 ) -> list[str]:
     expect = case["expect"]
     rs = state.get("route_state")
@@ -1482,6 +1632,21 @@ def _validate_route_state(
     if bool(rs.get("miss_visible")) != bool(expect.get("miss_visible")):
         errors.append(
             f"miss_visible {rs.get('miss_visible')!r} != expected {expect.get('miss_visible')!r}"
+        )
+    # Issue 6782: the recovery panel must echo the exact unknown anchor back to
+    # the reader. `miss_visible` alone is not a receipt — a panel that appears
+    # while naming the wrong entry, or nothing at all, satisfies it.
+    got_slug = rs.get("miss_q_text")
+    if expect.get("miss_visible"):
+        want_slug = want_hash.lstrip("#")
+        if got_slug != want_slug:
+            errors.append(
+                f"miss_q_text {got_slug!r} != the unknown anchor {want_slug!r} "
+                "(the recovery panel must name the entry the reader asked for)"
+            )
+    elif got_slug not in (None, ""):
+        errors.append(
+            f"miss_q_text {got_slug!r} is populated on a route with no miss state"
         )
     want_sel = expect.get("selected_id")
     got_sel = rs.get("selected_id")
@@ -1534,13 +1699,31 @@ def _validate_route_state(
                 f"target_below_fixed_ui {rs.get('target_below_fixed_ui')!r} is not true"
             )
 
-    requested = rs.get("requested_url")
-    final = rs.get("final_url")
-    if not isinstance(requested, str) or not requested:
-        errors.append("requested_url missing")
-    if not isinstance(final, str) or not final:
-        errors.append("final_url missing")
-    errors.extend(_route_matches(final, route, label="final_url"))
+    # Closed URL identity on BOTH recorded URLs plus the parsed fields beside
+    # them. requested_url used to be recorded and never checked, so a forged one
+    # rode along; final_url was substring-matched, so a cross-origin URL, an
+    # extra query key, a duplicated `q`, or a blank `?q=` all passed.
+    errors.extend(
+        _validate_url(
+            rs.get("requested_url"),
+            label="requested_url",
+            expect_path=want_path,
+            expect_q=want_q,
+            expect_hash=want_hash,
+            origin=origin,
+        )
+    )
+    errors.extend(
+        _validate_recorded_url(
+            rs,
+            label="route_state",
+            expect_path=want_path,
+            expect_q=want_q,
+            expect_hash=want_hash,
+            origin=origin,
+            href_key="final_url",
+        )
+    )
     return errors
 
 

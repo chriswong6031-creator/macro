@@ -630,11 +630,12 @@ def _git(*args: str) -> str:
 PROBES = resolve_probe_queries(REPO)
 FULL_IDS = list(PROBES["full_ids"])
 FULL_TOTAL = len(FULL_IDS)
-BASE = "http://127.0.0.1:9"
+_COMMITTED = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+BASE = _COMMITTED["candidate_binding"]["serve_root"]
 
 
 def _committed_manifest() -> dict:
-    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    return copy.deepcopy(_COMMITTED)
 
 
 def _live_binding() -> dict:
@@ -807,6 +808,7 @@ def _route_state_for(case: dict, *, locale: str = "en") -> dict:
         "query_q": want_q,
         "rf_q_value": want_q or "",
         "miss_visible": bool(expect.get("miss_visible")),
+        "miss_q_text": (frag.lstrip("#") if expect.get("miss_visible") else None),
         "selected_id": selected,
         "visible_result_count": count,
         "visible_entry_ids": list(ids),
@@ -1496,3 +1498,179 @@ def test_bogus_back_forward_share_receipts_are_red():
         steps["share"]["href"] = "http://example.test/not-the-share-target"
     joined = _red(manifest)
     assert "journey back" in joined or "journey forward" in joined or "journey share" in joined
+
+
+# --- review 5108611410: closed URL identity --------------------------------
+
+
+def test_forged_requested_url_is_red():
+    """`requested_url` was recorded and never checked."""
+
+    manifest = _green_manifest()
+    for state in manifest["pages"][0]["states"]:
+        state["route_state"]["requested_url"] = f"{BASE}/reference.html?q=whatever#forged"
+    joined = _red(manifest)
+    assert "requested_url" in joined
+
+
+def test_cross_origin_final_url_is_red():
+    manifest = _green_manifest()
+    for state in manifest["pages"][0]["states"]:
+        state["route_state"]["final_url"] = "https://www.mastermind-x.com/reference.html"
+    joined = _red(manifest)
+    assert "cross-origin" in joined
+
+
+def test_cross_origin_share_href_is_red():
+    manifest = _green_manifest()
+    share = manifest["pages"][0]["route_journey"]["steps"]["share"]
+    share["href"] = "https://www.mastermind-x.com/reference.html"
+    share["final_href"] = "https://www.mastermind-x.com/reference.html"
+    joined = _red(manifest)
+    assert "cross-origin" in joined
+
+
+def test_extra_query_key_on_final_url_is_red():
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["final_url"] = f"{BASE}/reference.html?q=curve&utm_source=x"
+    joined = _red(manifest)
+    assert "query" in joined
+
+
+def test_duplicate_q_parameter_is_red():
+    """`parse_qs(...)['q'][0]` silently ignored the second value."""
+
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["final_url"] = f"{BASE}/reference.html?q=curve&q=regime"
+    joined = _red(manifest)
+    assert "query" in joined
+
+
+def test_blank_query_on_default_route_is_red():
+    """`?q=` on a route whose query must be ABSENT."""
+
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html")
+    for state in page["states"]:
+        state["route_state"]["final_url"] = f"{BASE}/reference.html?q="
+        state["route_state"]["search"] = "?q="
+    joined = _red(manifest)
+    assert "query" in joined or "search field" in joined
+
+
+def test_search_field_disagreeing_with_href_is_red():
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html?q=curve")
+    for state in page["states"]:
+        state["route_state"]["search"] = "?q=regime"
+    joined = _red(manifest)
+    assert "search field" in joined
+
+
+# --- review 5108611410: unknown-anchor recovery slug -----------------------
+
+
+def test_missing_recovery_slug_is_red():
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html#not-a-real-entry")
+    for state in page["states"]:
+        state["route_state"]["miss_q_text"] = ""
+    joined = _red(manifest)
+    assert "miss_q_text" in joined
+
+
+def test_wrong_recovery_slug_is_red():
+    """A panel that appears while naming the wrong entry."""
+
+    manifest = _green_manifest()
+    page = _page(manifest, "reference.html#not-a-real-entry")
+    for state in page["states"]:
+        state["route_state"]["miss_q_text"] = "vix"
+    joined = _red(manifest)
+    assert "miss_q_text" in joined
+
+
+def test_recovery_slug_on_a_non_miss_route_is_red():
+    manifest = _green_manifest()
+    for state in manifest["pages"][0]["states"]:
+        state["route_state"]["miss_q_text"] = "not-a-real-entry"
+    joined = _red(manifest)
+    assert "miss_q_text" in joined
+
+
+# --- review 5108611410: journey transition binding -------------------------
+
+
+def test_stale_hash_on_change_step_is_red():
+    manifest = _green_manifest()
+    for page in manifest["pages"]:
+        step = page["route_journey"]["steps"]["change"]
+        step["hash"] = "#stale"
+        step["href"] = f"{BASE}/reference.html?q={PROBES['change_query']}#stale"
+    joined = _red(manifest)
+    assert "journey change" in joined
+
+
+def test_empty_probe_carrying_a_real_query_is_red():
+    manifest = _green_manifest()
+    for page in manifest["pages"]:
+        step = page["route_journey"]["steps"]["empty_probe"]
+        step["url_q"] = PROBES["change_query"]
+        step["search"] = f"?q={PROBES['change_query']}"
+        step["href"] = f"{BASE}/reference.html?q={PROBES['change_query']}"
+    joined = _red(manifest)
+    assert "journey empty_probe" in joined
+
+
+def test_journey_step_fields_disagreeing_with_href_is_red():
+    manifest = _green_manifest()
+    manifest["pages"][0]["route_journey"]["steps"]["clear"]["pathname"] = "/elsewhere.html"
+    joined = _red(manifest)
+    assert "journey clear" in joined
+
+
+# --- review 5108611410: frozen render invocation ---------------------------
+
+
+def test_render_command_substitution_is_red():
+    """`echo build_market_reference but do nothing` used to satisfy a substring test."""
+
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["render_invocation"]["command"] = (
+        "echo build_market_reference but do nothing"
+    )
+    joined = _red(manifest)
+    assert "frozen" in joined
+
+
+def test_render_argv_substitution_is_red():
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["render_invocation"]["argv"] = ["/bin/false"]
+    joined = _red(manifest)
+    assert "argv" in joined
+
+
+def test_render_argv_non_python_interpreter_is_red():
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["render_invocation"]["argv"] = [
+        "/bin/sh",
+        "-m",
+        "scripts.build_market_reference",
+    ]
+    joined = _red(manifest)
+    assert "not a python interpreter" in joined
+
+
+def test_render_argv_wrong_module_is_red():
+    manifest = _green_manifest()
+    manifest["candidate_binding"]["render_invocation"]["argv"] = [
+        sys.executable,
+        "-m",
+        "scripts.build_something_else",
+    ]
+    joined = _red(manifest)
+    assert "argv[1:]" in joined

@@ -103,9 +103,10 @@ MODULE_REF = "scripts/capture_page_evidence.py"
 # 1.5.0: per-cell console/response receipts, one axes-bound page journey with its
 #        own listeners, registry-derived non-empty probes, share reopened in a
 #        clean context, and subject-blob (not current-disk) binding.
+# 1.6.0: unknown-anchor recovery slug (`[data-miss-q]`) captured per cell.
 # This is stamped into every artifact as provenance, so it moves whenever the
 # emitted shape does — two byte-different manifests must never claim one version.
-TOOL_VERSION = "1.5.0"
+TOOL_VERSION = "1.6.0"
 
 # v2: a console error carries the asset it came from, and a page carries the
 # responses that failed. v1 recorded bare error strings, which the census could
@@ -1496,6 +1497,25 @@ _ROUTE_STATE_SCRIPT = r"""
   }
   const miss = document.querySelector('.rf-miss');
   const missVisible = !!(miss && !miss.hidden && miss.getClientRects().length > 0);
+  // The recovery slug the miss panel echoes back to the reader. Issue 6782
+  // requires the visible text to be the exact unknown anchor, so `miss_visible`
+  // alone is not a receipt: a panel that appears while naming the wrong entry
+  // (or nothing) is the failure this field exists to catch. Only the
+  // locale-visible span is read — the panel carries both l-en and l-zh.
+  let missQText = null;
+  if (miss && missVisible) {
+    const slugs = Array.from(miss.querySelectorAll('[data-miss-q]')).filter((el) => {
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      const host = el.closest('.l-en, .l-zh');
+      if (host) {
+        const hs = getComputedStyle(host);
+        if (hs.display === 'none' || hs.visibility === 'hidden') return false;
+      }
+      return true;
+    });
+    missQText = slugs.length ? (slugs[0].textContent || '').trim() : '';
+  }
   let selectedId = null;
   const targeted = document.querySelector('.rf-e:target:not(.rf-closed)');
   if (targeted && targeted.id) selectedId = targeted.id;
@@ -1577,6 +1597,7 @@ _ROUTE_STATE_SCRIPT = r"""
     query_q: queryQ,
     rf_q_value: rfQValue,
     miss_visible: missVisible,
+    miss_q_text: missQText,
     selected_id: selectedId,
     visible_result_count: visibleEntries.length,
     visible_entry_ids: visibleEntryIds,
@@ -1882,6 +1903,7 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                     "search": "",
                     "query_q": None,
                     "miss_visible": False,
+                    "miss_q_text": None,
                     "selected_id": None,
                     "visible_result_count": None,
                     "visible_entry_ids": [],
