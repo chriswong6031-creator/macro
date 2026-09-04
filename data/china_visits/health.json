@@ -1,7 +1,7 @@
 {
- "status": "ok",
- "detail": "935 candidate row(s) this run",
- "last_attempt_utc": "2026-09-04T05:13:42.209896+00:00",
+ "status": "upstream_degraded",
+ "detail": "derived over a same-run china_filings TRANSPORT degradation (sse: HTTP 502 from CNInfo exchange=sse; szse: HTTP 502 from CNInfo exchange=szse); same-run china_filings key-integrity partition is UNKNOWN this run \u2014 this run contributes no absence evidence",
+ "last_attempt_utc": "2026-09-04T16:08:15.990002+00:00",
  "last_success_utc": "2026-09-04T05:13:42.209896+00:00",
  "candidate_accounting": {
   "eligible": 935,
