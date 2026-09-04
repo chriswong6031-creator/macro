@@ -1975,17 +1975,6 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 163.0,
-      "checked_at": "2026-09-03T09:39:44.642272+00:00"
-    },
-    "china_board_breadth": {
-      "source": "china_board_breadth",
-      "status": "ok",
-      "rows": 1,
-      "last_date": "2026-09-03",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
       "elapsed_sec": 4.5,
       "checked_at": "2026-09-04T05:15:15.459612+00:00"
     },
@@ -3646,40 +3635,40 @@
       "valuation": {
         "table": "valuation",
         "asof": "2026-09-03",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       },
       "margin": {
         "table": "margin",
-        "asof": "2026-09-02",
+        "asof": "2026-09-03",
         "lag_days": 1,
         "state": "fresh"
       },
       "moneyflow": {
         "table": "moneyflow",
         "asof": "2026-09-03",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       },
       "chips": {
         "table": "chips",
         "asof": "2026-09-03",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       },
       "broker": {
         "table": "broker",
-        "asof": "2026-09-03",
+        "asof": "2026-09-04",
         "lag_days": 0,
         "state": "fresh"
       },
       "forecast": {
         "table": "forecast",
         "asof": "2026-08-31",
-        "lag_days": 3,
+        "lag_days": 4,
         "state": "fresh"
       }
     },
-    "asof": "2026-09-03 21:59:31.633082+00:00"
+    "asof": "2026-09-04 05:36:44.441919+00:00"
   }
 }

@@ -5,7 +5,7 @@
     "may_originate": false,
     "may_escalate": false
   },
-  "built": "2026-09-03T21:44:21.555630+00:00",
+  "built": "2026-09-04T06:00:30.759687+00:00",
   "asof": "2026-09-03",
   "policy_impulse": "neutral",
   "transmission_channel": [],
@@ -127,14 +127,14 @@
     "per_source_days": {
       "lpr": 14,
       "rrr": 484,
-      "fr007": 0,
+      "fr007": -1,
       "communiques": 128
     }
   },
   "priced_in_check": {
     "descriptive": true,
     "label": "descriptive only — not a signal",
-    "fr007_z": -0.3594882616188657,
+    "fr007_z": -0.45187931345745863,
     "pboc_stance": "neutral"
   },
   "data_gaps": []
