@@ -6441,6 +6441,34 @@ jobs:
       - name: pick lab liquidity gate regression tests
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
+  global-liquidity-transmission:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # W-LIQ.1 state-only producer. Both suites are offline and use synthetic
+    # inputs: the legacy global-liquidity calculations plus the new causal
+    # release-alignment, missing-data, contract-envelope, immutable-hash,
+    # historical-fixture, and walk-forward purge invariants. This lane has no
+    # trading, alerting, routing, or downstream transmission authority.
+    paths:
+      - "config/global_liquidity_transmission_v1.yml"
+      - "engine/global_liquidity.py"
+      - "engine/global_liquidity_transmission.py"
+      - "scripts/build_global_liquidity_transmission.py"
+      - "tests/fixtures/global_liquidity_transmission_wliq1_window.json"
+      - "tests/test_global_liquidity.py"
+      - "tests/test_global_liquidity_transmission.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install state-producer test dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: global liquidity state producers — legacy parity and W-LIQ.1 contract
+        run: python -m pytest tests/test_global_liquidity.py tests/test_global_liquidity_transmission.py -q
+
   ric-w2-surface:
     if: ${{ false }}
     gate: code

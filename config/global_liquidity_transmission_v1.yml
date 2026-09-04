@@ -1,0 +1,141 @@
+schema: global_liquidity_transmission.producer_config.v1
+contract_schema: global_liquidity_transmission.v1
+producer_version: w-liq.1.0
+authority: measurement_only
+frequency: W-FRI
+min_history_periods: 52
+orthogonal_min_history_periods: 104
+min_monetary_coverage_ratio: 0.6666666667
+min_funding_coverage_ratio: 0.6666666667
+confidence_revision_reliability:
+  low: 1.0
+  medium: 0.75
+  high: 0.5
+  unknown: 0.5
+
+# These are existing canonical stores. This manifest adds no collector or feed.
+# `period_anchor: month_end` is load-bearing for JPNASSETS: FRED labels each
+# end-of-period monthly observation on the first day of that month, while the
+# value was not knowable until after month-end.
+monetary_components:
+  fed:
+    store: fred
+    key: WALCL
+    column: fed_balance_sheet
+    provider: Board of Governors of the Federal Reserve System
+    source_id: WALCL
+    frequency: weekly_as_of_wednesday
+    period_anchor: observation_date
+    release_lag_bdays: 1
+    stale_after_calendar_days: 10
+    unit_multiplier: 1000000.0
+    fx: null
+    weight: 1.0
+    transform: log_level
+    pit_status: release_lag_aligned_non_revised
+    revision_risk: low
+  ecb:
+    store: fred
+    key: ECBASSETSW
+    column: ecb_assets
+    provider: European Central Bank via FRED
+    source_id: ECBASSETSW
+    frequency: weekly
+    period_anchor: observation_date
+    release_lag_bdays: 2
+    stale_after_calendar_days: 12
+    unit_multiplier: 1000000.0
+    fx:
+      store: yahoo
+      key: EURUSD=X
+      column: close
+      invert: false
+    weight: 1.0
+    transform: log_level
+    pit_status: release_lag_aligned_revision_unknown
+    revision_risk: medium
+  boj:
+    store: fred
+    key: JPNASSETS
+    column: boj_assets
+    provider: Bank of Japan via FRED
+    source_id: JPNASSETS
+    frequency: monthly_end_of_period
+    period_anchor: month_end
+    release_lag_bdays: 2
+    stale_after_calendar_days: 45
+    unit_multiplier: 100000000.0
+    fx:
+      store: yahoo
+      key: USDJPY=X
+      column: close
+      invert: true
+    weight: 1.0
+    transform: log_level
+    pit_status: release_lag_aligned_revision_unknown
+    revision_risk: medium
+
+usd_funding_components:
+  broad_dollar:
+    store: fred
+    key: DTWEXBGS
+    column: broad_dollar
+    provider: Board of Governors of the Federal Reserve System via FRED
+    source_id: DTWEXBGS
+    frequency: daily_business
+    period_anchor: observation_date
+    release_lag_bdays: 1
+    stale_after_calendar_days: 10
+    change_transform: log_change
+    change_periods: 13
+    direction_multiplier: -1.0
+    weight: 1.0
+    pit_status: release_lag_aligned_non_revised
+    revision_risk: low
+  real_yield_10y:
+    store: fred
+    key: DFII10
+    column: us10y_real
+    provider: Board of Governors of the Federal Reserve System via FRED
+    source_id: DFII10
+    frequency: daily_business
+    period_anchor: observation_date
+    release_lag_bdays: 1
+    stale_after_calendar_days: 7
+    change_transform: level_change
+    change_periods: 13
+    direction_multiplier: -1.0
+    weight: 1.0
+    pit_status: release_lag_aligned_non_revised
+    revision_risk: low
+  high_yield_oas:
+    store: fred
+    key: BAMLH0A0HYM2
+    column: hy_oas
+    provider: ICE BofA via FRED and the repo append-only archive
+    source_id: BAMLH0A0HYM2
+    frequency: daily_business
+    period_anchor: observation_date
+    release_lag_bdays: 1
+    stale_after_calendar_days: 7
+    change_transform: level_change
+    change_periods: 13
+    direction_multiplier: -1.0
+    weight: 1.0
+    pit_status: release_lag_aligned_non_revised
+    revision_risk: low
+
+quality_thresholds:
+  # Absolute band, in RAW `monetary_impulse` units
+  # (weekly_change_in_expanding_z_score), inside which `state.label` reads
+  # `flat`.  It is NOT a z-score threshold: the field it gates,
+  # `state.monetary_impulse`, is a first difference of a z-scored stance.  The
+  # standardized shock magnitude lives in `state.monetary_impulse_z` and is
+  # deliberately not gated here — materiality belongs to the separately
+  # ratified W-LIQ.3 eventization policy.  (Renamed from `monetary_impulse_z`,
+  # which claimed a standardization this quantity does not have.)
+  monetary_impulse_flat_band: 0.05
+  usd_funding_impulse_z: 0.25
+  us_ci_loans_yoy_pct: 0.5
+  china_tsf_impulse_pct: 0.0
+  treasury_plumbing_change_bn: 25.0
