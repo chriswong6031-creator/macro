@@ -3,6 +3,7 @@
 **Architecture:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_FREEZE_2026-09-04.md`  
 **Amendment 1:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_1_2026-09-04.md`  
 **Amendment 2:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_2_ACCESS_TRANSPORT_2026-09-04.md`  
+**Amendment 3:** `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md`
 **Decision:** `DEC:MARKET-ONTOLOGY-F04-EXPLORER-LIVE-TRACE-SCENARIO-BOUNDARY`  
 **Parent:** `marketontology-f04-ontology-transmission-20260826-fable-001`  
 **Records operation:** `marketontology-f04-explorer-architecture-20260904-sol-001`  
@@ -10,7 +11,13 @@
 **Historical procedure pin:** `Mastermind@22b36b830bd5560942186ada7597508f918696af`  
 **Historical Macro base:** `0007d955278c0456507bb4854eb85ddb41e2874e`
 
-> Re-pin protected procedure, current default branches, owner contracts, open PRs, active carriers and production state before every modifying child. Historical pins are receipts, not permanent authority. Amendment 1 controls state/privacy/freshness/method wording; Amendment 2 controls access and transport wording.
+> **CONTROLLING ENTRYPOINT:** Re-pin protected procedure, current default branches, owner
+> contracts, open PRs, active carriers and production state before every modifying child.
+> Historical pins are receipts, not permanent authority. Amendment 3 controls the F00
+> consumption edge, shared navigation, request-time freshness, K1 evidence, denominator,
+> clocks, design, protected paths and reproducibility corrections. Amendment 2 controls access
+> and transport. Amendment 1 controls only where Amendments 2/3 do not supersede it. X1 is
+> held until the Amendment 3 repair is merged and a fresh planned-write collision census passes.
 
 ---
 
@@ -78,7 +85,7 @@ Fable is the parent principal/integrator. Architecture-frozen implementation rou
 
 ## Task P0.1 — Records validation
 
-**Files:** exactly six records in `marketontology-f04-explorer-architecture-20260904-sol-001`:
+**Historical PR #6820 files:** exactly eight records counted by Git:
 
 1. architecture freeze;
 2. Amendment 1;
@@ -86,10 +93,16 @@ Fable is the parent principal/integrator. Architecture-frozen implementation rou
 4. decision;
 5. Fable handoff;
 6. this plan.
+7. exact capability closure map.
+8. F00 return reconciliation handoff.
+
+The bounded repair adds Amendment 3 as the ninth packet path and minimally amends the eight
+predecessor records. Preserve PR #6820 as immutable history.
 
 - [ ] Decision, handoff and plan bind both amendments.
 - [ ] Agent OS schema and repository fences pass on one immutable head.
-- [ ] Independent review attacks product usefulness, owner duplication, four-layer state/privacy split, scenario semantics, same-cycle freshness, deterministic ordering, PIT/corrections, Git/Pages/R2/browser-cache leakage, X3 owner placement, X1/X6 scope and feasibility.
+- [ ] Delta verification closes the two existing review packets; do not request a third full
+  review for the bounded records repair.
 - [ ] Current Macro main is reconciled through current integration proof without rewriting semantic source merely to reach ancestry zero.
 - [ ] PR remains Draft/Hold until Sol explicitly accepts the exact head.
 
@@ -112,6 +125,9 @@ Fable is the parent principal/integrator. Architecture-frozen implementation rou
 
 # Phase X1 — WTI Live Trace
 
+**Hard predecessor:** Amendment 3 repair merged + fresh planned-write collision census +
+explicit current X1 commission. F00 consumption alone does not authorize X1.
+
 **Recommended operation:** `marketontology-f04-explorer-x1-wti-live-trace-20260904-fable-001`  
 **Preferred avenue:** CTO Sol or Terra after placement evidence  
 **Accepted capability:** one real end-to-end Ontology Explorer vertical
@@ -122,14 +138,16 @@ Read current:
 
 - `engine/transmission_chains.py` and its pure grammar/evaluator seam;
 - `engine/transmission_publish.py`, including documented prior-night static-publication lag;
-- `scripts/build_transmission.py` and actual production DAG;
+- the exact deployed checkout/build/release path and owner generation clocks; no nightly-order
+  or production-DAG proof is assumed for request-time composition;
 - `data/transmission/chain_state.json`;
 - `data/transmission/chain_calibration.json`;
 - `data/transmission/latest.json`;
 - WTI and inverse-chain YAML through the existing loader;
 - `app/prophet_lab.py`, `app/capital_structure.py`, `app/main.py`, `app/paywall.py` and current private API conventions;
 - current site-access/Caddy/Pages/public-R2/public-git exposure records;
-- nav/theme/build/SEO patterns;
+- authenticated nav/theme/build/SEO patterns, specifically `_site_nav.html.j2`,
+  `_navlinks.html.j2`, `navigation-refresh.css`, `nav_market.js`, and `theme.js`;
 - current Brain context seam only to preserve the X1/X6 boundary;
 - open PRs touching transmission, policy, API/auth, nav, analytics, access or shared templates.
 
@@ -159,6 +177,8 @@ service-worker/localStorage/IndexedDB persistence of the response
 - [ ] Confirm `/ontology.html` and `/api/ontology/explorer/v1` are not owned elsewhere.
 - [ ] Freeze exact owner readers; no frontend JSON-shape reimplementation.
 - [ ] Freeze per-node/edge/path owner generations and request-time source-manifest identity.
+- [ ] Expand Amendment 3's literal D2C #6809 and K3-D #6514 protected paths and prove the
+  planned X1 write set remains disjoint.
 - [ ] Confirm existing API can support pure request-time composition without a new durable store/secret; otherwise return `DECISION_REQUEST`.
 
 ## Task X1.1 — RED semantic, privacy and access tests
@@ -170,13 +190,19 @@ Write failing tests proving:
 - [ ] `ontology_explorer_snapshot.v1` is tenant-neutral with effective-as-of and knowledge cutoff.
 - [ ] It refuses `mode`, `assumption`, `user_overlay`, holdings, weights and user IDs.
 - [ ] Every material node/edge/path has owner/native identity, owner-generation and method/relationship class.
-- [ ] Same-cycle owner generations are used; typed per-owner lag is mandatory otherwise.
+- [ ] Request-time input bytes/generations derive `source_manifest_hash`; current-source versus
+  deployed-checkout/pull lag is typed separately from owner staleness.
+- [ ] `evidence_refs[]` and `evidence_index[]` validate through K1 EvidenceRef/EvidenceBlock/
+  EvidenceRecipe law or fail with `EVIDENCE_CONTRACT_CONFLICT`.
 - [ ] True downstream nodes cannot activate a false upstream path.
 - [ ] Current WTI root and breakeven hop remain false while real-yield/duration may be true.
 - [ ] WTI is explicit reference/default, never inferred `most material`.
 - [ ] `first_blocking_leg` is deterministic path order, not a score.
-- [ ] Historical follow-through carries exact numerator/N/span/regime and baseline-comparison availability, never `confidence`.
-- [ ] Terminal cohort outcomes remain separate from transition frequency.
+- [ ] Historical follow-through carries rising-edge episode numerator/N/span/regime and
+  baseline-comparison availability, never `confidence`.
+- [ ] Terminal cohort outcomes remain separate: per-bar cohort N is labeled overlapping;
+  effective N, overlap policy, interval, span, concentration and current-regime mapping are
+  emitted by the owner or typed unavailable.
 - [ ] Inverse path remains separate.
 - [ ] Coverage is structured with denominator/missing buckets.
 - [ ] Missing invalidator, clock, right or owner ref produces typed degradation.
@@ -228,12 +254,15 @@ Record intended RED before implementation.
 
 ## Task X1.4 — Public shell and interaction
 
-- [ ] Create `/ontology.html` with canonical header/theme/language/account patterns.
+- [ ] Create `/ontology.html` with authenticated `_site_nav` global chrome and an Ontology
+  workspace toolbar below it; do not create a third header.
 - [ ] Render useful methodology/locked state without JavaScript or current data.
 - [ ] Resolve existing browser session/token and fetch API only after auth is available.
 - [ ] Distinguish `401`, `403`, contract refusal and `503` usefully.
 - [ ] Keep last-good only in page memory; mark stale after refresh failure; reload requires authorized fetch.
 - [ ] Implement deterministic layered path, path rail, trace narrative and inspector.
+- [ ] Use `instrument_analyzer` C-signal archetype. Prove dark command-center depth and light
+  research-workspace material as two deliberate designs, not token substitution.
 - [ ] Implement WTI/inverse/invalidator/evidence/source interactions.
 - [ ] Use `Observed`, `Historical`, `Hypothesis`, `Unavailable`; no confidence palette.
 - [ ] Preserve TXI state vocabulary and user-facing scope.
@@ -250,10 +279,12 @@ Record intended RED before implementation.
 
 ## Task X1.6 — Real production proof
 
-- [ ] Focused/repository tests, template parity, API/auth/access, DAG/order and Agent OS/fences.
+- [ ] Focused/repository tests, template parity, API/auth/access, deployed-checkout/source-
+  manifest freshness and Agent OS/fences.
 - [ ] Exact owner generations/source-manifest/producer build identity.
 - [ ] Real current WTI dormancy and downstream-without-upstream contradiction.
-- [ ] Historical numerator/N/span/regime/baseline state; terminal outcomes separately caveated.
+- [ ] Historical episode numerator/N/span/regime/baseline state; terminal overlapping cohort
+  bar N plus typed effective-N/overlap/interval/span/concentration state.
 - [ ] Structured coverage and first-blocking-leg proof.
 - [ ] Anonymous and Free API denial; Essential and Pro success.
 - [ ] Raw Git, anonymous clone, Pages/static mirror and public R2 contain no current F04 snapshot.

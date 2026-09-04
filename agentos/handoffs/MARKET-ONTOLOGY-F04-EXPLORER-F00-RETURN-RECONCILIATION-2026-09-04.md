@@ -23,6 +23,10 @@ changed:
       Records the authoritative F00 return path, distinguishes suite-level F00 integration
       from a child-specific F04 receiver binding, and freezes the exact post-architecture
       placement sequence.
+  - path: research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md
+    what: >
+      Records F00's explicit consumption edge and closes both existing architecture reviews
+      through one bounded records-only erratum; no third review or product effect.
 verified:
   - claim: "F00 restart/integration is now current Agent OS organizational truth."
     command: >
@@ -57,22 +61,26 @@ verified:
       PASS — the F00 session is bound to the F00 successor operation only. F04 principal or
       child work still requires an explicit current assignment/placement edge and distinct
       pickup/START under its own operation/carrier.
-  - claim: "The F04 architecture remains compatible with the F00 interim shared-contract freeze."
+  - claim: "A records-only comparison found no owner/authority conflict with the F00 interim contract; it did not verify an implemented page shell."
     command: >
       Compare #6820 architecture, Amendments 1/2, decision and plan against #6827's interim
       page-shell/navigation, evidence/source/time/null/correction, authority, identity and
       tenant boundaries.
     result: >
-      PASS — /ontology.html uses the existing shell family; owner-native evidence/clocks,
-      typed corrections, zero action authority, Stock Identity/Data OS and Supabase User
-      Plane remain canonical; Amendment 2 strengthens rather than conflicts with access law.
+      PARTIAL / RECORDS-ONLY — owner-native evidence/clocks, typed corrections, zero action
+      authority, Stock Identity/Data OS and Supabase User Plane remain canonical. The earlier
+      phrase that `/ontology.html` "uses the existing shell family" was unsupported because no
+      route exists. Amendment 3 now specifies `_site_nav` and a below-nav workspace toolbar;
+      X1 must implement and prove them.
+  - claim: "F00 consumed the final exact F04 architecture return and issued a bounded repair ruling."
+    command: >
+      Fresh-read C0BSBM78V1N/1788510607.305039 at semantic edge 1788522863.288509 and
+      reconcile it with F04 return 1788519543.566529 and PR #6820 merge 700182ffb2a9324aacfaf2d2a85f4ecd0da327f4.
+    result: >
+      PASS — F00 accepted the eight records into its integration state, required one
+      records-only Amendment 3 repair against the two existing review packets, forbade a
+      third full review, and kept X1 held until repair merge plus fresh collision census.
 unverified:
-  - claim: "F00 has consumed and accepted the final exact F04 architecture return."
-    what_would_verify: >
-      After #6820 exact-head CI/fences, independent review and current-main integration proof
-      pass, this Sol session posts one explicit F04 architecture return on
-      C0BSBM78V1N/1788510607.305039 and the active F00 receiver responds with a consumption/
-      integration ruling on that same root.
   - claim: "A dedicated F04 Fable principal is necessary or currently available."
     what_would_verify: >
       F00's post-consumption collision/capacity assessment identifies sustained F04
@@ -83,29 +91,22 @@ unverified:
       F00 consumes any F00G product-shell/route evidence and completes the promised shared
       contract freeze, then performs a fresh planned-write census against X1's exact paths.
 unresolved:
-  - "PR #6820 is not yet a final return: exact-head CI, independent review and latest-main integration proof remain gates."
-  - "F00E/F00F/F00G evidence and the final F00 shared-contract freeze may still add a stronger owner/shell requirement; F04 must adopt it or return a conflict."
+  - "The Amendment 3 repair is not yet merged; its exact-head CI/security and Sol acceptance remain gates."
+  - "X1 remains held until the repair merges and a fresh planned-write collision census passes."
   - "No dedicated F04 principal or X1 worker is assigned. The active F00 Fable session cannot self-inherit F04 child authority."
   - "D2C #6809 remains on its exact REQUEST_REPAIR carrier and must be reconciled independently before any dependent F04 feature."
 next_actions:
   - >
-    Complete exact-head validation and independent review of PR #6820 on its existing
-    carrier. Keep it Draft/Hold and records-only until Sol accepts the immutable head.
+    Complete the Amendment 3 records-only repair on current Macro main. Preserve PR #6820 as
+    immutable history, validate against the two existing review packets, and keep the repair
+    PR Draft/Hold for Sol without requesting a third full review.
   - >
-    Once accepted, post one explicit `F04 ARCHITECTURE RETURN / HOLD-FOR-F00-INTEGRATION`
-    under the exact active F00 root C0BSBM78V1N/1788510607.305039. Include the final PR/head,
-    seven-record census, architecture capability delta, D2C/K3-D holds, both amendments,
-    access no-widening law and recommended X1 boundary.
+    After the repair is merged, F00/Sol performs a fresh planned-write census and then chooses
+    the lawful X1 topology. A dedicated F04 principal remains optional and requires a separate
+    explicit assignment; X1 routes only after that fresh gate.
   - >
-    F00 consumes that return, reconciles F00E/F00F/F00G and current open carriers, then
-    chooses the lawful implementation topology. Suite-level Fable integration may remain
-    with F00; a dedicated F04 Fable principal is optional and requires a separate explicit
-    assignment. X1 implementation should route to the least-scarce capable builder after
-    the shared-contract and path-collision gates.
-  - >
-    Do not open or place X1 until the F00 consumption edge and fresh X1 carrier/path census
-    exist. Preserve the proposed X1 operation key only as a recommendation, not a created
-    child.
+    Do not open or place X1 until this repair is merged and the fresh X1 carrier/path census
+    exists. Preserve the proposed X1 operation key only as a recommendation, not a child.
 do_not_redo:
   - "Do not create a second F00/F04 integration parent or a new Market Ontology lifecycle."
   - "Do not treat the F00 session's START as F04 pickup or implementation authority."
@@ -115,7 +116,7 @@ do_not_redo:
   - "Do not duplicate or absorb D2C #6809, K3-D #6514 or another active owner carrier."
 danger_areas:
   - "Two Fable sessions can look organizationally complementary while actually creating two integration authorities over the same F04 paths."
-  - "A records-only F00 merge can be mistaken for execution or for consumption of this still-unaccepted return."
+  - "F00 consumption or a records-only repair merge can be mistaken for X1 execution authority."
   - "A stale recommended X1 path list can collide with F00G/shared-shell or API/access work that lands before START."
   - "The exact F00 root is the reciprocal dialogue carrier; a new top-level Slack status post is not equivalent."
 prs: [6820, 6809, 6827]
@@ -143,7 +144,8 @@ current return carrier: Macro PR #6820
 source implementation state: PRE_START / no carrier
 ```
 
-The current Chairman Pro Sol session is the F04 architecture producer. It is not the X1 implementation worker and does not create a new provider-seat identity.
+F00 consumed this return at `1788522863.288509`; the current records-only repair does not
+become the X1 implementation worker or create a provider-seat identity.
 
 ## Relationship between F00 Fable and F04 Fable recommendation
 
@@ -163,11 +165,12 @@ Option 2 is not required merely because the historical operation key contains `f
 The final F04 return to F00 must include:
 
 - exact protected Skillpack pin and current Macro main;
-- PR #6820 immutable head and exact seven-record paths;
+- PR #6820 immutable head and exact eight-record paths counted by Git;
 - capability delta: `SPEC_ONLY` architecture, no product/runtime effect;
 - product thesis and WTI reference journey;
 - Amendment 1 four-layer state/privacy/freshness/method contract;
-- Amendment 2 authenticated API and no-public-mirror contract;
+- Amendments 2 and 3 authenticated API, shared-nav, request-time freshness, K1 evidence,
+  denominator and no-public-mirror contracts;
 - `/transmission.html` owner-preservation and `/ontology.html` public-shell decision;
 - current D2C #6809 and K3-D #6514 holds;
 - X1 independently useful boundary and explicit non-goals;
@@ -176,10 +179,9 @@ The final F04 return to F00 must include:
 
 ## Consumption gate
 
-F00 consumption is not inferred from message delivery. The active F00 receiver must post an explicit same-root integration ruling that either:
-
-- accepts the architecture into the final shared freeze and authorizes placement planning;
-- requests a bounded architecture repair on PR #6820; or
-- identifies a current owner/path collision and keeps X1 held.
-
-Only after that edge may a fresh X1 child be created and assigned. X1 still requires its own operation identity, exact carrier, receiver assignment, ACK, collision-cleared START and continuation watcher.
+F00 consumption is established by its explicit same-root ruling
+`C0BSBM78V1N/1788510607.305039 @ 1788522863.288509`. That ruling authorizes only the bounded
+records repair and holds X1. Only after the repair is merged and a fresh planned-write
+collision census passes may F00/Sol consider a new X1 child. X1 still requires its own
+operation identity, exact carrier, receiver assignment, ACK, collision-cleared START, and
+continuation watcher.
