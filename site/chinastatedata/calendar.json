@@ -1,21 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-09-03",
-  "generated_at_utc": "2026-09-03T21:50:35.722095+00:00",
+  "asof": "2026-09-04",
+  "generated_at_utc": "2026-09-04T06:06:35.547812+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-09-03",
-      "window_end": null,
-      "etype": "CAIXIN_S",
-      "label_en": "Caixin Services PMI",
-      "label_zh": "财新服务业 PMI",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
     {
       "date": "2026-09-04",
       "window_end": null,
@@ -350,6 +338,42 @@
       "impact": "high",
       "source_class": "static",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-19",
+      "window_end": null,
+      "etype": "ACTIVITY",
+      "label_en": "IP, FAI & retail sales",
+      "label_zh": "工业增加值、固投与社零",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-19",
+      "window_end": null,
+      "etype": "GDP",
+      "label_en": "GDP (quarterly)",
+      "label_zh": "GDP（季度）",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-19",
+      "window_end": null,
+      "etype": "HK_UNEMP",
+      "label_en": "HK unemployment",
+      "label_zh": "香港失业率",
+      "region": "hk",
+      "impact": "medium",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
       "approx": false
     }
   ],

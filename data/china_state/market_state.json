@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
   "as_of": "2026-09-03",
-  "generated_utc": "2026-09-03T21:50:33Z",
+  "generated_utc": "2026-09-04T06:06:33Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -18,26 +18,27 @@
   },
   "phase": {
     "phase": "REPAIR",
-    "confidence": 0.667,
+    "confidence": 0.8,
     "as_of": null,
     "evidence": [
-      "turnover_z20_null"
+      "turnover_z20_null",
+      "participation_regime_nan"
     ],
     "contradictions": [],
     "falsifiers": [
       {
-        "id": "REPA_RP_LDN_LOW",
-        "expr": "ldn5 < 1.0",
+        "id": "GRIN_GB_TOZ_COLD",
+        "expr": "turnover_z20 < 0.5",
         "horizon_d": 10
       },
       {
-        "id": "REPA_RP_LUP_LOW",
-        "expr": "lup5 < 2.0",
+        "id": "GRIN_GB_LUP_QUIET",
+        "expr": "lup5 < 1.5",
         "horizon_d": 10
       },
       {
-        "id": "REPA_RP_TOZ_STABLE",
-        "expr": "turnover_z20 > -1.5",
+        "id": "GRIN_GB_SEC_WASH",
+        "expr": "sec_wash > 0.3",
         "horizon_d": 10
       }
     ]
@@ -68,23 +69,23 @@
     "contradictions": []
   },
   "microstructure": {
-    "as_of": "2026-09-03",
+    "as_of": "2026-09-04",
     "aggregate": {
-      "date": "2026-09-03",
-      "limit_up_count": 10.0,
+      "date": "2026-09-04",
+      "limit_up_count": 9.0,
       "limit_down_count": 0.0,
-      "sealed_up_close": 4.0,
-      "failed_up_seal_count": 6.0,
-      "lianban_2plus": 0.0,
-      "lianban_max": 1.0,
-      "universe_n": 1852.0,
-      "limit_up_breadth_pct": 0.54,
+      "sealed_up_close": 5.0,
+      "failed_up_seal_count": 4.0,
+      "lianban_2plus": 2.0,
+      "lianban_max": 2.0,
+      "universe_n": 1851.0,
+      "limit_up_breadth_pct": 0.4862,
       "limit_down_breadth_pct": 0.0
     },
     "name_summary": {
-      "n_packets": 109,
-      "chase_veto_count": 3,
-      "fillable_count": 108
+      "n_packets": 110,
+      "chase_veto_count": 2,
+      "fillable_count": 109
     },
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
@@ -129,13 +130,13 @@
       "per_source_days": {
         "lpr": 14,
         "rrr": 484,
-        "fr007": 0,
+        "fr007": -1,
         "communiques": 128
       }
     }
   },
   "rotation": {
-    "as_of": "2026-09-03",
+    "as_of": "2026-09-04",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -159,57 +160,57 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-09-03",
+      "as_of": "2026-09-04",
       "basket_count": 237,
       "above_200d_pct": 53.2,
       "hot_baskets": [
         {
           "id": "ths_innovative_rx",
-          "ret_60d": 0.252
-        },
-        {
-          "id": "thsc300756",
-          "ret_60d": 0.1607
-        },
-        {
-          "id": "thsc301146",
-          "ret_60d": 0.16
-        },
-        {
-          "id": "thsc308822",
-          "ret_60d": 0.1508
+          "ret_60d": 0.2799
         },
         {
           "id": "thsc309264",
-          "ret_60d": 0.1293
+          "ret_60d": 0.1719
+        },
+        {
+          "id": "thsc300756",
+          "ret_60d": 0.1697
+        },
+        {
+          "id": "thsc301146",
+          "ret_60d": 0.1686
+        },
+        {
+          "id": "thsc308822",
+          "ret_60d": 0.1635
         }
       ],
       "cold_baskets": [
         {
-          "id": "thsc300926",
-          "ret_60d": -0.1388
-        },
-        {
-          "id": "thsc309084",
-          "ret_60d": -0.1397
-        },
-        {
           "id": "thsc309000",
-          "ret_60d": -0.1641
+          "ret_60d": -0.1379
+        },
+        {
+          "id": "thsc300926",
+          "ret_60d": -0.146
+        },
+        {
+          "id": "thsc309030",
+          "ret_60d": -0.1492
         },
         {
           "id": "thsc309128",
-          "ret_60d": -0.176
+          "ret_60d": -0.1583
         },
         {
           "id": "thsc300795",
-          "ret_60d": -0.2201
+          "ret_60d": -0.209
         }
       ]
     }
   },
   "macro": {
-    "as_of": "2026-09-03",
+    "as_of": "2026-09-04",
     "quad": "Q4",
     "quad_name": "Growth-scare",
     "liquidity_overlay": "contracting",
@@ -229,70 +230,70 @@
         "roro": -0.071,
         "roro_raw": -0.071,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 1.179,
-        "china_roro_breadth": 0.329,
-        "china_roro_southbound": 0.065,
-        "china_roro_m1_m2": -0.352,
-        "china_roro_turnover": -1.194,
-        "china_roro_qvix": 0.295,
-        "china_roro_usdcnh": -0.462,
-        "china_roro_margin": -0.429,
+        "china_roro_copper_gold": 1.169,
+        "china_roro_breadth": 0.71,
+        "china_roro_southbound": -0.327,
+        "china_roro_m1_m2": -0.345,
+        "china_roro_turnover": -1.261,
+        "china_roro_qvix": 0.4,
+        "china_roro_usdcnh": -0.487,
+        "china_roro_margin": -0.428,
         "china_roro_ah_premium": null,
         "legs": [
           {
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 1.179,
+            "value": 1.169,
             "lean": "risk-on"
           },
           {
             "key": "breadth",
             "name_en": "Breadth (% > 50d)",
             "name_zh": "市场宽度（>50日）",
-            "value": 0.329,
+            "value": 0.71,
             "lean": "risk-on"
           },
           {
             "key": "southbound",
             "name_en": "Southbound smart-money",
             "name_zh": "南向资金",
-            "value": 0.065,
-            "lean": "risk-on"
+            "value": -0.327,
+            "lean": "risk-off"
           },
           {
             "key": "m1_m2",
             "name_en": "M1−M2 scissors",
             "name_zh": "M1−M2 剪刀差",
-            "value": -0.352,
+            "value": -0.345,
             "lean": "risk-off"
           },
           {
             "key": "turnover",
             "name_en": "Turnover band",
             "name_zh": "成交活跃度",
-            "value": -1.194,
+            "value": -1.261,
             "lean": "risk-off"
           },
           {
             "key": "qvix",
             "name_en": "QVIX fear (300)",
             "name_zh": "QVIX 恐慌（300）",
-            "value": 0.295,
+            "value": 0.4,
             "lean": "risk-on"
           },
           {
             "key": "usdcnh",
             "name_en": "Offshore yuan (20d)",
             "name_zh": "离岸人民币（20日）",
-            "value": -0.462,
+            "value": -0.487,
             "lean": "risk-off"
           },
           {
             "key": "margin",
             "name_en": "Margin froth",
             "name_zh": "融资拥挤度",
-            "value": -0.429,
+            "value": -0.428,
             "lean": "risk-off"
           }
         ]
@@ -370,7 +371,7 @@
         "note_zh": "已用20年A股前瞻数据校准：无前瞻回撤优势（A股均值回归 —— 高读数偏平/逆向）；区间为历史分位锚定。描述性背景，从不计入评分。"
       },
       "drawdown_risk": {
-        "score": 15.9,
+        "score": 15.2,
         "band": "low",
         "uncalibrated": false,
         "calibrated": true,
@@ -390,7 +391,7 @@
       "cn_10y": 1.6798,
       "cn_2y": 1.2359,
       "cn_slope_10_2": 0.44389999999999996,
-      "cn_us_10y_spread": null
+      "cn_us_10y_spread": -3.0901999999999994
     },
     "cgb_curve": {
       "as_of": "2026-09-03",
@@ -414,7 +415,7 @@
     }
   },
   "allocation": {
-    "as_of": "2026-09-03",
+    "as_of": "2026-09-04",
     "variant": "balanced",
     "label_en": "Balanced",
     "label_zh": "均衡",
@@ -431,24 +432,25 @@
     "participation: regime=unclear who_controls=mixed risk=normal",
     "participation_evidence: turnover_z20=-1.45",
     "participation_evidence: margin_chg_5d=0.29% (rising)",
-    "phase: REPAIR confidence=0.667",
-    "phase_evidence: turnover_z20_null"
+    "phase: REPAIR confidence=0.8",
+    "phase_evidence: turnover_z20_null",
+    "phase_evidence: participation_regime_nan"
   ],
   "contradictions": [],
   "falsifiers": [
     {
-      "id": "REPA_RP_LDN_LOW",
-      "expr": "ldn5 < 1.0",
+      "id": "GRIN_GB_TOZ_COLD",
+      "expr": "turnover_z20 < 0.5",
       "horizon_d": 10
     },
     {
-      "id": "REPA_RP_LUP_LOW",
-      "expr": "lup5 < 2.0",
+      "id": "GRIN_GB_LUP_QUIET",
+      "expr": "lup5 < 1.5",
       "horizon_d": 10
     },
     {
-      "id": "REPA_RP_TOZ_STABLE",
-      "expr": "turnover_z20 > -1.5",
+      "id": "GRIN_GB_SEC_WASH",
+      "expr": "sec_wash > 0.3",
       "horizon_d": 10
     }
   ],

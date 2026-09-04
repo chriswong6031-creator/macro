@@ -93,6 +93,9 @@ html[data-lang="zh"] .cdot.conf-buy{background:var(--red)}html[data-lang="zh"] .
 .snm a:hover,.nm a:hover,.cr-nm a:hover{color:var(--ink-link, var(--blue))}
 .snm a:hover::after,.nm a:hover::after,.cr-nm a:hover::after{opacity:1}
 .snm a:hover .tk,.nm a:hover .tk,.cr-nm a:hover .tk{color:var(--ink-link, var(--blue))}
+/* S9: a ticker outside the desk's covered/scored universe renders unlinked (no dead
+   Terminal link) — plain text, same layout as the linked form (name + .tk ticker). */
+.mname-unlinked{color:inherit}
 
 /* ── the velocity-bar glyph (the spine) ── */
 .vbar{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
@@ -289,6 +292,125 @@ html[data-theme="light"] .fv-hero-notice{background:color-mix(in srgb,color-mix(
 .fv-disc>summary::before{content:"▸";color:var(--muted);transition:transform .18s;flex:none}
 .fv-disc[open]>summary::before{transform:rotate(90deg)}
 .fv-disc-body{padding:2px 16px 16px}
+
+/* ═══════════════ W6: per-group history drawer, compare, episodes (spec §1-§4) ═══════
+   TP-0 declared dual-theme treatment for state bands: DARK = command-center idiom, a
+   low-alpha luminance fill (glow reads correctly against the dark canvas); LIGHT =
+   research-workspace idiom, a 6%-tinted fill bounded by a hairline top/bottom edge — a
+   flat low-alpha wash reads as a smudge on white paper, so light gets a defined edge
+   instead of more glow. S8 repair (W6 review round): direction ("above"/"below" the
+   group's own norm — see engine.flow_observatory.workflow._direction) NOW rides the
+   SAME --up/--down-derived, data-lang-flipped color the state chips already use
+   (`.rk.up`/`.rk.down`'s own convention below), so the ZH red-up flip is automatic
+   instead of a second, band-specific rule the state chip and the band underneath it
+   used to visibly disagree on. ═══════════════════════════════════════════════════ */
+.fv-hist{margin:0}
+.fv-hist>summary{padding:9px 12px;font-size:12px;font-weight:700}
+.fv-hist .fv-disc-body{padding:4px 14px 14px}
+/* B3 repair — the ACTUAL mechanism (measured, not guessed): `table.board` is already,
+   independent of anything in this drawer, wider than the 390px mobile viewport —
+   `table.board#sectortbl`'s Theme/Members/Quadrant columns carry pre-existing nowrap
+   name/badge/chip content (the SAME "table-internal clipping...pre-existing to
+   table.board" characteristic the ORIGINAL W6 evidence README already documented
+   for the sibling `concrow`/`excludedrow` rows) that measures ~900px wide even with
+   NO drawer open at all — confirmed by diffing against the git HEAD build BEFORE
+   this repair, which shows the identical ~900px table width. A `colspan="8"` cell
+   (this drawer's `<td>`) always renders at the SUM of the table's actual column
+   widths, so `white-space:normal` alone (which only stops single-LINE overflow) still
+   wraps the caption onto an ~855px-wide box the 390px viewport can only show the
+   LEFT slice of — invisible, not merely scrolled, exactly the "truncates mid-word"
+   review finding. Overhauling table.board's general mobile responsiveness for EVERY
+   column is out of this repair's scope (and is the same pre-existing gap the W3/W4
+   rows already carry) — instead, `.fv-hist-text`/`.fv-hist-tracks` are given an
+   EXPLICIT, viewport-relative `max-width` at the mobile breakpoint. A definite width
+   on a block breaks the "inherit the oversized auto column width" chain: once
+   `.fv-hist-text`'s width is DEFINITE (not "auto" resolving against a wide column),
+   its `<p>` children wrap within that definite width regardless of how wide sibling
+   columns are; likewise `.fv-hist-tracks`' flex children (see `.fv-hist-track` below)
+   correctly shrink-to-fit a definite parent width instead of contributing their own
+   max-content size to the table's column-width computation. */
+.fv-hist-text{white-space:normal;word-break:break-word}
+.fv-replay-caption{font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.5}
+.fv-hist-tracks{overflow-x:auto}
+.fv-hist-line{display:flex;align-items:center;gap:10px;margin:6px 0;white-space:nowrap}
+.fv-hist-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);width:150px;flex:none}
+/* S7: text-transform:uppercase on the label above turns a lowercase "σ" into a
+   visually capitalized "Σ" — CSS text-transform is a rendering step, not a DOM edit,
+   so the unit must be exempted explicitly rather than "just not uppercased" at the
+   source string. Applied everywhere σ appears inside this drawer. */
+.no-uc{text-transform:none}
+/* defensive cap, independent of the mobile fix above: a percentage-sized SVG inside
+   a `flex:1;min-width:0` track can otherwise balloon during intrinsic-sizing passes
+   (measured up to 695px) — flex-basis:0 (not auto) plus a hard max-width keeps the
+   spark itself sane at every viewport, desktop included. */
+.fv-hist-track{position:relative;flex:1 1 0;min-width:0;max-width:480px;height:28px;display:block}
+@media (max-width:640px){
+  /* the load-bearing half of the B3 fix — see the comment above `.fv-hist-text`.
+     `calc(100vw - 64px)` clears `.wrap`'s 20px side padding plus this row's own
+     reduced 7px mobile td padding either side, with margin to spare; verified
+     empirically (see PR body) that this keeps the drawer's own content inside the
+     visible 390px frame regardless of how wide table.board's OTHER columns force
+     the table itself to become. */
+  .fv-hist-text{max-width:calc(100vw - 64px)}
+  .fv-hist-tracks{max-width:calc(100vw - 64px)}
+}
+.fv-hist-track .spark{position:relative;z-index:2;width:100%;height:100%}
+.fv-band{position:absolute;top:0;bottom:0;border-radius:var(--r-ctl, 2px);pointer-events:auto;cursor:help}
+html[data-theme="dark"] .fv-band.dir-above{background:color-mix(in srgb,var(--up) 18%,transparent)}
+html[data-theme="dark"] .fv-band.dir-below{background:color-mix(in srgb,var(--down) 18%,transparent)}
+html[data-theme="light"] .fv-band.dir-above{background:color-mix(in srgb,var(--up) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--up) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--up) 45%,transparent)}
+html[data-theme="light"] .fv-band.dir-below{background:color-mix(in srgb,var(--down) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--down) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--down) 45%,transparent)}
+/* zh flip — "above the group's own norm" keeps meaning "above", but the COLOR that
+   means "constructive" flips red<->green in zh (same convention `.rk.up`/`.rk.down`
+   already apply), so the swap is which --up/--down token feeds "above" vs "below",
+   never the direction word itself. */
+html[data-theme="dark"][data-lang="zh"] .fv-band.dir-above{background:color-mix(in srgb,var(--down) 18%,transparent)}
+html[data-theme="dark"][data-lang="zh"] .fv-band.dir-below{background:color-mix(in srgb,var(--up) 18%,transparent)}
+html[data-theme="light"][data-lang="zh"] .fv-band.dir-above{background:color-mix(in srgb,var(--down) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--down) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--down) 45%,transparent)}
+html[data-theme="light"][data-lang="zh"] .fv-band.dir-below{background:color-mix(in srgb,var(--up) 6%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--up) 45%,transparent);border-bottom:1px solid color-mix(in srgb,var(--up) 45%,transparent)}
+.fv-rev-marker{position:absolute;top:-3px;font-size:9px;color:var(--ink-warn, var(--amber));transform:translateX(-50%);z-index:3;cursor:help}
+.fv-published-track{position:relative;height:5px;margin:3px 0 0 160px}
+.fv-published-seg{position:absolute;top:1px;height:2px;border-radius:var(--r-ctl, 2px);background:var(--muted)}
+html[data-theme="light"] .fv-published-seg{background:var(--ink-2)}
+.fv-published-note{font-size:10.5px;color:var(--muted);margin:4px 0 0 160px}
+@media (max-width:640px){.fv-published-note{margin-left:0}}
+.fv-episodes{margin-top:12px;border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent);padding-top:10px}
+.fv-episode-count{font-size:12px;font-weight:700;color:var(--ink);margin:0 0 3px}
+.fv-episode-note{font-size:11px;color:var(--muted);margin:0 0 8px;font-style:italic}
+.fv-episode-card{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;font-size:12px;padding:5px 0;border-top:1px dashed color-mix(in srgb,var(--grid) 45%,transparent)}
+.fv-episode-card:first-child{border-top:none}
+.fv-ep-date{font-family:var(--num);color:var(--ink);font-weight:700;width:82px;flex:none}
+.fv-ep-vals{font-family:var(--num);color:var(--muted);width:130px;flex:none}
+.fv-ep-outcome{color:var(--text);white-space:normal}
+
+/* compare — JS-only (needs a 2-row pairing before there is anything to render); the
+   checkbox is CSS-hidden without `.js` (spec §2 "JS-off: the compare control hides;
+   a note names the JS dependency" — the <noscript> paragraph above the bar). */
+.fv-cmp-cb{margin-right:7px;vertical-align:middle;width:14px;height:14px}
+html:not(.js) .fv-cmp-cb{display:none}
+.fv-compare-bar{display:none;position:sticky;bottom:12px;margin:12px 0;padding:10px 14px;
+  background:var(--card);border:1px solid var(--grid);border-radius:var(--r-ctl, 10px);
+  align-items:center;gap:12px;z-index:5;font-size:13px}
+.fv-compare-bar{box-shadow:var(--glass-shadow)}
+html.js .fv-compare-bar.on{display:flex}
+.fv-compare-panel{margin-top:14px}
+.fv-compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.fv-compare-cols{grid-template-columns:1fr}}
+.fv-compare-col{border:1px solid var(--grid);border-radius:var(--r-card, 14px);padding:12px 14px;background:var(--card)}
+.fv-compare-col h4{margin:0 0 8px;font-size:13.5px;color:var(--ink)}
+.fv-compare-stats{font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.fv-compare-refusal{font-size:12.5px;color:var(--ink-warn, var(--warn));padding:10px 0}
+.fv-cmp-btn{appearance:none;border:1px solid var(--line, var(--grid));background:var(--panel, var(--card));
+  color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:var(--r-ctl, 8px);cursor:pointer}
+.fv-cmp-btn:hover{border-color:var(--muted)}
+.fv-cmp-btn-go{background:var(--panel2, var(--tile));border-color:var(--blue);color:var(--ink-link, var(--blue));font-weight:800}
+.fv-cmp-btn-go:disabled{opacity:.45;cursor:not-allowed}
+.fv-watch-note{font-size:11.5px;color:var(--muted);margin:10px 0 0;padding:9px 13px;
+  border:1px dashed var(--grid);border-radius:var(--r-ctl, 8px);line-height:1.5}
 
 /* ═══════════════ ABS × REL QUADRANT BOARD (spec §2.4) — the anti-conflation device ═══ */
 .fv-quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
