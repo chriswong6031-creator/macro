@@ -329,7 +329,7 @@
       <div><dt><span class="l-en">Calculation as-of</span><span class="l-zh">计算截止</span></dt>
            <dd><time>2026-09-04T11:03:41.497178+00:00</time></dd></div>
       <div class="mq-nonclock"><dt><span class="l-en">Page built</span><span class="l-zh">页面生成</span></dt>
-           <dd><time>2026-09-04T18:41:41Z</time></dd></div>
+           <dd><time>2026-09-04T19:39:34Z</time></dd></div>
     </dl>
     <p class="mq-context-caveat"><span class="l-en">Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.</span><span class="l-zh">页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。</span></p>
   </div>
@@ -450,7 +450,7 @@
            <dd><time>2026-08-28</time></dd></div>
       <div><dt><span class="l-en">Method version</span><span class="l-zh">方法版本</span></dt><dd><code>liquidity_central_banks.compose.v1</code></dd></div>
       <div><dt><span class="l-en">Prior accepted print</span><span class="l-zh">上一已接受读数</span></dt>
-           <dd><span class="mq-absent mq-absent-inline"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Warm-up: first accepted print</span><span class="l-zh">预热期：首个已接受读数</span></span></span></dd></div>
+           <dd></dd></div>
     </dl>
   </div>
 
@@ -499,10 +499,6 @@
   </div>
   <ul class="mq-diag-list">
     <li class="mq-diag mq-tone-neutral">
-      <strong><span class="l-en">No method-comparable prior print</span><span class="l-zh">无方法可比的历史读数</span></strong>
-      <span><span class="l-en">No comparable prior print</span><span class="l-zh">没有可比的历史读数</span></span>
-    </li>
-    <li class="mq-diag mq-tone-neutral">
       <strong><span class="l-en">Component histories not published</span><span class="l-zh">未发布分项历史序列</span></strong>
       <span><span class="l-en">Insufficient history</span><span class="l-zh">历史数据不足</span></span>
     </li>
@@ -521,11 +517,47 @@
     <h3 id="mq-changed-title"><span class="l-en">What changed</span><span class="l-zh">发生了什么变化</span></h3>
     <span class="mq-section-note"><span class="l-en">Current accepted snapshot against the prior accepted snapshot, under the same method version.</span><span class="l-zh">在相同方法版本下，将当前已接受快照与上一已接受快照对比。</span></span>
   </div>
-  <p class="mq-changed-verdict mq-tone-neutral"><span class="l-en">No comparable prior print</span><span class="l-zh">没有可比的历史读数</span></p>
-  <div class="mq-changed-empty">
-    <span class="mq-absent"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Warm-up: first accepted print</span><span class="l-zh">预热期：首个已接受读数</span></span></span>
-    <p><span class="l-en">No numeric comparison is shown. A change table would have to invent a baseline that does not exist, and a method-version change is reported as a method change — never as a delta.</span><span class="l-zh">此处不展示任何数值对比。展示变化表将不得不虚构一个并不存在的基准；方法版本变更只按方法变更呈现，绝不伪装成数值变化。</span></p>
-  </div>
+  <p class="mq-changed-verdict mq-tone-ok"><span class="l-en">Comparable with the prior accepted print</span><span class="l-zh">与上一已接受读数可比</span></p>
+  <table class="mq-table">
+    <thead><tr>
+      <th scope="col"><span class="l-en">Metric</span><span class="l-zh">指标</span></th>
+      <th scope="col"><span class="l-en">Prior</span><span class="l-zh">上期</span></th>
+      <th scope="col"><span class="l-en">Current</span><span class="l-zh">当前</span></th>
+      <th scope="col"><span class="l-en">Change</span><span class="l-zh">变化</span></th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <th scope="row"><span class="l-en">Glt monetary impulse</span><span class="l-zh">Glt monetary impulse</span></th>
+        <td>0.003956</td>
+        <td>0.003956</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Glt monetary impulse z</span><span class="l-zh">Glt monetary impulse z</span></th>
+        <td>0.07703</td>
+        <td>0.07703</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Glt usd funding impulse</span><span class="l-zh">Glt usd funding impulse</span></th>
+        <td>-0.1448</td>
+        <td>-0.1448</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Glt liquidity breadth</span><span class="l-zh">Glt liquidity breadth</span></th>
+        <td>0.3333</td>
+        <td>0.3333</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Cb fed balance sheet impulse 13w</span><span class="l-zh">Cb fed balance sheet impulse 13w</span></th>
+        <td>0.38</td>
+        <td>0.38</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
       <section class="mq-metrics" aria-labelledby="mq-metrics-title">
   <div class="mq-section-head">
@@ -2014,12 +2046,12 @@
   <dl class="mq-method-grid">
     <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">No correction recorded</span><span class="l-zh">无更正记录</span></dd></div>
     <div><dt><span class="l-en">Predecessor generation</span><span class="l-zh">前一代产物</span></dt>
-         <dd><span class="mq-dash">—</span></dd></div>
+         <dd><code>liquidity_central_banks-US-a82080353b5a5894</code></dd></div>
     <div><dt><span class="l-en">Changed fingerprints</span><span class="l-zh">已变更指纹</span></dt>
          <dd><span class="mq-dash">—</span></dd></div>
     <div><dt><span class="l-en">Hysteresis</span><span class="l-zh">滞回</span></dt><dd>liquidity_central_banks has no headline model at all in architecture section 10.9 -- unlike liquidity_regime/financial_conditions/growth&#39;s explicit x/y quadrant blueprints or monetary_policy&#39;s own composition-list headline, section 10.9 has no headline-model subsection, only a required-composition list. headline.state_id stays null and this is not applicable by design, not by missing data; the real content (global monetary/funding impulse, Fed/ECB/BoJ balance-sheet impulses, the global-vs-Fed-desk agreement check) lives in metrics/drivers/implications instead. Region is published as US per every current Macro &amp; Monetary page even though this composer&#39;s owner inputs are explicitly global -- see the region_scope_disclosure implication for the reader-facing version of this note.</dd></div>
   </dl>
-  <p class="mq-lineage-note">First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.</p>
+  <p class="mq-lineage-note">Same reference period as the predecessor print; no tracked metric changed value (no-change republication).</p>
 </section>
     </section>
   </div>
@@ -2328,11 +2360,11 @@
       <dl class="mq-clocks">
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Artifact built</span><span class="l-zh">产物生成</span></span><span class="mq-clock-meaning"><span class="l-en">Producer generation time. Not an economic clock.</span><span class="l-zh">生产端生成时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-04T18:41:41Z</time></dd>
+          <dd><time>2026-09-04T19:39:33Z</time></dd>
         </div>
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Page built</span><span class="l-zh">页面生成</span></span><span class="mq-clock-meaning"><span class="l-en">Static page render time. Not an economic clock.</span><span class="l-zh">静态页面渲染时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-04T18:41:41Z</time></dd>
+          <dd><time>2026-09-04T19:39:34Z</time></dd>
         </div>
       </dl>
     </section>
@@ -2342,11 +2374,11 @@
       <dl class="mq-method-grid">
         <div><dt><span class="l-en">Artifact path</span><span class="l-zh">产物路径</span></dt><dd><code>macrodata/workspaces/liquidity_central_banks/US/latest.json</code></dd></div>
         <div><dt><span class="l-en">Manifest path</span><span class="l-zh">清单路径</span></dt><dd><code>macrodata/workspaces/manifest.json</code></dd></div>
-        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">fccc2eaa8a03fea3ffdb7dea63c7982c7f0c0794edb2e815bc803cb67b0b0f64</code></dd></div>
-        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>62357</dd></div>
-        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>liquidity_central_banks-US-fccc2eaa8a03fea3</code></dd></div>
+        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">564fd8bc77f79112b501efa2b07fb6017af7f8d15c8a38b15990f7c1bd514a97</code></dd></div>
+        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>63641</dd></div>
+        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>liquidity_central_banks-US-564fd8bc77f79112</code></dd></div>
         <div><dt><span class="l-en">Producer</span><span class="l-zh">生产者</span></dt><dd><code>engine.market_os.macro_workspaces.liquidity_central_banks</code></dd></div>
-        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>001f1af4a2d1d6022d9ab291796373606e8c202e</code></dd></div>
+        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>ea24fb5df2ba3d5461f07f722ba23adff32c782c</code></dd></div>
         <div><dt><span class="l-en">Client contract</span><span class="l-zh">客户端契约</span></dt><dd><code>mastermind.macro_workspace_snapshot.v1@1.0.0</code></dd></div>
       </dl>
       <p class="mq-lineage-note"><span class="l-en">The page validated this artifact against the closed schema and recomputed its content hash before rendering. A mismatch renders a refusal page instead of a state.</span><span class="l-zh">本页在渲染前已按封闭 schema 校验该产物并重新计算其内容哈希。若不匹配，将呈现拒绝页面而非任何状态读数。</span></p>

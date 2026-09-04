@@ -44,6 +44,8 @@ _TEMPLATE_NAMES = (
     "macro_monetary_policy.html.j2",
     "macro_financial_conditions.html.j2",
     "macro_liquidity_central_banks.html.j2",
+    "macro_capital_structure.html.j2",
+    "macro_housing_real_estate.html.j2",
     "_macro_suite_shell.html.j2",
     "_seo_head.html.j2",
     "_site_nav.html.j2",

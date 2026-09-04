@@ -1186,6 +1186,12 @@ pages:
   macro:macro_liquidity_central_banks:
     archetype: "regime_dashboard"
 
+  macro:macro_capital_structure:
+    archetype: "regime_dashboard"
+
+  macro:macro_housing_real_estate:
+    archetype: "regime_dashboard"
+
   # Pre-existing stragglers healed in passing (2026-09-04, R2 pages wave):
   # both rows sat unclassified on main's committed registry — the
   # product-experience classification tests were dark under pack starvation.

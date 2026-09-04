@@ -37,9 +37,11 @@ from typing import Any, Mapping
 
 from engine.market_os.macro_workspaces import (
     business_activity,
+    capital_structure,
     contract,
     financial_conditions,
     growth,
+    housing,
     inflation,
     labor,
     liquidity_central_banks,
@@ -56,7 +58,39 @@ DEFAULT_RATES_COMMAND = ROOT / "data" / "rates_command" / "latest.json"
 DEFAULT_INTL_RISK = ROOT / "data" / "intl_risk" / "latest.json"
 DEFAULT_GLT_LATEST = ROOT / "site" / "liquiditydata" / "global_liquidity_transmission.json"
 DEFAULT_GLT_HISTORY_META = ROOT / "data" / "global_liquidity_transmission" / "state_history_meta.json"
+DEFAULT_FRED_DIR = ROOT / "data" / "fred"
+DEFAULT_ZORI_NATIONAL = ROOT / "data" / "zori" / "national.parquet"
+DEFAULT_CAPITAL_STRUCTURE_PROJECTION = ROOT / "data" / "capital_structure" / "projection.json"
 MIN_CLIENT_CONTRACT = f"{contract.CONTRACT_ID}@{contract.CONTRACT_VERSION}"
+
+# Housing core: FRED series id -> the parquet's value column (the column names
+# come from the collector config, config.yml fred.series entries).
+_HOUSING_FRED_COLUMNS = {
+    "MORTGAGE30US": "mortgage_30y",
+    "HOUST": "housing_starts",
+    "PERMIT": "building_permits",
+    "CSUSHPISA": "case_shiller_sa",
+}
+
+
+def _load_series_rows(path: Path, column: str) -> list | None:
+    """Load one series parquet into plain ``[(iso_date, float), ...]`` rows.
+
+    Missing file -> ``None`` (the composer emits its own typed absence).
+    A PRESENT-but-unreadable file, or a missing pandas/pyarrow runtime, RAISES:
+    laundering either into "source absent" would hide corruption or an
+    environment defect behind an honest-looking typed null (same law as
+    ``_load_json_or_empty``). pandas is imported lazily so importing this
+    module never requires it (the CI suites monkeypatch the loaders)."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    import pandas as pd  # noqa: PLC0415 — lazy: only a real build needs it
+
+    frame = pd.read_parquet(p)
+    frame.index = pd.to_datetime(frame.index)
+    series = frame[column].dropna().sort_index()
+    return [(idx.date().isoformat(), float(value)) for idx, value in series.items()]
 
 
 def _load_json(path: Path) -> dict:
@@ -164,7 +198,11 @@ def build_liquidity_regime(
 def _compose_workspace(workspace_id: str, *, regime_latest: dict,
                        inflation_intel: dict, rates_command: dict,
                        intl_risk: dict, glt_latest: dict,
-                       glt_history_meta: dict, built_at: str,
+                       glt_history_meta: dict,
+                       housing_fred_frames: dict,
+                       housing_zori_rows: list | None,
+                       capital_structure_projection: dict,
+                       built_at: str,
                        prior_snapshot: dict | None,
                        code_version: str | None) -> dict:
     """Route one BUILT workspace to its composer with its owner-native inputs.
@@ -210,6 +248,16 @@ def _compose_workspace(workspace_id: str, *, regime_latest: dict,
             glt_history_meta,
             built_at=built_at,
             prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "housing_real_estate":
+        return housing.compose(
+            housing_fred_frames, housing_zori_rows,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
+    if workspace_id == "capital_structure":
+        return capital_structure.compose(
+            capital_structure_projection,
+            built_at=built_at,
+            prior_snapshot=prior_snapshot, code_version=code_version)
     raise ValueError(f"no builder route for workspace id: {workspace_id!r}")
 
 
@@ -220,6 +268,9 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
               intl_risk_path: Path | str = DEFAULT_INTL_RISK,
               glt_latest_path: Path | str = DEFAULT_GLT_LATEST,
               glt_history_meta_path: Path | str = DEFAULT_GLT_HISTORY_META,
+              fred_dir: Path | str = DEFAULT_FRED_DIR,
+              zori_path: Path | str = DEFAULT_ZORI_NATIONAL,
+              capital_structure_projection_path: Path | str = DEFAULT_CAPITAL_STRUCTURE_PROJECTION,
               built_at: str, code_version: str | None = None,
               prior_snapshot_path: Path | str | None = None,
               write: bool = True) -> dict:
@@ -238,6 +289,12 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
     intl_risk = _load_json_or_empty(Path(intl_risk_path))
     glt_latest = _load_json_or_empty(Path(glt_latest_path))
     glt_history_meta = _load_json_or_empty(Path(glt_history_meta_path))
+    housing_fred_frames = {
+        sid: _load_series_rows(Path(fred_dir) / f"{sid}.parquet", column)
+        for sid, column in _HOUSING_FRED_COLUMNS.items()
+    }
+    housing_zori_rows = _load_series_rows(Path(zori_path), "zori")
+    capital_structure_projection = _load_json_or_empty(Path(capital_structure_projection_path))
 
     out = Path(out_root)
     manifest_entries: dict[str, dict] = {}
@@ -262,6 +319,9 @@ def build_all(*, out_root: Path | str = DEFAULT_OUT_ROOT,
             wid, regime_latest=regime_latest, inflation_intel=inflation_intel,
             rates_command=rates_command, intl_risk=intl_risk,
             glt_latest=glt_latest, glt_history_meta=glt_history_meta,
+            housing_fred_frames=housing_fred_frames,
+            housing_zori_rows=housing_zori_rows,
+            capital_structure_projection=capital_structure_projection,
             built_at=built_at,
             prior_snapshot=prior, code_version=code_version)
         snapshot = contract.finalize(body)

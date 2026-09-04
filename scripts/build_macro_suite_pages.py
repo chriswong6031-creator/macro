@@ -160,6 +160,30 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
             "with the weekly grid clock, warmup windows and typed gaps shown."
         ),
     ),
+    SuitePage(
+        workspace_id="capital_structure",
+        region="US",
+        template="macro_capital_structure.html.j2",
+        output="macro_capital_structure.html",
+        seo_title="US Capital Structure — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "A read-only census of the US corporate capital-structure event "
+            "projection — coverage, classification and review backlog, with "
+            "everything the owner does not publish typed honestly."
+        ),
+    ),
+    SuitePage(
+        workspace_id="housing_real_estate",
+        region="US",
+        template="macro_housing_real_estate.html.j2",
+        output="macro_housing_real_estate.html",
+        seo_title="US Housing & Real Estate — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "Mortgage rates, starts, permits and home prices for the United States, "
+            "with rights-blocked and uncovered legs typed honestly and every "
+            "release clock shown."
+        ),
+    ),
 )
 
 

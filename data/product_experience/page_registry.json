@@ -1,14 +1,14 @@
 {
   "schema": "mastermind.page_registry.v1",
-  "generated_at": "2026-09-04",
+  "generated_at": "2026-09-04T19:39:46Z",
   "sources": {
     "macro": {
       "available": true,
       "root": "/private/tmp/f01-r1b-wt",
       "ref": "HEAD",
-      "sha": "001f1af4a2d1d6022d9ab291796373606e8c202e",
+      "sha": "ea24fb5df2ba3d5461f07f722ba23adff32c782c",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 8926,
+      "tracked_html_pages": 8928,
       "write_page_sites": 151,
       "write_page_unresolved": 35,
       "unresolved_write_sites": [
@@ -6374,6 +6374,49 @@
       ]
     },
     {
+      "page_id": "macro:macro_capital_structure",
+      "repo": "macro",
+      "route": "/macro_capital_structure.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_capital_structure.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_capital_structure.html",
+        "templates/macro_capital_structure.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
       "page_id": "macro:macro_context",
       "repo": "macro",
       "route": "/macro_context.html",
@@ -6497,6 +6540,49 @@
         "config/site_access.yml:1",
         "site/macro_growth_real_economy.html",
         "templates/macro_growth_real_economy.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_housing_real_estate",
+      "repo": "macro",
+      "route": "/macro_housing_real_estate.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_housing_real_estate.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_housing_real_estate.html",
+        "templates/macro_housing_real_estate.html.j2"
       ],
       "notes": [
         "template attributed by name match; no write_page() call site names it",
