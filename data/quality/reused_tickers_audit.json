@@ -37,7 +37,7 @@
     {
      "name": "ECHO",
      "kind": "zombie",
-     "detail": "dead-registry name advancing 1745d past its 2021-11-22 registry bar; overlap corr -0.139"
+     "detail": "dead-registry name advancing 1746d past its 2021-11-22 registry bar; overlap corr -0.139"
     }
    ]
   },
@@ -84,7 +84,7 @@
     {
      "name": "ANGPY",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-09-02) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-09-03) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "APEI",
@@ -99,7 +99,7 @@
     {
      "name": "AREN",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-09-02) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-09-03) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "ASIX",
@@ -359,7 +359,7 @@
     {
      "name": "HLX",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-31) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-09-01) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "HPP",
@@ -379,7 +379,7 @@
     {
      "name": "IMPUY",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-09-02) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-09-03) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "INGN",
@@ -604,7 +604,7 @@
     {
      "name": "RHHBY",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-09-02) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-09-03) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "RILY",
@@ -800,8 +800,8 @@
     {
      "ticker": "ECHO",
      "registry_last": "2021-11-22",
-     "store_tip": "2026-09-02",
-     "days_past_death": 1745,
+     "store_tip": "2026-09-03",
+     "days_past_death": 1746,
      "overlap": {
       "n_overlap": 99,
       "ret_corr_full": -0.0318,
@@ -2242,8 +2242,8 @@
     {
      "ticker": "SITC",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-09-02",
-     "days_past_death": 254,
+     "store_tip": "2026-09-03",
+     "days_past_death": 255,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 0.6596,
@@ -2568,12 +2568,12 @@
    "delisted_printing": [
     {
      "ticker": "ANGPY",
-     "store_tip": "2026-09-02",
+     "store_tip": "2026-09-03",
      "acked": true
     },
     {
      "ticker": "AREN",
-     "store_tip": "2026-09-02",
+     "store_tip": "2026-09-03",
      "acked": false
     },
     {
@@ -2589,12 +2589,12 @@
     },
     {
      "ticker": "HLX",
-     "store_tip": "2026-08-31",
+     "store_tip": "2026-09-01",
      "acked": false
     },
     {
      "ticker": "IMPUY",
-     "store_tip": "2026-09-02",
+     "store_tip": "2026-09-03",
      "acked": true
     },
     {
@@ -2605,7 +2605,7 @@
     },
     {
      "ticker": "RHHBY",
-     "store_tip": "2026-09-02",
+     "store_tip": "2026-09-03",
      "acked": true
     },
     {

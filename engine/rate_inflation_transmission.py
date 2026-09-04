@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from lib import config
+from engine.yield_momentum import build_yield_momentum
 
 log = logging.getLogger(__name__)
 
@@ -591,6 +592,7 @@ def snapshot(f: pd.DataFrame) -> dict | None:
     return {
         "asof": str(f.index[-1].date()),
         "state": state,
+        "yield_momentum": build_yield_momentum(f),
         "breakeven_decomp": breakeven_decomposition(f),
         "inflation_decomposition": inflation_decomposition(f),
         "transmission": read,
