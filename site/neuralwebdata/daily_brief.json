@@ -1,15 +1,15 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-09-04T12:58:49.631090+00:00",
+  "produced_at": "2026-09-04T17:07:12.345476+00:00",
   "as_of": "2026-09-01T07:19:07+00:00",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "fresh",
     "tool_call_batches": 5,
     "individual_tool_calls": 9,
     "context_stale": false,
-    "summary": "cortex ran (9 tool calls); memo as_of 2026-09-01T07:19:07+00:00"
+    "summary": "cortex ran (9 tool calls); memo as_of 2026-09-04T17:05:52+00:00"
   },
   "what_changed": [
     {
@@ -982,28 +982,28 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-09-01",
+    "as_of": "2026-09-04",
     "counts": {
       "overdue": 15,
-      "due": 11,
+      "due": 9,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 286,
+      "accruing": 287,
       "n_acknowledged": 0
     },
     "top_due": {
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "15 overdue, 11 due, 1 missing, 1 stale, 2 blocked, 286 accruing. Top due: qledger:placebo."
+    "morning_line": "15 overdue, 9 due, 1 missing, 1 stale, 2 blocked, 287 accruing. Top due: qledger:placebo."
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-09-03",
+    "as_of": "2026-09-04",
     "phase": "REPAIR",
     "phase_confidence": 0.8,
     "who_controls": "mixed",

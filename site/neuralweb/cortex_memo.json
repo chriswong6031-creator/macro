@@ -1,31 +1,29 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-09-01T07:19:07+00:00",
-  "summary": "Context-only shadow deliberation as of 2026-09-01. The measured tape remains risk-on and the risk radar is calm, with its 21-day pullback rate below base (13.0% versus 17.8%); this does not support originating or escalating a risk claim. The more important context is transition risk: the confirmed US regime remains Q2 Reflation, but the current axes indicate raw Q3 (growth -0.40, inflation +0.24), only 1 of 7 required confirmation sessions. Liquidity is neutral-hollow rather than stressed: the RRP buffer is exhausted, but credit is tight, financial conditions are loose, and no stress confirmation is present. Factor evidence is immature: only 11 panel dates, no surviving scorecard factors, composite untradeable, Pair G dormant, and zero graded factor-attention firings. The graded spine extract is dominated by unsigned MFE proxy records, often marked STOPPED despite positive MFE, so it is unsuitable for directional inference. Kernel evidence reinforces restraint: no engine shown is armed; US-board and radar signed-excess estimates are negative in Q2, while several apparently strong board estimates use unsigned MFE proxies or vacuous held-out tests. No new hypothesis was staked because the available evidence did not justify spending the limited weekly budget on a properly specified causal or conditional claim.",
+  "as_of": "2026-09-04T17:05:52+00:00",
+  "summary": "Context-only shadow deliberation: the measured tape remains risk-on (75) with normalizing volatility, healthy credit, and broad 200-day participation, but the confirmed US Q2 Reflation label is internally unsupported by current axes (growth -0.47, inflation +0.52): raw Q3 has persisted 4 of the required 7 sessions. Liquidity is contracting in an orderly, non-stressed drain, while real yields are restrictive and near a five-year extreme. The risk radar is WATCH, but its measured 21-session >=5% pullback rate is 13.0% versus a 17.8% base rate (0.73x), so it is an early context flag, not an edge. Factor evidence is immature: only 10 panel dates, no Pair G records, no surviving scorecard legs, and the named low-beta leader has negative IC. The spine/kernel do not justify origination: no reviewed engine is armed; radar has negative signed excess across horizons, alt-data loses out of sample, and several desk families show negative 63-day signed excess. No hypothesis was staked because the available patterns were either already represented by current contradictions or lacked sufficient mature, independent evidence for a useful pre-committed test.",
   "what_fired": [
-    "Four shadow attention items were recorded: confirmed-Q2 versus raw-Q3 transition; the growth-over-value thesis versus its bull-flattener falsifier; overdue open master-brain theses; and stale options-skew contradictions affecting five buy-lane names.",
-    "No Pair G factor contradiction fired; the ledger is absent until the panel reaches at least 60 distinct dates.",
-    "No calibrated risk escalation fired. Risk radar is calm, credit health is healthy, and volatility is normalizing."
+    "Shadow attention: US confirmed Q2 label versus raw Q3 axes, pending 4/7 sessions.",
+    "Shadow attention: open China-equities overweight thesis conflicts with current China/HK Q4 growth-scare context, contracting liquidity, and weak-side HK peg; detailed China market state is stale.",
+    "Shadow attention: 19 briefing-versus-ticker-demand directional oppositions, including VSAT, FTNT, NET, and TENB."
   ],
-  "contradictions_review": "The confluence graph contains two current tensions. First, ticker-level demand/tape evidence opposes the intelligence briefing across 23 divergences; this is display-only and requires reconciliation rather than directional use. Second, GLXY, HOOD, NXPI, QCOM, and TSLA were simultaneously in the buy lane and showing five-day rising OTM-put skew as of 2026-08-21. That options witness is stale relative to this deliberation and is legal only as de-escalation context. ADB-W3 review also found that the open growth-over-value underweight thesis explicitly names bull flattening as a falsifier, while the current curve regime is bull flattener. Numerous master-brain theses remain open after their check-by dates, weakening their present evidentiary value. The confirmed Q2 label is also in tension with raw Q3 axes, but confirmation is only 1/7 sessions, so this is transition attention rather than a regime claim.",
+  "contradictions_review": "The confluence graph reports a briefing-divergences contradiction: 19 ticker-level demand-versus-supply directional oppositions. The options contradiction edge currently has n=0 and therefore supplies no name-level conflict. Pair G is dormant because the factor panel has only 10 dates and requires at least 60; absence is lack of coverage, not agreement. The master-brain China overweight thesis mb-2026-07-09-1 conflicts with current China Q4, HK Q4, contracting liquidity, and weak-side/outflow peg context. Several other master-brain theses are overdue and still marked open beyond their check-by dates, which weakens their present interpretability; this is a ledger-hygiene concern rather than a market claim.",
   "decaying_families": [
-    "Open master-brain theses past their stated check-by dates, including semiconductors, Bitcoin, China equities, long Treasuries, high-yield credit, and US equities.",
-    "Options-skew contradiction snapshot dated 2026-08-21; refresh is required before continued reliance.",
-    "Factor intelligence panel: history floor not met at 11 dates; Pair G remains dormant below 60 dates.",
-    "Policy, stock-desk, thematic-desk, AI-desk, radar, and altdata families show negative signed-excess estimates at one or more horizons and remain unarmed.",
-    "Risk-radar forward log has 25 graded observations but zero actual alerts, so alert precision remains unmeasurable."
+    "radar: negative signed excess in Q2 at 5 and 21 days and negative pooled results across 5/21/63 days; nevertheless unarmed because the allocation test is vacuous.",
+    "altdata: pooled out-of-sample result is negative; unarmed despite high estimated reliability.",
+    "desk:stock_desk and desk:thematic_desk: negative 63-day signed excess in Q2 and pooled samples; weighting tests are vacuous.",
+    "policy and desk:policy_intent: negative signed excess with small or incomplete samples.",
+    "factor composite: non-tradeable, with no surviving legs and only 10 panel dates."
   ],
   "deserves_operator": [
-    "Review the Q2-to-Q3 transition only if raw Q3 persists through the seven-session confirmation rule; clear if the axes revert first.",
-    "Review master-brain growth-over-value theses because bull flattening\u2014the stated falsifier\u2014is currently present; do not preserve the lean without explicit human disposition.",
-    "Close, score, or formally extend every thesis whose check-by date has passed; open-ended retention is inconsistent with its pre-commitment.",
-    "Refresh the five-name options-skew contradiction set and clear it if simultaneous buy-lane membership plus rising put skew no longer holds.",
-    "Reconcile the 23 briefing-versus-tape directional divergences before using the briefing as current explanatory context.",
-    "Treat the factor scorecard and Pair G ledger as coverage gaps, not evidence of agreement or absence of borrowed strength."
+    "US regime-label transition: review if Q3 reaches 7/7 while liquidity remains contracting; clear if axes support Q2 for three consecutive sessions first. Attention claim 34526163d831bd4f.",
+    "China overweight thesis mb-2026-07-09-1: review while China and HK remain Q4 and the HK peg remains weak-side/outflow; clear only after Q1/Q2 plus three sessions without weak-side peg pressure. Attention claim 9cc64f0b6ba96ffb.",
+    "Briefing reconciliation: investigate the 19 directional oppositions; clear when the next committed briefing and ticker-demand artifact contain zero unexplained oppositions, or retain if a cited name remains opposed for three consecutive committed sessions. Attention claim d5049b076d64c00a.",
+    "Ledger hygiene: score or retire open master-brain theses whose check-by dates have passed, especially the duplicate thesis IDs, before treating the open ledger as current context."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-31",
+    "as_of": "2026-09-04",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -37,8 +35,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 27,
-      "total_rows": 35
+      "ungradeable": 45,
+      "total_rows": 53
     },
     "is_context_only": true
   },
@@ -113,6 +111,6 @@
     "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-09-01T07:05:15Z"
+    "context_as_of": "2026-09-04T12:55:25Z"
   }
 }
