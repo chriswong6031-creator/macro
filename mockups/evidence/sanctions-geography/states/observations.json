@@ -1,0 +1,201 @@
+{
+  "schema": "f02x1.state_evidence.v1",
+  "note": "Interaction states run against the real committed artifact. Degraded states run the real page code against a labelled synthetic projection fixture; no committed artifact was modified and no source fact invented.",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "captures": [
+    {
+      "state": "selected-boundary",
+      "theme": "dark",
+      "locale": "en",
+      "file": "selected-boundary-dark-en.png",
+      "observations": {
+        "boundary": "Russia",
+        "row_focusable": true,
+        "row_selected": true,
+        "map_path_selected": 1,
+        "entry_cards": 12
+      }
+    },
+    {
+      "state": "no-results",
+      "theme": "dark",
+      "locale": "en",
+      "file": "no-results-dark-en.png",
+      "observations": {
+        "rows": 0,
+        "empty_shown": 1,
+        "cause_stated": 1,
+        "state_code": "NO_RESULTS"
+      }
+    },
+    {
+      "state": "unresolved-register",
+      "theme": "dark",
+      "locale": "en",
+      "file": "unresolved-register-dark-en.png",
+      "observations": {
+        "rows": 46,
+        "program_filter_disabled": true,
+        "type_filter_disabled": true,
+        "header": "PUBLISHED PLACE"
+      }
+    },
+    {
+      "state": "selected-boundary",
+      "theme": "light",
+      "locale": "en",
+      "file": "selected-boundary-light-en.png",
+      "observations": {
+        "boundary": "Russia",
+        "row_focusable": true,
+        "row_selected": true,
+        "map_path_selected": 1,
+        "entry_cards": 12
+      }
+    },
+    {
+      "state": "no-results",
+      "theme": "light",
+      "locale": "en",
+      "file": "no-results-light-en.png",
+      "observations": {
+        "rows": 0,
+        "empty_shown": 1,
+        "cause_stated": 1,
+        "state_code": "NO_RESULTS"
+      }
+    },
+    {
+      "state": "unresolved-register",
+      "theme": "light",
+      "locale": "en",
+      "file": "unresolved-register-light-en.png",
+      "observations": {
+        "rows": 46,
+        "program_filter_disabled": true,
+        "type_filter_disabled": true,
+        "header": "PUBLISHED PLACE"
+      }
+    },
+    {
+      "state": "stale-derived",
+      "theme": "dark",
+      "locale": "en",
+      "file": "stale-derived-dark-en.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "status",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "stale-derived",
+      "theme": "light",
+      "locale": "en",
+      "file": "stale-derived-light-en.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "status",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "stale-derived",
+      "theme": "dark",
+      "locale": "zh",
+      "file": "stale-derived-dark-zh.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "status",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "unavailable",
+      "theme": "dark",
+      "locale": "en",
+      "file": "unavailable-dark-en.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "alert",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "unavailable",
+      "theme": "light",
+      "locale": "en",
+      "file": "unavailable-light-en.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "alert",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "unavailable",
+      "theme": "dark",
+      "locale": "zh",
+      "file": "unavailable-dark-zh.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "alert",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "parser-shape-changed",
+      "theme": "dark",
+      "locale": "en",
+      "file": "parser-shape-changed-dark-en.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "alert",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "parser-shape-changed",
+      "theme": "light",
+      "locale": "en",
+      "file": "parser-shape-changed-light-en.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "alert",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    },
+    {
+      "state": "parser-shape-changed",
+      "theme": "dark",
+      "locale": "zh",
+      "file": "parser-shape-changed-dark-zh.png",
+      "observations": {
+        "banner_shown": 1,
+        "state_code_visible": true,
+        "role": "alert",
+        "counts_still_readable": "19,326",
+        "fixture": "SYNTHETIC \u2014 source_state/freshness overridden locally"
+      }
+    }
+  ]
+}

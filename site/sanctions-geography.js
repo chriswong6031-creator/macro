@@ -62,6 +62,11 @@
     tableBox: root.querySelector("[data-sg-tablebox]"),
     search: root.querySelector("[data-sg-search]"),
     sort: root.querySelector("[data-sg-sort]"),
+    view: root.querySelector("[data-sg-view]"),
+    program: root.querySelector("[data-sg-program]"),
+    type: root.querySelector("[data-sg-type]"),
+    change: root.querySelector("[data-sg-change]"),
+    thead: root.querySelector("[data-sg-thead]"),
     entries: root.querySelector("[data-sg-entries]"),
     entriesHead: root.querySelector("[data-sg-entries-head]"),
     changes: root.querySelector("[data-sg-changes]"),
@@ -73,8 +78,9 @@
 
   var model = {
     projection: null,
-    byGeo: {},          /* geo_id -> country row */
-    entriesByGeo: {},   /* geo_id -> [entry]     */
+    byGeo: {},          /* geo_id -> country row        */
+    entriesByGeo: {},   /* geo_id -> [entry]            */
+    typesByGeo: {},     /* geo_id -> {entity_type:true} */
     drawableIds: null,
     selected: null
   };
@@ -113,6 +119,20 @@
     var s = String(value || "");
     var bare = s.indexOf(":") >= 0 ? s.slice(s.indexOf(":") + 1) : s;
     return bare ? bare.slice(0, 12) : "—";
+  }
+
+  /* A delta may legally carry a correction with no entity-level name. Printing
+     an empty heading loses the one identifier that IS always present, so the
+     published UID becomes the visible name rather than a blank row. */
+  function displayName(record, target) {
+    var name = record && record.name ? String(record.name).trim() : "";
+    if (name) {
+      target.textContent = name;
+      return target;
+    }
+    return bi(target,
+      "OFAC UID " + (record && record.uid !== undefined ? record.uid : "—"),
+      "OFAC 编号 " + (record && record.uid !== undefined ? record.uid : "—"));
   }
 
   function stepFor(count) {
@@ -334,20 +354,135 @@
     ui.legend.appendChild(off);
   }
 
-  /* ---------------- country table ----------------------------------------- */
+  /* ---------------- country table + structured filters -------------------
+
+     Four filters beyond free text, each answering a question the register can
+     actually support, and none inferring anything the projection does not say:
+
+       view     — resolved boundaries (paintable) vs published places we could
+                  not place at all. These are two different registers, so they
+                  are a view switch rather than a filter on one list.
+       program  — a boundary is kept when the projection lists that program for
+                  it. The option list is the union the artifact itself carries.
+       type     — derived from the entries indexed under the boundary, never
+                  from a name or an address string.
+       change   — an explicit official add/remove in this window, or none.
+
+     When the view has no meaning for a control, the control is DISABLED rather
+     than silently ignored, so the UI never claims a filter it is not applying.
+  */
+
+  function fillSelect(select, values, labeller) {
+    if (!select) { return; }
+    while (select.options.length > 1) { select.remove(1); }
+    values.forEach(function (value) {
+      var opt = document.createElement("option");
+      opt.value = value;
+      var pair = labeller(value);
+      opt.setAttribute("data-label-en", pair[0]);
+      opt.setAttribute("data-label-zh", pair[1]);
+      opt.textContent = pair[0];
+      select.appendChild(opt);
+    });
+  }
+
+  var TYPE_ZH = { Individual: "个人", Entity: "实体", Vessel: "船舶", Aircraft: "航空器" };
+
+  function populateFilters(p) {
+    var boundariesPerProgram = {};
+    (p.countries || []).forEach(function (r) {
+      (r.programs || []).forEach(function (pr) {
+        var key = String(pr.program || "");
+        if (!key) { return; }
+        boundariesPerProgram[key] = (boundariesPerProgram[key] || 0) + 1;
+      });
+    });
+    var programs = Object.keys(boundariesPerProgram).sort();
+    fillSelect(ui.program, programs, function (value) {
+      var n = boundariesPerProgram[value];
+      return [value + " (" + n + ")", value + "（" + n + "）"];
+    });
+
+    var types = {};
+    (p.entries || []).forEach(function (e) {
+      if (e.entity_type) { types[String(e.entity_type)] = true; }
+    });
+    fillSelect(ui.type, Object.keys(types).sort(), function (value) {
+      return [value, TYPE_ZH[value] || value];
+    });
+  }
+
+  function currentView() {
+    return (ui.view && ui.view.value) === "unresolved" ? "unresolved" : "resolved";
+  }
+
+  function syncControls() {
+    var resolved = currentView() === "resolved";
+    [ui.program, ui.type, ui.change].forEach(function (control) {
+      if (!control) { return; }
+      control.disabled = !resolved;
+      control.setAttribute("aria-disabled", resolved ? "false" : "true");
+    });
+  }
+
+  function matchesText(haystack, q) {
+    return !q || haystack.toLowerCase().indexOf(q) >= 0;
+  }
+
+  function unresolvedRows() {
+    var p = model.projection;
+    var rows = (p.unresolved_geography || []).map(function (u) {
+      return { place: u.published_country, addresses: u.published_addresses, reason: "unplaced" };
+    });
+    if (model.drawableIds) {
+      (p.countries || []).forEach(function (r) {
+        if (!model.drawableIds[String(r.geo_id)]) {
+          rows.push({ place: r.country, addresses: r.published_addresses, reason: "nogeometry" });
+        }
+      });
+    }
+    return rows;
+  }
 
   function visibleRows() {
     var q = (ui.search && ui.search.value ? ui.search.value : "").trim().toLowerCase();
-    var rows = (model.projection.countries || []).slice();
-    if (q) {
-      rows = rows.filter(function (r) {
-        if (String(r.country || "").toLowerCase().indexOf(q) >= 0) { return true; }
-        return (r.programs || []).some(function (pr) {
-          return String(pr.program || "").toLowerCase().indexOf(q) >= 0;
-        });
-      });
-    }
     var mode = ui.sort && ui.sort.value ? ui.sort.value : "entries";
+
+    if (currentView() === "unresolved") {
+      var off = unresolvedRows().filter(function (r) {
+        return matchesText(String(r.place || ""), q);
+      });
+      off.sort(function (a, b) {
+        if (mode === "name") { return String(a.place).localeCompare(String(b.place)); }
+        return (Number(b.addresses) || 0) - (Number(a.addresses) || 0);
+      });
+      return off;
+    }
+
+    var program = ui.program && !ui.program.disabled ? ui.program.value : "";
+    var type = ui.type && !ui.type.disabled ? ui.type.value : "";
+    var change = ui.change && !ui.change.disabled ? ui.change.value : "";
+
+    var rows = (model.projection.countries || []).filter(function (r) {
+      var text = String(r.country || "") + " " + (r.programs || []).map(function (pr) {
+        return pr.program;
+      }).join(" ");
+      if (!matchesText(text, q)) { return false; }
+      if (program && !(r.programs || []).some(function (pr) { return pr.program === program; })) {
+        return false;
+      }
+      if (type) {
+        var seen = model.typesByGeo[String(r.geo_id)];
+        if (!seen || !seen[type]) { return false; }
+      }
+      if (change) {
+        var moved = (Number(r.added) || 0) + (Number(r.removed) || 0) > 0;
+        if (change === "changed" && !moved) { return false; }
+        if (change === "unchanged" && moved) { return false; }
+      }
+      return true;
+    });
+
     rows.sort(function (a, b) {
       if (mode === "name") { return String(a.country).localeCompare(String(b.country)); }
       if (mode === "changed") {
@@ -358,8 +493,36 @@
     return rows;
   }
 
+  function renderHead() {
+    if (!ui.thead) { return; }
+    clear(ui.thead);
+    var tr = el("tr");
+    function th(en, zh, right) {
+      var cell = el("th", right ? "sg-r" : null);
+      cell.setAttribute("scope", "col");
+      bi(cell, en, zh);
+      tr.appendChild(cell);
+    }
+    if (currentView() === "unresolved") {
+      th("Published place", "公开地点");
+      th("Addresses", "地址", true);
+      th("Why it is off the map", "无法上图的原因");
+    } else {
+      th("Boundary", "边界");
+      th("Entries", "条目", true);
+      th("Addresses", "地址", true);
+      th("Added / removed", "新增 / 移除", true);
+      th("Programs", "项目");
+    }
+    ui.thead.appendChild(tr);
+  }
+
   function renderTable() {
     if (!ui.tbody) { return; }
+    syncControls();
+    renderHead();
+    var unresolvedView = currentView() === "unresolved";
+    var columns = unresolvedView ? 3 : 5;
     var rows = visibleRows();
     clear(ui.tbody);
 
@@ -368,50 +531,75 @@
          says so and says why; it never synthesises a fact to fill the box. */
       var tr = el("tr");
       var td = el("td");
-      td.setAttribute("colspan", "5");
+      td.setAttribute("colspan", String(columns));
       var host = el("div");
       td.appendChild(host);
       tr.appendChild(td);
       ui.tbody.appendChild(tr);
       emptyState(host,
-        "No boundary matches that filter",
-        "没有符合该筛选的边界",
-        "Nothing in the current list names a country or program matching your text. Clear the filter to see all boundaries again.",
-        "当前名单中没有任何国家或项目与该文字匹配。清除筛选即可重新查看全部边界。");
-      /* The closed state vocabulary stays visible, but as a machine receipt in
-         mono beside the plain sentence — never inside it. */
+        "No row matches these filters",
+        "没有符合当前筛选的记录",
+        "Nothing in the current register matches every filter you have set. Widen one of them to see rows again.",
+        "当前登记册中没有同时满足所有筛选条件的记录。放宽其中一项即可重新看到内容。");
       code(host, "NO_RESULTS");
+      return;
+    }
+
+    if (unresolvedView) {
+      rows.forEach(function (r) {
+        var tr2 = el("tr");
+        var place = el("td");
+        var raw = String(r.place === undefined ? "" : r.place);
+        if (!raw.trim() || raw === "(blank)") {
+          bi(place, "Address names no country", "地址未填写国家");
+          code(place, raw.trim() ? raw : "(blank)");
+        } else {
+          place.textContent = raw;
+        }
+        tr2.appendChild(place);
+        tr2.appendChild(el("td", "sg-r", num(r.addresses)));
+        var why = el("td", "sg-unres");
+        if (r.reason === "nogeometry") {
+          bi(why, "Counted, but this boundary is not in the 110m map",
+                  "已计数，但 110m 地图中没有该边界");
+        } else {
+          bi(why, "No boundary matched this published country",
+                  "该公开国家未匹配到任何边界");
+        }
+        tr2.appendChild(why);
+        ui.tbody.appendChild(tr2);
+      });
       return;
     }
 
     rows.forEach(function (r) {
       var id = String(r.geo_id);
-      var tr = el("tr");
-      tr.setAttribute("tabindex", "0");
-      tr.setAttribute("data-geo-id", id);
-      if (model.selected === id) { tr.className = "is-on"; }
+      var tr3 = el("tr");
+      tr3.setAttribute("tabindex", "0");
+      tr3.setAttribute("data-geo-id", id);
+      if (model.selected === id) { tr3.className = "is-on"; }
 
-      tr.appendChild(el("td", null, r.country));
-      tr.appendChild(el("td", "sg-r", num(r.entries)));
-      tr.appendChild(el("td", "sg-r", num(r.published_addresses)));
+      tr3.appendChild(el("td", null, r.country));
+      tr3.appendChild(el("td", "sg-r", num(r.entries)));
+      tr3.appendChild(el("td", "sg-r", num(r.published_addresses)));
 
       var delta = el("td", "sg-r");
       var added = Number(r.added) || 0;
       var removed = Number(r.removed) || 0;
-      delta.textContent = (added || removed) ? ("+" + added + " / −" + removed) : "—";
-      tr.appendChild(delta);
+      delta.textContent = (added || removed) ? ("+" + added + " / \u2212" + removed) : "—";
+      tr3.appendChild(delta);
 
       var progs = (r.programs || []).slice(0, 2).map(function (pr) { return pr.program; });
       var extra = Math.max(0, (r.programs || []).length - progs.length);
-      var td = el("td", "sg-mono");
-      td.textContent = progs.join(", ") + (extra ? "  +" + extra : "");
-      tr.appendChild(td);
+      var td2 = el("td", "sg-mono");
+      td2.textContent = progs.join(", ") + (extra ? "  +" + extra : "");
+      tr3.appendChild(td2);
 
-      tr.addEventListener("click", function () { select(id); });
-      tr.addEventListener("keydown", function (ev) {
+      tr3.addEventListener("click", function () { select(id); });
+      tr3.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(id); }
       });
-      ui.tbody.appendChild(tr);
+      ui.tbody.appendChild(tr3);
     });
   }
 
@@ -441,7 +629,7 @@
 
   function entryCard(entry, geoId) {
     var box = el("div", "sg-entry");
-    box.appendChild(el("div", "sg-entry-n", entry.name));
+    box.appendChild(displayName(entry, el("div", "sg-entry-n")));
 
     var uid = el("div", "sg-entry-uid");
     uid.textContent = "OFAC UID " + entry.uid + " · " + (entry.entity_type || "—");
@@ -551,7 +739,7 @@
     }
     list.slice(0, MAX_CHANGE_ROWS).forEach(function (c) {
       var box = el("div", "sg-crow");
-      box.appendChild(el("div", "sg-crow-n", c.name));
+      box.appendChild(displayName(c, el("div", "sg-crow-n")));
       var meta = el("div", "sg-crow-m");
       meta.textContent = (c.published_at || "").slice(0, 10) + " · UID " + c.uid;
       box.appendChild(meta);
@@ -763,9 +951,15 @@
         "PARSER_SHAPE_CHANGED");
       return;
     }
-    if (state === "STALE" || String(fresh.stale_state || "").toUpperCase() === "STALE") {
-      var after = fresh.stale_after || "";
-      if (!after || new Date(after).getTime() <= Date.now()) {
+    /* The deterministic artifact carries source_state=CURRENT plus a
+       freshness.stale_after deadline: staleness is a fact about the CLOCK, so
+       it is derived from that deadline whenever it has passed, and an explicit
+       STALE label is still honoured on its own. */
+    var after = fresh.stale_after || "";
+    var deadlinePassed = !!after && new Date(after).getTime() <= Date.now();
+    var labelled = state === "STALE" || String(fresh.stale_state || "").toUpperCase() === "STALE";
+    if (labelled || deadlinePassed) {
+      {
         banner("stale",
           "This read is behind the official publication clock",
           "此读数已落后于官方发布时间",
@@ -783,6 +977,7 @@
     (p.countries || []).forEach(function (r) { model.byGeo[String(r.geo_id)] = r; });
 
     model.entriesByGeo = {};
+    model.typesByGeo = {};
     (p.entries || []).forEach(function (e) {
       var seen = {};
       (e.addresses || []).forEach(function (a) {
@@ -792,6 +987,10 @@
         seen[id] = true;
         if (!model.entriesByGeo[id]) { model.entriesByGeo[id] = []; }
         model.entriesByGeo[id].push(e);
+        if (e.entity_type) {
+          if (!model.typesByGeo[id]) { model.typesByGeo[id] = {}; }
+          model.typesByGeo[id][String(e.entity_type)] = true;
+        }
       });
     });
   }
@@ -807,19 +1006,22 @@
       var ph = ui.search.getAttribute(zh ? "data-ph-zh" : "data-ph-en");
       if (ph) { ui.search.setAttribute("placeholder", ph); }
     }
-    if (ui.sort) {
-      Array.prototype.forEach.call(ui.sort.options, function (opt) {
+    [ui.view, ui.program, ui.type, ui.change, ui.sort].forEach(function (select) {
+      if (!select) { return; }
+      Array.prototype.forEach.call(select.options, function (opt) {
         var label = opt.getAttribute(zh ? "data-label-zh" : "data-label-en");
         if (label) { opt.textContent = label; }
       });
-    }
+    });
   }
 
   function wire() {
     if (ui.search) { ui.search.addEventListener("input", renderTable); }
-    if (ui.sort) { ui.sort.addEventListener("change", renderTable); }
+    [ui.view, ui.program, ui.type, ui.change, ui.sort].forEach(function (control) {
+      if (control) { control.addEventListener("change", renderTable); }
+    });
     applyLang();
-    document.addEventListener("langchange", applyLang);
+    document.addEventListener("langchange", function () { applyLang(); renderTable(); });
   }
 
   function fail(reason) {
@@ -856,6 +1058,8 @@
       renderAsOf(p);
       renderProvenance(p);
       renderMap(p, out[1]);
+      populateFilters(p);
+      applyLang();
       renderTable();
       renderEntries();
       renderChanges(p);

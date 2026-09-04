@@ -33,6 +33,7 @@ What these tests defend, in the order the failures would hurt:
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -345,6 +346,92 @@ def test_zh_copy_carries_no_raw_english_state_enum(html):
 
 
 # --------------------------------------------------------------------------
+# 5b — repairs pinned by review; each of these shipped broken once
+# --------------------------------------------------------------------------
+
+def test_translation_strings_are_never_marked_safe():
+    """`|safe` on the bilingual macro turns every future translation string into
+    an injection surface to satisfy one bold clause. Emphasis is real markup."""
+    body = TPL.read_text(encoding="utf-8")
+    macro = re.search(r"\{%\s*macro\s+t\(.*?endmacro\s*%\}", body, re.S)
+    assert macro, "the bilingual macro is gone"
+    assert "|safe" not in macro.group(0), "t() must escape its arguments"
+    assert "<strong>" in body, "emphasis must exist as markup, not inside a string"
+
+
+def test_caveat_emphasis_survives_escaping(html):
+    """The bold clause must reach the browser as emphasis, not as literal tags."""
+    assert "&lt;b&gt;" not in html, "escaped markup is being shown to the reader"
+    assert re.search(r"<strong>.*?not a current location.*?</strong>", html, re.S)
+
+
+def test_seo_path_is_the_canonical_hyphenated_route():
+    body = TPL.read_text(encoding="utf-8")
+    assert 'seo_path = "sanctions-geography.html"' in body
+    assert 'seo_path = "sanctions_geography.html"' not in body
+
+
+def test_page_owns_its_own_canvas_from_tokens(css_text):
+    """theme.css does not paint <body>; a page that forgets ships dark panels on
+    the browser's white default, which a pixel sample of the first dark capture
+    confirmed. The frame is owned here, from tokens, for this page only."""
+    block = re.search(r"(?<![\w.\-])body\s*\{[^}]*\}", css_text)
+    assert block, "this page never sets a body frame"
+    assert "var(--bg)" in block.group(0), "canvas must come from the theme token"
+    assert "var(--text)" in block.group(0)
+
+
+def test_freshness_hook_and_source_hook_are_on_visible_elements(html):
+    """The canonical observer probes [data-asof] and [data-source]. Both must sit
+    on elements that are actually rendered, not inside a collapsed disclosure."""
+    assert re.search(r'<span[^>]*data-sg-asof[^>]*data-asof', html) or \
+           re.search(r'<span[^>]*data-asof[^>]*data-sg-asof', html)
+    prov = re.search(r'<div[^>]*data-sg-prov[^>]*>', html)
+    assert prov and "data-source" in prov.group(0), (
+        "the visible provenance rail must carry the source hook")
+
+
+@pytest.mark.parametrize("hook,label", [
+    ("data-sg-view", "register view"),
+    ("data-sg-program", "program"),
+    ("data-sg-type", "entry type"),
+    ("data-sg-change", "official change state"),
+    ("data-sg-sort", "sort"),
+])
+def test_every_required_filter_control_exists_and_is_labelled(html, hook, label):
+    tag = re.search(r"<select[^>]*%s[^>]*>" % re.escape(hook), html)
+    assert tag, f"missing the {label} control"
+    assert "aria-label=" in tag.group(0), f"the {label} control has no accessible name"
+
+
+def test_filters_are_disabled_rather_than_silently_ignored(js_text):
+    """A control the current view cannot apply must say so, or the UI is
+    claiming a filter it is not honouring."""
+    assert "syncControls" in js_text
+    assert "disabled" in js_text and "aria-disabled" in js_text
+
+
+def test_entry_type_filter_is_derived_from_entries_not_from_names(js_text):
+    assert "typesByGeo" in js_text
+    assert "entity_type" in js_text
+
+
+def test_staleness_is_derived_from_the_deadline_not_only_from_a_label(js_text):
+    """The deterministic artifact carries source_state=CURRENT plus a
+    freshness.stale_after deadline; staleness is a fact about the clock."""
+    assert "stale_after" in js_text
+    assert "deadlinePassed" in js_text, (
+        "staleness must be derived from the deadline, not only from an explicit label")
+
+
+def test_a_nameless_correction_row_still_shows_its_uid(js_text):
+    """Delta corrections may legally omit the entity-level name; a blank heading
+    would drop the one identifier that is always published."""
+    assert "displayName" in js_text
+    assert "OFAC UID " in js_text
+
+
+# --------------------------------------------------------------------------
 # 6 — shell, structure, accessibility
 # --------------------------------------------------------------------------
 
@@ -527,3 +614,85 @@ def test_rendered_site_page_carries_the_same_honest_semantics():
     assert "published address" in lowered
     assert out.count('<nav class="site-nav">') == 1
     assert len(re.findall(r"<h1\b", out)) == 1
+
+
+# --------------------------------------------------------------------------
+# 9 — the canonical theme-parity receipt (added to this lane's writer boundary
+#     by the operation's path ruling; verify_shots stays as working evidence)
+# --------------------------------------------------------------------------
+
+EVIDENCE_DIR = ROOT / "mockups" / "evidence" / "sanctions-geography"
+
+
+def _guard():
+    import scripts.check_ui_visual_evidence as guard
+    return guard
+
+
+def test_canonical_receipt_exists_and_carries_only_the_allowed_keys():
+    import yaml
+
+    receipt = EVIDENCE_DIR / "EVIDENCE.yml"
+    assert receipt.is_file(), "the canonical TP-0 receipt is missing"
+    data = yaml.safe_load(receipt.read_text(encoding="utf-8"))
+    guard = _guard()
+    assert set(data) == guard.RECEIPT_ALLOWED_KEYS, (
+        "an extra key on a receipt is a second evidence plane starting to grow")
+    assert data["schema"] == guard.RECEIPT_SCHEMA
+
+
+def test_receipt_owns_the_only_material_path_this_lane_adds():
+    """Only the stylesheet is a material UI change under the guard's three
+    shapes — the template carries no inline <style and the script injects no
+    rules — but the receipt must literally list whatever is material."""
+    import yaml
+
+    guard = _guard()
+    data = yaml.safe_load((EVIDENCE_DIR / "EVIDENCE.yml").read_text(encoding="utf-8"))
+    added = {
+        p: (TEMPLATES / pathlib_name).read_text(encoding="utf-8").splitlines()
+        for p, pathlib_name in (
+            ("templates/sanctions_geography.css", "sanctions_geography.css"),
+            ("templates/sanctions_geography.js", "sanctions_geography.js"),
+            ("templates/sanctions_geography.html.j2", "sanctions_geography.html.j2"),
+        )
+    }
+    material = guard.material_paths(added)
+    assert material, "expected the stylesheet to register as a material UI change"
+    for path in material:
+        assert path in data["changed_paths"], f"receipt does not own {path}"
+
+
+def test_referenced_manifest_carries_all_eight_rest_cells():
+    guard = _guard()
+    import yaml
+
+    data = yaml.safe_load((EVIDENCE_DIR / "EVIDENCE.yml").read_text(encoding="utf-8"))
+    record = guard.ReceiptRecord(
+        path="mockups/evidence/sanctions-geography/EVIDENCE.yml", data=data, error=None)
+    errors = guard.validate_manifest_evidence(record, ROOT)
+    assert not errors, "; ".join(errors)
+
+
+def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
+    """Interaction and degraded-source states, each with recorded DOM
+    assertions — a picture nobody can check is not evidence."""
+    log = EVIDENCE_DIR / "states" / "observations.json"
+    assert log.is_file(), "no state-evidence log"
+    payload = json.loads(log.read_text(encoding="utf-8"))
+    captured = {c["state"] for c in payload["captures"]}
+    for required in ("selected-boundary", "no-results", "unresolved-register",
+                     "stale-derived", "unavailable", "parser-shape-changed"):
+        assert required in captured, f"no browser evidence for {required}"
+    for cap in payload["captures"]:
+        assert (EVIDENCE_DIR / "states" / cap["file"]).is_file(), cap["file"]
+    by_state = {c["state"]: c["observations"] for c in payload["captures"]}
+    assert by_state["no-results"]["state_code"] == "NO_RESULTS"
+    assert by_state["selected-boundary"]["row_focusable"] is True
+    assert by_state["selected-boundary"]["map_path_selected"] == 1
+    assert by_state["unresolved-register"]["program_filter_disabled"] is True
+    for degraded in ("stale-derived", "unavailable", "parser-shape-changed"):
+        assert by_state[degraded]["state_code_visible"] is True
+        assert by_state[degraded]["banner_shown"] == 1
+        assert "SYNTHETIC" in by_state[degraded]["fixture"], (
+            "a degraded-state capture must declare its fixture, never imply a real outage")

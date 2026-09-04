@@ -23,11 +23,11 @@
   stylesheet block, no style attribute, and the page script injects no rules at
   runtime, so every visual decision stays inside the governed layer.
 #}
-{#- The house t() macro. `|safe` is load-bearing and matches report_base.html.j2
-    and _navlinks.html.j2: without it a caveat written with <b> ships its own
-    tags as visible text, which is exactly what the first browser pass caught. -#}
+{#- Dual-emit bilingual macro. It ESCAPES on purpose: marking arbitrary
+    translation strings safe would make every future string an injection surface
+    to satisfy one bold clause. Emphasis is real markup around the call instead. -#}
 {% macro t(en, zh='') -%}
-<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -37,7 +37,7 @@
 <title>Sanctions Geography — where the official OFAC list's published addresses point</title>
 {% set seo_title = "Sanctions Geography — Mastermind" %}
 {% set seo_desc = "Every country named by a published address on the U.S. Treasury OFAC Specially Designated Nationals list, with the source receipt behind each count." %}
-{% set seo_path = "sanctions_geography.html" %}
+{% set seo_path = "sanctions-geography.html" %}
 {%- include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -58,8 +58,8 @@
       <span class="sg-chip sg-chip--prog">{{ t('Context surface — not a screening service', '情境参考 — 非筛查服务') }}</span>
       <span class="sg-chip sg-chip--prog">{{ t('Read the register, then check the receipt', '先看登记，再核凭证') }}</span>
     </div>
-    <div class="sg-headmeta"><span class="dtp-asof sg-asof" data-sg-asof></span></div>
-    <div class="sg-prov sg-mono" data-sg-prov></div>
+    <div class="sg-headmeta"><span class="dtp-asof sg-asof" data-sg-asof data-asof></span></div>
+    <div class="sg-prov sg-mono" data-sg-prov data-source></div>
     <div data-sg-banner></div>
   </header>
 
@@ -71,9 +71,11 @@
       <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
       <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
     </div>
-    <p class="sg-caveat">{{ t(
-      '<b>These are addresses on a form, not a current location.</b> A count means the entry has at least one published address whose country field names that place. Nationality, citizenship, a vessel’s flag and a place of birth are separate fields on the same record and none of them is used here. A person or company listed with an address in a country need not be there now, or ever.',
-      '<b>这些是表单上的地址，并非当前位置。</b>某地的计数表示该条目至少有一条公开地址的国家字段指向该地。国籍、公民身份、船舶船旗与出生地是同一记录上的不同字段，本页一律不予采用。以某国地址列名的个人或公司，未必现在身处该地，也未必曾经身处该地。') }}</p>
+    <p class="sg-caveat"><strong>{{ t(
+      'These are addresses on a form, not a current location.',
+      '这些是表单上的地址，并非当前位置。') }}</strong> {{ t(
+      'A count means the entry has at least one published address whose country field names that place. Nationality, citizenship, a vessel’s flag and a place of birth are separate fields on the same record and none of them is used here. A person or company listed with an address in a country need not be there now, or ever.',
+      '某地的计数表示该条目至少有一条公开地址的国家字段指向该地。国籍、公民身份、船舶船旗与出生地是同一记录上的不同字段，本页一律不予采用。以某国地址列名的个人或公司，未必现在身处该地，也未必曾经身处该地。') }}</p>
   </section>
 
   <section class="sg-sec" aria-labelledby="sg-h-atlas">
@@ -96,7 +98,7 @@
         <div class="sg-panel-h">
           <h3>{{ t('Every named boundary', '全部被提及的边界') }}</h3>
         </div>
-        <div class="sg-filters">
+        <div class="sg-filters" role="group" aria-label="Filter and sort boundaries">
           {#- An <option> may contain text only: a dual-emit .l-en/.l-zh pair inside
               one renders as BOTH languages concatenated ("Most entries条目最多"),
               which the first browser pass caught. Form controls therefore use the
@@ -107,6 +109,21 @@
                  placeholder="Filter by country or program…"
                  data-ph-en="Filter by country or program…"
                  data-ph-zh="按国家或项目名称筛选…">
+          <select data-sg-view aria-label="Choose which register the table shows">
+            <option value="resolved" data-label-en="On the map" data-label-zh="已上图边界">On the map</option>
+            <option value="unresolved" data-label-en="Could not be placed" data-label-zh="无法定位">Could not be placed</option>
+          </select>
+          <select data-sg-program aria-label="Filter by sanctions program">
+            <option value="" data-label-en="Any program" data-label-zh="全部项目">Any program</option>
+          </select>
+          <select data-sg-type aria-label="Filter by entry type">
+            <option value="" data-label-en="Any entry type" data-label-zh="全部条目类型">Any entry type</option>
+          </select>
+          <select data-sg-change aria-label="Filter by official change in this window">
+            <option value="" data-label-en="Any change state" data-label-zh="全部变更状态">Any change state</option>
+            <option value="changed" data-label-en="Changed in this window" data-label-zh="本窗口内有变更">Changed in this window</option>
+            <option value="unchanged" data-label-en="No change in this window" data-label-zh="本窗口内无变更">No change in this window</option>
+          </select>
           <select data-sg-sort aria-label="Sort boundaries">
             <option value="entries" data-label-en="Most entries" data-label-zh="条目最多">Most entries</option>
             <option value="changed" data-label-en="Most recent change" data-label-zh="近期变更最多">Most recent change</option>
@@ -121,9 +138,9 @@
             <caption class="sg-sr">{{ t(
               'Boundaries named by a published address, with entry counts, address counts, official additions and removals, and programs.',
               '被公开地址提及的边界，含条目数、地址数、官方新增与移除，以及项目。') }}</caption>
-            <thead>
+            <thead data-sg-thead>
               <tr>
-                <th scope="col">{{ t('Boundary', '边界') }}</th>
+                <th scope="col" data-sg-col-place>{{ t('Boundary', '边界') }}</th>
                 <th scope="col" class="sg-r">{{ t('Entries', '条目') }}</th>
                 <th scope="col" class="sg-r">{{ t('Addresses', '地址') }}</th>
                 <th scope="col" class="sg-r">{{ t('Added / removed', '新增 / 移除') }}</th>

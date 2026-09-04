@@ -35,12 +35,12 @@
 
 
 <meta name="description" content="Every country named by a published address on the U.S. Treasury OFAC Specially Designated Nationals list, with the source receipt behind each count.">
-<link rel="canonical" href="https://www.mastermind-x.com/sanctions_geography.html">
+<link rel="canonical" href="https://www.mastermind-x.com/sanctions-geography.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
 <meta property="og:title" content="Sanctions Geography — Mastermind">
 <meta property="og:description" content="Every country named by a published address on the U.S. Treasury OFAC Specially Designated Nationals list, with the source receipt behind each count.">
-<meta property="og:url" content="https://www.mastermind-x.com/sanctions_geography.html">
+<meta property="og:url" content="https://www.mastermind-x.com/sanctions-geography.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Sanctions Geography — Mastermind">
@@ -309,8 +309,8 @@
       <span class="sg-chip sg-chip--prog"><span class="l-en">Context surface — not a screening service</span><span class="l-zh">情境参考 — 非筛查服务</span></span>
       <span class="sg-chip sg-chip--prog"><span class="l-en">Read the register, then check the receipt</span><span class="l-zh">先看登记，再核凭证</span></span>
     </div>
-    <div class="sg-headmeta"><span class="dtp-asof sg-asof" data-sg-asof></span></div>
-    <div class="sg-prov sg-mono" data-sg-prov></div>
+    <div class="sg-headmeta"><span class="dtp-asof sg-asof" data-sg-asof data-asof></span></div>
+    <div class="sg-prov sg-mono" data-sg-prov data-source></div>
     <div data-sg-banner></div>
   </header>
 
@@ -322,7 +322,7 @@
       <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
       <div class="sg-fig"><span class="sg-skel sg-skel--row"></span></div>
     </div>
-    <p class="sg-caveat"><span class="l-en"><b>These are addresses on a form, not a current location.</b> A count means the entry has at least one published address whose country field names that place. Nationality, citizenship, a vessel’s flag and a place of birth are separate fields on the same record and none of them is used here. A person or company listed with an address in a country need not be there now, or ever.</span><span class="l-zh"><b>这些是表单上的地址，并非当前位置。</b>某地的计数表示该条目至少有一条公开地址的国家字段指向该地。国籍、公民身份、船舶船旗与出生地是同一记录上的不同字段，本页一律不予采用。以某国地址列名的个人或公司，未必现在身处该地，也未必曾经身处该地。</span></p>
+    <p class="sg-caveat"><strong><span class="l-en">These are addresses on a form, not a current location.</span><span class="l-zh">这些是表单上的地址，并非当前位置。</span></strong> <span class="l-en">A count means the entry has at least one published address whose country field names that place. Nationality, citizenship, a vessel’s flag and a place of birth are separate fields on the same record and none of them is used here. A person or company listed with an address in a country need not be there now, or ever.</span><span class="l-zh">某地的计数表示该条目至少有一条公开地址的国家字段指向该地。国籍、公民身份、船舶船旗与出生地是同一记录上的不同字段，本页一律不予采用。以某国地址列名的个人或公司，未必现在身处该地，也未必曾经身处该地。</span></p>
   </section>
 
   <section class="sg-sec" aria-labelledby="sg-h-atlas">
@@ -343,11 +343,26 @@
         <div class="sg-panel-h">
           <h3><span class="l-en">Every named boundary</span><span class="l-zh">全部被提及的边界</span></h3>
         </div>
-        <div class="sg-filters"><input type="search" data-sg-search
+        <div class="sg-filters" role="group" aria-label="Filter and sort boundaries"><input type="search" data-sg-search
                  aria-label="Filter boundaries by country or program name"
                  placeholder="Filter by country or program…"
                  data-ph-en="Filter by country or program…"
                  data-ph-zh="按国家或项目名称筛选…">
+          <select data-sg-view aria-label="Choose which register the table shows">
+            <option value="resolved" data-label-en="On the map" data-label-zh="已上图边界">On the map</option>
+            <option value="unresolved" data-label-en="Could not be placed" data-label-zh="无法定位">Could not be placed</option>
+          </select>
+          <select data-sg-program aria-label="Filter by sanctions program">
+            <option value="" data-label-en="Any program" data-label-zh="全部项目">Any program</option>
+          </select>
+          <select data-sg-type aria-label="Filter by entry type">
+            <option value="" data-label-en="Any entry type" data-label-zh="全部条目类型">Any entry type</option>
+          </select>
+          <select data-sg-change aria-label="Filter by official change in this window">
+            <option value="" data-label-en="Any change state" data-label-zh="全部变更状态">Any change state</option>
+            <option value="changed" data-label-en="Changed in this window" data-label-zh="本窗口内有变更">Changed in this window</option>
+            <option value="unchanged" data-label-en="No change in this window" data-label-zh="本窗口内无变更">No change in this window</option>
+          </select>
           <select data-sg-sort aria-label="Sort boundaries">
             <option value="entries" data-label-en="Most entries" data-label-zh="条目最多">Most entries</option>
             <option value="changed" data-label-en="Most recent change" data-label-zh="近期变更最多">Most recent change</option>
@@ -358,9 +373,9 @@
         <div class="sg-tblwrap" data-sg-tablebox tabindex="0">
           <table class="sg-tbl">
             <caption class="sg-sr"><span class="l-en">Boundaries named by a published address, with entry counts, address counts, official additions and removals, and programs.</span><span class="l-zh">被公开地址提及的边界，含条目数、地址数、官方新增与移除，以及项目。</span></caption>
-            <thead>
+            <thead data-sg-thead>
               <tr>
-                <th scope="col"><span class="l-en">Boundary</span><span class="l-zh">边界</span></th>
+                <th scope="col" data-sg-col-place><span class="l-en">Boundary</span><span class="l-zh">边界</span></th>
                 <th scope="col" class="sg-r"><span class="l-en">Entries</span><span class="l-zh">条目</span></th>
                 <th scope="col" class="sg-r"><span class="l-en">Addresses</span><span class="l-zh">地址</span></th>
                 <th scope="col" class="sg-r"><span class="l-en">Added / removed</span><span class="l-zh">新增 / 移除</span></th>
@@ -416,7 +431,7 @@
       <summary><span class="l-en">Source files, hashes and rights behind every count above</span><span class="l-zh">上述所有计数背后的来源文件、哈希值与权利声明</span></summary>
       <div class="sg-disc-body">
         <p><span class="l-en">The only sanctions source is the U.S. Department of the Treasury Office of Foreign Assets Control Sanctions List Service. Boundary geometry is the tracked Natural Earth 110m asset already in this site, recorded by the project as public domain. Nothing on this page is generated by a model.</span><span class="l-zh">制裁数据的唯一来源是美国财政部外国资产控制办公室（OFAC）制裁名单服务。边界几何来自本站已有的 Natural Earth 110m 资源，该项目将其数据列为公有领域。本页所有内容均非由模型生成。</span></p>
-        <p class="sg-mono"><span class="l-en">Projection identity</span><span class="l-zh">投影标识</span> sha256:3134a431f05c6abff3bede7c30e363eed4f9c033af62de3ea2b1ad4b2f3680b3</p>
+        <p class="sg-mono"><span class="l-en">Projection identity</span><span class="l-zh">投影标识</span> sha256:5553e82532eaf6f42d024af142d2ceec6b16dcd2e1ad37d66fa26df020c13cbc</p>
         <div data-sg-source></div>
       </div>
     </details>

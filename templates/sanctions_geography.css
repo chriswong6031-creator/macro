@@ -19,7 +19,7 @@
    fill is DARKER than the white panel, ink on paper. Depth comes from hairline
    borders and a shallow shadow; the selection bloom becomes a ring, because a
    bloom on white is a stain. The clay --warn rung stamps onto white, and the
-   ramp tops out lower (62% vs 76%) because saturated clay above that muddies
+   ramp tops out lower (62% against dark's 86%) because saturated clay above that muddies
    against white instead of deepening.
 
    Mechanisms that intentionally differ: figure/ground inversion, bloom vs ring,
@@ -29,9 +29,20 @@
    Every colour derives from theme.css tokens; --up/--down are deliberately never
    used, because they swap in ZH (红涨绿跌) and a sanctions add is not "up".      */
 
-/* ---------- page frame ---------------------------------------------------- */
+/* ---------- page frame ----------------------------------------------------
+   theme.css defines the palette but does not paint <body>: in this estate every
+   standalone page sets its own canvas, and a page that forgets ships dark
+   panels on the browser's white default. The first capture did exactly that —
+   a pixel sample of the "dark" page canvas came back pure white — so the frame is
+   owned here, from tokens, for this page only.                              */
 
-.sg { max-width: 1360px; margin: 0 auto; padding: 0 18px 72px; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.55 var(--font-ui);
+  margin: 0; padding: 18px;
+}
+
+.sg { max-width: 1360px; margin: 0 auto; padding: 0 0 64px; }
 .sg *, .sg *::before, .sg *::after { box-sizing: border-box; }
 .sg .tnum { font-variant-numeric: tabular-nums; }
 
@@ -184,7 +195,9 @@
   background: var(--panel2); border: 1px solid var(--line);
   border-radius: var(--r-ctl, 8px); padding: 7px 10px; min-height: 40px; min-width: 0;
 }
-.sg-filters input { flex: 1 1 150px; }
+.sg-filters input { flex: 1 1 190px; }
+.sg-filters select { flex: 0 1 auto; }
+.sg-filters select:disabled { opacity: .45; cursor: not-allowed; }
 .sg-filters input:focus-visible, .sg-filters select:focus-visible {
   outline: 2px solid var(--link); outline-offset: 1px; border-color: var(--link);
 }
@@ -387,7 +400,8 @@ html[data-theme="light"] .sg-prov { background: var(--panel); }
 }
 
 @media (max-width: 640px) {
-  .sg { padding: 0 13px 56px; }
+  body { padding: 13px; }
+  .sg { padding: 0 0 48px; }
   .sg-detail { grid-template-columns: minmax(0, 1fr); }
   .sg-read { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sg-head h1 { font-size: var(--fs-h2); }

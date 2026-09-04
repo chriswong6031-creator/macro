@@ -1,0 +1,6 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/sanctions_geography.css
+  - templates/sanctions_geography.js
+  - templates/sanctions_geography.html.j2
+manifest: mockups/evidence/sanctions-geography/manifest.json
