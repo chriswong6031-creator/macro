@@ -38,6 +38,9 @@ owns_paths:
   - tests/test_us_candidate_episode_intake.py
   - tests/test_us_candidate_episode_reconciler.py
   - tests/test_us_candidate_episode_wiring.py
+  - engine/prophet_b2_disposition.py
+  - tests/test_prophet_b2_disposition.py
+  - research/prophet_v4/B2_0_DISPOSITION_AND_MUTATION_PACKET_2026-09-04.md
 depends_on:
   - WS:PROPHET-US-AVAILABILITY
   - WS:LIVE-ENTRY-RADAR
@@ -209,7 +212,11 @@ waves:
   - id: b2
     depends_on: [b1]
     title: "V4-B2 — entry-event correction hardening (B-15..B-19)"
-    status: todo
+    status: in_progress
+    next_action: >
+      B2-0 records packet frozen: the B-15..B-19 disposition matrix + correction/
+      supersession/PIT-replay/mutation law — see
+      research/prophet_v4/B2_0_DISPOSITION_AND_MUTATION_PACKET_2026-09-04.md.
   - id: b3
     depends_on: [b1]
     title: "V4-B3 — orthogonal lifecycle contract (4 independent state fields)"
