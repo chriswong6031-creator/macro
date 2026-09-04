@@ -1,11 +1,16 @@
 """Public /help directory integration and truth-boundary guards."""
 from __future__ import annotations
 
+import ast
 import re
+from dataclasses import replace
 from pathlib import Path
 
+import pytest
 import yaml
+from jinja2 import Environment, FileSystemLoader
 
+from lib.help_directory import HELP_LINKS, help_directory_view_model
 from scripts import build_public_pages
 
 
@@ -22,7 +27,12 @@ def test_public_builder_renders_help_directory(tmp_path: Path) -> None:
     assert 'id="help-search"' in html
     assert 'role="status"' in html
     assert 'data-empty-state="empty"' in html
-    assert 'data-unknown-state="unknown"' in html
+    assert 'data-unknown-state="unknown"' not in html
+    assert '>complete<' not in html
+    assert '>empty · 0<' not in html
+    assert '>unknown<' not in html
+    assert "Available" in html
+    assert "可用" in html
     assert "changelog" not in html.lower()
     assert "docs/site_semantics" not in html
 
@@ -76,6 +86,69 @@ def test_help_uses_strict_bilingual_markup_and_accessible_filters() -> None:
     assert '@media (max-width:600px)' in template
     assert 'html[data-theme="light"]' in template
     assert "style.textContent" not in template
+    assert 'class="sr-only"' not in template
+
+
+def test_mixed_unknown_entry_renders_beside_complete_owner_without_a_link() -> None:
+    unknown = replace(
+        HELP_LINKS[1],
+        id="methodology-status-unknown",
+        state="unknown",
+        href=None,
+        status_en="Availability unknown",
+        status_zh="可用性未知",
+    )
+    vm = help_directory_view_model(ROOT, entries=(HELP_LINKS[0], unknown))
+    env = Environment(loader=FileSystemLoader(ROOT / "templates"), autoescape=True)
+
+    html = env.get_template("help.html.j2").render(generated_utc="test", **vm)
+
+    assert 'id="help-market-reference" href="reference.html"' in html
+    unknown_card = re.search(
+        r'<article class="help-card" id="help-methodology-status-unknown"(?P<body>.*?)</article>',
+        html,
+        re.DOTALL,
+    )
+    assert unknown_card is not None
+    assert "href=" not in unknown_card.group(0)
+    assert 'aria-disabled="true"' in unknown_card.group(0)
+    assert "Availability unknown" in unknown_card.group(0)
+    assert "可用性未知" in unknown_card.group(0)
+    assert len(re.findall(r'<(?:a|article)\b[^>]*\sdata-help-card(?:\s|>)', html)) == 2
+
+
+def test_public_builder_defers_help_failure_until_other_public_pages_land(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _broken_help(_root: Path) -> dict:
+        raise ValueError("help source drift")
+
+    monkeypatch.setattr(build_public_pages, "help_directory_view_model", _broken_help)
+
+    with pytest.raises(ValueError, match="help source drift"):
+        build_public_pages.build(tmp_path)
+
+    assert not (tmp_path / "help.html").exists()
+    for name in ("plans.html", "support.html", "unsubscribe.html"):
+        assert (tmp_path / name).is_file(), name
+
+
+def test_full_site_builder_guards_help_as_an_additive_public_page() -> None:
+    tree = ast.parse((ROOT / "scripts" / "build_site.py").read_text(encoding="utf-8"))
+
+    guarded_calls = [
+        call
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Try)
+        for statement in node.body
+        for call in ast.walk(statement)
+        if isinstance(call, ast.Call)
+        and isinstance(call.func, ast.Name)
+        and call.func.id == "build_help_page"
+    ]
+
+    assert len(guarded_calls) == 1
 
 
 def test_help_is_discoverable_in_shared_public_nav() -> None:

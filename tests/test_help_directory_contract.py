@@ -100,6 +100,25 @@ def test_unknown_entry_is_explicit_and_cannot_inherit_a_link() -> None:
     }]
 
 
+def test_unknown_entry_does_not_hide_complete_siblings() -> None:
+    """A degraded owner stays local to its card instead of blanking the directory."""
+    unknown = replace(
+        HELP_LINKS[1],
+        id="methodology-status-unknown",
+        state="unknown",
+        href=None,
+        status_en="Availability unknown",
+        status_zh="可用性未知",
+    )
+
+    model = help_directory_view_model(ROOT, entries=(HELP_LINKS[0], unknown))
+
+    assert model["directory_state"] == "complete"
+    assert [entry["state"] for entry in model["entries"]] == ["complete", "unknown"]
+    assert model["entries"][0]["href"] == "reference.html"
+    assert model["entries"][1]["href"] is None
+
+
 def test_validation_rejects_empty_chinese_label() -> None:
     """Breaks if a missing Chinese label can reach a fallback-capable view."""
     entry = replace(HELP_LINKS[0], label_zh="")
@@ -132,6 +151,22 @@ def test_validation_rejects_unapproved_complete_url() -> None:
     entry = replace(HELP_LINKS[0], href="https://example.com/reference.html")
 
     with pytest.raises(ValueError, match="unapproved href"):
+        validate_help_directory(ROOT, entries=(entry,))
+
+
+def test_validation_rejects_missing_local_target() -> None:
+    """A syntactically valid local typo cannot become a clickable destination."""
+    entry = replace(HELP_LINKS[0], href="reference-typo.html")
+
+    with pytest.raises(ValueError, match="target template is unavailable"):
+        validate_help_directory(ROOT, entries=(entry,))
+
+
+def test_validation_rejects_non_string_source_template() -> None:
+    """Malformed metadata returns the contract error rather than leaking Path's TypeError."""
+    entry = replace(HELP_LINKS[0], source_template=None)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="invalid source_template"):
         validate_help_directory(ROOT, entries=(entry,))
 
 

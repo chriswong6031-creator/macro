@@ -4,7 +4,7 @@
 {%- endmacro %}
 {% macro t_text(en, zh) -%}{{ en }} / {{ zh }}{%- endmacro %}
 <!DOCTYPE html>
-<html lang="en" data-directory-state="{{ directory_state }}">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -36,13 +36,15 @@ a{color:inherit;text-decoration:none}
 .help-filter{min-height:44px;padding:8px 13px;border:1px solid var(--line);border-radius:var(--r-pill,999px);background:transparent;color:var(--muted);font:650 12px/1 var(--font-ui);cursor:pointer}
 .help-filter:hover,.help-filter[aria-pressed="true"]{border-color:color-mix(in srgb,var(--link) 65%,var(--line));color:var(--text);background:var(--panel2)}
 .help-meta{display:flex;justify-content:space-between;gap:16px;margin:0 0 13px;color:var(--muted);font:600 11px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
-.help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:transparent;border-top:1px solid var(--line)}
-.help-card{min-width:0;min-height:138px;padding:21px 22px;background:var(--bg);border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between;gap:24px;transition:background .16s ease,transform .16s ease}
-.help-card:nth-child(odd){border-right:1px solid var(--line)}
+.help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.help-card{min-width:0;min-height:138px;padding:21px 22px;background:var(--bg);display:flex;flex-direction:column;justify-content:space-between;gap:24px;transition:background .16s ease,transform .16s ease}
 .help-card:hover,.help-card:focus-visible{background:var(--panel);outline:none;transform:translateY(-1px)}
 .help-card[hidden]{display:none}
 .help-card-top{display:flex;align-items:center;gap:10px;color:var(--muted);font:650 10px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
 .help-state{margin-left:auto;color:var(--ink-ok,var(--ok));letter-spacing:.04em}
+.help-card[data-entry-state="unknown"]{cursor:not-allowed}
+.help-card[data-entry-state="unknown"] .help-state{color:var(--muted)}
+.help-card[data-entry-state="unknown"]:hover{transform:none}
 .help-card-title{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;font:680 clamp(18px,2.3vw,24px)/1.2 var(--font-ui);letter-spacing:-.02em}
 .help-arrow{color:var(--link);font:400 24px/1 var(--font-ui);transition:transform .16s ease}
 .help-card:hover .help-arrow{transform:translateX(3px)}
@@ -69,7 +71,6 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
   .help-hero::before{left:0;top:8px;bottom:28px}
   .help-grid{grid-template-columns:1fr}
   .help-card{min-height:118px;padding:18px}
-  .help-card:nth-child(odd){border-right:0}
   html[data-theme="light"] .help-grid{gap:10px}
 }
 @media (prefers-reduced-motion:reduce){.help-card,.help-arrow{transition:none}.help-card:hover{transform:none}}
@@ -87,20 +88,19 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
     <p class="help-owners">{{ t('Market Reference', '市场参考') }} · {{ t('Methodology', '方法论') }} · {{ t('Support', '支持') }} · {{ t('Account', '账户') }}</p>
   </header>
 
-  {% if directory_state != 'unknown' %}
+{% if entries %}
   <section class="help-controls" aria-label="{{ t_text('Search and filter', '搜索与筛选') }}">
-    <label class="help-search" for="help-search">
-      <span class="sr-only">{{ t('Search', '搜索') }}</span>
+    <div class="help-search">
       <input id="help-search" type="search" autocomplete="off"
              aria-label="{{ t_text('Search', '搜索') }}"
              data-ph-en="Search" data-ph-zh="搜索" placeholder="Search">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
-    </label>
+    </div>
     <div class="help-filters" role="group" aria-label="{{ t_text('Filter', '筛选') }}">
       <button class="help-filter" type="button" data-category="all" aria-pressed="true">{{ t('All', '全部') }}</button>
-      {% for category in categories %}
+{% for category in categories %}
       <button class="help-filter" type="button" data-category="{{ category.id }}" aria-pressed="false">{{ t(category.label_en, category.label_zh) }}</button>
-      {% endfor %}
+{% endfor %}
     </div>
   </section>
 
@@ -109,27 +109,26 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
     <span id="help-result-count" role="status" aria-live="polite">{{ entries|length }}</span>
   </div>
   <section class="help-grid" aria-label="{{ t_text('Help', '帮助') }}">
-    {% for entry in entries %}
-      {% if entry.state == 'complete' %}
+{% for entry in entries %}
+{% if entry.state == 'complete' %}
       <a class="help-card" id="help-{{ entry.id }}" href="{{ entry.href }}"
-         data-help-card data-category="{{ entry.category }}"
+         data-help-card data-entry-state="complete" data-category="{{ entry.category }}"
          data-search="{{ entry.label_en|lower }} {{ entry.label_zh }} {{ entry.href|lower }}">
-        <span class="help-card-top">{{ t(entry.category_en, entry.category_zh) }}<span class="help-state">complete</span></span>
+        <span class="help-card-top">{{ t(entry.category_en, entry.category_zh) }}<span class="help-state">{{ t('Available', '可用') }}</span></span>
         <strong class="help-card-title">{{ t(entry.label_en, entry.label_zh) }}<span class="help-arrow" aria-hidden="true">↗</span></strong>
       </a>
-      {% else %}
-      <article class="help-card" id="help-{{ entry.id }}" data-help-card data-category="{{ entry.category }}" data-search="{{ entry.label_en|lower }} {{ entry.label_zh }}" aria-disabled="true">
-        <span class="help-card-top">{{ t(entry.category_en, entry.category_zh) }}<span class="help-state">unknown</span></span>
+{% else %}
+      <article class="help-card" id="help-{{ entry.id }}" data-help-card data-entry-state="unknown" data-category="{{ entry.category }}" data-search="{{ entry.label_en|lower }} {{ entry.label_zh }}" aria-disabled="true">
+        <span class="help-card-top">{{ t(entry.category_en, entry.category_zh) }}<span class="help-state">{{ t(entry.status_en, entry.status_zh) }}</span></span>
         <strong class="help-card-title">{{ t(entry.label_en, entry.label_zh) }}</strong>
       </article>
-      {% endif %}
-    {% endfor %}
+{% endif %}
+{% endfor %}
   </section>
-  <div class="help-state-panel" data-empty-state="empty" role="status" aria-live="polite" hidden>empty · 0</div>
-  {% else %}
-  <div class="help-state-panel" data-unknown-state="unknown" role="status" aria-live="polite">unknown</div>
-  {% endif %}
-  {% if directory_state != 'unknown' %}<div data-unknown-state="unknown" hidden></div>{% endif %}
+  <div class="help-state-panel" data-empty-state="empty" role="status" aria-live="polite" hidden>{{ t('No matching links', '没有匹配链接') }} · 0</div>
+{% else %}
+  <div class="help-state-panel" data-empty-state="empty" role="status" aria-live="polite">{{ t('No links available', '暂无可用链接') }} · 0</div>
+{% endif %}
 </main>
 
 {% include "_public_footer.html.j2" %}
@@ -139,8 +138,9 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
 (function(){
   'use strict';
   var root=document.getElementById('help-directory');
-  if(!root||root.getAttribute('data-directory-state')==='unknown')return;
+  if(!root)return;
   var query=document.getElementById('help-search');
+  if(!query)return;
   var count=document.getElementById('help-result-count');
   var empty=root.querySelector('[data-empty-state]');
   var cards=Array.prototype.slice.call(root.querySelectorAll('[data-help-card]'));
@@ -148,16 +148,19 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
   var category='all';
   function normal(value){return (value||'').toLocaleLowerCase().trim();}
   function paint(){
-    var needle=normal(query.value), visible=0;
+    var needle=normal(query.value), visible=0, completeVisible=0;
     cards.forEach(function(card){
       var categoryMatch=category==='all'||card.getAttribute('data-category')===category;
       var searchMatch=!needle||normal(card.getAttribute('data-search')).indexOf(needle)!==-1;
       card.hidden=!(categoryMatch&&searchMatch);
-      if(!card.hidden)visible+=1;
+      if(!card.hidden){
+        visible+=1;
+        if(card.getAttribute('data-entry-state')==='complete')completeVisible+=1;
+      }
     });
     count.textContent=String(visible);
     empty.hidden=visible!==0;
-    root.setAttribute('data-directory-state',visible?'complete':'empty');
+    root.setAttribute('data-directory-state',visible?(completeVisible?'complete':'unknown'):'empty');
   }
   buttons.forEach(function(button){button.addEventListener('click',function(){
     category=button.getAttribute('data-category');

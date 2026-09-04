@@ -109,16 +109,27 @@ def build(site=None) -> None:
     )
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
-    # Help is fail-closed: its fixed links render only after every bilingual label
-    # is still present in its declared owner. Never retain stale directory bytes.
-    help_vm = help_directory_view_model(config.ROOT)
-    write_page(
-        site / "help.html",
-        env.get_template("help.html.j2").render(
-            generated_utc=generated,
-            **help_vm,
-        ),
-    )
+    # Help itself is fail-closed, but it is additive: source drift must not keep
+    # pricing, support, or unsubscribe from rendering. Defer its failure until
+    # those independent pages land, exactly as the plans path does below.
+    help_error: Exception | None = None
+    help_vm: dict | None = None
+    try:
+        help_vm = help_directory_view_model(config.ROOT)
+        write_page(
+            site / "help.html",
+            env.get_template("help.html.j2").render(
+                generated_utc=generated,
+                **help_vm,
+            ),
+        )
+    except Exception as exc:  # noqa: BLE001 — re-raised after the other pages land
+        help_error = exc
+        print(
+            "::error title=help-source::help page NOT rebuilt — "
+            f"{str(exc).splitlines()[0] if str(exc) else type(exc).__name__}",
+            flush=True,
+        )
 
     # The plans page is the only remaining page that reads mutable product config. A malformed
     # config/brain.yml or config/plans.yml must not take support.html, unsubscribe.html and
@@ -149,8 +160,11 @@ def build(site=None) -> None:
             generated_utc=generated
         ),
     )
+    if help_error is not None:
+        raise help_error
     if plans_error is not None:
         raise plans_error
+    assert help_vm is not None
     log.info(
         "wrote public pages (help=%s links · Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
         len(help_vm["entries"]),

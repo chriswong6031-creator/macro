@@ -5731,10 +5731,14 @@ def main() -> int:
         build_support_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("support page failed: %s", e)
-    build_help_page(env, site, generated)
+    try:
+        build_help_page(env, site, generated)
+        _tmark("help_page")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("help page failed: %s", e)
     try:
         build_unsubscribe_page(env, site, generated)
-        _tmark("plans_help_support_unsub_pages")
+        _tmark("plans_support_unsub_pages")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("unsubscribe page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +

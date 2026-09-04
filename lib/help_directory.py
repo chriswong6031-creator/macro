@@ -12,6 +12,7 @@ from html import unescape
 from pathlib import Path
 import re
 from typing import Any, Iterable, Literal
+from urllib.parse import urlsplit
 
 
 LinkState = Literal["complete", "unknown"]
@@ -129,10 +130,11 @@ def _is_approved_href(href: str) -> bool:
 
 
 def _source_path(root: Path, entry: HelpLink) -> Path:
+    if not isinstance(entry.source_template, str):
+        raise ValueError(f"help entry {entry.id!r}: invalid source_template")
     source = Path(entry.source_template)
     if (
-        not isinstance(entry.source_template, str)
-        or source.is_absolute()
+        source.is_absolute()
         or not source.parts
         or source.parts[0] != "templates"
         or ".." in source.parts
@@ -152,6 +154,24 @@ def _validate_source_labels(root: Path, entry: HelpLink) -> None:
             raise ValueError(
                 f"help entry {entry.id!r}: source template {entry.source_template} missing {field}"
             )
+
+
+def _validate_local_target(root: Path, entry: HelpLink) -> None:
+    """Bind relative destinations to a committed public-page template.
+
+    The public render may run from a sparse worktree where ``site/`` is omitted,
+    so the governed source template — not a possibly absent generated copy — is
+    the stable existence check.
+    """
+    if entry.href == _APP_SIGNIN_URL:
+        return
+    assert entry.href is not None  # complete-entry validation runs first
+    target = Path(urlsplit(entry.href).path)
+    template = root / "templates" / f"{target.as_posix()}.j2"
+    if not template.is_file():
+        raise ValueError(
+            f"help entry {entry.id!r}: target template is unavailable: {template}"
+        )
 
 
 def validate_help_directory(root: Path, entries: Iterable[HelpLink] = HELP_LINKS) -> None:
@@ -187,6 +207,8 @@ def validate_help_directory(root: Path, entries: Iterable[HelpLink] = HELP_LINKS
                     raise ValueError(f"help entry {entry.id!r}: unknown entries require {field}")
 
         _validate_source_labels(root, entry)
+        if entry.state == "complete":
+            _validate_local_target(root, entry)
 
 
 def help_directory_view_model(
@@ -198,7 +220,7 @@ def help_directory_view_model(
     validate_help_directory(root, entries)
     if not entries:
         directory_state = "empty"
-    elif any(entry.state == "unknown" for entry in entries):
+    elif all(entry.state == "unknown" for entry in entries):
         directory_state = "unknown"
     else:
         directory_state = "complete"
