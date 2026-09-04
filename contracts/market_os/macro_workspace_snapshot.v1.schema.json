@@ -1,0 +1,647 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_os/macro_workspace_snapshot.v1.schema.json",
+  "title": "mastermind.macro_workspace_snapshot.v1",
+  "description": "Market OS F01 shared Macro & Monetary workspace projection contract. One region's compiled, owner-backed, DISPLAY-ONLY snapshot for one of the twelve closed macro workspace identities. It is a derived projection over canonical macro owners (regime, conditions, liquidity, plumbing, rates), NOT a new truth store: it persists no owner truth, accepts no user writes, and carries no rank/gate/size/trade authority (authority.can_* all false, axis_authority_ceiling DESCRIPTIVE). Closed at every level: additionalProperties:false throughout, closed freshness (7.6) and null (7.7) vocabularies, closed workspace-id / evidence-class / assumption vocabularies. Missing is never zero/neutral/calm: every absence carries a typed null_reason and every clock is distinct (7.5). Unknown top-level keys and unsupported schema versions fail closed in every consumer. content_sha256 is a canonical-JSON digest over the whole snapshot EXCLUDING the volatile generation identity/wall-clock fields (generation.generation_id, generation.built_at, generation.rendered_at, generation.content_sha256) so an identical owner input reproduces an identical digest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "workspace", "region", "generation", "authority", "availability",
+    "headline", "axes", "metrics", "series", "drivers", "changes", "implications",
+    "scenario_contract", "alert_contract", "sources", "corrections", "learning"
+  ],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "version"],
+      "properties": {
+        "contract": { "const": "mastermind.macro_workspace_snapshot.v1" },
+        "version": { "const": "1.0.0" }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "subtitle"],
+      "properties": {
+        "id": { "$ref": "#/$defs/workspaceId" },
+        "title": { "$ref": "#/$defs/bilingualText" },
+        "subtitle": { "$ref": "#/$defs/bilingualText" }
+      }
+    },
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "supported", "display_name"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[A-Z]{2,3}(-[A-Z0-9]+)?$" },
+        "supported": { "type": "boolean" },
+        "display_name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation_id", "built_at", "rendered_at", "producer", "code_version",
+        "calculation_as_of", "content_sha256"
+      ],
+      "properties": {
+        "generation_id": { "type": "string", "minLength": 1 },
+        "built_at": { "type": "string", "format": "date-time" },
+        "rendered_at": { "type": ["string", "null"] },
+        "producer": { "type": "string", "minLength": 1 },
+        "code_version": { "type": ["string", "null"] },
+        "calculation_as_of": { "type": ["string", "null"] },
+        "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class", "display_only", "can_rank", "can_gate", "can_size",
+        "can_originate_signal", "can_execute", "axis_authority_ceiling"
+      ],
+      "properties": {
+        "class": { "const": "context_only" },
+        "display_only": { "const": true },
+        "can_rank": { "const": false },
+        "can_gate": { "const": false },
+        "can_size": { "const": false },
+        "can_originate_signal": { "const": false },
+        "can_execute": { "const": false },
+        "axis_authority_ceiling": { "const": "DESCRIPTIVE" }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "required", "degraded", "coverage_ratio", "worst_freshness",
+        "contradiction", "reasons"
+      ],
+      "properties": {
+        "state": { "$ref": "#/$defs/freshnessState" },
+        "required": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/componentAvailability" }
+        },
+        "degraded": { "type": "array", "items": { "type": "string" } },
+        "coverage_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "worst_freshness": { "$ref": "#/$defs/freshnessState" },
+        "contradiction": { "$ref": "#/$defs/contradictionBlock" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "headline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state_id", "state_label", "subtitle", "method_version", "effective_date",
+        "quadrant", "prior_state", "transition_distance", "nearest_boundary",
+        "one_month_vector", "hysteresis", "status", "null_reason"
+      ],
+      "properties": {
+        "state_id": { "type": ["string", "null"], "enum": ["A", "B", "C", "D", null] },
+        "state_label": { "$ref": "#/$defs/nullableBilingual" },
+        "subtitle": { "$ref": "#/$defs/bilingualText" },
+        "method_version": { "type": "string", "minLength": 1 },
+        "effective_date": { "type": ["string", "null"] },
+        "quadrant": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "x_status", "y_status"],
+          "properties": {
+            "x": { "type": ["number", "null"] },
+            "y": { "type": ["number", "null"] },
+            "x_status": { "$ref": "#/$defs/presenceState" },
+            "y_status": { "$ref": "#/$defs/presenceState" }
+          }
+        },
+        "prior_state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state_id", "effective_date", "method_version"],
+          "properties": {
+            "state_id": { "type": ["string", "null"], "enum": ["A", "B", "C", "D", null] },
+            "effective_date": { "type": ["string", "null"] },
+            "method_version": { "type": ["string", "null"] }
+          }
+        },
+        "transition_distance": { "type": ["number", "null"] },
+        "nearest_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["axis", "distance", "null_reason"],
+          "properties": {
+            "axis": { "type": ["string", "null"] },
+            "distance": { "type": ["number", "null"] },
+            "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+          }
+        },
+        "one_month_vector": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dx", "dy", "status", "null_reason"],
+          "properties": {
+            "dx": { "type": ["number", "null"] },
+            "dy": { "type": ["number", "null"] },
+            "status": { "$ref": "#/$defs/presenceState" },
+            "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+          }
+        },
+        "hysteresis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["band", "applied", "held_prior", "note"],
+          "properties": {
+            "band": { "type": "number", "minimum": 0 },
+            "applied": { "type": "boolean" },
+            "held_prior": { "type": "boolean" },
+            "note": { "type": "string" }
+          }
+        },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+      }
+    },
+    "axes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/axis" } }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/metric" } }
+      }
+    },
+    "series": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "status", "null_reason"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/seriesEntry" } },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+      }
+    },
+    "drivers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rate_side", "balance_sheet"],
+      "properties": {
+        "rate_side": { "type": "array", "items": { "$ref": "#/$defs/driver" } },
+        "balance_sheet": { "type": "array", "items": { "$ref": "#/$defs/driver" } }
+      }
+    },
+    "changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparability", "prior_generation_id", "prior_effective_date",
+        "prior_method_version", "deltas", "status", "null_reason"
+      ],
+      "properties": {
+        "comparability": {
+          "enum": ["COMPARABLE", "NO_PRIOR", "METHOD_CHANGED", "DEFINITION_INCOMPARABLE"]
+        },
+        "prior_generation_id": { "type": ["string", "null"] },
+        "prior_effective_date": { "type": ["string", "null"] },
+        "prior_method_version": { "type": ["string", "null"] },
+        "deltas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["metric_id", "prior_value", "current_value", "delta", "note"],
+            "properties": {
+              "metric_id": { "type": "string" },
+              "prior_value": { "type": ["number", "string", "null"] },
+              "current_value": { "type": ["number", "string", "null"] },
+              "delta": { "type": ["number", "null"] },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+      }
+    },
+    "implications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/implication" } }
+      }
+    },
+    "scenario_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_available", "result_schema", "assumptions", "status", "note"],
+      "properties": {
+        "execution_available": { "const": false },
+        "result_schema": { "const": "mastermind.macro_workspace_scenario_result.v1" },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["assumption_id", "label", "unit", "step", "min", "max", "owner_field"],
+            "properties": {
+              "assumption_id": { "type": "string", "minLength": 1 },
+              "label": { "$ref": "#/$defs/bilingualText" },
+              "unit": { "type": "string" },
+              "step": { "type": "number" },
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "owner_field": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "note": { "type": "string" }
+      }
+    },
+    "alert_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service_available", "eligible_conditions", "status", "note"],
+      "properties": {
+        "service_available": { "const": false },
+        "eligible_conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["condition_id", "kind", "label", "params"],
+            "properties": {
+              "condition_id": { "type": "string", "minLength": 1 },
+              "kind": {
+                "enum": [
+                  "state_transition", "boundary_approach", "component_shock",
+                  "source_stale_or_failed", "source_revision", "release_approaching",
+                  "contradiction_change"
+                ]
+              },
+              "label": { "$ref": "#/$defs/bilingualText" },
+              "params": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "note": { "type": "string" }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/source" } }
+      }
+    },
+    "corrections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["predecessor_generation_id", "changed_fingerprints", "correction_state", "note"],
+      "properties": {
+        "predecessor_generation_id": { "type": ["string", "null"] },
+        "changed_fingerprints": { "type": "array", "items": { "type": "string" } },
+        "correction_state": { "enum": ["none", "corrected", "superseded"] },
+        "note": { "type": "string" }
+      }
+    },
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instrumentation", "event_names", "privacy_note"],
+      "properties": {
+        "instrumentation": { "const": "first_party" },
+        "event_names": { "type": "array", "items": { "type": "string" } },
+        "privacy_note": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "workspaceId": {
+      "enum": [
+        "liquidity_regime", "growth_real_economy", "capital_structure",
+        "business_activity", "labor_markets", "inflation_system", "monetary_policy",
+        "financial_conditions", "liquidity_central_banks", "housing_real_estate",
+        "consumer_payments", "national_debt_liabilities"
+      ]
+    },
+    "freshnessState": {
+      "enum": [
+        "CURRENT", "LATE_WITHIN_TOLERANCE", "STALE_SOURCE", "NOT_YET_RELEASED",
+        "SOURCE_FAILED", "RIGHTS_BLOCKED", "NOT_COVERED", "HISTORICAL_AS_KNOWN",
+        "SIMULATED"
+      ]
+    },
+    "nullReason": {
+      "enum": [
+        "UNKNOWN", "NOT_APPLICABLE", "NOT_YET_RELEASED", "SOURCE_FAILED",
+        "RIGHTS_BLOCKED", "INSUFFICIENT_HISTORY", "WARMUP",
+        "REVISION_PENDING_REBUILD", "DISAGREEMENT", "COMPUTATION_REFUSED",
+        "OUT_OF_REGION", "NOT_COVERED"
+      ]
+    },
+    "nullReasonOrNull": {
+      "type": ["string", "null"],
+      "enum": [
+        "UNKNOWN", "NOT_APPLICABLE", "NOT_YET_RELEASED", "SOURCE_FAILED",
+        "RIGHTS_BLOCKED", "INSUFFICIENT_HISTORY", "WARMUP",
+        "REVISION_PENDING_REBUILD", "DISAGREEMENT", "COMPUTATION_REFUSED",
+        "OUT_OF_REGION", "NOT_COVERED", null
+      ]
+    },
+    "presenceState": {
+      "enum": ["PRESENT", "PARTIAL", "ABSENT", "DISAGREEMENT"]
+    },
+    "evidenceClass": {
+      "enum": [
+        "DESCRIPTIVE", "HISTORICAL_ASSOCIATION", "MECHANISM_SUPPORTED", "MODEL_HYPOTHESIS"
+      ]
+    },
+    "confidenceBand": {
+      "type": ["string", "null"],
+      "enum": ["LOW", "MEDIUM", "HIGH", null]
+    },
+    "valueType": {
+      "enum": [
+        "number", "percent", "ratio", "basis_points", "currency_bn", "index",
+        "z_score", "score_0_100", "categorical", "count"
+      ]
+    },
+    "rightsState": {
+      "enum": ["OPEN", "RIGHTS_BLOCKED", "UNKNOWN"]
+    },
+    "bilingualText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "zh": { "type": ["string", "null"] }
+      }
+    },
+    "nullableBilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh"],
+      "properties": {
+        "en": { "type": ["string", "null"] },
+        "zh": { "type": ["string", "null"] }
+      }
+    },
+    "componentAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "label", "required", "freshness", "status", "source_asof", "null_reason"],
+      "properties": {
+        "component_id": { "type": "string", "minLength": 1 },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "required": { "type": "boolean" },
+        "freshness": { "$ref": "#/$defs/freshnessState" },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "source_asof": { "type": ["string", "null"] },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+      }
+    },
+    "contradictionBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "kind", "en", "zh", "components"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "kind": { "type": ["string", "null"] },
+        "en": { "type": ["string", "null"] },
+        "zh": { "type": ["string", "null"] },
+        "components": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "axis_id", "label", "direction_semantics", "value", "value_status",
+        "null_reason", "components", "weights_law", "transformation",
+        "min_components", "coverage_floor", "components_available",
+        "frequency_alignment", "thresholds", "definition_version", "data_version",
+        "revision_behavior", "authority_ceiling", "freshness"
+      ],
+      "properties": {
+        "axis_id": { "enum": ["funding_pressure", "balance_sheet_support"] },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "direction_semantics": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "null"] },
+        "value_status": { "$ref": "#/$defs/presenceState" },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" },
+        "components": { "type": "array", "items": { "$ref": "#/$defs/axisComponent" } },
+        "weights_law": { "type": "string", "minLength": 1 },
+        "transformation": { "type": "string", "minLength": 1 },
+        "min_components": { "type": "integer", "minimum": 1 },
+        "coverage_floor": { "type": "number", "minimum": 0, "maximum": 1 },
+        "components_available": { "type": "integer", "minimum": 0 },
+        "frequency_alignment": { "type": "string", "minLength": 1 },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["boundary", "hysteresis_band", "low_label", "high_label"],
+          "properties": {
+            "boundary": { "type": "number" },
+            "hysteresis_band": { "type": "number", "minimum": 0 },
+            "low_label": { "$ref": "#/$defs/bilingualText" },
+            "high_label": { "$ref": "#/$defs/bilingualText" }
+          }
+        },
+        "definition_version": { "type": "string", "minLength": 1 },
+        "data_version": { "type": ["string", "null"] },
+        "revision_behavior": { "type": "string", "minLength": 1 },
+        "authority_ceiling": { "const": "DESCRIPTIVE" },
+        "freshness": { "$ref": "#/$defs/freshnessState" }
+      }
+    },
+    "axisComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id", "label", "owner_field", "owner_ref", "raw_value",
+        "standardized_value", "contribution", "sign", "weight", "coverage_state",
+        "freshness", "null_reason"
+      ],
+      "properties": {
+        "component_id": { "type": "string", "minLength": 1 },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "owner_field": { "type": "string", "minLength": 1 },
+        "owner_ref": { "type": "string", "minLength": 1 },
+        "raw_value": { "type": ["number", "string", "boolean", "null"] },
+        "standardized_value": { "type": ["number", "null"] },
+        "contribution": { "type": ["number", "null"] },
+        "sign": { "type": "integer", "enum": [1, -1] },
+        "weight": { "type": "number", "minimum": 0 },
+        "coverage_state": { "$ref": "#/$defs/presenceState" },
+        "freshness": { "$ref": "#/$defs/freshnessState" },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id", "reference_id", "definition_id", "definition_version",
+        "owner_ref", "value", "value_type", "unit", "basis", "direction_semantics",
+        "reference_period", "observed_at", "released_at", "available_at",
+        "collected_at", "revised_at", "calculation_as_of", "market_session",
+        "source_refs", "source_digest", "transformation", "model_version",
+        "uncertainty", "coverage", "freshness", "rights_state", "status",
+        "null_reason", "authority_ceiling"
+      ],
+      "properties": {
+        "metric_id": { "type": "string", "minLength": 1 },
+        "reference_id": { "type": ["string", "null"] },
+        "definition_id": { "type": ["string", "null"] },
+        "definition_version": { "type": ["string", "null"] },
+        "owner_ref": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "string", "boolean", "null"] },
+        "value_type": { "$ref": "#/$defs/valueType" },
+        "unit": { "type": ["string", "null"] },
+        "basis": { "type": ["string", "null"] },
+        "direction_semantics": { "type": ["string", "null"] },
+        "reference_period": { "type": ["string", "null"] },
+        "observed_at": { "type": ["string", "null"] },
+        "released_at": { "type": ["string", "null"] },
+        "available_at": { "type": ["string", "null"] },
+        "collected_at": { "type": ["string", "null"] },
+        "revised_at": { "type": ["string", "null"] },
+        "calculation_as_of": { "type": ["string", "null"] },
+        "market_session": { "type": ["string", "null"] },
+        "source_refs": { "type": "array", "items": { "type": "string" } },
+        "source_digest": { "type": ["string", "null"] },
+        "transformation": { "type": ["string", "null"] },
+        "model_version": { "type": ["string", "null"] },
+        "uncertainty": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "type": ["string", "null"] },
+            "value": { "type": ["number", "null"] }
+          }
+        },
+        "coverage": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "freshness": { "$ref": "#/$defs/freshnessState" },
+        "rights_state": { "$ref": "#/$defs/rightsState" },
+        "status": { "$ref": "#/$defs/presenceState" },
+        "null_reason": { "$ref": "#/$defs/nullReasonOrNull" },
+        "authority_ceiling": { "const": "DESCRIPTIVE" }
+      }
+    },
+    "seriesEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["series_id", "label", "unit", "basis", "points", "source_ref", "freshness", "revision_behavior"],
+      "properties": {
+        "series_id": { "type": "string", "minLength": 1 },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "unit": { "type": ["string", "null"] },
+        "basis": { "type": ["string", "null"] },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["t", "v"],
+            "properties": {
+              "t": { "type": "string" },
+              "v": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "source_ref": { "type": ["string", "null"] },
+        "freshness": { "$ref": "#/$defs/freshnessState" },
+        "revision_behavior": { "type": "string" }
+      }
+    },
+    "driver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["driver_id", "label", "owner_field", "value", "unit", "impact_sign", "impact_magnitude", "note", "coverage_state"],
+      "properties": {
+        "driver_id": { "type": "string", "minLength": 1 },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "owner_field": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "string", "boolean", "null"] },
+        "unit": { "type": ["string", "null"] },
+        "impact_sign": { "type": "integer", "enum": [1, -1, 0] },
+        "impact_magnitude": { "type": ["number", "null"] },
+        "note": { "type": "string" },
+        "coverage_state": { "$ref": "#/$defs/presenceState" }
+      }
+    },
+    "implication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implication_id", "text", "evidence_class", "confidence", "horizon", "channels", "contradictions", "trace_ref"],
+      "properties": {
+        "implication_id": { "type": "string", "minLength": 1 },
+        "text": { "$ref": "#/$defs/bilingualText" },
+        "evidence_class": { "$ref": "#/$defs/evidenceClass" },
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["data_coverage", "source_health", "revision_risk", "method_stability", "evidence_breadth", "contradiction_state"],
+          "properties": {
+            "data_coverage": { "$ref": "#/$defs/confidenceBand" },
+            "source_health": { "$ref": "#/$defs/confidenceBand" },
+            "revision_risk": { "$ref": "#/$defs/confidenceBand" },
+            "method_stability": { "$ref": "#/$defs/confidenceBand" },
+            "evidence_breadth": { "$ref": "#/$defs/confidenceBand" },
+            "contradiction_state": { "$ref": "#/$defs/presenceState" }
+          }
+        },
+        "horizon": { "type": ["string", "null"] },
+        "channels": { "type": "array", "items": { "type": "string" } },
+        "contradictions": { "type": "array", "items": { "type": "string" } },
+        "trace_ref": { "type": ["string", "null"] }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id", "label", "owner_ref", "provider", "reference_period",
+        "released_at", "first_known_at", "collected_at", "revised_at",
+        "correction_state", "transform", "rights_state", "definition_id",
+        "definition_version", "artifact_ref", "freshness"
+      ],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "owner_ref": { "type": "string", "minLength": 1 },
+        "provider": { "type": ["string", "null"] },
+        "reference_period": { "type": ["string", "null"] },
+        "released_at": { "type": ["string", "null"] },
+        "first_known_at": { "type": ["string", "null"] },
+        "collected_at": { "type": ["string", "null"] },
+        "revised_at": { "type": ["string", "null"] },
+        "correction_state": { "enum": ["none", "corrected", "superseded", "unknown"] },
+        "transform": { "type": ["string", "null"] },
+        "rights_state": { "$ref": "#/$defs/rightsState" },
+        "definition_id": { "type": ["string", "null"] },
+        "definition_version": { "type": ["string", "null"] },
+        "artifact_ref": { "type": ["string", "null"] },
+        "freshness": { "$ref": "#/$defs/freshnessState" }
+      }
+    }
+  }
+}
