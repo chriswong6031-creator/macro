@@ -46,15 +46,24 @@ how 42,790.2% reached every Neural Web consumer without anything failing.
 
 ## 2. Precision gate — zero false precise publications
 
-19-case corpus, `tests/fixtures/special_situations/f09/corpus.json`, run through the real
+22-case corpus, `tests/fixtures/special_situations/f09/corpus.json`, run through the real
 extractor and current-term compiler:
 
 | verdict | n |
 |---|---|
-| correct publication (price matched the expected value exactly) | 8 |
-| **correct decline** (no price published where none may be) | 8 |
+| correct publication (price matched the expected value exactly) | 9 |
+| **correct decline** (no price published where none may be) | 10 |
 | recall miss (should have published, declined) | 0 |
 | **FALSE PUBLICATION** | **0** |
+
+Three cases were added by the critical repair, all previously absent and all reproduced as
+false publications first (§8): a rejected historical **cash** proposal under *Background of the
+Merger* beside a current **all-stock** merger (measured at head `a88c12f2` as `VERIFIED`, offer
+48.00, spread +20%, consideration `cash`); a *Prior Proposals* price that is the document's only
+per-share number; and a **fairness-opinion** DCF value quoted beside a correctly-scoped offer,
+which must NOT suppress the real price. Out-of-scope prices are not discarded — all three are
+retained as `deferred` observations noted `outside_current_transaction_scope`, so the evidence
+stays visible while never becoming a live term.
 
 Hostile negatives that must never yield an offer price, and all declined: special **dividend**
 per share, preferred **redemption** price, option **exercise** price, **aggregate/enterprise**
@@ -199,3 +208,73 @@ filing genuinely may use that day's close. That test was replaced rather than pa
 `DSC:A-DIGEST-OF-A-DERIVED-PROJECTION-IS-NOT-BYTE-BINDING` records the transferable half: no
 single layer lied — the falsehood lived at the seam between "the bytes I hashed" and "the
 document I claimed", which is precisely what per-layer review does not inspect.
+
+## 8. Critical repair after the independent NOT PASS
+
+The head that §7 describes, `a88c12f2`, was then reviewed independently and **failed**. The
+reviewer reproduced Sol's seven blocking repairs and added four defects neither Sol's review nor
+this lane had named — three of which reached `VERIFIED` on a wrong or unproven number. Sol folded
+them into one addendum (carrier `1788441394.459699`) and required a single return covering the
+complete set. This section is the record of that repair; §7 remains the record of the round
+before it, and the sections are deliberately not merged, because the useful fact about this wave
+is that a green suite, a passing exact-head review by the *author's* own lane, and a full CI pack
+sweep all held simultaneously with three `VERIFIED`-reaching defects still live.
+
+| # | Defect at `a88c12f2` | Repair |
+|---|---|---|
+| NEW-1 | `observation_id()` excluded `prior/supersedes_observation_id` and `correction_reason`, so `link_supersession()` recomputing the id returned the **same string** — a no-op. A hand-forged relation validated `True`, and `compile_current_terms` then admitted an entire multi-accession bucket whenever *any* `supersedes` matched *any* id in it | the correction relation moved **inside** the closed digest, so a changed relation cannot keep its identity; `validate_lineage()` additionally proves predecessor existence, same-field lineage, direction and acyclicity; and the compile now walks the connected lineage **out from the requested accession** instead of admitting the bucket |
+| NEW-2 | `_price_inputs` graded Canada/intl/HK panels against `lib/nyse_calendar` and stamped `calendar_id=XNYS`. On 2026-07-03 NYSE was closed while HKEX traded, so a genuinely one-session-stale `.HK` column reported `sessions_behind=0` and reached `VERIFIED` | V1 admits only an exact resolved **U.S.** listing: `resolve_us_listing()` plus a closed `calendar_id`/`listing` check. No suffix-root fallback, no foreign panel, no syntax-derived currency |
+| NEW-3 | the pure reducer never cross-validated its own receipt: `_has_calendar_receipt()` checked field *presence*, `sessions_behind` was taken from the caller, `session` was never compared to `expected_session`, any string passed as a `basis`, and `price_input()`'s own default was `close_raw` | `validate_price_receipt()` re-derives every recomputable field through the calendar owner and checks the rest against closed vocabularies; the reducer publishes **its own** recomputation, so a published freshness number cannot disagree with the calendar even when the producer is wrong |
+| NEW-4 | `_fetch_filing_text()` returned the legacy `.txt` **before** `_retain_source()` ever ran, so every already-cached accession could never obtain a receipt; `enrich_deal_terms()` skipped it and the natural build passes `fetch_missing=False`. Coverage over the pre-existing corpus was structurally zero, permanently, with no backfill path | a legacy candidate cache with no verified receipt now goes back through the same fetch owner to reacquire the exact complete bytes; `--no-refresh` stays network- and source-inert |
+| CONFIRMED | a rejected historical `$48.00` cash proposal under *Background of the Merger*, beside a current all-stock merger, published `VERIFIED` / offer 48.00 / spread +20% / consideration `cash` — the scope anchored on the first price candidate and cut *into* the background section | one deterministic current-transaction scope; background, prior-proposal, fairness-opinion, financing and employee-award spans cannot originate a current term. Out-of-scope prices are retained as `deferred`, not discarded (§2) |
+| CONFIRMED | SEC acceptance timestamps hard-coded to `-04:00`, wrong for every winter filing | `ZoneInfo("America/New_York")`, byte-equivalent to the proven `sec_capital_structure` parser and pinned by a test that runs both over the same bytes |
+| CONFIRMED | the ledger appended with `open(..., "a")` after silently skipping malformed lines; the JSON Schema accepted any `observation_id` of 8+ characters and required none of the source receipt | validate-the-whole-ledger-before-append, atomic publish + readback, `INTEGRITY_FAILED` / `PARTIAL_GENERATION` with a census; schema hardened to a closed 32-hex id and a conditional `allOf` that requires `raw_sha256`, `raw_bytes`, `acquired_at` and `completeness=complete` for any observed exact term |
+
+### The mutation gate, and the one guard it caught
+
+The suites passing is not the evidence — Sol required discriminating mutants, and the reason is
+visible in the result. Ten mutants were applied one at a time to the repaired sources, each
+re-introducing exactly one defect above, with the file restored from the index between runs:
+
+| mutant | verdict |
+|---|---|
+| M1 correction lineage removed from the `observation_id` digest | killed |
+| M2 caller's `sessions_behind` trusted again | killed |
+| M3 `basis` vocabulary opened | killed |
+| M4 receipt's declared `expected_session` no longer compared | **SURVIVED 197/197** |
+| M5 non-US listing/calendar admitted | killed |
+| M6 `rebind_observation()` neutered | killed |
+| M7 SEC acceptance clock hard-coded to `-04:00` | killed |
+| M8 legacy `.txt` returned before reacquisition | killed |
+| M9 malformed ledger line silently skipped | killed |
+| M10 schema `observation_id` loosened to `minLength: 8` | killed |
+
+M4 is the finding. The `expected_session` comparison is *correct code*, shipped in the repair,
+reviewed, and pinned by **nothing**: deleting it left every test green. The four sibling
+freshness tests each move `session` or `sessions_behind` as well, so recomputed staleness
+arithmetic reddens them first and the finer check never decides anything. The killing test has to
+do the opposite of what feels thorough — hold `session` and `sessions_behind` genuinely honest for
+`now_utc`, so the price really is current and nothing downstream disagrees, and corrupt only the
+receipt's own claim about which session the market last completed. It matters because that field
+is **published**: a `VERIFIED` row would have carried a calendar fact no calendar owner produced.
+Closed by `test_a_false_expected_session_field_is_invalid_even_when_the_price_is_current`; the
+matrix is then 10/10 at 198 passing. Recorded as
+`DSC:A-GREEN-SUITE-CANNOT-TELL-YOU-WHICH-GUARDS-IT-PINS`.
+
+### Regression evidence, controlled
+
+The four owned suites are **198 passed**. For the rest, the sparse worktree makes a raw failure
+count meaningless — unrelated suites need `data/` and `site/`, which are not checked out — so the
+comparison is run as a true A/B on the *same* tree, same data, same sparseness: the 33 other test
+files that reference these modules are run once against the repaired sources, then again with
+`origin/main`'s versions of all six F09 paths swapped in and nothing else changed.
+
+| side | result |
+|---|---|
+| repaired branch | 40 failed, 1547 passed, 19 skipped |
+| `origin/main` F09 sources swapped in | 40 failed, 1547 passed, 19 skipped |
+
+The failing sets are **identical, test for test**: 40 failures present on both sides, 0 present
+only on the branch, 0 present only on main. Zero regressions attributable to this repair, and the
+40 are pre-existing sparse-worktree artifacts in unrelated suites. Every F09 source file was
+restored from the index afterwards and re-verified by blob digest.

@@ -21,7 +21,11 @@ CORPUS = json.loads(
 ASOF = date(2026, 9, 1)
 _CASH_EXACT = ("Each share of common stock will be converted into the right to receive $25.00 "
                "in cash per share. The transaction is expected to close on December 15, 2026.")
-NOW = datetime(2026, 6, 18, 22, 0, tzinfo=timezone.utc)   # explicit market clock, never date.today()
+# ONE explicit market clock for the whole suite, consistent with ASOF and every session below.
+# It was 2026-06-18 while ASOF and the price sessions were 2026-09-01 — an incoherence the old
+# reducer could not see because it TRUSTED the caller's `sessions_behind` instead of recomputing
+# it from the calendar. Now that freshness is re-derived from `now_utc`, the clock has to be real.
+NOW = datetime(2026, 9, 1, 22, 0, tzinfo=timezone.utc)   # 18:00 ET, after the 2026-09-01 close
 
 
 def _src(case: dict) -> dict:
@@ -32,6 +36,9 @@ def _src(case: dict) -> dict:
         filing_date=case["filing_date"], source_url=f"https://sec.gov/{case['accession']}.txt",
         body=case["text"], acquired_at="2026-09-02T00:00:00Z",
         raw_sha256="a" * 64, raw_bytes=len(case["text"]) * 3,
+        # the resolved listing travels WITH the observation: an observed bare-dollar USD price
+        # may not exist without it, which is what the hardened contract now refuses
+        resolved_listing="ABC" if case.get("listing_currency") == "USD" else None,
         acceptance_datetime=f"{case['filing_date']}T17:31:00-04:00")
 
 
@@ -45,13 +52,36 @@ def _case(cid: str) -> dict:
     return next(c for c in CORPUS if c["id"] == cid)
 
 
-def _price(value=15.19, session="2026-09-01", currency="USD", behind=0, basis="close_raw"):
-    """A price carrying an INDEPENDENT calendar receipt and an immutable artifact digest."""
-    return arb.price_input(ticker="T", session=session, value=value, currency=currency,
-                           basis=basis, source_artifact="breadth/_closes_cache.parquet",
-                           artifact_sha256="b" * 64, sessions_behind=behind,
-                           expected_session="2026-09-01", calendar_owner="lib/nyse_calendar.py",
-                           calendar_revision="nyse_calendar.v1", calendar_id="XNYS")
+def _price(value=15.19, session="2026-09-01", currency="USD", basis=None, ticker="T",
+           now=None, **override):
+    """A TRUTHFUL narrow-V1 price receipt — what an honest producer would write.
+
+    It used to name `breadth/_closes_cache.parquet` with `basis="close_raw"`, which is a FALSE
+    receipt: breadth is written `auto_adjust=True`. CI therefore blessed the exact fiction the
+    owner ruling prohibits. V1 reads only the per-ticker U.S. Yahoo store's `close_price`
+    (`auto_adjust=False`, split-adjusted / dividend-unadjusted), on XNYS.
+
+    `expected_session` and `sessions_behind` are DERIVED here from the approved calendar owner,
+    exactly as the producer must derive them — so a test that wants a stale price moves the
+    SESSION, and a test that wants to lie passes the lie explicitly through `override`.
+    """
+    from lib import nyse_calendar
+    now = now or NOW
+    listing = arb.resolve_us_listing(ticker)
+    day = date.fromisoformat(session)
+    kw = dict(ticker=listing or ticker, listing="XNYS", session=session, value=value,
+              currency=currency, basis=basis or arb.PRICE_BASIS_SPLIT_ADJ,
+              column=arb.PRICE_COLUMN, source_artifact=f"yahoo/{listing or ticker}.parquet",
+              artifact_sha256="b" * 64, artifact_bytes=4096,
+              writer_owner=arb.PRICE_WRITER_OWNER, writer_blob=arb.PRICE_WRITER_BLOB,
+              calendar_owner=arb.CALENDAR_OWNER, calendar_blob=arb.CALENDAR_BLOB,
+              calendar_revision=arb.CALENDAR_REVISION, calendar_id=arb.US_CALENDAR_ID,
+              expected_session=nyse_calendar.expected_last_session(now).isoformat(),
+              sessions_behind=int(nyse_calendar.sessions_behind(day, now)),
+              sessions_unique_monotonic=True, values_finite_positive=True,
+              read_validated=True)
+    kw.update(override)
+    return arb.price_input(**kw)
 
 
 # ---------------------------------------------------------------- grounding
@@ -150,7 +180,8 @@ def test_month_only_close_is_a_window_not_a_month_end():
     assert compiled["terms"]["expected_close_precision"] == arb.PRECISION_MONTH
     r = arb.reduce_cash_deal(compiled, category="Acquisitions", live_price=_price(), market_session=ASOF, now_utc=NOW)
     assert r["days_to_close"] is None and r["annualized_pct"] is None
-    assert "DATE_PRECISION_INSUFFICIENT" in r["reasons"]
+    # informational, not a failure: a VERIFIED row must never carry a failure reason
+    assert "DATE_PRECISION_INSUFFICIENT" in r["warnings"] and r["reasons"] == []
     assert r["orderable"] is False
     assert arb.days_to_close("2026-11", ASOF) is None      # the substitution is gone entirely
 
@@ -169,16 +200,21 @@ def test_exact_date_annualizes_with_its_receipts():
                              live_price=_price(), reference_price=_price(session="2026-09-01"), market_session=ASOF, now_utc=NOW)
     assert r["quality_state"] == arb.QUALITY_VERIFIED and r["orderable"] is True
     assert r["days_to_close"] == 105
-    assert r["live_session"] == "2026-09-01" and r["price_basis"] == "close_raw"
+    assert r["live_session"] == "2026-09-01"
+    assert r["price_basis"] == arb.PRICE_BASIS_SPLIT_ADJ
+    assert r["live_source"] == "yahoo/T.parquet"
     assert r["formula_revision"] == arb.FORMULA_REVISION
 
 
 def test_stale_price_is_visible_context_but_never_ordered():
     compiled = arb.compile_current_terms(_obs(_case("cash_acquisition_exact_date")))
-    r = arb.reduce_cash_deal(compiled, category="Acquisitions", live_price=_price(behind=1),
+    # a GENUINELY stale session — staleness is recomputed from the calendar, so it can no
+    # longer be asserted by a caller who simply says `sessions_behind=1`
+    r = arb.reduce_cash_deal(compiled, category="Acquisitions",
+                             live_price=_price(session="2026-08-31"),
                              market_session=ASOF, now_utc=NOW)
     assert r["quality_state"] == arb.QUALITY_STALE_PRICE
-    assert "PRICE_STALE" in r["reasons"]
+    assert "PRICE_STALE" in r["reasons"] and r["sessions_behind"] == 1
     assert r["live_gross_spread_pct"] is not None      # still visible …
     assert r["orderable"] is False                     # … but never in the ordered book
 
@@ -216,7 +252,7 @@ def test_a_reference_session_must_have_closed_before_sec_availability():
                                  reference_price=_price(session="2026-09-03"),
                                  market_session=ASOF, now_utc=NOW)
     assert later["filing_reference_premium_pct"] is None
-    assert "REFERENCE_SESSION_UNRESOLVED" in later["reasons"]
+    assert "REFERENCE_SESSION_UNRESOLVED" in later["warnings"]
 
 
 def test_stated_premium_is_never_the_computed_premium():
@@ -249,9 +285,9 @@ def test_retraction_removes_the_current_term_but_keeps_the_receipt():
                       supersedes_observation_id=price["observation_id"],
                       prior_observation_id=price["observation_id"],
                       correction_reason="offer withdrawn")
-    retraction["observation_id"] = arb.observation_id(
-        source=src, field=retraction["field"], locator=retraction["locator"],
-        normalized=retraction["normalized"])
+    # `reseal()` is now the ONLY lawful way to mint a row carrying a correction relation:
+    # the relation is inside the closed digest, so an id minted without it is not this row's id
+    retraction = arb.reseal(retraction)
     assert arb.validate_observation(retraction)      # a correction is evidenced, not asserted
     compiled = arb.compile_current_terms(base + [retraction])
     assert "RETRACTED" in compiled["reasons"]
@@ -415,16 +451,16 @@ def test_a_model_authored_term_cannot_satisfy_the_contract():
 
 def _price_now(**kw):
     """A price on a session consistent with NOW, for the repair-era mutants."""
-    kw.setdefault("session", "2026-06-18")
+    kw.setdefault("session", "2026-09-01")
     return _price(**kw)
 
 
-def _src_full(text, *, accession="0000000001-26-000001", cik="1", filing_date="2026-06-17",
+def _src_full(text, *, accession="0000000001-26-000001", cik="1", filing_date="2026-09-01",
               truncated=False, acceptance=None):
     return arb.source_descriptor(
         cik=cik, form_type="8-K", accession=accession, filing_date=filing_date,
         source_url="https://sec.gov/x", body=text, acquired_at="2026-06-17T12:00:00Z",
-        body_truncated=truncated, acceptance_datetime=acceptance)
+        body_truncated=truncated, resolved_listing="ABC", acceptance_datetime=acceptance)
 
 
 # --- 2. deal identity fails closed -----------------------------------------
@@ -459,7 +495,7 @@ def test_an_amendment_form_alone_does_not_merge_deal_lineage():
     amend_text = ("Amendment No. 1. The consideration is increased to $27.50 in cash per share. "
                   "The transaction is expected to close on December 15, 2026.")
     amend = arb.extract_term_observations(amend_text, source=_src_full(
-        amend_text, accession="0000000001-26-000002", filing_date="2026-06-20"),
+        amend_text, accession="0000000001-26-000002", filing_date="2026-09-20"),
         listing_currency="USD")
     merged = arb.compile_current_terms(base + amend)
     assert merged["status"] != "observed", "an /A alone merged two accessions"
@@ -554,7 +590,7 @@ def test_date_only_filing_date_cannot_resolve_the_reference_session():
                                 stage="pending", live_price=_price_now(),
                                 reference_price=_price_now(session="2026-06-16"), now_utc=NOW)
     assert econ["filing_reference_premium_pct"] is None
-    assert "REFERENCE_SESSION_UNRESOLVED" in econ["reasons"]
+    assert "REFERENCE_SESSION_UNRESOLVED" in econ["warnings"]
 
 
 def test_the_reducer_requires_an_explicit_market_clock():
@@ -615,3 +651,439 @@ def test_two_premium_statements_with_different_comparators_do_not_collapse():
         text, source=_src_full(text), listing_currency="USD"))
     assert compiled["terms"].get("stated_premium_pct") is None, \
         "two different stated comparators collapsed into one number"
+
+
+# ===========================================================================
+# F09-1 CRITICAL REPAIR — Sol reviews 5102199556 / 5102373399 and the reviewer
+# STOP addendum (carrier 1788441394.459699). Every test below is a reproduced
+# EXPLOIT: it published a wrong or unproven number at head a88c12f2.
+# ===========================================================================
+
+_YAHOO_ARTIFACT = "yahoo/ABC.parquet"
+
+
+def _us_price(**kw):
+    """A COMPLETE narrow-V1 price receipt: exact resolved US listing, per-ticker Yahoo
+    `close_price`, XNYS, and every receipt field the reducer independently re-checks."""
+    kw.setdefault("session", "2026-09-01")
+    kw.setdefault("expected_session", "2026-09-01")
+    kw.setdefault("value", 20.0)
+    kw.setdefault("currency", "USD")
+    kw.setdefault("sessions_behind", 0)
+    kw.setdefault("basis", arb.PRICE_BASIS_SPLIT_ADJ)
+    kw.setdefault("column", "close_price")
+    kw.setdefault("listing", "XNYS")
+    kw.setdefault("ticker", "ABC")
+    kw.setdefault("source_artifact", _YAHOO_ARTIFACT)
+    kw.setdefault("artifact_sha256", "b" * 64)
+    kw.setdefault("artifact_bytes", 4096)
+    kw.setdefault("writer_owner", arb.PRICE_WRITER_OWNER)
+    kw.setdefault("writer_blob", arb.PRICE_WRITER_BLOB)
+    kw.setdefault("calendar_owner", arb.CALENDAR_OWNER)
+    kw.setdefault("calendar_blob", arb.CALENDAR_BLOB)
+    kw.setdefault("calendar_revision", arb.CALENDAR_REVISION)
+    kw.setdefault("calendar_id", "XNYS")
+    kw.setdefault("sessions_unique_monotonic", True)
+    kw.setdefault("values_finite_positive", True)
+    kw.setdefault("read_validated", True)
+    return arb.price_input(**kw)
+
+
+def _complete_src(text, *, accession="0000000001-26-000001", cik="1",
+                  filing_date="2026-09-01", acceptance="2026-09-01T21:31:00+00:00"):
+    """A complete retained source object — the only shape a VERIFIED row may cite."""
+    return arb.source_descriptor(
+        cik=cik, form_type="8-K", accession=accession, filing_date=filing_date,
+        source_url="https://sec.gov/x", body=text, acquired_at="2026-06-17T12:00:00Z",
+        raw_sha256="a" * 64, raw_bytes=len(text) * 3, resolved_listing="ABC",
+        acceptance_datetime=acceptance)
+
+
+def _verified(text=_CASH_EXACT, **kw):
+    obs = arb.extract_term_observations(text, source=_complete_src(text),
+                                        listing_currency="USD")
+    return arb.reduce_cash_deal(arb.compile_current_terms(obs, accession="0000000001-26-000001"),
+                                category="Acquisitions", stage="pending",
+                                live_price=_us_price(), now_utc=NOW, **kw)
+
+
+# --- CRITICAL A: correction relation identity is an authorization boundary ---
+
+_OTHER_DEAL = ("Each share will be converted into the right to receive $250.00 in cash per "
+               "share. The transaction is expected to close on December 20, 2026.")
+_ACC_A = "0000000001-26-000001"
+_ACC_B = "0000000001-26-000777"
+_ACC_C = "0000000001-26-000999"
+
+
+def _obs_for(text, accession, filed):
+    return arb.extract_term_observations(
+        text, source=_complete_src(text, accession=accession, filing_date=filed),
+        listing_currency="USD")
+
+
+def test_a_forged_supersession_field_cannot_pull_an_unrelated_price_into_a_deal():
+    """ONE unauthenticated field merged two unrelated transactions.
+
+    `prior/supersedes_observation_id` and `correction_reason` sat OUTSIDE the observation
+    digest, so a hand-forged link kept the row's id and passed validation, and the compiler
+    admitted the whole multi-accession bucket when ANY supersession matched ANY bucket id.
+    """
+    a = _obs_for(_CASH_EXACT, _ACC_A, "2026-09-01")
+    b = _obs_for(_OTHER_DEAL, _ACC_B, "2026-09-02")
+    target = next(o for o in a if o["field"] == "price_per_share")
+    forged = [dict(o, supersedes_observation_id=target["observation_id"],
+                   prior_observation_id=target["observation_id"],
+                   correction_reason="forged") if o["field"] == "price_per_share" else o
+              for o in b]
+    # the forged row must not even validate: its id no longer covers its own relation fields
+    assert not arb.validate_observation(
+        next(o for o in forged if o["field"] == "price_per_share")), \
+        "a forged correction link kept the observation id"
+    compiled = arb.compile_current_terms(a + forged, accession=_ACC_A)
+    econ = arb.reduce_cash_deal(compiled, category="Acquisitions", stage="pending",
+                                live_price=_us_price(), now_utc=NOW)
+    assert econ["quality_state"] != arb.QUALITY_VERIFIED
+    assert econ["offer_price"] != 250.0, "an unrelated accession's price reached this deal"
+
+
+def test_link_supersession_changes_the_observation_identity():
+    """`link_supersession()` recomputed the id and got the SAME string back — a no-op.
+
+    A relation that can change without changing the identity is not immutable, which is what
+    made the forged-field exploit above possible.
+    """
+    older = _obs_for(_CASH_EXACT, _ACC_A, "2026-09-01")
+    amend = _OTHER_DEAL.replace("$250.00", "$260.00")
+    newer = _obs_for(amend, _ACC_B, "2026-09-02")
+    linked = arb.link_supersession(newer, older)
+    before = {o["field"]: o["observation_id"] for o in newer}
+    after = {o["field"]: o["observation_id"] for o in linked}
+    changed = [f for f in after if after[f] != before.get(f)]
+    assert changed, "stamping a supersession did not change any observation id"
+    for o in linked:
+        assert arb.validate_observation(o), "a lawfully linked row failed its own digest"
+
+
+def test_one_valid_link_cannot_legalize_an_unrelated_third_accession():
+    """A linked pair admitted an entire bucket, including an accession with no relation."""
+    older = _obs_for(_CASH_EXACT, _ACC_A, "2026-09-01")
+    amend_text = _CASH_EXACT.replace("$25.00", "$27.00")
+    newer = arb.link_supersession(_obs_for(amend_text, _ACC_B, "2026-09-02"), older)
+    stranger = _obs_for(_OTHER_DEAL, _ACC_C, "2026-09-02")
+    compiled = arb.compile_current_terms(older + newer + stranger, accession=_ACC_A)
+    cited = {(compiled.get("evidence") or {}).get(f, {}).get("accession")
+             for f in ("price_per_share", "consideration", "expected_close")}
+    assert _ACC_C not in cited, "an unrelated accession was compiled into the lineage"
+    assert compiled["terms"].get("price_per_share") != 250.0
+
+
+def test_a_dangling_correction_link_is_an_integrity_failure():
+    rows = _obs_for(_CASH_EXACT, _ACC_A, "2026-09-01")
+    broken = [dict(o, prior_observation_id="f" * 32, supersedes_observation_id="f" * 32,
+                   correction_reason="amended") if o["field"] == "price_per_share" else o
+              for o in rows]
+    broken = [arb.reseal(o) if o["field"] == "price_per_share" else o for o in broken]
+    compiled = arb.compile_current_terms(broken, accession=_ACC_A)
+    assert "INTEGRITY_FAILED" in compiled["reasons"]
+    assert compiled["terms"].get("price_per_share") is None
+
+
+def test_a_supersession_cycle_is_an_integrity_failure():
+    rows = [o for o in _obs_for(_CASH_EXACT, _ACC_A, "2026-09-01")
+            if o["field"] == "price_per_share"]
+    a = rows[0]
+    b = arb.reseal(dict(a, prior_observation_id=a["observation_id"],
+                        supersedes_observation_id=a["observation_id"],
+                        correction_reason="amended"))
+    a2 = arb.reseal(dict(a, prior_observation_id=b["observation_id"],
+                         supersedes_observation_id=b["observation_id"],
+                         correction_reason="amended"))
+    compiled = arb.compile_current_terms([a2, b], accession=_ACC_A)
+    assert "INTEGRITY_FAILED" in compiled["reasons"]
+
+
+# --- CRITICAL C: the reducer must recompute receipt truth -------------------
+
+def test_a_stale_session_with_a_caller_authored_zero_behind_is_not_verified():
+    """`sessions_behind=0` was TRUSTED and `session` was never compared to `expected_session`.
+
+    A 2020 session beside a 2026 expected session therefore reached VERIFIED.
+    """
+    econ = _verified()
+    assert econ["quality_state"] == arb.QUALITY_VERIFIED, "control case must be verified"
+    bad = arb.reduce_cash_deal(
+        arb.compile_current_terms(
+            arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                          listing_currency="USD"), accession=_ACC_A),
+        category="Acquisitions", stage="pending", now_utc=NOW,
+        live_price=_us_price(session="2020-01-02", expected_session="2026-06-01",
+                             sessions_behind=0))
+    assert bad["quality_state"] != arb.QUALITY_VERIFIED
+    assert "PRICE_STALE" in bad["reasons"] or "PRICE_RECEIPT_INVALID" in bad["reasons"]
+
+
+def test_a_made_up_price_basis_is_not_verified():
+    bad = arb.reduce_cash_deal(
+        arb.compile_current_terms(
+            arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                          listing_currency="USD"), accession=_ACC_A),
+        category="Acquisitions", stage="pending", now_utc=NOW,
+        live_price=_us_price(basis="totally_made_up_basis"))
+    assert bad["quality_state"] != arb.QUALITY_VERIFIED
+    assert "PRICE_BASIS_UNRESOLVED" in bad["reasons"]
+
+
+def test_price_input_has_no_raw_close_default():
+    """The `close_raw` fiction lived in the PURE owner's own default, not only the producer."""
+    p = arb.price_input(ticker="ABC", session="2026-06-18", value=1.0, currency="USD")
+    assert p["basis"] is None, "price_input still defaults to a basis it cannot prove"
+
+
+def test_sessions_behind_is_recomputed_not_accepted():
+    """The receipt's own arithmetic is re-derived from the approved calendar owner."""
+    bad = arb.reduce_cash_deal(
+        arb.compile_current_terms(
+            arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                          listing_currency="USD"), accession=_ACC_A),
+        category="Acquisitions", stage="pending", now_utc=NOW,
+        live_price=_us_price(session="2026-08-25", sessions_behind=0))
+    # the receipt's own conclusion was a lie, so the receipt itself is invalid and NOTHING
+    # numeric is published — and the recomputed count contradicts the claimed zero
+    assert bad["quality_state"] != arb.QUALITY_VERIFIED
+    assert "PRICE_RECEIPT_INVALID" in bad["reasons"] and "PRICE_STALE" in bad["reasons"]
+    assert bad["sessions_behind"] and bad["sessions_behind"] > 0
+    assert bad["live_gross_spread_pct"] is None
+
+    # an HONEST stale receipt is different: still visible, never ordered
+    honest = arb.reduce_cash_deal(
+        arb.compile_current_terms(
+            arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                          listing_currency="USD"), accession=_ACC_A),
+        category="Acquisitions", stage="pending", now_utc=NOW,
+        live_price=_price(session="2026-08-25", value=20.0, ticker="ABC"))
+    assert honest["quality_state"] == arb.QUALITY_STALE_PRICE
+    assert honest["live_gross_spread_pct"] is not None and honest["orderable"] is False
+
+
+def test_a_false_expected_session_field_is_invalid_even_when_the_price_is_current():
+    """The receipt's DECLARED `expected_session` is re-derived, not just used for arithmetic.
+
+    Found by mutation, not by reading: deleting the `expected_session` comparison from
+    `validate_price_receipt` left all 197 tests passing. Every other freshness test here moves
+    `session` or `sessions_behind` too, so the recomputed-staleness arithmetic caught those
+    mutants and this check was never the thing under test.
+
+    It is a real gate, because the receipt is PUBLISHED. Here `session` and `sessions_behind`
+    are both honest for `NOW` — the price genuinely is current — and only the receipt's own
+    claim about which session the market last completed is wrong. Nothing downstream would
+    contradict it, so a VERIFIED row would ship a calendar fact no owner ever produced. That is
+    the false-precision shape this wave exists to remove, one field further in.
+    """
+    control = arb.reduce_cash_deal(
+        arb.compile_current_terms(
+            arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                          listing_currency="USD"), accession=_ACC_A),
+        category="Acquisitions", stage="pending", now_utc=NOW, live_price=_us_price())
+    assert control["quality_state"] == arb.QUALITY_VERIFIED, "control must isolate one field"
+
+    bad = arb.reduce_cash_deal(
+        arb.compile_current_terms(
+            arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                          listing_currency="USD"), accession=_ACC_A),
+        category="Acquisitions", stage="pending", now_utc=NOW,
+        live_price=_us_price(expected_session="2026-08-31"))
+    assert bad["quality_state"] != arb.QUALITY_VERIFIED
+    assert "PRICE_RECEIPT_INVALID" in bad["reasons"]
+    assert bad["orderable"] is False
+    # the honest arithmetic is untouched, which is exactly why nothing else could catch this
+    assert bad["sessions_behind"] == 0
+
+
+def test_an_adjusted_breadth_artifact_can_never_be_verified():
+    """breadth/`_closes_cache.parquet` is written `auto_adjust=True`; the branch labelled it raw."""
+    for kw in ({"source_artifact": "breadth/_closes_cache.parquet"},
+               {"column": "close"},
+               {"writer_owner": "collectors/breadth.py"},
+               {"artifact_sha256": None},
+               {"artifact_bytes": None},
+               {"calendar_blob": None},
+               {"calendar_id": "XHKG"},
+               {"listing": "XHKG"}):
+        bad = arb.reduce_cash_deal(
+            arb.compile_current_terms(
+                arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                              listing_currency="USD"), accession=_ACC_A),
+            category="Acquisitions", stage="pending", now_utc=NOW, live_price=_us_price(**kw))
+        assert bad["quality_state"] != arb.QUALITY_VERIFIED, f"{kw} reached VERIFIED"
+
+
+def test_a_tampered_artifact_digest_shape_is_not_verified():
+    for digest in ("", "not-a-digest", "b" * 63, "z" * 64):
+        bad = arb.reduce_cash_deal(
+            arb.compile_current_terms(
+                arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                              listing_currency="USD"), accession=_ACC_A),
+            category="Acquisitions", stage="pending", now_utc=NOW,
+            live_price=_us_price(artifact_sha256=digest))
+        assert bad["quality_state"] != arb.QUALITY_VERIFIED, f"digest {digest!r} reached VERIFIED"
+
+
+def test_the_reviewed_owner_blobs_are_pinned_to_the_real_repository_blobs():
+    """The receipt names a REVIEWED writer/calendar blob. If either owner legitimately moves,
+    this test — not a silent coverage collapse — is what tells a session to re-review it."""
+    import subprocess
+    for path, pinned in ((arb.PRICE_WRITER_OWNER, arb.PRICE_WRITER_BLOB),
+                         (arb.CALENDAR_OWNER, arb.CALENDAR_BLOB)):
+        actual = subprocess.run(["git", "rev-parse", f"HEAD:{path}"], capture_output=True,
+                                text=True, cwd=Path(__file__).resolve().parents[1]).stdout.strip()
+        assert actual == pinned, (
+            f"{path} moved: reviewed blob {pinned} != current {actual}. Re-review the owner's "
+            f"basis/calendar semantics, then re-pin — do not widen the vocabulary.")
+
+
+# --- CRITICAL B: the narrow U.S.-listing boundary ---------------------------
+
+def test_a_foreign_listing_is_declined_not_graded_on_xnys():
+    """On 2026-07-03 NYSE was closed while HKEX traded: an HK row one local session stale
+    reported `sessions_behind=0` against the US calendar and reached VERIFIED."""
+    for tk, art in (("ARX.TO", "yahoo/ARX.TO.parquet"), ("0700.HK", "yahoo/0700.HK.parquet"),
+                    ("BRK.B", "yahoo/BRK.B.parquet")):
+        assert arb.resolve_us_listing(tk) is None, f"{tk} resolved as a US cash-equity listing"
+    assert arb.resolve_us_listing("ABC") == "ABC"
+    assert arb.resolve_us_listing("") is None and arb.resolve_us_listing(None) is None
+
+
+def test_no_syntax_derived_usd_reaches_the_verified_path():
+    """`market_currency()` returned USD for ANY dotless ticker (BABA, ADS1)."""
+    import inspect
+    for fn in (arb.reduce_cash_deal, arb.validate_price_receipt):
+        assert "market_currency" not in inspect.getsource(fn), \
+            f"{fn.__name__} still derives a currency from ticker syntax"
+    # the syntax helper itself survives for the display/candidate lanes, and still says USD —
+    # which is exactly why the verified path may not call it
+    assert arb.market_currency("BABA") == "USD" and arb.resolve_us_listing("BABA") == "BABA"
+    assert arb.market_currency("ARX.TO") == "CAD" and arb.resolve_us_listing("ARX.TO") is None
+
+
+# --- HIGH E: historical proposal vs the current transaction -----------------
+
+_HISTORICAL_CASH_CURRENT_STOCK = (
+    "The Company entered into an Agreement and Plan of Merger under which each share of common "
+    "stock will be converted into the right to receive 0.850 shares of Parent common stock in a "
+    "stock-for-stock merger. The transaction is expected to close on December 15, 2026. "
+    "Background of the Merger: in March 2025 the board received and rejected an unsolicited "
+    "proposal to acquire the Company for $48.00 in cash per share.")
+
+
+def test_a_historical_cash_proposal_cannot_price_a_current_stock_deal():
+    """Reproduced by the independent reviewer: VERIFIED, offer 48.00, spread +20%, cash.
+
+    The extractor anchored the transaction scope on the FIRST price candidate, which scoped
+    into `Background of the Merger` and made a rejected 2025 proposal the live consideration.
+    """
+    compiled = arb.compile_current_terms(arb.extract_term_observations(
+        _HISTORICAL_CASH_CURRENT_STOCK, source=_complete_src(_HISTORICAL_CASH_CURRENT_STOCK),
+        listing_currency="USD"), accession=_ACC_A)
+    econ = arb.reduce_cash_deal(compiled, category="Acquisitions", stage="pending",
+                                live_price=_us_price(value=40.0), now_utc=NOW)
+    assert econ["offer_price"] != 48.0, "a rejected historical proposal priced the live deal"
+    assert econ["quality_state"] != arb.QUALITY_VERIFIED
+    assert econ["live_gross_spread_pct"] is None
+
+
+def test_a_background_price_is_never_the_only_admissible_candidate():
+    """Even with no current price at all, a background price cannot become the offer."""
+    text = ("The parties agreed to an all-stock combination. The transaction is expected to "
+            "close on December 15, 2026. Prior Proposals: the Company previously rejected "
+            "$61.00 in cash per share.")
+    compiled = arb.compile_current_terms(
+        arb.extract_term_observations(text, source=_complete_src(text),
+                                      listing_currency="USD"), accession=_ACC_A)
+    assert compiled["terms"].get("price_per_share") is None
+
+
+# --- quality semantics ------------------------------------------------------
+
+def test_a_verified_row_carries_no_failure_reasons():
+    """A VERIFIED row shipped `REFERENCE_SESSION_UNRESOLVED` in its own failure list."""
+    econ = _verified()
+    assert econ["quality_state"] == arb.QUALITY_VERIFIED
+    assert econ["reasons"] == [], f"VERIFIED row carries failure reasons {econ['reasons']}"
+    assert isinstance(econ.get("warnings"), list)
+
+
+def test_informational_gaps_are_warnings_not_failures():
+    econ = _verified()
+    assert "REFERENCE_SESSION_UNRESOLVED" in econ["warnings"]
+
+
+# --- the hardened contract refuses what the runtime refuses -----------------
+
+def _validator():
+    from jsonschema import Draft202012Validator
+    return Draft202012Validator(json.loads(
+        (Path(__file__).parents[1] /
+         "contracts/special_situations_deal_term_observation.schema.json").read_text()))
+
+
+def _one_observed_price() -> dict:
+    obs = arb.extract_term_observations(_CASH_EXACT, source=_complete_src(_CASH_EXACT),
+                                        listing_currency="USD")
+    return next(o for o in obs if o["field"] == "price_per_share" and o["status"] == "observed")
+
+
+def test_the_committed_contract_matches_the_runtime_law():
+    """Every mutant the runtime refuses, the published contract must refuse too.
+
+    The schema previously required an 8-character `observation_id`, omitted `raw_sha256`,
+    `raw_bytes`, acceptance and event identity from `source.required`, and did not require the
+    locator excerpt — so a row the runtime would reject still satisfied the contract a consumer
+    reads. A contract weaker than its runtime is a licence, not a contract.
+    """
+    v = _validator()
+    good = _one_observed_price()
+    assert not list(v.iter_errors(good)), "the control row must validate"
+
+    def refuses(mutant, why):
+        assert list(v.iter_errors(mutant)), f"the contract accepted {why}"
+
+    refuses(dict(good, observation_id="abcdef12"), "an 8-character observation id")
+    refuses(dict(good, observation_id="A" * 32), "an upper-case observation id")
+    refuses(dict(good, locator={k: x for k, x in good["locator"].items() if k != "excerpt"}),
+            "a locator with no excerpt")
+    refuses(dict(good, source={k: x for k, x in good["source"].items() if k != "raw_sha256"}),
+            "an observed precise term with no retained-object digest")
+    refuses(dict(good, source=dict(good["source"], raw_bytes=None)),
+            "an observed precise term with no retained-object length")
+    refuses(dict(good, source=dict(good["source"], completeness="truncated")),
+            "an observed precise term read from a truncated body")
+    refuses(dict(good, source=dict(good["source"], acquired_at=None)),
+            "an observed precise term with no acquisition time")
+    refuses(dict(good, supersedes_observation_id="f" * 32),
+            "a supersession with no predecessor and no reason")
+    refuses(dict(good, supersedes_observation_id="f" * 32, prior_observation_id="f" * 32),
+            "a supersession with no stated reason")
+    refuses(dict(good, correction_reason="amended"),
+            "a correction reason with no relation")
+    refuses(dict(good, supersedes_observation_id="not-a-digest",
+                 prior_observation_id="not-a-digest", correction_reason="amended"),
+            "a correction link that is not a closed digest")
+    refuses(dict(good, source=dict(good["source"], resolved_listing=None)),
+            "an observed bare-dollar USD price with no resolved listing receipt")
+    refuses(dict(good, source=dict(good["source"], resolved_listing="ARX.TO")),
+            "a foreign listing standing in as the resolved U.S. listing")
+    refuses(dict(good, locator=dict(good["locator"], start=-1)),
+            "a negative locator offset")
+
+
+def test_a_lawfully_corrected_row_still_satisfies_the_contract():
+    """The hardening must refuse forgeries without refusing real corrections."""
+    v = _validator()
+    older = _obs_for(_CASH_EXACT, _ACC_A, "2026-09-01")
+    amend = _CASH_EXACT.replace("$25.00", "$27.00")
+    linked = arb.link_supersession(_obs_for(amend, _ACC_B, "2026-09-02"), older)
+    for o in linked:
+        assert not list(v.iter_errors(o)), \
+            f"the contract refused a lawful correction: {[e.message for e in v.iter_errors(o)]}"
+        assert arb.validate_observation(o)

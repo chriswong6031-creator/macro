@@ -501,7 +501,7 @@ def snapshot() -> dict:
         "cross_border": int(desk.cross_border.sum()),
         "floor_musd": float(_cfg().get("market_cap_floor_musd", 100)),
     }
-    keep_cols = ["id", "ticker", "company", "category", "stage", "form_type",
+    keep_cols = ["id", "accession", "ticker", "company", "category", "stage", "form_type",
                  "cross_border", "mc_musd", "date_filed", "source_url"]
     keep_cols = [c for c in keep_cols if c in desk.columns]
     sits = (desk.sort_values("date_filed", ascending=False)[keep_cols]
@@ -545,23 +545,15 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
     return rows
 
 
-_PRICE_BASIS = {}          # artifact -> basis; every panel below is a RAW daily close
-_DEFAULT_PRICE_BASIS = "close_raw"
-# pinned so a published freshness verdict names the calendar revision that issued it
+# There is NO default price basis, and the arb lane no longer reads the broad close panels at
+# all. `_closes_*` below still serve the activist track record and the price backfill; they are
+# `auto_adjust=True` stores (breadth.py:402, special_prices.py:86), so labelling any of them a
+# raw close is a false receipt — and a back-adjusted reference close runs LOW, which inflated
+# `filing_reference_premium_pct` systematically rather than randomly.
+#
+# V1's verified path reads exactly one provenance: the per-ticker U.S. Yahoo store's
+# `close_price` (`auto_adjust=False`, split-adjusted / dividend-unadjusted).
 _CALENDAR_REVISION = "nyse_calendar.v1"
-
-
-def _closes_paths() -> dict[str, Path]:
-    """artifact identity -> file, for the immutable digest receipt on every published price."""
-    out: dict[str, Path] = {}
-    for g in ("breadth", "midcap_breadth", "smallcap_breadth"):
-        out[f"{g}/_closes_cache.parquet"] = config.data_dir() / g / "_closes_cache.parquet"
-    for f in ("bt_prices.parquet", "arb_prices.parquet"):
-        out[f"{GROUP}/{f}"] = config.data_dir() / GROUP / f
-    for sub, fn in (("canada_search", "closes.parquet"), ("intl_search", "closes.parquet"),
-                    ("hk_search", "closes_deep.parquet")):
-        out[f"{sub}/{fn}"] = config.data_dir() / sub / fn
-    return {k: v for k, v in out.items() if v.exists()}
 
 
 def _closes_frames() -> list[tuple[str, pd.DataFrame]]:
@@ -612,16 +604,6 @@ def _closes_panel(frames: list[tuple[str, pd.DataFrame]] | None = None) -> pd.Da
     return df.loc[:, ~df.columns.duplicated()].sort_index()
 
 
-def _panel_sources(frames: list[tuple[str, pd.DataFrame]]) -> dict[str, str]:
-    """column -> artifact that supplied it. First frame wins, matching the de-duplication in
-    `_closes_panel`, so the receipt names the file the number actually came from."""
-    out: dict[str, str] = {}
-    for name, f in frames:
-        for c in f.columns:
-            out.setdefault(str(c), name)
-    return out
-
-
 def _artifact_digest(path: Path) -> str | None:
     """sha256 of the exact price artifact bytes. A path is a location, not an identity."""
     try:
@@ -634,22 +616,107 @@ def _artifact_digest(path: Path) -> str | None:
         return None
 
 
+def us_listing_price_store(listing: str) -> Path | None:
+    """`data/yahoo/<LISTING>.parquet` iff it exists AND carries `close_price`, else None.
+
+    The resolved-listing receipt V1 is built on. `collectors/yahoo.py` fetches this store with
+    `auto_adjust=False` and documents `close_price` as split-adjusted / dividend-UNadjusted — the
+    structure-math basis — so the store's existence with that exact column is what establishes
+    both the listing and its USD quote currency. Nothing here reads ticker syntax.
+    """
+    if not listing:
+        return None
+    p = config.data_dir() / "yahoo" / f"{listing}.parquet"
+    if not p.exists():
+        return None
+    try:
+        import pyarrow.parquet as pq
+        names = set(pq.read_schema(p).names)
+    except Exception:  # noqa: BLE001
+        return None
+    from engine import special_arb as arb
+    return p if arb.PRICE_COLUMN in names else None
+
+
+def _yahoo_close_series(listing: str) -> tuple[object, str, int] | None:
+    """(close_price series indexed by session, artifact digest, artifact byte length) or None."""
+    path = us_listing_price_store(listing)
+    if path is None:
+        return None
+    from engine import special_arb as arb
+    try:
+        df = pd.read_parquet(path, columns=[arb.PRICE_COLUMN])
+        idx = pd.to_datetime(df.index)
+    except Exception as e:  # noqa: BLE001
+        log.warning("special_situations arb: yahoo store unreadable for %s: %s", listing, e)
+        return None
+    s = pd.Series(df[arb.PRICE_COLUMN].to_numpy(), index=idx).dropna()
+    if s.empty:
+        return None
+    digest = _artifact_digest(path)
+    try:
+        nbytes = path.stat().st_size
+    except OSError:
+        return None
+    if not digest:
+        return None
+    return s, digest, int(nbytes)
+
+
+def _yahoo_price_input(listing: str, series, digest: str, nbytes: int, session,
+                       value: float, now_utc: datetime) -> dict:
+    """One narrow-V1 price receipt over the exact Yahoo artifact bytes.
+
+    Every field the pure reducer independently re-derives or checks against a closed vocabulary
+    is stated here by the producer that actually opened the file — including the two series-level
+    facts a pure owner cannot recompute (unique monotonic sessions, finite positive values).
+    """
+    from engine import special_arb as arb
+    sessions = [x.date() for x in series.index]
+    unique_monotonic = all(b > a for a, b in zip(sessions, sessions[1:]))
+    finite_positive = bool(((series > 0) & series.notna()).all()) and \
+        bool(pd.Series(series).map(lambda v: v == v and abs(v) != float("inf")).all())
+    return arb.price_input(
+        ticker=listing, listing=arb.US_CALENDAR_ID, session=session.isoformat(),
+        value=float(value), currency="USD", basis=arb.PRICE_BASIS_SPLIT_ADJ,
+        column=arb.PRICE_COLUMN, source_artifact=f"yahoo/{listing}.parquet",
+        artifact_sha256=digest, artifact_bytes=nbytes,
+        writer_owner=arb.PRICE_WRITER_OWNER, writer_blob=arb.PRICE_WRITER_BLOB,
+        calendar_owner=arb.CALENDAR_OWNER, calendar_blob=arb.CALENDAR_BLOB,
+        calendar_revision=_CALENDAR_REVISION, calendar_id=arb.US_CALENDAR_ID,
+        expected_session=nyse_calendar.expected_last_session(now_utc).isoformat(),
+        sessions_behind=int(nyse_calendar.sessions_behind(session, now_utc)),
+        sessions_unique_monotonic=unique_monotonic, values_finite_positive=finite_positive,
+        read_validated=True, recorded_at=now_utc.isoformat())
+
+
 def _observations_path() -> Path:
     return config.data_dir() / GROUP / "observations" / "observations.jsonl"
 
 
 def _load_observations() -> tuple[dict[str, list[dict]], dict]:
-    """Append-only deal-term observation ledger, grouped by CIK, with an integrity census.
+    """The deal-term ledger keyed by EVENT ACCESSION, with an integrity census. Fails CLOSED.
 
-    Fails CLOSED. The previous loader checked a `schema` string and silently dropped anything it
-    could not parse, so a malformed trailing line or a hand-edited value degraded into a
-    perfectly healthy-looking projection of the surviving rows. Now every row is re-validated
-    against its own closed digest, and any malformed or invalid row is COUNTED and reported —
-    partial generation is a visible state, not a quiet subset.
+    Two separate defects closed here.
+
+    **The join key.** Rows were grouped under `source.cik` and that whole issuer bucket was
+    compiled for every situation, so two unrelated deals by one filer shared a price. An issuer
+    is not a deal. Special Situations events already set `id = accession`, so the accession IS
+    the transaction key, and a cross-accession lineage now has to be proven by explicit
+    supersession rather than assumed from a shared filer.
+
+    **The rebind.** `validate_observation()` re-derives a row's id from the row's OWN fields, so
+    a forger who edits a value, moves a span and recomputes the id passed it — and nothing ever
+    re-opened the retained object or the projection the offsets claim to index. Every row is now
+    re-bound to the retained bytes: raw digest and byte length, projection digest/length/
+    revision, locator bounds, excerpt digest, document identity, accession identity and
+    completeness, all recomputed before a single term is compiled.
     """
+    from collectors import special_situations as col
     from engine import special_arb as arb
     p = _observations_path()
-    census = {"lines": 0, "malformed": 0, "invalid": 0, "kept": 0, "integrity_failed": False}
+    census = {"lines": 0, "malformed": 0, "invalid": 0, "unbound": 0, "kept": 0,
+              "integrity_failed": False}
     if not p.exists():
         return {}, census
     out: dict[str, list[dict]] = {}
@@ -659,6 +726,10 @@ def _load_observations() -> tuple[dict[str, list[dict]], dict]:
         log.warning("special_situations: observation ledger unreadable: %s", e)
         census["integrity_failed"] = True
         return {}, census
+    verified_cache: dict[str, tuple[bytes, dict] | None] = {}
+    # re-extraction is per (document, listing currency), not per row: a ledger with hundreds of
+    # rows over a handful of accessions would otherwise re-parse each document once per row
+    authored_cache: dict[tuple[str, object], set[tuple]] = {}
     for line in lines:
         line = line.strip()
         if not line:
@@ -672,61 +743,77 @@ def _load_observations() -> tuple[dict[str, list[dict]], dict]:
         if not arb.validate_observation(o):
             census["invalid"] += 1
             continue
-        cik = str((o.get("source") or {}).get("cik") or "").lstrip("0")
-        if cik:
-            out.setdefault(cik, []).append(o)
-            census["kept"] += 1
-    census["integrity_failed"] = bool(census["malformed"] or census["invalid"])
+        accession = str((o.get("source") or {}).get("accession") or "")
+        if not accession:
+            census["unbound"] += 1
+            continue
+        if accession not in verified_cache:
+            receipt = col._source_receipt(accession)
+            raw = col.retained_source_bytes(receipt) if receipt else None
+            verified_cache[accession] = (raw, receipt) if (raw and receipt) else None
+        bound = verified_cache[accession]
+        if bound is None:
+            census["unbound"] += 1            # a row citing bytes this host does not retain
+            continue
+        raw, receipt = bound
+        akey = (accession, o.get("currency"))
+        if akey not in authored_cache:
+            authored_cache[akey] = arb.authored_terms(
+                arb.normalized_projection(raw.decode("utf-8", "replace")),
+                listing_currency=o.get("currency"))
+        if arb.rebind_observation(o, raw_bytes=raw, receipt=receipt, accession=accession,
+                                  authored=authored_cache[akey]):
+            census["unbound"] += 1            # a row that does not descend from those bytes
+            continue
+        out.setdefault(accession, []).append(o)
+        census["kept"] += 1
+    lineage = arb.validate_lineage([o for rows in out.values() for o in rows])
+    if lineage:
+        census["lineage"] = lineage
+    census["integrity_failed"] = bool(census["malformed"] or census["invalid"]
+                                      or census["unbound"] or lineage)
     if census["integrity_failed"]:
-        log.warning("special_situations: observation ledger integrity: %d malformed, %d invalid "
-                    "of %d rows", census["malformed"], census["invalid"], census["lines"])
+        log.warning("special_situations: observation ledger integrity: %d malformed, %d invalid, "
+                    "%d unbound of %d rows", census["malformed"], census["invalid"],
+                    census["unbound"], census["lines"])
     return out, census
 
 
-def _price_inputs(panel: pd.DataFrame, sources: dict, digests: dict, col: str, ticker: str,
-                  now_utc: datetime) -> tuple[dict | None, dict | None]:
-    """Typed live + filing-reference prices for one listing, with INDEPENDENT freshness.
+def _price_inputs(listing: str, now_utc: datetime) -> tuple[dict | None, object]:
+    """The narrow-V1 live price for one EXACT resolved U.S. listing, plus its close series.
 
-    Expected session and sessions-behind come from `lib/nyse_calendar` — the canonical US
-    cash-equity calendar owner — never from the price panel. Grading a store against itself is
-    how a globally frozen panel reports every listing as current.
+    Reads only `data/yahoo/<LISTING>.parquet::close_price`. The previous version searched a
+    concatenated panel of breadth + backtest + Canada/intl/HK search stores, fell back from a
+    suffixed target to `raw.split(".")[0]`, took the currency from whichever COLUMN it selected,
+    and stamped `calendar_id="XNYS"` on all of it — so on 2026-07-03 (NYSE closed, HKEX open) an
+    HK row one local session stale reported `sessions_behind=0` and reached VERIFIED.
 
-    The reference price is deliberately NOT resolved here: it needs the SEC acceptance timestamp,
-    which lives in the observation evidence, so the reducer decides whether a reference session
-    is admissible at all.
+    Freshness comes from `lib/nyse_calendar` and the file's own bytes are digested, because
+    grading a store against itself lets a globally frozen panel certify every listing current.
     """
-    from engine import special_arb as arb
-    s = panel[col].dropna()
-    if s.empty:
+    read = _yahoo_close_series(listing)
+    if read is None:
         return None, None
-    ccy = arb.market_currency(col)
-    if not ccy:
-        return None, None                       # unresolved listing is not a USD listing
-    artifact = sources.get(str(col))
-    last = s.index[-1].date()
-    expected = nyse_calendar.expected_last_session(now_utc)
-    behind = nyse_calendar.sessions_behind(last, now_utc)
-    live = arb.price_input(
-        ticker=ticker, session=last.isoformat(), value=float(s.iloc[-1]), currency=ccy,
-        basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS), source_artifact=artifact,
-        artifact_sha256=digests.get(artifact),
-        sessions_behind=behind, expected_session=expected.isoformat(),
-        calendar_owner="lib/nyse_calendar.py", calendar_revision=_CALENDAR_REVISION,
-        calendar_id="XNYS", recorded_at=now_utc.isoformat())
-    return live, s
+    series, digest, nbytes = read
+    session = series.index[-1].date()
+    live = _yahoo_price_input(listing, series, digest, nbytes, session,
+                              float(series.iloc[-1]), now_utc)
+    return live, series
 
 
-def _reference_price(series, acceptance: object, sources: dict, digests: dict, col: str,
-                     ticker: str, now_utc: datetime) -> dict | None:
+def _reference_price(listing: str, series, acceptance: object, now_utc: datetime) -> dict | None:
     """Last completed session strictly BEFORE the exact SEC availability moment, or None.
 
     A date-only filing date cannot say whether the market had already closed when the filing
     became available, so without an exact acceptance timestamp there is no defensible reference
     session and the reducer reports REFERENCE_SESSION_UNRESOLVED.
     """
-    from engine import special_arb as arb
     if series is None or acceptance is None:
         return None
+    read = _yahoo_close_series(listing)
+    if read is None:
+        return None
+    _, digest, nbytes = read
     try:
         cut = pd.Timestamp(acceptance)
     except Exception:  # noqa: BLE001
@@ -743,18 +830,8 @@ def _reference_price(series, acceptance: object, sources: dict, digests: dict, c
     if not qualified:
         return None
     rs = pd.Timestamp(qualified[-1])
-    ccy = arb.market_currency(col)
-    if not ccy:
-        return None
-    artifact = sources.get(str(col))
-    return arb.price_input(
-        ticker=ticker, session=rs.date().isoformat(), value=float(series.loc[rs]), currency=ccy,
-        basis=_PRICE_BASIS.get(artifact, _DEFAULT_PRICE_BASIS), source_artifact=artifact,
-        artifact_sha256=digests.get(artifact), calendar_owner="lib/nyse_calendar.py",
-        calendar_revision=_CALENDAR_REVISION, calendar_id="XNYS",
-        expected_session=nyse_calendar.expected_last_session(now_utc).isoformat(),
-        sessions_behind=nyse_calendar.sessions_behind(rs.date(), now_utc),
-        recorded_at=now_utc.isoformat())
+    return _yahoo_price_input(listing, series, digest, nbytes, rs.date(),
+                              float(series.loc[rs]), now_utc)
 
 
 def _enrich_arb(sits: list[dict], *, now_utc: datetime | None = None) -> int:
@@ -766,21 +843,15 @@ def _enrich_arb(sits: list[dict], *, now_utc: datetime | None = None) -> int:
     """
     from engine import special_arb as arb
     now_utc = now_utc or datetime.now(timezone.utc)
-    try:
-        frames = _closes_frames()
-        panel = _closes_panel(frames)
-    except Exception as e:  # noqa: BLE001
-        log.warning("special_situations arb: closes panel failed: %s", e)
-        frames, panel = [], pd.DataFrame()
-    sources = _panel_sources(frames)
-    digests = {name: _artifact_digest(path) for name, path in _closes_paths().items()}
-    obs_by_cik, census = _load_observations()
+    obs_by_accession, census = _load_observations()
     n = 0
     for s in sits:
         if s.get("category") not in arb.ARB_CATEGORIES:
             continue
-        cik = str(s.get("cik") or "").lstrip("0")
-        rows = obs_by_cik.get(cik)
+        # the event id IS the accession for the EDGAR lane (collectors set `id=accession`), and
+        # an accession is the transaction. The issuer CIK is deliberately not consulted.
+        accession = str(s.get("accession") or s.get("id") or "")
+        rows = obs_by_accession.get(accession)
         if census.get("integrity_failed"):
             # partial generation must not present as a healthy projection of survivors
             s["arb"] = arb.reduce_cash_deal(
@@ -789,21 +860,27 @@ def _enrich_arb(sits: list[dict], *, now_utc: datetime | None = None) -> int:
                 category=s.get("category"), stage=s.get("stage"), now_utc=now_utc)
             s["arb"]["ledger_census"] = census
             continue
-        compiled = arb.compile_current_terms(rows)
-        raw = str(s.get("ticker") or "").upper()
-        col = None
-        if not panel.empty:
-            col = next((c for c in (raw, raw.split(".")[0]) if c and c in panel.columns), None)
+        # an explicitly linked lineage may reach past this accession, so the connected component
+        # is offered to the compiler — which admits ONLY rows it can reach by a validated edge
+        candidates = list(rows or [])
+        if candidates:
+            linked = {o.get("supersedes_observation_id") for o in
+                      (r for group in obs_by_accession.values() for r in group)}
+            ids = {o.get("observation_id") for o in candidates}
+            if linked & ids or any(o.get("supersedes_observation_id") for o in candidates):
+                candidates = [o for group in obs_by_accession.values() for o in group]
+        compiled = arb.compile_current_terms(candidates, accession=accession or None)
+        listing = arb.resolve_us_listing(s.get("ticker"))
         live = ref = None
-        if col:
-            live, series = _price_inputs(panel, sources, digests, col, raw, now_utc)
+        if listing:
+            live, series = _price_inputs(listing, now_utc)
             acceptance = next((ev.get("acceptance_datetime")
                                for ev in (compiled.get("evidence") or {}).values()
                                if ev.get("acceptance_datetime")), None)
-            ref = _reference_price(series, acceptance, sources, digests, col, raw, now_utc)
+            ref = _reference_price(listing, series, acceptance, now_utc)
         econ = arb.reduce_cash_deal(compiled, category=s.get("category"), stage=s.get("stage"),
                                     live_price=live, reference_price=ref, now_utc=now_utc,
-                                    ticker=raw)
+                                    ticker=listing or s.get("ticker"))
         s["arb"] = econ
         if econ.get("quality_state") == arb.QUALITY_VERIFIED:
             n += 1
@@ -1002,14 +1079,18 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
             if k in merged and k[0] is not None:
                 merged[k]["live"] = True                       # same situation, confirmed
                 merged[k]["edgar_url"] = r.get("source_url")
-                # a digest-confirmed row keeps the DIGEST dict, which carries no CIK — take it
-                # from the confirming EDGAR filing or the observation-ledger join finds nothing
+                # a digest-confirmed row keeps the DIGEST dict, which carries no event identity —
+                # take the ACCESSION from the confirming EDGAR filing, or the observation-ledger
+                # join finds nothing. The CIK travels for display only; it is not a join key.
+                merged[k].setdefault("accession", r.get("accession") or r.get("id"))
                 merged[k].setdefault("cik", r.get("cik"))
             else:
                 merged[k] = {
                     "id": r.get("id"), "ticker": r.get("ticker"), "company": r.get("company"),
-                    # the subject CIK is the join key for the deal-term observation ledger;
-                    # without it every cash deal reports SOURCE_UNAVAILABLE (F09-1)
+                    # the EVENT ACCESSION is the join key for the deal-term observation ledger.
+                    # It was the issuer CIK, which compiled one issuer bucket for every
+                    # situation and let two unrelated deals by one filer share a price (F09-1).
+                    "accession": r.get("accession") or r.get("id"),
                     "cik": r.get("cik"),
                     "category": r.get("category"),
                     "stage": r.get("current_stage") or r.get("stage") or "",
@@ -1114,7 +1195,10 @@ def mastermind_emit() -> dict:
             ftr = track["by_filer"].get(activist.norm_filer(fname)) if fname else None
             consider(r.get("ticker"), {
                 "ticker": r.get("ticker"), "company": r.get("company"),
-                "cik": r.get("cik"),          # observation-ledger join key (F09-1)
+                # the ACCESSION is the observation-ledger join key; the CIK is an issuer, and an
+                # issuer is not a transaction (F09-1 critical repair)
+                "accession": r.get("accession") or r.get("id"),
+                "cik": r.get("cik"),
                 "category": r.get("category"),
                 "stage": r.get("current_stage") or r.get("stage") or "",
                 "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,

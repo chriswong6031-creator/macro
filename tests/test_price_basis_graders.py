@@ -120,6 +120,25 @@ KNOWN_UNMIGRATED = {
         "merge_close_caches), not because the module was repaired. #4874 restored the "
         "detector but not the row. Do not delete it again without reading excess()."),
     # ---- reads both stores, but performs NO name-vs-benchmark arithmetic ------------
+    "engine/special_situations.py": (
+        "NO PAIRING: the two stores never meet in one calculation, and cannot. The breadth "
+        "panel is reached only by `_closes_panel()`, which is passed straight through to "
+        "`activist.filer_track_record()` and to collectors/special_prices.py — this module "
+        "performs no arithmetic on it. The F09-1 cash-deal path reads ONLY "
+        "`data/yahoo/<T>.parquet::close_price` via `_yahoo_close_series()`, and its arithmetic "
+        "is offer-price-from-the-FILING-TEXT over that one close — there is no second price "
+        "leg to mix a basis with. The pure reducer additionally refuses, by closed vocabulary, "
+        "any receipt whose artifact is not `yahoo/<T>.parquet`, whose column is not "
+        "`close_price`, or whose writer is not collectors/yahoo.py at the reviewed blob "
+        "(`engine/special_arb.validate_price_receipt`), so a breadth number cannot reach a "
+        "VERIFIED row even by accident — the F09-1 mutant suite pins exactly that "
+        "(tests/test_special_arb.py::test_an_adjusted_breadth_artifact_can_never_be_verified, "
+        "tests/test_special_situations.py::test_the_broad_adjusted_panels_are_never_read_by_the_arb_lane). "
+        "NOT migrated to engine.price_ladder deliberately: the ladder is adjusted-FIRST with "
+        "coverage-first fallbacks across four rungs, and the controlling F09 owner ruling "
+        "(Sol 2026-09-03) narrows V1 to ONE artifact with ONE reviewed basis and requires a "
+        "visible PRICE_BASIS_UNRESOLVED decline otherwise. A fallback ladder would make that "
+        "decline unreachable, which is the defect this capability exists to remove."),
     "engine/prophet_bridge.py": (
         "NO PAIRING: _load_price_history (#4684 P3) is a hand-rolled ADJUSTED-FIRST "
         "ladder — data/baskets/ohlcv -> data/stocks -> the four breadth close panels. "

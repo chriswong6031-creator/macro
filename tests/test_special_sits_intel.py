@@ -793,10 +793,14 @@ def _f09_econ(**over):
                 offer_price=25.0, currency="USD", price_unit="share",
                 stated_premium_pct=45.0, stated_premium_basis="premium of approximately 45%",
                 filing_reference_premium_pct=64.58, reference_session="2026-07-16",
-                reference_price=15.19, reference_source="breadth/_closes_cache.parquet",
+                reference_price=15.19, reference_source="yahoo/ABC.parquet",
                 live_gross_spread_pct=64.58, live_session="2026-07-17", live_price=15.19,
-                live_source="breadth/_closes_cache.parquet", sessions_behind=0,
-                price_basis="close_raw", expected_close="2026-12-15",
+                # the ONE admitted provenance and its reviewed basis. This fixture used to name
+                # `breadth/_closes_cache.parquet` with `basis="close_raw"` — breadth is written
+                # `auto_adjust=True`, so the suite was pinning a false receipt as VERIFIED.
+                live_source="yahoo/ABC.parquet", sessions_behind=0,
+                price_basis=arb.PRICE_BASIS_SPLIT_ADJ, warnings=[],
+                expected_close="2026-12-15",
                 expected_close_precision="exact_date", days_to_close=151, annualized_pct=138.9,
                 calc_asof="2026-07-18", accession="0000000001-26-000001",
                 evidence={"price_per_share": {"source_url": "https://sec.gov/x"}})

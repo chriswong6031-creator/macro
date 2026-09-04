@@ -268,6 +268,53 @@
     "price_per_share": null,
     "quality_state": "SOURCE_UNAVAILABLE"
    }
+  },
+  {
+   "id": "historical_cash_proposal_current_stock_deal",
+   "label": "REQUIRED (Sol 5102199556 §6 / 5102373399 HIGH E): a rejected historical CASH proposal in Background of the Merger beside a CURRENT all-stock transaction. Reproduced at head a88c12f2 as VERIFIED, offer 48.00, spread +20%, consideration=cash.",
+   "form_type": "DEFM14A",
+   "accession": "0000000020-26-000020",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "On September 2, 2026, the Company entered into an Agreement and Plan of Merger under which each outstanding share of common stock will be converted into the right to receive 0.850 shares of Parent common stock. The stock-for-stock transaction is expected to close on December 15, 2026, subject to customary closing conditions. Background of the Merger: in March 2025 the board received and, after consultation with its advisors, rejected an unsolicited proposal from a financial sponsor to acquire the Company for $48.00 in cash per share.",
+   "expect": {
+    "price_per_share": null,
+    "consideration": "stock",
+    "quality_state": "NOT_FIXED_CASH",
+    "why": "a background/prior-proposal span may never originate current price, currency, consideration, premium or close; the current transaction has no cash per-share price, so the correct outcome is a decline, not the first price in the filing"
+   }
+  },
+  {
+   "id": "prior_proposal_only_price",
+   "label": "Prior Proposals section is the ONLY per-share price in the document — the live deal is all-stock and must still publish nothing",
+   "form_type": "DEFM14A",
+   "accession": "0000000021-26-000021",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "The parties agreed to an all-stock combination in which each share will be exchanged for 1.200 shares of Parent common stock. The transaction is expected to close on December 15, 2026. Prior Proposals: the Company previously rejected an offer of $61.00 in cash per share.",
+   "expect": {
+    "price_per_share": null,
+    "consideration": "stock",
+    "quality_state": "NOT_FIXED_CASH"
+   }
+  },
+  {
+   "id": "fairness_opinion_reference_price",
+   "label": "a fairness-opinion span quoting a per-share value cannot become the offer (Opinion of ... is a disqualified section role)",
+   "form_type": "DEFM14A",
+   "accession": "0000000022-26-000022",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "At the effective time each share of common stock will be converted into the right to receive $32.00 in cash per share. The all-cash transaction is expected to close on December 15, 2026. Opinion of the Financial Advisor: the advisor observed a discounted cash flow range implying $57.00 per share.",
+   "expect": {
+    "price_per_share": 32.0,
+    "currency": "USD",
+    "consideration": "cash",
+    "expected_close": "2026-12-15",
+    "close_precision": "exact_date",
+    "quality_state": "VERIFIED",
+    "why": "the current-transaction scope is the admissible opening section; the fairness opinion's $57.00 is outside it and must not create a conflict that suppresses the real, correctly-scoped $32.00"
+   }
   }
  ]
 }

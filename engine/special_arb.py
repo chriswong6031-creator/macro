@@ -80,7 +80,52 @@ REASONS = frozenset({
     "SOURCE_TRUNCATED",                # body was cut; absence of a conflict is not evidence
     "STATED_PREMIUM_BASIS_UNRESOLVED", # a percentage with no captured comparator
     "CALENDAR_RECEIPT_MISSING",        # freshness asserted without the independent calendar owner
+    # F09-1 CRITICAL repair (Sol reviews 5102199556 / 5102373399 + reviewer STOP addendum)
+    "PRICE_RECEIPT_INVALID",           # a receipt whose own arithmetic/identity does not re-derive
+    "LISTING_UNSUPPORTED",             # not an exact resolved U.S. cash-equity listing on XNYS
+    "TRANSACTION_SCOPE_UNRESOLVED",    # no deterministic current-transaction evidence scope
 })
+
+# Informational gaps that legitimately coexist with a VERIFIED row. They are NOT failures and
+# must not appear in `reasons`: a VERIFIED row carrying "…UNRESOLVED" in its failure list is how
+# a partial receipt read as a complete one (Sol review 5102373399, "closed-state cleanup").
+WARNINGS = frozenset({
+    "REFERENCE_SESSION_UNRESOLVED", "DATE_PRECISION_INSUFFICIENT",
+    "STATED_PREMIUM_BASIS_UNRESOLVED",
+})
+
+# ------------------------------------------------------------------ narrow V1 price boundary
+#
+# V1 admits exactly ONE price provenance, pinned to the owner ruling of 2026-09-03: the existing
+# per-ticker U.S. Yahoo store, which deliberately fetches `auto_adjust=False` and documents
+# `close_price` as split-adjusted / dividend-UNadjusted — the structure-math basis. Every other
+# committed panel (breadth, bt_prices, arb_prices, Canada/intl/HK search) is written
+# `auto_adjust=True`, so labelling any of them a raw close is a FALSE receipt, and a false
+# receipt is how a back-adjusted reference close silently inflated a filing-reference premium.
+#
+# The owner blobs are the REVIEWED ones. Pinning them is deliberately fail-closed: if either
+# owner's basis or calendar semantics move, every row declines visibly instead of inheriting
+# semantics nobody re-read. `tests/test_special_arb.py` asserts these equal the repository's
+# current blobs, so drift is a loud test failure, never a silent coverage collapse.
+PRICE_BASIS_SPLIT_ADJ = "split_adjusted_dividend_unadjusted"
+PRICE_BASES = frozenset({PRICE_BASIS_SPLIT_ADJ})
+PRICE_COLUMN = "close_price"
+PRICE_COLUMNS = frozenset({PRICE_COLUMN})
+PRICE_WRITER_OWNER = "collectors/yahoo.py"
+PRICE_WRITER_BLOB = "7e41bb66d921b43bee6253f316bb1849e2c3e72b"
+CALENDAR_OWNER = "lib/nyse_calendar.py"
+CALENDAR_BLOB = "0ece6439ffe4b081ee7a268fe99b69e1de1216a3"
+CALENDAR_REVISION = "nyse_calendar.v1"
+US_CALENDAR_ID = "XNYS"
+PRICE_ARTIFACT_RE = re.compile(r"^yahoo/[A-Z][A-Z0-9]{0,9}\.parquet$")
+
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_HEX32 = re.compile(r"^[0-9a-f]{32}$")
+_ISO_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# An exact canonical U.S. cash-equity root. A dot or a dash is a foreign suffix (ARX.TO, 0700.HK)
+# or a share class (BRK.B) — both outside V1 — and the old `raw.split(".")[0]` fallback is what
+# let a foreign target be priced from a same-root U.S. column.
+_US_ROOT = re.compile(r"^[A-Z][A-Z0-9]{0,4}$")
 
 OBSERVATION_FIELDS = ("price_per_share", "currency", "consideration",
                       "stated_premium_pct", "expected_close")
@@ -144,6 +189,7 @@ def source_descriptor(*, cik: object, form_type: object, accession: object,
                       doc_id: object = None, body_truncated: bool = False,
                       raw_sha256: str | None = None, raw_bytes: int | None = None,
                       acceptance_datetime: object = None,
+                      resolved_listing: object = None,
                       projection_revision: str = PROJECTION_REVISION) -> dict:
     """Identity of the exact bytes an observation was read from.
 
@@ -175,8 +221,127 @@ def source_descriptor(*, cik: object, form_type: object, accession: object,
         "completeness": completeness,
         "projection_revision": projection_revision,
         "acquired_at": str(acquired_at) if acquired_at is not None else None,
+        # The resolved listing receipt, in the SAME evidence chain as the bytes. A bare "$" may
+        # only become an observed USD price when the listing was actually resolved, so the
+        # resolution has to travel with the observation rather than being re-inferred later.
+        "resolved_listing": str(resolved_listing) if resolved_listing else None,
         "doc_id": str(doc_id) if doc_id is not None else "normalized_projection",
     }
+
+
+_MARKUP_SCRIPT = re.compile(r"(?is)<(script|style)\b.*?</\1>")
+_MARKUP_TAG = re.compile(r"(?s)<[^>]+>")
+_MARKUP_ENTITY = re.compile(r"&#?\w+;")
+_MARKUP_WS = re.compile(r"\s+")
+
+
+def normalized_projection(raw: str) -> str:
+    """The ONE versioned normalized projection (`PROJECTION_REVISION`) offsets are read against.
+
+    Owned here, in the pure module, and imported by the acquisition collector — because a
+    locator is only meaningful against an EXACT projection, and two implementations of "strip the
+    markup" are two projections. The ledger reader re-derives this from the retained raw object
+    at load time and refuses any row whose offsets do not land where it says they do.
+    """
+    out = _MARKUP_SCRIPT.sub(" ", raw)
+    out = _MARKUP_TAG.sub(" ", out)
+    out = _MARKUP_ENTITY.sub(" ", out)
+    return _MARKUP_WS.sub(" ", out).strip()
+
+
+# Everything about a row that carries meaning but is NOT inside the observation digest. A
+# forger who edits one of these and reseals the id passes `validate_observation()`, so the
+# rebind compares the whole tuple against what the deterministic extractor actually authored
+# from the retained bytes. `status` is in here on purpose: flipping a `deferred` out-of-scope
+# price to `observed` is how a rejected background proposal would become the live offer.
+_SEMANTIC_KEYS = ("field", "status", "normalized", "unit", "currency", "currency_basis",
+                  "precision", "stated_basis", "note")
+
+
+def _semantic_tuple(obs: dict) -> tuple:
+    loc = obs.get("locator") or {}
+    return (loc.get("start"), loc.get("end"),
+            tuple(_canonical(obs.get(k)) for k in _SEMANTIC_KEYS))
+
+
+def authored_terms(projection: str, *, listing_currency: str | None = None) -> set[tuple]:
+    """Every term the deterministic extractor authors from THESE bytes, as semantic tuples.
+
+    The closure the digest cannot provide. `observation_id` covers the span and the value, so a
+    moved offset or an altered number breaks the id — but only until the forger recomputes it,
+    and `validate_observation()` re-derives that id from the row's OWN fields, so a resealed row
+    is self-consistent by construction. Measured: a row resealed with `normalized=999.0` while
+    its locator still pointed at the true "$25.00 … per share" span passed every check and
+    reached VERIFIED. A row is admissible only if the extractor, re-run over the verified
+    projection, actually produces it.
+    """
+    stub = {"accession": "_", "doc_id": "normalized_projection",
+            "projection_revision": PROJECTION_REVISION, "body_sha256": None}
+    return {_semantic_tuple(o) for o in
+            extract_term_observations(projection, source=stub,
+                                      listing_currency=listing_currency)}
+
+
+def rebind_observation(obs: dict, *, raw_bytes: bytes, receipt: dict,
+                       accession: object = None,
+                       authored: set[tuple] | None = None) -> list[str]:
+    """Re-open the retained bytes and prove the row descends from them. [] when clean.
+
+    This is the check the old runtime did not have. `validate_observation()` proves a row is
+    internally self-consistent — it re-derives the id from the row's OWN fields — so a forger who
+    edits a value, moves a span, rewrites the source metadata and then recomputes the id passes
+    it. Nothing in the loader ever re-read the retained object or the normalized projection the
+    offsets claim to index, and the extractor was still reading a legacy 40k `.txt`, so the seam
+    between "the bytes I hashed" and "the document I claimed" was never inspected by anyone.
+
+    Here the raw object is re-digested, the projection is re-derived from the verified bytes, and
+    the locator span and excerpt digest are re-read out of that projection. A row that survives
+    this cannot have been authored by anything other than the retained filing.
+    """
+    src = obs.get("source") or {}
+    loc = obs.get("locator") or {}
+    reasons: list[str] = []
+    if not isinstance(raw_bytes, (bytes, bytearray)) or not raw_bytes:
+        return ["SOURCE_BYTES_UNAVAILABLE"]
+    raw_digest = hashlib.sha256(bytes(raw_bytes)).hexdigest()
+    if raw_digest != receipt.get("raw_sha256") or raw_digest != src.get("raw_sha256"):
+        reasons.append("SOURCE_HASH_MISMATCH")
+    if len(raw_bytes) != receipt.get("raw_bytes") or len(raw_bytes) != src.get("raw_bytes"):
+        reasons.append("SOURCE_HASH_MISMATCH")
+    revision = src.get("projection_revision")
+    if revision != PROJECTION_REVISION or receipt.get("projection_revision") != PROJECTION_REVISION:
+        reasons.append("SOURCE_HASH_MISMATCH")
+    if src.get("completeness") != COMPLETENESS_COMPLETE or receipt.get("truncated"):
+        reasons.append("SOURCE_TRUNCATED")
+    if accession is not None and (str(src.get("accession")) != str(accession)
+                                  or str(receipt.get("accession")) != str(accession)):
+        reasons.append("IDENTITY_UNRESOLVED")
+    if str(src.get("doc_id") or "") != str(receipt.get("doc_id") or src.get("doc_id") or ""):
+        reasons.append("IDENTITY_UNRESOLVED")
+    if reasons:
+        return sorted(set(reasons))
+
+    projection = normalized_projection(bytes(raw_bytes).decode("utf-8", "replace"))
+    if _sha256(projection) != src.get("body_sha256") or \
+            _sha256(projection) != receipt.get("projection_sha256"):
+        return ["SOURCE_HASH_MISMATCH"]
+    if len(projection) != receipt.get("projection_chars"):
+        return ["SOURCE_HASH_MISMATCH"]
+    start, end = loc.get("start"), loc.get("end")
+    if not isinstance(start, int) or not isinstance(end, int) or isinstance(start, bool) \
+            or isinstance(end, bool) or not (0 <= start < end <= len(projection)):
+        return ["SOURCE_HASH_MISMATCH"]          # a locator outside the document it cites
+    if _sha256(projection[start:end]) != loc.get("excerpt_sha256"):
+        return ["SOURCE_HASH_MISMATCH"]
+    stored_excerpt = loc.get("excerpt")
+    if stored_excerpt is not None and stored_excerpt != projection[start:end]:
+        return ["SOURCE_HASH_MISMATCH"]
+    if authored is None:
+        authored = authored_terms(projection, listing_currency=obs.get("currency"))
+    if _semantic_tuple(obs) not in authored:
+        # the span and the digests are honest, but this is not a term these bytes say
+        return ["SOURCE_HASH_MISMATCH"]
+    return []
 
 
 def evidence_locator(text: str, start: int, end: int, *, doc_id: str = "full_submission_text",
@@ -194,13 +359,24 @@ def evidence_locator(text: str, start: int, end: int, *, doc_id: str = "full_sub
 
 
 def observation_id(*, source: dict, field: str, locator: dict, normalized: object,
-                   extraction_revision: str = EXTRACTION_REVISION) -> str:
-    """Deterministic id over a CLOSED digest shape.
+                   extraction_revision: str = EXTRACTION_REVISION,
+                   prior_observation_id: object = None,
+                   supersedes_observation_id: object = None,
+                   correction_reason: object = None) -> str:
+    """Deterministic id over a CLOSED digest shape — CORRECTION LINEAGE INCLUDED.
 
     Closed on purpose: every element that could change the meaning of the value is inside the
     digest, so a row whose value, span, projection or source object was altered cannot keep its
     id. That is what makes `validate_observation` a real integrity check rather than a
     schema-label check.
+
+    The correction relation is inside the digest for the same reason, and it is the sharper half:
+    while `prior_observation_id` / `supersedes_observation_id` / `correction_reason` sat OUTSIDE
+    the digest, `link_supersession()` recomputed the id and got the SAME string back — a no-op —
+    so a hand-forged relation field kept a valid id, validated True, and pulled an unrelated
+    accession's price into a VERIFIED deal (reproduced: offer 250.00, spread +1150%). A relation
+    that can change without changing the identity is not an identity; it is an authorization
+    boundary anyone can cross.
     """
     payload = _canonical([
         "special_situations.deal_term_observation.v1",
@@ -215,8 +391,35 @@ def observation_id(*, source: dict, field: str, locator: dict, normalized: objec
         field,
         normalized,
         extraction_revision,
+        prior_observation_id,
+        supersedes_observation_id,
+        correction_reason,
     ])
     return _sha256(payload)[:32]
+
+
+def _relation_of(obs: dict) -> tuple[object, object, object]:
+    return (obs.get("prior_observation_id"), obs.get("supersedes_observation_id"),
+            obs.get("correction_reason"))
+
+
+def reseal(obs: dict) -> dict:
+    """Re-derive an observation's id from its own current contents.
+
+    The ONE lawful way to mint a row that carries a correction relation. Used by
+    `link_supersession()` and by the mutant suite, so a test can build a row that is internally
+    sealed yet semantically illegal (dangling predecessor, cycle) and prove the LINEAGE checks —
+    not merely the digest — are what refuse it.
+    """
+    out = dict(obs)
+    prior, supersedes, reason = _relation_of(out)
+    out["observation_id"] = observation_id(
+        source=out.get("source") or {}, field=out.get("field"),
+        locator=out.get("locator") or {}, normalized=out.get("normalized"),
+        extraction_revision=out.get("extraction_revision") or EXTRACTION_REVISION,
+        prior_observation_id=prior, supersedes_observation_id=supersedes,
+        correction_reason=reason)
+    return out
 
 
 def validate_observation(obs: object, projection: str | None = None) -> bool:
@@ -234,13 +437,32 @@ def validate_observation(obs: object, projection: str | None = None) -> bool:
         return False
     if obs.get("field") not in OBSERVATION_FIELDS or obs.get("status") not in _STATUS:
         return False
+    oid = obs.get("observation_id")
+    if not isinstance(oid, str) or not _HEX32.match(oid):
+        return False                          # closed id shape: 32 lower-case hex, nothing else
+    prior, supersedes, reason = _relation_of(obs)
+    for link in (prior, supersedes):
+        if link is not None and not (isinstance(link, str) and _HEX32.match(link)):
+            return False
+    # V1 carries ONE relation per row, so the two link fields must agree, and a relation without
+    # a stated reason is an unexplained rewrite of a deal's economics.
+    if (prior is None) != (supersedes is None) or prior != supersedes:
+        return False
+    if prior is not None and not (isinstance(reason, str) and reason.strip()):
+        return False
+    if prior is None and reason is not None:
+        return False
+    if prior is not None and prior == oid:
+        return False                          # a row cannot supersede itself
     try:
         expected = observation_id(
             source=src, field=obs["field"], locator=loc, normalized=obs.get("normalized"),
-            extraction_revision=obs.get("extraction_revision") or EXTRACTION_REVISION)
+            extraction_revision=obs.get("extraction_revision") or EXTRACTION_REVISION,
+            prior_observation_id=prior, supersedes_observation_id=supersedes,
+            correction_reason=reason)
     except Exception:  # noqa: BLE001
         return False
-    if expected != obs.get("observation_id"):
+    if expected != oid:
         return False
     if projection is not None:
         start, end = loc.get("start"), loc.get("end")
@@ -251,6 +473,82 @@ def validate_observation(obs: object, projection: str | None = None) -> bool:
         if _sha256(projection) != src.get("body_sha256"):
             return False
     return True
+
+
+def validate_lineage(rows: list[dict]) -> list[str]:
+    """Lineage integrity across a POPULATION of rows. Returns failure reasons, [] when clean.
+
+    A sealed digest proves a row was not edited; it says nothing about whether the relation it
+    asserts is real. These four checks are what the digest cannot do:
+
+    * **existence** — a link naming an id no row carries is dangling, and a dangling link is the
+      shape a forger uses to reach outside the evidence set;
+    * **same field / same lineage** — a price may only supersede a price;
+    * **direction** — a successor must not pre-date its predecessor;
+    * **acyclicity** — a cycle has no current term at all, so "newest wins" silently picks one.
+    """
+    by_id = {}
+    for o in rows:
+        oid = o.get("observation_id")
+        if isinstance(oid, str):
+            by_id.setdefault(oid, o)
+    reasons: list[str] = []
+    edges: dict[str, str] = {}
+    for o in rows:
+        prior, _, _ = _relation_of(o)
+        if prior is None:
+            continue
+        pred = by_id.get(prior)
+        if pred is None:
+            reasons.append("INTEGRITY_FAILED")          # dangling predecessor
+            continue
+        if pred.get("field") != o.get("field"):
+            reasons.append("INTEGRITY_FAILED")          # cross-field "correction"
+            continue
+        if _sort_key(pred) > _sort_key(o):
+            reasons.append("INTEGRITY_FAILED")          # a successor older than its predecessor
+            continue
+        edges[str(o.get("observation_id"))] = prior
+    # acyclicity: walk each successor chain, bounded by the population size
+    for start in list(edges):
+        seen, cur, steps = {start}, edges.get(start), 0
+        while cur is not None and steps <= len(edges) + 1:
+            if cur in seen:
+                reasons.append("INTEGRITY_FAILED")      # cycle
+                break
+            seen.add(cur)
+            cur = edges.get(cur)
+            steps += 1
+    return sorted(set(reasons))
+
+
+def _lineage_component(rows: list[dict], accession: str) -> list[dict]:
+    """The rows of the EXACT connected lineage containing `accession`, and nothing else.
+
+    The compiler used to admit an entire multi-accession bucket the moment ANY supersession
+    matched ANY id in it, so one valid amendment link legalized every other accession that
+    happened to be in the same issuer bucket. Reachability is computed over validated
+    supersession edges only, in both directions, starting from the requested accession's own
+    rows — an accession with no edge chain to it is simply not part of this transaction.
+    """
+    by_id = {str(o.get("observation_id")): o for o in rows}
+    adj: dict[str, set[str]] = {}
+    for o in rows:
+        prior, _, _ = _relation_of(o)
+        oid = str(o.get("observation_id"))
+        if prior and prior in by_id:
+            adj.setdefault(oid, set()).add(prior)
+            adj.setdefault(prior, set()).add(oid)
+    frontier = [str(o.get("observation_id")) for o in rows
+                if str((o.get("source") or {}).get("accession")) == str(accession)]
+    seen = set(frontier)
+    while frontier:
+        cur = frontier.pop()
+        for nxt in adj.get(cur, ()):  # noqa: B007
+            if nxt not in seen:
+                seen.add(nxt)
+                frontier.append(nxt)
+    return [o for o in rows if str(o.get("observation_id")) in seen]
 
 
 def link_supersession(newer: list[dict], older: list[dict]) -> list[dict]:
@@ -270,11 +568,8 @@ def link_supersession(newer: list[dict], older: list[dict]) -> list[dict]:
         if not prior:
             out.append(o)
             continue
-        linked = dict(o, prior_observation_id=prior, supersedes_observation_id=prior)
-        linked["observation_id"] = observation_id(
-            source=linked["source"], field=linked["field"], locator=linked["locator"],
-            normalized=linked.get("normalized"),
-            extraction_revision=linked.get("extraction_revision") or EXTRACTION_REVISION)
+        linked = reseal(dict(o, prior_observation_id=prior, supersedes_observation_id=prior,
+                             correction_reason=o.get("correction_reason") or "supersedes_prior"))
         out.append(linked)
     return out
 
@@ -296,7 +591,10 @@ def make_observation(*, source: dict, field: str, normalized: object, raw: objec
     if status not in _STATUS:
         raise ValueError(f"unknown observation status: {status}")
     oid = observation_id(source=source, field=field, locator=locator, normalized=normalized,
-                         extraction_revision=extraction_revision)
+                         extraction_revision=extraction_revision,
+                         prior_observation_id=prior_observation_id,
+                         supersedes_observation_id=supersedes_observation_id,
+                         correction_reason=correction_reason)
     return {
         "schema": OBSERVATION_SCHEMA,
         "observation_id": oid,
@@ -408,14 +706,39 @@ _DATE_VAGUE = re.compile(r"year[-\s]end|coming\s+months|(?:late|early|mid)[-\s]\
 
 # A filing is not one transaction. A fairness opinion, a background section, a financing
 # paragraph or a superseded proposal can each contain cash/CVR/exchange-ratio language that has
-# nothing to do with the live deal. Scope every field to the transaction the PRICE sits in, and
-# cut that scope at the nearest structural boundary.
+# nothing to do with the live deal.
+#
+# The previous scope was anchored on the FIRST price candidate and then cut at the nearest
+# section boundary — which is how a rejected 2025 "$48.00 in cash per share" proposal sitting
+# under "Background of the Merger" became the live consideration of a current all-stock merger
+# (reproduced: VERIFIED, offer 48.00, spread +20%, consideration `cash`). Anchoring on a price
+# means the document decides which transaction it is describing by whichever number appears
+# first, which is not transaction identity at all.
+#
+# Scope is now STRUCTURAL and computed before any price is looked at: the document is split at
+# every section cue, sections whose ROLE cannot originate current consideration are
+# disqualified outright, and the current transaction is the first admissible section carrying an
+# explicit current-transaction anchor. A price outside that section can never be the offer.
 _SECTION_CUE = re.compile(
     r"Background\s+of\s+the\b|Opinion\s+of\b|Risk\s+Factors\b|Item\s+\d+(?:\.\d+)?\b|"
     r"Certain\s+Relationships\b|Interests\s+of\b|Prior\s+[Pp]roposals?\b|"
     r"Reasons\s+for\s+the\b|Financing\s+of\s+the\b|Employment\s+Agreements?\b",
     re.I)
-_SCOPE_SPAN = 1200          # hard bound so a scope can never quietly become "the document"
+
+# sections that may NEVER originate a current price / currency / consideration / premium / close
+_EXCLUDED_SECTION = re.compile(
+    r"Background\s+of\s+the\b|Opinion\s+of\b|Risk\s+Factors\b|"
+    r"Certain\s+Relationships\b|Interests\s+of\b|Prior\s+[Pp]roposals?\b|"
+    r"Financing\s+of\s+the\b|Employment\s+Agreements?\b", re.I)
+
+# an explicit statement that THIS document is describing a live transaction
+_CURRENT_TXN_ANCHOR = re.compile(
+    r"Agreement\s+and\s+Plan\s+of\b|merger\s+agreement\b|"
+    r"(?:will|shall)\s+be\s+(?:converted|cancelled|exchanged)\b|"
+    r"right\s+to\s+receive\b|tender\s+offer\b|offer\s+to\s+purchase\b|"
+    r"all[-\s]cash\b|all[-\s]stock\b|stock[-\s]for[-\s]stock\b|exchange\s+ratio\b|"
+    r"business\s+combination\b|combination\b|has\s+agreed\s+to\s+acquire\b|"
+    r"agreed\s+to\s+an\b|entered\s+into\b", re.I)
 
 # a stated premium is only meaningful with its comparator; "35% premium" alone is a number
 # with no semantics, and it must never stand in for the computed filing-reference premium
@@ -432,22 +755,39 @@ _QUARTER_WORD = {"first": 1, "1st": 1, "second": 2, "2nd": 2,
                  "third": 3, "3rd": 3, "fourth": 4, "4th": 4}
 
 
-def transaction_scope(text: str, start: int, end: int) -> tuple[int, int]:
-    """The bounded evidence scope one transaction's terms may be read from.
+def document_sections(text: str) -> list[dict]:
+    """The document split at every section cue, each span labelled with its role.
 
-    Anchored on the price span and cut at the nearest section cue on each side, then hard-capped.
-    A CVR named only under "Background of the Merger" is outside the live deal's scope, which is
-    the whole point: page-wide first-match is not transaction identity.
+    Deterministic and price-independent: the boundaries come from the document's own structure,
+    so which spans may originate current economics is settled before a single number is read.
     """
-    lo = max(0, start - _SCOPE_SPAN)
-    hi = min(len(text), end + _SCOPE_SPAN)
-    before = [m.end() for m in _SECTION_CUE.finditer(text, lo, start)]
-    if before:
-        lo = max(before)
-    after = _SECTION_CUE.search(text, end, hi)
-    if after:
-        hi = after.start()
-    return lo, hi
+    cuts = [(m.start(), m.group(0)) for m in _SECTION_CUE.finditer(text)]
+    bounds = [(0, None)] + cuts
+    out: list[dict] = []
+    for i, (start, cue) in enumerate(bounds):
+        end = bounds[i + 1][0] if i + 1 < len(bounds) else len(text)
+        if end <= start:
+            continue
+        out.append({"start": start, "end": end, "cue": cue,
+                    "excluded": bool(cue and _EXCLUDED_SECTION.match(cue))})
+    return out
+
+
+def current_transaction_scope(text: str) -> tuple[int, int] | None:
+    """The ONE evidence span the current transaction's terms may be read from, or None.
+
+    First admissible section carrying an explicit current-transaction anchor; failing that, the
+    first admissible section. Never a disqualified section, and never "wherever the first price
+    happens to be". When no admissible section exists at all the answer is None — an honest
+    `TRANSACTION_SCOPE_UNRESOLVED` decline, not a guess.
+    """
+    admissible = [sec for sec in document_sections(text) if not sec["excluded"]]
+    if not admissible:
+        return None
+    anchored = [sec for sec in admissible
+                if _CURRENT_TXN_ANCHOR.search(text, sec["start"], sec["end"])]
+    chosen = (anchored or admissible)[0]
+    return chosen["start"], chosen["end"]
 
 
 def _neg_context(text: str, start: int, end: int) -> str | None:
@@ -578,14 +918,20 @@ def extract_term_observations(text: str | None, *, source: dict,
         return []
     obs: list[dict] = []
     doc_id = source.get("doc_id") or "normalized_projection"
+    scope_bounds = current_transaction_scope(text)
+    if scope_bounds is None:
+        return []                     # no admissible section: nothing here can be current
+    lo, hi = scope_bounds
 
     def _emit(field, normalized, raw, locator, precision, status="observed", **kw):
         obs.append(make_observation(source=source, field=field, normalized=normalized, raw=raw,
                                     locator=locator, precision=precision, status=status,
                                     recorded_at=recorded_at, **kw))
 
-    # ---- price per share (and the currency that names it) -> defines the transaction scope
-    cands = _price_candidates(text)
+    # ---- price per share, read ONLY inside the current-transaction scope
+    all_cands = _price_candidates(text)
+    cands = [c for c in all_cands if lo <= c["start"] and c["end"] <= hi]
+    outside = [c for c in all_cands if c not in cands]
     share_vals = {c["value"] for c in cands if c["unit"] == "share"}
     ads_vals = {c["value"] for c in cands if c["unit"] == "ADS"}
     conflicted = len(share_vals) > 1 or (share_vals and ads_vals and share_vals != ads_vals)
@@ -599,13 +945,15 @@ def extract_term_observations(text: str | None, *, source: dict,
         _emit("currency", iso, c["ccy_token"], loc, PRECISION_TEXT,
               status="observed" if iso else "ambiguous", currency=iso, currency_basis=basis,
               note=None if iso else basis)
+    # Out-of-scope prices are RECORDED, never compiled: a rejected prior proposal is real
+    # evidence about the filing and must stay visible, but `deferred` rows are not live terms,
+    # so nothing here can originate the current offer.
+    for c in outside:
+        loc = evidence_locator(text, c["start"], c["end"], doc_id=doc_id)
+        _emit("price_per_share", c["value"], loc["excerpt"], loc, PRECISION_EXACT_NUMERIC,
+              status="deferred", unit=c["unit"],
+              note="outside_current_transaction_scope")
 
-    # scope: anchored on the price when there is one. With no price no economics can ever be
-    # published, so a document-wide read there can only ever produce a NON-cash classification.
-    if cands and not conflicted:
-        lo, hi = transaction_scope(text, cands[0]["start"], cands[0]["end"])
-    else:
-        lo, hi = 0, len(text)
     scope = text[lo:hi]
 
     # ---- consideration, inside the transaction scope only
@@ -671,18 +1019,25 @@ def _sort_key(o: dict) -> tuple:
     return (str(src.get("filing_date") or ""), str(src.get("accession") or ""))
 
 
-def compile_current_terms(observations: list[dict] | None) -> dict:
+def compile_current_terms(observations: list[dict] | None, *, accession: object = None) -> dict:
     """Deterministically choose the current term set, failing closed on identity and integrity.
 
-    Three rules the previous version broke:
+    Four rules the previous versions broke:
 
     1. **Every row is re-validated.** A schema label is not integrity. A row whose value, span,
-       projection or source receipt was altered no longer matches its own closed digest, and the
-       whole compile degrades to INTEGRITY_FAILED rather than quietly publishing the survivors.
+       projection, source receipt OR correction relation was altered no longer matches its own
+       closed digest, and the whole compile degrades to INTEGRITY_FAILED rather than quietly
+       publishing the survivors.
     2. **An accession is an isolated transaction.** Grouping by issuer CIK let two unrelated
        deals share a price. Multiple accessions may only form one lineage through an EXPLICIT
        source-linked supersession; an `/A` form or a shared filer proves nothing.
-    3. **A truncated projection cannot be conflict-free.** Absence of a second price inside a
+    3. **Only the EXACT connected lineage of the requested accession is compiled.** Pass
+       `accession` — the Special Situations event id — and the compile walks validated
+       supersession edges out from that accession's own rows. The previous version admitted the
+       whole multi-accession bucket the moment ANY supersession matched ANY id in it, so one
+       lawful amendment link legalized an unrelated third accession sitting in the same bucket.
+       A lineage is not a bucket that happens to contain one real edge.
+    4. **A truncated projection cannot be conflict-free.** Absence of a second price inside a
        cut body is not evidence, so the compile carries the truncation forward and the reducer
        refuses to call it VERIFIED.
     """
@@ -700,6 +1055,13 @@ def compile_current_terms(observations: list[dict] | None) -> dict:
         return {"status": "ambiguous", "reasons": ["INTEGRITY_FAILED"], "terms": {},
                 "evidence": {}, "accession": None, "amendment_chain": [],
                 "integrity": {"rows": len(raw_rows), "invalid": len(invalid)}}
+    lineage_reasons = validate_lineage(rows)
+    if lineage_reasons:
+        return {"status": "ambiguous", "reasons": lineage_reasons, "terms": {},
+                "evidence": {}, "accession": None, "amendment_chain": [],
+                "integrity": {"rows": len(raw_rows), "lineage": "invalid"}}
+    if accession is not None:
+        rows = _lineage_component(rows, str(accession))
     if not rows:
         return {"status": "unavailable",
                 "reasons": ["SOURCE_BYTES_UNAVAILABLE"] if unbound else ["TERM_NOT_FOUND"],
@@ -799,40 +1161,152 @@ def compile_current_terms(observations: list[dict] | None) -> dict:
 # ------------------------------------------------------------------ typed price inputs
 
 def price_input(*, ticker: object, session: object, value: object, currency: object,
-                basis: object = "close_raw", source_artifact: object = None,
+                basis: object = None, source_artifact: object = None,
                 sessions_behind: int | None = None, expected_session: object = None,
                 calendar_id: object = None, recorded_at: object = None,
                 calendar_owner: object = None, calendar_revision: object = None,
-                artifact_sha256: object = None) -> dict:
+                calendar_blob: object = None, artifact_sha256: object = None,
+                artifact_bytes: object = None, column: object = None,
+                listing: object = None, writer_owner: object = None,
+                writer_blob: object = None,
+                sessions_unique_monotonic: object = None,
+                values_finite_positive: object = None,
+                read_validated: object = None) -> dict:
     """One price observation with the clocks and receipts that make it usable or not.
 
-    `sessions_behind` and `expected_session` must come from an INDEPENDENT calendar owner, not
-    from the price panel itself. Deriving the expected session from the same store you are
-    grading lets a globally stale panel certify itself as current: every listing is equally
-    behind, so nothing looks behind. `artifact_sha256` identifies the exact price bytes — a path
-    string is a location, not an identity.
+    There is NO basis default. `basis="close_raw"` used to be this function's own fallback, so
+    the false-raw fiction lived in the PURE owner and not only in the producer: any caller that
+    simply omitted the basis received a receipt asserting a raw close it had never proven.
+    Unstated is now unstated, and unstated is `PRICE_BASIS_UNRESOLVED`.
+
+    Everything here is a CLAIM. `validate_price_receipt()` re-derives every part of it that can
+    be re-derived — expected session, sessions behind, digest shape, closed vocabularies — so a
+    caller-authored `sessions_behind=0` beside a 2020 session is caught by arithmetic rather
+    than trusted. The two facts a pure owner cannot recompute (whether the series' sessions were
+    unique and monotonic, and whether its values were finite and positive) are carried as
+    explicit named booleans the producer must set from the artifact it actually read.
     """
     return {
         "ticker": str(ticker) if ticker is not None else None,
+        "listing": str(listing) if listing is not None else None,
         "session": str(session) if session is not None else None,
         "expected_session": str(expected_session) if expected_session is not None else None,
         "sessions_behind": None if sessions_behind is None else int(sessions_behind),
         "value": _num(value),
         "currency": str(currency).upper() if currency else None,
         "basis": str(basis) if basis else None,
+        "column": str(column) if column is not None else None,
         "calendar_id": str(calendar_id) if calendar_id is not None else None,
         "calendar_owner": str(calendar_owner) if calendar_owner is not None else None,
         "calendar_revision": str(calendar_revision) if calendar_revision is not None else None,
+        "calendar_blob": str(calendar_blob) if calendar_blob is not None else None,
         "source_artifact": str(source_artifact) if source_artifact is not None else None,
         "artifact_sha256": str(artifact_sha256) if artifact_sha256 is not None else None,
+        "artifact_bytes": None if artifact_bytes is None else int(artifact_bytes),
+        "writer_owner": str(writer_owner) if writer_owner is not None else None,
+        "writer_blob": str(writer_blob) if writer_blob is not None else None,
+        "sessions_unique_monotonic": (None if sessions_unique_monotonic is None
+                                      else bool(sessions_unique_monotonic)),
+        "values_finite_positive": (None if values_finite_positive is None
+                                   else bool(values_finite_positive)),
+        "read_validated": None if read_validated is None else bool(read_validated),
         "recorded_at": str(recorded_at) if recorded_at is not None else None,
     }
 
 
-def _has_calendar_receipt(p: dict | None) -> bool:
-    """A freshness claim is only as good as the owner that issued it."""
-    return bool(p and p.get("calendar_owner") and p.get("expected_session")
-                and p.get("sessions_behind") is not None and p.get("artifact_sha256"))
+def resolve_us_listing(ticker: object) -> str | None:
+    """The exact canonical U.S. cash-equity root, or None.
+
+    V1's whole boundary. A dot or a dash means a foreign suffix (`ARX.TO`, `0700.HK`) or a share
+    class (`BRK.B`) — both outside V1 — and the old producer's `raw.split(".")[0]` fallback let a
+    foreign target be priced from a same-root U.S. column with the currency then inferred from
+    the selected column rather than the resolved listing. Nothing about this function derives a
+    CURRENCY: USD comes from the resolved listing's own Yahoo store semantics, never from ticker
+    syntax.
+    """
+    t = str(ticker or "").strip().upper()
+    return t if t and _US_ROOT.fullmatch(t) else None
+
+
+def validate_price_receipt(p: dict | None, *, now_utc, ticker: object = None) -> list[str]:
+    """Independently re-derive a price receipt's truth. Returns failure reasons, [] when clean.
+
+    The reducer used to check only that certain receipt KEYS were present, trust the caller's
+    `sessions_behind`, never compare `session` against `expected_session`, and accept any string
+    as a basis. Measured consequences at head a88c12f2: `session=2020-01-02` +
+    `expected_session=2026-06-01` + `sessions_behind=0` reached VERIFIED; so did
+    `basis="totally_made_up_basis"`; so did a genuinely five-sessions-stale close whose caller
+    simply declared zero.
+
+    Everything below is recomputed from `now_utc` through the approved calendar owner
+    (`lib/nyse_calendar`, pure date arithmetic — no IO) or checked against a closed vocabulary.
+    """
+    if not p:
+        return ["PRICE_MISSING"]
+    from lib import nyse_calendar
+
+    reasons: list[str] = []
+    val = _num(p.get("value"))
+    if val is None or val <= 0:
+        reasons.append("PRICE_MISSING")
+
+    # --- closed vocabularies: basis, column, writer, calendar, artifact shape
+    if p.get("basis") not in PRICE_BASES:
+        reasons.append("PRICE_BASIS_UNRESOLVED")
+    if p.get("column") not in PRICE_COLUMNS:
+        reasons.append("PRICE_BASIS_UNRESOLVED")
+    if p.get("writer_owner") != PRICE_WRITER_OWNER or p.get("writer_blob") != PRICE_WRITER_BLOB:
+        reasons.append("PRICE_BASIS_UNRESOLVED")
+    if p.get("calendar_owner") != CALENDAR_OWNER or p.get("calendar_blob") != CALENDAR_BLOB \
+            or p.get("calendar_revision") != CALENDAR_REVISION:
+        reasons.append("CALENDAR_RECEIPT_MISSING")
+    if p.get("calendar_id") != US_CALENDAR_ID or p.get("listing") != US_CALENDAR_ID:
+        reasons.append("LISTING_UNSUPPORTED")
+
+    # --- exact artifact identity: a path is a location, a digest+length is an identity
+    digest = p.get("artifact_sha256")
+    if not (isinstance(digest, str) and _HEX64.match(digest)):
+        reasons.append("PRICE_RECEIPT_INVALID")
+    nbytes = p.get("artifact_bytes")
+    if not (isinstance(nbytes, int) and not isinstance(nbytes, bool) and nbytes > 0):
+        reasons.append("PRICE_RECEIPT_INVALID")
+
+    # --- listing / ticker / artifact agreement
+    listing_ticker = resolve_us_listing(p.get("ticker"))
+    if listing_ticker is None:
+        reasons.append("LISTING_UNSUPPORTED")
+    if ticker is not None and resolve_us_listing(ticker) != listing_ticker:
+        reasons.append("LISTING_UNSUPPORTED")
+    artifact = str(p.get("source_artifact") or "")
+    if not PRICE_ARTIFACT_RE.match(artifact) or (
+            listing_ticker and artifact != f"yahoo/{listing_ticker}.parquet"):
+        reasons.append("PRICE_BASIS_UNRESOLVED")
+
+    # --- the producer's own read validation of the artifact it opened
+    if p.get("read_validated") is not True or p.get("sessions_unique_monotonic") is not True \
+            or p.get("values_finite_positive") is not True:
+        reasons.append("PRICE_RECEIPT_INVALID")
+
+    # --- clocks, recomputed rather than accepted
+    session = _iso_date(p.get("session"))
+    if session is None or not _ISO_DAY.match(str(p.get("session") or "")):
+        return sorted(set(reasons + ["PRICE_RECEIPT_INVALID"]))
+    try:
+        expected = nyse_calendar.expected_last_session(now_utc)
+        behind = int(nyse_calendar.sessions_behind(session, now_utc))
+    except Exception:  # noqa: BLE001
+        return sorted(set(reasons + ["CALENDAR_RECEIPT_MISSING"]))
+    if str(p.get("expected_session") or "") != expected.isoformat():
+        reasons.append("PRICE_RECEIPT_INVALID")     # the receipt's own expected session is wrong
+    if p.get("sessions_behind") != behind:
+        reasons.append("PRICE_RECEIPT_INVALID")     # a caller-authored freshness conclusion
+    if session > expected:
+        # not "stale" — a receipt asserting a session the market has not finished is invalid,
+        # and an invalid clock publishes no number at all
+        reasons.extend(["PRICE_RECEIPT_INVALID", "PRICE_STALE"])
+    elif behind > 0:
+        reasons.append("PRICE_STALE")               # latest must be EXACTLY expected for VERIFIED
+    return sorted(set(reasons))
 
 
 def _usable(p: dict | None) -> bool:
@@ -841,16 +1315,31 @@ def _usable(p: dict | None) -> bool:
 
 # ------------------------------------------------------------------ the one reducer
 
-def _result(state: str, reasons: list[str], **extra) -> dict:
+def _result(state: str, reasons: list[str], warnings: list[str] | None = None, **extra) -> dict:
+    """One closed result shape.
+
+    `reasons` is the FAILURE channel and `warnings` is the informational one. They are separate
+    because a VERIFIED row used to ship `REFERENCE_SESSION_UNRESOLVED` inside its own failure
+    list — a state that reads, to every consumer, as a verified number that also failed. The
+    invariant is enforced here rather than trusted: a VERIFIED row carries no failure reason.
+    """
     if state not in QUALITY_STATES:
         raise ValueError(f"unknown quality state: {state}")
+    reasons = sorted(set(reasons))
+    warnings = sorted(set(warnings or []))
     bad = [r for r in reasons if r not in REASONS]
     if bad:
         raise ValueError(f"unknown failure reason(s): {bad}")
+    bad_w = [w for w in warnings if w not in WARNINGS]
+    if bad_w:
+        raise ValueError(f"unknown warning(s): {bad_w}")
+    if state == QUALITY_VERIFIED and reasons:
+        raise ValueError(f"a VERIFIED row cannot carry failure reasons: {reasons}")
     out = {
         "schema": "special_situations.cash_deal_economics.v1",
         "quality_state": state,
-        "reasons": sorted(set(reasons)),
+        "reasons": reasons,
+        "warnings": warnings,
         "formula_revision": FORMULA_REVISION,
         "extraction_revision": EXTRACTION_REVISION,
         "is_context_only": True,
@@ -934,17 +1423,41 @@ def reduce_cash_deal(compiled: dict | None, *, now_utc=_REQUIRED, category: obje
     base.update({"offer_price": round(offer, 4), "currency": currency,
                  "price_unit": terms.get("price_unit") or "share"})
 
+    # V1 admits exactly one listing family, and USD comes from that resolved listing — never
+    # from ticker syntax, and never from whichever price column happened to be selected.
+    if ticker is not None and resolve_us_listing(ticker) is None:
+        return _result(QUALITY_AMBIGUOUS, ["LISTING_UNSUPPORTED"], **base)
+    if currency != "USD":
+        return _result(QUALITY_AMBIGUOUS, ["LISTING_UNSUPPORTED"], **base)
+
     if not _usable(live_price):
         return _result(QUALITY_CALCULATION_UNAVAILABLE, ["PRICE_MISSING"], **base)
-    if (live_price.get("currency") or "").upper() != currency:
-        return _result(QUALITY_AMBIGUOUS, ["CURRENCY_MISMATCH"], **base)
 
-    live_session = _iso_date(live_price.get("session"))
-    if live_session and live_session > asof:
+    # Every receipt claim that CAN be re-derived is re-derived, before any number is published.
+    receipt_reasons = validate_price_receipt(live_price, now_utc=now_utc, ticker=ticker)
+    if (live_price.get("currency") or "").upper() != currency:
+        receipt_reasons = sorted(set(receipt_reasons + ["CURRENCY_MISMATCH"]))
+    behind = None
+    try:
+        from lib import nyse_calendar as _cal
+        _sess = _iso_date(live_price.get("session"))
+        behind = int(_cal.sessions_behind(_sess, now_utc)) if _sess else None
+    except Exception:  # noqa: BLE001
+        behind = None
+    # A receipt that is merely BEHIND is still a true receipt: the spread stays visible and
+    # simply never enters the ordered book. A receipt that does not re-derive publishes no
+    # number at all — there is nothing to be visible about.
+    stale_only = receipt_reasons == ["PRICE_STALE"]
+    if receipt_reasons and not stale_only:
         base.update({"live_session": live_price.get("session"),
-                     "price_basis": live_price.get("basis")})
-        return _result(QUALITY_CALCULATION_UNAVAILABLE, ["PRICE_STALE"],
-                       price_clock="future_session", **base)
+                     "price_basis": live_price.get("basis"),
+                     "sessions_behind": behind,
+                     "expected_session": live_price.get("expected_session"),
+                     "live_source": live_price.get("source_artifact"),
+                     "live_artifact_sha256": live_price.get("artifact_sha256")})
+        state = (QUALITY_AMBIGUOUS if "CURRENCY_MISMATCH" in receipt_reasons
+                 else QUALITY_CALCULATION_UNAVAILABLE)
+        return _result(state, receipt_reasons, **base)
 
     if reference_price and _usable(reference_price):
         if (reference_price.get("basis") or None) != (live_price.get("basis") or None):
@@ -954,11 +1467,12 @@ def reduce_cash_deal(compiled: dict | None, *, now_utc=_REQUIRED, category: obje
 
     lp = _num(live_price.get("value"))
     reasons: list[str] = [r for r in compiled_reasons if r == "SOURCE_TRUNCATED"]
+    warnings: list[str] = []
     base.update({
         "live_price": round(lp, 4), "live_session": live_price.get("session"),
         "live_source": live_price.get("source_artifact"),
         "live_artifact_sha256": live_price.get("artifact_sha256"),
-        "sessions_behind": live_price.get("sessions_behind"),
+        "sessions_behind": behind,                     # RECOMPUTED, not the receipt's claim
         "expected_session": live_price.get("expected_session"),
         "calendar_owner": live_price.get("calendar_owner"),
         "calendar_revision": live_price.get("calendar_revision"),
@@ -989,7 +1503,10 @@ def reduce_cash_deal(compiled: dict | None, *, now_utc=_REQUIRED, category: obje
             "acceptance_datetime": acceptance,
         })
     else:
-        reasons.append("REFERENCE_SESSION_UNRESOLVED")
+        warnings.append("REFERENCE_SESSION_UNRESOLVED")
+
+    if terms.get("stated_premium_pct") is not None and not terms.get("stated_premium_basis"):
+        warnings.append("STATED_PREMIUM_BASIS_UNRESOLVED")
 
     precision = terms.get("expected_close_precision")
     if precision == PRECISION_EXACT_DATE:
@@ -998,24 +1515,22 @@ def reduce_cash_deal(compiled: dict | None, *, now_utc=_REQUIRED, category: obje
             base["days_to_close"] = int(days)
             base["annualized_pct"] = round(((offer / lp) ** (365.0 / int(days)) - 1.0) * 100, 1)
         else:
-            reasons.append("DATE_PRECISION_INSUFFICIENT")
+            warnings.append("DATE_PRECISION_INSUFFICIENT")
     else:
-        reasons.append("DATE_PRECISION_INSUFFICIENT")
+        warnings.append("DATE_PRECISION_INSUFFICIENT")
 
-    # a freshness claim with no independent calendar owner is not a freshness claim
-    if not _has_calendar_receipt(live_price):
-        return _result(QUALITY_CALCULATION_UNAVAILABLE, reasons + ["CALENDAR_RECEIPT_MISSING"],
-                       **base)
-    behind = live_price.get("sessions_behind")
-    if behind is not None and int(behind) > 0:
-        return _result(QUALITY_STALE_PRICE, reasons + ["PRICE_STALE"], **base)
     # a cut body cannot be declared conflict-free, so it cannot be VERIFIED
     if "SOURCE_TRUNCATED" in reasons or \
             terms.get("source_completeness") != COMPLETENESS_COMPLETE:
         return _result(QUALITY_CALCULATION_UNAVAILABLE,
-                       sorted(set(reasons + ["SOURCE_TRUNCATED"])), **base)
+                       sorted(set(reasons + ["SOURCE_TRUNCATED"])), warnings, **base)
+    if stale_only:
+        return _result(QUALITY_STALE_PRICE, sorted(set(reasons + ["PRICE_STALE"])),
+                       warnings, **base)
+    if reasons:
+        return _result(QUALITY_CALCULATION_UNAVAILABLE, reasons, warnings, **base)
 
-    result = _result(QUALITY_VERIFIED, reasons, **base)
+    result = _result(QUALITY_VERIFIED, [], warnings, **base)
     result["orderable"] = result["annualized_pct"] is not None
     if result["annualized_pct"] is not None and abs(result["annualized_pct"]) >= 1000.0:
         result["extreme_value"] = True
@@ -1071,6 +1586,7 @@ def context_row(row: dict, *, block: str = "arb") -> dict:
         "expected_close": e.get("expected_close"),
         "expected_close_precision": e.get("expected_close_precision"),
         "quality_state": e.get("quality_state"), "reasons": e.get("reasons") or [],
+        "warnings": e.get("warnings") or [],
         "accession": e.get("accession"), "source_url": (e.get("evidence") or {})
             .get("price_per_share", {}).get("source_url"),
         "formula_revision": e.get("formula_revision"),
@@ -1142,6 +1658,11 @@ _SUFFIX_CCY = {
 
 def market_currency(ticker: object) -> str | None:
     """Quote currency for a resolved listing, or None when the listing is not resolved.
+
+    NOT ON THE VERIFIED PATH. Retained for the display/candidate lanes only. It answers from
+    ticker SYNTAX — "USD" for any dotless symbol, so `BABA` and `ADS1` both came back USD — and
+    the narrow V1 verified path derives USD from the resolved listing's own Yahoo store instead
+    (`resolve_us_listing` + `validate_price_receipt`). Nothing here may gate a published number.
 
     The old default returned "USD" for anything it did not recognise — including the empty
     string. A raw collector event does not carry the engine-resolved listing, so that default
