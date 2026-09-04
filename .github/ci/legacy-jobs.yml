@@ -3444,6 +3444,7 @@ jobs:
       - "lib/filing_value_units.py"
       - "lib/finra_knowable.py"
       - "lib/forex_link.py"
+      - "lib/help_directory.py"
       - "lib/hk_calendar.py"
       - "lib/nyse_calendar.py"
       - "lib/options_context.py"
@@ -3510,6 +3511,14 @@ jobs:
       - "site/master_brief.json"
       - "site/neuralwebdata/**"
       - "site/qledger/**"
+      # F13-X1: build_site imports the source-bound help directory, whose
+      # fail-closed contract reads these exact existing owner templates.
+      - "templates/_navlinks.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
+      - "templates/support.html.j2"
       - "tests/test_check_intelligence_registry.py"
       - "tests/test_intelligence_registry.py"
       - "tests/test_output_health.py"
@@ -7018,6 +7027,14 @@ jobs:
       - "site/prophet/**"
       - "site/qledger/**"
       - "site/vol/**"
+      # F13-X1: build_site imports the source-bound help directory, whose
+      # fail-closed contract reads these exact existing owner templates.
+      - "templates/_navlinks.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
+      - "templates/support.html.j2"
       - "tests/test_biocatalyst_api.py"
       - "tests/test_biocatalyst_d0b_ui.py"
       - "tests/test_biocatalyst_deploy.py"
@@ -8706,7 +8723,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pyyaml jinja2
       - name: public fastlane split + rendered pricing copy pins
-        run: python -m pytest tests/test_public_render_fastlane.py -q
+        run: python -m pytest tests/test_public_render_fastlane.py tests/test_help_directory.py tests/test_help_directory_contract.py -q
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -10988,7 +11005,11 @@ jobs:
       - "site/qledger/track_record.json"
       - "site/sectordata/**"
       - "site/stocktable.js"
+      # F13-X1 help source-validation closure reached through build_site.
+      - "templates/_navlinks.html.j2"
       - "templates/_prophet_card.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
       - "templates/_stock_decision.css.j2"
       - "templates/_track_record_dlg.html.j2"
       - "templates/_us_board_cards.html.j2"
@@ -10997,7 +11018,10 @@ jobs:
       - "templates/dashboard.html.j2"
       - "templates/hk.html.j2"
       - "templates/intl.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
       - "templates/stocktable.js"
+      - "templates/support.html.j2"
       - "templates/theme.css"
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
