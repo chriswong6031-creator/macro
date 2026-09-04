@@ -154,19 +154,55 @@
     "items": []
   },
   "changes": {
-    "comparability": "NO_PRIOR",
-    "deltas": [],
-    "null_reason": "WARMUP",
-    "prior_effective_date": null,
-    "prior_generation_id": null,
-    "prior_method_version": null,
-    "status": "ABSENT"
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 0.003956,
+        "delta": 0.0,
+        "metric_id": "glt_monetary_impulse",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.003956
+      },
+      {
+        "current_value": 0.077032,
+        "delta": 0.0,
+        "metric_id": "glt_monetary_impulse_z",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.077032
+      },
+      {
+        "current_value": -0.144768,
+        "delta": 0.0,
+        "metric_id": "glt_usd_funding_impulse",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": -0.144768
+      },
+      {
+        "current_value": 0.333333,
+        "delta": 0.0,
+        "metric_id": "glt_liquidity_breadth",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.333333
+      },
+      {
+        "current_value": 0.38,
+        "delta": 0.0,
+        "metric_id": "cb_fed_balance_sheet_impulse_13w",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.38
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-08-28",
+    "prior_generation_id": "liquidity_central_banks-US-a82080353b5a5894",
+    "prior_method_version": "liquidity_central_banks.compose.v1",
+    "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
-    "predecessor_generation_id": null
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "liquidity_central_banks-US-a82080353b5a5894"
   },
   "drivers": {
     "balance_sheet": [
@@ -259,11 +295,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T18:41:41Z",
+    "built_at": "2026-09-04T19:39:33Z",
     "calculation_as_of": "2026-09-04T11:03:41.497178+00:00",
-    "code_version": "001f1af4a2d1d6022d9ab291796373606e8c202e",
-    "content_sha256": "fccc2eaa8a03fea3ffdb7dea63c7982c7f0c0794edb2e815bc803cb67b0b0f64",
-    "generation_id": "liquidity_central_banks-US-fccc2eaa8a03fea3",
+    "code_version": "ea24fb5df2ba3d5461f07f722ba23adff32c782c",
+    "content_sha256": "564fd8bc77f79112b501efa2b07fb6017af7f8d15c8a38b15990f7c1bd514a97",
+    "generation_id": "liquidity_central_banks-US-564fd8bc77f79112",
     "producer": "engine.market_os.macro_workspaces.liquidity_central_banks",
     "rendered_at": null
   },
@@ -289,8 +325,8 @@
       "status": "ABSENT"
     },
     "prior_state": {
-      "effective_date": null,
-      "method_version": null,
+      "effective_date": "2026-08-28",
+      "method_version": "liquidity_central_banks.compose.v1",
       "state_id": null
     },
     "quadrant": {

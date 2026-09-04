@@ -166,6 +166,35 @@ REGISTRY: dict[str, dict] = {
             "cb_fed_balance_sheet_impulse_13w",
         ),
     },
+    "capital_structure": {
+        "id": "capital_structure",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.capital_structure",
+        "method_version": "capital_structure.compose.v1",
+        "title_en": "Capital Structure",
+        "title_zh": "资本结构",
+        "subtitle_en": "Refinancing pressure x balance-sheet resilience/market access",
+        "subtitle_zh": "再融资压力 × 资产负债表韧性/市场准入",
+        "required_components": ("event_coverage_census", "issuer_records"),
+    },
+    "housing_real_estate": {
+        "id": "housing_real_estate",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.housing",
+        "method_version": "housing_real_estate.compose.v1",
+        "title_en": "Housing & Real Estate",
+        "title_zh": "住房与房地产",
+        "subtitle_en": "Demand/transaction momentum x affordability/financing pressure",
+        "subtitle_zh": "需求/成交动能 × 可负担性/融资压力",
+        "required_components": (
+            "mortgage_rate",
+            "housing_starts",
+            "building_permits",
+            "case_shiller_hpi",
+        ),
+    },
 }
 
 # Declare the remaining not-yet-built workspaces so the registry lists the

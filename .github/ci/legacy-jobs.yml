@@ -13681,10 +13681,12 @@ jobs:
       - "scripts/build_macro_workspaces.py"
       - "tests/test_macro_workspace_build.py"
       - "tests/test_macro_workspace_business_activity.py"
+      - "tests/test_macro_workspace_capital_structure.py"
       - "tests/test_macro_workspace_consumer.py"
       - "tests/test_macro_workspace_contract.py"
       - "tests/test_macro_workspace_financial_conditions.py"
       - "tests/test_macro_workspace_growth.py"
+      - "tests/test_macro_workspace_housing.py"
       - "tests/test_macro_workspace_inflation.py"
       - "tests/test_macro_workspace_labor.py"
       - "tests/test_macro_workspace_liquidity_central_banks.py"
@@ -13704,10 +13706,12 @@ jobs:
           python -m pytest
           tests/test_macro_workspace_build.py
           tests/test_macro_workspace_business_activity.py
+          tests/test_macro_workspace_capital_structure.py
           tests/test_macro_workspace_consumer.py
           tests/test_macro_workspace_contract.py
           tests/test_macro_workspace_financial_conditions.py
           tests/test_macro_workspace_growth.py
+          tests/test_macro_workspace_housing.py
           tests/test_macro_workspace_inflation.py
           tests/test_macro_workspace_labor.py
           tests/test_macro_workspace_liquidity_central_banks.py
@@ -13751,6 +13755,9 @@ jobs:
       - "templates/macro_financial_conditions.html.j2"
       # R3 2026-09-04: the Liquidity & Central Banks page.
       - "templates/macro_liquidity_central_banks.html.j2"
+      # R4/R5 2026-09-04: Capital Structure + Housing pages.
+      - "templates/macro_capital_structure.html.j2"
+      - "templates/macro_housing_real_estate.html.j2"
       - "templates/macro_suite.css"
       - "templates/macro_suite.js"
       - "templates/macro_suite_boot.js"

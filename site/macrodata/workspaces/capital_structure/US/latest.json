@@ -1,0 +1,1637 @@
+{
+  "alert_contract": {
+    "eligible_conditions": [
+      {
+        "condition_id": "new_capital_structure_event",
+        "kind": "component_shock",
+        "label": {
+          "en": "New capital-structure event observed",
+          "zh": "新增资本结构事件"
+        },
+        "params": [
+          "issuer_id",
+          "family"
+        ]
+      },
+      {
+        "condition_id": "review_backlog_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Review backlog shock",
+          "zh": "审查积压冲击"
+        },
+        "params": [
+          "review_backlog_ratio"
+        ]
+      },
+      {
+        "condition_id": "issuer_contradiction_flagged",
+        "kind": "contradiction_change",
+        "label": {
+          "en": "Issuer event contradiction flagged",
+          "zh": "发行人事件矛盾标记"
+        },
+        "params": [
+          "issuer_id"
+        ]
+      },
+      {
+        "condition_id": "source_stale_or_failed",
+        "kind": "source_stale_or_failed",
+        "label": {
+          "en": "Source stale or failed",
+          "zh": "数据源过期或失败"
+        },
+        "params": [
+          "source_id"
+        ]
+      }
+    ],
+    "note": "Eligible condition types are declared; this composer writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    "service_available": false,
+    "status": "ABSENT"
+  },
+  "authority": {
+    "axis_authority_ceiling": "DESCRIPTIVE",
+    "can_execute": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "class": "context_only",
+    "display_only": true
+  },
+  "availability": {
+    "contradiction": {
+      "components": [],
+      "en": null,
+      "kind": null,
+      "present": false,
+      "zh": null
+    },
+    "coverage_ratio": 1.0,
+    "degraded": [],
+    "reasons": [
+      "owner_coverage_state=partial",
+      "owner_horizon_state=degraded_discovery"
+    ],
+    "required": [
+      {
+        "component_id": "event_coverage_census",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Event & issuer coverage census",
+          "zh": "事件与发行人覆盖普查"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-04T06:14:34.409360Z",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "issuer_records",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Issuer capital-structure event records",
+          "zh": "发行人资本结构事件记录"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-04T06:14:34.409360Z",
+        "status": "PRESENT"
+      }
+    ],
+    "state": "CURRENT",
+    "worst_freshness": "CURRENT"
+  },
+  "axes": {
+    "items": []
+  },
+  "changes": {
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 2374,
+        "delta": 0.0,
+        "metric_id": "cs_issuer_count",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 2374
+      },
+      {
+        "current_value": 6996,
+        "delta": 0.0,
+        "metric_id": "cs_event_count",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 6996
+      },
+      {
+        "current_value": 2717,
+        "delta": 0.0,
+        "metric_id": "cs_classified_event_count",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 2717
+      },
+      {
+        "current_value": 3584,
+        "delta": 0.0,
+        "metric_id": "cs_deferred_event_count",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 3584
+      },
+      {
+        "current_value": 4772,
+        "delta": 0.0,
+        "metric_id": "cs_review_count",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 4772
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-09-04T06:14:34.409360Z",
+    "prior_generation_id": "capital_structure-US-050d93924bc1ba05",
+    "prior_method_version": "capital_structure.compose.v1",
+    "status": "PRESENT"
+  },
+  "corrections": {
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "capital_structure-US-050d93924bc1ba05"
+  },
+  "drivers": {
+    "balance_sheet": [],
+    "rate_side": []
+  },
+  "generation": {
+    "built_at": "2026-09-04T19:39:33Z",
+    "calculation_as_of": "2026-09-04T06:19:48.233321Z",
+    "code_version": "ea24fb5df2ba3d5461f07f722ba23adff32c782c",
+    "content_sha256": "bfa014352bfadc253ff58728bbd53fdeb4bfbe572d0000b9d06495e882a09f51",
+    "generation_id": "capital_structure-US-bfa014352bfadc25",
+    "producer": "engine.market_os.macro_workspaces.capital_structure",
+    "rendered_at": null
+  },
+  "headline": {
+    "effective_date": "2026-09-04T06:14:34.409360Z",
+    "hysteresis": {
+      "applied": false,
+      "band": 0.0,
+      "held_prior": false,
+      "note": "architecture section 10.3 names a refinancing-pressure x balance-sheet-resilience/market-access quadrant, but the scoped owner artifact for this composer (data/capital_structure/projection.json) is an event/filing classification projection only -- it explicitly types the instrument-level substance both axes would need (maturity/refinancing terms, cash runway, financing capacity) as not currently published, at both the whole-projection level and every individual issuer record. No quadrant score is estimated from event-classification metadata alone; the real, honestly-aggregable coverage and event census is published under metrics instead."
+    },
+    "method_version": "capital_structure.compose.v1",
+    "nearest_boundary": {
+      "axis": null,
+      "distance": null,
+      "null_reason": "COMPUTATION_REFUSED"
+    },
+    "null_reason": "COMPUTATION_REFUSED",
+    "one_month_vector": {
+      "dx": null,
+      "dy": null,
+      "null_reason": "COMPUTATION_REFUSED",
+      "status": "ABSENT"
+    },
+    "prior_state": {
+      "effective_date": "2026-09-04T06:14:34.409360Z",
+      "method_version": "capital_structure.compose.v1",
+      "state_id": null
+    },
+    "quadrant": {
+      "x": null,
+      "x_status": "ABSENT",
+      "y": null,
+      "y_status": "ABSENT"
+    },
+    "state_id": null,
+    "state_label": {
+      "en": null,
+      "zh": null
+    },
+    "status": "ABSENT",
+    "subtitle": {
+      "en": "Refinancing pressure x balance-sheet resilience/market access",
+      "zh": "再融资压力 × 资产负债表韧性/市场准入"
+    },
+    "transition_distance": null
+  },
+  "implications": {
+    "items": [
+      {
+        "channels": [
+          "financing",
+          "credit_markets"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "headline_unavailable",
+        "text": {
+          "en": "No refinancing-pressure x balance-sheet-resilience/market-access state is asserted: the scoped owner projection publishes capital-structure EVENT and FILING classification metadata only, and explicitly discloses the instrument-level terms both axes would need (maturity/refinancing capacity, cash runway) as not currently published. Rather than estimate a fabricated score, the real event and issuer census is published as metrics instead.",
+          "zh": "未给出再融资压力 × 资产负债表韧性/市场准入状态：所设定的所有者投影仅发布资本结构事件与文件分类元数据，并明确披露两轴所需的工具层面条款（到期/再融资能力、现金续航）目前尚未发布。为避免虚构评分，改以指标形式发布真实的事件与发行人普查数据。"
+        },
+        "trace_ref": "data/capital_structure/projection.json#coverage"
+      },
+      {
+        "channels": [
+          "financing"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "event_census_read",
+        "text": {
+          "en": "The owner-published projection covers 2374 issuers and 6996 capital-structure events this cycle (2717 classified, 3584 deferred pending further review) -- a filing-classification census, not a risk score.",
+          "zh": "所有者发布的投影本周期覆盖 2374 个发行人和 6996 项资本结构事件（已分类 2717 项，延期待进一步审查 3584 项）——这是文件分类普查，并非风险评分。"
+        },
+        "trace_ref": "data/capital_structure/projection.json#coverage"
+      },
+      {
+        "channels": [
+          "financing",
+          "issuance"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "issuer_census_read",
+        "text": {
+          "en": "Across 2374 issuer records read this cycle: 956 have a classified latest event, 1495 sit in the owner's pending review queue, and 232 carry a shelf-registration filing as their most recent observed event (a coarse market-access census, not a scored issuance-conditions index).",
+          "zh": "本周期读取的 2374 个发行人记录中：956 个的最新事件已完成分类，1495 个仍处于所有者的待审查队列中，232 个的最新观测事件为货架注册文件（这是粗粒度的市场准入普查，并非评分化的发行条件指数）。"
+        },
+        "trace_ref": "data/capital_structure/projection.json#records"
+      },
+      {
+        "channels": [
+          "financing"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "owner_horizon_state_degraded",
+        "text": {
+          "en": "The owner itself marks this cycle's discovery horizon as 'degraded_discovery' (latest_expected_index_not_observed; latest_filings_observation_missing). This composer passes that read through unchanged rather than smoothing it over.",
+          "zh": "所有者自身将本周期的发现视野标记为“degraded_discovery”（latest_expected_index_not_observed；latest_filings_observation_missing）。本组合器原样传递该判断，不做平滑处理。"
+        },
+        "trace_ref": "data/capital_structure/projection.json#coverage"
+      },
+      {
+        "channels": [
+          "financing"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "unavailable_capacities_disclosure",
+        "text": {
+          "en": "The owner projection explicitly discloses the following capacities as not currently published, at both the whole-projection level and every issuer record: active_instrument_overhang, cash_runway, financing_probability, fully_diluted_shares, instruments, normalized_terms, offering_ability, remaining_capacity. Each is typed rather than silently omitted or estimated -- see the corresponding metric for each name.",
+          "zh": "所有者投影明确披露以下能力目前尚未发布，且在整体投影层面与每条发行人记录层面均如此：active_instrument_overhang, cash_runway, financing_probability, fully_diluted_shares, instruments, normalized_terms, offering_ability, remaining_capacity。每一项均以类型化方式呈现，而非被静默省略或臆造——具体见各自对应的指标。"
+        },
+        "trace_ref": "data/capital_structure/projection.json#unavailable"
+      },
+      {
+        "channels": [
+          "financing"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "scope_boundary_disclosure",
+        "text": {
+          "en": "This workspace reads exactly one owner path, the capital-structure event projection. Aggregate credit-spread and financing-cost context (named in architecture section 10.3) is not composed here even though a comparable reading exists elsewhere in this repository -- that context belongs to the Financial Conditions and Monetary Policy workspaces and is never duplicated into this one by reaching outside the scoped owner input. Issuer-level drilldowns and a portfolio exposure join are both request-time concerns; this composer never republishes the underlying records array itself.",
+          "zh": "本工作区仅读取一个所有者数据路径，即资本结构事件投影。架构第10.3节提及的综合信用利差与融资成本背景本处不予汇编，即便本仓库其他位置存在可比读数——该背景属于金融条件与货币政策工作区，不会通过越界读取所有者输入而在此重复呈现。发行人层面的下钻与投资组合敞口关联均为请求时概念；本组合器绝不会原样重新发布底层记录数组本身。"
+        },
+        "trace_ref": "engine.market_os.macro_workspaces.capital_structure#scope"
+      },
+      {
+        "channels": [
+          "financing"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "owner_authority_disclosure_agrees",
+        "text": {
+          "en": "The owner artifact's own authority block agrees with this snapshot's fixed contract authority: context-only, no rank/entry/sizing/prophet authority.",
+          "zh": "所有者制品自身的权限区块与本快照固定的合约权限一致：仅限上下文，不含排名/入场/仓位/预言权限。"
+        },
+        "trace_ref": "data/capital_structure/projection.json#authority"
+      }
+    ]
+  },
+  "learning": {
+    "event_names": [
+      "macro_workspace_opened",
+      "macro_state_changed_seen",
+      "macro_driver_expanded",
+      "macro_source_opened",
+      "macro_degraded_state_seen",
+      "macro_unknown_or_refusal_seen"
+    ],
+    "instrumentation": "first_party",
+    "privacy_note": "Event definitions reuse the existing first-party analytics owner; no second analytics store, no user identity copied into the artifact."
+  },
+  "metrics": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.issuer_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 2374,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.event_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_event_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_event_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "events",
+        "value": 6996,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.classified_event_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_classified_event_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_classified_event_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "events",
+        "value": 2717,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.deferred_event_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_deferred_event_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_deferred_event_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "events",
+        "value": 3584,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.review_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_review_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_review_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "events",
+        "value": 4772,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.edge_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_edge_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_edge_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "edges",
+        "value": 581,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.generation_age_hours",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_owner_generation_age_hours",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_owner_generation_age_hours",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "hours",
+        "value": 0.087173,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_categorical",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.state",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_coverage_state",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_coverage_state",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "partial",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_categorical",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.freshness",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_event_detection_freshness_state",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_event_detection_freshness_state",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-native enum member, a DIFFERENT vocabulary from this snapshot's own freshness taxonomy -- never conflated with it",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "stale",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_categorical",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.generation_freshness",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_generation_freshness_state",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_generation_freshness_state",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-native enum member, a DIFFERENT vocabulary from this snapshot's own freshness taxonomy -- never conflated with it",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "fresh",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_categorical",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.source_status",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_source_status",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_source_status",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "ok",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_categorical",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.horizon_state",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_horizon_state",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_horizon_state",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "degraded_discovery",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "classified_over_total_events",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.classified_event_count / coverage.event_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_classified",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_event_classification_rate",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_event_classification_rate",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "classified_event_count divided by event_count; refused (never 0) when event_count is missing or zero",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 0.388365,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "pending_review_over_total_events",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "coverage.review_count / coverage.event_count",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_backlog",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_review_backlog_ratio",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_review_backlog_ratio",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "review_count divided by event_count; refused (never 0) when event_count is missing or zero",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 0.682104,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*]",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_records_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_records_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuer records actually present in this projection",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 2374,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.classification_state",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_latest_event_classified_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_latest_event_classified_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuers whose latest observed event reached the owner's classified terminal state",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 956,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "classified_over_total_issuer_records",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.classification_state",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_classified",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_latest_event_classified_share",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_latest_event_classified_share",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "classified issuer-record count divided by total issuer-record count; refused when there are zero records",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 0.402696,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.review.state",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_pending_review_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_pending_review_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuers whose latest observed event is currently in the owner's pending review queue",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 1495,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.family",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_shelf_registration_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_shelf_registration_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuers whose latest observed event family is a shelf registration -- a coarse market-access census, never a scored issuance-conditions index",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 232,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "shelf_over_total_issuer_records",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.family",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_shelf_activity",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_shelf_registration_share",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_shelf_registration_share",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "shelf-registration issuer-record count divided by total issuer-record count; refused when there are zero records",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 0.097725,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.relationships",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_with_relationships_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_with_relationships_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuers whose latest observed event carries a non-empty owner-native relationships edge list",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 250,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].latest_observed_event.correction_of",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_correction_present_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_correction_present_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuers whose latest observed event is itself a correction of a prior event (architecture 10.3 amendment/correction lineage leg)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 0,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_census",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "records[*].coverage.contradiction_ids",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cs_issuer_contradiction_flagged_count",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_issuer_contradiction_flagged_count",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "PRESENT",
+        "transformation": "count of issuer records whose own coverage.contradiction_ids is non-empty (owner-native, never a composer-invented threshold)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "issuers",
+        "value": 0,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:active_instrument_overhang",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_active_instrument_overhang",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_active_instrument_overhang",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'active_instrument_overhang' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:cash_runway",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_cash_runway",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_cash_runway",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'cash_runway' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:financing_probability",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_financing_probability",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_financing_probability",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'financing_probability' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:fully_diluted_shares",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_fully_diluted_shares",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_fully_diluted_shares",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'fully_diluted_shares' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:instruments",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_instruments",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_instruments",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'instruments' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:normalized_terms",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_normalized_terms",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_normalized_terms",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'normalized_terms' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:offering_ability",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_offering_ability",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_offering_ability",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'offering_ability' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_disclosed_unavailable",
+        "calculation_as_of": "2026-09-04T06:14:34.409360Z",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "unavailable[]:remaining_capacity",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "cs_remaining_capacity",
+        "model_version": "capital_structure.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-09-04T06:14:34.409360Z",
+        "owner_ref": "engine.capital_structure_event_projection",
+        "reference_id": "mastermind.market_reference/v1#cs_remaining_capacity",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "data/capital_structure/projection.json"
+        ],
+        "status": "ABSENT",
+        "transformation": "the owner-native projection explicitly discloses 'remaining_capacity' as not currently published, at both the whole-projection level and every individual issuer record; this composer never estimates a value in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      }
+    ]
+  },
+  "region": {
+    "code": "US",
+    "display_name": "United States",
+    "supported": true
+  },
+  "scenario_contract": {
+    "assumptions": [
+      {
+        "assumption_id": "review_backlog_ratio",
+        "label": {
+          "en": "Review backlog ratio",
+          "zh": "审查积压比率"
+        },
+        "max": 1.0,
+        "min": 0.0,
+        "owner_field": "coverage.review_count",
+        "step": 0.05,
+        "unit": "ratio"
+      },
+      {
+        "assumption_id": "classification_rate",
+        "label": {
+          "en": "Event classification rate",
+          "zh": "事件分类完成率"
+        },
+        "max": 1.0,
+        "min": 0.0,
+        "owner_field": "coverage.classified_event_count",
+        "step": 0.05,
+        "unit": "ratio"
+      },
+      {
+        "assumption_id": "maturity_wall_horizon_months",
+        "label": {
+          "en": "Maturity-wall horizon",
+          "zh": "到期墙期限"
+        },
+        "max": 120.0,
+        "min": 0.0,
+        "owner_field": null,
+        "step": 1.0,
+        "unit": "months"
+      },
+      {
+        "assumption_id": "refinancing_capacity_pct",
+        "label": {
+          "en": "Refinancing capacity",
+          "zh": "再融资能力"
+        },
+        "max": 100.0,
+        "min": 0.0,
+        "owner_field": null,
+        "step": 5.0,
+        "unit": "pct"
+      }
+    ],
+    "execution_available": false,
+    "note": "Assumption vocabulary is declared and closed; this composer ships no scenario execution endpoint (non-goal). maturity_wall_horizon_months / refinancing_capacity_pct have no owner_field because the scoped owner projection discloses instrument-level terms as unavailable (see the module docstring); a future owner-native pure scenario function produces mastermind.macro_workspace_scenario_result.v1 with no canonical write.",
+    "result_schema": "mastermind.macro_workspace_scenario_result.v1",
+    "status": "PARTIAL"
+  },
+  "schema": {
+    "contract": "mastermind.macro_workspace_snapshot.v1",
+    "version": "1.0.0"
+  },
+  "series": {
+    "items": [],
+    "null_reason": "INSUFFICIENT_HISTORY",
+    "status": "ABSENT"
+  },
+  "sources": {
+    "items": [
+      {
+        "artifact_ref": "data/capital_structure/projection.json",
+        "collected_at": "2026-09-04T06:19:48.233321Z",
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Capital-structure event & filing classification projection",
+          "zh": "资本结构事件与文件分类投影"
+        },
+        "owner_ref": "engine.capital_structure_event_projection",
+        "provider": "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2 (SEC EDGAR filing events)",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "capital_structure_event_projection",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/capital_structure/projection.json#source_receipt.source_ledger_receipt",
+        "collected_at": "2026-09-04T06:19:48.233321Z",
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": "capital-structure-sec-form-policy/1.2.0",
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Underlying SEC form-policy source ledger receipt",
+          "zh": "底层SEC表格政策数据源清单回执"
+        },
+        "owner_ref": "engine.capital_structure_event_projection",
+        "provider": "SEC EDGAR (via capital-structure source ledger)",
+        "reference_period": "2026-09-04T06:14:34.409360Z",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "capital_structure_source_ledger",
+        "transform": null
+      }
+    ]
+  },
+  "workspace": {
+    "id": "capital_structure",
+    "subtitle": {
+      "en": "Refinancing pressure x balance-sheet resilience/market access",
+      "zh": "再融资压力 × 资产负债表韧性/市场准入"
+    },
+    "title": {
+      "en": "Capital Structure",
+      "zh": "资本结构"
+    }
+  }
+}

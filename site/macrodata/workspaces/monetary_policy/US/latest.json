@@ -190,7 +190,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "monetary_policy-US-29cfec26a51e9500",
+    "prior_generation_id": "monetary_policy-US-04a3616eaed2875e",
     "prior_method_version": "monetary_policy.compose.v1",
     "status": "PRESENT"
   },
@@ -198,7 +198,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "monetary_policy-US-29cfec26a51e9500"
+    "predecessor_generation_id": "monetary_policy-US-04a3616eaed2875e"
   },
   "drivers": {
     "balance_sheet": [
@@ -319,11 +319,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T18:41:41Z",
+    "built_at": "2026-09-04T19:39:33Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "001f1af4a2d1d6022d9ab291796373606e8c202e",
-    "content_sha256": "23c51cc84e5b52483e15d6adcf4b1c46acae947d861821e6d93306ce91da0109",
-    "generation_id": "monetary_policy-US-23c51cc84e5b5248",
+    "code_version": "ea24fb5df2ba3d5461f07f722ba23adff32c782c",
+    "content_sha256": "b9d5d281bb65cb6a8bbf7bf3cb6c7d79335cb2802403d757e3074b13c690064b",
+    "generation_id": "monetary_policy-US-b9d5d281bb65cb6a",
     "producer": "engine.market_os.macro_workspaces.monetary_policy",
     "rendered_at": null
   },
