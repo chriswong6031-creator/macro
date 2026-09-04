@@ -10,7 +10,7 @@ objective: >
   PIT observation history with corrections, official-vs-curated lenses with
   contribution/concentration, calibrated descriptive method, research workflow, and
   product-learning events — all context_only.
-status: active
+status: done
 program: china-system
 repos: [macro]
 owner: fable
@@ -24,6 +24,7 @@ owns_paths:
   - data/flow_observatory/
 decisions:
   - DEC:FLOW-OBSERVATORY-V2-ARCHITECTURE-FREEZE
+  - DEC:FLOW-OBSERVATORY-V2-OFFICIAL-LENS-REPLAY-DISCLOSED
   - DEC:FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION
   - DEC:FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2
 landmines:
@@ -53,11 +54,11 @@ waves:
   - {id: W2, title: "Binding source quality + fail-visible publication", status: done, pr: 6791, depends_on: [W1]}
   - {id: W3, title: "PIT observation history, transitions, corrections", status: done, pr: 6795, depends_on: [W2]}
   - {id: W4, title: "Official/curated lenses, coverage, contribution, concentration", status: done, pr: 6796, depends_on: [W3]}
-  - {id: W5, title: "Preregistered method evaluation + threshold calibration", status: in_progress, pr: 6808, depends_on: [W4]}
-  - {id: W6, title: "History, compare, drilldown, research workflow", status: todo, depends_on: [W5]}
-  - {id: W7, title: "Product-learning instrumentation via /api/collect", status: todo, depends_on: [W6]}
-  - {id: FINAL, title: "Adversarial integrated acceptance vs the 12 program fixtures", status: todo, depends_on: [W7]}
-next_action: "Merge W5 (#6808) after review, then W6 research workflow, W7 instrumentation, final acceptance per masterplan §12."
+  - {id: W5, title: "Preregistered method evaluation + threshold calibration", status: done, pr: 6808, depends_on: [W4]}
+  - {id: W6, title: "History, compare, drilldown, research workflow", status: done, pr: 6812, depends_on: [W5]}
+  - {id: W7, title: "Product-learning instrumentation via /api/collect", status: done, pr: 6815, depends_on: [W6]}
+  - {id: FINAL, title: "Adversarial integrated acceptance vs the 12 program fixtures", status: done, depends_on: [W7]}
+next_action: "Program complete (ACCEPTED-WITH-LIMITATIONS, 2026-09-04). Maintenance only: watch the second valid asia-close session confirm live transitions; see the 2026-09-04 closeout handoff for the limitation ledger."
 ---
 
 # Flow Observatory V2
