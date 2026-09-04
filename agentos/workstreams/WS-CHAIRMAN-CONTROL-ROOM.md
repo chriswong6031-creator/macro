@@ -56,15 +56,31 @@ waves:
       published a GitHub source checkpoint in #432 comment 5533580505 for Draft PR #435 head
       `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
       `BUILT_NOT_PROVEN / PRODUCTION_INERT`; that checkpoint is not a reciprocal Slack completion.
-      The Slack root ends at 1788475247.999589 without a worker RESULT / HOLD; that exact root is
-      C0BSBM78V1N/1788472184.797999. GitHub #432 comment 5533655499 records the exact-head
-      `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in the best-effort census producer; comment
-      5533704747's green hosted `test` and CodeQL receipts are mechanical only and do not clear it.
-      The immediate upstream next action is a Sol path-ceiling ruling for the same #432 task, branch and
-      Draft PR #435 to repair the source scope through at least
-      `integrations/mastermind_slack_app/chatgpt.py`. Independent review or protection of the current
-      five-path head alone is not a release condition. This Macro PR remains exact-two Agent OS paths
-      and does not add that upstream source path. Profile_A remains the only proven disposable profile;
+      That exact root is C0BSBM78V1N/1788472184.797999; it now runs through edge 1788494921.091209 and
+      still carries no post-build worker RESULT / HOLD. GitHub #432 comment 5533655499 records the
+      exact-head `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in the best-effort census
+      producer; comment 5533704747's green hosted `test` and CodeQL receipts are mechanical only and do
+      not clear it. Sol has since RULED on that blocker in comment 5535426302
+      (`REALM1_LC1_STRICT_INVENTORY_PRODUCER_R1`): the #432 ceiling is expanded from five paths to
+      exactly six by adding only `integrations/chairman_surfaces/chatgpt.py`, with
+      `integrations/chairman_surfaces/runner.py` NO-EDIT, the legacy best-effort
+      `list_local_environments()` preserved for ordinary callers, and one added strict all-or-nothing
+      acquisition owner reserved to the trusted live MAS-115 boundary. Comment 5535485976 adds the
+      execution note, comment 5535513439 corrects the truncation sentinel to a four-byte margin (making
+      `4b4c77c81a19dafdd6c0ecbed58f14025a41eea77efb2ec070a537e52c999f49` the controlling strict contract
+      digest), comment 5535684208 keeps a valid 201st inventory row visible with refusal only at the
+      1,001st identity, and comment 5535685009 pins the exact closed `/bin/ps` result shape and
+      process-to-directory identity join. Sol further issued an ACCELERATED CONTINUE / CONDITIONAL
+      EXPANDED START at carrier edge 1788495816.349859, letting the bound task post
+      `PATH_EXPANSION_FREEZE / REALM1-LC1-R4` and then self-issue
+      `START scope=REALM1-LC1-R4 effect=SOURCE_ONLY` without a further Sol round trip when every freeze
+      field is truthfully satisfied. The same operation, Codex task, worktree, branch and PR #435 are
+      retained; the rulings grant scope, not a new carrier. The repair has NOT begun: no worker
+      `PATH_EXPANSION_FREEZE` and no worker START exist on the carrier and PR #435's head is unmoved, so
+      candidate head 62eaf50a is still not releasable and no later worker freeze, START or result may be
+      inferred. Independent review or protection of that candidate head alone is not a release
+      condition. A Macro records PR remains exact-two Agent OS paths and does not add that upstream
+      source path. Profile_A remains the only proven disposable profile;
       profile_B and any account realm remain unproven. Keep #359 PRE_START until the path-widened source
       repair is independently reviewed, protected and read back, then require a fresh same-root Sol
       continuation before re-running only the exact no-effect host gate. PF-1 A/B, INSTALL1, PF-1
@@ -169,7 +185,9 @@ landmines:
   - "Historical P0B receipts include a Multilogin HTTP 501/non-JSON cloud-search result and a rejected launcher bearer. They remain valid adverse evidence but are superseded as the current start gate by later protected Mastermind repairs and must not be replayed as current capability truth."
   - "The fixed-port MAS-115 profile update is a one-profile, one-policy mutation. Any changed profile, port, payload, pre-state or ambiguous effect requires reconciliation; never blind-retry EFFECT_UNKNOWN."
   - "Mastermind PR #396 merge 771a9558 is source proof only. It does not prove profile_B, Keychain readiness, a vendor effect, a ChatGPT account realm, PF-1, INSTALL1 or production behavior."
-  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432's Sol-approved path-ceiling repair eliminates LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING at least through integrations/mastermind_slack_app/chatgpt.py, then earns applicable independent review and protected-master readback, and a fresh same-root continuation arrives."
+  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432's Sol-approved six-path repair eliminates LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING through integrations/chairman_surfaces/chatgpt.py, then earns applicable independent review and protected-master readback, and a fresh same-root continuation arrives."
+  - "The Mastermind census owner is integrations/chairman_surfaces/chatgpt.py. The spelling published in the #6804 records placed chatgpt.py under a different Mastermind directory that has never held such a file; it is corrected, not preserved as a prior implementation identity, and PR #435's own tree carries only the chairman_surfaces spelling. Resolve any cross-repo path against that repository's actual tree before recording it as an owner — a records gate proves schema and citation form, never that a foreign-repo path resolves."
+  - "A Sol path-ceiling ruling grants SCOPE, not execution, and a conditional START authorization is still not a START. #432 has its six-path expansion and a pre-authorized expanded-scope START, but until the bound task actually posts PATH_EXPANSION_FREEZE / REALM1-LC1-R4 and its own START, candidate head 62eaf50a is unchanged and no repair exists to review, protect or read back."
   - "PF-1 A/B precedes INSTALL1, while PF-1 C15-C18 requires the exact installed generation after INSTALL1. Collapsing PF-1 into one pre-install prerequisite creates a circular gate."
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
@@ -192,15 +210,20 @@ do_not_redo:
   - "Do not treat source merge, green CI, Slack delivery, Secretary attention, Keychain-item presence or a vendor response as profile_B proof."
   - "Do not refresh Chairman bindings merely to pass an age gate, reuse a Chairman profile/account, choose an unqualified stopped profile, fall back to GoLogin, create a third profile or start a browser in the profile_B child."
   - "Do not blind-retry a profile update, lifecycle bootstrap, release-receipt, Keychain or vendor effect after uncertainty; reconcile the same operation/task/host and exact fixed coordinates."
+  - "Do not reopen, reuse or re-ACK merged Macro PR #6804 or its terminal operation ccr-realm1-agentos-current-state-repair-20260903-sol-001; later corrections to these records belong to a fresh records carrier."
+  - "Do not create a second #432 task, worktree, branch, PR, carrier or watcher on the strength of the path-ceiling ruling. The ruling explicitly retains task 01a0694f-56bb-71c0-9c35-6a0644691f20, branch sol/wsx-realm1-live-seat-census-gate-repair-20260903 and PR #435, and forbids retry or failover."
 next_action: >
   Keep the exact #359 host child at PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while the
   sole #432 source repair remains blocked by the exact-head
-  LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING hold. The current five-path Draft PR #435 checkpoint
-  is a GitHub receipt, not a Slack worker result, and green hosted checks do not make it protectable.
-  The next upstream action is a Sol path-ceiling ruling for the same #432 task, branch and Draft PR #435
-  to add at least integrations/mastermind_slack_app/chatgpt.py; this exact-two-record Macro PR must not
-  carry that source change. Do not recreate a host child, revive #431, rerun the attended ceremony, or
-  start a host gate from a source-only checkpoint. Only after the path-widened source repair has
+  LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING hold. The Draft PR #435 checkpoint at candidate head
+  62eaf50a is a GitHub receipt, not a Slack worker result, and green hosted checks do not make it
+  protectable. Sol's path-ceiling ruling has been issued and fixes the #432 ceiling at exactly six
+  paths, the sixth being integrations/chairman_surfaces/chatgpt.py, on the same task, branch and Draft
+  PR #435, and a later edge conditionally pre-authorizes the expanded-scope START. The next upstream
+  action therefore belongs to that already-bound task alone and needs no further Sol round trip: post
+  PATH_EXPANSION_FREEZE / REALM1-LC1-R4, then self-issue START scope=REALM1-LC1-R4 effect=SOURCE_ONLY
+  and execute, or return one finite typed BLOCKED. A Macro records PR must not carry that source change. Do not recreate a host child, revive #431, rerun the
+  attended ceremony, or start a host gate from a source-only checkpoint. Only after the six-path repair has
   independent exact-head review and protected-master readback may one fresh same-root Sol continuation
   re-read protected source and run the packet's no-effect HOST_PROFILE_GATE. Only a later
   PROFILE_B_PROVEN return can release the separate non-sensitive account ceremony: the Chairman then
@@ -220,16 +243,38 @@ not profile capability. The current canonical source repair is issue #432: GitHu
 records its worker's source checkpoint for Draft PR #435 head
 `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
 `BUILT_NOT_PROVEN / PRODUCTION_INERT` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`. Slack root
-`C0BSBM78V1N/1788472184.797999` ends at 1788475247.999589 without a worker `RESULT / HOLD`. The
-reproduced `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in GitHub comment 5533655499 means
-the current five-path head cannot be made protected merely by review/readback; comment 5533704747's
-green hosted checks establish mechanical evidence only. It remains at most `BUILT_NOT_PROVEN /
-PRODUCTION_INERT` and neither `PROTECTED` nor `PROVEN_LIVE` pending a Sol path-ceiling ruling and
-same-task/branch/PR repair through at least `integrations/mastermind_slack_app/chatgpt.py`. The #359 host task
+`C0BSBM78V1N/1788472184.797999` runs through edge 1788494921.091209 and still carries no post-build
+worker `RESULT / HOLD`. The reproduced `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in
+GitHub comment 5533655499 means that candidate head cannot be made protected merely by
+review/readback; comment 5533704747's green hosted checks establish mechanical evidence only. Sol's
+path-ceiling ruling (comment 5535426302, with execution note 5535485976, sentinel correction
+5535513439, 201st-row correction 5535684208 and process-result review note 5535685009) has since
+expanded the ceiling to exactly six paths by adding
+`integrations/chairman_surfaces/chatgpt.py` and requires a strict all-or-nothing acquisition owner
+alongside the retained legacy best-effort discovery API — on the same task, branch and PR #435. A
+later edge (1788495816.349859) additionally pre-authorizes the expanded-scope START conditionally, so
+the bound task needs no further Sol round trip. Those rulings authorize scope only. Because no worker
+`PATH_EXPANSION_FREEZE / REALM1-LC1-R4` and no worker START exist, the head is unchanged and remains
+at most `BUILT_NOT_PROVEN / PRODUCTION_INERT`, neither `PROTECTED` nor `PROVEN_LIVE`; even a future
+protected merge of that repair would remain `BUILT_NOT_PROVEN` until host proof. The operation's cited
+protected base is `7022e70640637a4fa07f073442dc693301290e2a`, and live Mastermind master has since
+advanced beyond it; integrating that movement belongs to the bound #432 task, not to a Macro records
+carrier. The #359 host task
 `01a06846-1b1b-7212-aa67-e6d303802489` has an ACK plus prior clean detached-checkout and approved-host
 proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE`; no host, Keychain, vendor,
 profile, account or browser effect has occurred. Exactly profile_A is proven; profile_B and the
 dedicated account realm remain unproven.
+
+The Macro-side records lineage for this state is itself terminal. PR #6804, which first published this
+P0B record and its dated continuation handoff, is MERGED at
+`f72d6430ccab5d67e9669c962e0334f46bb20d7b` (2026-09-04T03:39:54Z), and its operation
+`ccr-realm1-agentos-current-state-repair-20260903-sol-001` received `SOL ACCEPTED / STOP` on carrier
+`C0BSBM78V1N/1788474038.447649` at edge `1788493795.031669`. It must not be reopened or reused. The
+present correction of the census-owner path and of the post-ruling #432 state is carried by the
+separate records-only operation `ccr-agentos-realm1-census-owner-path-correction-20260903-sol-001` on
+root `C0BSBM78V1N/1788494388.342559`. A merged records PR, its green CI, its independent review and
+any Slack delivery on either carrier are records evidence only: none of them is upstream
+implementation, host execution, profile capability or production behavior.
 
 X1 is the accepted daily command surface over the existing truth model: truthful Needs You,
 deterministic Focus, 47-row All Work, Surface Dock, detail drawer, local Command-K search and System
