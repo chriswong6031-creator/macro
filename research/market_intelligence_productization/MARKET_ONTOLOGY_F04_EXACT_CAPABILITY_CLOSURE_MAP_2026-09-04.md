@@ -13,12 +13,19 @@ The Ontology Explorer is the flagship F04 product composition, not a replacement
 This closure map is binding with:
 
 - `DEC:MARKET-ONTOLOGY-F04-EXPLORER-LIVE-TRACE-SCENARIO-BOUNDARY`;
-- Architecture Amendments 1 and 2;
+- Architecture Amendments 1, 2, and 3;
 - the Fable principal handoff;
 - the X1–X9 implementation plan;
 - later accepted owner-specific decisions.
 
 Later owner truth wins for that owner. This map must then be amended rather than cosmetically marking a row closed.
+
+Amendment 3 is the controlling review-closure erratum: F00 consumed the eight PR #6820
+records at `C0BSBM78V1N/1788510607.305039 @ 1788522863.288509`, but X1 remains held until
+the repair is merged and a fresh planned-write collision census passes. Any evidence rendered
+for these rows uses K1 EvidenceRef/EvidenceBlock/EvidenceRecipe; any historical sample labels
+episode N separately from overlapping cohort-bar N and types missing effective-N/overlap/
+interval/span/concentration or current-regime state as unavailable.
 
 ---
 
@@ -149,7 +156,8 @@ At least one real ETF event/exposure row resolves to canonical security identity
 
 ### Slice versus row closure
 
-X1 WTI Live Trace is the first useful slice and may become `PROVEN_LIVE` independently. It does **not** close the entire row.
+X1 WTI Live Trace is the first useful slice and may become `PROVEN_LIVE` independently after
+its current hold and full production gates clear. It does **not** close the entire row.
 
 X1 closes:
 
@@ -274,6 +282,10 @@ X9     integrated proof, telemetry, row-by-row closeout
 
 X5-GMI and X5-ETF need not wait for X6/X7 when their owner gates are clear and paths are disjoint. X8-B/C/E remain dependency-held regardless of UI readiness.
 
+This sequencing table is descriptive. It creates no child. X1 requires the Amendment 3 repair
+merge, fresh planned-write census, explicit commission, concrete receiver, ACK, and separate
+collision-cleared `START`.
+
 ---
 
 ## 4. F04 progress reporting law
@@ -312,6 +324,8 @@ Linear MAS-145 may summarize the lane but may not convert the architecture merge
 - Do not hold lawful X1/Theme Map/ETF research slices behind K5 when their real owners are ready.
 - Do not let a lawful uncalibrated research-priority list masquerade as full Opportunity Map closure.
 - Do not treat a high historical follow-through rate as arbitrage or LER authority.
+- Do not treat overlapping per-bar cohort observations as independent episode N, or invent
+  effective N, intervals, span, concentration, or current-regime selection.
 - Do not use current GMI membership for historical Theme Map replay when D2C/PIT is absent.
 - Do not use GMI ETF node slugs as canonical security identity.
 - Do not create another Radar/spool, task/alert queue, thesis store or portfolio state for Decision Zones/Opportunity.

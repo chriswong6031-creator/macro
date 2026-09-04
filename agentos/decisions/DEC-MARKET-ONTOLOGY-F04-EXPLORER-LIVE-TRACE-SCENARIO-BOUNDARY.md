@@ -24,11 +24,17 @@ answer: >
   WTI Live Trace is the first product vertical; a dormant or contradictory real path is
   acceptable truth and may not be made visually active to satisfy a mockup. Architecture
   Amendment 1 separates tenant-neutral snapshot, ephemeral scenario assumption/evaluation
-  and private session view; freezes same-cycle freshness, deterministic non-alpha
+  and private session view; freezes owner-generation freshness (as superseded by Amendment 3
+  request-time source-manifest/deployed-checkout law), deterministic non-alpha
   ordering, X3 owner placement, scenario overlays, X1/X6 scope and real-data reference
   compositions. Architecture Amendment 2 forbids committing the current full-fidelity
   F04 snapshot to public Git, Pages, public R2 or browser-persistent storage and requires
   the existing authenticated Macro API/site_full/private-no-store transport pattern.
+  Architecture Amendment 3 records F00's explicit consumption/repair edge, binds the
+  authenticated shared navigation family and below-nav workspace toolbar, replaces nightly
+  ordering with request-time source-manifest and deployed-checkout freshness, adopts K1
+  evidence forms, separates episode N from overlapping cohort-bar N, and freezes the design,
+  protected-path and reproducibility corrections required by the two existing reviews.
 rationale: >
   The original serialized completion order protected owner semantics but delayed the user
   product behind every GMI dependency. Current Macro already contains a production TXI
@@ -44,7 +50,10 @@ rationale: >
   site/premiumdata bytes remain anonymously downloadable from raw Git/clone/Pages, so a
   new static "gated" snapshot would be bypassable despite a correct primary-domain gate.
   The existing authenticated read-only API pattern provides the smallest canonical
-  transport without a new auth framework, database, bucket or service.
+  transport without a new auth framework, database, bucket or service. F00 consumed the
+  immutable eight-record PR #6820 return at `C0BSBM78V1N/1788510607.305039 @
+  1788522863.288509` and required one records-only Amendment 3 repair; X1 remains held until
+  that repair is merged and a fresh planned-write collision census passes.
 alternatives:
   - option: Wait for D2C, D2D, D2E, W3B, W3C, K3-D and K5 before building any explorer.
     why_not: >
@@ -102,6 +111,8 @@ evidence:
   - "Current site/premiumdata directory still contains tracked full payloads with raw GitHub download URLs; current Agent OS says the paid boundary remains unissuable estate-wide."
   - "app/prophet_lab.py and app/capital_structure.py provide the canonical authenticated read-only site_full/private-no-store API pattern adopted by Amendment 2."
   - "MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_2_ACCESS_TRANSPORT_2026-09-04.md forbids a new static/public current F04 snapshot and binds the API/mirror proof contract."
+  - "F00 consumed the exact PR #6820 eight-record return and issued the bounded repair ruling on C0BSBM78V1N/1788510607.305039 at 1788522863.288509."
+  - "MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md closes the two existing review packets without a third full review and binds nav, freshness, K1 evidence, denominator, clock, design, protected-path and reproducibility corrections."
 affects:
   - "WS:MARKET-OS"
   - "WS:GMI-THEME-GRAPH"
@@ -137,13 +148,15 @@ The following are part of this ruling and control earlier ambiguous wording:
 
 1. `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_1_2026-09-04.md`
 2. `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_2_ACCESS_TRANSPORT_2026-09-04.md`
+3. `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md`
 
 Amendment 1 freezes:
 
 - tenant-neutral `ontology_explorer_snapshot.v1`;
 - ephemeral `ontology_scenario_assumption.v1` and `ontology_scenario_eval.v1` with zero owner writes;
 - private `ontology_session_view.v1` for mode, selected state and user overlays;
-- per-node/edge/path owner-generation binding and same-cycle production freshness;
+- per-node/edge/path owner-generation binding, as superseded by Amendment 3 request-time
+  source-manifest and deployed-checkout freshness;
 - WTI as explicit reference path rather than machine-ranked `most material` path;
 - deterministic `first_blocking_leg` and non-alpha ordering;
 - Rate & Inflation Transmission / RIC as X3 response-research owner, with F04 consumer-only;
@@ -160,6 +173,21 @@ Amendment 2 freezes:
 - zero current F04 snapshot under `site/**`, public Git/clone/Pages, public R2, source maps, service-worker cache, localStorage/IndexedDB or committed full-response evidence;
 - access proof across primary origin and every alternate mirror path;
 - a no-widening claim for F04 only, not a false claim that the estate-wide access debt is solved.
+
+Amendment 3 freezes:
+
+- explicit F00 consumption/ruling edge `1788522863.288509` and continued X1 hold;
+- authenticated `_site_nav` family plus a below-nav Ontology workspace toolbar;
+- request-time owner bytes/generations, `source_manifest_hash`, and typed
+  `DEPLOYED_CHECKOUT_LAG` / `DEPLOY_PULL_LAG`, with no nightly-order proof claim;
+- K1 `EvidenceRef`, `EvidenceBlock`, and `EvidenceRecipe` as the evidence contract;
+- hop episode N distinct from overlapping terminal-cohort bar N, with honest effective-N,
+  overlap, interval, span, concentration, and regime-unavailable fields;
+- `instrument_analyzer` C-signal archetype with separate dark command-center and light
+  research-workspace treatments;
+- literal D2C/K3-D protected paths, ephemeral replay identity, and
+  `DNR:KILL-CAUSAL-DAG-ALPHA` / `DNR:KILL-FUSED-COMPOSITE`;
+- eight immutable PR #6820 records plus the ninth add-only erratum path.
 
 ## Product route and transport
 
@@ -190,7 +218,12 @@ A path-level combined numerical effect requires one accepted owner explicitly mo
 
 The first vertical uses the current WTI chain exactly as emitted. At the archaeology base the root oil threshold and breakeven hop are false while downstream real-yield and QQQ-relative conditions are true. The path remains dormant. Downstream observations do not prove the upstream oil mechanism.
 
-Historical hop frequencies display numerator/N/span/regime under `HISTORICAL_TRANSITION_RATE`, never confidence. When no valid null comparator exists, show `baseline_comparison: unavailable`. The terminal cohort event study remains separate and may contradict the mechanism.
+Historical hop frequencies display rising-edge episode numerator/N/span/regime under
+`HISTORICAL_TRANSITION_RATE`, never confidence. When no valid null comparator exists, show
+`baseline_comparison: unavailable`. The terminal cohort event study remains separate: its
+current N is overlapping per-bar cohort N, not independent episode N; effective N, overlap
+treatment, interval, span and concentration remain typed unavailable until the owner emits
+them. An unresolved current regime is `CURRENT_REGIME_UNAVAILABLE`, never an inferred cell.
 
 ## Dependency law
 
@@ -201,6 +234,9 @@ May proceed before D2C/K3-D acceptance:
 - explicit scenario-assumption contract;
 - existing rate-sensitivity scenario;
 - public shell, authenticated API, inspector, evidence drilldown and access split.
+
+This dependency independence is not current X1 authority. F00 holds X1 until the Amendment 3
+repair is merged and a fresh planned-write collision census passes.
 
 Held until accepted owner availability:
 

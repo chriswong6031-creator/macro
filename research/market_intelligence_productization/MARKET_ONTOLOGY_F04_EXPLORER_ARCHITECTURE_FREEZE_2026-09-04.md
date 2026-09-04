@@ -13,6 +13,15 @@
 **Cognition route:** `CHAT_INCLUDED_DEFAULT / PRO_MODE_EXCEPTION / CROSS_SYSTEM_ARCHITECTURE`  
 **Capability delta of this document:** `NONE`
 
+> **SUPERSESSION NOTICE (2026-09-04).** Amendment 3,
+> `MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md`,
+> is the controlling review-closure erratum. Read it first. It binds the F00 consumption edge,
+> authenticated shared navigation, request-time freshness, K1 evidence forms, honest sample
+> denominators, theme art directions, protected dependency paths, and the eight-record Git
+> census. Amendment 2 controls authenticated transport. In particular, the static payload in
+> §6.3, the `Header` label in §7.1, the underspecified read model in §12, the vague/static X1
+> paths in §23, and the corresponding acceptance clauses in §24.1 are superseded inline below.
+
 ---
 
 ## 1. Executive ruling
@@ -168,6 +177,12 @@ Later bounded integration may add:
 
 ### 6.3 Access architecture
 
+**Superseded transport:** Amendment 2 and Amendment 3 prohibit the static paid payload named
+below. `/ontology.html` is a public-safe shell in the authenticated product navigation family;
+current state is returned only by the authenticated read-only Macro API with private/no-store
+headers. The bullets below are preserved as historical PR #6820 text; the
+`/premiumdata/ontology_explorer.json` instruction must not be implemented.
+
 The existing static-site commercial law remains:
 
 - HTML is a public shell;
@@ -179,7 +194,8 @@ The existing static-site commercial law remains:
 Expected first-wave split, subject to exact implementation archaeology:
 
 - public presentation: `/ontology.html`, `/ontology.css`, `/ontology.js`;
-- paid current payload: `/premiumdata/ontology_explorer.json` gated by existing `site_full`;
+- paid current response: authenticated read-only Macro API under existing `site_full`, with
+  private/no-store headers and no public/static twin;
 - public shell contains methodology, controls, honest totals and a non-current instructional composition only;
 - current market path data, evidence receipts and user overlay never leak into the anonymous HTML shell;
 - no new entitlement feature or pricing tier is created by F04.
@@ -194,7 +210,7 @@ The reference composition's information density is retained, but the semantics a
 
 | Region | Frozen behavior |
 |---|---|
-| Header | Ontology identity, global node/path search, `LIVE TRACE` / `SCENARIO`, Ask Mastermind, tour, exact as-of. |
+| Ontology workspace toolbar (below authenticated global nav) | Ontology identity, product-scoped node/path search, `LIVE TRACE` / `SCENARIO`, Ask Mastermind, tour, exact owner as-of and build clocks. It does not duplicate site navigation, ticker search, account, language, or theme controls. |
 | View tabs | Today, Rate Path, Credit Channel, Dollar Regime, Equity Duration, Saved. |
 | Filter rail | Relationship class, evidence/method class, active/invalidated/unavailable, My Portfolio, My Watchlist. |
 | Trace narrative | What the selected path says, what changed, what has not transmitted, weakest supported link, most exposed covered holding, key invalidator. |
@@ -459,6 +475,13 @@ Magnitude-sensitive WTI->inflation/rates response is a later bounded owner/metho
 ---
 
 ## 12. `ontology_explorer.v1` read model
+
+**Amended contract:** Amendment 3 §§4–6 extend this illustrative shape. Every response binds
+request-time deployed owner bytes through `source_manifest_hash`, distinguishes source staleness
+from `DEPLOYED_CHECKOUT_LAG`, uses K1 `EvidenceRef` IDs and a validated bounded
+`evidence_index[]`, and keeps hop episode N separate from overlapping terminal-cohort bar N.
+Missing effective N, overlap treatment, interval, span, concentration, or current-regime mapping
+is typed unavailable rather than inferred.
 
 The explorer consumes canonical owners and emits one **derived projection**, never a truth store.
 
@@ -890,6 +913,12 @@ No current Fable provider session, RuntimeBinding, ACK, START or watcher is asse
 
 ## 23. X1 frozen implementation boundary
 
+**Amended boundary:** Amendment 3 controls this section. `/ontology.html` must use
+`templates/_site_nav.html.j2` and its shared inventory/behavior family; current state comes from
+the Amendment 2 authenticated API, never a gated static payload. The D2C PR #6809 and K3-D PR
+#6514 literal protected paths are enumerated in Amendment 3 §7 and require a fresh expansion and
+collision census before X1 `START`.
+
 Expected current-owner-safe surface, subject to the child worker's exact current-main census:
 
 **Create/modify:**
@@ -898,7 +927,7 @@ Expected current-owner-safe surface, subject to the child worker's exact current
 - `scripts/build_ontology_explorer.py`;
 - `templates/ontology.html.j2`;
 - `templates/ontology.js` / `templates/ontology.css` or current site asset convention;
-- generated `site/ontology.html`, presentation assets and gated payload;
+- generated `site/ontology.html` and public-safe presentation assets only; no current payload;
 - `config/site_access.yml` and matching Caddy boundary only as required for public presentation assets and paid payload;
 - current nav/SEO/sitemap surfaces only after exact product-owner archaeology;
 - focused tests and real browser evidence.
@@ -929,7 +958,13 @@ If X1 needs an owner contract change, it returns to Sol/Fable instead of widenin
 
 ### 24.1 X1 minimum acceptance
 
-- real current TXI producer -> F04 derived read model -> gated payload -> `/ontology.html` consumer;
+Amendment 3 §§2–6 are additional minimum acceptance law: authenticated shared nav plus a
+below-nav workspace toolbar; request-time source-manifest and deployed-checkout/pull-lag proof;
+K1 evidence contract validation; episode-N versus overlapping cohort-bar-N disclosure; typed
+effective-N/overlap/interval/span/concentration and regime-unavailable states; and visible
+per-owner as-of/build clocks.
+
+- exact deployed TXI/rates owner bytes -> request-time F04 derived read model -> authenticated API -> `/ontology.html` consumer;
 - WTI current state reproduced exactly from owner receipts;
 - downstream true nodes do not falsely activate an upstream-dormant path;
 - historical transition rates display N/span/regime and are not labeled confidence;
@@ -1005,9 +1040,13 @@ The following decisions are frozen for implementation unless Sol issues a later 
 
 ## 26. Exact next action
 
+**Current gate:** F00 consumed the exact eight-record PR #6820 return at
+`C0BSBM78V1N/1788510607.305039 @ 1788522863.288509` and required one records-only repair.
+X1 remains held until that repair is merged and a fresh planned-write collision census passes.
+
 1. Keep D2C on its existing repair carrier and review the returned repaired exact head; do not create a successor.
-2. Subject this records-only architecture PR to independent exact-head architecture review and Agent OS/CI validation.
-3. After architecture acceptance, place the **existing F04 parent responsibility** with a concrete eligible Fable principal if capacity exists; otherwise retain `WAITING_CAPACITY / needs_placement` without a dead-letter commission.
+2. Complete the single Amendment 3 records repair against the two existing review packets; do not commission a third full review.
+3. After the repair is merged and the fresh planned-write census passes, F00/Sol may place the **existing F04 parent responsibility** with one concrete eligible principal or bounded X1 child; no retrieved record self-assigns one.
 4. The Fable principal performs a fresh current-owner/path collision census and commissions X1 as a new bounded child to the least-scarce capable implementation avenue.
 5. X1 stops at WTI Live Trace production proof and returns; it does not absorb Scenario, Portfolio, GMI, K3-D or save/replay.
 
