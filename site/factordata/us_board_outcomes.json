@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-31",
+ "as_of": "2026-09-03",
  "rows": [
   {
    "ticker": "U",
@@ -15,16 +15,16 @@
    "lane": "buy"
   },
   {
-   "ticker": "TTD",
-   "sector": "Communication Services",
-   "first_surfaced": "2026-07-28",
-   "surfaced_price": 19.09,
-   "last_price": 13.8,
-   "pct_since": -27.7,
-   "days_on_board": 6,
+   "ticker": "CRSR",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-07-31",
+   "surfaced_price": 10.8,
+   "last_price": 14.35,
+   "pct_since": 32.9,
+   "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
-   "status": "stopped",
+   "status": "running",
    "lane": "buy"
   },
   {
@@ -38,6 +38,19 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "HP",
+   "sector": "Energy",
+   "first_surfaced": "2026-07-30",
+   "surfaced_price": 34.38,
+   "last_price": 42.73,
+   "pct_since": 24.3,
+   "days_on_board": 3,
+   "exit_date": "2026-08-12",
+   "mark_date": "2026-08-12",
+   "status": "running",
    "lane": "buy"
   },
   {
@@ -168,6 +181,19 @@
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
    "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "CNH",
+   "sector": "Industrials",
+   "first_surfaced": "2026-07-27",
+   "surfaced_price": 11.44,
+   "last_price": 10.32,
+   "pct_since": -9.8,
+   "days_on_board": 3,
+   "exit_date": "2026-07-30",
+   "mark_date": "2026-07-30",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -457,19 +483,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "CNH",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-24",
-   "surfaced_price": 11.08,
-   "last_price": 10.32,
-   "pct_since": -6.9,
-   "days_on_board": 4,
-   "exit_date": "2026-07-30",
-   "mark_date": "2026-07-30",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "FHI",
    "sector": "Financials",
    "first_surfaced": "2026-07-29",
@@ -587,6 +600,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "ASO",
+   "sector": "Consumer Discretionary",
+   "first_surfaced": "2026-07-27",
+   "surfaced_price": 50.42,
+   "last_price": 47.45,
+   "pct_since": -5.9,
+   "days_on_board": 4,
+   "exit_date": "2026-07-31",
+   "mark_date": "2026-07-31",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "AMZN",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-07-31",
@@ -678,19 +704,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "VIRT",
-   "sector": "Financials",
-   "first_surfaced": "2026-07-29",
-   "surfaced_price": 59.16,
-   "last_price": 55.85,
-   "pct_since": -5.6,
-   "days_on_board": 6,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "URG",
    "sector": "Energy",
    "first_surfaced": "2026-08-07",
@@ -767,31 +780,19 @@
    "mark_date": "2026-08-14",
    "status": "stopped",
    "lane": "buy"
-  },
-  {
-   "ticker": "SITM",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-08-13",
-   "surfaced_price": 711.91,
-   "last_price": 749.44,
-   "pct_since": 5.3,
-   "days_on_board": 2,
-   "exit_date": "2026-08-17",
-   "mark_date": "2026-08-17",
-   "status": "running",
-   "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 75,
-  "n_stopped": 79,
-  "n_flat": 312,
-  "n_total": 466,
+  "n_running": 74,
+  "n_stopped": 83,
+  "n_flat": 302,
+  "n_total": 459,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 17,
+  "n_skipped_no_price": 21,
   "skipped_no_price": [
    "ALV",
+   "AM",
    "BRX",
    "CAR",
    "CE",
@@ -800,15 +801,14 @@
    "ELS",
    "EZPW",
    "FCN",
+   "IDA",
    "MAT",
    "MPT",
    "NYT",
-   "OHI",
-   "REXR",
-   "RHI"
+   "OHI"
   ],
   "win_rate": 0.161,
-  "avg_pct": 0.0,
+  "avg_pct": 0.1,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",
    "mark": "close on the date the name left the buy board, not today's",

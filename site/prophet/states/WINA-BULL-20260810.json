@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "WINA-BULL-20260810",
-  "asof": "2026-09-03",
+  "asof": "2026-09-04",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 10.6,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": -0.033,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 53.3,
+    "horizon_pct_used": 55.6,
     "p1": -0.6889,
     "p2": -0.3444,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Stop Level Breached",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 24,
-  "tau": 0.5333
+  "days_elapsed": 25,
+  "tau": 0.5556
 }

@@ -9,6 +9,13 @@
 **Reviewed predecessor head:** `621613cf79b483afe54eb4c7327a318ccb8a1ad4`  
 **Capability delta:** `NONE — this amendment narrows and completes the architecture contract`
 
+> **SUPERSEDED IN PART (2026-09-04).** Amendment 2 controls access/transport. Amendment 3,
+> `MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md`,
+> controls the F00 consumption edge, navigation, request-time freshness, K1 evidence forms,
+> sample-denominator honesty, theme art directions, protected paths, and record census.
+> Specifically, Amendment 1 §2.1's static publication sentence, §3.1 in full, §3.3 items
+> 2/4/5, and every producer-order/DAG test are historical and must not be implemented.
+
 This amendment closes the seven blocking ambiguities recorded in Sol exact-head architecture review `5111169860`. It is part of the same architecture operation and does not create a product route, worker, RuntimeBinding, scenario run, owner model, deployment or authority effect.
 
 The governing thesis remains:
@@ -30,7 +37,8 @@ It supersedes only:
 5. any implication that F04 may own the WTI response model developed in X3;
 6. any scenario implementation that reimplements TXI test grammar, infers an unspecified path shape, uses the wrong market calendar or feeds hypothetical points into owner history;
 7. X1's requirement for a live Brain/page-context consumer, which belongs to X6;
-8. the four-record release census in PR #6820, which becomes five records.
+8. the earlier four/five-record release census; PR #6820 ultimately merged eight records
+   counted by Git, and Amendment 3 controls the current packet census.
 
 Everything else in these sources remains controlling:
 
@@ -50,10 +58,13 @@ The explorer must not solve composition by mixing unrelated state classes into o
 
 ### 2.1 `ontology_explorer_snapshot.v1` — tenant-neutral market snapshot
 
-This is the only object eligible for the shared paid static payload in X1.
+This is the tenant-neutral object returned through the authenticated read-only API in X1. It
+is not eligible for a shared/public static payload.
 
 **Owner:** F04 derived-composition producer.  
-**Publication:** gated `/premiumdata/ontology_explorer.json` or the exact current paid static-asset convention established during implementation archaeology.  
+**Publication (superseded):** do not publish `/premiumdata/ontology_explorer.json` or another
+public/static twin. Amendment 2's authenticated Macro API and Amendment 3's request-time
+source-manifest/deployed-checkout contract control.
 **Lifetime:** immutable generation.  
 **Inputs:** canonical owner outputs only.  
 **Private/user content:** forbidden.  
@@ -230,11 +241,16 @@ X7 does not persist copied market values, evidence bodies, a private duplicate g
 
 ---
 
-## 3. Same-cycle freshness and production DAG law
+## 3. Historical freshness proposal — superseded for request-time X1
+
+> **SECTION SUPERSEDED.** Amendment 3 §4 replaces §3.1 and §3.3 items 2, 4, and 5.
+> X1 composes at request time from exact bytes in the deployed checkout. Freshness is proven
+> by owner generations, `source_manifest_hash`, owner clocks, and typed
+> `DEPLOYED_CHECKOUT_LAG`/`DEPLOY_PULL_LAG`; it is not proven by nightly job order.
 
 The current TXI web-publication adapter documents a one-night lag because `build_site` runs before `run_transmission_chains`. The explorer cannot inherit that lag while claiming current Live Trace.
 
-### 3.1 Preferred X1 producer order
+### 3.1 Historical producer-order proposal — do not implement for request-time X1
 
 ```text
 required TXI/rate owner producers complete
@@ -249,7 +265,7 @@ The ontology snapshot producer runs after every owner whose current values it in
 
 ### 3.2 Permitted degradation
 
-If same-cycle closure is impossible, publish only with, per affected owner/edge:
+If current owner freshness cannot be established, return only with, per affected owner/edge:
 
 - owner generation used;
 - newest owner generation available to the producer;
@@ -264,10 +280,10 @@ A page-level as-of without owner-generation identity is insufficient.
 X1 must show:
 
 1. exact owner artifacts and hashes/generation IDs read;
-2. workflow/job order proving the producer runs after them;
+2. exact deployed checkout/build identity and its relationship to current source;
 3. snapshot `source_manifest_hash` resolving to exact inputs;
-4. candidate and deployed `producer_build_ref`;
-5. no newer owner generation existed before snapshot build completion, or typed lag accurately disclosed it;
+4. request-time composer build/method identity;
+5. no newer owner generation exists in current source but is absent from deployment, or typed deployed-checkout/pull lag accurately discloses it;
 6. browser values matching snapshot and owner receipts.
 
 This does not authorize changing `/transmission.html` in X1. Its existing lag is a separately owned defect.
@@ -417,7 +433,7 @@ X1 complete path:
 ```text
 canonical owner outputs
 -> ontology_explorer_snapshot.v1 producer
--> gated paid payload
+-> authenticated private/no-store API response
 -> /ontology.html client
 -> WTI path rail/canvas/inspector/inverse/invalidator/history
 -> candidate and production browser proof
@@ -436,7 +452,7 @@ These freeze information hierarchy and interaction behavior using current canoni
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ONTOLOGY                 Search node or path…         LIVE TRACE | Scenario  │
-│ Reference path · WTI transmission trace        Snapshot as of 2026-08-31    │
+│ Reference path · WTI transmission trace  Owner as-of 2026-08-31 · built 2026-09-01 05:51 UTC │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ TRACE NARRATIVE                                                               │
 │ Downstream real-yield and duration conditions are present, but the declared  │
@@ -466,6 +482,10 @@ Required semantics:
 - terminal-cohort outcome study is a separate inspector section, never corroborating confidence;
 - inverse path is separate;
 - inspector includes owner generation, clocks, correction, rights and evidence.
+- the historical reference is explicitly labeled `PR #6820 archaeology snapshot`; runtime
+  values are never copied from it;
+- calibration evidence separately shows owner as-of `2026-08-21` and built
+  `2026-08-22 16:34 UTC`.
 
 ### 8.2 Active/partial pattern
 
@@ -581,10 +601,13 @@ X1 is accepted only when:
 
 1. snapshot is tenant-neutral and contains no assumption/user overlay;
 2. owner-generation references bind every material node/edge/path;
-3. production order proves same-cycle closure or typed lag;
+3. request-time `source_manifest_hash`, owner generations, deployed checkout/build identity,
+   and typed source/deploy lag prove freshness without a nightly-order claim;
 4. WTI is explicit reference/default, not machine-ranked as most material;
 5. `first_blocking_leg` is deterministic path-order state, not score;
-6. historical rates show numerator/denominator/span/regime and baseline-comparison availability;
+6. historical rates show episode numerator/denominator/span/regime and baseline-comparison
+   availability; terminal cohort bar N is labeled overlapping and missing effective N,
+   overlap treatment, interval, span, or concentration is typed unavailable;
 7. coverage is structured;
 8. public/Free shell and paid boundary are proven;
 9. desktop/mobile compositions and stale/unavailable states work with current data;
@@ -613,7 +636,8 @@ X1 is accepted only when:
 
 - shared snapshot refuses `mode`, `assumption`, `user_overlay`, raw holdings and user IDs;
 - every material node/edge/path resolves owner generation;
-- producer-order test fails when ontology build precedes TXI/rates generation;
+- deployed-checkout test fails when current source has a newer owner generation than the
+  request-time deployment and no typed deploy/pull lag is emitted;
 - downstream true nodes cannot activate false root;
 - p-confirm ordering or deletion of first-blocking-leg logic turns tests red;
 - public HTML/JS contains no current values or paid body;
@@ -664,10 +688,12 @@ A fixture/read Executive surface is not production-live placement. Concrete elig
 
 PR #6820 remains Draft/Hold until:
 
-1. changed-file census is exactly the original four records plus this amendment;
+1. historical PR #6820 changed-file census is eight records by Git; the current repair adds
+   Amendment 3 and minimally amends the eight predecessor records;
 2. decision and PR body reference the amendment and supersession;
 3. Agent OS/schema/fences and relevant CI are terminal with no candidate-owned red;
-4. an independent reviewer attacks the four-layer split, freshness/DAG, ordering, X3 owner boundary, path-overlay semantics, X1/X6 boundary and real-data compositions as well as the original dimensions;
+4. the two existing review packets are closed by Amendment 3 delta verification; no third
+   full review is required for the bounded records repair;
 5. current-main compatibility is proven under current review-reuse law;
 6. Sol accepts the immutable head.
 

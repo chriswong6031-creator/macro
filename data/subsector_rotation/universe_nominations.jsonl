@@ -53,3 +53,4 @@
 {"date":"2026-08-31","theme":"Commodities Metals","donor":"commmetalsgold","receiver":"commmetalsrecycling","confidence":0.389,"both_confirmed":false}
 {"date":"2026-08-31","theme":"Crypto & Blockchain","donor":"blockchainplatforms","receiver":"blockchainenterprise","confidence":0.298,"both_confirmed":false}
 {"date":"2026-08-31","theme":"Wearables","donor":"wearablesmedical","receiver":"wearablesimmersive","confidence":0.292,"both_confirmed":false}
+{"date":"2026-09-03","theme":"Artificial Intelligence","donor":"aisecurity","receiver":"aiadssearch","confidence":0.317,"both_confirmed":false}

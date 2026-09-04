@@ -149,6 +149,7 @@ on:
       - "scripts/build_leader_radar.py"
       - "scripts/build_live_overlay.py"
       - "scripts/build_macro_context.py"
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"

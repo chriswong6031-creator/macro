@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "RHP-BULL-20260818",
-  "asof": "2026-09-03",
+  "asof": "2026-09-04",
   "phase": "between_t1_t2",
   "detection_phase": "post_t1_failed_hold",
   "management_confidence": 35.6,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 0.3,
     "progress": 32.8,
-    "pace": 55.8,
+    "pace": 51.1,
     "retention": 0.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.041,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 35.6,
+    "horizon_pct_used": 37.8,
     "p1": -0.6396,
     "p2": -0.3198,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-19",
   "_first_t1_ts": "2026-08-25",
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

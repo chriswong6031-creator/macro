@@ -1,33 +1,15 @@
 {
   "schema": "prophet.suggestions/v1",
-  "as_of": "2026-09-04T02:14:20+00:00",
+  "as_of": "2026-09-04T13:26:33+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "suggestions": [
     {
       "code": "stale_us_audit_scoreboard_us",
       "kind": "staleness",
       "severity": "medium",
-      "detail": "us-audit-scoreboard is 650h old (SLA 48.0h) [US]",
+      "detail": "us-audit-scoreboard is 661h old (SLA 48.0h) [US]",
       "market": "us",
       "first_seen": "2026-08-10",
-      "asof": "2026-09-04"
-    },
-    {
-      "code": "stale_us_board_outcomes_us",
-      "kind": "staleness",
-      "severity": "medium",
-      "detail": "us-board-outcomes is 98h old (SLA 48h) [US]",
-      "market": "us",
-      "first_seen": "2026-09-04",
-      "asof": "2026-09-04"
-    },
-    {
-      "code": "stale_ca_board_ledger_ca",
-      "kind": "staleness",
-      "severity": "medium",
-      "detail": "ca-board-ledger is 67h old (SLA 48h) [CA]",
-      "market": "ca",
-      "first_seen": "2026-09-04",
       "asof": "2026-09-04"
     }
   ]

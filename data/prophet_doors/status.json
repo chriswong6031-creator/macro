@@ -1,33 +1,53 @@
 {
   "appended": 3,
-  "asof": "2026-09-02",
+  "asof": "2026-09-03",
   "candidates": {
     "R": 3,
-    "T": 1,
+    "T": 2,
     "W": 11
   },
   "deduped": {
-    "R": 0,
-    "T": 1,
+    "R": 2,
+    "T": 0,
     "W": 11
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "consulted": false
+      "asof": "2026-09-04",
+      "consulted": true,
+      "n_keys": 27,
+      "n_themes": 18,
+      "ok": true,
+      "reason": null,
+      "source": "site/basketdata/foresight_cascade.json"
     },
     "ignition": {
       "coil_min_sessions": 293,
       "consulted": true,
-      "null_reasons": {},
-      "reason": null,
+      "null_reasons": {
+        "no_bar_on_flag_date": 43,
+        "ohlcv_absent": 10
+      },
+      "reason": "no flagged name resolved in the OHLCV store — coil and thrust null on every flag tonight",
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {},
+      "themes_read": {
+        "Commodities Agriculture": {
+          "theme_thrust_frac": null,
+          "theme_thrust_reason": "no_covered_member",
+          "theme_thrust_state": null
+        },
+        "Commodities Energy": {
+          "theme_thrust_frac": null,
+          "theme_thrust_reason": "no_covered_member",
+          "theme_thrust_state": null
+        }
+      },
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 3,
-      "tickers_read": 3
+      "tickers_ok": 0,
+      "tickers_read": 53
     },
     "keys": [
       "relay_count_3d",
@@ -45,11 +65,16 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": false
+      "consulted": true,
+      "high_lookback": 63,
+      "members_indexed": 115,
+      "n_covered": 68,
+      "reason": null,
+      "window_sessions": 21
     },
     "turnover": {
       "consulted": true,
-      "last_session": "2026-09-02",
+      "last_session": "2026-09-03",
       "n_tickers": 1544,
       "ok": true,
       "reason": null,
@@ -83,11 +108,12 @@
   },
   "flag_tickers": {
     "R": [
-      "DUOL",
-      "HRMY",
-      "JXN"
+      "CLF"
     ],
-    "T": [],
+    "T": [
+      "ADM",
+      "BWXT"
+    ],
     "W": []
   },
   "n_universe": 1496,
@@ -96,41 +122,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-09-03 10:33:46",
-  "runtime_s": 114.3,
+  "run_utc": "2026-09-04 13:18:43",
+  "runtime_s": 115.6,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 2,
-    "asof": "2026-08-31",
-    "n_members": 132,
+    "age_days": 0,
+    "asof": "2026-09-03",
+    "n_members": 115,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 2.744,
+        "emerging_score": 3.602,
         "rank": 1,
-        "theme": "Cybersecurity"
+        "theme": "Commodities Agriculture"
       },
       {
-        "emerging_score": 1.795,
+        "emerging_score": 3.455,
         "rank": 2,
-        "theme": "Big Data"
+        "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.569,
+        "emerging_score": 2.234,
         "rank": 3,
-        "theme": "Software"
+        "theme": "Mega-Cap"
       },
       {
-        "emerging_score": 1.527,
+        "emerging_score": 1.727,
         "rank": 4,
-        "theme": "Artificial Intelligence"
+        "theme": "Commodities Energy"
       },
       {
-        "emerging_score": 1.343,
+        "emerging_score": 1.724,
         "rank": 5,
-        "theme": "Biometrics"
+        "theme": "Energy Traditional"
       }
     ]
   },
@@ -141,14 +167,14 @@
     ],
     "aligned": 11,
     "asof_max": "2026-09-02",
-    "asof_mismatch": 0,
-    "asof_run": "2026-09-02",
+    "asof_mismatch": 11,
+    "asof_run": "2026-09-03",
     "evaluated": 713,
     "fresh": 12,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 21.8,
+    "runtime_s": 21.1,
     "skipped": 4,
     "source": "baskets/membership.json",
     "state_turn": 89,

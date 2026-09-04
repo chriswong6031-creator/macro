@@ -1161,3 +1161,35 @@ pages:
     access_shell: "anonymous"
     payload_tier: "public"
     evidence: [terminal/app/login/page.tsx]
+
+  macro:macro_liquidity_regime:
+    archetype: "regime_dashboard"
+
+  macro:macro_growth_real_economy:
+    archetype: "regime_dashboard"
+
+  macro:macro_business_activity:
+    archetype: "regime_dashboard"
+
+  macro:macro_labor_markets:
+    archetype: "regime_dashboard"
+
+  macro:macro_inflation_system:
+    archetype: "regime_dashboard"
+
+  macro:macro_monetary_policy:
+    archetype: "regime_dashboard"
+
+  macro:macro_financial_conditions:
+    archetype: "regime_dashboard"
+
+  # Pre-existing stragglers healed in passing (2026-09-04, R2 pages wave):
+  # both rows sat unclassified on main's committed registry — the
+  # product-experience classification tests were dark under pack starvation.
+  # reference.html is the indicators-and-terms glossary; the Price of Duration
+  # page is a research report. Both are reading surfaces.
+  macro:reference:
+    archetype: "editorial"
+
+  macro:report_price_of_duration:
+    archetype: "editorial"

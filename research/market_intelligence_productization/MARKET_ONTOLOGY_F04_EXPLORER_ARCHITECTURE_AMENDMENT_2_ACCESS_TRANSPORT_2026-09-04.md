@@ -9,6 +9,13 @@
 **Predecessor architecture head:** `93fa67df98ee39f046f47bb2d02e8b3159cd9593`  
 **Capability delta:** `NONE — this amendment prevents a new paid-payload mirror leak`
 
+> **AMENDED (2026-09-04).** Amendment 3,
+> `MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md`,
+> controls the F00 consumption edge, authenticated shared navigation, request-time
+> source-manifest/deployed-checkout freshness, K1 evidence forms, denominator honesty,
+> theme art directions, protected dependency paths, and the eight-record PR #6820 census.
+> Amendment 2 remains controlling for access and transport.
+
 This amendment closes an access-architecture defect discovered after Amendment 1: the planned gated static file `/premiumdata/ontology_explorer.json` would be committed into the public Macro repository. Caddy could correctly deny the primary-domain route while raw GitHub, anonymous clone and the GitHub Pages mirror still exposed the same bytes. A primary-origin `401/403` would therefore be false proof of commercial access integrity.
 
 The X1 product shell remains public and discoverable. The current proprietary explorer snapshot moves to the existing authenticated Macro API pattern and is never committed to a public Git/R2/static path.
@@ -297,7 +304,8 @@ X1 cannot be accepted unless:
 4. success and errors are private/no-store/noindex/nosniff and vary on Authorization;
 5. no current F04 snapshot exists in raw Git, clone, Pages, public R2, shell, bundle, source map, service-worker cache or committed evidence;
 6. the response is tenant-neutral and every private/session/scenario field remains outside it;
-7. same-cycle owner-generation/source-manifest proof from Amendment 1 passes;
+7. Amendment 3 request-time owner-generation/source-manifest and typed
+   deployed-checkout/pull-lag proof passes;
 8. anonymous, Free, Essential and Pro behavior is proven against the exact production subject;
 9. browser storage/network inspection proves no persistent unauthorized copy;
 10. the capability claim is limited to F04 no-widening/access correctness, not estate-wide access integrity.
@@ -317,7 +325,8 @@ CURRENT ACCESS EFFECT: NONE
 CURRENT WORKER EFFECT: NONE
 ```
 
-Architecture PR #6820 remains Draft/Hold. Its release census becomes six records:
+Architecture PR #6820 subsequently merged as immutable history with eight records counted by
+Git:
 
 1. original architecture freeze;
 2. Amendment 1;
@@ -325,8 +334,12 @@ Architecture PR #6820 remains Draft/Hold. Its release census becomes six records
 4. binding decision;
 5. Fable handoff;
 6. implementation plan.
+7. exact capability closure map.
+8. F00 return reconciliation handoff.
 
-After Amendment 2 is bound into the decision, handoff and plan, all earlier CI and review evidence is superseded. Fresh exact-head validation, independent review and current-main compatibility proof are required.
+The bounded follow-up repair adds Amendment 3 and minimally amends all eight predecessor
+records. Its delta is verified against the two existing review packets; no third full review is
+commissioned.
 
 A merge makes this access ruling durable only. It does not create the API, alter an entitlement, remove existing public leaks, provision storage, place Fable, start X1 or deploy anything.
 

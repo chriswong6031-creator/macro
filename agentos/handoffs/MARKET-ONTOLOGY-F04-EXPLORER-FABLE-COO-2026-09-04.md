@@ -27,13 +27,19 @@ changed:
   - path: research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_1_2026-09-04.md
     what: >
       Separates tenant-neutral snapshot, ephemeral scenario assumption/evaluation and
-      private session view; freezes same-cycle freshness, deterministic non-alpha
+      private session view; freezes owner-generation freshness (as superseded by Amendment 3
+      request-time source-manifest/deployed-checkout law), deterministic non-alpha
       ordering, X3 owner placement, scenario overlay, X1/X6 scope and real-data states.
   - path: research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_2_ACCESS_TRANSPORT_2026-09-04.md
     what: >
       Forbids a new current F04 snapshot in public Git/Pages/R2/static/browser storage and
       binds a public-safe shell plus authenticated Macro API/site_full/private-no-store
       delivery with alternate-path access proof.
+  - path: research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXPLORER_ARCHITECTURE_AMENDMENT_3_REVIEW_CLOSURE_2026-09-04.md
+    what: >
+      Records F00 consumption and closes the two existing review packets with shared-nav,
+      request-time freshness, K1 evidence, denominator, clocks, design, protected-path and
+      ephemeral-replay corrections. No third full review or product effect.
   - path: agentos/decisions/DEC-MARKET-ONTOLOGY-F04-EXPLORER-LIVE-TRACE-SCENARIO-BOUNDARY.md
     what: >
       Records the binding parallel-product, epistemic, owner, privacy and authenticated-
@@ -95,8 +101,16 @@ verified:
       bind Amendment 1; subsequent access archaeology; bind Amendment 2 into decision,
       handoff and implementation plan.
     result: >
-      PASS — six records now define state/privacy, freshness, ordering, owner boundaries,
-      scenario semantics, X1 scope, reference compositions and authenticated transport.
+      PASS — PR #6820 merged eight records counted by Git. Amendment 3 preserves that history
+      and supplies the bounded review-closure erratum required by F00.
+  - claim: "F00 consumed the immutable F04 return and kept X1 held for one records repair."
+    command: >
+      Fresh-read C0BSBM78V1N/1788510607.305039 at 1788522863.288509 and compare the exact
+      ruling with F04 return 1788519543.566529 and PR #6820 merge 700182ffb2a9324aacfaf2d2a85f4ecd0da327f4.
+    result: >
+      PASS — the F00 edge accepts the eight records into integration state, requires the
+      Amendment 3 repair against the two existing reviews, forbids a third full review, and
+      keeps X1 held until repair merge plus fresh collision census.
 unverified:
   - claim: "A concrete eligible Fable principal can ACK/START."
     what_would_verify: >
@@ -114,7 +128,8 @@ unverified:
     what_would_verify: >
       X7 current Terminal/Supabase User Plane, RLS and revision-contract archaeology.
 unresolved:
-  - "Architecture PR #6820 remains Draft/Hold until fresh exact-head CI/fences, independent review and current-main integration proof pass."
+  - "The follow-up Amendment 3 repair remains Draft/Hold until exact-head validation, hosted CI/security and Sol acceptance pass."
+  - "X1 remains PRE_START until the repair merges and a fresh planned-write collision census passes."
   - "Fable parent placement is WAITING_CAPACITY / needs_placement; no receiver or START is claimed."
   - "D2C #6809 remains REQUEST_REPAIR on its exact carrier."
   - "K3-D #6514 remains Draft/Hold and may not enter F04 as accepted economic truth."
@@ -122,12 +137,13 @@ unresolved:
   - "Estate-wide public Git/Pages/R2 access debt remains a separate program; X1 must not widen it or claim it solved."
 next_actions:
   - >
-    Keep #6820 Draft/Hold and obtain fresh exact-head independent review, Agent OS/schema/
-    fence/CI validation and current-main compatibility proof for the exact six records.
+    Preserve merged PR #6820 as immutable eight-record history. Complete the one Amendment 3
+    records repair, validate its delta against the two existing review packets, and keep its
+    PR Draft/Hold for Sol. Do not request a third full review.
   - >
-    After architecture acceptance, assign the existing parent to one concrete eligible
-    Fable principal when capacity exists; otherwise preserve WAITING_CAPACITY without
-    OPEN_PICKUP.
+    After the repair merges and a fresh planned-write census passes, F00/Sol may assign the
+    existing parent or an X1 child to one concrete eligible receiver; otherwise preserve
+    PRE_START without OPEN_PICKUP.
   - >
     Fable performs fresh owner/API/access/path archaeology, then commissions X1 to the
     least-scarce capable implementation avenue. X1 stops at public-safe shell + pure
@@ -205,14 +221,14 @@ Fable prevents local children from duplicating owners or shrinking the thesis. F
 
 1. current live Chairman intent;
 2. current protected Sol Skillpack/universal laws;
-3. later accepted specific owner/authority decisions;
-4. binding F04 decision;
-5. Amendment 2 for access/transport;
-6. Amendment 1 for state/privacy/freshness/method/X1 scope;
-7. architecture freeze;
-8. existing F04/GMI routing records;
-9. amended implementation plan;
-10. current owner code/contracts and immutable proof.
+3. F00 consumption/ruling `C0BSBM78V1N/1788510607.305039 @ 1788522863.288509`;
+4. Amendment 3 for review closure and its exact supersessions;
+5. later accepted specific owner/authority decisions;
+6. binding F04 decision;
+7. Amendment 2 for access/transport;
+8. Amendment 1 outside the clauses superseded by Amendment 3;
+9. architecture freeze with inline errata;
+10. existing F04/GMI routing records, amended plan, current owner contracts and immutable proof.
 
 A newer accepted owner decision wins for that owner; stop and return exact conflict.
 
@@ -248,6 +264,10 @@ A newer accepted owner decision wins for that owner; stop and return exact confl
 - scenario assumption/evaluation;
 - private session view/overlay/save;
 - interactive product and integrated production/learning proof.
+
+The shell must use the authenticated `_site_nav` family and an Ontology toolbar below it. Its
+formal archetype is `instrument_analyzer` C-signal, with separate dark command-center and
+light research-workspace material treatments.
 
 ## 6. Complete journey
 
@@ -309,7 +329,10 @@ A paid user opens `/ontology.html` and completes one real WTI Live Trace from ca
 3. Essential/Pro receives current snapshot from authenticated API.
 4. WTI is explicit reference path, not inferred `most material`.
 5. Trace states oil root/breakeven false, downstream rate/duration true, path dormant.
-6. Nodes/edges show values, thresholds, owner generations, clocks, methods, `X of N`, baseline availability and invalidators.
+6. Nodes/edges show values, thresholds, owner generations, as-of/build clocks, K1 evidence,
+   methods, rising-edge episode `X of N`, baseline availability and invalidators. Terminal
+   cohort bar N is separately labeled overlapping; absent effective N/interval/span/
+   concentration and current-regime mappings are typed unavailable.
 7. `first_blocking_leg` is deterministic path order.
 8. Inverse path remains separate.
 9. Mobile/keyboard completes vertical sequence without canvas.
@@ -321,6 +344,7 @@ A paid user opens `/ontology.html` and completes one real WTI Live Trace from ca
 ```text
 current deployed TXI/rates owner bytes
 -> pure request-time F04 composer
+-> source_manifest_hash + deployed-checkout/pull-lag adjudication
 -> validated ontology_explorer_snapshot.v1
 -> authenticated Macro API with private no-store headers
 -> entitled browser
@@ -331,9 +355,10 @@ No assumption/private overlay/owner write in X1. No full response in static Git/
 ### Required proof
 
 - exact source-manifest, owner generations and deployed build;
-- same-cycle owner closure or typed per-owner lag;
+- request-time source-manifest, deployed checkout/build identity, and typed source/deploy lag;
 - current WTI dormant contradiction;
-- historical numerator/N/span/regime and absent-baseline disclosure;
+- historical episode numerator/N/span/regime, overlapping terminal-cohort bar N, typed
+  effective-N/interval/span/concentration absence, and absent-baseline disclosure;
 - structured coverage/first blocking leg;
 - anonymous `401`, Free `403`, Essential/Pro `200`, exact private headers;
 - no current F04 snapshot in raw Git, clone, Pages, public R2, HTML, bundle, source map, service worker, localStorage/IndexedDB/Cache Storage or committed full-response evidence;

@@ -11,13 +11,12 @@
     "ca_pipelines",
     "ca_rails_ind",
     "ca_silver_royalty",
-    "ca_tech",
-    "ca_utilities"
+    "ca_tech"
   ],
   "held": [
     "ca_gold",
-    "ca_base_metals",
     "ca_banks",
+    "ca_base_metals",
     "ca_oil_gas"
   ],
   "leader": "ca_gold",

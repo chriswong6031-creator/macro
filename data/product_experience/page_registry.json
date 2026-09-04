@@ -1,16 +1,16 @@
 {
   "schema": "mastermind.page_registry.v1",
-  "generated_at": "2026-08-11T00:00:00Z",
+  "generated_at": "2026-09-04",
   "sources": {
     "macro": {
       "available": true,
-      "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/ds-pr-1-registry",
+      "root": "/private/tmp/f01-r1b-wt",
       "ref": "HEAD",
-      "sha": "eb37499065ca189bd33a9dd53ca50c3d3a45d894",
+      "sha": "8e59a413018d0f1563b86ccfbb7e0b4b688eed72",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 4664,
+      "tracked_html_pages": 8925,
       "write_page_sites": 151,
-      "write_page_unresolved": 33,
+      "write_page_unresolved": 35,
       "unresolved_write_sites": [
         "scripts/build_biocatalyst.py: page_temp",
         "scripts/build_btc_strategy.py: out",
@@ -27,6 +27,8 @@
         "scripts/build_fundamental_forensics.py: page_temp",
         "scripts/build_government_revenue.py: temp_path",
         "scripts/build_ipo.py: out",
+        "scripts/build_macro_suite_pages.py: temp",
+        "scripts/build_market_reference.py: out",
         "scripts/build_options_screener.py: out",
         "scripts/build_qa_bottom_sensors.py: out",
         "scripts/build_site.py: out",
@@ -47,7 +49,7 @@
       "root": "/Users/chriswong/Documents/Cluade/charting-app",
       "ref": "origin/master",
       "available": true,
-      "sha": "bfc16bd7fc76da2a6be308050c8c0c4bc6fe606d",
+      "sha": "fadd8b82f03ecaabe8a86d693da89f27be096d9f",
       "page_modules": 15
     },
     "mastermind": {
@@ -55,7 +57,7 @@
       "available": true,
       "ref": "master",
       "sha": "17c40884de5bfbf9309f523e6787e4fd82dae266",
-      "tracked_worktree_clean": true,
+      "tracked_worktree_clean": false,
       "read_from": "worktree",
       "html_routes": 7
     }
@@ -285,7 +287,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:4195",
+        "scripts/build_site.py:4309",
         "site/advanced.html",
         "templates/advanced.html.j2"
       ],
@@ -416,7 +418,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3450",
+        "scripts/build_site.py:3564",
         "site/alerts.html",
         "templates/_navlinks.html.j2",
         "templates/alerts.html.j2"
@@ -852,13 +854,14 @@
       "lifecycle": "live",
       "priority": "unclassified",
       "generated": true,
-      "bilingual": false,
+      "bilingual": true,
       "themes": [
         "light",
         "dark"
       ],
       "locales": [
-        "en"
+        "en",
+        "zh"
       ],
       "known_contracts": [
         "site_access.v1:default_insider"
@@ -938,13 +941,14 @@
       "lifecycle": "live",
       "priority": "unclassified",
       "generated": true,
-      "bilingual": false,
+      "bilingual": true,
       "themes": [
         "light",
         "dark"
       ],
       "locales": [
-        "en"
+        "en",
+        "zh"
       ],
       "known_contracts": [
         "site_access.v1:default_insider"
@@ -1099,7 +1103,7 @@
       "builder": [],
       "data_sources": [],
       "access_shell": "anonymous",
-      "payload_tier": "public_shell_premium_payload",
+      "payload_tier": "public",
       "nav_family": "product_nav.research",
       "archetype": "intelligence_desk",
       "design_system": {
@@ -1119,9 +1123,7 @@
         "en",
         "zh"
       ],
-      "known_contracts": [
-        "site_access.v1:free_registered"
-      ],
+      "known_contracts": [],
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
@@ -1238,7 +1240,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_bonds.py:1545",
+        "scripts/build_bonds.py:1554",
         "site/bonds.html",
         "templates/_navlinks.html.j2",
         "templates/bonds.html.j2"
@@ -1361,7 +1363,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:1523",
+        "scripts/build_canada.py:1551",
         "site/canada.html",
         "templates/_navlinks.html.j2",
         "templates/canada.html.j2"
@@ -1407,7 +1409,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6100",
+        "scripts/build_site.py:7148",
         "site/canada_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -1498,7 +1500,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:1550",
+        "scripts/build_canada.py:1578",
         "site/canada_stock.html",
         "templates/canada_stock.html.j2"
       ],
@@ -1543,7 +1545,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:1532",
+        "scripts/build_canada.py:1560",
         "site/canada_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/canada.html.j2"
@@ -1675,7 +1677,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1969",
+        "scripts/build_china.py:1981",
         "site/china.html",
         "templates/_navlinks.html.j2",
         "templates/china.html.j2"
@@ -1806,7 +1808,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6100",
+        "scripts/build_site.py:7148",
         "site/china_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -1897,7 +1899,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china_intel.py:70",
+        "scripts/build_china_intel.py:82",
         "site/china_intel.html",
         "templates/_navlinks.html.j2",
         "templates/china_intel.html.j2"
@@ -1941,7 +1943,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:2005",
+        "scripts/build_china.py:2017",
         "site/china_lookup.html",
         "templates/china_lookup.html.j2"
       ],
@@ -2030,7 +2032,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1980",
+        "scripts/build_china.py:1992",
         "site/china_news.html",
         "templates/_navlinks.html.j2",
         "templates/china_news.html.j2"
@@ -2247,7 +2249,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1987",
+        "scripts/build_china.py:1999",
         "site/china_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/china.html.j2"
@@ -2459,7 +2461,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6526",
+        "scripts/build_site.py:7625",
         "site/committee.html",
         "templates/committee.html.j2"
       ],
@@ -2855,7 +2857,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_darkpool_desk.py:592",
+        "scripts/build_darkpool_desk.py:629",
         "site/darkpool.html",
         "templates/_navlinks.html.j2",
         "templates/darkpool.html.j2"
@@ -2976,7 +2978,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_discovery.py:306",
+        "scripts/build_discovery.py:359",
         "site/discovery.html",
         "templates/discovery.html.j2"
       ],
@@ -3017,7 +3019,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3179",
+        "scripts/build_site.py:3293",
         "site/etfs.html",
         "templates/_navlinks.html.j2",
         "templates/etfs.html.j2"
@@ -3099,7 +3101,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3383",
+        "scripts/build_site.py:3497",
         "site/factors.html",
         "templates/factors.html.j2"
       ],
@@ -3188,8 +3190,8 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/_dev_render_flow_leaders.py:29",
-        "scripts/build_flow_leaders.py:1139",
-        "scripts/build_flow_leaders.py:65",
+        "scripts/build_flow_leaders.py:1164",
+        "scripts/build_flow_leaders.py:90",
         "site/flow_leaders.html",
         "templates/flow_leaders.html.j2"
       ],
@@ -3232,7 +3234,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_flow_velocity.py:129",
+        "scripts/build_flow_velocity.py:605",
         "site/flow_velocity.html",
         "templates/_navlinks.html.j2",
         "templates/flow_velocity.html.j2"
@@ -3358,7 +3360,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_ako.html"
       ],
       "notes": [
@@ -3396,7 +3398,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_akre.html"
       ],
       "notes": [
@@ -3434,7 +3436,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_altarock.html"
       ],
       "notes": [
@@ -3472,7 +3474,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_altimeter.html"
       ],
       "notes": [
@@ -3510,7 +3512,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_appaloosa.html"
       ],
       "notes": [
@@ -3548,7 +3550,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_aquamarine.html"
       ],
       "notes": [
@@ -3586,7 +3588,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_bakerbros.html"
       ],
       "notes": [
@@ -3624,7 +3626,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_basswood.html"
       ],
       "notes": [
@@ -3662,7 +3664,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_baupost.html"
       ],
       "notes": [
@@ -3700,7 +3702,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_berkshire.html"
       ],
       "notes": [
@@ -3738,7 +3740,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_casdin.html"
       ],
       "notes": [
@@ -3776,7 +3778,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_coatue.html"
       ],
       "notes": [
@@ -3814,7 +3816,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_corvex.html"
       ],
       "notes": [
@@ -3852,7 +3854,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_d1capital.html"
       ],
       "notes": [
@@ -3890,7 +3892,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_dorsey.html"
       ],
       "notes": [
@@ -3928,7 +3930,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_dragoneer.html"
       ],
       "notes": [
@@ -3966,7 +3968,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_duquesne.html"
       ],
       "notes": [
@@ -4004,7 +4006,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_durable.html"
       ],
       "notes": [
@@ -4042,7 +4044,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_egerton.html"
       ],
       "notes": [
@@ -4080,7 +4082,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_elliott.html"
       ],
       "notes": [
@@ -4118,7 +4120,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_engaged.html"
       ],
       "notes": [
@@ -4156,7 +4158,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_fairholme.html"
       ],
       "notes": [
@@ -4194,7 +4196,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_gates.html"
       ],
       "notes": [
@@ -4232,7 +4234,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_giverny.html"
       ],
       "notes": [
@@ -4270,7 +4272,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_greenlea.html"
       ],
       "notes": [
@@ -4308,7 +4310,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_himalaya.html"
       ],
       "notes": [
@@ -4346,7 +4348,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_icahn.html"
       ],
       "notes": [
@@ -4390,7 +4392,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1972",
+        "scripts/build_smart_money.py:2045",
         "site/fund_index.html",
         "templates/fund_index.html.j2"
       ],
@@ -4427,7 +4429,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_jana.html"
       ],
       "notes": [
@@ -4465,7 +4467,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_kimmeridge.html"
       ],
       "notes": [
@@ -4503,7 +4505,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_lightstreet.html"
       ],
       "notes": [
@@ -4541,7 +4543,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_lonepine.html"
       ],
       "notes": [
@@ -4579,7 +4581,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_mudrick.html"
       ],
       "notes": [
@@ -4617,7 +4619,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_oaktree.html"
       ],
       "notes": [
@@ -4655,7 +4657,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_pabrai.html"
       ],
       "notes": [
@@ -4693,7 +4695,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_perceptive.html"
       ],
       "notes": [
@@ -4731,7 +4733,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_pershing.html"
       ],
       "notes": [
@@ -4769,7 +4771,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_polen.html"
       ],
       "notes": [
@@ -4807,7 +4809,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_punchcard.html"
       ],
       "notes": [
@@ -4845,7 +4847,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_racapital.html"
       ],
       "notes": [
@@ -4883,7 +4885,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_rtw.html"
       ],
       "notes": [
@@ -4921,7 +4923,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_sachem.html"
       ],
       "notes": [
@@ -4959,7 +4961,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_scion.html"
       ],
       "notes": [
@@ -4997,7 +4999,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_soros.html"
       ],
       "notes": [
@@ -5035,7 +5037,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_starboard.html"
       ],
       "notes": [
@@ -5073,7 +5075,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_tci.html"
       ],
       "notes": [
@@ -5111,7 +5113,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_thirdpoint.html"
       ],
       "notes": [
@@ -5149,7 +5151,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_tigerglobal.html"
       ],
       "notes": [
@@ -5187,7 +5189,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_trian.html"
       ],
       "notes": [
@@ -5225,7 +5227,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_valueact.html"
       ],
       "notes": [
@@ -5263,7 +5265,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_viking.html"
       ],
       "notes": [
@@ -5301,7 +5303,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1939",
+        "scripts/build_smart_money.py:2012",
         "site/fund_whalerock.html"
       ],
       "notes": [
@@ -5475,7 +5477,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6248",
+        "scripts/build_site.py:7296",
         "site/history.html",
         "templates/history.html.j2"
       ],
@@ -5518,7 +5520,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_hk.py:1818",
+        "scripts/build_hk.py:1826",
         "site/hk.html",
         "templates/_navlinks.html.j2",
         "templates/hk.html.j2"
@@ -5564,7 +5566,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6100",
+        "scripts/build_site.py:7148",
         "site/hk_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -5655,7 +5657,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_hk.py:1846",
+        "scripts/build_hk.py:1854",
         "site/hk_lookup.html",
         "templates/hk_lookup.html.j2"
       ],
@@ -5698,7 +5700,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_hk.py:1828",
+        "scripts/build_hk.py:1836",
         "site/hk_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/hk.html.j2"
@@ -5869,7 +5871,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_intel_hub.py:426",
+        "scripts/build_intel_hub.py:486",
         "site/intelligence_hub.html",
         "templates/_navlinks.html.j2",
         "templates/intelligence_hub.html.j2"
@@ -5913,7 +5915,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_intl.py:910",
+        "scripts/build_intl.py:919",
         "site/intl.html",
         "templates/_navlinks.html.j2",
         "templates/intl.html.j2"
@@ -5957,7 +5959,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_intl.py:920",
+        "scripts/build_intl.py:929",
         "site/intl_stock.html",
         "templates/intl_stock.html.j2"
       ],
@@ -6002,7 +6004,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_intl.py:911",
+        "scripts/build_intl.py:920",
         "site/intl_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/intl.html.j2"
@@ -6046,7 +6048,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_intraday_flow.py:1015",
+        "scripts/build_intraday_flow.py:1021",
         "site/intraday_flow.html",
         "templates/_navlinks.html.j2",
         "templates/intraday_flow.html.j2"
@@ -6170,7 +6172,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_leader_radar.py:126",
-        "scripts/build_leader_radar.py:2947",
+        "scripts/build_leader_radar.py:2972",
         "site/leader_radar.html",
         "templates/_navlinks.html.j2",
         "templates/leader_radar.html.j2"
@@ -6321,12 +6323,55 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_site.py:6347",
+        "scripts/build_site.py:7432",
         "site/macro.html",
         "templates/_navlinks.html.j2",
         "templates/dashboard.html.j2"
       ],
       "notes": []
+    },
+    {
+      "page_id": "macro:macro_business_activity",
+      "repo": "macro",
+      "route": "/macro_business_activity.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_business_activity.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_business_activity.html",
+        "templates/macro_business_activity.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
     },
     {
       "page_id": "macro:macro_context",
@@ -6373,6 +6418,264 @@
       "notes": []
     },
     {
+      "page_id": "macro:macro_financial_conditions",
+      "repo": "macro",
+      "route": "/macro_financial_conditions.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_financial_conditions.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_financial_conditions.html",
+        "templates/macro_financial_conditions.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_growth_real_economy",
+      "repo": "macro",
+      "route": "/macro_growth_real_economy.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_growth_real_economy.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_growth_real_economy.html",
+        "templates/macro_growth_real_economy.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_inflation_system",
+      "repo": "macro",
+      "route": "/macro_inflation_system.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_inflation_system.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_inflation_system.html",
+        "templates/macro_inflation_system.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_labor_markets",
+      "repo": "macro",
+      "route": "/macro_labor_markets.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_labor_markets.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_labor_markets.html",
+        "templates/macro_labor_markets.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_liquidity_regime",
+      "repo": "macro",
+      "route": "/macro_liquidity_regime.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_liquidity_regime.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_liquidity_regime.html",
+        "templates/macro_liquidity_regime.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:macro_monetary_policy",
+      "repo": "macro",
+      "route": "/macro_monetary_policy.html",
+      "route_kind": "page",
+      "source_template": "templates/macro_monetary_policy.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/macro_monetary_policy.html",
+        "templates/macro_monetary_policy.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
       "page_id": "macro:macro_signals",
       "repo": "macro",
       "route": "/macro_signals.html",
@@ -6409,7 +6712,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:5962",
+        "scripts/build_site.py:7010",
         "site/macro_signals.html",
         "templates/macro_signals.html.j2"
       ],
@@ -6452,7 +6755,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_market_memory_page.py:39",
-        "scripts/build_site.py:6610",
+        "scripts/build_site.py:7722",
         "site/market_memory.html",
         "templates/_navlinks.html.j2",
         "templates/market_memory.html.j2"
@@ -6500,7 +6803,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_market_structure_page.py:121",
-        "scripts/build_site.py:6599",
+        "scripts/build_site.py:7711",
         "site/market_structure.html",
         "templates/_navlinks.html.j2",
         "templates/market_structure.html.j2"
@@ -6636,7 +6939,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_masterminds.py:220",
+        "scripts/build_masterminds.py:226",
         "site/masterminds.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -6679,7 +6982,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_measurement.py:1696",
+        "scripts/build_measurement.py:2003",
         "site/measurement.html",
         "templates/measurement.html.j2"
       ],
@@ -6844,7 +7147,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6539",
+        "scripts/build_site.py:7638",
         "site/neural_web.html",
         "templates/_navlinks.html.j2",
         "templates/neural_web.html.j2"
@@ -6888,7 +7191,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:5947",
+        "scripts/build_site.py:6949",
         "site/news.html",
         "templates/_navlinks.html.j2",
         "templates/news.html.j2"
@@ -6977,7 +7280,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_options_command.py:978",
+        "scripts/build_options_command.py:1497",
         "site/options.html",
         "templates/_navlinks.html.j2",
         "templates/options.html.j2"
@@ -7068,7 +7371,7 @@
         "config/site_access.yml",
         "config/site_access.yml:1",
         "scripts/build_public_pages.py:122",
-        "scripts/build_site.py:3592",
+        "scripts/build_site.py:3706",
         "site/plans.html",
         "templates/_public_nav.html.j2",
         "templates/plans.html.j2"
@@ -7411,7 +7714,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "lib/seo.py:99",
-        "scripts/build_site.py:3426",
+        "scripts/build_site.py:3540",
         "site/quant_lab.html",
         "templates/quant_lab.html.j2"
       ],
@@ -7462,6 +7765,50 @@
         "templates/radar.html.j2"
       ],
       "notes": []
+    },
+    {
+      "page_id": "macro:reference",
+      "repo": "macro",
+      "route": "/reference.html",
+      "route_kind": "page",
+      "source_template": "templates/reference.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "product_nav.research",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/reference.html",
+        "templates/_navlinks.html.j2",
+        "templates/reference.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
     },
     {
       "page_id": "macro:report_ai_master_plan",
@@ -7586,6 +7933,49 @@
         "config/site_access.yml:1",
         "site/report_haven_audition.html",
         "templates/report_haven_audition.html.j2"
+      ],
+      "notes": [
+        "template attributed by name match; no write_page() call site names it",
+        "no write_page() call site resolves to this route; builder unknown"
+      ]
+    },
+    {
+      "page_id": "macro:report_price_of_duration",
+      "repo": "macro",
+      "route": "/report_price_of_duration.html",
+      "route_kind": "page",
+      "source_template": "templates/report_price_of_duration.html.j2",
+      "builder": [],
+      "data_sources": [],
+      "access_shell": "anonymous",
+      "payload_tier": "public_shell_premium_payload",
+      "nav_family": "none",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
+      "primary_user_question": "",
+      "owner": "unowned",
+      "lifecycle": "live",
+      "priority": "unclassified",
+      "generated": true,
+      "bilingual": true,
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "locales": [
+        "en",
+        "zh"
+      ],
+      "known_contracts": [
+        "site_access.v1:default_insider"
+      ],
+      "open_prs": [],
+      "source_evidence": [
+        "config/site_access.yml:1",
+        "site/report_price_of_duration.html",
+        "templates/report_price_of_duration.html.j2"
       ],
       "notes": [
         "template attributed by name match; no write_page() call site names it",
@@ -7758,7 +8148,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_reports.py:278",
+        "scripts/build_reports.py:304",
         "site/reports.html",
         "templates/_navlinks.html.j2",
         "templates/reports.html.j2"
@@ -7804,7 +8194,7 @@
         "templates/research_report.html.j2"
       ],
       "notes": [
-        "1016 committed pages under site/research/"
+        "1843 committed pages under site/research/"
       ]
     },
     {
@@ -8058,7 +8448,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_sector_central.py:297",
+        "scripts/build_sector_central.py:454",
         "site/sector_central.html",
         "templates/_navlinks.html.j2",
         "templates/sector_central.html.j2"
@@ -8234,7 +8624,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6061",
+        "scripts/build_site.py:7109",
         "site/sector_heatmap.html",
         "templates/sector_heatmap.html.j2"
       ],
@@ -8325,7 +8715,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "lib/seo.py:99",
-        "scripts/build_site.py:3404",
+        "scripts/build_site.py:3518",
         "site/signal_lab.html",
         "templates/signal_lab.html.j2"
       ],
@@ -8370,8 +8760,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_smart_money.py:1908",
-        "scripts/build_smart_money.py:825",
+        "scripts/build_smart_money.py:1981",
+        "scripts/build_smart_money.py:898",
         "site/smart_money.html",
         "templates/_navlinks.html.j2",
         "templates/smart_money.html.j2"
@@ -8582,7 +8972,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_stage_analysis_page.py:163",
+        "scripts/build_stage_analysis_page.py:236",
         "site/stage_analysis.html",
         "templates/_navlinks.html.j2",
         "templates/stage_analysis.html.j2"
@@ -8621,7 +9011,7 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_vector.py:1382",
+        "scripts/build_vector.py:1396",
         "site/start.html",
         "templates/_navlinks.html.j2"
       ],
@@ -8668,7 +9058,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6588",
+        "scripts/build_site.py:7700",
         "scripts/build_state_of_themes.py:1519",
         "site/state_of_themes.html",
         "templates/_navlinks.html.j2",
@@ -8750,7 +9140,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6258",
+        "scripts/build_site.py:7306",
         "site/stock.html",
         "templates/stock.html.j2"
       ],
@@ -8832,7 +9222,7 @@
         "site/stocks/"
       ],
       "notes": [
-        "2180 committed pages under site/stocks/",
+        "5605 committed pages under site/stocks/",
         "no write_page() call site resolves to this directory; builder unknown"
       ]
     },
@@ -8907,7 +9297,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_strategies.py:262",
+        "scripts/build_strategies.py:271",
         "site/strategies.html",
         "templates/_navlinks.html.j2",
         "templates/strategy_detail.html.j2"
@@ -8956,7 +9346,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_btc_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9006,7 +9396,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_copper_active.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9056,7 +9446,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_copper_macro.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9106,7 +9496,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_copper_swap.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9156,7 +9546,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_gold_active.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9206,7 +9596,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_gold_macro.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9256,7 +9646,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_gold_swap.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9306,7 +9696,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_oil_macro.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9356,7 +9746,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_oil_swap.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9406,7 +9796,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_silver_active.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9456,7 +9846,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_silver_macro.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9506,7 +9896,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cm_silver_swap.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9556,7 +9946,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cn_credit_margin.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9606,7 +9996,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cn_credit_vol.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9656,7 +10046,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cn_volmanaged.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9704,11 +10094,11 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china_masterminds.py:248",
+        "scripts/build_china_masterminds.py:254",
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cnmm_aggressive.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -9757,11 +10147,11 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china_masterminds.py:248",
+        "scripts/build_china_masterminds.py:254",
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cnmm_conservative.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -9810,11 +10200,11 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china_masterminds.py:248",
+        "scripts/build_china_masterminds.py:254",
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_cnmm_moderate.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -9865,7 +10255,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_copper_growth.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9915,7 +10305,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_credit_carry.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -9965,7 +10355,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_credit_gate_equity.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10015,7 +10405,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_curve_recession.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10065,7 +10455,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_dual_momentum.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10115,7 +10505,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_duration_timing.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10165,7 +10555,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_em_debt_carry.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10215,7 +10605,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_equalweight_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10265,7 +10655,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_eth_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10315,7 +10705,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_fin_conditions.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10365,7 +10755,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_flight_to_quality.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10415,7 +10805,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_gold_macro.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10465,7 +10855,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_golden_cross.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10515,7 +10905,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_ig_carry.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10565,7 +10955,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_lowvol_defensive.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10616,8 +11006,8 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_masterminds.py:217",
-        "scripts/build_strategies.py:247",
+        "scripts/build_masterminds.py:223",
+        "scripts/build_strategies.py:256",
         "site/strategy_mm_aggressive.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -10669,8 +11059,8 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_masterminds.py:217",
-        "scripts/build_strategies.py:247",
+        "scripts/build_masterminds.py:223",
+        "scripts/build_strategies.py:256",
         "site/strategy_mm_conservative.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -10722,8 +11112,8 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_masterminds.py:217",
-        "scripts/build_strategies.py:247",
+        "scripts/build_masterminds.py:223",
+        "scripts/build_strategies.py:256",
         "site/strategy_mm_moderate.html",
         "templates/mastermind_detail.html.j2"
       ],
@@ -10774,7 +11164,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_momentum_crashguard.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10824,7 +11214,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_nasdaq_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10874,7 +11264,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_net_liquidity.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10924,7 +11314,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_oil_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -10974,7 +11364,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_quality_flight.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -11024,7 +11414,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_sahm_timer.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -11074,7 +11464,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_semis_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -11124,7 +11514,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_smallcap_trend.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -11174,7 +11564,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_vix_term_timer.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -11224,7 +11614,7 @@
         "scripts/build_china_strategies.py:84",
         "scripts/build_commodity_strategies.py:104",
         "scripts/build_commodity_strategies.py:80",
-        "scripts/build_strategies.py:247",
+        "scripts/build_strategies.py:256",
         "site/strategy_vol_managed_sp.html",
         "templates/strategy_detail.html.j2"
       ],
@@ -11367,7 +11757,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6117",
+        "scripts/build_site.py:7165",
         "site/subsector_rotation.html",
         "templates/subsector_rotation.html.j2"
       ],
@@ -11409,8 +11799,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6142",
-        "scripts/build_site.py:6156",
+        "scripts/build_site.py:7190",
+        "scripts/build_site.py:7204",
         "site/subsector_rotation_china.html",
         "templates/subsector_rotation_china.html.j2"
       ],
@@ -11572,7 +11962,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_public_pages.py:130",
-        "scripts/build_site.py:3616",
+        "scripts/build_site.py:3730",
         "site/support.html",
         "templates/_public_nav.html.j2",
         "templates/support.html.j2"
@@ -11842,7 +12232,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_public_pages.py:134",
-        "scripts/build_site.py:3639",
+        "scripts/build_site.py:3753",
         "site/unsubscribe.html",
         "templates/unsubscribe.html.j2"
       ],
@@ -11892,8 +12282,8 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_site.py:5952",
-        "scripts/build_site.py:6348",
+        "scripts/build_site.py:6994",
+        "scripts/build_site.py:7433",
         "site/us_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/dashboard.html.j2"
@@ -12030,7 +12420,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_track_record_page.py:549",
+        "scripts/build_track_record_page.py:563",
         "site/us_track_record.html",
         "templates/us_track_record.html.j2"
       ],
@@ -12110,7 +12500,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_vector.py:4578",
+        "scripts/build_vector.py:4603",
         "site/vector.html",
         "templates/vector.html.j2"
       ],
@@ -12154,7 +12544,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_vector.py:3649",
+        "scripts/build_vector.py:3670",
         "site/vector_allocation.html",
         "templates/vector_allocation.html.j2"
       ],
@@ -12199,7 +12589,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6397",
+        "scripts/build_site.py:7495",
         "site/watchlist.html",
         "templates/_navlinks.html.j2",
         "templates/watchlist.html.j2"

@@ -7673,6 +7673,19 @@ def main() -> int:
     except Exception as _cs_e:  # noqa: BLE001 — additive; never break main build
         log.warning("capital_structure.html render failed (%s); page skipped", _cs_e)
 
+    # F01 Macro & Monetary suite — server-rendered workspace pages over the
+    # validated mastermind.macro_workspace_snapshot.v1 artifacts. The builder
+    # fails CLOSED on its own (a refused snapshot renders the typed refusal page,
+    # never a stale or empty one), so this hook only keeps a full-site rebuild
+    # from leaving the suite's pages and shared assets behind the templates.
+    try:
+        from scripts.build_macro_suite_pages import render as _render_macro_suite
+        _macro_suite_pages = _render_macro_suite(config.ROOT)
+        for _mq_page in _macro_suite_pages:
+            log.info("wrote %s", _mq_page)
+    except Exception as _mq_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("macro suite pages render failed (%s); pages skipped", _mq_e)
+
     # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
     # falsifier health, filter chips, and weekly-delta strip. Reads the four
     # site/neuralwebdata theme artifacts already written by build_thematic_state.

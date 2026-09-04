@@ -32,19 +32,8 @@
   }
  ],
  "price_hits": [],
- "ihm_depths": [
-  {
-   "index": "SOXX",
-   "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 18.8,
-   "reason": "washout_turn",
-   "washout_turn": true,
-   "extreme": true
-  }
- ],
- "ihm_hits": [
-  "SOXX"
- ],
+ "ihm_depths": [],
+ "ihm_hits": [],
  "message_en": null,
  "message_zh": null,
  "authority": {
