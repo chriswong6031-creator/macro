@@ -11,8 +11,9 @@ mission: >
 state_before: >
   Exact-head review of the prior control record returned NOT PASS because MOR-1 was pinned to a
   superseded head, R1-A3 and R1-C1 acceptance claims were not bound to their controlling Slack
-  rulings, and the disk and base observations were stale. During this bounded repair MOR-1,
-  F09-1 and R1-T advanced again on their existing carriers. The frozen architecture and
+  rulings, and the disk and base observations were stale. During this bounded repair MOR-1
+  and F09-1 advanced again, while R1-T's exact natural hosted run concluded red on its
+  existing carrier. The frozen architecture and
   history-preserving Terminal composition order did not change; only the observed execution
   state and the provenance of held source acceptance needed correction.
 changed:
@@ -31,17 +32,17 @@ verified:
     command: "Read research/market_intelligence_productization/MARKET_ONTOLOGY_POST_TIMEOUT_COMPLETION_ARCHITECTURE_2026-09-02.md and current Agent OS control records."
     result: "Terminal/Supabase own authenticated private Thesis state; Macro owns deterministic market truth; existing evidence, identity, calendar, correction, queue, scheduler, notification and Capital Structure owners remain canonical."
   - claim: "The Mac host is again below its immutable admission floor and runner 30 is not startable."
-    command: "Fresh-read Slack carrier C0BSBM78V1N/1788407647.423079 through pressure-reattribution edge 1788494003.432939 and delivery-reconciliation edge 1788494891.440669; run df -k /System/Volumes/Data at 2026-09-04T05:43:58Z."
-    result: "The carrier has no pressure-reattribution result after the prior 34,372,920 KiB receipt. The direct point-in-time host read was 2,119,392 KiB free versus the 83,886,080 KiB floor at 100% capacity; runner 30 remains inadmissible."
+    command: "Fresh-read Slack carrier C0BSBM78V1N/1788407647.423079 through pressure-reattribution edge 1788494003.432939 and delivery-reconciliation edge 1788494891.440669; run df -k /System/Volumes/Data at 2026-09-04T06:39:40Z."
+    result: "The carrier has no pressure-reattribution result after the prior 34,372,920 KiB receipt. The direct point-in-time host read was 1,481,204 KiB free versus the 83,886,080 KiB floor at 100% capacity; runner 30 remains inadmissible."
   - claim: "MOR-1 has a newer remote repair/evidence sequence, but no current-head immutable review."
     command: "Read Macro PR #6792 and remote branch claude/mor1-integrity-repair-20260902 at 7853ffeaca41d4d8f33995b1453db2be134ce8a3, prior GitHub review 5108611410 at 616f8809a7dfeded9502616591f421e92662df54, and Slack carrier C0BSBM78V1N/1788407666.610799."
     result: "Remote history through tree 47590118fcde9e6913e4d28d54751b2c60223b83 contains the current-base join and commits titled for the bounded review repair, deterministic replay/origin closure and packet recapture. No terminal same-carrier RESULT or non-author review at 7853ffea was visible, so those titles are not treated as acceptance."
   - claim: "F09-1 has one canonical replacement source session and one advanced Draft/Hold PR head."
     command: "Read Slack carrier C0BSBM78V1N/1788407688.753659 through PROGRESS 1788497262.469879 and Macro PR #6793 at 29b60c1abeddc4fe4a5291609555f4ca3519ebf2."
     result: "Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 consumed the three combined repair rulings and the remote head advanced to tree 195bc43f9a6b730394deb6f309d64ed8aac61f12. No terminal worker result or non-author current-head acceptance exists."
-  - claim: "R1-T has moved beyond the rejected 8e125e87 head and is in one natural hosted run on the same sticky carrier."
+  - claim: "R1-T moved beyond the rejected 8e125e87 head, but its one exact natural hosted run concluded red on the same sticky carrier."
     command: "Read mastermind-terminal PR #496 at cfd6abe5979ea999ab7f769431829e83284a8aa0, Slack RESULT 1788498775.207599 and natural Actions run 33839590027."
-    result: "The same sticky task repaired W2-A call-site deadline binding on the existing six-path historical PR; CodeQL, Quote Hub and Ingest are green while Terminal typecheck/tests remain nonterminal at the repair census. No composition or release authority exists yet."
+    result: "The same sticky task repaired W2-A call-site deadline binding on the existing six-path historical PR. Run 33839590027 attempt 1 concluded FAILURE: the responsive matrix reported 12 failed, 5 flaky, 554 passed and 260 skipped, including Saved Layouts and the 1440x900 W2-A journey with TOOLBAR_ACTION_FAILED; artifact 9925512395 preserves the evidence. CodeQL, Quote Hub and Ingest are green, but no composition or release authority exists."
   - claim: "R1-A3 and R1-C1 have exact Slack semantic acceptance at their current heads, while GitHub review state remains unresolved and release stays held."
     command: "Read mastermind-terminal #497 at 4ecf9a3cec93d2e258ece5c21886f484bf731f0f with reviews 5075428416/5087077099 and controlling Sol ruling 1788462294.724449; read #501 at dfc4db670b45b9ad31ea8b1f1325ef8f22761823 with review 5102583408 and controlling Sol STOP 1788471383.036879; read #502 at 02e9a9fd3ec668382301879e5278b5cf7263c7c1."
     result: "The exact Slack rulings accept #497's terminal implementation and #501's owned source capability, but GitHub still reports CHANGES_REQUESTED from stale-head reviews and neither child has independent merge authority. All three remain Draft/Hold dependencies; F11 remains production-inert."
@@ -59,17 +60,17 @@ unverified:
   - claim: "F09-1 closes every false-precision path at 29b60c1a or a later immutable head."
     what_would_verify: "A terminal source return from exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43, full hostile proof, green current-head CI and independent provenance/financial-method review."
   - claim: "R1-T head cfd6abe5 is composition-eligible."
-    what_would_verify: "Natural run 33839590027 concludes with no candidate-owned responsive failures, followed by a genuine non-author immutable-head review that finds no blocker or major."
+    what_would_verify: "The same existing task repairs the candidate-owned responsive failures on PR #496, one later natural run concludes with no candidate-owned responsive failures, and a genuine non-author immutable-head review finds no blocker or major."
   - claim: "F11-1 is schema-live, deployed and cross-user isolated in production."
     what_would_verify: "Green composed responsive authority, authorized Supabase catalog/DDL proof, exact deployed build identity, and two-user RLS plus stale-version/idempotency/history production proof."
   - claim: "This refreshed records head is valid and independently accurate."
     what_would_verify: "Fresh exact-head Agent OS validation/hosted CI and one non-author records review after this commit."
 unresolved:
   - "Macro PR #6810 remains records-only, Draft/Hold; head cbbabbec passed CI but received NOT PASS at Slack 1788496627.014489, so this repaired post-image requires new exact-head CI and non-author review."
-  - "The latest carrier-confirmed Mac state kept runner 28 busy; direct disk read at 2026-09-04T05:43:58Z was 2,119,392 KiB free, runner 30 remains offline, and no second runner start is admissible."
+  - "The latest carrier-confirmed Mac state kept runner 28 busy; direct disk read at 2026-09-04T06:39:40Z was 1,481,204 KiB free, runner 30 remains offline, and no second runner start is admissible."
   - "MOR-1 PR #6792 remains OPEN/DRAFT/HOLD at remote head 7853ffeaca41d4d8f33995b1453db2be134ce8a3; the exact Claude6 carrier owes a terminal immutable result and current-head non-author review."
   - "F09 PR #6793 remains OPEN/DRAFT/HOLD at 29b60c1abeddc4fe4a5291609555f4ca3519ebf2; exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43 owns the in-flight combined repair and owes its terminal return."
-  - "R1-T PR #496 remains OPEN/DRAFT/HOLD at cfd6abe5979ea999ab7f769431829e83284a8aa0; natural run 33839590027 and current-head independent review are nonterminal/owed."
+  - "R1-T PR #496 remains OPEN/DRAFT/HOLD at cfd6abe5979ea999ab7f769431829e83284a8aa0; natural run 33839590027 concluded FAILURE with 12 failed, 5 flaky, 554 passed and 260 skipped, including candidate-owned Saved Layouts/W2-A failures, so same-carrier repair and a later current-head independent review are owed."
   - "R1-A3 #497 and R1-C1 #501 have exact current-head Slack semantic acceptance, while GitHub reviewDecision remains CHANGES_REQUESTED from stale-head reviews; both remain held and neither may merge independently before parent #485 composition."
   - "F11 PR #502 remains OPEN/DRAFT/HOLD at 02e9a9fd3ec668382301879e5278b5cf7263c7c1 and has no production DDL or deployed-user effect."
   - "Retained P1 exact-byte admission, maturity-wall/covenant producers, K3-D/K2-C/D2C/Terminal #490 and other existing holds remain on their canonical carriers."
@@ -77,7 +78,7 @@ next_actions:
   - "Consume the Mac PRESSURE_REATTRIBUTION return exactly once. If it proves one owner-cleared regenerable target, authorize only that exact cleanup in the same sticky host session and require two above-floor reads plus runner stability; otherwise preserve the typed hold."
   - "Consume the MOR terminal return from exact Claude6 session 50be9654-4f1e-4d5b-9143-01f6f21fa0a0, review remote head 7853ffea or its same-carrier successor against review 5108611410 and the build-identity addendum, and either issue one bounded continuation or terminal STOP."
   - "Consume the F09 source return from exact Claude6 session 58d45b99-0a88-4722-9138-18e12805cf43, independently red-team transaction identity, byte binding, correction lineage, calendar/price receipts, current-transaction scoping and consumer wiring before acceptance."
-  - "Consume R1-T run 33839590027 at head cfd6abe5. If candidate-owned failures are absent, place one non-author review; if present, continue only the same task and existing PR scope."
+  - "Adjudicate R1-T run 33839590027 at head cfd6abe5 and issue one bounded same-carrier repair for its candidate-owned Saved Layouts/W2-A failures; continue only the same task and existing PR scope, then require one later natural run before non-author review."
   - "Only after R1-T is source-accepted, create one temporary current-base composition in the Fable-frozen order: Terminal master -> #497 -> #501 -> eligible #496 -> #502. Preserve every accepted head as an ancestor and prove byte identity after each join."
   - "Require one ordinary first-attempt responsive matrix with zero failed and zero flaky product journeys on the immutable composed head; do not rerun to manufacture green."
   - "After composed authority is accepted, advance F11 through authorized Supabase preflight, controlled DDL/catalog readback, exact deployment identity and two-user production proof."
@@ -108,7 +109,8 @@ decisions:
 **Program owner:** Main Meta-CEO Sol under current Chairman continuation intent  
 **Protected procedure observed for repair:** `mastermindx-market-intelligence/Mastermind@3055b499b87db19730e9a724e34f07f0d0af8755`
 **Skillpack:** `mastermind.sol_skillpack.v1 / 1.0.1 / bootstrap-major 1 compatible`  
-**Macro main observed for repair:** `5799cc2ad0f50d3c40f1731a4bdaf70f3b78ca8e`
+**Repair census (UTC):** `2026-09-04T06:39:40Z`
+**Macro main observed for repair census:** `765c96798075984f87807033f46575e11432540c`
 **PR merge-base observed for repair:** `0795a15b0249110a7eb35439123cd1af755e8397`
 **Terminal protected master:** `fadd8b82f03ecaabe8a86d693da89f27be096d9f`  
 **Records carrier:** Macro PR #6810 / branch `sol/market-ontology-continuation-control-20260903`  
@@ -122,7 +124,7 @@ The fastest lawful completion path is not another wide delegation. It is to clos
 
 1. restore safe Mac disk margin while keeping runner 30 offline;
 2. finish the exact MOR and F09 repairs already owned by their Claude6 sessions;
-3. prove the newest R1-T budget contract in its one natural hosted run and independent review;
+3. repair the newest R1-T budget contract after its exact natural hosted run failed, then prove it in one later natural run and independent review;
 4. compose the accepted Terminal children once, then move F11 through DDL, deploy and two-user proof.
 
 MOR and F09 production acceptance remain independent after source acceptance. They must use owner-native evidence and natural execution, not synthetic reruns or new receipt planes.
@@ -132,13 +134,13 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 | Capability / rail | State | Exact current truth |
 |---|---|---|
 | Frozen product/system architecture | `SPEC_ONLY / ACCEPTED_GOVERNING_ARCHITECTURE` | Terminal/Supabase private state, Macro truth and all existing source/evidence/control owners remain canonical. |
-| Mac authoritative daily route | `BROKEN / BELOW_FLOOR` | Latest carrier-confirmed state keeps runner 28 busy; direct read at `2026-09-04T05:43:58Z` was 2,119,392 KiB free versus the 83,886,080 KiB floor at 100% capacity; pressure re-attribution has no returned result and runner 30 stays off. |
+| Mac authoritative daily route | `BROKEN / BELOW_FLOOR` | Latest carrier-confirmed state keeps runner 28 busy; direct read at `2026-09-04T06:39:40Z` was 1,481,204 KiB free versus the 83,886,080 KiB floor at 100% capacity; pressure re-attribution has no returned result and runner 30 stays off. |
 | MOR-1 public reference | `BUILT_NOT_PROVEN / REPAIR_PUSHED / REVIEW_OWED` | PR #6792 remote head `7853ffea...`; prior review 5108611410 is anchored to stale `616f8809...`, and no terminal current-head result or review is visible. |
 | F09 grounded cash-deal economics | `BUILT_NOT_PROVEN / SOURCE_IN_FLIGHT` | PR #6793 remote head `29b60c1a...`; exact Claude6 source session owns the combined repair; no terminal worker result or current-head acceptance exists. |
 | F11 private Thesis Object | `BUILT_NOT_PROVEN / PRODUCTION_INERT` | PR #502 head `02e9a9fd...`; source/disposable-Postgres proof exists, but no production DDL, deployment or two-user proof. |
 | R1-A3 visual-ready liveness | `BUILT_NOT_PROVEN / SLACK_SOURCE_ACCEPTED / RELEASE_HOLD` | PR #497 head `4ecf9a3c...`; Sol ruling `1788462294.724449` terminally accepts the implementation under STOP, while GitHub remains CHANGES_REQUESTED from stale-head review 5075428416; held for parent composition. |
 | R1-C1 scale/settings hydration | `BUILT_NOT_PROVEN / SLACK_SOURCE_ACCEPTED / RELEASE_HOLD` | PR #501 head `dfc4db67...`; Sol STOP `1788471383.036879` accepts the owned source capability, while GitHub remains CHANGES_REQUESTED from stale-head review 5102583408; held for parent composition. |
-| R1-T toolbar budget contract | `BUILT_NOT_PROVEN / HOSTED_PROOF_IN_FLIGHT` | PR #496 head `cfd6abe5...`; W2-A call-site binding repair is pushed on the same sticky task; run 33839590027 is nonterminal. |
+| R1-T toolbar budget contract | `BUILT_NOT_PROVEN / HOSTED_PROOF_FAILED / REPAIR_REQUIRED` | PR #496 head `cfd6abe5...`; run 33839590027 attempt 1 concluded with 12 failed, 5 flaky, 554 passed and 260 skipped, including Saved Layouts and W2-A failures. |
 | Parent Terminal responsive authority #485 | `PARTIAL / COMPOSITION_BLOCKED` | Composition begins only after R1-T acceptance and follows the frozen no-ff order. |
 | Retained P1 admission | `DARK_OR_DISCONNECTED / WAITING_EXTERNAL_SOURCE` | Exact original bytes and authoritative manifest are required; never reconstruct. |
 | Maturity wall and covenant headroom | `NOT_BUILT` | Still gated by canonical source producers under Capital Structure ownership; outside F09-1. |
@@ -152,7 +154,7 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Slack carrier: `C0BSBM78V1N / 1788407647.423079`
 - Exact host session: Claude6 `8aa7dcc3-951a-40f1-9029-7d206004b05c`
 - Current edge: read-only disk-pressure re-attribution `1788494003.432939`, followed by delivery-state reconciliation `1788494891.440669`; no worker return is visible
-- Direct point-in-time read: `2,119,392 KiB` free at `2026-09-04T05:43:58Z`, 100% capacity; this is an observation, not a durable floor receipt
+- Direct point-in-time read: `1,481,204 KiB` free at `2026-09-04T06:39:40Z`, 100% capacity; this is an observation, not a durable floor receipt
 - Frozen law: no runner-30 start, cleanup, service action or workflow action until the same session returns a typed owner-safe boundary and Sol issues one exact continuation.
 
 ### 3.2 MOR-1
@@ -182,7 +184,7 @@ MOR and F09 production acceptance remain independent after source acceptance. Th
 - Slack carrier: `C0BSBM78V1N / 1788442224.010349`
 - Exact task: Codex `01a06789-df7e-7c43-84f3-f332e8e9b512`
 - Current head/tree: `cfd6abe5979ea999ab7f769431829e83284a8aa0 / 65cf58c5700ed5dd1db6b1919195776945b90f8c`
-- Natural run: `33839590027`; CodeQL, Quote Hub and Ingest were green while required Terminal typecheck/tests remained nonterminal at the repair census.
+- Natural run: `33839590027` attempt 1 concluded FAILURE; CodeQL, Quote Hub and Ingest were green, while the responsive matrix reported `12 failed / 5 flaky / 554 passed / 260 skipped`, including Saved Layouts and the 1440x900 W2-A journey with `TOOLBAR_ACTION_FAILED`. Evidence artifact: `9925512395`.
 - Composition order frozen by Fable: current Terminal master -> no-ff #497 -> no-ff #501 -> eligible #496 -> no-ff #502.
 - Every accepted child head must remain an ancestor; after each join, prove owned blobs are byte-identical. The composed full responsive matrix must be first-attempt `0 failed / 0 flaky`.
 
@@ -209,7 +211,7 @@ The program must extend existing owners. It must not create:
 
 1. Restore Mac floor plus safe margin through one exact owner-cleared action at a time.
 2. Close MOR and F09 source blockers on their current exact sessions and obtain independent immutable-head reviews.
-3. Complete R1-T natural proof and independent review; reject any candidate-owned failure or false receipt.
+3. Repair R1-T's candidate-owned natural-run failures on its same task and PR, then complete one later natural proof and independent review; reject any candidate-owned failure or false receipt.
 4. Create one temporary history-preserving Terminal composition in the Fable-frozen order and run focused discriminators plus one ordinary full responsive matrix.
 5. Accept the composed Terminal source only with zero failed and zero flaky product journeys.
 6. Apply and verify F11 production DDL, deploy exact accepted bytes, and prove two-user RLS/concurrency/idempotency behavior.
@@ -220,7 +222,7 @@ The program must extend existing owners. It must not create:
 
 The next Sol action is event-driven but not passive:
 
-- first consume whichever arrives among Mac pressure re-attribution, MOR current-head result/review, F09 source return or R1-T run `33839590027`;
+- first adjudicate concluded R1-T run `33839590027` and issue one exact same-carrier repair for its candidate-owned Saved Layouts/W2-A failures; otherwise consume whichever arrives among Mac pressure re-attribution, MOR current-head result/review or F09 source return;
 - re-pin protected procedure and current repository head;
 - issue exactly one same-carrier `CONTINUE`, `REQUEST_REPAIR` or terminal `STOP`;
 - update this durable carrier when that ruling materially changes the program graph.
