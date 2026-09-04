@@ -198,19 +198,55 @@
     "items": []
   },
   "changes": {
-    "comparability": "NO_PRIOR",
-    "deltas": [],
-    "null_reason": "WARMUP",
-    "prior_effective_date": null,
-    "prior_generation_id": null,
-    "prior_method_version": null,
-    "status": "ABSENT"
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 944364.0,
+        "delta": 0.0,
+        "metric_id": "tga_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 944364.0
+      },
+      {
+        "current_value": 835231.0,
+        "delta": 0.0,
+        "metric_id": "net_issuance_sum_13w",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 835231.0
+      },
+      {
+        "current_value": 2.92,
+        "delta": 0.0,
+        "metric_id": "auction_bid_to_cover_recent_avg",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 2.92
+      },
+      {
+        "current_value": 14.1,
+        "delta": 0.0,
+        "metric_id": "household_debt_service_ratio_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 14.1
+      },
+      {
+        "current_value": 89.0,
+        "delta": 0.0,
+        "metric_id": "bond_desk_health_score_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 89.0
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-09-03",
+    "prior_generation_id": "national_debt_liabilities-US-2f2c0ba8c9f0b2ec",
+    "prior_method_version": "national_debt_liabilities.compose.v1",
+    "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
-    "predecessor_generation_id": null
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "national_debt_liabilities-US-2f2c0ba8c9f0b2ec"
   },
   "drivers": {
     "balance_sheet": [
@@ -331,11 +367,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T20:31:50Z",
+    "built_at": "2026-09-04T21:57:07Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "692b64327ce552fb5cde04465716db802eb76403",
-    "content_sha256": "2f2c0ba8c9f0b2ec53d06fbc79343aa9408c2153cc65632e4afbc175c502780b",
-    "generation_id": "national_debt_liabilities-US-2f2c0ba8c9f0b2ec",
+    "code_version": "b4968933bfc326a0367ce170f7ea4e85aead9ad2",
+    "content_sha256": "797b109a53ed5811d1d783ec0918eee720633dc9dc42299482ffb4c0331a847f",
+    "generation_id": "national_debt_liabilities-US-797b109a53ed5811",
     "producer": "engine.market_os.macro_workspaces.national_debt",
     "rendered_at": null
   },
@@ -361,8 +397,8 @@
       "status": "ABSENT"
     },
     "prior_state": {
-      "effective_date": null,
-      "method_version": null,
+      "effective_date": "2026-09-03",
+      "method_version": "national_debt_liabilities.compose.v1",
       "state_id": null
     },
     "quadrant": {

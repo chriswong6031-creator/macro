@@ -390,19 +390,62 @@
     ]
   },
   "changes": {
-    "comparability": "NO_PRIOR",
-    "deltas": [],
-    "null_reason": "WARMUP",
-    "prior_effective_date": null,
-    "prior_generation_id": null,
-    "prior_method_version": null,
-    "status": "ABSENT"
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 763602.0,
+        "delta": 0.0,
+        "metric_id": "retail_sales_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 763602.0
+      },
+      {
+        "current_value": 5.0092,
+        "delta": 0.0,
+        "metric_id": "retail_sales_yoy",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 5.0092
+      },
+      {
+        "current_value": 55.2,
+        "delta": 0.0,
+        "metric_id": "consumer_sentiment_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 55.2
+      },
+      {
+        "current_value": -10.5348,
+        "delta": 0.0,
+        "metric_id": "consumer_sentiment_yoy",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": -10.5348
+      },
+      {
+        "current_value": null,
+        "delta": null,
+        "metric_id": "cash_flow_momentum",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": null
+      },
+      {
+        "current_value": null,
+        "delta": null,
+        "metric_id": "credit_stress",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": null
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-07-01",
+    "prior_generation_id": "consumer_payments-US-4821613d720ae3e0",
+    "prior_method_version": "consumer_payments.compose.v1",
+    "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
-    "predecessor_generation_id": null
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "consumer_payments-US-4821613d720ae3e0"
   },
   "drivers": {
     "balance_sheet": [
@@ -495,11 +538,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T20:31:50Z",
+    "built_at": "2026-09-04T21:57:07Z",
     "calculation_as_of": "2026-07-01",
-    "code_version": "692b64327ce552fb5cde04465716db802eb76403",
-    "content_sha256": "4821613d720ae3e0bc4b3ed027f932a541653f63b4d57990370575d02532edb7",
-    "generation_id": "consumer_payments-US-4821613d720ae3e0",
+    "code_version": "b4968933bfc326a0367ce170f7ea4e85aead9ad2",
+    "content_sha256": "129eb4dc3a7771fc577b5a1bb25ecd9ad713d69c5ceca4606c660b8dac76abee",
+    "generation_id": "consumer_payments-US-129eb4dc3a7771fc",
     "producer": "engine.market_os.macro_workspaces.consumer_payments",
     "rendered_at": null
   },
@@ -525,8 +568,8 @@
       "status": "ABSENT"
     },
     "prior_state": {
-      "effective_date": null,
-      "method_version": null,
+      "effective_date": "2026-07-01",
+      "method_version": "consumer_payments.compose.v1",
       "state_id": null
     },
     "quadrant": {
