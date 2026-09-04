@@ -1,6 +1,6 @@
 """Render the data-free public pages without invoking the market-data builders.
 
-This is the fast path for pricing, support, and unsubscribe changes.  The full
+This is the fast path for help, pricing, support, and unsubscribe changes.  The full
 ``scripts.build_site`` entry point reads parquet stores and rebuilds thousands of
 market pages; these three pages need only committed configuration and templates.
 
@@ -21,6 +21,7 @@ sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
+from lib.help_directory import help_directory_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -108,7 +109,18 @@ def build(site=None) -> None:
     )
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
-    # The plans page is the only one of the three that reads config. A malformed
+    # Help is fail-closed: its fixed links render only after every bilingual label
+    # is still present in its declared owner. Never retain stale directory bytes.
+    help_vm = help_directory_view_model(config.ROOT)
+    write_page(
+        site / "help.html",
+        env.get_template("help.html.j2").render(
+            generated_utc=generated,
+            **help_vm,
+        ),
+    )
+
+    # The plans page is the only remaining page that reads mutable product config. A malformed
     # config/brain.yml or config/plans.yml must not take support.html, unsubscribe.html and
     # the asset re-stamp down with it — scripts/ci/public_render.sh runs under `set -e`, so
     # an unguarded raise here aborts the entire publish. Defer the failure instead: render
@@ -140,7 +152,8 @@ def build(site=None) -> None:
     if plans_error is not None:
         raise plans_error
     log.info(
-        "wrote public pages (Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
+        "wrote public pages (help=%s links · Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
+        len(help_vm["entries"]),
         vm["essential"]["monthly_pm"],
         vm["essential"]["annual_pm"],
         vm["pro"]["monthly_pm"],

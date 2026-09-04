@@ -81,7 +81,7 @@ def test_shared_public_nav_matches_landing_core_information_architecture():
     assert "https://www.mastermind-x.com/research_vault.html" in shared_hrefs
     # The shared research menu can carry a small number of deep public research
     # destinations that do not need a duplicate landing-page hero card.
-    shared_only = {"stocks/earnings/index.html"}
+    shared_only = {"stocks/earnings/index.html", "help.html"}
     assert shared_hrefs <= landing_hrefs | shared_only
     assert shared_only <= shared_hrefs
     shared = _render_partial("_public_nav.html.j2")
@@ -105,6 +105,7 @@ def test_visitor_templates_use_public_chrome_not_member_navigation():
         "seo_base.html.j2",
         "plans.html.j2",
         "support.html.j2",
+        "help.html.j2",
         "unsubscribe.html.j2",
     )
     for name in names:
@@ -165,7 +166,7 @@ def test_all_committed_free_estate_pages_have_public_chrome():
 
 
 def test_other_public_visitor_pages_have_public_chrome():
-    for name in ("plans.html", "support.html", "unsubscribe.html"):
+    for name in ("help.html", "plans.html", "support.html", "unsubscribe.html"):
         text = (SITE / name).read_text(encoding="utf-8")
         assert '<nav class="public-nav"' in text, name
         assert '<footer class="public-footer">' in text, name

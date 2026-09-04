@@ -42,6 +42,7 @@ from engine.us_board_rank import (  # noqa: E402
 )
 from lib import config, site_assets, store  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
+from lib.help_directory import help_directory_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -3731,6 +3732,18 @@ def build_support_page(env: Environment, site: Path, generated: str) -> None:
     log.info("wrote support.html (public support desk)")
 
 
+def build_help_page(env: Environment, site: Path, generated: str) -> None:
+    """Render the public, source-validated bilingual owner directory.
+
+    This is deliberately fail-closed. A missing source label or invalid target
+    aborts the render instead of leaving a stale or inferred help destination.
+    """
+    vm = help_directory_view_model(config.ROOT)
+    html = env.get_template("help.html.j2").render(generated_utc=generated, **vm)
+    write_page(site / "help.html", html)
+    log.info("wrote help.html (%d source-validated links)", len(vm["entries"]))
+
+
 def build_unsubscribe_page(env: Environment, site: Path, generated: str) -> None:
     """✨ Unsubscribe — the public bilingual opt-out page (SEE W4, masterplan R5).
 
@@ -5718,9 +5731,10 @@ def main() -> int:
         build_support_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("support page failed: %s", e)
+    build_help_page(env, site, generated)
     try:
         build_unsubscribe_page(env, site, generated)
-        _tmark("plans_support_unsub_pages")
+        _tmark("plans_help_support_unsub_pages")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("unsubscribe page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
