@@ -1,7 +1,8 @@
 """Build the official OFAC sanctions-geography projection and static desk.
 
 This is an explicit build command, not a scheduler. It writes one bounded
-machine consumer plus the paired static presentation assets.
+first-load consumer, projection-bound detail shards, and the paired static
+presentation assets.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -29,6 +31,7 @@ from collectors.ofac_sanctions import (  # noqa: E402
     acquire_bundle,
 )
 from engine.ofac_sanctions import (  # noqa: E402
+    ProjectionBoundsError,
     SourceShapeError,
     build_projection,
     canonical_json_bytes,
@@ -36,6 +39,7 @@ from engine.ofac_sanctions import (  # noqa: E402
 
 
 DATA_NAME = "sanctions-geography-data.json"
+SHARD_DIR_NAME = "sanctions-geography-entries"
 PAGE_NAME = "sanctions-geography.html"
 ASSET_MAP = {
     "sanctions_geography.css": "sanctions-geography.css",
@@ -79,7 +83,158 @@ def _load_previous(path: Path) -> dict[str, Any] | None:
         raise BuildUnavailableError(f"last-good machine consumer is unreadable: {exc}") from exc
     if not isinstance(value, dict) or value.get("schema_version") != "mastermind.sanctions_geography.v1":
         raise BuildUnavailableError("last-good machine consumer has an unrecognized schema")
+    if isinstance(value.get("entries"), list):
+        return value
+
+    manifest = value.get("entry_shards")
+    if not isinstance(manifest, dict):
+        raise BuildUnavailableError("last-good machine consumer has no entry corpus or shard manifest")
+    by_geo = manifest.get("by_geo")
+    unresolved = manifest.get("unresolved")
+    if not isinstance(by_geo, dict) or not isinstance(unresolved, dict):
+        raise BuildUnavailableError("last-good shard manifest is malformed")
+
+    records: dict[str, dict[str, Any]] = {}
+    expected_records = [*by_geo.items(), ("unresolved", unresolved)]
+    for geo_id, record in expected_records:
+        if not isinstance(record, dict):
+            raise BuildUnavailableError("last-good shard manifest record is malformed")
+        if geo_id != "unresolved" and not re.fullmatch(r"[0-9]{3}", str(geo_id)):
+            raise BuildUnavailableError("last-good shard identity is not canonical")
+        expected_name = "unresolved.json" if geo_id == "unresolved" else f"{geo_id}.json"
+        expected_rel = f"{SHARD_DIR_NAME}/{expected_name}"
+        if record.get("path") != expected_rel:
+            raise BuildUnavailableError("last-good shard path is not canonical")
+        shard_path = path.parent / SHARD_DIR_NAME / expected_name
+        try:
+            body = shard_path.read_bytes()
+        except OSError as exc:
+            raise BuildUnavailableError(f"last-good shard unavailable: {expected_name}") from exc
+        if len(body) != record.get("bytes"):
+            raise BuildUnavailableError(f"last-good shard byte count mismatch: {expected_name}")
+        if hashlib.sha256(body).hexdigest() != record.get("sha256"):
+            raise BuildUnavailableError(f"last-good shard SHA-256 mismatch: {expected_name}")
+        try:
+            shard = json.loads(body)
+        except json.JSONDecodeError as exc:
+            raise BuildUnavailableError(f"last-good shard JSON invalid: {expected_name}") from exc
+        if (
+            not isinstance(shard, dict)
+            or shard.get("schema_version") != value.get("schema_version")
+            or shard.get("parser_revision") != value.get("parser_revision")
+            or shard.get("projection_id") != value.get("projection_id")
+            or shard.get("source_identity") != value.get("source_identity")
+            or shard.get("geo_id") != geo_id
+            or not isinstance(shard.get("entries"), list)
+        ):
+            raise BuildUnavailableError(f"last-good shard identity mismatch: {expected_name}")
+        if len(shard["entries"]) != record.get("entries"):
+            raise BuildUnavailableError(f"last-good shard entry count mismatch: {expected_name}")
+        for entry in shard["entries"]:
+            if not isinstance(entry, dict) or not entry.get("uid"):
+                raise BuildUnavailableError(f"last-good shard entry malformed: {expected_name}")
+            uid = str(entry["uid"])
+            known = records.get(uid)
+            if known is not None and known.get("source_fingerprint") != entry.get("source_fingerprint"):
+                raise BuildUnavailableError(f"last-good shard entry conflict: UID {uid}")
+            records.setdefault(uid, entry)
+    value["entries"] = sorted(
+        records.values(),
+        key=lambda row: (0, int(row["uid"])) if str(row["uid"]).isdigit() else (1, str(row["uid"])),
+    )
     return value
+
+
+def _projection_artifacts(projection: Mapping[str, Any]) -> tuple[bytes, dict[str, bytes]]:
+    """Return the lightweight consumer and deterministic projection-bound shards."""
+
+    entries = projection.get("entries")
+    if not isinstance(entries, list):
+        raise BuildUnavailableError("projection entry corpus is unavailable")
+    grouped: dict[str, dict[str, dict[str, Any]]] = {}
+    unresolved: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        if not isinstance(entry, dict) or not entry.get("uid"):
+            raise BuildUnavailableError("projection entry is malformed")
+        uid = str(entry["uid"])
+        resolved_ids = {
+            str(address.get("geo_id"))
+            for address in entry.get("addresses", [])
+            if isinstance(address, Mapping) and address.get("geo_id")
+        }
+        if not resolved_ids:
+            unresolved[uid] = entry
+        if any(
+            isinstance(address, Mapping) and not address.get("geo_id")
+            for address in entry.get("addresses", [])
+        ):
+            unresolved[uid] = entry
+        for geo_id in resolved_ids:
+            if not re.fullmatch(r"[0-9]{3}", geo_id):
+                raise BuildUnavailableError(f"non-canonical geometry shard id: {geo_id!r}")
+            grouped.setdefault(geo_id, {})[uid] = entry
+
+    shard_bodies: dict[str, bytes] = {}
+    manifest_by_geo: dict[str, dict[str, Any]] = {}
+    for geo_id in sorted(grouped):
+        shard = {
+            "schema_version": projection.get("schema_version"),
+            "parser_revision": projection.get("parser_revision"),
+            "projection_id": projection.get("projection_id"),
+            "source_identity": projection.get("source_identity"),
+            "geo_id": geo_id,
+            "entries": [grouped[geo_id][uid] for uid in sorted(grouped[geo_id], key=lambda v: (0, int(v)) if v.isdigit() else (1, v))],
+        }
+        body = canonical_json_bytes(shard)
+        name = f"{geo_id}.json"
+        shard_bodies[name] = body
+        manifest_by_geo[geo_id] = {
+            "path": f"{SHARD_DIR_NAME}/{name}",
+            "sha256": hashlib.sha256(body).hexdigest(),
+            "entries": len(shard["entries"]),
+            "bytes": len(body),
+        }
+
+    unresolved_shard = {
+        "schema_version": projection.get("schema_version"),
+        "parser_revision": projection.get("parser_revision"),
+        "projection_id": projection.get("projection_id"),
+        "source_identity": projection.get("source_identity"),
+        "geo_id": "unresolved",
+        "entries": [unresolved[uid] for uid in sorted(unresolved, key=lambda v: (0, int(v)) if v.isdigit() else (1, v))],
+    }
+    unresolved_body = canonical_json_bytes(unresolved_shard)
+    shard_bodies["unresolved.json"] = unresolved_body
+
+    consumer = copy.deepcopy(dict(projection))
+    consumer.pop("entries", None)
+    consumer["entry_shards"] = {
+        "initial_requests": 0,
+        "selection_request_limit": 1,
+        "by_geo": manifest_by_geo,
+        "unresolved": {
+            "path": f"{SHARD_DIR_NAME}/unresolved.json",
+            "sha256": hashlib.sha256(unresolved_body).hexdigest(),
+            "entries": len(unresolved_shard["entries"]),
+            "bytes": len(unresolved_body),
+        },
+    }
+    return canonical_json_bytes(consumer), shard_bodies
+
+
+def _write_projection_artifacts(root: Path, projection: Mapping[str, Any]) -> Path:
+    site = root / "site"
+    output = site / DATA_NAME
+    consumer_body, shard_bodies = _projection_artifacts(projection)
+    shard_dir = site / SHARD_DIR_NAME
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    for name, body in shard_bodies.items():
+        _write_if_changed(shard_dir / name, body)
+    for stale in sorted(shard_dir.glob("*.json")):
+        if stale.name not in shard_bodies:
+            stale.unlink()
+    _write_if_changed(output, consumer_body)
+    return output
 
 
 def build_data(
@@ -129,8 +284,7 @@ def build_data(
         previous=previous,
         as_of=as_of,
     )
-    _write_if_changed(output, canonical_json_bytes(projection))
-    return output
+    return _write_projection_artifacts(root, projection)
 
 
 def degraded_projection(
@@ -143,7 +297,7 @@ def degraded_projection(
 
     if last_good is None:
         raise BuildUnavailableError("official source failed and no last-good projection exists")
-    if state not in {"UNAVAILABLE", "PARSER_SHAPE_CHANGED"}:
+    if state not in {"SOURCE_UNAVAILABLE", "PARSER_SHAPE_CHANGED"}:
         raise ValueError(f"unrecognized degraded source state: {state}")
     value = copy.deepcopy(dict(last_good))
     value["source_state"] = state
@@ -195,8 +349,7 @@ def build(
     bundle: Mapping[str, Any] | None = None,
     now: datetime | None = None,
     delta_days: int = 30,
-    data_only: bool = False,
-) -> tuple[Path, Path | None]:
+) -> tuple[Path, Path]:
     """Acquire, project, and render; preserve last-good facts on a typed outage."""
 
     root = root.resolve()
@@ -209,21 +362,24 @@ def build(
         output = build_data(root=root, bundle=acquired, as_of=as_of)
         projection = _load_previous(output)
         assert projection is not None
-    except SourceShapeError as exc:
+    except (SourceShapeError, ProjectionBoundsError) as exc:
         projection = degraded_projection(
             previous,
             state="PARSER_SHAPE_CHANGED",
             error_code=f"{type(exc).__name__}:{str(exc)[:160]}",
         )
-        _write_if_changed(output, canonical_json_bytes(projection))
+        _write_projection_artifacts(root, projection)
     except (SourceIntegrityError, SourceUnavailableError, OSError) as exc:
         projection = degraded_projection(
             previous,
-            state="UNAVAILABLE",
+            state="SOURCE_UNAVAILABLE",
             error_code=f"{type(exc).__name__}:{str(exc)[:160]}",
         )
-        _write_if_changed(output, canonical_json_bytes(projection))
-    page = None if data_only else render(root, projection)
+        _write_projection_artifacts(root, projection)
+    # A data-only success could advance the projection while leaving the page
+    # and exact CSS/JS companions on a different build. There is one build path:
+    # every accepted projection refreshes its presentation before returning.
+    page = render(root, projection)
     return output, page
 
 
@@ -231,16 +387,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=_ROOT)
     parser.add_argument("--delta-days", type=int, default=30)
-    parser.add_argument("--data-only", action="store_true")
     args = parser.parse_args(argv)
     try:
-        output, page = build(root=args.root, delta_days=args.delta_days, data_only=args.data_only)
+        output, page = build(root=args.root, delta_days=args.delta_days)
     except Exception as exc:  # noqa: BLE001 — one typed CI annotation for the explicit build command
         print(f"::error title=sanctions_geography::build failed ({type(exc).__name__}: {exc})", flush=True)
         return 1
     print(f"wrote {output}")
-    if page:
-        print(f"wrote {page}")
+    print(f"wrote {page}")
     return 0
 
 

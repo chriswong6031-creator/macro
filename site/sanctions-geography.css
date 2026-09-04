@@ -160,6 +160,18 @@ body {
 
 .sg-geo[data-count="0"] { cursor: default; }
 
+/* Natural Earth's 110m topology contains a few named shapes without the
+   canonical numeric geometry identity used by the projection. They are not a
+   zero: the source may name the place, but this asset cannot bind its count.
+   A hatch keeps that unavailable identity distinct in both art directions. */
+.sg-geo.is-identityless {
+  fill: url("#sg-identityless-pattern");
+  stroke: color-mix(in srgb, var(--warn) 72%, var(--line));
+  stroke-dasharray: 2 1;
+}
+.sg-identityless-pattern-bg { fill: color-mix(in srgb, var(--panel2) 82%, transparent); }
+.sg-identityless-pattern-line { fill: none; stroke: color-mix(in srgb, var(--warn) 58%, var(--muted)); stroke-width: 1; }
+
 /* Filtered OUT of the current view — deliberately not the same treatment as an
    honest zero. A dimmed boundary still carries its fill, so a reader can see it
    has data that this filter is hiding; a plain boundary has none to show. */
@@ -364,6 +376,12 @@ html[data-theme="light"] .sg-geo.is-on {
 html[data-theme="light"] .sg-geo.is-pick:hover { stroke: color-mix(in srgb, var(--text) 62%, transparent); }
 /* On paper a 22% ink is nearly gone; light dims less far to stay legible. */
 html[data-theme="light"] .sg-geo.is-off { opacity: .34; }
+html[data-theme="light"] .sg-geo.is-identityless {
+  fill: url("#sg-identityless-pattern");
+  stroke: color-mix(in srgb, var(--warn) 64%, var(--text));
+}
+html[data-theme="light"] .sg-identityless-pattern-bg { fill: color-mix(in srgb, var(--panel2) 72%, var(--panel)); }
+html[data-theme="light"] .sg-identityless-pattern-line { stroke: color-mix(in srgb, var(--warn) 48%, var(--text)); }
 
 html[data-theme="light"] .sg-ramp i:nth-child(1) { background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
 html[data-theme="light"] .sg-ramp i:nth-child(2) { background: color-mix(in srgb, var(--warn) 24%, var(--panel)); }

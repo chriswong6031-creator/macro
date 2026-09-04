@@ -22,15 +22,29 @@ from xml.etree import ElementTree as ET
 CURRENT_NAMESPACE = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML"
 DELTA_NAMESPACE = "https://www.treasury.gov/ofac/DeltaFile/1.0"
 SCHEMA_VERSION = "mastermind.sanctions_geography.v1"
-PARSER_REVISION = "ofac-sanctions-v1.0.3"
+PARSER_REVISION = "ofac-sanctions-v1.0.4"
 DEFAULT_MAX_XML_BYTES = 50_000_000
 DEFAULT_MAX_ENTRIES = 25_000
 DEFAULT_MAX_ADDRESSES_PER_ENTRY = 200
 DEFAULT_MAX_SUPERSEDED_OBSERVATIONS = 32
+DEFAULT_MAX_XML_DEPTH = 128
+
+REQUIRED_STATES = (
+    "CURRENT",
+    "ADDED_SINCE_PREVIOUS",
+    "REMOVED_SINCE_PREVIOUS",
+    "SOURCE_CORRECTED",
+    "GEOGRAPHY_UNRESOLVED",
+    "IDENTITY_UNRESOLVED",
+    "SOURCE_STALE",
+    "SOURCE_UNAVAILABLE",
+    "PARSER_SHAPE_CHANGED",
+    "NO_RESULTS",
+)
 
 _CURRENT = f"{{{CURRENT_NAMESPACE}}}"
 _DELTA = f"{{{DELTA_NAMESPACE}}}"
-_UNSAFE_XML_RE = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_UNSAFE_XML_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
 _SPACE_RE = re.compile(r"\s+")
 _PUNCT_RE = re.compile(r"[^a-z0-9]+")
 
@@ -86,7 +100,13 @@ def _reject_hostile_xml(payload: bytes, *, max_bytes: int = DEFAULT_MAX_XML_BYTE
         raise SourceShapeError("empty XML payload")
     if len(payload) > max_bytes:
         raise SourceShapeError(f"XML payload exceeds {max_bytes} byte bound")
-    if _UNSAFE_XML_RE.search(payload):
+    try:
+        decoded = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise SourceShapeError("XML payload must use UTF-8 encoding") from exc
+    if "\x00" in decoded:
+        raise SourceShapeError("XML payload contains forbidden NUL bytes")
+    if _UNSAFE_XML_RE.search(decoded):
         raise SourceShapeError("DTD/entity declarations are forbidden")
 
 
@@ -182,9 +202,11 @@ def parse_current_sdn(
 
     entries: list[dict[str, Any]] = []
     seen: dict[str, str] = {}
+    observed_count = 0
     for index, element in enumerate(root.findall(_CURRENT + "sdnEntry")):
         if index >= max_entries:
             raise ProjectionBoundsError(f"entry bound exceeded: {max_entries}")
+        observed_count += 1
         uid = _child_text(element, "uid", _CURRENT)
         identity_resolved = bool(uid and uid.isdigit())
         if not identity_resolved:
@@ -223,8 +245,8 @@ def parse_current_sdn(
             entries.append(entry)
 
     expected_count = int(raw_count)
-    if expected_count != len(entries):
-        raise SourceShapeError(f"record count mismatch: source={expected_count} parsed={len(entries)}")
+    if expected_count != observed_count:
+        raise SourceShapeError(f"record count mismatch: source={expected_count} parsed={observed_count}")
     entries.sort(key=lambda row: (0, int(row["uid"])) if row["uid"].isdigit() else (1, row["uid"]))
     return {"published_at": published_at, "record_count": expected_count, "entries": entries}
 
@@ -275,10 +297,17 @@ def _delta_address(element: ET.Element) -> dict[str, Any]:
     return address
 
 
-def _delta_field_operations(entity: ET.Element, *, max_operations: int = 5_000) -> list[dict[str, str | None]]:
+def _delta_field_operations(
+    entity: ET.Element,
+    *,
+    max_operations: int = 5_000,
+    max_depth: int = DEFAULT_MAX_XML_DEPTH,
+) -> list[dict[str, str | None]]:
     operations: list[dict[str, str | None]] = []
 
-    def visit(parent: ET.Element, path: tuple[str, ...]) -> None:
+    def visit(parent: ET.Element, path: tuple[str, ...], depth: int) -> None:
+        if depth > max_depth:
+            raise SourceShapeError(f"XML element depth exceeds reviewed bound: {max_depth}")
         for child in list(parent):
             local = child.tag.rsplit("}", 1)[-1]
             child_path = (*path, local)
@@ -294,9 +323,9 @@ def _delta_field_operations(entity: ET.Element, *, max_operations: int = 5_000) 
                 })
                 if len(operations) > max_operations:
                     raise ProjectionBoundsError(f"delta field-operation bound exceeded: {max_operations}")
-            visit(child, child_path)
+            visit(child, child_path, depth + 1)
 
-    visit(entity, ())
+    visit(entity, (), 0)
     return operations
 
 
@@ -384,7 +413,7 @@ def _resolve_country(published_country: str, boundary_index: Mapping[str, dict[s
     target_name = OFAC_TO_NATURAL_EARTH_NAME.get(key, published_country)
     boundary = boundary_index.get(_name_key(target_name))
     if not published_country or key.startswith("region ") or boundary is None:
-        return {"geo_id": None, "geo_name": None, "state": "GEO_UNRESOLVED"}
+        return {"geo_id": None, "geo_name": None, "state": "GEOGRAPHY_UNRESOLVED"}
     return {"geo_id": boundary["geo_id"], "geo_name": boundary["geo_name"], "state": "RESOLVED"}
 
 
@@ -513,6 +542,7 @@ def build_projection(
 
     latest_action: dict[str, str] = {}
     changes: list[dict[str, Any]] = []
+    geo_names: dict[str, str] = {}
     for parsed, receipt in parsed_deltas:
         for change in parsed["changes"]:
             latest_action[change["uid"]] = change["action"]
@@ -520,16 +550,25 @@ def build_projection(
             projected_change["published_at"] = parsed["published_at"]
             projected_change["publication_type"] = parsed["publication_type"]
             projected_change["state"] = {
-                "add": "ADDED",
-                "remove": "REMOVED",
+                "add": "ADDED_SINCE_PREVIOUS",
+                "remove": "REMOVED_SINCE_PREVIOUS",
                 "correct": "SOURCE_CORRECTED",
             }[change["action"]]
             projected_change["source_key"] = receipt.get("source_key")
             for address in projected_change["addresses"]:
                 address.update(_resolve_country(address["published_country"], boundary_index))
                 address["published_address"] = _address_label(address)
+                if address["geo_id"]:
+                    geo_names[address["geo_id"]] = address["geo_name"]
             changes.append(projected_change)
-    changes.sort(key=lambda row: (row["published_at"], row["uid"], row["action"]), reverse=True)
+    changes.sort(
+        key=lambda row: (
+            row["published_at"],
+            (0, int(row["uid"])) if str(row["uid"]).isdigit() else (1, str(row["uid"])),
+            row["action"],
+        ),
+        reverse=True,
+    )
 
     previous_by_uid = {
         str(row.get("uid")): row
@@ -540,14 +579,14 @@ def build_projection(
     country_entry_ids: defaultdict[str, set[str]] = defaultdict(set)
     country_address_counts: Counter[str] = Counter()
     country_program_entry_ids: defaultdict[str, defaultdict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
-    geo_names: dict[str, str] = {}
+    country_entry_types: defaultdict[str, set[str]] = defaultdict(set)
     unresolved: Counter[str] = Counter()
 
     for raw_entry in current["entries"]:
         entry = copy.deepcopy(raw_entry)
         states = ["CURRENT"] if entry["identity_resolved"] else ["CURRENT", "IDENTITY_UNRESOLVED"]
         if latest_action.get(entry["uid"]) == "add":
-            states.append("ADDED")
+            states.append("ADDED_SINCE_PREVIOUS")
         prior = previous_by_uid.get(entry["uid"])
         if latest_action.get(entry["uid"]) == "correct" or (
             prior and prior.get("source_fingerprint") != entry["source_fingerprint"]
@@ -588,18 +627,21 @@ def build_projection(
             geo_names[geo_id] = address["geo_name"]
             country_entry_ids[geo_id].add(entry["uid"])
             country_address_counts[geo_id] += 1
+            if entry["entity_type"]:
+                country_entry_types[geo_id].add(entry["entity_type"])
             for program in entry["programs"]:
                 country_program_entry_ids[geo_id][program].add(entry["uid"])
         entries.append(entry)
 
     country_change_counts: defaultdict[str, Counter[str]] = defaultdict(Counter)
     for change in changes:
-        if change["state"] in {"ADDED", "REMOVED"}:
+        if change["state"] in {"ADDED_SINCE_PREVIOUS", "REMOVED_SINCE_PREVIOUS"}:
             for geo_id in {address["geo_id"] for address in change["addresses"] if address["geo_id"]}:
                 country_change_counts[geo_id][change["state"]] += 1
 
     countries = []
-    for geo_id in sorted(country_entry_ids, key=lambda value: (-len(country_entry_ids[value]), geo_names[value], value)):
+    country_ids = set(country_entry_ids) | set(country_change_counts)
+    for geo_id in sorted(country_ids, key=lambda value: (-len(country_entry_ids[value]), geo_names[value], value)):
         programs = [
             {"program": program, "entries": len(ids)}
             for program, ids in country_program_entry_ids[geo_id].items()
@@ -610,8 +652,9 @@ def build_projection(
             "country": geo_names[geo_id],
             "entries": len(country_entry_ids[geo_id]),
             "published_addresses": country_address_counts[geo_id],
-            "added": country_change_counts[geo_id]["ADDED"],
-            "removed": country_change_counts[geo_id]["REMOVED"],
+            "added": country_change_counts[geo_id]["ADDED_SINCE_PREVIOUS"],
+            "removed": country_change_counts[geo_id]["REMOVED_SINCE_PREVIOUS"],
+            "entry_types": sorted(country_entry_types[geo_id]),
             "programs": programs,
         })
 
@@ -623,6 +666,8 @@ def build_projection(
         "parser_revision": PARSER_REVISION,
         "capability_state": "BUILT_NOT_PROVEN",
         "production_state": "PRODUCTION_INERT",
+        "discovery_state": "DIRECT_ROUTE_ONLY",
+        "global_discovery_state": "NOT_GLOBALLY_DISCOVERABLE",
         "source_state": "CURRENT",
         "source_identity": identity,
         "projection_id": "sha256:" + identity,
@@ -660,7 +705,7 @@ def build_projection(
         "entries": entries,
         "changes": changes,
         "unresolved_geography": [
-            {"published_country": name, "published_addresses": count, "state": "GEO_UNRESOLVED"}
+            {"published_country": name, "published_addresses": count, "state": "GEOGRAPHY_UNRESOLVED"}
             for name, count in sorted(unresolved.items(), key=lambda item: (-item[1], item[0]))
         ],
         "method": {

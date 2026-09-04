@@ -3686,10 +3686,21 @@ jobs:
       - "site/basketdata/fear_greed.json"
       - "site/factordata/basket_washout_state.json"
       - "site/factordata/china_standouts.json"
+      - "site/sanctions-geography.css"
+      - "site/sanctions-geography-data.json"
+      - "site/sanctions-geography-entries/**"
+      - "site/sanctions-geography.html"
+      - "site/sanctions-geography.js"
+      - "templates/sanctions_geography.css"
+      - "templates/sanctions_geography.html.j2"
+      - "templates/sanctions_geography.js"
       - "tests/test_china_standout_track.py"
       - "tests/test_cn_board_lane_gate.py"
       - "tests/test_cn_entry_price_integrity.py"
       - "tests/test_cn_standout_audit.py"
+      - "tests/test_ofac_sanctions.py"
+      - "tests/test_sanctions_geography_build.py"
+      - "tests/test_sanctions_geography_ui.py"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -3701,13 +3712,15 @@ jobs:
         # (exit 2) — locally invisible because dev envs carry it, and the sibling jobs that
         # import the builder (e.g. unrun-picks-boards) get it transitively via jinja2. With
         # it added, every suite in this job passes in a from-scratch minimal venv.
-        run: pip install pytest pandas numpy pyarrow pyyaml markupsafe
+        run: pip install pytest pandas numpy pyarrow pyyaml markupsafe jinja2
       - name: SA-W2 CN standout audit tests
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
       - name: CN entry-price integrity (corrupt-bar gate, PIT latch, fail-closed lane — PR 5000)
         run: python -m pytest tests/test_cn_entry_price_integrity.py -q
       - name: CN board-append lane gate (fail-closed CN_LANE — board/ripening/audit/event-latch)
         run: python -m pytest tests/test_cn_board_lane_gate.py -q
+      - name: F02-X1 official sanctions geography source, build, and UI contract
+        run: python -m pytest tests/test_ofac_sanctions.py tests/test_sanctions_geography_build.py tests/test_sanctions_geography_ui.py -q
 
   workflow-yaml:
     if: ${{ false }}

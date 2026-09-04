@@ -20,7 +20,7 @@
    Honesty rules encoded below, not merely documented:
      * a count is "distinct entries with at least one published address whose
        country field names this boundary" — never a location, never a headcount;
-     * ADDED / REMOVED come only from an explicit official delta action; the
+     * ADDED_SINCE_PREVIOUS / REMOVED_SINCE_PREVIOUS come only from an explicit official delta action; the
        absence of a delta is never read as a removal;
      * a published country with no boundary, and a boundary id the topology does
        not carry, are both registered off-map rather than folded into a
@@ -84,6 +84,9 @@
     byGeo: {},          /* geo_id -> country row        */
     entriesByGeo: {},   /* geo_id -> [entry]            */
     typesByGeo: {},     /* geo_id -> {entity_type:true} */
+    shardStatus: {},    /* geo_id -> loading|ready|error */
+    shardErrors: {},
+    shardPromises: {},
     drawableIds: null,
     selected: null
   };
@@ -242,12 +245,12 @@
   function renderProvenance(p) {
     if (!ui.prov) { return; }
     var src = (p.source && p.source.current) || {};
-    var health = String(src.source_health || p.source_state || "").toUpperCase();
+    var health = String(p.source_state || src.source_health || "").toUpperCase();
     clear(ui.prov);
 
     ui.prov.className = "sg-prov " + (
       health === "CURRENT" ? "sg-prov--ok"
-        : (health === "STALE" ? "sg-prov--warn" : "sg-prov--bad")
+        : (health === "SOURCE_STALE" ? "sg-prov--warn" : "sg-prov--bad")
     );
 
     function pair(labelEn, labelZh, value, cls) {
@@ -278,7 +281,11 @@
     var features = geo.features || [];
 
     model.drawableIds = {};
-    features.forEach(function (f) { model.drawableIds[String(f.id)] = true; });
+    features.forEach(function (f) {
+      if (f.id !== undefined && f.id !== null && String(f.id)) {
+        model.drawableIds[String(f.id)] = true;
+      }
+    });
 
     var width = 960;
     var height = 460;
@@ -290,27 +297,52 @@
     clear(ui.map);
 
     var NS = "http://www.w3.org/2000/svg";
+    var defs = document.createElementNS(NS, "defs");
+    var pattern = document.createElementNS(NS, "pattern");
+    pattern.setAttribute("id", "sg-identityless-pattern");
+    pattern.setAttribute("width", "6");
+    pattern.setAttribute("height", "6");
+    pattern.setAttribute("patternUnits", "userSpaceOnUse");
+    var patternBg = document.createElementNS(NS, "rect");
+    patternBg.setAttribute("class", "sg-identityless-pattern-bg");
+    patternBg.setAttribute("width", "6");
+    patternBg.setAttribute("height", "6");
+    var patternLine = document.createElementNS(NS, "path");
+    patternLine.setAttribute("class", "sg-identityless-pattern-line");
+    patternLine.setAttribute("d", "M-1,1 L1,-1 M0,6 L6,0 M5,7 L7,5");
+    pattern.appendChild(patternBg);
+    pattern.appendChild(patternLine);
+    defs.appendChild(pattern);
+    ui.map.appendChild(defs);
 
     features.forEach(function (f) {
       var d = path(f);
       if (!d) { return; }
-      var id = String(f.id);
+      var hasCanonicalId = f.id !== undefined && f.id !== null && String(f.id);
+      var id = hasCanonicalId ? String(f.id) : "";
       var row = model.byGeo[id];
       var count = row ? Number(row.entries) || 0 : 0;
       var name = row ? row.country : ((f.properties && f.properties.name) || id);
 
       var node = document.createElementNS(NS, "path");
       node.setAttribute("d", d);
-      node.setAttribute("class", "sg-geo" + (count > 0 ? " is-pick" : ""));
-      node.setAttribute("data-geo-id", id);
-      node.setAttribute("data-count", String(count));
-      node.setAttribute("data-step", String(stepFor(count)));
+      node.setAttribute("class", "sg-geo" + (!hasCanonicalId ? " is-identityless" : "") +
+        (count > 0 ? " is-pick" : ""));
+      if (hasCanonicalId) {
+        node.setAttribute("data-geo-id", id);
+        node.setAttribute("data-count", String(count));
+        node.setAttribute("data-step", String(stepFor(count)));
+      } else {
+        node.setAttribute("data-step", "identityless");
+      }
       if (count > 0) {
         node.setAttribute("tabindex", "0");
         node.setAttribute("aria-disabled", "false");
         node.setAttribute("role", "button");
-        node.setAttribute("aria-label",
-          name + ": " + num(count) + " listed entries with a published address here");
+        node.setAttribute("data-name-en", name + ": " + num(count) +
+          " listed entries with a published address here");
+        node.setAttribute("data-name-zh", name + "：" + num(count) +
+          " 条名单记录在此有公开地址");
         node.addEventListener("click", function () {
           if (node.classList.contains("is-off")) { return; }
           select(id);
@@ -323,7 +355,9 @@
         });
       }
       var title = document.createElementNS(NS, "title");
-      title.textContent = name + " · " + num(count);
+      title.textContent = hasCanonicalId
+        ? name + " · " + num(count)
+        : name + " · geometry identity unavailable; see off-map register";
       node.appendChild(title);
       ui.map.appendChild(node);
     });
@@ -414,8 +448,10 @@
     });
 
     var types = {};
-    (p.entries || []).forEach(function (e) {
-      if (e.entity_type) { types[String(e.entity_type)] = true; }
+    (p.countries || []).forEach(function (country) {
+      (country.entry_types || []).forEach(function (entryType) {
+        if (entryType) { types[String(entryType)] = true; }
+      });
     });
     fillSelect(ui.type, Object.keys(types).sort(), function (value) {
       return [value, TYPE_ZH[value] || value];
@@ -667,6 +703,11 @@
       tr.classList.toggle("is-on", !!model.selected && tr.getAttribute("data-geo-id") === model.selected);
     });
     renderEntries();
+    if (model.selected) {
+      loadSelectedEntries(model.selected).catch(function () {
+        /* The loader records and renders its own typed detail failure. */
+      });
+    }
   }
 
   function chip(parent, cls, en, zh) {
@@ -689,8 +730,8 @@
       chip(chips, "sg-chip--prog", String(pr), String(pr));
     });
     states.forEach(function (st) {
-      if (st === "ADDED") { chip(chips, "sg-chip--added", "Added by official delta", "官方增量新增"); }
-      else if (st === "REMOVED") { chip(chips, "sg-chip--removed", "Removed by official delta", "官方增量移除"); }
+      if (st === "ADDED_SINCE_PREVIOUS") { chip(chips, "sg-chip--added", "Added by official delta", "官方增量新增"); }
+      else if (st === "REMOVED_SINCE_PREVIOUS") { chip(chips, "sg-chip--removed", "Removed by official delta", "官方增量移除"); }
       else if (st === "SOURCE_CORRECTED") { chip(chips, "sg-chip--corrected", "Source corrected", "来源已更正"); }
     });
     if (entry.identity_resolved === false) {
@@ -705,12 +746,12 @@
       dl.appendChild(dt);
       var dd = el("dd");
       dd.textContent = a.published_address || a.published_country || "—";
-      if (a.state === "GEO_UNRESOLVED" || !a.geo_id) {
+      if (a.state === "GEOGRAPHY_UNRESOLVED" || !a.geo_id) {
         var mark = el("span", "sg-chip sg-chip--unres");
         bi(mark, "Could not be placed", "无法定位边界");
         dd.appendChild(document.createTextNode(" "));
         dd.appendChild(mark);
-        code(dd, "GEO_UNRESOLVED");
+        code(dd, "GEOGRAPHY_UNRESOLVED");
       } else if (geoId && String(a.geo_id) === String(geoId)) {
         var here = el("span", "sg-unres sg-mono");
         here.textContent = " ← this boundary";
@@ -752,6 +793,24 @@
       return;
     }
 
+    var status = model.shardStatus[model.selected];
+    if (!status || status === "loading") {
+      emptyState(ui.entries,
+        "Loading entry detail",
+        "正在载入条目明细",
+        "The boundary register is ready. Its projection-bound detail shard is loading on demand.",
+        "边界登记册已就绪；与该投影绑定的明细分片正在按需载入。");
+      return;
+    }
+    if (status === "error") {
+      emptyState(ui.entries,
+        "Entry detail could not be verified",
+        "无法验证条目明细",
+        "The boundary count remains readable, but its detail shard was missing, malformed, stale, or failed its SHA-256 check.",
+        "边界计数仍可读取，但其明细分片缺失、格式错误、已过期或未通过 SHA-256 校验。");
+      code(ui.entries, "PARSER_SHAPE_CHANGED / ENTRY_SHARD");
+      return;
+    }
     var list = model.entriesByGeo[model.selected] || [];
     if (!list.length) {
       emptyState(ui.entries,
@@ -794,9 +853,9 @@
       var chips = el("div", "sg-crow-s");
       /* The state comes from the official delta's own action field. Nothing
          here infers a removal from an absence. */
-      if (c.state === "ADDED" || c.action === "add") {
+      if (c.state === "ADDED_SINCE_PREVIOUS" || c.action === "add") {
         chip(chips, "sg-chip--added", "Added", "新增");
-      } else if (c.state === "REMOVED" || c.action === "remove") {
+      } else if (c.state === "REMOVED_SINCE_PREVIOUS" || c.action === "remove") {
         chip(chips, "sg-chip--removed", "Removed", "移除");
       } else if (c.state === "SOURCE_CORRECTED") {
         chip(chips, "sg-chip--corrected", "Source corrected", "来源已更正");
@@ -838,8 +897,8 @@
       "Published addresses matched to a boundary.",
       "已匹配到边界的公开地址。");
     item(num(s.geo_unresolved_addresses),
-      "Published addresses we could not place — kept as GEO_UNRESOLVED, never folded into a neighbour.",
-      "无法定位的公开地址 — 保留为 GEO_UNRESOLVED，绝不并入邻国。");
+      "Published addresses we could not place — kept as GEOGRAPHY_UNRESOLVED, never folded into a neighbour.",
+      "无法定位的公开地址 — 保留为 GEOGRAPHY_UNRESOLVED，绝不并入邻国。");
     item(num(s.published_addresses),
       "Published address records read from the official file.",
       "自官方文件读取的公开地址记录总数。");
@@ -936,6 +995,9 @@
       kv("SHA-256", "SHA-256", rec.raw_sha256 || "—", true);
       kv("Schema", "模式", rec.schema_revision || "—");
       kv("Rights", "权利声明", rec.rights || "—");
+      if (rec.catalog_size_match === false) {
+        kv("Catalog byte verification", "目录字节校验", "SIZE_MISMATCH / SHA-256 unavailable", true);
+      }
       if (rec.delta_relation) { kv("Delta relation", "增量关系", rec.delta_relation, true); }
       box.appendChild(dl);
       ui.source.appendChild(box);
@@ -981,13 +1043,13 @@
   function renderHealth(p) {
     var state = String(p.source_state || "").toUpperCase();
     var fresh = p.freshness || {};
-    if (state === "UNAVAILABLE") {
+    if (state === "SOURCE_UNAVAILABLE") {
       banner("bad",
         "The official file could not be reached for this build",
         "本次构建无法访问官方文件",
         "Every figure below is the last accepted projection, kept deliberately rather than replaced with an empty success. Counts, boundaries and the source receipt are still readable; only the freshness is not.",
         "以下所有数字来自最近一次已接受的投影，我们刻意保留而非以空结果覆盖。计数、边界与来源凭证仍可查阅，仅时效性无法保证。",
-        "UNAVAILABLE");
+        "SOURCE_UNAVAILABLE");
       return;
     }
     if (state === "PARSER_SHAPE_CHANGED") {
@@ -1002,10 +1064,11 @@
     /* The deterministic artifact carries source_state=CURRENT plus a
        freshness.stale_after deadline: staleness is a fact about the CLOCK, so
        it is derived from that deadline whenever it has passed, and an explicit
-       STALE label is still honoured on its own. */
+       SOURCE_STALE label is still honoured on its own. */
     var after = fresh.stale_after || "";
     var deadlinePassed = !!after && new Date(after).getTime() <= Date.now();
-    var labelled = state === "STALE" || String(fresh.stale_state || "").toUpperCase() === "STALE";
+    var labelled = state === "SOURCE_STALE" ||
+      String(fresh.stale_state || "").toUpperCase() === "SOURCE_STALE";
     if (labelled || deadlinePassed) {
       {
         banner("stale",
@@ -1013,7 +1076,7 @@
           "此读数已落后于官方发布时间",
           "The list itself has not been re-acquired since the published date on the receipt. Treat the counts as of that date, not as of today.",
           "自凭证所载发布日期以来，名单未再次获取。请按该日期而非今日理解这些计数。",
-          "STALE");
+          "SOURCE_STALE");
       }
     }
   }
@@ -1026,19 +1089,14 @@
 
     model.entriesByGeo = {};
     model.typesByGeo = {};
-    (p.entries || []).forEach(function (e) {
-      var seen = {};
-      (e.addresses || []).forEach(function (a) {
-        if (!a.geo_id || a.state === "GEO_UNRESOLVED") { return; }
-        var id = String(a.geo_id);
-        if (seen[id]) { return; }
-        seen[id] = true;
-        if (!model.entriesByGeo[id]) { model.entriesByGeo[id] = []; }
-        model.entriesByGeo[id].push(e);
-        if (e.entity_type) {
-          if (!model.typesByGeo[id]) { model.typesByGeo[id] = {}; }
-          model.typesByGeo[id][String(e.entity_type)] = true;
-        }
+    model.shardStatus = {};
+    model.shardErrors = {};
+    model.shardPromises = {};
+    (p.countries || []).forEach(function (country) {
+      var id = String(country.geo_id);
+      model.typesByGeo[id] = {};
+      (country.entry_types || []).forEach(function (entryType) {
+        model.typesByGeo[id][String(entryType)] = true;
       });
     });
   }
@@ -1069,6 +1127,16 @@
         var name = control.getAttribute(zh ? "data-aria-zh" : "data-aria-en");
         if (name) { control.setAttribute("aria-label", name); }
       });
+    updateMapAccessibleNames(zh);
+  }
+
+  function updateMapAccessibleNames(zh) {
+    if (!ui.map) { return; }
+    var nodes = ui.map.querySelectorAll(".sg-geo.is-pick");
+    Array.prototype.forEach.call(nodes, function (node) {
+      var name = node.getAttribute(zh ? "data-name-zh" : "data-name-en");
+      if (name) { node.setAttribute("aria-label", name); }
+    });
   }
 
   function wire() {
@@ -1102,6 +1170,108 @@
       if (!r.ok) { throw new Error(url + " → HTTP " + r.status); }
       return r.json();
     });
+  }
+
+  function sha256Hex(buffer) {
+    if (!window.crypto || !window.crypto.subtle) {
+      return Promise.reject(new Error("Web Crypto unavailable; shard verification refused"));
+    }
+    return window.crypto.subtle.digest("SHA-256", buffer).then(function (digest) {
+      return Array.prototype.map.call(new Uint8Array(digest), function (byte) {
+        return byte.toString(16).padStart(2, "0");
+      }).join("");
+    });
+  }
+
+  function loadSelectedEntries(geoId) {
+    var id = String(geoId || "");
+    if (!/^[0-9]{3}$/.test(id)) {
+      return Promise.reject(new Error("non-canonical shard identity"));
+    }
+    if (model.shardStatus[id] === "ready") {
+      return Promise.resolve(model.entriesByGeo[id] || []);
+    }
+    if (model.shardStatus[id] === "loading" && model.shardPromises[id]) {
+      return model.shardPromises[id];
+    }
+    var manifest = model.projection && model.projection.entry_shards;
+    var record = manifest && manifest.by_geo && manifest.by_geo[id];
+    var expectedPath = "sanctions-geography-entries/" + id + ".json";
+    if (!record || record.path !== expectedPath ||
+        !/^[0-9a-f]{64}$/.test(String(record.sha256 || "")) ||
+        !Number.isInteger(record.bytes) || record.bytes <= 0 ||
+        !Number.isInteger(record.entries) || record.entries < 0) {
+      model.shardStatus[id] = "error";
+      model.shardErrors[id] = "manifest mismatch";
+      renderEntries();
+      return Promise.reject(new Error("entry shard is absent from the canonical manifest"));
+    }
+    var url = new URL(record.path, window.location.href);
+    if (url.origin !== window.location.origin) {
+      model.shardStatus[id] = "error";
+      model.shardErrors[id] = "cross-origin path refused";
+      renderEntries();
+      return Promise.reject(new Error("entry shard must be same-origin"));
+    }
+
+    model.shardStatus[id] = "loading";
+    renderEntries();
+    var request = fetch(url.href, { credentials: "same-origin" })
+      .then(function (response) {
+        if (!response.ok) { throw new Error(record.path + " → HTTP " + response.status); }
+        return response.arrayBuffer();
+      })
+      .then(function (buffer) {
+        if (buffer.byteLength !== record.bytes) {
+          throw new Error("entry shard byte count mismatch");
+        }
+        return sha256Hex(buffer).then(function (actualHash) {
+          if (actualHash !== record.sha256) { throw new Error("entry shard SHA-256 mismatch"); }
+          var payload;
+          try {
+            payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(buffer));
+          } catch (error) {
+            throw new Error("entry shard JSON is malformed");
+          }
+          if (!payload || payload.schema_version !== model.projection.schema_version ||
+              payload.parser_revision !== model.projection.parser_revision ||
+              payload.projection_id !== model.projection.projection_id ||
+              payload.source_identity !== model.projection.source_identity ||
+              payload.geo_id !== id || !Array.isArray(payload.entries) ||
+              payload.entries.length !== record.entries) {
+            throw new Error("entry shard identity is stale or malformed");
+          }
+          model.entriesByGeo[id] = payload.entries;
+          model.shardStatus[id] = "ready";
+          delete model.shardErrors[id];
+          if (model.selected === id) { renderEntries(); }
+          return payload.entries;
+        });
+      })
+      .catch(function (error) {
+        model.shardStatus[id] = "error";
+        model.shardErrors[id] = String(error && error.message ? error.message : error);
+        if (model.selected === id) { renderEntries(); }
+        throw error;
+      });
+    model.shardPromises[id] = request;
+    return request;
+  }
+
+  /* Reproducible behavioral contract seam. The committed Node probe supplies a
+     minimal DOM and opts in before this file loads; normal browsers never set
+     the flag, never receive the seam, and continue directly to boot(). */
+  if (window.__SANCTIONS_GEOGRAPHY_TEST__ === true) {
+    window.__sanctionsGeographyBehavior = {
+      applyLang: applyLang,
+      getSelected: function () { return model.selected; },
+      getShardStatus: function (geoId) { return model.shardStatus[String(geoId)]; },
+      loadSelectedEntries: loadSelectedEntries,
+      setProjection: function (p) { model.projection = p; index(p); },
+      setSelected: function (geoId) { model.selected = geoId; },
+      syncMap: syncMap
+    };
+    return;
   }
 
   function boot() {

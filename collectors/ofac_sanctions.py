@@ -30,7 +30,7 @@ DELTA_XSD_URL = "https://www.treasury.gov/ofac/downloads/sanctions/1.0/DeltaFile
 
 CURRENT_SCHEMA_REVISION = f"https://{SLS_HOST}/api/PublicationPreview/exports/XML"
 DELTA_SCHEMA_REVISION = "https://www.treasury.gov/ofac/DeltaFile/1.0"
-PARSER_REVISION = "ofac-sanctions-v1.0.3"
+PARSER_REVISION = "ofac-sanctions-v1.0.4"
 RIGHTS_URL = "https://ofac.treasury.gov/sanctions-list-service"
 DEFAULT_MAX_RESPONSE_BYTES = 50_000_000
 

@@ -33,8 +33,10 @@ What these tests defend, in the order the failures would hurt:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -121,7 +123,9 @@ def test_render_uses_no_variable_beyond_the_frozen_four():
     env.get_template("sanctions_geography.html.j2").render(**RENDER_CONTEXT)
 
 
-@pytest.mark.parametrize("state", ["CURRENT", "STALE", "UNAVAILABLE", "PARSER_SHAPE_CHANGED"])
+@pytest.mark.parametrize(
+    "state", ["CURRENT", "SOURCE_STALE", "SOURCE_UNAVAILABLE", "PARSER_SHAPE_CHANGED"]
+)
 def test_every_frozen_source_state_renders(state):
     """A degraded source must still produce a page, never a build crash."""
     out = _render(source_state=state)
@@ -161,7 +165,7 @@ def test_thematic_programs_are_not_misread_as_absent_geography(html):
 
 
 def test_unresolved_geography_is_a_named_state_not_a_zero(html, js_text):
-    assert "GEO_UNRESOLVED" in html or "GEO_UNRESOLVED" in js_text
+    assert "GEOGRAPHY_UNRESOLVED" in html or "GEOGRAPHY_UNRESOLVED" in js_text
 
 
 def test_no_compliance_screening_affordance(html):
@@ -339,8 +343,8 @@ def test_zh_copy_carries_no_raw_english_state_enum(html):
     """`慢速评级: HOLD` is the shape this forbids — an EN machine token dropped
     into ZH copy, which reads as untranslated to the person it addresses."""
     for zh in re.findall(r'<span class="l-zh">(.*?)</span>', html, re.S):
-        assert not re.search(r"\b(CURRENT|ADDED|REMOVED|SOURCE_CORRECTED|"
-                             r"GEO_UNRESOLVED|UNAVAILABLE|STALE|"
+        assert not re.search(r"\b(CURRENT|ADDED_SINCE_PREVIOUS|REMOVED_SINCE_PREVIOUS|SOURCE_CORRECTED|"
+                             r"GEOGRAPHY_UNRESOLVED|SOURCE_UNAVAILABLE|SOURCE_STALE|"
                              r"PARSER_SHAPE_CHANGED|NO_RESULTS)\b", zh), (
             f"raw EN state enum inside ZH copy: {zh[:80]!r}")
 
@@ -519,11 +523,11 @@ def test_sections_head_with_h2_and_stay_within_the_archetype_budget(html):
         f"archetype E allows at most 6 first-level sections, found {len(l1)}")
 
 
-def test_map_is_an_accessible_image_with_a_name(html):
+def test_map_is_an_accessible_group_with_interactive_children(html):
     m = re.search(r"<svg\b[^>]*class=\"[^\"]*sg-map[^\"]*\"[^>]*>", html)
     assert m, "no .sg-map svg"
     tag = m.group(0)
-    assert 'role="img"' in tag
+    assert 'role="group"' in tag
     assert "aria-labelledby=" in tag or "aria-label=" in tag
 
 
@@ -573,7 +577,7 @@ def test_js_reads_the_frozen_artifact_name(js_text):
 
 
 def test_js_binds_only_frozen_schema_keys(js_text):
-    for key in ("summary", "countries", "entries", "changes",
+    for key in ("summary", "countries", "changes",
                 "unresolved_geography", "source", "freshness", "method"):
         assert key in js_text, f"frozen projection key never consumed: {key}"
 
@@ -594,9 +598,49 @@ def test_page_declares_no_second_country_authority(js_text):
 
 def test_js_never_infers_a_removal(js_text):
     """`delta omission never implies removal` is a correctness rule, so the
-    REMOVED state may only come from an explicit official action field."""
-    assert "REMOVED" in js_text
+    REMOVED_SINCE_PREVIOUS state may only come from an explicit official action field."""
+    assert "REMOVED_SINCE_PREVIOUS" in js_text
     assert "action" in js_text or "state" in js_text
+
+
+def test_degraded_provenance_prefers_projection_state_over_last_good_receipt(js_text):
+    assert "p.source_state || src.source_health" in js_text
+    assert 'health === "SOURCE_STALE"' in js_text
+
+
+def test_idless_topology_shapes_are_not_painted_as_honest_zero(js_text, css_text):
+    assert "is-identityless" in js_text
+    assert ".sg-geo.is-identityless" in css_text
+    assert "data-step" in js_text
+
+
+def test_map_accessible_names_are_bilingual_and_reapplied_on_language_change(js_text):
+    assert "updateMapAccessibleNames" in js_text
+    assert "data-name-en" in js_text and "data-name-zh" in js_text
+    apply_lang = re.search(r"function applyLang\(\)\s*\{.*?\n  \}", js_text, re.S)
+    assert apply_lang and "updateMapAccessibleNames" in apply_lang.group(0)
+
+
+def test_committed_dom_probe_executes_selection_clear_and_language_refresh():
+    probe = ROOT / "scripts" / "sanctions_geography_dom_probe.js"
+    assert probe.is_file(), "the behavioral DOM probe must be committed and reproducible"
+    completed = subprocess.run(
+        ["node", str(probe), str(JS)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    result = json.loads(completed.stdout)
+    assert result["selection_cleared"] == 1
+    assert result["dimmed_keyboard_reachable"] == 0
+    assert result["zh_map_name_applied"] is True
+    assert result["initial_shard_requests"] == 0
+    assert result["selection_shard_requests"] == 1
+    assert result["selected_entries_loaded"] == 1
+    assert result["tampered_shard_refused"] is True
+    assert result["tampered_shard_state_error"] is True
 
 
 # --------------------------------------------------------------------------
@@ -746,6 +790,20 @@ def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
     log = EVIDENCE_DIR / "states" / "observations.json"
     assert log.is_file(), "no state-evidence log"
     payload = json.loads(log.read_text(encoding="utf-8"))
+    assert payload["driver"] == "scripts/capture_sanctions_geography_states.py"
+    assert (ROOT / payload["driver"]).is_file(), "state evidence has no committed driver"
+    artifact_paths = {
+        "data_sha256": SITE / "sanctions-geography-data.json",
+        "page_sha256": SITE / "sanctions-geography.html",
+        "css_sha256": SITE / "sanctions-geography.css",
+        "js_sha256": SITE / "sanctions-geography.js",
+        "driver_sha256": ROOT / payload["driver"],
+    }
+    for field, artifact in artifact_paths.items():
+        assert payload["artifacts"][field] == hashlib.sha256(artifact.read_bytes()).hexdigest()
+    projection = json.loads((SITE / "sanctions-geography-data.json").read_text(encoding="utf-8"))
+    assert payload["artifacts"]["projection_id"] == projection["projection_id"]
+    assert payload["artifacts"]["source_identity"] == projection["source_identity"]
     captured = {c["state"] for c in payload["captures"]}
     for required in ("selected-boundary", "no-results", "filtered-map-sync",
                      "unresolved-register", "stale-derived", "unavailable",
@@ -757,11 +815,16 @@ def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
     assert by_state["no-results"]["state_code"] == "NO_RESULTS"
     assert by_state["selected-boundary"]["row_focusable"] is True
     assert by_state["selected-boundary"]["map_path_selected"] == 1
+    assert by_state["selected-boundary"]["initial_shard_requests"] == 0
+    assert by_state["selected-boundary"]["selection_shard_requests"] == 1
+    assert by_state["selected-boundary"]["zh_map_name_applied"] is True
+    assert by_state["selected-boundary"]["identityless_paths"] > 0
+    assert by_state["selected-boundary"]["identityless_paths_with_zero_count"] == 0
     assert by_state["unresolved-register"]["program_filter_disabled"] is True
     sync = by_state["filtered-map-sync"]
     assert sync["boundaries_dimmed"] > 0, "a filter left every boundary lit"
-    assert sync["selection_cleared"] == 0, (
-        "a selection the filter excluded was left standing")
+    assert sync["selection_cleared"] > 0, (
+        "the capture did not exercise clearing a selection excluded by the filter")
     assert sync["dimmed_still_keyboard_reachable"] == 0, (
         "a filtered boundary was still reachable by keyboard — the filter would "
         "apply to the mouse and not to the tab key")

@@ -46,7 +46,7 @@
 <body>
 {% include "_site_nav.html.j2" %}
 
-<div class="sg" data-sg-root data-source-state="{{ source_state }}" data-active-section="{{ active_section }}" data-active-page="{{ active_page }}">
+<div class="sg" data-sg-root data-source-state="{{ source_state }}" data-active-section="{{ active_section }}" data-active-page="{{ active_page }}" data-production-state="PRODUCTION_INERT" data-discovery-state="DIRECT_ROUTE_ONLY" data-global-discovery="NOT_GLOBALLY_DISCOVERABLE">
 
   <header class="sg-head">
     <span class="sg-eyebrow">{{ t('Official register · U.S. Treasury OFAC', '官方登记册 · 美国财政部 OFAC') }}</span>
@@ -87,10 +87,10 @@
           <h3 id="sg-map-title">{{ t('Boundaries named by a published address', '被公开地址提及的边界') }}</h3>
         </div>
         <div class="sg-skel sg-skel--map" data-sg-mapskel></div>
-        <svg class="sg-map" data-sg-map role="img" aria-labelledby="sg-map-title sg-map-desc" hidden></svg>
+        <svg class="sg-map" data-sg-map role="group" aria-labelledby="sg-map-title sg-map-desc" hidden></svg>
         <p id="sg-map-desc" class="sg-fig-m">{{ t(
-          'Shading is the number of listed entries with at least one published address naming that boundary. A plain boundary means no published address names it — an honest zero, not missing data. When a filter is active the boundaries it excludes are dimmed, which means filtered out of the current view, never that the count is zero. Boundaries are schematic, drawn from the Natural Earth public-domain 110m dataset, and may reflect disputed-boundary choices we did not make.',
-          '底色深浅表示：有多少名单条目至少有一条公开地址提及该边界。未着色的边界表示没有任何公开地址提及它 — 这是真实的零值，而非数据缺失。当筛选生效时，被排除的边界会变暗，这表示「不在当前视图内」，而非计数为零。边界为示意性绘制，来源为 Natural Earth 公有领域 110m 数据集，可能反映并非由我们作出的争议边界处理方式。') }}</p>
+          'Shading is the number of listed entries with at least one published address naming that boundary. A plain identified boundary means no published address names it — an honest zero, not missing data. A hatched shape has no canonical geometry identity in this 110m asset; it is unavailable for counting here, even if its name appears in the off-map register. When a filter is active the boundaries it excludes are dimmed, which means filtered out of the current view, never that the count is zero. Boundaries are schematic, drawn from the Natural Earth public-domain 110m dataset, and may reflect disputed-boundary choices we did not make.',
+          '底色深浅表示：有多少名单条目至少有一条公开地址提及该边界。无底色且具有规范标识的边界表示没有公开地址提及它 — 这是真实的零值，而非数据缺失。带斜线的形状在本 110m 资源中没有规范几何标识，因此无法在此计数；即使其名称出现在下方无法上图登记册中也不例外。当筛选生效时，被排除的边界会变暗，这表示「不在当前视图内」，而非计数为零。边界为示意性绘制，来源为 Natural Earth 公有领域 110m 数据集，可能反映并非由我们作出的争议边界处理方式。') }}</p>
         <div class="sg-legend" data-sg-legend></div>
       </div>
 

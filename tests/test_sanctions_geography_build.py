@@ -7,9 +7,12 @@ from pathlib import Path
 
 import pytest
 
+import scripts.build_sanctions_geography as sanctions_builder
 from collectors.ofac_sanctions import make_receipt
+from engine.ofac_sanctions import ProjectionBoundsError
 from scripts.build_sanctions_geography import (
     BuildUnavailableError,
+    _load_previous,
     build_data,
     degraded_projection,
     render,
@@ -85,6 +88,19 @@ def test_build_data_writes_bounded_machine_consumer_and_reuses_last_good_bytes(t
     assert payload["method"]["geography_basis"] == "published_address_country_only"
     assert payload["summary"]["current_entries"] == 1
     assert payload["countries"][0]["geo_id"] == "840"
+    assert "entries" not in payload, "the first-load consumer must not carry the full entry corpus"
+    shard_record = payload["entry_shards"]["by_geo"]["840"]
+    assert shard_record["path"] == "sanctions-geography-entries/840.json"
+    shard_path = root / "site" / shard_record["path"]
+    assert shard_path.stat().st_size == shard_record["bytes"]
+    assert hashlib.sha256(shard_path.read_bytes()).hexdigest() == shard_record["sha256"]
+    shard = json.loads(shard_path.read_text())
+    assert shard["projection_id"] == payload["projection_id"]
+    assert shard["source_identity"] == payload["source_identity"]
+    assert [entry["uid"] for entry in shard["entries"]] == ["101"]
+    assert len(shard["entries"]) == shard_record["entries"]
+    assert _load_previous(output)["entries"][0]["uid"] == "101"
+    assert len(first) < 20_000
 
     later = _bundle()
     later["current_receipt"]["acquired_at"] = "2026-09-04T10:00:00Z"
@@ -93,12 +109,36 @@ def test_build_data_writes_bounded_machine_consumer_and_reuses_last_good_bytes(t
     assert hashlib.sha256(output.read_bytes()).hexdigest() == hashlib.sha256(first).hexdigest()
 
 
+def test_last_good_reconstruction_fails_closed_on_tampered_shard(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    output = build_data(root=root, bundle=_bundle(), as_of="2026-09-04T09:30:00Z")
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    shard = root / "site" / payload["entry_shards"]["by_geo"]["840"]["path"]
+    shard.write_bytes(shard.read_bytes() + b" ")
+    with pytest.raises(BuildUnavailableError, match="byte count mismatch"):
+        _load_previous(output)
+
+
+def test_build_removes_only_stale_owned_shards(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    shard_dir = root / "site" / "sanctions-geography-entries"
+    shard_dir.mkdir()
+    stale = shard_dir / "999.json"
+    stale.write_text("stale", encoding="utf-8")
+    foreign = shard_dir / "README.txt"
+    foreign.write_text("keep", encoding="utf-8")
+    build_data(root=root, bundle=_bundle(), as_of="2026-09-04T09:30:00Z")
+    assert not stale.exists()
+    assert foreign.read_text(encoding="utf-8") == "keep"
+
+
 def test_degraded_projection_keeps_last_good_facts_and_exposes_failure_state(tmp_path: Path) -> None:
     root = _root(tmp_path)
     output = build_data(root=root, bundle=_bundle(), as_of="2026-09-04T09:30:00Z")
-    last_good = json.loads(output.read_text())
-    degraded = degraded_projection(last_good, state="UNAVAILABLE", error_code="official_source_timeout")
-    assert degraded["source_state"] == "UNAVAILABLE"
+    last_good = _load_previous(output)
+    assert last_good is not None
+    degraded = degraded_projection(last_good, state="SOURCE_UNAVAILABLE", error_code="official_source_timeout")
+    assert degraded["source_state"] == "SOURCE_UNAVAILABLE"
     assert degraded["degraded"]["last_good_projection_id"] == last_good["projection_id"]
     assert degraded["entries"] == last_good["entries"]
     assert degraded["summary"] == last_good["summary"]
@@ -107,7 +147,40 @@ def test_degraded_projection_keeps_last_good_facts_and_exposes_failure_state(tmp
 
 def test_degraded_projection_refuses_empty_success_without_last_good() -> None:
     with pytest.raises(BuildUnavailableError, match="no last-good"):
-        degraded_projection(None, state="UNAVAILABLE", error_code="official_source_timeout")
+        degraded_projection(None, state="SOURCE_UNAVAILABLE", error_code="official_source_timeout")
+
+
+def test_projection_bound_failure_becomes_a_named_last_good_degraded_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _root(tmp_path)
+    output = build_data(root=root, bundle=_bundle(), as_of="2026-09-04T09:30:00Z")
+
+    def bounded_failure(**_kwargs):
+        raise ProjectionBoundsError("synthetic reviewed bound")
+
+    rendered: dict = {}
+
+    def capture_render(_root: Path, projection: dict) -> Path:
+        rendered.update(projection)
+        return _root / "site" / "sanctions-geography.html"
+
+    monkeypatch.setattr(sanctions_builder, "build_data", bounded_failure)
+    monkeypatch.setattr(sanctions_builder, "render", capture_render)
+    rebuilt, page = sanctions_builder.build(root=root, bundle=_bundle())
+    assert rebuilt == output
+    assert page == root / "site" / "sanctions-geography.html"
+    degraded = json.loads(output.read_text())
+    assert degraded["source_state"] == "PARSER_SHAPE_CHANGED"
+    assert degraded["degraded"]["error_code"].startswith("ProjectionBoundsError:")
+    assert rendered["source_state"] == "PARSER_SHAPE_CHANGED"
+
+
+def test_build_has_no_data_only_split_that_can_break_page_projection_parity() -> None:
+    import inspect
+
+    assert "data_only" not in inspect.signature(sanctions_builder.build).parameters
+    assert "--data-only" not in inspect.getsource(sanctions_builder.main)
 
 
 def test_build_data_rejects_tampered_boundary_receipt(tmp_path: Path) -> None:

@@ -6,6 +6,7 @@ import json
 import pytest
 
 import collectors.ofac_sanctions as ofac_collector
+import engine.ofac_sanctions as ofac_engine
 from collectors.ofac_sanctions import (
     SourceIntegrityError,
     fetch_bytes,
@@ -14,6 +15,7 @@ from collectors.ofac_sanctions import (
 )
 from engine.ofac_sanctions import (
     ProjectionBoundsError,
+    REQUIRED_STATES,
     SourceShapeError,
     build_projection,
     canonical_json_bytes,
@@ -24,6 +26,23 @@ from engine.ofac_sanctions import (
 
 CURRENT_NS = "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML"
 DELTA_NS = "https://www.treasury.gov/ofac/DeltaFile/1.0"
+
+EXPECTED_REQUIRED_STATES = {
+    "CURRENT",
+    "ADDED_SINCE_PREVIOUS",
+    "REMOVED_SINCE_PREVIOUS",
+    "SOURCE_CORRECTED",
+    "GEOGRAPHY_UNRESOLVED",
+    "IDENTITY_UNRESOLVED",
+    "SOURCE_STALE",
+    "SOURCE_UNAVAILABLE",
+    "PARSER_SHAPE_CHANGED",
+    "NO_RESULTS",
+}
+
+
+def test_acquisition_receipts_and_projection_name_the_same_parser_revision() -> None:
+    assert ofac_collector.PARSER_REVISION == ofac_engine.PARSER_REVISION
 
 
 def _current_xml(*entries: str, count: int | None = None) -> bytes:
@@ -266,6 +285,28 @@ def test_parsers_reject_dtd_namespace_drift_and_record_count_mismatch() -> None:
         parse_current_sdn(_current_xml(_entry(), count=2))
 
 
+def test_hostile_xml_guard_rejects_utf16_dtd_and_bounds_delta_depth() -> None:
+    entity_payload = (
+        '<?xml version="1.0" encoding="UTF-16"?>'
+        '<!DOCTYPE sdnList [<!ENTITY boom "expanded">]>'
+        f'<sdnList xmlns="{CURRENT_NS}"><publshInformation>'
+        '<Publish_Date>09/03/2026</Publish_Date><Record_Count>0</Record_Count>'
+        '</publshInformation></sdnList>'
+    ).encode("utf-16")
+    with pytest.raises(SourceShapeError, match="DTD/entity|UTF-8"):
+        parse_current_sdn(entity_payload)
+
+    depth = 300
+    nested = "".join("<n>" for _ in range(depth)) + "".join("</n>" for _ in range(depth))
+    with pytest.raises(SourceShapeError, match="depth"):
+        parse_delta(_delta_xml(f'<entity id="1">{nested}</entity>'))
+
+
+def test_projection_uses_the_exact_issue_state_vocabulary() -> None:
+    assert set(REQUIRED_STATES) == EXPECTED_REQUIRED_STATES
+    assert not ({"ADDED", "REMOVED", "GEO_UNRESOLVED", "STALE", "UNAVAILABLE"} & set(REQUIRED_STATES))
+
+
 def test_delta_parser_preserves_explicit_action_and_published_address() -> None:
     parsed = parse_delta(
         _delta_xml(
@@ -315,12 +356,15 @@ def test_projection_maps_source_aliases_keeps_regions_unresolved_and_marks_delta
 
     by_uid = {row["uid"]: row for row in projection["entries"]}
     assert by_uid["101"]["states"] == ["CURRENT"]  # current membership wins over an older remove action
-    assert by_uid["202"]["states"] == ["CURRENT", "ADDED"]
+    assert by_uid["202"]["states"] == ["CURRENT", "ADDED_SINCE_PREVIOUS"]
     assert by_uid["202"]["addresses"][0]["geo_id"] == "104"
-    assert by_uid["303"]["addresses"][0]["state"] == "GEO_UNRESOLVED"
+    assert by_uid["303"]["addresses"][0]["state"] == "GEOGRAPHY_UNRESOLVED"
     assert by_uid["404"]["addresses"][0]["geo_id"] == "807"
     assert projection["summary"]["geo_unresolved_addresses"] == 1
-    assert {row["state"] for row in projection["changes"]} == {"ADDED", "REMOVED"}
+    assert {row["state"] for row in projection["changes"]} == {
+        "ADDED_SINCE_PREVIOUS",
+        "REMOVED_SINCE_PREVIOUS",
+    }
     assert all("current_location" not in json.dumps(row) for row in projection["entries"])
 
 
@@ -418,9 +462,9 @@ def test_successful_reacquisition_clears_a_degraded_last_good_state(topology: di
     )
     degraded = {
         **accepted,
-        "source_state": "UNAVAILABLE",
+        "source_state": "SOURCE_UNAVAILABLE",
         "degraded": {
-            "state": "UNAVAILABLE",
+            "state": "SOURCE_UNAVAILABLE",
             "error_code": "official_source_timeout",
             "last_good_projection_id": accepted["projection_id"],
             "facts_retained_from_last_good": True,
