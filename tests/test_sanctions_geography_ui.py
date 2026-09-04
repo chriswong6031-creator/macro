@@ -425,6 +425,24 @@ def test_map_and_table_show_the_same_filtered_register(js_text, css_text):
         "a selection filtered out of view must be cleared")
 
 
+def test_a_filtered_boundary_is_unreachable_by_keyboard_too(js_text):
+    """`pointer-events:none` only takes the mouse away. A dimmed boundary that
+    keeps tabindex=0 and its Enter/Space handler is still selectable by keyboard,
+    so the filter would apply to one input device and not the other."""
+    assert 'setAttribute("tabindex", off ? "-1" : "0")' in js_text, (
+        "focusability must move with the filtered state")
+    assert 'setAttribute("aria-disabled", off ? "true" : "false")' in js_text
+    assert js_text.count('classList.contains("is-off")') >= 2, (
+        "both the click and the keydown handler must refuse a filtered boundary")
+
+
+def test_the_filter_group_landmark_is_also_bilingual(html):
+    tag = re.search(r"<div[^>]*data-sg-filters[^>]*>", html, re.S)
+    assert tag, "the filter group is gone"
+    assert 'role="group"' in tag.group(0)
+    assert "data-aria-en=" in tag.group(0) and "data-aria-zh=" in tag.group(0)
+
+
 def test_a_dimmed_boundary_is_not_styled_as_an_honest_zero(css_text):
     """Filtered-out and no-data must stay visually distinct, or the map starts
     reporting zeros it does not have."""
@@ -744,6 +762,12 @@ def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
     assert sync["boundaries_dimmed"] > 0, "a filter left every boundary lit"
     assert sync["selection_cleared"] == 0, (
         "a selection the filter excluded was left standing")
+    assert sync["dimmed_still_keyboard_reachable"] == 0, (
+        "a filtered boundary was still reachable by keyboard — the filter would "
+        "apply to the mouse and not to the tab key")
+    assert sync["dimmed_missing_aria_disabled"] == 0
+    assert sync["eligible_still_focusable"] == sync["rows"], (
+        "the boundaries the filter kept must stay focusable")
     for degraded in ("stale-derived", "unavailable", "parser-shape-changed"):
         assert by_state[degraded]["state_code_visible"] is True
         assert by_state[degraded]["banner_shown"] == 1

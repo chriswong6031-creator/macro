@@ -68,6 +68,7 @@
     type: root.querySelector("[data-sg-type]"),
     change: root.querySelector("[data-sg-change]"),
     list: root.querySelector("[data-sg-list]"),
+    filters: root.querySelector("[data-sg-filters]"),
     thead: root.querySelector("[data-sg-thead]"),
     entries: root.querySelector("[data-sg-entries]"),
     entriesHead: root.querySelector("[data-sg-entries-head]"),
@@ -306,12 +307,19 @@
       node.setAttribute("data-step", String(stepFor(count)));
       if (count > 0) {
         node.setAttribute("tabindex", "0");
+        node.setAttribute("aria-disabled", "false");
         node.setAttribute("role", "button");
         node.setAttribute("aria-label",
           name + ": " + num(count) + " listed entries with a published address here");
-        node.addEventListener("click", function () { select(id); });
+        node.addEventListener("click", function () {
+          if (node.classList.contains("is-off")) { return; }
+          select(id);
+        });
         node.addEventListener("keydown", function (ev) {
-          if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(id); }
+          if (ev.key !== "Enter" && ev.key !== " ") { return; }
+          ev.preventDefault();
+          if (node.classList.contains("is-off")) { return; }
+          select(id);
         });
       }
       var title = document.createElementNS(NS, "title");
@@ -538,6 +546,13 @@
       var named = !!model.byGeo[id];
       var off = filtered && named && !visible[id];
       node.classList.toggle("is-off", !!off);
+      /* `pointer-events:none` only takes the mouse away. A filtered-out boundary
+         that keeps tabindex=0 and its Enter/Space handler is still reachable and
+         still selectable by keyboard — the filter would apply to one input device
+         and not the other. Focusability and the exposed state move together. */
+      if (!node.classList.contains("is-pick")) { return; }
+      node.setAttribute("tabindex", off ? "-1" : "0");
+      node.setAttribute("aria-disabled", off ? "true" : "false");
     });
     if (model.selected && !visible[model.selected]) {
       model.selected = null;
@@ -1048,7 +1063,7 @@
     });
     /* An accessible name left in English is still an untranslated string — it is
        simply one only a screen-reader user hears. */
-    [ui.search, ui.list, ui.view, ui.program, ui.type, ui.change, ui.sort]
+    [ui.search, ui.list, ui.view, ui.program, ui.type, ui.change, ui.sort, ui.filters]
       .forEach(function (control) {
         if (!control) { return; }
         var name = control.getAttribute(zh ? "data-aria-zh" : "data-aria-en");

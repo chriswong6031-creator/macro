@@ -98,7 +98,10 @@
         <div class="sg-panel-h">
           <h3>{{ t('Every named boundary', '全部被提及的边界') }}</h3>
         </div>
-        <div class="sg-filters" role="group" aria-label="Filter and sort boundaries">
+        <div class="sg-filters" data-sg-filters role="group"
+             aria-label="Filter and sort boundaries"
+             data-aria-en="Filter and sort boundaries"
+             data-aria-zh="筛选与排序边界">
           {#- An <option> may contain text only: a dual-emit .l-en/.l-zh pair inside
               one renders as BOTH languages concatenated ("Most entries条目最多"),
               which the first browser pass caught. Form controls therefore use the

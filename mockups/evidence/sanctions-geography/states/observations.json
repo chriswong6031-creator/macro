@@ -41,7 +41,10 @@
         "rows": 3,
         "boundaries_dimmed": 145,
         "boundaries_lit": 32,
-        "selection_cleared": 0
+        "selection_cleared": 0,
+        "dimmed_still_keyboard_reachable": 0,
+        "dimmed_missing_aria_disabled": 0,
+        "eligible_still_focusable": 3
       }
     },
     {
@@ -91,7 +94,10 @@
         "rows": 3,
         "boundaries_dimmed": 145,
         "boundaries_lit": 32,
-        "selection_cleared": 0
+        "selection_cleared": 0,
+        "dimmed_still_keyboard_reachable": 0,
+        "dimmed_missing_aria_disabled": 0,
+        "eligible_still_focusable": 3
       }
     },
     {
