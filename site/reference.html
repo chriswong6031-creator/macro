@@ -4379,7 +4379,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
 <!-- ══ L1 §3 · footer — the authority ceiling, in plain words, once ═══════════ -->
 <footer class="rf-foot">
   <span class="l-en">Reference only — definitions, not calls. No live market values appear on this page.</span><span class="l-zh">仅供参考 — 只有释义，不含判断。本页不显示任何实时行情数值。</span>
-  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-03 09:25 UTC</span>.
+  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-04 00:14 UTC</span>.
 </footer>
 
 <script>
@@ -4548,7 +4548,10 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     history.replaceState(null, "", location.pathname + location.search);
   }
 
-  // Sync the address-bar `q` with visible search state (MOR-1 #6782).
+  // Sync the address-bar `q` with visible search state (MOR-1, issue 6782 —
+  // issue numbers are written bare here: a hash-prefixed four-digit number
+  // reads as a hex colour literal and the forward-only design ratchet blocks
+  // it).
   // Initial URL remains the source of initial state; keystrokes replaceState
   // (no history spam); clear removes `q`; popstate rehydrates filters.
   // Mode/family/letter stay non-addressable and reset on popstate.

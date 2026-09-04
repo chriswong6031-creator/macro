@@ -688,7 +688,10 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
     history.replaceState(null, "", location.pathname + location.search);
   }
 
-  // Sync the address-bar `q` with visible search state (MOR-1 #6782).
+  // Sync the address-bar `q` with visible search state (MOR-1, issue 6782 —
+  // issue numbers are written bare here: a hash-prefixed four-digit number
+  // reads as a hex colour literal and the forward-only design ratchet blocks
+  // it).
   // Initial URL remains the source of initial state; keystrokes replaceState
   // (no history spam); clear removes `q`; popstate rehydrates filters.
   // Mode/family/letter stay non-addressable and reset on popstate.

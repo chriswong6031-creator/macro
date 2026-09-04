@@ -100,9 +100,12 @@ MODULE_REF = "scripts/capture_page_evidence.py"
 # 1.2.0: failed-load evidence is kept, and target gains resolved_gitdir_or_none.
 # 1.3.0: MOR-1 route_state + candidate_binding fields.
 # 1.4.0: real back and forward journeys, computed share target, render/build graph.
+# 1.5.0: per-cell console/response receipts, one axes-bound page journey with its
+#        own listeners, registry-derived non-empty probes, share reopened in a
+#        clean context, and subject-blob (not current-disk) binding.
 # This is stamped into every artifact as provenance, so it moves whenever the
 # emitted shape does — two byte-different manifests must never claim one version.
-TOOL_VERSION = "1.4.0"
+TOOL_VERSION = "1.5.0"
 
 # v2: a console error carries the asset it came from, and a page carries the
 # responses that failed. v1 recorded bare error strings, which the census could
@@ -1041,6 +1044,24 @@ def run_capture(
                 failed_seen.add((failed_url, status))
                 failed_responses.append({"url": failed_url, "status": status})
 
+            # Per-CELL receipts. The page-level bags above are deduped across all
+            # eight REST cells, so an error that occurs in exactly one cell is
+            # indistinguishable there from one that occurs in all eight — and a
+            # page-level empty bag cannot prove any individual cell was clean.
+            # Issue #6782 requires the cell to carry its own console/response
+            # evidence, so it is recorded here before any skip path.
+            entry["console_errors"] = [
+                {
+                    "text": str(error.get("text") or ""),
+                    "source_url": error.get("source_url") or None,
+                }
+                for error in observation.console_errors
+            ]
+            entry["failed_responses"] = [
+                {"url": str(failure.get("url") or ""), "status": int(failure.get("status") or 0)}
+                for failure in observation.failed_responses
+            ]
+
             if delay_ms > 0 and position < len(cells) - 1:
                 time.sleep(delay_ms / 1000.0)
 
@@ -1435,6 +1456,35 @@ _OBSERVER_SCRIPT = r"""
 """
 
 # Per-cell route probe — used by MOR-1; harmless elsewhere (null-selected fields).
+# Deep-link focus re-assertion. Module level because the MOR-1 share round trip
+# reopens the shared URL in its own context and must prove the same focus and
+# occlusion semantics the cell capture proves.
+_REFOCUS_TARGET_SCRIPT = r"""
+() => {
+  const target = document.querySelector('.rf-e:target:not(.rf-closed)');
+  if (!target) return false;
+  const bar = document.querySelector('.rf-bar');
+  let offset = 0;
+  if (bar) {
+    const cs = getComputedStyle(bar);
+    if (cs.display !== 'none' && cs.visibility !== 'hidden') {
+      offset = bar.getBoundingClientRect().height || 0;
+    }
+  }
+  const top = target.getBoundingClientRect().top + window.pageYOffset - offset - 8;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+  const focusEl = target.querySelector('.rf-sum') || target;
+  if (focusEl === target && !target.hasAttribute('tabindex')) {
+    target.setAttribute('tabindex', '-1');
+  }
+  try { focusEl.focus({ preventScroll: true }); }
+  catch (e) { try { focusEl.focus(); } catch (e2) {} }
+  return !!(document.activeElement && (document.activeElement === focusEl
+    || focusEl.contains(document.activeElement)
+    || (document.activeElement.closest && document.activeElement.closest('.rf-e') === target)));
+}
+"""
+
 _ROUTE_STATE_SCRIPT = r"""
 (requestedUrl) => {
   let queryQ = null;
@@ -1461,22 +1511,38 @@ _ROUTE_STATE_SCRIPT = r"""
   const visibleEntryIds = visibleEntries.map((el) => el.id).filter(Boolean);
   const countEl = document.querySelector('.rf-count');
   const countLabelVisible = !!(countEl && !countEl.hidden && countEl.getClientRects().length > 0);
+  // The label must prove BOTH numbers. `data-count-visible` marks the numerator;
+  // the denominator is the sibling .tnum inside the SAME locale span. Reading
+  // them positionally out of the text is wrong: EN renders "N of TOTAL" and ZH
+  // renders "共 TOTAL 条，显示 N 条" — the order is reversed between locales.
   let countLabelText = '';
+  let countNumerator = null;
+  let countDenominator = null;
   if (countEl) {
-    const locale = document.documentElement.getAttribute('lang') ||
-      document.documentElement.getAttribute('data-locale') || '';
-    const zh = document.documentElement.getAttribute('data-locale') === 'zh' ||
-      (document.body && document.body.classList.contains('zh'));
-    // Prefer the locale-visible span text; fall back to full count label.
-    const enSpan = countEl.querySelector('.l-en');
-    const zhSpan = countEl.querySelector('.l-zh');
-    if (zh && zhSpan) countLabelText = (zhSpan.textContent || '').trim();
-    else if (enSpan) countLabelText = (enSpan.textContent || '').trim();
-    else countLabelText = (countEl.textContent || '').trim();
+    const localeSpans = Array.from(countEl.querySelectorAll('.l-en, .l-zh'));
+    let shown = localeSpans.find((el) => {
+      const cs = getComputedStyle(el);
+      return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0;
+    }) || null;
+    if (!shown) {
+      const zh = document.documentElement.getAttribute('data-locale') === 'zh' ||
+        (document.body && document.body.classList.contains('zh'));
+      shown = countEl.querySelector(zh ? '.l-zh' : '.l-en');
+    }
+    const scope = shown || countEl;
+    countLabelText = (scope.textContent || '').trim();
+    const toInt = (el) => {
+      if (!el) return null;
+      const raw = (el.textContent || '').replace(/[^0-9]/g, '');
+      return raw.length ? parseInt(raw, 10) : null;
+    };
+    const numEl = scope.querySelector('[data-count-visible]');
+    countNumerator = toInt(numEl);
+    const denomEl = Array.from(scope.querySelectorAll('.tnum'))
+      .filter((el) => !el.hasAttribute('data-count-visible'))[0] || null;
+    countDenominator = toInt(denomEl);
   }
-  const countVisibleAttr = Array.from(document.querySelectorAll('[data-count-visible]'))
-    .map((el) => (el.textContent || '').trim())
-    .filter(Boolean);
+  const countVisibleAttr = [countNumerator, countDenominator];
   const active = document.activeElement;
   let focusedElementId = null;
   let focusedVisible = false;
@@ -1517,6 +1583,8 @@ _ROUTE_STATE_SCRIPT = r"""
     count_label_visible: countLabelVisible,
     count_label_text: countLabelText,
     count_label_values: countVisibleAttr,
+    count_label_numerator: countNumerator,
+    count_label_denominator: countDenominator,
     focused_element_id: focusedElementId,
     focused_visible: focusedVisible,
     target_below_fixed_ui: targetBelowFixedUi,
@@ -1524,12 +1592,31 @@ _ROUTE_STATE_SCRIPT = r"""
 }
 """
 
-# MOR-1 journey probe — change/clear/back/forward observations.
-# Share and reload are captured by the Python driver on a pristine load so
-# mutations cannot pollute the share target or reload rehydration proof.
+# MOR-1 journey probe — change / empty-probe / clear / back / forward.
+#
+# Every step returns a fully parsed snapshot (pathname, search, hash, input,
+# ORDERED visible ids, count, count-label numerator and denominator), never a
+# self-asserted ``ok`` flag: the verifier recomputes each verdict from the
+# recorded fields against subject-derived expectations.
+#
+# ``changeQuery`` and ``forwardQuery`` are registry-derived NON-EMPTY queries.
+# The previous probes (``journeyprobe``/``navprobe``) matched nothing, so a
+# handler that simply hid every row satisfied both; ``emptyQuery`` keeps a
+# zero-result case as an additional negative, not as the sole discriminator.
+#
+# Typing writes with replaceState (see templates/reference.html.j2 §5), so the
+# single pushState below adds exactly one history entry and back() returns to
+# the snapshot taken immediately before it.
+#
+# Share and reload are captured by the Python driver — reload on a pristine
+# load, share by REOPENING the captured href in a clean context — so mutations
+# here cannot pollute either proof.
 _MOR1_JOURNEY_SCRIPT = r"""
-async () => {
+async (args) => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const changeQuery = String((args && args.changeQuery) || '');
+  const forwardQuery = String((args && args.forwardQuery) || '');
+  const emptyQuery = String((args && args.emptyQuery) || '');
   const qEl = document.querySelector('#rf-q');
   const clearBtn = document.querySelector('.rf-clear');
   const readQ = () => {
@@ -1538,7 +1625,30 @@ async () => {
       return sp.has('q') ? sp.get('q') : null;
     } catch (e) { return null; }
   };
-  const snap = () => {
+  const countPair = () => {
+    const countEl = document.querySelector('.rf-count');
+    if (!countEl) return [null, null];
+    const spans = Array.from(countEl.querySelectorAll('.l-en, .l-zh'));
+    let shown = spans.find((el) => {
+      const cs = getComputedStyle(el);
+      return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0;
+    }) || null;
+    if (!shown) {
+      const zh = document.documentElement.getAttribute('data-locale') === 'zh';
+      shown = countEl.querySelector(zh ? '.l-zh' : '.l-en');
+    }
+    const scope = shown || countEl;
+    const toInt = (el) => {
+      if (!el) return null;
+      const raw = (el.textContent || '').replace(/[^0-9]/g, '');
+      return raw.length ? parseInt(raw, 10) : null;
+    };
+    const numEl = scope.querySelector('[data-count-visible]');
+    const denomEl = Array.from(scope.querySelectorAll('.tnum'))
+      .filter((el) => !el.hasAttribute('data-count-visible'))[0] || null;
+    return [toInt(numEl), toInt(denomEl)];
+  };
+  const snap = (label) => {
     const entries = Array.from(document.querySelectorAll('.rf-e'));
     const visibleEntries = entries.filter((el) => {
       if (el.classList.contains('is-off')) return false;
@@ -1546,91 +1656,72 @@ async () => {
       if (s.display === 'none' || s.visibility === 'hidden') return false;
       return el.getClientRects().length > 0;
     });
+    const miss = document.querySelector('.rf-miss');
+    const targeted = document.querySelector('.rf-e:target:not(.rf-closed)');
+    const pair = countPair();
     return {
+      step: label,
       href: String(location.href || ''),
-      url_q: readQ(),
+      pathname: String(location.pathname || ''),
+      search: String(location.search || ''),
       hash: String(location.hash || ''),
+      url_q: readQ(),
       input: qEl ? String(qEl.value || '') : '',
       visible_result_count: visibleEntries.length,
       visible_entry_ids: visibleEntries.map((el) => el.id).filter(Boolean),
+      count_label_numerator: pair[0],
+      count_label_denominator: pair[1],
+      miss_visible: !!(miss && !miss.hidden && miss.getClientRects().length > 0),
+      selected_id: targeted && targeted.id ? targeted.id : null,
     };
   };
-  const verdicts = {
-    change: null,
-    clear: null,
-    reload: null,
-    back: null,
-    forward: null,
-    share: null,
-  };
-  const initial = snap();
-  const shareHref = String(location.href || '');
-  verdicts.share = {
-    ok: shareHref.length > 0,
-    href: shareHref,
-    final_href: shareHref,
-    matches_final: shareHref === String(location.href || ''),
-  };
-  if (qEl) {
+  const type = async (value) => {
     qEl.focus();
-    qEl.value = 'journeyprobe';
+    qEl.value = value;
     qEl.dispatchEvent(new Event('input', { bubbles: true }));
-    await sleep(280);
-    const afterChange = snap();
-    verdicts.change = Object.assign({
-      ok: afterChange.url_q === 'journeyprobe' && afterChange.input === 'journeyprobe',
-    }, afterChange);
-    if (clearBtn) {
-      clearBtn.click();
-      await sleep(160);
-    } else {
-      qEl.value = '';
-      qEl.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(280);
-    }
-    const afterClear = snap();
-    verdicts.clear = Object.assign({
-      ok: (afterClear.url_q === null || afterClear.url_q === '') && afterClear.input === '',
-    }, afterClear);
-    if (initial.url_q) {
-      qEl.value = initial.url_q;
-      qEl.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(280);
-    } else if (qEl.value) {
-      qEl.value = '';
-      qEl.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(280);
-    }
-  } else {
-    verdicts.change = { ok: false, reason: 'missing #rf-q' };
-    verdicts.clear = { ok: false, reason: 'missing #rf-q' };
-  }
-  history.pushState({}, '', location.pathname + '?q=navprobe' + (location.hash || ''));
-  await sleep(40);
-  history.back();
-  await sleep(280);
-  const afterBack = snap();
-  verdicts.back = Object.assign({
-    ok: afterBack.url_q !== 'navprobe' && String(afterBack.href || '').indexOf('navprobe') < 0,
-    performed: true,
-    after_href: afterBack.href,
-  }, afterBack);
-  history.forward();
-  await sleep(280);
-  const afterFwd = snap();
-  verdicts.forward = Object.assign({
-    ok: afterFwd.url_q === 'navprobe' && afterFwd.input === 'navprobe',
-    performed: true,
-    after_href: afterFwd.href,
-  }, afterFwd);
-  verdicts.reload = {
-    ok: null,
-    deferred_to_driver: true,
-    pre_reload_href: initial.href,
-    pre_reload_q: initial.url_q,
-    pre_reload_hash: initial.hash,
+    await sleep(300);
   };
-  return { initial, verdicts };
+  const steps = {};
+  steps.initial = snap('initial');
+  if (!qEl) {
+    return { steps, error: 'missing #rf-q' };
+  }
+  await type(changeQuery);
+  steps.change = snap('change');
+  await type(emptyQuery);
+  steps.empty_probe = snap('empty_probe');
+  if (clearBtn) {
+    clearBtn.click();
+    await sleep(200);
+  } else {
+    await type('');
+  }
+  steps.clear = snap('clear');
+  // Restore the route's own canonical query before the history probe so `back`
+  // is proven against the route under test, not against a mutated page.
+  if (steps.initial.url_q) {
+    await type(steps.initial.url_q);
+  } else if (qEl.value) {
+    await type('');
+  }
+  steps.pre_push = snap('pre_push');
+  history.pushState({}, '', location.pathname + '?q=' + encodeURIComponent(forwardQuery) + (location.hash || ''));
+  await sleep(60);
+  steps.pushed = snap('pushed');
+  history.back();
+  await sleep(320);
+  steps.back = Object.assign({ performed: true }, snap('back'));
+  history.forward();
+  await sleep(320);
+  steps.forward = Object.assign({ performed: true }, snap('forward'));
+  return {
+    steps,
+    probes: {
+      change_query: changeQuery,
+      forward_query: forwardQuery,
+      empty_query: emptyQuery,
+    },
+  };
 }
 """
 
@@ -1771,31 +1862,7 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
             page.wait_for_timeout(self._settle_ms)
             # Theme/locale application can steal focus; re-assert deep-link focus
             # after apply so route_state measures the product's intended target.
-            page.evaluate(
-                """() => {
-                  const target = document.querySelector('.rf-e:target:not(.rf-closed)');
-                  if (!target) return false;
-                  const bar = document.querySelector('.rf-bar');
-                  let offset = 0;
-                  if (bar) {
-                    const cs = getComputedStyle(bar);
-                    if (cs.display !== 'none' && cs.visibility !== 'hidden') {
-                      offset = bar.getBoundingClientRect().height || 0;
-                    }
-                  }
-                  const top = target.getBoundingClientRect().top + window.pageYOffset - offset - 8;
-                  window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
-                  const focusEl = target.querySelector('.rf-sum') || target;
-                  if (focusEl === target && !target.hasAttribute('tabindex')) {
-                    target.setAttribute('tabindex', '-1');
-                  }
-                  try { focusEl.focus({ preventScroll: true }); }
-                  catch (e) { try { focusEl.focus(); } catch (e2) {} }
-                  return !!(document.activeElement && (document.activeElement === focusEl
-                    || focusEl.contains(document.activeElement)
-                    || (document.activeElement.closest && document.activeElement.closest('.rf-e') === target)));
-                }"""
-            )
+            page.evaluate(_REFOCUS_TARGET_SCRIPT.strip())
             page.wait_for_timeout(100)
             applied_force: str | None = None
             if cell.force_state is not None:

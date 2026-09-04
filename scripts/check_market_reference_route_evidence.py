@@ -8,12 +8,15 @@ import json
 import sys
 from pathlib import Path
 
-# Direct invocation bootstrap: `python scripts/check_market_reference_route_evidence.py`
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+# Guard-family pin: unconditional, top level, before the first repo import.
+# A conditional re-pin is not a pin — the root may already sit BEHIND a foreign
+# package on sys.path, and this file runs as a CI guard by bare file path.
+_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_ROOT))
 
-from scripts.market_reference_route_evidence import validate_manifest_route_matrix
+from scripts.market_reference_route_evidence import (  # noqa: E402
+    validate_manifest_route_matrix,
+)
 
 DEFAULT_MANIFEST = Path("mockups/evidence/market_reference_mor1/manifest.json")
 
