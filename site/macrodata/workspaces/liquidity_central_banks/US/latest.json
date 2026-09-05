@@ -93,14 +93,19 @@
       "zh": null
     },
     "coverage_ratio": 1.0,
-    "degraded": [],
+    "degraded": [
+      "glt_monetary_impulse",
+      "glt_liquidity_breadth",
+      "glt_usd_funding_impulse"
+    ],
     "reasons": [
+      "worst_required_source_freshness=LATE_WITHIN_TOLERANCE",
       "glt_quality_status=degraded"
     ],
     "required": [
       {
         "component_id": "glt_monetary_impulse",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "label": {
           "en": "Global monetary impulse",
           "zh": "全球货币脉冲"
@@ -108,11 +113,11 @@
         "null_reason": null,
         "required": true,
         "source_asof": "2026-08-28",
-        "status": "PRESENT"
+        "status": "PARTIAL"
       },
       {
         "component_id": "glt_liquidity_breadth",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "label": {
           "en": "Global liquidity breadth",
           "zh": "全球流动性广度"
@@ -120,11 +125,11 @@
         "null_reason": null,
         "required": true,
         "source_asof": "2026-08-28",
-        "status": "PRESENT"
+        "status": "PARTIAL"
       },
       {
         "component_id": "glt_usd_funding_impulse",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "label": {
           "en": "USD funding impulse",
           "zh": "美元融资脉冲"
@@ -132,7 +137,7 @@
         "null_reason": null,
         "required": true,
         "source_asof": "2026-08-28",
-        "status": "PRESENT"
+        "status": "PARTIAL"
       },
       {
         "component_id": "cb_fed_balance_sheet_impulse_13w",
@@ -147,8 +152,8 @@
         "status": "PRESENT"
       }
     ],
-    "state": "CURRENT",
-    "worst_freshness": "CURRENT"
+    "state": "LATE_WITHIN_TOLERANCE",
+    "worst_freshness": "LATE_WITHIN_TOLERANCE"
   },
   "axes": {
     "items": []
@@ -194,7 +199,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-08-28",
-    "prior_generation_id": "liquidity_central_banks-US-9dcb0e92cf498347",
+    "prior_generation_id": "liquidity_central_banks-US-b06aeee9f14d1572",
     "prior_method_version": "liquidity_central_banks.compose.v1",
     "status": "PRESENT"
   },
@@ -202,7 +207,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "liquidity_central_banks-US-9dcb0e92cf498347"
+    "predecessor_generation_id": "liquidity_central_banks-US-b06aeee9f14d1572"
   },
   "drivers": {
     "balance_sheet": [
@@ -295,11 +300,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T22:42:48Z",
+    "built_at": "2026-09-05T00:51:12Z",
     "calculation_as_of": "2026-09-04T11:03:41.497178+00:00",
-    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
-    "content_sha256": "b06aeee9f14d157296fe72e215c74c0cab02aa3735b88ca6f75eb2d930dae90d",
-    "generation_id": "liquidity_central_banks-US-b06aeee9f14d1572",
+    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
+    "content_sha256": "05c7b8485b9940a18b4334120d434d49d77656d8f6a027cd7a057ed6667f5841",
+    "generation_id": "liquidity_central_banks-US-05c7b8485b9940a1",
     "producer": "engine.market_os.macro_workspaces.liquidity_central_banks",
     "rendered_at": null
   },
@@ -361,7 +366,7 @@
           "evidence_breadth": "MEDIUM",
           "method_stability": "HIGH",
           "revision_risk": "MEDIUM",
-          "source_health": "HIGH"
+          "source_health": "LOW"
         },
         "contradictions": [],
         "evidence_class": "DESCRIPTIVE",
@@ -383,7 +388,7 @@
           "evidence_breadth": "MEDIUM",
           "method_stability": "HIGH",
           "revision_risk": "MEDIUM",
-          "source_health": "HIGH"
+          "source_health": "LOW"
         },
         "contradictions": [],
         "evidence_class": "DESCRIPTIVE",
@@ -406,7 +411,7 @@
           "evidence_breadth": "MEDIUM",
           "method_stability": "HIGH",
           "revision_risk": "MEDIUM",
-          "source_health": "HIGH"
+          "source_health": "LOW"
         },
         "contradictions": [],
         "evidence_class": "DESCRIPTIVE",
@@ -428,7 +433,7 @@
           "evidence_breadth": "MEDIUM",
           "method_stability": "HIGH",
           "revision_risk": "MEDIUM",
-          "source_health": "HIGH"
+          "source_health": "LOW"
         },
         "contradictions": [],
         "evidence_class": "DESCRIPTIVE",
@@ -450,7 +455,7 @@
           "evidence_breadth": "MEDIUM",
           "method_stability": "HIGH",
           "revision_risk": "MEDIUM",
-          "source_health": "HIGH"
+          "source_health": "LOW"
         },
         "contradictions": [],
         "evidence_class": "DESCRIPTIVE",
@@ -472,7 +477,7 @@
           "evidence_breadth": "MEDIUM",
           "method_stability": "HIGH",
           "revision_risk": "MEDIUM",
-          "source_health": "HIGH"
+          "source_health": "LOW"
         },
         "contradictions": [],
         "evidence_class": "DESCRIPTIVE",
@@ -510,7 +515,7 @@
         "definition_id": "state.monetary_impulse",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_monetary_impulse",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -546,7 +551,7 @@
         "definition_id": "state.monetary_impulse_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_monetary_impulse_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -582,7 +587,7 @@
         "definition_id": "state.monetary_stance",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_monetary_stance",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -618,7 +623,7 @@
         "definition_id": "state.orthogonalised_impulse",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_orthogonalised_impulse",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -654,7 +659,7 @@
         "definition_id": "state.liquidity_breadth",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_broader_agreement",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_liquidity_breadth",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -690,7 +695,7 @@
         "definition_id": "state.usd_funding_impulse",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_easier_funding",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_usd_funding_impulse",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -726,7 +731,7 @@
         "definition_id": "state.policy_liquidity_impulse",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_policy_liquidity_impulse",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -798,7 +803,7 @@
         "definition_id": "state.label",
         "definition_version": "1.0.0",
         "direction_semantics": null,
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_state_label",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -834,7 +839,7 @@
         "definition_id": "state.event_reference.quality",
         "definition_version": "1.0.0",
         "direction_semantics": null,
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_state_quality_label",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -870,7 +875,7 @@
         "definition_id": "quality.confidence.value",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_coverage_and_pit_reliability",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_confidence",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -906,7 +911,7 @@
         "definition_id": "freshness.monetary_coverage_ratio",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_coverage",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_monetary_coverage_ratio",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -942,7 +947,7 @@
         "definition_id": "freshness.funding_coverage_ratio",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_coverage",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_funding_coverage_ratio",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -978,7 +983,7 @@
         "definition_id": "freshness.component_snapshot.monetary.fed.current_contribution_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_fed_monetary_contribution_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -1014,7 +1019,7 @@
         "definition_id": "freshness.component_snapshot.monetary.ecb.current_contribution_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_ecb_monetary_contribution_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -1050,7 +1055,7 @@
         "definition_id": "freshness.component_snapshot.monetary.boj.current_contribution_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_more_expansionary",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_boj_monetary_contribution_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -1086,7 +1091,7 @@
         "definition_id": "freshness.component_snapshot.usd_funding.broad_dollar.current_contribution_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_easier_funding",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_broad_dollar_contribution_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -1122,7 +1127,7 @@
         "definition_id": "freshness.component_snapshot.usd_funding.high_yield_oas.current_contribution_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_easier_funding",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_high_yield_oas_contribution_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -1158,7 +1163,7 @@
         "definition_id": "freshness.component_snapshot.usd_funding.real_yield_10y.current_contribution_z",
         "definition_version": "1.0.0",
         "direction_semantics": "higher_easier_funding",
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "market_session": null,
         "metric_id": "glt_real_yield_10y_contribution_z",
         "model_version": "liquidity_central_banks.compose.v1",
@@ -1601,7 +1606,7 @@
         "definition_id": null,
         "definition_version": null,
         "first_known_at": null,
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "label": {
           "en": "Global Liquidity Transmission state (monetary + funding impulse)",
           "zh": "全球流动性传导状态（货币+融资脉冲）"
@@ -1622,7 +1627,7 @@
         "definition_id": null,
         "definition_version": null,
         "first_known_at": null,
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "label": {
           "en": "GLT quality & coverage disclosure",
           "zh": "GLT质量与覆盖率披露"
@@ -1643,7 +1648,7 @@
         "definition_id": null,
         "definition_version": null,
         "first_known_at": null,
-        "freshness": "CURRENT",
+        "freshness": "LATE_WITHIN_TOLERANCE",
         "label": {
           "en": "GLT per-component freshness receipts",
           "zh": "GLT分项新鲜度回执"

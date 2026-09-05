@@ -1,14 +1,14 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-09-04",
+  "as_of": "2026-09-05",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
   "blocks": {
     "rates": {
-      "dominant_pc_share": 0.8259,
+      "dominant_pc_share": 0.826,
       "first3_var": 0.9634,
-      "effective_dimension_pr": 1.4423,
+      "effective_dimension_pr": 1.4421,
       "pc3_to_pc4_gap": null,
       "oos_pctile_vs_null": null,
       "curvature_stability_tag": "stable",
@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5944,
-      "effective_factor_bets_pr": 2.5175,
+      "dominant_factor_pc_share": 0.5948,
+      "effective_factor_bets_pr": 2.5146,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -28,11 +28,11 @@
     },
     "dispersion": {
       "state": "neutral",
-      "dispersion_pctile": 0.54,
+      "dispersion_pctile": 0.46,
       "avg_corr": 0.07,
-      "dominant_equity_pc_share": 0.1729,
-      "effective_universe_bets_pr": 23.41,
-      "idio_dispersion_share": 0.8136
+      "dominant_equity_pc_share": 0.1722,
+      "effective_universe_bets_pr": 23.51,
+      "idio_dispersion_share": 0.7877
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
@@ -74,7 +74,7 @@
           "macro_context": 10,
           "narrative": 9,
           "options_entry": 6,
-          "policy": 9,
+          "policy": 10,
           "radar": 12,
           "reflex.commodity_shock": 4,
           "reflex.cortex_attention": 7,
@@ -84,7 +84,7 @@
           "stock_personality": 1,
           "tech_signals": 1,
           "thematic_desk": 1,
-          "us_board": 10,
+          "us_board": 11,
           "us_importance_v0": 11,
           "us_importance_v0_pit": 11,
           "whitehouse": 9
@@ -120,7 +120,7 @@
       "macro_context": 10,
       "narrative": 9,
       "options_entry": 6,
-      "policy": 9,
+      "policy": 10,
       "radar": 12,
       "reflex.commodity_shock": 4,
       "reflex.cortex_attention": 7,
@@ -130,7 +130,7 @@
       "stock_personality": 1,
       "tech_signals": 1,
       "thematic_desk": 1,
-      "us_board": 10,
+      "us_board": 11,
       "us_importance_v0": 11,
       "us_importance_v0_pit": 11,
       "whitehouse": 9

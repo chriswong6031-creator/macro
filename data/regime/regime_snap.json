@@ -1,68 +1,33 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.971,
+  "roro": 0.803,
   "cap_recent": false,
   "fear_built": 0.269,
-  "roro_velocity": 0.517,
-  "vel_pctile": 0.974,
-  "legs_up": 4,
+  "roro_velocity": 0.045,
+  "vel_pctile": 0.595,
+  "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
-    "vix",
-    "skew",
-    "vix_term",
-    "dxy"
+    "vix_term"
   ],
-  "days_since_last_snap": 59,
+  "days_since_last_snap": 60,
   "fear_rebuilding": false,
-  "vix_term": 0.822,
-  "status": "building",
+  "vix_term": 0.813,
+  "status": "dormant",
   "gates": {
-    "velocity": true,
-    "legs": true,
+    "velocity": false,
+    "legs": false,
     "fear": false,
     "washout": false
   },
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "vix",
-      "en": "VIX",
-      "zh": "\u6ce2\u52a8\u7387 VIX"
-    },
-    {
-      "key": "skew",
-      "en": "SKEW (tail pricing)",
-      "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
-    },
-    {
       "key": "vix_term",
       "en": "VIX term structure",
       "zh": "VIX \u671f\u9650\u7ed3\u6784"
-    },
-    {
-      "key": "dxy",
-      "en": "Dollar (20d %\u0394)",
-      "zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09"
     }
   ],
-  "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "unclear",
-    "confidence": "low",
-    "checks": {
-      "catalyst": "The move is attributed to hawkish Fed repricing, but no explicit hard-data surprise, policy action, signed agreement, or clearly identified verbal catalyst is provided.",
-      "premium": "Only four of seven legs have flipped and the snap remains building, suggesting a partial rather than complete unwind of fear premium.",
-      "washout": "No real capitulation is evident: cap_recent is false and fear_built is modest at 0.269 despite extreme velocity.",
-      "follow_through": "Next-session confirmation looks vulnerable because the snap is incomplete and the hawkish rates impulse could conflict with sustained risk-on follow-through."
-    },
-    "read": "This is an incomplete relief move from a shallow dip, not a confirmed washout reversal. Durability cannot be judged confidently without a legible structural catalyst.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-09-04T10:09:46.080017+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "magnitude_band": null
 }

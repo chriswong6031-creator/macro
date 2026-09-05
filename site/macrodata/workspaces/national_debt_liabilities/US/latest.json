@@ -238,7 +238,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "national_debt_liabilities-US-797b109a53ed5811",
+    "prior_generation_id": "national_debt_liabilities-US-7df07bb461781c80",
     "prior_method_version": "national_debt_liabilities.compose.v1",
     "status": "PRESENT"
   },
@@ -246,7 +246,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "national_debt_liabilities-US-797b109a53ed5811"
+    "predecessor_generation_id": "national_debt_liabilities-US-7df07bb461781c80"
   },
   "drivers": {
     "balance_sheet": [
@@ -367,11 +367,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T22:42:48Z",
+    "built_at": "2026-09-05T00:51:12Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
-    "content_sha256": "7df07bb461781c80b90bedab31e870a5d12a6d1279fbfbb220abbbb8f245d4e8",
-    "generation_id": "national_debt_liabilities-US-7df07bb461781c80",
+    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
+    "content_sha256": "8bfbadf03a5d1dec26ac30ce8a126d736c8ef2fa4c59e016bfd380cbe1ec530b",
+    "generation_id": "national_debt_liabilities-US-8bfbadf03a5d1dec",
     "producer": "engine.market_os.macro_workspaces.national_debt",
     "rendered_at": null
   },

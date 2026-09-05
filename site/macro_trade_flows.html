@@ -331,7 +331,7 @@
       <div><dt><span class="l-en">Calculation as-of</span><span class="l-zh">计算截止</span></dt>
            <dd><span class="mq-dash">—</span></dd></div>
       <div class="mq-nonclock"><dt><span class="l-en">Page built</span><span class="l-zh">页面生成</span></dt>
-           <dd><time>2026-09-04T23:45:35Z</time></dd></div>
+           <dd><time>2026-09-05T01:36:17Z</time></dd></div>
     </dl>
     <p class="mq-context-caveat"><span class="l-en">Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.</span><span class="l-zh">页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。</span></p>
   </div>
@@ -454,7 +454,7 @@
            <dd><span class="mq-dash">—</span></dd></div>
       <div><dt><span class="l-en">Method version</span><span class="l-zh">方法版本</span></dt><dd><code>trade_flows.compose.v1</code></dd></div>
       <div><dt><span class="l-en">Prior accepted print</span><span class="l-zh">上一已接受读数</span></dt>
-           <dd><span class="mq-absent mq-absent-inline"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Warm-up: first accepted print</span><span class="l-zh">预热期：首个已接受读数</span></span></span></dd></div>
+           <dd></dd></div>
     </dl>
   </div>
 
@@ -531,10 +531,6 @@
       <span><span class="l-en">Shown separately, and excluded from the page state: trade_balance, exports, imports, import_price_index, export_price_index.</span><span class="l-zh">单独呈现，且不计入本页状态：trade_balance, exports, imports, import_price_index, export_price_index。</span></span>
     </li>
     <li class="mq-diag mq-tone-neutral">
-      <strong><span class="l-en">No method-comparable prior print</span><span class="l-zh">无方法可比的历史读数</span></strong>
-      <span><span class="l-en">No comparable prior print</span><span class="l-zh">没有可比的历史读数</span></span>
-    </li>
-    <li class="mq-diag mq-tone-neutral">
       <strong><span class="l-en">Component histories not published</span><span class="l-zh">未发布分项历史序列</span></strong>
       <span><span class="l-en">Insufficient history</span><span class="l-zh">历史数据不足</span></span>
     </li>
@@ -553,11 +549,41 @@
     <h3 id="mq-changed-title"><span class="l-en">What changed</span><span class="l-zh">发生了什么变化</span></h3>
     <span class="mq-section-note"><span class="l-en">Current accepted snapshot against the prior accepted snapshot, under the same method version.</span><span class="l-zh">在相同方法版本下，将当前已接受快照与上一已接受快照对比。</span></span>
   </div>
-  <p class="mq-changed-verdict mq-tone-neutral"><span class="l-en">No comparable prior print</span><span class="l-zh">没有可比的历史读数</span></p>
-  <div class="mq-changed-empty">
-    <span class="mq-absent"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Warm-up: first accepted print</span><span class="l-zh">预热期：首个已接受读数</span></span></span>
-    <p><span class="l-en">No numeric comparison is shown. A change table would have to invent a baseline that does not exist, and a method-version change is reported as a method change — never as a delta.</span><span class="l-zh">此处不展示任何数值对比。展示变化表将不得不虚构一个并不存在的基准；方法版本变更只按方法变更呈现，绝不伪装成数值变化。</span></p>
-  </div>
+  <p class="mq-changed-verdict mq-tone-ok"><span class="l-en">Comparable with the prior accepted print</span><span class="l-zh">与上一已接受读数可比</span></p>
+  <table class="mq-table">
+    <thead><tr>
+      <th scope="col"><span class="l-en">Metric</span><span class="l-zh">指标</span></th>
+      <th scope="col"><span class="l-en">Prior</span><span class="l-zh">上期</span></th>
+      <th scope="col"><span class="l-en">Current</span><span class="l-zh">当前</span></th>
+      <th scope="col"><span class="l-en">Change</span><span class="l-zh">变化</span></th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <th scope="row"><span class="l-en">Trade balance level</span><span class="l-zh">Trade balance level</span></th>
+        <td>None</td>
+        <td>None</td>
+        <td class="mq-delta mq-delta-flat">None</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Exports level</span><span class="l-zh">Exports level</span></th>
+        <td>None</td>
+        <td>None</td>
+        <td class="mq-delta mq-delta-flat">None</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Imports level</span><span class="l-zh">Imports level</span></th>
+        <td>None</td>
+        <td>None</td>
+        <td class="mq-delta mq-delta-flat">None</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Export import coverage ratio</span><span class="l-zh">Export import coverage ratio</span></th>
+        <td>None</td>
+        <td>None</td>
+        <td class="mq-delta mq-delta-flat">None</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
       <section class="mq-metrics" aria-labelledby="mq-metrics-title">
   <div class="mq-section-head">
@@ -1626,12 +1652,12 @@
   <dl class="mq-method-grid">
     <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">No correction recorded</span><span class="l-zh">无更正记录</span></dd></div>
     <div><dt><span class="l-en">Predecessor generation</span><span class="l-zh">前一代产物</span></dt>
-         <dd><span class="mq-dash">—</span></dd></div>
+         <dd><code>trade_flows-US-81b6bc6d3bd103f3</code></dd></div>
     <div><dt><span class="l-en">Changed fingerprints</span><span class="l-zh">已变更指纹</span></dt>
          <dd><span class="mq-dash">—</span></dd></div>
     <div><dt><span class="l-en">Hysteresis</span><span class="l-zh">滞回</span></dt><dd>Trade Flows is a Chairman-authorized expansion added after the frozen Market Ontology architecture document&#39;s own twelve-workspace freeze, so no section of that document defines a headline model for it at all -- not even a note that none exists, the way monetary_policy/liquidity_central_banks each carry their own such note. There is accordingly no named axis pair here to attempt, and no dual-axis quadrant is asserted. A future architecture revision may ratify a genuine two-axis blueprint for this workspace, at which point this null becomes a real state the moment that blueprint is adopted. Until then, the real trade content -- balance, exports, imports, price indexes, the terms-of-trade proxy, and the balance-identity read -- lives in metrics, drivers, and implications instead. See the headline_unavailable implication for the reader-facing version.</dd></div>
   </dl>
-  <p class="mq-lineage-note">First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.</p>
+  <p class="mq-lineage-note">Same reference period as the predecessor print; no tracked metric changed value (no-change republication).</p>
 </section>
     </section>
   </div>
@@ -2124,11 +2150,11 @@
       <dl class="mq-clocks">
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Artifact built</span><span class="l-zh">产物生成</span></span><span class="mq-clock-meaning"><span class="l-en">Producer generation time. Not an economic clock.</span><span class="l-zh">生产端生成时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-04T22:42:48Z</time></dd>
+          <dd><time>2026-09-05T00:51:12Z</time></dd>
         </div>
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Page built</span><span class="l-zh">页面生成</span></span><span class="mq-clock-meaning"><span class="l-en">Static page render time. Not an economic clock.</span><span class="l-zh">静态页面渲染时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-04T23:45:35Z</time></dd>
+          <dd><time>2026-09-05T01:36:17Z</time></dd>
         </div>
       </dl>
     </section>
@@ -2138,11 +2164,11 @@
       <dl class="mq-method-grid">
         <div><dt><span class="l-en">Artifact path</span><span class="l-zh">产物路径</span></dt><dd><code>macrodata/workspaces/trade_flows/US/latest.json</code></dd></div>
         <div><dt><span class="l-en">Manifest path</span><span class="l-zh">清单路径</span></dt><dd><code>macrodata/workspaces/manifest.json</code></dd></div>
-        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">81b6bc6d3bd103f390a872598337404d8c78760120b65b207674b0834e966dc5</code></dd></div>
-        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>61535</dd></div>
-        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>trade_flows-US-81b6bc6d3bd103f3</code></dd></div>
+        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">bf73c3af7e2623347867b1291e4a4e7b92bd1d7b3db395d1fb67b002af879a31</code></dd></div>
+        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>62488</dd></div>
+        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>trade_flows-US-bf73c3af7e262334</code></dd></div>
         <div><dt><span class="l-en">Producer</span><span class="l-zh">生产者</span></dt><dd><code>engine.market_os.macro_workspaces.trade_flows</code></dd></div>
-        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>93e4faa768119a100d390ef84a3d345cc8db8149</code></dd></div>
+        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>42e9bb9308978d033f9e4bf986d7eb21e486feac</code></dd></div>
         <div><dt><span class="l-en">Client contract</span><span class="l-zh">客户端契约</span></dt><dd><code>mastermind.macro_workspace_snapshot.v1@1.0.0</code></dd></div>
       </dl>
       <p class="mq-lineage-note"><span class="l-en">The page validated this artifact against the closed schema and recomputed its content hash before rendering. A mismatch renders a refusal page instead of a state.</span><span class="l-zh">本页在渲染前已按封闭 schema 校验该产物并重新计算其内容哈希。若不匹配，将呈现拒绝页面而非任何状态读数。</span></p>
@@ -2151,7 +2177,8 @@
 </aside>
 <div class="mq-scrim" id="mq-scrim" hidden></div>
 
-<script src="theme.js?v=f0609099" defer></script>
+<script src="theme.js?v=83cd230b" defer></script>
 <script src="macro_suite.js?v=e202c862" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

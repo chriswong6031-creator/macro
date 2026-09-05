@@ -175,6 +175,7 @@ on:
       - "scripts/build_reports.py"
       - "scripts/build_research_pages.py"
       - "scripts/build_research_vault.py"
+      - "scripts/build_risk_envelope.py"
       - "scripts/build_rr_banner.py"
       - "scripts/build_seasonality.py"
       - "scripts/build_stock_seasonality_page.py"

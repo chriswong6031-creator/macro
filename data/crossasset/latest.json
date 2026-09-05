@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-03",
+  "date": "2026-09-04",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
@@ -10,21 +10,21 @@
     "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-09-03",
+  "asof": "2026-09-04",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.76,
+      "absorption_pctile": 0.65,
       "n_markets": 6,
-      "absorption_ratio": 0.395,
-      "mean_abs_corr": 0.265,
+      "absorption_ratio": 0.381,
+      "mean_abs_corr": 0.25,
       "dominant_cluster": [
+        "US",
         "Commodities",
         "Crypto",
-        "US",
         "Dollar"
       ],
       "spark_w": [
@@ -131,7 +131,7 @@
         0.396,
         0.369,
         0.37,
-        0.395
+        0.381
       ],
       "spark_asof": "2026-09-04"
     },
@@ -178,13 +178,13 @@
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 55.0
+        "pctile": 59.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 66.901,
+        "ratio": 67.208,
         "trend": "mid",
-        "pctile": 27.0
+        "pctile": 29.0
       },
       {
         "pair": "oil_gold",
@@ -194,9 +194,9 @@
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.171,
+        "ratio": 0.172,
         "trend": "mid",
-        "pctile": 39.0
+        "pctile": 40.0
       }
     ],
     "carry": {
@@ -235,33 +235,33 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.276,
-          "t": 4.455,
+          "r": 0.278,
+          "t": 4.494,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.314,
-          "t": 4.133,
+          "r": 0.313,
+          "t": 4.13,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.263,
-          "t": 3.903,
+          "r": 0.262,
+          "t": 3.881,
           "q": 0.005
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.251,
-          "t": 3.626,
-          "q": 0.0112
+          "r": 0.248,
+          "t": 3.554,
+          "q": 0.015
         }
       ],
       "stable": false,
@@ -290,7 +290,7 @@
       "agree_pct": 100,
       "n_blind_flags": 0,
       "flags_top": [],
-      "asof": "2026-08-31"
+      "asof": "2026-09-03"
     },
     "dollar": {
       "usd_dir": "flat",
@@ -312,13 +312,13 @@
       ],
       "unstable_n": 0,
       "fx_stress": {
-        "dominant": null,
-        "top_key": "intervention_risk",
-        "top_val": 25.7
+        "dominant": "intervention_risk",
+        "top_key": "carry_unwind",
+        "top_val": 50.0
       }
     },
     "shadow": {
-      "pressure_pctile": 0.76,
+      "pressure_pctile": 0.65,
       "incumbent_state": "watch",
       "shadow_state": "watch",
       "escalated": false

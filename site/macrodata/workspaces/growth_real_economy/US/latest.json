@@ -110,7 +110,7 @@
         },
         "null_reason": null,
         "required": true,
-        "source_asof": "2026-09-03",
+        "source_asof": "2026-09-04",
         "status": "PRESENT"
       },
       {
@@ -122,7 +122,7 @@
         },
         "null_reason": null,
         "required": true,
-        "source_asof": "2026-09-03",
+        "source_asof": "2026-09-04",
         "status": "PRESENT"
       },
       {
@@ -195,7 +195,7 @@
           },
           {
             "component_id": "leading_tier_momentum",
-            "contribution": 3.71,
+            "contribution": 3.55,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -205,14 +205,14 @@
             "null_reason": null,
             "owner_field": "business_cycle.tiers.leading.mom6",
             "owner_ref": "engine.business_cycle",
-            "raw_value": 0.7426750855886297,
+            "raw_value": 0.7097366800869338,
             "sign": 1,
-            "standardized_value": 68.57,
+            "standardized_value": 67.74,
             "weight": 0.2
           },
           {
             "component_id": "coincident_tier_momentum",
-            "contribution": -0.82,
+            "contribution": -0.81,
             "coverage_state": "DISAGREEMENT",
             "freshness": "CURRENT",
             "label": {
@@ -222,9 +222,9 @@
             "null_reason": null,
             "owner_field": "business_cycle.tiers.coincident.mom6",
             "owner_ref": "engine.business_cycle",
-            "raw_value": -0.21765857550346368,
+            "raw_value": -0.21603351448561625,
             "sign": 1,
-            "standardized_value": 44.56,
+            "standardized_value": 44.6,
             "weight": 0.15
           }
         ],
@@ -255,7 +255,7 @@
           }
         },
         "transformation": "gdpnow/wei mapped via center+scale: 50+clamp((v-center)/scale,-1,1)*50 (gdpnow center=2.0pct SAAR, scale=4.0pct; wei center=1.5pct, scale=4.0pct); leading/coincident tier mom6 mapped with center=0, scale=2.0 index-pts; prior-only owner reads, no in-composer estimation",
-        "value": 70.77,
+        "value": 70.61,
         "value_status": "DISAGREEMENT",
         "weights_law": "weighted mean of standardized components, weights renormalized over present components; gdpnow_growth 0.35, wei_growth 0.30, leading_tier_momentum 0.20, coincident_tier_momentum 0.15"
       },
@@ -309,14 +309,14 @@
             "null_reason": null,
             "owner_field": "business_cycle.tiers.coincident.index",
             "owner_ref": "engine.business_cycle",
-            "raw_value": 35.43241699664992,
+            "raw_value": 35.43404205766777,
             "sign": 1,
             "standardized_value": 35.43,
             "weight": 0.2
           },
           {
             "component_id": "growth_axis_score",
-            "contribution": -3.5,
+            "contribution": -2.5,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -326,9 +326,9 @@
             "null_reason": null,
             "owner_field": "growth_score",
             "owner_ref": "engine.axes",
-            "raw_value": -0.467,
+            "raw_value": -0.333,
             "sign": 1,
-            "standardized_value": 26.65,
+            "standardized_value": 33.35,
             "weight": 0.15
           }
         ],
@@ -359,7 +359,7 @@
           }
         },
         "transformation": "leading_diffusion/coincident_diffusion/coincident_index_level are direct 0-100 passthroughs (already percent-of-legs-positive / normalized index readings); growth_axis_score (engine/axes.py) mapped via center=0, scale=1.0; lagging tier is INTENTIONALLY EXCLUDED (published separately as confirmation-only context: metrics[lagging_tier_index]/[lagging_tier_diffusion]/[lagging_tier_momentum]), consistent with its trailing definition",
-        "value": 64.42,
+        "value": 65.42,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of standardized components, weights renormalized over present components; leading_diffusion 0.30, coincident_diffusion 0.35, coincident_index_level 0.20, growth_axis_score 0.15"
       }
@@ -369,15 +369,15 @@
     "comparability": "COMPARABLE",
     "deltas": [
       {
-        "current_value": 70.77,
-        "delta": 0.0,
+        "current_value": 70.61,
+        "delta": -0.16,
         "metric_id": "growth_momentum",
         "note": "same method version; numeric comparison permitted",
         "prior_value": 70.77
       },
       {
-        "current_value": 64.42,
-        "delta": 0.0,
+        "current_value": 65.42,
+        "delta": 1.0,
         "metric_id": "growth_level_breadth",
         "note": "same method version; numeric comparison permitted",
         "prior_value": 64.42
@@ -385,15 +385,15 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "growth_real_economy-US-dad8ed072cca409d",
+    "prior_generation_id": "growth_real_economy-US-f491be52ff105a42",
     "prior_method_version": "growth_real_economy.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
-    "predecessor_generation_id": "growth_real_economy-US-dad8ed072cca409d"
+    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
+    "predecessor_generation_id": "growth_real_economy-US-f491be52ff105a42"
   },
   "drivers": {
     "balance_sheet": [
@@ -437,21 +437,21 @@
         "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=35.43, weight=0.2. [schema key law] published under drivers.balance_sheet because the shared macro_workspace_snapshot.v1 schema names this array 'balance_sheet' (inherited from the liquidity_regime workspace); it carries a growth-level/breadth driver here, not a balance-sheet reading.",
         "owner_field": "business_cycle.tiers.coincident.index",
         "unit": "index",
-        "value": 35.43241699664992
+        "value": 35.43404205766777
       },
       {
         "coverage_state": "PRESENT",
         "driver_id": "growth_axis_score",
-        "impact_magnitude": 3.5,
+        "impact_magnitude": 2.5,
         "impact_sign": -1,
         "label": {
           "en": "Growth axis composite (engine/axes.py)",
           "zh": "增长轴综合评分（engine/axes.py）"
         },
-        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=26.65, weight=0.15. [schema key law] published under drivers.balance_sheet because the shared macro_workspace_snapshot.v1 schema names this array 'balance_sheet' (inherited from the liquidity_regime workspace); it carries a growth-level/breadth driver here, not a balance-sheet reading.",
+        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=33.35, weight=0.15. [schema key law] published under drivers.balance_sheet because the shared macro_workspace_snapshot.v1 schema names this array 'balance_sheet' (inherited from the liquidity_regime workspace); it carries a growth-level/breadth driver here, not a balance-sheet reading.",
         "owner_field": "growth_score",
         "unit": "z_score",
-        "value": -0.467
+        "value": -0.333
       }
     ],
     "rate_side": [
@@ -486,44 +486,44 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "leading_tier_momentum",
-        "impact_magnitude": 3.71,
+        "impact_magnitude": 3.55,
         "impact_sign": 1,
         "label": {
           "en": "Leading tier 6M momentum",
           "zh": "领先层六个月动能"
         },
-        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=68.57, weight=0.2. [schema key law] published under drivers.rate_side because the shared macro_workspace_snapshot.v1 schema names this array 'rate_side' (inherited from the liquidity_regime workspace); it carries a growth-momentum driver here, not a rate-side reading.",
+        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=67.74, weight=0.2. [schema key law] published under drivers.rate_side because the shared macro_workspace_snapshot.v1 schema names this array 'rate_side' (inherited from the liquidity_regime workspace); it carries a growth-momentum driver here, not a rate-side reading.",
         "owner_field": "business_cycle.tiers.leading.mom6",
         "unit": "index_pts",
-        "value": 0.7426750855886297
+        "value": 0.7097366800869338
       },
       {
         "coverage_state": "DISAGREEMENT",
         "driver_id": "coincident_tier_momentum",
-        "impact_magnitude": 0.82,
+        "impact_magnitude": 0.81,
         "impact_sign": -1,
         "label": {
           "en": "Coincident tier 6M momentum",
           "zh": "同步层六个月动能"
         },
-        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=44.56, weight=0.15. [schema key law] published under drivers.rate_side because the shared macro_workspace_snapshot.v1 schema names this array 'rate_side' (inherited from the liquidity_regime workspace); it carries a growth-momentum driver here, not a rate-side reading.",
+        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=44.6, weight=0.15. [schema key law] published under drivers.rate_side because the shared macro_workspace_snapshot.v1 schema names this array 'rate_side' (inherited from the liquidity_regime workspace); it carries a growth-momentum driver here, not a rate-side reading.",
         "owner_field": "business_cycle.tiers.coincident.mom6",
         "unit": "index_pts",
-        "value": -0.21765857550346368
+        "value": -0.21603351448561625
       }
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T22:42:48Z",
-    "calculation_as_of": "2026-09-03",
-    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
-    "content_sha256": "f491be52ff105a425c3c44957d64a443c8211989844ae5f3e75bf3e4ba7948a3",
-    "generation_id": "growth_real_economy-US-f491be52ff105a42",
+    "built_at": "2026-09-05T00:51:12Z",
+    "calculation_as_of": "2026-09-04",
+    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
+    "content_sha256": "df2ab56ae87d1ea365540ed2c838037863d1def665927a95332faa2102d854ce",
+    "generation_id": "growth_real_economy-US-df2ab56ae87d1ea3",
     "producer": "engine.market_os.macro_workspaces.growth",
     "rendered_at": null
   },
   "headline": {
-    "effective_date": "2026-09-03",
+    "effective_date": "2026-09-04",
     "hysteresis": {
       "applied": true,
       "band": 5.0,
@@ -533,13 +533,13 @@
     "method_version": "growth_real_economy.compose.v1",
     "nearest_boundary": {
       "axis": "growth_level_breadth",
-      "distance": 14.42,
+      "distance": 15.42,
       "null_reason": null
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": 0.0,
-      "dy": 0.0,
+      "dx": -0.16,
+      "dy": 1.0,
       "null_reason": null,
       "status": "PRESENT"
     },
@@ -549,9 +549,9 @@
       "state_id": "B"
     },
     "quadrant": {
-      "x": 70.77,
+      "x": 70.61,
       "x_status": "DISAGREEMENT",
-      "y": 64.42,
+      "y": 65.42,
       "y_status": "PRESENT"
     },
     "state_id": "B",
@@ -564,7 +564,7 @@
       "en": "Growth / real economy regime",
       "zh": "增长/实体经济体制"
     },
-    "transition_distance": 0.0
+    "transition_distance": 1.01
   },
   "implications": {
     "items": [
@@ -590,8 +590,8 @@
         "horizon": "current",
         "implication_id": "state_descriptive",
         "text": {
-          "en": "US growth regime reads B - Accelerating momentum, broad strength (growth momentum x=70.77, growth level/breadth y=64.42, boundary 50).",
-          "zh": "美国增长体制读数为 B - 动能加速，广度强劲（增长动能 x=70.77，增长水平/广度 y=64.42，分界 50）。"
+          "en": "US growth regime reads B - Accelerating momentum, broad strength (growth momentum x=70.61, growth level/breadth y=65.42, boundary 50).",
+          "zh": "美国增长体制读数为 B - 动能加速，广度强劲（增长动能 x=70.61，增长水平/广度 y=65.42，分界 50）。"
         },
         "trace_ref": "data/regime/latest.json#business_cycle"
       },
@@ -641,7 +641,7 @@
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "composite_prior_only",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "growth_momentum_composite",
@@ -652,10 +652,10 @@
         "metric_id": "growth_momentum",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.market_os.macro_workspaces.growth",
         "reference_id": "mastermind.market_reference/v1#growth_momentum",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -670,14 +670,14 @@
           "value": null
         },
         "unit": "score",
-        "value": 70.77,
+        "value": 70.61,
         "value_type": "score_0_100"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "composite_prior_only",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "growth_level_breadth_composite",
@@ -688,10 +688,10 @@
         "metric_id": "growth_level_breadth",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.market_os.macro_workspaces.growth",
         "reference_id": "mastermind.market_reference/v1#growth_level_breadth",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -706,14 +706,14 @@
           "value": null
         },
         "unit": "score",
-        "value": 64.42,
+        "value": 65.42,
         "value_type": "score_0_100"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "conditions.growth_nowcast.gdpnow",
@@ -724,10 +724,10 @@
         "metric_id": "gdpnow_growth",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.conditions.growth_nowcast",
         "reference_id": "mastermind.market_reference/v1#gdpnow_growth",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -749,7 +749,7 @@
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "conditions.growth_nowcast.wei",
@@ -760,10 +760,10 @@
         "metric_id": "wei_growth",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.conditions.growth_nowcast",
         "reference_id": "mastermind.market_reference/v1#wei_growth",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -814,7 +814,7 @@
           "value": null
         },
         "unit": "index_pts_mom6",
-        "value": 0.7426750855886297,
+        "value": 0.7097366800869338,
         "value_type": "number"
       },
       {
@@ -850,7 +850,7 @@
           "value": null
         },
         "unit": "index_pts_mom6",
-        "value": -0.21765857550346368,
+        "value": -0.21603351448561625,
         "value_type": "number"
       },
       {
@@ -958,14 +958,14 @@
           "value": null
         },
         "unit": "index_0_100",
-        "value": 35.43241699664992,
+        "value": 35.43404205766777,
         "value_type": "index"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "growth_score",
@@ -976,10 +976,10 @@
         "metric_id": "growth_axis_score",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.axes",
         "reference_id": "mastermind.market_reference/v1#growth_axis_score",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -994,7 +994,7 @@
           "value": null
         },
         "unit": "z",
-        "value": -0.467,
+        "value": -0.333,
         "value_type": "z_score"
       },
       {
@@ -1030,7 +1030,7 @@
           "value": null
         },
         "unit": "index_0_100",
-        "value": 95.244510811055,
+        "value": 95.2115724055533,
         "value_type": "index"
       },
       {
@@ -1066,7 +1066,7 @@
           "value": null
         },
         "unit": "index_0_100",
-        "value": 92.865513387041,
+        "value": 92.89962325771066,
         "value_type": "index"
       },
       {
@@ -1102,7 +1102,7 @@
           "value": null
         },
         "unit": "pct_legs_positive",
-        "value": 50.0,
+        "value": 0.0,
         "value_type": "percent"
       },
       {
@@ -1138,14 +1138,14 @@
           "value": null
         },
         "unit": "index_pts_mom6",
-        "value": 0.585355949054545,
+        "value": 0.36731840730412557,
         "value_type": "number"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "conditions.recession.score",
@@ -1156,10 +1156,10 @@
         "metric_id": "recession_risk_score",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.conditions.recession",
         "reference_id": "mastermind.market_reference/v1#recession_risk_score",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1181,7 +1181,7 @@
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "conditions.recession.sahm",
@@ -1192,10 +1192,10 @@
         "metric_id": "sahm_rule_value",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.conditions.recession",
         "reference_id": "mastermind.market_reference/v1#sahm_rule_value",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1210,14 +1210,14 @@
           "value": null
         },
         "unit": "pp",
-        "value": -0.03,
+        "value": -0.07,
         "value_type": "number"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "conditions.labor_nowcast.withheld_tax_yoy_pct",
@@ -1228,10 +1228,10 @@
         "metric_id": "real_income_proxy_yoy",
         "model_version": "growth_real_economy.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.conditions.labor_nowcast",
         "reference_id": "mastermind.market_reference/v1#real_income_proxy_yoy",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1349,7 +1349,7 @@
         },
         "owner_ref": "engine.conditions.growth_nowcast",
         "provider": "Federal Reserve Bank of Atlanta",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1370,7 +1370,7 @@
         },
         "owner_ref": "engine.conditions.growth_nowcast",
         "provider": "Federal Reserve Bank of New York / FRED",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1454,7 +1454,7 @@
         },
         "owner_ref": "engine.axes",
         "provider": "Mastermind engine.axes (internal composite over hard + survey inputs)",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1475,7 +1475,7 @@
         },
         "owner_ref": "engine.conditions.recession",
         "provider": "NY Fed / Federal Reserve Board / FRED",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1496,7 +1496,7 @@
         },
         "owner_ref": "engine.conditions.labor_nowcast",
         "provider": "Daily Treasury Statement via engine.conditions.labor_nowcast",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
