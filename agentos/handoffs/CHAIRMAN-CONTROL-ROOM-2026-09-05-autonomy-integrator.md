@@ -105,7 +105,7 @@ unresolved:
 next_actions:
 - Root follows published486 maintenance fc151 current-base CI to conclusion and separately adjudicates release;
   no feature work reopens.
-- Runtime qualifies794 and obtains original-carrier START for issued27/31 fixture amendment; diagnose all four failures
+- Runtime qualifies794 and obtains original-carrier START for issued27/31 fixture amendment; repair the two diagnosed fixture causes and verify all four failures
   and preserve protected RCH2 appended tests during later integration.
 - Capacity qualifies794 before CAP/PF effects, preserves CAP da0 history and exact two-file repair, and returns
   final exact17/component proof; PF returns immutable integrated provider-free source proof.
