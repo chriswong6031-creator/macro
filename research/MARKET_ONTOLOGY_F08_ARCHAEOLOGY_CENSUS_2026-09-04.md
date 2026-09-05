@@ -46,13 +46,30 @@ Authority ceilings: 027/085 `notification_only`; 028 `context_and_user_decision_
 
 **HOUSE vs user:** `engine/portfolio.py` is HOUSE cross-asset risk-budgeting, NOT user-portfolio; user holdings truth lives in A1A/A1B (Terminal-side).
 
-## 3. Terminal private-state plane
+## 3. Terminal private-state plane (verified 2026-09-04 at charting-app origin/master e89ebda4 via git plumbing — local checkout was July-stale and was NOT used)
 
-**PENDING** — first census ran against a stale July-13 working tree (local HEAD 687da219 vs origin e89ebda4 2026-09-04, which predates A1A/A1B merges) and is void for current-state claims. Re-census against `origin/main` via git plumbing in flight. Stale-census facts retained only as *July baseline*: Supabase 0001 schema (profiles, watchlists, watchlist_symbols, chart_layouts, saved_scripts, alerts, favorites), `ingest/alerts_engine.py` 5-min cron (signal/regime/price/rsi conditions, one-shot fire, `active=eq.true` idempotent-fire guard, poll-only), `mm.wls` localStorage guest fallback, bare-ticker join keys.
+**A1A portfolio truth store — `portfolio_positions` (Supabase), CONFIRMED LIVE:**
+- Schema (`supabase/migrations/0007_portfolio_positions.sql`): `id uuid pk gen_random_uuid()`, `user_id → auth.users on delete cascade`, `ticker text`, `shares numeric`, `entry_price numeric`, `entry_date date`, `notes text`, `status text default 'open'`, `created_at/updated_at`. RLS enabled with four own-row policies (`auth.uid() = user_id`).
+- Service `terminal/lib/portfolio.ts`: belt-and-braces owner scoping (RLS + explicit `.eq("user_id", userId)`); **TWO-ORGANISMS LAW (UWP-R2)** in module doc — holdings never feed signal/score/ranker/alerts; display tier only.
+- Route `terminal/app/api/portfolio/route.ts`: GET distinguishes 401 signed-out / 200 empty / 503 store-unreadable (empty ≠ outage — typed). POST `create/update/close/reopen/delete`; `user_id` never read from body; foreign ids 404 via ownership re-resolution.
+- Write semantics: server-generated uuid, **no client idempotency key, no upsert-by-natural-key** (multiple rows per ticker legal); `status` writer-enforced only (no DB CHECK).
+- **No local fallback for authenticated users** (`TerminalShell.tsx:1012-1013`: portfolio rows only from `/api/portfolio`; never folded into `lists`/`mm.wls`/watchlist sync).
+
+**A1B import path — lives MACRO-side, not in charting-app:** verified absent from Terminal at origin (no paste/bulk route or component). The canonical paste→write path is the macro dashboard client: `templates/portfolio.js` ("paste a book on the Portfolio tab") + `templates/watchstore.js:1008-1030` writing to the SAME Supabase `portfolio_positions` (insert with one-shot local→cloud fold guarded by `pfFoldMarkerKey`; empty local book never consumes the fold). Macro server reads open positions in `app/main.py:1612,1641`. Schema also mirrored in `templates/uwp_supabase.sql`. **One shared store, two product surfaces** — macro side keeps a signed-out localStorage book with one-shot fold; Terminal side has no local book at all.
+
+**Watchlist at origin:** `terminal/app/api/watchlist/route.ts` — GET full inventory; POST list CRUD (`createList/renameList/deleteList`, W1b) + symbol ops (`addSymbols/removeSymbols/moveSymbols`); destructive ops require explicit resolved target. `mm.wls` persists as an optimistic cache demoted after one-time migration (`mm.wls.migrated.v1`/`.deleted.v1` markers; prior cross-user-leak bug covered by `watchlist-ownership.spec.ts`). `0009_watchlist_symbol_unique.sql` exists (unread). **Watchlist/portfolio separation explicit and tested** — no FK between them; "adding to a watchlist leaves portfolio_positions unchanged."
+
+**Alerts at origin:** `terminal/app/api/alerts/route.ts` grew ~35→191 lines since July: typed GET errors (503 on read failure, no longer silent `[]`), condition allow-list `LEGACY={signal,regime,price,rsi}` + 8 `opt_*` options types + `suite_event/suite_sequence` (`terminal/lib/suiteAlerts.ts`), entitlement gating (`isPaidTier/isProTier`, fails closed), `MAX_ALERTS_PER_USER=50`, and options-identity canonicalization on write (`canonicalizeOptAlertIdentity`, `terminal/lib/optionsAlerts.ts:647-660` — persisted `symbol` derived from `condition.root`; market-wide kinds → sentinel `MARKET`). `ingest/alerts_engine.py` +925/-20 lines since July (body unread — gap). **Delivery: still NONE — poll-only** (grep for smtp/sendgrid/resend/webhook/push/notif across ingest+terminal returned zero delivery channels).
+
+**Cross-origin contracts:** `terminal/lib/upstreams.ts` — `R2_BASE` (public R2 CDN), `FLOW_BACKEND` (Quote-Hub sidecar, R2 fallback), `ISSUE_DESK_API_BASE` (www.mastermind-x.com), `NW_BASE` (neuralwebdata). `company-intelligence/[symbol]` BFF resolves from R2 (`resolveCompanyIntelligenceFromR2`).
+
+**Identity join keys:** portfolio/watchlist = bare normalized ticker (`normalizeTicker`: trim/upper/≤128/control-rejected); options alerts carry the richer canonical identity above. No CIK/internal-id join anywhere in private state.
+
+**F08-relevant integrity notes:** Terminal alerts one-shot fire with `active=eq.true` idempotent-fire guard (July baseline; engine body re-read pending); alert "delivery" today = UI poll of `GET /api/alerts`; alert prefs do not exist on either side; the two alert planes (macro engine-file alerts vs Terminal user-condition alerts) are fully disjoint systems with no shared registry — composition, not unification, is the F08 job.
 
 ## 4. Open items toward the first return
 
-- Terminal re-census at origin (in flight): portfolio_positions schema, A1B route, owner-scoping, delivery, upstreams.ts/R2 contracts, identity keys.
+- Read `ingest/alerts_engine.py` current body at origin (+925 lines since July) — evaluator condition dispatch + fire semantics.
 - Architecture freeze drafts: identity/time/null/dedup/correction/notification; alert authority + replay/idempotency (extend `alert_time.py` three-clock + typed-read + push_sent patterns; add last-attempt/last-success law).
 - Real-data compositions (desktop/tablet/mobile) incl. calm-empty/stale/outage/partial-identity/notification-failure/duplicate-event/resolved/replay states.
 - Ordered verticals + cross-compute assignments per root routing; hostile tests; two-user/production proof plan.
