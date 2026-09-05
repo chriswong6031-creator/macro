@@ -361,6 +361,23 @@
     return true;
   }
 
+  /* The canonical surface is always reachable, in every state. It used to be
+     offered only by the one action branch that fires when nothing is blocking
+     and nothing is unobserved — a rare case — which left the ordinary dormant
+     reader with the link present solely inside <noscript>, i.e. exactly where
+     the reader who can see the page never looks. This path is a real page that
+     carries every chain the owners publish, so it is a genuine continuation
+     rather than a courtesy link. */
+  function transmissionLink() {
+    var p = el("p", "ox-more");
+    var a = el("a");
+    a.href = "transmission.html";
+    a.appendChild(say("See this path among all the owners publish",
+      "在所有者发布的全部路径中查看本条"));
+    p.appendChild(a);
+    return p;
+  }
+
   function renderNextAction(snapshot) {
     var action = snapshot.next_action;
     var box = card("Next", "下一步", "watch");
@@ -386,6 +403,7 @@
       hint.appendChild(say("Opens the step-by-step readings below.",
         "将展开下方的逐环节读数。"));
       box.appendChild(hint);
+      box.appendChild(transmissionLink());
       return box;
     }
 

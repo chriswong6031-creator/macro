@@ -178,3 +178,16 @@ def test_the_client_uses_the_house_sign_in_return_convention():
     assert 'path.slice(0, 2) !== "//"' in client
     # and never the bare form, which is the regression this pins
     assert '"/?signin=1"' not in client
+
+
+def test_the_canonical_transmission_continuation_is_offered_in_every_state():
+    """It used to be reachable only from the one action branch that fires when
+    nothing blocks and nothing is unobserved — a rare case — leaving the ordinary
+    reader with the link present solely inside <noscript>, which is exactly where
+    a reader who can see the page never looks."""
+    client = (ROOT / "templates" / "ontology.js").read_text(encoding="utf-8")
+    assert "function transmissionLink()" in client
+    # called on the focus_leg branch too, not only the fallback branch
+    assert client.count("transmissionLink()") >= 2
+    assert (ROOT / "site" / "transmission.html").exists(), (
+        "the continuation must point at a page that exists")

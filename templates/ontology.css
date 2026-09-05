@@ -139,6 +139,11 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
 .ox-action[disabled]{cursor:default;color:var(--muted);border-color:var(--line)}
 .ox-action[disabled]:hover{border-color:var(--line);color:var(--muted)}
 
+.ox-more{margin:12px 0 0;font-size:var(--fs-sm)}
+.ox-more a{color:var(--ink-link,var(--info));text-decoration:none;
+  border-bottom:1px solid var(--line);padding-bottom:1px}
+.ox-more a:hover{border-bottom-color:currentColor}
+
 /* ---- study: receipts and named gaps ------------------------------------- */
 /* A focused step is a destination, not a control, so it gets the focus ring
    without entering the tab order (tabIndex -1 in the client). */
