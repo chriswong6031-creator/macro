@@ -228,6 +228,15 @@ OWNER_VALUE: dict[str, dict[str, str]] = {
     "stable": _pair("Stable", "平稳"),
     "deteriorating": _pair("Deteriorating", "恶化"),
     "improving": _pair("Improving", "改善"),
+    # The liquidity_regime producer's quality scale is HYPHENATED, so the
+    # underscored keys above never match it. `neutral-hollow` is the value the
+    # shipped artifact carries today, and without a reviewed entry it deslugs to
+    # a raw token on the page -- the exact leak this table exists to prevent, and
+    # the failure `test_the_shipped_artifact_needs_no_unreviewed_label` reports.
+    # "Hollow" is the producer's own word for support whose LEVEL reads neutral
+    # while its COMPOSITION is mechanical or exhausted; the reviewed copy says
+    # that in plain words rather than shipping the jargon.
+    "neutral-hollow": _pair("Neutral level, weak composition", "中性水平，结构偏弱"),
 }
 
 # --- metric identities -------------------------------------------------------
