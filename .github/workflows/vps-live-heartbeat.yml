@@ -4,19 +4,34 @@ on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/check_research_vault_source_freshness.py"
+      - ".github/workflows/research-ingest.yml"
+      - ".github/workflows/vps-live-heartbeat.yml"
 
 permissions:
   contents: read
 
+# Keep PR contract runs out of the live dead-man's cancellation group.
 concurrency:
-  group: vps-live-heartbeat
+  group: vps-live-heartbeat-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  research-vault-contract:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Research Vault source-freshness guard self-test
+        run: python -m scripts.check_research_vault_source_freshness --selftest
+
   health:
     # This becomes the external dead-man only after the production soak. It uses
     # GitHub-hosted compute so an offline Mac fleet cannot mask a dead VPS.
-    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.VPS_LIVE_PRIMARY == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
