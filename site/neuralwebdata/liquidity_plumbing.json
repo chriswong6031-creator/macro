@@ -19,14 +19,14 @@
     "hard_gate": false
   },
   "headline": {
-    "state": "orderly_drain",
-    "summary": "Net liquidity is contracting in an orderly manner; conditions may steer toward headwind for buy setups (existing engine limits apply)."
+    "state": "neutral_hollow",
+    "summary": "Net liquidity is neutral but RRP exhausted or composition is mechanical — buffer is hollow; net-neutral read with limited downside cushion. RRP buffer is empty — the next liquidity drain hits bank reserves directly."
   },
   "fed": {
     "assets_bn": 6737.204,
     "assets_chg_20d_bn": -11.363,
     "reserve_balances_bn": 2894.531,
-    "walcl_stale_days": 1,
+    "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
     "asof": "2026-09-03"
@@ -59,36 +59,36 @@
     "netliq_chg_20d_bn": 6.726,
     "netliq_chg_65d_bn": -71.573,
     "netliq_pctile_expanding": 0.770522,
-    "overlay": "contracting"
+    "overlay": "neutral"
   },
   "quality": {
-    "label": "contracting",
-    "fed_share": 0.04,
+    "label": "neutral-hollow",
+    "fed_share": 0.27,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.66,
+      "hy_oas_pct": 2.65,
       "hy_oas_z": -0.2,
       "nfci": -0.558,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 1
+    "walcl_stale_days": 2
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.914,
-    "sofr_minus_iorb_bp": 0.0,
+    "effr_minus_iorb_pctile": 0.9141,
+    "sofr_minus_iorb_bp": 1.0,
     "sofr_minus_iorb_d20_bp": 1.0,
-    "sofr_minus_iorb_pctile": 0.9088,
+    "sofr_minus_iorb_pctile": 0.9348,
     "sofr_99pctl_minus_iorb_bp": 8.0,
     "sofr_99pctl_minus_iorb_d20_bp": 0.0,
     "sofr_99pctl_minus_iorb_pctile": 0.8513,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
-    "asof": "2026-09-02"
+    "asof": "2026-09-03"
   },
   "components": {
     "walcl": {
@@ -383,8 +383,8 @@
     "asof": "2026-09-02"
   },
   "entry_effect": {
-    "direction": "headwind",
-    "quality": "contraction",
+    "direction": "neutral",
+    "quality": "neutral",
     "measured_basis": "cycle_ladder_21d_odds",
     "use": "support existing buy setup, never originate one"
   },
@@ -394,7 +394,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-09-04T12:50:13Z",
-  "inputs_hash": "sha256:e4d431a6fe70c1ccc4ded9c61479353fc71b57a78bc30fbfc5e8982bc8abf17f",
+  "produced_at": "2026-09-05T03:13:18Z",
+  "inputs_hash": "sha256:b280524ba686b295aa7c99585bfc0618b94a239a21b848940cb8f188a3457686",
   "tier": "shadow"
 }

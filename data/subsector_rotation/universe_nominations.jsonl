@@ -54,3 +54,6 @@
 {"date":"2026-08-31","theme":"Crypto & Blockchain","donor":"blockchainplatforms","receiver":"blockchainenterprise","confidence":0.298,"both_confirmed":false}
 {"date":"2026-08-31","theme":"Wearables","donor":"wearablesmedical","receiver":"wearablesimmersive","confidence":0.292,"both_confirmed":false}
 {"date":"2026-09-03","theme":"Artificial Intelligence","donor":"aisecurity","receiver":"aiadssearch","confidence":0.317,"both_confirmed":false}
+{"date":"2026-09-04","theme":"Energy Renewable","donor":"energycleanmaterials","receiver":"energycleanbatteries","confidence":0.331,"both_confirmed":false}
+{"date":"2026-09-04","theme":"Internet of Things","donor":"iotsecurity","receiver":"iothardware","confidence":0.319,"both_confirmed":false}
+{"date":"2026-09-04","theme":"Artificial Intelligence","donor":"aisecurity","receiver":"aiedge","confidence":0.301,"both_confirmed":false}
