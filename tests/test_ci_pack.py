@@ -1037,12 +1037,19 @@ def test_stock_dashboard_first_frame_contract_is_executed_by_pr_code_gate() -> N
         "site/canada-stock-v36.js",
         "site/stock-dashboard.css",
         "site/dashboard-icons.js",
+        "scripts/render_stock_dashboard_fixture.py",
         "scripts/verify_stock_dashboard_mobile_layout.cjs",
+        "mockups/evidence/prophet-p0b-zero-fouc/manifest.json",
+        "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
+        "mockups/evidence/prophet-p0b-zero-fouc/mobile-layout.json",
+        "mockups/evidence/prophet-p0b-zero-fouc/mobile-layout-canada.json",
+        "mockups/evidence/prophet-p0b-zero-fouc/ca-js-disabled-dark-390.png",
+        "mockups/evidence/prophet-p0b-zero-fouc/ca-composer-failed-light-390.png",
         code_suite,
     }
     assert required_paths <= set(code_job["paths"])
     assert any(code_suite in str(step.get("run") or "") for step in code_job["steps"])
-    assert _job_pip_packages(code_job) == {"pytest"}
+    assert _job_pip_packages(code_job) == {"beautifulsoup4", "jinja2", "pytest"}
 
     data_job = manifest["jobs"]["engine-render-guards"]
     data_runs = "\n".join(str(step.get("run") or "") for step in data_job["steps"])
@@ -1052,7 +1059,13 @@ def test_stock_dashboard_first_frame_contract_is_executed_by_pr_code_gate() -> N
 
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     code_jobs = [job for job in jobs if job.gate == "code"]
-    for changed in ([code_suite], ["templates/hk.html.j2"], ["site/canada-stock-v36.js"]):
+    for changed in (
+        [code_suite],
+        ["templates/hk.html.j2"],
+        ["site/canada-stock-v36.js"],
+        ["scripts/render_stock_dashboard_fixture.py"],
+        ["mockups/evidence/prophet-p0b-zero-fouc/mobile-layout-canada.json"],
+    ):
         selected, reason = PACK.select_jobs(code_jobs, changed)
         assert "stock-dashboard-first-frame" in {job.job_id for job in selected}, reason
         assert "unowned path" not in reason, reason

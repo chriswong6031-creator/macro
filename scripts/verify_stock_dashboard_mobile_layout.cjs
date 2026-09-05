@@ -13,13 +13,15 @@
  */
 
 const fs = require("fs");
+const crypto = require("crypto");
 const path = require("path");
 
 function usage(message) {
   if (message) process.stderr.write(`error: ${message}\n`);
   process.stderr.write(
     "usage: verify_stock_dashboard_mobile_layout.cjs " +
-      "--html FILE --site-dir DIR [--composer FILE] [--browser FILE] [--out FILE]\n"
+      "--html FILE --site-dir DIR --fixture-receipt FILE " +
+      "[--composer FILE] [--browser FILE] [--out FILE] [--screenshot-dir DIR]\n"
   );
   process.exit(2);
 }
@@ -31,7 +33,9 @@ function parseArgs(argv) {
     if (!key || !key.startsWith("--") || i + 1 >= argv.length) usage("invalid arguments");
     parsed[key.slice(2)] = argv[i + 1];
   }
-  if (!parsed.html || !parsed["site-dir"]) usage("--html and --site-dir are required");
+  if (!parsed.html || !parsed["site-dir"] || !parsed["fixture-receipt"]) {
+    usage("--html, --site-dir, and --fixture-receipt are required");
+  }
   return parsed;
 }
 
@@ -45,6 +49,76 @@ function realDir(value, label) {
   const resolved = path.resolve(value);
   if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) usage(`${label} is not a directory: ${resolved}`);
   return resolved;
+}
+
+function sha256Bytes(bytes) {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
+function sha256File(filename) {
+  return sha256Bytes(fs.readFileSync(filename));
+}
+
+function relativeRepoPath(repoRoot, filename) {
+  const relative = path.relative(repoRoot, filename);
+  if (!relative || relative.startsWith(".." + path.sep) || path.isAbsolute(relative)) {
+    usage(`receipt input is outside the repository: ${filename}`);
+  }
+  return relative.split(path.sep).join("/");
+}
+
+function bindFixtureReceipt(receiptFile, htmlFile, repoRoot) {
+  let receipt;
+  try {
+    receipt = JSON.parse(fs.readFileSync(receiptFile, "utf8"));
+  } catch (error) {
+    usage(`--fixture-receipt is not valid JSON: ${error.message}`);
+  }
+  if (receipt.schema !== "mastermind.stock_dashboard_rendered_fixture.v1" ||
+      receipt.proof_class !== "rendered_fixture") {
+    usage("--fixture-receipt is not a rendered stock-dashboard fixture receipt");
+  }
+  const htmlSha256 = sha256File(htmlFile);
+  const matches = Object.entries(receipt.markets || {}).filter(
+    ([, market]) => market && market.output_sha256 === htmlSha256
+  );
+  if (matches.length !== 1) {
+    usage(`rendered HTML hash must match exactly one fixture market; matched ${matches.length}`);
+  }
+  const [market, binding] = matches[0];
+  if (typeof binding.route !== "string" || !/^\/[^?#]+\.html$/.test(binding.route) ||
+      typeof binding.output !== "string" || path.posix.basename(binding.route) !== binding.output) {
+    usage(`fixture receipt carries an invalid ${market} route/output binding`);
+  }
+  const constructionInputs = {};
+  for (const item of binding.inputs || []) {
+    if (!item || typeof item.path !== "string" || typeof item.sha256 !== "string") {
+      usage(`fixture receipt carries a malformed ${market} input row`);
+    }
+    const filename = path.resolve(repoRoot, item.path);
+    if (relativeRepoPath(repoRoot, filename) !== item.path) {
+      usage(`fixture receipt input is not canonical: ${item.path}`);
+    }
+    if (!fs.existsSync(filename) || !fs.statSync(filename).isFile()) {
+      usage(`fixture receipt input is missing: ${item.path}`);
+    }
+    const actual = sha256File(filename);
+    if (actual !== item.sha256) {
+      usage(`fixture receipt input hash mismatch: ${item.path}`);
+    }
+    constructionInputs[item.path] = actual;
+  }
+  return {
+    market,
+    route: binding.route,
+    output: binding.output,
+    htmlSha256,
+    receipt: {
+      path: relativeRepoPath(repoRoot, receiptFile),
+      sha256: sha256File(receiptFile),
+    },
+    constructionInputs,
+  };
 }
 
 const MIME = {
@@ -61,6 +135,11 @@ const MIME = {
   ".webp": "image/webp",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
+};
+
+const MARKET_COMPOSERS = {
+  hk: "hk-stock-v36.js",
+  ca: "canada-stock-v36.js",
 };
 
 function pngWidth(bytes) {
@@ -154,7 +233,17 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const htmlFile = realFile(args.html, "--html");
   const siteDir = realDir(args["site-dir"], "--site-dir");
-  const composer = args.composer || "hk-stock-v36.js";
+  const repoRoot = path.dirname(siteDir);
+  const fixtureReceiptFile = realFile(args["fixture-receipt"], "--fixture-receipt");
+  const fixtureBinding = bindFixtureReceipt(fixtureReceiptFile, htmlFile, repoRoot);
+  const composer = args.composer || MARKET_COMPOSERS[fixtureBinding.market];
+  if (!composer || path.basename(composer) !== composer) {
+    usage(`no safe composer filename for fixture market: ${fixtureBinding.market}`);
+  }
+  const screenshotDir = args["screenshot-dir"]
+    ? realDir(args["screenshot-dir"], "--screenshot-dir")
+    : null;
+  const loadedAssets = new Map();
   let chromium;
   try {
     ({ chromium } = require("playwright"));
@@ -166,13 +255,14 @@ async function main() {
   const launch = {headless: true};
   if (args.browser) launch.executablePath = realFile(args.browser, "--browser");
   const browser = await chromium.launch(launch);
+  const browserVersion = browser.version();
   const states = [
     {name: "en-dark", locale: "en", theme: "dark"},
     {name: "en-light", locale: "en", theme: "light"},
     {name: "zh-dark", locale: "zh", theme: "dark"},
     {name: "zh-light", locale: "zh", theme: "light"},
     {name: "js-disabled", locale: "en", theme: "dark", javascriptEnabled: false},
-    {name: "composer-failed", locale: "en", theme: "dark", composerMode: "failed"},
+    {name: "composer-failed", locale: "en", theme: "light", composerMode: "failed"},
     {name: "composer-pending", locale: "en", theme: "dark", composerMode: "pending"},
   ];
   const rows = [];
@@ -199,7 +289,7 @@ async function main() {
         if (path.basename(url.pathname) === composer && state.composerMode === "pending") {
           await new Promise((resolve) => setTimeout(resolve, 2500));
         }
-        const candidate = url.pathname === "/hk_stocks.html"
+        const candidate = url.pathname === fixtureBinding.route
           ? htmlFile
           : path.resolve(siteDir, url.pathname.replace(/^\/+/, ""));
         if (candidate !== htmlFile && !candidate.startsWith(siteDir + path.sep)) {
@@ -210,16 +300,21 @@ async function main() {
           await route.fulfill({status: 404, body: ""});
           return;
         }
+        const bytes = fs.readFileSync(candidate);
+        if (candidate !== htmlFile) {
+          loadedAssets.set(relativeRepoPath(repoRoot, candidate), sha256Bytes(bytes));
+        }
         await route.fulfill({
           status: 200,
-          body: fs.readFileSync(candidate),
+          body: bytes,
           contentType: MIME[path.extname(candidate).toLowerCase()] || "application/octet-stream",
         });
       });
 
       const page = await context.newPage();
       const waitUntil = state.composerMode === "pending" ? "commit" : "load";
-      await page.goto("http://stock-dashboard.invalid/hk_stocks.html", {waitUntil, timeout: 30000});
+      const pageUrl = new URL(fixtureBinding.route, "http://stock-dashboard.invalid");
+      await page.goto(pageUrl.href, {waitUntil, timeout: 30000});
       await page.waitForTimeout(state.composerMode === "pending" ? 500 : 750);
       if (state.javascriptEnabled !== false && state.composerMode !== "pending") {
         await page.evaluate(({locale, theme}) => {
@@ -228,10 +323,25 @@ async function main() {
           if (typeof window.setTheme === "function") window.setTheme(theme);
           else document.documentElement.setAttribute("data-theme", theme);
         }, {locale: state.locale, theme: state.theme});
-        await page.waitForTimeout(250);
+        // theme.js keeps its sun/moon flourish alive for roughly 1100ms.
+        // Measure and persist the settled state, never the transition frame.
+        await page.waitForTimeout(1400);
       }
       const layout = await page.evaluate(`(${LAYOUT_SCRIPT})()`);
       const screenshot = await page.screenshot({fullPage: true});
+      let screenshotBinding = null;
+      if (screenshotDir && ["js-disabled", "composer-failed"].includes(state.name)) {
+        const screenshotFile = path.resolve(
+          screenshotDir,
+          `${fixtureBinding.market}-${state.name}-${state.theme}-390.png`
+        );
+        if (path.dirname(screenshotFile) !== screenshotDir) usage("invalid screenshot output path");
+        fs.writeFileSync(screenshotFile, screenshot);
+        screenshotBinding = {
+          path: relativeRepoPath(repoRoot, screenshotFile),
+          sha256: sha256Bytes(screenshot),
+        };
+      }
       layout.screenshot_width = pngWidth(screenshot);
       layout.pass = !layout.horizontal_overflow &&
         layout.elements_wider_than_viewport === 0 && layout.screenshot_width === 390;
@@ -241,6 +351,7 @@ async function main() {
         theme: state.theme,
         javascript_enabled: state.javascriptEnabled !== false,
         composer: state.composerMode || "loaded",
+        ...(screenshotBinding ? {screenshot: screenshotBinding} : {}),
         ...layout,
       });
       await context.close();
@@ -251,7 +362,30 @@ async function main() {
 
   const payload = {
     schema: "mastermind.stock_dashboard_mobile_layout.v1",
-    html: htmlFile,
+    proof_class: "browser_fixture_proof_reproducible",
+    claims: {
+      source_contract: "not_assessed_by_this_receipt",
+      browser_fixture: "reproducible",
+      canonical_build: "unavailable",
+      production: "none",
+    },
+    verifier: {
+      path: relativeRepoPath(repoRoot, path.resolve(__filename)),
+      sha256: sha256File(path.resolve(__filename)),
+    },
+    browser: {
+      engine: "chromium",
+      version: browserVersion,
+    },
+    fixture_receipt: fixtureBinding.receipt,
+    fixture_market: fixtureBinding.market,
+    input_html: {
+      path: fixtureBinding.output,
+      route: fixtureBinding.route,
+      sha256: fixtureBinding.htmlSha256,
+    },
+    construction_inputs: fixtureBinding.constructionInputs,
+    loaded_assets: Object.fromEntries(Array.from(loadedAssets.entries()).sort()),
     viewport: {width: 390, height: 844, device_scale_factor: 1},
     acceptance: "scroll_width <= client_width; elements_wider_than_viewport == 0; screenshot_width == 390",
     pass: rows.every((row) => row.pass),

@@ -2224,11 +2224,44 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 
 <!-- ===== Standout stocks (BRANCH B ripe-list contract) — the TSX Stock Dashboard headline ===== -->
 {% if mode == 'stocks' %}
-{% set _ca_board_n = setups.buy|length if (setups and setups.buy) else 0 %}
+{# Owner counts are evidence, not defaults. Only an ordered, non-string,
+   non-mapping sequence proves a population (including an explicit empty list).
+   Missing/null/malformed owners remain unavailable on the static first frame. #}
+{% set _ca_setups = setups if (setups is defined and setups is mapping) else {} %}
+{% set _ca_board_source = _ca_setups.get('buy') %}
+{% set _ca_watch_source = _ca_setups.get('watch') %}
+{% set _ca_board_known = _ca_board_source is sequence and _ca_board_source is not string and _ca_board_source is not mapping %}
+{% set _ca_watch_known = _ca_watch_source is sequence and _ca_watch_source is not string and _ca_watch_source is not mapping %}
+{% set _ca_board = _ca_board_source if _ca_board_known else [] %}
+{% set _ca_watch = _ca_watch_source if _ca_watch_known else [] %}
+{% set _ca_board_n = _ca_board|length %}
+{% set _ca_watch_n = _ca_watch|length %}
 <section class="ca-v36-panel" id="ca-v36-prophet">
   <div class="ca-v36-sec-hd">
     <h2>Prophet</h2>
-    <span class="ca-v36-result" id="ca-v36-result">{{ _ca_board_n }} {{ t('shown ·', '已显示 ·') }} {{ _ca_board_n }} {{ t('on board', '只在榜') }}</span>
+    <span class="ca-v36-result" id="ca-v36-result">
+      {% if _ca_board_known and _ca_watch_known %}
+      {{ t(
+        _ca_board_n ~ ' board + ' ~ _ca_watch_n ~ ' watch = ' ~ (_ca_board_n + _ca_watch_n) ~ ' current names',
+        '榜单 ' ~ _ca_board_n ~ ' 只 + 观察 ' ~ _ca_watch_n ~ ' 只 = 当前共 ' ~ (_ca_board_n + _ca_watch_n) ~ ' 只'
+      ) }}
+      {% elif _ca_board_known %}
+      {{ t(
+        _ca_board_n ~ ' board names · watch unavailable',
+        '榜单 ' ~ _ca_board_n ~ ' 只 · 观察名单暂不可用'
+      ) }}
+      {% elif _ca_watch_known %}
+      {{ t(
+        'board unavailable · ' ~ _ca_watch_n ~ ' watch names',
+        '榜单暂不可用 · 观察 ' ~ _ca_watch_n ~ ' 只'
+      ) }}
+      {% else %}
+      {{ t(
+        'board unavailable · watch unavailable',
+        '榜单暂不可用 · 观察名单暂不可用'
+      ) }}
+      {% endif %}
+    </span>
     <span class="ca-v36-fresh" id="ca-v36-fresh" hidden></span>
     <span class="ca-v36-sec-spacer"></span>
     <div class="ca-v36-controls">
@@ -2243,15 +2276,15 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       </span>
     </div>
   </div>
-  <div class="ca-v36-card-grid" id="ca-v36-card-grid"{% if setups and setups.buy is defined %} data-owner-population="{{ setups.buy|length }}"{% endif %}>
-{% if setups and setups.buy %}
+  <div class="ca-v36-card-grid" id="ca-v36-card-grid"{% if _ca_board_known %} data-owner-population="{{ _ca_board_n }}"{% endif %}>
+{% if _ca_board %}
 {# ── W8-G: JSON data block — feeds StockTable.init(); serialized in system (board) order.
    NO re-sorting here: _branch_b_order already delivered the correct system order; this
    block copies fields verbatim, preserving the delivered sequence (CN no-ordering-mutation
    pattern). stage is mapped from the CA group field (entry_open → ENTRY, setting_up → RIPENING)
    so the stocktable.js row-accent / filter logic works identically across markets. ── #}
 {% set _ca_st_rows = [] %}
-{% for _r in setups.buy %}
+{% for _r in _ca_board %}
   {% set _sig = _r.get('signal') or {} %}
   {% set _conv = _r.get('conviction') or {} %}
   {% set _es = _r.get('entry_signal') or {} %}
@@ -2275,7 +2308,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 <script type="application/json" id="stocktable-data">
 {
   "rows": {{ _ca_st_rows | tojson }},
-  "as_of": {{ (setups.as_of or '') | tojson }}
+  "as_of": {{ (_ca_setups.get('as_of') or '') | tojson }}
 }
 </script>
 {# ---- stocks-mode health banner (deliverable 5): breadth cache (HKCA-13), board-ledger
@@ -2295,7 +2328,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% endif %}
 <div class="panel" id="standouts">
   <h2>{{ t('Prophet Stock Signals — TSX ripe list', 'Prophet 选股 — TSX 成熟清单') }}
-    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
+    {% if _ca_setups.get('eligible') is not none %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ _ca_board_n }} {{ t('shown ·', '已显示 ·') }} {{ _ca_setups.get('eligible') }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
     {{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}
     {# W8-G: grid/table view toggle #}
     <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
@@ -2309,8 +2342,8 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       freshness disclosure of its own (the page-hero "data through" stamp is the
       whole page's macro-data vintage, not this board's). Stated once, in plain
       words (DESIGN_DOCTRINE Law 4). -#}
-  {% if setups and setups.get('as_of') %}
-  <p class="muted small" style="margin:0 0 8px"><span class="l-en">Data through</span><span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>
+  {% if _ca_setups.get('as_of') %}
+  <p class="muted small" style="margin:0 0 8px"><span class="l-en">Data through</span><span class="l-zh">数据截至</span> <strong>{{ _ca_setups.get('as_of') }}</strong></p>
   {% endif %}
   {# ===== ONE desk-header "what this desk is / isn't" block (§7.2 / §7.3) — consolidates
      the caveat museum (the old per-page repetitions are DELETED; the tier badge lives on
@@ -2321,17 +2354,18 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     {# CA2: CONFLUENCE stat — make a zero-cross tape VISIBLE. Counts board names with a
        FRESH MACD-2D × StochRSI-3D confluence buy TODAY (r.signal.tier). "0 of N" reads
        honestly when nothing crossed, rather than a silent all-None board. #}
-    {% if setups.confluence %}
+    {% if _ca_setups.get('confluence') %}
+    {% set _ca_confluence = _ca_setups.get('confluence') %}
     <p class="dh-conf" data-tip-en="Counts names with a fresh multi-timeframe buy cross today. Zero is normal." data-tip-zh="统计今日出现新鲜多周期买入金叉的个股。为零很正常。">
-      <span class="l-en">Confluence: <b class="{{ 'pos' if setups.confluence.crosses > 0 else 'neg' }}">{{ setups.confluence.crosses }}</b> buyable cross{{ '' if setups.confluence.crosses == 1 else 'es' }} today of {{ setups.confluence.board }} board names{% if setups.confluence.crosses == 0 %} — no fresh entry trigger on this tape{% endif %}.</span>
-      <span class="l-zh">汇合：{{ setups.confluence.board }} 只榜单个股中今日有 <b class="{{ 'pos' if setups.confluence.crosses > 0 else 'neg' }}">{{ setups.confluence.crosses }}</b> 只出现可买金叉{% if setups.confluence.crosses == 0 %} — 本行情无新鲜入场触发{% endif %}。</span>
+      <span class="l-en">Confluence: <b class="{{ 'pos' if _ca_confluence.crosses > 0 else 'neg' }}">{{ _ca_confluence.crosses }}</b> buyable cross{{ '' if _ca_confluence.crosses == 1 else 'es' }} today of {{ _ca_confluence.board }} board names{% if _ca_confluence.crosses == 0 %} — no fresh entry trigger on this tape{% endif %}.</span>
+      <span class="l-zh">汇合：{{ _ca_confluence.board }} 只榜单个股中今日有 <b class="{{ 'pos' if _ca_confluence.crosses > 0 else 'neg' }}">{{ _ca_confluence.crosses }}</b> 只出现可买金叉{% if _ca_confluence.crosses == 0 %} — 本行情无新鲜入场触发{% endif %}。</span>
     </p>
     {% endif %}
   </div>
   {# CA2: SECTOR-CONCENTRATION banner (honesty, NOT forced diversification) — fires when
      >60% of the board shares one sector. States the fact + the sector counts; no re-rank. #}
-  {% if setups.sector_concentration %}
-  {% set sc = setups.sector_concentration %}
+  {% if _ca_setups.get('sector_concentration') %}
+  {% set sc = _ca_setups.get('sector_concentration') %}
   <p class="chip off sec-conc" style="margin:2px 0 10px; display:block; line-height:1.6">
     <span class="l-en">🧭 <b>{{ sc.n }}/{{ sc.total }}</b> picks are <b>{{ sc.sector }}</b> — the basing cohort is concentrated in this complex on this tape.
       {% for s, n in sc.counts.items() %}<span class="muted">{{ s }} {{ n }}{{ '' if loop.last else ' ·' }}</span> {% endfor %}</span>
@@ -2343,7 +2377,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {# ===== TRACK-RECORD — receipt chip + popup (shared partial, 2026-07-20) — the desk's
      accountability centerpiece. Ships 'accruing' with the honest first-read date; flips to a
      scored 21d hit-rate read once ≥5 IC-dates mature (≈ late-Aug 21d). ===== #}
-  {% set trk = setups.board_track %}
+  {% set trk = _ca_setups.get('board_track') %}
   {% if trk %}
   {% set _ca_h21 = (trk.by_horizon or {})['21d'] if (trk.by_horizon and '21d' in trk.by_horizon) else none %}
   {% if trk.status == 'scored' and _ca_h21 and _ca_h21.hit_rate_21d is not none %}
@@ -2388,8 +2422,8 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {% endmacro %}
   {# hard freshness gate banner (deliverable 4): tailwind axis suppressed when the
      canada_search panel is >3 trading days staler than the board's own price date. #}
-  {% if setups.tailwind_suppressed %}
-  <p class="chip off" style="margin:2px 0 8px">{{ t('Basket-tailwind axis suppressed', '篮子顺风轴已抑制') }}{% if setups.tailwind_stale_days is not none %} — {{ t('panel', '面板') }} {{ setups.tailwind_stale_days }} {{ t('trading days stale', '个交易日陈旧') }}{% else %} — {{ t('panel missing', '面板缺失') }}{% endif %}</p>
+  {% if _ca_setups.get('tailwind_suppressed') %}
+  <p class="chip off" style="margin:2px 0 8px">{{ t('Basket-tailwind axis suppressed', '篮子顺风轴已抑制') }}{% if _ca_setups.get('tailwind_stale_days') is not none %} — {{ t('panel', '面板') }} {{ _ca_setups.get('tailwind_stale_days') }} {{ t('trading days stale', '个交易日陈旧') }}{% else %} — {{ t('panel missing', '面板缺失') }}{% endif %}</p>
   {% endif %}
   {# W8-G: count chips row (live-updated by JS when in table mode) #}
   <div id="st-count-chips" style="display:none"></div>
@@ -2399,9 +2433,9 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {{ pv.pv_css() }}
   <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">
-    {% for s in setups.buy %}
+    {% for s in _ca_board %}
     {# ---- BRANCH-B group divider: entry-open before setting-up ---- #}
-    {% if loop.first or s.group != setups.buy[loop.index0 - 1].group %}
+    {% if loop.first or s.group != _ca_board[loop.index0 - 1].group %}
     <div style="grid-column:1/-1; margin:4px 0 -2px">
       <span class="rk" style="text-transform:uppercase; letter-spacing:.05em">
         {% if s.group == 'entry_open' %}🟢 {{ t('Entry open now', '入场已开启') }}{% else %}🟡 {{ t('Setting up — awaiting trigger', '蓄势中 — 待触发') }}{% endif %}
@@ -2519,11 +2553,11 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {# ===== WATCH strip (W6 parity R6/R7/R8) — strong momentum SCREEN, blocked entry
      (weekly not yet turned / falling knife). A real edge with NO base yet: watch, don't
      buy. Ported from hk.html.j2's watch-strip; links to canada_stock.html. ===== #}
-  {% if setups.watch %}
+  {% if _ca_watch %}
   <div class="watch-strip">
     <p class="ws-h">👁 {{ t('On watch — strong screen, blocked entry (wait for a base)', '观察名单 — 筛选强但入场受阻（等待筑底）') }}</p>
     <div class="watch-grid">
-      {% for w in setups.watch %}
+      {% for w in _ca_watch %}
       {% set wc = w.conviction %}
       <a href="canada_stock.html#{{ w.ticker }}" class="{{ 'wg-knife' if w.watch_reason == 'knife' else '' }}" title="{{ (wc.verdict if wc else '') }} · {{ w.block_reason or '' }}">
         <span class="wg-tk">{{ w.ticker }}{% if wc and wc.score is not none %} <span class="muted small" style="font-weight:600">· {{ wc.score }}</span>{% endif %} <span class="muted small">{{ t('mom', '动量') }} {{ '%+.2f'|format(w.alpha) }}</span></span>
@@ -2544,10 +2578,10 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {% endif %}
   {# ===== LAGGARD / avoid strip (W6 parity) — weakest momentum screen: distribution /
      avoid. Fed by setups.laggards (and any falling-knife demotes surfaced above). ===== #}
-  {% if setups.laggards %}
+  {% if _ca_setups.get('laggards') %}
   <p class="note" style="margin:13px 0 5px; text-transform:none; color:var(--ink-down, var(--down)); font-weight:700">⚠ {{ t('Weakest screen (laggards) — distribution / avoid:', '筛选最弱（落后股）— 派发／回避：') }}</p>
   <p style="margin:0; line-height:2">
-    {% for r in setups.laggards %}<a href="canada_stock.html#{{ r.ticker }}" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span>{% if r.alpha is not none %} <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span>{% endif %}</a>{% endfor %}
+    {% for r in _ca_setups.get('laggards') %}<a href="canada_stock.html#{{ r.ticker }}" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span>{% if r.alpha is not none %} <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span>{% endif %}</a>{% endfor %}
   </p>
   {% endif %}
   {# ===== AI-brief doorway (W6 §7.5) — presence-guarded. No CA AI brief exists yet
@@ -2584,7 +2618,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     <a class="ca-v36-link" href="measurement.html">{{ t('Methodology →', '方法论 →') }}</a>
   </div>
   <div class="ca-v36-evidence-body" id="ca-v36-evidence-body">
-    {% if setups and setups.buy and setups.board_track %}{{ ca_track_record_surface() }}{% else %}<div class="ca-v36-empty ca-v36-static-state">{{ t('Track record is currently unavailable.', '往绩记录目前暂不可用。') }}</div>{% endif %}
+    {% if _ca_board and _ca_setups.get('board_track') %}{{ ca_track_record_surface() }}{% else %}<div class="ca-v36-empty ca-v36-static-state">{{ t('Track record is currently unavailable.', '往绩记录目前暂不可用。') }}</div>{% endif %}
   </div>
 </section>
 
@@ -2614,7 +2648,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 <script src="chart_i18n.js"></script>
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
-{% if mode == 'stocks' and setups and setups.buy %}
+{% if mode == 'stocks' and _ca_board %}
 <script src="stocktable.js"></script>
 <script>
 /* W8-G: StockTable init — standout board table view (CA / TSX market).

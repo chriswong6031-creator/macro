@@ -9,16 +9,21 @@ generated pages and their current data populations live separately in
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+from bs4 import BeautifulSoup
 
 
 ROOT = Path(__file__).resolve().parents[1]
 BROWSER_RECEIPT = ROOT / "scripts" / "verify_stock_dashboard_mobile_layout.cjs"
+FIXTURE_RECIPE = ROOT / "scripts" / "render_stock_dashboard_fixture.py"
+EVIDENCE_DIR = ROOT / "mockups" / "evidence" / "prophet-p0b-zero-fouc"
 
 MARKETS = {
     "hk": {
@@ -266,7 +271,8 @@ console.log(JSON.stringify(cases.map(function (ownerText) {
 
 def test_canada_board_count_requires_the_server_owner_marker() -> None:
     template = _read(MARKETS["ca"]["template"])
-    assert 'data-owner-population="{{ setups.buy|length }}"' in template
+    assert "{% if _ca_board_known %}" in template
+    assert 'data-owner-population="{{ _ca_board_n }}"' in template
 
     text = _read(MARKETS["ca"]["composer"])
     observed = _run_node_function(
@@ -286,6 +292,256 @@ console.log(JSON.stringify(cases.map(function (ownerCount) {
 """,
     )
     assert observed == [None, None, 0, 9]
+
+
+_MISSING = object()
+
+
+def _render_canada_owner_fixture(setups: object = _MISSING) -> BeautifulSoup:
+    """Render the actual Canada template through the production Jinja globals."""
+    from tests.test_canada_build import _env, _vm
+
+    vm = _vm()
+    if setups is _MISSING:
+        vm.pop("setups")
+    else:
+        vm["setups"] = setups
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    return BeautifulSoup(html, "html.parser")
+
+
+def test_canada_static_first_frame_counts_both_proven_owner_lists() -> None:
+    """The JS-free first frame names the complete 9-board + 8-watch estate."""
+    setups = json.loads(
+        _read(ROOT / "site" / "factordata" / "canada_standouts.json")
+    )
+    soup = _render_canada_owner_fixture(setups)
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert result is not None and grid is not None
+    copy = result.get_text(" ", strip=True)
+    assert "9 board + 8 watch = 17 current names" in copy
+    assert "cards shown" not in copy
+    assert grid.get("data-owner-population") == "9"
+    assert len(soup.select("#standouts .watch-strip .watch-grid a[href]")) == 8
+
+
+def test_canada_static_first_frame_preserves_explicit_empty_owner_lists() -> None:
+    """An explicit empty list is the only shape allowed to prove owner zero."""
+    from tests.test_canada_build import _vm
+
+    setups = {**_vm()["setups"], "buy": [], "watch": []}
+    soup = _render_canada_owner_fixture(setups)
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert result is not None and grid is not None
+    copy = result.get_text(" ", strip=True)
+    assert "0 board + 0 watch = 0 current names" in copy
+    assert "cards shown" not in copy
+    assert grid.get("data-owner-population") == "0"
+
+
+@pytest.mark.parametrize(
+    ("owner", "value"),
+    (
+        ("buy", _MISSING),
+        ("buy", None),
+        ("buy", "not-a-list"),
+        ("buy", {"ticker": "not-a-list"}),
+        ("watch", _MISSING),
+        ("watch", None),
+        ("watch", "not-a-list"),
+        ("watch", {"ticker": "not-a-list"}),
+    ),
+)
+def test_canada_static_first_frame_never_coerces_malformed_owner_to_zero(
+    owner: str, value: object
+) -> None:
+    """Missing/null/string/mapping owners render unavailable without exceptions."""
+    from tests.test_canada_build import _vm
+
+    setups = dict(_vm()["setups"])
+    if value is _MISSING:
+        setups.pop(owner)
+    else:
+        setups[owner] = value
+    soup = _render_canada_owner_fixture(setups)
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert result is not None and grid is not None
+    copy = result.get_text(" ", strip=True)
+    assert f"{owner if owner == 'watch' else 'board'} unavailable" in copy
+    assert "17 current names" not in copy
+    if owner == "buy":
+        assert grid.get("data-owner-population") is None
+
+
+@pytest.mark.parametrize("setups", (_MISSING, None))
+def test_canada_static_first_frame_missing_setups_is_unavailable(
+    setups: object,
+) -> None:
+    soup = _render_canada_owner_fixture(setups)
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert result is not None and grid is not None
+    copy = result.get_text(" ", strip=True)
+    assert "board unavailable" in copy
+    assert "watch unavailable" in copy
+    assert grid.get("data-owner-population") is None
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
+    tmp_path: Path,
+) -> None:
+    """Browser inputs reproduce from candidate templates and checked-in fixtures."""
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    receipts = []
+    for out_dir in (first, second):
+        receipt = out_dir / "rendered-fixture.json"
+        run = subprocess.run(
+            [
+                sys.executable,
+                str(FIXTURE_RECIPE),
+                "--market",
+                "all",
+                "--out-dir",
+                str(out_dir),
+                "--receipt",
+                str(receipt),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+        assert run.returncode == 0, run.stderr
+        receipts.append(json.loads(receipt.read_text(encoding="utf-8")))
+
+    assert receipts[0] == receipts[1]
+    receipt = receipts[0]
+    assert receipt == json.loads(_read(EVIDENCE_DIR / "rendered-fixture.json"))
+    assert receipt["schema"] == "mastermind.stock_dashboard_rendered_fixture.v1"
+    assert receipt["proof_class"] == "rendered_fixture"
+    assert receipt["transform"] == "jinja2_candidate_template_render"
+    assert receipt["ambient_inputs"] == []
+    for market, expected in (("hk", (39, 8)), ("ca", (9, 8))):
+        page = first / receipt["markets"][market]["output"]
+        assert _sha256(page) == receipt["markets"][market]["output_sha256"]
+        soup = BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser")
+        assert len(soup.find_all("main")) == 1
+        ids = [node.get("id") for node in soup.find_all(attrs={"id": True})]
+        assert len(ids) == len(set(ids)), f"{market}: rendered fixture has duplicate ids"
+        assert receipt["markets"][market]["owner_population"] == {
+            "board": expected[0],
+            "watch": expected[1],
+        }
+        input_paths = {item["path"] for item in receipt["markets"][market]["inputs"]}
+        assert f"templates/{'hk' if market == 'hk' else 'canada'}.html.j2" in input_paths
+        assert f"site/factordata/{'hk' if market == 'hk' else 'canada'}_standouts.json" in input_paths
+        for item in receipt["markets"][market]["inputs"]:
+            assert _sha256(ROOT / item["path"]) == item["sha256"]
+
+
+@pytest.mark.parametrize(
+    ("market", "receipt_name", "composer"),
+    (
+        ("hk", "mobile-layout.json", "hk-stock-v36.js"),
+        ("ca", "mobile-layout-canada.json", "canada-stock-v36.js"),
+    ),
+)
+def test_committed_browser_receipts_are_self_binding_fixture_proof(
+    market: str, receipt_name: str, composer: str
+) -> None:
+    """Each checked-in browser claim binds bytes, assets, tool, and lineage."""
+    fixture = json.loads(
+        _read(EVIDENCE_DIR / "rendered-fixture.json")
+    )
+    browser = json.loads(_read(EVIDENCE_DIR / receipt_name))
+    assert browser["proof_class"] == "browser_fixture_proof_reproducible"
+    assert browser["claims"] == {
+        "source_contract": "not_assessed_by_this_receipt",
+        "browser_fixture": "reproducible",
+        "canonical_build": "unavailable",
+        "production": "none",
+    }
+    assert browser["fixture_market"] == market
+    assert browser["verifier"] == {
+        "path": "scripts/verify_stock_dashboard_mobile_layout.cjs",
+        "sha256": _sha256(BROWSER_RECEIPT),
+    }
+    assert browser["fixture_receipt"]["sha256"] == _sha256(
+        EVIDENCE_DIR / "rendered-fixture.json"
+    )
+    assert browser["input_html"]["sha256"] == fixture["markets"][market]["output_sha256"]
+    template = "hk.html.j2" if market == "hk" else "canada.html.j2"
+    assert browser["construction_inputs"][f"templates/{template}"] == _sha256(
+        ROOT / "templates" / template
+    )
+    for relative, digest in browser["loaded_assets"].items():
+        assert _sha256(ROOT / relative) == digest
+    assert browser["loaded_assets"]["site/stock-dashboard.css"] == _sha256(
+        ROOT / "site" / "stock-dashboard.css"
+    )
+    assert browser["loaded_assets"][f"site/{composer}"] == _sha256(
+        ROOT / "site" / composer
+    )
+    assert {row["state"] for row in browser["states"]} >= {
+        "en-dark",
+        "en-light",
+        "zh-dark",
+        "zh-light",
+        "js-disabled",
+        "composer-failed",
+        "composer-pending",
+    }
+    if market == "ca":
+        degraded = {
+            row["state"]: row["screenshot"]
+            for row in browser["states"]
+            if row["state"] in {"js-disabled", "composer-failed"}
+        }
+        assert set(degraded) == {"js-disabled", "composer-failed"}
+        for screenshot in degraded.values():
+            assert _sha256(ROOT / screenshot["path"]) == screenshot["sha256"]
+
+
+def test_visual_manifest_names_fixture_only_provenance() -> None:
+    """The 16-cell capture cannot be mistaken for a canonical or live build."""
+    fixture_path = EVIDENCE_DIR / "rendered-fixture.json"
+    fixture = json.loads(_read(fixture_path))
+    manifest = json.loads(_read(EVIDENCE_DIR / "manifest.json"))
+    target = manifest["target"]
+    assert target["kind"] == "rendered_fixture"
+    assert target["proof_class"] == "browser_fixture_proof_reproducible"
+    assert target["canonical_build_proof"] == "unavailable"
+    assert target["production_proof"] == "none"
+    assert target["fixture_receipt"] == {
+        "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
+        "sha256": _sha256(fixture_path),
+    }
+    assert {
+        route: row["sha256"]
+        for route, row in target["rendered_pages"].items()
+    } == {
+        spec["route"]: spec["output_sha256"]
+        for spec in fixture["markets"].values()
+    }
+    assert manifest["totals"] == {
+        "pages": 2,
+        "states_attempted": 16,
+        "states_captured": 16,
+    }
+    for page in manifest["pages"]:
+        for state in page["states"]:
+            screenshot = EVIDENCE_DIR / state["file"]
+            assert screenshot.is_file()
+            assert _sha256(screenshot) == state["sha256"]
 
 
 @pytest.mark.parametrize(

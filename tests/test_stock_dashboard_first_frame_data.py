@@ -1,8 +1,10 @@
-"""Generated-page population receipts for the P0B stock-dashboard shell.
+"""Legacy generated-page population receipts for the stock dashboards.
 
 These assertions intentionally read checked-in ``site/**`` output and therefore
-remain in the nightly ``gate: data`` lane.  The PR merge gate's hermetic source
-contract lives in ``test_stock_dashboard_first_frame.py``.
+remain in the nightly ``gate: data`` lane. The checked-in pages predate P0B and
+prove only their legacy population/identity integrity; they are not evidence of
+candidate static composition. Candidate-template composition is rendered through
+the deterministic recipe in ``test_stock_dashboard_first_frame.py``.
 """
 
 from __future__ import annotations
@@ -102,7 +104,8 @@ def test_canada_generated_page_preserves_complete_candidate_action_population() 
 
 
 @pytest.mark.parametrize("market", PAGES)
-def test_generated_ids_remain_unique_after_static_composition(market: str) -> None:
+def test_legacy_generated_ids_remain_unique_before_p0b_composition(market: str) -> None:
+    """Population-only guard; the P0B candidate duplicate-id proof is elsewhere."""
     soup = _soup(market)
     ids = [node.get("id") for node in soup.find_all(attrs={"id": True})]
     duplicates = sorted(node_id for node_id, count in Counter(ids).items() if count > 1)

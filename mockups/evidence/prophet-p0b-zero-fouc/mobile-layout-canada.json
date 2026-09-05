@@ -19,18 +19,16 @@
     "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
     "sha256": "c0b43196d7643b5ae3b54ff1babdb241e24ccea02cf2c78d6dc5b26d5d7493b0"
   },
-  "fixture_market": "hk",
+  "fixture_market": "ca",
   "input_html": {
-    "path": "hk_stocks.html",
-    "route": "/hk_stocks.html",
-    "sha256": "4403ab98ba82127ec52c2da47fdc03c67092e7339265a5438539b57f432736c1"
+    "path": "canada_stocks.html",
+    "route": "/canada_stocks.html",
+    "sha256": "1a0ce962b600357544e86ffe6685b5297e5c83d66d3a51574aa19361bcb8f94d"
   },
   "construction_inputs": {
     "engine/i18n.py": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44",
     "scripts/render_stock_dashboard_fixture.py": "bc2fb1a9d1518defc2b2c7fe2700f4a784f849ece44316f4b8ac2a97831938be",
-    "site/factordata/hk_standouts.json": "176e8c6d4bd22027336f5cf5785bab83d47558762348a36a16433f153e68013f",
-    "templates/_aibrief_body.html.j2": "f758be7fc256a9dad50ea07542ef6d75b1aa6694be58eabd5627a351b74bd7c5",
-    "templates/_aibrief_css.j2": "1c341bc8204ba2203cd6f1953419a58ace9ccc8c3048767658d276072cde5d81",
+    "site/factordata/canada_standouts.json": "902d097d89ffc6cc6d9846c8ae70ab4aa24092752b4a92423c87fb86895fa5ce",
     "templates/_cmd_hero.css.j2": "86d3c260212c477d990b82dd424078dcb2227e252dcc83a2ba92f3e629b5170e",
     "templates/_decision_card.html.j2": "2c67a16a868f40bfced08d96be88571f0a235ca948169c8e9a44de827442ca76",
     "templates/_icons.html.j2": "91e9ed18b6423b41793062ccde2406222b66f646f6f3928f272e71318c9e0dab",
@@ -44,10 +42,14 @@
     "templates/_risk_radar_dlg.html.j2": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43",
     "templates/_seo_head.html.j2": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee",
     "templates/_site_nav.html.j2": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482",
-    "templates/hk.html.j2": "3bb84123744ee18c2e3505736de24d95a020906413f3037a73db4958cb9aa932"
+    "templates/canada.html.j2": "fe6b914170db6f26a7d6e9e4a4b122b2a1debd8c1b7937cb2382b6ee7686dee4"
   },
   "loaded_assets": {
     "site/account.js": "521f0e4bd309a1b19d7dcee243667839d21a2903b20cc69ed14b72784bd276bd",
+    "site/canada-stock-v36.js": "7fe0b21ac3cadae67215efc09e7a870a60856bc56efd1aef301ea72c34ee6695",
+    "site/canadabasketdata/baskets.json": "85b74e8bebd0dc78cb896e6f7209106c44d350868b3db536127cc58c841e5811",
+    "site/canadabasketdata/sector_pulse_canada.json": "6cb4206a1d4176cb8c7705801627e3b6dfe56d80a18ec44006ac17abe88ab4ca",
+    "site/chart_i18n.js": "23272c482c2b27f294f6e35f45a76dfe8e61bdd6cdc61e88e83a3cde47174315",
     "site/charts.js": "5372d2a229f4d2b16319a2d02c9fb2bfba19ad65c680d415796b12103aeff6ff",
     "site/dashboard-icons.css": "be32e541eabb7deeb4a6c88ff20bd1a0a53a96c873fb3773ed01da470682b0e9",
     "site/dashboard-icons.js": "6d98e4cbf040ad07d257bb38398c2dadec42f80f0653dc1b2307cc124a06d86f",
@@ -57,7 +59,6 @@
     "site/fonts/Inter-700.woff2": "6f56409fd3d64bb85f7d070bce20749db2d66b6d63cec586cc22d1c761be2491",
     "site/fonts/Inter-800.woff2": "a7d0a50f15d389cad679238466bdb5fc9787aa0715719064ce25abaff042820d",
     "site/fonts/Inter-900.woff2": "d5c0ed7b8b5dde97d48b97947d740bbd8ad3ba9f2c5cc6b8280f16acba2d828e",
-    "site/hk-stock-v36.js": "63afc85249a7e94fd8c8f21b30947a3fa33e43c4f799bebfd2898f666371d75a",
     "site/illus.css": "cbe6a0b4f83095ed300ee49a5d9f4d03e88005170a4792a7a9f41805a67e5f07",
     "site/illus.js": "8e0a3779784525f15bb4a1b20e50f39ef4d0ddf243827f5ab609cfb08a69c620",
     "site/live.js": "f7bdf7cce1606c07d806408b7feb8b134c99e838acc3ee887bf5e1a15a9f4478",
@@ -65,7 +66,6 @@
     "site/live/quotes.json": "812af30033cb0f84e755d8fb5d8f5424ad170a429f89d361505ce3d2f5fe94dd",
     "site/live_config.js": "52943e92422103557d94066ceb65f4402816322281f95e8bd376293fe14d9c10",
     "site/logo_config.js": "b37d33d3194c191b1bb64db3f5c33d17c7dc06a74892e4aa8ea4d50320aae215",
-    "site/marketdata/rotation_events_hk.json": "9082a36bbf5dab22bf67c4b3fe2830a4e7aeb00ee9713b350eb6cdee6e431459",
     "site/mtf.js": "b62aea2f86b81a2d06e156c9e8f63f43804cd183868f209f3c450cdf2b39a1c0",
     "site/nav_market.js": "24985e3240b509bfa197a5203b7bd28bb039b82b77a624481393203c74463497",
     "site/navigation-refresh.css": "c299c32498d25c412608eca40e53686b891076dd11a0c452b7dfe048c3d25584",
@@ -147,6 +147,10 @@
       "theme": "dark",
       "javascript_enabled": false,
       "composer": "loaded",
+      "screenshot": {
+        "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-js-disabled-dark-390.png",
+        "sha256": "ff51a0a233e751da8ef36f64d82adcfd9316f10fd4d9a7929a6e7d9848beb5fe"
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,
@@ -161,6 +165,10 @@
       "theme": "light",
       "javascript_enabled": true,
       "composer": "failed",
+      "screenshot": {
+        "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-composer-failed-light-390.png",
+        "sha256": "db84a9d08f9957bdaa0e3d1586c612e7df5e50497f3eb28394065a071c6ad245"
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,

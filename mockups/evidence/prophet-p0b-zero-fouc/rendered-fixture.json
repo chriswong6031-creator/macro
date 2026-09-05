@@ -1,0 +1,218 @@
+{
+  "ambient_inputs": [],
+  "effects": {
+    "collectors": false,
+    "ledger_advance": false,
+    "publish": false
+  },
+  "markets": {
+    "ca": {
+      "inputs": [
+        {
+          "path": "engine/i18n.py",
+          "role": "jinja_globals",
+          "sha256": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44"
+        },
+        {
+          "path": "scripts/render_stock_dashboard_fixture.py",
+          "role": "recipe",
+          "sha256": "bc2fb1a9d1518defc2b2c7fe2700f4a784f849ece44316f4b8ac2a97831938be"
+        },
+        {
+          "path": "site/factordata/canada_standouts.json",
+          "role": "owner_fixture",
+          "sha256": "902d097d89ffc6cc6d9846c8ae70ab4aa24092752b4a92423c87fb86895fa5ce"
+        },
+        {
+          "path": "templates/_cmd_hero.css.j2",
+          "role": "jinja_template",
+          "sha256": "86d3c260212c477d990b82dd424078dcb2227e252dcc83a2ba92f3e629b5170e"
+        },
+        {
+          "path": "templates/_decision_card.html.j2",
+          "role": "jinja_template",
+          "sha256": "2c67a16a868f40bfced08d96be88571f0a235ca948169c8e9a44de827442ca76"
+        },
+        {
+          "path": "templates/_icons.html.j2",
+          "role": "jinja_template",
+          "sha256": "91e9ed18b6423b41793062ccde2406222b66f646f6f3928f272e71318c9e0dab"
+        },
+        {
+          "path": "templates/_lens.html.j2",
+          "role": "jinja_template",
+          "sha256": "1d6bbb2ff780b60a2fcd0397e7c94305e1a7f996ae76c517c4562385ccdc19ea"
+        },
+        {
+          "path": "templates/_market_state.css.j2",
+          "role": "jinja_template",
+          "sha256": "16f285a8a6857f6627ec756b7fbfc9009c130c8e6e6275b7438855f90d421a6c"
+        },
+        {
+          "path": "templates/_navlinks.html.j2",
+          "role": "jinja_template",
+          "sha256": "10ef03e1d39149ee0e94072bcdeebae3cdbdfa92c0e620efdf54b69a1109f7b8"
+        },
+        {
+          "path": "templates/_prophet_card.html.j2",
+          "role": "jinja_template",
+          "sha256": "27b08e4f5a5c1aa0ad29108ed9ec6bfc2ce970b820fc46ab3a066c0ba3798e35"
+        },
+        {
+          "path": "templates/_risk_radar_card.css.j2",
+          "role": "jinja_template",
+          "sha256": "07b56d52a6e426352ad9ca9cc9b117d50cb50bfd2c7d8de052aaaa4dad9bb2f2"
+        },
+        {
+          "path": "templates/_risk_radar_card.html.j2",
+          "role": "jinja_template",
+          "sha256": "fe784862a462a62eae7e76b4c9df32cb2aefb01738a138ce262e2d171188d2d3"
+        },
+        {
+          "path": "templates/_risk_radar_dlg.css.j2",
+          "role": "jinja_template",
+          "sha256": "186239255efa4f7a938c3b0abb9c33c59c99e0711993269b5909980da2adf1ac"
+        },
+        {
+          "path": "templates/_risk_radar_dlg.html.j2",
+          "role": "jinja_template",
+          "sha256": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43"
+        },
+        {
+          "path": "templates/_seo_head.html.j2",
+          "role": "jinja_template",
+          "sha256": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee"
+        },
+        {
+          "path": "templates/_site_nav.html.j2",
+          "role": "jinja_template",
+          "sha256": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482"
+        },
+        {
+          "path": "templates/canada.html.j2",
+          "role": "jinja_template",
+          "sha256": "fe6b914170db6f26a7d6e9e4a4b122b2a1debd8c1b7937cb2382b6ee7686dee4"
+        }
+      ],
+      "output": "canada_stocks.html",
+      "output_sha256": "1a0ce962b600357544e86ffe6685b5297e5c83d66d3a51574aa19361bcb8f94d",
+      "owner_population": {
+        "board": 9,
+        "watch": 8
+      },
+      "route": "/canada_stocks.html"
+    },
+    "hk": {
+      "inputs": [
+        {
+          "path": "engine/i18n.py",
+          "role": "jinja_globals",
+          "sha256": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44"
+        },
+        {
+          "path": "scripts/render_stock_dashboard_fixture.py",
+          "role": "recipe",
+          "sha256": "bc2fb1a9d1518defc2b2c7fe2700f4a784f849ece44316f4b8ac2a97831938be"
+        },
+        {
+          "path": "site/factordata/hk_standouts.json",
+          "role": "owner_fixture",
+          "sha256": "176e8c6d4bd22027336f5cf5785bab83d47558762348a36a16433f153e68013f"
+        },
+        {
+          "path": "templates/_aibrief_body.html.j2",
+          "role": "jinja_template",
+          "sha256": "f758be7fc256a9dad50ea07542ef6d75b1aa6694be58eabd5627a351b74bd7c5"
+        },
+        {
+          "path": "templates/_aibrief_css.j2",
+          "role": "jinja_template",
+          "sha256": "1c341bc8204ba2203cd6f1953419a58ace9ccc8c3048767658d276072cde5d81"
+        },
+        {
+          "path": "templates/_cmd_hero.css.j2",
+          "role": "jinja_template",
+          "sha256": "86d3c260212c477d990b82dd424078dcb2227e252dcc83a2ba92f3e629b5170e"
+        },
+        {
+          "path": "templates/_decision_card.html.j2",
+          "role": "jinja_template",
+          "sha256": "2c67a16a868f40bfced08d96be88571f0a235ca948169c8e9a44de827442ca76"
+        },
+        {
+          "path": "templates/_icons.html.j2",
+          "role": "jinja_template",
+          "sha256": "91e9ed18b6423b41793062ccde2406222b66f646f6f3928f272e71318c9e0dab"
+        },
+        {
+          "path": "templates/_lens.html.j2",
+          "role": "jinja_template",
+          "sha256": "1d6bbb2ff780b60a2fcd0397e7c94305e1a7f996ae76c517c4562385ccdc19ea"
+        },
+        {
+          "path": "templates/_market_state.css.j2",
+          "role": "jinja_template",
+          "sha256": "16f285a8a6857f6627ec756b7fbfc9009c130c8e6e6275b7438855f90d421a6c"
+        },
+        {
+          "path": "templates/_navlinks.html.j2",
+          "role": "jinja_template",
+          "sha256": "10ef03e1d39149ee0e94072bcdeebae3cdbdfa92c0e620efdf54b69a1109f7b8"
+        },
+        {
+          "path": "templates/_prophet_card.html.j2",
+          "role": "jinja_template",
+          "sha256": "27b08e4f5a5c1aa0ad29108ed9ec6bfc2ce970b820fc46ab3a066c0ba3798e35"
+        },
+        {
+          "path": "templates/_risk_radar_card.css.j2",
+          "role": "jinja_template",
+          "sha256": "07b56d52a6e426352ad9ca9cc9b117d50cb50bfd2c7d8de052aaaa4dad9bb2f2"
+        },
+        {
+          "path": "templates/_risk_radar_card.html.j2",
+          "role": "jinja_template",
+          "sha256": "fe784862a462a62eae7e76b4c9df32cb2aefb01738a138ce262e2d171188d2d3"
+        },
+        {
+          "path": "templates/_risk_radar_dlg.css.j2",
+          "role": "jinja_template",
+          "sha256": "186239255efa4f7a938c3b0abb9c33c59c99e0711993269b5909980da2adf1ac"
+        },
+        {
+          "path": "templates/_risk_radar_dlg.html.j2",
+          "role": "jinja_template",
+          "sha256": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43"
+        },
+        {
+          "path": "templates/_seo_head.html.j2",
+          "role": "jinja_template",
+          "sha256": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee"
+        },
+        {
+          "path": "templates/_site_nav.html.j2",
+          "role": "jinja_template",
+          "sha256": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482"
+        },
+        {
+          "path": "templates/hk.html.j2",
+          "role": "jinja_template",
+          "sha256": "3bb84123744ee18c2e3505736de24d95a020906413f3037a73db4958cb9aa932"
+        }
+      ],
+      "output": "hk_stocks.html",
+      "output_sha256": "4403ab98ba82127ec52c2da47fdc03c67092e7339265a5438539b57f432736c1",
+      "owner_population": {
+        "board": 39,
+        "watch": 8
+      },
+      "route": "/hk_stocks.html"
+    }
+  },
+  "proof_class": "rendered_fixture",
+  "runtime": {
+    "jinja2": "3.1.6"
+  },
+  "schema": "mastermind.stock_dashboard_rendered_fixture.v1",
+  "transform": "jinja2_candidate_template_render"
+}
