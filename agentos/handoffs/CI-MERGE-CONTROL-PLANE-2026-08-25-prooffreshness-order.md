@@ -250,7 +250,62 @@ also stays on the conservative path.
   (`_touches_semantic_authority` → True, live-inherited-red → None,
   `semantic_main_circuit_decision` → no bypass). Verify any new caller does too:
   transport exceptions now return `None` instead of propagating.
-- `note_merged_commit(..., pull_files(n))` records `None` as an EMPTY complete
-  file list. That is pre-existing post-merge bookkeeping, deliberately NOT changed
-  here (out of commissioned scope), but it is a latent under-read worth a separate
-  look.
+- `note_merged_commit` CORRECTED after adversarial review (see below). It had
+  recorded an unreadable footprint as an EMPTY, non-truncated file list; because
+  the squash is inserted at the FRONT of the main timeline, that told every later
+  candidate in the same sweep the commit changed NOTHING, and a sibling whose
+  tested surface overlapped it could merge with no re-proof. It now records
+  `truncated=True` when the inventory was not COMPLETE, reusing the window loop's
+  existing conservative-reproof law. Any future caller must pass
+  `inventory_complete` honestly.
+
+### Adversarial review outcome (2026-09-05)
+
+An independent opus reviewer attacked the exact head and returned one MAJOR
+finding that was verified and fixed rather than argued down.
+
+**Finding.** The commit's claim that "its other four callers keep their
+fail-closed reading" was FALSE for one of them.
+`scripts/merge_on_green.py` post-merge bookkeeping fed `pull_files()`'s answer
+straight into `note_merged_commit`, which stored `(list(files or []), False)` —
+so `None` became "touched nothing, not truncated", and `files_of` then served
+that seeded value instead of performing the real `/commits/{sha}` GET. Scope was
+correctly characterised by the reviewer: HTTP/non-list/malformed/truncated
+already returned `None` there (PRE-EXISTING hole), while this repair added one
+NEW subcase — a transport exception, which previously propagated and aborted the
+sweep (fail-closed). Trigger: PR A merges, the `/pulls/A/files` GET then fails at
+the bookkeeping call, and sibling PR B merges in the same sweep against a main
+commit it was never re-proven against.
+
+**Fix.** `note_merged_commit(..., inventory_complete=False)` records the squash as
+TRUNCATED, which the window loop already treats as "cannot be shown to be outside
+the surface". Guarded by
+`test_a_squash_with_an_unseen_footprint_is_recorded_truncated_not_empty`,
+`test_a_sibling_cannot_merge_against_a_squash_this_sweep_could_not_see`, and a
+control that the ordinary complete path is unchanged. Both guards were confirmed
+RED against the pre-fix bookkeeping line and GREEN after.
+
+**Also from the review, accepted and acted on.** The existing
+`test_a_surface_that_cannot_be_determined_is_re_proven` case named "a footprint
+that cannot be read" seeds `_pr_files` directly WITHOUT a class, a state
+production can no longer produce; its docstring's "every way of not knowing
+re-proves" was no longer true. Renamed to name what it actually guards — the
+conservative DEFAULT for an unclassified inventory — with the narrowing recorded
+in the docstring.
+
+**Known and deliberately NOT changed** (named so a later session does not read
+silence as absence):
+- `except RateLimited: raise` inside `pull_files` is currently unreachable, since
+  `_request` returns `(status, payload)` for every `HTTPError` and never raises
+  `RateLimited`. A real 429 takes the `status >= 400` branch and is classified
+  UNAVAILABLE, which is the correct outcome. The guard is retained as defensive
+  depth, but it is NOT exercised at this seam and no claim should say it is.
+- `_semantic_pull_paths` is a SECOND independent `/pulls/{n}/files` reader that
+  still returns a bare `None` on `status >= 400`. It feeds
+  `_touches_semantic_authority`, which returns True on None, so it is fail-closed
+  and safe; the divergence is a consistency debt, not a hole, and unifying the two
+  readers is outside this commission's ceiling.
+- The generic `except Exception as exc` in `proof_freshness_disposition`
+  interpolates `{exc}` into its reason. This repair removes the PR-files transport
+  path from reaching it, and the canary test proves that path is clean, but other
+  exception sources still flow through that older interpolation.

@@ -1942,13 +1942,32 @@ class ProofFreshness:
         return bound
 
     def note_merged_commit(
-        self, sha: str, files: list[str] | None, message: str = ""
+        self,
+        sha: str,
+        files: list[str] | None,
+        message: str = "",
+        *,
+        inventory_complete: bool = True,
     ) -> None:
-        """Record a squash this sweep just landed so the next PR classifies it."""
+        """Record a squash this sweep just landed so the next PR classifies it.
+
+        This commit is inserted at the FRONT of the main timeline, so it enters the
+        staleness window of every pull request evaluated later in the same sweep.
+        That makes the ``files`` argument safety-critical rather than bookkeeping:
+        recording an unseen footprint as an EMPTY, non-truncated list tells every
+        later candidate that this commit changed NOTHING, and a sibling whose tested
+        surface really does overlap it would then merge with no re-proof.
+
+        ``inventory_complete=False`` means the sweep could not fully see what the
+        merged commit touched. Record it as TRUNCATED, which the existing window
+        loop already reads as "cannot be shown to be outside the surface" and routes
+        to conservative re-proof. Not knowing must never present as "touched
+        nothing".
+        """
         if not sha:
             return
         self.commits.insert(0, {"sha": sha, "message": message})
-        self._commit_files[sha] = (list(files or []), False)
+        self._commit_files[sha] = (list(files or []), not inventory_complete)
         self._proof_bound_sha = None
 
     def sha_is_skip_ci_tick(self, sha: str) -> bool:
@@ -7192,10 +7211,14 @@ def sweep_pull(
             f"PR #{number}: every check concluded clean — squash-merged "
             f"({merged_sha[:12]}).",
         )
+        merged_files = freshness.pull_files(number)
         freshness.note_merged_commit(
             merged_sha or f"merged-{number}",
-            freshness.pull_files(number),
+            merged_files,
             message=f"squash merge of #{number}",
+            inventory_complete=(
+                freshness.surface_class(number) == PR_FILES_COMPLETE
+            ),
         )
         # Cleanup is genuinely best-effort. A label/ref read can fail after GitHub
         # has accepted the merge; that must never hide the `merged` verdict and let

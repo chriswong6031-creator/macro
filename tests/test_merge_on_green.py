@@ -4103,7 +4103,7 @@ def test_a_non_PR_workflow_edit_does_not_globally_invalidate_green_proof(workflo
     "case,runs,kwargs,expected_in_reason",
     [
         (
-            "a footprint that cannot be read",
+            "a footprint with no observation class (default is conservative)",
             [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)],
             {"pull_files": {4242: None}},
             "could not be established",
@@ -4122,9 +4122,18 @@ def test_a_surface_that_cannot_be_determined_is_re_proven(
     """FAIL CLOSED, the whole reason this gate is worth having.
 
     A definition of "tested surface" that silently resolves to the empty set turns
-    this into a no-op that REVIEWS as protection. Every way of not knowing therefore
-    lands on re-prove, including the empty footprint — a pull request whose files
-    match no path entry is not "outside every surface", it is unclassified.
+    this into a no-op that REVIEWS as protection, so an unclassified footprint
+    lands on re-prove — a pull request whose files match no path entry is not
+    "outside every surface", it is unclassified.
+
+    NARROWED 2026-09-05: this no longer says "every way of not knowing re-proves".
+    A POSITIVELY OBSERVED transport failure is PROOF_SURFACE_UNAVAILABLE and defers
+    with zero non-GET effects, because a failed read may not author a write; those
+    cases are owned by the `unreadable_files_inventory` tests at the end of this
+    file. What survives here is the DEFAULT: an inventory carrying no observation
+    class — including one seeded directly, as the first case does — stays on the
+    conservative path. That default is load-bearing, since it is what stops
+    anything from silently inheriting the new deferral.
     """
     freshness = _freshness(
         commits=[(MAIN_MOVED_AT_1026, ["engine/signal_quality.py"])], **kwargs
@@ -9044,3 +9053,64 @@ def test_an_unreadable_inventory_is_re_observed_by_the_next_sweep(monkeypatch):
     state["fail"] = False
     second, _reason2 = _surface_probe_freshness().stale_for(_pull(), runs)
     assert second is True, "the re-read must be able to reach an affirmative verdict"
+
+
+def test_a_squash_with_an_unseen_footprint_is_recorded_truncated_not_empty():
+    """Adversarial-review finding, 2026-09-05 — the sibling-merge hole.
+
+    `note_merged_commit` inserts the squash at the FRONT of the main timeline, so
+    every candidate evaluated later in the SAME sweep classifies against it. If an
+    unreadable footprint were recorded as an empty, non-truncated list, that commit
+    would tell those candidates it changed NOTHING, and a sibling whose tested
+    surface genuinely overlaps the merged files would merge with no re-proof. Not
+    knowing must never present as "touched nothing".
+    """
+    freshness = _freshness()
+    sha = "f" * 40
+
+    freshness.note_merged_commit(
+        sha, None, message="squash merge of #99", inventory_complete=False
+    )
+
+    files, truncated = freshness.files_of(sha)
+    assert truncated is True, (
+        "an unseen merged footprint must be recorded TRUNCATED, so the window loop "
+        "re-proves instead of reading it as an empty change"
+    )
+    assert files == []
+
+
+def test_a_squash_with_a_read_footprint_is_still_recorded_exactly():
+    """Control: the ordinary complete-inventory path is unchanged."""
+    freshness = _freshness()
+    sha = "e" * 40
+
+    freshness.note_merged_commit(
+        sha, ["engine/signal_quality.py"], message="squash merge of #98"
+    )
+
+    assert freshness.files_of(sha) == (["engine/signal_quality.py"], False)
+
+
+def test_a_sibling_cannot_merge_against_a_squash_this_sweep_could_not_see():
+    """End-to-end consequence of the finding above, through the real decision.
+
+    Before the fix this returned False ("none of them inside any gate's path
+    filter") because the unseen squash contributed no candidates, and the sibling
+    merged unproven against it.
+    """
+    freshness = _freshness(
+        commits=[(MAIN_MOVED_AT_1026, ["docs/unrelated.md"])],
+        gates=[{"workflow": "ci.yml", "patterns": ["engine/**"]}],
+        pull_files={4242: ["engine/signal_quality.py"]},
+    )
+    freshness.note_merged_commit(
+        "f" * 40, None, message="squash merge of #99", inventory_complete=False
+    )
+
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+
+    assert stale is True, f"a sibling must re-prove against an unseen squash ({reason})"
+    assert "too many files to list" in reason, reason
