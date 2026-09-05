@@ -305,12 +305,21 @@
     }
     return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
   }
+  function watchPopulation() {
+    var grid = qs("#standouts .watch-strip .watch-grid");
+    return grid ? qsa("a[href]", grid).length : null;
+  }
   function applyFilter() {
     var shown = 0;
     state.cards.forEach(function (card) { var show = allowed(ticker(card.getAttribute("data-ticker"))); card.hidden = !show; if (show) shown++; });
     var empty = qs("#ca-v36-grid-empty");
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
-    var result = qs("#ca-v36-result"); if (result) result.innerHTML = bi(shown + " shown · " + state.cards.length + " on board", "显示 " + shown + " 只 · 榜单共 " + state.cards.length + " 只");
+    var board = state.cards.length, result = qs("#ca-v36-result"), watch = watchPopulation();
+    if (result) {
+      result.innerHTML = watch === null
+        ? bi(shown + " cards shown · " + board + " board names · watch unavailable", "显示 " + shown + " 张卡片 · 榜单 " + board + " 只 · 观察名单暂不可用")
+        : bi(shown + " cards shown · " + (board + watch) + " current names (" + board + " board + " + watch + " watch)", "显示 " + shown + " 张卡片 · 当前共 " + (board + watch) + " 只（榜单 " + board + " + 观察 " + watch + "）");
+    }
     var pill = qs("#ca-v36-filter"), item = itemForFilter();
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi(item.kind === "theme" ? "Theme" : "Sector", item.kind === "theme" ? "主题" : "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();

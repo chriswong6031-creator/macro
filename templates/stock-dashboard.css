@@ -675,6 +675,7 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   .mx-stockdash--ca .ca-v36-fresh { white-space: normal; }
   .mx-stockdash--ca .ca-v36-sec-hd { align-items: flex-start; flex-wrap: wrap; padding: 11px 12px; }
   .mx-stockdash--ca .ca-v36-sec-hd h2 { font-size: 17px; }
+  .mx-stockdash--ca .ca-v36-result { width: 100%; white-space: normal; }
   .mx-stockdash--ca .ca-v36-controls { width: 100%; }
   /* Mobile Act-Now grammar: one segmented lane selector, one lane body at a
      time, no stacked giant lane cards, no horizontal overflow. */
@@ -916,6 +917,7 @@ html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-sb { background: var(--pa
   .mx-stockdash--hk { font-size: 15.8px; }
   .mx-stockdash--hk .hk-v37-sec-hd { align-items: flex-start; flex-wrap: wrap; padding: 11px 12px; }
   .mx-stockdash--hk .hk-v37-sec-hd h2 { font-size: 17px; }
+  .mx-stockdash--hk .hk-v37-result { width: 100%; white-space: normal; }
   .mx-stockdash--hk .hk-v37-flow { width: 100%; max-width: none; white-space: normal; }
   .mx-stockdash--hk .hk-v37-controls { width: 100%; }
   .mx-stockdash--hk .hk-v37-card-grid { padding: 10px; }

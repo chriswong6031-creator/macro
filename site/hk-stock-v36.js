@@ -381,13 +381,22 @@
     var count = all ? parseInt(all.textContent, 10) : NaN;
     return isNaN(count) ? Math.max(state.rows.length, state.cards.length) : count;
   }
+  function watchPopulation() {
+    var grid = qs("#standouts .watch-strip .watch-grid");
+    return grid ? qsa("a[href]", grid).length : null;
+  }
   function applyFilter() {
     var shown = 0;
     state.cards.forEach(function (card) { var show = allowed(ticker(card.getAttribute("data-ticker"))); card.hidden = !show; if (show) shown++; });
     var empty = qs("#hk-v37-grid-empty");
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var total = ownerPopulation();
-    var result = qs("#hk-v37-result"); if (result) result.innerHTML = bi(shown + " actionable cards shown · " + total + " owner candidates", "显示 " + shown + " 张可操作卡片 · 原生榜单共 " + total + " 只");
+    var result = qs("#hk-v37-result"), watch = watchPopulation();
+    if (result) {
+      result.innerHTML = watch === null
+        ? bi(shown + " actionable cards shown · " + total + " stage-board names · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + total + " 只 · 观察名单暂不可用")
+        : bi(shown + " actionable cards shown · " + (total + watch) + " current names (" + total + " stage board + " + watch + " watch)", "显示 " + shown + " 张可操作卡片 · 当前共 " + (total + watch) + " 只（阶段榜单 " + total + " + 观察 " + watch + "）");
+    }
     var pill = qs("#hk-v37-filter"), item = itemForFilter();
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi("Sector", "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();

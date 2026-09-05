@@ -181,6 +181,44 @@ def test_canada_top_picks_remains_the_first_five_owner_cards() -> None:
     assert 'card.classList.toggle("ca-v36-top-pick", i < 5)' in text
 
 
+@pytest.mark.parametrize(
+    ("market", "board_phrase"),
+    (("hk", "stage board"), ("ca", "board")),
+)
+def test_result_copy_counts_watch_population_dynamically(
+    market: str, board_phrase: str
+) -> None:
+    """Result copy reports the whole estate without inventing a missing watch zero."""
+    text = _read(MARKETS[market]["composer"])
+    watch = re.search(r"function watchPopulation\b.*?(?=\n  function )", text, re.S)
+    assert watch, f"{market}: watchPopulation() missing"
+    assert 'qs("#standouts .watch-strip .watch-grid")' in watch.group(0)
+    assert 'qsa("a[href]", grid).length' in watch.group(0)
+
+    apply = re.search(r"function applyFilter\b.*?(?=\n  function )", text, re.S)
+    assert apply, f"{market}: applyFilter() missing"
+    body = apply.group(0)
+    assert "watchPopulation()" in body
+    assert "watch === null" in body
+    assert "current names (" in body
+    assert board_phrase in body
+    assert "watch unavailable" in body
+    assert "当前共" in body
+    assert "观察名单暂不可用" in body
+    assert "47 current names" not in text
+    assert "17 current names" not in text
+
+
+@pytest.mark.parametrize(
+    "selector", (".ca-v36-result", ".hk-v37-result")
+)
+def test_complete_population_copy_wraps_on_mobile(selector: str) -> None:
+    """The longer honest population read must not widen the 390px canvas."""
+    css = _read(ROOT / "templates" / "stock-dashboard.css")
+    rule = selector + " { width: 100%; white-space: normal; }"
+    assert rule in css
+
+
 @pytest.mark.parametrize("market", MARKETS)
 def test_zero_cards_do_not_abort_static_shell_enhancement(market: str) -> None:
     text = _read(MARKETS[market]["composer"])
