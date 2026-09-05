@@ -238,7 +238,7 @@ verified:
       Local commit 7ffc3821004ab4bf4a63d56f88d18cb5165424d6, tree
       d8fc3053a766fd014d4cfc4dd313c06c541932f8, fixes a q=0 Accept path and
       rejects bare NaN, Infinity and -Infinity before verifier/provider use
-      while preserving q=1. Focused failures 11+4 were repaired; targeted
+      while preserving `q=1.` with its literal trailing dot. Focused failures 11+4 were repaired; targeted
       tests are 15/15, exact ASGI 42/42 and expanded tests 775/775. Independent
       read-only rereview passed and five preserved blobs match. Remote #463
       remains 4d6 Draft/HOLD: no join, push or CI occurs without an explicit
@@ -270,7 +270,7 @@ unresolved:
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement; do not replace or parallelize it."
   - "The installed Control Room is now source 15d relative to #481, but it remains informationally degraded: DB absent, source clocks old and B3/B5/B6 unproven. The desktop header source/status overlap is real-preview-confirmed and still present on installed 15d pending the sequenced CSS release."
   - "The B5 vocabulary has source-level responsibility, dispatch, attention, freshness, blocker, capacity and exact-target surfaces but no current live feed. Canonical parent/child-orphan projection is absent; no aggregate lifecycle or derived next-action authority is lawful."
-  - "Two read-only exact-Chrome-tab probes reached their CDP deadlines before command dispatch, including a 3.0-second root-handle URL/title retry; both have effect=NONE. Secretary was informed and no more retries or bypass are allowed. A fresh IAB live page separately verified source 15d. This is not a Business cockpit edge."
+  - "Two read-only exact-Chrome-tab probes reached their CDP deadlines before command dispatch, including a 3.0-second root-handle URL/title retry; both have effect=NONE. Secretary was informed; no refresh was dispatched, no bypass was used, and supported transport recovery remains pending. A fresh IAB live page separately verified source 15d. This is not a Business cockpit edge."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Treat #481 source merge and narrow installed-host receipt as complete only for the stated Control Room source/UI plane. Preserve B3/B5/B6, Business cockpit and Executive-runtime gates as unproven."
@@ -288,7 +288,7 @@ danger_areas:
   - "The installed #481 Control Room now qualifies empty attention when runtime/inbox state is absent, but a degraded UI remains non-operational evidence. At 1440px, long synthetic source/status text visibly overruns rightward across the badge/theme controls even though document width does not overflow; this is real-preview-confirmed on installed 15d and persists until a sequenced CSS release, not comprehensive visual acceptance."
   - "Actual Business account/workspace confirmation is sensitive: record opaque references and state outcomes only; never put account secrets, cookies, tokens, private account locators or browser targets in Agent OS."
   - "HC0 is a sticky existing child with a session-loss reconciliation hold. A second writer or blind transport retry would violate the one-carrier rule."
-prs: [247, 302, 310, 326, 361, 463, 469, 481]
+prs: [247, 302, 310, 326, 361, 463, 469, 481, 482]
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CCR-SOL-IDENTITY-IS-NOT-A-CHAT
@@ -300,9 +300,10 @@ discoveries:
 
 Start with B0 archaeology evidence and the separate MAS-242 Stage 0 B2
 workspace-canary gate, the initial protected Mastermind Skillpack archaeology
-basis at `46a24a1a4083b74bbde8876100a8ca1f720589a9`, current protected #481
-release `15d2693e5ff319f5f09e4c555fb007328237cee4` with relevant Skillpack bytes
-unchanged, and the Integration task
+basis at `46a24a1a4083b74bbde8876100a8ca1f720589a9`, current protected Master
+`a3440f21a0d6df7666bd9ed9f3b02385dac23588` with relevant Skillpack bytes
+unchanged, and the installed #481 Control Room release
+`15d2693e5ff319f5f09e4c555fb007328237cee4`, then the Integration task
 `01a06f72-aaae-77f1-a3fb-28f5d05c107a`. Treat the localhost:8787 observation
 as useful degraded evidence only. The MAS-242 Stage 0 identity is unbound:
 choose no cockpit until a real host proves an exact account/workspace and a
@@ -319,6 +320,7 @@ numbered PR links below are in the Mastermind repository: [P1 #302](https://gith
 [Steward S1 #463](https://github.com/mastermindx-market-intelligence/Mastermind/pull/463),
 [Executive metadata #469](https://github.com/mastermindx-market-intelligence/Mastermind/pull/469),
 [degraded-attention candidate #481](https://github.com/mastermindx-market-intelligence/Mastermind/pull/481),
+[production preflight #482](https://github.com/mastermindx-market-intelligence/Mastermind/pull/482),
 and the [HC0 exact Slack carrier](https://mastermindxgroup.slack.com/archives/C0BRDFZPLHK/p1788311510473749?thread_ts=1788311510.473749&cid=C0BRDFZPLHK).
 
 The current action owner is Integration task
