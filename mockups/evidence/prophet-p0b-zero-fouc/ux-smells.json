@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-09-05T05:59:33Z",
+  "generated_at": "2026-09-05T11:53:56Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -24,9 +24,9 @@
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 15579,
-            "elements_wider_than_viewport": 14,
-            "horizontal_overflow": true
+            "document_height_px": 17842,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
@@ -50,7 +50,7 @@
           "viewport": "desktop"
         },
         "panel_count": 134,
-        "payload_bytes_total": 194381,
+        "payload_bytes_total": 182208,
         "raw_slug_hit_count": 1,
         "raw_slug_hits": [
           "hk_prophet_v2"
@@ -102,7 +102,7 @@
           "viewport": "desktop"
         },
         "panel_count": 10,
-        "payload_bytes_total": 228849,
+        "payload_bytes_total": 1440764,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 31,
@@ -119,12 +119,12 @@
   ],
   "schema": "mastermind.ux_smell_report.v1",
   "target": {
-    "base_url": null,
-    "kind": "site_dir",
-    "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/macro-main3",
-    "resolved_sha_or_none": "cfe5ffc5845e1c606a6db8c6417a6e9871d6f370",
-    "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/macro-main3 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
-    "site_dir": "/Users/chriswong/.codex/worktrees/b3a7/macro-main/site"
+    "base_url": "http://127.0.0.1:8767",
+    "kind": "base_url",
+    "resolved_gitdir_or_none": null,
+    "resolved_sha_or_none": null,
+    "resolved_sha_source": "unavailable: a live origin does not disclose the commit it is serving",
+    "site_dir": null
   },
   "tool": {
     "module_ref": "scripts/capture_page_evidence.py",
