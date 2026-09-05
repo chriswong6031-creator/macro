@@ -97,7 +97,7 @@ pick the page up automatically once `site/ontology.html` is tracked:
 |---|---|---|
 | Page inventory | `scripts/build_product_page_registry.py:612-613` | `git ls-files site/*.html` — **automatic** |
 | Sitemap | `lib/seo.py:293-313` (`discover_core_pages`) | globs `site_dir/*.html` — **automatic** |
-| Asset access | `config/site_access.yml:7-8` | HTML shells are no longer gated here (operator 2026-08-04); only `premium.enforced_early` prefixes 403. This page ships no gated asset prefix, so **no entry needed** |
+| Asset access | `config/site_access.yml` `public.exact` | **LITERAL — and I got this wrong on the first pass. See B-7.** |
 | Judgment fields | `config/product_experience/page_registry_overrides.yml` | **LITERAL — the only hand-maintained input** |
 
 The one real entry, alongside `macro:alerts` (`:914-915`):
@@ -263,3 +263,79 @@ returned").
 Net effect: the PR carries one genuine red whose cause is diagnosed, whose fix
 is written, and whose application is blocked by an ownership rule rather than by
 a defect. It is not spurious and it is not disowned.
+
+
+---
+
+## B-7 · Two corrections to this packet, from Sol analytical support
+
+A support session checked this packet against the repo and found two claims in
+it that were **false**. Both are corrected here rather than quietly edited,
+because the wrong versions were already delivered.
+
+### B-7.1 · The public assets ARE gated — this was a product bug, not a doc error
+
+The first pass said `config/site_access.yml` needs no entry, reasoning from the
+file's own header that HTML page shells stopped being gated there in 2026-08-04.
+That part is true and it is not the part that matters: the same header says the
+`public` list decides **ASSET** reachability, and Caddy's `@reg_asset` route is
+**default-deny**, compared byte-for-byte against this file.
+
+`/ontology.css` and `/ontology.js` are not in it:
+
+```
+$ grep -n "ontology" config/site_access.yml
+(no matches)
+```
+
+Every comparable page lists its assets individually — `/biocatalyst.css`,
+`/biocatalyst.js` (`:103-104`), `/onboard.css`, `/onboard.js` (`:214-215`).
+So today an anonymous visitor would be served the public shell **without its
+stylesheet or its client**, which defeats the "public-safe discoverable shell"
+the frozen mission requires. This is not a Stage B nicety; it is a real break in
+Stage A's own promise, and it is only invisible because nothing links to the page
+yet.
+
+The hunk, into `public.exact`:
+
+```yaml
+    # F04-X1 WTI Live Trace. The shell is public and carries zero current values;
+    # every current reading is fetched from the authenticated API instead, so the
+    # presentation assets are as public as the page they paint.
+    - /ontology.css
+    - /ontology.js
+```
+
+`config/site_access.yml`'s own rule requires the byte-matching `app/deploy/Caddyfile`
+line in the same PR. Both are in #6828's declared Caddy/public-access territory,
+so this joins the expansion request in B-6 rather than being taken here.
+
+**How the error happened, since that matters more than the correction:** I quoted
+the header sentence that says the public list governs assets, and then reasoned
+about the page instead of about the assets. The check that would have caught it
+is the one I did not run — grepping the file for the asset names.
+
+### B-7.2 · There IS a custom-event convention, and I said there wasn't
+
+B-5 concluded "this repo has no per-page custom event convention" on the strength
+of one search: `grep -rn "gtag('event'" templates/`. That search was correct and
+the conclusion drawn from it was not. The real owner is
+`mmTrack` / `mmTrackGrowth` (`templates/theme.js:197`), which beacons to
+`/api/collect` alongside a growth registry — a first-party transport, not the GA4
+block I was looking at.
+
+So the honest Stage B position is the opposite of what B-5 says: there is an
+existing owner to integrate with, and this page should use it rather than
+inventing anything. The constraint I stated in B-5 still holds and now matters
+more, because `/api/collect` is a first-party endpoint that records events: the
+payload may carry the event name only — never a state code, leg name, freshness
+value or digest, all of which are paid current output.
+
+B-5's GA4 description is accurate as far as it goes; its **conclusion** is
+withdrawn.
+
+### B-7.3 · Also carried, already open in B-6
+
+The four suites need real `ci-pack` selection plus import/dependency wiring —
+which is what `contract-delta` is red about, and what B-6 returns as the
+expansion request.

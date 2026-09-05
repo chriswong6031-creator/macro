@@ -191,3 +191,32 @@ def test_the_canonical_transmission_continuation_is_offered_in_every_state():
     assert client.count("transmissionLink()") >= 2
     assert (ROOT / "site" / "transmission.html").exists(), (
         "the continuation must point at a page that exists")
+
+
+def test_every_blocking_reason_the_composer_emits_has_its_own_sentence():
+    """The client's else-branch narrated not_resolved / not_judged / not_readable
+    as "condition is not met", converting "we could not judge this" into a market
+    verdict on the customer surface — the same collapse the composer refuses
+    upstream. Every reason it can emit must be said as what it is."""
+    import inspect
+    from engine import ontology_explorer
+
+    source = inspect.getsource(ontology_explorer._first_blocking_leg)
+    emitted = set(re.findall(r'"(condition_false|not_\w+)"', source))
+    assert emitted, "the reason vocabulary must be discoverable from the composer"
+
+    client = (ROOT / "templates" / "ontology.js").read_text(encoding="utf-8")
+    handled = set(re.findall(r"^\s{4}(\w+): function \(\)", client, re.M))
+    missing = emitted - handled
+    assert not missing, f"blocking reasons with no sentence of their own: {sorted(missing)}"
+    # and none of them may be phrased as a false condition unless it IS one
+    assert "condition_false" in handled
+
+
+def test_blocking_reason_sentences_are_factories_not_shared_fragments():
+    """A DocumentFragment empties when appended, so a shared one renders once and
+    then inserts nothing on every later render."""
+    client = (ROOT / "templates" / "ontology.js").read_text(encoding="utf-8")
+    block = client.split("var BLOCKING_REASON = {", 1)[1].split("};", 1)[0]
+    assert "function ()" in block
+    assert re.search(r"^\s{4}\w+: say\(", block, re.M) is None

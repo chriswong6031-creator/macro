@@ -337,13 +337,42 @@
     return box;
   }
 
+  /* Factories, not fragments. A DocumentFragment is emptied when it is appended,
+     so a shared one would render correctly once and then insert nothing on every
+     later render. */
+  var BLOCKING_REASON = {
+    condition_false: function () {
+      return say(", whose condition is not met.", "，该环节条件未满足。"); },
+    not_observed: function () {
+      return say(", which has no current reading.", "，该环节暂无当前读数。"); },
+    not_resolved: function () {
+      return say(", which the owners have not resolved yet.",
+        "，所有者尚未对该环节作出判定。"); },
+    not_judged: function () {
+      return say(", which the owners recorded without a verdict.",
+        "，所有者已记录该环节但未给出判定结果。"); },
+    not_readable: function () {
+      return say(", whose recorded verdict could not be read.",
+        "，该环节已记录的判定无法读取。"); }
+  };
+
   function renderBlocking(snapshot) {
     var blocking = snapshot.first_blocking_leg;
     if (!blocking) {
       var okBox = card("Why it does not fire", "为何未触发");
       var okP = el("p");
-      okP.appendChild(say("Every step is met; nothing is blocking this path.",
-        "所有环节均已满足，该路径当前没有阻断点。"));
+      /* Nothing blocks the CONDITIONS. Whether the path is running is the
+         owner's episode, and saying "nothing is blocking this path" while the
+         owner has it dormant would answer a different question than the one
+         the card asks. */
+      okP.appendChild(snapshot.state.activation === true
+        ? say("Every step is met and the owners have this path running.",
+          "所有环节均已满足，且所有者记录该路径正在运行。")
+        : say("No step is blocking: every condition reads true right now. The "
+          + "path is still not running, which is a fact about the owners' record "
+          + "rather than about today's conditions.",
+          "当前没有受阻环节：各项条件读数均为真。但该路径仍未运行——"
+          + "这取决于所有者的记录，而非当日条件。"));
       okBox.appendChild(okP);
       return okBox;
     }
@@ -354,9 +383,14 @@
     p.appendChild(say("The path stops at step " + blocking.index + ", ", "路径止于第 "
       + blocking.index + " 环节，"));
     p.appendChild(strong);
-    p.appendChild(blocking.reason === "not_observed"
-      ? say(", which has no current reading.", "，该环节暂无当前读数。")
-      : say(", whose condition is not met.", "，该环节条件未满足。"));
+    /* Every reason the composer can emit, said as what it is. The else-branch
+       used to narrate not_resolved / not_judged / not_readable as "condition is
+       not met" — which converts "we could not judge this" into a market verdict
+       on the customer surface, the same collapse the composer refuses upstream.
+       A step we could not read is a step we could not read. */
+    var reason = BLOCKING_REASON[blocking.reason];
+    p.appendChild(reason ? reason()
+      : say(", which this page could not judge.", "，本页面无法对该环节作出判定。"));
     if (snapshot.contradiction) {
       p.appendChild(say(" A later step does read true. That reading has its own causes; "
         + "it is not evidence for the earlier step.",
