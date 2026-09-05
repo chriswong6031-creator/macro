@@ -197,3 +197,69 @@ entitlement logic. If every hunk above were applied and then reverted, the page
 would still serve exactly the same bytes to exactly the same readers at its
 direct URL. That is deliberate: discoverability is separable from correctness,
 and this vertical shipped correctness first.
+
+---
+
+## B-6 · The gate found this before I could hand the packet over
+
+`contract-delta` is red on this PR, and it is **my** red. It is also the repo's
+own instrument for the finding in B-4, reached independently:
+
+```
+contract-delta: tests/test_ontology_explorer_{contract,identity,transport,shell}.py
+  is a new pytest suite named by no run: step in any workflow — wire it into the
+  job that owns its subject in .github/ci/legacy-jobs.yml, or add a reasoned row
+  to config/unrun_test_waivers.yml
+
+contract-delta: {biocatalyst-history, biocatalyst-serving, flow-surface,
+  unrun-government-revenue-grader}: import closure now reaches
+  engine/ontology_explorer.py, which .github/ci/legacy-jobs.yml's declared
+  `paths:` for <job> does not cover — widen <job>'s `paths:` to include
+  engine/ontology_explorer.py (widening is always the safe direction)
+```
+
+The closure exists because `app/main.py` includes the router, the router imports
+the composer, and those four curated jobs import `app.main`. Their `paths:`
+blocks already carry engine files added for precisely this reason — "this
+curated job reaches that app router, so its exclusive declaration must cover the
+exact transitive closure rather than silently skipping changes to these
+dependencies" (`.github/ci/legacy-jobs.yml:1591-1594`). Mine is the same case.
+
+**The hunk** — one line per job, into each existing `paths:` list
+(`flow-surface` :1586, `biocatalyst-serving` :6619, `biocatalyst-history` :7202,
+`unrun-government-revenue-grader` :12355):
+
+```yaml
+      # The ontology-explorer route is reached through app/main, so a change to
+      # its composer must re-run this job rather than be silently skipped.
+      - "engine/ontology_explorer.py"
+```
+
+plus the `ontology-explorer` job from B-4 for the four suites.
+
+### Why this is not fixed in this PR
+
+Both remedies land in `.github/ci/legacy-jobs.yml`, the four-way contended file
+(#6828 / #6834 / #6842 / #6514), and the standing order for this operation is
+"no edits to held shared files until F00's exact hunk ruling". So this is
+returned as a **concrete expansion request** rather than taken unilaterally —
+which is the mechanism the same order names ("unless a concrete expansion is
+returned").
+
+**Two things I deliberately did not do:**
+
+* **I did not make the engine import lazy to break the closure.** It would not
+  have worked — `scripts/audit_unrun_tests.py:513` walks the AST with
+  `ast.walk`, which is scope-insensitive and also catches
+  `import_module("literal")` — and anything that *did* work would have been
+  evasion of a gate that is measuring something true.
+* **I did not waive the four suites.** `config/unrun_test_waivers.yml` would
+  clear half the red, and its own header says the default answer for a new dark
+  suite is to wire it in. A waiver here would assert these suites are unrun *on
+  purpose*, which is false: they are unrun pending a file I was told not to
+  touch. If F00 rules that the wiring waits, a waiver row with that reason and a
+  delete condition is the honest form — but that is a ruling, not my call.
+
+Net effect: the PR carries one genuine red whose cause is diagnosed, whose fix
+is written, and whose application is blocked by an ownership rule rather than by
+a defect. It is not spurious and it is not disowned.
