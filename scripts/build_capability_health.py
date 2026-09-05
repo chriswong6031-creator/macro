@@ -13,13 +13,36 @@ RECEIPT SOURCES, PER TYPE
     reads their already-resolved view. The already-judged ``state``/``assessment_status``
     ride through verbatim (an ``output_health_artifact`` fact is an upstream VERDICT, not
     raw clocks — see the engine module's docstring on why that fold never re-derives it).
+    ``corrupt``/``rights_blocked`` are correctly always ``False`` for this source type:
+    output_health has no distinct "corrupt receipt" or "rights block" signal of its own
+    (blindness is already fully expressed via ``state=None, assessment_status=
+    could_not_look``), so there is nothing further to wire here.
 ``nightly_lane``
     Read from ``data/run_status.json``: a named key under ``sources`` (per-source
     ``status``/``checked_at``/``last_date``), or the literal ``__global__`` for the
-    top-level ``last_run`` heartbeat. ``__global__`` NEVER supplies ``last_successful`` —
-    ``scripts/collect.py`` writes ``last_run`` unconditionally once the collect pass
-    reaches that line, so it proves an attempt reached that point, never a verified
-    success (see the registry's own comment on this).
+    top-level ``last_run`` heartbeat. The collector status vocabulary
+    (``collectors/base.py``'s ``FetchResult.status``: ok | stale | failed | dead |
+    skipped | blocked) is mapped explicitly (repair 2026-09-04, findings C1/I5):
+      ok      -> last_attempted = last_successful = checked_at (a genuine success)
+      stale   -> an EXPLICIT ``state=stale`` (the collector's own declared staleness
+                 call, not a re-derivation from our own stale_after_hours budget)
+      failed/dead -> last_attempted = checked_at ONLY. data/run_status.json retains only
+                 the LATEST row per source (no history), so there is no prior
+                 last_successful to compare against — the honest fact is "attempted, no
+                 prior success known", which the engine resolves to could_not_look, never
+                 a fabricated degraded/stale guess.
+      blocked -> ``rights_blocked=True`` (a known, expected limitation — bot-blocked,
+                 paywalled — never conflated with a failure)
+      skipped -> "no-attempt-fact": neither clock is supplied at all (the source was not
+                 even consulted this run; the engine reads that as no_clock_evidence, not
+                 a failure)
+    ``__global__`` NEVER supplies ``last_successful`` — ``scripts/collect.py`` writes
+    ``last_run`` unconditionally once the collect pass reaches that line, regardless of
+    per-source outcome, so it can only ever prove an attempt, never a verified success.
+    (No capability in the V1 seed cohort actually declares a ``__global__`` source any
+    more — see ``config/capability_health.yml``'s comment on why one was removed from
+    ``prophet_us`` in this same repair: a source that can NEVER contribute anything but
+    could_not_look would permanently poison its capability under the worst-fold law.)
 ``provider_rung`` / ``sentinel_probe``
     Declared in the closed receipt-source vocabulary and accepted by registry
     validation, but NOT wired to a live fetch in this V1 build: none of the seed cohort's
@@ -27,10 +50,20 @@ RECEIPT SOURCES, PER TYPE
     comment for the two commission candidates dropped for lack of a verifiable receipt).
     Additive later, per the frozen commission's "5-8 entries is right; additive later".
 
+FAILS CLOSED ON A BAD REGISTRY (repair finding C3). A malformed/missing/non-dict
+``config/capability_health.yml``, a missing or empty ``capabilities`` key, a duplicate
+capability id, or an unresolvable ``depends_on`` reference is a HARD BUILD ERROR
+(:class:`RegistryError`): :func:`main` prints every problem via a bare
+``::warning``/``::error`` (never a logger), exits non-zero, and WRITES NOTHING — a
+silent zero-capability artifact would destroy whatever last-good state a prior run wrote.
+
 WRITES ONE ARTIFACT. Deterministic, no network, no GH API. Default output path is
 ``data/capability_health/state.json`` under ``--root`` — the production nightly default.
 ``--out`` and ``--receipts-root`` exist so a sparse worktree or a test can point both the
-destination and the receipt reads somewhere that is never ``data/`` or ``site/``.
+destination and the receipt reads somewhere that is never ``data/`` or ``site/``; the
+default ``data/`` path is refused outright in a sparse worktree unless ``--out`` is given
+explicitly (repair finding M5) — a write into an omitted tree can truncate the committed
+artifact once the branch merges.
 
 Usage
 -----
@@ -52,27 +85,48 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yaml  # noqa: E402
 
 from engine.capability_health import (  # noqa: E402
+    STATE_STALE,
     resolve_capability_health,
     validate_registry,
 )
+from lib.dataos.temporal import TemporalError, utc  # noqa: E402
 
 REGISTRY_REL = Path("config") / "capability_health.yml"
 DEFAULT_OUT_REL = Path("data") / "capability_health" / "state.json"
 RUN_STATUS_REL = Path("data") / "run_status.json"
 
-_KNOWN_TYPES_WITH_LOADERS = {"output_health_artifact", "nightly_lane"}
+#: collectors/base.py FetchResult.status vocabulary (module docstring above has the full
+#: mapping table).
+_STATUS_OK = "ok"
+_STATUS_STALE = "stale"
+_STATUS_FAILED = "failed"
+_STATUS_DEAD = "dead"
+_STATUS_BLOCKED = "blocked"
+_STATUS_SKIPPED = "skipped"
 
 
-def _load_yaml(path: Path) -> dict | None:
+class RegistryError(RuntimeError):
+    """The registry (or a capability entry) is structurally invalid.
+
+    FAILS CLOSED (repair finding C3): a caller that catches this must refuse to write an
+    artifact, never fall back to a silent zero-capability write that would destroy
+    last-good state.
+    """
+
+
+def _load_yaml_text(path: Path) -> tuple[Any, str | None]:
+    """``(parsed_doc_or_None, problem_or_None)`` — never silently returns ``None`` for
+    both an unreadable file AND a genuinely empty one; the caller must be able to tell
+    "could not read" from "read fine, contained nothing"."""
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError:
-        return None
+    except OSError as exc:
+        return None, f"{path} is unreadable ({type(exc).__name__}: {exc})"
     try:
         doc = yaml.safe_load(text)
-    except yaml.YAMLError:
-        return None
-    return doc if isinstance(doc, dict) else None
+    except yaml.YAMLError as exc:
+        return None, f"{path} is not valid YAML ({exc})"
+    return doc, None
 
 
 def _load_json(path: Path) -> Any:
@@ -87,11 +141,36 @@ def _load_json(path: Path) -> Any:
 
 
 def load_registry(root: Path) -> list[dict[str, Any]]:
-    """The parsed ``capabilities`` list, or ``[]`` when the registry is unreadable."""
-    doc = _load_yaml(root / REGISTRY_REL)
+    """The parsed, VALIDATED ``capabilities`` list.
+
+    Raises :class:`RegistryError` — never returns a silent ``[]`` (repair finding C3) —
+    on anything short of a well-formed, non-empty, schema-valid list: an unreadable or
+    unparseable file, a non-mapping document, a missing/empty/non-list ``capabilities``
+    key, a non-mapping entry, or any :func:`engine.capability_health.validate_registry`
+    problem (unknown receipt-source type, missing ref, duplicate id, unresolvable
+    ``depends_on``, ...).
+    """
+    path = root / REGISTRY_REL
+    doc, problem = _load_yaml_text(path)
+    if problem:
+        raise RegistryError(problem)
     if not isinstance(doc, dict):
-        return []
-    return [c for c in (doc.get("capabilities") or []) if isinstance(c, dict)]
+        raise RegistryError(f"{path} did not parse to a mapping (got {type(doc).__name__})")
+    if "capabilities" not in doc:
+        raise RegistryError(f"{path} has no 'capabilities' key")
+    raw = doc.get("capabilities")
+    if not isinstance(raw, list) or not raw:
+        raise RegistryError(f"{path}'s 'capabilities' is empty or not a list")
+    capabilities = [c for c in raw if isinstance(c, dict)]
+    if len(capabilities) != len(raw):
+        raise RegistryError(
+            f"{path}'s 'capabilities' contains {len(raw) - len(capabilities)} "
+            f"non-mapping entr(y/ies)"
+        )
+    problems = validate_registry(capabilities)
+    if problems:
+        raise RegistryError("; ".join(problems))
+    return capabilities
 
 
 def output_health_facts(
@@ -133,7 +212,14 @@ def output_health_facts(
 
 
 def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[str, Any]]:
-    """One fact per requested ``nightly_lane`` ref, from ``data/run_status.json``."""
+    """One fact per requested ``nightly_lane`` ref, from ``data/run_status.json``.
+
+    See the module docstring's status-mapping table (repair findings C1/I5): ``ok`` is
+    the only status that ever supplies ``last_successful``; ``failed``/``dead`` supply
+    ``last_attempted`` alone (no fabricated success); ``blocked`` sets
+    ``rights_blocked``; ``stale`` sets an explicit ``state``; ``skipped`` supplies no
+    clock at all.
+    """
     doc = _load_json(receipts_root / RUN_STATUS_REL)
     out: dict[str, dict[str, Any]] = {}
     if not isinstance(doc, dict):
@@ -150,19 +236,51 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
                 else {"readable": True, "corrupt": False, "last_attempted": last_run}
             )
             continue
+
         entry = sources.get(ref)
         if not isinstance(entry, dict):
             out[ref] = {"readable": False}
             continue
+
         status = str(entry.get("status") or "")
         checked_at = entry.get("checked_at")
+        last_date = entry.get("last_date")
         fact: dict[str, Any] = {"readable": True, "corrupt": False}
+
+        if status == _STATUS_SKIPPED:
+            # "no-attempt-fact": this run did not even consult this source. Neither
+            # clock is supplied — the engine reads that as no_clock_evidence, never a
+            # fabricated failure.
+            out[ref] = fact
+            continue
+
+        if status == _STATUS_BLOCKED:
+            fact["rights_blocked"] = True
+            fact["rights_detail"] = str(entry.get("error") or "collector reports 'blocked'")
+            if checked_at:
+                fact["last_attempted"] = checked_at
+            if last_date:
+                fact["data_as_of"] = last_date
+            out[ref] = fact
+            continue
+
         if checked_at:
             fact["last_attempted"] = checked_at
-            if status == "ok":
+            if status == _STATUS_OK:
                 fact["last_successful"] = checked_at
-        if entry.get("last_date"):
-            fact["data_as_of"] = entry.get("last_date")
+            elif status == _STATUS_STALE:
+                # The adapter itself ran cleanly (no exception) but its OWN
+                # stale_after_days budget says the fetched content is old — the
+                # collector's explicit call, honored directly rather than re-derived
+                # from our own stale_after_hours.
+                fact["state"] = STATE_STALE
+            elif status in (_STATUS_FAILED, _STATUS_DEAD):
+                # An attempt happened and did not succeed. data/run_status.json keeps
+                # only the LATEST row per source (no history), so there is no prior
+                # last_successful to compare against here — never invent one.
+                pass
+        if last_date:
+            fact["data_as_of"] = last_date
         out[ref] = fact
     return out
 
@@ -221,20 +339,38 @@ def build(
     receipts_root: Path | None = None,
     previous: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Gather receipts and resolve. Reads only; writes nothing. Deterministic, no network."""
+    """Gather receipts and resolve. Reads only; writes nothing. Deterministic, no network.
+
+    Raises :class:`RegistryError` (never returns) when the registry itself is invalid —
+    the caller must not write an artifact in that case (repair finding C3).
+    """
     capabilities = load_registry(root)
-
-    for problem in validate_registry(capabilities):
-        # GitHub annotation law (CLAUDE.md §Ops): bare print, NEVER a logger — a
-        # log.warning(...) call here would swallow the "::warning" prefix and GitHub
-        # would silently drop the annotation.
-        print(f"::warning title=capability_health_registry::{problem}", flush=True)
-
     rroot = receipts_root if receipts_root is not None else root
     receipts = gather_receipts(root, capabilities, now=now, receipts_root=rroot)
     return resolve_capability_health(
         capabilities=capabilities, receipts=receipts, previous=previous, now=now
     )
+
+
+def load_previous(out_path: Path) -> dict[str, dict[str, Any]] | None:
+    """The prior artifact's per-capability records, keyed by id — or ``None`` when the
+    prior artifact is absent/unparseable/carries no ``capabilities`` list.
+
+    Repair finding I6: :func:`main` previously never wired this at all, so the engine's
+    ``transition`` diff was permanently ``{"prev_seen": False, "prev_state": None, ...}``
+    on every run, even the second one.
+    """
+    doc = _load_json(out_path)
+    if not isinstance(doc, dict):
+        return None
+    rows = doc.get("capabilities")
+    if not isinstance(rows, list):
+        return None
+    out: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if isinstance(row, dict) and isinstance(row.get("id"), str):
+            out[row["id"]] = row
+    return out or None
 
 
 def render_summary(view: dict[str, Any]) -> str:
@@ -252,6 +388,30 @@ def render_summary(view: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _sparse_default_out_guard(root: Path) -> str | None:
+    """Non-``None`` when writing the DEFAULT ``data/`` output path would be unsafe in a
+    sparse worktree (repair finding M5). Never applies to an explicit ``--out`` — that is
+    always allowed, on purpose (tests, evidence runs, CI pointing elsewhere).
+    """
+    try:
+        from scripts.worktree_sparse import missing_dirs  # noqa: PLC0415
+    except Exception:  # noqa: BLE001 — the guard itself must never crash the build
+        return None
+    try:
+        missing = missing_dirs(root)
+    except Exception:  # noqa: BLE001
+        return None
+    if "data" in missing:
+        return (
+            f"refusing to write the default output path '{DEFAULT_OUT_REL}' in a sparse "
+            f"worktree (missing top-level dirs: {sorted(missing)}) — a write into an "
+            f"omitted tree can truncate the committed artifact once this branch merges. "
+            f"Pass --out explicitly (e.g. a scratchpad path) or run "
+            f"'python3 scripts/worktree_sparse.py full' first."
+        )
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -262,7 +422,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--out", type=Path, default=None,
-        help="output artifact path; default <root>/data/capability_health/state.json",
+        help="output artifact path; default <root>/data/capability_health/state.json "
+             "(refused in a sparse worktree unless given explicitly)",
     )
     parser.add_argument(
         "--now", default=None,
@@ -272,14 +433,56 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary", action="store_true", help="print the summary only; skip the write")
     args = parser.parse_args(argv)
 
-    now = datetime.now(timezone.utc) if args.now is None else datetime.fromisoformat(args.now)
-    view = build(args.root, now=now, receipts_root=args.receipts_root)
+    # M4: validate --now is a real, TZ-AWARE instant BEFORE any output_health pass — a
+    # naive/invalid --now must fail loudly HERE, not be silently swallowed by
+    # output_health_facts' own except-Exception-returns-unreadable guard deep in build().
+    if args.now is None:
+        now = datetime.now(timezone.utc)
+    else:
+        try:
+            now = datetime.fromisoformat(args.now)
+        except ValueError as exc:
+            print(
+                f"::error title=capability_health::--now {args.now!r} is not a valid "
+                f"ISO instant ({exc})", flush=True,
+            )
+            return 2
+    try:
+        now = utc(now)
+    except TemporalError as exc:
+        print(
+            f"::error title=capability_health::--now {args.now!r} must be tz-aware "
+            f"({exc})", flush=True,
+        )
+        return 2
+
+    out_path = args.out if args.out is not None else (args.root / DEFAULT_OUT_REL)
+
+    if args.out is None:
+        guard = _sparse_default_out_guard(args.root)
+        if guard:
+            print(f"::error title=capability_health::{guard}", flush=True)
+            return 2
+
+    previous = load_previous(out_path)
+
+    try:
+        view = build(args.root, now=now, receipts_root=args.receipts_root, previous=previous)
+    except RegistryError as exc:
+        # C3: fail CLOSED. Print every problem (bare print, never a logger — the
+        # GitHub-annotation law), exit non-zero, WRITE NOTHING.
+        for problem in str(exc).split("; "):
+            print(f"::warning title=capability_health_registry::{problem}", flush=True)
+        print(
+            "::error title=capability_health::registry is invalid — refusing to write "
+            "an artifact (any last-good state is left untouched)", flush=True,
+        )
+        return 1
 
     if args.summary:
         print(render_summary(view))
         return 0
 
-    out_path = args.out if args.out is not None else (args.root / DEFAULT_OUT_REL)
     text = json.dumps(view, indent=2, sort_keys=True, default=str)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_path.with_suffix(out_path.suffix + ".tmp")

@@ -43,15 +43,16 @@ capabilities:
       - type: output_health_artifact
         ref: prophet-index
         clocks: [data_as_of]
-      - type: nightly_lane
-        ref: __global__
-        # __global__ binds last_attempted only, deliberately not last_successful:
-        # scripts/collect.py writes data/run_status.json's top-level `last_run`
-        # unconditionally once the collect pass reaches that line, regardless of
-        # whether individual sources failed — it proves an ATTEMPT reached that point,
-        # never a verified success. Claiming last_successful from it would be exactly
-        # the "I looked and it was clean" overclaim this registry exists to refuse.
-        clocks: [last_attempted]
+    # A `nightly_lane: __global__` heartbeat source was DROPPED here (repair 2026-09-04,
+    # post-review). `__global__` can only ever bind last_attempted — `scripts/collect.py`
+    # writes data/run_status.json's top-level `last_run` unconditionally regardless of
+    # per-source outcome, so it never proves a success. Under the (correct, ruled)
+    # worst-fold law that a source with no prior success is could_not_look and can never
+    # be masked by a sibling (engine.capability_health's C1/I3 repair), keeping it here
+    # would have permanently forced prophet_us to could_not_look even when prophet-index
+    # itself reads confidently healthy — a source that can NEVER contribute anything but
+    # could_not_look adds no honest signal, only permanent poison. prophet-index alone is
+    # the real receipt for this capability.
     stale_after_hours: 30
     next_action_hint: >-
       Check the nightly-liveness.yml watchdog and site/prophet/index.json's own
