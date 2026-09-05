@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-09-04T19:51:34.071316+00:00",
+  "generated_at": "2026-09-05T05:54:18.047609+00:00",
   "n_ledgers": 34,
   "n_closed": 25,
   "n_grader_starved": 9,
@@ -14,9 +14,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 79242,
-      "n_graded": 103711,
-      "last_graded_at": "2026-09-04T19:49:10.073835+00:00",
+      "n_logged": 79174,
+      "n_graded": 101581,
+      "last_graded_at": "2026-09-05T05:51:50.817790+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -28,9 +28,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 103711,
-      "n_graded": 103711,
-      "last_graded_at": "2026-09-04T19:49:10.073835+00:00",
+      "n_logged": 101581,
+      "n_graded": 101581,
+      "last_graded_at": "2026-09-05T05:51:50.817790+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -42,8 +42,8 @@
       "graders": [
         "engine/board_ledger.py"
       ],
-      "n_logged": 668,
-      "n_graded": 383,
+      "n_logged": 657,
+      "n_graded": 370,
       "last_graded_at": null,
       "tune_step": "N",
       "verdict": "CLOSED"
@@ -98,7 +98,7 @@
       "graders": [
         "engine/china_standout_track.py"
       ],
-      "n_logged": 2912,
+      "n_logged": 2882,
       "n_graded": 1165,
       "last_graded_at": null,
       "tune_step": "N",
@@ -127,7 +127,7 @@
         "engine/china_sector_cycles_grader.py",
         "scripts/grade_promises.py"
       ],
-      "n_logged": 2332,
+      "n_logged": 2279,
       "n_graded": 5081,
       "last_graded_at": "2026-07-02T18:59:33.219372+00:00",
       "tune_step": "N",
@@ -183,7 +183,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 22,
+      "n_logged": 21,
       "n_graded": 12,
       "last_graded_at": null,
       "tune_step": "Y",
@@ -197,7 +197,7 @@
       "graders": [
         "engine/risk_radar_intl_audit.py"
       ],
-      "n_logged": 22,
+      "n_logged": 21,
       "n_graded": 11,
       "last_graded_at": null,
       "tune_step": "Y",

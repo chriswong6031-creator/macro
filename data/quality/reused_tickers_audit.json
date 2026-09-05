@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-04",
+ "asof": "2026-09-05",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -22,7 +22,7 @@
  "n": 3026,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 145,
+ "n_flags": 144,
  "universes": [
   {
    "name": "stocks",
@@ -46,7 +46,7 @@
    "n": 2782,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 144,
+   "n_flags": 143,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -104,7 +104,7 @@
     {
      "name": "AREN",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-09-03) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-09-04) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "ASIX",
@@ -300,11 +300,6 @@
      "name": "ELME",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
-    },
-    {
-     "name": "FBRX",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-28) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "FF",
@@ -789,7 +784,7 @@
   "zombie": 5,
   "rebirth": 3,
   "registry_mismatch": 128,
-  "delisted_printing": 9,
+  "delisted_printing": 8,
   "member_identity": 0
  },
  "stores": [
@@ -1046,8 +1041,8 @@
     {
      "ticker": "BBBY",
      "registry_last": "2023-05-19",
-     "store_tip": "2026-09-03",
-     "days_past_death": 1203,
+     "store_tip": "2026-09-04",
+     "days_past_death": 1204,
      "overlap": {
       "n_overlap": 2362,
       "ret_corr_full": 0.9305,
@@ -2578,19 +2573,13 @@
     },
     {
      "ticker": "AREN",
-     "store_tip": "2026-09-03",
+     "store_tip": "2026-09-04",
      "acked": false
     },
     {
      "ticker": "CRNX",
      "store_tip": "2026-09-02",
      "acked": false
-    },
-    {
-     "ticker": "FBRX",
-     "store_tip": "2026-08-28",
-     "acked": true,
-     "ack": "resolved exit \u2014 config/delisted_symbols.yml"
     },
     {
      "ticker": "HLX",

@@ -1,12 +1,12 @@
 {
   "store": "massive_stock_day",
-  "n_tickers": 21489,
-  "latest_date": "2026-09-03",
-  "updated_at": "2026-09-04T18:07:22.245893+00:00",
+  "n_tickers": 21495,
+  "latest_date": "2026-09-04",
+  "updated_at": "2026-09-05T04:34:28.914989+00:00",
   "coverage": {
     "first_day": "2021-07-06",
-    "last_day": "2026-09-03",
-    "n_processed_days": 1348,
+    "last_day": "2026-09-04",
+    "n_processed_days": 1349,
     "max_missing_run_weekdays": 0,
     "max_missing_run_weekdays_recent": 0,
     "recent_window_bdays": 90,
@@ -15,8 +15,8 @@
   "anchor": {
     "ticker": "SPY",
     "first": "2021-07-06",
-    "last": "2026-09-03",
-    "n_rows": 1298,
+    "last": "2026-09-04",
+    "n_rows": 1299,
     "max_gap_calendar_days": 4
   }
 }

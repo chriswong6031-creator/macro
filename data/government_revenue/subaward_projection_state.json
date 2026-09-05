@@ -13,19 +13,19 @@
   },
   "contract": "government_revenue.subaward_projection_state.v1",
   "detail_rows_this_run": 2000,
-  "last_successful_observed_at": "2026-09-04T17:48:45.530376+00:00",
-  "observed_at": "2026-09-04T17:48:45.530376+00:00",
-  "parent_coverage_semantic_sha256": "dcd39e4f41eab158c54d8d7087bd9ef0afd02df415267ca30de92f2c441b6dc0",
+  "last_successful_observed_at": "2026-09-05T04:08:22.392904+00:00",
+  "observed_at": "2026-09-05T04:08:22.392904+00:00",
+  "parent_coverage_semantic_sha256": "0f037b32cba22d4ca3b705756bf1a14facc5aa657678261405c210af90e69a95",
   "parents": [
     {
       "collection_state": "zero",
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_DEAC0494AL85000_8900_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c998a2793d3a57cb1fd725b246c60c71d9d232b180f25e1f82722d955b79e779",
+        "receipt_id": "usaspending-subaward:c13dab7c4b8df5b6dc31d6b9ad1e4e189e82e5a5a8eeb88db7618cb095ade499",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:c998a2793d3a57cb1fd725b246c60c71d9d232b180f25e1f82722d955b79e779",
+      "count_receipt_id": "usaspending-subaward:c13dab7c4b8df5b6dc31d6b9ad1e4e189e82e5a5a8eeb88db7618cb095ade499",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -40,10 +40,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001917C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c90ff5a61e858373fc8ebd24cd15055e436aa75766c1cae6734c3dbca2bfb4ce",
+        "receipt_id": "usaspending-subaward:3bc86d3dc3a97c5bf538d73ca3f3d4244a0d7cb5a00c285a7c2dcfdc08dcf7d1",
         "reported_subaward_count": 12589
       },
-      "count_receipt_id": "usaspending-subaward:c90ff5a61e858373fc8ebd24cd15055e436aa75766c1cae6734c3dbca2bfb4ce",
+      "count_receipt_id": "usaspending-subaward:3bc86d3dc3a97c5bf538d73ca3f3d4244a0d7cb5a00c285a7c2dcfdc08dcf7d1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -58,10 +58,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001902C3002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:72b60475dc42d68c2ec8d379dc273da755b394a50bd5aced51b256fad8148916",
+        "receipt_id": "usaspending-subaward:cfe6ff44d4d0008ef70f07c2cc507bd00431d64841e2a75d9ff01e1e5fb042cb",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:72b60475dc42d68c2ec8d379dc273da755b394a50bd5aced51b256fad8148916",
+      "count_receipt_id": "usaspending-subaward:cfe6ff44d4d0008ef70f07c2cc507bd00431d64841e2a75d9ff01e1e5fb042cb",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -76,10 +76,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862511C6600_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:d30ed6166fa177874d3b28cfd2fda61643dc2cd666cb587bccb59c0132d5c690",
+        "receipt_id": "usaspending-subaward:857ad75cacc93cd8ce7d09c5c95a446effe7c234348f4ae322303ffbca4f9ef5",
         "reported_subaward_count": 1309
       },
-      "count_receipt_id": "usaspending-subaward:d30ed6166fa177874d3b28cfd2fda61643dc2cd666cb587bccb59c0132d5c690",
+      "count_receipt_id": "usaspending-subaward:857ad75cacc93cd8ce7d09c5c95a446effe7c234348f4ae322303ffbca4f9ef5",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -94,10 +94,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001920C0009_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f420d3edf68bdc55e84d0e90162f0c9714c91a765281b9096aa1c5dec9892a09",
+        "receipt_id": "usaspending-subaward:59a59a5a768eeb88535ee186d03276626ec34e75fbf9e69700c223e17da5df5b",
         "reported_subaward_count": 19245
       },
-      "count_receipt_id": "usaspending-subaward:f420d3edf68bdc55e84d0e90162f0c9714c91a765281b9096aa1c5dec9892a09",
+      "count_receipt_id": "usaspending-subaward:59a59a5a768eeb88535ee186d03276626ec34e75fbf9e69700c223e17da5df5b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -112,10 +112,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001923C0003_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:4e4d0997f87025e2bbc93a17963151c58327691e8372239244ee75f62e4b1d33",
+        "receipt_id": "usaspending-subaward:92d31f7c9ffaf7261cea83c8f2d755f44db433f6e81e6cecd216c540c2b00461",
         "reported_subaward_count": 3079
       },
-      "count_receipt_id": "usaspending-subaward:4e4d0997f87025e2bbc93a17963151c58327691e8372239244ee75f62e4b1d33",
+      "count_receipt_id": "usaspending-subaward:92d31f7c9ffaf7261cea83c8f2d755f44db433f6e81e6cecd216c540c2b00461",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -130,15 +130,15 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_NAS1510000_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:4c5ba1249939d6117a56c0ed54050b837cf9c6de2844710ba1024617a3018ab7",
+        "receipt_id": "usaspending-subaward:9bb2813b24803fc29026c1e60612f25e3d15fc15577c569b0c8608066f6b27ad",
         "reported_subaward_count": 269
       },
-      "count_receipt_id": "usaspending-subaward:4c5ba1249939d6117a56c0ed54050b837cf9c6de2844710ba1024617a3018ab7",
+      "count_receipt_id": "usaspending-subaward:9bb2813b24803fc29026c1e60612f25e3d15fc15577c569b0c8608066f6b27ad",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:30a45c2fd436c37eaf5a85c46ee89df0a7079fd4b42b1b57b01969ebe56b689b",
-        "usaspending-subaward:7f876357c50df03a515aa7b7471e402e3adee1ece8cae47174bb707a69af126d",
-        "usaspending-subaward:54f5be12adc5d6b3fa88a35926ba4e2c3876877c6a5bff01303f240c61ac0506"
+        "usaspending-subaward:7c1657410c3d953fda75fb3079a40361b4016e363722dbca18d8dd9ed6d8d5c6",
+        "usaspending-subaward:91bf0406c9ff781cc8fc7552a697057da743db8812147ab3661aabfd18c71819",
+        "usaspending-subaward:844c35adf6aeb5ed9fce550d5bcf1d62a7f21549258bf273416e45ae16e7285c"
       ],
       "detail_rows": 269,
       "high_count_parent": false,
@@ -152,10 +152,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_DEAC0584OR21400_8900_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f88d384c7193ccdbfda0f23f0bcd86e93856be4dd9a6c27e33e71f59de01d395",
+        "receipt_id": "usaspending-subaward:374cf64efd488c0cfbf081acdc21dbfded505eb3a5e4b8171e7011625dd1a405",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:f88d384c7193ccdbfda0f23f0bcd86e93856be4dd9a6c27e33e71f59de01d395",
+      "count_receipt_id": "usaspending-subaward:374cf64efd488c0cfbf081acdc21dbfded505eb3a5e4b8171e7011625dd1a405",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -170,10 +170,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ000601C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:79ba294793c86a967e6a715a24003cca77c17a32e24aabaabd8233c2051821de",
+        "receipt_id": "usaspending-subaward:eb61456aa4258f65d9e397cc5587f6ac64f1c5d20569794143fca72fa0f6ac35",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:79ba294793c86a967e6a715a24003cca77c17a32e24aabaabd8233c2051821de",
+      "count_receipt_id": "usaspending-subaward:eb61456aa4258f65d9e397cc5587f6ac64f1c5d20569794143fca72fa0f6ac35",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -188,10 +188,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001914C0067_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:2d301c43f521314c89ca733317fea65afb4a426fe359cb4f8fcfe0eebd87006c",
+        "receipt_id": "usaspending-subaward:59e6020ad96d47f8e54eb996e61f527d7ff7662652b2154f23b822b4a246bb27",
         "reported_subaward_count": 1590
       },
-      "count_receipt_id": "usaspending-subaward:2d301c43f521314c89ca733317fea65afb4a426fe359cb4f8fcfe0eebd87006c",
+      "count_receipt_id": "usaspending-subaward:59e6020ad96d47f8e54eb996e61f527d7ff7662652b2154f23b822b4a246bb27",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -206,10 +206,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_NNJ06TA25C_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:9fc0f99919b4ff6ac4c85a389db1fade3a198b9eeb57a40892c74b1bada6b806",
+        "receipt_id": "usaspending-subaward:4259b1e470b40a1181912efa97c520f51f09d7e36a4cd1e6827dd28f4070680d",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:9fc0f99919b4ff6ac4c85a389db1fade3a198b9eeb57a40892c74b1bada6b806",
+      "count_receipt_id": "usaspending-subaward:4259b1e470b40a1181912efa97c520f51f09d7e36a4cd1e6827dd28f4070680d",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -224,10 +224,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA821920C0006_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c5a4cfde411403d1b8b4543d6a29e309d2db5f2c1db6f5982ad8083ac931b3bc",
+        "receipt_id": "usaspending-subaward:a18aeef91fd10988528bb365eae410a76965dd911abc41ac708af303f88641e4",
         "reported_subaward_count": 4608
       },
-      "count_receipt_id": "usaspending-subaward:c5a4cfde411403d1b8b4543d6a29e309d2db5f2c1db6f5982ad8083ac931b3bc",
+      "count_receipt_id": "usaspending-subaward:a18aeef91fd10988528bb365eae410a76965dd911abc41ac708af303f88641e4",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -242,10 +242,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002416C2116_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:e6abe971f179002680b4f637399106a649de8547025e6df883d989fbdd36bf46",
+        "receipt_id": "usaspending-subaward:a1b242d534565fccc727bed7cdf0c2a6a6716fbe91a58cdca2f03073558276c3",
         "reported_subaward_count": 121819
       },
-      "count_receipt_id": "usaspending-subaward:e6abe971f179002680b4f637399106a649de8547025e6df883d989fbdd36bf46",
+      "count_receipt_id": "usaspending-subaward:a1b242d534565fccc727bed7cdf0c2a6a6716fbe91a58cdca2f03073558276c3",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -260,10 +260,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001916C0033_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:258bcfac680ddb510e7554ebf29c0fd29b8f6fd51cc48d7182ef2eab4ab42d7f",
+        "receipt_id": "usaspending-subaward:4cd5c63169af671d55b730bc0320c258f97b440fb08f6aa0717a97768d65001a",
         "reported_subaward_count": 2401
       },
-      "count_receipt_id": "usaspending-subaward:258bcfac680ddb510e7554ebf29c0fd29b8f6fd51cc48d7182ef2eab4ab42d7f",
+      "count_receipt_id": "usaspending-subaward:4cd5c63169af671d55b730bc0320c258f97b440fb08f6aa0717a97768d65001a",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -278,14 +278,14 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA863412C2651_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:50e7c2eacfb2f5206272a6a58fa45cc2a75c45ef5aee656449426781f3e2ec08",
+        "receipt_id": "usaspending-subaward:a25d03eac490f4e5e27bd619554e254b9b2629957da5f9af5a5cb8b77b0310c9",
         "reported_subaward_count": 191
       },
-      "count_receipt_id": "usaspending-subaward:50e7c2eacfb2f5206272a6a58fa45cc2a75c45ef5aee656449426781f3e2ec08",
+      "count_receipt_id": "usaspending-subaward:a25d03eac490f4e5e27bd619554e254b9b2629957da5f9af5a5cb8b77b0310c9",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:970631df812861209e2edafdfbf69598ab4db266cba03e20b6fea552a830888a",
-        "usaspending-subaward:a36ef0aaa534489b3c56b26b64d2f1448b1766fb9b85a210b349213305338498"
+        "usaspending-subaward:0d96fb4c18ec2f3cca05ef8759ab11f33323bec1424852e060da3f5df3c78161",
+        "usaspending-subaward:e48822114b5b9c076a6f7c73b9a2442eb2918190dfad05d3809ddc4a390fb64c"
       ],
       "detail_rows": 191,
       "high_count_parent": false,
@@ -299,10 +299,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA861404C2004_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:ea6389d9d61eb1c61d8ef58eec10052621526a64ee0d0e7abab2194f0803c204",
+        "receipt_id": "usaspending-subaward:1d905672af1a7293c95db0b8f4154ce23b881889faf1e039c8788fa81eb16c15",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:ea6389d9d61eb1c61d8ef58eec10052621526a64ee0d0e7abab2194f0803c204",
+      "count_receipt_id": "usaspending-subaward:1d905672af1a7293c95db0b8f4154ce23b881889faf1e039c8788fa81eb16c15",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -317,10 +317,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001915C0003_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b8fefdeba9aed2316a4b38a3ffa1d8658aedb099b48c16017057b7251cb0c4c6",
+        "receipt_id": "usaspending-subaward:ec304bc2a0377cc0e2424e2e6bafed82b11cfa2cc60ca86ce0a4c9715ee723c3",
         "reported_subaward_count": 834
       },
-      "count_receipt_id": "usaspending-subaward:b8fefdeba9aed2316a4b38a3ffa1d8658aedb099b48c16017057b7251cb0c4c6",
+      "count_receipt_id": "usaspending-subaward:ec304bc2a0377cc0e2424e2e6bafed82b11cfa2cc60ca86ce0a4c9715ee723c3",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -335,10 +335,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_NNM07AB03C_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b2008b00554c4682dd9af92d7eced66ec81b3c48f1d92d535e792700081ff975",
+        "receipt_id": "usaspending-subaward:42f8f2fd6731381c1c771e2e186b91b4e159d2a57e1da6f173a8d94d0fd9195a",
         "reported_subaward_count": 1023
       },
-      "count_receipt_id": "usaspending-subaward:b2008b00554c4682dd9af92d7eced66ec81b3c48f1d92d535e792700081ff975",
+      "count_receipt_id": "usaspending-subaward:42f8f2fd6731381c1c771e2e186b91b4e159d2a57e1da6f173a8d94d0fd9195a",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -353,10 +353,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q20C0023_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:7449c1a046d27e2ccf20460579ee5d23103c1edef0bdba3c5cebe88217ee9030",
+        "receipt_id": "usaspending-subaward:026181047ca706718b6a12fe338fc3d8ff3ef42d2ec075e37a3db5047659de58",
         "reported_subaward_count": 4420
       },
-      "count_receipt_id": "usaspending-subaward:7449c1a046d27e2ccf20460579ee5d23103c1edef0bdba3c5cebe88217ee9030",
+      "count_receipt_id": "usaspending-subaward:026181047ca706718b6a12fe338fc3d8ff3ef42d2ec075e37a3db5047659de58",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -371,15 +371,15 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q24C0022_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:02e47d2e78137fb8d973b41bcbf19bc6a398f4955eaf8130cffbb4195d1d3f79",
+        "receipt_id": "usaspending-subaward:6f4928737464989ab1d122df5d4ac3430c70f9b53b54f3a021cb8b470b9b3d41",
         "reported_subaward_count": 217
       },
-      "count_receipt_id": "usaspending-subaward:02e47d2e78137fb8d973b41bcbf19bc6a398f4955eaf8130cffbb4195d1d3f79",
+      "count_receipt_id": "usaspending-subaward:6f4928737464989ab1d122df5d4ac3430c70f9b53b54f3a021cb8b470b9b3d41",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:42aa34362c8fed7f23586af4a9952bc3eafdc7ca75d22ce5dc45d287652fdc12",
-        "usaspending-subaward:fc59dfa7dd0c9d22c3130613817e35fe93556c73dfcc502183d990d6573b5035",
-        "usaspending-subaward:16f0b763608fa6ab49249c51e65a54b9572c071019ab36ec5720cb146f0c58aa"
+        "usaspending-subaward:288c1459e316939969163753cc65c5cf30685c7af257329578fb06b21aa35614",
+        "usaspending-subaward:121a7ecbdb6c887a43db3e539de08a141422f8c6bfa48fab1e2fa62ef5e441fe",
+        "usaspending-subaward:fe142baf15e77f072fe85b7f7e47f7c43e8433af4b3e4b987bda6fe3f5929cc0"
       ],
       "detail_rows": 217,
       "high_count_parent": false,
@@ -393,10 +393,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002406C2222_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:999734f458b6775a5b67845dbb59a13680c275fffbe0491faddee1f7a5245f53",
+        "receipt_id": "usaspending-subaward:6595972e55679e0d3b55d600c7a0f5bcb0c57389abe9475a3bc059589dab71db",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:999734f458b6775a5b67845dbb59a13680c275fffbe0491faddee1f7a5245f53",
+      "count_receipt_id": "usaspending-subaward:6595972e55679e0d3b55d600c7a0f5bcb0c57389abe9475a3bc059589dab71db",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -411,10 +411,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F4261098C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:19d45be9b5dc7e1d3b6834e51d5bea7b28182cdcd0d810ec667f6558e326e8f9",
+        "receipt_id": "usaspending-subaward:a9467706b0f7821313e8f7861d6f0f86175dfedd8bc229bc3a985f41187f60c1",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:19d45be9b5dc7e1d3b6834e51d5bea7b28182cdcd0d810ec667f6558e326e8f9",
+      "count_receipt_id": "usaspending-subaward:a9467706b0f7821313e8f7861d6f0f86175dfedd8bc229bc3a985f41187f60c1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -429,10 +429,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F0470195C0017_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:ba3651490a8764dc135aa91614e9e44d485ab92fbe8a3a87e332c6c1063cd43d",
+        "receipt_id": "usaspending-subaward:66daf6a90ce912245960e60d9ea5fa420d1193986c4571c1e4c39632b624f70f",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:ba3651490a8764dc135aa91614e9e44d485ab92fbe8a3a87e332c6c1063cd43d",
+      "count_receipt_id": "usaspending-subaward:66daf6a90ce912245960e60d9ea5fa420d1193986c4571c1e4c39632b624f70f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -447,10 +447,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ014717C0032_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:fc6bec0a2d9635c38c7b6ee2536e600336217e21d12d944bb73c5ebb6761a65a",
+        "receipt_id": "usaspending-subaward:e47cef449f1d993f208c59cf073db4e5d36107d3ae290c81a41075a91d016a1e",
         "reported_subaward_count": 2584
       },
-      "count_receipt_id": "usaspending-subaward:fc6bec0a2d9635c38c7b6ee2536e600336217e21d12d944bb73c5ebb6761a65a",
+      "count_receipt_id": "usaspending-subaward:e47cef449f1d993f208c59cf073db4e5d36107d3ae290c81a41075a91d016a1e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -465,10 +465,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F0470102C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:352228e3e02346f02f5a3f3d04f001cc773df33ca96cae94fca093eda967e9a3",
+        "receipt_id": "usaspending-subaward:f4a201937fe2142c66de22cfe5d8e7695a2bdd8adfb0f3e23faf609e0f2e46f8",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:352228e3e02346f02f5a3f3d04f001cc773df33ca96cae94fca093eda967e9a3",
+      "count_receipt_id": "usaspending-subaward:f4a201937fe2142c66de22cfe5d8e7695a2bdd8adfb0f3e23faf609e0f2e46f8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -483,10 +483,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001999C1226_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:bc201a5adec2289ef920c45228566ee243120c511ccdce24d49a63fc965cd404",
+        "receipt_id": "usaspending-subaward:509b38fab15818389a8ee2157d616d0c292694ea2dc951396bf3066b6c8e7556",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:bc201a5adec2289ef920c45228566ee243120c511ccdce24d49a63fc965cd404",
+      "count_receipt_id": "usaspending-subaward:509b38fab15818389a8ee2157d616d0c292694ea2dc951396bf3066b6c8e7556",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -501,10 +501,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA861108C2897_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:45eb1f4755a9b3f2b94584dce59bff4ff9b53a244f8e8b211ee6352d40246324",
+        "receipt_id": "usaspending-subaward:12acc1e9aad7787f29880de58fbc64e9de17e65d094f78a3ca5f8319dab54a74",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:45eb1f4755a9b3f2b94584dce59bff4ff9b53a244f8e8b211ee6352d40246324",
+      "count_receipt_id": "usaspending-subaward:12acc1e9aad7787f29880de58fbc64e9de17e65d094f78a3ca5f8319dab54a74",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -519,13 +519,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001918C1021_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:0fe4a6580e4201a91c3d7bcff7987ef7a25e8ba964b3a465061b5eda83009191",
+        "receipt_id": "usaspending-subaward:2a631960e96f1c7b4adaa00acf0fe27dd8b411bf11941f8ae0e101046e82f114",
         "reported_subaward_count": 53
       },
-      "count_receipt_id": "usaspending-subaward:0fe4a6580e4201a91c3d7bcff7987ef7a25e8ba964b3a465061b5eda83009191",
+      "count_receipt_id": "usaspending-subaward:2a631960e96f1c7b4adaa00acf0fe27dd8b411bf11941f8ae0e101046e82f114",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:1050870948eb3531a810e835e264a07e82535a898fb7497e3a87cfd29d8653d5"
+        "usaspending-subaward:7a361f8819756044d670be0ce777ce244274c8e2d159c6dc6466ba3e0b878c8b"
       ],
       "detail_rows": 53,
       "high_count_parent": false,
@@ -539,10 +539,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001918C1037_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b5c964d64ef36e3e601ffa09598b0e9c0516afe9dd67a3bb4c34d06d0f9b0749",
+        "receipt_id": "usaspending-subaward:748a888e9398d4944bd3ce79917e143aebe19472bbf0f4463d2e9154e06549e1",
         "reported_subaward_count": 7869
       },
-      "count_receipt_id": "usaspending-subaward:b5c964d64ef36e3e601ffa09598b0e9c0516afe9dd67a3bb4c34d06d0f9b0749",
+      "count_receipt_id": "usaspending-subaward:748a888e9398d4944bd3ce79917e143aebe19472bbf0f4463d2e9154e06549e1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -557,17 +557,17 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002423C2307_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:743479091d0f302b6f761da0ef511301496baa5ea3b5ab299856075b30ffc480",
+        "receipt_id": "usaspending-subaward:11d5bdaf86ee8bd2b7db193c2839400ea7353bf052331972b3d444c6994fcd91",
         "reported_subaward_count": 488
       },
-      "count_receipt_id": "usaspending-subaward:743479091d0f302b6f761da0ef511301496baa5ea3b5ab299856075b30ffc480",
+      "count_receipt_id": "usaspending-subaward:11d5bdaf86ee8bd2b7db193c2839400ea7353bf052331972b3d444c6994fcd91",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:0bbb8c9ce526e0c9d82ea0daad9aa8ea247c2d0a26e87a7b93c20b840e400faf",
-        "usaspending-subaward:68fb343b52ed1d1aec4c2eea98ca8ebb8e7b49b741db8f0b80d8fa6e875c7345",
-        "usaspending-subaward:dfaffbc604d204d714a2e9143f049733cf276cb43d3e943b036ecbea91b40499",
-        "usaspending-subaward:ce572600c69de37fea17ae744cd2593b7717a2ffa9f37ee79d53fb5be4a66f0e",
-        "usaspending-subaward:02975ab359959b96b5f7b174f892036f6d3f11863c3f79c1b049d09a79a1e5d8"
+        "usaspending-subaward:c04bd746bd2ce6997f5cb09eed58c6ba0900228945ea2ae7e84917261b873a97",
+        "usaspending-subaward:9616ee36b4045ae47ecdb204a70b8e9017c226b2153238ed02563de111f77399",
+        "usaspending-subaward:3aa663cb961b695a5fdb1b75fa27546b968d13b34bf40624bf83e073a94818cc",
+        "usaspending-subaward:7e57ccef96ce50dd76070d3ea54a4f5cfa01cb39820a95626cba3b081c7b8e25",
+        "usaspending-subaward:ba128d147ce48f7b6ebdf302f8e8128507c66e9c0377bd0b2241ea3f3b61ab55"
       ],
       "detail_rows": 488,
       "high_count_parent": false,
@@ -581,10 +581,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001921C0020_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:584241437c3643fa06bbb333485714353538717a504b3258aa3655f0b5e51fb3",
+        "receipt_id": "usaspending-subaward:9de03f03f64daa4565e0705394a8c735d64975fca47da879a55a9c3606f0bbc1",
         "reported_subaward_count": 8304
       },
-      "count_receipt_id": "usaspending-subaward:584241437c3643fa06bbb333485714353538717a504b3258aa3655f0b5e51fb3",
+      "count_receipt_id": "usaspending-subaward:9de03f03f64daa4565e0705394a8c735d64975fca47da879a55a9c3606f0bbc1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -599,16 +599,16 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001924C0039_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:9fe3c2889345967d440c66da283522d737295c9db076ec12884596af2ddec488",
+        "receipt_id": "usaspending-subaward:fc7aff38ca059c223e7f95efe8d1759ba80afaea1ae75e913845d7b7f901edee",
         "reported_subaward_count": 340
       },
-      "count_receipt_id": "usaspending-subaward:9fe3c2889345967d440c66da283522d737295c9db076ec12884596af2ddec488",
+      "count_receipt_id": "usaspending-subaward:fc7aff38ca059c223e7f95efe8d1759ba80afaea1ae75e913845d7b7f901edee",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:6247b9b8907d27fd8d01e4ea8a8379e1a10b995b28edbf1ff623f33193cb9d05",
-        "usaspending-subaward:cf3d1992f8773be536a8bcd9496c48b5a1c28f6b8944a789b8764bd2dd14c599",
-        "usaspending-subaward:42f29a2ca1df63911dbeca592ad1bf952114d2709a29b822f19c7598d36f2539",
-        "usaspending-subaward:c02517a4b5cc1cad413110ed311d8c7d7d3f2e2cecf590d52332f036e03328b0"
+        "usaspending-subaward:33b904f7b13d35254b3f734ecfd43b563167ad51510370cb6bb007c51277be1d",
+        "usaspending-subaward:13eb02a573875514e4e59fe9eef0c8f51596117efdf807a06f89d0eb3892ba7f",
+        "usaspending-subaward:269c6e575317a3f3f6b87c18a55cea174a9b576aa7d8c6a4e6b0cb8fdef807c9",
+        "usaspending-subaward:bf142a47138d5e9849d808a223e5b21b9acb445bad3eb1449956a8dc1daeec02"
       ],
       "detail_rows": 340,
       "high_count_parent": false,
@@ -622,10 +622,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001904C3146_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:688569fc2027dfc0590f255cd4aa797079f9a548e2329f635551f9ede0f9acd5",
+        "receipt_id": "usaspending-subaward:0d64a841d68df446d8a65584647db24cdb0cda503491d588d6574f3657846ac4",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:688569fc2027dfc0590f255cd4aa797079f9a548e2329f635551f9ede0f9acd5",
+      "count_receipt_id": "usaspending-subaward:0d64a841d68df446d8a65584647db24cdb0cda503491d588d6574f3657846ac4",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -640,10 +640,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA861106C2899_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:69ad3f4495026c5cfd8f1f0479f99afeeb39a311c78528548afd6dda326013b1",
+        "receipt_id": "usaspending-subaward:6e606d25eececd233c941562c5587465c2149c6944d0611e6584c4975a6952b3",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:69ad3f4495026c5cfd8f1f0479f99afeeb39a311c78528548afd6dda326013b1",
+      "count_receipt_id": "usaspending-subaward:6e606d25eececd233c941562c5587465c2149c6944d0611e6584c4975a6952b3",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -658,10 +658,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA881018C0005_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:a8e6e85dd952c4dcf688b4476ca09eb36cc15d046e36e934854744828209bf97",
+        "receipt_id": "usaspending-subaward:66387552f89c8f0ca511c1dc20cce1a1f02a9523ca063a39814f6d60211fd01e",
         "reported_subaward_count": 3048
       },
-      "count_receipt_id": "usaspending-subaward:a8e6e85dd952c4dcf688b4476ca09eb36cc15d046e36e934854744828209bf97",
+      "count_receipt_id": "usaspending-subaward:66387552f89c8f0ca511c1dc20cce1a1f02a9523ca063a39814f6d60211fd01e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -676,10 +676,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ16C0023_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:fe3acba845a3991e480fe7cbff95be92a907dd5cd5f9bea12c7034a0dd9ab686",
+        "receipt_id": "usaspending-subaward:f1f2b69b739b07ba7e0ca3b05d90dd39e3779b9e43d341840be82c4434c29801",
         "reported_subaward_count": 2433
       },
-      "count_receipt_id": "usaspending-subaward:fe3acba845a3991e480fe7cbff95be92a907dd5cd5f9bea12c7034a0dd9ab686",
+      "count_receipt_id": "usaspending-subaward:f1f2b69b739b07ba7e0ca3b05d90dd39e3779b9e43d341840be82c4434c29801",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -694,10 +694,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862506C6456_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:fe03d6202d6abd2d6e71d90581e8681c746d66f02afd262d96137e138644693e",
+        "receipt_id": "usaspending-subaward:4e227d2a43623499851b04753b81318c1578929f9525a5ee42c54a1bfd989566",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:fe03d6202d6abd2d6e71d90581e8681c746d66f02afd262d96137e138644693e",
+      "count_receipt_id": "usaspending-subaward:4e227d2a43623499851b04753b81318c1578929f9525a5ee42c54a1bfd989566",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -712,10 +712,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001909C0019_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b7b2a599b20909937814663baf3e6e784a8489f8713f72fdf6b82e54f8567279",
+        "receipt_id": "usaspending-subaward:698ea9bea59068b2da263d563e37dcb3cbb593f4ce753e93716c99ecdfa93647",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:b7b2a599b20909937814663baf3e6e784a8489f8713f72fdf6b82e54f8567279",
+      "count_receipt_id": "usaspending-subaward:698ea9bea59068b2da263d563e37dcb3cbb593f4ce753e93716c99ecdfa93647",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -730,13 +730,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA868224CB001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c35d5bf89015325f903dcee78563ae6bb794bbe48d38ee86a3f8c8eb7c3ae47f",
+        "receipt_id": "usaspending-subaward:22ebd523c4278ef44844ca3b0c67dbbe96e23125f80f98ec050285f7d774d179",
         "reported_subaward_count": 74
       },
-      "count_receipt_id": "usaspending-subaward:c35d5bf89015325f903dcee78563ae6bb794bbe48d38ee86a3f8c8eb7c3ae47f",
+      "count_receipt_id": "usaspending-subaward:22ebd523c4278ef44844ca3b0c67dbbe96e23125f80f98ec050285f7d774d179",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:8dda266f0048a29a4cfb3db32b4f3122e3996ec2930ba62b4a4b89259ee1bf2f"
+        "usaspending-subaward:3f5766859177967ed57ae1c2535343744294b20ff83577731c3f81921144b22c"
       ],
       "detail_rows": 74,
       "high_count_parent": false,
@@ -750,10 +750,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001911C0083_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:a5b80cadaba989354671dc45d8d4df711923c3048afd9b1c5e9b714b850e8175",
+        "receipt_id": "usaspending-subaward:345e8afce43e7335bf16020637666903191b97e0af1270cac840d27ca9803c1e",
         "reported_subaward_count": 602
       },
-      "count_receipt_id": "usaspending-subaward:a5b80cadaba989354671dc45d8d4df711923c3048afd9b1c5e9b714b850e8175",
+      "count_receipt_id": "usaspending-subaward:345e8afce43e7335bf16020637666903191b97e0af1270cac840d27ca9803c1e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -768,10 +768,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001914C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:8bb80e48c1d815a8e714e03f3abee392af8a44c02abfb7ae4b75ec53ed69a424",
+        "receipt_id": "usaspending-subaward:d4c2e92745df9465ed1fcb7a687394e43cb77c863ab0bddae3ea76efac95ca9e",
         "reported_subaward_count": 911
       },
-      "count_receipt_id": "usaspending-subaward:8bb80e48c1d815a8e714e03f3abee392af8a44c02abfb7ae4b75ec53ed69a424",
+      "count_receipt_id": "usaspending-subaward:d4c2e92745df9465ed1fcb7a687394e43cb77c863ab0bddae3ea76efac95ca9e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -786,10 +786,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA863418C2701_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c96ac12e9b37d014c39c5b7cf6d7b6901efc90c9db99d3ff5e47b8197b37a50f",
+        "receipt_id": "usaspending-subaward:cf2bc592b6840a21db1af64a370a5084e0324e2e1369f7ef78f551ceb8d58cb0",
         "reported_subaward_count": 2128
       },
-      "count_receipt_id": "usaspending-subaward:c96ac12e9b37d014c39c5b7cf6d7b6901efc90c9db99d3ff5e47b8197b37a50f",
+      "count_receipt_id": "usaspending-subaward:cf2bc592b6840a21db1af64a370a5084e0324e2e1369f7ef78f551ceb8d58cb0",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -804,10 +804,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002418C2307_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:babc298518ac12b66a53e2a018997309971064a55942d2d3b5fe107d59f05f50",
+        "receipt_id": "usaspending-subaward:dffa880dbbec14fb6cf50eb93aaa4dc0053d3b43476d4a45c6d7e73c54d767df",
         "reported_subaward_count": 2597
       },
-      "count_receipt_id": "usaspending-subaward:babc298518ac12b66a53e2a018997309971064a55942d2d3b5fe107d59f05f50",
+      "count_receipt_id": "usaspending-subaward:dffa880dbbec14fb6cf50eb93aaa4dc0053d3b43476d4a45c6d7e73c54d767df",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -822,13 +822,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002408C2110_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:387d11d025191e1ca73067e774f50a37cd61b2713dcf0c61fd86110c2022bc33",
+        "receipt_id": "usaspending-subaward:fcd1d2c13547d43efeb6425b76a6525656a56239407b19574e410989cba67860",
         "reported_subaward_count": 1
       },
-      "count_receipt_id": "usaspending-subaward:387d11d025191e1ca73067e774f50a37cd61b2713dcf0c61fd86110c2022bc33",
+      "count_receipt_id": "usaspending-subaward:fcd1d2c13547d43efeb6425b76a6525656a56239407b19574e410989cba67860",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:776cab2b970db13c5e4a02a96f01d85b8d786eef8e5809f311a1b1f3bbe3dc09"
+        "usaspending-subaward:dd538940a36b14aba3b6b967ee58ebdea08e87075f9314ba9a3b6c73015d3118"
       ],
       "detail_rows": 1,
       "high_count_parent": false,
@@ -842,10 +842,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002423C2305_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:68578ba37cc5dc70e48d37113316874771bc2c859537061bc6d87cc72a74789f",
+        "receipt_id": "usaspending-subaward:85b5294431b19427d8cb2fdfa9ba12bbe9946f1bf43835d7e965c6990198db0c",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:68578ba37cc5dc70e48d37113316874771bc2c859537061bc6d87cc72a74789f",
+      "count_receipt_id": "usaspending-subaward:85b5294431b19427d8cb2fdfa9ba12bbe9946f1bf43835d7e965c6990198db0c",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -860,10 +860,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ014712C0004_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:81f878c2f3c25665d253d7ab7ee33c208b5ecb1bfc1a3340e533d2a5202b17cb",
+        "receipt_id": "usaspending-subaward:9fcb0627811dace5dbdaa71aadcb481e24930d3fc71d02b439ddcb9e2ccc9880",
         "reported_subaward_count": 865
       },
-      "count_receipt_id": "usaspending-subaward:81f878c2f3c25665d253d7ab7ee33c208b5ecb1bfc1a3340e533d2a5202b17cb",
+      "count_receipt_id": "usaspending-subaward:9fcb0627811dace5dbdaa71aadcb481e24930d3fc71d02b439ddcb9e2ccc9880",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -878,10 +878,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001913C0008_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:5778da7c8b9052b7167d1928b0dd8641c3ba48c6e1fe12d2fb12945cb3bddf97",
+        "receipt_id": "usaspending-subaward:2d29af6d5eb85c6ee1ada89e34145c5768f0fc4a5fca1dd2ccb03ebc6321c166",
         "reported_subaward_count": 669
       },
-      "count_receipt_id": "usaspending-subaward:5778da7c8b9052b7167d1928b0dd8641c3ba48c6e1fe12d2fb12945cb3bddf97",
+      "count_receipt_id": "usaspending-subaward:2d29af6d5eb85c6ee1ada89e34145c5768f0fc4a5fca1dd2ccb03ebc6321c166",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -896,13 +896,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862514C6450_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:32249551f9efdbe83e370045bdde8f59e645a3d59272d028cd2a2c3bee20a4c4",
+        "receipt_id": "usaspending-subaward:46cd6fcdcb245255ba4da6fea1fb34a7d2f11c26b3318309edfe5702679bbda9",
         "reported_subaward_count": 27
       },
-      "count_receipt_id": "usaspending-subaward:32249551f9efdbe83e370045bdde8f59e645a3d59272d028cd2a2c3bee20a4c4",
+      "count_receipt_id": "usaspending-subaward:46cd6fcdcb245255ba4da6fea1fb34a7d2f11c26b3318309edfe5702679bbda9",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:513bfdb474ac4d34dfbe09df1daf0182f03ffb11196652820419c445c5a961e9"
+        "usaspending-subaward:f33e6a1d9c9627752d2e206d3e760f9a62f686ee2ae9f8479cc8894526ca190a"
       ],
       "detail_rows": 27,
       "high_count_parent": false,
@@ -916,10 +916,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002416C2229_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:dca6205d6d787b8f0d3d71cc3c66a48c0eb5c03c6c6e78270b2ef3b15d5d5373",
+        "receipt_id": "usaspending-subaward:5fceec015aa37a83dacc221fafb66f8e03464f21760812bb34c7be469b45d323",
         "reported_subaward_count": 6572
       },
-      "count_receipt_id": "usaspending-subaward:dca6205d6d787b8f0d3d71cc3c66a48c0eb5c03c6c6e78270b2ef3b15d5d5373",
+      "count_receipt_id": "usaspending-subaward:5fceec015aa37a83dacc221fafb66f8e03464f21760812bb34c7be469b45d323",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -934,10 +934,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ014707C0196_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f314dc2a2688642b6cf1bab29faef7b18797240c92fb6acf2c0691466ade1dbd",
+        "receipt_id": "usaspending-subaward:1ea7fc680c538f3b08c7fd10c0c149c84f6c6b0587bd477c93b738aa19ac3608",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:f314dc2a2688642b6cf1bab29faef7b18797240c92fb6acf2c0691466ade1dbd",
+      "count_receipt_id": "usaspending-subaward:1ea7fc680c538f3b08c7fd10c0c149c84f6c6b0587bd477c93b738aa19ac3608",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -952,10 +952,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001909C0010_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:66c24a093853bee6032918d33ebff99d3b795189e06dea1f85e5d9b7c3909b15",
+        "receipt_id": "usaspending-subaward:926a33c72e14de7ef48fcb1cb263e9479d05ddab1bfc2297f8debe888cdfea0d",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:66c24a093853bee6032918d33ebff99d3b795189e06dea1f85e5d9b7c3909b15",
+      "count_receipt_id": "usaspending-subaward:926a33c72e14de7ef48fcb1cb263e9479d05ddab1bfc2297f8debe888cdfea0d",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -970,14 +970,14 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001924C0025_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:16f8a43cb32da4789d0eb607807f6a27106584622deddaa6cd759bf59579179a",
+        "receipt_id": "usaspending-subaward:4d23e592c0b4eb6ad55978790382c7604677421d855e17ba48ce1d7838715de0",
         "reported_subaward_count": 191
       },
-      "count_receipt_id": "usaspending-subaward:16f8a43cb32da4789d0eb607807f6a27106584622deddaa6cd759bf59579179a",
+      "count_receipt_id": "usaspending-subaward:4d23e592c0b4eb6ad55978790382c7604677421d855e17ba48ce1d7838715de0",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:a322cf3508e17f5d2636c4c0f77c087b89f51941c9f994dbe257ef2322108db6",
-        "usaspending-subaward:08060de62e0b5477e53fdbb37c91130be63d1e42d8ce7ee48063b59bfd15ad97"
+        "usaspending-subaward:062eea995ffda2c5f59e343d9c3853ee09f8e86e71335de0592f98a254ff248c",
+        "usaspending-subaward:3467dbe5c183818ef86105992276f9a84a5f58fa424ab5fcac3c52da38b133c8"
       ],
       "detail_rows": 191,
       "high_count_parent": false,
@@ -991,10 +991,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001909C0022_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:3d60b8dbb6f189704d3c01a3ff95649a305763b31712799253cec99d796766b5",
+        "receipt_id": "usaspending-subaward:133bf3d2167033436b5a27df89c15c6ac9a3112c2b2ac9a7e65a50bac1a2921a",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:3d60b8dbb6f189704d3c01a3ff95649a305763b31712799253cec99d796766b5",
+      "count_receipt_id": "usaspending-subaward:133bf3d2167033436b5a27df89c15c6ac9a3112c2b2ac9a7e65a50bac1a2921a",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1009,10 +1009,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002405C5346_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:8173d46f09ddd5bb64d18fb29aed54bbf88ffdc394bfa93f6f6beaa5400a59db",
+        "receipt_id": "usaspending-subaward:05942eee3f4344f1374da468711771a587b606b9e3f47b4289ff8510a4d1e80f",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:8173d46f09ddd5bb64d18fb29aed54bbf88ffdc394bfa93f6f6beaa5400a59db",
+      "count_receipt_id": "usaspending-subaward:05942eee3f4344f1374da468711771a587b606b9e3f47b4289ff8510a4d1e80f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1027,10 +1027,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q15C0022_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:7fddc1c31dea77e8daae0be00b8325f4e8a3cb36142204d584240de6aadf19e9",
+        "receipt_id": "usaspending-subaward:fa455ed2aa421f591441547913cc2c8386ff8878c1db5b11da255c8bbe91082b",
         "reported_subaward_count": 15035
       },
-      "count_receipt_id": "usaspending-subaward:7fddc1c31dea77e8daae0be00b8325f4e8a3cb36142204d584240de6aadf19e9",
+      "count_receipt_id": "usaspending-subaward:fa455ed2aa421f591441547913cc2c8386ff8878c1db5b11da255c8bbe91082b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1045,13 +1045,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001912C0004_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:886c7723ecff66f29a8aacb3a138677a3fe457a5b1a03c6cd538165e76db41cf",
+        "receipt_id": "usaspending-subaward:76e39e40249c3f96675df98997186be30b44a2f45eadf9a97a56306d7440553b",
         "reported_subaward_count": 88
       },
-      "count_receipt_id": "usaspending-subaward:886c7723ecff66f29a8aacb3a138677a3fe457a5b1a03c6cd538165e76db41cf",
+      "count_receipt_id": "usaspending-subaward:76e39e40249c3f96675df98997186be30b44a2f45eadf9a97a56306d7440553b",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:eee9facd597b4988aa02a8784c74050cfe558cbfbbb2c00309ee13fd22a54a86"
+        "usaspending-subaward:7631c794d6561b1f11c8efccda3bb71bf5251002d07c402ffbcd4f5b95d447a1"
       ],
       "detail_rows": 88,
       "high_count_parent": false,
@@ -1065,10 +1065,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001912C0112_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:0585624aeeb1cade2396342c7e16d45e82a4a6af0cc727c959c00164b8f99641",
+        "receipt_id": "usaspending-subaward:c1b343cf62bd9a6e9b8ac00355e57dcc1656d29a101b360832a505c99ff0ab27",
         "reported_subaward_count": 486
       },
-      "count_receipt_id": "usaspending-subaward:0585624aeeb1cade2396342c7e16d45e82a4a6af0cc727c959c00164b8f99641",
+      "count_receipt_id": "usaspending-subaward:c1b343cf62bd9a6e9b8ac00355e57dcc1656d29a101b360832a505c99ff0ab27",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1083,10 +1083,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001918C1046_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:5eb90d4289a9b621a2525554b8d137f27a206a8d61750990b5304ceb95a7244f",
+        "receipt_id": "usaspending-subaward:bae877d2b7513e1f00f9b33d32c27487b146e7f10e398abe735179bfeffbeb4c",
         "reported_subaward_count": 897
       },
-      "count_receipt_id": "usaspending-subaward:5eb90d4289a9b621a2525554b8d137f27a206a8d61750990b5304ceb95a7244f",
+      "count_receipt_id": "usaspending-subaward:bae877d2b7513e1f00f9b33d32c27487b146e7f10e398abe735179bfeffbeb4c",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1101,13 +1101,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002418C2305_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:333f86ee729a1db937ae04d46a92cf9c6b5c5a0a9c39f5be93666f2751e3ab25",
+        "receipt_id": "usaspending-subaward:2a88176bdf5f48f14ba3c2099bb3e938f0a25cb0f6d859caf9349577850fc98c",
         "reported_subaward_count": 27
       },
-      "count_receipt_id": "usaspending-subaward:333f86ee729a1db937ae04d46a92cf9c6b5c5a0a9c39f5be93666f2751e3ab25",
+      "count_receipt_id": "usaspending-subaward:2a88176bdf5f48f14ba3c2099bb3e938f0a25cb0f6d859caf9349577850fc98c",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:1cf87d106e37390131fb49748603c495480acc222d59aef0bc456cc7af02c8dd"
+        "usaspending-subaward:ebc5932be8bacf0e28429793e815cd456c39bdddc12902bbcccab44e57db0ccb"
       ],
       "detail_rows": 27,
       "high_count_parent": false,
@@ -1121,10 +1121,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001913C9999_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f6d33198a007ec3c679dff11ddf0be06e4e0b456a6899976cccd8f053131f5d0",
+        "receipt_id": "usaspending-subaward:f82492a6444ff8ff215db15c360d91f330c470849df93133851c03775fdf9df8",
         "reported_subaward_count": 3905
       },
-      "count_receipt_id": "usaspending-subaward:f6d33198a007ec3c679dff11ddf0be06e4e0b456a6899976cccd8f053131f5d0",
+      "count_receipt_id": "usaspending-subaward:f82492a6444ff8ff215db15c360d91f330c470849df93133851c03775fdf9df8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1139,10 +1139,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ085621C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:07d24dbdaf7a02737da325857ace9e45f7595b31b9f564886efaa802ec354c7d",
+        "receipt_id": "usaspending-subaward:565f0fae1757e33d9014515dbe32b2ed1f92264d8db25783f802ac024b85a3ed",
         "reported_subaward_count": 2000
       },
-      "count_receipt_id": "usaspending-subaward:07d24dbdaf7a02737da325857ace9e45f7595b31b9f564886efaa802ec354c7d",
+      "count_receipt_id": "usaspending-subaward:565f0fae1757e33d9014515dbe32b2ed1f92264d8db25783f802ac024b85a3ed",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1157,10 +1157,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA861520F0001_9700_FA861520D6052_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:67f375377e73c0af0fa4149bb8276e49fc64e823ada22795ab9837086b8d3845",
+        "receipt_id": "usaspending-subaward:7f15a03b8fc68887da676c2a05b4546713aeefaedea25aa7ca15ddc9ee488c39",
         "reported_subaward_count": 103
       },
-      "count_receipt_id": "usaspending-subaward:67f375377e73c0af0fa4149bb8276e49fc64e823ada22795ab9837086b8d3845",
+      "count_receipt_id": "usaspending-subaward:7f15a03b8fc68887da676c2a05b4546713aeefaedea25aa7ca15ddc9ee488c39",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1175,10 +1175,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0003904C2009_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:88b9ac272ce3408eb306da9a11feffab3301b09371e595eb0c453f125b34c455",
+        "receipt_id": "usaspending-subaward:e061edfc7460f58b7574e61b5cb4437bb232b3a448ade2ed9fef4d13617e687b",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:88b9ac272ce3408eb306da9a11feffab3301b09371e595eb0c453f125b34c455",
+      "count_receipt_id": "usaspending-subaward:e061edfc7460f58b7574e61b5cb4437bb232b3a448ade2ed9fef4d13617e687b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1193,10 +1193,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002413C2305_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:9441201ac92fba9ba13b8d6fc6f524b15ace70aa7ccaa908c556955070c66fd3",
+        "receipt_id": "usaspending-subaward:d211a694abe8e89ecc8c0fa3dfa3a6adba8ad961e658475ae8fd92a079d0ef93",
         "reported_subaward_count": 102
       },
-      "count_receipt_id": "usaspending-subaward:9441201ac92fba9ba13b8d6fc6f524b15ace70aa7ccaa908c556955070c66fd3",
+      "count_receipt_id": "usaspending-subaward:d211a694abe8e89ecc8c0fa3dfa3a6adba8ad961e658475ae8fd92a079d0ef93",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1211,10 +1211,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862507C6471_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:d4b6dd169da93083cf28d44732c85cc64513052a98ad2b091476488ef92948e1",
+        "receipt_id": "usaspending-subaward:8b87d1e7d43f248267b39636b392622d6721284342532d0db764b7b5c832476a",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:d4b6dd169da93083cf28d44732c85cc64513052a98ad2b091476488ef92948e1",
+      "count_receipt_id": "usaspending-subaward:8b87d1e7d43f248267b39636b392622d6721284342532d0db764b7b5c832476a",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1229,10 +1229,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001910C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:34098be0f9454d226ce7d944491b0c781a412a59e5146538cfd45c9445af5d73",
+        "receipt_id": "usaspending-subaward:f9451e941ae40c9a7087b3023dd41b23a4c1abe68e2447e6162b1f77bc0ed0ab",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:34098be0f9454d226ce7d944491b0c781a412a59e5146538cfd45c9445af5d73",
+      "count_receipt_id": "usaspending-subaward:f9451e941ae40c9a7087b3023dd41b23a4c1abe68e2447e6162b1f77bc0ed0ab",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1247,10 +1247,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002411C2300_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:67e642cc9aaa2260390f8fa0b10bca29d225d878d2e1cd43920429ed8a8abcb9",
+        "receipt_id": "usaspending-subaward:4cba096ccd2638bea19a3ccdd50364459ce632cee31c006392a881fbadd3b9ed",
         "reported_subaward_count": 1208
       },
-      "count_receipt_id": "usaspending-subaward:67e642cc9aaa2260390f8fa0b10bca29d225d878d2e1cd43920429ed8a8abcb9",
+      "count_receipt_id": "usaspending-subaward:4cba096ccd2638bea19a3ccdd50364459ce632cee31c006392a881fbadd3b9ed",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1265,10 +1265,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001993C0006_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:9c91444de8ae1de01d441d833823a7234e3758e92c484a06ba3a8a4ded67742c",
+        "receipt_id": "usaspending-subaward:be5f4f9d6d3e07caeeef2aebcd839216c9ff353d0bec45fc42407a37225ee37f",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:9c91444de8ae1de01d441d833823a7234e3758e92c484a06ba3a8a4ded67742c",
+      "count_receipt_id": "usaspending-subaward:be5f4f9d6d3e07caeeef2aebcd839216c9ff353d0bec45fc42407a37225ee37f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1283,10 +1283,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ13C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:6eabf89bcf66ec3cfb15579cfa4b2b1650ada58b90ea3a853f55dda5e7e6f721",
+        "receipt_id": "usaspending-subaward:c481e7dd41ad0b49f13166e381eb506dc160d7125dfac2b26c0c1dd0389c45ec",
         "reported_subaward_count": 855
       },
-      "count_receipt_id": "usaspending-subaward:6eabf89bcf66ec3cfb15579cfa4b2b1650ada58b90ea3a853f55dda5e7e6f721",
+      "count_receipt_id": "usaspending-subaward:c481e7dd41ad0b49f13166e381eb506dc160d7125dfac2b26c0c1dd0389c45ec",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1301,10 +1301,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HHSN261200800001E_7529_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c8284401cb3cb483690adb8e95f3328daa5583151aaa817f246558fb8319ee4a",
+        "receipt_id": "usaspending-subaward:b828bbd05324f5059be084ee8860fa4f08845b9542ea60b16d05e328850c0ca3",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:c8284401cb3cb483690adb8e95f3328daa5583151aaa817f246558fb8319ee4a",
+      "count_receipt_id": "usaspending-subaward:b828bbd05324f5059be084ee8860fa4f08845b9542ea60b16d05e328850c0ca3",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1319,10 +1319,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q26C0013_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:addd2144b4be515cb1e807c6a572135fad72aac5f6c871bd55939254b7543e57",
+        "receipt_id": "usaspending-subaward:27a2ea1a78dabbf4095116221914c1fa25b5ef5dcff505b61cf3d024a82c1029",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:addd2144b4be515cb1e807c6a572135fad72aac5f6c871bd55939254b7543e57",
+      "count_receipt_id": "usaspending-subaward:27a2ea1a78dabbf4095116221914c1fa25b5ef5dcff505b61cf3d024a82c1029",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1337,10 +1337,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002418C2406_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:dd9fc6cdf2e13b1aada6ecf71e29fb4d3a82824345ca629477caf1491719d3be",
+        "receipt_id": "usaspending-subaward:9a5edd2a08557b90eb224bca387f26b3d00550f3700b04b651d7be0f68b26be4",
         "reported_subaward_count": 1245
       },
-      "count_receipt_id": "usaspending-subaward:dd9fc6cdf2e13b1aada6ecf71e29fb4d3a82824345ca629477caf1491719d3be",
+      "count_receipt_id": "usaspending-subaward:9a5edd2a08557b90eb224bca387f26b3d00550f3700b04b651d7be0f68b26be4",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1355,10 +1355,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001919C0010_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:5c2051b62c70735d8db6dfd7a770bea13aa90ec65da39cb373a48d1b3df9246c",
+        "receipt_id": "usaspending-subaward:6a592e6a8976e7421207681ffd5caa0bb187f6885264a6076fe12a52bc451f04",
         "reported_subaward_count": 630
       },
-      "count_receipt_id": "usaspending-subaward:5c2051b62c70735d8db6dfd7a770bea13aa90ec65da39cb373a48d1b3df9246c",
+      "count_receipt_id": "usaspending-subaward:6a592e6a8976e7421207681ffd5caa0bb187f6885264a6076fe12a52bc451f04",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1373,10 +1373,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q19C0011_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:1cf2c22c5f2d62c7b0bb8e82024f9d568131c1c9d5786f491f785d487365bae8",
+        "receipt_id": "usaspending-subaward:758cea1e8983afdd5c2a61fbdecf81cc84c766e0dde3cdf1e53c1ce70ef6a1ed",
         "reported_subaward_count": 4246
       },
-      "count_receipt_id": "usaspending-subaward:1cf2c22c5f2d62c7b0bb8e82024f9d568131c1c9d5786f491f785d487365bae8",
+      "count_receipt_id": "usaspending-subaward:758cea1e8983afdd5c2a61fbdecf81cc84c766e0dde3cdf1e53c1ce70ef6a1ed",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1391,10 +1391,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002498C2104_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:6ee04a8f237d93910f93f15e5330a63b2eaf362aa07985e2ff27107681fc965e",
+        "receipt_id": "usaspending-subaward:d8da3d6729a46dce09bb5c61cfd4abf4c0c2c184ccb9acca317a922879d8c180",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:6ee04a8f237d93910f93f15e5330a63b2eaf362aa07985e2ff27107681fc965e",
+      "count_receipt_id": "usaspending-subaward:d8da3d6729a46dce09bb5c61cfd4abf4c0c2c184ccb9acca317a922879d8c180",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1409,10 +1409,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA880708C0010_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c4513de685f28c48e6cca9ce62e1a4165383f77309d4f4d9e76725f8f7460028",
+        "receipt_id": "usaspending-subaward:120bdbb4b79f7aef76797a4e59fa4a6447d27b223c6595a66fed77d5a4fb2510",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:c4513de685f28c48e6cca9ce62e1a4165383f77309d4f4d9e76725f8f7460028",
+      "count_receipt_id": "usaspending-subaward:120bdbb4b79f7aef76797a4e59fa4a6447d27b223c6595a66fed77d5a4fb2510",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1427,10 +1427,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002415C2114_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:8d77e974d9c771e8c903120abfbdde024972a4d65baa845021f7f381091f52e6",
+        "receipt_id": "usaspending-subaward:ac535ced4203434d259ecbc9f39d5fc1e462ddb1dfafa65a679cab34adf82050",
         "reported_subaward_count": 2990
       },
-      "count_receipt_id": "usaspending-subaward:8d77e974d9c771e8c903120abfbdde024972a4d65baa845021f7f381091f52e6",
+      "count_receipt_id": "usaspending-subaward:ac535ced4203434d259ecbc9f39d5fc1e462ddb1dfafa65a679cab34adf82050",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1445,10 +1445,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002409C2116_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:1da3f311df30bca439887739337edfb01364d52dfb773f68ad80d0affa506fef",
+        "receipt_id": "usaspending-subaward:d7bd0a2f7cf200a5d2ebab956f07f29e9cf5b32d64f8ee3c61db9da239385cf8",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:1da3f311df30bca439887739337edfb01364d52dfb773f68ad80d0affa506fef",
+      "count_receipt_id": "usaspending-subaward:d7bd0a2f7cf200a5d2ebab956f07f29e9cf5b32d64f8ee3c61db9da239385cf8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1463,10 +1463,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA880710C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:62f9ec821da8db03e3620c3cf826d350bf35d3d781f292e3d37a9c8ba1ea1b65",
+        "receipt_id": "usaspending-subaward:e27907465028304018e3092f1c41489a3be455494d21a616fbb07a7bda5698c1",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:62f9ec821da8db03e3620c3cf826d350bf35d3d781f292e3d37a9c8ba1ea1b65",
+      "count_receipt_id": "usaspending-subaward:e27907465028304018e3092f1c41489a3be455494d21a616fbb07a7bda5698c1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1481,10 +1481,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ014719C0004_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:d95f37e6f14c2ae51f2c8dc0677d64ddbac7076e1d468512895be37cd03dd76c",
+        "receipt_id": "usaspending-subaward:98aaacb04d9c69c7eba66ac5c180dcf206f3b159a286f185809da55ed7d944b8",
         "reported_subaward_count": 987
       },
-      "count_receipt_id": "usaspending-subaward:d95f37e6f14c2ae51f2c8dc0677d64ddbac7076e1d468512895be37cd03dd76c",
+      "count_receipt_id": "usaspending-subaward:98aaacb04d9c69c7eba66ac5c180dcf206f3b159a286f185809da55ed7d944b8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1499,10 +1499,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_NNM07AA75C_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:772e42cbbd2f7ac5483d0b60f0b0389db4a4cf9fea0dd3841899acaaa60dabea",
+        "receipt_id": "usaspending-subaward:0f59ac4a84d3906c2cfa7905deb1226ac533df5f6b68bd3f2fd34e9aa1a0f859",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:772e42cbbd2f7ac5483d0b60f0b0389db4a4cf9fea0dd3841899acaaa60dabea",
+      "count_receipt_id": "usaspending-subaward:0f59ac4a84d3906c2cfa7905deb1226ac533df5f6b68bd3f2fd34e9aa1a0f859",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1517,10 +1517,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862511C6597_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:68a313b0a14c2a05ef5187a05943899c51e412ecef8b6f9986730b4a7d501fc1",
+        "receipt_id": "usaspending-subaward:93d63e32a96ee4a237e849e08e6c4be93ec7b3908d41a3454a9981be3ffbeac3",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:68a313b0a14c2a05ef5187a05943899c51e412ecef8b6f9986730b4a7d501fc1",
+      "count_receipt_id": "usaspending-subaward:93d63e32a96ee4a237e849e08e6c4be93ec7b3908d41a3454a9981be3ffbeac3",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1535,10 +1535,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F0470102C0502_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:e159baf16c40f0cbd82244a232106c2d35ee2ccaed21085b8fb1bf83045052a2",
+        "receipt_id": "usaspending-subaward:a06ec6c2b29503f06ebd78a233ab50ac618c5e2fc070d4d117c48b0896f2fffc",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:e159baf16c40f0cbd82244a232106c2d35ee2ccaed21085b8fb1bf83045052a2",
+      "count_receipt_id": "usaspending-subaward:a06ec6c2b29503f06ebd78a233ab50ac618c5e2fc070d4d117c48b0896f2fffc",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1553,10 +1553,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ08C0098_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:83bfb3a5ebff17a95d6ba12d10c6d71e3b2609765e9fe55b483d657c98a39c91",
+        "receipt_id": "usaspending-subaward:c8cef41c9632282c1e9c1fb7c52cc7285152d04dec6c97b4168ef423a467e4fe",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:83bfb3a5ebff17a95d6ba12d10c6d71e3b2609765e9fe55b483d657c98a39c91",
+      "count_receipt_id": "usaspending-subaward:c8cef41c9632282c1e9c1fb7c52cc7285152d04dec6c97b4168ef423a467e4fe",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1571,10 +1571,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001925C0070_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:077c114e2ea769756fd4636ee06cca2a4934c63295557fa6d3fbfc30834af893",
+        "receipt_id": "usaspending-subaward:5157d5d9609ad5e50fb05e8792ee343d928454fe45d0ee683966832edad1cdb6",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:077c114e2ea769756fd4636ee06cca2a4934c63295557fa6d3fbfc30834af893",
+      "count_receipt_id": "usaspending-subaward:5157d5d9609ad5e50fb05e8792ee343d928454fe45d0ee683966832edad1cdb6",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1589,10 +1589,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_GSFC0200211DNAS502200_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:553df693dbaff88df05b372bc53e820ffb8981dd89c37a40974fb4b69de3b5e2",
+        "receipt_id": "usaspending-subaward:f31e14209f8badf0383761b879ac5452bd4f3e30abf6eb4edcc14149a4d5ec39",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:553df693dbaff88df05b372bc53e820ffb8981dd89c37a40974fb4b69de3b5e2",
+      "count_receipt_id": "usaspending-subaward:f31e14209f8badf0383761b879ac5452bd4f3e30abf6eb4edcc14149a4d5ec39",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1607,10 +1607,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q14C0034_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:659ee7c072bb0c6df4895a2acb699188a257deab7eaf283e3c5326071b7cb99e",
+        "receipt_id": "usaspending-subaward:e6ba594d36678f3758c7302a272f1aa231e749bd5f13d6363db5ae567102553e",
         "reported_subaward_count": 656
       },
-      "count_receipt_id": "usaspending-subaward:659ee7c072bb0c6df4895a2acb699188a257deab7eaf283e3c5326071b7cb99e",
+      "count_receipt_id": "usaspending-subaward:e6ba594d36678f3758c7302a272f1aa231e749bd5f13d6363db5ae567102553e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1625,10 +1625,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA880718C0009_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:266825a9f09ae640a2c71eda84a2d90e28a37db39f7e63f885a68eea99b9e889",
+        "receipt_id": "usaspending-subaward:6e5e21bce9a11689629e359ebeb8c352202248dd3701e873d977b541882e77e4",
         "reported_subaward_count": 2604
       },
-      "count_receipt_id": "usaspending-subaward:266825a9f09ae640a2c71eda84a2d90e28a37db39f7e63f885a68eea99b9e889",
+      "count_receipt_id": "usaspending-subaward:6e5e21bce9a11689629e359ebeb8c352202248dd3701e873d977b541882e77e4",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1643,10 +1643,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862516C6599_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:cc0902beb3c6dbe73ca87a0ffcf499e57d85498f4b9159cc765838be97fa2472",
+        "receipt_id": "usaspending-subaward:26bc5d95e296ef38bf935bb8a073dcd9ff9c852d76407ff694763e226a61e368",
         "reported_subaward_count": 708
       },
-      "count_receipt_id": "usaspending-subaward:cc0902beb3c6dbe73ca87a0ffcf499e57d85498f4b9159cc765838be97fa2472",
+      "count_receipt_id": "usaspending-subaward:26bc5d95e296ef38bf935bb8a073dcd9ff9c852d76407ff694763e226a61e368",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1661,10 +1661,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ23C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:94cf794f3da09b47806a8f7034928785ae27791ddeaf28d8f8b3231f287b48d4",
+        "receipt_id": "usaspending-subaward:3cf0d2226005618f45b92de70f3a6196381757f4974a4fa3f8526247e3ec2297",
         "reported_subaward_count": 2381
       },
-      "count_receipt_id": "usaspending-subaward:94cf794f3da09b47806a8f7034928785ae27791ddeaf28d8f8b3231f287b48d4",
+      "count_receipt_id": "usaspending-subaward:3cf0d2226005618f45b92de70f3a6196381757f4974a4fa3f8526247e3ec2297",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1679,10 +1679,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0003019C0025_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:79bb499f7273650386bb12fd3dcff1fff9ceea929733db8a50042767c4d82c70",
+        "receipt_id": "usaspending-subaward:dfda62e9048e9f05b4d2d3938157a497b70b723cf59d9a0793ade3c8811ae16b",
         "reported_subaward_count": 1478
       },
-      "count_receipt_id": "usaspending-subaward:79bb499f7273650386bb12fd3dcff1fff9ceea929733db8a50042767c4d82c70",
+      "count_receipt_id": "usaspending-subaward:dfda62e9048e9f05b4d2d3938157a497b70b723cf59d9a0793ade3c8811ae16b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1697,10 +1697,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA863423F0048_9700_FA863420D2704_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f064236b1f1b09f9c5646ef86fc29d34287af22780492ce55af6c14040121df1",
+        "receipt_id": "usaspending-subaward:d80bad540f8d7087e50d153c9776a08365f824061542b8a52d1132e671d67707",
         "reported_subaward_count": 1613
       },
-      "count_receipt_id": "usaspending-subaward:f064236b1f1b09f9c5646ef86fc29d34287af22780492ce55af6c14040121df1",
+      "count_receipt_id": "usaspending-subaward:d80bad540f8d7087e50d153c9776a08365f824061542b8a52d1132e671d67707",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1715,10 +1715,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001908C0028_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c2094d63cf3137ebe6393f7453d833d24bd2250a46c979dfff5032893629ea7d",
+        "receipt_id": "usaspending-subaward:83d19d2df36ed079c8be73e97f9bd2adb113d02a136f4666a7b886e8e1c5ad8b",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:c2094d63cf3137ebe6393f7453d833d24bd2250a46c979dfff5032893629ea7d",
+      "count_receipt_id": "usaspending-subaward:83d19d2df36ed079c8be73e97f9bd2adb113d02a136f4666a7b886e8e1c5ad8b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1733,10 +1733,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA862518F7027_9700_FA862516D6458_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:296eb63e0ead762e86b5bd5badbae67bcb6a8e7b18f822648dba54a1c9bfa5fa",
+        "receipt_id": "usaspending-subaward:eb7f0dfe03085acbed2d1bfcb917c78b7f7d137e614bca5de512742651ab20d8",
         "reported_subaward_count": 4624
       },
-      "count_receipt_id": "usaspending-subaward:296eb63e0ead762e86b5bd5badbae67bcb6a8e7b18f822648dba54a1c9bfa5fa",
+      "count_receipt_id": "usaspending-subaward:eb7f0dfe03085acbed2d1bfcb917c78b7f7d137e614bca5de512742651ab20d8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1751,10 +1751,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002421C2106_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:13ec67146c07eaddabcf63973151cc5f2fa9837c5b293ce74675d7e2f857908e",
+        "receipt_id": "usaspending-subaward:15b6ce2c69733316da3792db08f5a6af89d659f47643376130a476bc51d2f26d",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:13ec67146c07eaddabcf63973151cc5f2fa9837c5b293ce74675d7e2f857908e",
+      "count_receipt_id": "usaspending-subaward:15b6ce2c69733316da3792db08f5a6af89d659f47643376130a476bc51d2f26d",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1769,10 +1769,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F3365791C0006_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:80bbb241f1b0ef8b441a8db426c09c17ca8b408f12f7f8124ed17b1386a5140a",
+        "receipt_id": "usaspending-subaward:dc9e46d2e59e9caf5a9ac415e2bd01a1be990827210aaaf4f27e554ae4bb291e",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:80bbb241f1b0ef8b441a8db426c09c17ca8b408f12f7f8124ed17b1386a5140a",
+      "count_receipt_id": "usaspending-subaward:dc9e46d2e59e9caf5a9ac415e2bd01a1be990827210aaaf4f27e554ae4bb291e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1787,13 +1787,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA820518F0001_9700_FA820518D0001_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b2586e70e93f2fadf1b9c553f8587c260e0a221c3a143de6ca28d76d959405aa",
+        "receipt_id": "usaspending-subaward:30777eafb3fcba1eb247ee7bb434681ecdb847cb226a4a678319466fbe537f69",
         "reported_subaward_count": 24
       },
-      "count_receipt_id": "usaspending-subaward:b2586e70e93f2fadf1b9c553f8587c260e0a221c3a143de6ca28d76d959405aa",
+      "count_receipt_id": "usaspending-subaward:30777eafb3fcba1eb247ee7bb434681ecdb847cb226a4a678319466fbe537f69",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:6f2dc22236c474320e4a54f37301b6dd2e517ca42c622497552b2a1bcffea226"
+        "usaspending-subaward:96cf0f2b563a346545558a30a5589c1ceef4366fd0ab5c39226fc7d48cce85f5"
       ],
       "detail_rows": 24,
       "high_count_parent": false,
@@ -1807,13 +1807,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA861108C2896_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:9f0ee3bd739e7f8bbbdf2d312758b3b84278d3c12f9c0f8104c30df7913c0d14",
+        "receipt_id": "usaspending-subaward:93c32edda1856f729d78e5b5c2d313b956031c3941db891008d20b2639fcd393",
         "reported_subaward_count": 1
       },
-      "count_receipt_id": "usaspending-subaward:9f0ee3bd739e7f8bbbdf2d312758b3b84278d3c12f9c0f8104c30df7913c0d14",
+      "count_receipt_id": "usaspending-subaward:93c32edda1856f729d78e5b5c2d313b956031c3941db891008d20b2639fcd393",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:23c3bf3aa7a289de6ad3e6b7c1c0416ceda07d8e271f502ce9e7093e97125b9f"
+        "usaspending-subaward:df30b3419734544770869a3afd87eb2fbe7fd82d0350cb76595823adf5a3550e"
       ],
       "detail_rows": 1,
       "high_count_parent": false,
@@ -1827,10 +1827,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_DEAC0609RL14728_8900_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:e5a9edddb30426a413252c1c5a449b4cb58f39eb9603a9cd6b678e4b353acc32",
+        "receipt_id": "usaspending-subaward:f05834ba13bc2486fbbd21430c299c72ca37f2b6029235a1cdb9c84483d458ee",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:e5a9edddb30426a413252c1c5a449b4cb58f39eb9603a9cd6b678e4b353acc32",
+      "count_receipt_id": "usaspending-subaward:f05834ba13bc2486fbbd21430c299c72ca37f2b6029235a1cdb9c84483d458ee",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1845,10 +1845,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ21C0015_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:97ba29d256eb810316efbde06f994337170d37da1ae12fd7fe4f7d581b1cabcb",
+        "receipt_id": "usaspending-subaward:f58b2f34f941ade42baa27618f82a76d5f2cd48744ca715333bf097faa4299d7",
         "reported_subaward_count": 1507
       },
-      "count_receipt_id": "usaspending-subaward:97ba29d256eb810316efbde06f994337170d37da1ae12fd7fe4f7d581b1cabcb",
+      "count_receipt_id": "usaspending-subaward:f58b2f34f941ade42baa27618f82a76d5f2cd48744ca715333bf097faa4299d7",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1863,10 +1863,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA881018C0006_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:9d36dfa442a5ba736228407c7f31d192faae83a76c00156209c79429a1a88685",
+        "receipt_id": "usaspending-subaward:d4d79b6ed637da35066a77eb495f5ee21b7c1561450253d498a4a5f434a1f85d",
         "reported_subaward_count": 1691
       },
-      "count_receipt_id": "usaspending-subaward:9d36dfa442a5ba736228407c7f31d192faae83a76c00156209c79429a1a88685",
+      "count_receipt_id": "usaspending-subaward:d4d79b6ed637da35066a77eb495f5ee21b7c1561450253d498a4a5f434a1f85d",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1881,10 +1881,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002402C2303_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:7ad72aa95bc30f54cffafca07b56f3a6147c617d001566016d69903f638158eb",
+        "receipt_id": "usaspending-subaward:2592349bb614315ac90a99982083a3e28cc1ded5bb63946d15df129c9903380b",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:7ad72aa95bc30f54cffafca07b56f3a6147c617d001566016d69903f638158eb",
+      "count_receipt_id": "usaspending-subaward:2592349bb614315ac90a99982083a3e28cc1ded5bb63946d15df129c9903380b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1899,10 +1899,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA881008C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:75324cf73f39bae77b2845cc81a1f92f1832b365f613ca5b83c665a1691e36c3",
+        "receipt_id": "usaspending-subaward:2e739f11bfe60b31863271e74c8b4714a7df87c8bfeffc4a608922be4c7bbd09",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:75324cf73f39bae77b2845cc81a1f92f1832b365f613ca5b83c665a1691e36c3",
+      "count_receipt_id": "usaspending-subaward:2e739f11bfe60b31863271e74c8b4714a7df87c8bfeffc4a608922be4c7bbd09",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1917,10 +1917,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA865925CB003_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:5959fabfd46818af2757c9aa07a0d7cbfd2e65edfbd5fcd18bf5d072e17042f1",
+        "receipt_id": "usaspending-subaward:b94714b449009b45005f489eb2778aace213f49e17525a7705388f36992fe6a1",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:5959fabfd46818af2757c9aa07a0d7cbfd2e65edfbd5fcd18bf5d072e17042f1",
+      "count_receipt_id": "usaspending-subaward:b94714b449009b45005f489eb2778aace213f49e17525a7705388f36992fe6a1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1935,10 +1935,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002416C2427_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:1a2967ccea326fb1b88da589221764ebcffdfe1510af7b32898e73da9f31510c",
+        "receipt_id": "usaspending-subaward:bb8a955722a0548bfba05bea074641803216302d52b50df8b62c3dcfe4f75751",
         "reported_subaward_count": 909
       },
-      "count_receipt_id": "usaspending-subaward:1a2967ccea326fb1b88da589221764ebcffdfe1510af7b32898e73da9f31510c",
+      "count_receipt_id": "usaspending-subaward:bb8a955722a0548bfba05bea074641803216302d52b50df8b62c3dcfe4f75751",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1953,10 +1953,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002418C2301_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:5d575fcd5902699d0e809a9d0d39c32da9ade055f169f75886315482a7a4feb0",
+        "receipt_id": "usaspending-subaward:15813433d4382e0c87d5675c1d4c4055815b9087fa4749b9b3dfab9fe447f3fa",
         "reported_subaward_count": 1386
       },
-      "count_receipt_id": "usaspending-subaward:5d575fcd5902699d0e809a9d0d39c32da9ade055f169f75886315482a7a4feb0",
+      "count_receipt_id": "usaspending-subaward:15813433d4382e0c87d5675c1d4c4055815b9087fa4749b9b3dfab9fe447f3fa",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1971,10 +1971,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002424C2301_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:ba5913462437acb76541ed138ed123d09e83ef254cff39b62acd9b0784cd2747",
+        "receipt_id": "usaspending-subaward:dc2b42b42356fbbf5c57e3da2a6670aa784da2ccb9bc5b41e309cb014233c8a0",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:ba5913462437acb76541ed138ed123d09e83ef254cff39b62acd9b0784cd2747",
+      "count_receipt_id": "usaspending-subaward:dc2b42b42356fbbf5c57e3da2a6670aa784da2ccb9bc5b41e309cb014233c8a0",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -1989,10 +1989,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002413C2307_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:964098d4332026c9f23387326763c78c919d7146f9b72cbd5da070ce047c1f04",
+        "receipt_id": "usaspending-subaward:c100f33bcb108be3474ff028407add4121d2a5485e020c2d1425f8fdba6ef667",
         "reported_subaward_count": 2305
       },
-      "count_receipt_id": "usaspending-subaward:964098d4332026c9f23387326763c78c919d7146f9b72cbd5da070ce047c1f04",
+      "count_receipt_id": "usaspending-subaward:c100f33bcb108be3474ff028407add4121d2a5485e020c2d1425f8fdba6ef667",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2007,10 +2007,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002406C2303_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f3d1de1328af9347fb30d66e801150f58e2fcbda9ee3b2efdb334b05bd2fbd71",
+        "receipt_id": "usaspending-subaward:47f2f5142614eda0c916dc45a6b00c8c0a74c9167fb4b37cb1a28afb22e2b5e6",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:f3d1de1328af9347fb30d66e801150f58e2fcbda9ee3b2efdb334b05bd2fbd71",
+      "count_receipt_id": "usaspending-subaward:47f2f5142614eda0c916dc45a6b00c8c0a74c9167fb4b37cb1a28afb22e2b5e6",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2025,10 +2025,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ085124C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b03b355804a27bbf8aa4f9bd51c1d9d42ecd19839630deafe46b092a67eed2cc",
+        "receipt_id": "usaspending-subaward:a4a4cc883e25c43fcb75883eada74492baf25b306956fb31eebefb5a9dbbb4b6",
         "reported_subaward_count": 96
       },
-      "count_receipt_id": "usaspending-subaward:b03b355804a27bbf8aa4f9bd51c1d9d42ecd19839630deafe46b092a67eed2cc",
+      "count_receipt_id": "usaspending-subaward:a4a4cc883e25c43fcb75883eada74492baf25b306956fb31eebefb5a9dbbb4b6",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2043,10 +2043,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002422C5500_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:2c89b5012c1ab92400e9cdb7a7d3ea5046a33abef5f672aa8f79dc46456bf234",
+        "receipt_id": "usaspending-subaward:b0be975b47c3e8cf1cb8310406d1d4067244d0a129b6fb0ae0350f180e6fddb8",
         "reported_subaward_count": 1057
       },
-      "count_receipt_id": "usaspending-subaward:2c89b5012c1ab92400e9cdb7a7d3ea5046a33abef5f672aa8f79dc46456bf234",
+      "count_receipt_id": "usaspending-subaward:b0be975b47c3e8cf1cb8310406d1d4067244d0a129b6fb0ae0350f180e6fddb8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2061,10 +2061,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001908C0023_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c37ca77417e4ef0e768a2666e6f462cdc47840f40ac10efe597f998c53b2140b",
+        "receipt_id": "usaspending-subaward:13435ffb92f55a3481f1ce436f52f50cd31e44017966110810431595a69178d2",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:c37ca77417e4ef0e768a2666e6f462cdc47840f40ac10efe597f998c53b2140b",
+      "count_receipt_id": "usaspending-subaward:13435ffb92f55a3481f1ce436f52f50cd31e44017966110810431595a69178d2",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2079,10 +2079,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q18C0130_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c1d152fad2d8020e39dd213db5f0225b6a79b7ff25bb7173c0e0c85295278965",
+        "receipt_id": "usaspending-subaward:7cbfe6ec780a1192910c45e151752934c8d69e6cf5c46390bc8fa3b78e4d7230",
         "reported_subaward_count": 2021
       },
-      "count_receipt_id": "usaspending-subaward:c1d152fad2d8020e39dd213db5f0225b6a79b7ff25bb7173c0e0c85295278965",
+      "count_receipt_id": "usaspending-subaward:7cbfe6ec780a1192910c45e151752934c8d69e6cf5c46390bc8fa3b78e4d7230",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2097,10 +2097,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002420C2437_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:7abef92ca319f6588877f39fa2c496a3c70772dafb54dee791122c851c3e8088",
+        "receipt_id": "usaspending-subaward:f4b908e6ddbdac43ea4dab1186fee348be33a9987fd0ed2118be3ccc7cf92bd9",
         "reported_subaward_count": 566
       },
-      "count_receipt_id": "usaspending-subaward:7abef92ca319f6588877f39fa2c496a3c70772dafb54dee791122c851c3e8088",
+      "count_receipt_id": "usaspending-subaward:f4b908e6ddbdac43ea4dab1186fee348be33a9987fd0ed2118be3ccc7cf92bd9",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2115,10 +2115,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001914C0032_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:e420375bdadfd40d82b617b6ac903de5b41659d746b95390b2377e186409f8fe",
+        "receipt_id": "usaspending-subaward:1f1d1a9f42e85b8997eecfd6fb167ba152a308d413734c0571e71690e45aec98",
         "reported_subaward_count": 192
       },
-      "count_receipt_id": "usaspending-subaward:e420375bdadfd40d82b617b6ac903de5b41659d746b95390b2377e186409f8fe",
+      "count_receipt_id": "usaspending-subaward:1f1d1a9f42e85b8997eecfd6fb167ba152a308d413734c0571e71690e45aec98",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2133,13 +2133,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA820523F0501_9700_FA820518D0001_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:4549891f8fd3fd77811449c81b983dd0db8934d2d377db40c2cb6f0317f9e007",
+        "receipt_id": "usaspending-subaward:3022e08dda270d346ffccbe770f142d5a5e2ea73287df54c55ffa4e8ca7aeac8",
         "reported_subaward_count": 7
       },
-      "count_receipt_id": "usaspending-subaward:4549891f8fd3fd77811449c81b983dd0db8934d2d377db40c2cb6f0317f9e007",
+      "count_receipt_id": "usaspending-subaward:3022e08dda270d346ffccbe770f142d5a5e2ea73287df54c55ffa4e8ca7aeac8",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:0772ba0c69cc3388fb39e8f4e64237865455fb39e5ae5c3c6188b5e650f7f64d"
+        "usaspending-subaward:80894e46c8f631063a60ae98ac6f95a2813ea0bf87844735a892b023bc72a07e"
       ],
       "detail_rows": 7,
       "high_count_parent": false,
@@ -2153,10 +2153,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA880810C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:0e0164092514c1f4140e506706a7bbb413976e7c3c40d04aaada290f7fd3e189",
+        "receipt_id": "usaspending-subaward:ebc90ee89e17e5b342c6ed6e84dbeb2d83d4f01882a2b541fc1d36bf86d5db64",
         "reported_subaward_count": 824
       },
-      "count_receipt_id": "usaspending-subaward:0e0164092514c1f4140e506706a7bbb413976e7c3c40d04aaada290f7fd3e189",
+      "count_receipt_id": "usaspending-subaward:ebc90ee89e17e5b342c6ed6e84dbeb2d83d4f01882a2b541fc1d36bf86d5db64",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2171,10 +2171,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_NSFDACS1219442_4900_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:daedfbe4e54c19f7570458c036a0dd623d224ea3d08baba6dfa0996c469d2e09",
+        "receipt_id": "usaspending-subaward:2866935647f4adee59c5952572a462955782e66ad197ea0f8413804fd77436fa",
         "reported_subaward_count": 1219
       },
-      "count_receipt_id": "usaspending-subaward:daedfbe4e54c19f7570458c036a0dd623d224ea3d08baba6dfa0996c469d2e09",
+      "count_receipt_id": "usaspending-subaward:2866935647f4adee59c5952572a462955782e66ad197ea0f8413804fd77436fa",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2189,10 +2189,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ027610C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:3e6462ac426215a66ad498ffa7849edb25f89aa21c708a9188cfbb1e04bb2e73",
+        "receipt_id": "usaspending-subaward:98d7dace355fca540598767cb5ce8b0a393e85d67e8b5304393cf56a962a6ad6",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:3e6462ac426215a66ad498ffa7849edb25f89aa21c708a9188cfbb1e04bb2e73",
+      "count_receipt_id": "usaspending-subaward:98d7dace355fca540598767cb5ce8b0a393e85d67e8b5304393cf56a962a6ad6",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2207,10 +2207,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001903C0057_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:fbbe8e4e323af11f0f78ed7cfcfa4760a1ef0eda371a1b4b1f863539f709a736",
+        "receipt_id": "usaspending-subaward:cf1866288aa6911014ac845f5b22d341cb55f776484a0aca94dd26097c95c21b",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:fbbe8e4e323af11f0f78ed7cfcfa4760a1ef0eda371a1b4b1f863539f709a736",
+      "count_receipt_id": "usaspending-subaward:cf1866288aa6911014ac845f5b22d341cb55f776484a0aca94dd26097c95c21b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2225,10 +2225,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q18C0049_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:67ae58c3fba14f97fb5241fbf6d8a1b008a4d1302626ca7779ec559f27844d65",
+        "receipt_id": "usaspending-subaward:64f06de06b86bc807e30e07980bf318ce6be05790ac9b5e57f5a1e26c2f57dc7",
         "reported_subaward_count": 1249
       },
-      "count_receipt_id": "usaspending-subaward:67ae58c3fba14f97fb5241fbf6d8a1b008a4d1302626ca7779ec559f27844d65",
+      "count_receipt_id": "usaspending-subaward:64f06de06b86bc807e30e07980bf318ce6be05790ac9b5e57f5a1e26c2f57dc7",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2243,10 +2243,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002417C2105_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:005f370bb7fbd38bd3cab2b9fb323a8c3493465ea19cf447d3d798ccf1e49fa0",
+        "receipt_id": "usaspending-subaward:265e8390119ebc195a4b3d8361909b37e58855ad59c5b975c68f686e53b767d8",
         "reported_subaward_count": 4040
       },
-      "count_receipt_id": "usaspending-subaward:005f370bb7fbd38bd3cab2b9fb323a8c3493465ea19cf447d3d798ccf1e49fa0",
+      "count_receipt_id": "usaspending-subaward:265e8390119ebc195a4b3d8361909b37e58855ad59c5b975c68f686e53b767d8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2261,10 +2261,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002498C2107_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:f79eb145a6ea5b19215757ee140087d30242328fca01603da6c1c36a3ba7f6b2",
+        "receipt_id": "usaspending-subaward:c2d57f2411f0d4bc25a759eec4239b8f33c78641b89bb536f73714f4fbe1df86",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:f79eb145a6ea5b19215757ee140087d30242328fca01603da6c1c36a3ba7f6b2",
+      "count_receipt_id": "usaspending-subaward:c2d57f2411f0d4bc25a759eec4239b8f33c78641b89bb536f73714f4fbe1df86",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2279,10 +2279,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002416C2431_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:48e1c42de0d5558a1d608953091a89fe8774b3658ecf7c29b0e116442f387c3a",
+        "receipt_id": "usaspending-subaward:1a5a407030f25b0f2bd3f467be66b745aec591df8ee8b7822771f082bacba18f",
         "reported_subaward_count": 1055
       },
-      "count_receipt_id": "usaspending-subaward:48e1c42de0d5558a1d608953091a89fe8774b3658ecf7c29b0e116442f387c3a",
+      "count_receipt_id": "usaspending-subaward:1a5a407030f25b0f2bd3f467be66b745aec591df8ee8b7822771f082bacba18f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2297,10 +2297,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q25F0080_9700_W31P4Q23D0003_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:41641c96cb61fdc285426a0ece2a3d79dba6507ccae8d1218e50292de93a1021",
+        "receipt_id": "usaspending-subaward:c5828aa5a9ca221ffb13dc57744fda04c4663edcd913ad7d8ca9e7027d099cf3",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:41641c96cb61fdc285426a0ece2a3d79dba6507ccae8d1218e50292de93a1021",
+      "count_receipt_id": "usaspending-subaward:c5828aa5a9ca221ffb13dc57744fda04c4663edcd913ad7d8ca9e7027d099cf3",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2315,10 +2315,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0003024C0100_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:fdc60cc9462ec23dc3bc5b63fd9a4dbef6cd5c5dafe02731f95fb225ebef13eb",
+        "receipt_id": "usaspending-subaward:5f5efcf92d8462e98608ea8e3861239557b9cfc1773c36bfc0d84e69b9aac7c0",
         "reported_subaward_count": 84
       },
-      "count_receipt_id": "usaspending-subaward:fdc60cc9462ec23dc3bc5b63fd9a4dbef6cd5c5dafe02731f95fb225ebef13eb",
+      "count_receipt_id": "usaspending-subaward:5f5efcf92d8462e98608ea8e3861239557b9cfc1773c36bfc0d84e69b9aac7c0",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2333,10 +2333,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q24C0024_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:aa98204bb2d7e49ed81df9ab12ec4419ceca5debd99068fb2a1ef67064b92ce2",
+        "receipt_id": "usaspending-subaward:7641c2650145e78b422303bfeaa9ddff55490ba154c632389e02e05f9b65470f",
         "reported_subaward_count": 455
       },
-      "count_receipt_id": "usaspending-subaward:aa98204bb2d7e49ed81df9ab12ec4419ceca5debd99068fb2a1ef67064b92ce2",
+      "count_receipt_id": "usaspending-subaward:7641c2650145e78b422303bfeaa9ddff55490ba154c632389e02e05f9b65470f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2351,10 +2351,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA861512C6016_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:1244ad1c47b83d123327ee65d2accd13dcf4bb63d70224bd2c1e618bec9407da",
+        "receipt_id": "usaspending-subaward:a0a42ffdb2702e7da958cb38832c60e1b9279ec08edac6180406935aad147907",
         "reported_subaward_count": 1441
       },
-      "count_receipt_id": "usaspending-subaward:1244ad1c47b83d123327ee65d2accd13dcf4bb63d70224bd2c1e618bec9407da",
+      "count_receipt_id": "usaspending-subaward:a0a42ffdb2702e7da958cb38832c60e1b9279ec08edac6180406935aad147907",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2369,10 +2369,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001907C0097_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:4eb46630957c4d35f6e58efedae4d92e69b1cb5512116ec578a2e2a205837c03",
+        "receipt_id": "usaspending-subaward:ce14ce9b06bf841a30db088c8e9b68c4ebeae0248d12f26e9a87242923ac80c1",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:4eb46630957c4d35f6e58efedae4d92e69b1cb5512116ec578a2e2a205837c03",
+      "count_receipt_id": "usaspending-subaward:ce14ce9b06bf841a30db088c8e9b68c4ebeae0248d12f26e9a87242923ac80c1",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2387,10 +2387,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_MSFC0199911DNAS800016_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:2c9c40caa72770f081a5c5a44ddeaf013446c1bedf608288472e757bb00f42ad",
+        "receipt_id": "usaspending-subaward:6600dd3aaa0db9a6075f540c24263b97b6697c494360784a46cdb8da98034e9f",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:2c9c40caa72770f081a5c5a44ddeaf013446c1bedf608288472e757bb00f42ad",
+      "count_receipt_id": "usaspending-subaward:6600dd3aaa0db9a6075f540c24263b97b6697c494360784a46cdb8da98034e9f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2405,10 +2405,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q17C0006_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:91402c8693576bbc8b6ab7e280267a8dea4ddb99031734047d2704e7554a10db",
+        "receipt_id": "usaspending-subaward:84a1b7de08ec9545629598aff685c7e7341f99e7f40c2694bea4b1b82a153a03",
         "reported_subaward_count": 2965
       },
-      "count_receipt_id": "usaspending-subaward:91402c8693576bbc8b6ab7e280267a8dea4ddb99031734047d2704e7554a10db",
+      "count_receipt_id": "usaspending-subaward:84a1b7de08ec9545629598aff685c7e7341f99e7f40c2694bea4b1b82a153a03",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2423,13 +2423,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q24F0165_9700_W31P4Q23D0003_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:26f8299ca1abaf6761c38f16d37c30e116b11a8a924cd7aad6ef884e54c252e8",
+        "receipt_id": "usaspending-subaward:71b1de2683f44a12f852ea7111c13bb9a43d5af6e8213736bdcf9a9564a8828c",
         "reported_subaward_count": 1
       },
-      "count_receipt_id": "usaspending-subaward:26f8299ca1abaf6761c38f16d37c30e116b11a8a924cd7aad6ef884e54c252e8",
+      "count_receipt_id": "usaspending-subaward:71b1de2683f44a12f852ea7111c13bb9a43d5af6e8213736bdcf9a9564a8828c",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:e7434f0076d1a800dadf17f5f148cc5de8292ac4593c36bbfc890006020940fa"
+        "usaspending-subaward:aa11a8c494668f55d42a4a12b59c184e93de9082ef1fcdd78b3fb9156abd60a3"
       ],
       "detail_rows": 1,
       "high_count_parent": false,
@@ -2443,13 +2443,13 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA850512C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:779826a54ce143254d07fc0196a97a5ae9caf4650900df8915fbac72a14ef5b7",
+        "receipt_id": "usaspending-subaward:bea3adba18a76329e7225800462cca96056fb0294c7a7d45fa727433954eb116",
         "reported_subaward_count": 1
       },
-      "count_receipt_id": "usaspending-subaward:779826a54ce143254d07fc0196a97a5ae9caf4650900df8915fbac72a14ef5b7",
+      "count_receipt_id": "usaspending-subaward:bea3adba18a76329e7225800462cca96056fb0294c7a7d45fa727433954eb116",
       "count_verified": true,
       "detail_receipt_ids": [
-        "usaspending-subaward:9c3b42f5f9bcefc7b64d50d318ccc69f53469d8fd7e50c8884b2d348554ca8f0"
+        "usaspending-subaward:ace8f78d638f1a2db8fee2def97c4200587d7fcaaebe3a38bca0a4d16599c2bc"
       ],
       "detail_rows": 1,
       "high_count_parent": false,
@@ -2463,10 +2463,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ027615C0003_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:c145c73b47c15bf8023c29a1bd635f7e55d83a5198421b63b7313d9c7b8f34c8",
+        "receipt_id": "usaspending-subaward:669b2a26edf47bd70438f7742f0a3b414f57846bb9f8a585d601ff6a67caf803",
         "reported_subaward_count": 1803
       },
-      "count_receipt_id": "usaspending-subaward:c145c73b47c15bf8023c29a1bd635f7e55d83a5198421b63b7313d9c7b8f34c8",
+      "count_receipt_id": "usaspending-subaward:669b2a26edf47bd70438f7742f0a3b414f57846bb9f8a585d601ff6a67caf803",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2481,10 +2481,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_80MSFC20C0052_8000_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:69d97b5c0a005435703377a538b9d0a20f092b25f30663e509cd6cc49a65d28c",
+        "receipt_id": "usaspending-subaward:24e43d80f3b33d530da1c97a7918c78d84e1c71425f3a98cff77f1b23df57c43",
         "reported_subaward_count": 1999
       },
-      "count_receipt_id": "usaspending-subaward:69d97b5c0a005435703377a538b9d0a20f092b25f30663e509cd6cc49a65d28c",
+      "count_receipt_id": "usaspending-subaward:24e43d80f3b33d530da1c97a7918c78d84e1c71425f3a98cff77f1b23df57c43",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2499,10 +2499,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ086220C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:99692980d7013f77aa58ed578a5c9cf2f1e6f72fbe8af80b62fc80675417ff16",
+        "receipt_id": "usaspending-subaward:9b27ad2919dd9edc12a23e43d4d5da05a3d4783d6b05e8d7ce51aad52da28097",
         "reported_subaward_count": 3249
       },
-      "count_receipt_id": "usaspending-subaward:99692980d7013f77aa58ed578a5c9cf2f1e6f72fbe8af80b62fc80675417ff16",
+      "count_receipt_id": "usaspending-subaward:9b27ad2919dd9edc12a23e43d4d5da05a3d4783d6b05e8d7ce51aad52da28097",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2517,10 +2517,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA873023C0025_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:1df9f278b215995b4b0c893d58a96436d858068f25e3246dc64b97f8cb95a360",
+        "receipt_id": "usaspending-subaward:464a590a1abe33b9612a96e7d889c91e10f5ed7f883e63e60ce53825e1b047cb",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:1df9f278b215995b4b0c893d58a96436d858068f25e3246dc64b97f8cb95a360",
+      "count_receipt_id": "usaspending-subaward:464a590a1abe33b9612a96e7d889c91e10f5ed7f883e63e60ce53825e1b047cb",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2535,10 +2535,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002410C2229_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:071f86310bce3c3353b0e74f4a457c6eeb48363fd1b53c79b8059a65ef50247e",
+        "receipt_id": "usaspending-subaward:801d0e0f931579311ee7d0e45dc4a634f3fff6e206b50bec84163584c1baebfb",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:071f86310bce3c3353b0e74f4a457c6eeb48363fd1b53c79b8059a65ef50247e",
+      "count_receipt_id": "usaspending-subaward:801d0e0f931579311ee7d0e45dc4a634f3fff6e206b50bec84163584c1baebfb",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2553,10 +2553,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002413C2108_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:dc90bff87dcf5ef37a4e9dfdb3f3a36595186453d534be73b2bedfef572fe46a",
+        "receipt_id": "usaspending-subaward:01825fdc304f0244771d3e54c5e53f5493ea18bd9a3e5469c0977b5cb0406a7e",
         "reported_subaward_count": 935
       },
-      "count_receipt_id": "usaspending-subaward:dc90bff87dcf5ef37a4e9dfdb3f3a36595186453d534be73b2bedfef572fe46a",
+      "count_receipt_id": "usaspending-subaward:01825fdc304f0244771d3e54c5e53f5493ea18bd9a3e5469c0977b5cb0406a7e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2571,10 +2571,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002404C2118_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:dd0a1bd83a0c602fedb701122cd266b8acf70a4cac9951919bcd78473ab2505e",
+        "receipt_id": "usaspending-subaward:c093b8ea0e085e0f9686c7562991ba12511e43ccd0dbcd9846ee859c9380301b",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:dd0a1bd83a0c602fedb701122cd266b8acf70a4cac9951919bcd78473ab2505e",
+      "count_receipt_id": "usaspending-subaward:c093b8ea0e085e0f9686c7562991ba12511e43ccd0dbcd9846ee859c9380301b",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2589,10 +2589,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002409C2107_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:aa7a4416bdaffad20f056b28750c3a532c8220d82bac24b3c9b56fa0e168d2c7",
+        "receipt_id": "usaspending-subaward:ae75d09acd41feb0dd16684e7cfd3ad8fc15f86a47f3ce4b7d449742c93fd70d",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:aa7a4416bdaffad20f056b28750c3a532c8220d82bac24b3c9b56fa0e168d2c7",
+      "count_receipt_id": "usaspending-subaward:ae75d09acd41feb0dd16684e7cfd3ad8fc15f86a47f3ce4b7d449742c93fd70d",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2607,10 +2607,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002411C2306_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:7203050871d3826e037a190cace0ca554a750f3ec7c95cd771129aeed1457357",
+        "receipt_id": "usaspending-subaward:ee9d7a6b485ffe546f62038041d9237964f5ecda774b5ef2531fe8de8baaf2c5",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:7203050871d3826e037a190cace0ca554a750f3ec7c95cd771129aeed1457357",
+      "count_receipt_id": "usaspending-subaward:ee9d7a6b485ffe546f62038041d9237964f5ecda774b5ef2531fe8de8baaf2c5",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2625,10 +2625,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0003022C1025_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:7dab4abc8aa47c880c300b46d979a50f7edca1bd24efa5a656f7555084dfdd2d",
+        "receipt_id": "usaspending-subaward:9f223d19c9932980c3c836e23edcc8591106941594111520e245ce652389f90f",
         "reported_subaward_count": 673
       },
-      "count_receipt_id": "usaspending-subaward:7dab4abc8aa47c880c300b46d979a50f7edca1bd24efa5a656f7555084dfdd2d",
+      "count_receipt_id": "usaspending-subaward:9f223d19c9932980c3c836e23edcc8591106941594111520e245ce652389f90f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2643,10 +2643,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA867523C0037_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:6ae3069f9ac5c369ac6ace547e12dd62c49886e90a6db343d6e093875fddadbd",
+        "receipt_id": "usaspending-subaward:160e404c52610639990b1825039ed39b0c1674ea088d3691020ab055b2a57da8",
         "reported_subaward_count": 663
       },
-      "count_receipt_id": "usaspending-subaward:6ae3069f9ac5c369ac6ace547e12dd62c49886e90a6db343d6e093875fddadbd",
+      "count_receipt_id": "usaspending-subaward:160e404c52610639990b1825039ed39b0c1674ea088d3691020ab055b2a57da8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2661,10 +2661,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q23F0024_9700_W31P4Q23D0003_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:aaa911b227e74452e084e12bef35aa6beca85bac78d8ceb1d2443f352dd7c454",
+        "receipt_id": "usaspending-subaward:522fab5583f1f87f4f11deb0b16e47d026105123048a11483a2d548e2df8ca48",
         "reported_subaward_count": 190
       },
-      "count_receipt_id": "usaspending-subaward:aaa911b227e74452e084e12bef35aa6beca85bac78d8ceb1d2443f352dd7c454",
+      "count_receipt_id": "usaspending-subaward:522fab5583f1f87f4f11deb0b16e47d026105123048a11483a2d548e2df8ca48",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2679,10 +2679,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA881013C0001_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:916d127b3901c67643b2cc0fa3edfd9e2f62c25d1baea5cf98f80327c6867cd4",
+        "receipt_id": "usaspending-subaward:d9593a4fba245476ef043c03a7e559234120097fc4338f0b27db0a6b9414e0e2",
         "reported_subaward_count": 554
       },
-      "count_receipt_id": "usaspending-subaward:916d127b3901c67643b2cc0fa3edfd9e2f62c25d1baea5cf98f80327c6867cd4",
+      "count_receipt_id": "usaspending-subaward:d9593a4fba245476ef043c03a7e559234120097fc4338f0b27db0a6b9414e0e2",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2697,10 +2697,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001917C0003_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:60846ce5cb04a0c12c5a01696c52aa591413259c7a9d51ac382d90e3921ffeb1",
+        "receipt_id": "usaspending-subaward:9bac34ab77d3cfea815e0bdd0c8309e20b24696d9f664e7ce7fedcd8d40a201e",
         "reported_subaward_count": 331
       },
-      "count_receipt_id": "usaspending-subaward:60846ce5cb04a0c12c5a01696c52aa591413259c7a9d51ac382d90e3921ffeb1",
+      "count_receipt_id": "usaspending-subaward:9bac34ab77d3cfea815e0bdd0c8309e20b24696d9f664e7ce7fedcd8d40a201e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2715,10 +2715,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_HQ085621C0003_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:d57f1ffe83841cb9acaff99abfd42a17ddf0588a77542f5bccffc5286aa5c4c5",
+        "receipt_id": "usaspending-subaward:6c5a9bce36f4a378ee685f0983a1384b6d9d7c4220b391f37ece2c4332e90157",
         "reported_subaward_count": 246
       },
-      "count_receipt_id": "usaspending-subaward:d57f1ffe83841cb9acaff99abfd42a17ddf0588a77542f5bccffc5286aa5c4c5",
+      "count_receipt_id": "usaspending-subaward:6c5a9bce36f4a378ee685f0983a1384b6d9d7c4220b391f37ece2c4332e90157",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2733,10 +2733,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ06C0093_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:5fc5a0fc03e31354bff6d0b516f49139d3ce0f3f5b5cff8e0a77f88c6ba09be1",
+        "receipt_id": "usaspending-subaward:14803c655f7069daddd56c4aff6b09b8de501b29222aaf2bee27642c3b3c64ac",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:5fc5a0fc03e31354bff6d0b516f49139d3ce0f3f5b5cff8e0a77f88c6ba09be1",
+      "count_receipt_id": "usaspending-subaward:14803c655f7069daddd56c4aff6b09b8de501b29222aaf2bee27642c3b3c64ac",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2751,10 +2751,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001919C0013_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:120849bd72cac23df4760244015e89b0ab2df3d06c262a3bdc8fa5ac17b265fe",
+        "receipt_id": "usaspending-subaward:bca4b442f5b82df01e94c61a87876c93dd14e839c05f063c4ed513d206d7f216",
         "reported_subaward_count": 1855
       },
-      "count_receipt_id": "usaspending-subaward:120849bd72cac23df4760244015e89b0ab2df3d06c262a3bdc8fa5ac17b265fe",
+      "count_receipt_id": "usaspending-subaward:bca4b442f5b82df01e94c61a87876c93dd14e839c05f063c4ed513d206d7f216",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2769,10 +2769,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W58RGZ26C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:88d7f9171cb29b15e2728a5d63a8dfa508d6893e524929c449d83c96175271dd",
+        "receipt_id": "usaspending-subaward:459d56f226a09df110d64ce01d7dbe7968392a3d1db4dbe2a8a106bdeb989e0a",
         "reported_subaward_count": 250
       },
-      "count_receipt_id": "usaspending-subaward:88d7f9171cb29b15e2728a5d63a8dfa508d6893e524929c449d83c96175271dd",
+      "count_receipt_id": "usaspending-subaward:459d56f226a09df110d64ce01d7dbe7968392a3d1db4dbe2a8a106bdeb989e0a",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2787,10 +2787,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_0005_9700_FA852612D0001_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:096d15ab4c5dc9e9cd284aa788f8177ede2a61355603e0cb49a691c107060265",
+        "receipt_id": "usaspending-subaward:2bacd6a111aed07ce9d1cf5ba34fff6314aeb7e26ba5037d75e4a26c8ec0810e",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:096d15ab4c5dc9e9cd284aa788f8177ede2a61355603e0cb49a691c107060265",
+      "count_receipt_id": "usaspending-subaward:2bacd6a111aed07ce9d1cf5ba34fff6314aeb7e26ba5037d75e4a26c8ec0810e",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2805,10 +2805,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F3365701C4600_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:78f40166f353a56e7dcc8ae554e3cb79f24edcb1ff9ba0ff03a8fd0963388309",
+        "receipt_id": "usaspending-subaward:3e0c5ef14ebeb99c4c7a84fce3243eaed5efbe8e4447feb73e0f05a336c5a2c8",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:78f40166f353a56e7dcc8ae554e3cb79f24edcb1ff9ba0ff03a8fd0963388309",
+      "count_receipt_id": "usaspending-subaward:3e0c5ef14ebeb99c4c7a84fce3243eaed5efbe8e4447feb73e0f05a336c5a2c8",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2823,10 +2823,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_F1962802C0010_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:d5c6a52ecad4d1e15ab743aa85f014381274731979e6a9dff43fdda187a3757a",
+        "receipt_id": "usaspending-subaward:3acc7f5359d72922330a77dd459ae1cbf2524a046558a3deb0e2be30e2606377",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:d5c6a52ecad4d1e15ab743aa85f014381274731979e6a9dff43fdda187a3757a",
+      "count_receipt_id": "usaspending-subaward:3acc7f5359d72922330a77dd459ae1cbf2524a046558a3deb0e2be30e2606377",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2841,10 +2841,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_W31P4Q23C0005_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:1adca0f65a69a14918d4b96d4a9ef232711817634c77e4e6b22085d738882b21",
+        "receipt_id": "usaspending-subaward:032a284de7db3d9443bc688c16fae24fa7117256b621d776d3ff6623a8619eab",
         "reported_subaward_count": 545
       },
-      "count_receipt_id": "usaspending-subaward:1adca0f65a69a14918d4b96d4a9ef232711817634c77e4e6b22085d738882b21",
+      "count_receipt_id": "usaspending-subaward:032a284de7db3d9443bc688c16fae24fa7117256b621d776d3ff6623a8619eab",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2859,10 +2859,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0002424C5408_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:ab521e03d948006f05f18278af6b6587465e815843b2528a23a147bd797ed21c",
+        "receipt_id": "usaspending-subaward:2690fbd91b9d5c34d1f22787b313f9fad2958bc0af8f796b7739165438e04c80",
         "reported_subaward_count": 152
       },
-      "count_receipt_id": "usaspending-subaward:ab521e03d948006f05f18278af6b6587465e815843b2528a23a147bd797ed21c",
+      "count_receipt_id": "usaspending-subaward:2690fbd91b9d5c34d1f22787b313f9fad2958bc0af8f796b7739165438e04c80",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2877,10 +2877,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001915C0004_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:b15a0692c5ee68dc90eb06232950816317f593846203efe9f346d20a73bcfa8f",
+        "receipt_id": "usaspending-subaward:fd0ea2688616c8ec1e9412383e81c018107f749ec0040fe13fe0580dd0974b5f",
         "reported_subaward_count": 7
       },
-      "count_receipt_id": "usaspending-subaward:b15a0692c5ee68dc90eb06232950816317f593846203efe9f346d20a73bcfa8f",
+      "count_receipt_id": "usaspending-subaward:fd0ea2688616c8ec1e9412383e81c018107f749ec0040fe13fe0580dd0974b5f",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2895,10 +2895,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_N0001923F0002_9700_N0001919G0008_9700",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:272d31657c5e48ae015cbcba0e5ed208b51459cb6db9bb22c3929991e3788c2e",
+        "receipt_id": "usaspending-subaward:e63a64f76a92137cc04ab44a67b144b7cefafbb860c1ee8a3a97b8fbd4131d70",
         "reported_subaward_count": 0
       },
-      "count_receipt_id": "usaspending-subaward:272d31657c5e48ae015cbcba0e5ed208b51459cb6db9bb22c3929991e3788c2e",
+      "count_receipt_id": "usaspending-subaward:e63a64f76a92137cc04ab44a67b144b7cefafbb860c1ee8a3a97b8fbd4131d70",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2913,10 +2913,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA881013C0002_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:8f597bad348ed4c08077f9c802ff69ff56becf3cf0b8cf66f0f055e5ffcf0cc8",
+        "receipt_id": "usaspending-subaward:52030a9c7c65dbb6a091c001e19f9ab066c8d4a5ebec0871b1f0e314d052dd87",
         "reported_subaward_count": 1052
       },
-      "count_receipt_id": "usaspending-subaward:8f597bad348ed4c08077f9c802ff69ff56becf3cf0b8cf66f0f055e5ffcf0cc8",
+      "count_receipt_id": "usaspending-subaward:52030a9c7c65dbb6a091c001e19f9ab066c8d4a5ebec0871b1f0e314d052dd87",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2931,10 +2931,10 @@
       "count_receipt_binding": {
         "parent_generated_award_id": "CONT_AWD_FA867521C0034_9700_-NONE-_-NONE-",
         "rail": "subaward_count",
-        "receipt_id": "usaspending-subaward:062e2a543feb6fb37e6cdf3c4802ea4d40800b7dafaab7a64eeda07be0d57a94",
+        "receipt_id": "usaspending-subaward:d7779143eb3e80a8f435859e7534d60f18206cd9f183abc0416775ecf82f09f7",
         "reported_subaward_count": 2200
       },
-      "count_receipt_id": "usaspending-subaward:062e2a543feb6fb37e6cdf3c4802ea4d40800b7dafaab7a64eeda07be0d57a94",
+      "count_receipt_id": "usaspending-subaward:d7779143eb3e80a8f435859e7534d60f18206cd9f183abc0416775ecf82f09f7",
       "count_verified": true,
       "detail_receipt_ids": [],
       "detail_rows": 0,
@@ -2946,12 +2946,12 @@
     }
   ],
   "projection_eligible": true,
-  "projection_generation_id": "subaward-9c1ce30588446f540279b25c",
-  "projection_semantic_sha256": "9c1ce30588446f540279b25c88d25186afd84dd2e0f1f3c489bea9d3260ad8ee",
+  "projection_generation_id": "subaward-1867997fc2f6e7e47cd87703",
+  "projection_semantic_sha256": "1867997fc2f6e7e47cd87703b9d4eb5b32fa66fe035ab3ed62530ef957149ef4",
   "public_downstream_row_cap": 2000,
-  "run_id": "usaspending-subaward-5e8823a085549cfdaa5fd129",
+  "run_id": "usaspending-subaward-51141b877ccdefadd29d68ea",
   "schema_version": "1.0.0",
   "selected_parent_count": 160,
   "subaward_snapshots_row_count": 2314,
-  "subaward_snapshots_semantic_sha256": "dd4c434ab9131857f2f44a74efb99383f68154e58b3dd80a7a949228627c36aa"
+  "subaward_snapshots_semantic_sha256": "256e9f1717514f1be8451daa7c7e597e7f70806ab742d25bc03a56c3e8ed4113"
 }
