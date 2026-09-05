@@ -62,8 +62,10 @@ def test_public_render_owns_the_excluded_surfaces():
         "templates/plans.html.j2",
         "templates/seo_base.html.j2",
         "templates/support.html.j2",
+        "templates/help.html.j2",
         "templates/unsubscribe.html.j2",
         "scripts/build_public_pages.py",
+        "lib/help_directory.py",
         "config/plans.yml",
     ):
         assert f'- "{pattern}"' in PUBLIC
@@ -90,7 +92,7 @@ def test_public_render_retry_does_not_repeat_the_full_site_js_guard():
     successful rebase, lost the ref again, and exhausted its push budget.
     """
     assert "check_inline_js.py site\n" not in PUBLIC_SH
-    assert 'PUBLIC_OUTPUTS=(site/plans.html site/support.html site/unsubscribe.html)' in PUBLIC_SH
+    assert 'PUBLIC_OUTPUTS=(site/help.html site/plans.html site/support.html site/unsubscribe.html)' in PUBLIC_SH
     assert 'check_inline_js.py "${PUBLIC_OUTPUTS[@]}"' in PUBLIC_SH
     assert 'if [ "$(git rev-parse HEAD)" != "$PRE_SYNC_HEAD" ]; then' in PUBLIC_SH
     assert "PUSH_BUDGET_SECS=600" in PUBLIC_SH
@@ -113,6 +115,7 @@ def test_public_builder_renders_current_pricing_without_market_data(tmp_path):
     assert 'aria-label="Founding Pro memberships no longer available"' in plans
     assert "signed up" not in plans
     assert (tmp_path / "support.html").is_file()
+    assert (tmp_path / "help.html").is_file()
     assert (tmp_path / "unsubscribe.html").is_file()
 
 

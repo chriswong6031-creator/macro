@@ -4,7 +4,7 @@
     "event_versions": "b61c16452fbd95abe158b7b02e9221857a5331b51a4ab4f7a534fd9b57be39b3",
     "review_queue": "bb139ff39dbc740bfa4fe5febb1feace627465528b921d1037b70ba1ad0938c8"
   },
-  "as_of": "2026-09-05T00:33:04.546302+00:00",
+  "as_of": "2026-09-05T08:32:24.683977+00:00",
   "authority": {
     "entry_authority": false,
     "is_context_only": true,
@@ -124,7 +124,7 @@
       "PRE 14C"
     ]
   },
-  "generation_id": "generation:cs:8bba6c4b22240954ef619920",
+  "generation_id": "generation:cs:995979d55221ce8706aed685",
   "known_exclusions": [
     "424B2",
     "424B6",

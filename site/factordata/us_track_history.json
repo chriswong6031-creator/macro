@@ -1,16 +1,16 @@
 {
   "schema": "us_track_history/v1",
   "as_of": "2026-09-04",
-  "generated": "2026-09-04T13:26:32.570473+00:00",
+  "generated": "2026-09-05T06:32:03.389825+00:00",
   "cohort_rollup": {
     "horizons": {
       "h5": {
         "accruing": true,
-        "raw_n": 3730,
+        "raw_n": 3967,
         "effective_n": 2,
-        "win_rate": 0.4692,
-        "avg_excess": -0.0009,
-        "med_excess": -0.0038,
+        "win_rate": 0.4648,
+        "avg_excess": -0.0015,
+        "med_excess": -0.0043,
         "wilson_lo": 0.0945,
         "wilson_hi": 0.9055,
         "cohort_series": [
@@ -96,21 +96,21 @@
           },
           {
             "week": "2026-08-24/2026-08-30",
-            "raw_n": 381,
+            "raw_n": 618,
             "effective_n": 1,
-            "win_rate": 0.2966,
-            "avg_excess": -0.0157,
-            "med_excess": -0.0191
+            "win_rate": 0.335,
+            "avg_excess": -0.0139,
+            "med_excess": -0.0174
           }
         ]
       },
       "h10": {
         "accruing": true,
-        "raw_n": 2496,
+        "raw_n": 2723,
         "effective_n": 2,
-        "win_rate": 0.4615,
-        "avg_excess": -0.0021,
-        "med_excess": -0.0068,
+        "win_rate": 0.4513,
+        "avg_excess": -0.0039,
+        "med_excess": -0.0084,
         "wilson_lo": 0.0945,
         "wilson_hi": 0.9055,
         "cohort_series": [
@@ -180,11 +180,11 @@
           },
           {
             "week": "2026-08-17/2026-08-23",
-            "raw_n": 403,
+            "raw_n": 630,
             "effective_n": 1,
-            "win_rate": 0.3722,
-            "avg_excess": -0.0162,
-            "med_excess": -0.0176
+            "win_rate": 0.3603,
+            "avg_excess": -0.0186,
+            "med_excess": -0.0197
           }
         ]
       },
@@ -478,6 +478,11 @@
       },
       {
         "as_of": "2026-09-03",
+        "total": 0,
+        "by_lane": {}
+      },
+      {
+        "as_of": "2026-09-04",
         "total": 0,
         "by_lane": {}
       }
