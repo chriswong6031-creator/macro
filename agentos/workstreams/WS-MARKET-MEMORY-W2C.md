@@ -50,25 +50,35 @@ waves:
     status: in_progress
     depends_on: [M0C]
     next_action: >
-      After the M0D-0 records closeout is on origin/main, implement the runtime
-      vertical slice under DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO and
-      agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md: one sealed REST
-      capture per session in [04:00:00Z, 04:05:00Z) D+1; keyless technicals-v2;
-      registration v2 encoding the seal predicate; experience-v2 at 04:32Z;
-      strict prospective activation. Do not mix D-class R2 coherence into this PR.
+      Namespace repair for experience-v2 is in this change. Do not start
+      experience-v2 by hand. Tuesday 2026-08-25 04:00–04:32Z is the first
+      natural PROVEN_LIVE gate. M0D remains BUILT_NOT_PROVEN until that
+      natural admit authenticates. Do not mix D-class R2 coherence into this
+      wave.
+  - id: V1-CONTEXT-AUDIT-DECOUPLE
+    title: Restore v1 owner replay by decoupling trusted context from Options audit
+    status: done
+    pr: 6266
+    next_action: >
+      Proven live at #6266 / e92238244f0a28ad642bca803de762ed63a18c37.
+      Trusted context completes independently. Do not recouple the Options
+      audit. v1 experience.timer still waits on technicals freshness, which
+      waits on massive_stock_day.
 next_action: >
-  Implement the M0D runtime vertical slice from
-  agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md under
-  DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO. Seal one canonical results[] capture per
-  session in [04:00:00Z, 04:05:00Z) D+1; do not treat first REST availability
-  as readiness; keep v1 isolation and 04:32Z stagger. Stop at a design
-  contradiction or first authenticated natural v2 opportunity.
+  Do not start experience-v2 or v1 writers by hand. Tuesday 2026-08-25
+  04:00–04:32Z is the first natural M0D PROVEN_LIVE gate after the
+  experience-v2 tmpfs/InaccessiblePaths namespace repair. M0D remains
+  BUILT_NOT_PROVEN. If v1 is unrestored by then, grade v2 as
+  v1_control_unavailable. Do not implement Options Audit preregistration v2
+  here. Do not open R2.
 decisions:
   - "DEC:W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE"
   - "DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY"
   - "DEC:W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE"
   - "DEC:W2C-M0C-SOL-RATIFIED-REST-SUCCESSOR"
   - "DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO"
+  - "DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT"
+  - "DEC:MASSIVE-PROBE-UNLISTED-403-IS-UNPUBLISHED"
 discoveries:
   - "DSC:MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z"
   - "DSC:SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC"
@@ -76,6 +86,9 @@ discoveries:
   - "DSC:SPY-DAILY-AGG-IS-RTH-PRICE-FULLDAY-ACTIVITY"
   - "DSC:W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW"
   - "DSC:W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE"
+  - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
+  - "DSC:MASSIVE-STOCK-DAY-UNPUBLISHED-TODAY-RETURNS-403"
+  - "DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE"
 do_not_redo:
   - Do not treat a lawful in-window abstained row as missed, absent, or an M0A failure.
   - Do not reopen #5805 or the nested __case_v1 filename admit without a live journal reproducing the noncanonical-filename exception.
@@ -98,14 +111,20 @@ do_not_redo:
   - Do not treat first REST availability as W2C opportunity readiness; the D+1 04:00–04:05Z source seal is the readiness boundary.
   - Do not persist forming-bar revisions as production source generations; one stable seal equals one capture.
   - Do not re-run M0D-0 as a standing gate; the 2026-08-20 trajectory already passed.
+  - Do not recouple the Options Context Audit into macro-market-memory-context.service or scripts/project_market_memory_context.py main().
   - Do not backdate activation_session or rush Monday 2026-08-24.
+  - Do not treat stock-day unpublished-today 403 as a Massive stock entitlement regression or flatten it to no_entitled_date.
+  - Do not restore mandatory InaccessiblePaths for tmpfs-hidden unbound v1 siblings on experience-v2; that combination is 226/NAMESPACE (DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE).
+  - Do not start experience-v2 by hand to manufacture the Tuesday natural admit.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
   - Experience timer enabled-but-inactive is not armed. Armed means enabled plus active/waiting with a future NextElapse.
+  - Coupled Options Context Audit publication inside the trusted-context oneshot prevents w2c_reconcile_timer() once the owner corpus is large enough to burn the 90s CPU budget.
   - technical_session_absent is a lawful same-session evidence miss, not a missed window. The writer did run.
   - Technicals Result=success with a lagged session is a different defect from technicals failing closed.
   - Session 2026-08-18 also lacked a trusted same-session pin; that is concurrent with, not a substitute for, the technical lag.
   - Massive stocks day_aggs LastModified lives in the 04:30Z band. The 22:30 UTC nightly cannot see session D.
+  - Unpublished calendar-today stock_day keys 403 with an empty listing. That is not a stock entitlement regression; listed+403 is the Options class. Flattening to no_entitled_date hid this for three nights.
   - 2026-08-19 ticker-count then publish-last tears delayed coherent 08-18 capture to 22:57Z; they did not delay the 08-19 S3 object past 04:45Z — that object was itself 04:54Z.
   - accrue_market_memory_spy_experience.py and _expected_registration_spec() are v1-hardcoded. Editing that dict in place changes v1's registration_id and rejects every sealed v1 row.
   - Single-ticker bar.t is midnight ET; session identity is the request date.
@@ -114,6 +133,7 @@ landmines:
   - Two experience oneshots at the same 04:30:00Z second contend for the 900s window; v2 starts at 04:32Z.
   - REST daily is a live forming aggregate from 09:30 ET; 546 unique digests on 2026-08-20. First availability is not a sealed source.
   - Production 04:00–04:05Z sampling may poll repeatedly; only the sealed digest is a source generation. Post-04:05Z corrections append lineage, they do not rewrite the sealed opportunity.
+  - TemporaryFileSystem=/var/lib/macro-market-memory:ro hides unbound v1 siblings; mandatory InaccessiblePaths for those siblings is 226/NAMESPACE. Optional '-' is the v1-proven form and is not an isolation weakening (DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE).
 artifacts:
   - agentos/handoffs/MARKET_MEMORY_M0A_CLOSEOUT_2026-08-16.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20.md
@@ -123,17 +143,22 @@ artifacts:
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0c-sol-ratification.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-v2-slice.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-22-v1-context-decouple.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-23-source-liveness.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-24-experience-v2-namespace.md
   - agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md
   - agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md
   - agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md
   - agentos/decisions/DEC-W2C-M0C-SOL-RATIFIED-REST-SUCCESSOR.md
   - agentos/decisions/DEC-W2C-M0D0-0400Z-SOURCE-SEAL-GO.md
+  - agentos/decisions/DEC-W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT.md
   - agentos/discoveries/DSC-MASSIVE-DAY-AGGS-LASTMODIFIED-FOLLOWS-0430Z.md
   - agentos/discoveries/DSC-SPY-REST-UNADJUSTED-DAILY-MATCHES-FLATFILE-OHLC.md
   - agentos/discoveries/DSC-MASSIVE-GROUPED-DAILY-AVAILABLE-AT-XNYS-CLOSE.md
   - agentos/discoveries/DSC-SPY-DAILY-AGG-IS-RTH-PRICE-FULLDAY-ACTIVITY.md
   - agentos/discoveries/DSC-W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW.md
   - agentos/discoveries/DSC-W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE.md
+  - agentos/discoveries/DSC-OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL.md
   - research/market_memory/W2C_M0D0_SPY_REST_REVISION_TRAJECTORY_2026-08-20.tsv
 ---
 

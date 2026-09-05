@@ -838,7 +838,7 @@
       var program=detail.program||row.program||{},lines=arr(detail.lines).filter(obj),latest=latestLine(lines),coverage=obj(detail.source_coverage)?detail.source_coverage:{},doc=arr(detail.documents).filter(obj)[0]||{},src=safeUrl(doc.source_url),request=latest?semanticValue(latest,'president_budget_request_total'):null,disc=latest?semanticValue(latest,'discretionary_request'):null,recon=latest?semanticValue(latest,'reconciliation_request'):null,enacted=latest?semanticValue(latest,'prior_year_enacted_reference'):null;
       host.className='inspector budget-inspector';
       host.innerHTML='<div class="inspect-hero budget-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('DoD budget program','国防部预算项目'))+'</span><span class="inspect-id">'+esc(text(program.native_identifier))+'</span></div><h2>'+esc(text(program.name))+'</h2><div class="inspect-meta">'+esc(programKind(program.kind)+' · '+tr("President's Budget request lane","总统预算请求链路"))+'</div><div class="inspect-truth"><span class="truth official">'+esc(tr('Official request evidence','官方请求证据'))+'</span><span class="truth derived">'+esc(tr('Display only','仅展示'))+'</span></div><div class="inspect-actions"><button class="tool-btn" type="button" data-budget-evidence>'+esc(tr('View source chain','查看来源链'))+'</button><button class="tool-btn" type="button" data-budget-copy>'+esc(tr('Copy link','复制链接'))+'</button>'+(src?'<a class="tool-btn" href="'+esc(src)+'" target="_blank" rel="noopener">'+esc(tr('Official exhibit ↗','官方表件 ↗'))+'</a>':'')+'</div></div>'+
-        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Latest request frame','最新请求框架'))+'</div><div class="budget-amounts">'+amountCard(tr('FY '+text(latest&&latest.fiscal_year)+' total request','FY '+text(latest&&latest.fiscal_year)+' 请求总额'),request,tr('President’s Budget total','总统预算请求总额'),true)+amountCard(tr('Discretionary request','可自由支配请求'),disc,tr('Source-native column','来源原生列'),false)+amountCard(tr('Reconciliation request','调节请求'),recon,tr('Source-native column','来源原生列'),false)+amountCard(tr('Prior enacted reference','上年已颁参考'),enacted,tr('Historical reference only','仅历史参考'),false)+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Latest request frame','最新请求框架'))+'</div><div class="budget-amounts">'+amountCard(tr('FY '+text(latest&&latest.fiscal_year)+' total request','FY '+text(latest&&latest.fiscal_year)+' 请求总额'),request,tr('President’s Budget total','总统预算请求总额'),true)+amountCard(tr('Discretionary request','可自由支配请求'),disc,tr('Source-native column','来源原生列'),false)+amountCard(tr('Mandatory request','强制性请求'),recon,tr('Source-native column','来源原生列'),false)+amountCard(tr('Prior enacted reference','上年已颁参考'),enacted,tr('Historical reference only','仅历史参考'),false)+'</div></section>'+
         '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Funding-stage firewall','资金阶段防火墙'))+'</div><div class="budget-coverage">'+coverageCard(tr("President's Budget request",'总统预算请求'),coverage.president_budget_request)+coverageCard(tr('Authorization','授权'),coverage.authorization)+coverageCard(tr('Enacted appropriation','已颁拨款'),coverage.appropriation_enacted)+coverageCard(tr('Execution','执行'),coverage.execution)+'</div></section>'+
         '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Source-native program lines','来源原生项目行'))+'</div><div class="budget-lines">'+(lines.length?lineCards(lines):'<div class="budget-null">'+esc(tr('No retained line is available.','没有可用的保留项目行。'))+'</div>')+'</div></section>'+
         '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Reviewed award bridges','经核验的授标桥接'))+'</div><div class="budget-bridges">'+reviewedBridges(detail)+'</div></section>'+
@@ -856,4 +856,367 @@
     }
     return{load:load,refresh:function(){if(!listing||loadState!=='ok')return[];var rows=rowsFrom(listing);if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});return rows},render:render,invalidate:function(){detailEpoch++},state:function(){return loadState}};
   };
+
+  /* D5 Program/Platform Dossier -- composed `government_program_dossier.v1`
+   * bundle (engine/government_revenue/program_dossier.py), read-only, one
+   * static site twin fetched once: government-revenue-data/program-dossier.json.
+   * Same cookie-plane fetch idiom as the Identity Atlas above: same-origin
+   * credentials, a 401/403 degrades to the members-only teaser, any other
+   * failure is a typed `unavailable`, a contract mismatch is `invalid` --
+   * never a crash and never a blank (freeze DEFENSE_D5_PROGRAM_GRAPH_
+   * ARCHITECTURE_FREEZE.md SS4). The bundle-level pair `dossiers: []` +
+   * `ontology_graph_id: null` is the frozen page-level "no certified
+   * ontology yet" state (SS4); `dossiers: []` with a non-null graph id is
+   * the distinct, valid "certified ontology, zero current programs" state.
+   *
+   * Every rail renders a typed plain-word state, never a blank (SS4/SS6).
+   * No numeric budget/request figure is ever read, summed or compared here
+   * (T5 -- this module never calls a money/number formatter). No firm-to-
+   * firm edge or adjacency is ever rendered (T12). No node-link graph is
+   * rendered as the primary surface (SS9). Copy strings below reproduce the
+   * frozen bilingual copy table (D5 mode=programs surface, 2026-08-23)
+   * verbatim for every enum-keyed typed state and gap; ordinary structural
+   * labels (section headers already given by the freeze's six questions
+   * aside) follow the same plain house idiom used throughout this file. */
+  global.createGovernmentRevenueProgramDossier=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,tr=api.tr,hostFor=api.host;
+    var DOSSIER_PATH='government-revenue-data/program-dossier.json';
+    var pending=null,bundle=null,loadState='idle',epoch=0;
+
+    function failure(code){var e=new Error(code);e.code=code;return e}
+    function ensure(){
+      if(pending)return pending;
+      if(typeof global.fetch!=='function'){loadState='unavailable';return Promise.resolve(false)}
+      loadState='loading';
+      pending=global.fetch(DOSSIER_PATH,{credentials:'same-origin'}).then(function(response){
+        if(response.status===401||response.status===403)throw failure('locked');
+        if(!response.ok)throw failure('unavailable');
+        return response.json();
+      }).then(function(value){
+        if(!obj(value)||value.contract!=='government_program_dossier.v1'||!/^1\./.test(text(value.schema_version,'')))throw failure('invalid');
+        bundle=value;
+        loadState=value.ontology_graph_id==null?'ontology_unavailable':(arr(value.dossiers).filter(obj).length?'ok':'empty');
+        return true;
+      }).catch(function(error){bundle=null;loadState=(error&&error.code)||'unavailable';return false});
+      return pending;
+    }
+
+    // --- frozen typed-state copy (rail-scoped; verbatim from the D5 copy table) ---
+    function copyProgramUmbrella(){return tr('Program relationship: unresolved / not asserted','项目归属:未解决/未认定')}
+    function copyProgramConflicted(){return tr('Program attribution: conflicting reviewed claims — attribution withheld','项目归属:复核证据冲突——暂不认定')}
+    function copyQuantityGap(){return tr('Quantity is not representable from the award tape (v1); available once SAR/budget sources land','数量无法由合同事件源表示(v1);待SAR/预算来源接入后提供')}
+    function copyEconomicsGap(){return tr('No reviewed economic exposure — participation is not a revenue share','无已复核经济敞口——参与关系不代表收入份额')}
+    function copyContractTypeGap(){return tr('Contract type: available once an event is reviewed against this program','合同类型:待事件与该项目完成复核关联后提供')}
+    function copyGaoGap(){return tr('GAO/DOT&E assessment: not yet on file','GAO/DOT&E 评估:暂未收录')}
+    // Count-free (MEDIUM-6 repair): the row shape carries only a bool
+    // (`shared_scope`), never a program count, so the copy must never name
+    // a specific number -- a second shared-scope supplier spanning two or
+    // five programs would otherwise render a fabricated "three".
+    function copySharedScope(){return tr('Supplier scope shared across programs','供应范围横跨多个项目')}
+    function copyHistorical(){return tr('historical only','仅历史记录')}
+    function copyIssuerNotAsserted(){return tr('Issuer path: not asserted','发行人路径:未认定')}
+    function copyParticipationLimitation(){return tr('Companies on this rail participate in the same program; no commercial relationship between them is asserted.','本栏公司参与同一项目;不主张它们之间存在任何商业关系。')}
+    function copyAllocationLimitation(){return tr('Reviewed participation is not a share of revenue. Nothing here allocates award value to a ticker.','已复核的参与关系不代表收入份额。此处不将合同金额分配至任何股票。')}
+    function copyParticipantsNotReviewed(){return tr('Participants not yet reviewed','参与方尚未复核')}
+    function copyParticipantsReviewedNone(){return tr('Reviewed — no admissible participants','已复核——无可采信参与方')}
+    function copyMilestonesNotReviewed(){return tr('Forward milestones not yet reviewed','前瞻里程碑尚未复核')}
+    function copyMilestonesReviewedNone(){return tr('Reviewed — no admissible forward milestone','已复核——无可采信的前瞻里程碑')}
+    function copyMilestonesReviewedEmpty(){return tr('Reviewed — no upcoming milestone on file','已复核——暂无即将到来的里程碑')}
+    function copyBudget(stateName){return stateName==='projection_missing'?tr('Budget request rail unavailable — no budget projection exists yet (planned for a later wave)','预算请求栏不可用——预算投影尚未建立(规划于后续阶段)'):tr('Budget source unavailable','预算来源不可用')}
+    function copyEconomicRelationships(){return tr('No reviewed economic-relationship data','无已复核的经济关系数据')}
+    // House "windows, not certainties" idiom (vector.html.j2), reused verbatim.
+    function copyWindowsNotCertainties(){return tr('Windows, not certainties. The watch window is re-drawn nightly as the evidence changes.','这是观察窗口，不是确定预测。证据变化时，窗口会在每晚重新绘制。')}
+    var QUESTIONS=function(){return[
+      tr('What is this?','这是什么?'),
+      tr('Why does government need it?','政府为何需要?'),
+      tr('What changed?','有何变化?'),
+      tr('Which listed companies have reviewed access?','哪些上市公司经复核参与?'),
+      tr('What remains unresolved?','尚有哪些未决?'),
+      tr('What happens next?','接下来是什么?')
+    ]};
+
+    function chip(kind,label){return'<span class="truth '+esc(kind)+'">'+esc(label)+'</span>'}
+    function roleWord(role){
+      // Closed v1 role enum (freeze SS3.1); the pilot's three values get
+      // house copy, any other value degrades to a mechanical, non-invented
+      // snake_case-to-words transform rather than a fabricated label.
+      var known={prime_contractor:tr('Prime contractor','主承包商'),teaming_partner:tr('Teaming partner','联合承包伙伴'),supplier:tr('Supplier','供应商')};
+      return known[role]||text(role,'').replace(/_/g,' ')
+    }
+    function securityWord(stateName){
+      if(stateName==='verified_live')return tr('verified','已核验');
+      if(stateName==='listing_terminated')return tr('listing ended','上市已终止');
+      if(stateName==='not_in_si_universe')return tr('not in the covered listing universe','不在已覆盖的上市范围内');
+      return tr('unconfirmed','未确认')
+    }
+    function windowWords(window){
+      window=obj(window)?window:{};
+      var from=text(window.from,''),to=text(window.to,'');
+      if(from&&to)return from+' – '+to;
+      return to||from||tr('window not specified','窗口未指定')
+    }
+    function railState(rail,key){rail=obj(rail)?rail:{};return text(rail[key],'not_reviewed')}
+    function gapCopyFor(stateName){return stateName==='conflicted'?copyProgramConflicted():copyProgramUmbrella()}
+
+    function rowsFrom(value){
+      return arr((value||{}).dossiers).filter(obj).map(function(d){
+        var pi=obj(d.program_identity)?d.program_identity:{},reviewed=pi.state==='reviewed';
+        return{
+          id:'program:'+text(d.program_id),kind:'program_dossier',
+          truth:reviewed?'reviewed':'derived',
+          truthCopy:reviewed?tr('Program identity reviewed','项目身份已核验'):gapCopyFor(pi.state),
+          linked:false,defense:true,tickers:[],agency:text(pi.sponsor_agency,''),
+          date:text((value||{}).generated_at,''),
+          title:reviewed?text(pi.name,text(d.program_id)):text(d.program_id),
+          subtitle:reviewed?text(pi.phase,''):gapCopyFor(pi.state),
+          dossier:d,bundleLimitations:arr((value||{}).limitations)
+        };
+      });
+    }
+
+    function load(){
+      var ticket=++epoch;
+      if(typeof api.onRows==='function')api.onRows([],{status:'loading',content_id:null,total:0});
+      return ensure().then(function(){
+        if(ticket!==epoch)return;
+        var ok=loadState==='ok'||loadState==='empty',rows=ok?rowsFrom(bundle):[];
+        if(typeof api.onRows==='function')api.onRows(rows,{status:loadState,content_id:bundle&&bundle.content_id||null,total:rows.length});
+      });
+    }
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();if(loadState!=='locked')return;pending=null;load()}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+
+    // --- six-question sections (freeze SS9, in the frozen order) ---
+    function sectionWhatIsThis(d){
+      var pi=obj(d.program_identity)?d.program_identity:{};
+      if(pi.state!=='reviewed')return'<p class="inspect-value">'+esc(gapCopyFor(pi.state))+'</p>';
+      var meta=[pi.phase?tr('Phase: ','阶段：')+text(pi.phase):'',pi.sponsor_agency?tr('Sponsor: ','主管机构：')+text(pi.sponsor_agency):''].filter(Boolean).join(' · ');
+      var out='<p class="inspect-value"><strong>'+esc(text(pi.name))+'</strong></p>';
+      if(meta)out+='<p class="inspect-value">'+esc(meta)+'</p>';
+      out+='<p class="inspect-value">'+esc(pi.latest_platform_name?tr('Latest block in the reviewed record: ','已核验记录中的最新型别：')+text(pi.latest_platform_name):tr('No platform/block variant is yet in the reviewed record.','已核验记录中尚无型别/批次变体。'))+'</p>';
+      // LOW-2 repair: NO "read being updated" chip is rendered here. It was
+      // gated on `program_revision > 1`, which LATCHES FOREVER -- revision
+      // never decreases, so a pure rename from years ago would render the
+      // transient D3 chip permanently. D3's own chip (cycle_app.js
+      // firedBannerHTML) is gated on an engine-maintained boolean latch
+      // (`tw.state==='FIRED' && tw.latched`), not a client-side recency
+      // window -- there is no time-based mechanism in D3 to mirror. The
+      // frozen `government_program_dossier.v1` program_identity rail shape
+      // (freeze SS4) carries no `known_at`/succession timestamp of any
+      // kind, so the reviewer's fallback (`program_revision > 1 AND the
+      // resolved revision's known_at within 14 days of the bundle as_of`)
+      // cannot be computed client-side without an engine/schema change,
+      // which is out of this packet's scope. `bundle.generated_at` is not
+      // a substitute: it refreshes every nightly build regardless of
+      // whether this row's revision actually changed, so gating on it
+      // would still effectively latch (or worse, fabricate recency).
+      // Removed rather than ship either the original bug or a fabricated
+      // proxy; a correct implementation needs a revision-scoped `known_at`
+      // added to the rail by a future engine packet.
+      return out;
+    }
+    function sectionWhy(d){
+      var cap=obj(d.capability)?d.capability:{},out='';
+      if(cap.state!=='reviewed'){
+        out+='<p class="inspect-value">'+esc(gapCopyFor(cap.state))+'</p>';
+      }else{
+        out+='<p class="inspect-value"><strong>'+esc(text(cap.name))+'</strong></p>';
+        out+='<p class="inspect-value">'+esc(text(cap.need_statement,''))+'</p>';
+      }
+      // Freeze SS9: the quantity gap is named ALWAYS in v1, reviewed link or not.
+      out+='<div class="budget-null"><span>'+esc(copyQuantityGap())+'</span></div>';
+      out+='<div class="budget-null"><span>'+esc(copyEconomicsGap())+'</span></div>';
+      return out;
+    }
+    function sectionChanged(d){
+      var aw=obj(d.awards)?d.awards:{},src=railState(aw,'source_state'),link=railState(aw,'link_state'),out='';
+      if(link==='conflicted'){
+        out+='<div class="budget-rail warn"><span>'+esc(tr('Award attribution','授标归属'))+'</span><b>'+esc(tr('Event attribution conflicted — under review','事件归属存在冲突——复核中'))+'</b></div>';
+      }else if(src==='current'){
+        var msg=link==='reviewed_none'?tr('Award tape current — reviewed: no linkable events on the tape','合同事件源为最新——已复核:暂无可关联事件'):tr('Award tape current — no event reviewed against this program yet','合同事件源为最新——尚无事件与该项目完成复核关联');
+        out+='<div class="budget-rail'+(link==='reviewed'?' ok':' warn')+'"><span>'+esc(tr('Award source','合同事件源'))+'</span><b>'+esc(msg)+'</b></div>';
+      }else{
+        var srcCopy=src==='partial'?tr('Award source partial','合同事件源部分可用'):src==='stale'?tr('Award source stale (source latency: days to weeks)','合同事件源滞后(来源延迟数天至数周)'):tr('Award source unavailable','合同事件源不可用');
+        out+='<div class="budget-rail warn"><span>'+esc(tr('Award source','合同事件源'))+'</span><b>'+esc(srcCopy)+'</b></div>';
+      }
+      // Freeze SS9: contract type is read-only from the award plane joined on
+      // a reviewed program_event_link; this build never performs that join
+      // (see the packet's reported GAP), so the named gap always renders.
+      out+='<div class="budget-null"><span>'+esc(copyContractTypeGap())+'</span></div>';
+      return out;
+    }
+    function sectionParticipants(d){
+      var p=obj(d.participants)?d.participants:{},stateName=railState(p,'state'),out='';
+      if(stateName==='reviewed'){
+        var rows=arr(p.rows).filter(obj);
+        if(!rows.length){
+          out+='<div class="budget-null"><strong>'+esc(copyParticipantsReviewedNone())+'</strong></div>';
+        }else{
+          out+='<div class="atlas-chips" style="display:grid;gap:8px">'+rows.map(function(row){
+            var reviewedIssuer=row.issuer_path_state==='reviewed';
+            var issuerBit=reviewedIssuer?(text(row.central_id,'')+' · '+securityWord(row.public_security)):copyIssuerNotAsserted();
+            var chips=chip(reviewedIssuer?'reviewed':'derived',reviewedIssuer?tr('reviewed','已核验'):tr('not asserted','未认定'))
+              +(row.historical?chip('historic',copyHistorical()):'')
+              +(row.shared_scope?chip('derived',copySharedScope()):'');
+            return'<article class="atlas-entity'+(reviewedIssuer?'':' derived')+'"><div class="atlas-entity-top"><div><span class="atlas-entity-name">'+esc(roleWord(row.role))+(row.role_scope?' — '+esc(text(row.role_scope)):'')+'</span><span class="atlas-entity-meta">'+esc(issuerBit)+'</span></div>'+chips+'</div></article>';
+          }).join('')+'</div>';
+        }
+      }else{
+        out+='<div class="budget-null"><strong>'+esc(stateName==='conflicted'?copyProgramConflicted():stateName==='reviewed_none'?copyParticipantsReviewedNone():copyParticipantsNotReviewed())+'</strong></div>';
+      }
+      // Freeze SS4: both limitation strings are populated on every rail
+      // state, not only `reviewed` -- render them unconditionally (T12).
+      out+='<p class="limit-copy">'+esc(copyParticipationLimitation())+'</p>';
+      out+='<p class="limit-copy">'+esc(copyAllocationLimitation())+'</p>';
+      return out;
+    }
+    function sectionUnresolved(d){
+      var budget=obj(d.budget)?d.budget:{},out='';
+      out+='<div class="budget-rail warn"><span>'+esc(tr('Budget','预算'))+'</span><b>'+esc(copyBudget(railState(budget,'state')))+'</b></div>';
+      out+='<div class="budget-rail"><span>'+esc(tr('Economic relationships','经济关系'))+'</span><b>'+esc(copyEconomicRelationships())+'</b></div>';
+      var sharedRow=arr((obj(d.participants)?d.participants:{}).rows).filter(obj).some(function(row){return row.shared_scope});
+      if(sharedRow)out+='<div class="budget-rail warn"><span>'+esc(tr('Supplier scope','供应范围'))+'</span><b>'+esc(copySharedScope())+'</b></div>';
+      out+='<div class="budget-rail warn"><span>'+esc(tr('Oversight','监督'))+'</span><b>'+esc(copyGaoGap())+'</b></div>';
+      return out;
+    }
+    function sectionNext(d){
+      var m=obj(d.milestones)?d.milestones:{},stateName=railState(m,'state');
+      if(stateName==='reviewed'){
+        var rows=arr(m.rows).filter(obj);
+        if(!rows.length)return'<div class="budget-null"><strong>'+esc(copyMilestonesReviewedEmpty())+'</strong></div>';
+        return rows.map(function(row){
+          var when=row.temporal_kind==='window'?windowWords(row.window):text(row.date);
+          return'<div class="budget-rail ok"><span>'+esc(tr('Forward milestone','前瞻里程碑'))+'</span><b>'+esc(text(row.title))+'</b><small>'+esc(when)+'</small></div>';
+        }).join('')+'<p class="limit-copy">'+esc(copyWindowsNotCertainties())+'</p>';
+      }
+      return'<div class="budget-null"><strong>'+esc(stateName==='conflicted'?copyProgramConflicted():stateName==='reviewed_none'?copyMilestonesReviewedNone():copyMilestonesNotReviewed())+'</strong></div>';
+    }
+    function sectionInspectorIds(d){
+      var pi=obj(d.program_identity)?d.program_identity:{},cap=obj(d.capability)?d.capability:{},aw=obj(d.awards)?d.awards:{},p=obj(d.participants)?d.participants:{},m=obj(d.milestones)?d.milestones:{};
+      var lines=['program_id: '+text(d.program_id)];
+      if(pi.state==='reviewed'){
+        lines.push('program_revision: '+text(pi.program_revision));
+        if(pi.latest_platform_id)lines.push('latest_platform_id: '+text(pi.latest_platform_id));
+      }
+      if(cap.state==='reviewed'){
+        lines.push('capability_id: '+text(cap.capability_id));
+        lines.push('program_capability_link_id: '+text(cap.program_capability_link_id));
+      }
+      if(arr(aw.program_event_link_ids).length)lines.push('program_event_link_ids: '+arr(aw.program_event_link_ids).join(', '));
+      if(arr(aw.event_ids).length)lines.push('event_ids: '+arr(aw.event_ids).join(', '));
+      arr(p.rows).filter(obj).forEach(function(row){lines.push('role_assertion_id ('+text(row.role)+'): '+text(row.role_assertion_id))});
+      arr(m.rows).filter(obj).forEach(function(row){lines.push('milestone_id: '+text(row.milestone_id))});
+      return'<article class="receipt"><div class="receipt-kind">'+esc(tr('Technical identity','技术标识'))+'</div><div class="receipt-code">'+esc(lines.join('\n'))+'</div></article>';
+    }
+    function render(row){
+      var host=hostFor();if(!host||!row)return;
+      var d=obj(row.dossier)?row.dossier:{},pi=obj(d.program_identity)?d.program_identity:{},reviewed=pi.state==='reviewed';
+      var title=reviewed?text(pi.name,text(d.program_id)):text(d.program_id);
+      var questions=QUESTIONS();
+      var sections=[sectionWhatIsThis(d),sectionWhy(d),sectionChanged(d),sectionParticipants(d),sectionUnresolved(d),sectionNext(d)];
+      var stanceChips=chip(reviewed?'reviewed':'derived',reviewed?tr('Program identity reviewed','项目身份已核验'):gapCopyFor(pi.state))
+        +chip('derived',tr('Display only','仅展示'))
+        +chip('derived',tr("Watch — don't chase",'观察，不追逐'));
+      host.className='inspector program-inspector';
+      host.innerHTML=
+        '<div class="inspect-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('Program Dossier','项目档案'))+'</span><span class="inspect-id">'+esc(text(d.program_id))+'</span></div><h2>'+esc(title)+'</h2><div class="inspect-truth">'+stanceChips+'</div></div>'+
+        questions.map(function(question,i){return'<section class="inspect-section"><div class="inspect-label">'+esc(question)+'</div>'+sections[i]+'</section>'}).join('')+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Inspector · technical identity','检查器 · 技术标识'))+'</div>'+sectionInspectorIds(d)+'</section>'+
+        (arr(row.bundleLimitations).length?'<section class="inspect-section"><div class="inspect-label">'+esc(tr('Read-model limitations','读取模型限制'))+'</div><div class="limit-copy">'+esc(arr(row.bundleLimitations).join(' · '))+'</div></section>':'');
+      if(typeof api.setMobile==='function')api.setMobile(title,tr('Program Dossier','项目档案'));
+    }
+
+    return{
+      load:load,
+      refresh:function(){var ok=loadState==='ok'||loadState==='empty',rows=ok?rowsFrom(bundle):[];if(typeof api.onRows==='function')api.onRows(rows,{status:loadState,content_id:bundle&&bundle.content_id||null,total:rows.length});return rows},
+      render:render,
+      invalidate:function(){},
+      state:function(){return loadState}
+    };
+  };
+  /* D6-B1 FMS congressional-notification rail -- read-only projection of
+   * `government_fms_case.v1` (engine/government_revenue/fms_cases.py). One
+   * fetch of the full case graph; every case already carries its complete
+   * observation history (spec §4), so unlike the DoD budget rail above this
+   * factory never opens a second per-case detail request. Stage is always
+   * `congressional_notification` in v1 -- this file never computes, stores,
+   * or displays a review-period-elapsed conclusion (freeze §4.4, T3). Values
+   * are proposed-sale estimates and are never summed across cases (T13). The
+   * five-answer copy strings below reproduce the frozen U5 bilingual table
+   * (DEFENSE_D6B1_FMS_IMPLEMENTATION_SPEC_2026-08-25.md §9.3) verbatim. */
+  global.createGovernmentRevenueFms=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
+    var contentId=null,loadEpoch=0,loadState='loading',listing=null;
+
+    function validAuthority(value){return obj(value)&&value.tier==='display'&&value.context_only===true&&value.can_rank===false&&value.can_size===false&&value.can_gate===false&&value.can_originate_signal===false&&value.can_add_candidates===false&&value.can_escalate===false}
+    function fetchFms(route){
+      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
+      return withAuth({Accept:'application/json'}).then(function(headers){
+        return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:headers});
+      }).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
+        if(!obj(value)||value.contract!=='government_fms_case.v1'||value.schema_version!=='1.0.0'||!/^grfms1-[a-f0-9]{24}$/.test(text(value.content_id,''))||!validAuthority(value.authority))throw new Error('contract');
+        return value;
+      });
+    }
+    function rowsFrom(value){return arr(value.cases).filter(obj).map(function(c){return{id:'fms:'+text(c.case_key),kind:'fms_case',truth:'official',truthCopy:tr('Official 36(b) congressional notification','36(b) 国会通知官方记录'),linked:false,defense:true,tickers:[],agency:null,date:value.known_at,title:text(c.capability_title,text(c.customer_country)),subtitle:text(c.transmittal_number,'—')+' · '+text(c.customer_country),case:c,fmsEnvelope:{content_id:value.content_id,known_at:value.known_at,as_of:value.as_of,coverage:value.coverage,limitations:value.limitations}}})}
+    function load(){
+      var ticket=++loadEpoch;loadState='loading';
+      if(typeof api.onRows==='function'&&!listing)api.onRows([],{status:'loading',content_id:null,total:0});
+      return fetchFms('fms-cases').then(function(value){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        listing=value;contentId=value.content_id;loadState='ok';
+        var rows=rowsFrom(value);
+        if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});
+        return rows;
+      }).catch(function(error){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        var message=error&&error.message||'';
+        if((message==='http_401'||message==='http_403')&&!authSettled()){
+          loadState='loading';
+          if(typeof api.onRows==='function')api.onRows([],{status:'loading',content_id:null,total:0});
+          return[];
+        }
+        listing=null;contentId=null;
+        loadState=(message==='http_404'||message==='http_503'||message==='contract')?'unavailable':'unavailable';
+        if(typeof api.onRows==='function')api.onRows([],{status:loadState,content_id:null,total:0});
+        return[];
+      });
+    }
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();load();}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+    function contractorRow(item){return'<article class="budget-bridge"><span class="truth observed">'+esc(tr('Named in source — identity not reviewed','来源点名 — 身份未审核'))+'</span><strong>'+esc(text(item.name_as_printed))+'</strong>'+(item.location_as_printed?'<small>'+esc(text(item.location_as_printed))+'</small>':'')+'</article>'}
+    function evidenceHtml(c){
+      var html='';
+      arr(c.observations).filter(obj).forEach(function(o){
+        html+='<article class="receipt"><div class="receipt-kind">'+esc(text(o.source_surface)+' · '+text(o.kind))+'</div><p>'+esc(tr('Version','版本')+' '+text(o.version))+'</p><div class="receipt-code">'+esc('observation_id: '+text(o.observation_id)+'\nsha256: '+text(o.response_sha256)+'\nobserved_at: '+text(o.observed_at)+'\nknown_at: '+text(o.known_at))+'</div>'+(safeUrl(o.source_url)?'<a class="source-link" href="'+esc(safeUrl(o.source_url))+'" target="_blank" rel="noopener"><b>'+esc(tr('Open source receipt ↗','打开来源凭证 ↗'))+'</b><span>↗</span></a>':'')+'</article>';
+      });
+      return html;
+    }
+    function render(row){
+      var host=hostFor();if(!host||!row)return;
+      var c=row.case||{},env=row.fmsEnvelope||{},cov=obj(c.source_coverage)?c.source_coverage:{},clocks=obj(c.clocks)?c.clocks:{},notif=obj(clocks.official_notification_date)?clocks.official_notification_date:{},pub=obj(clocks.official_web_publication_date)?clocks.official_web_publication_date:{},contractors=arr(c.contractors).filter(obj);
+      host.className='inspector budget-inspector';
+      host.innerHTML='<div class="inspect-hero budget-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('FMS congressional notification','FMS 国会通知'))+'</span><span class="inspect-id">'+esc(text(c.transmittal_number,'—'))+'</span></div><h2>'+esc(text(c.customer_country))+'</h2><div class="inspect-meta">'+esc(text(c.capability_title,tr('Capability not disclosed by an official web post','官方网页公告未披露该能力')))+'</div><div class="inspect-truth"><span class="truth official">'+esc(tr('Official 36(b) congressional notification','36(b) 国会通知官方记录'))+'</span><span class="truth derived">'+esc(tr('Display only','仅展示'))+'</span></div><div class="inspect-actions"><button class="tool-btn" type="button" data-fms-evidence>'+esc(tr('View source chain','查看来源链'))+'</button><button class="tool-btn" type="button" data-fms-copy>'+esc(tr('Copy link','复制链接'))+'</button></div></div>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Stage','阶段'))+'</div><div class="budget-boundary"><strong>'+esc(tr('Notified to Congress — not a signed sale','已通知国会 — 尚非已签署军售'))+'</strong><span>'+esc(tr('Later stage not observed','未观察到后续阶段'))+'</span></div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Amount','金额'))+'</div><div class="budget-amounts">'+'<div class="budget-amount primary"><span>'+esc(tr('Estimated notification value','通知估算金额'))+'</span><b>'+esc(money(c.estimated_notification_value))+'</b><small>'+esc(tr('Proposed-sale estimate — not an award, backlog, or revenue','拟议军售估算 — 并非合同授予、订单积压或收入'))+'</small></div>'+'</div>'+(c.source_caveat?'<p class="budget-null">'+esc(text(c.source_caveat))+'</p>':'')+'</section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Clocks','时间线'))+'</div><div class="budget-coverage">'+'<div class="budget-rail muted"><span>'+esc(tr('Official notification date','官方通知日期'))+'</span><b>'+esc(notif.value?date(notif.value):tr('Official notification date unavailable','官方通知日期暂无'))+'</b></div>'+'<div class="budget-rail muted"><span>'+esc(tr('Official web publication date','官方网页发布日期'))+'</span><b>'+esc(date(pub.value))+'</b></div>'+'<div class="budget-rail muted"><span>'+esc(tr('First observed','首次获知'))+'</span><b>'+esc(date((clocks||{}).first_observed_at))+'</b></div>'+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Linkage','关联'))+'</div><div class="budget-bridges">'+(contractors.length?contractors.map(contractorRow).join(''):(c.contractor_note?'<p class="budget-null">'+esc(text(c.contractor_note))+'</p>':''))+'<article class="budget-bridge"><span class="truth observed">'+esc(tr('Program link not reviewed','项目关联未审核'))+'</span></article>'+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Advancement','推进'))+'</div><div class="budget-boundary"><span>'+esc(tr('Requires official evidence of an offered, accepted, or implemented LOA','须有官方证据证明 LOA 已提出、接受或实施'))+'</span></div></section>'+
+        (cov.web_presence===false?'<section class="inspect-section"><div class="inspect-label">'+esc(tr('Coverage note','覆盖说明'))+'</div><div class="budget-null"><span>'+esc(tr('Recovered from the Federal Register official record — no agency web post exists for this case.','该案例来自联邦公报官方记录 — 该机构未发布对应网页公告。'))+'</span><br><span>'+esc(text((env.coverage||{}).history_disclosure))+'</span></div></section>':'')+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Evidence & limits','证据与限制'))+'</div><div class="limit-copy">'+esc(tr('Display-only context. It cannot rank a case, size a position, gate a trade, or add a candidate.','仅作展示情境。不得为案例排序、调整仓位、设闸或添加候选。'))+'</div></section>';
+      var evidence=host.querySelector('[data-fms-evidence]');if(evidence)evidence.addEventListener('click',function(){if(typeof api.openEvidenceDrawer==='function')api.openEvidenceDrawer({title:tr('FMS source chain','FMS 来源链'),html:evidenceHtml(c),focus:evidence})});
+      var copy=host.querySelector('[data-fms-copy]');if(copy)copy.addEventListener('click',function(){if(typeof api.copyLink==='function')api.copyLink(copy)});
+      if(typeof api.setMobile==='function')api.setMobile(text(c.customer_country),text(c.transmittal_number,'—'));
+    }
+    return{load:load,refresh:function(){if(!listing||loadState!=='ok')return[];var rows=rowsFrom(listing);if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});return rows},render:render,invalidate:function(){},state:function(){return loadState}};
+  };
+
 })(window);

@@ -1,0 +1,825 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "opportunity_evidence.vector.v1",
+  "title": "opportunity_evidence.vector.v1",
+  "description": "K3-E Opportunity Evidence Vector — a typed, deterministic VIEW/JOIN projection over canonical owner outputs for one subject at one decision time. It is a contract, not a store: no artifact path, no writer, no scheduler, no index, no payload warehouse exists for this object. Neither Prophet nor Radar consumes or writes it. It carries no composite score, no rank, no gate, no size, no origination, and no entry authority. Clock vocabulary, object classes, and missingness reasons are the accepted K1 Evidence Foundation vocabulary (contracts/evidence_foundation/) — this contract deliberately mints no fifth PIT vocabulary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "subject",
+    "asof",
+    "generated_at",
+    "authority",
+    "display_only",
+    "compilation_state",
+    "slots",
+    "projection",
+    "economic_cause_hypothesis",
+    "denominator",
+    "dominant_degradation",
+    "permitted_consumers",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "opportunity_evidence.vector.v1"},
+    "version": {"const": "1.0.0"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "asof": {"$ref": "#/$defs/decisionClock"},
+    "generated_at": {"$ref": "#/$defs/utcInstant"},
+    "authority": {"$ref": "#/$defs/authorityEnvelope"},
+    "display_only": {"const": true},
+    "compilation_state": {
+      "description": "Vector-level composition verdict, reusing the K1 recipe_compilation_receipt.v1 state vocabulary verbatim (emitted by lib/evidence_foundation.py and frozen as the compilation.state enum in contracts/market_os/security_state.v1.schema.json). 'complete' is illegal when any adverse denominator count is non-zero.",
+      "enum": ["refused", "abstained", "partial", "corrected", "complete"]
+    },
+    "slots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/slot"}
+    },
+    "projection": {"$ref": "#/$defs/projection"},
+    "economic_cause_hypothesis": {
+      "description": "The SEPARATE economic-cause object (E0 dislocation spec §2.2). Never computed from residual magnitude; null when no lawfully supported hypothesis exists. Statistical opportunity evidence and economic-cause hypotheses are two objects with two semantics — this field being separate from `slots` is the wire form of that law.",
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/economicCauseHypothesis"}
+      ]
+    },
+    "denominator": {"$ref": "#/$defs/denominatorReceipt"},
+    "dominant_degradation": {
+      "description": "Single worst adverse state across slots, by the frozen strict severity order conflicted > corrected > identity_unresolved > rights_blocked > missing > unsupported > unknown > stale > partial_coverage. 'none' only when no adverse state exists — every adverse slot state (including unsupported and unknown) participates.",
+      "type": "string",
+      "enum": [
+        "none",
+        "partial_coverage",
+        "stale",
+        "unknown",
+        "unsupported",
+        "missing",
+        "rights_blocked",
+        "identity_unresolved",
+        "corrected",
+        "conflicted"
+      ]
+    },
+    "permitted_consumers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "research_session",
+          "opportunity_case_k5",
+          "market_os_security_state_view",
+          "operator_display"
+        ]
+      },
+      "description": "Closed consumer-class list. Prophet ranking/gating and Radar detection are NOT members and can never be added within v1 — that change requires v2 plus a fusion-arena/Eval-OS promotion ruling."
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over canonical JSON of the complete vector excluding only content_sha256. No join/write clock enters identity."
+    }
+  },
+  "$defs": {
+    "utcInstant": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "clockValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "grain", "clock_class", "native_field", "state"],
+      "properties": {
+        "value": {
+          "oneOf": [
+            {"$ref": "#/$defs/utcInstant"},
+            {"$ref": "#/$defs/isoDate"},
+            {"type": "null"}
+          ]
+        },
+        "grain": {
+          "enum": ["date", "datetime", "unknown"],
+          "description": "K1 nativeClock grain (date|datetime) plus exactly one additive member, 'unknown', used only when the clock's state is unknown. This is the sole declared delta from the K1 clock vocabulary and is pinned by an equality test."
+        },
+        "clock_class": {
+          "description": "K1 clock class this value projects. The registry pins the lawful class per construct; the validator enforces the pin.",
+          "enum": [
+            "world_valid",
+            "source_published",
+            "knowable",
+            "observed",
+            "system_recorded",
+            "belief_or_build",
+            "review_due"
+          ]
+        },
+        "native_field": {
+          "type": ["string", "null"],
+          "description": "The owner-native field name this clock was read from, unrenamed (K1 law 3). null only when state is unknown."
+        },
+        "state": {"enum": ["known", "unknown"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "known"}}},
+          "then": {
+            "properties": {
+              "value": {"type": "string"},
+              "native_field": {"type": "string"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"state": {"const": "unknown"}}},
+          "then": {"properties": {"value": {"type": "null"}}}
+        }
+      ]
+    },
+    "decisionClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "grain", "t0_source", "t0_mode", "t0_evidence_ref"],
+      "properties": {
+        "value": {
+          "oneOf": [{"$ref": "#/$defs/utcInstant"}, {"$ref": "#/$defs/isoDate"}]
+        },
+        "grain": {"enum": ["date", "datetime"]},
+        "t0_source": {
+          "description": "The decision date must come from an existing PIT object, never optimized after seeing forward returns (E0 §4.1). Every source is authenticated by t0_evidence_ref against the registry t0_sources pins (semantic K3E_R021). The retired caller_named_pit_object free string is replaced by owner_pit_reference, which additionally REQUIRES a known native_digest immutability receipt (Sol REQUEST_CHANGES 2026-08-25 item 1). The four named sources are validation-checkable: the registry pins their owner_store and recorded clock class. owner_pit_reference is NOT — its store, clock class and referenced bytes are all caller-declared — so it is an accountability receipt rather than a verification, and the registry restricts it to t0_mode 'retrospective_research' (Sol REQUEST_CHANGES 2026-08-26 item A). No source on this wire is 'fully authenticated' in the sense of validation reading the owner's bytes; this contract holds no owner I/O.",
+          "enum": [
+            "winner_case_t0_hypothesis",
+            "drl_event_date",
+            "prophet_stamp_date",
+            "radar_observed_at",
+            "owner_pit_reference"
+          ]
+        },
+        "t0_mode": {
+          "description": "K1 reference.v1 replay.mode vocabulary, verbatim two-member subset lawful for a decision clock. 'live': the vector claims operational PIT — the recorded_clock must sit within the registry-pinned max_recording_lag_days of t0 (semantic K3E_R021), so a decision-time object minted after the fact fails closed. 'retrospective_research': declared research over a past t0 — the lag law is replaced by this visible declaration; authentication (owner pins, digest requirement, known recorded clock) still binds in full. There is no silent third mode. Membership in this enum is wire-level only and never per-source permission: the registry t0_sources.lawful_t0_modes decides which modes a given t0_source may claim, and K3E_R021 enforces it. Only sources whose owner_store and clock class validation can actually check may claim 'live'; the generic owner_pit_reference may not (Sol REQUEST_CHANGES 2026-08-26 item A), and a source carrying no lawful_t0_modes pin may claim only 'retrospective_research'.",
+          "enum": ["live", "retrospective_research"]
+        },
+        "t0_evidence_ref": {"$ref": "#/$defs/t0EvidenceRef"}
+      }
+    },
+    "t0EvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner_store", "native_identity", "native_digest", "recorded_clock"],
+      "description": "The immutable owner-backed PIT reference the decision date was read from, reusing K1 reference.v1 EvidenceRef semantics field-for-field: owner_store, native_identity, and native_digest are the verbatim reference.v1 shapes; recorded_clock is this contract's K1-reconciled clockValue projection restricted to the three minting clock classes. An arbitrary caller string is no longer expressible on this wire.",
+      "properties": {
+        "owner_store": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "reference.v1 owner_store, verbatim shape: the canonical owner store the decision-time object lives in. The registry t0_sources section pins the lawful store per named t0_source; a mismatch is K3E_R021."
+        },
+        "native_identity": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 8,
+          "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,63}$"},
+          "additionalProperties": {
+            "oneOf": [
+              {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^[^\\r\\n]+$"},
+              {"type": "integer", "minimum": 0}
+            ]
+          },
+          "description": "reference.v1 native_identity, verbatim shape: the owner-native identity of the PIT object. Key names are re-checked semantically by K3E_R021 because the structural validator does not implement propertyNames."
+        },
+        "native_digest": {
+          "description": "reference.v1 nativeDigest, verbatim shape — the immutability receipt over the referenced object's bytes. Registry law (t0_sources.digest_required): owner_pit_reference, the generic source, REQUIRES state 'known'; the four registry-pinned owner sources may carry state 'unknown' because validation checks their declared owner_store and clock class against the registry pins, which the generic source has none of. Stated precisely (Sol REQUEST_CHANGES 2026-08-26 item A, applied to this sibling claim too): those pins constrain what a caller may DECLARE, they do not prove the referenced object exists — no source on this wire is verified by reading the owner's bytes, because this contract holds no owner I/O.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "sha256"],
+              "properties": {
+                "state": {"const": "known"},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "sha256"],
+              "properties": {
+                "state": {"const": "unknown"},
+                "sha256": {"type": "null"}
+              }
+            }
+          ]
+        },
+        "recorded_clock": {"$ref": "#/$defs/t0RecordedClock"}
+      }
+    },
+    "t0RecordedClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "grain", "clock_class", "native_field", "state"],
+      "description": "When the referenced PIT object was minted — this contract's clockValue shape with state pinned 'known' (an unverifiable minting clock fails closed at the schema, before K3E_R021 runs) and clock_class narrowed to the three K1 minting classes.",
+      "properties": {
+        "value": {
+          "oneOf": [{"$ref": "#/$defs/utcInstant"}, {"$ref": "#/$defs/isoDate"}]
+        },
+        "grain": {"enum": ["date", "datetime"]},
+        "clock_class": {"enum": ["observed", "system_recorded", "belief_or_build"]},
+        "native_field": {"type": "string", "minLength": 1},
+        "state": {"const": "known"}
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_type", "value", "identity_state", "identity_bridge"],
+      "properties": {
+        "subject_type": {
+          "enum": ["us_listing_symbol", "dataos_security_id"]
+        },
+        "value": {"type": "string", "minLength": 1},
+        "identity_state": {
+          "description": "Whether cross-owner joins in this vector are backed by a validated identity bridge. A nominal ticker-string match is NOT proof: without a validated bridge the state is unproven and every cross-owner join slot must be identity_unresolved.",
+          "enum": ["single_owner_native", "bridge_validated", "unproven"]
+        },
+        "identity_bridge": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["method", "receipt"],
+              "properties": {
+                "method": {
+                  "description": "Only owner-approved bridges. The dated symbol-directory + cik_map route is forbidden by K1 and stays forbidden here.",
+                  "enum": [
+                    "earnings_company_identity_v1_pit_alias",
+                    "dataos_security_master",
+                    "owner_native_same_key"
+                  ]
+                },
+                "receipt": {"type": "string", "minLength": 1}
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"identity_state": {"const": "bridge_validated"}}},
+          "then": {"properties": {"identity_bridge": {"type": "object"}}}
+        },
+        {
+          "if": {"properties": {"identity_state": {"enum": ["single_owner_native", "unproven"]}}},
+          "then": {"properties": {"identity_bridge": {"type": "null"}}}
+        }
+      ]
+    },
+    "authorityEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "can_rank",
+        "can_gate",
+        "can_size",
+        "can_originate",
+        "can_open_entry"
+      ],
+      "properties": {
+        "can_rank": {"const": false},
+        "can_gate": {"const": false},
+        "can_size": {"const": false},
+        "can_originate": {"const": false},
+        "can_open_entry": {"const": false}
+      },
+      "description": "The exact K1 all-false authority envelope. ENTRY_OPEN remains false: entry availability below is a READ of owner state, never an authority of this object."
+    },
+    "familyBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "family_id", "routed_to"],
+      "properties": {
+        "kind": {
+          "enum": ["governed_family", "research_only", "candidate_new_family"]
+        },
+        "family_id": {
+          "type": ["string", "null"],
+          "description": "Registry-validated governed fusion-family id when kind=governed_family; null otherwise. One column binds to at most ONE governed family (registry-enforced)."
+        },
+        "routed_to": {
+          "oneOf": [
+            {"type": "null"},
+            {"const": "k5_eval_os_gauntlet"}
+          ],
+          "description": "candidate_new_family slots route to K5 / Eval OS and gain no authority here."
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "governed_family"}}},
+          "then": {
+            "properties": {
+              "family_id": {"type": "string"},
+              "routed_to": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "research_only"}}},
+          "then": {
+            "properties": {
+              "family_id": {"type": "null"},
+              "routed_to": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "candidate_new_family"}}},
+          "then": {
+            "properties": {
+              "family_id": {"type": "null"},
+              "routed_to": {"const": "k5_eval_os_gauntlet"}
+            }
+          }
+        }
+      ]
+    },
+    "ownerRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "artifact", "reader", "evidence_ref_id"],
+      "properties": {
+        "owner": {"type": "string", "minLength": 1},
+        "artifact": {"type": "string", "minLength": 1},
+        "reader": {"type": "string", "minLength": 1},
+        "evidence_ref_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^efr_[0-9a-f]{64}$"}
+          ],
+          "description": "Optional K1 EvidenceRef content id when the owner is a K1-registered owner. Owners outside the K1 vocabulary carry a plain owner/artifact/reader pointer using the same clock-class vocabulary."
+        }
+      }
+    },
+    "variationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "window_days", "observations", "distinct_values"],
+      "properties": {
+        "field": {"type": "string", "minLength": 1},
+        "window_days": {"type": "integer", "minimum": 1},
+        "observations": {"type": "integer", "minimum": 0},
+        "distinct_values": {"type": "integer", "minimum": 0}
+      },
+      "description": "Observed-variation receipt for flow-state constructs: state derives from observed variation in the artifact, defaulting stale, never from the field's nominal meaning (C0 §4.1 ruling 5)."
+    },
+    "missingness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason", "zero_substituted"],
+      "properties": {
+        "state": {"enum": ["present", "absent"]},
+        "reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "explicit_none",
+            "not_applicable",
+            "not_available_for_date",
+            "source_missing",
+            "rights_blocked",
+            "unresolved_identity",
+            "stale",
+            "unsupported",
+            "reconstructed_not_operational_pit",
+            "quarantined",
+            "unknown"
+          ],
+          "description": "The exact K1 reference.v1 missingness reason enum, unchanged."
+        },
+        "zero_substituted": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "present"}}},
+          "then": {"properties": {"reason": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"state": {"const": "absent"}}},
+          "then": {"properties": {"reason": {"type": "string"}}}
+        }
+      ]
+    },
+    "coverageFlag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "note"],
+      "properties": {
+        "state": {
+          "enum": ["full", "partial", "fallback", "unknown", "not_applicable"]
+        },
+        "note": {
+          "type": ["string", "null"],
+          "maxLength": 240,
+          "description": "Display-only prose. No consumer may parse values, scores, ranks, sizes, or entry directives out of any free-text field on this wire."
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "construct",
+        "family_binding",
+        "object_class",
+        "state",
+        "value_or_null",
+        "asof",
+        "known_at",
+        "coverage_flag",
+        "owner_ref",
+        "derivation",
+        "provenance_class",
+        "missingness",
+        "basis",
+        "variation_receipt",
+        "included_in_composition",
+        "exclusion_reason"
+      ],
+      "properties": {
+        "construct": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Registry key. Every construct must exist in slot_registry.v1.json; the registry pins its owner, clocks, family binding, and derivation law."
+        },
+        "family_binding": {"$ref": "#/$defs/familyBinding"},
+        "object_class": {
+          "description": "K1 object classes, unchanged. An instrument_state is never a market verdict; a forward_claim can never appear as observed fact.",
+          "enum": [
+            "world_observation",
+            "derived_view",
+            "system_belief",
+            "forward_claim",
+            "instrument_state"
+          ]
+        },
+        "state": {
+          "description": "Typed availability state. None of these ever becomes zero or neutral. 'modeled' is distinct from 'observed' (e.g. dealer gamma).",
+          "enum": [
+            "observed",
+            "modeled",
+            "missing",
+            "stale",
+            "rights_blocked",
+            "conflicted",
+            "unsupported",
+            "identity_unresolved",
+            "unknown"
+          ]
+        },
+        "value_or_null": {
+          "description": "Owner-read value. MUST be null whenever state is not observed/modeled. Numeric zero is a value, never a stand-in for absence. The value surface is TYPED and flat: a scalar, or a one-level object of scalar leaves with lower_snake keys — no nested objects, no arrays, so no score/weight/rank/directive structure can ride inside a value. The semantic validator additionally fences forbidden payload keys (score/weight/rank/buy/size/composite/entry etc.) and requires plain numbers for dislocation-decomposition terms.",
+          "oneOf": [
+            {"type": "null"},
+            {"type": "number"},
+            {"type": "boolean"},
+            {"type": "string", "maxLength": 160},
+            {
+              "type": "object",
+              "minProperties": 1,
+              "maxProperties": 16,
+              "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,63}$"},
+              "additionalProperties": {
+                "oneOf": [
+                  {"type": "number"},
+                  {"type": "boolean"},
+                  {"type": "null"},
+                  {"type": "string", "maxLength": 160}
+                ]
+              }
+            }
+          ]
+        },
+        "asof": {"$ref": "#/$defs/clockValue"},
+        "known_at": {"$ref": "#/$defs/clockValue"},
+        "coverage_flag": {"$ref": "#/$defs/coverageFlag"},
+        "owner_ref": {"$ref": "#/$defs/ownerRef"},
+        "derivation": {
+          "enum": ["owner_read", "deterministic_join"],
+          "description": "owner_read: the value is the owner's own output, unrecomputed. deterministic_join: a frozen-rule selection/routing over owner outputs. There is no local-derivation value: re-deriving an owner's statistic (e.g. a residual) inside this view is forbidden."
+        },
+        "provenance_class": {
+          "enum": ["owner_artifact", "owner_model", "deterministic_rule", "human"],
+          "description": "No LLM class exists: no LLM may originate facts, ranks, scores, probabilities, gates, or the opportunity itself."
+        },
+        "missingness": {"$ref": "#/$defs/missingness"},
+        "basis": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["peer_basis"],
+              "properties": {
+                "peer_basis": {"enum": ["sector", "market", "theme", "mixed"]}
+              }
+            }
+          ],
+          "description": "Required non-null for residual/decomposition constructs (registry-pinned): peer_basis=market is disclosed, never passed off as sector-idiosyncratic."
+        },
+        "variation_receipt": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/variationReceipt"}]
+        },
+        "included_in_composition": {"type": "boolean"},
+        "exclusion_reason": {
+          "type": ["string", "null"],
+          "maxLength": 160,
+          "description": "Why this slot is excluded from composition (e.g. lookahead_known_at_after_asof, identity_unresolved). Required non-null when included_in_composition is false."
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"enum": ["observed", "modeled"]}}},
+          "then": {
+            "properties": {
+              "missingness": {
+                "properties": {"state": {"const": "present"}}
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value_or_null": {"type": "null"},
+              "missingness": {
+                "properties": {"state": {"const": "absent"}}
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"included_in_composition": {"const": false}}},
+          "then": {"properties": {"exclusion_reason": {"type": "string"}}},
+          "else": {"properties": {"exclusion_reason": {"type": "null"}}}
+        }
+      ]
+    },
+    "slotRefList": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "Construct keys of member slots. Every entry must name a slot present in `slots`."
+    },
+    "legDenominator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "included", "excluded"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "included": {"type": "integer", "minimum": 0},
+        "excluded": {"type": "integer", "minimum": 0}
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed",
+        "inferred",
+        "market_reflection",
+        "strongest_unresolved_fact",
+        "failed_or_unavailable_gates",
+        "next_observable",
+        "entry_availability"
+      ],
+      "description": "The seven authenticated-MO projection legs. Each is independently materialized and independently visible; no leg may be derivable only by unpacking another, and no composite may hide them.",
+      "properties": {
+        "observed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["slot_refs", "denominator"],
+          "properties": {
+            "slot_refs": {"$ref": "#/$defs/slotRefList"},
+            "denominator": {"$ref": "#/$defs/legDenominator"}
+          }
+        },
+        "inferred": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["slot_refs", "denominator", "label"],
+          "properties": {
+            "slot_refs": {"$ref": "#/$defs/slotRefList"},
+            "denominator": {"$ref": "#/$defs/legDenominator"},
+            "label": {
+              "const": "owner_derived_system_belief",
+              "description": "Owner-native statistical/model results stay labeled owner-derived / system-belief."
+            }
+          }
+        },
+        "market_reflection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["incorporation_legs", "denominator"],
+          "properties": {
+            "incorporation_legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["leg", "state", "slot_refs"],
+                "properties": {
+                  "leg": {
+                    "enum": ["I1_anticipation", "I2_immediate_response", "I3_estimate_revision", "I4_options_repricing", "I5_attention", "I6_peer_response", "I7_persistence_rejection"]
+                  },
+                  "state": {
+                    "enum": ["observed", "modeled", "partial", "missing", "stale", "rights_blocked", "conflicted", "identity_unresolved", "unknown", "ex_post_excluded"],
+                    "description": "A leg fed only by modeled slots (e.g. dealer gamma) is 'modeled', never 'observed' — the distinction survives projection."
+                  },
+                  "slot_refs": {"$ref": "#/$defs/slotRefList"}
+                }
+              }
+            },
+            "denominator": {
+              "$ref": "#/$defs/legDenominator",
+              "description": "FROZEN inclusion semantics, recomputed by public validation (K3E_R015): total = incorporation legs on the wire; included = legs whose state is observed, modeled, or partial — modeled market-reflection evidence is included evidence, typed as modeled, never silently counted excluded merely because it is not observed; excluded = missing/stale/rights_blocked/conflicted/identity_unresolved/unknown/ex_post_excluded legs. A tampered count cannot survive validation."
+            }
+          }
+        },
+        "strongest_unresolved_fact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "fact", "slot_refs"],
+          "properties": {
+            "state": {"enum": ["named", "none_open", "unknown"]},
+            "fact": {"type": ["string", "null"], "maxLength": 320},
+            "slot_refs": {"$ref": "#/$defs/slotRefList"}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"state": {"const": "named"}}},
+              "then": {
+                "properties": {
+                  "fact": {"type": "string", "minLength": 1},
+                  "slot_refs": {"minItems": 1}
+                }
+              },
+              "else": {"properties": {"fact": {"type": "null"}}}
+            }
+          ]
+        },
+        "failed_or_unavailable_gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gates", "denominator"],
+          "properties": {
+            "gates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["gate", "owner", "state", "reason"],
+                "properties": {
+                  "gate": {"type": "string", "minLength": 1, "maxLength": 120},
+                  "owner": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "The canonical gate OWNER being read. Never this library or any composed rule: a gate this vector computed itself is the named authority leak and fails semantic validation."
+                  },
+                  "state": {"enum": ["failed", "unavailable", "not_evaluated"]},
+                  "reason": {"type": ["string", "null"], "maxLength": 240}
+                }
+              }
+            },
+            "denominator": {
+              "$ref": "#/$defs/legDenominator",
+              "description": "FROZEN inclusion semantics, recomputed by public validation (K3E_R015): total = gate entries on the wire; included = gates whose state is failed or unavailable (evaluated adverse owner verdicts — this leg's evidence); excluded = not_evaluated entries. A tampered count cannot survive validation."
+            }
+          }
+        },
+        "next_observable": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "observable", "expected_clock_class", "expected_by"],
+          "properties": {
+            "state": {"enum": ["named", "none", "unknown"]},
+            "observable": {"type": ["string", "null"]},
+            "expected_clock_class": {
+              "oneOf": [
+                {"type": "null"},
+                {"enum": ["world_valid", "source_published", "knowable", "observed", "system_recorded", "belief_or_build", "review_due"]}
+              ]
+            },
+            "expected_by": {
+              "oneOf": [{"type": "null"}, {"$ref": "#/$defs/isoDate"}]
+            }
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"state": {"const": "named"}}},
+              "then": {"properties": {"observable": {"type": "string", "minLength": 1}}},
+              "else": {"properties": {"observable": {"type": "null"}}}
+            }
+          ]
+        },
+        "entry_availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entry_signal", "radar_probe_coverage", "composition_law"],
+          "description": "A READ of the canonical entry owners' current state. This vector never computes, opens, gates, or times an entry; owner state is projected verbatim with its own clocks. 'read' is lawful ONLY over a referenced owner slot whose state is observed; a missing/stale/unknown owner slot forces the matching leg state (semantic K3E_R011). OWNERSHIP LAW (Sol REQUEST_CHANGES 2026-08-25 item 3): the canonical live actionability surface is engine.entry_signal (assess) projected as prophet.board_read/v1 entry_signal.status — Prophet board ADMISSION state (lane / buyable / eligible) is admission/context and may never satisfy this leg; when the actionability surface is unavailable the leg remains explicitly missing/stale/unknown, never inferred from admission.",
+          "properties": {
+            "entry_signal": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "slot_refs", "verdict_class"],
+              "properties": {
+                "state": {"enum": ["read", "missing", "stale", "unknown"]},
+                "slot_refs": {"$ref": "#/$defs/slotRefList"},
+                "verdict_class": {
+                  "const": "owner_entry_actionability",
+                  "description": "This leg reads ONLY the owner entry/actionability axis (registry entry_role 'actionability': engine.entry_signal.assess -> prophet.board_read/v1 entry_signal.status). A ref to an admission/context construct is K3E_R011."
+                }
+              }
+            },
+            "radar_probe_coverage": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "slot_refs", "verdict_class"],
+              "properties": {
+                "state": {"enum": ["read", "missing", "stale", "unknown"]},
+                "slot_refs": {"$ref": "#/$defs/slotRefList"},
+                "verdict_class": {
+                  "const": "probe_coverage_state_not_trade_entry",
+                  "description": "Radar probe availability is a probe/coverage state (registry entry_role 'probe_coverage'), NEVER a trade-entry verdict. It answers 'is Radar watching this name', not 'is an entry open'."
+                }
+              }
+            },
+            "composition_law": {
+              "const": "owner_read_only_never_computed",
+              "description": "Entry availability is only ever an owner read. A value derived from other vector slots is the named Prophet/Radar authority leak and fails validation."
+            }
+          }
+        }
+      }
+    },
+    "economicCauseHypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hypothesis", "provenance_class", "supporting_slot_refs", "set_because"],
+      "properties": {
+        "hypothesis": {
+          "enum": [
+            "sector_or_factor_washout",
+            "company_impairment",
+            "liquidity_airpocket",
+            "positioning_unwind",
+            "unknown"
+          ]
+        },
+        "provenance_class": {
+          "enum": ["owner_artifact", "deterministic_rule", "human"],
+          "description": "No LLM class. And no residual-magnitude class: a hypothesis can never be set from epsilon."
+        },
+        "supporting_slot_refs": {"$ref": "#/$defs/slotRefList"},
+        "set_because": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400,
+          "description": "Display-only prose. No consumer may parse values, scores, ranks, sizes, or entry directives out of any free-text field on this wire."
+        }
+      }
+    },
+    "denominatorReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "included",
+        "excluded",
+        "missing",
+        "stale",
+        "rights_blocked",
+        "conflicted",
+        "unsupported",
+        "identity_unresolved",
+        "unknown"
+      ],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "included": {"type": "integer", "minimum": 0},
+        "excluded": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0},
+        "stale": {"type": "integer", "minimum": 0},
+        "rights_blocked": {"type": "integer", "minimum": 0},
+        "conflicted": {"type": "integer", "minimum": 0},
+        "unsupported": {"type": "integer", "minimum": 0},
+        "identity_unresolved": {"type": "integer", "minimum": 0},
+        "unknown": {"type": "integer", "minimum": 0}
+      },
+      "description": "Every aggregate prints its denominator. Counts are the ONLY lawful aggregate arithmetic in this contract: no weighted value, sum of slot values, or cross-family numeric combination exists anywhere on this wire."
+    }
+  }
+}

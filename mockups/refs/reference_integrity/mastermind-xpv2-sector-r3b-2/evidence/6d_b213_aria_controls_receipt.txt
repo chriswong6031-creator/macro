@@ -1,0 +1,15 @@
+# XPV2-SC-R3B.2 — B2-13 aria-controls receipt (aria_receipt_audit.json)
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+lang=en: total [aria-expanded] census=13, shared-panel census=4 (expected 4), #r3-receipt panel count=1
+  marker=data-r3b1="02" class='r3-rcpt r3-rcpt--named' aria-controls='r3-receipt'
+  marker=data-r3b1="08" class='r3-tr-help' aria-controls='r3-receipt'
+  marker=data-r3b1="08" class='r3-tr-help' aria-controls='r3-receipt'
+  marker=data-r3b1="08" class='r3-tr-help r3-tr-help--named' aria-controls='r3-receipt'
+lang=zh: total [aria-expanded] census=13, shared-panel census=4 (expected 4), #r3-receipt panel count=1
+  marker=data-r3b1="02" class='r3-rcpt r3-rcpt--named' aria-controls='r3-receipt'
+  marker=data-r3b1="08" class='r3-tr-help' aria-controls='r3-receipt'
+  marker=data-r3b1="08" class='r3-tr-help' aria-controls='r3-receipt'
+  marker=data-r3b1="08" class='r3-tr-help r3-tr-help--named' aria-controls='r3-receipt'
+
+pass: True

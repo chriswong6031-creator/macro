@@ -1,0 +1,85 @@
+{
+ "articles": [
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/korea-aim-9x-sidewinder-block-ii-missiles/",
+   "http_status": 200,
+   "local_path": "state-korea-aim-9x-sidewinder-block-ii-missiles.html",
+   "sha256": "9c7acd45e82526aeb0eb99fe19a386c66c5132c7d8722487040d18ddf8d4a282",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/korea-aim-9x-sidewinder-block-ii-missiles/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/norway-uh-60m-black-hawk-helicopters/",
+   "http_status": 200,
+   "local_path": "state-norway-uh-60m-black-hawk-helicopters.html",
+   "sha256": "d6bd83ba12d23b9dd92bd301db6976455ae9840e8f697314aa46fff11099997a",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/norway-uh-60m-black-hawk-helicopters/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/italy-guidance-section-single-variant-air-to-air-advanced-precision-kill-weapon-system-ii/",
+   "http_status": 200,
+   "local_path": "state-italy-guidance-section-single-variant-air-to-air-advanced-precision-kill-weapon-.html",
+   "sha256": "6dee117e83cc398af5ccee2db9e537a488262038afb624ab12ba73a61d0b4c04",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/italy-guidance-section-single-variant-air-to-air-advanced-precision-kill-weapon-system-ii/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/qatar-kc-46a-aerial-refueling-aircraft/",
+   "http_status": 200,
+   "local_path": "state-qatar-kc-46a-aerial-refueling-aircraft.html",
+   "sha256": "f8cb6b226d5030658b912872244dbcb45cba1c72d099f263ff55e1816c52445c",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/qatar-kc-46a-aerial-refueling-aircraft/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/norway-155mm-high-explosive-he-m795-projectile/",
+   "http_status": 200,
+   "local_path": "state-norway-155mm-high-explosive-he-m795-projectile.html",
+   "sha256": "e546eb90ae5716f48808bd951c1c3781d8973d2404c808b13bc27003239e96b1",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/08/norway-155mm-high-explosive-he-m795-projectile/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/07/greece-switchblade-300-block-20-lethal-miniature-aerial-missile-system/",
+   "http_status": 200,
+   "local_path": "state-greece-switchblade-300-block-20-lethal-miniature-aerial-missile-system.html",
+   "sha256": "fcc69e0bf0f6e7bf98336e416456376b24866129a1c44d48ed1d8d995ce9cb43",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/07/greece-switchblade-300-block-20-lethal-miniature-aerial-missile-system/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/07/kuwait-c-17-sustainment/",
+   "http_status": 200,
+   "local_path": "state-kuwait-c-17-sustainment.html",
+   "sha256": "4d8fb12fc04c3d9863b12e64fb35871c3ff89bbdcf36acd14b071a502ecef4ff",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/07/kuwait-c-17-sustainment/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/07/kingdom-of-saudi-arabia-advanced-precision-kill-weapon-systems/",
+   "http_status": 200,
+   "local_path": "state-kingdom-of-saudi-arabia-advanced-precision-kill-weapon-systems.html",
+   "sha256": "b67e69db3aa0ad33175ba43af9539ff656b6e5c4aa9212cbb5a300cf305d8bad",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/07/kingdom-of-saudi-arabia-advanced-precision-kill-weapon-systems/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/06/singapore-hellfire-missiles/",
+   "http_status": 200,
+   "local_path": "state-singapore-hellfire-missiles.html",
+   "sha256": "e5ff0f3e6b8ae3bfa9dee0cad98009cb44f6558df86d587f0763ae4aaa483030",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/06/singapore-hellfire-missiles/"
+  },
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/06/australia-f-a-18f-ea-18g-growler-aircraft-training/",
+   "http_status": 200,
+   "local_path": "state-australia-f-a-18f-ea-18g-growler-aircraft-training.html",
+   "sha256": "e5b4fef69384255b6d1fb9c4272e43a80f6aa6cfe53d3b8c8b2a5f2567f8a28b",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/06/australia-f-a-18f-ea-18g-growler-aircraft-training/"
+  }
+ ],
+ "captured_at": "2026-08-26T09:55:35.309464+00:00",
+ "kind": "fms_state_staged_v1",
+ "listing": {
+  "final_url": "https://www.state.gov/arms-sales-congressional-notifications",
+  "http_status": 200,
+  "local_path": "state-listing.html",
+  "sha256": "dcbebc9c8d91895f0c2174afa219ad195b54f97e806acde4399fbfcbdfb90391",
+  "url": "https://www.state.gov/arms-sales-congressional-notifications"
+ },
+ "transport": "cli_residential",
+ "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0 Safari/537.36"
+}

@@ -1,0 +1,45 @@
+{
+  "expected": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "legacy_v0",
+      "source_revision": null
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 1,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "paneTfs": [
+            "1D"
+          ],
+          "panes": [
+            "AAPL"
+          ],
+          "sync": true
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      }
+    ]
+  },
+  "input": {
+    "active": "AAPL",
+    "tf": "1D"
+  }
+}

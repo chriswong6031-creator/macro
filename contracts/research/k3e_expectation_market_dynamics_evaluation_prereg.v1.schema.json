@@ -1,0 +1,943 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/k3e_expectation_market_dynamics_evaluation_prereg.v1.schema.json",
+  "title": "K3E Expectation Market Dynamics evaluation preregistration v1",
+  "description": "Immutable, result-free registration of the target, clock, split, baseline, search-budget, dependence, abstention, and decision laws for K3E expectation-dynamics evaluation. This is a research contract inside the existing Evaluation OS boundary, not an evaluator, result store, score, ranker, or authority grant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "registration_id",
+    "program",
+    "status",
+    "authored_on",
+    "canonicalization",
+    "activation",
+    "authority",
+    "owners",
+    "population",
+    "time_law",
+    "eras",
+    "episode_law",
+    "targets",
+    "baselines",
+    "challenger_budget",
+    "metrics",
+    "multiple_testing",
+    "coverage_gate",
+    "decision_law",
+    "null_and_adverse_law",
+    "amendment_law"
+  ],
+  "properties": {
+    "schema": {
+      "const": "k3e.expectation_market_dynamics.evaluation_prereg/v1"
+    },
+    "registration_id": {
+      "const": "K3E-EVAL-0-V1"
+    },
+    "program": {
+      "const": "K3E_EXPECTATION_MARKET_DYNAMICS"
+    },
+    "status": {
+      "const": "FROZEN_BEFORE_ADVANCED_TUNING"
+    },
+    "authored_on": {
+      "const": "2026-08-23"
+    },
+    "canonicalization": {
+      "const": "json_utf8_sort_keys_compact_no_ascii_escape/v1"
+    },
+    "activation": {
+      "$ref": "#/$defs/activation"
+    },
+    "authority": {
+      "$ref": "#/$defs/authority"
+    },
+    "owners": {
+      "$ref": "#/$defs/owners"
+    },
+    "population": {
+      "$ref": "#/$defs/population"
+    },
+    "time_law": {
+      "$ref": "#/$defs/timeLaw"
+    },
+    "eras": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/era"},
+            {"properties": {"id": {"const": "DEVELOPMENT"}, "start": {"const": "2012-01-03"}, "end": {"const": "2018-12-31"}, "outcome_access": {"const": "tuning_allowed_within_budget"}, "promotion_eligible": {"const": false}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/era"},
+            {"properties": {"id": {"const": "VALIDATION"}, "start": {"const": "2019-01-02"}, "end": {"const": "2022-12-30"}, "outcome_access": {"const": "model_selection_only"}, "promotion_eligible": {"const": false}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/era"},
+            {"properties": {"id": {"const": "LOCKED_RETROSPECTIVE_HOLDOUT"}, "start": {"const": "2023-01-03"}, "end": {"const": "2026-08-21"}, "outcome_access": {"const": "locked_until_single_final_evaluation"}, "promotion_eligible": {"const": true}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/era"},
+            {"properties": {"id": {"const": "PROSPECTIVE_SHADOW"}, "start": {"const": null}, "end": {"const": null}, "outcome_access": {"const": "append_only_shadow_no_tuning"}, "promotion_eligible": {"const": false}}}
+          ]
+        }
+      ],
+      "items": false
+    },
+    "episode_law": {
+      "$ref": "#/$defs/episodeLaw"
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T1_NEXT_REVISION_DIRECTION"}, "family": {"const": "expectation"}, "horizons_sessions": {"const": [1, 5, 21, 63]}, "promotion_eligible": {"const": true}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T2_NEXT_REVISION_ARRIVAL"}, "family": {"const": "expectation"}, "horizons_sessions": {"const": [5, 21, 63]}, "promotion_eligible": {"const": true}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T3_REVISION_CLUSTER_ONSET"}, "family": {"const": "expectation"}, "horizons_sessions": {"const": [10, 21]}, "promotion_eligible": {"const": true}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T4_CONSENSUS_CHANGE"}, "family": {"const": "expectation"}, "horizons_sessions": {"const": [21, 63]}, "promotion_eligible": {"const": true}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T5_DISPERSION_DIRECTION"}, "family": {"const": "expectation"}, "horizons_sessions": {"const": [21, 63]}, "promotion_eligible": {"const": true}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T6_MARKET_RESIDUAL_RESPONSE"}, "family": {"const": "market_response"}, "horizons_sessions": {"const": [5, 21, 63]}, "promotion_eligible": {"const": false}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T7_EXPECTATION_MARKET_LEAD_LAG"}, "family": {"const": "coupling_phase"}, "horizons_sessions": {"const": [21, 63]}, "promotion_eligible": {"const": false}}}]},
+        {"allOf": [{"$ref": "#/$defs/target"}, {"properties": {"id": {"const": "T8_NEXT_PHASE_TRANSITION"}, "family": {"const": "coupling_phase"}, "horizons_sessions": {"const": [21, 63]}, "promotion_eligible": {"const": false}}}]}
+      ],
+      "items": false
+    },
+    "baselines": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B0_NO_CHANGE"}, "fitted_on": {"const": "development_only"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B1_LATEST_ELIGIBLE_CONSENSUS"}, "fitted_on": {"const": "none"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B2_REVISION_30D"}, "fitted_on": {"const": "none"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B3_REVISION_90D"}, "fitted_on": {"const": "none"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B4_FRESH_MEDIAN"}, "fitted_on": {"const": "none"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B5_DETERMINISTIC_WAVE"}, "fitted_on": {"const": "none"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B6_HISTORICAL_BASE_RATE"}, "fitted_on": {"const": "development_only"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B7_MARKET_SECTOR_ONLY"}, "fitted_on": {"const": "development_only"}}}]},
+        {"allOf": [{"$ref": "#/$defs/baseline"}, {"properties": {"id": {"const": "B8_REVISIONS_ONLY"}, "fitted_on": {"const": "development_only"}}}]}
+      ],
+      "items": false
+    },
+    "challenger_budget": {
+      "$ref": "#/$defs/challengerBudget"
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "multiple_testing": {
+      "$ref": "#/$defs/multipleTesting"
+    },
+    "coverage_gate": {
+      "$ref": "#/$defs/coverageGate"
+    },
+    "decision_law": {
+      "$ref": "#/$defs/decisionLaw"
+    },
+    "null_and_adverse_law": {
+      "$ref": "#/$defs/nullLaw"
+    },
+    "amendment_law": {
+      "$ref": "#/$defs/amendmentLaw"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stringList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "freeze_boundary_rule",
+        "origin_main_required",
+        "activation_receipt_required",
+        "pre_activation_rows",
+        "advanced_challenger_outcomes_inspected_before_freeze",
+        "results_in_this_registration"
+      ],
+      "properties": {
+        "freeze_boundary_rule": {
+          "const": "first_nyse_session_open_strictly_after_origin_main_commit_containing_exact_registration_digest/v1"
+        },
+        "origin_main_required": {
+          "const": true
+        },
+        "activation_receipt_required": {
+          "const": true
+        },
+        "pre_activation_rows": {
+          "const": "retrospective_research_only_never_prospective_evidence"
+        },
+        "advanced_challenger_outcomes_inspected_before_freeze": {
+          "const": false
+        },
+        "results_in_this_registration": {
+          "const": false
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "descriptive_context_only",
+        "may_claim_fair_value",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_trade",
+        "may_influence_prophet",
+        "may_publish_product_state",
+        "may_create_lifecycle",
+        "may_grant_production_authority"
+      ],
+      "properties": {
+        "descriptive_context_only": {
+          "const": true
+        },
+        "may_claim_fair_value": {
+          "const": false
+        },
+        "may_rank": {
+          "const": false
+        },
+        "may_gate": {
+          "const": false
+        },
+        "may_size": {
+          "const": false
+        },
+        "may_trade": {
+          "const": false
+        },
+        "may_influence_prophet": {
+          "const": false
+        },
+        "may_publish_product_state": {
+          "const": false
+        },
+        "may_create_lifecycle": {
+          "const": false
+        },
+        "may_grant_production_authority": {
+          "const": false
+        }
+      }
+    },
+    "owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantic_program",
+        "evaluation_law",
+        "common_expectation_federation",
+        "family_incorporation_science",
+        "binding_decisions",
+        "reused_planes",
+        "forbidden_duplicates"
+      ],
+      "properties": {
+        "semantic_program": {
+          "const": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+        },
+        "evaluation_law": {
+          "const": "WS:EVAL-OS-MEASUREMENT-LAW"
+        },
+        "common_expectation_federation": {
+          "const": "MAS-119"
+        },
+        "family_incorporation_science": {
+          "const": "MAS-118"
+        },
+        "binding_decisions": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "DEC:K3E-EXPECTATION-MARKET-DYNAMICS-FREEZE",
+              "DEC:MARKET-BELIEF-IS-COMPOSITION-NOT-TRUTH-STORE"
+            ]
+          }
+        },
+        "reused_planes": {
+          "$ref": "#/$defs/stringList"
+        },
+        "forbidden_duplicates": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "expectation_truth_store",
+              "identity_plane",
+              "event_system",
+              "residual_engine",
+              "ranker",
+              "evaluation_plane",
+              "lifecycle",
+              "publication_plane"
+            ]
+          }
+        }
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_cohort",
+        "identity_rule",
+        "membership_rule",
+        "security_types",
+        "excluded_security_types",
+        "delistings_policy",
+        "adr_policy",
+        "region_policy",
+        "coverage_floor_policy",
+        "rights_policy"
+      ],
+      "properties": {
+        "primary_cohort": {
+          "const": "US_PRIMARY_LISTED_COMMON_EQUITY"
+        },
+        "identity_rule": {
+          "const": "canonical_owner_issuer_security_mapping_at_decision_cutoff_no_ticker_guess"
+        },
+        "membership_rule": {
+          "const": "point_in_time_membership_at_decision_cutoff_not_current_survivor_list"
+        },
+        "security_types": {
+          "type": "array",
+          "const": [
+            "common_stock"
+          ]
+        },
+        "excluded_security_types": {
+          "type": "array",
+          "const": [
+            "etf",
+            "etn",
+            "cef",
+            "fund",
+            "preferred",
+            "warrant",
+            "unit",
+            "shell_without_operating_issuer_mapping"
+          ]
+        },
+        "delistings_policy": {
+          "const": "retain_if_lawfully_observable_and_report_missing_delisted_count"
+        },
+        "adr_policy": {
+          "const": "separate_declared_subgroup_never_silently_pool_with_domestic_common"
+        },
+        "region_policy": {
+          "const": "non_us_is_separate_descriptive_subgroup_until_own_preregistered_episode_floor"
+        },
+        "coverage_floor_policy": {
+          "const": "no_imputation_into_eligibility_denominator_and_no_drop_without_reason"
+        },
+        "rights_policy": {
+          "const": "unlicensed_or_nonreproducible_rows_are_ineligible_and_counted_rights_blocked"
+        }
+      }
+    },
+    "timeLaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_cutoff",
+        "feature_eligibility",
+        "distinct_source_clocks",
+        "fiscal_clock",
+        "market_clock",
+        "label_start",
+        "purge_sessions",
+        "embargo_sessions",
+        "overlap_policy",
+        "correction_policy",
+        "late_arrival_policy"
+      ],
+      "properties": {
+        "decision_cutoff": {
+          "const": "nyse_session_close_t_on_or_after_all_input_system_observed_at"
+        },
+        "feature_eligibility": {
+          "const": "max(owner_available_at,system_observed_at)<=decision_cutoff"
+        },
+        "distinct_source_clocks": {
+          "type": "array",
+          "const": [
+            "source_effective_at",
+            "source_published_at",
+            "provider_observed_at",
+            "system_observed_at"
+          ]
+        },
+        "fiscal_clock": {
+          "const": "fiscal_period_identity_separate_from_market_session_and_rollover_is_lineage_not_revision"
+        },
+        "market_clock": {
+          "const": "owner_native_exchange_session_calendar"
+        },
+        "label_start": {
+          "const": "strictly_after_decision_cutoff"
+        },
+        "purge_sessions": {
+          "const": 63
+        },
+        "embargo_sessions": {
+          "const": 63
+        },
+        "overlap_policy": {
+          "const": "cluster_overlapping_labels_by_issuer_episode_and_never_count_rows_as_independent"
+        },
+        "correction_policy": {
+          "const": "use_only_correction_versions_known_by_cutoff_preserve_superseded_as_known_bytes"
+        },
+        "late_arrival_policy": {
+          "const": "available_only_after_system_observed_at_never_backfilled_to_source_effective_at"
+        }
+      }
+    },
+    "era": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "start",
+        "end",
+        "purpose",
+        "outcome_access",
+        "promotion_eligible"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "DEVELOPMENT",
+            "VALIDATION",
+            "LOCKED_RETROSPECTIVE_HOLDOUT",
+            "PROSPECTIVE_SHADOW"
+          ]
+        },
+        "start": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "purpose": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "outcome_access": {
+          "enum": [
+            "tuning_allowed_within_budget",
+            "model_selection_only",
+            "locked_until_single_final_evaluation",
+            "append_only_shadow_no_tuning"
+          ]
+        },
+        "promotion_eligible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "episodeLaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "episode_identity",
+        "quiet_gap_sessions",
+        "fiscal_roll_policy",
+        "event_overlap_policy",
+        "effective_n",
+        "cluster_keys",
+        "minimum_overall_episodes",
+        "minimum_subgroup_episodes",
+        "raw_row_count_may_substitute"
+      ],
+      "properties": {
+        "episode_identity": {
+          "const": "sha256(issuer_ref,metric,horizon_or_fiscal_period,episode_start_nyse_session)"
+        },
+        "quiet_gap_sessions": {
+          "const": 20
+        },
+        "fiscal_roll_policy": {
+          "const": "new_period_identity_without_nonzero_same_period_change_does_not_start_revision_episode"
+        },
+        "event_overlap_policy": {
+          "const": "overlapping_owner_native_events_for_one_issuer_collapse_to_one_event_cluster_for_inference"
+        },
+        "effective_n": {
+          "const": "distinct_issuer_episodes_after_overlap_clustering"
+        },
+        "cluster_keys": {
+          "type": "array",
+          "const": [
+            "issuer_ref",
+            "episode_id",
+            "event_cluster_id"
+          ]
+        },
+        "minimum_overall_episodes": {
+          "const": 100
+        },
+        "minimum_subgroup_episodes": {
+          "const": 25
+        },
+        "raw_row_count_may_substitute": {
+          "const": false
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "family",
+        "eligible_grain",
+        "horizons_sessions",
+        "label",
+        "censoring",
+        "required_dependencies",
+        "promotion_eligible"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "T1_NEXT_REVISION_DIRECTION",
+            "T2_NEXT_REVISION_ARRIVAL",
+            "T3_REVISION_CLUSTER_ONSET",
+            "T4_CONSENSUS_CHANGE",
+            "T5_DISPERSION_DIRECTION",
+            "T6_MARKET_RESIDUAL_RESPONSE",
+            "T7_EXPECTATION_MARKET_LEAD_LAG",
+            "T8_NEXT_PHASE_TRANSITION"
+          ]
+        },
+        "family": {
+          "enum": [
+            "expectation",
+            "market_response",
+            "coupling_phase"
+          ]
+        },
+        "eligible_grain": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "horizons_sessions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              1,
+              5,
+              10,
+              21,
+              63
+            ]
+          }
+        },
+        "label": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "censoring": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "required_dependencies": {
+          "$ref": "#/$defs/stringList"
+        },
+        "promotion_eligible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "applies_to",
+        "definition",
+        "fitted_on",
+        "trial_budget_count"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "B0_NO_CHANGE",
+            "B1_LATEST_ELIGIBLE_CONSENSUS",
+            "B2_REVISION_30D",
+            "B3_REVISION_90D",
+            "B4_FRESH_MEDIAN",
+            "B5_DETERMINISTIC_WAVE",
+            "B6_HISTORICAL_BASE_RATE",
+            "B7_MARKET_SECTOR_ONLY",
+            "B8_REVISIONS_ONLY"
+          ]
+        },
+        "applies_to": {
+          "$ref": "#/$defs/stringList"
+        },
+        "definition": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "fitted_on": {
+          "enum": [
+            "none",
+            "development_only"
+          ]
+        },
+        "trial_budget_count": {
+          "const": 0
+        }
+      }
+    },
+    "challengerBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fdr_family",
+        "maximum_total_trials",
+        "trial_identity",
+        "failed_trials_count",
+        "manual_feature_or_threshold_change_counts",
+        "families"
+      ],
+      "properties": {
+        "fdr_family": {
+          "const": "k3e_expectation_market_dynamics_v1"
+        },
+        "maximum_total_trials": {
+          "const": 64
+        },
+        "trial_identity": {
+          "const": "model_family+target+horizon+feature_set+preprocessing+hyperparameters+seed_policy"
+        },
+        "failed_trials_count": {
+          "const": true
+        },
+        "manual_feature_or_threshold_change_counts": {
+          "const": true
+        },
+        "families": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "prefixItems": [
+            {"const": {"id": "REGULARIZED_LINEAR_OR_HAZARD", "maximum_trials": 12}},
+            {"const": {"id": "GRADIENT_BOOSTED_TREES", "maximum_trials": 16}},
+            {"const": {"id": "BAYESIAN_CHANGE_POINT", "maximum_trials": 10}},
+            {"const": {"id": "LATENT_STATE_SPACE", "maximum_trials": 10}},
+            {"const": {"id": "POINT_PROCESS_CASCADE", "maximum_trials": 8}},
+            {"const": {"id": "SEQUENCE_MODEL", "maximum_trials": 8}}
+          ],
+          "items": false
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification_primary",
+        "survival_primary",
+        "continuous_primary",
+        "calibration",
+        "abstention",
+        "uncertainty",
+        "subgroups",
+        "ranking_is_descriptive_only"
+      ],
+      "properties": {
+        "classification_primary": {
+          "const": "multiclass_log_loss_then_brier_score"
+        },
+        "survival_primary": {
+          "const": "ipcw_integrated_brier_score_with_censoring_preserved"
+        },
+        "continuous_primary": {
+          "const": "mae_and_pinball_loss_on_owner_native_scale_with_metric_currency_strata"
+        },
+        "calibration": {
+          "const": "reliability_curve_ece_calibration_intercept_and_slope"
+        },
+        "abstention": {
+          "const": "risk_coverage_curve_plus_error_and_denominator_by_abstention_reason"
+        },
+        "uncertainty": {
+          "const": "issuer_episode_cluster_bootstrap_95pct_ci_and_date_block_sensitivity"
+        },
+        "subgroups": {
+          "type": "array",
+          "const": [
+            "market_cap_band",
+            "sector",
+            "metric",
+            "horizon",
+            "coverage_band",
+            "rights_class",
+            "region",
+            "era",
+            "event_proximity",
+            "positive_negative_near_zero_eps"
+          ]
+        },
+        "ranking_is_descriptive_only": {
+          "const": true
+        }
+      }
+    },
+    "multipleTesting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "procedure",
+        "q",
+        "family_scope",
+        "primary_pvalue_unit",
+        "subgroup_policy",
+        "unregistered_comparison_policy"
+      ],
+      "properties": {
+        "procedure": {
+          "const": "benjamini_yekutieli"
+        },
+        "q": {
+          "const": 0.1
+        },
+        "family_scope": {
+          "const": "all_promotion_bearing_challenger_target_horizon_comparisons_in_K3E_EVAL_0_V1"
+        },
+        "primary_pvalue_unit": {
+          "const": "issuer_episode_clustered_loss_difference_vs_strongest_eligible_baseline"
+        },
+        "subgroup_policy": {
+          "const": "descriptive_unless_preregistered_primary_no_subgroup_rescue_of_failed_overall_result"
+        },
+        "unregistered_comparison_policy": {
+          "const": "exploratory_only_and_counts_toward_future_declared_budget_if_reused"
+        }
+      }
+    },
+    "coverageCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "expected_question",
+        "expected_result_policy"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "enum": [
+            "live_or_historical",
+            "hostile_synthetic"
+          ]
+        },
+        "expected_question": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expected_result_policy": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "coverageGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_scored_fraction_of_eligible",
+        "minimum_named_case_fraction_answered",
+        "current_regime_required",
+        "panel_missingness_required",
+        "motivating_cases",
+        "hostile_cases"
+      ],
+      "properties": {
+        "minimum_scored_fraction_of_eligible": {
+          "const": 0.6
+        },
+        "minimum_named_case_fraction_answered": {
+          "const": 0.6
+        },
+        "current_regime_required": {
+          "const": true
+        },
+        "panel_missingness_required": {
+          "const": true
+        },
+        "motivating_cases": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "AAPL_CURRENT_LIVE_EVENT_PATH"}, "kind": {"const": "live_or_historical"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "MRNA_POST_JUNE_2026_REVISION_EPISODE"}, "kind": {"const": "live_or_historical"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "NVDA_2023_PIT_NEGATIVE_CONTROL"}, "kind": {"const": "live_or_historical"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "GOOG_GOOGL_DUAL_CLASS_IDENTITY"}, "kind": {"const": "live_or_historical"}}}]}
+          ],
+          "items": false
+        },
+        "hostile_cases": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "prefixItems": [
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "THIN_COVERAGE"}, "kind": {"const": "hostile_synthetic"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "NEGATIVE_NEAR_ZERO_EPS"}, "kind": {"const": "hostile_synthetic"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "FISCAL_ROLL"}, "kind": {"const": "hostile_synthetic"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "PROVIDER_429"}, "kind": {"const": "hostile_synthetic"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "MARKET_SECTOR_BASELINE_CONFLICT"}, "kind": {"const": "hostile_synthetic"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "NO_OPTIONS_COVERAGE"}, "kind": {"const": "hostile_synthetic"}}}]},
+            {"allOf": [{"$ref": "#/$defs/coverageCase"}, {"properties": {"id": {"const": "CORRECTION_SUPERSESSION"}, "kind": {"const": "hostile_synthetic"}}}]}
+          ],
+          "items": false
+        }
+      }
+    },
+    "decisionLaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "advance_all_required",
+        "research_only_if",
+        "kill_or_revise_if",
+        "unestimable_if",
+        "prospective_authority_requirement",
+        "review_requirement"
+      ],
+      "properties": {
+        "advance_all_required": {
+          "$ref": "#/$defs/stringList"
+        },
+        "research_only_if": {
+          "$ref": "#/$defs/stringList"
+        },
+        "kill_or_revise_if": {
+          "$ref": "#/$defs/stringList"
+        },
+        "unestimable_if": {
+          "$ref": "#/$defs/stringList"
+        },
+        "prospective_authority_requirement": {
+          "const": "new_explicit_promotion_decision_after_prospective_shadow_never_from_EVAL_0"
+        },
+        "review_requirement": {
+          "const": "independent_adversarial_review_of_coverage_leakage_effective_n_denominators_and_actual_use_case"
+        }
+      }
+    },
+    "nullLaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_terminal_states",
+        "publication",
+        "missing_not_zero",
+        "rights_blocked_not_imputed",
+        "censored_not_negative",
+        "no_winner_shopping"
+      ],
+      "properties": {
+        "allowed_terminal_states": {
+          "type": "array",
+          "const": [
+            "ADVANCE_RESEARCH_ONLY",
+            "RETAIN_BASELINE",
+            "REVISE_PREREG",
+            "KILL_CONSTRUCTION",
+            "UNESTIMABLE_AS_PROGRAM",
+            "RIGHTS_BLOCKED",
+            "INSUFFICIENT_EPISODE_N"
+          ]
+        },
+        "publication": {
+          "const": "all_registered_targets_trials_abstentions_failures_nulls_and_adverse_subgroups_reported"
+        },
+        "missing_not_zero": {
+          "const": true
+        },
+        "rights_blocked_not_imputed": {
+          "const": true
+        },
+        "censored_not_negative": {
+          "const": true
+        },
+        "no_winner_shopping": {
+          "const": true
+        }
+      }
+    },
+    "amendmentLaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "immutable_registration",
+        "change_policy",
+        "outcome_seen_policy",
+        "new_forward_boundary_required",
+        "supersession_required",
+        "old_results_remain_reportable"
+      ],
+      "properties": {
+        "immutable_registration": {
+          "const": true
+        },
+        "change_policy": {
+          "const": "new_version_new_digest_explicit_reason_and_diff"
+        },
+        "outcome_seen_policy": {
+          "const": "any_change_after_outcome_access_is_post_hoc_and_cannot_relabel_prior_holdout"
+        },
+        "new_forward_boundary_required": {
+          "const": true
+        },
+        "supersession_required": {
+          "const": true
+        },
+        "old_results_remain_reportable": {
+          "const": true
+        }
+      }
+    }
+  }
+}

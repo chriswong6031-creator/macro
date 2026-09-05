@@ -13,35 +13,32 @@ owner: coo-fable
 class: build
 blast_radius: reversible
 ambiguity: open
+decisions:
+  - "DEC:CI-EXECUTION-PROFILE-V2"
 discoveries:
   - "DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING"
   - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
   - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
   - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
+  - "DSC:REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES"
+  - "DSC:SEALED-PC-CI-REPLAY-AND-PORTABILITY-NEED-EXPLICIT-RUNTIME-BINDINGS"
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
-    status: awaiting_ci
+    status: done
     pr: [5608, 6223]
     note: >
-      PR 5608 landed the cross-job contract: the changed-file list rides the
-      ci-changed-files artifact, its sha256 joins plan_hash_payload so
-      --expect-plan-sha pins it, children read CI_CHANGED_FILES_FILE, and the
-      CI_CHANGED_FILES_JSON env/output hops are deleted. FF PR 5898 fence run
-      32546500471 then exposed a second terminal copy: both same-repository and
-      fork self-mod live checks rebuilt the changed paths and complete commit
-      messages as shell variables and expanded them into checker argv, so the
-      process could die with E2BIG before policy evaluation. The bounded repair
-      in PR 6223 keeps the exact ancestry/range proof and moves both populations
-      to files, with only their paths crossing argv.
-      Evidence: DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING and
-      DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT. This wave remains
-      awaiting exact-head proof that the checker process launches and emits
-      the intended policy verdict, then merged/current-main proof.
-    next_action: >
-      Sol/Fable reviews the bounded self-mod transport PR; after merge, rerun
-      fences on unchanged FF PR 5898 head 47d3b4b49e7191e72576ebc6e7495748ab1c8164
-      and confirm the required self-mod-fence reaches policy evaluation.
+      PR #5608 landed bounded planner-to-pack changed-file transport. PR #6223
+      merged as bc0a9cd896401fae7ec19a208b3a5017cc8d13a6 and moved both
+      same-repository and fork self-mod populations into files while
+      preserving exact ancestry/range proof. The original #5898 fences run
+      32546500471 failed before Python started with E2BIG. The authorized
+      tree-preserving #5898 refresh kept the reviewed tree, and fences run
+      32602516677 invoked the live checker through bounded file handles,
+      emitted the actual PASS policy verdict, and showed no E2BIG or exit 126.
+      #5898 then merged as 21f51a1ecfed778a738b048bd7e5efd30b1d9336;
+      current main contains both repairs. No policy weakening, parallel
+      transport, or separate runner path was introduced. W-TRANSPORT is done.
   - id: W-REWRITE
     title: Structural rewrite of planner/merge control plane
     status: in_progress
@@ -75,21 +72,20 @@ waves:
       complete W-REWRITE or any CI-speed/scoping wave.
   - id: W-PR-EVENT-CAUSALITY
     title: Candidate authority and lifecycle-event causality closure
-    status: awaiting_ci
+    status: done
+    pr: 6252
     note: >
-      PR #6223 exposed two control-plane defects without changing its subject:
-      ci-authority treated mutable same-ref base-tip equality as candidate
-      identity, and a delayed closed event shared semantic CI's concurrency group
-      and cancelled a later reopened proof. The repair candidate keeps the event
-      base SHA plus live base observations as receipt provenance, binds authority
-      to the exact PR/head/repositories/base ref/author/actor/file inventory/admin
-      permissions, and conditionally reacquires the bounded inventory when the
-      base advances across pagination. Semantic CI remains sole authority for the
-      exact synthetic merge and tested base. ci.yml now admits only opened,
-      synchronize, and reopened proof events; closed cannot enter the proof slot.
-      Awaiting exact-head old-authority, semantic, fence, and workflow proof plus
-      merged-main containment. Evidence:
-      DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY.
+      PR #6252 closed both causality races and merged as
+      27711c21665788bb9804b05b03a2587860679646. Candidate authority no
+      longer treats mutable same-ref live-base equality as candidate identity,
+      while semantic CI remains the sole exact synthetic-merge/base proof;
+      `closed` no longer enters the PR proof trigger or concurrency slot, so
+      only opened, synchronize, and reopened produce proof. Exact-head evidence
+      is semantic CI 32593286806, fences 32593286723, and ci-authority
+      32593286769, all successful on subject 004452e517ca277596008ab3623beca3f707fa33.
+      Current main contains the merge. No replacement cancellation service,
+      semantic-proof weakening, or Fundamental Forensics change was introduced.
+      Evidence: DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY.
   - id: W-GATE-SPLIT
     title: Merge gate tests code against fixtures; data receipts post-nightly
     status: in_progress
@@ -134,14 +130,118 @@ waves:
       dossier_identity_end_to_end, dossier_numeric_contract) - they red only
       the data-gated workflow-yaml job (data-health lane); owners' follow-up,
       deliberately not absorbed.
+  - id: W3-PLANNER-CONTAINMENT
+    title: ci-plan working-tree containment on the sole ci.yml carrier
+    status: done
+    pr: 6286
+    note: >
+      PR #6286 merged 2026-08-25T22:36:54Z as
+      fafe8d7ee775f8b60a0229c085fb7aee6d4349e7 on exact head
+      a8842dd5c6db23753c916aa27005aa7cab0c88ab under Sol's corrected W3
+      acceptance law (review 5023367453) and the Chairman release recorded
+      on the carrier. The corrected gate replaced the sub-60s ci-plan timing
+      metric (hosted ref-fetch latency is not W3's capability) with one
+      truthful terminal same-head binding graph: run 32893976114 attempt 2
+      concluded SUCCESS at 22:19:30Z after attempt 1's ci-pack-6 died inside
+      actions/checkout for ~64 minutes with zero tests executed — a
+      checkout-only infrastructure failure recorded as issue #6351 evidence,
+      healed by the one permitted same-head targeted retry. W3 deliberately
+      fixed ci-plan only: the planner runs in a sparse tracked-paths
+      checkout (--tracked-paths-file, scripts/ci_scope_dependencies) while
+      ci-pack materialization remains the old hosted blob:none full-tree
+      path, now explicitly owned by the #6351 trusted self-hosted promotion.
+  - id: W-SELFHOSTED-BRIDGE
+    title: P0R diagnostic bridge — canary reconciled to the current semantic contract
+    status: in_progress
+    note: >
+      Issue #6351 is the sole coordination/evidence carrier for trusted
+      self-hosted CI promotion (Sol CEO incident command 2026-08-25T19:52Z;
+      Fable COO is the single principal owner bridge through P4). The bridge
+      implements Sol's frozen design: one narrowly admitted diagnostic plan
+      pair (pr_head/workflow_dispatch, valid ONLY for workflow
+      infrastructure-selfhosted-ci-canary) in build_plan and
+      load_authoritative_plan; ci_semantic_proof byte-unchanged and
+      hostile-tested closed; canary pinned to Python 3.12.13 and gate code;
+      hosted and self-hosted canary consumers consume ONE frozen plan via
+      --plan-json with strict semantic-fragment parity; portable Linux
+      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. P0R/current-main
+      closure is green through merge baseline 32942786458. P1 run 32945782277
+      then failed before PC pickup because the canary resolver treated the PR
+      API's stale base.sha as the synthetic merge ref's authoritative first
+      parent (the observed API base lagged that exact parent by 23 commits).
+      Production ci.yml already derives tested_base_sha from merge parent 1;
+      #6351's bounded resolver correction merged through PR #6467 as
+      b6b2307d34110052eaedd1a3779353b1779c3308. P1 run 32957250432 then
+      proved exact hosted/self-hosted pack-0 semantic parity, missing-cache
+      refusal, different-tree contamination isolation, and one PC CI slot at
+      220.080s versus hosted 799.132s (3.63x). P2 run 32960314514 proved
+      three distinct sealed PC slots concurrently at 174.986-254.000s,
+      byte-stable shared cache, load-1m peak 4.053 on 16 CPUs, at least
+      42.77GB memory available, and an independently routable render slot
+      while pc-render-1 executed real production render work. Exact trusted
+      manual comparison of the uploaded pack 0/1/9 receipts returned parity
+      true for all three. The run wrapper concluded cancelled only because
+      pack-9's receipt-only hosted compare job spent its full ten-minute
+      budget materializing a redundant full repository checkout. The bounded
+      P2R repair now publishes a runtime-complete, package-shaped
+      main-defined comparator artifact before candidate checkout or any
+      candidate-authored execution, and removes that compare-only checkout;
+      executable tests lock both bundle imports and upload ordering. It does
+      not change production routing or semantic authority. Sequence after P2R:
+      P3A inert trusted executor, P3B production route with hosted ci-pack-N
+      anchors, then P4 three natural PR proofs. P2 is now accepted from the
+      combined receipts: run 32960314514 proved three concurrent PC CI slots and
+      an independently acquired pc-render-4 reservation; run 32964925696 made
+      checkoutless parity green for packs 0/1/9 on one exact tree and plan. PC
+      wall time was 164.689-216.668s versus hosted 680.467-2050.9s, all semantic
+      fragments were byte-identical, cache bytes were unchanged and the resource
+      envelope stayed safe. P3A merged through PR #6481 as
+      7dc0b0ddcd6dd7323a0bf9d45b4ebf6ebc785531. The exact main-pinned workflow
+      was added as the fifth selected workflow in the existing organization runner
+      group, and the merged root admission was deployed with identical hash
+      e4ff74a96e9949a0ce4707e3fdb58cfffc251057d5e8c69a7309fe2871e11202;
+      direct main admission passed and a hostile PR ref remained refused. First
+      dispatch 33024021850 then failed closed before PC pickup: after exact resolver
+      and candidate checkout success, hosted planning invoked the older candidate
+      scripts/run_ci_pack.py, which does not admit the trusted executor event pair,
+      so no plan artifact existed. P3A-R on the same #6351 program froze and
+      transported the complete main-owned planner/semantic/control bundle while
+      retaining the exact candidate tree and manifest. It merged through PR
+      #6487 as ac3f8a888e2ece7a15f37180c19dc247227a3098. Direct main proof run
+      33030976647 then passed on pc-ci-3 against PR #6390 with exact
+      main/control SHA ac3f8a888e2ece7a15f37180c19dc247227a3098, tested merge
+      078bdb7d212a3bcabea9df6ba06a6ef7bcf5ee07, plan
+      1ad0b428cac9e81481545358f9e30b151c3fdffe88d28ed7bc99be8d5ac7e720,
+      matching fragment/control/receipt identity, stable 66,228,371,240-byte
+      root-owned cache, 60.03% peak CPU, 38.55GB memory-available floor and
+      218.947s wall time. P3B-A then merged through PR #6496 as
+      904863dabc490ee95ac50153048c25dee048d90b. Its exact-head hosted run
+      33035115527 passed one planner, contract delta, all twelve packs and the
+      semantic gate; those packs consumed about 180.7 hosted minutes and the
+      slowest pack ran 38m22s. P3B-B is the separate active carrier: call the
+      exact main-owned executor only for same-repository PRs, preserve hosted
+      planner/ci-pack-N anchors/ci-gate and the complete hosted fork path, and
+      prove the route on its own exact PR tree before P4 natural traffic. PR
+      #6505 run 33039532309 reached all twelve real PC jobs but the root hook
+      refused them before steps because job `env` is unavailable pre-job;
+      contract-delta also caught the new route suite unwired. The same carrier
+      now uses GitHub's event payload, forwards it in the root-owned wrapper and
+      wires the suite. Post-restart PC hashes are Python 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
+      and wrapper d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
+      run 33043922465 then executed the complete twelve-pack matrix: packs
+      0/1/2/3/4/7/8/10/11 passed and packs 5/6/9 exposed the complete sealed-host
+      portability set. The same carrier now derives replay's loader directory
+      from the selected interpreter while stripping credentials, scopes the
+      set-ID fixture to exact descriptor metadata, preserves Git-config refusal
+      across client behavior, and projects the caller's PR branch identity into
+      the detached trusted executor. Repaired exact execution/parity/gate proof
+      remains owed.
 next_action: >
-  First, prove W-PR-EVENT-CAUSALITY under the pre-existing authority system on
-  its exact candidate head: authority mutation battery, workflow lifecycle and
-  syntax checks, semantic ci-gate and contract-delta, fences, and active
-  ci-authority/main must all conclude green before normal merge; then prove
-  current main contains the repair. Do not use the candidate's proposed
-  authority semantics to justify its own landing. After that, verify
-  contract-delta appears and behaves on the next few ordinary PRs
+  W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
+  new CI-speed, runner, branch-protection, or cancellation-system proposal.
+  Continue W-GATE-SPLIT and W-CONTRACT-DELTA only under their existing evidence
+  gates; W-REWRITE remains separately commissioned. Verify contract-delta
+  appears and behaves on the next few ordinary PRs
   (inherited-immune, catches introduced closure/unwired defects); confirm
   the armed backlog fully drains post-breaker-open (21 -> 17 within an hour
   of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22):
@@ -149,6 +249,17 @@ next_action: >
   scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs
   merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE
   remains separately commissioned.
+  W3-PLANNER-CONTAINMENT is closed; W-SELFHOSTED-BRIDGE (issue #6351, Fable
+  COO principal) owns the permanent ci-pack materialization repair — hosted
+  packs still run the blob:none full-tree checkout that produced the #6406
+  and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
+  repairs into product PRs or reopen them here outside the #6351 sequence.
+  P3A-R and its repaired direct-main dispatch are accepted; run 33024021850 is
+  a closed diagnostic receipt, not a retry candidate. P3B-A is accepted on main.
+  Complete the separate P3B-B carrier: make the exact protected-main zero-input
+  call for same-repository PRs, retain the hosted fork implementation and hosted
+  planner/anchors/ci-gate, and prove the new route on its own exact PR tree before
+  P4 natural traffic.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
@@ -157,6 +268,7 @@ owns_paths:
   - "scripts/run_ci_pack.py"
   - "scripts/merge_on_green.py"
   - "scripts/check_self_mod_fence.py"
+  - ".github/workflows/trusted-ci-executor.yml"
 ---
 
 The E2BIG incident model and receipts live in

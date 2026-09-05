@@ -56,19 +56,52 @@ worse than a missed warning.
      genuinely wedged run, that is just no longer something a session does on
      its own initiative.
 
+  7. RE-READING THE SAME CI STATUS FASTER THAN IT CAN CHANGE (2026-08-27, the
+     SECOND time an operator has had to say it). Not a loop and not a hot
+     `--interval`, so shapes 1-2 never saw it: a session answers each Stop-hook
+     block with one more single `gh pr checks <n>`. Measured that day: ~25
+     consecutive Stop cycles, each one poll, while 12 ci-packs ran — and the
+     session already had a background watcher armed at 150s that was reporting
+     every transition for free. The operator: "how come u check it so often...
+     literally u can just check every 5 mins or something, not every 20
+     seconds". A ci.yml run here takes 30-45 minutes, so a read 20 seconds after
+     the last one cannot return a different answer; it is pure shared-pool spend
+     plus a full context re-read every turn.
+     The mechanism that defeats prose here is worth naming, because it is not
+     laziness: the Stop hook fires on EVERY turn and escalates to "If the same
+     genuine blocker persists after another attempt, finish with SHIP LOOP
+     BLOCKED", which reads as a demand to demonstrate a fresh attempt. It is
+     not - a blocked Stop is satisfied by a one-line hold note. A memory note
+     (`never-poll-ci-with-short-cycle-checks`) said all of this after the first
+     operator order on 2026-08-24 and did not bind, which is the same reason
+     shapes 1 and 6 exist as code.
+     This one is ADVICE, not a decision: it attaches `additionalContext` to a
+     REPEAT of the same status shape inside POLL_COOLDOWN_S and always allows.
+     A deny would contradict this file's own standing rule, pinned by
+     `test_ci_observation_is_never_denied_for_owning_an_open_pull_request` — the
+     guard governs HOW a session watches, never WHETHER, and no state outside
+     the command line makes reading your own PR illegal. A cooldown IS such
+     state. If advice proves as unbinding as prose was, escalating shape 7 to a
+     deny is a RULING for the operator, not a refactor.
+     The first read of any shape is silent, a different run/PR is a different
+     shape, writes are never polls, and the window self-clears.
+
 A session owns its pull request through to the merge, so it WILL be watching CI.
-Shapes 1-4 govern HOW that watching happens, never WHETHER it may: one
+Shapes 1-4 and 7 govern HOW that watching happens, never WHETHER it may: one
 slow watcher per endpoint (`--interval 60` or higher), preflight
 `gh api rate_limit`, and an empty or 403 response read as "unknown" rather than
 as settled. This guard never denies a `gh` call merely because a pull request is
 open or armed.
 """
 import datetime as dt
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
+import time
 
 MIN_SLEEP = 90       # seconds between gh polls in a loop
 MIN_WATCH_INTERVAL = 60
@@ -103,6 +136,86 @@ PROTECTED_LANES = frozenset({
     "nightly-liveness.yml",  # dead-man switch over daily.yml (detects)
     "prophet-rescue.yml",    # bounded self-heal over daily.yml (responds)
 })
+
+#: Shape 7. The operator's own number ("every 5 mins or something"), and comfortably
+#: shorter than the 30-45 minute ci.yml run any repeat read is waiting on, so honouring
+#: it can never cost a session real information.
+POLL_COOLDOWN_S = 300
+#: Cheap read-only status shapes that a waiting session repeats. Deliberately narrow:
+#: mutations (`gh pr edit`, `gh pr merge`, `gh pr comment`) and one-shot creates are not
+#: here, and never become "polls" no matter how often they run.
+POLL_SHAPES = (
+    (re.compile(r"\bgh\s+pr\s+checks\b[^|;&]*?(?P<id>\d+)"), "pr-checks"),
+    (re.compile(r"\bgh\s+pr\s+view\b[^|;&]*?(?P<id>\d+)[^|;&]*?--json"), "pr-view"),
+    (re.compile(r"\bgh\s+run\s+view\b[^|;&]*?(?P<id>\d+)"), "run-view"),
+    (re.compile(r"\bgh\s+api\b[^|;&]*?/actions/runs/(?P<id>\d+)(?![^|;&]*?(?:/cancel|/force-cancel|/rerun))"), "run-api"),
+)
+#: A write is never a poll, however often it repeats. `gh api ... --method POST` and
+#: the cancel/rerun paths are mutations that other shapes already govern.
+POLL_WRITE_RE = re.compile(r"(?:--method|-X)\s+(?:POST|PATCH|PUT|DELETE)\b|/cancel\b|/force-cancel\b|/rerun\b", re.I)
+#: Shared across every worktree of this clone on purpose: the REST pool they are
+#: spending is one bucket, so two sibling sessions polling the same run alternately
+#: is the same waste as one session polling twice as fast.
+POLL_STATE_DIR = os.environ.get("MACRO_GH_POLL_STATE_DIR") or os.path.join(
+    tempfile.gettempdir(), "macro-gh-poll-cooldown"
+)
+
+
+def poll_shape(cmd: str):
+    """Return a stable key for a repeatable status read, or None."""
+    if POLL_WRITE_RE.search(cmd):
+        return None
+    for rx, name in POLL_SHAPES:
+        m = rx.search(cmd)
+        if m:
+            return f"{name}:{m.group('id')}"
+    return None
+
+
+def poll_cooldown_nudge(key: str, now: float | None = None):
+    """Context for a repeat of `key` inside the cooldown, or None.
+
+    NEVER a deny. `test_ci_observation_is_never_denied_for_owning_an_open_pull_request`
+    pins the rule this file states in prose - the guard governs HOW a session watches,
+    never WHETHER, and "no state outside the command line makes that read illegal".
+    A cooldown IS state outside the command line, so it may inform the session and
+    must not stop it. Escalating this to a deny is a RULING for the operator, not a
+    refactor. Fails OPEN on any state error."""
+    now = time.time() if now is None else now
+    try:
+        os.makedirs(POLL_STATE_DIR, exist_ok=True)
+        digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+        path = os.path.join(POLL_STATE_DIR, f"{digest}.json")
+        last = 0.0
+        try:
+            with open(path, encoding="utf-8") as fh:
+                last = float((json.load(fh) or {}).get("at") or 0.0)
+        except FileNotFoundError:
+            last = 0.0
+        except Exception:
+            last = 0.0          # unreadable state is not evidence of a recent poll
+        waited = now - last
+        if 0 < waited < POLL_COOLDOWN_S:
+            return (
+                f"SHARED GITHUB QUOTA - REDUNDANT POLL: you already read `{key}` "
+                f"{int(waited)}s ago. "
+                f"A ci.yml run here takes 30-45 minutes, so re-reading it inside "
+                f"{POLL_COOLDOWN_S}s cannot return a different answer - it just spends "
+                f"the pool every session shares and re-reads your whole context.\n\n"
+                f"This is ADVICE, not a block - the call is going through. Nothing new "
+                f"is expected for another {POLL_COOLDOWN_S - int(waited)}s.\n\n"
+                f"If a background watcher is already armed, its notifications ARE the "
+                f"check - a poll in the same turn is double work. If one is not, arm "
+                f"exactly one and stay silent until it reports.\n\n"
+                f"The Stop hook firing every turn is NOT a demand for a fresh poll; "
+                f"answer a blocked Stop with a one-line hold note and no tool call."
+            )
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"at": now, "key": key}, fh)
+    except Exception:
+        return None             # fail open, always
+    return None
+
 
 REMEDY = (
     "Poll on a slow cadence and check the pool first:\n"
@@ -323,7 +436,21 @@ def live_proof_reason(workflow: str):
     )
 
 
-def allow():
+def allow(context: str | None = None):
+    """Exit ALLOW. With `context`, attach it so the session actually reads it.
+
+    stdout is the harness's decision channel, so a bare allow must print nothing
+    there. `additionalContext` is the one field that reaches the model in-band on
+    an allow; `warn()` only reaches stderr, which is where the first version of
+    shape 7 would have died unread.
+    """
+    if context:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "additionalContext": context,
+            }
+        }))
     sys.exit(0)
 
 
@@ -444,7 +571,21 @@ def main():
         allow()          # fail open
     if reason:
         deny(reason)
-    allow()
+    # Shape 7 is resolved AFTER every deny shape, so a command that never reached
+    # GitHub is not recorded as a poll — otherwise a denial would start a cooldown
+    # for a read the session was not allowed to make.
+    nudge = None
+    try:
+        # strip_heredocs FIRST: a heredoc body is DATA, not a command. Without this
+        # the note fires on any command that merely writes ABOUT polling — which is
+        # how it flagged the very edit that documents it, the same way shape 1 once
+        # blocked its own introducing commit.
+        key = poll_shape(strip_heredocs(cmd))
+        if key:
+            nudge = poll_cooldown_nudge(key)
+    except Exception:
+        nudge = None         # fail open, like every other rule here
+    allow(nudge)
 
 
 if __name__ == "__main__":

@@ -205,3 +205,92 @@ if a future plane needs the excluded observation to carry PRODUCT weight rather
 than only suppress absence authority, that is a genuinely new decision: this
 record deliberately keeps the exception invisible to scoring, ranking, and
 Prophet.
+
+## Amended by P1-R3A (2026-08-22) — the ordering half of the same contract
+
+Sol's review of PR #6242 accepted every decision above and blocked on one
+omission: the ledger was durable, but it became durable AFTER the canonical
+filtered store had already committed without the observation, bridged only by
+the process-local `LAST_KEY_INTEGRITY["excluded_rows"]` handoff. A hard kill in
+that window lost the observation from every durable store
+([[DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS]] §"P1-R3A").
+
+The amendment adds ONE frozen invariant and changes nothing else:
+
+    durable coverage exception  ->  canonical filtered filing-store commit
+
+and never `filtered commit -> process-local handoff -> durable exception later`.
+Concretely: `china_visits.persist_boundary_exceptions()` is the single reused
+entry point (the fingerprint/upsert law stays owned by the visit plane and is
+NOT duplicated in `china_filings`); `china_filings.write_filings()` calls it
+before `_commit_filings()` and REFUSES its own canonical commit when it returns
+`ok: False`, leaving `filings.parquet` byte-identical; the refusal is fail-soft
+to the asia lane (a typed `errors[]` entry, never a raise) but degrades absence
+authority globally, because a run whose canonical write never committed derived
+from a stale tape. `refresh()` no longer harvests `excluded_rows` at all and
+skips any candidate observation whose fingerprint the boundary already made
+durable in the same invocation, so one source occurrence yields exactly one
+observation or reaffirmation.
+
+Everything the original decision fixed is retained unchanged: one ledger, the
+`obsfp1` fingerprint law, the canonical-identity firewall, exact-only
+reconciliation, no expiry of unresolved exceptions, scoped/unscoped suppression,
+strict unreadable-store protections, P1-R1 same-cycle order, CNInfo concurrency,
+and zero new network requests. No second quarantine ledger, no retry database,
+no transaction framework was introduced.
+
+Alternatives rejected for the ordering:
+
+- **A write-ahead journal / staging file at the filings boundary.** Rejected: it
+  is a second durable store for the same facts, which the commission forbids and
+  which would need its own reconciliation, its own corruption semantics, and its
+  own aging rules — reproducing the whole ledger badly.
+- **Persisting the exception from `refresh()` but ordering `refresh()` before the
+  filings commit.** Rejected: it inverts P1-R1's same-cycle contract (the visit
+  plane derives FROM the committed store) to fix a durability bug, and it would
+  still leave `--only china_filings` unprotected.
+- **Duplicating the fingerprint/upsert logic inside `china_filings`.** Rejected
+  explicitly by the commission and on the merits: two copies of the fingerprint
+  law are free to drift, and P1-R2's whole contribution was making ONE predicate
+  serve both boundaries.
+- **Letting the fence fail open (commit anyway, warn loudly).** Rejected: a
+  filtered store that forgets what it filtered is exactly the defect being
+  repaired. The blast radius of failing closed is bounded — the fence is inert
+  unless a malformed P1-relevant row is present, which has never occurred in
+  54,078 accrued rows.
+
+## Sol residual rulings, 2026-08-23 — the three open questions are CLOSED
+
+P1-R3A merged as #6269 (squash `0bcfef045517bcaae23271b1218f37c59bcaa864`) and
+Sol's final code adjudication is **PASS**. The three residuals the P1-R3A PR
+named are ruled, and **no further P1 implementation repair is authorized**. Each
+is written here rather than only in the session handoff because each is a
+standing "do not build this" that a later session would otherwise re-derive as an
+obvious improvement.
+
+1. **The unreadable accrued-filings-store path stays as it is.** Losing an
+   observation because `filings.parquet` was unreadable past CNInfo's re-pull
+   window is a broader `china_filings` **outage-recovery** concern, not another
+   P1 malformed-key persistence path. Do NOT add a second persistence site at
+   the `_read_filings_strict() is None` abort — that would weaken the
+   single-fence property the ordering mutation guard pins, to solve a problem
+   that is not this ledger's.
+
+2. **The `china_visits` import failure stays fail-closed.** When the fence cannot
+   reach the ledger's owner it refuses the canonical commit even if no malformed
+   row was P1-relevant, because it cannot measure relevance without the owner.
+   That over-strictness is **by design** and retained. Do NOT duplicate the
+   P1-relevance law into `china_filings` to narrow it — two copies of that law
+   are free to drift, which is the failure P1-R2 exists to have closed.
+
+3. **Scoped coverage exceptions have no TTL, expiry, prune, or operator-clear.**
+   They remain open until deterministic reconciliation, or until a future
+   **explicitly evidence-backed adjudication mechanism** exists. An operator
+   lever is not that mechanism, and neither is an age threshold. Building either
+   without the mechanism is forbidden.
+
+What remains is a RECEIPT, not code: the first natural post-#6269 Asia-close with
+healthy CNInfo transport. Another SSE 504 is valid failure-state evidence but is
+not the clean-path receipt; the lane must not be rerun and data must not be
+manufactured to obtain one.
+

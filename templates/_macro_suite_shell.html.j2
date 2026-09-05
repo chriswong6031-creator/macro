@@ -1,0 +1,726 @@
+{#
+  Shared page shell for the twelve-workspace Macro & Monetary suite (F01 / R1B).
+
+  This partial is a MACRO LIBRARY, imported by each workspace page:
+
+      {% import "_macro_suite_shell.html.j2" as shell %}
+      ...
+      {{ shell.body(view) }}
+
+  It implements the suite's shared research grammar exactly once:
+
+      context header -> causal-implications ribbon -> headline state band ->
+      tab bar -> dominant visualization -> diagnostics -> what changed ->
+      component metrics -> evidence drawer
+
+  Everything it renders comes from the view model built by
+  ``lib.macro_suite_view.build_view`` over ONE validated
+  ``mastermind.macro_workspace_snapshot.v1`` artifact. The shell never invents a
+  value, never substitutes zero for missing, and never prints a producer slug:
+  absent data arrives as a typed absence carrying a reviewed reason label.
+
+  Two rules that look like styling but are contract:
+    * Only tabs the snapshot proves are real are rendered. Scenario and Alerts
+      are withheld (and explained) whenever the artifact declares
+      execution_available / service_available false.
+    * built_at and rendered_at are shown apart from the economic clocks and
+      labelled as non-economic, because neither establishes freshness.
+
+  Bilingual law: every label is a paired <span class="l-en">/<span class="l-zh">
+  toggled by html[data-lang]; exactly one language is on screen at a time.
+#}
+
+{%- macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro -%}
+
+{#- A {"en","zh"} node from the view model. -#}
+{%- macro bl(node) -%}
+{%- if node %}{{ t(node.en, node.zh) }}{% endif -%}
+{%- endmacro -%}
+
+{#- A typed absence: em dash plus the reviewed reason. Never a bare blank. -#}
+{%- macro absent(cell, inline=False) -%}
+{%- if cell -%}
+<span class="mq-absent{{ ' mq-absent-inline' if inline else '' }}"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why">{{ bl(cell.label) }}</span></span>
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro chip(node, tone='neutral', kind='') -%}
+{%- if node %}<span class="mq-chip mq-tone-{{ tone }}{{ ' mq-chip-' ~ kind if kind else '' }}">{{ bl(node) }}</span>{% endif -%}
+{%- endmacro -%}
+
+{%- macro clock_list(rows) -%}
+<dl class="mq-clocks">
+  {%- for row in rows %}
+  <div class="mq-clock{{ ' is-absent' if row.absent else '' }}">
+    <dt><span class="mq-clock-name">{{ bl(row.name) }}</span><span class="mq-clock-meaning">{{ bl(row.meaning) }}</span></dt>
+    <dd>{% if row.absent %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('not carried by this source', '该数据源未提供') }}</span>{% else %}<time>{{ row.value }}</time>{% endif %}</dd>
+  </div>
+  {%- endfor %}
+</dl>
+{%- endmacro -%}
+
+{# ─────────────────────────── 1. context header ─────────────────────────── #}
+{%- macro context_header(view) -%}
+{%- set ctx = view.context -%}
+<header class="mq-context" id="mq-context">
+  <div class="mq-context-id">
+    <p class="mq-kicker">{{ t('Macro & Monetary', '宏观与货币') }}</p>
+    <h1>{{ bl(view.workspace.title) }}</h1>
+    <p class="mq-deck">{{ bl(view.workspace.subtitle) }}</p>
+    <div class="mq-idchips">
+      <span class="mq-chip mq-chip-key">{{ t('Region', '地区') }} · {{ bl(view.region.display) }}</span>
+      <span class="mq-chip mq-chip-key">{{ t('Frequency', '频率') }} · {{ t('Owner cadence, daily republish', '按所有者节奏，每日重新发布') }}</span>
+      <span class="mq-chip mq-chip-key">{{ t('Window', '窗口') }} · {{ t('Latest accepted print', '最新已接受读数') }}</span>
+    </div>
+  </div>
+
+  <div class="mq-context-state">
+    <div class="mq-avail">
+      <span class="mq-avail-label">{{ t('Required-source availability', '必需数据源可用性') }}</span>
+      <strong class="mq-tone-{{ ctx.state_tone }}">{{ bl(ctx.state_label) }}</strong>
+      <span class="mq-avail-note">{{ t('Conservative over the required set — a degraded optional leg cannot turn this green.', '在必需分项集合上取最保守值 — 可选分项降级不会让此处转绿。') }}</span>
+    </div>
+    <dl class="mq-context-meta">
+      <div><dt>{{ t('Coverage', '覆盖率') }}</dt><dd>{% if ctx.coverage %}{{ ctx.coverage }}{% else %}{{ absent(none) }}<span class="mq-dash">—</span>{% endif %}</dd></div>
+      <div><dt>{{ t('Last accepted source cut', '最近已接受数据截止') }}</dt>
+           <dd>{% if ctx.last_source_cut %}<time>{{ ctx.last_source_cut }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+      <div><dt>{{ t('Calculation as-of', '计算截止') }}</dt>
+           <dd>{% if ctx.calculation_as_of %}<time>{{ ctx.calculation_as_of }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+      <div class="mq-nonclock"><dt>{{ t('Page built', '页面生成') }}</dt>
+           <dd><time>{{ ctx.page_built_at }}</time></dd></div>
+    </dl>
+    <p class="mq-context-caveat">{{ t('Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.', '页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。') }}</p>
+  </div>
+
+  <details class="mq-sourcerow">
+    <summary>{{ t('Required components and their source clocks', '必需分项及其数据源时钟') }}</summary>
+    <table class="mq-table mq-table-compact">
+      <thead><tr>
+        <th scope="col">{{ t('Component', '分项') }}</th>
+        <th scope="col">{{ t('Presence', '具备情况') }}</th>
+        <th scope="col">{{ t('Freshness', '新鲜度') }}</th>
+        <th scope="col">{{ t('Source as-of', '数据源截止') }}</th>
+      </tr></thead>
+      <tbody>
+        {%- for component in view.context.required %}
+        <tr>
+          <th scope="row">{{ bl(component.label) }}</th>
+          <td>{{ chip(component.presence, component.presence_tone) }}</td>
+          <td>{{ chip(component.freshness, component.freshness_tone) }}</td>
+          <td>{% if component.source_asof %}<time>{{ component.source_asof }}</time>{% else %}{{ absent(component.absence, True) }}{% endif %}</td>
+        </tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+  </details>
+</header>
+{%- endmacro -%}
+
+{# ─────────────────────── 2. causal implications ribbon ─────────────────── #}
+{%- macro implications_ribbon(view) -%}
+{%- set block = view.implications -%}
+<section class="mq-ribbon" aria-labelledby="mq-ribbon-title">
+  <div class="mq-section-head">
+    <h2 id="mq-ribbon-title">{{ t('What this state implies', '该状态意味着什么') }}</h2>
+    <span class="mq-section-note">{{ t('Deterministic text from the accepted snapshot. No language model writes here.', '文本由已接受快照确定性生成，此处不由语言模型撰写。') }}</span>
+  </div>
+  {%- if block.absent %}
+  <p class="mq-ribbon-empty">{{ bl(block.absence_text) }}</p>
+  {%- else %}
+  <ul class="mq-ribbon-list">
+    {%- for item in block.entries %}
+    <li class="mq-implication">
+      <div class="mq-implication-badges">
+        <span class="mq-chip mq-chip-evidence">{{ bl(item.evidence_label) }}</span>
+        {%- if item.horizon %}<span class="mq-chip">{{ t('Horizon', '时间跨度') }} · {{ bl(item.horizon) }}</span>{% endif %}
+        {%- for channel in item.channels %}<span class="mq-chip mq-chip-channel">{{ bl(channel) }}</span>{% endfor %}
+      </div>
+      <p class="mq-implication-text">{{ bl(item.text) }}</p>
+      <p class="mq-implication-claim">{{ bl(item.evidence_claim) }}</p>
+      <details class="mq-confidence">
+        <summary>{{ t('Confidence basis', '置信度依据') }}</summary>
+        <dl class="mq-confidence-grid">
+          {%- for band in item.confidence %}
+          <div><dt>{{ bl(band.name) }}</dt><dd>{% if band.value %}{{ bl(band.value) }}{% else %}{{ absent(band.absence, True) }}{% endif %}</dd></div>
+          {%- endfor %}
+        </dl>
+        {%- if item.contradictions %}
+        <p class="mq-implication-contra">{{ t('Contradictions', '矛盾之处') }}: {{ item.contradictions | join(', ') }}</p>
+        {%- endif %}
+        {%- if item.trace_ref %}
+        <p class="mq-trace"><span class="mq-trace-label">{{ t('Trace', '溯源') }}</span><code>{{ item.trace_ref }}</code>
+          <button type="button" class="mq-linkish" data-mq-open-evidence>{{ t('Open evidence', '打开证据') }}</button></p>
+        {%- endif %}
+      </details>
+    </li>
+    {%- endfor %}
+  </ul>
+  {%- if block.truncated %}
+  <p class="mq-ribbon-more">{{ t('Additional implications are carried by the snapshot but not shown here; the core surface shows at most three.', '快照中还有其他推论，此处未展示；核心界面最多展示三条。') }}</p>
+  {%- endif %}
+  {%- endif %}
+</section>
+{%- endmacro -%}
+
+{# ───────────────────────── 3. headline state band ──────────────────────── #}
+{%- macro headline_band(view) -%}
+{%- set head = view.headline -%}
+<section class="mq-headline" aria-labelledby="mq-headline-title">
+  <div class="mq-headline-state">
+    <p class="mq-kicker">{{ bl(head.subtitle) }}</p>
+    <h2 id="mq-headline-title">
+      {%- if head.state_label -%}
+      <span class="mq-state-letter" aria-hidden="true">{{ head.state_id }}</span>{{ bl(head.state_label) }}
+      {%- else -%}
+      {{ absent(head.absence) }}
+      {%- endif -%}
+    </h2>
+    <dl class="mq-headline-meta">
+      <div><dt>{{ t('Effective date', '生效日期') }}</dt>
+           <dd>{% if head.effective_date %}<time>{{ head.effective_date }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+      <div><dt>{{ t('Method version', '方法版本') }}</dt><dd><code>{{ head.method_version }}</code></dd></div>
+      <div><dt>{{ t('Prior accepted print', '上一已接受读数') }}</dt>
+           <dd>{% if head.prior.absent %}{{ absent(view.changes.absence, True) }}{% else %}<strong>{{ head.prior.state_id }}</strong> <time>{{ head.prior.effective_date }}</time>{% endif %}</dd></div>
+    </dl>
+  </div>
+
+  <div class="mq-axis-cells">
+    {%- for axis in view.axes %}
+    <div class="mq-axis-cell">
+      <span class="mq-axis-name">{{ bl(axis.label) }}</span>
+      <strong class="mq-axis-value">{% if axis.value %}{{ axis.value }}{% else %}{{ absent(axis.absence) }}{% endif %}</strong>
+      <span class="mq-axis-direction">{{ bl(axis.direction) }}</span>
+      <span class="mq-axis-clocks">{{ chip(axis.freshness, axis.freshness_tone) }}</span>
+    </div>
+    {%- endfor %}
+
+    <div class="mq-axis-cell mq-axis-cell-vector">
+      <span class="mq-axis-name">{{ t('1-month vector', '一个月位移向量') }}</span>
+      {%- if head.vector.present %}
+      <strong class="mq-axis-value">Δx {{ head.vector.dx }} · Δy {{ head.vector.dy }}</strong>
+      <span class="mq-axis-direction">{{ t('Movement since the prior accepted print', '相对上一已接受读数的位移') }}</span>
+      {%- else %}
+      <strong class="mq-axis-value">{{ absent(head.vector.absence) }}</strong>
+      <span class="mq-axis-direction">{{ t('No vector is drawn: there is no method-comparable prior print to move from.', '不绘制向量：不存在方法可比的历史读数作为起点。') }}</span>
+      {%- endif %}
+    </div>
+
+    <div class="mq-axis-cell">
+      <span class="mq-axis-name">{{ t('Nearest boundary', '最近分界') }}</span>
+      <strong class="mq-axis-value">{% if head.nearest_boundary.distance %}{{ head.nearest_boundary.distance }}{% else %}{{ absent(head.nearest_boundary.absence) }}{% endif %}</strong>
+      <span class="mq-axis-direction">{% if head.nearest_boundary.axis_label %}{{ t('Score points to', '距下列坐标轴分界') }} {{ bl(head.nearest_boundary.axis_label) }}{% endif %}</span>
+    </div>
+  </div>
+</section>
+{%- endmacro -%}
+
+{# ──────────────────────────────── 4. tabs ──────────────────────────────── #}
+{%- macro tab_bar(view) -%}
+<div class="mq-tabbar" role="tablist" aria-label="{{ 'Workspace views' }}">
+  {%- for tab in view.tabs %}
+  <button type="button" role="tab" class="mq-tab{{ ' is-active' if loop.first else '' }}"
+          id="mq-tab-{{ tab.tab_id }}" data-mq-tab="{{ tab.tab_id }}"
+          aria-selected="{{ 'true' if loop.first else 'false' }}"
+          aria-controls="mq-panel-{{ tab.tab_id }}">{{ bl(tab.name) }}</button>
+  {%- endfor %}
+</div>
+{%- endmacro -%}
+
+{# ───────────────────── 5. dominant visualization (state map) ───────────── #}
+{%- macro quadrant_map(view) -%}
+{%- set map = view.quadrant_map -%}
+{%- if map -%}
+<figure class="mq-map" aria-labelledby="mq-map-title">
+  <figcaption id="mq-map-title" class="mq-section-head">
+    <h3>{{ t('Regime map', '体制地图') }}</h3>
+    <span class="mq-section-note">{{ t('Two disclosed descriptive axes. The grid is a description of the current reading, not a forecast.', '两条已披露的描述性坐标轴。此网格描述当前读数，并非预测。') }}</span>
+  </figcaption>
+
+  <svg class="mq-map-svg" viewBox="0 0 144 134" role="img"
+       aria-label="Quadrant state map">
+    <g transform="translate(38,6)">
+      <rect class="mq-map-plot" x="0" y="0" width="100" height="100" rx="2"></rect>
+
+      {#- hysteresis band around each boundary: the zone where a flip is held -#}
+      {%- if map.band_x %}
+      <rect class="mq-map-band" x="{{ map.boundary_x - map.band_x }}" y="0" width="{{ map.band_x * 2 }}" height="100"></rect>
+      {%- endif %}
+      {%- if map.band_y %}
+      <rect class="mq-map-band" x="0" y="{{ 100 - map.boundary_y - map.band_y }}" width="100" height="{{ map.band_y * 2 }}"></rect>
+      {%- endif %}
+
+      <line class="mq-map-axis" x1="{{ map.boundary_x }}" y1="0" x2="{{ map.boundary_x }}" y2="100"></line>
+      <line class="mq-map-axis" x1="0" y1="{{ 100 - map.boundary_y }}" x2="100" y2="{{ 100 - map.boundary_y }}"></line>
+
+      {#- Cell captions sit on TWO lines inside their own 50x50 quadrant: one
+          "X / Y" line overflows at map scale and collides with its neighbour. -#}
+      {%- for cell in map.cells %}
+      {%- set cx = 25 if cell.position in ('tl', 'bl') else 75 -%}
+      {%- set cy = 25 if cell.position in ('tl', 'tr') else 75 -%}
+      <g class="mq-map-cell{{ ' is-current' if cell.current else '' }}">
+        <text class="mq-map-letter" x="{{ cx }}" y="{{ cy - 6 }}" text-anchor="middle">{{ cell.letter }}</text>
+        <text class="mq-map-cell-label l-en" x="{{ cx }}" y="{{ cy + 3 }}" text-anchor="middle">{{ cell.line1.en }}</text>
+        <text class="mq-map-cell-label l-en" x="{{ cx }}" y="{{ cy + 8 }}" text-anchor="middle">{{ cell.line2.en }}</text>
+        <text class="mq-map-cell-label l-zh" x="{{ cx }}" y="{{ cy + 3 }}" text-anchor="middle">{{ cell.line1.zh }}</text>
+        <text class="mq-map-cell-label l-zh" x="{{ cx }}" y="{{ cy + 8 }}" text-anchor="middle">{{ cell.line2.zh }}</text>
+      </g>
+      {%- endfor %}
+
+      {%- if map.plotted %}
+      <circle class="mq-map-halo" cx="{{ map.point.cx }}" cy="{{ map.point.cy }}" r="6"></circle>
+      <circle class="mq-map-point" cx="{{ map.point.cx }}" cy="{{ map.point.cy }}" r="2.6"></circle>
+      {%- endif %}
+    </g>
+
+    {#- Axis captions. The plot occupies x 38..138, y 6..106. After rotate(-90)
+        the text's own +x axis points UP the page, so a "start" anchor grows
+        upward from its origin and an "end" anchor grows downward. -#}
+    <text class="mq-map-axis-label l-en" x="38" y="114" text-anchor="start">{{ map.x_axis.low_label.en }}</text>
+    <text class="mq-map-axis-label l-zh" x="38" y="114" text-anchor="start">{{ map.x_axis.low_label.zh }}</text>
+    <text class="mq-map-axis-label l-en" x="138" y="114" text-anchor="end">{{ map.x_axis.high_label.en }}</text>
+    <text class="mq-map-axis-label l-zh" x="138" y="114" text-anchor="end">{{ map.x_axis.high_label.zh }}</text>
+    <text class="mq-map-axis-name l-en" x="88" y="124" text-anchor="middle">{{ map.x_axis.label.en }}</text>
+    <text class="mq-map-axis-name l-zh" x="88" y="124" text-anchor="middle">{{ map.x_axis.label.zh }}</text>
+
+    <text class="mq-map-axis-label l-en" text-anchor="start" transform="translate(32,104) rotate(-90)">{{ map.y_axis.low_label.en }}</text>
+    <text class="mq-map-axis-label l-zh" text-anchor="start" transform="translate(32,104) rotate(-90)">{{ map.y_axis.low_label.zh }}</text>
+    <text class="mq-map-axis-label l-en" text-anchor="end" transform="translate(32,8) rotate(-90)">{{ map.y_axis.high_label.en }}</text>
+    <text class="mq-map-axis-label l-zh" text-anchor="end" transform="translate(32,8) rotate(-90)">{{ map.y_axis.high_label.zh }}</text>
+    <text class="mq-map-axis-name l-en" text-anchor="middle" transform="translate(10,56) rotate(-90)">{{ map.y_axis.label.en }}</text>
+    <text class="mq-map-axis-name l-zh" text-anchor="middle" transform="translate(10,56) rotate(-90)">{{ map.y_axis.label.zh }}</text>
+  </svg>
+
+  <div class="mq-map-readout">
+    <div><span>{{ bl(map.x_axis.label) }}</span><strong>{% if map.x_axis.value %}{{ map.x_axis.value }}{% else %}{{ absent(map.x_axis.absence) }}{% endif %}</strong><em>{{ bl(map.x_axis.direction) }}</em></div>
+    <div><span>{{ bl(map.y_axis.label) }}</span><strong>{% if map.y_axis.value %}{{ map.y_axis.value }}{% else %}{{ absent(map.y_axis.absence) }}{% endif %}</strong><em>{{ bl(map.y_axis.direction) }}</em></div>
+    <div><span>{{ t('Boundary', '分界') }}</span><strong>{{ map.x_axis.boundary_text }} / {{ map.y_axis.boundary_text }}</strong><em>{{ t('Fixed, disclosed threshold on each axis', '每条坐标轴上固定且已披露的阈值') }}</em></div>
+    <div><span>{{ t('Hysteresis band', '滞回带') }}</span><strong>±{{ view.headline.hysteresis.band }}</strong>
+         <em>{% if view.headline.hysteresis.applied %}{{ t('Applied against the prior print', '已对照上一读数应用') }}{% else %}{{ t('Not applied: no comparable prior print', '未应用：不存在可比的历史读数') }}{% endif %}</em></div>
+  </div>
+
+  {%- if not view.headline.vector.present %}
+  <p class="mq-map-note">{{ t('No movement arrow is drawn.', '未绘制位移箭头。') }} {{ absent(view.headline.vector.absence, True) }}</p>
+  {%- endif %}
+</figure>
+{%- endif -%}
+{%- endmacro -%}
+
+{# ────────────────────────────── 6. diagnostics ─────────────────────────── #}
+{%- macro diagnostics(view) -%}
+<section class="mq-diagnostics" aria-labelledby="mq-diagnostics-title">
+  <div class="mq-section-head">
+    <h3 id="mq-diagnostics-title">{{ t('Diagnostics', '诊断') }}</h3>
+    <span class="mq-section-note">{{ t('Constraints, missing components, source issues and method warnings.', '约束、缺失分项、数据源问题与方法警示。') }}</span>
+  </div>
+  <ul class="mq-diag-list">
+    {%- for item in view.diagnostics %}
+    <li class="mq-diag mq-tone-{{ item.tone }}">
+      <strong>{{ bl(item.title) }}</strong>
+      <span>{{ bl(item.body) }}</span>
+    </li>
+    {%- endfor %}
+  </ul>
+</section>
+{%- endmacro -%}
+
+{# ────────────────────────────── 7. what changed ────────────────────────── #}
+{%- macro what_changed(view) -%}
+{%- set changes = view.changes -%}
+<section class="mq-changed" aria-labelledby="mq-changed-title">
+  <div class="mq-section-head">
+    <h3 id="mq-changed-title">{{ t('What changed', '发生了什么变化') }}</h3>
+    <span class="mq-section-note">{{ t('Current accepted snapshot against the prior accepted snapshot, under the same method version.', '在相同方法版本下，将当前已接受快照与上一已接受快照对比。') }}</span>
+  </div>
+  <p class="mq-changed-verdict mq-tone-{{ 'ok' if changes.comparable else 'neutral' }}">{{ bl(changes.comparability_label) }}</p>
+  {%- if changes.comparable and changes.deltas %}
+  <table class="mq-table">
+    <thead><tr>
+      <th scope="col">{{ t('Metric', '指标') }}</th>
+      <th scope="col">{{ t('Prior', '上期') }}</th>
+      <th scope="col">{{ t('Current', '当前') }}</th>
+      <th scope="col">{{ t('Change', '变化') }}</th>
+    </tr></thead>
+    <tbody>
+      {%- for delta in changes.deltas %}
+      <tr>
+        <th scope="row">{{ bl(delta.label) }}</th>
+        <td>{{ delta.prior }}</td>
+        <td>{{ delta.current }}</td>
+        <td class="mq-delta mq-delta-{{ delta.sign }}">{{ delta.delta }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- else %}
+  <div class="mq-changed-empty">
+    {{ absent(changes.absence) }}
+    <p>{{ t('No numeric comparison is shown. A change table would have to invent a baseline that does not exist, and a method-version change is reported as a method change — never as a delta.', '此处不展示任何数值对比。展示变化表将不得不虚构一个并不存在的基准；方法版本变更只按方法变更呈现，绝不伪装成数值变化。') }}</p>
+  </div>
+  {%- endif %}
+</section>
+{%- endmacro -%}
+
+{# ─────────────────────── 8. component metrics + histories ─────────────── #}
+{%- macro component_metrics(view) -%}
+<section class="mq-metrics" aria-labelledby="mq-metrics-title">
+  <div class="mq-section-head">
+    <h3 id="mq-metrics-title">{{ t('Component metrics', '分项指标') }}</h3>
+    <span class="mq-section-note">{{ t('Each cell carries its own unit, basis, direction and clocks — frequencies differ inside one band.', '每个单元格自带单位、基准、方向与时钟 — 同一组内的频率并不相同。') }}</span>
+  </div>
+  <div class="mq-metric-grid">
+    {%- for metric in view.metrics %}
+    <article class="mq-metric">
+      <header>
+        <span class="mq-metric-name">{{ bl(metric.label) }}</span>
+        {{ chip(metric.freshness, metric.freshness_tone) }}
+      </header>
+      <strong class="mq-metric-value">
+        {%- if metric.value %}{{ bl(metric.value) }}{% else %}{{ absent(metric.absence) }}{% endif -%}
+        {%- if metric.unit %}<span class="mq-metric-unit">{{ bl(metric.unit) }}</span>{% endif -%}
+      </strong>
+      <p class="mq-metric-direction">{{ bl(metric.direction) }}</p>
+      <dl class="mq-metric-meta">
+        <div><dt>{{ t('Reference period', '参考期') }}</dt>
+             <dd>{% if metric.reference_period %}<time>{{ metric.reference_period }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+        <div><dt>{{ t('Basis', '基准') }}</dt><dd>{{ bl(metric.basis) }}</dd></div>
+        <div><dt>{{ t('Definition', '定义') }}</dt><dd><code>{{ metric.definition_id }}</code> · v{{ metric.definition_version }}</dd></div>
+      </dl>
+      <details class="mq-metric-clocks">
+        <summary>{{ t('Clocks and owner', '时钟与所有者') }}</summary>
+        {{ clock_list(metric.clocks) }}
+        <p class="mq-owner"><span>{{ t('Owner', '所有者') }}</span><code>{{ metric.owner_ref }}</code></p>
+        <p class="mq-owner"><span>{{ t('Authority ceiling', '权限上限') }}</span><code>{{ metric.authority_ceiling }}</code></p>
+      </details>
+    </article>
+    {%- endfor %}
+  </div>
+</section>
+{%- endmacro -%}
+
+{%- macro component_histories(view) -%}
+{%- set series = view.series -%}
+<section class="mq-series" aria-labelledby="mq-series-title">
+  <div class="mq-section-head">
+    <h3 id="mq-series-title">{{ t('Component histories', '分项历史') }}</h3>
+    <span class="mq-section-note">{{ t('Owner projections with per-series clocks, units, basis and revision behaviour.', '所有者投影序列，附各序列的时钟、单位、基准与修订行为。') }}</span>
+  </div>
+  {%- if series.absent %}
+  <div class="mq-changed-empty">
+    {{ absent(series.absence) }}
+    <p>{{ t('This snapshot publishes no chart-ready history. An empty chart frame would read as a flat line at zero, so none is drawn.', '本快照未发布可绘图的历史序列。空白图框会被误读为零值水平线，因此不予绘制。') }}</p>
+  </div>
+  {%- else %}
+  <table class="mq-table">
+    <thead><tr>
+      <th scope="col">{{ t('Series', '序列') }}</th>
+      <th scope="col">{{ t('Unit', '单位') }}</th>
+      <th scope="col">{{ t('Points', '点数') }}</th>
+      <th scope="col">{{ t('Range', '区间') }}</th>
+      <th scope="col">{{ t('Freshness', '新鲜度') }}</th>
+    </tr></thead>
+    <tbody>
+      {%- for item in series.entries %}
+      <tr>
+        <th scope="row">{{ bl(item.label) }}</th>
+        <td>{{ bl(item.unit) }}</td>
+        <td>{{ item.count }}</td>
+        <td><time>{{ item.first }}</time> → <time>{{ item.last }}</time></td>
+        <td>{{ chip(item.freshness, item.freshness_tone) }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+</section>
+{%- endmacro -%}
+
+{# ─────────────────────────────── drivers ───────────────────────────────── #}
+{%- macro driver_tables(view) -%}
+<section class="mq-drivers" aria-labelledby="mq-drivers-title">
+  <div class="mq-section-head">
+    <h3 id="mq-drivers-title">{{ t('Drivers', '驱动因子') }}</h3>
+    <span class="mq-section-note">{{ t('Signed push toward each axis high side. A driver is a disclosed contribution, not a cause.', '各分项推向坐标轴高值一侧的有符号推力。驱动因子是已披露的贡献，而非因果。') }}</span>
+  </div>
+  {%- for group in view.drivers %}
+  <div class="mq-driver-group">
+    <h4>{{ bl(group.title) }}</h4>
+    {%- if group.absent %}
+    <div class="mq-changed-empty">{{ absent(group.absence) }}</div>
+    {%- else %}
+    <table class="mq-table">
+      <thead><tr>
+        <th scope="col">{{ t('Driver', '驱动因子') }}</th>
+        <th scope="col">{{ t('Reading', '读数') }}</th>
+        <th scope="col">{{ t('Unit', '单位') }}</th>
+        <th scope="col">{{ t('Push', '推力') }}</th>
+        <th scope="col">{{ t('Coverage', '覆盖') }}</th>
+      </tr></thead>
+      <tbody>
+        {%- for row in group.rows %}
+        <tr>
+          <th scope="row">{{ bl(row.label) }}<span class="mq-owner-field"><code>{{ row.owner_field }}</code></span></th>
+          <td>{% if row.value %}{{ bl(row.value) }}{% else %}{{ absent(row.absence, True) }}{% endif %}</td>
+          <td>{{ bl(row.unit) }}</td>
+          <td class="mq-delta mq-delta-{{ row.impact_sign }}">{% if row.impact %}{{ row.impact }}{% else %}{{ absent(row.impact_absence, True) }}{% endif %}</td>
+          <td>{{ chip(row.coverage, row.coverage_tone) }}</td>
+        </tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+    {%- endif %}
+  </div>
+  {%- endfor %}
+</section>
+{%- endmacro -%}
+
+{%- macro axis_method(view) -%}
+<section class="mq-method" aria-labelledby="mq-method-title">
+  <div class="mq-section-head">
+    <h3 id="mq-method-title">{{ t('Axis method receipts', '坐标轴方法凭据') }}</h3>
+    <span class="mq-section-note">{{ t('A composite may only be shown when its full composition law is disclosed.', '只有在完整披露构成法则的前提下，复合指标才可展示。') }}</span>
+  </div>
+  {%- for axis in view.axes %}
+  <details class="mq-axis-method">
+    <summary><span>{{ bl(axis.label) }}</span><span class="mq-axis-method-value">{% if axis.value %}{{ axis.value }}{% else %}{{ absent(axis.absence, True) }}{% endif %}</span></summary>
+    <dl class="mq-method-grid">
+      <div><dt>{{ t('Direction', '方向') }}</dt><dd>{{ bl(axis.direction) }}</dd></div>
+      <div><dt>{{ t('Weights law', '权重法则') }}</dt><dd>{{ axis.weights_law }}</dd></div>
+      <div><dt>{{ t('Transformation', '变换') }}</dt><dd>{{ axis.transformation }}</dd></div>
+      <div><dt>{{ t('Frequency alignment', '频率对齐') }}</dt><dd>{{ axis.frequency_alignment }}</dd></div>
+      <div><dt>{{ t('Revision behaviour', '修订行为') }}</dt><dd>{{ axis.revision_behavior }}</dd></div>
+      <div><dt>{{ t('Components present', '已具备分项') }}</dt><dd>{{ axis.components_available }} / {{ t('minimum', '最少') }} {{ axis.min_components }}</dd></div>
+      <div><dt>{{ t('Coverage floor', '覆盖下限') }}</dt><dd>{{ axis.coverage_floor }}</dd></div>
+      <div><dt>{{ t('Definition version', '定义版本') }}</dt><dd><code>{{ axis.definition_version }}</code></dd></div>
+      <div><dt>{{ t('Authority ceiling', '权限上限') }}</dt><dd><code>{{ axis.authority_ceiling }}</code></dd></div>
+    </dl>
+    <table class="mq-table mq-table-compact">
+      <thead><tr>
+        <th scope="col">{{ t('Component', '分项') }}</th>
+        <th scope="col">{{ t('Raw', '原始值') }}</th>
+        <th scope="col">{{ t('Standardized', '标准化值') }}</th>
+        <th scope="col">{{ t('Weight', '权重') }}</th>
+        <th scope="col">{{ t('Contribution', '贡献') }}</th>
+      </tr></thead>
+      <tbody>
+        {%- for component in axis.components %}
+        <tr>
+          <th scope="row">{{ bl(component.label) }}<span class="mq-owner-field"><code>{{ component.owner_field }}</code></span></th>
+          <td>{% if component.raw %}{{ bl(component.raw) }}{% else %}{{ absent(component.raw_absence, True) }}{% endif %}</td>
+          <td>{{ component.standardized }}</td>
+          <td>{{ component.weight }}</td>
+          <td class="mq-delta mq-delta-{{ component.contribution_sign }}">{{ component.contribution }}</td>
+        </tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+  </details>
+  {%- endfor %}
+</section>
+{%- endmacro -%}
+
+{%- macro lineage(view) -%}
+{%- set corrections = view.evidence.corrections -%}
+<section class="mq-lineage" aria-labelledby="mq-lineage-title">
+  <div class="mq-section-head">
+    <h3 id="mq-lineage-title">{{ t('Correction and method lineage', '更正与方法沿革') }}</h3>
+  </div>
+  <dl class="mq-method-grid">
+    <div><dt>{{ t('Correction state', '更正状态') }}</dt><dd>{{ bl(corrections.state) }}</dd></div>
+    <div><dt>{{ t('Predecessor generation', '前一代产物') }}</dt>
+         <dd>{% if corrections.predecessor %}<code>{{ corrections.predecessor }}</code>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+    <div><dt>{{ t('Changed fingerprints', '已变更指纹') }}</dt>
+         <dd>{% if corrections.changed_fingerprints %}{{ corrections.changed_fingerprints | join(', ') }}{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+    <div><dt>{{ t('Hysteresis', '滞回') }}</dt><dd>{{ view.headline.hysteresis.note }}</dd></div>
+  </dl>
+  <p class="mq-lineage-note">{{ corrections.note }}</p>
+</section>
+{%- endmacro -%}
+
+{# ────────────────────── withheld capabilities (not tabs) ───────────────── #}
+{%- macro withheld(view) -%}
+{%- if view.withheld_tabs %}
+<section class="mq-withheld" aria-labelledby="mq-withheld-title">
+  <div class="mq-section-head">
+    <h3 id="mq-withheld-title">{{ t('Declared but not offered', '已声明但尚未开放') }}</h3>
+    <span class="mq-section-note">{{ t('These are named here rather than shown as tabs. A tab that cannot do its job is a dead destination.', '这些能力在此列出，而非以标签页形式呈现。无法履行职责的标签页就是一个死入口。') }}</span>
+  </div>
+  <div class="mq-withheld-grid">
+    {%- for item in view.withheld_tabs %}
+    <article class="mq-withheld-card">
+      <h4>{{ bl(item.name) }}</h4>
+      <p>{{ bl(item.reason) }}</p>
+      {%- if item.declared %}
+      <details>
+        <summary>{{ bl(item.declared_title) }}</summary>
+        <ul class="mq-withheld-list">
+          {%- for declared in item.declared %}
+          <li>{{ bl(declared.label) }}{% if declared.unit %} <span class="mq-chip">{{ bl(declared.unit) }}</span>{% endif %}
+            {%- if declared.min and declared.max %} <span class="mq-withheld-range">{{ declared.min }} … {{ declared.max }}{% if declared.step %} · {{ t('step', '步长') }} {{ declared.step }}{% endif %}</span>{% endif %}</li>
+          {%- endfor %}
+        </ul>
+      </details>
+      {%- endif %}
+    </article>
+    {%- endfor %}
+  </div>
+</section>
+{%- endif -%}
+{%- endmacro -%}
+
+{# ───────────────────────── 9. evidence drawer ──────────────────────────── #}
+{%- macro evidence_drawer(view) -%}
+{%- set evidence = view.evidence -%}
+<aside class="mq-drawer" id="mq-evidence-drawer" aria-labelledby="mq-evidence-title"
+       aria-hidden="true" tabindex="-1" hidden inert>
+  <header class="mq-drawer-head">
+    <div>
+      <p class="mq-kicker">{{ t('Source receipt', '来源凭据') }}</p>
+      <h2 id="mq-evidence-title">{{ t('Evidence', '证据') }}</h2>
+    </div>
+    <button class="mq-drawer-close" id="mq-close-evidence" type="button"
+            data-label-en="Close evidence drawer" data-label-zh="关闭证据抽屉"
+            aria-label="Close evidence drawer">×</button>
+  </header>
+  <div class="mq-drawer-body">
+
+    <section class="mq-drawer-section">
+      <h3>{{ t('Authority ceiling', '权限上限') }}</h3>
+      <p class="mq-authority-statement">{{ bl(evidence.authority.statement) }}</p>
+      <ul class="mq-authority-flags">
+        {%- for flag in evidence.authority.flags %}
+        <li><span>{{ bl(flag.name) }}</span><strong class="mq-tone-{{ 'bad' if flag.value else 'ok' }}">{{ t('Yes', '是') if flag.value else t('No', '否') }}</strong></li>
+        {%- endfor %}
+        <li><span>{{ t('Axis authority ceiling', '坐标轴权限上限') }}</span><strong><code>{{ evidence.authority.ceiling }}</code></strong></li>
+      </ul>
+    </section>
+
+    <section class="mq-drawer-section">
+      <h3>{{ t('Sources', '数据来源') }}</h3>
+      {%- for source in evidence.sources %}
+      <article class="mq-source">
+        <header>
+          <strong>{{ bl(source.label) }}</strong>
+          {{ chip(source.freshness, source.freshness_tone) }}
+        </header>
+        <dl class="mq-method-grid">
+          <div><dt>{{ t('Provider', '提供方') }}</dt><dd>{{ source.provider or '—' }}</dd></div>
+          <div><dt>{{ t('Owner', '所有者') }}</dt><dd><code>{{ source.owner_ref }}</code></dd></div>
+          <div><dt>{{ t('Artifact', '产物') }}</dt><dd><code>{{ source.artifact_ref or '—' }}</code></dd></div>
+          <div><dt>{{ t('Rights', '授权') }}</dt><dd>{{ bl(source.rights) }}</dd></div>
+          <div><dt>{{ t('Correction', '更正') }}</dt><dd>{{ bl(source.correction) }}</dd></div>
+          <div><dt>{{ t('Definition', '定义') }}</dt>
+               <dd>{% if source.definition_id %}<code>{{ source.definition_id }}</code>{% if source.definition_version %} · v{{ source.definition_version }}{% endif %}{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+          <div><dt>{{ t('Transform', '变换') }}</dt><dd>{{ source.transform or '—' }}</dd></div>
+        </dl>
+        {{ clock_list(source.clocks) }}
+      </article>
+      {%- endfor %}
+    </section>
+
+    <section class="mq-drawer-section">
+      <h3>{{ t('Non-economic clocks', '非经济时钟') }}</h3>
+      <dl class="mq-clocks">
+        {%- for clock in evidence.non_economic_clocks %}
+        <div class="mq-clock">
+          <dt><span class="mq-clock-name">{{ bl(clock.name) }}</span><span class="mq-clock-meaning">{{ bl(clock.meaning) }}</span></dt>
+          <dd><time>{{ clock.value }}</time></dd>
+        </div>
+        {%- endfor %}
+      </dl>
+    </section>
+
+    <section class="mq-drawer-section">
+      <h3>{{ t('Publication receipt', '发布凭据') }}</h3>
+      <dl class="mq-method-grid">
+        <div><dt>{{ t('Artifact path', '产物路径') }}</dt><dd><code>{{ evidence.artifact.path }}</code></dd></div>
+        <div><dt>{{ t('Manifest path', '清单路径') }}</dt><dd><code>{{ evidence.artifact.manifest_path }}</code></dd></div>
+        <div><dt>{{ t('Content hash', '内容哈希') }}</dt><dd><code class="mq-hash">{{ evidence.generation.content_sha256 }}</code></dd></div>
+        <div><dt>{{ t('Bytes', '字节数') }}</dt><dd>{{ evidence.artifact.bytes }}</dd></div>
+        <div><dt>{{ t('Generation id', '产物代号') }}</dt><dd><code>{{ evidence.generation.generation_id }}</code></dd></div>
+        <div><dt>{{ t('Producer', '生产者') }}</dt><dd><code>{{ evidence.generation.producer }}</code></dd></div>
+        <div><dt>{{ t('Producer code version', '生产端代码版本') }}</dt><dd><code>{{ evidence.generation.code_version }}</code></dd></div>
+        <div><dt>{{ t('Client contract', '客户端契约') }}</dt><dd><code>{{ evidence.artifact.min_client_contract }}</code></dd></div>
+      </dl>
+      <p class="mq-lineage-note">{{ t('The page validated this artifact against the closed schema and recomputed its content hash before rendering. A mismatch renders a refusal page instead of a state.', '本页在渲染前已按封闭 schema 校验该产物并重新计算其内容哈希。若不匹配，将呈现拒绝页面而非任何状态读数。') }}</p>
+    </section>
+  </div>
+</aside>
+<div class="mq-scrim" id="mq-scrim" hidden></div>
+{%- endmacro -%}
+
+{# ─────────────────────────── assembled page body ───────────────────────── #}
+{%- macro body(view) -%}
+<main class="mq-shell" id="mq-shell">
+  {{ context_header(view) }}
+  {{ implications_ribbon(view) }}
+  {{ headline_band(view) }}
+
+  <div class="mq-workspace">
+    {{ tab_bar(view) }}
+    <button type="button" class="mq-evidence-button" data-mq-open-evidence>
+      <span aria-hidden="true">↗</span> {{ t('Evidence & sources', '证据与来源') }}
+    </button>
+
+    <section class="mq-panel" id="mq-panel-current" role="tabpanel"
+             aria-labelledby="mq-tab-current" data-mq-panel="current" tabindex="0">
+      {{ quadrant_map(view) }}
+      {{ diagnostics(view) }}
+      {{ what_changed(view) }}
+      {{ component_metrics(view) }}
+    </section>
+
+    <section class="mq-panel" id="mq-panel-drivers" role="tabpanel"
+             aria-labelledby="mq-tab-drivers" data-mq-panel="drivers" tabindex="0">
+      {{ driver_tables(view) }}
+      {{ axis_method(view) }}
+    </section>
+
+    <section class="mq-panel" id="mq-panel-history" role="tabpanel"
+             aria-labelledby="mq-tab-history" data-mq-panel="history" tabindex="0">
+      {{ component_histories(view) }}
+      {{ lineage(view) }}
+    </section>
+  </div>
+
+  {{ withheld(view) }}
+</main>
+{{ evidence_drawer(view) }}
+{%- endmacro -%}
+
+{# ───────────────────── honest refusal (fail-closed) body ───────────────── #}
+{%- macro degraded_body(view) -%}
+<main class="mq-shell mq-shell-degraded" id="mq-shell">
+  <header class="mq-context">
+    <div class="mq-context-id">
+      <p class="mq-kicker">{{ t('Macro & Monetary', '宏观与货币') }}</p>
+      <h1>{{ bl(view.workspace.title) }}</h1>
+      <p class="mq-deck">{{ bl(view.workspace.subtitle) }}</p>
+      <div class="mq-idchips">
+        <span class="mq-chip mq-chip-key">{{ t('Region', '地区') }} · {{ bl(view.region.display) }}</span>
+        <span class="mq-chip mq-tone-bad">{{ bl(view.failure.label) }}</span>
+      </div>
+    </div>
+    <div class="mq-context-state">
+      <dl class="mq-context-meta">
+        <div class="mq-nonclock"><dt>{{ t('Page built', '页面生成') }}</dt><dd><time>{{ view.page_built_at }}</time></dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <section class="mq-refusal" aria-labelledby="mq-refusal-title">
+    <span class="mq-refusal-mark" aria-hidden="true">⌁</span>
+    <h2 id="mq-refusal-title">{{ bl(view.failure.headline) }}</h2>
+    <p class="mq-refusal-body">{{ bl(view.failure.body) }}</p>
+    <dl class="mq-method-grid">
+      <div><dt>{{ t('Typed reason', '类型化原因') }}</dt><dd>{{ bl(view.failure.label) }}</dd></div>
+      <div><dt>{{ t('Detail', '详情') }}</dt><dd><code class="mq-refusal-detail">{{ view.failure.detail }}</code></dd></div>
+      <div><dt>{{ t('Artifact path', '产物路径') }}</dt><dd><code>{{ view.artifact.path }}</code></dd></div>
+      <div><dt>{{ t('Manifest path', '清单路径') }}</dt><dd><code>{{ view.artifact.manifest_path }}</code></dd></div>
+      <div><dt>{{ t('Client contract', '客户端契约') }}</dt><dd><code>{{ view.artifact.min_client_contract }}</code></dd></div>
+    </dl>
+    <p class="mq-refusal-next">{{ bl(view.failure.next) }}</p>
+  </section>
+</main>
+{%- endmacro -%}

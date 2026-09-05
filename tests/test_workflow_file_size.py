@@ -32,6 +32,14 @@ census, the brun/ORDER visibility check and the render-options ordering
 gate all see through the move (an extracted script must carry that
 module's provenance marker in its first 5 lines, or resolution fails
 closed). Extract more the same way; do not delete comments to fit.
+
+2026-08-26 diet: PR #6499 had squeezed the file to ~36 bytes under budget by
+stripping its own step comments. The three largest ${{ }}-free engine bodies
+(commit engine outputs, the Prophet nightly builder, the Prophet checkpoint —
+52,056 bytes of body) were extracted verbatim to scripts/ci/ with the marker,
+restoring ~52,000 bytes of headroom (~434.8 KB on disk). Tests that read those
+bodies raw were routed through scripts/workflow_run_source.py (the same seam
+the guards use) with their assertions unchanged.
 """
 
 import re

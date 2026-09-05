@@ -1,29 +1,29 @@
 {
-  "as_of": "2026-08-22T01:24:50.348429+00:00",
+  "as_of": "2026-09-04T20:48:42.984697+00:00",
   "ok": false,
   "fail_reasons": [],
   "warnings": [
-    "earnings store COVERAGE stale: only 252 of 1992 rows (12.7%) carry an as_of within the 2 td SLA (floor=50%) \u2014 the store-level as_of looks fresh because a few rows were refreshed while the rest are frozen; check that the collector is sweeping the whole universe, not a named-ticker subset"
+    "earnings store COVERAGE stale: only 815 of 2104 rows (38.7%) carry an as_of within the 2 td SLA (floor=50%) \u2014 the store-level as_of looks fresh because a few rows were refreshed while the rest are frozen; check that the collector is sweeping the whole universe, not a named-ticker subset"
   ],
   "errors": [
-    "earnings store stale AT SCALE: only 252 of 1992 names reporting within the sweep window (12.7%) carry an as_of inside the 2-td SLA (floor 50%). The newest stamp (2026-08-22) is fresh, so an age-only check reads green \u2014 that is the presence-vs-coverage trap. Most likely the sweep is running against a tiny ticker list instead of the full universe, or is bot-walled after its first calls."
+    "earnings store stale AT SCALE: only 838 of 2104 names reporting within the sweep window (39.8%) carry an as_of inside the 2-td SLA (floor 50%). The newest stamp (2026-09-04) is fresh, so an age-only check reads green \u2014 that is the presence-vs-coverage trap. Most likely the sweep is running against a tiny ticker list instead of the full universe, or is bot-walled after its first calls."
   ],
   "detail": {
-    "today_utc": "2026-08-22",
+    "today_utc": "2026-09-04",
     "store_path": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/earnings/earnings.parquet",
     "store_present": true,
-    "as_of_str": "2026-08-22T01:21:54.159008+00:00",
+    "as_of_str": "2026-09-04T20:44:07.121643+00:00",
     "as_of_age_td": 0,
-    "ticker_count": 1992,
-    "with_next_date": 1992,
-    "fresh_rows": 252,
-    "fresh_share": 0.1265,
+    "ticker_count": 2104,
+    "with_next_date": 2104,
+    "fresh_rows": 838,
+    "fresh_share": 0.3983,
     "min_fresh_share": 0.5,
     "max_age_td": 2,
-    "rows_within_sla": 252,
-    "fresh_row_fraction": 0.1265,
+    "rows_within_sla": 815,
+    "fresh_row_fraction": 0.3874,
     "sla_ok": true,
-    "fresh_denominator": 1992,
+    "fresh_denominator": 2104,
     "denominator_basis": "sweep_window",
     "sweep_window_calendar_days": 95
   }

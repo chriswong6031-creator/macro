@@ -1,0 +1,1855 @@
+{
+  "alert_contract": {
+    "eligible_conditions": [
+      {
+        "condition_id": "savings_deterioration",
+        "kind": "state_transition",
+        "label": {
+          "en": "Savings deterioration",
+          "zh": "储蓄恶化"
+        },
+        "params": [
+          "direction"
+        ]
+      },
+      {
+        "condition_id": "revolving_credit_acceleration",
+        "kind": "component_shock",
+        "label": {
+          "en": "Revolving-credit acceleration",
+          "zh": "循环信贷加速"
+        },
+        "params": [
+          "revolving_credit_yoy"
+        ]
+      },
+      {
+        "condition_id": "spending_income_divergence",
+        "kind": "contradiction_change",
+        "label": {
+          "en": "Spending/income divergence",
+          "zh": "支出/收入背离"
+        },
+        "params": [
+          "kind"
+        ]
+      },
+      {
+        "condition_id": "credit_stress_break",
+        "kind": "boundary_approach",
+        "label": {
+          "en": "Credit-stress boundary approach",
+          "zh": "信贷压力临界值临近"
+        },
+        "params": [
+          "axis",
+          "distance"
+        ]
+      },
+      {
+        "condition_id": "source_stale_or_failed",
+        "kind": "source_stale_or_failed",
+        "label": {
+          "en": "Source stale or failed",
+          "zh": "数据源过期或失败"
+        },
+        "params": [
+          "source_id"
+        ]
+      },
+      {
+        "condition_id": "source_revision",
+        "kind": "source_revision",
+        "label": {
+          "en": "Material source revision",
+          "zh": "数据源重大修订"
+        },
+        "params": [
+          "source_id"
+        ]
+      }
+    ],
+    "note": "Eligible condition types are declared; this composer writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    "service_available": false,
+    "status": "ABSENT"
+  },
+  "authority": {
+    "axis_authority_ceiling": "DESCRIPTIVE",
+    "can_execute": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "class": "context_only",
+    "display_only": true
+  },
+  "availability": {
+    "contradiction": {
+      "components": [],
+      "en": null,
+      "kind": null,
+      "present": false,
+      "zh": null
+    },
+    "coverage_ratio": 1.0,
+    "degraded": [
+      "consumer_sentiment"
+    ],
+    "reasons": [
+      "worst_required_source_freshness=LATE_WITHIN_TOLERANCE"
+    ],
+    "required": [
+      {
+        "component_id": "retail_sales",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Retail sales",
+          "zh": "零售销售"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-07-01",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "consumer_sentiment",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "Consumer sentiment (Michigan)",
+          "zh": "消费者信心（密歇根大学）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-07-01",
+        "status": "PARTIAL"
+      },
+      {
+        "component_id": "consumer_credit_total",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit (total)",
+          "zh": "消费信贷（总额）"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "consumer_credit_revolving",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit (revolving)",
+          "zh": "消费信贷（循环）"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "consumer_credit_nonrevolving",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit (nonrevolving)",
+          "zh": "消费信贷（非循环）"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "personal_saving_rate",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Personal saving rate",
+          "zh": "个人储蓄率"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "real_disposable_income",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Real disposable income",
+          "zh": "实际可支配收入"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "cc_delinquency",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Credit-card delinquency rate",
+          "zh": "信用卡拖欠率"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "mortgage_delinquency",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Mortgage delinquency rate",
+          "zh": "住房抵押贷款拖欠率"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": false,
+        "source_asof": null,
+        "status": "ABSENT"
+      }
+    ],
+    "state": "LATE_WITHIN_TOLERANCE",
+    "worst_freshness": "LATE_WITHIN_TOLERANCE"
+  },
+  "axes": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "axis_id": "cash_flow_momentum",
+        "components": [
+          {
+            "component_id": "retail_sales_yoy_leg",
+            "contribution": 15.65,
+            "coverage_state": "PRESENT",
+            "freshness": "CURRENT",
+            "label": {
+              "en": "Retail sales YoY",
+              "zh": "零售销售同比"
+            },
+            "null_reason": null,
+            "owner_field": "fred.RSAFS.retail_sales",
+            "owner_ref": "data/fred/RSAFS.parquet",
+            "raw_value": 5.0092,
+            "sign": 1,
+            "standardized_value": 81.31,
+            "weight": 0.5
+          },
+          {
+            "component_id": "real_disposable_income_yoy_leg",
+            "contribution": null,
+            "coverage_state": "ABSENT",
+            "freshness": "SOURCE_FAILED",
+            "label": {
+              "en": "Real disposable income YoY",
+              "zh": "实际可支配收入同比"
+            },
+            "null_reason": "SOURCE_FAILED",
+            "owner_field": "fred.DSPIC96.real_disposable_income",
+            "owner_ref": "data/fred/DSPIC96.parquet",
+            "raw_value": null,
+            "sign": 1,
+            "standardized_value": null,
+            "weight": 0.5
+          }
+        ],
+        "components_available": 1,
+        "coverage_floor": 1.0,
+        "data_version": null,
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_stronger",
+        "frequency_alignment": "both legs monthly, period-start dated; RSAFS ~M+1 mid-month release, DSPIC96 ~M+1 month-end BEA release",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Cash-flow / spending momentum",
+          "zh": "现金流/支出动能"
+        },
+        "min_components": 2,
+        "null_reason": "COMPUTATION_REFUSED",
+        "revision_behavior": "recomputed each owner cadence from prior-only owner reads; a method-version change breaks comparability and is reported as such, never as a numeric delta",
+        "thresholds": {
+          "boundary": 50.0,
+          "high_label": {
+            "en": "Strong momentum",
+            "zh": "动能强劲"
+          },
+          "hysteresis_band": 5.0,
+          "low_label": {
+            "en": "Weak momentum",
+            "zh": "动能疲弱"
+          }
+        },
+        "transformation": "YoY percent changes mapped 50+clamp(v/scale,-1,1)*50; prior-only owner reads, no in-composer estimation",
+        "value": null,
+        "value_status": "ABSENT",
+        "weights_law": "weighted mean of standardized components, BOTH legs required present (coverage_floor=1.0, judgment call 6); retail sales YoY 0.50, real disposable income YoY 0.50"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "axis_id": "credit_stress",
+        "components": [
+          {
+            "component_id": "revolving_credit_yoy_leg",
+            "contribution": null,
+            "coverage_state": "ABSENT",
+            "freshness": "SOURCE_FAILED",
+            "label": {
+              "en": "Revolving credit YoY",
+              "zh": "循环信贷同比"
+            },
+            "null_reason": "SOURCE_FAILED",
+            "owner_field": "fred.REVOLSL.consumer_credit_revolving",
+            "owner_ref": "data/fred/REVOLSL.parquet",
+            "raw_value": null,
+            "sign": 1,
+            "standardized_value": null,
+            "weight": 0.3
+          },
+          {
+            "component_id": "saving_rate_level_leg",
+            "contribution": null,
+            "coverage_state": "ABSENT",
+            "freshness": "SOURCE_FAILED",
+            "label": {
+              "en": "Personal saving rate",
+              "zh": "个人储蓄率"
+            },
+            "null_reason": "SOURCE_FAILED",
+            "owner_field": "fred.PSAVERT.personal_saving_rate",
+            "owner_ref": "data/fred/PSAVERT.parquet",
+            "raw_value": null,
+            "sign": -1,
+            "standardized_value": null,
+            "weight": 0.25
+          },
+          {
+            "component_id": "cc_delinquency_level_leg",
+            "contribution": null,
+            "coverage_state": "ABSENT",
+            "freshness": "SOURCE_FAILED",
+            "label": {
+              "en": "Credit-card delinquency rate",
+              "zh": "信用卡拖欠率"
+            },
+            "null_reason": "SOURCE_FAILED",
+            "owner_field": "fred.DRCCLACBS.cc_delinquency_rate",
+            "owner_ref": "data/fred/DRCCLACBS.parquet",
+            "raw_value": null,
+            "sign": 1,
+            "standardized_value": null,
+            "weight": 0.25
+          },
+          {
+            "component_id": "mortgage_delinquency_level_leg",
+            "contribution": null,
+            "coverage_state": "ABSENT",
+            "freshness": "SOURCE_FAILED",
+            "label": {
+              "en": "Mortgage delinquency rate",
+              "zh": "住房抵押贷款拖欠率"
+            },
+            "null_reason": "SOURCE_FAILED",
+            "owner_field": "fred.DRSFRMACBS.mortgage_delinquency_rate",
+            "owner_ref": "data/fred/DRSFRMACBS.parquet",
+            "raw_value": null,
+            "sign": 1,
+            "standardized_value": null,
+            "weight": 0.2
+          }
+        ],
+        "components_available": 0,
+        "coverage_floor": 0.5,
+        "data_version": null,
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_stress",
+        "frequency_alignment": "mixed: G.19 revolving credit monthly (~5th business day of M+2), saving rate monthly (BEA, ~M+1 month-end), delinquency quarterly (~70d after quarter end)",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit stress",
+          "zh": "消费信贷压力"
+        },
+        "min_components": 2,
+        "null_reason": "COMPUTATION_REFUSED",
+        "revision_behavior": "recomputed each owner cadence from prior-only owner reads; a method-version change breaks comparability and is reported as such, never as a numeric delta",
+        "thresholds": {
+          "boundary": 50.0,
+          "high_label": {
+            "en": "High stress",
+            "zh": "压力高"
+          },
+          "hysteresis_band": 5.0,
+          "low_label": {
+            "en": "Low stress",
+            "zh": "压力低"
+          }
+        },
+        "transformation": "revolving-credit YoY mapped 50+clamp(v/scale,-1,1)*50 (sign=+1); saving rate mapped 50-clamp((v-neutral)/scale,-1,1)*50 (sign=-1, judgment call 9); delinquency rates mapped linearly floor->ceil (disclosed anchors, judgment call 8)",
+        "value": null,
+        "value_status": "ABSENT",
+        "weights_law": "weighted mean of standardized components, weights renormalized over present components (min 2 of 4, coverage_floor=0.5, judgment call 7); revolving-credit YoY 0.30, saving rate (inverted) 0.25, cc delinquency 0.25, mortgage delinquency 0.20"
+      }
+    ]
+  },
+  "changes": {
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 763602.0,
+        "delta": 0.0,
+        "metric_id": "retail_sales_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 763602.0
+      },
+      {
+        "current_value": 5.0092,
+        "delta": 0.0,
+        "metric_id": "retail_sales_yoy",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 5.0092
+      },
+      {
+        "current_value": 55.2,
+        "delta": 0.0,
+        "metric_id": "consumer_sentiment_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 55.2
+      },
+      {
+        "current_value": -10.5348,
+        "delta": 0.0,
+        "metric_id": "consumer_sentiment_yoy",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": -10.5348
+      },
+      {
+        "current_value": null,
+        "delta": null,
+        "metric_id": "cash_flow_momentum",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": null
+      },
+      {
+        "current_value": null,
+        "delta": null,
+        "metric_id": "credit_stress",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": null
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-07-01",
+    "prior_generation_id": "consumer_payments-US-129eb4dc3a7771fc",
+    "prior_method_version": "consumer_payments.compose.v1",
+    "status": "PRESENT"
+  },
+  "corrections": {
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "consumer_payments-US-129eb4dc3a7771fc"
+  },
+  "drivers": {
+    "balance_sheet": [
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "consumer_credit_revolving_yoy",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Revolving credit YoY",
+          "zh": "循环信贷同比"
+        },
+        "note": "bucket reuse: published under drivers.balance_sheet because Consumer has no dedicated credit bucket -- see the driver_bucket_naming_note implication",
+        "owner_field": "fred.REVOLSL.consumer_credit_revolving",
+        "unit": "percent",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "personal_saving_rate_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Personal saving rate",
+          "zh": "个人储蓄率"
+        },
+        "note": "bucket reuse: see consumer_credit_revolving_yoy's note; higher saving rate lowers credit stress (inverted leg, judgment call 9)",
+        "owner_field": "fred.PSAVERT.personal_saving_rate",
+        "unit": "percent",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "cc_delinquency_rate_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Credit-card delinquency rate",
+          "zh": "信用卡拖欠率"
+        },
+        "note": "bucket reuse: see consumer_credit_revolving_yoy's note",
+        "owner_field": "fred.DRCCLACBS.cc_delinquency_rate",
+        "unit": "percent",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "mortgage_delinquency_rate_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Mortgage delinquency rate",
+          "zh": "住房抵押贷款拖欠率"
+        },
+        "note": "bucket reuse: see consumer_credit_revolving_yoy's note",
+        "owner_field": "fred.DRSFRMACBS.mortgage_delinquency_rate",
+        "unit": "percent",
+        "value": null
+      }
+    ],
+    "rate_side": [
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "retail_sales_yoy",
+        "impact_magnitude": 5.0092,
+        "impact_sign": 1,
+        "label": {
+          "en": "Retail sales YoY",
+          "zh": "零售销售同比"
+        },
+        "note": "bucket reuse: published under drivers.rate_side because the contract's driver bucket pair is fixed as rate_side/balance_sheet and Consumer has no dedicated spending bucket -- see the driver_bucket_naming_note implication",
+        "owner_field": "fred.RSAFS.retail_sales",
+        "unit": "percent",
+        "value": 5.0092
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "real_disposable_income_yoy",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Real disposable income YoY",
+          "zh": "实际可支配收入同比"
+        },
+        "note": "bucket reuse: see retail_sales_yoy's note",
+        "owner_field": "fred.DSPIC96.real_disposable_income",
+        "unit": "percent",
+        "value": null
+      }
+    ]
+  },
+  "generation": {
+    "built_at": "2026-09-04T22:42:48Z",
+    "calculation_as_of": "2026-07-01",
+    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
+    "content_sha256": "34abcae985b41777d20664fd8aaa81dd3e17e282bd03f3394fd5ff5888d48f65",
+    "generation_id": "consumer_payments-US-34abcae985b41777",
+    "producer": "engine.market_os.macro_workspaces.consumer_payments",
+    "rendered_at": null
+  },
+  "headline": {
+    "effective_date": "2026-07-01",
+    "hysteresis": {
+      "applied": false,
+      "band": 5.0,
+      "held_prior": false,
+      "note": "architecture section 10.11 defines a real two-axis blueprint (real household cash-flow/spending momentum x consumer credit stress), but this build cannot fill it in: the cash-flow-momentum axis needs BOTH retail_sales_yoy and real_disposable_income_yoy present, and the credit-stress axis needs at least 2 of its 4 legs (revolving-credit YoY, saving rate, cc delinquency, mortgage delinquency) covering at least half the axis's weight -- most of those legs are pending collector population as of this build. This is a genuine data gap (a refusal to fill an existing blueprint), not a design absence (a blueprint that does not exist): it self-heals the instant the pending series populate. See the headline_unavailable implication for the reader-facing version."
+    },
+    "method_version": "consumer_payments.compose.v1",
+    "nearest_boundary": {
+      "axis": null,
+      "distance": null,
+      "null_reason": "COMPUTATION_REFUSED"
+    },
+    "null_reason": "COMPUTATION_REFUSED",
+    "one_month_vector": {
+      "dx": null,
+      "dy": null,
+      "null_reason": "COMPUTATION_REFUSED",
+      "status": "ABSENT"
+    },
+    "prior_state": {
+      "effective_date": "2026-07-01",
+      "method_version": "consumer_payments.compose.v1",
+      "state_id": null
+    },
+    "quadrant": {
+      "x": null,
+      "x_status": "ABSENT",
+      "y": null,
+      "y_status": "ABSENT"
+    },
+    "state_id": null,
+    "state_label": {
+      "en": null,
+      "zh": null
+    },
+    "status": "ABSENT",
+    "subtitle": {
+      "en": "Cash-flow/spending momentum x consumer credit stress",
+      "zh": "现金流/支出动能 × 消费信贷压力"
+    },
+    "transition_distance": null
+  },
+  "implications": {
+    "items": [
+      {
+        "channels": [
+          "consumer",
+          "spending",
+          "credit"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "headline_unavailable",
+        "text": {
+          "en": "No dual-axis Consumer & Payments state (cash-flow/spending momentum x consumer credit stress) is asserted this cycle: the cash-flow-momentum axis needs both retail sales and real disposable income growth reads, and the credit-stress axis needs at least half of its four legs (revolving credit, saving rate, cc delinquency, mortgage delinquency) -- most credit-stress legs are pending collector population as of this build. This is a data gap, not a design absence; the state is expected to become computable once the pending series populate.",
+          "zh": "本周期未给出消费与支付双轴状态（现金流/支出动能 × 消费信贷压力）：现金流动能轴需要零售销售与实际可支配收入增速读数同时具备，信贷压力轴需要其四个分项（循环信贷、储蓄率、信用卡拖欠率、住房抵押贷款拖欠率）中至少一半具备——截至本次构建，大多数信贷压力分项仍待采集器填充数据。这是数据缺口，而非设计上的不适用；一旦待填充序列具备数据，该状态预计即可计算。"
+        },
+        "trace_ref": "engine.market_os.macro_workspaces.consumer_payments#headline"
+      },
+      {
+        "channels": [
+          "spending"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "retail_sales_read",
+        "text": {
+          "en": "Retail sales read +5.0% YoY (-0.6% MoM).",
+          "zh": "零售销售读数为同比+5.0%（环比-0.6%）。"
+        },
+        "trace_ref": "data/fred/RSAFS.parquet"
+      },
+      {
+        "channels": [
+          "confidence"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "sentiment_read",
+        "text": {
+          "en": "University of Michigan consumer sentiment reads 55.2, -10.5% YoY.",
+          "zh": "密歇根大学消费者信心指数读数为55.2，同比-10.5%。"
+        },
+        "trace_ref": "data/fred/UMCSENT.parquet"
+      },
+      {
+        "channels": [
+          "consumer"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "no_alfred_pit_vintage_capture",
+        "text": {
+          "en": "No point-in-time vintage capture exists for any series on this page today. Every level and derived read above is the current stored (latest-revised) value, not what was knowable in real time; BEA income/saving and Census retail-sales figures in particular are revised for months after first release.",
+          "zh": "本页所有序列目前均无时点（PIT）版本捕获。以上所有水平值与派生读数均为当前存储的（最新修订后的）数值，而非当时实际可知的数值；BEA的收入/储蓄数据与人口普查局的零售销售数据在首次发布后会持续修订数月。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "consumer",
+          "payments"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "payments_rights_blocked_disclosure",
+        "text": {
+          "en": "Card-network and processor transaction-volume panels are not shown: docs/QUAL_DATA_COMPLIANCE.md section 2.3 excludes this category as a rights-adjacent standing policy (consent-framework verification and re-identification risk), never as a scope backlog item this composer could close by building a new collector.",
+          "zh": "本页未展示银行卡网络/收单机构交易量面板数据：docs/QUAL_DATA_COMPLIANCE.md 第2.3节将此类数据列为权利相关的既定排除政策（涉及同意框架核实与重新识别风险），而非可通过新建采集器解决的范围性待办事项。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "consumer",
+          "credit"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "household_debt_not_covered_disclosure",
+        "text": {
+          "en": "NY Fed Quarterly Report on Household Debt and Credit (QHDC) context is not shown: no collector for that release exists in this estate yet. This workspace does not estimate that context from a different series.",
+          "zh": "纽约联储家庭债务与信贷季度报告（QHDC）相关背景未展示：本估值体系目前尚未为该发布接入任何采集器。本工作区不会用其他序列估算该背景数据。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "consumer"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "LOW",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "driver_bucket_naming_note",
+        "text": {
+          "en": "The drivers.rate_side bucket in this snapshot carries cash-flow/spending legs (retail sales YoY, real disposable income YoY), not policy rates; drivers.balance_sheet carries credit-stress legs (revolving-credit YoY, saving rate, cc/mortgage delinquency), not a balance sheet. The contract's driver bucket pair is fixed as rate_side/balance_sheet and this workspace has no dedicated spending/credit buckets, so the naming is cosmetic bucket reuse, disclosed here rather than left implicit.",
+          "zh": "本快照中drivers.rate_side分组承载的是现金流/支出分项（零售销售同比、实际可支配收入同比），而非政策利率；drivers.balance_sheet分组承载的是信贷压力分项（循环信贷同比、储蓄率、信用卡/住房抵押贷款拖欠率），而非资产负债表。合约的驱动因素分组固定为rate_side/balance_sheet，本工作区没有独立的支出/信贷分组可用，因此命名属于用途借用，在此明确披露而非隐含处理。"
+        },
+        "trace_ref": null
+      }
+    ]
+  },
+  "learning": {
+    "event_names": [
+      "macro_workspace_opened",
+      "macro_state_changed_seen",
+      "macro_driver_expanded",
+      "macro_source_opened",
+      "macro_degraded_state_seen",
+      "macro_unknown_or_refusal_seen"
+    ],
+    "instrumentation": "first_party",
+    "privacy_note": "Event definitions reuse the existing first-party analytics owner; no second analytics store, no user identity copied into the artifact."
+  },
+  "metrics": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.RSAFS.retail_sales",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_spending",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "retail_sales_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-01",
+        "owner_ref": "data/fred/RSAFS.parquet",
+        "reference_id": "mastermind.market_reference/v1#retail_sales_level",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:RSAFS"
+        ],
+        "status": "PRESENT",
+        "transformation": "Census Bureau Advance Retail Sales, total, seasonally adjusted, republished by FRED, in USD MILLIONS (never mixed with the USD-BILLIONS G.19/DSPIC96 series in one derived read -- judgment call 14). No ALFRED point-in-time vintage exists for this series; this composer publishes the current stored (latest-revised) read.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": 763602.0,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "mom_pct_change",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.RSAFS.retail_sales",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_spending",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "retail_sales_mom",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-07-01",
+        "owner_ref": "data/fred/RSAFS.parquet",
+        "reference_id": "mastermind.market_reference/v1#retail_sales_mom",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:RSAFS"
+        ],
+        "status": "PRESENT",
+        "transformation": "Month-over-month percent change of the same SA series; refused when no observation lands within 20 days of the ~30-day lookback target.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": -0.582,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.RSAFS.retail_sales",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_spending",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "retail_sales_yoy",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-07-01",
+        "owner_ref": "data/fred/RSAFS.parquet",
+        "reference_id": "mastermind.market_reference/v1#retail_sales_yoy",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:RSAFS"
+        ],
+        "status": "PRESENT",
+        "transformation": "12-month percent change of the same SA series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 5.0092,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.UMCSENT.umich_sentiment",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_confident",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "consumer_sentiment_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-07-01",
+        "owner_ref": "data/fred/UMCSENT.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_sentiment_level",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:UMCSENT"
+        ],
+        "status": "PRESENT",
+        "transformation": "University of Michigan Surveys of Consumers, Index of Consumer Sentiment, republished by FRED. No ALFRED point-in-time vintage exists for this series; the current stored (latest-revised) read is published. Freshness cadence for this series is 61 days / 15-day grace, hand-corrected from a naive 65-day figure -- see judgment call 1.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_1966q1_100",
+        "value": 55.2,
+        "value_type": "index"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.UMCSENT.umich_sentiment",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_confident",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "consumer_sentiment_yoy",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-07-01",
+        "owner_ref": "data/fred/UMCSENT.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_sentiment_yoy",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:UMCSENT"
+        ],
+        "status": "PRESENT",
+        "transformation": "12-month percent change of the same index.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": -10.5348,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.TOTALSL.consumer_credit_total",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_credit_outstanding",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "consumer_credit_total_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/TOTALSL.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_credit_total_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:TOTALSL"
+        ],
+        "status": "ABSENT",
+        "transformation": "Federal Reserve G.19 Consumer Credit, total, seasonally adjusted, republished by FRED, in USD BILLIONS (never mixed with the USD-MILLIONS RSAFS series in one derived read -- judgment call 14). No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_billions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.TOTALSL.consumer_credit_total",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_credit_growth",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "consumer_credit_total_yoy",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/TOTALSL.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_credit_total_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:TOTALSL"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same SA series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.REVOLSL.consumer_credit_revolving",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_credit_outstanding",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "consumer_credit_revolving_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/REVOLSL.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_credit_revolving_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:REVOLSL"
+        ],
+        "status": "ABSENT",
+        "transformation": "Federal Reserve G.19 Consumer Credit, revolving, seasonally adjusted, republished by FRED, in USD BILLIONS (never mixed with the USD-MILLIONS RSAFS series in one derived read -- judgment call 14). No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_billions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.REVOLSL.consumer_credit_revolving",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_credit_growth",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "consumer_credit_revolving_yoy",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/REVOLSL.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_credit_revolving_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:REVOLSL"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same SA series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.NONREVSL.consumer_credit_nonrevolving",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_credit_outstanding",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "consumer_credit_nonrevolving_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/NONREVSL.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_credit_nonrevolving_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:NONREVSL"
+        ],
+        "status": "ABSENT",
+        "transformation": "Federal Reserve G.19 Consumer Credit, nonrevolving, seasonally adjusted, republished by FRED, in USD BILLIONS (never mixed with the USD-MILLIONS RSAFS series in one derived read -- judgment call 14). No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_billions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.NONREVSL.consumer_credit_nonrevolving",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_credit_growth",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "consumer_credit_nonrevolving_yoy",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/NONREVSL.parquet",
+        "reference_id": "mastermind.market_reference/v1#consumer_credit_nonrevolving_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:NONREVSL"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same SA series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.PSAVERT.personal_saving_rate",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_precautionary_saving",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "personal_saving_rate_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/PSAVERT.parquet",
+        "reference_id": "mastermind.market_reference/v1#personal_saving_rate_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:PSAVERT"
+        ],
+        "status": "ABSENT",
+        "transformation": "BEA Personal Saving Rate (personal saving as a percentage of disposable personal income), republished by FRED. No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_3m_level_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.PSAVERT.personal_saving_rate",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_precautionary_saving",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "personal_saving_rate_change_3m",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/PSAVERT.parquet",
+        "reference_id": "mastermind.market_reference/v1#personal_saving_rate_change_3m",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:PSAVERT"
+        ],
+        "status": "ABSENT",
+        "transformation": "Current level minus the level roughly 91 days prior, in percentage points (mirrors housing.py's mortgage_30y_rate_change_13w pattern -- judgment call 11); refused when no observation lands within 20 days of that lookback target.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DSPIC96.real_disposable_income",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_income",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "real_disposable_income_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/DSPIC96.parquet",
+        "reference_id": "mastermind.market_reference/v1#real_disposable_income_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DSPIC96"
+        ],
+        "status": "ABSENT",
+        "transformation": "BEA Real Disposable Personal Income, seasonally adjusted annual rate, republished by FRED (chained dollars, base year per FRED series metadata -- NOT verified in this authoring environment; see judgment call 15). No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_billions_chained_saar",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DSPIC96.real_disposable_income",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_income_growth",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "real_disposable_income_yoy",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/DSPIC96.parquet",
+        "reference_id": "mastermind.market_reference/v1#real_disposable_income_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DSPIC96"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same SAAR series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DRCCLACBS.cc_delinquency_rate",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_delinquency_stress",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "cc_delinquency_rate_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/DRCCLACBS.parquet",
+        "reference_id": "mastermind.market_reference/v1#cc_delinquency_rate_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DRCCLACBS"
+        ],
+        "status": "ABSENT",
+        "transformation": "Federal Reserve delinquency rate on credit card loans, all commercial banks, NOT seasonally adjusted (delinquency has no standard SA convention), republished by FRED, quarterly, period-START dated. No ALFRED point-in-time vintage exists for this series; delinquency data can be revised after first release.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DRSFRMACBS.mortgage_delinquency_rate",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_delinquency_stress",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "mortgage_delinquency_rate_level",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/DRSFRMACBS.parquet",
+        "reference_id": "mastermind.market_reference/v1#mortgage_delinquency_rate_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DRSFRMACBS"
+        ],
+        "status": "ABSENT",
+        "transformation": "Federal Reserve delinquency rate on single-family residential mortgages, all commercial banks, NOT seasonally adjusted, republished by FRED, quarterly, period-START dated. No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "n/a",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "RIGHTS_BLOCKED",
+        "market_session": null,
+        "metric_id": "payments_panel_card_network",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "RIGHTS_BLOCKED",
+        "observed_at": null,
+        "owner_ref": "NONE -- card-network/processor panels are a standing rights-adjacent exclusion (docs/QUAL_DATA_COMPLIANCE.md section 2.3)",
+        "reference_id": "mastermind.market_reference/v1#payments_panel_card_network",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "RIGHTS_BLOCKED",
+        "source_digest": null,
+        "source_refs": [
+          "NONE -- card-network/processor panels are a standing rights-adjacent exclusion (docs/QUAL_DATA_COMPLIANCE.md section 2.3)"
+        ],
+        "status": "ABSENT",
+        "transformation": "Consumer card/transaction data panels (Yipit, Earnest Research, Consumer Edge, Bloomberg Second Measure, and equivalents) are excluded per docs/QUAL_DATA_COMPLIANCE.md section 2.3: \"These panels aggregate individual payment transactions. The data originates from bank partnerships or card-network agreements; the downstream compliance burden includes verifying that each data vendor's underlying consent framework is intact, that individual transaction records are appropriately anonymized at the cell level, and that the aggregate product does not permit re-identification.\" This composer reads that as a rights-adjacent permanent barrier, not an engineering backlog item -- see judgment call 3 for the full disclosed reasoning.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "n/a",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "household_debt_panel_nyfed_qhdc",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": null,
+        "owner_ref": "NONE -- no collector for the NY Fed Quarterly Report on Household Debt and Credit exists in this estate",
+        "reference_id": "mastermind.market_reference/v1#household_debt_panel_nyfed_qhdc",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "NONE -- no collector for the NY Fed Quarterly Report on Household Debt and Credit exists in this estate"
+        ],
+        "status": "ABSENT",
+        "transformation": "The NY Fed Quarterly Report on Household Debt and Credit (QHDC) would supply richer household-debt composition context, but no collector for that release exists in this estate today. This composer does not build new collectors; typed as not covered rather than estimated from a different series (judgment call 4).",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "composite_prior_only",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "axes.cash_flow_momentum",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_stronger_momentum",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "cash_flow_momentum",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-07-01",
+        "owner_ref": "engine.market_os.macro_workspaces.consumer_payments",
+        "reference_id": "mastermind.market_reference/v1#cash_flow_momentum",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.market_os.macro_workspaces.consumer_payments"
+        ],
+        "status": "ABSENT",
+        "transformation": "weighted-mean composite over retail_sales_yoy + real_disposable_income_yoy; see axes[cash_flow_momentum]",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "score",
+        "value": null,
+        "value_type": "score_0_100"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "composite_prior_only",
+        "calculation_as_of": "2026-07-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "axes.credit_stress",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_stress",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "credit_stress",
+        "model_version": "consumer_payments.compose.v1",
+        "null_reason": "COMPUTATION_REFUSED",
+        "observed_at": "2026-07-01",
+        "owner_ref": "engine.market_os.macro_workspaces.consumer_payments",
+        "reference_id": "mastermind.market_reference/v1#credit_stress",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.market_os.macro_workspaces.consumer_payments"
+        ],
+        "status": "ABSENT",
+        "transformation": "weighted-mean composite over revolving-credit YoY, saving rate (inverted), cc delinquency, mortgage delinquency; see axes[credit_stress]",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "score",
+        "value": null,
+        "value_type": "score_0_100"
+      }
+    ]
+  },
+  "region": {
+    "code": "US",
+    "display_name": "United States",
+    "supported": true
+  },
+  "scenario_contract": {
+    "assumptions": [
+      {
+        "assumption_id": "real_income_growth_pct",
+        "label": {
+          "en": "Real income growth",
+          "zh": "实际收入增长"
+        },
+        "max": 20.0,
+        "min": -20.0,
+        "owner_field": "fred.DSPIC96.real_disposable_income",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "saving_rate_pct",
+        "label": {
+          "en": "Saving rate",
+          "zh": "储蓄率"
+        },
+        "max": 25.0,
+        "min": 0.0,
+        "owner_field": "fred.PSAVERT.personal_saving_rate",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "revolving_credit_growth_pct",
+        "label": {
+          "en": "Revolving credit growth",
+          "zh": "循环信贷增长"
+        },
+        "max": 30.0,
+        "min": -20.0,
+        "owner_field": "fred.REVOLSL.consumer_credit_revolving",
+        "step": 1.0,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "cc_delinquency_rate_pct",
+        "label": {
+          "en": "Credit-card delinquency rate",
+          "zh": "信用卡拖欠率"
+        },
+        "max": 15.0,
+        "min": 0.0,
+        "owner_field": "fred.DRCCLACBS.cc_delinquency_rate",
+        "step": 0.25,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "retail_sales_growth_pct",
+        "label": {
+          "en": "Retail sales growth",
+          "zh": "零售销售增长"
+        },
+        "max": 30.0,
+        "min": -30.0,
+        "owner_field": "fred.RSAFS.retail_sales",
+        "step": 0.5,
+        "unit": "pct"
+      }
+    ],
+    "execution_available": false,
+    "note": "Assumption vocabulary is declared and closed; this composer ships no scenario execution endpoint (non-goal). A future owner-native pure scenario function produces mastermind.macro_workspace_scenario_result.v1 with no canonical write.",
+    "result_schema": "mastermind.macro_workspace_scenario_result.v1",
+    "status": "PARTIAL"
+  },
+  "schema": {
+    "contract": "mastermind.macro_workspace_snapshot.v1",
+    "version": "1.0.0"
+  },
+  "series": {
+    "items": [],
+    "null_reason": "INSUFFICIENT_HISTORY",
+    "status": "ABSENT"
+  },
+  "sources": {
+    "items": [
+      {
+        "artifact_ref": "data/fred/RSAFS.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Retail sales (Census Advance Monthly Retail Trade, via FRED)",
+          "zh": "零售销售（人口普查局零售贸易先行月度统计，经FRED）"
+        },
+        "owner_ref": "collectors.fred[RSAFS]",
+        "provider": "US Census Bureau / FRED",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "retail_sales",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/UMCSENT.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "Consumer sentiment (University of Michigan, via FRED)",
+          "zh": "消费者信心（密歇根大学，经FRED）"
+        },
+        "owner_ref": "collectors.fred[UMCSENT]",
+        "provider": "University of Michigan / FRED",
+        "reference_period": "2026-07-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "consumer_sentiment",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/TOTALSL.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit, total (Federal Reserve G.19, via FRED)",
+          "zh": "消费信贷总额（美联储G.19报告，经FRED）"
+        },
+        "owner_ref": "collectors.fred[TOTALSL]",
+        "provider": "Federal Reserve / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "consumer_credit_total",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/REVOLSL.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit, revolving (Federal Reserve G.19, via FRED)",
+          "zh": "消费信贷循环部分（美联储G.19报告，经FRED）"
+        },
+        "owner_ref": "collectors.fred[REVOLSL]",
+        "provider": "Federal Reserve / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "consumer_credit_revolving",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/NONREVSL.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Consumer credit, nonrevolving (Federal Reserve G.19, via FRED)",
+          "zh": "消费信贷非循环部分（美联储G.19报告，经FRED）"
+        },
+        "owner_ref": "collectors.fred[NONREVSL]",
+        "provider": "Federal Reserve / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "consumer_credit_nonrevolving",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/PSAVERT.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Personal saving rate (BEA, via FRED)",
+          "zh": "个人储蓄率（BEA，经FRED）"
+        },
+        "owner_ref": "collectors.fred[PSAVERT]",
+        "provider": "US Bureau of Economic Analysis / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "personal_saving_rate",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DSPIC96.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Real disposable personal income (BEA, via FRED)",
+          "zh": "实际可支配个人收入（BEA，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DSPIC96]",
+        "provider": "US Bureau of Economic Analysis / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "real_disposable_income",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DRCCLACBS.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Credit-card delinquency rate (Federal Reserve, via FRED)",
+          "zh": "信用卡拖欠率（美联储，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DRCCLACBS]",
+        "provider": "Federal Reserve / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "cc_delinquency",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DRSFRMACBS.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Mortgage delinquency rate (Federal Reserve, via FRED)",
+          "zh": "住房抵押贷款拖欠率（美联储，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DRSFRMACBS]",
+        "provider": "Federal Reserve / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "mortgage_delinquency",
+        "transform": null
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "RIGHTS_BLOCKED",
+        "label": {
+          "en": "Card-network/processor transaction panels",
+          "zh": "银行卡网络/收单机构交易面板数据"
+        },
+        "owner_ref": "NONE -- rights-blocked (docs/QUAL_DATA_COMPLIANCE.md section 2.3)",
+        "provider": null,
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "RIGHTS_BLOCKED",
+        "source_id": "payments_panel_card_network",
+        "transform": null
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "NOT_COVERED",
+        "label": {
+          "en": "NY Fed Quarterly Report on Household Debt and Credit",
+          "zh": "纽约联储家庭债务与信贷季度报告"
+        },
+        "owner_ref": "NONE -- no collector wired in this estate",
+        "provider": "Federal Reserve Bank of New York",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "household_debt_nyfed_qhdc",
+        "transform": null
+      }
+    ]
+  },
+  "workspace": {
+    "id": "consumer_payments",
+    "subtitle": {
+      "en": "Cash-flow/spending momentum x consumer credit stress",
+      "zh": "现金流/支出动能 × 消费信贷压力"
+    },
+    "title": {
+      "en": "Consumer & Payments",
+      "zh": "消费与支付"
+    }
+  }
+}

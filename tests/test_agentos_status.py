@@ -534,7 +534,8 @@ def test_staleness_comes_from_git_not_from_a_typed_field(
     out = tmp_path / "state.json"
     _status(STORE, out, "--now", FROZEN, "--active-builds", str(builds))
     rows = _state(out)["workstreams"]
-    assert any(row["updated"] for row in rows), "git dates did not resolve for any record"
+    undated = [row["key"] for row in rows if not row["updated"]]
+    assert not undated, f"git dates did not resolve for tracked workstreams: {undated}"
 
 
 # ------------------------------------------------------- non-ranked readiness
@@ -628,12 +629,18 @@ def test_readiness_states_explain_graph_and_authored_progress(
     assert ready["reason_code"] == "dependencies_satisfied"
     assert ready["unmet_dependencies"] == []
 
-    waiting = records[("MACRO-CONTEXT-INDEX", "W2")]
+    # C0 regold 2026-08-28: MACRO-CONTEXT-INDEX W2 is done (Agent OS Phase 3
+    # landed), so it no longer exhibits an unmet dependency; PROPHET-US-ENTRY-TIMING
+    # W2 (todo, depends_on the unfinished W1) is the live single-unmet-dep fixture.
+    waiting = records[("PROPHET-US-ENTRY-TIMING", "W2")]
     assert waiting["state"] == "blocked"
     assert waiting["reason_code"] == "unmet_dependencies"
-    assert waiting["unmet_dependencies"] == ["WS:MACRO-CONTEXT-INDEX#W1"]
+    assert waiting["unmet_dependencies"] == ["WS:PROPHET-US-ENTRY-TIMING#W1"]
 
-    parent_blocked = records[("GMI-THEME-GRAPH", "TRANSMISSION")]
+    # D2C is the current unfinished authored wave; the former TRANSMISSION wave no
+    # longer exists by design (folded to the completed TRANSMISSION-FOLD), so the
+    # blocked-parent exemplar rides D2C rather than resurrecting a dead wave id.
+    parent_blocked = records[("GMI-THEME-GRAPH", "D2C")]
     assert parent_blocked["state"] == "blocked"
     assert parent_blocked["reason_code"] == "workstream_blocked"
     assert parent_blocked["unmet_dependencies"] == []

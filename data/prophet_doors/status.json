@@ -1,52 +1,33 @@
 {
-  "appended": 7,
-  "asof": "2026-08-21",
+  "appended": 2,
+  "asof": "2026-09-04",
   "candidates": {
-    "R": 2,
-    "T": 5,
-    "W": 35
+    "R": 1,
+    "T": 1,
+    "W": 4
   },
   "deduped": {
     "R": 0,
     "T": 1,
-    "W": 34
+    "W": 3
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-21",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
       "consulted": true,
-      "null_reasons": {
-        "ohlcv_absent": 7
-      },
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Commodities Agriculture": {
-          "theme_thrust_frac": 0.1667,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        },
-        "Crypto & Blockchain": {
-          "theme_thrust_frac": 0.1923,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 45,
-      "tickers_read": 52
+      "tickers_ok": 1,
+      "tickers_read": 1
     },
     "keys": [
       "relay_count_3d",
@@ -64,17 +45,12 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 170,
-      "n_covered": 87,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
       "consulted": true,
-      "last_session": "2026-08-21",
-      "n_tickers": 1543,
+      "last_session": "2026-09-04",
+      "n_tickers": 1544,
       "ok": true,
       "reason": null,
       "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
@@ -112,60 +88,54 @@
   },
   "flag_tickers": {
     "R": [
-      "DINO",
-      "TRU"
+      "VYX"
     ],
-    "T": [
-      "FMC",
-      "HOOD",
-      "IBM",
-      "V"
-    ],
+    "T": [],
     "W": [
-      "CCJ"
+      "IREN"
     ]
   },
-  "n_universe": 1495,
+  "n_universe": 1496,
   "overflow": {
     "R": 0,
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-22 06:38:26",
-  "runtime_s": 126.9,
+  "run_utc": "2026-09-04 20:19:38",
+  "runtime_s": 110.9,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 0,
-    "asof": "2026-08-21",
-    "n_members": 170,
+    "age_days": 1,
+    "asof": "2026-09-03",
+    "n_members": 115,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.807,
+        "emerging_score": 3.602,
         "rank": 1,
-        "theme": "Commodities Metals"
-      },
-      {
-        "emerging_score": 2.529,
-        "rank": 2,
         "theme": "Commodities Agriculture"
       },
       {
-        "emerging_score": 2.09,
-        "rank": 3,
-        "theme": "Crypto & Blockchain"
-      },
-      {
-        "emerging_score": 1.629,
-        "rank": 4,
+        "emerging_score": 3.455,
+        "rank": 2,
         "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.605,
+        "emerging_score": 2.234,
+        "rank": 3,
+        "theme": "Mega-Cap"
+      },
+      {
+        "emerging_score": 1.727,
+        "rank": 4,
+        "theme": "Commodities Energy"
+      },
+      {
+        "emerging_score": 1.724,
         "rank": 5,
-        "theme": "Healthcare & Biotech"
+        "theme": "Energy Traditional"
       }
     ]
   },
@@ -174,19 +144,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 35,
-    "asof_max": "2026-08-21",
+    "aligned": 4,
+    "asof_max": "2026-09-04",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-21",
-    "evaluated": 712,
-    "fresh": 36,
+    "asof_run": "2026-09-04",
+    "evaluated": 713,
+    "fresh": 4,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 19.9,
-    "skipped": 5,
+    "runtime_s": 19.3,
+    "skipped": 4,
     "source": "baskets/membership.json",
-    "state_turn": 98,
+    "state_turn": 88,
     "universe_n": 717
   }
 }

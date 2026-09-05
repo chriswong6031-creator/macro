@@ -35,6 +35,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.workflow_run_source import resolved_workflow_text  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github/workflows"
 
@@ -57,7 +59,9 @@ LANES = [
 
 
 def _lines(name: str) -> list[str]:
-    return (WORKFLOWS / name).read_text().splitlines()
+    # 512KB-cap diet: some daily.yml bodies live in scripts/ci/ — splice them
+    # back IN PLACE so index/order assertions keep their pre-extraction meaning.
+    return resolved_workflow_text(WORKFLOWS / name, ROOT).splitlines()
 
 
 def _idx(lines: list[str], needle: str) -> list[int]:

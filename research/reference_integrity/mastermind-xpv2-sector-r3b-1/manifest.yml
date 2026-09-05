@@ -9,7 +9,12 @@
 schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b-1
 scope: full
-status: in_review
+status: revise
+# status: revise set 2026-08-23 by the returning R3B/R3B.1 orchestrator per Sol's final
+# four-critic adjudication + Chairman execution directive: durable seat dispositions
+# PRC=PASS_WITH_CONDITIONS / Mobile=PASS_WITH_CONDITIONS / Data=PASS_WITH_CONDITIONS /
+# Visual-Taste=BLOCK; overall Sol verdict REVISE (verdict.yml). Successor cycle:
+# mastermind-xpv2-sector-r3b-2 (one bounded surgical closure, B2-01..B2-11).
 # status: in_review SET AT FREEZE (2026-08-22) by the R3B.1 orchestrator: all four lanes
 # converged and adjudicated, 29/29 continuity items RESOLVED_BY_CHANGE, fresh 49-file
 # evidence matrix landed, acceptance green (verify 16/16, R3A 59/59, RIG scan exit 0).
@@ -54,6 +59,16 @@ files:
   baseline: baseline.yml
   proposal: proposal.yml
   continuity: continuity.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  # Supplemental seat receipts (schema roles are the two above; RIG REVIEW_ROLES):
+  #   reviews/mobile_accessibility.md  (PASS_WITH_CONDITIONS, re-run seat, PR #6309)
+  #   reviews/data_authority.md        (PASS_WITH_CONDITIONS, re-run seat, PR #6309)
+  verdict: verdict.yml
+  # approval: FORBIDDEN at this SHA (Sol final adjudication) -- never authored by this cycle.
+  # Historical note superseded 2026-08-23 -- the four final seats delivered; receipts above.
+  # Original comment retained below for lineage:
   # reviews/: the FOUR NEW fresh critic seats Sol fans out after the successor freeze
   # (commission "Final review" -- current critics may verify fixes during the build but may
   # not be the final approval seats). Never authored by this cycle.

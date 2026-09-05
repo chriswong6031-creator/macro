@@ -1,167 +1,172 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-08-18",
-  "generated_at": "2026-08-19T19:14:49.258535+00:00",
+  "as_of": "2026-09-03",
+  "generated_at": "2026-09-04T17:16:36.540587+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-08-18-BIIB-20260819191449-1",
-      "ticker": "BIIB",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine's verdict is neutral with no clear edge, and the accounting watch plus a crowded Big Pharma basket keep it flat relative to the S&P. A modest FRESH BUY signal is not enough to chase.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Quality axis accounting: watch",
-        "Caution: Big Pharma basket crowded/stretched",
-        "Board: FRESH BUY, off_high -1.9%"
-      ],
-      "dissent": "Insider/earnings/revision confluence plus a fresh-buy board state could resolve upward and leave a neutral stance too flat.",
-      "falsifier": {
-        "text": "A close at a new high with the accounting watch cleared and the entry leg still unblocked while the S&P is flat or lower would point to a constructive read.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-15",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-08-18-JNJ-20260819191449-2",
-      "ticker": "JNJ",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Momentum is strong but the engine's verdict is neutral with no clear edge, accounting is on watch, and the board is at the high. Don't chase, don't short.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Quality axis accounting: watch",
-        "Selection alpha z 1.54 is context only",
-        "Board: TURN SIGNALED, off_high 0.0"
-      ],
-      "dissent": "Strong momentum and spotlight tailwind could continue, making a flat stance underperform if it breaks out cleanly.",
-      "falsifier": {
-        "text": "A clean breakout above the current TURN SIGNALED high with the accounting watch resolved while the S&P is flat or lower would point to a constructive read.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-15",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-08-18-TRGP-20260819191449-3",
-      "ticker": "TRGP",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The extension brake and cycle block say wait for a pullback, but strong earnings/momentum and clean quality argue against shorting. Neutral captures don't-chase, don't-fade.",
-      "evidence": [
-        "Verdict: Extended \u2014 wait for a pullback",
-        "Entry axis blocked: 31% over 200dma",
-        "cycle_blocked: true",
-        "Selection alpha z 1.37 and quality z 0.94 clean"
-      ],
-      "dissent": "A 31% trend extension can keep running in a momentum tape, and neutral sacrifices upside if the pullback never arrives.",
-      "falsifier": {
-        "text": "A high-volume close above the current signal without the expected pullback while the S&P is flat or lower would point to a more constructive read.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-15",
-      "engine_verdict": "Extended \u2014 wait for a pullback"
-    },
-    {
-      "id": "2026-08-18-HWM-20260819191449-4",
-      "ticker": "HWM",
+      "id": "2026-09-03-ADM-20260904171636-1",
+      "ticker": "ADM",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The verdict is a high-confluence leader with entry not blocked and clean accounting. The constructive lean follows the risk-approved selection, but is kept low-conviction because the rank is selection, not a forecast.",
+      "thesis": "The constructive lean rests on validated residual-alpha selection and an unblocked rising setup, not the board rank. Conviction stays low because the entry axis is nearly neutral and prior constructive calls have weak directional accuracy.",
       "evidence": [
-        "Verdict: High-confluence leader (context)",
-        "Entry axis not blocked; no cautions",
-        "Quality axis accounting: clean",
-        "Selection SUE 3.0 / revision 1.16 / alpha 1.19 are context only"
+        "Verdict: High-confluence leader",
+        "Selection axis z 1.04; 66th percentile",
+        "Entry unblocked; direction up; FRESH BUY",
+        "Accounting flag clean",
+        "Constructive track-record directional accuracy 32.4%"
       ],
-      "dissent": "TURN SIGNALED at 0% off high means it could be near a local top; any loss of relative strength would erase the edge quickly.",
+      "dissent": "The mixed regime and only middling entry and quality readings may leave little relative advantage despite intact momentum.",
       "falsifier": {
-        "text": "An entry-leg flip to blocked with a board-state rollover while the S&P is flat or higher would point to a neutral or cautious read.",
+        "text": "ADM underperforms the S&P 500 over 20 trading days while its board direction turns down.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "HWM",
+          "subject_ticker": "ADM",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-09-15",
+      "check_by": "2026-10-01",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
-      "id": "2026-08-18-GNW-20260819191449-5",
-      "ticker": "GNW",
+      "id": "2026-09-03-SONO-20260904171636-2",
+      "ticker": "SONO",
       "name": null,
       "lean": "constructive",
-      "conviction": "low",
+      "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The engine tags it a leader with entry not blocked and cycle open, but weak fundamentals make this constructive lean higher-risk and low-conviction. It is a risk-reshaped lean, not a quality bet.",
+      "thesis": "Validated residual-alpha selection is reinforced by an unblocked base-building entry and the strongest quality axis in this group. The fresh insider leg supports the confluence, though the poor historical directional accuracy of constructive calls limits confidence.",
       "evidence": [
-        "Verdict: Leader \u00b7 weak fundamentals \u2014 higher-risk",
-        "Entry axis not blocked; board FRESH BUY",
-        "cycle_blocked: false",
-        "Caution: weak fundamentals",
-        "Revision z 2.38 is context only"
+        "Verdict: Constructive \u2014 building a base",
+        "Validated insider leg z 1.50",
+        "Entry axis 60th percentile; not blocked",
+        "Quality axis 77th percentile; accounting clean",
+        "Direction up; FRESH BUY"
       ],
-      "dissent": "Weak fundamentals and low quality can reprice fast; if revisions roll over, this constructive lean likely underperforms.",
+      "dissent": "At 15.7% below its high, the apparent base may instead be an incomplete recovery that continues to lag the index.",
       "falsifier": {
-        "text": "An entry-leg flip to blocked with the stock losing its up-state while the S&P is flat or higher would point to a neutral read.",
+        "text": "SONO underperforms the S&P 500 over 20 trading days and the board direction turns down.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "GNW",
+          "subject_ticker": "SONO",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-09-15",
-      "engine_verdict": "Leader \u00b7 weak fundamentals \u2014 higher-risk"
+      "check_by": "2026-10-01",
+      "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-08-18-SWX-20260819191449-6",
-      "ticker": "SWX",
+      "id": "2026-09-03-F-20260904171636-3",
+      "ticker": "F",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The accounting warning caps a leader read; the engine says verify before buying, so stay flat relative to the S&P rather than chase a turn signal with weak quality.",
+      "horizon_d": 15,
+      "thesis": "The turn signal and unblocked entry are offset by a negative fresh earnings-surprise reading, an accounting watch flag, and a lagging sector basket. With no clear validated directional edge, neither relative outperformance nor underperformance is dependable.",
       "evidence": [
-        "Verdict: Leader \u00b7 accounting warning \u2014 verify before buying",
-        "Quality axis accounting: warn",
-        "Board: TURN SIGNALED, off_high -1.8%",
-        "Entry axis not blocked but no clear edge"
+        "Verdict: Neutral \u2014 no clear edge",
+        "Fresh SUE z -0.89",
+        "Accounting flag watch",
+        "Consumer Discretionary equal-weight basket below long-term trend",
+        "Direction up; TURN SIGNALED"
       ],
-      "dissent": "If the accounting issue clears and revisions continue improving, neutral would miss a legitimate leader continuation.",
+      "dissent": "The immediate turn signal, positive revisions, and positive momentum context could develop into sustained relative strength.",
       "falsifier": {
-        "text": "A close at a new high with the accounting flag cleared and the entry leg still unblocked while the S&P is flat or lower would point to a constructive read.",
+        "text": "F establishes sustained relative strength versus the S&P 500 for 10 consecutive trading days.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-09-15",
-      "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
+      "check_by": "2026-09-24",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-09-03-WFC-20260904171636-4",
+      "ticker": "WFC",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "A favorable unblocked entry is counterbalanced by negative momentum context, below-median quality, and the crowded-sector risk control. Extension and crowding argue against chasing, but the rising tape does not justify a directional short.",
+      "evidence": [
+        "Verdict: Neutral \u2014 no clear edge",
+        "Entry axis 64th percentile; FRESH BUY",
+        "Momentum context z -0.58",
+        "Quality axis 36th percentile; accounting watch",
+        "Financials basket crowded and stretched"
+      ],
+      "dissent": "The fresh positive earnings-surprise context and rising direction could sustain outperformance despite crowding.",
+      "falsifier": {
+        "text": "WFC outperforms the S&P 500 for 10 consecutive trading days without its board direction turning down.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-24",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-09-03-SPNT-20260904171636-5",
+      "ticker": "SPNT",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "The turn signal and supportive entry are not enough to overcome weak quality, an accounting watch flag, and essentially flat selection evidence. The rising direction also makes a bearish call inappropriate without an actual rollover.",
+      "evidence": [
+        "Verdict: Neutral \u2014 no clear edge",
+        "Selection axis 52nd percentile",
+        "Entry axis 62nd percentile; TURN SIGNALED",
+        "Quality axis 35th percentile",
+        "Accounting flag watch"
+      ],
+      "dissent": "The positive tailwind and immediate turn signal could become a durable relative breakout.",
+      "falsifier": {
+        "text": "SPNT establishes sustained relative strength versus the S&P 500 for 10 consecutive trading days.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-24",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-09-03-FAF-20260904171636-6",
+      "ticker": "FAF",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "The deterministic profile is constructive and the direction remains up, but the shipped extension brake says not to chase. Because extension is the only meaningful caution and momentum is intact, this is a watch rather than a relative short.",
+      "evidence": [
+        "Verdict: Constructive \u2014 building a base",
+        "Board state: HOLD \u2014 EXTENDED",
+        "Entry not blocked",
+        "Direction up",
+        "Accounting flag clean"
+      ],
+      "dissent": "Positive revisions, supportive tailwind, and intact momentum may carry FAF higher despite the extended entry.",
+      "falsifier": {
+        "text": "FAF resets its extension while retaining an upward board direction and then outperforms the S&P 500 over 10 trading days.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-24",
+      "engine_verdict": "Constructive \u2014 building a base"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

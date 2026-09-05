@@ -44,8 +44,11 @@ current-catalog rows (``store``/``yahoo_fetch``) that answer "what string do I u
 TODAY for a bar of any date" (``AliasRow`` docstring, ``lib/dataos/identity.py``).
 ``resolve_graph_node_identity(node_id, asof=...)`` with an EXPLICIT ``asof`` instead
 resolves in HISTORICAL mode: rule 6 may consult ONLY DATED alias rows (``valid_from``
-or ``valid_to`` non-null) as historical-naming evidence — a current-catalog row is
-never allowed to answer a historical-naming question, because it was never given one.
+or ``valid_to`` non-null) of the HISTORICAL vendor spaces as historical-naming
+evidence — a current-catalog SPACE (``store``/``yahoo_fetch``) is never allowed to
+answer a historical-naming question, because it was never given one; since 2026-08-28
+those spaces may carry dated rows across a ratified key migration, so the exclusion
+is by vendor identity (``_CURRENT_CATALOG_VENDORS``), not row shape.
 Rule 5 (exact inception-code match) is asof-invariant in BOTH modes: the master's
 ``inception_code`` is the security's own canonical symbol, minted once and stored, so
 it never depends on the query date.
@@ -333,16 +336,31 @@ def _cross_market_mismatch_reason(market_scope: str, listing_key: str | None) ->
 # F2 (post-adversarial-review) — HISTORICAL-mode alias lookup, two-clock law. Only
 # DATED alias rows (at least one of valid_from/valid_to non-null) are historical-naming
 # evidence; a fully open row (both bounds null) is a CURRENT-CATALOG space answering
-# "what string do I use today for a bar of any date" and is structurally excluded.
+# "what string do I use today for a bar of any date" and is structurally excluded —
+# and so is EVERY row of a current-catalog VENDOR, dated or not. The exclusion used
+# to be shape-only ("both bounds null"), which was equivalent while current-catalog
+# spaces could only emit open rows; since 2026-08-28 the `store` space emits DATED
+# rows across a ratified key migration (EQR->VMRK, AMENDMENT ruling 9 / m3), so the
+# vendor-identity test below is the law's real boundary: a current-catalog space
+# answers "what key does the REPO use", never the market's historical naming, no
+# matter how its rows are bounded.
 # ---------------------------------------------------------------------------
+
+#: Vendor spaces that model the repo's own current catalog (see
+#: scripts/build_security_master.py VENDOR_YAHOO_FETCH / VENDOR_STORE). Their rows
+#: are never historical-naming evidence, dated or not.
+_CURRENT_CATALOG_VENDORS = frozenset({"store", "yahoo_fetch"})
+
 
 def _historical_alias_resolve(table: VendorAliasTable, vendor: str, vendor_symbol: str,
                               on: date) -> str | None:
+    if vendor in _CURRENT_CATALOG_VENDORS:
+        return None  # a current-catalog space was never asked a historical question
     for r in table.rows:
         if r.vendor != vendor or r.vendor_symbol != vendor_symbol:
             continue
         if r.valid_from is None and r.valid_to is None:
-            continue  # current-catalog row — not historical-naming evidence
+            continue  # current-catalog-shaped row — not historical-naming evidence
         if r.covers(on):
             return r.security_id
     return None
@@ -570,9 +588,10 @@ def resolve_graph_node_identity(node_id: str, asof: str | date | None = None) ->
     An explicit ``asof`` re-runs the §4 algorithm as a PURE function over the
     committed Data OS inputs at that date — no store write, no second store — in
     HISTORICAL mode (two-clock law, F2 amendment): rule 6 may consult only DATED
-    alias rows as historical-naming evidence; the unconditionally-open current-catalog
-    rows (``store``/``yahoo_fetch``) are structurally excluded. Rule 5 is unaffected
-    either way — it is asof-invariant.
+    alias rows of the historical vendor spaces as historical-naming evidence; the
+    current-catalog spaces (``store``/``yahoo_fetch``) are excluded by vendor
+    identity, whether their rows are open or dated. Rule 5 is unaffected either
+    way — it is asof-invariant.
 
     Raises :class:`UnknownGraphNodeError` only for a ``node_id`` absent from the graph
     itself (or present under a non-company kind — v1's row scope is company nodes

@@ -231,6 +231,16 @@ _MM_EVENT_TYPES = {
     # anything the client sends — which is what keeps the denominator honest when
     # the client is the thing choosing the arm. Read by engine/marketing/ad_ingest.py.
     "ad_exposure",
+    # Flow Observatory V2 W7 (research/flow_observatory/W7_SPEC.md): product-learning
+    # instrumentation for templates/flow_velocity.html.j2 — nine typed events (trust_open,
+    # changed_expand, quadrant_select, group_drill, history_open, compare_run,
+    # episode_view, terminal_out, watch_note_view) rides in `meta` as
+    # {ev, lens, id, sess} (the SAME meta passthrough `click` already uses). Privacy:
+    # group ids, lens names, and — for Terminal handoffs only — the instrument symbol
+    # the existing `click` event already carries; no holdings, no research text, no PII.
+    # (PR #6815 review: the prior wording "group ids and lens names only" overstated
+    # this — terminal_out's `id` field is a ticker, not a group id.)
+    "flowobs",
 }
 
 
@@ -565,6 +575,29 @@ def _live_artifact(name: str) -> Path:
     return primary if primary.exists() else SITE / "live" / name
 
 
+_PROPHET_LIVE_CFG: dict | None = None
+
+
+def _prophet_live_cfg() -> dict:
+    """The repo's own ``prophet_live`` config block, parsed once per process.
+
+    Read through ``live_states.live_cfg`` by the caller so the status surface and
+    the evaluator answer "is a pass expected right now?" from ONE window/calendar
+    law. A second copy of the session rule is how a monitor ends up disagreeing
+    with the producer it is supposed to be grading.
+    """
+    global _PROPHET_LIVE_CFG
+    if _PROPHET_LIVE_CFG is None:
+        try:
+            import yaml  # noqa: PLC0415
+            loaded = yaml.safe_load((REPO / "config.yml").read_text(encoding="utf-8"))
+            _PROPHET_LIVE_CFG = (loaded or {}).get("prophet_live") or {}
+        except Exception as exc:  # noqa: BLE001
+            log.warning("status: prophet_live config unreadable (%s) — in-code defaults", exc)
+            _PROPHET_LIVE_CFG = {}
+    return _PROPHET_LIVE_CFG
+
+
 @app.get("/api/status")
 def status() -> dict:
     """At-a-glance health of the VPS loops — the freshness each cron is producing.
@@ -756,6 +789,103 @@ def status() -> dict:
                 checks[key] = {"error": "unavailable", "age_min": age_min(artifact)}
         else:
             checks[key] = {"status": "missing"}
+
+    # ---- US Prophet Live: the product lane's SEMANTIC projection -------------
+    # ALWAYS emitted, even when the artifact is absent or unreadable, because
+    # absence during an expected session is precisely the state that hid the
+    # 2026-07-30 -> 2026-08-26 freeze. In that incident the evaluator ran ~1,500
+    # in-window passes, published nothing (its R2 credentials were never seeded
+    # at cutover), exited 0 on every pass, and NO surface graded this lane -- so
+    # the external dead-man printed "VPS live plane healthy" for 27 days while
+    # the served document stayed frozen at status=dark, pass_ts 2026-07-30.
+    #
+    # Every clock below is ABSOLUTE (`pass_ts`, `quote_asof`) so it keeps ageing
+    # after the writer dies. File mtime is emitted as `served_age_min` for
+    # operators but is deliberately NOT the truth signal: a deploy that copies an
+    # old file rewrites mtime without advancing one semantic clock.
+    #
+    # Aggregate counts only. This endpoint is public and unauthenticated, so
+    # protected pack membership (tickers, levels) must never appear here.
+    prophet: dict[str, Any] = {"status": "absent", "reason": None, "expected_now": None}
+    try:
+        from engine.prophet_live import live_states as _ls  # noqa: PLC0415
+
+        _now = datetime.now(timezone.utc)
+        _lc = _ls.live_cfg(_prophet_live_cfg())
+        prophet["expected_now"] = bool(_ls.in_window(_now, _lc))
+        prophet["session_now"] = _ls.session_et(_now)
+        prophet["pack_expected"] = _ls.last_completed_session(_now)
+    except Exception as exc:  # noqa: BLE001
+        # Fail CLOSED: an unanswerable session law leaves `expected_now` None and
+        # the dead-man treats None as "cannot prove this is a safe window".
+        log.warning("status: prophet_live session law unavailable: %s", exc)
+
+    _pl_artifact = _live_artifact("prophet_live.json")
+    if not _pl_artifact.exists():
+        prophet["reason"] = "served artifact missing"
+    else:
+        prophet["served_age_min"] = age_min(_pl_artifact)
+        try:
+            _pl = json.loads(_pl_artifact.read_text())
+        except Exception as exc:  # noqa: BLE001
+            # Coarsened for the client (CWE-209); the path stays server-side.
+            log.warning("status: prophet_live artifact unreadable (%s): %s", _pl_artifact, exc)
+            prophet["status"] = "unparseable"
+            prophet["reason"] = "unavailable"
+        else:
+            _meta = _pl.get("meta") or {}
+            prophet["schema"] = _pl.get("schema")
+            prophet["status"] = _pl.get("status") or "unknown"
+            prophet["reason"] = _pl.get("reason")
+            prophet["pass_ts"] = _meta.get("pass_ts")
+            prophet["session_et"] = _meta.get("session_et")
+            prophet["pack_as_of"] = _meta.get("pack_as_of")
+            prophet["quote_asof"] = _meta.get("quote_asof")
+            prophet["producer"] = _meta.get("producer") or _meta.get("source")
+
+            def _abs_age_min(raw: Any) -> float | None:
+                """Minutes from an ABSOLUTE ISO stamp to now; None when unusable."""
+                if not isinstance(raw, str) or not raw.strip():
+                    return None
+                try:
+                    stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                except ValueError:
+                    return None
+                if stamp.tzinfo is None:
+                    stamp = stamp.replace(tzinfo=timezone.utc)
+                return round(
+                    (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc))
+                    .total_seconds() / 60,
+                    1,
+                )
+
+            prophet["pass_age_min"] = _abs_age_min(_meta.get("pass_ts"))
+            prophet["quote_age_min"] = _abs_age_min(_meta.get("quote_asof"))
+
+            # Pack basis: the armed pack must be the LAST COMPLETED session. A
+            # mis-stamped pack (same-day or weekend `as_of`) darkens the whole
+            # session -- that defect alone darkened 11 of the 18 sessions lost in
+            # the 2026-08 incident, so it gets its own reported field rather than
+            # hiding inside a generic `dark` status.
+            _expected_pack = prophet.get("pack_expected")
+            _actual_pack = _meta.get("pack_as_of")
+            prophet["pack_ok"] = (
+                bool(_actual_pack) and _actual_pack == _expected_pack
+                if _expected_pack else None
+            )
+
+            _counts = _meta.get("state_counts") or _meta.get("counts")
+            if isinstance(_counts, dict):
+                prophet["state_counts"] = {
+                    str(k): int(v) for k, v in _counts.items()
+                    if isinstance(v, (int, float))
+                }
+            _states = _pl.get("states")
+            if isinstance(_states, dict):
+                prophet["n_names"] = len(_states)
+            elif isinstance(_states, list):
+                prophet["n_names"] = len(_states)
+    checks["prophet_live"] = prophet
 
     # terminal_data — the daily Terminal-data refresh loop
     if TERMINAL_MANIFEST.exists():
@@ -996,6 +1126,7 @@ class BrainChatRequest(BaseModel):
     thread_id: str | None = Field(None, description="Optional thread id for conversation continuity")
     history: list[dict] | None = Field(None, description="Client-sent fallback history (max 12 turns; used only when thread store is absent)")
     context: dict | None = Field(None, description="Optional page/symbol context hint")
+    company_source_span: dict | None = Field(None, description="Optional closed exact-source reference; source bytes are never accepted from the client")
     mode: str = Field("chat", description="'chat' (default) or 'research' (W6b Deep Research — forces pro lane, raises tool budget, structured multi-section cited report; requires pro quota)")
     images: list[str] | None = Field(None, max_length=4, description="Optional image attachments (W6c vision) — base64 data URIs or https URLs; served by a vision model (Haiku on Fast, Opus on Pro). Invalid/oversized dropped. Max 4.")
 
@@ -1246,6 +1377,7 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
         thread_id=body.thread_id,
         history=history,
         context=body.context,
+        company_source_span=body.company_source_span,
         root=REPO,
         mode=mode,
         images=body.images,
@@ -1275,6 +1407,11 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
     POST body: same as /api/brain/chat.
     SSE events (always in this order):
         {"type":"meta","lane":...,"model":...,"thread_id":...,"quota":{...}}
+        {"type":"context_receipt","schema":"ai_context_receipt.v1",...}  (W1-C — every
+                                        native/instant/deep run, right after meta and
+                                        before any delta/tool event; the deterministic
+                                        effective-context resolution the turn used. See
+                                        research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.)
         {"type":"tool","name":"..."}            (progress, 0+ — during tool-calling phase)
         {"type":"annotate","symbol":...,...}    (when annotate_chart called, 0+)
         {"type":"delta","text":"..."}           (full buffered answer, after all tool turns)
@@ -1312,6 +1449,7 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             thread_id=body.thread_id,
             history=history,
             context=body.context,
+            company_source_span=body.company_source_span,
             root=REPO,
             mode=mode,
             images=body.images,
@@ -2045,6 +2183,21 @@ app.include_router(earnings_router)
 # recommendation surface.
 from app.company_intelligence import router as company_intelligence_router  # noqa: E402
 app.include_router(company_intelligence_router)
+
+# Bounded localhost projection of ONE regular-session quote for the static
+# stock dossiers.  Market-data authority stays with the Terminal Quote Plane —
+# this owns no store, socket, scheduler, or vendor credential, and it may only
+# report "live" when the upstream row itself proves measured current freshness.
+from app.dossier_quote import router as dossier_quote_router  # noqa: E402
+app.include_router(dossier_quote_router)
+
+# Deliberately public, bounded batch projection of regular-session quotes for
+# the exact rendered Intelligence Hub roster (R1A-M). Same owner boundary as
+# dossier_quote above (Terminal Quote Plane stays authoritative; this route
+# owns no store/socket/scheduler) — see app/intelligence_hub_market_pulse.py's
+# module docstring for the public-access decision.
+from app.intelligence_hub_market_pulse import router as intel_hub_market_pulse_router  # noqa: E402
+app.include_router(intel_hub_market_pulse_router)
 
 # Market Memory is a read-only product projection over two existing context
 # engines (Brain macro analogues + Signal Episode Atlas).  The router enforces

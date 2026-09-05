@@ -235,6 +235,20 @@ jobs:
         run: |
           printf '{"last_run": "%s", "run_id": "%s", "workflow": "weekly"}\n' \
             "$(date -u +%FT%T+00:00)" "${GITHUB_RUN_ID:-local}" > data/weekly_status.json
+      # W1 repair (2026-08-26 experiments audit §3): the BH-FDR consumer the cortex
+      # evaluator has promised since W7b PR2 and that did not exist — H5's "queued for
+      # FDR" pass sat in the experiments panel with nothing to read it.
+      #
+      # It rides WEEKLY, not with the nightly evaluator that feeds it. daily.yml is
+      # ~250 bytes under the 487,000-byte budget that guards GitHub's silent
+      # ~512,000-byte processing cap (#5416: over it, cron stops firing and dispatched
+      # runs strand queued with zero jobs, uncancellable) — a quarter-scoped batch is
+      # not worth spending that headroom on. Cadence is not correctness here: the batch
+      # groups by QUARTER, is idempotent, and appends a governance event only when the
+      # BH decision changes, so a weekly re-run of the same quarter is a no-op.
+      - name: quarterly cortex FDR batch (W1 — promotes nothing; records the BH account)
+        run: |
+          python -m scripts.quarterly_cortex_fdr || echo "::warning title=cortex_fdr::batch failed (non-fatal)"
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"

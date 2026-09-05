@@ -1,0 +1,164 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050",
+  "object_class": "system_belief",
+  "owner_store": "theme_graph.edge_belief",
+  "native_identity": {
+    "edge_id": "benefits_from:co:us:AAPL->theme:ai-infrastructure@2026-07-30",
+    "belief_time": "2026-08-01"
+  },
+  "native_schema": "theme_graph.edges.v1",
+  "native_digest": {
+    "state": "unknown",
+    "sha256": null
+  },
+  "coverage_class": "append_only_bitemporal",
+  "freshness": {
+    "state": "native_clock_bound",
+    "clock_field": "computed_at",
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "deterministic",
+  "subject": {
+    "key_type": "theme_node",
+    "key": "co:us:AAPL"
+  },
+  "secondary_subjects": [],
+  "clocks": [
+    {
+      "class": "world_valid",
+      "field": "valid_from",
+      "value_state": "known",
+      "value": "2026-07-30",
+      "grain": "date"
+    },
+    {
+      "class": "world_valid",
+      "field": "valid_to",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "date"
+    },
+    {
+      "class": "source_published",
+      "field": "evidence_time",
+      "value_state": "known",
+      "value": "2026-07-30",
+      "grain": "date"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "belief_time",
+      "value_state": "known",
+      "value": "2026-08-01",
+      "grain": "date"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "computed_at",
+      "value_state": "known",
+      "value": "2026-08-01T00:16:00Z",
+      "grain": "datetime"
+    }
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.theme_graph.store.read_edges",
+    "owner_reader_kind": "collection",
+    "pointer": "data/theme_graph/edges.parquet#edge_id=benefits_from:co:us:AAPL->theme:ai-infrastructure@2026-07-30&belief_time=2026-08-01"
+  },
+  "relations": [
+    {
+      "target_reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+      "type": "shares_upstream",
+      "automatic_effect": false,
+      "deterministic_key": null,
+      "independence": {
+        "source_independence": {
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
+        },
+        "information_novelty": {
+          "state": "shared",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
+        },
+        "mechanism_independence": {
+          "state": "unknown",
+          "assessment": "declarative_unverified",
+          "basis": "two owner observations cite the same upstream earnings release"
+        }
+      }
+    }
+  ],
+  "missingness": {
+    "state": "present",
+    "reason": null,
+    "zero_substituted": false
+  },
+  "correction": {
+    "kind": "none",
+    "predecessor_reference_ids": [],
+    "clock_field": null,
+    "chronology_state": "not_applicable",
+    "append_only": true,
+    "mutates_predecessor": false
+  },
+  "replay": {
+    "mode": "live",
+    "cutoffs": {
+      "world_valid": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "source_published": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "knowable": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "observed": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "system_recorded": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "belief_or_build": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "review_due": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      }
+    },
+    "code_revision": null,
+    "input_digest": null,
+    "vintage_state": "owner_native"
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

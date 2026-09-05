@@ -1,12 +1,12 @@
 {
   "schema": "builder_failstreaks.v1",
-  "updated_utc": "2026-08-22T05:01:04Z",
+  "updated_utc": "2026-09-04T12:02:07Z",
   "builders": {
     "options_flow": {
-      "streak": 2,
+      "streak": 12,
       "first_fail_utc": "2026-08-21",
-      "last_fail_utc": "2026-08-22",
-      "last_run_utc": "2026-08-22",
+      "last_fail_utc": "2026-09-04",
+      "last_run_utc": "2026-09-04",
       "last_rc": 1,
       "label": "options flow desk (build_options_flow)"
     }

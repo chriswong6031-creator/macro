@@ -1,5 +1,26 @@
+Workstream: REQUIRED
+Linear: REQUIRED
+Portfolio-Mode: REQUIRED
+Wave: REQUIRED
+Authority: REQUIRED
+Completion: REQUIRED
+
 <!--
 NAMED template — opt-in only. It is NOT the repo default and must never become one.
+MAS28-V1-CONTRACT-SHA256: 9c57ad499fa34ee32f0ffeb9f2f5928f0515dba1609f984e5a20ce6576e7f75e
+MAS28-V1-RULESET-SHA256: 2e97ad7acd0aec77ef18dbd76a1b3f2bbf8b7d4585e938498615de1917aa71aa
+
+Replace every REQUIRED value before review. Canonical values:
+- Workstream: WS:<KEY> | NONE
+- Linear: MAS-### | NONE
+- Portfolio-Mode: tracked | maintenance_exception | creates_workstream | architecture_candidate
+- Wave: a non-empty bounded identifier
+- Authority: implementation | records | research | maintenance | proof | deploy | architecture_candidate
+- Completion: merge-is-done | built-not-proven | proof-required | acceptance-required | records-only
+
+`Fixes/Closes MAS-###` is permitted only for `Completion: merge-is-done`.
+Use `Refs MAS-###` or the issue URL for every other completion class.
+
 Use it for design-migration packet PRs:
   gh pr create --body-file .github/PULL_REQUEST_TEMPLATE/design_migration.md
   ...or append ?template=design_migration.md to the compare URL.
@@ -40,6 +61,42 @@ Reference page:
   visual artifact before the normal ship chain proceeds.
 - [ ] **11. Perf budget respected:** the packet's page-weight/perf line (packet §I.5 pattern) holds,
   and generated-family packets carry a render-budget line — render budget is repo law.
+
+## Theme art direction — required
+
+Dark and light are **two art directions of one semantic system**, not a design and
+its skin. Token substitution alone is not proof of a light design. Prose here is
+binding: a reviewer judges the light plane as a design, not merely as renderable.
+
+**Dark treatment** — the material mechanism this surface uses in dark (depth,
+elevation, glow/tint discipline, how selection and stance read):
+
+> _(describe)_
+
+**Light treatment** — the material mechanism in light. It is not "dark with the
+tokens swapped": name the canvas/material relationship, the elevation step,
+shadow-vs-glow, and how hue stays reserved for meaning:
+
+> _(describe)_
+
+**Intentional theme differences** — every mechanism that deliberately differs
+between themes, and why the shared recipe would have been visually wrong:
+
+> _(describe, or state "none — the same material recipe is correct in both" and
+> justify it)_
+
+- [ ] **Light was judged as a design**, not only as "the page opens and functions"
+  — hierarchy, material depth, semantic color, responsive composition and EN/ZH
+  parity were each adjudicated in light.
+- [ ] **No runtime stylesheet bypass was introduced** — no substantive product
+  styling authored as an opaque runtime CSS system in page/composer JavaScript
+  (multi-kilobyte `style.textContent`, parallel palette/token family, or
+  duplicated light/dark branches invisible to the design-system checker).
+- [ ] **Dark regression budget respected** — dark visual changes outside the named
+  convergence surface are declared here, or there are none.
+- [ ] An `EVIDENCE.yml` receipt (`schema: mastermind.page_evidence_receipt.v1`)
+  maps this PR's changed presentation paths to the committed
+  `mastermind.p0_evidence.v2` manifest below.
 
 ## Evidence matrix (gate §0.2) — committed files, never prose
 

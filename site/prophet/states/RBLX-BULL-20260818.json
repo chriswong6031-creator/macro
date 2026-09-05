@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "RBLX-BULL-20260818",
-  "asof": "2026-08-21",
+  "asof": "2026-09-04",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 20.2,
@@ -13,24 +13,24 @@
     "validity": 0.0,
     "progress": 60.0,
     "pace": 0.0,
-    "retention": 4.2,
-    "overlay": 61.0
+    "retention": 21.2,
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.817,
-    "dist_to_t1_r": 1.317,
-    "dist_to_t2_r": 2.817,
-    "horizon_pct_used": 6.7,
-    "p1": 0.1218,
-    "p2": 0.0609,
+    "dist_to_stop_r": -0.076,
+    "dist_to_t1_r": 0.576,
+    "dist_to_t2_r": 2.076,
+    "horizon_pct_used": 37.8,
+    "p1": 0.6162,
+    "p2": 0.3081,
     "p3": null,
-    "move_r": 0.183,
+    "move_r": 0.924,
     "mfe_r": 4.352,
-    "mae_r": 0.0
+    "mae_r": -0.029
   },
   "rr_ratio": null,
   "rr_grade": null,
-  "change_reason": "Phase: at_t2 \u2192 invalidated",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 16.67000015258789,
-  "_mae": 0.0,
+  "_mae": -0.10999862670898608,
   "_max_p1": 2.9016536383965006,
   "_first_trigger_ts": "2026-08-18",
   "_first_t1_ts": "2026-08-18",
   "_first_t2_ts": "2026-08-18",
-  "days_elapsed": 3,
-  "tau": 0.0667
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

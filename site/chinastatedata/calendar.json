@@ -1,93 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-21",
-  "generated_at_utc": "2026-08-22T09:58:27.927434+00:00",
+  "asof": "2026-09-04",
+  "generated_at_utc": "2026-09-04T16:58:57.982179+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-08-21",
-      "window_end": "2026-08-31",
-      "etype": "earnings_season",
-      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
-      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "feed",
-      "source": "china_earnings.calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-26",
-      "window_end": null,
-      "etype": "HK_TRADE",
-      "label_en": "HK external trade",
-      "label_zh": "香港对外商品贸易",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
-      "approx": true
-    },
-    {
-      "date": "2026-08-31",
-      "window_end": null,
-      "etype": "PMI",
-      "label_en": "NBS PMI (mfg + non-mfg)",
-      "label_zh": "国家统计局 PMI（制造业＋非制造业）",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-31",
-      "window_end": null,
-      "etype": "HK_RETAIL",
-      "label_en": "HK retail sales",
-      "label_zh": "香港零售业销货",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
-      "approx": true
-    },
-    {
-      "date": "2026-09-01",
-      "window_end": null,
-      "etype": "CAIXIN_M",
-      "label_en": "Caixin Manufacturing PMI",
-      "label_zh": "财新制造业 PMI",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-09-01",
-      "window_end": null,
-      "etype": "HK_PMI",
-      "label_en": "S&P Global HK PMI",
-      "label_zh": "标普全球香港 PMI",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.hk_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-09-03",
-      "window_end": null,
-      "etype": "CAIXIN_S",
-      "label_en": "Caixin Services PMI",
-      "label_zh": "财新服务业 PMI",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
     {
       "date": "2026-09-04",
       "window_end": null,
@@ -123,6 +39,18 @@
       "source_class": "rule",
       "source": "engine.china_event_calendar",
       "approx": true
+    },
+    {
+      "date": "2026-09-07",
+      "window_end": null,
+      "etype": "omo_outright_repo_tender",
+      "label_en": "PBoC outright reverse repo tender — 3个月, RMB 500bn, matures 2026-12-05",
+      "label_zh": "央行买断式逆回购操作：3个月，5,000亿元，到期 2026-12-05",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
+      "approx": false
     },
     {
       "date": "2026-09-10",
@@ -339,10 +267,130 @@
       "source_class": "rule",
       "source": "engine.china_event_calendar",
       "approx": false
+    },
+    {
+      "date": "2026-10-07",
+      "window_end": null,
+      "etype": "FXRES",
+      "label_en": "FX reserves (SAFE)",
+      "label_zh": "外汇储备（外管局）",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-07",
+      "window_end": null,
+      "etype": "TRADE",
+      "label_en": "Customs trade (exports/imports)",
+      "label_zh": "海关进出口数据",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-12",
+      "window_end": null,
+      "etype": "CREDIT",
+      "label_en": "Money supply, RMB loans & TSF",
+      "label_zh": "货币供应、人民币贷款与社融",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-13",
+      "window_end": null,
+      "etype": "US_CPI",
+      "label_en": "US CPI",
+      "label_zh": "美国 CPI",
+      "region": "hk",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-15",
+      "window_end": null,
+      "etype": "MLF",
+      "label_en": "MLF operation (PBoC)",
+      "label_zh": "MLF 操作（央行中期借贷便利）",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-16",
+      "window_end": null,
+      "etype": "CPI",
+      "label_en": "CPI (consumer prices)",
+      "label_zh": "CPI（居民消费价格）",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-16",
+      "window_end": null,
+      "etype": "PPI",
+      "label_en": "PPI (producer prices)",
+      "label_zh": "PPI（工业生产者价格）",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-19",
+      "window_end": null,
+      "etype": "ACTIVITY",
+      "label_en": "IP, FAI & retail sales",
+      "label_zh": "工业增加值、固投与社零",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-19",
+      "window_end": null,
+      "etype": "GDP",
+      "label_en": "GDP (quarterly)",
+      "label_zh": "GDP（季度）",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-19",
+      "window_end": null,
+      "etype": "HK_UNEMP",
+      "label_en": "HK unemployment",
+      "label_zh": "香港失业率",
+      "region": "hk",
+      "impact": "medium",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": false
     }
   ],
   "data_gaps": [
-    "china_omo store holds no announced operation inside the horizon (the tape is present; the PBoC simply has nothing pending)"
+    "china_earnings store holds no reporting month inside the horizon"
   ],
   "authority": {
     "tier": "context_only",

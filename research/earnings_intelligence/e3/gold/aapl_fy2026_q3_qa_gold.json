@@ -1,0 +1,1149 @@
+{
+  "schema": "aapl_fy2026_q3_qa_gold.v2",
+  "frozen_at": "2026-08-23T02:30:00Z",
+  "adjudication_method": "dual_session",
+  "adjudication_note": "Operator-delimited boundary method unchanged: 7 exchanges at Operator 'go ahead' intros 32,42,52,63,76,84,97. respondents[] corrected to one element per management answer-turn in source order (qa_exchange.v1). Same speaker may occupy more than one turn. Exchange 0 preserves two Tim Cook turns split by analyst follow-up 38. Boundaries and topics unchanged. v1 SHA 6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761 is superseded calibration gold.",
+  "source_package": {
+    "event_id": "evt_cik0000320193_2026q3_results",
+    "live_generation_id": "f709a0a6ec514282d5769e7d",
+    "workspace_object_sha256": "dbd50e5c30e8a031f844e02362ffd53b25e3230e75eeef19bf3825543cb81197",
+    "sources": [
+      {
+        "kind": "issuer_release",
+        "document_id": "release:0000320193-26-000018",
+        "accession": "0000320193-26-000018",
+        "source_sha256": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+        "fixture": "tests/fixtures/company_intelligence/aapl_fy2026_q3_ex99_1.htm",
+        "sha256_confirmed": true,
+        "sha256_command": "sha256sum tests/fixtures/company_intelligence/aapl_fy2026_q3_ex99_1.htm"
+      },
+      {
+        "kind": "transcript",
+        "document_id": "tx:AAPL/2026Q3",
+        "source_sha256_uncompressed": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+        "fixture": "tests/fixtures/company_intelligence/aapl_fy2026_q3.json.gz",
+        "sha256_confirmed": true,
+        "sha256_command": "gunzip -c tests/fixtures/company_intelligence/aapl_fy2026_q3.json.gz | sha256sum"
+      }
+    ],
+    "sha_divergence_check": "pass",
+    "sha_divergence_note": "AAPL calibration remains bound to these exact source SHAs. A later current-marker generation must not silently rewrite this historical gold. Live E2 workspace f709a0a6ec514282d5769e7d was read through read_event_workspace; release and transcript source SHAs match the frozen fixtures (assumed_from_handoff=false).",
+    "transcript_segments_total": 108,
+    "transcript_schema": "mastermind.tx/v1",
+    "transcript_ticker": "AAPL",
+    "transcript_period": "Q3 FY2026"
+  },
+  "taxonomy": {
+    "version": "qa_topic.v1",
+    "hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+    "canonical_json": "{\"members\":[\"capacity\",\"capital_allocation\",\"costs_supply\",\"demand\",\"other\",\"pricing\",\"product\",\"regulation\",\"unavailable\"],\"schema\":\"qa_topic_taxonomy.v1\",\"version\":\"qa_topic.v1\"}",
+    "members": [
+      "demand",
+      "product",
+      "pricing",
+      "costs_supply",
+      "capacity",
+      "capital_allocation",
+      "regulation",
+      "other",
+      "unavailable"
+    ],
+    "finalized_from": "gold_adjudication_before_inference",
+    "dropped_seeds": [
+      "geography",
+      "capital_structure"
+    ],
+    "drop_rationale": "geography not needed: EU/China story covered by regulation; capital_structure superseded by capital_allocation for this exchange set."
+  },
+  "scoring_method": {
+    "exchange_boundary_quality": "Exact ordinal match on 7 operator-delimited boundaries (ordinal 0-6). Gold uses Operator-intro segment method (segs 32,42,52,63,76,84,97). Precision = TP/(TP+FP), Recall = TP/(TP+FN) where TP = model boundary matches gold boundary (same operator-intro segment_index \u00b10). No partial credit.",
+    "source_span_replay_success": "Percent of accepted model spans where segment_index, start_byte, end_byte locate a unique byte range in the transcript fixture. Computed by loading fixture, extracting segment[segment_index].text.encode()[start_byte:end_byte], and verifying non-empty and hash-matching.",
+    "unsupported_candidate_rate": "Count of model candidates rejected because the proposed span text cannot be located at the stated locator in the source fixture. Rate = rejected_unsupported / total_candidates.",
+    "cross_event_contamination": "Count of accepted model outputs referencing event_id or document_id not matching the AAPL FY2026 Q3 frozen source package.",
+    "topic_label_agreement": "For each matched exchange: Jaccard similarity J = |gold_topics \u2229 model_topics| / |gold_topics \u222a model_topics|. Mean J across matched exchanges. Requires exact enum membership per taxonomy_version.",
+    "identity_role_availability": "For each exchange: (a) questioner name match (exact string after strip), (b) questioner affiliation match, (c) all gold respondent names present in model respondents (ordered check). Availability = matches / gold fields.",
+    "invalid_schema_rate": "Count of accepted model outputs failing schema validation (missing required fields, unknown enum values, non-string types). Rate = invalid_accepted / total_accepted.",
+    "qwen_success_rate": "Fraction of Qwen calls returning valid JSON candidate set (not degraded/timeout).",
+    "retry_fallback_rate": "Fraction of model calls requiring retry or provider fallback. Each rung ledgered separately.",
+    "latency_ms": "Wall-clock time from first model call to last response, in milliseconds.",
+    "model_cost_usd": "Total cost in USD from lib.ai_costs ledger, lane=earnings_event_compiler."
+  },
+  "usefulness_bar": {
+    "decision": "refusal",
+    "numeric_threshold": null,
+    "written_refusal": "N=7 is too small to support a statistically defensible numeric precision/recall or F1 threshold. A single boundary error changes recall by 14.3% (1/7). Any numeric bar (e.g. 0.90) would be theatrical \u2014 the confidence interval on a proportion with N=7 spans the majority of [0,1]. The evaluation instead measures all \u00a710.2 metrics and reports against the already-frozen hard safety gates: accepted_unsupported=0, cross_event=0, span_replay=100%_of_accepted, invalid_schema=0_accepted. The decision on whether to grant E3-B production authority based on qualitative metrics and measured outputs is returned to Sol per freeze \u00a710.1 step 8.",
+    "return_to_sol": true,
+    "hard_gates_frozen": {
+      "accepted_unsupported": 0,
+      "cross_event_contamination": 0,
+      "span_replay_of_accepted": "100%",
+      "invalid_schema_accepted": 0
+    }
+  },
+  "source_available_at": {
+    "issuer_release": null,
+    "clock_state": "unknown",
+    "note": "Transcript source_available_at is issuer/provider transcript publication availability, never conference/call time. Native availability timestamp for tx:AAPL/2026Q3 is not held in this evaluation. clock_state=unknown per freeze \u00a73."
+  },
+  "qa_exchange_count": 7,
+  "segment_census": {
+    "total_segments": 108,
+    "roles": {
+      "IR": 10,
+      "CEO": 42,
+      "CFO": 23,
+      "Operator": 8,
+      "empty": 25
+    },
+    "operator_intro_segments": [
+      32,
+      42,
+      52,
+      63,
+      76,
+      84,
+      97
+    ],
+    "boundary_method": "operator_intro_go_ahead",
+    "boundary_count": 7
+  },
+  "exchanges": [
+    {
+      "ordinal": 0,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_00",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Amit Daryanani",
+        "affiliation": "Evercore",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          32,
+          33
+        ],
+        "affiliation_source_segment": 32
+      },
+      "question_spans": [
+        {
+          "segment_index": 32,
+          "start_byte": 0,
+          "end_byte": 107,
+          "text_sha256": "225ace80daabd3e742b9a5bd06b965caa73b7b0b1a6cba6ea5448414c1453720",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "Certainly. We will go ahead and take our first question from Amit Daryanani from Evercore. Please go ahead."
+        },
+        {
+          "segment_index": 33,
+          "start_byte": 0,
+          "end_byte": 586,
+          "text_sha256": "947fec8b7554911f27474260b881a3d386a0f5a12bb68b83823d94b2f729fc71",
+          "speaker": "Amit Daryanani",
+          "role": "",
+          "excerpt": "Yep. Thanks. I'll take my question. Tim, best of luck. It's been a pleasure working with you over the years. Maybe to st"
+        },
+        {
+          "segment_index": 38,
+          "start_byte": 0,
+          "end_byte": 720,
+          "text_sha256": "05a74525b018373a7d191a8d6a15bb5f30af41a935340e72bcf1c4ecd08db65f",
+          "speaker": "Amit Daryanani",
+          "role": "",
+          "excerpt": "Got it. That's really helpful. Thanks a lot for that. Tim, I just have a memory question for you. Apple has historically"
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 34,
+          "start_byte": 0,
+          "end_byte": 739,
+          "text_sha256": "75efda87f9ee8da9d08faf500536969eaa32eca9777e74c81b2be0f4bc5d7e5e",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Yeah, Amit, this is Kevan. How are you doing? Why don't I start with just kind of describing the sequential change, then"
+        },
+        {
+          "segment_index": 35,
+          "start_byte": 0,
+          "end_byte": 211,
+          "text_sha256": "cb9b49e4003fc1613018fae5b186621c8b06bc852fbe90c4d147f43b87cd9993",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "That projected supply constraint in the September quarter will affect the iPhone, Mac, and the iPad. Really, when you co"
+        },
+        {
+          "segment_index": 36,
+          "start_byte": 0,
+          "end_byte": 794,
+          "text_sha256": "14d91a9b5c08b80ad6db2be54c82ed3dd06a2e8249c2f027c6c4afc4cd9d4af5",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah, Amit, it's Tim. First of all, thank you for your comments. During the June quarter, we did experience supply const"
+        },
+        {
+          "segment_index": 37,
+          "start_byte": 0,
+          "end_byte": 116,
+          "text_sha256": "a320bed4ca8d475ce5b2f6fbdf7abca5f2598fd36e4b0a002236a9d879fa4a93",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "We're seeing some very significant constraints currently, with limited flexibility in the supply chain to remedy it."
+        },
+        {
+          "segment_index": 39,
+          "start_byte": 0,
+          "end_byte": 791,
+          "text_sha256": "a7444a1ada6f3799cb926b20c4407755a52e814c5c287c3f28b9353c78ed1a06",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah. Let me back up and talk about memory in general, because I know this is a subject on many of your minds. If you lo"
+        },
+        {
+          "segment_index": 40,
+          "start_byte": 0,
+          "end_byte": 592,
+          "text_sha256": "fcde5a9cbc3556767ea11729bd2ccfe01f20adca61f9b2ae82c1849fd0f99402",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "The second is, we're expecting lower costs on certain non-memory components that are in our BOM. If you look beyond Sept"
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4,
+            5
+          ]
+        }
+      ],
+      "topics": [
+        "costs_supply"
+      ],
+      "adjudication_notes": "Q1: revenue deceleration from supply constraints (advanced node SoC) + FX. Q2: memory pricing inflation, sourcing flexibility. Both costs_supply."
+    },
+    {
+      "ordinal": 1,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_01",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Michael Ng",
+        "affiliation": "Goldman Sachs",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          42,
+          43
+        ],
+        "affiliation_source_segment": 42
+      },
+      "question_spans": [
+        {
+          "segment_index": 42,
+          "start_byte": 0,
+          "end_byte": 71,
+          "text_sha256": "1ee8ee9e6a179a18ef3f08bf56738003036b51c8084d369900b0a1b78599e95e",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "Our next question is from Michael Ng of Goldman Sachs. Please go ahead."
+        },
+        {
+          "segment_index": 43,
+          "start_byte": 0,
+          "end_byte": 524,
+          "text_sha256": "c55f038cf522a2aaca9c630a74c5632a8db453ca51e78e2aa049b219f0e67267",
+          "speaker": "Michael Ng",
+          "role": "",
+          "excerpt": "Good afternoon. First, Tim, congratulations on the extraordinary run you on these earnings calls. In terms of my questio"
+        },
+        {
+          "segment_index": 46,
+          "start_byte": 0,
+          "end_byte": 443,
+          "text_sha256": "54369179feac9eb4ae91558801807150cbd1f2a1d8407d4b9048d94cd4ca5288",
+          "speaker": "Michael Ng",
+          "role": "",
+          "excerpt": "Great. Thank you. That's very helpful. My second question, just on iOS 27 and Apple Intelligence, went into public beta "
+        },
+        {
+          "segment_index": 49,
+          "start_byte": 0,
+          "end_byte": 47,
+          "text_sha256": "e3c894a774dd6be02cc7b4626e20e390514814575330200252bf0b4bf20a1ce9",
+          "speaker": "Michael Ng",
+          "role": "",
+          "excerpt": "Wonderful. Thank you for all the thoughts, Tim."
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 44,
+          "start_byte": 0,
+          "end_byte": 728,
+          "text_sha256": "bbea01e1f88036458d8479269c36b45c45135ae36d965b83aaa1738b468b4186",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Michael, first of all, thank you for your comments. I really appreciate that. If you look at the Apple Upgrade, what it'"
+        },
+        {
+          "segment_index": 45,
+          "start_byte": 0,
+          "end_byte": 82,
+          "text_sha256": "564d3632404d5dc0ec8839b31bf8dc5751afa508ae3698fb99a5f67eeed05bba",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Michael, I'll just mention that it's only available in the U.S. right now as well."
+        },
+        {
+          "segment_index": 47,
+          "start_byte": 0,
+          "end_byte": 755,
+          "text_sha256": "ef4dc21619ad2052657398424b9e047d4357482ad50e32a57efbf8ea43579264",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Thank you for that. First of all, we are off the charts excited about Siri AI. We had a great reception from WWDC. We re"
+        },
+        {
+          "segment_index": 48,
+          "start_byte": 0,
+          "end_byte": 261,
+          "text_sha256": "45c0ab79ed9c3cfefaf8fcf216770a0669d5e59f3abef1dfa97e656f1e0c35da",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "We do believe there will be people that want to use it a lot. We will have some kind of upgrade possibilities on iCloud+"
+        },
+        {
+          "segment_index": 50,
+          "start_byte": 0,
+          "end_byte": 10,
+          "text_sha256": "8569efc4ed5a6273140c2b6ec0ab8d99f4398210808fbb7c0cbbae4fbcc21350",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Thank you."
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
+          ]
+        }
+      ],
+      "topics": [
+        "product",
+        "demand"
+      ],
+      "adjudication_notes": "Q1: Apple Upgrade Program leasing model, residual values, install base adoption. Q2: iOS 27 Siri AI public beta learnings, demand driver for iPhone holiday cycle, iCloud+ compute cost recovery."
+    },
+    {
+      "ordinal": 2,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_02",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Ben Reitzes",
+        "affiliation": "Melius Research",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          52,
+          53
+        ],
+        "affiliation_source_segment": 52
+      },
+      "question_spans": [
+        {
+          "segment_index": 52,
+          "start_byte": 0,
+          "end_byte": 76,
+          "text_sha256": "8a9a005d67aa0008143d04f6dddf6f839dad6b2ac1e72c0a95bae624a145b5e5",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "Our next question is from Ben Reitzes from Melius Research. Please go ahead."
+        },
+        {
+          "segment_index": 53,
+          "start_byte": 0,
+          "end_byte": 702,
+          "text_sha256": "6c31fec22c0f9df16ace6bfdc3cb5353b147df90056c0aeb2a0b70220ff8df35",
+          "speaker": "Ben Reitzes",
+          "role": "",
+          "excerpt": "Yeah. Hey, guys. Thanks a lot for the question and, obviously, Tim, known you a long time. I'll really miss you. I wante"
+        },
+        {
+          "segment_index": 54,
+          "start_byte": 0,
+          "end_byte": 102,
+          "text_sha256": "eb375dbb0c0fadb62f2121d635799908c01fbbacc8d40fecfa3a444aa3123ce7",
+          "speaker": "Ben Reitzes",
+          "role": "",
+          "excerpt": "Is there any guidance you can give us there as you see it, Tim, and we'd really appreciate it. Thanks."
+        },
+        {
+          "segment_index": 58,
+          "start_byte": 0,
+          "end_byte": 431,
+          "text_sha256": "0901277fed1f20cb0203cd232d51d748d0fcafebab1816d45fbe5afc42031ca7",
+          "speaker": "Ben Reitzes",
+          "role": "",
+          "excerpt": "Okay. If I could just ask, you guys know what's in the press all the time, but there's this little company that is also "
+        },
+        {
+          "segment_index": 60,
+          "start_byte": 0,
+          "end_byte": 12,
+          "text_sha256": "d2a9cb2189373b8bca57c70c1a09c28d14edc53f3c42c861c402126a4bd9b3f6",
+          "speaker": "Ben Reitzes",
+          "role": "",
+          "excerpt": "Thanks, Tim."
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 55,
+          "start_byte": 0,
+          "end_byte": 781,
+          "text_sha256": "669a0b46cf1f36579b01d6313300c80d2fed7d2193b43f4a1de40d0efc203d14",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Let me talk about the constraints a little more, and then Kevan can weigh in on the guidance for revenue. As I'd mention"
+        },
+        {
+          "segment_index": 56,
+          "start_byte": 0,
+          "end_byte": 134,
+          "text_sha256": "719bbc307346e31f490d859d435b6a51faa43e5f312f61f3be011d9c1edf4506",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "We've got a quarter that we're going to be scrambling on the supply side, essentially. Kevan, you want to add on the rev"
+        },
+        {
+          "segment_index": 57,
+          "start_byte": 0,
+          "end_byte": 455,
+          "text_sha256": "f1f399229d92e49febb95bc8ff95940e8f02f07aa7c95d87ea82381d7860360d",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Yeah. Thanks, Tim. Ben, let me jump in here. The dynamics Tim mentioned, combined with the foreign exchange impact I men"
+        },
+        {
+          "segment_index": 59,
+          "start_byte": 0,
+          "end_byte": 466,
+          "text_sha256": "9133872d480de92605127a3d2c3447d1b513086e608801ce23313c562c1cb4f4",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah. Let me stress again, this isn't a partner or supplier issue. This issue is an incredibly strong, it's a great issu"
+        },
+        {
+          "segment_index": 61,
+          "start_byte": 0,
+          "end_byte": 15,
+          "text_sha256": "d25f296a8cd3d4780f84ad236683a189af0eaff18011abbac8575a182f497780",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yep. Thank you."
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
+          ]
+        }
+      ],
+      "topics": [
+        "costs_supply",
+        "capacity"
+      ],
+      "adjudication_notes": "Q1: supply constraints root-cause (demand-forecast issue, advanced-node SoC), December quarter guidance bounds. Q2: Arizona fab, broadening silicon supply base (capacity)."
+    },
+    {
+      "ordinal": 3,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_03",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Erik Woodring",
+        "affiliation": "Morgan Stanley",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          63,
+          64
+        ],
+        "affiliation_source_segment": 63
+      },
+      "question_spans": [
+        {
+          "segment_index": 63,
+          "start_byte": 0,
+          "end_byte": 75,
+          "text_sha256": "d3f20bf73445ddd4c74399a2efaa655677a7289ef490971bcc6dd3be5b98f19b",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "Our next question is from Erik Woodring of Morgan Stanley. Please go ahead."
+        },
+        {
+          "segment_index": 64,
+          "start_byte": 0,
+          "end_byte": 746,
+          "text_sha256": "c629146f0d41068dca6d0f2827463fcfebf62b643ea9b7d3130560e10eb7eecf",
+          "speaker": "Erik Woodring",
+          "role": "",
+          "excerpt": "Great. Thanks so much for taking my questions, guys. Tim, just echo what everyone is saying, it's been a pleasure workin"
+        },
+        {
+          "segment_index": 66,
+          "start_byte": 0,
+          "end_byte": 24,
+          "text_sha256": "19b7268133dbe9bb2bf82e8fbf2eb3282a283be569cb52daead07c5c7bfc4ce0",
+          "speaker": "Erik Woodring",
+          "role": "",
+          "excerpt": "Okay. I appreciate that."
+        },
+        {
+          "segment_index": 68,
+          "start_byte": 0,
+          "end_byte": 680,
+          "text_sha256": "3b65477b61ed56187763017fcedbd0dadcdb7c4df65467d9b5b413163553a637",
+          "speaker": "Erik Woodring",
+          "role": "",
+          "excerpt": "Yeah. No, that does help. Thank you, Tim. Just maybe a quick follow-up, I guess, Tim or Kevan, just 12% services growth "
+        },
+        {
+          "segment_index": 73,
+          "start_byte": 0,
+          "end_byte": 63,
+          "text_sha256": "8e1c6f4e7b77e661fdfaf830ed31aee918e11e0287054714ea66b9ebc33204be",
+          "speaker": "Erik Woodring",
+          "role": "",
+          "excerpt": "Great. Thank you so much, Kevan. I appreciate the detail there."
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 65,
+          "start_byte": 0,
+          "end_byte": 622,
+          "text_sha256": "966ef70c32345c453895d93b64a3cafc1640e030ab3ec3e46960a85290134833",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah. On the pricing front, we reluctantly raised prices, I would say. We did it because we're in what I would character"
+        },
+        {
+          "segment_index": 67,
+          "start_byte": 0,
+          "end_byte": 5,
+          "text_sha256": "85fec70372b092bb42d021a6d1b373081dde8bcf90feb49e0725e285043fb0ad",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah."
+        },
+        {
+          "segment_index": 69,
+          "start_byte": 0,
+          "end_byte": 760,
+          "text_sha256": "ebec68797ef6c95bf7c60bb4ae1e0e388937106a8251f5c4b0cdfa1f9e0af25e",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Hey, Erik, this is Kevan. I'll take that one. Let's walk from kind of the 16% in our fiscal second quarter to kind of th"
+        },
+        {
+          "segment_index": 70,
+          "start_byte": 0,
+          "end_byte": 723,
+          "text_sha256": "83153f05fa321a60cd4e4548c8fea4c5bcdb2d9074a871e6ac12909a99438769",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Keep in mind, we also made some changes to the App Store business model in certain countries. In the U.S., we do continu"
+        },
+        {
+          "segment_index": 71,
+          "start_byte": 0,
+          "end_byte": 754,
+          "text_sha256": "772e51acdcfa81532c2a7333e63e4635defa36bda95ccd8072936fb3e95f8dbc",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "We also set all-time records in cloud services and payment services, where Apple Pay saw a record level of users in both"
+        },
+        {
+          "segment_index": 72,
+          "start_byte": 0,
+          "end_byte": 561,
+          "text_sha256": "6e73a9072fc730e6be7adf124d56dc9ab9fa3d4738c5985b86fb8e07384d505a",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "As we go into the September quarter, what I would say is we expect foreign exchange will continue to be a headwind. In f"
+        },
+        {
+          "segment_index": 74,
+          "start_byte": 0,
+          "end_byte": 31,
+          "text_sha256": "6d5c7eb7cd25730d2bb5bf354a893ad00e901fc3decee539dbc2592f2a633516",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Sure. No problem, Erik. Thanks."
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            6
+          ]
+        }
+      ],
+      "topics": [
+        "pricing",
+        "demand"
+      ],
+      "adjudication_notes": "Q1: philosophy of price increases on iPhone/Mac/iPad in response to memory cost inflation (pricing). Q2: services growth 12% below guidance, 4Q deceleration guide, FX headwind (demand)."
+    },
+    {
+      "ordinal": 4,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_04",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Aaron Rakers",
+        "affiliation": "Wells Fargo",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          76,
+          77
+        ],
+        "affiliation_source_segment": 76
+      },
+      "question_spans": [
+        {
+          "segment_index": 76,
+          "start_byte": 0,
+          "end_byte": 71,
+          "text_sha256": "ed1d5943bd16ca32bba7c5d76dcbb25097ffa36f26a50f03fcd6671f66c63d5a",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "Our next question is from Aaron Rakers of Wells Fargo. Please go ahead."
+        },
+        {
+          "segment_index": 77,
+          "start_byte": 0,
+          "end_byte": 416,
+          "text_sha256": "0fd798b40d16275852c232cae31a9b1358bce8bff6c4fbdac0509702624e23c9",
+          "speaker": "Aaron Rakers",
+          "role": "",
+          "excerpt": "Thanks for taking the questions, also best wishes, Tim. I guess I want to, maybe it tethers with the memory pricing dyna"
+        },
+        {
+          "segment_index": 79,
+          "start_byte": 0,
+          "end_byte": 347,
+          "text_sha256": "2b82d1b1f08da276f67f2c8aace93cca094ac0244ccdef200b29062921804aad",
+          "speaker": "Aaron Rakers",
+          "role": "",
+          "excerpt": "Very helpful. Then as a quick follow-up, maybe more longer term thematically, as AI proliferates towards the edge and mo"
+        },
+        {
+          "segment_index": 81,
+          "start_byte": 0,
+          "end_byte": 10,
+          "text_sha256": "8569efc4ed5a6273140c2b6ec0ab8d99f4398210808fbb7c0cbbae4fbcc21350",
+          "speaker": "Aaron Rakers",
+          "role": "",
+          "excerpt": "Thank you."
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 78,
+          "start_byte": 0,
+          "end_byte": 614,
+          "text_sha256": "1a55215605e4ff04addc32fdf1d83a8a4f14eedd741b3ed20ad64c6a64f87a6c",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "You're talking about on iPhone, I assume, in general. We've been running at this 22% growth rate for the last while. For"
+        },
+        {
+          "segment_index": 80,
+          "start_byte": 0,
+          "end_byte": 392,
+          "text_sha256": "ece97aa11874f3e0f5a71feb31fed572f3c2d9f869ec6f479858ceb2bcb74d50",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "I think there are enormous opportunities for Apple moving forward in AI. I'm so excited about Siri AI and where it is an"
+        },
+        {
+          "segment_index": 82,
+          "start_byte": 0,
+          "end_byte": 5,
+          "text_sha256": "85fec70372b092bb42d021a6d1b373081dde8bcf90feb49e0725e285043fb0ad",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah."
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2
+          ]
+        }
+      ],
+      "topics": [
+        "demand",
+        "product"
+      ],
+      "adjudication_notes": "Q1: pull-forward demand assessment across consumer/enterprise/education, price elasticity of iPad/Mac increases (demand). Q2: AI at the edge, new addressable markets from AI proliferation (product)."
+    },
+    {
+      "ordinal": 5,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_05",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Wamsi Mohan",
+        "affiliation": "Bank of America",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          84,
+          85
+        ],
+        "affiliation_source_segment": 84
+      },
+      "question_spans": [
+        {
+          "segment_index": 84,
+          "start_byte": 0,
+          "end_byte": 74,
+          "text_sha256": "bd291042c652a24d573fdf69437970bc2bb410df58b929c96dcc510520512ee2",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "Our next question is from Wamsi Mohan of Bank of America. Please go ahead."
+        },
+        {
+          "segment_index": 85,
+          "start_byte": 0,
+          "end_byte": 203,
+          "text_sha256": "4649601a01e3de9555db1b04cb9de2e4d9189b29208adbdce0462d7a65838f0d",
+          "speaker": "Wamsi Mohan",
+          "role": "",
+          "excerpt": "Yes. Thank you. Tim, first, congrats on your tenure as CEO. You joined back in 2011 when Apple reported $108 billion in "
+        },
+        {
+          "segment_index": 87,
+          "start_byte": 0,
+          "end_byte": 16,
+          "text_sha256": "97890584b31c13af390ce01bd1b42ac8a70ac0b79860ed67ef5d728577625d47",
+          "speaker": "Wamsi Mohan",
+          "role": "",
+          "excerpt": "For my question."
+        },
+        {
+          "segment_index": 89,
+          "start_byte": 0,
+          "end_byte": 512,
+          "text_sha256": "b413bd2fc925e01256000d6ea54dbe19e05b60be0c7452244f5f3b044fd8c9ee",
+          "speaker": "Wamsi Mohan",
+          "role": "",
+          "excerpt": "Yeah, sure, Tim. It's been a pleasure. For my question, first on Siri AI, do you expect that Siri AI would change the ca"
+        },
+        {
+          "segment_index": 91,
+          "start_byte": 0,
+          "end_byte": 18,
+          "text_sha256": "956e5c6279cc4c74a2c344bee7a1eb643d2b8511a871568bfe0d3d8596d59ba7",
+          "speaker": "Wamsi Mohan",
+          "role": "",
+          "excerpt": "Okay. Thanks, Tim."
+        },
+        {
+          "segment_index": 93,
+          "start_byte": 0,
+          "end_byte": 494,
+          "text_sha256": "87c168dcb065036270403a84f8c629cc31af1200e892beb07a084bae7223f9ef",
+          "speaker": "Wamsi Mohan",
+          "role": "",
+          "excerpt": "John, since you're on the call, congrats on the new role. I'd love to get maybe a just a high-level take from you if you"
+        },
+        {
+          "segment_index": 95,
+          "start_byte": 0,
+          "end_byte": 10,
+          "text_sha256": "8569efc4ed5a6273140c2b6ec0ab8d99f4398210808fbb7c0cbbae4fbcc21350",
+          "speaker": "Wamsi Mohan",
+          "role": "",
+          "excerpt": "Thank you."
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 86,
+          "start_byte": 0,
+          "end_byte": 19,
+          "text_sha256": "439d8da114ab91629b5b8c97b51958ca070e7cb68ac2f9a3d61a8a7dcb065e7b",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Thank you for that."
+        },
+        {
+          "segment_index": 88,
+          "start_byte": 0,
+          "end_byte": 23,
+          "text_sha256": "2f4de3eba5116968701b0d75d9c32edd80d771366d5c4f03b98e73e5287dfa67",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "I really appreciate it."
+        },
+        {
+          "segment_index": 90,
+          "start_byte": 0,
+          "end_byte": 585,
+          "text_sha256": "3414372d70da92ce0e968c02612c0168acbd0e9f342747424dccb16e9928369d",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "We use a hybrid model, as I know Kevan has reviewed with you earlier. We use some third-party cloud, and we do our own d"
+        },
+        {
+          "segment_index": 92,
+          "start_byte": 0,
+          "end_byte": 5,
+          "text_sha256": "85fec70372b092bb42d021a6d1b373081dde8bcf90feb49e0725e285043fb0ad",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Yeah."
+        },
+        {
+          "segment_index": 94,
+          "start_byte": 0,
+          "end_byte": 223,
+          "text_sha256": "69952d413aead2ac98fee878d71f1cc50b9b6833184c42f902d999e8919482dc",
+          "speaker": "John Ternus",
+          "role": "CEO",
+          "excerpt": "Well, thank you for asking. I guess I would just reiterate what Tim said, there is so much opportunity for us with every"
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            3
+          ]
+        },
+        {
+          "name": "John Ternus",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
+          ]
+        }
+      ],
+      "topics": [
+        "capital_allocation",
+        "product"
+      ],
+      "adjudication_notes": "Q1: capital intensity changes from Siri AI hybrid compute, first-party + third-party cloud capex, OpEx + COGS AI spend (capital_allocation). Q2: competitive landscape with OpenAI AI device / SpaceX AI phone, directed to incoming CEO John Ternus (product). Multi-speaker: Tim Cook + John Ternus."
+    },
+    {
+      "ordinal": 6,
+      "exchange_id": "qx_evt_cik0000320193_2026q3_results_a8ff5d03e875_06",
+      "event_id": "evt_cik0000320193_2026q3_results",
+      "document_id": "tx:AAPL/2026Q3",
+      "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "questioner": {
+        "name": "Samik Chatterjee",
+        "affiliation": "JPMorgan",
+        "name_state": "source_supported",
+        "affiliation_state": "source_supported",
+        "name_source_segments": [
+          97,
+          98
+        ],
+        "affiliation_source_segment": 97
+      },
+      "question_spans": [
+        {
+          "segment_index": 97,
+          "start_byte": 0,
+          "end_byte": 64,
+          "text_sha256": "3a79628c62edc56729d9d0971a9cb0ee4b2a9d093b0d2fea132262663596376b",
+          "speaker": "Operator",
+          "role": "Operator",
+          "excerpt": "We will now go to Samik Chatterjee of JPMorgan. Please go ahead."
+        },
+        {
+          "segment_index": 98,
+          "start_byte": 0,
+          "end_byte": 459,
+          "text_sha256": "c676bbd39b0658053cf84b5ff62a1b193395c455103e7dfd16339ba39f2dcf35",
+          "speaker": "Samik Chatterjee",
+          "role": "",
+          "excerpt": "Hi, thanks for squeezing me in here. Tim, best wishes from my side as well. Maybe just for my first one, if I go back to"
+        },
+        {
+          "segment_index": 101,
+          "start_byte": 0,
+          "end_byte": 486,
+          "text_sha256": "e67635edc3818367a713fcd2112199476ac7faffe8d263ee1c823ee74933a339",
+          "speaker": "Samik Chatterjee",
+          "role": "",
+          "excerpt": "Okay. Got it. Great. For my follow-up, Kevan, just not to beat sort of this FX thing to death here, but if I look at the"
+        },
+        {
+          "segment_index": 104,
+          "start_byte": 0,
+          "end_byte": 78,
+          "text_sha256": "d41162e7ecf8917e3e19f9da8c259765afa769069845b521ae8a47f5b9535666",
+          "speaker": "Samik Chatterjee",
+          "role": "",
+          "excerpt": "Great. Thank you both for taking my questions. Congrats again, Tim. Thank you."
+        }
+      ],
+      "answer_spans": [
+        {
+          "segment_index": 99,
+          "start_byte": 0,
+          "end_byte": 762,
+          "text_sha256": "56198e84920ae8a6dd4500ced184574592600398e8b8ee3cb6b7b9abea7870c0",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Thanks for the question. Let me take them individually. You look at the EU, we're working closely with the commission. O"
+        },
+        {
+          "segment_index": 100,
+          "start_byte": 0,
+          "end_byte": 143,
+          "text_sha256": "5e8785fc7a6afe3856e420af276115ef0e95fb86cf4ccb271563eb5aa116553d",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "We're working now through the rollout of those, and there will be more work required down the road for Siri AI. We're at"
+        },
+        {
+          "segment_index": 102,
+          "start_byte": 0,
+          "end_byte": 761,
+          "text_sha256": "f53d3523fb20e51bae8e8dce16ac32a5c9c59fd4b1adc32c74db2f8c0b08ef3d",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "Yeah, Samik, that's a good question. Let me walk through kind of what's impacting our gross margins. We look at our gros"
+        },
+        {
+          "segment_index": 103,
+          "start_byte": 0,
+          "end_byte": 621,
+          "text_sha256": "398c5404164466d6c6fae28cde53c1d1c3a9cfeb5de0b69e2a9a9352af3f95a4",
+          "speaker": "Kevan Parekh",
+          "role": "CFO",
+          "excerpt": "We are seeing the same dynamics when you go from the 48.1% that we printed in the June quarter to the 46.5% midpoint you"
+        },
+        {
+          "segment_index": 105,
+          "start_byte": 0,
+          "end_byte": 51,
+          "text_sha256": "cc8f2e2ab59458ad6595209254da0fdf9927b66549c50c0cc519a08a5821c34f",
+          "speaker": "Tim Cook",
+          "role": "CEO",
+          "excerpt": "Thank you so much for saying that. I appreciate it."
+        }
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
+          ]
+        }
+      ],
+      "topics": [
+        "regulation",
+        "costs_supply"
+      ],
+      "adjudication_notes": "Q1: Siri AI EU DMA compliance, China regulatory rollout hurdles (regulation). Q2: gross margin sequential decline 48.1%->46.5% \u2014 memory cost driver, FX contribution, non-memory component offsets (costs_supply)."
+    }
+  ],
+  "supersedes": {
+    "schema": "aapl_fy2026_q3_qa_gold.v1",
+    "gold_sha256": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761",
+    "reason": "qa_exchange.v1.respondents[] is one element per management answer-turn, not one element per unique speaker. v1 collapsed follow-up-split turns."
+  }
+}

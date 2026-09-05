@@ -575,7 +575,7 @@ and leaves gitignored runtime state (`.env`, `data/live_flow_state/`,
 | `liveflow-ops-wt` | `com.mastermind.liveflow` | **standalone clone — git-refreshable** |
 | `chainsnap-ops-wt` | `com.mastermind.chainsnapshots` | **standalone shallow clone; code-only, with an authority symlink into `flow-ops-wt`** |
 | `hub-ops-wt` | `com.mastermind.optionshub`, `com.mastermind.levelsgrader`, `com.mastermind.levelsseal` | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
-| `theta-ops-wt` | `com.macro.theta-terminal`, `com.macro.thetadata-backfill`, `com.macro.theta-staleness` (+4 readers) | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
+| `theta-ops-wt` | `com.macro.theta-terminal`, `com.macro.theta-staleness` (+4 readers); ~~`com.macro.thetadata-backfill`~~ **RETIRED 2026-08-22 (AD-1T1)** — replaced by `com.macro.thetadata-daily` (finite periodic, no `KeepAlive`); `installed_live_status: NOT_INSTALLED` pending Sol acceptance (see `research/THETADATA_OPS_RUNBOOK.md` §3a) | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
 | `flow-ops-wt` | flow enrich / signing lanes | standalone clone, full history (~75 GB) |
 | `fund-ops-wt` | `com.mastermind.fund` | standalone clone of a *different* repo (`mastermind-terminal`) |
 
@@ -665,20 +665,25 @@ status`.  That is the whole argument for these trees being clones.
   (`~/theta/`), and both processes' `cwd` follows the inode through a rename,
   so a swap does not disturb a running terminal.  It keeps the *old* script on
   its open fd and picks up the new one on its next natural restart.
-- `com.macro.thetadata-backfill` — `exec`s **every 60 s** (it exits 1 on its
-  own pre-close gate until 20:10 UTC, and `ThrottleInterval` re-fires it).  A
-  swap can land in that gap; the cost is one failed exec and a 60 s retry.
-  Keep the two `mv`s back-to-back in a single shell and it is a non-event.
+- ~~`com.macro.thetadata-backfill`~~ **RETIRED 2026-08-22 (AD-1T1)** — used to
+  `exec` every 60 s (KeepAlive + a pre-close gate until 20:10 UTC). Replaced
+  by `com.macro.thetadata-daily`: a FINITE periodic lane (four
+  `StartCalendarInterval` fire points/day, no `KeepAlive`), NOT installed on
+  this host as of this writing (`installed_live_status: NOT_INSTALLED`
+  pending Sol acceptance — see `research/THETADATA_OPS_RUNBOOK.md` §3a). A
+  swap of the new lane's files is a non-event for the same reason the old
+  one was: no exec is in flight most of the day.
 
 Do not carry `backfill.log` forward — that once-per-minute gate line grows it
 past 100 MB, and launchd recreates it on the next spawn.  Leaving it in the
 rollback is the cheap cleanup.
 
-The same TCC constraint applies to the ThetaData EOD backfill agent
-(`com.macro.thetadata-backfill`): its keepalive script must live **outside**
-`~/Documents/` (kept at `/Users/chriswong/theta-ops-wt/scripts/launchd/`),
-because macOS TCC denies launchd `exec` on scripts under `~/Documents/`
-("Operation not permitted" / exit 126).
+The same TCC constraint applies to the ThetaData EOD daily maintainer agent
+(`com.macro.thetadata-daily`, replacing the retired `com.macro.thetadata-backfill`):
+its wrapper script must live **outside** `~/Documents/` (kept at
+`/Users/chriswong/theta-ops-wt/scripts/launchd/`), because macOS TCC denies
+launchd `exec` on scripts under `~/Documents/` ("Operation not permitted" /
+exit 126).
 
 ##### Disk
 
@@ -805,6 +810,58 @@ python -m scripts.live_flow_poller --help
 python -m pytest -q -p no:cacheprovider \
   tests/test_options_signal_episode.py tests/test_live_flow.py
 ```
+
+## OA-1T measured microstructure production proof
+
+Proving OA-1T-Macro is an **observational** task. Nothing here starts a writer:
+the only processes that write are the ones launchd already runs. Do not invoke
+the poller, and do not create a proof store — the receipt is assembled by
+reading artifacts the normal cycle produced.
+
+Rules, all of them binding:
+
+- Run only during a **normal current NYSE session**. The measurement lives on
+  live RTH prints; there is nothing to read outside one.
+- **Never** use `--once --date <past>` to conjure an event. Per *Manual
+  single-cycle smoke* above, that mutates live R2 replay surfaces and cannot
+  satisfy the same-exchange-date observation/decision/availability contract.
+- Do **not** re-arm the retired Studio fleet to produce a session.
+- Read only the existing date-keyed event stage / R2 output and the existing
+  Flow ML ledger. Do not append a ledger row by hand.
+
+Capture, for **one untouched natural event**:
+
+```text
+production checkout SHA / running producer identity
+session date
+one untouched natural event_id
+event ts / observed_at / decision_at / available_at
+microstructure.schema
+source_print_count / nbbo_valid_print_count
+nbbo_print_coverage / nbbo_premium_coverage
+at_ask / at_bid / inside / outside shares
+aggression_share / aggression_balance
+spread and quote-age summaries
+vol_gt_oi / vol_gt_oi_ratio / oi_vintage
+matching Flow ML ledger event_id and flattened values
+matching options.signal_episode/v1 source_event_id after normal nightly advance,
+  if the event is eligible
+flow_score.yml scoring.enabled=false
+flow_signals.gate/v2 scored=false and scoring.enabled=false
+```
+
+Reading the shares: `at_ask_share` and `at_bid_share` are **execution
+locations** measured against the NBBO. They are not buyer identity, not
+institutional intent, not opening intent, and not a direction. `aggression_share`
+is their sum and nothing more. The coverage fields state how much of the source
+premium actually supports those shares; a low coverage means the shares rest on
+a thin base, not that the flow was quiet.
+
+**A session with no notable event is not a failure and must not be
+manufactured.** Do not lower the premium floor, do not widen the selection rule,
+and do not stage a fixture in production to close the proof. Until a normal
+event occurs, OA-1T-Macro stays `BUILT_NOT_PROVEN`; that is an accurate state,
+and a fabricated receipt is worse than an honest wait.
 
 ## Scheduled R2 public verification
 

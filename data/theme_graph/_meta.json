@@ -1,54 +1,33 @@
 {
-  "belief_time": "2026-08-22",
+  "belief_time": "2026-09-04",
   "capability_counts": {
-    "measurement_candidate": 499,
-    "semantic_only": 142
+    "measurement_candidate": 505,
+    "semantic_only": 138
   },
-  "computed_at": "2026-08-22T04:50:47Z",
-  "correction_receipt": {
-    "entity_type_conflict": [
-      {
-        "edges_annulled": [
-          "member_of:co:us:IBIT->basket:baskets:crypto_rails@2023-05-09"
-        ],
-        "node_id": "co:us:IBIT",
-        "retire_date": "2026-08-22"
-      }
-    ],
-    "identity_break": [
-      {
-        "edges_truncated": [
-          "member_of:co:us:GOLD->basket:baskets:gold_miners@2023-05-09"
-        ],
-        "node_id": "co:us:GOLD",
-        "retire_date": "2025-12-02"
-      }
-    ],
-    "rows_appended": {
-      "edges": 2,
-      "evidence": 2,
-      "node_lifecycle": 2
-    },
-    "run_at": "2026-08-22T12:58:35Z",
-    "script": "scripts.correct_gmi_identity_lineage",
-    "skipped_already_retired": []
-  },
+  "company_mint_refusals": [
+    {
+      "conflicting_node": "etf:IBIT",
+      "reason": "etf_conflict",
+      "suite": "baskets",
+      "symbol": "IBIT"
+    }
+  ],
+  "computed_at": "2026-09-04T11:52:40Z",
   "counts": {
-    "capability": 641,
-    "edges": 8294,
-    "edges_latest_belief": 8292,
-    "evidence": 13,
-    "identity_resolution": 2806,
+    "capability": 644,
+    "edges": 14737,
+    "edges_latest_belief": 8293,
+    "evidence": 17,
+    "identity_resolution": 2807,
     "node_lifecycle": 2,
-    "nodes": 3878
+    "nodes": 3882
   },
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "identity_resolution_state_counts": {
     "DEFERRED_IDENTITY_EXCEPTION": 1,
-    "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 226,
-    "RESOLVED": 2344,
+    "NOT_IN_MASTER": 202,
+    "RESOLVED": 2369,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",
@@ -56,10 +35,10 @@
     "finviz": {
       "closed_member_edges": 26,
       "company_resolution": {
-        "minted_new": 529,
+        "minted_new": 530,
         "refused": [],
         "resolved_dot_dash_variant": 0,
-        "resolved_existing": 413,
+        "resolved_existing": 412,
         "variant_pairs": []
       },
       "dropped_adjacent_duplicates": [
@@ -74,8 +53,8 @@
       ]
     },
     "ths": {
-      "concept_map_asof": "2026-06-27",
-      "concepts": 373,
+      "concept_map_asof": "2026-08-29",
+      "concepts": 375,
       "expresses_edges": 237,
       "unresolved_concept_names": 0
     }
@@ -140,14 +119,14 @@
     }
   },
   "rows_appended": {
-    "capability": 641,
-    "edges": 0,
+    "capability": 643,
+    "edges": 1,
     "evidence": 0,
     "identity_resolution": 2805,
-    "nodes": 0
+    "nodes": 1
   },
   "skipped_suites": {},
-  "ths_unmapped_concept_count": 312,
+  "ths_unmapped_concept_count": 314,
   "unknown_ths_codes": [],
   "unknown_ths_concepts": []
 }

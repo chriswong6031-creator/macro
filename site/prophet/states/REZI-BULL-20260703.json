@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "REZI-BULL-20260703",
-  "asof": "2026-08-21",
+  "asof": "2026-09-04",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 13.5,
@@ -17,16 +17,16 @@
     "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": -1.133,
+    "dist_to_stop_r": -1.307,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 93.3,
-    "p1": -1.4218,
-    "p2": -0.7109,
+    "horizon_pct_used": 124.4,
+    "p1": -1.538,
+    "p2": -0.769,
     "p3": null,
-    "move_r": -2.133,
+    "move_r": -2.307,
     "mfe_r": 1.111,
-    "mae_r": -2.18
+    "mae_r": -2.329
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 5.610001525878907,
-  "_mae": -11.009999313354491,
+  "_mae": -11.759999313354491,
   "_max_p1": 0.7405942608420997,
   "_first_trigger_ts": "2026-07-11",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 42,
-  "tau": 0.9333
+  "days_elapsed": 56,
+  "tau": 1.2444
 }

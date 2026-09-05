@@ -1,53 +1,53 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-08-22",
-  "scored_total": 118,
-  "open": 124,
-  "unscored_soft": 40,
+  "as_of": "2026-09-04",
+  "scored_total": 176,
+  "open": 71,
+  "unscored_soft": 41,
   "overall": {
-    "n": 118,
-    "hits": 62,
-    "misses": 56,
-    "hit_rate": 0.525,
-    "dir_accuracy": 0.356
+    "n": 176,
+    "hits": 104,
+    "misses": 72,
+    "hit_rate": 0.591,
+    "dir_accuracy": 0.392
   },
   "by_market": {
     "us": {
-      "n": 33,
-      "hits": 17,
-      "misses": 16,
-      "hit_rate": 0.515,
-      "dir_accuracy": 0.364
+      "n": 50,
+      "hits": 32,
+      "misses": 18,
+      "hit_rate": 0.64,
+      "dir_accuracy": 0.44
     },
     "china": {
-      "n": 42,
-      "hits": 16,
-      "misses": 26,
-      "hit_rate": 0.381,
-      "dir_accuracy": 0.31
+      "n": 62,
+      "hits": 32,
+      "misses": 30,
+      "hit_rate": 0.516,
+      "dir_accuracy": 0.371
     },
     "hk": {
-      "n": 6,
-      "hits": 6,
+      "n": 10,
+      "hits": 10,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 0.833
+      "dir_accuracy": 0.9
     },
     "canada": {
-      "n": 37,
-      "hits": 23,
-      "misses": 14,
-      "hit_rate": 0.622,
-      "dir_accuracy": 0.324
+      "n": 54,
+      "hits": 30,
+      "misses": 24,
+      "hit_rate": 0.556,
+      "dir_accuracy": 0.278
     }
   },
   "by_conviction": {
     "low": {
-      "n": 117,
-      "hits": 62,
-      "misses": 55,
-      "hit_rate": 0.53,
-      "dir_accuracy": 0.359
+      "n": 175,
+      "hits": 104,
+      "misses": 71,
+      "hit_rate": 0.594,
+      "dir_accuracy": 0.394
     },
     "medium": {
       "n": 1,
@@ -64,127 +64,127 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "118 scored, hit-rate 0.525 (directional accuracy 0.356). Chance alone would land a hit-rate near 0.8605 (directional accuracy near 0.5125) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "176 scored, hit-rate 0.591 (directional accuracy 0.392). Chance alone would land a hit-rate near 0.854 (directional accuracy near 0.5125) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
     {
-      "id": "china-2026-07-10-1",
+      "id": "hk-2026-08-07-20260808071443-2",
+      "market": "hk",
+      "subject": "China Tech & Internet",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0594,
+      "check_by": "2026-09-04"
+    },
+    {
+      "id": "china-2026-08-07-20260808153507-1",
+      "market": "china",
+      "subject": "Industrial Metals",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0208,
+      "check_by": "2026-09-04"
+    },
+    {
+      "id": "china-2026-08-07-20260808212841-1",
+      "market": "china",
+      "subject": "Industrial Metals",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0208,
+      "check_by": "2026-09-04"
+    },
+    {
+      "id": "china-2026-08-07-20260808212841-2",
       "market": "china",
       "subject": "AI Compute & Optics",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "miss",
-      "realized": -0.1418,
-      "check_by": "2026-08-21"
+      "realized": -0.051,
+      "check_by": "2026-09-04"
     },
     {
-      "id": "china-2026-07-10-2",
+      "id": "china-2026-08-07-20260810023933-1",
       "market": "china",
-      "subject": "Semiconductors",
+      "subject": "Industrial Metals",
       "lean": "overweight",
       "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.2067,
-      "check_by": "2026-08-21"
+      "outcome": "hit",
+      "realized": -0.0208,
+      "check_by": "2026-09-04"
     },
     {
-      "id": "canada-2026-07-10-2",
-      "market": "canada",
-      "subject": "Gold Miners",
+      "id": "china-2026-08-07-20260810023933-2",
+      "market": "china",
+      "subject": "Innovative Pharma & CXO",
       "lean": "avoid",
       "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.2961,
-      "check_by": "2026-08-21"
+      "outcome": "hit",
+      "realized": -0.0446,
+      "check_by": "2026-09-04"
     },
     {
-      "id": "hk-2026-07-17-3",
-      "market": "hk",
-      "subject": "China Tech & Internet",
+      "id": "china-2026-07-23-3",
+      "market": "china",
+      "subject": "Banks",
       "lean": "underweight",
       "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0289,
-      "check_by": "2026-08-21"
+      "outcome": "miss",
+      "realized": 0.0882,
+      "check_by": "2026-09-03"
     },
     {
-      "id": "us-2026-07-24-2",
-      "market": "us",
-      "subject": "Energy (Equal-Weight)",
+      "id": "china-2026-08-06-20260806220317-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "hit",
-      "realized": 0.0312,
-      "check_by": "2026-08-21"
+      "realized": -0.0339,
+      "check_by": "2026-09-03"
     },
     {
-      "id": "china-2026-07-24-1",
+      "id": "china-2026-08-06-20260806220317-2",
       "market": "china",
-      "subject": "Semiconductors",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0831,
-      "check_by": "2026-08-21"
-    },
-    {
-      "id": "canada-2026-07-24-1",
-      "market": "canada",
-      "subject": "Gold Miners",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.312,
-      "check_by": "2026-08-21"
-    },
-    {
-      "id": "china-2026-07-24-2",
-      "market": "china",
-      "subject": "Innovative Pharma & CXO",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.0688,
-      "check_by": "2026-08-21"
-    },
-    {
-      "id": "china-2026-07-24-3",
-      "market": "china",
-      "subject": "Coal",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.083,
-      "check_by": "2026-08-21"
-    },
-    {
-      "id": "hk-2026-07-24-2",
-      "market": "hk",
-      "subject": "China Tech & Internet",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0137,
-      "check_by": "2026-08-21"
-    },
-    {
-      "id": "china-2026-07-23-1",
-      "market": "china",
-      "subject": "Semiconductors",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0569,
-      "check_by": "2026-08-20"
-    },
-    {
-      "id": "china-2026-07-23-2",
-      "market": "china",
-      "subject": "Innovative Pharma & CXO",
+      "subject": "Industrial Metals",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "hit",
-      "realized": 0.0406,
-      "check_by": "2026-08-20"
+      "realized": 0.0044,
+      "check_by": "2026-09-03"
+    },
+    {
+      "id": "china-2026-08-13-20260814043945-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0492,
+      "check_by": "2026-09-03"
+    },
+    {
+      "id": "china-2026-08-05-20260805150052-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0157,
+      "check_by": "2026-09-02"
+    },
+    {
+      "id": "china-2026-08-05-20260805150052-2",
+      "market": "china",
+      "subject": "Industrial Metals",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.011,
+      "check_by": "2026-09-02"
     }
   ]
 }

@@ -18,3 +18,10 @@
 {"asof":"2026-08-19","market":"us","state":"watch","incumbent_state":"watch","pressure_pct":0.59,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}
 {"asof":"2026-08-20","market":"us","state":"watch","incumbent_state":"watch","pressure_pct":0.58,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}
 {"asof":"2026-08-21","market":"us","state":"watch","incumbent_state":"watch","pressure_pct":0.61,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}
+{"asof":"2026-08-24","market":"us","state":"calm","incumbent_state":"calm","pressure_pct":0.53,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-08-25","market":"us","state":"calm","incumbent_state":"calm","pressure_pct":0.55,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-08-26","market":"us","state":"calm","incumbent_state":"calm","pressure_pct":0.55,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-08-27","market":"us","state":"calm","incumbent_state":"calm","pressure_pct":0.54,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-08-28","market":"us","state":"calm","incumbent_state":"calm","pressure_pct":0.53,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-08-31","market":"us","state":"calm","incumbent_state":"calm","pressure_pct":0.53,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-09-03","market":"us","state":"watch","incumbent_state":"watch","pressure_pct":0.76,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}

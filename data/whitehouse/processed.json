@@ -773,6 +773,222 @@
       "at": "2026-08-21T20:40:49.801989+00:00",
       "activated": false,
       "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=48990": {
+      "id": "wh-2026-08-24-president-trump-champions-educational-freedom-putting-students-and-parents-first",
+      "at": "2026-08-24T16:54:47.626747+00:00",
+      "activated": false,
+      "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=49034": {
+      "id": "wh-2026-08-24-presidential-message-on-national-park-week",
+      "at": "2026-08-24T19:44:53.737339+00:00",
+      "activated": false,
+      "importance": 5
+    },
+    "https://www.whitehouse.gov/?p=49023": {
+      "id": "wh-2026-08-24-operation-economic-outcast-total-isolation-of-the-iranian-regime",
+      "at": "2026-08-24T19:45:24.527516+00:00",
+      "activated": true,
+      "importance": 94
+    },
+    "https://www.whitehouse.gov/?p=49062": {
+      "id": "wh-2026-08-25-presidential-message-on-overdose-and-drug-poisoning-awareness-week",
+      "at": "2026-08-25T14:06:24.587629+00:00",
+      "activated": false,
+      "importance": 18
+    },
+    "https://www.whitehouse.gov/?p=49065": {
+      "id": "wh-2026-08-25-president-trump-is-finally-ending-canadas-free-ride",
+      "at": "2026-08-25T18:56:28.690104+00:00",
+      "activated": false,
+      "importance": 45
+    },
+    "https://www.whitehouse.gov/?p=49072": {
+      "id": "wh-2026-08-25-honoring-the-memory-of-dolly-parton",
+      "at": "2026-08-25T20:45:33.508924+00:00",
+      "activated": false,
+      "importance": 1
+    },
+    "https://www.whitehouse.gov/?p=49134": {
+      "id": "wh-2026-08-26-trump-delivers-14-wins-you-may-have-missed",
+      "at": "2026-08-26T19:18:46.208822+00:00",
+      "activated": false,
+      "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=49160": {
+      "id": "wh-2026-08-26-fact-sheet-president-donald-j-trump-further-ensures-affordable-beef-for-the-amer",
+      "at": "2026-08-26T23:32:39.046648+00:00",
+      "activated": true,
+      "importance": 62
+    },
+    "https://www.whitehouse.gov/?p=49151": {
+      "id": "wh-2026-08-26-further-ensuring-affordable-beef-for-the-american-consumer",
+      "at": "2026-08-26T23:33:05.906920+00:00",
+      "activated": true,
+      "importance": 64
+    },
+    "https://www.whitehouse.gov/?p=49156": {
+      "id": "wh-2026-08-26-fact-sheet-president-donald-j-trump-declares-a-national-emergency-to-secure-amer",
+      "at": "2026-08-26T23:33:34.965182+00:00",
+      "activated": true,
+      "importance": 72
+    },
+    "https://www.whitehouse.gov/?p=49152": {
+      "id": "wh-2026-08-26-declaring-a-national-emergency-to-secure-the-united-states-bulk-power-system",
+      "at": "2026-08-26T23:34:06.496579+00:00",
+      "activated": true,
+      "importance": 76
+    },
+    "https://www.whitehouse.gov/?p=49148": {
+      "id": "wh-2026-08-26-fifth-anniversary-of-the-attack-at-abbey-gate",
+      "at": "2026-08-26T23:34:16.911528+00:00",
+      "activated": false,
+      "importance": 2
+    },
+    "https://www.whitehouse.gov/?p=49170": {
+      "id": "wh-2026-08-27-never-surrender-karoline-leavitts-historic-tenure-as-white-house-press-secretary",
+      "at": "2026-08-27T20:30:46.806302+00:00",
+      "activated": false,
+      "importance": 2
+    },
+    "https://www.whitehouse.gov/?p=49168": {
+      "id": "wh-2026-08-27-honoring-the-american-history-of-the-great-lakes-and-renaming-lake-ontario-as-la",
+      "at": "2026-08-27T20:31:11.050079+00:00",
+      "activated": false,
+      "importance": 8
+    },
+    "https://www.whitehouse.gov/?p=49180": {
+      "id": "wh-2026-08-27-honoring-the-american-history-of-the-great-lakes-and-renaming-lake-ontario-as-la",
+      "at": "2026-08-28T05:24:23.760481+00:00",
+      "activated": false,
+      "importance": 15
+    },
+    "https://www.whitehouse.gov/?p=49175": {
+      "id": "wh-2026-08-27-president-trump-delivers-for-texas-lower-taxes-border-security-and-jobs-coming-h",
+      "at": "2026-08-28T05:24:31.790376+00:00",
+      "activated": false,
+      "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=49232": {
+      "id": "wh-2026-08-28-fact-sheet-president-donald-j-trump-establishes-a-commission-to-design-the-unite",
+      "at": "2026-08-28T18:42:00.791729+00:00",
+      "activated": false,
+      "importance": 28
+    },
+    "https://www.whitehouse.gov/?p=49230": {
+      "id": "wh-2026-08-28-establishing-the-united-states-space-academy",
+      "at": "2026-08-28T18:42:08.553254+00:00",
+      "activated": false,
+      "importance": 25
+    },
+    "https://www.whitehouse.gov/?p=49235": {
+      "id": "wh-2026-08-29-president-trump-was-right-america-controls-the-strait-of-hormuz",
+      "at": "2026-08-29T02:12:01.826147+00:00",
+      "activated": true,
+      "importance": 92
+    },
+    "https://www.whitehouse.gov/?p=49402": {
+      "id": "wh-2026-08-31-fact-sheet-president-donald-j-trump-announces-deal-with-nine-additional-pharmace",
+      "at": "2026-08-31T20:05:10.560234+00:00",
+      "activated": true,
+      "importance": 72
+    },
+    "https://www.whitehouse.gov/?p=49389": {
+      "id": "wh-2026-08-31-president-trump-and-vp-vance-deliver-manufacturing-renaissance-to-michigan",
+      "at": "2026-08-31T20:05:19.001284+00:00",
+      "activated": false,
+      "importance": 32
+    },
+    "https://www.whitehouse.gov/?p=49415": {
+      "id": "wh-2026-08-31-fact-sheet-delivering-a-universal-sign-on-for-public-services",
+      "at": "2026-08-31T23:51:16.279973+00:00",
+      "activated": false,
+      "importance": 32
+    },
+    "https://www.whitehouse.gov/?p=49461": {
+      "id": "wh-2026-08-31-fact-sheet-president-donald-j-trump-announces-historic-oil-agreement-to-secure-a",
+      "at": "2026-09-01T05:07:42.397358+00:00",
+      "activated": true,
+      "importance": 92
+    },
+    "https://www.whitehouse.gov/?p=49567": {
+      "id": "wh-2026-09-02-presidential-message-on-national-childhood-cancer-awareness-month",
+      "at": "2026-09-02T16:34:25.033659+00:00",
+      "activated": false,
+      "importance": 8
+    },
+    "https://www.whitehouse.gov/?p=49565": {
+      "id": "wh-2026-09-02-presidential-message-on-national-recovery-month",
+      "at": "2026-09-02T16:34:30.626537+00:00",
+      "activated": false,
+      "importance": 12
+    },
+    "https://www.whitehouse.gov/?p=49511": {
+      "id": "wh-2026-09-02-ten-times-extreme-liberal-democrats-in-congress-put-their-dangerous-agenda-ahead",
+      "at": "2026-09-02T16:34:35.632494+00:00",
+      "activated": false,
+      "importance": 10
+    },
+    "https://www.whitehouse.gov/?p=49573": {
+      "id": "wh-2026-09-02-presidential-message-on-national-preparedness-month-6e71",
+      "at": "2026-09-02T19:47:29.689308+00:00",
+      "activated": false,
+      "importance": 8
+    },
+    "https://www.whitehouse.gov/?p=49577": {
+      "id": "wh-2026-09-02-g20-innovation-ministerial-concludes-with-consensus-statement",
+      "at": "2026-09-02T22:38:30.005325+00:00",
+      "activated": false,
+      "importance": 28
+    },
+    "tw-2026-08-31-tga-release": {
+      "id": "tw-2026-08-31-tga-release",
+      "at": "2026-09-02T22:38:50.188439+00:00",
+      "activated": true,
+      "importance": 62
+    },
+    "https://www.whitehouse.gov/?p=49593": {
+      "id": "wh-2026-09-03-president-trump-secures-the-biggest-oil-deal-in-world-history",
+      "at": "2026-09-03T01:07:25.343094+00:00",
+      "activated": true,
+      "importance": 88
+    },
+    "https://www.whitehouse.gov/?p=49591": {
+      "id": "wh-2026-09-03-congressional-bill-h-r-6500-signed-into-law",
+      "at": "2026-09-03T01:07:35.492707+00:00",
+      "activated": false,
+      "importance": 45
+    },
+    "https://www.whitehouse.gov/?p=49671": {
+      "id": "wh-2026-09-04-made-in-america-manufacturing-private-hiring-power-explosive-august-jobs-report",
+      "at": "2026-09-04T16:21:24.762994+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49785": {
+      "id": "wh-2026-09-04-supporting-americas-ranchers",
+      "at": "2026-09-04T19:35:23.081103+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49783": {
+      "id": "wh-2026-09-04-promoting-fair-competition-in-livestock-markets-and-expanding-market-access-for-",
+      "at": "2026-09-04T19:35:51.154475+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49684": {
+      "id": "wh-2026-09-04-fact-sheet-president-donald-j-trump-supports-americas-ranchers",
+      "at": "2026-09-04T19:35:58.564340+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=49685": {
+      "id": "wh-2026-09-04-fact-sheet-president-donald-j-trump-promotes-fair-competition-in-livestock-marke",
+      "at": "2026-09-04T19:36:07.122628+00:00",
+      "activated": false,
+      "importance": 0
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

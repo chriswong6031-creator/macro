@@ -31,7 +31,7 @@ OPTIONS_TIMER_DISARMED=0
 OPTIONS_API_FENCE_MARKER=/run/macro-api-market-memory-options-deny.ready
 OPTIONS_RECIPROCAL_FENCE_MARKER=/run/macro-market-memory-options-reciprocal-deny.ready
 OPTIONS_RUNTIME_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update\.sh|codex-runtime-setup\.sh|macro-api\.service|macro-market-memory-(options|source|context|identity|breadth|technicals|experience|production-records)\.(service|timer)|market-memory-options-(prereqs|unit-boundary|runtime-fence|dropin-migration)\.sh)|scripts/(__init__|capture_market_memory_option_oi)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory|market_memory_(option_oi_observation|option_oi_store|pit))\.py)|contracts/market_memory/(option_oi_probe_receipt|spy_option_oi_source_observation|option_oi_capture_receipt|option_oi_store)\.v1\.schema\.json|config/market_memory_option_oi_source\.v1\.json|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
-OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-spy-rest-prereqs|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources(_spy)?)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
+OPTIONS_RECIPROCAL_CLOSURE_REGEX='^(app/requirements\.txt|app/deploy/(update|market-memory-spy-rest-prereqs|market-memory-options-(unit-boundary|runtime-fence|dropin-migration))\.sh|app/deploy/macro-market-memory-(source|source-spy-rest|context|identity|breadth|technicals|technicals-v2|experience|experience-v2|production-records|options-context-audit)\.(service|timer)|scripts/(__init__|accrue_market_memory_spy_experience|accrue_market_memory_spy_experience_v2|audit_options_market_memory_context|capture_market_memory_options_episodes|capture_market_memory_technicals_v2|ingest_market_memory_sources_spy)\.py|engine/(__init__|options_signal_episode|options_market_memory_context|options_market_memory_receipt_store)\.py|engine/neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual|_production_records|_source_kernel|_sources(_spy)?)?)\.py|contracts/market_memory/(spy_experience_(registration|opportunity|outcome_revision|population_receipt)|options_signal_episode_production_record)\.v1\.schema\.json|contracts/options/options\.signal_episode\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|config/market_memory_spy_experience_registration\.v2\.json|lib/(__init__|nyse_calendar)\.py|data/options_signal_episode/episodes\.jsonl|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='^(app/requirements\.txt|scripts/(__init__|accrue_market_memory_spy_experience)\.py|engine/(__init__\.py|neuralweb/(__init__|market_memory(_pit|_trusted|_technical_observation|_technical_store|_experience_accrual)?)\.py)|contracts/market_memory/spy_experience_(registration|opportunity|outcome_revision|population_receipt)\.v1\.schema\.json|config/market_memory_(canary|technical_price_basis|spy_experience_registration)\.v1\.json|lib/(__init__|nyse_calendar)\.py|research/licenses/MASSIVE_ENTITLEMENT_RECORD\.md)$'
 MARKET_MEMORY_EXPERIENCE_ROOT=/var/lib/macro-market-memory/state/experience-v1
 MARKET_MEMORY_EXPERIENCE_INSTALLATION="$MARKET_MEMORY_EXPERIENCE_ROOT/registration_installation.json"
@@ -80,7 +80,7 @@ stop_unit_and_verify_inactive() {
 stop_reciprocal_market_memory_writers() {
 	local profile service timer
 	rm -f "$OPTIONS_RECIPROCAL_FENCE_MARKER"
-	for profile in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records; do
+	for profile in source source-spy-rest context identity breadth technicals technicals-v2 experience experience-v2 production-records options-context-audit; do
 		service="macro-market-memory-$profile.service"
 		timer="macro-market-memory-$profile.timer"
 		if ! stop_unit_and_verify_inactive \
@@ -380,6 +380,26 @@ if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
 	fi
 fi
 
+# BEGIN CONTROL_ROOM_ACTIVE_BUILDS_PUBLISH
+# The Control Room projection has no credentials and cannot query GitHub.  The
+# existing trusted update lane therefore publishes the canonical three-repo
+# advisory document into the installer-owned source directory on every tick.
+# This is a best-effort observation only: every pre-commit failure leaves the
+# last-good file untouched; a post-commit durability ambiguity is separately
+# reported as effect-unknown. Neither outcome may stop Macro deployment or
+# authorize execution.
+if /usr/bin/python3 "$APP_DIR/scripts/publish_control_room_active_builds.py"; then
+	:
+else
+	CONTROL_ROOM_SOURCE_STATUS=$?
+	if [ "$CONTROL_ROOM_SOURCE_STATUS" -eq 3 ]; then
+		echo "macro-update: project active-build source publication effect unknown" >&2
+	else
+		echo "macro-update: project active-build source publication deferred" >&2
+	fi
+fi
+# END CONTROL_ROOM_ACTIVE_BUILDS_PUBLISH
+
 # Codex CLI: keep the provider runtime pinned and self-healing just like the
 # reviewed systemd units below. Authentication is durable VPS state under the
 # root-only /var/lib/macro-codex* stores and is never copied into git.
@@ -399,6 +419,7 @@ install -d -m 0700 /var/lib/macro-market-memory/public/trusted-v1
 install -d -m 0700 /var/lib/macro-market-memory/state
 install -d -m 0700 /var/lib/macro-market-memory/state/sources
 install -d -m 0700 /var/lib/macro-market-memory/state/context-projection
+install -d -m 0700 /var/lib/macro-market-memory/state/context-projection/options-context-receipts
 install -d -m 0700 /var/lib/macro-market-memory/state/identity-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/breadth-v1
 install -d -m 0700 /var/lib/macro-market-memory/state/technicals-v1
@@ -727,6 +748,63 @@ if [ "$MARKET_MEMORY_CONTEXT_RUN_NEEDED" -eq 1 ]; then
 		echo "macro-update: deferring Market Memory context projection — shared runtime dependencies are not current" >&2
 	elif ! systemctl start macro-market-memory-context.service; then
 		echo "macro-update: Market Memory context projection failed closed; hourly timer will retry" >&2
+	fi
+fi
+
+# Options Context Audit publisher: a distinct preregistered evidence owner.
+# W2C owner replay waits on trusted context, not this receipt. Its failure
+# stays loud and must not relabel a successful trusted projection as failure.
+MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED=0
+MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES=(
+	"$APP_DIR/app/deploy/macro-market-memory-options-context-audit.service"
+	"$APP_DIR/app/deploy/macro-market-memory-options-context-audit.timer"
+)
+if ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[0]}" /etc/systemd/system/macro-market-memory-options-context-audit.service || \
+   ! mm_reviewed_unit_file_ready "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[1]}" /etc/systemd/system/macro-market-memory-options-context-audit.timer; then
+	unit_repair_inputs_safe "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[@]}" || {
+		echo "macro-update: refusing unsafe options-context-audit unit repair input" >&2
+		exit 1
+	}
+	if systemd-analyze verify "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! mm_reviewed_unit_file_ready "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				[ ! -L "/etc/systemd/system/$UNIT" ] || {
+					echo "macro-update: refusing symlinked unit $UNIT" >&2
+					exit 1
+				}
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+				systemctl restart macro-market-memory-options-context-audit.timer 2>/dev/null || true
+			fi
+			RECONCILED=1
+			echo "macro-update: Market Memory options-context-audit units updated"
+		fi
+	else
+		echo "macro-update: refusing Market Memory options-context-audit unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 0 ]; then
+	systemctl enable --now macro-market-memory-options-context-audit.timer >/dev/null 2>&1 || \
+		echo "macro-update: macro-market-memory-options-context-audit.timer could not be enabled" >&2
+fi
+
+MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_RUN_NEEDED=0
+if [ "$MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(scripts/audit_options_market_memory_context\.py|engine/options_market_memory_(context|receipt_store)\.py)$'; then
+	MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_RUN_NEEDED=1
+fi
+if [ "$MARKET_MEMORY_OPTIONS_CONTEXT_AUDIT_RUN_NEEDED" -eq 1 ]; then
+	if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ]; then
+		echo "macro-update: deferring Options Context Audit until reciprocal boundary attestation" >&2
+	elif [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: deferring Options Context Audit — shared runtime dependencies are not current" >&2
+	elif ! systemctl start macro-market-memory-options-context-audit.service; then
+		echo "macro-update: Options Context Audit failed closed; hourly timer will retry" >&2
 	fi
 fi
 
@@ -1140,6 +1218,20 @@ fi
 #                          48 marketing modules are nightly-only, and outbox/
 #                          rejections are admin-only (see the admin list below).
 #   engine/live_quotes.py  app/tape.py REST quote fetch (→ lib/config.py)
+#   engine/quote_resolution.py brain_gateway imports the shared read-only quote
+#                          resolver at module load; its owner waterfall remains
+#                          cached in macro-api until the process restarts.
+#   engine/neuralweb/native_facts.py and engine/intelligence_workspace/*.py
+#                          W1-B lazily imports the frozen typed fact runtime on
+#                          the first native request; Python then pins those
+#                          modules, the registry, and schema validators for the
+#                          process lifetime. The request-time owner closure also
+#                          pins Data OS identity/registry modules, Theme Graph's
+#                          current-view and cached rights readers, and the equity
+#                          earnings staleness helpers. Exact W1-A and transitive
+#                          config/schema changes therefore require the same
+#                          restart without widening to nightly Theme builders or
+#                          unrelated collectors.
 #   lib/*                  ai_costs + mastermind_response_log log every chat call;
 #                          config.py is a module-level dep of live_quotes;
 #                          commercial_path.py is the GATE-4 emit module reached
@@ -1159,7 +1251,7 @@ fi
 API_RESTART_CONFIRMED=0
 API_RESTART_NEEDED=0
 # BEGIN MACRO_API_RESTART_TRIGGER
-if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/prophet_lab/.*\.py|engine/entry_radar/(__init__|contracts|spool)\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|commercial_path|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
+if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config\.yml|config/(site_access|dataset_registry|theme_sources)\.yml|config/intelligence_workspace/datapoints\.v1\.json|contracts/intelligence_workspace/(datapoint_(registry|value)|ai_context_envelope\.v1)\.schema\.json|collectors/equity_earnings\.py|engine/neuralweb/(ask_brain|cortex|brain_gateway|native_facts|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/intelligence_workspace/.*\.py|engine/theme_graph/(store|rights)\.py|engine/earnings_catalyst\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|quote_resolution|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/prophet_lab/.*\.py|engine/entry_radar/(__init__|contracts|spool)\.py|engine/prophet_live/(__init__|interval|live_states)\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|fms_cases|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/dataos/.*\.py|lib/(config|ai_costs|commercial_path|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
    [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	API_RESTART_NEEDED=1
 
@@ -1558,9 +1650,9 @@ if [ "$RECIPROCAL_TIMERS_PAUSED" -eq 1 ] && \
 		exit 1
 	fi
 	# END W2C_DEFERRED_REPLAY
-	for RECIPROCAL_PROFILE in source source-spy-rest context identity breadth technicals technicals-v2 experience-v2 production-records; do
+	for RECIPROCAL_PROFILE in source source-spy-rest context identity breadth technicals technicals-v2 experience-v2 production-records options-context-audit; do
 		if [ -e "/etc/systemd/system/macro-market-memory-$RECIPROCAL_PROFILE.timer" ]; then
-			if [ "$RECIPROCAL_PROFILE" = production-records ]; then
+			if [ "$RECIPROCAL_PROFILE" = production-records ] || [ "$RECIPROCAL_PROFILE" = options-context-audit ]; then
 				systemctl enable --now "macro-market-memory-$RECIPROCAL_PROFILE.timer" || true
 			else
 				systemctl start "macro-market-memory-$RECIPROCAL_PROFILE.timer" || true

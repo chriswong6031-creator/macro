@@ -1,10 +1,11 @@
 name: filing-forensics-broad-sec
 # Filing Forensics FF-1 — incremental broad SEC source plane.
 #
-# Polls Submissions for every issuer in data/edgar/fundamentals.parquet, admits
-# exact SEC bytes into the private fundamental_forensics/broad-sec/v1/ prefix,
-# and fetches Company Facts only when an issuer's relevant 10-K/10-Q (and
-# existing 20-F/40-F) filing state changes.
+# Discovers relevant 10-K/10-Q (and existing 20-F/40-F) changes from the
+# official EDGAR full-index master ZIP, admits exact SEC Submissions bytes
+# for affected canonical issuers into the private
+# fundamental_forensics/broad-sec/v1/ prefix, and fetches Company Facts only
+# when an issuer's relevant filing state actually changes.
 #
 # This lane is source truth only. It does not rebuild the workbench, run
 # detectors, or publish findings. A rerender cannot make the source current.
@@ -32,9 +33,9 @@ on:
           - incremental
           - recovery
       recovery_from:
-        description: ISO-8601 Z stale broad-source vintage. Required for recovery.
+        description: Frozen FF-1R July recovery anchor; recovery rejects every other value.
         required: false
-        default: ""
+        default: "2026-07-12T11:23:15Z"
 
 permissions:
   contents: read
@@ -64,15 +65,19 @@ jobs:
           R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
           R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_MODE: ${{ github.event.inputs.mode || 'incremental' }}
+          EVENT_RECOVERY_FROM: ${{ github.event.inputs.recovery_from || '' }}
         run: |
           set -euo pipefail
           # Schedule cannot enter recovery merely because a backlog exists.
           # Recovery is an explicit workflow_dispatch choice.
           MODE="incremental"
           RECOVERY_FROM=""
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            MODE="${{ github.event.inputs.mode || 'incremental' }}"
-            RECOVERY_FROM="${{ github.event.inputs.recovery_from || '' }}"
+          # FF-1R stays manual-only and accepts only its ratified July anchor.
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            MODE="$EVENT_MODE"
+            RECOVERY_FROM="$EVENT_RECOVERY_FROM"
           fi
           SCRATCH="$HOME/.cache/mm-ff-broad-sec/scratch"
           mkdir -p "$SCRATCH"

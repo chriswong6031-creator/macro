@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.thetadata-daily.plist
+  AD-1T1 full-universe incremental ThetaData T1 daily maintainer.
+
+  Behaviour (see research/AD1T1_INCREMENTAL_CADENCE_SPEC_2026-08-22.md §E):
+    • Finite periodic — StartCalendarInterval fires at four host-local (PT)
+      points: 13:20, 14:30, 16:00, 18:00 (= 16:20 / 17:30 / 19:00 / 21:00 ET
+      in the normal regime; 13:20 gives 10 min margin over the 16:10 ET gate).
+    • NO KeepAlive. Multiple fire points ARE the bounded retry ladder: a
+      successful earlier run makes later fires cheap `already_present`
+      no-ops; a failed earlier run gets three more bounded attempts, never a
+      hammer loop.
+    • RunAtLoad=true is safe (covers reboot/wake) because every invocation is
+      gate-checked (session + 16:10 ET) and idempotent in python.
+    • LimitLoadToSessionType Aqua — the agent loads at GUI login only; the
+      runbook states the auto-login requirement this implies.
+
+  Replaces com.macro.thetadata-backfill.plist (retired — see
+  research/THETADATA_OPS_RUNBOOK.md for the bootout + bootstrap transition).
+
+  Install / uninstall — see research/THETADATA_OPS_RUNBOOK.md.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macro.thetadata-daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <!--
+          Script MUST live OUTSIDE ~/Documents/. launchd (Aqua) is denied
+          exec on files under ~/Documents/ by macOS TCC ("Operation not
+          permitted" / exit 126) — same constraint as the retired backfill
+          wrapper. Kept in the ops worktree (same as WorkingDirectory).
+        -->
+        <string>/Users/chriswong/theta-ops-wt/scripts/launchd/theta_daily_refresh.sh</string>
+    </array>
+
+    <!-- Bounded retry ladder — four calendar fire points, host-local (PT). -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>13</integer>
+            <key>Minute</key>
+            <integer>20</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>14</integer>
+            <key>Minute</key>
+            <integer>30</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>16</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>18</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+
+    <!-- Covers reboot/wake — every invocation is gate-checked + idempotent. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Deliberately ABSENT: no KeepAlive. The finite calendar fire points
+         are the retry ladder; a daemon that respawns on every nonzero exit
+         would hammer the vendor outside the bounded window. -->
+
+    <!-- Working directory: the ops worktree; the wrapper also cd's there explicitly -->
+    <key>WorkingDirectory</key>
+    <string>/Users/chriswong/theta-ops-wt</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/chriswong/theta-ops-wt/daily_refresh.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/chriswong/theta-ops-wt/daily_refresh.log</string>
+
+    <!-- PATH with conda so the wrapper can call python-related tools.
+         launchd's default PATH is only /usr/bin:/bin:/usr/sbin:/sbin. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- Only run for the specific user session — not as a system daemon -->
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+</dict>
+</plist>

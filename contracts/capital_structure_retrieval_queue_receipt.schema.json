@@ -5,13 +5,17 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema", "as_of", "policy_version", "max_filings", "selected_count",
+    "schema", "as_of", "policy_version", "discovery_clock_policy_version",
+    "max_filings", "selected_count",
     "deferred_count", "lane_quota_slots", "lanes", "authority"
   ],
   "properties": {
     "schema": {"const": "capital_structure.retrieval_queue_receipt.v1"},
     "as_of": {"type": "string", "format": "date-time"},
     "policy_version": {"type": "string", "minLength": 1},
+    "discovery_clock_policy_version": {
+      "const": "capital-structure-sec-discovery-clock/1.0.0"
+    },
     "max_filings": {"type": "integer", "minimum": 0},
     "selected_count": {"type": "integer", "minimum": 0},
     "deferred_count": {"type": "integer", "minimum": 0},

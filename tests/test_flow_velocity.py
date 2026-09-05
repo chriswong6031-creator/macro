@@ -50,7 +50,7 @@ def test_flat_series_scores_near_zero_whatever_its_offset(offset):
     assert abs(kin["vel_primary"]) < 0.5, (
         f"offset {offset:+} alone produced velocity {kin['vel_primary']:+.2f} — the measure is "
         "reading the structural level, not the drift")
-    assert kin["state"] == "balanced"
+    assert kin["state"] == "near its norm"
 
 
 def test_real_drift_still_scores_after_demeaning():
@@ -61,7 +61,7 @@ def test_real_drift_still_scores_after_demeaning():
     kin = fv._kinetics(_series(base), _cfg())
     assert kin is not None
     assert kin["vel_primary"] >= 0.5, f"a real burst scored only {kin['vel_primary']:+.2f}"
-    assert kin["state"] in ("accelerating in", "inflow cooling")
+    assert kin["state"] in ("above norm, rising", "above norm, cooling")
 
 
 def test_breadth_gauge_can_reach_both_verdicts():
@@ -176,3 +176,119 @@ def test_northbound_note_matches_the_frozen_constant():
             "Connect home-market rule) — historical only, no live velocity.")
     assert fv.NORTHBOUND_FROZEN in note and "19 Aug" not in note
     assert chan["live"] is False
+
+
+# ── W5 adjudicated thresholds (research/flow_observatory/W5_PREREG.md;
+#    PR #6808 comment 5531154940, superseding 5530582923;
+#    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+#    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) ─────────────────────────────────────────
+def test_w5_adjudicated_constants_are_pinned():
+    """Themes: tau=0.75 (in the honest-neutral band, flip strictly improves), tilt beta=30
+    (was 25) — STANDS, reconfirmed by the R2 independent review. Names: REVERTED to the
+    incumbent tau=0.5 — an independent statistical review found the R1 tau=0.3 selection
+    was computed on the breadth-tilt state series and misapplied to the per-name surface,
+    breaching the frozen 25% neutral floor. Southbound: unchanged 0.5 (R1's own re-sweep
+    already excluded every improving tau via the <2% held-out-reach sanity bound, and R2
+    separately reverted the METHOD side too — see the winsorize tests below). The
+    module-level `_VIN`/`_VOUT` legacy-default constants were removed as readerless in
+    production (R2 cleanup) — names now shares the SAME literal default the engine's
+    `_kinetics`/`_classify` signatures already carried, so there is nothing left to pin
+    beyond `_NAMES_VIN`/`_VOUT` themselves."""
+    assert (fv._THEMES_VIN, fv._THEMES_VOUT) == (0.75, -0.75)
+    assert fv._THEMES_TILT_BETA == 30
+    assert (fv._NAMES_VIN, fv._NAMES_VOUT) == (0.5, -0.5)
+    assert not hasattr(fv, "_VIN") and not hasattr(fv, "_VOUT"), (
+        "the dead module-level _VIN/_VOUT constants were supposed to be removed in R2 — "
+        "if this fails, either they came back or a new production reader appeared that "
+        "needs a live constant again (in which case un-delete deliberately, don't just "
+        "restore the pin)")
+
+
+def test_w5_names_threshold_reverted_to_incumbent():
+    """A name at vel=0.35 would have counted as 'in' under the withdrawn R1 tau=0.3
+    threshold, but sits BELOW the reverted incumbent tau=0.5 — the R2 reversion must
+    actually move the breadth count back, not leave the R1 value lingering in behavior
+    even after the constant changed."""
+    kmap = {f"t{i}": {"vel": 0.35} for i in range(10)}
+    br = fv.flow_breadth(kmap, None)
+    assert br["names_in"] == 0, (
+        "vel=0.35 must NOT count as 'in' under the reverted 0.5 threshold — a regression "
+        "here means the R1 0.3 cutoff is still live somewhere")
+
+    kmap_at_incumbent = {f"t{i}": {"vel": 0.5} for i in range(10)}
+    br2 = fv.flow_breadth(kmap_at_incumbent, None)
+    assert br2["names_in"] == 10, "vel=0.5 (the incumbent boundary) must count as 'in'"
+
+
+def test_w5_themes_breadth_threshold_and_tilt_band_take_effect():
+    """A sector at vel=0.6 cleared the OLD 0.5 cutoff but sits below the W5-adjudicated
+    themes threshold 0.75 — it must no longer count toward the sector tilt. Separately, a
+    tilt of 28% cleared the old beta=25 band ('broad inflow') but must now read 'mixed'
+    under the recalibrated beta=30."""
+    sectors_borderline = {"rows": [{"vel": 0.6} for _ in range(10)]}
+    br = fv.flow_breadth({}, sectors_borderline)
+    assert br["sectors_in"] == 0, "vel=0.6 should NOT count as 'in' under the new 0.75 threshold"
+    assert br["state"] == "mixed"
+
+    # tilt = 100*(14-0)/50 = 28 -> old beta=25 called this "broad inflow"; new beta=30 must not.
+    sectors_28pct = {"rows": [{"vel": 1.4} for _ in range(14)] + [{"vel": 0.0} for _ in range(36)]}
+    br28 = fv.flow_breadth({}, sectors_28pct)
+    assert br28["tilt"] == 28
+    assert br28["state"] == "mixed", "a 28% tilt must read mixed under the recalibrated beta=30"
+
+
+def test_w5_state_boundary_determinism_at_new_thresholds():
+    """>= is IN, strictly below is NOT — pinned at the current per-lens cutoffs so a future
+    off-by-one can't silently flip the boundary session's verdict. Names uses the reverted
+    incumbent 0.5 (R2); themes keeps its W5-recalibrated 0.75 (unaffected by R2)."""
+    assert fv._classify(0.5, 0.1, fv._NAMES_VIN, fv._NAMES_VOUT)[0] == "above norm, rising"
+    assert fv._classify(0.4999, 0.1, fv._NAMES_VIN, fv._NAMES_VOUT)[0] == "near its norm"
+    assert fv._classify(0.75, 0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "above norm, rising"
+    assert fv._classify(0.7499, 0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "near its norm"
+    assert fv._classify(-0.75, -0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "below norm, worsening"
+    assert fv._classify(-0.7499, -0.1, fv._THEMES_VIN, fv._THEMES_VOUT)[0] == "near its norm"
+
+
+# ── M1 winsorization primitive — DORMANT as of R2 (no production caller; the R1 southbound
+#    M1 adoption was withdrawn, DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2). These two
+#    tests now pin the PRIMITIVE's own correctness only (a future preregistered wave may
+#    still revisit it per R2 ruling 5) — they no longer describe live production behavior.
+def test_w5_southbound_m1_winsorize_equals_m0_when_nothing_exceeds_winsor_bounds():
+    """M1 (winsorized) is a NO-OP swap over M0 when no value ever falls outside its own
+    rolling 2.5th/97.5th percentile bounds — pinning that keeps a change to the
+    winsorization primitive from silently diverging M1 from M0 on data the bounds never
+    bind on. R2 note: this is now a pure primitive-correctness guard on a dormant
+    parameter/helper, not a production-equivalence claim — southbound reverted to M0 (no
+    winsorize call at all) after an independent review found the R1 adoption rested on a
+    single unreplicated seeded draw of the Sec 5(a) metric.
+
+    Random continuous data routinely DOES get clipped ~5% of the time by construction (a
+    genuine outlier isn't required — being the current window's own max/min is enough), so
+    "no values exceed winsor bounds" has to be engineered, not merely "no injected spike":
+    at n=80 raw sessions the causal demean (dm=40) leaves only 61 post-demean rows, under
+    the winsorization primitive's own min_periods=63 — so its rolling bounds are undefined
+    for every single session (pure warm-up) and ``_winsorize_causal`` is the identity
+    function by construction, not by luck of the draw."""
+    rng = np.random.default_rng(2026)
+    flow = _series(rng.normal(0, 1.0, 80))
+    dm = min(252, max(30, len(flow) // 2))
+    post_demean_len = len(flow) - flow.rolling(dm, min_periods=max(20, dm // 2)).mean().isna().sum()
+    assert post_demean_len < 63, "fixture no longer guarantees warm-up-only winsorization"
+    m0 = fv._kinetics(flow, fv._AGG, winsorize=False)
+    m1 = fv._kinetics(flow, fv._AGG, winsorize=True)
+    assert m0 is not None and m1 is not None
+    assert m0["vel_primary"] == pytest.approx(m1["vel_primary"], abs=1e-9)
+    assert m0["accel"] == pytest.approx(m1["accel"], abs=1e-9)
+    assert m0["state"] == m1["state"]
+
+
+def test_w5_southbound_m1_winsorize_clips_an_injected_outlier():
+    """Sanity check the OTHER direction: a single huge spike must actually get clipped by
+    the M1 primitive (otherwise the 'equivalence on quiet data' test above would be vacuous
+    — passing only because winsorize never does anything). Dormant-primitive guard as of
+    R2 — see the module note above."""
+    rng = np.random.default_rng(4)
+    flow = _series(rng.normal(0, 1.0, 400))
+    flow.iloc[300] = 500.0   # far past any rolling 97.5th percentile of a unit-normal series
+    wins = fv._winsorize_causal(flow, window=126, lo_q=0.025, hi_q=0.975)
+    assert wins.iloc[300] < 500.0

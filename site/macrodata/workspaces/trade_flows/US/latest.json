@@ -1,0 +1,1566 @@
+{
+  "alert_contract": {
+    "eligible_conditions": [
+      {
+        "condition_id": "trade_balance_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Trade balance shock",
+          "zh": "贸易差额冲击"
+        },
+        "params": [
+          "trade_balance_level"
+        ]
+      },
+      {
+        "condition_id": "coverage_ratio_shift",
+        "kind": "component_shock",
+        "label": {
+          "en": "Export/import coverage shift",
+          "zh": "出口对进口覆盖率变化"
+        },
+        "params": [
+          "export_import_coverage_ratio"
+        ]
+      },
+      {
+        "condition_id": "terms_of_trade_shift",
+        "kind": "component_shock",
+        "label": {
+          "en": "Terms-of-trade shift",
+          "zh": "贸易条件变化"
+        },
+        "params": [
+          "terms_of_trade_proxy"
+        ]
+      },
+      {
+        "condition_id": "identity_disagreement_change",
+        "kind": "contradiction_change",
+        "label": {
+          "en": "Trade-balance identity disagreement change",
+          "zh": "贸易差额恒等式分歧变化"
+        },
+        "params": [
+          "kind"
+        ]
+      },
+      {
+        "condition_id": "source_stale_or_failed",
+        "kind": "source_stale_or_failed",
+        "label": {
+          "en": "Source stale or failed",
+          "zh": "数据源过期或失败"
+        },
+        "params": [
+          "source_id"
+        ]
+      },
+      {
+        "condition_id": "source_revision",
+        "kind": "source_revision",
+        "label": {
+          "en": "Material source revision",
+          "zh": "数据源重大修订"
+        },
+        "params": [
+          "source_id"
+        ]
+      }
+    ],
+    "note": "Eligible condition types are declared; this composer writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    "service_available": false,
+    "status": "ABSENT"
+  },
+  "authority": {
+    "axis_authority_ceiling": "DESCRIPTIVE",
+    "can_execute": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "class": "context_only",
+    "display_only": true
+  },
+  "availability": {
+    "contradiction": {
+      "components": [],
+      "en": null,
+      "kind": null,
+      "present": false,
+      "zh": null
+    },
+    "coverage_ratio": 0.0,
+    "degraded": [
+      "trade_balance",
+      "exports",
+      "imports",
+      "import_price_index",
+      "export_price_index"
+    ],
+    "reasons": [
+      "worst_required_source_freshness=SOURCE_FAILED"
+    ],
+    "required": [
+      {
+        "component_id": "trade_balance",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Trade balance (goods & services)",
+          "zh": "贸易差额（货物与服务）"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": true,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "exports",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Exports (goods & services)",
+          "zh": "出口（货物与服务）"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": true,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "imports",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Imports (goods & services)",
+          "zh": "进口（货物与服务）"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": true,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "import_price_index",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Import price index",
+          "zh": "进口价格指数"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": true,
+        "source_asof": null,
+        "status": "ABSENT"
+      },
+      {
+        "component_id": "export_price_index",
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Export price index",
+          "zh": "出口价格指数"
+        },
+        "null_reason": "SOURCE_FAILED",
+        "required": true,
+        "source_asof": null,
+        "status": "ABSENT"
+      }
+    ],
+    "state": "SOURCE_FAILED",
+    "worst_freshness": "SOURCE_FAILED"
+  },
+  "axes": {
+    "items": []
+  },
+  "changes": {
+    "comparability": "NO_PRIOR",
+    "deltas": [],
+    "null_reason": "WARMUP",
+    "prior_effective_date": null,
+    "prior_generation_id": null,
+    "prior_method_version": null,
+    "status": "ABSENT"
+  },
+  "corrections": {
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.",
+    "predecessor_generation_id": null
+  },
+  "drivers": {
+    "balance_sheet": [
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "trade_balance_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Trade balance",
+          "zh": "贸易差额"
+        },
+        "note": "bucket reuse: published under drivers.balance_sheet because these legs concern a trade 'balance', a loose thematic fit, not a literal balance sheet -- see the driver_bucket_naming_note implication",
+        "owner_field": "fred.BOPGSTB.trade_balance_goods_services",
+        "unit": "usd_millions_sa",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "exports_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Exports",
+          "zh": "出口"
+        },
+        "note": "bucket reuse: see trade_balance_level's note",
+        "owner_field": "fred.BOPTEXP.exports_goods_services",
+        "unit": "usd_millions_sa",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "imports_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Imports",
+          "zh": "进口"
+        },
+        "note": "bucket reuse: see trade_balance_level's note",
+        "owner_field": "fred.BOPTIMP.imports_goods_services",
+        "unit": "usd_millions_sa",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "export_import_coverage_ratio",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Export/import coverage ratio",
+          "zh": "出口对进口覆盖率"
+        },
+        "note": "bucket reuse: see trade_balance_level's note",
+        "owner_field": "fred.BOPTEXP / fred.BOPTIMP",
+        "unit": "ratio",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "trade_balance_share_of_flows_pct",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Balance as share of flows",
+          "zh": "差额占流量比重"
+        },
+        "note": "bucket reuse: see trade_balance_level's note",
+        "owner_field": "fred.BOPGSTB / (fred.BOPTEXP + fred.BOPTIMP)",
+        "unit": "percent",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "trade_balance_identity_residual",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Trade-balance identity residual",
+          "zh": "贸易差额恒等式残差"
+        },
+        "note": "bucket reuse: see trade_balance_level's note",
+        "owner_field": "fred.BOPGSTB - (fred.BOPTEXP - fred.BOPTIMP)",
+        "unit": "usd_millions_sa",
+        "value": null
+      }
+    ],
+    "rate_side": [
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "import_price_index_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Import price index",
+          "zh": "进口价格指数"
+        },
+        "note": "bucket reuse: published under drivers.rate_side because the contract's driver bucket pair is fixed as rate_side/balance_sheet and Trade Flows has no dedicated price-index bucket -- see the driver_bucket_naming_note implication",
+        "owner_field": "fred.IR.import_price_index",
+        "unit": "index",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "export_price_index_level",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Export price index",
+          "zh": "出口价格指数"
+        },
+        "note": "bucket reuse: see import_price_index_level's note",
+        "owner_field": "fred.IQ.export_price_index",
+        "unit": "index",
+        "value": null
+      },
+      {
+        "coverage_state": "ABSENT",
+        "driver_id": "terms_of_trade_proxy",
+        "impact_magnitude": null,
+        "impact_sign": 0,
+        "label": {
+          "en": "Terms-of-trade proxy",
+          "zh": "贸易条件指标"
+        },
+        "note": "bucket reuse: see import_price_index_level's note",
+        "owner_field": "fred.IQ / fred.IR",
+        "unit": "ratio",
+        "value": null
+      }
+    ]
+  },
+  "generation": {
+    "built_at": "2026-09-04T22:42:48Z",
+    "calculation_as_of": null,
+    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
+    "content_sha256": "81b6bc6d3bd103f390a872598337404d8c78760120b65b207674b0834e966dc5",
+    "generation_id": "trade_flows-US-81b6bc6d3bd103f3",
+    "producer": "engine.market_os.macro_workspaces.trade_flows",
+    "rendered_at": null
+  },
+  "headline": {
+    "effective_date": null,
+    "hysteresis": {
+      "applied": false,
+      "band": 0.0,
+      "held_prior": false,
+      "note": "Trade Flows is a Chairman-authorized expansion added after the frozen Market Ontology architecture document's own twelve-workspace freeze, so no section of that document defines a headline model for it at all -- not even a note that none exists, the way monetary_policy/liquidity_central_banks each carry their own such note. There is accordingly no named axis pair here to attempt, and no dual-axis quadrant is asserted. A future architecture revision may ratify a genuine two-axis blueprint for this workspace, at which point this null becomes a real state the moment that blueprint is adopted. Until then, the real trade content -- balance, exports, imports, price indexes, the terms-of-trade proxy, and the balance-identity read -- lives in metrics, drivers, and implications instead. See the headline_unavailable implication for the reader-facing version."
+    },
+    "method_version": "trade_flows.compose.v1",
+    "nearest_boundary": {
+      "axis": null,
+      "distance": null,
+      "null_reason": "NOT_APPLICABLE"
+    },
+    "null_reason": "NOT_APPLICABLE",
+    "one_month_vector": {
+      "dx": null,
+      "dy": null,
+      "null_reason": "NOT_APPLICABLE",
+      "status": "ABSENT"
+    },
+    "prior_state": {
+      "effective_date": null,
+      "method_version": null,
+      "state_id": null
+    },
+    "quadrant": {
+      "x": null,
+      "x_status": "ABSENT",
+      "y": null,
+      "y_status": "ABSENT"
+    },
+    "state_id": null,
+    "state_label": {
+      "en": null,
+      "zh": null
+    },
+    "status": "ABSENT",
+    "subtitle": {
+      "en": "Trade balance, exports/imports, and the terms of trade",
+      "zh": "贸易差额、出口与进口及贸易条件"
+    },
+    "transition_distance": null
+  },
+  "implications": {
+    "items": [
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "headline_unavailable",
+        "text": {
+          "en": "This page publishes no dual-axis state and no headline quadrant: the frozen Market Ontology architecture document defines twelve macro workspaces, each with its own headline blueprint (or an explicit note that none exists), and Trade Flows is not one of the twelve -- it is a Chairman-authorized expansion added afterward, so no blueprint section for it exists to fill in or fall short of. This is a design absence, not a data gap: unlike a workspace whose blueprint exists but cannot be computed from today's inputs, there is simply no named axis pair here to attempt. A future architecture revision may ratify a two-axis blueprint for this workspace, at which point this null becomes a real state the moment that blueprint is adopted. Until then, the real trade content -- balance, exports, imports, price indexes, and the terms of trade -- is published in full as metrics, drivers, and implications instead of being forced into a quadrant that has no definition to force it into.",
+          "zh": "本页不发布双轴状态,也不发布头条象限:已冻结的市场本体架构文档定义了十二个宏观工作区,每个都有各自的头条蓝图（或明确说明不存在蓝图）,而贸易流动并非这十二个之一——它是后续经授权新增的扩展工作区,因此根本不存在可填补或未能填补的蓝图章节。这是设计层面的缺失,而非数据缺口:与蓝图存在但当前输入无法计算的工作区不同,这里根本没有可尝试的既定轴对。未来的架构修订版可能会为本工作区批准一个双轴蓝图,届时这一空值将在该蓝图被采纳的那一刻转为真实状态。在此之前,真实的贸易内容——差额、出口、进口、物价指数与贸易条件——均以指标、驱动因素与含义的形式完整发布,而非被强行纳入一个没有定义可供强行纳入的象限。"
+        },
+        "trace_ref": "engine.market_os.macro_workspaces.trade_flows#headline"
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "sa_nsa_never_mix_disclosure",
+        "text": {
+          "en": "The trade balance, exports, and imports are seasonally adjusted (SA) dollar flows; the import and export price indexes are NOT seasonally adjusted (NSA). The terms-of-trade proxy divides the two NSA price indexes by each other -- a clean pairing -- and every other derived read on this page combines only the SA dollar-flow series. Neither group is ever mixed with the other in one derived value.",
+          "zh": "贸易差额、出口与进口为经季节调整（SA）的美元流量；进口与出口价格指数则未经季节调整（NSA）。贸易条件指标是两个NSA价格指数相除——属于同类型配对；本页其余所有派生读数均只组合SA美元流量序列。两类序列从不在同一派生读数中混用。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "same_date_discipline_disclosure",
+        "text": {
+          "en": "Every ratio and combined read on this page (the export/import coverage ratio, the terms-of-trade proxy, the balance-as-share-of-flows read, and the trade-balance identity residual) is computed only from a date common to every leg it combines, never by pairing each leg's own separately-latest print. When the latest shared date lags any single leg's own newest available print by more than a disclosed tolerance, this composer refuses that read rather than mixing an older print from one leg with a newer print from another under one reported date.",
+          "zh": "本页所有比率与组合读数（出口对进口覆盖率、贸易条件指标、差额占流量比重读数,以及贸易差额恒等式残差）均只依据其所涉及的每一分项都共有的同一日期计算,绝不将各分项各自的最新日期拼凑在一起。当某组合中各分项的共同最新日期,相较其中任一分项自身的最新可得读数滞后超出披露容差时,本组合器会拒绝给出该读数,而不会在同一报告日期下混用一个分项的旧读数与另一分项的新读数。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "no_alfred_pit_vintage_capture",
+        "text": {
+          "en": "No point-in-time vintage capture exists for any series on this page today. Every level and derived read above is the current stored (latest-revised) value, not what was knowable in real time; both the FT-900 dollar-flow figures and the BLS price indexes are revised for months after first release.",
+          "zh": "本页所有序列目前均无时点（PIT）版本捕获。以上所有水平值与派生读数均为当前存储的（最新修订后的）数值，而非当时实际可知的数值；FT-900美元流量数据与BLS物价指数在首次发布后均会持续修订数月。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "bilateral_country_not_covered_disclosure",
+        "text": {
+          "en": "Bilateral or country-level trade detail is not shown: a China-side GACC partner-country breakdown collector exists in this estate, but it is scoped as context/display-tier-only for its own owning surface, and reusing it here is a cross-workspace scope decision this composer does not make on its own authority.",
+          "zh": "本页未展示双边或国别贸易细节：本估值体系已接入一个针对中国海关总署国别贸易明细的采集器，但该采集器的定位仅面向其自身归属界面的背景/展示层级，若要在本工作区复用，需要跨工作区的范围决策，本组合器无权自行做出该决策。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "petroleum_not_covered_disclosure",
+        "text": {
+          "en": "Petroleum-specific trade flows are not shown: EIA weekly crude oil import/export series exist in this estate but belong to the energy-plumbing owner's own supply read, not this workspace.",
+          "zh": "本页未展示原油等石油相关贸易流量：本估值体系已接入EIA每周原油进出口序列，但该数据归属能源基础设施所有者自身的供给读数，而非本工作区。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "customs_tariff_not_covered_disclosure",
+        "text": {
+          "en": "Customs duty or tariff receipts context is not shown: no collector for that release exists in this estate yet. This workspace does not estimate that context from a different series.",
+          "zh": "本页未展示关税或海关税收相关背景：本估值体系目前尚未为该发布接入任何采集器。本工作区不会用其他序列估算该背景数据。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "services_detail_not_covered_disclosure",
+        "text": {
+          "en": "A goods-only or services-only breakdown of the trade balance, exports, or imports is not shown: only the combined goods-and-services read is collected, and this composer never estimates a finer split from the combined figure.",
+          "zh": "本页未展示货物或服务单独口径的贸易差额、出口或进口细分：本估值体系仅采集货物与服务合并口径的读数，本组合器也从不基于合并数据估算更细的拆分。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "trade"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "LOW",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "HIGH",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "driver_bucket_naming_note",
+        "text": {
+          "en": "The drivers.balance_sheet bucket in this snapshot carries the dollar-flow legs (trade balance, exports, imports, the coverage ratio, the balance-share-of-flows read, and the identity residual) -- a loose thematic fit (these concern a trade 'balance'), not a literal balance sheet; drivers.rate_side carries the two price-index legs and the terms-of-trade proxy, not policy rates. The contract's driver bucket pair is fixed as rate_side/balance_sheet and this workspace has no dedicated flows/price bucket, so the naming is cosmetic bucket reuse, disclosed here rather than left implicit.",
+          "zh": "本快照中drivers.balance_sheet分组承载的是美元流量分项（贸易差额、出口、进口、覆盖率、差额占流量比重读数与恒等式残差）——这只是与“差额”主题的松散呼应，而非字面意义上的资产负债表；drivers.rate_side分组承载的是两个物价指数分项与贸易条件指标，而非政策利率。合约的驱动因素分组固定为rate_side/balance_sheet，本工作区没有独立的流量/价格分组可用，因此命名属于用途借用，在此明确披露而非隐含处理。"
+        },
+        "trace_ref": null
+      }
+    ]
+  },
+  "learning": {
+    "event_names": [
+      "macro_workspace_opened",
+      "macro_state_changed_seen",
+      "macro_driver_expanded",
+      "macro_source_opened",
+      "macro_degraded_state_seen",
+      "macro_unknown_or_refusal_seen"
+    ],
+    "instrumentation": "first_party",
+    "privacy_note": "Event definitions reuse the existing first-party analytics owner; no second analytics store, no user identity copied into the artifact."
+  },
+  "metrics": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPGSTB.trade_balance_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_surplus",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "trade_balance_level",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPGSTB.parquet",
+        "reference_id": "mastermind.market_reference/v1#trade_balance_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPGSTB"
+        ],
+        "status": "ABSENT",
+        "transformation": "Census/BEA FT-900 Trade Balance: Goods and Services, BoP basis, seasonally adjusted, republished by FRED, in USD MILLIONS (never rescaled to $bn -- judgment call 3). Negative = deficit. No ALFRED point-in-time vintage exists for this series; this composer publishes the current stored (latest-revised) read.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_3m_average",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPGSTB.trade_balance_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_surplus",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "trade_balance_avg_3m",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPGSTB.parquet",
+        "reference_id": "mastermind.market_reference/v1#trade_balance_avg_3m",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPGSTB"
+        ],
+        "status": "ABSENT",
+        "transformation": "Mean of every observation inside a 65-day trailing window from the latest print, refused as insufficient history below 3 observations in that window -- never a blind average of 'the last three rows' across a collection gap (judgment call 5).",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_level_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPGSTB.trade_balance_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "positive_is_balance_improving",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "trade_balance_yoy_change",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPGSTB.parquet",
+        "reference_id": "mastermind.market_reference/v1#trade_balance_yoy_change",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPGSTB"
+        ],
+        "status": "ABSENT",
+        "transformation": "Current level minus the level roughly 12 months prior, in USD MILLIONS -- a LEVEL difference, never a percent (judgment call 4): the trade balance crosses zero, so a percent YoY would be unstable near a zero or sign-flipping denominator.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPTEXP.exports_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_exports",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "exports_level",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPTEXP.parquet",
+        "reference_id": "mastermind.market_reference/v1#exports_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPTEXP"
+        ],
+        "status": "ABSENT",
+        "transformation": "Census/BEA FT-900 Exports of Goods and Services, BoP basis, seasonally adjusted, republished by FRED, in USD MILLIONS. No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPTEXP.exports_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_export_growth",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "exports_yoy",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPTEXP.parquet",
+        "reference_id": "mastermind.market_reference/v1#exports_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPTEXP"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same SA series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPTIMP.imports_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_imports",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "imports_level",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPTIMP.parquet",
+        "reference_id": "mastermind.market_reference/v1#imports_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPTIMP"
+        ],
+        "status": "ABSENT",
+        "transformation": "Census/BEA FT-900 Imports of Goods and Services, BoP basis, seasonally adjusted, republished by FRED, in USD MILLIONS. No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPTIMP.imports_goods_services",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_import_growth",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "imports_yoy",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/BOPTIMP.parquet",
+        "reference_id": "mastermind.market_reference/v1#imports_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPTIMP"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same SA series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_ratio",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPTEXP / fred.BOPTIMP",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_export_coverage_of_imports",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "export_import_coverage_ratio",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "fred.BOPTEXP / fred.BOPTIMP",
+        "reference_id": "mastermind.market_reference/v1#export_import_coverage_ratio",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPTEXP",
+          "FRED:BOPTIMP"
+        ],
+        "status": "ABSENT",
+        "transformation": "Exports divided by imports (both goods-and-services, SA, USD millions), at the latest date common to both legs (same-date discipline); refused when no such date exists within 20 days of either leg's own newest print, rather than mixing an older print from one leg with a newer print from the other.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.IR.import_price_index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expensive_imports",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "import_price_index_level",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/IR.parquet",
+        "reference_id": "mastermind.market_reference/v1#import_price_index_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:IR"
+        ],
+        "status": "ABSENT",
+        "transformation": "BLS Import Price Index, All Commodities, NOT seasonally adjusted, republished by FRED (index, NSA, base year per BLS/FRED series metadata -- NOT verified in this authoring environment; see judgment call 14). No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_nsa",
+        "value": null,
+        "value_type": "index"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.IR.import_price_index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_import_price_inflation",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "import_price_index_yoy",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/IR.parquet",
+        "reference_id": "mastermind.market_reference/v1#import_price_index_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:IR"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same NSA index.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.IQ.export_price_index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expensive_exports",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "export_price_index_level",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/IQ.parquet",
+        "reference_id": "mastermind.market_reference/v1#export_price_index_level",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:IQ"
+        ],
+        "status": "ABSENT",
+        "transformation": "BLS Export Price Index, All Commodities, NOT seasonally adjusted, republished by FRED (index, NSA, base year per BLS/FRED series metadata -- NOT verified in this authoring environment; see judgment call 14). No ALFRED point-in-time vintage exists for this series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "index_nsa",
+        "value": null,
+        "value_type": "index"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "yoy_pct_change",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.IQ.export_price_index",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_faster_export_price_inflation",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "export_price_index_yoy",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "data/fred/IQ.parquet",
+        "reference_id": "mastermind.market_reference/v1#export_price_index_yoy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:IQ"
+        ],
+        "status": "ABSENT",
+        "transformation": "12-month percent change of the same NSA index.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_ratio",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.IQ / fred.IR",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_favorable_terms_of_trade",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "terms_of_trade_proxy",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "fred.IQ / fred.IR",
+        "reference_id": "mastermind.market_reference/v1#terms_of_trade_proxy",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:IQ",
+          "FRED:IR"
+        ],
+        "status": "ABSENT",
+        "transformation": "Export price index divided by import price index (both NOT seasonally adjusted -- a clean NSA-vs-NSA pairing, judgment call 2), at the latest date common to both legs; refused when no such date exists within 20 days of either leg's own newest print. Never combined with any SA dollar-flow series in the same derived read.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_share",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPGSTB / (fred.BOPTEXP + fred.BOPTIMP)",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_surplus_relative_to_flow_volume",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "trade_balance_share_of_flows_pct",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "fred.BOPGSTB / (fred.BOPTEXP + fred.BOPTIMP)",
+        "reference_id": "mastermind.market_reference/v1#trade_balance_share_of_flows_pct",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPGSTB",
+          "FRED:BOPTEXP",
+          "FRED:BOPTIMP"
+        ],
+        "status": "ABSENT",
+        "transformation": "Trade balance divided by (exports plus imports), expressed as a percent, at the latest date common to all three legs (same-date discipline, three-leg -- judgment call 6); refused when no such date exists within the disclosed staleness bound, or when the exports-plus-imports denominator reads exactly zero.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": null,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_identity_residual",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.BOPGSTB - (fred.BOPTEXP - fred.BOPTIMP)",
+        "definition_version": "1.0.0",
+        "direction_semantics": "magnitude_indicates_cross_series_revision_vintage_mismatch",
+        "freshness": "SOURCE_FAILED",
+        "market_session": null,
+        "metric_id": "trade_balance_identity_residual",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "SOURCE_FAILED",
+        "observed_at": null,
+        "owner_ref": "fred.BOPGSTB - (fred.BOPTEXP - fred.BOPTIMP)",
+        "reference_id": "mastermind.market_reference/v1#trade_balance_identity_residual",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:BOPGSTB",
+          "FRED:BOPTEXP",
+          "FRED:BOPTIMP"
+        ],
+        "status": "ABSENT",
+        "transformation": "Published trade balance minus (exports minus imports), at the latest date common to all three legs; a disclosed 100-USD-million tolerance band absorbs ordinary rounding across FRED's three independently-refreshed series -- a residual beyond the band is flagged as a genuine disagreement (this composer's one contradiction, judgment call 8), never silently averaged away.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "usd_millions_sa",
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "n/a",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "bilateral_country_trade_detail",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": null,
+        "owner_ref": "NONE -- a China-side GACC partner-country collector exists in this estate but is another owner's context/display-tier-only lane",
+        "reference_id": "mastermind.market_reference/v1#bilateral_country_trade_detail",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "NONE -- a China-side GACC partner-country collector exists in this estate but is another owner's context/display-tier-only lane"
+        ],
+        "status": "ABSENT",
+        "transformation": "A bilateral/country-level breakdown of US trade flows is not shown. A China-side partner-country trade detail collector (collectors/china_trade_detail.py -> data/china_trade_detail/) is real and nightly-wired in this estate, but it is scoped as 'CONTEXT / DISPLAY TIER ONLY' for its own owning surface, and reusing its breakdown here would require a cross-workspace scope/ rights decision this composer has no standing to make on its own authority. Typed as not covered rather than silently read.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "n/a",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "petroleum_specific_trade_flows",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": null,
+        "owner_ref": "NONE -- EIA weekly crude import/export series exist in this estate but belong to the energy-plumbing owner's lane",
+        "reference_id": "mastermind.market_reference/v1#petroleum_specific_trade_flows",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "NONE -- EIA weekly crude import/export series exist in this estate but belong to the energy-plumbing owner's lane"
+        ],
+        "status": "ABSENT",
+        "transformation": "Petroleum-specific import/export flows are not shown. EIA weekly crude oil import/export series (WCEIMUS2 / WCREXUS2) exist in-tree, surfaced as a supply read on the energy/oil page's Commodity Vector -- a different owner's lane, not this workspace's. This composer does not build new collectors or cross-project another workspace's supply read; typed as not covered.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "n/a",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "customs_tariff_receipts",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": null,
+        "owner_ref": "NONE -- no collector for customs/tariff receipts exists anywhere in this estate",
+        "reference_id": "mastermind.market_reference/v1#customs_tariff_receipts",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "NONE -- no collector for customs/tariff receipts exists anywhere in this estate"
+        ],
+        "status": "ABSENT",
+        "transformation": "Customs duty / tariff receipts context is not shown: no collector for that release exists in this estate today. This workspace does not estimate that context from a different series.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "n/a",
+        "calculation_as_of": null,
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "NONE",
+        "definition_version": "1.0.0",
+        "direction_semantics": "n/a",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "trade_services_detail",
+        "model_version": "trade_flows.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": null,
+        "owner_ref": "NONE -- only the combined goods-and-services read is collected; no goods-only or services-only breakdown exists",
+        "reference_id": "mastermind.market_reference/v1#trade_services_detail",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "NONE -- only the combined goods-and-services read is collected; no goods-only or services-only breakdown exists"
+        ],
+        "status": "ABSENT",
+        "transformation": "A goods-only or services-only breakdown of the trade balance, exports, or imports is not shown: BOPGSTB/BOPTEXP/BOPTIMP are the COMBINED goods-AND-services read, and no finer breakdown is collected in this estate. This composer never estimates a goods-only or services-only split from the combined figure.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": null,
+        "value_type": "number"
+      }
+    ]
+  },
+  "region": {
+    "code": "US",
+    "display_name": "United States",
+    "supported": true
+  },
+  "scenario_contract": {
+    "assumptions": [
+      {
+        "assumption_id": "exports_growth_pct",
+        "label": {
+          "en": "Exports growth",
+          "zh": "出口增长"
+        },
+        "max": 30.0,
+        "min": -30.0,
+        "owner_field": "fred.BOPTEXP.exports_goods_services",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "imports_growth_pct",
+        "label": {
+          "en": "Imports growth",
+          "zh": "进口增长"
+        },
+        "max": 30.0,
+        "min": -30.0,
+        "owner_field": "fred.BOPTIMP.imports_goods_services",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "import_price_growth_pct",
+        "label": {
+          "en": "Import price growth",
+          "zh": "进口价格增长"
+        },
+        "max": 30.0,
+        "min": -30.0,
+        "owner_field": "fred.IR.import_price_index",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "export_price_growth_pct",
+        "label": {
+          "en": "Export price growth",
+          "zh": "出口价格增长"
+        },
+        "max": 30.0,
+        "min": -30.0,
+        "owner_field": "fred.IQ.export_price_index",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "trade_balance_usd_bn",
+        "label": {
+          "en": "Trade balance",
+          "zh": "贸易差额"
+        },
+        "max": 50.0,
+        "min": -200.0,
+        "owner_field": null,
+        "step": 5.0,
+        "unit": "usd_bn"
+      }
+    ],
+    "execution_available": false,
+    "note": "Assumption vocabulary is declared and closed; this composer ships no scenario execution endpoint (non-goal). trade_balance_usd_bn has no owner_field because it is a DERIVED read (not a single owner series) -- a future owner-native pure scenario function produces mastermind.macro_workspace_scenario_result.v1 with no canonical write.",
+    "result_schema": "mastermind.macro_workspace_scenario_result.v1",
+    "status": "PARTIAL"
+  },
+  "schema": {
+    "contract": "mastermind.macro_workspace_snapshot.v1",
+    "version": "1.0.0"
+  },
+  "series": {
+    "items": [],
+    "null_reason": "INSUFFICIENT_HISTORY",
+    "status": "ABSENT"
+  },
+  "sources": {
+    "items": [
+      {
+        "artifact_ref": "data/fred/BOPGSTB.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Trade balance, goods & services (Census/BEA FT-900, via FRED)",
+          "zh": "贸易差额，货物与服务（人口普查局/BEA FT-900报告，经FRED）"
+        },
+        "owner_ref": "collectors.fred[BOPGSTB]",
+        "provider": "US Census Bureau / BEA / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "bopgstb",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/BOPTEXP.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Exports, goods & services (Census/BEA FT-900, via FRED)",
+          "zh": "出口，货物与服务（人口普查局/BEA FT-900报告，经FRED）"
+        },
+        "owner_ref": "collectors.fred[BOPTEXP]",
+        "provider": "US Census Bureau / BEA / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "boptexp",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/BOPTIMP.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Imports, goods & services (Census/BEA FT-900, via FRED)",
+          "zh": "进口，货物与服务（人口普查局/BEA FT-900报告，经FRED）"
+        },
+        "owner_ref": "collectors.fred[BOPTIMP]",
+        "provider": "US Census Bureau / BEA / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "boptimp",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/IR.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Import price index, all commodities (BLS, via FRED)",
+          "zh": "进口价格指数，所有商品（BLS，经FRED）"
+        },
+        "owner_ref": "collectors.fred[IR]",
+        "provider": "US Bureau of Labor Statistics / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "ir",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/IQ.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "SOURCE_FAILED",
+        "label": {
+          "en": "Export price index, all commodities (BLS, via FRED)",
+          "zh": "出口价格指数，所有商品（BLS，经FRED）"
+        },
+        "owner_ref": "collectors.fred[IQ]",
+        "provider": "US Bureau of Labor Statistics / FRED",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "iq",
+        "transform": null
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "NOT_COVERED",
+        "label": {
+          "en": "Bilateral/country-level trade detail",
+          "zh": "双边/国别贸易细节"
+        },
+        "owner_ref": "NONE -- another owner's context/display-tier-only lane",
+        "provider": "China Customs (GACC), via collectors/china_trade_detail.py",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "bilateral_country_trade_detail",
+        "transform": null
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "NOT_COVERED",
+        "label": {
+          "en": "Petroleum-specific trade flows",
+          "zh": "石油相关贸易流量"
+        },
+        "owner_ref": "NONE -- another owner's energy-plumbing lane",
+        "provider": "US Energy Information Administration",
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "petroleum_specific_trade_flows",
+        "transform": null
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "NOT_COVERED",
+        "label": {
+          "en": "Customs duty / tariff receipts",
+          "zh": "关税/海关税收"
+        },
+        "owner_ref": "NONE -- no collector wired in this estate",
+        "provider": null,
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "customs_tariff_receipts",
+        "transform": null
+      },
+      {
+        "artifact_ref": null,
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "NOT_COVERED",
+        "label": {
+          "en": "Goods-only / services-only trade detail",
+          "zh": "货物或服务单独口径贸易细节"
+        },
+        "owner_ref": "NONE -- only the combined read is collected",
+        "provider": null,
+        "reference_period": null,
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "trade_services_detail",
+        "transform": null
+      }
+    ]
+  },
+  "workspace": {
+    "id": "trade_flows",
+    "subtitle": {
+      "en": "Goods & services dollar flows x import/export price indexes",
+      "zh": "货物与服务美元贸易流量 × 进出口价格指数"
+    },
+    "title": {
+      "en": "Trade Flows",
+      "zh": "贸易流动"
+    }
+  }
+}

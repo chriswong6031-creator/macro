@@ -82,7 +82,7 @@ do_not_redo:
     (DSC:CN-F-ONLY-BIO-AND-EV-PIN-UNIQUE-CLOCKS)."
   - "Do not re-derive the Tushare entitlement matrix — CN-A #5945
     (research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md) is the
-    rights authority; ¥0 outlay stands until the operator's vendor letter."
+    rights authority; ¥0 outlay stands. TuShare licensing SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE — compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED and no vendor letter is required or may be requested; remaining gaps are collector/coverage work only."
   - "No second China rank-training candidate store —
     data/china_prophet_rank/candidates.parquet (writer
     engine/china_prophet_shadow.py) is canonical."
@@ -289,6 +289,67 @@ waves:
       normal-path regression, and the dossier still renders the normal P1
       product correctly. Do NOT manufacture malformed production input.
       STANDING GATE UNCHANGED: L0, P1B, P2, R1 and R2 stay CLOSED.
+      ===== P1-R3A CRASH-CONSISTENCY COMPLETION (Sol review of #6242,
+      2026-08-22 — an AMENDMENT of this wave, deliberately NOT a P1-R4).
+      #6242 (squash 4e9735088638) was retained with no rollback and every
+      semantic above accepted. Sol blocked on ONE omission: the ledger became
+      durable only INSIDE china_visits.refresh(), i.e. AFTER
+      china_filings.write_filings() had already committed a filtered canonical
+      store that omitted the observation, bridged only by the process-local
+      LAST_KEY_INTEGRITY['excluded_rows'] handoff. A hard kill in that window
+      — the asia lane runs under one — erased the observation from EVERY
+      durable store at once (excluded from filings.parquet by construction,
+      never written to coverage_exceptions.parquet, aged out of CNInfo's
+      3-day re-pull within days). That is the forgetfulness mode again, one
+      layer down; recorded as the third mode on
+      DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS. FROZEN
+      ORDERING INVARIANT NOW SHIPPED: durable coverage exception -> canonical
+      filtered filing-store commit, never the reverse.
+      china_visits.persist_boundary_exceptions() is the single reused entry
+      point (the fingerprint/upsert law stays owned by the visit plane and is
+      NOT duplicated in china_filings); write_filings() calls it before
+      _commit_filings() and REFUSES its own canonical commit when it returns
+      ok:False, leaving filings.parquet byte-identical; the refusal is
+      fail-soft to the asia lane (typed errors[] entry, never a raise) but
+      degrades absence authority globally, because a run whose canonical write
+      never committed derived from a stale tape. refresh() no longer harvests
+      excluded_rows at all and skips any candidate observation whose
+      fingerprint the boundary already made durable in the same invocation, so
+      one source occurrence yields exactly one observation or reaffirmation.
+      Still ONE ledger; no second quarantine store, no retry database, no
+      transaction framework; zero new network requests. The fence is INERT on
+      the common path (it returns at its first line when nothing was
+      excluded), so a normal night neither imports china_visits from
+      china_filings nor touches the ledger. Sol's ten discriminating tests
+      ship as tests/test_china_visits_collector.py::
+      TestP1R3ACrashConsistencyFence (+ TestPersistBoundaryExceptionsUnit);
+      three mutations were applied and confirmed KILLED — canonical commit
+      moved before the fence (killed by items 3 and 10), the same-invocation
+      dedup guard disabled (killed by item 4), and the fence made permissive
+      on failure (killed by items 3 and 3b). PROOF STILL OWED IS UNCHANGED
+      AND NOW COVERS BOTH: the first natural Asia-close with HEALTHY CNInfo
+      transport must establish checkout-contains-repair, china_filings ->
+      china_visits same-cycle order, clean source transport, known
+      key-integrity accounting, balanced candidate accounting, a readable
+      exception ledger, a clean zero-exception normal path, and a correct
+      production dossier. A natural run carrying another SSE 504 is valid
+      failure-state evidence but is NOT the clean-path acceptance receipt.
+      P1 therefore stays PARTIAL: normal path PROVEN_LIVE, final
+      malformed-evidence lifecycle BUILT_NOT_PROVEN.
+      ===== SOL FINAL CODE ADJUDICATION 2026-08-23: PASS. P1-R3A merged as
+      #6269, squash 0bcfef045517bcaae23271b1218f37c59bcaa864 (merged
+      2026-08-22T22:21:16Z from head c7bd320b1cbc; ancestor of origin/main
+      verified). CODE IS CLOSED — no further P1 implementation repair is
+      authorized, and all three residuals are RULED, each a standing "do not
+      build this": (1) the unreadable accrued-store path is a broader
+      china_filings OUTAGE-RECOVERY concern, not a P1 persistence path, no
+      change now; (2) the china_visits import failure stays FAIL-CLOSED BY
+      DESIGN and the P1-relevance law must NOT be duplicated into
+      china_filings to narrow it; (3) scoped coverage exceptions keep NO
+      TTL/expiry/prune/operator-clear — open until deterministic
+      reconciliation or a future explicitly evidence-backed adjudication
+      mechanism. Full text in DEC:CHINA-COVERAGE-EXCEPTION-LEDGER §"Sol
+      residual rulings, 2026-08-23". What remains is a RECEIPT, not code.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -313,43 +374,52 @@ waves:
     status: todo
     depends_on: [l0, p1b]
 next_action: >
-  ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication received;
-  freeze effective since Sol post-merge acceptance GO, receipt = main
-  49533d59b16076630ccd7d8bf48307f658db61da). State: pr0b DONE (#6045 squash
-  fdbf543b2333; receipt = asia-close run 32348780228 -> commit baf4cf7c9291,
-  intel_* columns live), rights0 done, p1 DONE / PROVEN_LIVE (#6050 squash
-  c54d1b55f673 + P1-R1 #6142 squash 650be4dfe6d5; proved 2026-08-21 on
-  natural asia-close run 32460910383, collection commit 324c9ca7ab98,
-  engine commit 927fb6a78046: china_visits began 2.0 ms after china_filings
-  returned in the SAME invocation, 145 candidates -> 145 rows, exact
-  reconciliation 145 represented + 0 typed exclusions == 145 with zero
-  silent drops and zero deferrals, 72/72 of this run's own fresh filings
-  represented same-cycle; production 交通银行 601328.SS card live on
-  desktop + mobile — see the p1 wave entry and
-  research/china_alpha_intelligence/receipts/P1_NATURAL_RUN_RECEIPT_2026-08-21.md),
-  pr0d DONE / PROVEN_LIVE (Sol natural-proof adjudication 2026-08-21,
-  adopted by reference from D2B2-CN-HK under WS:PROPHET-US-V4-RECOVERY:
-  PR #6116 squash ed28d0d992a1; CN 96.4% / HK 100% GMI resolution; natural
-  master receipt 2026-08-21T01:17:00 + GMI build 2026-08-21T03:47:15Z,
-  GMI RESOLVED 1833 = 702 US + 984 CN + 147 HK — see the pr0d wave entry
-  for the full accounting). Next in this WS: (1) DONE — the P1 data-half
-  proof landed 2026-08-21 on natural asia-close run 32460910383 with the
-  complete same-invocation accounting and the production desktop/mobile
-  crops; the wave is DONE / PROVEN_LIVE. NOTHING in this WS is authorized
-  to start next: P1B, L0, R1/R2, P2 and all later China Alpha execution
-  stay CLOSED until Sol reviews the P1 closeout. The one open question
-  handed back to Sol is DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP —
-  a latent silent-drop path that fired zero times on the proof run and was
-  deliberately NOT widened; repairing it needs its own commission.
-  (2) DONE — the D2B2-CN-HK immutable merge SHA
-  ed28d0d992a144aec5f0ef2616024e3e32d83b1a proof was recorded 2026-08-21
-  (see the pr0d and V4 d2 wave entries); pr0d is flipped to done.
-  Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real
-  production receipt (recorded here, immutable merge SHAs) = done. Do NOT
-  start P1B,
-  L0, R1, R2, or later verticals without a new Sol directive. Later tracks
-  (P3–P6, R3–R4, S-lobes, L3+) charter from the masterplan at their wave
-  boundaries.
+  COLD-START FRONTIER (rewritten 2026-08-22 on Sol's instruction — the older
+  "P1 DONE / one open question" prose is superseded by the more specific
+  p1r2/p1r3 wave state below and must not be read as the frontier).
+  ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication; freeze
+  effective since Sol post-merge acceptance GO, receipt = main
+  49533d59b16076630ccd7d8bf48307f658db61da).
+  DONE / PROVEN_LIVE: pr0b (#6045 squash fdbf543b2333), rights0, pr0d (Sol
+  natural-proof adjudication 2026-08-21; #6116 squash ed28d0d992a1).
+  P1 IS **PARTIAL**, NOT DONE. Its normal path is PROVEN_LIVE — #6050 squash
+  c54d1b55f673 plus P1-R1 #6142 squash 650be4dfe6d5, proved on natural
+  asia-close run 32460910383 (145 candidates -> 145 rows, exact
+  reconciliation, production 交通银行 601328.SS card on desktop + mobile;
+  research/china_alpha_intelligence/receipts/P1_NATURAL_RUN_RECEIPT_2026-08-21.md).
+  Its malformed-evidence lifecycle is BUILT_NOT_PROVEN across three
+  Sol-commissioned repairs of ONE defect family: p1r2 (#6229 squash
+  c11b16500c15, superseded IN PART), p1r3 (#6242 squash 4e9735088638) and the
+  p1r3a crash-consistency amendment inside the p1r3 wave entry (#6269 squash
+  0bcfef045517). The DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP question
+  that the old text handed back to Sol is CLOSED — #6229 repaired that
+  mechanism; what remains open is its successor,
+  DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS.
+  P1 CODE IS CLOSED (Sol FINAL CODE ADJUDICATION 2026-08-23: PASS). No further
+  P1 implementation repair is authorized, and the three former residuals are
+  RULED — see DEC:CHINA-COVERAGE-EXCEPTION-LEDGER §"Sol residual rulings,
+  2026-08-23" before proposing any of them: the unreadable accrued-store path
+  is an outage-recovery concern and gets no second persistence site; the
+  china_visits import failure stays fail-closed and the P1-relevance law must
+  NOT be duplicated into china_filings; coverage exceptions get NO
+  TTL/expiry/prune/operator-clear.
+  THE ONE THING A FRESH SESSION MAY DO HERE — and it is a RECEIPT, not code:
+  take the FIRST natural asia-close containing 0bcfef045517 with HEALTHY
+  CNInfo transport and record the acceptance items named in the p1r3 wave
+  entry. Do NOT rerun the lane and do NOT manufacture data to obtain one. As
+  of 2026-08-22 production
+  china_visits health reads upstream_degraded from a real
+  `sse: HTTP 504 from CNInfo` with last_success_utc 2026-08-21T09:29:55Z, so
+  the next close may degrade for that unrelated reason — a 504 run is valid
+  failure-state evidence but is NOT the clean-path acceptance receipt, and the
+  proof simply waits for a healthy night. Never manufacture malformed
+  production input.
+  STANDING GATE: P1B, L0, R1, R2, P2 and all later China Alpha execution stay
+  CLOSED until Sol rules. Later tracks (P3-P6, R3-R4, S-lobes, L3+) charter
+  from the masterplan at their wave boundaries. Completion law on every build
+  wave: merge = BUILT_NOT_PROVEN; a real production receipt recorded here with
+  immutable merge SHAs = done.
+
 artifacts:
   - research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md
   - research/china_alpha_intelligence/commissions/PR-0B_v4_telemetry.md

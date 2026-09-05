@@ -31,15 +31,26 @@ DOD_BUDGET_INGEST_STATUS_CONTRACT = "government_revenue.dod_budget_ingest_status
 SCHEMA_VERSION = "1.0.0"
 PARSER_VERSION = "dod-budget-fixture-parser.v1"
 EXTRACTOR_VERSION = "dod-budget-fixture-pages.v1"
-# Publication remains deliberately hard-disabled until a live acquisition lane
-# proves the durable object write and derives page text from those exact PDF
-# bytes with a production parser/extractor contract.
-DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED = False
+# Publication activated (Stage 2b, D6-A): a live acquisition lane now proves
+# the durable object write (fetch -> R2 put -> strict bounded readback,
+# collectors/dod_budget_live.py) and derives page text/words from those exact
+# PDF bytes through a production parser (parse_official_p1_document /
+# parse_official_r1_document) that emits ONLY through this module's public
+# wrappers, so every identity/semantic/state-hash invariant below is still
+# enforced by this same hermetic code. Gate-zero rulings (§5b.1) are frozen
+# law for that parser; a partial acquisition/storage/extraction receipt chain
+# is still a hard refusal (scripts/build_government_revenue.py:726 partial-
+# triad check is unaffected by this flag).
+DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED = True
 
 ALLOWED_SOURCE_HOSTS = {"comptroller.defense.gov", "comptroller.war.gov"}
 ALLOWED_EXHIBITS = {"p1", "r1"}
 DOCUMENT_STAGE = "president_budget_request"
 IMMUTABLE_R2_PREFIX = "government-revenue/dod-budget/pdf/sha256/"
+# Source-native self-identification printed on the FY2027 P-1/R-1 exhibits
+# (verified 2026-08-24, comptroller.war.gov host migration; the Department of
+# War rebrand). A prior "...of Defense (Comptroller)" string is retired.
+PUBLISHER = "Office of the Under Secretary of War (Comptroller)"
 
 AMOUNT_SEMANTICS = (
     "historical_actual",
@@ -242,7 +253,7 @@ def build_document_receipt(
         "contract": DOD_BUDGET_RECEIPT_CONTRACT,
         "schema_version": SCHEMA_VERSION,
         "receipt_id": "",
-        "publisher": "Office of the Under Secretary of Defense (Comptroller)",
+        "publisher": PUBLISHER,
         "fiscal_year": fiscal_year,
         "document_stage": DOCUMENT_STAGE,
         "exhibit": exhibit,
@@ -281,7 +292,7 @@ def validate_document_receipt(receipt: Mapping[str, Any]) -> None:
         raise ValueError("DoD budget receipt shape mismatch")
     if receipt.get("contract") != DOD_BUDGET_RECEIPT_CONTRACT or receipt.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("DoD budget receipt contract mismatch")
-    if receipt.get("publisher") != "Office of the Under Secretary of Defense (Comptroller)":
+    if receipt.get("publisher") != PUBLISHER:
         raise ValueError("DoD budget receipt publisher mismatch")
     fiscal_year = receipt.get("fiscal_year")
     if isinstance(fiscal_year, bool) or not isinstance(fiscal_year, int) or not 2000 <= fiscal_year <= 2100:
@@ -351,12 +362,16 @@ def merge_receipts(existing: Iterable[Mapping[str, Any]], incoming: Iterable[Map
 
 
 def _amounts_from_fields(fields: Mapping[str, str], *, fiscal_year: int) -> list[dict[str, Any]]:
+    # All five semantics are nullable: the FY2027 exhibits print real blank
+    # cells (a line with history but no current-year request, or vice versa).
+    # A blank cell must surface as None; a printed 0 stays 0.0. Coercing a
+    # blank to zero is a hard test-red (DEFENSE_D6A_BUDGET_RAIL_DESIGN §3).
     values = (
-        (fiscal_year - 2, "historical_actual", fields.get("actual"), False),
-        (fiscal_year - 1, "prior_year_enacted_reference", fields.get("enacted"), False),
+        (fiscal_year - 2, "historical_actual", fields.get("actual"), True),
+        (fiscal_year - 1, "prior_year_enacted_reference", fields.get("enacted"), True),
         (fiscal_year, "discretionary_request", fields.get("disc_request"), True),
         (fiscal_year, "reconciliation_request", fields.get("recon_request"), True),
-        (fiscal_year, "president_budget_request_total", fields.get("total_request"), False),
+        (fiscal_year, "president_budget_request_total", fields.get("total_request"), True),
     )
     result: list[dict[str, Any]] = []
     for cell_year, semantic, raw, nullable in values:
@@ -383,14 +398,26 @@ def _quantities_from_fields(fields: Mapping[str, str], *, fiscal_year: int) -> l
     return result
 
 
-def _line_identity(*, exhibit: str, component: str, appropriation_code: str, native_kind: str, native_value: str, fiscal_year: int) -> tuple[str, str]:
+def _line_identity(
+    *, exhibit: str, component: str, appropriation_code: str, native_kind: str,
+    native_value: str, fiscal_year: int, budget_activity: str,
+) -> tuple[str, str]:
+    # The budget-activity slug is REQUIRED (gate-zero census, §5b.1 ruling 4):
+    # R-1 genuinely reuses one Program Element across different budget
+    # activities within the same appropriation with different dollar amounts
+    # each time (29 real collisions found document-wide, e.g. PE 999999999
+    # "Classified Programs" printed once per BA as a per-BA catch-all; PE
+    # 0604776F at BA03 and BA04). Without a BA segment the identity grammar
+    # cannot tell these genuinely distinct lines apart. Adjudicated while no
+    # production data exists anywhere yet (last zero-cost moment).
     family = ":".join((
         "dod-family", exhibit, _slug(component), _slug(appropriation_code),
-        _slug(native_kind), _slug(native_value),
+        _slug(native_kind), _slug(native_value), _slug(budget_activity),
     ))
     line = ":".join((
         "dod", exhibit, _slug(component), _slug(appropriation_code),
-        _slug(native_kind), _slug(native_value), f"fy{fiscal_year}", DOCUMENT_STAGE,
+        _slug(native_kind), _slug(native_value), _slug(budget_activity),
+        f"fy{fiscal_year}", DOCUMENT_STAGE,
     ))
     return line, family
 
@@ -444,6 +471,7 @@ def _normalized_line(
         native_kind=native_kind,
         native_value=native_value,
         fiscal_year=fiscal_year,
+        budget_activity=fields["activity"],
     )
     observed = _utc_iso(receipt["observed_at"])
     row = {
@@ -462,7 +490,7 @@ def _normalized_line(
         "amounts": _amounts_from_fields(fields, fiscal_year=fiscal_year),
         "quantities": _quantities_from_fields(fields, fiscal_year=fiscal_year),
         "source": {
-            "publisher": "Office of the Under Secretary of Defense (Comptroller)",
+            "publisher": PUBLISHER,
             "source_url": receipt["final_url"],
             "document_sha256": receipt["content_sha256"],
             "receipt_id": receipt["receipt_id"],
@@ -480,6 +508,48 @@ def _normalized_line(
     }
     row["line_state_sha256"] = _line_state_sha256(row)
     return row
+
+
+def amounts_from_fields(fields: Mapping[str, str], *, fiscal_year: int) -> list[dict[str, Any]]:
+    """Public wrapper around ``_amounts_from_fields`` for external parsers.
+
+    A live extraction adapter (``collectors/dod_budget_live.py``) must never
+    import an underscore-prefixed helper directly; this thin wrapper (no logic
+    change) is the boundary every production parser calls through.
+    """
+    return _amounts_from_fields(fields, fiscal_year=fiscal_year)
+
+
+def quantities_from_fields(fields: Mapping[str, str], *, fiscal_year: int) -> list[dict[str, Any]]:
+    """Public wrapper around ``_quantities_from_fields`` for external parsers."""
+    return _quantities_from_fields(fields, fiscal_year=fiscal_year)
+
+
+def line_identity(
+    *, exhibit: str, component: str, appropriation_code: str, native_kind: str,
+    native_value: str, fiscal_year: int, budget_activity: str,
+) -> tuple[str, str]:
+    """Public wrapper around ``_line_identity`` for external parsers."""
+    return _line_identity(
+        exhibit=exhibit, component=component, appropriation_code=appropriation_code,
+        native_kind=native_kind, native_value=native_value, fiscal_year=fiscal_year,
+        budget_activity=budget_activity,
+    )
+
+
+def normalized_line_from_fields(
+    *,
+    fields: Mapping[str, str],
+    receipt: Mapping[str, Any],
+    page_number: int,
+    page_text: str,
+    source_line_number: int,
+) -> dict[str, Any]:
+    """Public wrapper around ``_normalized_line`` for external parsers."""
+    return _normalized_line(
+        fields=fields, receipt=receipt, page_number=page_number,
+        page_text=page_text, source_line_number=source_line_number,
+    )
 
 
 def parse_budget_document(pages: Sequence[str], receipt: Mapping[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:

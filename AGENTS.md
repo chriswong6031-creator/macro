@@ -64,6 +64,52 @@ Migration work follows `research/DESIGN_MIGRATION_FACTORY_V1.md`: builders execu
 a committed migration packet exactly and never invent design language — a builder
 that believes the packet is wrong stops and escalates.
 
+### Theme art direction — required (TP-0, 2026-08-27)
+
+Dark and light are **two deliberate art directions of one semantic system**, not
+a design and its skin. They share information architecture, component semantics,
+spacing/type scales, state meanings, user actions, data contracts, ordering and
+density law, and interaction behavior. They do **not** have to share material
+treatment: dark is a command center (luminance depth, instrument calm, restrained
+glow); light is a research workspace (cool canvas, white material, hairline
+discipline, shadow instead of glow).
+
+**Token substitution alone is never proof of a light design.** "The same CSS
+still renders once the tokens swap" is exactly the failure this law exists to
+stop.
+
+Every material UI packet must name: DARK TREATMENT; LIGHT TREATMENT; which
+mechanisms intentionally differ and why; the reference/baseline; theme-specific
+degraded states; and the evidence matrix (dark/light × EN/ZH × desktop 1440 /
+mobile 390). A packet missing the light art direction or its evidence is
+`PARTIAL/BLOCKED`, never `PASS`.
+
+- **Designer:** state both art directions separately and supply both evidence
+  sets; never approve "same CSS, tokens swap" without arguing why the mechanism
+  genuinely works in both luminance environments.
+- **Builder:** if a frozen spec lacks LIGHT TREATMENT or its required evidence,
+  stop `PARTIAL/BLOCKED` — do not invent or silently translate one, and never
+  add an opaque runtime stylesheet to escape a design-system constraint.
+- **Reviewer:** `PASS` on a material UI change requires dark and light each
+  adjudicated as designs — hierarchy, material depth, semantic color, responsive
+  composition, EN/ZH parity. Functional browser success is necessary, never
+  sufficient.
+
+**Substantive product styling may not be authored as an opaque runtime
+stylesheet system inside page/composer JavaScript** — no multi-kilobyte
+`style.textContent` material system, no parallel palette/token family, no
+duplicated light/dark stylesheet branches invisible to the design-system
+checker. JavaScript may mount and recompose canonical DOM, set state
+classes/attributes, select existing variants, and apply genuinely data-dependent
+inline geometry; governed presentation source owns the material decisions.
+
+Forward-only enforcement (inherited debt reports, but does not newly block):
+`scripts/check_design_system.py --mode enforce-added` on changed lines,
+`scripts/check_runtime_style_injection.py` as a ratcheted budget that may only
+stay flat or shrink, and `scripts/check_ui_visual_evidence.py` for the committed
+dual-theme evidence receipt. CI checks evidence existence and state identity
+only — a human/Opus reviewer owns visual taste.
+
 ## Workspace and git
 
 - The canonical tree is GitHub `origin/main`
@@ -130,6 +176,18 @@ that believes the packet is wrong stops and escalates.
   session already sits in one, and otherwise mints a sparse tree under
   `.grok/worktrees/<name>/` with `git worktree add --no-checkout` (Claude's
   pre-checkout shape) so an AionUi session never materializes the heavy trees.
+  Warp/Oz has no SessionStart or WorktreeCreate event. `.warp/hooks/session_start_sparse.py`
+  plus `.agents/skills/macro-sparse-worktree` are the analog: a Warp session must
+  run the mint itself (the skill auto-discovers), then `cd` to the printed
+  `WORKSPACE=` path. The hook reuses only a carrier positively bound to the
+  current Warp conversation/task identity; terminal/session IDs are not proof.
+  Its branch/path use a SHA-256 digest of the complete identity, never the raw
+  value, and an identity-less start mints a collision-resistant carrier rather
+  than reusing `warp-session`. New carriers mint from freshly fetched
+  `origin/main` under `.warp/worktrees/<name>/` with `git worktree add
+  --no-checkout`; failed fetches and path/branch collisions fail closed without
+  taking over a foreign carrier. It never writes
+  `.session-worktree` into a git checkout.
   `auto` acts only on a linked worktree sitting under a session root
   (`.claude/worktrees/` and siblings — never the occupied primary, and never the
   operator's designated local root, which is itself a linked worktree), and preserves
@@ -323,11 +381,20 @@ itself on demand.
   re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
   whole files, cap command output (`head`, `--limit`, `--jq`), and keep browser
   screenshots and full page dumps inside a subagent.
-- **One session = one task boundary.** A long program needs durable state on
-  disk, not a long session. Run it as a chain of short sessions over a
-  `research/*_CONTINUATION_HANDOFF_<date>.md`, one wave per session. Keep an
-  orchestrator under ~200k; past ~250k, checkpoint to a handoff and let the
-  operator clear rather than grinding to the ceiling.
+- **Durable state on disk — and a session may run as long as it stays useful.**
+  Operator 2026-09-01 REPEALED the former "one session = one task boundary" rule:
+  it forced every long workflow into a relay of amnesiac sessions, and
+  re-establishing context in each successor cost more than the stop ever saved.
+  There is no task-boundary stop — a merged, live-verified wave is a checkpoint,
+  not a session end, and one session may carry a program end-to-end across many
+  waves and many merges. The durable-state half survives as a WRITE rule, not a
+  STOP rule: keep program state in a
+  `research/*_CONTINUATION_HANDOFF_<date>.md` and `agentos/handoffs/` as you go,
+  so the work survives a clear, a crash, or an operator handoff. Cost control is
+  the two bullets above and is unaffected — a long session held near 150k is
+  cheap, a short one riding 800k is not, so when context grows, delegate the next
+  wave's execution rather than shortening the session. Context figures are
+  advisory targets, never a stop trigger.
 
 Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, so
 cutting thinking degrades quality for at most a sixth of the cost. The savings
@@ -359,11 +426,23 @@ one is abandoned work, not delivered work.
 `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` is fully satisfied: exact PR head pushed and local
 worktree clean; binding checks concluded green; PR DRAFT; no `merge-on-green` label;
 native auto-merge null; title/body/comment holds merge and names Sol as authority plus
-a Sol-controlled release condition. PARKED is terminal for the current session but is
-NOT SHIPPED, not deployed/live evidence, and not a retryable `SHIP LOOP BLOCKED` state.
-Report it once and stop. Do not poll, arm, mark ready, merge, or re-enter the ship loop
-until Sol changes or releases the hold. Ambiguous/incomplete hold state remains ordinary
-unfinished work and fails closed.
+a Sol-controlled release condition. PARKED is terminal for the current ship/merge attempt
+but is NOT SHIPPED, not deployed/live evidence, and not a retryable `SHIP LOOP BLOCKED`
+state. Report it once and stop shipping. Do not poll, arm, mark ready, merge, or re-enter
+the ship loop until Sol changes or releases the hold. Ambiguous/incomplete hold state
+remains ordinary unfinished work and fails closed.
+
+**That terminality is scoped to the ship attempt, never to the worker**
+(`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`). The reciprocal worker/Sol child dialogue remains
+nonterminal: the same child, carrier, branch and PR resume on a same-carrier Sol
+`CONTINUE` / `RULING` / `REQUEST_REPAIR`, and only an explicit same-carrier Sol STOP (or
+`ACCEPTED / STOP`, `CLOSED / STOP`) closes the child. Before yielding at PARKED you must
+already have posted one exact-carrier `RESULT / HOLD-FOR-SOL` and established a truthful
+continuation path — `WATCH_ARMED` only for a real, verified registration, otherwise
+`WATCH_UNAVAILABLE` naming the surface checked and the exact failure. "Waiting for Sol"
+is not a continuation path, and going silent on the holding authority is not a lawful
+stop: the task/wave boundary, the PR merge hold, the reasoning-session yield, the child
+STOP and program completion are five distinct facts, and none may be inferred from another.
 
 `merge-on-green` remains available and is still the recommended way to get the
 merge PERFORMED for ordinary work — arming it means you do not have to run the merge yourself. It
@@ -466,9 +545,11 @@ state (no arming label, `autoMergeRequest` null, DRAFT, hold comment naming auth
 release condition), and never arm a PR you did not open without grepping its
 title+body+comments for a hold. Once that protocol is complete, the exact head is pushed
 and clean, and binding checks are green, the delivery state is `PARKED / HOLD-FOR-SOL`:
-terminal for the current session, not SHIPPED, and not a retryable blocker. Report once;
-do not poll, re-arm, mark ready, merge, or re-enter the ship loop until the holding authority
-changes or releases the hold. Conditional merge authority granted for one PR NEVER
+terminal for the current ship/merge attempt, not SHIPPED, and not a retryable blocker.
+Report once; do not poll, re-arm, mark ready, merge, or re-enter the ship loop until the
+holding authority changes or releases the hold — but that is the SHIP attempt ending, not
+the child: the worker/Sol dialogue remains nonterminal and only an explicit same-carrier
+Sol STOP closes it (`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`). Conditional merge authority granted for one PR NEVER
 transfers to any other PR (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).
 
 **DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
@@ -550,14 +631,49 @@ emptied the pool on 2026-07-26 and 2026-08-09:
 - re-dispatching a main proof workflow (`ci.yml` / `fences.yml` /
   `integration-baseline.yml`) over one already in flight on main.
 
+It also **flags** — never denies — one more shape (7): re-reading the same status
+inside 300s, which attaches an `additionalContext` note and lets the call through.
+
 The guard governs HOW you watch, never WHETHER you may: reading your own pull
 request's check state is part of owning it through to the merge, and no state
-outside the command line makes that read illegal. What is on you: preflight
+outside the command line makes that read illegal. That rule is older and stronger
+than shape 7, which is exactly why shape 7 advises instead of denying — escalating
+it to a deny is a RULING for the operator, not a refactor.
+
+**A blocked Stop is not a demand for a fresh poll** (operator 2026-08-24, repeated
+2026-08-27). The commonest burn is neither a loop nor a hot interval: it is one
+`gh pr checks <n>` per Stop-hook cycle while a 30–45 minute run finishes. Measured
+on 2026-08-27: about twenty-five consecutive Stop cycles, one poll each, by a
+session that already had a watcher armed at 150s reporting every transition for
+free. The mechanism is not laziness — the Stop hook fires on every turn and
+escalates to "If the same genuine blocker persists after another attempt, finish
+with `SHIP LOOP BLOCKED:`", which reads as pressure to show a fresh attempt. It is
+not. Answer a blocked Stop with a one-line hold note and no tool call; waiting on
+CI is explicitly not a qualifying blocker for the escape ladder, so there is
+nothing to prove by looking again. The tell: three identical bucket counts in a row
+means every further read is waste, and an armed watcher makes polling redundant
+because its notifications ARE the check. What is on you: preflight
 `gh api rate_limit --jq '.resources.core.remaining'` before arming any long watch,
 run exactly ONE watcher per endpoint (a second watcher on the same run buys no
 information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
+
+**Hold notes do not end the Stop loop — go quiet through the ladder, not through
+repetition** (operator 2026-08-28). A one-line hold note satisfies the quota rule
+above but is not terminal to the guard: the Stop hook blocks again seconds later,
+and a session that answers every block with another note types near-identical
+hold notes in a tight billed loop for hours (about one hundred such turns measured
+on 2026-08-28 while a HOLD-FOR-SOL carrier lawfully waited out a queued CI field
+under an armed watcher; the cost is context × turns and the notes carry zero
+information after the first). When a long external wait is owned by an armed
+watcher or cron and the guard keeps blocking, check the escape-ladder threshold
+(any code: 10 consecutive / 15 total); once met, end the turn ONCE with the
+literal `SHIP LOOP BLOCKED:` evidence report — literal first characters, naming
+the PR, exact head, check state, and watcher id plus cadence — then stay quiet:
+no per-Stop hold notes, no tailing your own watcher's output file between ticks.
+Real events (watcher exit, cron fire, task notification, operator message)
+re-invoke the session; that is the only lawful cadence for a parked wait.
 
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
@@ -654,7 +770,16 @@ removes the only thing that would have noticed.
 Claude enforces this contract with `.claude/hooks/ship_loop_guard.py` at SessionStart
 and `scripts/ship_loop_hold_wrapper.py` at Stop. The wrapper delegates every ordinary
 state to the canonical guard and only turns a fully lawful Sol hold into terminal
-`SHIP LOOP PARKED`. For ordinary work, the guard snapshots pre-existing dirty files,
+`SHIP LOOP PARKED`. A lawful hold whose binding checks are not yet green instead gets
+`HOLD-FOR-SOL WAITING`, or `HOLD-FOR-SOL CHECKS RED` when one concluded red — and since
+2026-08-28 that applies on `claude/*` as well as `sol/*`. It used to be `sol/*`-only, so
+an ordinary held pull request fell through to `unmerged` and was told to squash-merge and
+deploy the very pull request `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` forbids merging; PR #6608
+took 121 consecutive blocks carrying that impossible instruction. The repair corrects the
+ADVICE only — pending and red still block, `parked` remains the one terminal exit and
+still requires every binding check concluded green, and waiting on CI still does not
+qualify for the escape ladder, so answer such a block with a one-line hold note rather
+than a fresh poll or a `SHIP LOOP BLOCKED` report. For ordinary work, the guard snapshots pre-existing dirty files,
 then refuses a normal stop while session-created work is uncommitted, unpushed,
 unmerged, awaiting a render, or absent from production. `unmerged` is satisfied by an
 actually-MERGED pull request and by nothing else; an armed `merge-on-green` pull request

@@ -145,6 +145,55 @@ def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
     assert checkouts[0]["with"]["fetch-depth"] == 0
 
 
+def test_ci_plan_sparse_profile_omits_only_the_measured_heavy_trees() -> None:
+    """W3 contains working-tree bytes without narrowing unknown future roots.
+
+    The include-all first row is load-bearing: a newly tracked top-level surface
+    materializes by default and therefore cannot become selection-dark merely
+    because this profile predates it. The four negative rows are the mechanical
+    census result; ci-pack's independent full checkout is pinned elsewhere.
+    """
+    checkout = next(
+        step
+        for step in _job("ci-plan")["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert checkout["with"]["sparse-checkout-cone-mode"] is False
+    assert checkout["with"]["sparse-checkout"].splitlines() == [
+        "/*",
+        "!/data/",
+        "!/site/",
+        "!/mockups/",
+        "!/verify_shots/",
+    ]
+
+
+def test_ci_plan_builds_and_consumes_one_bounded_exact_tree_path_handle() -> None:
+    """Sparse absence never answers repository absence.
+
+    The path population stays in a runner-temp file, not an output or env value;
+    both producer and consumer bind it to the identity step's immutable tree.
+    """
+    job = _job("ci-plan")
+    steps = job["steps"]
+    inventory = _step_running(job, "--write-tracked-paths")
+    plan = _plan_step()
+    handle = "$RUNNER_TEMP/ci-tracked-paths/tracked-paths.v1"
+    assert "scripts/ci_scope_dependencies.py" in inventory["run"]
+    assert f'--write-tracked-paths "{handle}"' in inventory["run"]
+    assert (
+        '--tested-tree-sha "${{ steps.identity.outputs.tested_tree_sha }}"'
+        in inventory["run"]
+    )
+    assert f'--tracked-paths-file "{handle}"' in plan["run"]
+    assert steps.index(inventory) < steps.index(plan)
+    assert all(
+        "TRACKED_PATH" not in key
+        for step in steps
+        for key in step.get("env", {})
+    ), "only the bounded file path may cross into the planner command"
+
+
 def test_ci_plan_passes_pack_count_twelve() -> None:
     """The partition arithmetic is fixed at twelve and must match `ci-pack` exactly.
 
@@ -239,15 +288,15 @@ def test_workflow_dispatch_can_pin_the_exact_observed_main_sha() -> None:
 # ─── ci-pack ────────────────────────────────────────────────────────────────────
 
 
-def test_ci_pack_needs_ci_plan() -> None:
-    """Without the dependency the matrix expression has no producer.
+def test_ci_pack_needs_the_hosted_plan_and_main_owned_trusted_execution() -> None:
+    """The matrix needs its planner and same-repo relays need the trusted result.
 
     `needs.ci-plan.outputs.matrix` evaluates to empty when `ci-plan` is not a
     declared dependency, `fromJSON` then fails at workflow parse time, and the run
-    dies before a single check is published.
+    dies before a single check is published.  The `trusted-ci` dependency is what
+    prevents a same-repository relay from publishing before the PC pack concludes.
     """
-    needs = _job("ci-pack")["needs"]
-    assert needs == "ci-plan" or needs == ["ci-plan"]
+    assert _job("ci-pack")["needs"] == ["ci-plan", "trusted-ci"]
 
 
 def test_ci_pack_matrix_comes_from_the_plan_and_no_static_pack_list_remains() -> None:
@@ -275,7 +324,12 @@ def test_ci_pack_is_gated_on_an_affirmative_has_work() -> None:
     must not be smuggled back as an implicit cancellation mechanism.
     """
     condition = _job("ci-pack")["if"]
-    assert condition == "needs.ci-plan.outputs.has_work == 'true'"
+    assert condition == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
 
 
 def test_ci_pack_passes_pack_count_twelve() -> None:
@@ -297,13 +351,14 @@ def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> No
     hiccup into twelve red packs.
     """
     step = _pack_step()
-    assert step["if"] == "needs.ci-plan.outputs.plan_sha != ''"
+    fork_guard = "github.event.pull_request.head.repo.full_name != github.repository"
+    assert step["if"] == f"{fork_guard} && needs.ci-plan.outputs.plan_sha != ''"
     assert step["env"]["EXPECTED_PLAN_SHA"] == "${{ needs.ci-plan.outputs.plan_sha }}"
     assert '--expect-plan-sha "$EXPECTED_PLAN_SHA"' in step["run"]
     fallback = next(
         item for item in _job("ci-pack")["steps"] if item.get("name") == "fail-safe full suite when no authoritative plan was produced"
     )
-    assert fallback["if"] == "needs.ci-plan.outputs.plan_sha == ''"
+    assert fallback["if"] == f"{fork_guard} && needs.ci-plan.outputs.plan_sha == ''"
     assert "--expect-plan-sha" not in fallback["run"]
 
 
@@ -572,9 +627,11 @@ def test_ci_pack_downloads_the_list_and_exports_only_its_path() -> None:
         "ci-pack", "actions/download-artifact@", "ci-changed-files"
     )
     assert download["with"]["path"] == "${{ runner.temp }}/ci-changed-files"
-    assert "if" not in download, (
-        "ci-plan uploads unconditionally, so a missing artifact here is a broken "
-        "control plane, not a case to tolerate"
+    assert download["if"] == (
+        "github.event.pull_request.head.repo.full_name != github.repository"
+    ), (
+        "only the hosted fork executor downloads this artifact; same-repository "
+        "packs relay the main-owned trusted fragment instead"
     )
     export = next(
         step for step in steps if "CI_CHANGED_FILES_FILE=" in str(step.get("run", ""))

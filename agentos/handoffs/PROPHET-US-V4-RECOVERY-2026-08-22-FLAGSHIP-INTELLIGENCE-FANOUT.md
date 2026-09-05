@@ -1,7 +1,7 @@
 ---
 workstream: WS:PROPHET-US-V4-RECOVERY
 session: "Sol CEO — Prophet flagship intelligence reassessment and research fan-out"
-model: sol
+model: codex
 ended_because: complete
 mission: >
   Reassess the Chairman's full Prophet flagship-intelligence expansion against

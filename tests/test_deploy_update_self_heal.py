@@ -264,6 +264,35 @@ MUST_RESTART = [
     "engine/neuralweb/ask_brain.py",
     "engine/neuralweb/chat_plain_words.py",
     "engine/neuralweb/brain_gateway.py",
+    "engine/neuralweb/native_facts.py",
+    # W1-B imports this typed-fact package on the first native request.  From
+    # then on its modules and lru-cached registry/schema validators are pinned.
+    "engine/intelligence_workspace/runtime.py",
+    "engine/intelligence_workspace/resolver.py",
+    "engine/intelligence_workspace/registry.py",
+    "engine/intelligence_workspace/adapters/quote.py",
+    "config/intelligence_workspace/datapoints.v1.json",
+    "contracts/intelligence_workspace/datapoint_registry.schema.json",
+    "contracts/intelligence_workspace/datapoint_value.schema.json",
+    # W1-C: the visible-context compiler + its schema (contract:
+    # research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md). The compiler
+    # is a pure module but lives in the W1-A package, so it is pulled in on the
+    # same first-request path; the schema is read (not lru-cached) but is still
+    # named here for symmetry with the sibling datapoint schemas above.
+    "engine/intelligence_workspace/context_compiler.py",
+    "contracts/intelligence_workspace/ai_context_envelope.v1.schema.json",
+    # W1-B request-time transitive closure. These modules/configs are imported
+    # or lru-cached by the frozen runtime after the first native request.
+    "lib/dataos/__init__.py",
+    "lib/dataos/identity.py",
+    "lib/dataos/registry.py",
+    "config/dataset_registry.yml",
+    "engine/theme_graph/store.py",
+    "engine/theme_graph/rights.py",
+    "config/theme_sources.yml",
+    "collectors/equity_earnings.py",
+    "engine/earnings_catalyst.py",
+    "config.yml",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/earnings_context_reader.py",
     "engine/neuralweb/chart_perception.py",
@@ -358,6 +387,18 @@ MUST_NOT_RESTART = [
     "engine/spine.py",
     "admin/server.py",
     "templates/index.html.j2",
+    # Hostile lookalikes must not widen the exact W1-A restart closure.
+    "config/intelligence_workspace/datapoints.v1.json.bak",
+    "contracts/intelligence_workspace/datapoint_value.schema.json.bak",
+    "contracts/intelligence_workspace/ai_context_envelope.v1.schema.json.bak",
+    "engine/intelligence_workspaces/resolver.py",
+    "lib/dataoses/registry.py",
+    "config/dataset_registry.yml.bak",
+    "config/theme_sources.yml.bak",
+    "engine/theme_graph/stores.py",
+    "engine/theme_graph/materialize.py",
+    "collectors/equity_earnings.py.bak",
+    "engine/earnings_catalysts.py",
 ]
 
 

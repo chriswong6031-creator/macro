@@ -230,6 +230,16 @@ project hooks still need one-time `/hooks-trust`. `--worktree` / `-w` still
 bases on current HEAD unless the session passes `--ref origin/main` (Grok) or
 `--worktree-base origin/main` (Cursor).
 
+**Warp/Oz mechanism (shipped 2026-08-22).** Warp has no SessionStart or
+`WorktreeCreate` event. `.warp/hooks/session_start_sparse.py` is the mint;
+`.agents/skills/macro-sparse-worktree` is how a Warp session discovers it and
+must run it before editing. If the session already sits in a linked session
+worktree the hook calls `python3 scripts/worktree_sparse.py auto`. Otherwise it
+mints under `.warp/worktrees/<name>/` with `git worktree add --no-checkout`
+(Claude's pre-checkout shape) and prints `WORKSPACE=<path>`. It never sparsifies
+the occupied primary or the operator local root, and it never writes
+`.session-worktree` into a git checkout.
+
 **Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
 was deliberately left alone by the shipping session: repointing it before the merge
 would have aimed it at a script not yet on `main` and broken worktree creation for

@@ -161,24 +161,34 @@ class TestSection6HostileCases:
         # SAME issuer now (V4-D2B1) — still distinct security_id (mint-once/§D2).
         assert goog["issuer_id"] == googl["issuer_id"] == "ISS:US-XNAS-GOOG"
 
-    def test_aep_resolves_with_a_null_issuer_id_because_the_master_has_no_evidence(
+    def test_no_evidence_row_resolves_with_a_null_issuer_id(
         self, master_inputs, etf_symbols,
     ):
-        """V4-D2B1 FIX 8 (m3): AEP is a measured NO_ISSUER_EVIDENCE row in the
-        committed master (its ticker missed the 08-18 CIK map) — the sidecar's
-        RESOLVED state and security_id/listing_key are UNAFFECTED (exact
-        security/listing identity never depended on the issuer axis), but issuer_id
-        must be null because the master itself has no CIK evidence backing it."""
-        master_row = master_inputs.master_by_code.get("AEP")
-        assert master_row is not None, "AEP must be a resolvable master row for this probe"
-        row = _resolve("co:us:AEP", master_inputs, etf_symbols)
+        """V4-D2B1 FIX 8 (m3): a measured NO_ISSUER_EVIDENCE row in the committed
+        master — the sidecar's RESOLVED state and security_id/listing_key are
+        UNAFFECTED (exact security/listing identity never depended on the issuer
+        axis), but issuer_id must be null because the master itself has no CIK
+        evidence backing it.  Probe was AEP until 2026-08, when AEP's promised
+        §11 self-heal landed (a later CIK map carries it, issuer_state RESOLVED
+        — asserted below); TPH is the current measured no-evidence exemplar."""
+        master_row = master_inputs.master_by_code.get("TPH")
+        assert master_row is not None, "TPH must be a resolvable master row for this probe"
+        # If the issuer_id assertion below ever fails with a non-null value, TPH
+        # gained issuer evidence (the §11 self-heal) — re-point this probe at a
+        # master row still measured NO_ISSUER_EVIDENCE, as was done for AEP.
+        row = _resolve("co:us:TPH", master_inputs, etf_symbols)
         assert row["resolution_state"] == "RESOLVED"
-        assert row["security_id"] == "SEC:US-XNAS-AEP"
-        assert row["listing_key"] == "US-XNAS-AEP"
+        assert row["security_id"] == "SEC:US-XNYS-TPH"
+        assert row["listing_key"] == "US-XNYS-TPH"
         assert row["issuer_id"] is None, (
-            "the master's issuer_state for AEP is NO_ISSUER_EVIDENCE — issuer_id must "
+            "the master's issuer_state for TPH is NO_ISSUER_EVIDENCE — issuer_id must "
             "be null in the sidecar, never the legacy master value"
         )
+        # AEP, the original probe, in its healed end-state: evidence arrived, so
+        # the sidecar rightly carries the evidenced issuer id.
+        aep = _resolve("co:us:AEP", master_inputs, etf_symbols)
+        assert aep["resolution_state"] == "RESOLVED"
+        assert aep["issuer_id"] == "ISS:US-XNAS-AEP"
 
     def test_share_class_equiv_is_never_consulted(self):
         """Structural proof: the resolver's only inputs are the master + alias table +
@@ -923,13 +933,17 @@ class TestD2B2US:
         )
 
     def test_cn_hk_resolution_unchanged_by_the_us_admission(self, baked_idres):
-        """The D2B2-US wave touches only `market_scope=us` seeds (§0) — CN/HK's own
-        CURRENT resolution counts must stay exactly what D2B2-CN-HK left them at."""
+        """The D2B2-US wave touches only `market_scope=us` seeds (§0) — the US
+        admission must never REMOVE a CN/HK resolution.  Floors since 2026-08-28
+        (984 had already rotted to 1002 on main): the CN seed lanes kept lawfully
+        admitting names after the D2B2-CN-HK bake, so an exact era count cannot
+        hold; a floor still fails on the defect this pins — CN/HK resolutions
+        silently disappearing."""
         current = baked_idres.loc[baked_idres.groupby("node_id")["computed_at"].idxmax()]
-        for market, expected in (("cn", 984), ("hk", 147)):
+        for market, floor in (("cn", 1005), ("hk", 147)):
             rows = current[current["market_scope"] == market]
             resolved = rows[rows["resolution_state"] == "RESOLVED"]
-            assert len(resolved) == expected
+            assert len(resolved) >= floor
 
     def test_gold_b_deferred_identity_exception_unchanged(self, master_inputs, etf_symbols):
         """The D2B2-US wave never touches the registered identity-exception codes
@@ -939,3 +953,27 @@ class TestD2B2US:
         gold = _resolve("co:us:GOLD", master_inputs, etf_symbols)
         assert b["resolution_state"] == "DEFERRED_IDENTITY_EXCEPTION"
         assert gold["resolution_state"] == "DEFERRED_IDENTITY_EXCEPTION"
+
+
+def test_dated_current_catalog_rows_are_never_historical_evidence():
+    """Two-clock law, vendor-identity form (2026-08-28): the exclusion of the
+    current-catalog spaces from HISTORICAL mode used to be implemented as a row-shape
+    test (both bounds null), which was equivalent only while `store`/`yahoo_fetch`
+    could emit nothing but open rows. Since the EQR->VMRK key migration the `store`
+    space carries a DATED family, so a shape test would admit repo-catalog rows as
+    historical-naming evidence — the exact repeal the law forbids. Pin the boundary:
+    a dated `store` row never answers, an identically-dated `yahoo` row does."""
+    from lib.dataos.identity import VendorAliasTable
+
+    table = VendorAliasTable.from_records([
+        {"vendor": "store", "vendor_symbol": "OLD", "security_id": "SEC:US-XNYS-OLD",
+         "valid_from": None, "valid_to": "2026-08-18"},
+        {"vendor": "store", "vendor_symbol": "NEW", "security_id": "SEC:US-XNYS-OLD",
+         "valid_from": "2026-08-18", "valid_to": None},
+        {"vendor": "yahoo", "vendor_symbol": "OLD", "security_id": "SEC:US-XNYS-OLD",
+         "valid_from": None, "valid_to": "2026-08-18"},
+    ])
+    on = date(2026, 1, 2)
+    assert ir._historical_alias_resolve(table, "store", "OLD", on) is None
+    assert ir._historical_alias_resolve(table, "yahoo_fetch", "OLD", on) is None
+    assert ir._historical_alias_resolve(table, "yahoo", "OLD", on) == "SEC:US-XNYS-OLD"

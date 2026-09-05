@@ -1,0 +1,5 @@
+# XPV2-SC-R3B.2 — duplicate-ID / ARIA-reference audit + href="#" census
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+[PASS] (c2) zero href="#" placeholders — found 0
+[PASS] (h) duplicate-ID / ARIA-reference audit (aria_id_audit.py) — [aria-id] lang=en: 253 ids, 0 duplicated, 75 ARIA/label references resolved, 0 unresolved | [aria-id] lang=zh: 253 ids, 0 duplicated, 75 ARIA/label references resolved, 0 unresolved | [aria-id] json → /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/xpv2-sc-r3b-resume/mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/aria_id_audit.json

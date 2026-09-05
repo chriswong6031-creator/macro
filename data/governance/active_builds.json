@@ -1,35 +1,215 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-22T01:13:20.522074+00:00",
+  "generated_at": "2026-08-29T10:10:47.291791+00:00",
   "base": {
-    "sha": "96d7b25ca14f51fa357eca15ad30177a5a876313"
+    "sha": "f598aa73efac8587ffc224b285affca2d3f3c540"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs_truncated": false,
   "open_prs": [
     {
-      "number": 6201,
-      "title": "agentos: record that the Terminal has no migration ledger (DSC)",
-      "head_ref": "claude/agentos-migration-ledger",
-      "updated_at": "2026-08-22T01:05:32Z",
-      "is_draft": false,
+      "number": 6651,
+      "title": "[HOLD-FOR-SOL] feat(admin): add Intelligence OS evidence view",
+      "head_ref": "claude/eval-os-a1-evidence-view-20260828",
+      "updated_at": "2026-08-29T09:51:12Z",
+      "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
+      "files_count": 9,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/discoveries/DSC-TERMINAL-HAS-NO-MIGRATION-LEDGER.md"
+        "admin/evidence_status.py",
+        "admin/intelligence_os.py",
+        "admin/static/app.js",
+        "admin/static/styles.css",
+        "agentos/workstreams/WS-EVAL-OS-EVIDENCE-VIEW.md",
+        "research/EVAL_OS_A1_EVIDENCE_PROVIDER_MAPPING_2026-08-28.md",
+        "scripts/build_intelligence_registry.py",
+        "tests/test_admin_intelligence_os.py",
+        "tests/test_admin_intelligence_os_ui.py"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6191,
-      "title": "HOLD-FOR-SOL \u00b7 biocatalyst(P1-1): Catalyst Radar \u2014 Trial Milestones (first post-P0 vertical)",
-      "head_ref": "claude/biocatalyst-p1-1-catalyst-radar",
-      "updated_at": "2026-08-21T13:03:26Z",
+      "number": 6650,
+      "title": "[TDD][LINEAR] Initiative portfolio strategy v1",
+      "head_ref": "sol/linear-initiative-plan-task1-20260829",
+      "updated_at": "2026-08-29T09:20:37Z",
       "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/linear_initiative_portfolio.v1.json",
+        "scripts/linear_initiative_plan.py",
+        "tests/linear_initiative_plan_cases.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6648,
+      "title": "[RECORDS][HOLD-FOR-SOL] Codex native-session collision reconciliation",
+      "head_ref": "sol/chairman-control-room-codex-session-collision-20260829",
+      "updated_at": "2026-08-29T08:00:36Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/discoveries/DSC-AUTONOMY-CONTINUATION-OWNER-GAP-MATRIX.md",
+        "agentos/discoveries/DSC-CODEX-NATIVE-SESSION-IDENTITY-IS-UNDERBOUND.md",
+        "agentos/discoveries/DSC-EFFECT-BEFORE-DIALOGUE-ADMISSION.md",
+        "agentos/discoveries/DSC-RETURN-WITHOUT-ATTENTION-EDGE.md",
+        "agentos/discoveries/DSC-SLACK-PRINCIPAL-DOES-NOT-PROVE-SOL-ACTOR.md",
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-29-codex-session-collision-reconciliation.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6647,
+      "title": "HOLD-FOR-SOL: fix(canada): TP-1 R3 \u2014 breadth truth, bounded gauge, dark filter parity, modal alignment",
+      "head_ref": "claude/tp1-canada-r3",
+      "updated_at": "2026-08-29T07:12:47Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 37,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/evidence/theme-parity/tp1-canada/after-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/after-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/allcands-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/allcands-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/breadth-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/breadth-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/06242bd37dade760.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/167901961ca02c37.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/3c37c17f7ea81608.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/3e81028b673e9766.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/4233cd851dd0e6b7.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/4efe886e93a53336.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/57f92d9793bed7b9.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/61758cf00e1ac6b3.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/69ee71c5645fedfe.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/82c9fbbf68e7e111.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/a2241d50291168fc.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/b74bbe7f06ac4b59.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/b885629f659631ec.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/bcfb78de08b3c40d.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/cb61a445d68f42b7.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/dbc53cd4b6e97459.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtered-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtered-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtermiss-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/manifest.json",
+        "mockups/evidence/theme-parity/tp1-canada/mobile-light-lane2-390.png",
+        "mockups/evidence/theme-parity/tp1-canada/modal-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/modal-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/tableview-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/tableview-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/ux-smells.json",
+        "site/canada-stock-v36.js",
+        "site/stock-dashboard.css",
+        "templates/stock-dashboard.css",
+        "tests/test_canada_v36_composer.py",
+        "tests/test_stock_dashboard_css.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6643,
+      "title": "stocks: EQR->VMRK key migration (#4622) + LEG exit row + OTC acks + dataos unwedge",
+      "head_ref": "claude/eqr-vmrk-key-migration",
+      "updated_at": "2026-08-29T09:53:30Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 32,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/discoveries/DSC-BREADTH-TICKER-FIXUPS-PIN-THE-FETCH-SYMBOL-TOO.md",
+        "agentos/discoveries/DSC-NIGHTLY-SECMASTER-REFRESH-WEDGES-SILENTLY-ON-PRUNE-CONFLICT.md",
+        "agentos/discoveries/DSC-QLEDGER-GRADING-NEVER-CONSULTS-TICKER-KEY-MIGRATIONS.md",
+        "collectors/breadth.py",
+        "config.yml",
+        "config/delisted_symbols.yml",
+        "config/us_names_zh.json",
+        "data/baskets/membership.json",
+        "data/baskets/ohlcv/VMRK.parquet",
+        "data/breadth/_closes_cache.parquet",
+        "data/breadth/_high_cache.parquet",
+        "data/breadth/_low_cache.parquet",
+        "data/breadth/_volume_cache.parquet",
+        "data/breadth/constituents.parquet",
+        "data/qledger/claims.jsonl",
+        "data/reference/_receipt.json",
+        "data/reference/issuer_master.parquet",
+        "data/reference/security_master.parquet",
+        "data/reference/vendor_aliases.parquet",
+        "data/smallcap_breadth/constituents.parquet",
+        "data/stocks/EQR.parquet",
+        "data/theme_graph/identity_resolution.parquet",
+        "data/yahoo/EQR.parquet",
+        "engine/theme_graph/identity_resolution.py",
+        "lib/dataos/identity.py",
+        "lib/ticker_aliases.py",
+        "scripts/build_security_master.py",
+        "tests/test_breadth_constituents_repair.py",
+        "tests/test_caddy_hub_boundary.py",
+        "tests/test_dataos_security_master.py",
+        "tests/test_delisted_symbols.py",
+        "tests/test_theme_graph_identity_resolution.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6642,
+      "title": "feat(agentos): publish direct source-record content identity",
+      "head_ref": "codex/agentos-source-records-digest-20260829",
+      "updated_at": "2026-08-29T05:02:44Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/agentos.py",
+        "tests/test_agentos_compile.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6641,
+      "title": "HOLD-FOR-SOL: CF2-P0 provider-family truth snapshot",
+      "head_ref": "claude/capacity-fabric-p0-provider-truth-20260829",
+      "updated_at": "2026-08-29T04:06:31Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/provider_capacity.py",
+        "tests/test_provider_capacity.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6638,
+      "title": "stock-identity W3A: episode-localization ruler engine + sealed PR-3 constants (SI-W3A-RULER-V1)",
+      "head_ref": "claude/si-w3a-ruler-v1",
+      "updated_at": "2026-08-29T09:36:09Z",
+      "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
       "files_count": 19,
@@ -37,52 +217,256 @@
       "files_error": false,
       "files": [
         ".github/ci/legacy-jobs.yml",
-        "agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-21.md",
-        "agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md",
-        "app/biocatalyst.py",
-        "config/biocatalyst_closed_beta_source_manifest.yml",
-        "config/sector_intelligence_ownership.yml",
-        "data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v2.json",
-        "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json",
-        "engine/biocatalyst/catalyst_events.py",
-        "site/biocatalyst.css",
-        "site/biocatalyst.js",
-        "templates/biocatalyst.css",
-        "templates/biocatalyst.html.j2",
-        "templates/biocatalyst.js",
-        "tests/test_biocatalyst_catalyst_radar.py",
-        "tests/test_biocatalyst_catalyst_radar_api.py",
-        "tests/test_biocatalyst_hydration.py",
-        "tests/test_biocatalyst_page.py",
-        "tests/test_biocatalyst_sponsor_ticker_map.py"
+        "agentos/handoffs/STOCK-IDENTITY-W3-MEASUREMENT-RELEASE.md",
+        "agentos/workstreams/WS-STOCK-IDENTITY.md",
+        "data/stock_identity/ruler/calibration_replay_manifest_v1.json",
+        "data/stock_identity/ruler/channel_a_constitution_v1.json",
+        "data/stock_identity/ruler/ruler_spec_v1.json",
+        "data/trial_ledger.jsonl",
+        "engine/stock_identity/model_constitution.py",
+        "engine/stock_identity/ruler.py",
+        "engine/stock_identity/ruler_nulls.py",
+        "research/stock_identity/W3_CHANNEL_A_MODEL_CONSTITUTION.md",
+        "research/stock_identity/W3_RULER_REGISTRATION.md",
+        "scripts/stock_identity_build_ruler.py",
+        "scripts/stock_identity_calibrate_w3.py",
+        "scripts/stock_identity_calibration_replay.py",
+        "tests/test_stock_identity_model_constitution.py",
+        "tests/test_stock_identity_ruler.py",
+        "tests/test_stock_identity_ruler_nulls.py",
+        "tests/test_stock_identity_w3_calibration.py"
       ],
-      "protected_paths_touched": []
+      "protected_paths_touched": [
+        "data/trial_ledger.jsonl"
+      ]
     },
     {
-      "number": 6182,
-      "title": "feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65)",
-      "head_ref": "chatgpt1/mas-65-linear-portfolio-plan-p0",
-      "updated_at": "2026-08-21T18:13:39Z",
+      "number": 6636,
+      "title": "records(agentos): checkpoint Web-Sol S0/S1 preflight",
+      "head_ref": "sol/web-sol-s0s1-agentos-preflight-20260829",
+      "updated_at": "2026-08-29T04:34:39Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 5,
+      "files_count": 1,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "scripts/linear_portfolio_plan.py",
-        "tests/agentos_compile_legacy_cases.py",
-        "tests/linear_portfolio_plan_cases.py",
-        "tests/linear_portfolio_plan_live_cases.py",
-        "tests/test_agentos_compile.py"
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-29-web-sol-s0s1-preflight.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6161,
-      "title": "docs(e3-0): Event Intelligence Compiler architecture freeze [HOLD-FOR-SOL]",
-      "head_ref": "claude/earnings-e3-0",
-      "updated_at": "2026-08-21T04:56:06Z",
+      "number": 6632,
+      "title": "records(alpha): reconcile K2-C/K3-D blockers and repair path",
+      "head_ref": "sol/alpha-k2c-k3d-current-state-20260828",
+      "updated_at": "2026-08-29T09:55:52Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-ALPHA-K2C-K3D-CURRENT-DEPENDENCY-STATE-2026-08-28.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6631,
+      "title": "records(gmi): route frozen F04 children without provider-Fable gate",
+      "head_ref": "sol/gmi-f04-bounded-child-routing-20260828",
+      "updated_at": "2026-08-29T09:55:46Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-GMI-F04-BOUNDED-CHILD-ROUTING-2026-08-28.md",
+        "agentos/workstreams/WS-GMI-THEME-GRAPH.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6628,
+      "title": "fix(ci): preserve red trusted-pack evidence for ci-gate (#6351)",
+      "head_ref": "sol/ci-red-pack-relay-recovery-6351",
+      "updated_at": "2026-08-29T05:35:33Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "agentos/discoveries/DSC-TRUSTED-CI-RED-PACK-FRAGMENT-SUPPRESSION.md",
+        "tests/test_trusted_ci_production_route.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 6627,
+      "title": "HOLD-FOR-SOL: fix(canada): TP-1 R2 \u2014 RIG REVISE repairs (modal reachability, fail-closed base, inset rails, achromatic breadth)",
+      "head_ref": "claude/tp1-canada-r2",
+      "updated_at": "2026-08-29T04:33:26Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 33,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/evidence/theme-parity/tp1-canada/after-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/after-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/allcands-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/allcands-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/06242bd37dade760.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/2e22516cc502cdd4.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/4efe886e93a53336.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/561d1591f185c11b.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/61758cf00e1ac6b3.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/61bbfd6bc0925e4f.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/69ee71c5645fedfe.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/82c9fbbf68e7e111.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/83e1884636acda81.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/93fcd432d608d982.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/97d07215a34d3a55.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/b74bbe7f06ac4b59.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/b885629f659631ec.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/bcfb78de08b3c40d.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/bd444a6f3893743e.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/e6d341d274de6c69.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtered-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtered-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtermiss-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/manifest.json",
+        "mockups/evidence/theme-parity/tp1-canada/mobile-light-lane2-390.png",
+        "mockups/evidence/theme-parity/tp1-canada/modal-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/modal-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/tableview-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/tableview-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/ux-smells.json",
+        "site/stock-dashboard.css",
+        "templates/stock-dashboard.css",
+        "tests/test_stock_dashboard_css.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6625,
+      "title": "[HOLD-FOR-SOL] radar(w4.2): private evidence-spool boundary \u2014 dedicated store + shared-bucket refusal (LER-C1)",
+      "head_ref": "claude/ler-c1-private-spool",
+      "updated_at": "2026-08-29T10:05:29Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 11,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "config/r2_delivery_plane_classification.v1.json",
+        "engine/entry_radar/spool.py",
+        "engine/prophet_lab/sources.py",
+        "research/R2_AND_DELIVERY_PLANE_TRUTH_CENSUS_2026-08.md",
+        "research/live_entry_radar/W42_PRIVATE_EVIDENCE_SPOOL_RUNBOOK_2026-08-28.md",
+        "tests/fixtures/r2_delivery_macro_anchor_lines.v1.tsv",
+        "tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv",
+        "tests/test_caddy_hub_boundary.py",
+        "tests/test_entry_radar_spool_privacy.py",
+        "tests/test_prophet_lab_commissioning.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6620,
+      "title": "records(canada): TP-1 theme-parity closeout \u2014 canada_stocks compliant post-proof",
+      "head_ref": "claude/tp1-canada-closeout",
+      "updated_at": "2026-08-28T20:45:38Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/product_experience/page_registry_overrides.yml",
+        "data/product_experience/page_registry.json",
+        "research/THEME_PARITY_TP1_CANADA_ACCEPTANCE.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6615,
+      "title": "[PLAN][STACKED] SNI semantic registration + SNI-1A contract execution plans",
+      "head_ref": "sol/sni1a-plan-20260828",
+      "updated_at": "2026-08-28T12:00:11Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "docs/superpowers/handoffs/2026-08-28-sni-semantic-registration-terra-gated-handoff.md",
+        "docs/superpowers/handoffs/2026-08-28-sni1a-terra-gated-handoff.md",
+        "docs/superpowers/plans/2026-08-28-sni-semantic-registration.md",
+        "docs/superpowers/plans/2026-08-28-sni1a-identity-relationship-contract.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6613,
+      "title": "[ARCHITECTURE][HOLD-FOR-SOL] SNI-1 Alibaba/Tencent reference twin contract",
+      "head_ref": "sol/sni1-reference-twin-20260828",
+      "updated_at": "2026-08-29T05:35:22Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 9,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-SNI-IDENTITY-AUTHORITY-CHAIN.md",
+        "agentos/discoveries/DSC-SNI-HK-MULTI-COUNTER-IS-NOT-MULTI-SECURITY.md",
+        "docs/superpowers/specs/2026-08-28-sni1-identity-authority-amendment.md",
+        "docs/superpowers/specs/2026-08-28-sni1-reference-twin-design.md",
+        "research/single_name_intelligence/SNI1_ALIBABA_TENCENT_ONTOLOGY_V0_2026-08-28.md",
+        "research/single_name_intelligence/SNI1_HK_DATA_QUALIFICATION_2026-08-28.md",
+        "research/single_name_intelligence/SNI1_OWNER_SOURCE_MATRIX_2026-08-28.md",
+        "research/single_name_intelligence/SNI1_PROGRAM_REGISTRY_GATE_2026-08-28.md",
+        "research/single_name_intelligence/fixtures/sni1_reference_payload_examples_v0.json"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6609,
+      "title": "HOLD-FOR-SOL: records(market-os): F00B current-owner capability crosswalk (88+42 parity scope)",
+      "head_ref": "claude/mo-f00b-crosswalk-20260828",
+      "updated_at": "2026-08-29T09:56:02Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/MARKET-ONTOLOGY-F00B-CURRENT-OWNER-CROSSWALK-2026-08-28.md",
+        "research/market_intelligence_productization/MARKET_ONTOLOGY_F00B_CROSSWALK_SUMMARY_2026-08-28.md",
+        "research/market_intelligence_productization/MARKET_ONTOLOGY_F00B_CURRENT_CAPABILITY_CROSSWALK_2026-08-28.csv"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6604,
+      "title": "HOLD-FOR-SOL: records(options): Options Intelligence C0 consolidated masterplan + program-control freeze",
+      "head_ref": "claude/options-intelligence-c0-program-control",
+      "updated_at": "2026-08-29T08:40:11Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -90,92 +474,182 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/decisions/DEC-E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER.md",
-        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-20.md",
-        "agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md",
-        "research/earnings_intelligence/e3/E3A_AAPL_SHADOW_EXTRACTION_HANDOFF_2026-08-20.md",
-        "research/earnings_intelligence/e3/E3B_AAPL_LIVE_QA_HANDOFF_2026-08-20.md",
-        "research/earnings_intelligence/e3/E3C_SECOND_EVENT_GENERALIZATION_HANDOFF_2026-08-20.md",
-        "research/earnings_intelligence/e3/E3P_NATURAL_CYCLE_COMMISSIONING_HANDOFF_2026-08-20.md",
-        "research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md"
+        "agentos/decisions/DEC-OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL.md",
+        "agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-28-options-intelligence-c0-program-control.md",
+        "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md",
+        "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md",
+        "agentos/workstreams/WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md",
+        "agentos/workstreams/WS-OPTIONS-CONTEXT-AUDIT-PREREG-V2.md",
+        "config/mastermind_programs.yml",
+        "research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6139,
-      "title": "records(biocatalyst): Sol-ratify Trial Milestone Radar and establish canonical P1 workstream",
-      "head_ref": "chatgpt1/mas-96-biocatalyst-catalyst-radar-ratification",
-      "updated_at": "2026-08-21T16:14:12Z",
-      "is_draft": false,
+      "number": 6600,
+      "title": "HOLD-FOR-SOL: CXI C0 Benchmark Truth Recovery (op macro-context-index-completion-20260828-sol-001) \u2014 do not merge",
+      "head_ref": "claude/macro-context-index-c0-20260828",
+      "updated_at": "2026-08-29T05:48:26Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-CXI-GOV-PRECISION-GATE-IS-TRUE-PRECISION.md",
+        "agentos/handoffs/WS-MACRO-CONTEXT-INDEX-2026-08-28.md",
+        "agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md",
+        "research/MACRO_CONTEXT_INDEX_COMPLETION_MASTERPLAN_BY_SOL.md",
+        "research/context_index/BENCHMARK_QUESTIONS.jsonl",
+        "research/context_index/BENCHMARK_RESULTS.md",
+        "research/context_index/C0_SOURCE_AUDIT_MANIFEST_V1.json",
+        "research/context_index/README.md",
+        "scripts/context_index_eval.py",
+        "tests/test_agentos_schema.py",
+        "tests/test_agentos_status.py",
+        "tests/test_context_index_eval.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6596,
+      "title": "records(crg): establish cross-repo contract governance execution home",
+      "head_ref": "sol/cross-repo-contract-governance-r0-20260828",
+      "updated_at": "2026-08-29T03:57:09Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-CROSS-REPO-CONTRACT-GOVERNANCE-FEDERATED-NO-RUNTIME.md",
+        "agentos/handoffs/CROSS-REPO-CONTRACT-GOVERNANCE-2026-08-28-fable-principal.md",
+        "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md",
+        "docs/superpowers/plans/2026-08-28-cross-repo-contract-governance-r0.md",
+        "docs/superpowers/specs/2026-08-28-cross-repo-contract-governance-design.md",
+        "research/CROSS_REPO_CONTRACT_GOVERNANCE_CURRENT_STATE_2026-08-28.md",
+        "research/CROSS_REPO_CONTRACT_GOVERNANCE_R0_CARRIER_RECEIPT_2026-08-28.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6595,
+      "title": "HOLD-FOR-SOL: records(market-os): reconcile Fable root-seat topology",
+      "head_ref": "sol/marketontology-fable-seat-topology-reconcile-20260828",
+      "updated_at": "2026-08-28T14:04:18Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-MARKET-ONTOLOGY-FABLE-MULTI-COO-CONCURRENCY-TOPOLOGY.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6593,
+      "title": "HOLD-FOR-SOL: records(agentos): reconcile Linear / Slack / GitHub drift",
+      "head_ref": "sol/cross-plane-linear-slack-github-reconcile-20260827",
+      "updated_at": "2026-08-28T05:36:32Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/AGENT-OS-2026-08-27-linear-slack-github-reconciliation.md",
+        "agentos/workstreams/WS-RATES-INFLATION-COMMAND.md",
+        "agentos/workstreams/WS-STOCK-DOSSIER-LIVE-QUOTE.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6589,
+      "title": "HOLD-FOR-SOL: records(market-memory) MM-G0 R1 repair \u2014 separate terminal gate classification from causal diagnosis",
+      "head_ref": "claude/market-memory-mm-g0-repair-20260828",
+      "updated_at": "2026-08-29T02:32:51Z",
+      "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
       "files_count": 3,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/decisions/DEC-BIOCATALYST-P1-SOL-RATIFIES-TRIAL-MILESTONE-RADAR.md",
-        "agentos/handoffs/BIOCATALYST-CATALYST-RADAR-2026-08-20-sol-ratification.md",
-        "agentos/workstreams/WS-BIOCATALYST-CATALYST-RADAR.md"
+        "agentos/discoveries/DSC-SEAL-ABSTENTION-DISCARDS-ITS-OWN-TRANSCRIPT.md",
+        "agentos/handoffs/MARKET-MEMORY-W2C-2026-08-27-mm-g0-gate-receipts.md",
+        "research/MARKET_MEMORY_MM_G0_AUG25_GATE_RECEIPTS_2026-08-27.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6135,
-      "title": "chore(workflow): add tracked-work PR metadata template (MAS-6)",
-      "head_ref": "chatgpt1/mas-6-pr-metadata-template-macro",
-      "updated_at": "2026-08-21T16:13:29Z",
-      "is_draft": false,
+      "number": 6586,
+      "title": "[AGENTOS][HOLD-FOR-SOL] Record Operator Continuity architecture",
+      "head_ref": "sol/operator-continuity-records-20260827",
+      "updated_at": "2026-08-28T07:30:42Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-OPERATOR-CONTINUITY-REALM-REBINDING-LAW.md",
+        "agentos/discoveries/DSC-CLAUDE-CONCRETE-HOST-IDENTITY-SEAM-MISSING.md",
+        "agentos/discoveries/DSC-NATIVE-CLAUDE-REALM-CAPACITY-IDENTITY-UNBOUND.md",
+        "agentos/handoffs/OPERATOR-CONTINUITY-2026-08-27-architecture-accepted.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6585,
+      "title": "HOLD-FOR-SOL: feat(oa1t): measured ThetaData trade+NBBO microstructure",
+      "head_ref": "claude/oa1t-macro-measured-options-microstructure",
+      "updated_at": "2026-08-29T02:37:21Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 8,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "collectors/flow_signals.py",
+        "engine/live_flow.py",
+        "ops/LIVE_FLOW_RUNBOOK.md",
+        "scripts/ops_train_flow_score.py",
+        "tests/test_flow_signals.py",
+        "tests/test_fs4_flow_scorer.py",
+        "tests/test_live_flow.py",
+        "tests/test_options_signal_episode.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6581,
+      "title": "records(agentos): refine MAS-112 to stale installed authorization",
+      "head_ref": "sol/mas112-installed-auth-reconcile-20260827",
+      "updated_at": "2026-08-28T00:56:57Z",
+      "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
       "files_count": 1,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/pull_request_template.md"
+        "agentos/discoveries/DSC-PERSONAL-PRO-INGRESS-PRINCIPAL-GAP.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6126,
-      "title": "records(intraday-flow): reconcile PR-4 merge to current-session production gate",
-      "head_ref": "chatgpt1/mas-86-intraday-pr4-merge-reconcile",
-      "updated_at": "2026-08-21T18:14:21Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-INTRADAY-FLOW-PR4-MERGED-PRODUCTION-ACCEPTANCE-OWED.md",
-        "agentos/handoffs/INTRADAY-FLOW-P0-RECOVERY-2026-08-20-pr4-merge-reconciliation.md",
-        "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6125,
-      "title": "records(market-os): reconcile A1A merge to bounded production acceptance",
-      "head_ref": "chatgpt1/mas-72-a1a-merge-reconcile",
-      "updated_at": "2026-08-21T16:16:21Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md",
-        "agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md",
-        "agentos/workstreams/WS-MARKET-OS.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6080,
-      "title": "feat(polygon-gex): AD-1C0.1 \u2014 bounded lawful capture lease for partial replacement (HELD FOR SOL)",
-      "head_ref": "claude/ad1c01-capture-lease",
-      "updated_at": "2026-08-21T09:45:13Z",
+      "number": 6578,
+      "title": "records(agentos): reconcile Slack dialogue continuity gates",
+      "head_ref": "sol/ccr-dialogue-continuity-reconcile-20260827",
+      "updated_at": "2026-08-29T02:41:47Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -183,11 +657,304 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/decisions/DEC-AD1C01-CAPTURE-LEASE-REPLACES-SAME-DAY.md",
-        "agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-20.md",
-        "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md",
-        "scripts/build_polygon_gex.py",
-        "tests/test_polygon_gex.py"
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-27-dialogue-continuity-progress.md",
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-27-dialogue-continuity-reconciliation.md",
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-27-wp1-reply-parity-reopened.md",
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-27-wp1-writer-reconciled.md",
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-29-operating-surface-project-visibility-recovery.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6570,
+      "title": "HOLD-FOR-SOL: research(toi): freeze Technical Opportunity Intelligence architecture and W1/W2 contracts",
+      "head_ref": "sol/technical-opportunity-intelligence-w0-20260827",
+      "updated_at": "2026-08-29T06:24:53Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 11,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-TECHNICAL-OPPORTUNITY-INTELLIGENCE-CANONICAL-OWNERSHIP-AND-TWO-QUEUE-LAW.md",
+        "agentos/discoveries/DSC-TECHNICAL-4H-RESEARCH-PANEL-NOT-PROVEN.md",
+        "agentos/discoveries/DSC-TECHNICAL-CONFLUENCE-V1-EXCLUDES-TECH-LAB-FAMILIES.md",
+        "agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27-w0-current-procedure.md",
+        "agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27.md",
+        "agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-28-w0-finalization.md",
+        "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md",
+        "research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-27.md",
+        "research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W0_PROCEDURE_AND_CONTINUATION_AMENDMENT_2026-08-27.md",
+        "research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W1_EVIDENCE_CENSUS_HANDOFF_2026-08-27.md",
+        "research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W2_DATA_CLOCK_HANDOFF_2026-08-27.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6567,
+      "title": "HOLD-FOR-SOL: fix(cn): prevent stale deep OHLC from regressing Prophet session",
+      "head_ref": "sol/cn-prophet-stale-deep-overlay-20260827",
+      "updated_at": "2026-08-28T03:25:17Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/build_china_library.py",
+        "tests/test_cn_board_lane_gate.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6528,
+      "title": "records(market-memory): recharter full PIT-to-cognition program",
+      "head_ref": "sol/market-memory-ceo-recharter-20260827",
+      "updated_at": "2026-08-29T02:33:54Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-MARKET-MEMORY-CEO-RECHARTER-AND-NO-REBUILD-FREEZE.md",
+        "agentos/handoffs/MARKET-MEMORY-2026-08-27-fable-coo-full-program.md",
+        "agentos/workstreams/WS-MARKET-MEMORY.md",
+        "research/MARKET_MEMORY_CEO_RECHARTER_2026-08-27.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6526,
+      "title": "fix(market-os): refresh Portfolio badge after authoritative A1B reread",
+      "head_ref": "sol/market-os-6510-badge-refresh-20260827",
+      "updated_at": "2026-08-27T06:32:19Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "tests/test_portfolio_import_a1b_js.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6514,
+      "title": "HOLD-FOR-SOL: contracts(k3d): Economic Propagation hypothesis v1 \u2014 do not merge until Sol accepts",
+      "head_ref": "claude/k3d-economic-propagation",
+      "updated_at": "2026-08-27T21:51:56Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 29,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/decisions/DEC-K3D-PROPAGATION-HYPOTHESIS-CONTRACT.md",
+        "agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-27-k3d.md",
+        "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md",
+        "contracts/economic_propagation/generator_registry.v1.json",
+        "contracts/economic_propagation/propagation_hypothesis.v1.schema.json",
+        "lib/economic_propagation.py",
+        "research/economic_propagation/K3D_PROPAGATION_HYPOTHESIS_CONTRACT_FREEZE_2026-08-27.md",
+        "research/economic_propagation/k3d_real_proof_records/real_abstention_tsn_adm_no_graph1.json",
+        "research/economic_propagation/k3d_real_proof_records/real_abstention_tsn_counterparty_unresolved.json",
+        "tests/fixtures/economic_propagation/golden_supported_hypothesis.json",
+        "tests/fixtures/economic_propagation/golden_typed_abstention_rights_blocked.json",
+        "tests/fixtures/economic_propagation/golden_typed_abstention_unresolved.json",
+        "tests/fixtures/economic_propagation/hostile_authority_trading_true.json",
+        "tests/fixtures/economic_propagation/hostile_binding_kills_drop.json",
+        "tests/fixtures/economic_propagation/hostile_clock_violations.json",
+        "tests/fixtures/economic_propagation/hostile_disagreeing_derived_summary.json",
+        "tests/fixtures/economic_propagation/hostile_economic_share_nonnull.json",
+        "tests/fixtures/economic_propagation/hostile_forbidden_key_injection.json",
+        "tests/fixtures/economic_propagation/hostile_generator_refusal_admission.json",
+        "tests/fixtures/economic_propagation/hostile_mechanism_trade_language.json",
+        "tests/fixtures/economic_propagation/hostile_mechanism_without_relationship.json",
+        "tests/fixtures/economic_propagation/hostile_relationship_construct_laundering.json",
+        "tests/fixtures/economic_propagation/hostile_rights_blocked_claimed_supported.json",
+        "tests/fixtures/economic_propagation/hostile_role_laundering.json",
+        "tests/fixtures/economic_propagation/hostile_sha_mismatch.json",
+        "tests/fixtures/economic_propagation/hostile_unresolved_identity_laundered.json",
+        "tests/fixtures/economic_propagation/manifest.json",
+        "tests/test_economic_propagation_hypothesis_contract.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6441,
+      "title": "HOLD-FOR-SOL: records(agentos): reconcile current state-sync program",
+      "head_ref": "sol/agentos-state-sync-20260825",
+      "updated_at": "2026-08-27T05:03:56Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/AGENT-OS-2026-08-25-state-sync-takeover.md",
+        "agentos/workstreams/WS-AGENT-OS.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6426,
+      "title": "HOLD-FOR-SOL: CI ProofFreshness precedes stale semantic verdict",
+      "head_ref": "claude/ci-prooffreshness-before-semantic-20260825",
+      "updated_at": "2026-08-25T22:05:07Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-STALE-SEMANTIC-PROOF-HAS-NO-CURRENT-VERDICT-AUTHORITY.md",
+        "agentos/discoveries/DSC-SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS.md",
+        "agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-25-prooffreshness-order.md",
+        "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md",
+        "scripts/merge_on_green.py",
+        "tests/test_merge_on_green_semantic.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6423,
+      "title": "DRAFT / DO NOT MERGE: ProofFreshness stale-red live fixture",
+      "head_ref": "claude/prooffreshness-live-fixture-20260825",
+      "updated_at": "2026-08-25T22:00:57Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/README.md",
+        "tests/test_merge_on_green_semantic.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6389,
+      "title": "[HOLD-FOR-SOL] BioCatalyst SNAPSHOT-ONBOARD A \u2014 Historical Event History",
+      "head_ref": "warp/warp-2b1d7bf0a28b4f9d9016367398c3bd93",
+      "updated_at": "2026-08-28T01:04:29Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 25,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/BPC-JV-RECON-2026-08-24-SNAPSHOT-ONBOARD-A.md",
+        "agentos/workstreams/WS-BPC-JV-RECON.md",
+        "app/biocatalyst.py",
+        "contracts/biocatalyst/biocatalyst_jv_snapshot_manifest.v1.schema.json",
+        "contracts/biocatalyst/historical_event_generation.v1.schema.json",
+        "contracts/biocatalyst/historical_event_record.v1.schema.json",
+        "docs/superpowers/plans/2026-08-24-biocatalyst-snapshot-onboard-a.md",
+        "engine/biocatalyst/historical_events.py",
+        "engine/biocatalyst/jv_snapshot.py",
+        "research/BIOCATALYST_SNAPSHOT_ONBOARD_A_CORPUS_AND_CONTRACT_FREEZE_2026-08-24.md",
+        "scripts/biocatalyst_snapshot_onboard.py",
+        "site/biocatalyst.css",
+        "site/biocatalyst.html",
+        "site/biocatalyst.js",
+        "templates/biocatalyst.css",
+        "templates/biocatalyst.html.j2",
+        "templates/biocatalyst.js",
+        "tests/biocatalyst_hydration_harness.js",
+        "tests/test_biocatalyst_historical_event_api.py",
+        "tests/test_biocatalyst_historical_event_ui.py",
+        "tests/test_biocatalyst_historical_events.py",
+        "tests/test_biocatalyst_jv_snapshot.py",
+        "tests/test_biocatalyst_snapshot_onboard.py",
+        "tests/test_sector_intelligence_ownership.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6296,
+      "title": "[HOLD-FOR-SOL] W-LIQ.1 causal global liquidity state producer",
+      "head_ref": "claude/w-liq1-global-liquidity",
+      "updated_at": "2026-08-27T00:48:59Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 15,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/discoveries/DSC-BOJ-ASSETS-REQUIRE-MONTH-END-ANCHOR.md",
+        "agentos/handoffs/GLOBAL-LIQUIDITY-TRANSMISSION-2026-08-22-w-liq1.md",
+        "agentos/workstreams/WS-GLOBAL-LIQUIDITY-TRANSMISSION.md",
+        "config/global_liquidity_transmission_v1.yml",
+        "data/global_liquidity_transmission/factor_comparison_btc_4w.json",
+        "data/global_liquidity_transmission/state_history.parquet",
+        "data/global_liquidity_transmission/state_history_meta.json",
+        "engine/global_liquidity_transmission.py",
+        "research/GLOBAL_LIQUIDITY_DATA_CENSUS_2026-08-22.md",
+        "research/GLOBAL_LIQUIDITY_TRANSMISSION_STATE_METHODOLOGY_2026-08-22.md",
+        "scripts/build_global_liquidity_transmission.py",
+        "site/liquiditydata/global_liquidity_transmission.json",
+        "tests/fixtures/global_liquidity_transmission_wliq1_window.json",
+        "tests/test_global_liquidity_transmission.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6264,
+      "title": "research(prophet): harden flagship intelligence fan-out cells",
+      "head_ref": "sol/prophet-flagship-fanout-hardening-20260822",
+      "updated_at": "2026-08-26T15:27:08Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 31,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-22.md",
+        "research/prophet_v4/PROPHET_FLAGSHIP_INTELLIGENCE_EXPANSION_MASTERPLAN_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_A_THEME_INTELLIGENCE_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_B_EVIDENCE_PRICE_GAP_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_C_CATALYST_SURPRISE_MATERIALITY_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_D_STOCK_SPECIES_ANALOGUES_REGIME_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_E_FRAGILITY_POSITIONING_CROWDING_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_F_EVIDENCE_TRANSLATION_TRAJECTORY_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_G_VALUE_OF_INFORMATION_MEASUREMENT_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ADVERSARIAL_REVIEW_AND_AMENDMENTS_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_ARCHITECTURE_FREEZE_AND_INTEGRATION_GRAPH_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_CELL_HARDENING_INDEX_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_DATA_SOURCE_AND_MOAT_LEDGER_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_EXECUTIVE_DECISION_DOCKET_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_EXTERNAL_METHODS_BENCHMARK_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_OPEN_HYPOTHESES_AND_KILL_MATRIX_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_R1_BACKBONE_PREWORK_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_R2_R3_BACKBONE_PREWORK_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_READ_FIRST_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/PROPHET_FLAGSHIP_REFERENCE_CASEBOOK_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/RESEARCH_CELL_DELIVERABLE_TEMPLATE_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/RESEARCH_CELL_EXECUTION_CONSTITUTION_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_A_THEME_INTELLIGENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_B_EVIDENCE_PRICE_GAP_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_C_CATALYST_FEDERATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_D_SPECIES_ANALOGUES_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_E_FRAGILITY_CROWDING_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_F_EVIDENCE_TRANSLATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_G_VALUE_OF_INFORMATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/launch_handoffs/CELL_H_FLAGSHIP_EXPERIENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md"
       ],
       "protected_paths_touched": []
     },
@@ -213,49 +980,6 @@
       ]
     },
     {
-      "number": 5898,
-      "title": "FF-1P2R: current-quarter EDGAR index discovery (do not merge; recovery fail-closed)",
-      "head_ref": "claude/ff-1p2-bulk-census",
-      "updated_at": "2026-08-21T05:36:36Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 25,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/filing-forensics-broad-sec.yml",
-        "agentos/decisions/DEC-FF-1-ACCESSION-PREFIX-IS-TRANSMITTER.md",
-        "agentos/decisions/DEC-FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES.md",
-        "agentos/decisions/DEC-FF-1-BROAD-SUBMISSIONS-USES-SEC-BULK-ARCHIVE.md",
-        "agentos/decisions/DEC-FF-1-PRIOR-COMPLETE-FAILS-CLOSED.md",
-        "agentos/decisions/DEC-FF-1-RECOVERY-NOT-COMMISSIONED.md",
-        "agentos/discoveries/DSC-FF-1-PER-ISSUER-CENSUS-EXCEEDS-90M.md",
-        "agentos/discoveries/DSC-FF-1-Q3-2026-MASTER-INDEX-CANARY.md",
-        "agentos/discoveries/DSC-FF-1-SEC-BULK-ARCHIVE-EXCEEDS-1GIB.md",
-        "agentos/handoffs/FUNDAMENTAL-FORENSICS-2026-08-18-P2.md",
-        "agentos/handoffs/FUNDAMENTAL-FORENSICS-2026-08-18-P2R.md",
-        "agentos/handoffs/FUNDAMENTAL-FORENSICS-2026-08-19-P2R-REPAIR.md",
-        "agentos/handoffs/FUNDAMENTAL-FORENSICS-2026-08-21-P2R-KERNEL.md",
-        "agentos/workstreams/WS-FUNDAMENTAL-FORENSICS.md",
-        "collectors/edgar_forensics.py",
-        "config/dag.yml",
-        "config/r2_delivery_plane_classification.v1.json",
-        "contracts/fundamental_forensics_broad_sec_run.schema.json",
-        "engine/fundamental_forensics/broad_sec_store.py",
-        "scripts/run_fundamental_forensics_broad_sec.py",
-        "tests/fixtures/r2_delivery_macro_anchor_lines.v1.tsv",
-        "tests/fixtures/r2_delivery_macro_evidence_files.v1.tsv",
-        "tests/test_fundamental_forensics_broad_sec.py",
-        "tests/test_fundamental_forensics_edgar_index.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/filing-forensics-broad-sec.yml",
-        "config/dag.yml"
-      ]
-    },
-    {
       "number": 5821,
       "title": "docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture",
       "head_ref": "sol/biopharma-cycle-intelligence-architecture-20260816",
@@ -275,79 +999,144 @@
         "research/BIOPHARMA_CYCLE_INTELLIGENCE_OS_MASTERPLAN_2026-08-16.md"
       ],
       "protected_paths_touched": []
-    },
-    {
-      "number": 5737,
-      "title": "radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language)",
-      "head_ref": "cursor/entry-radar-w8-rig-9f9d",
-      "updated_at": "2026-08-19T06:18:14Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 52,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15-w8.md",
-        "agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-17-w8.md",
-        "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md",
-        "config/unrun_test_waivers.yml",
-        "mockups/refs/entry_radar/COMPONENT_INVENTORY.md",
-        "mockups/refs/entry_radar/CRITIQUE.md",
-        "mockups/refs/entry_radar/DATA_TO_UI_MAPPING.md",
-        "mockups/refs/entry_radar/DESIGN_NOTES.md",
-        "mockups/refs/entry_radar/FINDING_DISPOSITIONS.md",
-        "mockups/refs/entry_radar/PINNED_PROPHET_REFERENCE.md",
-        "mockups/refs/entry_radar/STATE_INVENTORY.md",
-        "mockups/refs/entry_radar/W9_IMPLEMENTATION_HANDOFF.md",
-        "mockups/refs/entry_radar/crops/01-desktop-dark-en.png",
-        "mockups/refs/entry_radar/crops/02-desktop-light-en.png",
-        "mockups/refs/entry_radar/crops/03-desktop-dark-zh.png",
-        "mockups/refs/entry_radar/crops/04-desktop-light-zh.png",
-        "mockups/refs/entry_radar/crops/05-mobile390-dark-en.png",
-        "mockups/refs/entry_radar/crops/06-mobile390-dark-zh.png",
-        "mockups/refs/entry_radar/crops/07-mobile390-light-en.png",
-        "mockups/refs/entry_radar/crops/08-mobile390-light-zh.png",
-        "mockups/refs/entry_radar/crops/10-quiet-dark-en.png",
-        "mockups/refs/entry_radar/crops/11-quiet-light-zh.png",
-        "mockups/refs/entry_radar/crops/20-stale-dark-en.png",
-        "mockups/refs/entry_radar/crops/21-degraded-dark-en.png",
-        "mockups/refs/entry_radar/crops/30-multi-dark-en.png",
-        "mockups/refs/entry_radar/crops/31-multi-light-zh.png",
-        "mockups/refs/entry_radar/crops/40-invalidated-dark-en.png",
-        "mockups/refs/entry_radar/crops/41-history-dark-en.png",
-        "mockups/refs/entry_radar/crops/50-unavailable-dark-en.png",
-        "mockups/refs/entry_radar/crops/51-partial-dark-en.png",
-        "mockups/refs/entry_radar/crops/52-raw-dark-en.png",
-        "mockups/refs/entry_radar/crops/60-c1-provisional-dark-en.png",
-        "mockups/refs/entry_radar/crops/61-c2-variant-dark-en.png",
-        "mockups/refs/entry_radar/crops/70-anon-dark-en.png",
-        "mockups/refs/entry_radar/crops/80-ipo-dark-en.png",
-        "mockups/refs/entry_radar/crops/81-lobe-dark-en.png",
-        "mockups/refs/entry_radar/index.html",
-        "mockups/refs/entry_radar/radar-data.js",
-        "mockups/refs/entry_radar/radar.css",
-        "mockups/refs/entry_radar/radar.js",
-        "mockups/refs/entry_radar/reviews/INDEPENDENT_CRITIQUE.md",
-        "mockups/refs/entry_radar/tools/capture.py",
-        "mockups/refs/entry_radar/tools/mutation_test.py",
-        "mockups/refs/entry_radar/tools/verify.py",
-        "research/reference_integrity/entry-radar-w8/approval.yml",
-        "research/reference_integrity/entry-radar-w8/baseline.yml",
-        "research/reference_integrity/entry-radar-w8/manifest.yml",
-        "research/reference_integrity/entry-radar-w8/proposal.yml",
-        "research/reference_integrity/entry-radar-w8/reviews/product_regression.yml",
-        "research/reference_integrity/entry-radar-w8/reviews/visual_taste.yml",
-        "research/reference_integrity/entry-radar-w8/verdict.yml",
-        "tests/test_entry_radar_w8_rig.py"
-      ],
-      "protected_paths_touched": []
     }
   ],
   "collisions": [
     {
-      "pr_a": 6191,
-      "pr_b": 5898,
+      "pr_a": 6647,
+      "pr_b": 6627,
+      "shared_files": [
+        "mockups/evidence/theme-parity/tp1-canada/after-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/after-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/allcands-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/allcands-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/06242bd37dade760.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/4efe886e93a53336.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/61758cf00e1ac6b3.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/69ee71c5645fedfe.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/82c9fbbf68e7e111.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/b74bbe7f06ac4b59.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/b885629f659631ec.png",
+        "mockups/evidence/theme-parity/tp1-canada/cells/bcfb78de08b3c40d.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtered-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtered-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/filtermiss-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/manifest.json",
+        "mockups/evidence/theme-parity/tp1-canada/mobile-light-lane2-390.png",
+        "mockups/evidence/theme-parity/tp1-canada/modal-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/modal-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/tableview-dark-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/tableview-light-en-1440.png",
+        "mockups/evidence/theme-parity/tp1-canada/ux-smells.json",
+        "site/stock-dashboard.css",
+        "templates/stock-dashboard.css",
+        "tests/test_stock_dashboard_css.py"
+      ],
+      "shared_count": 25,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6643,
+      "pr_b": 6625,
+      "shared_files": [
+        "tests/test_caddy_hub_boundary.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6638,
+      "pr_b": 6625,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6638,
+      "pr_b": 6514,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6638,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6638,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6625,
+      "pr_b": 6514,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6625,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6625,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6514,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6514,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6426,
+      "pr_b": 6423,
+      "shared_files": [
+        "tests/test_merge_on_green_semantic.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6389,
+      "pr_b": 6296,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -356,6 +1145,1856 @@
     }
   ],
   "recent_merged": [
+    {
+      "number": 6635,
+      "title": "fix(control-room): route auth through admin session handler",
+      "merged_at": "2026-08-29T04:20:38Z"
+    },
+    {
+      "number": 6634,
+      "title": "feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65) [release carrier]",
+      "merged_at": "2026-08-29T03:06:22Z"
+    },
+    {
+      "number": 6633,
+      "title": "heal(agentos): schema-normalize four 08-28 records redding the contract fleet-wide",
+      "merged_at": "2026-08-29T03:27:44Z"
+    },
+    {
+      "number": 6630,
+      "title": "records(eval-os): open A1 evidence-view workstream and handoff",
+      "merged_at": "2026-08-29T02:40:01Z"
+    },
+    {
+      "number": 6626,
+      "title": "fix(ship-loop): a lawful claude/* HOLD-FOR-SOL waits instead of being told to merge",
+      "merged_at": "2026-08-29T08:59:48Z"
+    },
+    {
+      "number": 6623,
+      "title": "stocks: exit-ledger fetch exclusion + AVB successor-splice heal",
+      "merged_at": "2026-08-29T02:46:36Z"
+    },
+    {
+      "number": 6622,
+      "title": "prophet: record B1 natural production acceptance",
+      "merged_at": "2026-08-29T00:40:28Z"
+    },
+    {
+      "number": 6621,
+      "title": "fix(ci): re-base probe ceilings for the three deliberate always-on gates (TP-1 repair edge)",
+      "merged_at": "2026-08-28T22:08:24Z"
+    },
+    {
+      "number": 6619,
+      "title": "records(dossier-live-quote): realtime enabled and proven; anchor-roll defect",
+      "merged_at": "2026-08-28T16:21:21Z"
+    },
+    {
+      "number": 6618,
+      "title": "feat(control-room): add operator-auth remote access boundary",
+      "merged_at": "2026-08-28T20:09:02Z"
+    },
+    {
+      "number": 6617,
+      "title": "fix(dossier): stop rendering a rolled anchor as a zero move",
+      "merged_at": "2026-08-28T15:38:52Z"
+    },
+    {
+      "number": 6616,
+      "title": "docs(law): hold notes do not end the Stop loop \u2014 ladder out once, then stay quiet",
+      "merged_at": "2026-08-28T16:16:38Z"
+    },
+    {
+      "number": 6614,
+      "title": "biocatalyst: P1-AVAIL-1 entitled re-acceptance PASS \u2014 records closeout (MAS-172)",
+      "merged_at": "2026-08-28T12:47:37Z"
+    },
+    {
+      "number": 6612,
+      "title": "HOLD-FOR-SOL: design(canada): TP-1 theme-parity \u2014 governed stock-dashboard CSS pair + dual art directions",
+      "merged_at": "2026-08-28T17:35:28Z"
+    },
+    {
+      "number": 6611,
+      "title": "records(market-os): ratify granular full parity + beyond-parity ratchet",
+      "merged_at": "2026-08-28T12:02:02Z"
+    },
+    {
+      "number": 6610,
+      "title": "research(market-os): preserve final Market Ontology audit",
+      "merged_at": "2026-08-28T15:15:22Z"
+    },
+    {
+      "number": 6607,
+      "title": "daily: commit data/qledger from the stock_briefs job (Eval OS E1)",
+      "merged_at": "2026-08-28T16:35:35Z"
+    },
+    {
+      "number": 6605,
+      "title": "heal(agentos): schema-normalize the breathing completion-commission handoff",
+      "merged_at": "2026-08-28T09:24:43Z"
+    },
+    {
+      "number": 6603,
+      "title": "records: name the overnight-503 regression and why the tests missed it",
+      "merged_at": "2026-08-28T10:21:07Z"
+    },
+    {
+      "number": 6601,
+      "title": "records(breathing): freeze completion architecture + COO C0 handoff",
+      "merged_at": "2026-08-28T06:58:26Z"
+    },
+    {
+      "number": 6599,
+      "title": "[ARCHITECTURE][SOL-ACCEPTED] Live Entry Radar end-to-end completion program",
+      "merged_at": "2026-08-28T08:38:03Z"
+    },
+    {
+      "number": 6598,
+      "title": "qledger: anchor stock_desk/thematic_desk claims at registration (Eval OS E1)",
+      "merged_at": "2026-08-28T09:13:13Z"
+    },
+    {
+      "number": 6597,
+      "title": "records(topa): freeze OOT completion architecture + R0 COO handoff",
+      "merged_at": "2026-08-28T22:18:41Z"
+    },
+    {
+      "number": 6594,
+      "title": "biocatalyst: P1-AVAIL-1 availability audit \u2014 no origin-side defect (MAS-172)",
+      "merged_at": "2026-08-28T06:21:47Z"
+    },
+    {
+      "number": 6592,
+      "title": "dossier: fix the overnight 503 \u2014 regularSession is a session STATE, not a print provenance",
+      "merged_at": "2026-08-28T07:04:29Z"
+    },
+    {
+      "number": 6590,
+      "title": "HOLD-FOR-SOL: records(defense) D6-C0 remaining-rail rebaseline + architecture freeze",
+      "merged_at": "2026-08-28T05:44:47Z"
+    },
+    {
+      "number": 6587,
+      "title": "fix(china): heal stale A-share OHLC tails with guarded Tencent fallback",
+      "merged_at": "2026-08-28T18:14:23Z"
+    },
+    {
+      "number": 6584,
+      "title": "records(agentos): reconcile C1 native production gate",
+      "merged_at": "2026-08-28T18:14:31Z"
+    },
+    {
+      "number": 6583,
+      "title": "records(market-memory): MM-G0 August-25 W2C M0D gate adjudication \u2014 ABSTAINED",
+      "merged_at": "2026-08-28T02:08:03Z"
+    },
+    {
+      "number": 6582,
+      "title": "records(eval-os): freeze recovered Evaluation OS architecture and current truth",
+      "merged_at": "2026-08-28T22:18:33Z"
+    },
+    {
+      "number": 6580,
+      "title": "guard(gh-quota): flag a redundant CI status re-read (shape 7)",
+      "merged_at": "2026-08-28T01:32:42Z"
+    },
+    {
+      "number": 6579,
+      "title": "design(tp-0): theme-parity governance \u2014 forward-only ratchet, runtime-style fence, dual-theme evidence",
+      "merged_at": "2026-08-28T07:43:53Z"
+    },
+    {
+      "number": 6577,
+      "title": "ci: add non-authoritative pack execution timing (#6351)",
+      "merged_at": "2026-08-28T05:37:18Z"
+    },
+    {
+      "number": 6576,
+      "title": "plan(oa1t): measured ThetaData trade+NBBO microstructure",
+      "merged_at": "2026-08-28T18:14:51Z"
+    },
+    {
+      "number": 6575,
+      "title": "records(prophet-live): tighten D12 natural proof after fresh-empty production failure",
+      "merged_at": "2026-08-28T18:14:41Z"
+    },
+    {
+      "number": 6574,
+      "title": "feat(ops): add bounded M1 consumer census (#6432)",
+      "merged_at": "2026-08-28T16:16:24Z"
+    },
+    {
+      "number": 6573,
+      "title": "docs(oa0): freeze Options Alpha intelligence recovery architecture",
+      "merged_at": "2026-08-28T00:27:18Z"
+    },
+    {
+      "number": 6572,
+      "title": "dossier: bind the stock dossier to the Terminal quote plane, honestly",
+      "merged_at": "2026-08-28T02:34:58Z"
+    },
+    {
+      "number": 6571,
+      "title": "records(agentos): reconcile WP-1 orphan and manual pickup mode",
+      "merged_at": "2026-08-28T00:15:39Z"
+    },
+    {
+      "number": 6569,
+      "title": "fix(sentinel): breach fresh-but-empty prophet_live and ahead-of-calendar armed packs",
+      "merged_at": "2026-08-27T23:44:26Z"
+    },
+    {
+      "number": 6568,
+      "title": "design: Theme-Parity Ratchet + Presentation-Layer Convergence architecture",
+      "merged_at": "2026-08-28T00:12:56Z"
+    },
+    {
+      "number": 6566,
+      "title": "records(agentos): hand off Worker Presence WP-0 merge and WP-1 release",
+      "merged_at": "2026-08-27T22:20:25Z"
+    },
+    {
+      "number": 6565,
+      "title": "chore(prophet-live): remove temporary D12 red workflow",
+      "merged_at": "2026-08-27T22:20:16Z"
+    },
+    {
+      "number": 6564,
+      "title": "[COMMISSION][HOLD-FOR-SOL] Project Recovery R8-B2 semantic program registry source",
+      "merged_at": "2026-08-29T03:46:03Z"
+    },
+    {
+      "number": 6563,
+      "title": "fix: harden B1 natural acceptance inputs",
+      "merged_at": "2026-08-27T20:48:54Z"
+    },
+    {
+      "number": 6562,
+      "title": "fix(prophet-b1): numpy-dressed rows must not crash the episode intake's receipt hash",
+      "merged_at": "2026-08-27T19:45:49Z"
+    },
+    {
+      "number": 6561,
+      "title": "ci: bound trusted hosted planner materialization (#6351)",
+      "merged_at": "2026-08-27T15:42:27Z"
+    },
+    {
+      "number": 6560,
+      "title": "docs(grey-deer): record GD-3 production acceptance",
+      "merged_at": "2026-08-27T17:13:02Z"
+    },
+    {
+      "number": 6559,
+      "title": "fix(ci): bind reusable runtime workflow ref to resolved main",
+      "merged_at": "2026-08-27T13:54:10Z"
+    },
+    {
+      "number": 6557,
+      "title": "records(v38): Sol final HK+Canada regional acceptance",
+      "merged_at": "2026-08-27T20:42:39Z"
+    },
+    {
+      "number": 6556,
+      "title": "records(agentos): require ASD-A2 A2-0 admission revalidation",
+      "merged_at": "2026-08-27T21:21:51Z"
+    },
+    {
+      "number": 6555,
+      "title": "HOLD-FOR-SOL: [RECORDS] TFG-1 v1 gold falsifier + R2 amendment",
+      "merged_at": "2026-08-28T03:28:11Z"
+    },
+    {
+      "number": 6554,
+      "title": "fix(prophet-live): quarantine impossible pack tips before gating",
+      "merged_at": "2026-08-27T16:07:38Z"
+    },
+    {
+      "number": 6553,
+      "title": "HOLD-FOR-SOL: records(market-os): reconcile K2-C proof + receiver truth",
+      "merged_at": "2026-08-27T14:21:46Z"
+    },
+    {
+      "number": 6551,
+      "title": "records(agentos): hand off C1 merge and native production gate",
+      "merged_at": "2026-08-27T11:18:18Z"
+    },
+    {
+      "number": 6550,
+      "title": "records(v38-canada): Canada V3.8 PROVEN_LIVE acceptance + regional closeout",
+      "merged_at": "2026-08-27T11:45:32Z"
+    },
+    {
+      "number": 6549,
+      "title": "monitor: grade site/premiumdata/us_stocks.json \u2014 the entitled US board payload",
+      "merged_at": "2026-08-27T10:32:16Z"
+    },
+    {
+      "number": 6548,
+      "title": "ci: wire tests/test_dashboard_template_render.py into CI + heal its one red",
+      "merged_at": "2026-08-27T10:28:28Z"
+    },
+    {
+      "number": 6547,
+      "title": "records(k2c): production owner-read proof receipts (\u00a77)",
+      "merged_at": "2026-08-27T10:59:02Z"
+    },
+    {
+      "number": 6546,
+      "title": "[COMMISSION][HOLD-FOR-SOL] Project Recovery R8-B Agent OS typed waits",
+      "merged_at": "2026-08-28T21:21:50Z"
+    },
+    {
+      "number": 6545,
+      "title": "canada(v38-r2): What to Act On Now at rest; owner-only ranks; Leadership & Rotation",
+      "merged_at": "2026-08-27T10:11:30Z"
+    },
+    {
+      "number": 6544,
+      "title": "design(cn-board): make the CN board state its own freshness in plain words",
+      "merged_at": "2026-08-27T09:51:31Z"
+    },
+    {
+      "number": 6543,
+      "title": "HOLD-FOR-SOL: records(ric): recover Rates & Inflation Command and freeze completion architecture",
+      "merged_at": "2026-08-28T03:02:15Z"
+    },
+    {
+      "number": 6542,
+      "title": "prophet-rescue: [DAY N] title escalation when a breach class outlives a day",
+      "merged_at": "2026-08-27T10:30:16Z"
+    },
+    {
+      "number": 6541,
+      "title": "records(v38-hk): HK V3.8 PROVEN_LIVE acceptance + carrier handoff",
+      "merged_at": "2026-08-27T09:37:16Z"
+    },
+    {
+      "number": 6540,
+      "title": "records(agentos): reconcile #agent-dispatch receiver evidence",
+      "merged_at": "2026-08-27T11:30:21Z"
+    },
+    {
+      "number": 6539,
+      "title": "records(agentos): reconcile hybrid Executive workforce source law",
+      "merged_at": "2026-08-27T18:07:20Z"
+    },
+    {
+      "number": 6537,
+      "title": "records(market-os): repair post-#6504 reconciliation truth",
+      "merged_at": "2026-08-27T10:02:04Z"
+    },
+    {
+      "number": 6536,
+      "title": "heal(agentos): schema-lawful Breathing forensic-acceptance record (main ci-pack-9 red)",
+      "merged_at": "2026-08-27T08:10:59Z"
+    },
+    {
+      "number": 6535,
+      "title": "records(prophet-us): August availability ledger + two-tier backfill ruling + takeover handoff",
+      "merged_at": "2026-08-27T16:54:09Z"
+    },
+    {
+      "number": 6534,
+      "title": "prophet: PR-1 permanence net \u2014 extend the three existing watchdogs + a new post-publish acceptance alarm",
+      "merged_at": "2026-08-27T18:58:50Z"
+    },
+    {
+      "number": 6533,
+      "title": "k2c: institutional 13F owner-read adapter pilot (K2-B owner-row basis + proof lane)",
+      "merged_at": "2026-08-27T08:54:36Z"
+    },
+    {
+      "number": 6532,
+      "title": "design(us-board): make the board state its own freshness in plain words",
+      "merged_at": "2026-08-27T17:34:15Z"
+    },
+    {
+      "number": 6531,
+      "title": "records(breathing): reconcile post-Aug17 acceptance ruler and W-L2",
+      "merged_at": "2026-08-27T06:25:58Z"
+    },
+    {
+      "number": 6530,
+      "title": "records(deepvue): W2-A closeout \u2014 receipt, wave done, handoff",
+      "merged_at": "2026-08-27T07:04:48Z"
+    },
+    {
+      "number": 6529,
+      "title": "records(stock-identity): freeze W3-to-final program and Fable commission",
+      "merged_at": "2026-08-28T12:49:26Z"
+    },
+    {
+      "number": 6527,
+      "title": "fix(landing): the browser was dark-moding a page we never gave a dark mode",
+      "merged_at": "2026-08-27T06:48:01Z"
+    },
+    {
+      "number": 6525,
+      "title": "records(market-os): F00 pickup and carrier-landing handoff",
+      "merged_at": "2026-08-27T06:34:37Z"
+    },
+    {
+      "number": 6524,
+      "title": "records(prophet-live): mature force-majeure evidence closeout",
+      "merged_at": "2026-08-27T06:41:00Z"
+    },
+    {
+      "number": 6523,
+      "title": "fix(china_stocks): drop stitched resumption bars; re-heal 002155.SZ suspension window",
+      "merged_at": "2026-08-27T09:50:01Z"
+    },
+    {
+      "number": 6522,
+      "title": "records(gmi): finish-and-fold Theme Graph into autonomous F04 completion",
+      "merged_at": "2026-08-28T14:44:18Z"
+    },
+    {
+      "number": 6521,
+      "title": "[RESEARCH][HOLD-FOR-SOL] TFG-0 transcript format generalization",
+      "merged_at": "2026-08-27T11:40:51Z"
+    },
+    {
+      "number": 6520,
+      "title": "agentos(market-os): sync workstream after A1B production acceptance",
+      "merged_at": "2026-08-27T06:01:23Z"
+    },
+    {
+      "number": 6518,
+      "title": "ci: extract 3 largest engine run bodies to scripts/ci \u2014 daily.yml 512KB-cap headroom diet",
+      "merged_at": "2026-08-27T06:20:59Z"
+    },
+    {
+      "number": 6517,
+      "title": "fix(13f-census): recover filing documents omitted from SEC index.json via the SGML header manifest",
+      "merged_at": "2026-08-27T05:51:48Z"
+    },
+    {
+      "number": 6516,
+      "title": "records(grey-deer): GD-3 acceptance handoff for a computer-access session",
+      "merged_at": "2026-08-27T05:50:58Z"
+    },
+    {
+      "number": 6515,
+      "title": "hk(v38-r1): What to Act On Now at rest; Leadership & Rotation separated from action",
+      "merged_at": "2026-08-27T06:04:56Z"
+    },
+    {
+      "number": 6513,
+      "title": "cn-limit: stk_limit publishes legal bands without republishing the anchor",
+      "merged_at": "2026-08-27T05:38:07Z"
+    },
+    {
+      "number": 6512,
+      "title": "docs: sequence CI and private-readiness modernization",
+      "merged_at": "2026-08-27T05:27:16Z"
+    },
+    {
+      "number": 6511,
+      "title": "records(agentos): reconcile MAS-112 live scope mismatch",
+      "merged_at": "2026-08-27T06:13:55Z"
+    },
+    {
+      "number": 6509,
+      "title": "records(agentos): reconcile Autonomy V1 dispatch and Capacity Fabric continuation",
+      "merged_at": "2026-08-27T05:47:06Z"
+    },
+    {
+      "number": 6508,
+      "title": "records(market-os): accept A1B in production",
+      "merged_at": "2026-08-27T05:26:48Z"
+    },
+    {
+      "number": 6507,
+      "title": "fix(options-source): ThetaData is canonical \u2014 stop calling the retired Polygon estate an outage",
+      "merged_at": "2026-08-27T05:07:56Z"
+    },
+    {
+      "number": 6506,
+      "title": "shadow-book: percentile field is a true cross-sectional pct rank (era-stamped, no restatement)",
+      "merged_at": "2026-08-27T05:30:59Z"
+    },
+    {
+      "number": 6505,
+      "title": "ci: route trusted PR packs through main executor",
+      "merged_at": "2026-08-27T12:51:32Z"
+    },
+    {
+      "number": 6504,
+      "title": "records(market-os): complete MarketOntology parity + parallel Fable COO fanout",
+      "merged_at": "2026-08-27T06:03:25Z"
+    },
+    {
+      "number": 6503,
+      "title": "fix(cortex): repair the five hypothesis-evaluator wiring defects (experiments audit \u00a73 W1\u2013W6)",
+      "merged_at": "2026-08-27T05:33:41Z"
+    },
+    {
+      "number": 6502,
+      "title": "cn-limit: name-history source authority (Sol RETURN-GATE 10B)",
+      "merged_at": "2026-08-27T04:25:20Z"
+    },
+    {
+      "number": 6501,
+      "title": "fix(polygon-gex): a zero-capture must ALARM, not just file a receipt",
+      "merged_at": "2026-08-27T04:06:09Z"
+    },
+    {
+      "number": 6500,
+      "title": "fix(aibrief): the worker that writes the brief now writes its \u4e2d\u6587 too",
+      "merged_at": "2026-08-27T04:07:52Z"
+    },
+    {
+      "number": 6499,
+      "title": "shadow-book: wire nightly maturation, overlap-true HAC lags, leak-free Clark-West (experiments audit \u00a78.4+13)",
+      "merged_at": "2026-08-27T05:14:59Z"
+    },
+    {
+      "number": 6498,
+      "title": "records(alpha): commission K2-C and K3-D bounded waves",
+      "merged_at": "2026-08-27T04:11:26Z"
+    },
+    {
+      "number": 6497,
+      "title": "HOLD-FOR-SOL: E3-C GOOGL generalization REFUSED on source format (records + regression, no runtime change)",
+      "merged_at": "2026-08-27T09:21:36Z"
+    },
+    {
+      "number": 6496,
+      "title": "ci: make main-owned trusted executor call-capable (P3B-A #6351)",
+      "merged_at": "2026-08-27T03:42:13Z"
+    },
+    {
+      "number": 6494,
+      "title": "cn-limit: treat a non-positive stk_limit price as absent, fail-closed",
+      "merged_at": "2026-08-27T03:14:57Z"
+    },
+    {
+      "number": 6493,
+      "title": "perf(admin-analytics): stop every panel paying a 15.9M-row nested loop; fix the Visitors 524",
+      "merged_at": "2026-08-27T01:40:38Z"
+    },
+    {
+      "number": 6492,
+      "title": "records(e3c): freeze GOOGL Q2 source-completeness selection",
+      "merged_at": "2026-08-27T01:27:55Z"
+    },
+    {
+      "number": 6491,
+      "title": "records(alpha): close K3-E merge and reconcile next actions",
+      "merged_at": "2026-08-27T01:22:59Z"
+    },
+    {
+      "number": 6490,
+      "title": "registry: 2026-08-26 experiments audit \u2014 all 72 ready results tested and adjudicated",
+      "merged_at": "2026-08-27T01:26:31Z"
+    },
+    {
+      "number": 6489,
+      "title": "records(prophet-live): backfill executed \u2014 correct the do_not_redo that was wrong",
+      "merged_at": "2026-08-27T01:18:22Z"
+    },
+    {
+      "number": 6488,
+      "title": "fix(aibrief): route the AI Daily Brief through the provider ladder (Codex \u2192 Claude \u2192 DeepSeek)",
+      "merged_at": "2026-08-27T01:56:23Z"
+    },
+    {
+      "number": 6487,
+      "title": "CI P3A-R: freeze main-owned trusted executor control (#6351)",
+      "merged_at": "2026-08-27T01:41:37Z"
+    },
+    {
+      "number": 6486,
+      "title": "cn-limit: historical PIT is source-union, not current-snapshot intersection",
+      "merged_at": "2026-08-27T01:36:12Z"
+    },
+    {
+      "number": 6485,
+      "title": "records(defense): Sol accepts D6-B1 / park at D6-C boundary",
+      "merged_at": "2026-08-27T16:35:29Z"
+    },
+    {
+      "number": 6484,
+      "title": "feat(prophet-live): recover and absorb the 598 events the outage never published",
+      "merged_at": "2026-08-27T00:45:50Z"
+    },
+    {
+      "number": 6483,
+      "title": "records(prophet-live): US Prophet Live is PROVEN_LIVE \u2014 incident closeout",
+      "merged_at": "2026-08-26T15:34:33Z"
+    },
+    {
+      "number": 6482,
+      "title": "fix(prophet-live): stamp an owner on the artifact the dead-man grades",
+      "merged_at": "2026-08-26T15:14:35Z"
+    },
+    {
+      "number": 6481,
+      "title": "ci: add inert main-defined trusted executor (P3A #6351)",
+      "merged_at": "2026-08-26T18:05:30Z"
+    },
+    {
+      "number": 6480,
+      "title": "records(defense): D6-B1 FMS vertical closing handoff + WS reconcile",
+      "merged_at": "2026-08-26T16:10:18Z"
+    },
+    {
+      "number": 6479,
+      "title": "fix(ci): compare canary receipts without repo checkout",
+      "merged_at": "2026-08-26T11:42:08Z"
+    },
+    {
+      "number": 6478,
+      "title": "fms(\u00a711c): State staged replay in CI + country precedence fall-through (D6-B1 production amendments)",
+      "merged_at": "2026-08-26T10:58:50Z"
+    },
+    {
+      "number": 6477,
+      "title": "records(agentos): mint the workflow-definition pinning landmine",
+      "merged_at": "2026-08-26T09:52:46Z"
+    },
+    {
+      "number": 6476,
+      "title": "cn-limit: zero-date sentinel fix + pit_universe witness gate (DEP-EXACT)",
+      "merged_at": "2026-08-26T09:36:05Z"
+    },
+    {
+      "number": 6475,
+      "title": "agentos: next_date's three producers, the ingest script-mode landmine, and the cross-vendor census gap",
+      "merged_at": "2026-08-26T09:22:17Z"
+    },
+    {
+      "number": 6474,
+      "title": "agentos: record why a cold Terminal chart loaded the wrong timeframe",
+      "merged_at": "2026-08-26T09:55:20Z"
+    },
+    {
+      "number": 6473,
+      "title": "feat(deepvue): W2-A workspace_layout.v1 \u2014 contract freeze, validator, golden migration vectors",
+      "merged_at": "2026-08-26T11:56:50Z"
+    },
+    {
+      "number": 6472,
+      "title": "agentos: Market OS B1A PROVEN_LIVE from the natural post-merge nightly",
+      "merged_at": "2026-08-26T09:27:10Z"
+    },
+    {
+      "number": 6471,
+      "title": "records(k3e): close out both mutation-gate repairs ahead of cursor wrap",
+      "merged_at": "2026-08-26T10:01:54Z"
+    },
+    {
+      "number": 6470,
+      "title": "fix(prophet-live): close the force-majeure gaps #6464 left, and heal main",
+      "merged_at": "2026-08-26T10:58:01Z"
+    },
+    {
+      "number": 6469,
+      "title": "records(k3e): independent SRC-A1 C1\u2192C2 audit concurrence + cryptographic run binding",
+      "merged_at": "2026-08-26T09:10:38Z"
+    },
+    {
+      "number": 6468,
+      "title": "fix(geo-enrich): classify a rejected Management API credential; stop the false green",
+      "merged_at": "2026-08-26T09:55:17Z"
+    },
+    {
+      "number": 6467,
+      "title": "ci: derive canary base from exact merge tree",
+      "merged_at": "2026-08-26T10:13:30Z"
+    },
+    {
+      "number": 6466,
+      "title": "fix(ci): stop keying daily-engine retry identity off a templated run-name",
+      "merged_at": "2026-08-26T08:56:53Z"
+    },
+    {
+      "number": 6465,
+      "title": "records(agentos): canonize Personal-Pro native-write P0",
+      "merged_at": "2026-08-26T16:10:06Z"
+    },
+    {
+      "number": 6464,
+      "title": "fix(prophet-live): make a non-publishing US live lane impossible to hide",
+      "merged_at": "2026-08-26T09:36:58Z"
+    },
+    {
+      "number": 6463,
+      "title": "Fix Hunan Gold suspension placeholders",
+      "merged_at": "2026-08-26T08:27:16Z"
+    },
+    {
+      "number": 6462,
+      "title": "docs(agentos): close E3-B as PROVEN_LIVE after authenticated PASS",
+      "merged_at": "2026-08-27T00:04:52Z"
+    },
+    {
+      "number": 6461,
+      "title": "fix(revisions): capture the provider's fiscal period end and stop reading a rollover as a revision",
+      "merged_at": "2026-08-26T08:43:06Z"
+    },
+    {
+      "number": 6460,
+      "title": "records(agentos): close MAS-112 Keychain helper merge gate",
+      "merged_at": "2026-08-26T08:17:58Z"
+    },
+    {
+      "number": 6459,
+      "title": "plan: M1 Consumer Visibility Wave 1",
+      "merged_at": "2026-08-27T23:28:54Z"
+    },
+    {
+      "number": 6458,
+      "title": "records(k3e): SRC-A1P audit outcome \u2014 FAIL, no promotion, plus corrected run attribution",
+      "merged_at": "2026-08-26T08:21:54Z"
+    },
+    {
+      "number": 6457,
+      "title": "design: harden M1 Macro consumer recovery and migration",
+      "merged_at": "2026-08-27T22:57:21Z"
+    },
+    {
+      "number": 6456,
+      "title": "Sol V3.8 freeze \u2014 restore Action, separate Leadership",
+      "merged_at": "2026-08-26T20:02:05Z"
+    },
+    {
+      "number": 6455,
+      "title": "cn-limit: freeze the mainland session epoch at 1992-01-01 (DEP-EXACT)",
+      "merged_at": "2026-08-26T08:32:54Z"
+    },
+    {
+      "number": 6454,
+      "title": "d6b1: FR denominator shares the population-window predicate (acquire-lane heal)",
+      "merged_at": "2026-08-26T09:08:56Z"
+    },
+    {
+      "number": 6452,
+      "title": "fix(revisions): type an empty provider consensus instead of recording it as 0",
+      "merged_at": "2026-08-26T07:29:32Z"
+    },
+    {
+      "number": 6451,
+      "title": "fix(ci): close E3-B exclusive import ownership",
+      "merged_at": "2026-08-26T07:26:39Z"
+    },
+    {
+      "number": 6450,
+      "title": "records(agentos): W1-C truth repair \u2014 WS-DEEPVUE objective no longer says W1-C unstarted",
+      "merged_at": "2026-08-26T07:16:36Z"
+    },
+    {
+      "number": 6449,
+      "title": "test(ci): make P0R execution-profile refusal host-independent",
+      "merged_at": "2026-08-26T06:51:27Z"
+    },
+    {
+      "number": 6448,
+      "title": "records(cn-limit): SZSE calendar coverage gate \u2014 bounded ruling request for Sol",
+      "merged_at": "2026-08-26T05:44:45Z"
+    },
+    {
+      "number": 6447,
+      "title": "D6-B1: coverage-aware FMS vertical \u2014 official-union population, government_fms_case.v1, ninth fms mode",
+      "merged_at": "2026-08-26T06:35:53Z"
+    },
+    {
+      "number": 6446,
+      "title": "fix(cn-limit): write each trade_cal unit to its own year partition",
+      "merged_at": "2026-08-26T05:03:31Z"
+    },
+    {
+      "number": 6445,
+      "title": "records(v37): HK V3.7 PROVEN_LIVE \u2014 Canada\u2192HK regional rollout complete",
+      "merged_at": "2026-08-26T04:39:40Z"
+    },
+    {
+      "number": 6444,
+      "title": "agentos: A1B merged + deployed \u2014 Sol PASS, anonymous vertical proven, authenticated acceptance gated on PRODUCTION_WRITE_AUTH_REQUIRED",
+      "merged_at": "2026-08-26T16:09:55Z"
+    },
+    {
+      "number": 6443,
+      "title": "HOLD-FOR-SOL: record E3-B built-not-proven production gate",
+      "merged_at": "2026-08-26T06:50:37Z"
+    },
+    {
+      "number": 6442,
+      "title": "FIF-3A4R Sol acceptance records after PR #6382 landing",
+      "merged_at": "2026-08-26T03:17:22Z"
+    },
+    {
+      "number": 6440,
+      "title": "records(exec): close MAS-112 verifier repair and C1 code gap",
+      "merged_at": "2026-08-26T02:28:42Z"
+    },
+    {
+      "number": 6439,
+      "title": "AD-1T1 PROVEN_LIVE: production-proof records (workstream + handoff)",
+      "merged_at": "2026-08-26T02:22:42Z"
+    },
+    {
+      "number": 6438,
+      "title": "fix(cn-limit): sweep remaining fatal canonical_identity sites \u2014 classify vendor legacy codes across fund_basic/bse_mapping",
+      "merged_at": "2026-08-26T02:09:29Z"
+    },
+    {
+      "number": 6436,
+      "title": "records(deepvue): W1-C durable closeout \u2014 receipt, workstream, handoff, discovery",
+      "merged_at": "2026-08-26T02:20:36Z"
+    },
+    {
+      "number": 6435,
+      "title": "records(agentos): close CF1 and release CF2-F",
+      "merged_at": "2026-08-26T01:55:20Z"
+    },
+    {
+      "number": 6433,
+      "title": "feat(hk): HK Stock Dashboard V3.7 follower composer",
+      "merged_at": "2026-08-26T02:23:53Z"
+    },
+    {
+      "number": 6431,
+      "title": "fix(cn-limit): classify non-canonical stock_basic vendor codes \u2014 three-way split instead of fatal reference crash",
+      "merged_at": "2026-08-26T01:22:15Z"
+    },
+    {
+      "number": 6430,
+      "title": "fix(brain): context-receipt dedupe must key on request_id, not revision alone (W1-C)",
+      "merged_at": "2026-08-26T01:11:19Z"
+    },
+    {
+      "number": 6429,
+      "title": "records(v37): Canada V3.7 PROVEN_LIVE + supersession law + Sol V3.7 packets",
+      "merged_at": "2026-08-26T01:23:44Z"
+    },
+    {
+      "number": 6428,
+      "title": "fix(brain): heal widget-down outage \u2014 backticks inside the CSS template literal (W1-C)",
+      "merged_at": "2026-08-26T00:12:09Z"
+    },
+    {
+      "number": 6427,
+      "title": "ci(canary): P0R diagnostic bridge \u2014 reconcile self-hosted canary to the current CI semantic contract (#6351)",
+      "merged_at": "2026-08-25T23:29:15Z"
+    },
+    {
+      "number": 6425,
+      "title": "agentos: repair D6-B0 Sol handoff schema",
+      "merged_at": "2026-08-25T23:09:37Z"
+    },
+    {
+      "number": 6424,
+      "title": "Capital Structure W2D SEC discovery clock",
+      "merged_at": "2026-08-26T07:45:22Z"
+    },
+    {
+      "number": 6422,
+      "title": "agentos: reconcile current S0-R1 fixture principal state",
+      "merged_at": "2026-08-26T00:41:32Z"
+    },
+    {
+      "number": 6421,
+      "title": "feat(brain): W1-C visible context compiler + effective-context receipt (ai_context_envelope.v1)",
+      "merged_at": "2026-08-25T23:52:19Z"
+    },
+    {
+      "number": 6420,
+      "title": "records(defense): D6-B claim + U4 sweep finding \u2014 implementation wave held for Sol (26-23 absent_from_both)",
+      "merged_at": "2026-08-26T00:26:56Z"
+    },
+    {
+      "number": 6419,
+      "title": "agentos: prevent ambiguous global and local identifiers",
+      "merged_at": "2026-08-26T00:58:40Z"
+    },
+    {
+      "number": 6418,
+      "title": "records: M1 publisher runtime recovered and #6363 commissioned",
+      "merged_at": "2026-08-26T01:09:22Z"
+    },
+    {
+      "number": 6417,
+      "title": "contracts(k3e): Opportunity Evidence Vector v1 contract freeze \u2014 SOL ACCEPTED",
+      "merged_at": "2026-08-27T00:47:35Z"
+    },
+    {
+      "number": 6416,
+      "title": "Canada Stock Dashboard V3.7 \u2014 restore Track Record, owner-native lanes, group-action band",
+      "merged_at": "2026-08-26T00:11:22Z"
+    },
+    {
+      "number": 6415,
+      "title": "Capital Structure W2C exact-dependency runtime",
+      "merged_at": "2026-08-26T06:42:36Z"
+    },
+    {
+      "number": 6414,
+      "title": "records(cn-limit): delegate autonomous remainder program to Fable COO",
+      "merged_at": "2026-08-25T22:08:13Z"
+    },
+    {
+      "number": 6413,
+      "title": "records(k3e): EVAL-0 activation receipt, capability ledger refresh, COO takeover handoff",
+      "merged_at": "2026-08-25T22:21:37Z"
+    },
+    {
+      "number": 6412,
+      "title": "HOLD-FOR-SOL: records(xpv2): close the organizational layer onto merged #6337 \u2014 C2' continuation-delta repair",
+      "merged_at": "2026-08-26T02:22:50Z"
+    },
+    {
+      "number": 6411,
+      "title": "records(agentos): close MAS-28 W1 implementation wave",
+      "merged_at": "2026-08-26T00:16:08Z"
+    },
+    {
+      "number": 6410,
+      "title": "records(v36): Canada V3.6.1 PROVEN_LIVE receipt (entitled production matrix 2026-08-25)",
+      "merged_at": "2026-08-25T20:48:20Z"
+    },
+    {
+      "number": 6409,
+      "title": "fix(canada): bounded retry in the V3.6 composer loader (transient entitled-fetch failures)",
+      "merged_at": "2026-08-25T22:20:31Z"
+    },
+    {
+      "number": 6407,
+      "title": "agentos: B1A merge handoff amendment (Sol acceptance + production receipts)",
+      "merged_at": "2026-08-25T19:33:42Z"
+    },
+    {
+      "number": 6406,
+      "title": "fix(canada): make V3.6 composer [hidden] hiding actually hide (Top Picks / filter / view switch)",
+      "merged_at": "2026-08-25T19:38:21Z"
+    },
+    {
+      "number": 6405,
+      "title": "feat(prophet): build canonical candidate episode plane",
+      "merged_at": "2026-08-26T00:13:07Z"
+    },
+    {
+      "number": 6404,
+      "title": "D6-B0: FMS congressional-notification source migration + architecture freeze (records-only)",
+      "merged_at": "2026-08-25T18:10:56Z"
+    },
+    {
+      "number": 6403,
+      "title": "records(ccr): close P0A durable state and resume current P0B gate",
+      "merged_at": "2026-08-25T18:39:56Z"
+    },
+    {
+      "number": 6402,
+      "title": "records(v36): DEC \u2014 Sol ratifies Canada\u2192HK pilot, decouples US, fixes cross-market hierarchy + US freeze gates",
+      "merged_at": "2026-08-25T16:03:38Z"
+    },
+    {
+      "number": 6401,
+      "title": "Agent OS: bind crypto P0B to current Personal-Pro gates",
+      "merged_at": "2026-08-25T20:06:26Z"
+    },
+    {
+      "number": 6399,
+      "title": "docs(prophet): accept A1 natural settlement",
+      "merged_at": "2026-08-25T08:56:15Z"
+    },
+    {
+      "number": 6398,
+      "title": "records(v36): Canada V3.6.1 acceptance receipts + regional rollout reconciliation",
+      "merged_at": "2026-08-25T03:23:45Z"
+    },
+    {
+      "number": 6397,
+      "title": "Agent OS: record crypto P0B runtime admission block",
+      "merged_at": "2026-08-25T11:16:31Z"
+    },
+    {
+      "number": 6395,
+      "title": "Agent OS: close crypto P0A and commission P0B",
+      "merged_at": "2026-08-25T02:45:06Z"
+    },
+    {
+      "number": 6394,
+      "title": "Animate The Price of Duration figures",
+      "merged_at": "2026-08-25T02:54:02Z"
+    },
+    {
+      "number": 6393,
+      "title": "records(biocatalyst): park core product between commissioned waves",
+      "merged_at": "2026-08-25T19:55:49Z"
+    },
+    {
+      "number": 6392,
+      "title": "records(eval-os): reconcile completed T1 registry lifecycle",
+      "merged_at": "2026-08-25T19:55:11Z"
+    },
+    {
+      "number": 6391,
+      "title": "FF-1 acceptance-time representational equivalence",
+      "merged_at": "2026-08-28T20:24:22Z"
+    },
+    {
+      "number": 6390,
+      "title": "fix(live): make China Prophet A-share quotes genuinely live",
+      "merged_at": "2026-08-29T01:32:36Z"
+    },
+    {
+      "number": 6388,
+      "title": "records(xpv2): reconcile R3B/R3B.1 and active R3B.2 state",
+      "merged_at": "2026-08-25T02:07:04Z"
+    },
+    {
+      "number": 6386,
+      "title": "heal(ci): board-shadow session date is derived, not a literal that ages out",
+      "merged_at": "2026-08-25T01:41:44Z"
+    },
+    {
+      "number": 6385,
+      "title": "agentos(defense-v3): D6-A production proof complete \u2014 done / Sol acceptance pending",
+      "merged_at": "2026-08-25T01:50:29Z"
+    },
+    {
+      "number": 6384,
+      "title": "fix(reports): rebuild Price of Duration editorial V2",
+      "merged_at": "2026-08-25T00:45:09Z"
+    },
+    {
+      "number": 6383,
+      "title": "MAS-28 W1 repair: 5.10 pre-cutover legacy, integer parity, 0-3-space label ceiling",
+      "merged_at": "2026-08-25T19:52:45Z"
+    },
+    {
+      "number": 6382,
+      "title": "FIF-3A4R cross-filing fact lineage protocol + AAPL calibration",
+      "merged_at": "2026-08-26T02:27:35Z"
+    },
+    {
+      "number": 6380,
+      "title": "records(ccr): release ASD-A2 behind local collision preflight",
+      "merged_at": "2026-08-26T08:25:21Z"
+    },
+    {
+      "number": 6378,
+      "title": "ci(dod-budget): dispatch-only official P-1/R-1 acquisition lane (D6-A)",
+      "merged_at": "2026-08-24T16:41:58Z"
+    },
+    {
+      "number": 6377,
+      "title": "defense(d6a): DoD P-1/R-1 budget rail activation \u2014 official FY2027 source, immutable acquisition, production extraction",
+      "merged_at": "2026-08-24T23:10:48Z"
+    },
+    {
+      "number": 6376,
+      "title": "HOLD-FOR-SOL: E3-B AAPL canonical qa_exchange publication",
+      "merged_at": "2026-08-26T02:29:28Z"
+    },
+    {
+      "number": 6375,
+      "title": "Price of Duration Editorial V2 \u2014 Wave 1 composition shell",
+      "merged_at": "2026-08-24T22:16:25Z"
+    },
+    {
+      "number": 6373,
+      "title": "Close out DeepVue W0-B and W1-B",
+      "merged_at": "2026-08-24T14:17:24Z"
+    },
+    {
+      "number": 6372,
+      "title": "Runner fleet: accept M1 soak and recover M2 pack pressure",
+      "merged_at": "2026-08-24T14:01:07Z"
+    },
+    {
+      "number": 6371,
+      "title": "HOLD-FOR-SOL \u2014 Market OS B1A: AAPL security_state.v1 golden product vertical",
+      "merged_at": "2026-08-25T16:56:39Z"
+    },
+    {
+      "number": 6370,
+      "title": "feat(alpha): freeze K2-B manager intent contract",
+      "merged_at": "2026-08-24T17:53:03Z"
+    },
+    {
+      "number": 6369,
+      "title": "records(ccr): preserve MAS-115 canary failure",
+      "merged_at": "2026-08-24T13:29:35Z"
+    },
+    {
+      "number": 6368,
+      "title": "Repair W1-B ISO currency receipt validation",
+      "merged_at": "2026-08-24T13:19:18Z"
+    },
+    {
+      "number": 6365,
+      "title": "docs(agentos): pin private CI readiness baseline",
+      "merged_at": "2026-08-24T12:35:55Z"
+    },
+    {
+      "number": 6364,
+      "title": "The Price of Duration research report",
+      "merged_at": "2026-08-24T13:05:40Z"
+    },
+    {
+      "number": 6363,
+      "title": "B1: harden M1 private publisher Git",
+      "merged_at": "2026-08-24T14:36:44Z"
+    },
+    {
+      "number": 6362,
+      "title": "records(china-alpha): delegate remainder program to Fable COO",
+      "merged_at": "2026-08-24T11:50:22Z"
+    },
+    {
+      "number": 6361,
+      "title": "FIF-3A3 acceptance records after PR #6352 landing",
+      "merged_at": "2026-08-24T11:15:09Z"
+    },
+    {
+      "number": 6360,
+      "title": "E3-A2 closeout: record squash SHA, keep E3-B locked",
+      "merged_at": "2026-08-24T10:34:52Z"
+    },
+    {
+      "number": 6359,
+      "title": "DeepVue W0-B + W1-B: instant native W1-A facts",
+      "merged_at": "2026-08-24T12:04:21Z"
+    },
+    {
+      "number": 6358,
+      "title": "AgentOS: close FF-1R corrective tranche A",
+      "merged_at": "2026-08-24T09:27:15Z"
+    },
+    {
+      "number": 6357,
+      "title": "fix(govrev): let BWXT candidate census grow",
+      "merged_at": "2026-08-24T10:35:21Z"
+    },
+    {
+      "number": 6356,
+      "title": "agentos: close accepted K1 Evidence Foundation wave",
+      "merged_at": "2026-08-24T09:50:24Z"
+    },
+    {
+      "number": 6355,
+      "title": "agentos(defense-v3): D5P correction \u2014 D5 = BUILT_NOT_PROVEN / BLOCKED_ON_ENTITLED_PRODUCTION_PROOF",
+      "merged_at": "2026-08-24T10:25:24Z"
+    },
+    {
+      "number": 6354,
+      "title": "fix(govrev): admit D5 program links in event contract",
+      "merged_at": "2026-08-24T08:21:42Z"
+    },
+    {
+      "number": 6353,
+      "title": "records(ccr): separate Sol identity from chat navigation",
+      "merged_at": "2026-08-24T06:49:35Z"
+    },
+    {
+      "number": 6352,
+      "title": "FIF-3A3 real AAPL occurrence ledger + governed query",
+      "merged_at": "2026-08-24T09:53:54Z"
+    },
+    {
+      "number": 6350,
+      "title": "fix(market-memory): optionalize tmpfs-hidden v1 InaccessiblePaths on experience-v2",
+      "merged_at": "2026-08-24T06:01:37Z"
+    },
+    {
+      "number": 6349,
+      "title": "agentos: close W2B natural production proof",
+      "merged_at": "2026-08-24T03:42:21Z"
+    },
+    {
+      "number": 6348,
+      "title": "B1: route Prophet marks through disposable runtime",
+      "merged_at": "2026-08-23T21:36:29Z"
+    },
+    {
+      "number": 6347,
+      "title": "B1: harden canonical Prophet Git reads",
+      "merged_at": "2026-08-23T20:46:45Z"
+    },
+    {
+      "number": 6345,
+      "title": "fix(mas28): reconcile R028 per-target identity",
+      "merged_at": "2026-08-23T19:30:44Z"
+    },
+    {
+      "number": 6344,
+      "title": "agentos(imce): A5C closure records \u2014 waves done, production proof + incident + residuals",
+      "merged_at": "2026-08-23T19:08:27Z"
+    },
+    {
+      "number": 6343,
+      "title": "imce(a5c): production incident heal \u2014 discovery backward-window bound + shared chain-walk",
+      "merged_at": "2026-08-23T18:14:46Z"
+    },
+    {
+      "number": 6342,
+      "title": "feat(revisions): accrue prospective expectation observations",
+      "merged_at": "2026-08-23T15:47:44Z"
+    },
+    {
+      "number": 6341,
+      "title": "research(k3e): preregister EVAL-0 model competition",
+      "merged_at": "2026-08-23T16:08:05Z"
+    },
+    {
+      "number": 6340,
+      "title": "records(ccr): close out accepted ASD A1 core",
+      "merged_at": "2026-08-23T15:06:39Z"
+    },
+    {
+      "number": 6339,
+      "title": "research: add VEND-0 institutional estimates bake-off",
+      "merged_at": "2026-08-23T15:17:17Z"
+    },
+    {
+      "number": 6338,
+      "title": "records(alpha-intel): freeze SRC-A1 source contract",
+      "merged_at": "2026-08-23T14:44:59Z"
+    },
+    {
+      "number": 6337,
+      "title": "XPV2-SC-R3B.2 \u2014 Sol APPROVE_WITH_CONDITIONS: frozen successor mastermind-xpv2-sector-r3b-2 approved (reference law only)",
+      "merged_at": "2026-08-25T02:56:54Z"
+    },
+    {
+      "number": 6335,
+      "title": "A1B: atomic Portfolio Fast Start Import",
+      "merged_at": "2026-08-26T02:18:29Z"
+    },
+    {
+      "number": 6334,
+      "title": "LANDED: Dislocation P0-S1F source precision falsification",
+      "merged_at": "2026-08-25T01:02:06Z"
+    },
+    {
+      "number": 6332,
+      "title": "docs(agentos): record .github PR-template case-collision phantom-dirt landmine",
+      "merged_at": "2026-08-23T14:30:40Z"
+    },
+    {
+      "number": 6330,
+      "title": "records(ccr): record accepted X1 and preserve Bridge-First",
+      "merged_at": "2026-08-24T15:14:13Z"
+    },
+    {
+      "number": 6329,
+      "title": "records(alpha-intel): freeze K3E-0 expectation-market-dynamics architecture",
+      "merged_at": "2026-08-23T14:00:31Z"
+    },
+    {
+      "number": 6328,
+      "title": "MAS-28 W1: report-only PR linkage validator",
+      "merged_at": "2026-08-24T18:07:14Z"
+    },
+    {
+      "number": 6327,
+      "title": "fix(canada): restore Prophet-first V3.6.1 hierarchy",
+      "merged_at": "2026-08-23T13:12:38Z"
+    },
+    {
+      "number": 6325,
+      "title": "records(market-os): Market Intelligence Productization packet + K1 double-dispatch receipt",
+      "merged_at": "2026-08-23T14:04:57Z"
+    },
+    {
+      "number": 6324,
+      "title": "FIF-3A2 acceptance records after PR #6302 landing",
+      "merged_at": "2026-08-23T12:30:40Z"
+    },
+    {
+      "number": 6323,
+      "title": "chore(agentos): record Canada stock V3.6 merge closeout",
+      "merged_at": "2026-08-23T12:30:45Z"
+    },
+    {
+      "number": 6322,
+      "title": "imce(a5c): prospective source-vintage integrity \u2014 manifest chain, discovery, two-clock law, shared reader",
+      "merged_at": "2026-08-23T16:37:11Z"
+    },
+    {
+      "number": 6321,
+      "title": "feat(intelligence-workspace): ship W1-A typed datapoint resolver",
+      "merged_at": "2026-08-23T12:55:41Z"
+    },
+    {
+      "number": 6320,
+      "title": "Prophet US 2026-08-14 PIT replay settlement",
+      "merged_at": "2026-08-24T12:32:45Z"
+    },
+    {
+      "number": 6319,
+      "title": "feat(evidence): freeze K1 Evidence Foundation v1",
+      "merged_at": "2026-08-24T08:25:04Z"
+    },
+    {
+      "number": 6318,
+      "title": "FF-1R immutable issuer-manifest transport repair",
+      "merged_at": "2026-08-23T14:00:44Z"
+    },
+    {
+      "number": 6317,
+      "title": "docs(agentos): freeze MAS-28 PR-linkage validator V1 contract",
+      "merged_at": "2026-08-23T12:47:37Z"
+    },
+    {
+      "number": 6316,
+      "title": "Cell B V2: freeze price-blind buyback source census",
+      "merged_at": "2026-08-24T22:05:04Z"
+    },
+    {
+      "number": 6315,
+      "title": "feat(canada): ship Stock Dashboard V3.6 composition",
+      "merged_at": "2026-08-23T11:45:12Z"
+    },
+    {
+      "number": 6314,
+      "title": "fix(worktrees): bind Warp carriers to conversations",
+      "merged_at": "2026-08-23T10:34:27Z"
+    },
+    {
+      "number": 6313,
+      "title": "xpv2-sc-r3b-1: Sol REVISE verdict (durable four-seat receipts) + status revise; R3B.2 commission",
+      "merged_at": "2026-08-23T10:17:36Z"
+    },
+    {
+      "number": 6312,
+      "title": "D5: Virginia-class Program Dossier \u2014 ontology, dossier read model, program_link, mode=programs (Sol-authorized)",
+      "merged_at": "2026-08-23T11:42:19Z"
+    },
+    {
+      "number": 6311,
+      "title": "docs(theta-ops): m1 theta-ops-wt repointed to canonical origin \u2014 runbook \u00a73a Step 0 update",
+      "merged_at": "2026-08-23T09:39:41Z"
+    },
+    {
+      "number": 6310,
+      "title": "records(market-os): accept A1A in production and advance gate to A1B",
+      "merged_at": "2026-08-23T10:43:51Z"
+    },
+    {
+      "number": 6309,
+      "title": "XPV2-SC-R3B.1: recover the missing final critic receipts (re-run, review-only)",
+      "merged_at": "2026-08-23T08:38:52Z"
+    },
+    {
+      "number": 6308,
+      "title": "imce(a5c): fail-closed correction detection pending source-revision history",
+      "merged_at": "2026-08-23T10:51:09Z"
+    },
+    {
+      "number": 6307,
+      "title": "imce(a5c): TOL backlog-sensitivity prior-year extraction (item 7); pin Sol equality ruling (item 8)",
+      "merged_at": "2026-08-23T09:48:38Z"
+    },
+    {
+      "number": 6306,
+      "title": "E3-A2 deterministic source-native Q&A skeleton",
+      "merged_at": "2026-08-24T09:37:22Z"
+    },
+    {
+      "number": 6304,
+      "title": "docs(agentos): record final A1A authenticated matrix",
+      "merged_at": "2026-08-23T07:49:54Z"
+    },
+    {
+      "number": 6305,
+      "title": "records(biocatalyst): close P1-1 production acceptance",
+      "merged_at": "2026-08-24T08:27:16Z"
+    },
+    {
+      "number": 6302,
+      "title": "FIF-3A2 AAPL FY2026 Q3 10-Q + canonical earnings-event link",
+      "merged_at": "2026-08-23T11:57:16Z"
+    },
+    {
+      "number": 6301,
+      "title": "AD-1T1 commissioning: durable state after Sol PASS merge + m1 lane transition",
+      "merged_at": "2026-08-23T07:44:23Z"
+    },
+    {
+      "number": 6300,
+      "title": "records(market-os): commission bounded RCTX-1 exact-source context vertical",
+      "merged_at": "2026-08-23T07:41:27Z"
+    },
+    {
+      "number": 6299,
+      "title": "records(ccr): preserve MAS-125 security stop and P0B canary boundary",
+      "merged_at": "2026-08-23T07:37:18Z"
+    },
+    {
+      "number": 6298,
+      "title": "records(china-p1r3a): closeout \u2014 Sol PASS, #6269 lineage, residual rulings",
+      "merged_at": "2026-08-23T07:31:08Z"
+    },
+    {
+      "number": 6297,
+      "title": "MAS-126 CF1: secret-free provider capacity v1",
+      "merged_at": "2026-08-26T01:10:26Z"
+    },
+    {
+      "number": 6295,
+      "title": "MAS-123: close out Cell G AgentOS handoff",
+      "merged_at": "2026-08-23T07:14:08Z"
+    },
+    {
+      "number": 6294,
+      "title": "P0A: unify BTC Vector decision authority",
+      "merged_at": "2026-08-24T09:02:31Z"
+    },
+    {
+      "number": 6293,
+      "title": "research(market-os): freeze Fiscal-derived Research OS architecture delta",
+      "merged_at": "2026-08-23T06:44:28Z"
+    },
+    {
+      "number": 6292,
+      "title": "records(ccr): close H0 persistent production adoption",
+      "merged_at": "2026-08-23T07:06:44Z"
+    },
+    {
+      "number": 6291,
+      "title": "E3-A post-merge Agent OS closeout \u2014 squash SHA d919637f",
+      "merged_at": "2026-08-23T06:29:17Z"
+    },
+    {
+      "number": 6290,
+      "title": "FIF-3A1 acceptance records after PR #6268 landing",
+      "merged_at": "2026-08-23T06:17:07Z"
+    },
+    {
+      "number": 6289,
+      "title": "prophet: close HK-DISCOVERY-SHADOW wave with production receipts (records only)",
+      "merged_at": "2026-08-23T06:22:09Z"
+    },
+    {
+      "number": 6288,
+      "title": "records(imce): fifth-gate closure \u2014 A5A merged+proven-live, A5B merged BUILT_NOT_PROVEN",
+      "merged_at": "2026-08-23T04:56:46Z"
+    },
+    {
+      "number": 6287,
+      "title": "Capital Structure W2B: 500-live capacity envelope",
+      "merged_at": "2026-08-23T06:56:37Z"
+    },
+    {
+      "number": 6286,
+      "title": "ci: contain ci-plan working tree (W3)",
+      "merged_at": "2026-08-25T22:36:54Z"
+    },
+    {
+      "number": 6285,
+      "title": "FF-1R: bounded July recovery engine",
+      "merged_at": "2026-08-23T07:38:34Z"
+    },
+    {
+      "number": 6284,
+      "title": "records(market-os): receipt semantic-v2 restoration probe",
+      "merged_at": "2026-08-23T03:30:42Z"
+    },
+    {
+      "number": 6283,
+      "title": "Recover massive_stock_day from unpublished-today 403 probe abort",
+      "merged_at": "2026-08-23T03:04:03Z"
+    },
+    {
+      "number": 6282,
+      "title": "records(cs-v2): close W2A natural production proof",
+      "merged_at": "2026-08-23T02:53:11Z"
+    },
+    {
+      "number": 6281,
+      "title": "imce(a5b): registered prospective forward capture",
+      "merged_at": "2026-08-23T04:27:34Z"
+    },
+    {
+      "number": 6280,
+      "title": "records(market-os): adopt A1A semantic-v2 restoration law",
+      "merged_at": "2026-08-23T00:59:00Z"
+    },
+    {
+      "number": 6279,
+      "title": "HOLD-FOR-SOL \u2014 XPV2-SC-R3B.1 Visual/Taste critic receipt: BLOCK on VTC1-001 (review-only)",
+      "merged_at": "2026-08-23T09:43:08Z"
+    },
+    {
+      "number": 6278,
+      "title": "records(ff): close FF-1P2R production proof",
+      "merged_at": "2026-08-23T00:57:51Z"
+    },
+    {
+      "number": 6277,
+      "title": "fix(biocatalyst): prevent Catalyst Radar desktop row shrink",
+      "merged_at": "2026-08-23T06:32:56Z"
+    },
+    {
+      "number": 6276,
+      "title": "MAS-123: freeze Cell G flagship VOI law + read-only report",
+      "merged_at": "2026-08-23T06:46:02Z"
+    },
+    {
+      "number": 6275,
+      "title": "research(prophet): freeze MAS-122 Cell F D5 evidence contract",
+      "merged_at": "2026-08-26T09:17:25Z"
+    },
+    {
+      "number": 6274,
+      "title": "records(ccr): project merged Active-Session Dialogue F0 into Agent OS",
+      "merged_at": "2026-08-23T02:25:53Z"
+    },
+    {
+      "number": 6273,
+      "title": "fix(stocks-hub): Pressure Watch rows keep the record, drop the dead anchor",
+      "merged_at": "2026-08-23T00:19:00Z"
+    },
+    {
+      "number": 6272,
+      "title": "docs(capacity): freeze Executive Capacity Fabric F0",
+      "merged_at": "2026-08-23T02:29:02Z"
+    },
+    {
+      "number": 6271,
+      "title": "records(biocatalyst): record P1-1 production blocker",
+      "merged_at": "2026-08-22T23:41:04Z"
+    },
+    {
+      "number": 6270,
+      "title": "imce(a5a): generalize event_workspace.v1 to DHI/PHM/KBH/TOL earnings results",
+      "merged_at": "2026-08-23T01:16:24Z"
+    },
+    {
+      "number": 6269,
+      "title": "fix(china-p1r3a): make the coverage exception durable BEFORE the filtered commit",
+      "merged_at": "2026-08-22T22:21:16Z"
+    },
+    {
+      "number": 6268,
+      "title": "FIF-3A1 AAPL as-reported 10-K statement trees",
+      "merged_at": "2026-08-23T05:43:51Z"
+    },
+    {
+      "number": 6267,
+      "title": "AD-1T1: full-universe incremental ThetaData T1 cadence [HOLD-FOR-SOL \u2014 do not merge]",
+      "merged_at": "2026-08-23T06:47:35Z"
+    },
+    {
+      "number": 6266,
+      "title": "w2c: decouple trusted context from the Options Context Audit",
+      "merged_at": "2026-08-22T22:04:54Z"
+    },
+    {
+      "number": 6265,
+      "title": "feat(worktrees): mint sparse Warp/Oz session trees",
+      "merged_at": "2026-08-23T00:14:38Z"
+    },
+    {
+      "number": 6263,
+      "title": "heal(agentos): admit 'sol' as a handoff author model (main-red repair)",
+      "merged_at": "2026-08-22T21:50:19Z"
+    },
+    {
+      "number": 6262,
+      "title": "fix(lens): focusin steals taps from controls nested in a tip wrapper (29 live instances)",
+      "merged_at": "2026-08-22T22:43:39Z"
+    },
+    {
+      "number": 6260,
+      "title": "agentos: accept runner-fleet W3 production proof",
+      "merged_at": "2026-08-22T21:16:40Z"
+    },
+    {
+      "number": 6258,
+      "title": "LANDED: Dislocation P0-A1R source-integrity repair",
+      "merged_at": "2026-08-23T09:06:35Z"
+    },
+    {
+      "number": 6257,
+      "title": "records(market-os): preserve A1A exact-restoration blocker",
+      "merged_at": "2026-08-22T23:26:48Z"
+    },
+    {
+      "number": 6256,
+      "title": "fix(earnings): make story catch-up scale with the delta, not the lifetime corpus",
+      "merged_at": "2026-08-22T21:53:50Z"
+    },
+    {
+      "number": 6255,
+      "title": "docs(agentos): a Terminal mount-effect restore can be starved, not just slow (DSC)",
+      "merged_at": "2026-08-22T19:58:01Z"
+    },
+    {
+      "number": 6254,
+      "title": "FIF-2C acceptance records after PR #6235 landing",
+      "merged_at": "2026-08-22T20:17:14Z"
+    },
+    {
+      "number": 6253,
+      "title": "AD-1T0: ThetaData canonical options source cutover (Chairman ruling 2026-08-22)",
+      "merged_at": "2026-08-22T20:21:32Z"
+    },
+    {
+      "number": 6252,
+      "title": "ci: close PR event causality races",
+      "merged_at": "2026-08-22T19:48:36Z"
+    },
+    {
+      "number": 6251,
+      "title": "fix(ship-loop): park ratified Sol holds before unsafe-branch retry loop",
+      "merged_at": "2026-08-22T19:41:23Z"
+    },
+    {
+      "number": 6250,
+      "title": "docs(agentos): record A1A PD1 production acceptance",
+      "merged_at": "2026-08-22T19:51:46Z"
+    },
+    {
+      "number": 6249,
+      "title": "P0 #6185 heal: JS variable named `src` failed the render's dead-reference guard",
+      "merged_at": "2026-08-22T18:56:14Z"
+    },
+    {
+      "number": 6248,
+      "title": "XPV2-SC-R3B.1: Sector Central surgical correction \u2014 frozen successor candidate (mastermind-xpv2-sector-r3b-1, in_review)",
+      "merged_at": "2026-08-22T18:42:48Z"
+    },
+    {
+      "number": 6247,
+      "title": "docs(d5r.2): D5 contract-representability seal \u2014 17-key skeleton, link relations, review coverage, fixtures A-I, nine-round adversarial YES",
+      "merged_at": "2026-08-22T18:12:48Z"
+    },
+    {
+      "number": 6246,
+      "title": "records(imce): fourth-gate closure \u2014 A4P.1 + A4 registration executed, WS/handoff reconciled",
+      "merged_at": "2026-08-22T18:00:20Z"
+    },
+    {
+      "number": 6245,
+      "title": "E3-A R2 AAPL shadow gold \u2014 calibration / negative-method experiment",
+      "merged_at": "2026-08-23T05:57:38Z"
+    },
+    {
+      "number": 6244,
+      "title": "data(imce): A4 registration \u2014 three declared_budget rows appended, contract V1.2.1 registered",
+      "merged_at": "2026-08-22T17:31:02Z"
+    },
+    {
+      "number": 6243,
+      "title": "P0 production hotfix: restore Prophet candidate board (#6185)",
+      "merged_at": "2026-08-22T16:38:24Z"
+    },
+    {
+      "number": 6242,
+      "title": "P1-R3: durable scoped key-exclusion recovery for the China visit plane",
+      "merged_at": "2026-08-22T17:01:16Z"
+    },
+    {
+      "number": 6241,
+      "title": "docs(e3-0): record #6161 merge SHA and unlock E3-A",
+      "merged_at": "2026-08-22T16:25:39Z"
+    },
+    {
+      "number": 6240,
+      "title": "fix(publish_r2): follow directory symlinks when enumerating a store tree",
+      "merged_at": "2026-08-22T16:29:43Z"
+    },
+    {
+      "number": 6239,
+      "title": "xpv2-sc-r3b: Sol REVISE verdict + status revise; R3B.1 commission (pre-start steps 2-4)",
+      "merged_at": "2026-08-22T15:56:30Z"
+    },
+    {
+      "number": 6238,
+      "title": "fix(w2c): provision M0D spy-rest LoadCredential files",
+      "merged_at": "2026-08-22T15:57:47Z"
+    },
+    {
+      "number": 6237,
+      "title": "records(imce): A4P.1 preflight closure \u2014 DEFF denomination retired, PHM/KBH v0 population frozen, cell-ID normalization, A4 transition table, Treasury GO_LIMITED",
+      "merged_at": "2026-08-22T16:35:48Z"
+    },
+    {
+      "number": 6236,
+      "title": "ci(render): default routine renders to PC fleet",
+      "merged_at": "2026-08-22T15:29:35Z"
+    },
+    {
+      "number": 6235,
+      "title": "FIF-2C authenticated full financial packet read",
+      "merged_at": "2026-08-22T19:27:18Z"
+    },
+    {
+      "number": 6234,
+      "title": "review: XPV2 SC R3B mobile and accessibility critic",
+      "merged_at": "2026-08-22T15:24:23Z"
+    },
+    {
+      "number": 6233,
+      "title": "review(xpv2-sc-r3b): fresh product-regression critic receipt",
+      "merged_at": "2026-08-22T15:24:15Z"
+    },
+    {
+      "number": 6232,
+      "title": "V4-D2B3: GMI identity correction lineage \u2014 GOLD reuse + IBIT entity kind (frozen contract #6221)",
+      "merged_at": "2026-08-22T14:40:06Z"
+    },
+    {
+      "number": 6231,
+      "title": "review(xpv2-sc-r3b): fresh Visual/Taste critic receipt \u2014 BLOCK (ZH state-label contrast) [Sol-released, R3B.1 integration]",
+      "merged_at": "2026-08-22T15:24:04Z"
+    },
+    {
+      "number": 6230,
+      "title": "records(ccr): reconcile merged H0 and preserve P0B gate",
+      "merged_at": "2026-08-22T23:40:19Z"
+    },
+    {
+      "number": 6229,
+      "title": "fix(china-p1): P1-R2 announcement-id integrity \u2014 typed exclusions at both boundaries",
+      "merged_at": "2026-08-22T13:55:23Z"
+    },
+    {
+      "number": 6228,
+      "title": "review(xpv2-sc-r3b): fresh Data/Authority critic receipt \u2014 BLOCK (2 HIGH) [Sol-released, R3B.1 integration]",
+      "merged_at": "2026-08-22T15:23:47Z"
+    },
+    {
+      "number": 6227,
+      "title": "hk-discovery: fail-closed availability flags \u2014 omitted/None never ENTRY_OPEN (Sol pre-settlement repair)",
+      "merged_at": "2026-08-22T13:02:03Z"
+    },
+    {
+      "number": 6226,
+      "title": "prophet: HK-DISCOVERY-SHADOW \u2014 first registered challenger (hk_discovery_v1) + freshness receipt",
+      "merged_at": "2026-08-22T08:01:27Z"
+    },
+    {
+      "number": 6225,
+      "title": "[HOLD-FOR-SOL] ccr(seam): --json-stdout machine-consumer read for project_active_builds.v1",
+      "merged_at": "2026-08-22T18:29:48Z"
+    },
+    {
+      "number": 6224,
+      "title": "records(imce): third-gate closure \u2014 CPI-H1.1 + A4P merged/live, five Sol escalations recorded",
+      "merged_at": "2026-08-22T07:00:49Z"
+    },
+    {
+      "number": 6223,
+      "title": "ci: move self-mod fence payloads off argv",
+      "merged_at": "2026-08-22T20:58:24Z"
+    },
+    {
+      "number": 6222,
+      "title": "ci(merge-control): isolate production sweep on GitHub-hosted",
+      "merged_at": "2026-08-22T07:25:57Z"
+    },
+    {
+      "number": 6221,
+      "title": "V4-D2B3: archaeology + frozen correction contract \u2014 GOLD reuse + IBIT entity kind (records-only; implementation gated)",
+      "merged_at": "2026-08-22T06:36:39Z"
+    },
+    {
+      "number": 6220,
+      "title": "Capital Structure V2 W2A: protect live tail and publish horizon truth",
+      "merged_at": "2026-08-22T06:45:46Z"
+    },
+    {
+      "number": 6219,
+      "title": "docs(d5r.1): D5 source-law consistency close \u2014 six Sol repairs, cold-builder pass to YES",
+      "merged_at": "2026-08-22T06:06:32Z"
+    },
+    {
+      "number": 6218,
+      "title": "docs(agentos): record AD-1C0.1 merge \u2014 source-clock hardened, program paused on external blocker",
+      "merged_at": "2026-08-22T06:00:01Z"
+    },
+    {
+      "number": 6217,
+      "title": "feat(w2c): M0D v2 SPY REST source seal + technicals/experience-v2",
+      "merged_at": "2026-08-22T06:17:07Z"
+    },
+    {
+      "number": 6216,
+      "title": "records(ccr): establish Chairman Control Room P0 workstream",
+      "merged_at": "2026-08-22T05:48:11Z"
+    },
+    {
+      "number": 6215,
+      "title": "records(china-p1): P1 DONE / PROVEN_LIVE \u2014 natural run 32460910383, exact 145-candidate reconciliation",
+      "merged_at": "2026-08-22T05:41:24Z"
+    },
+    {
+      "number": 6214,
+      "title": "agentos(fif): record FIF-2B accepted on main",
+      "merged_at": "2026-08-22T05:25:04Z"
+    },
+    {
+      "number": 6213,
+      "title": "records(imce): A4P pre-registration criteria closure \u2014 contract V1.2, receipted boundaries, regenerated A4 packet (rev. 2)",
+      "merged_at": "2026-08-22T06:11:47Z"
+    },
+    {
+      "number": 6212,
+      "title": "prophet: market-scope the shadow challenger registry (post-merge Sol correction)",
+      "merged_at": "2026-08-22T04:35:54Z"
+    },
+    {
+      "number": 6211,
+      "title": "cpi(h1.1): class-envelope closure \u2014 seven advisories adjudicated, subset invariant WARN\u2192HARD",
+      "merged_at": "2026-08-22T04:51:03Z"
+    },
+    {
+      "number": 6210,
+      "title": "fix(grey-deer): GD-3R1 clock truth for the live provisional Risk Envelope",
+      "merged_at": "2026-08-22T05:16:07Z"
+    },
+    {
+      "number": 6209,
+      "title": "docs(d5r): D5 program-graph architecture freeze \u2014 owner adjudication, Virginia pilot, implementation handoff",
+      "merged_at": "2026-08-22T04:32:13Z"
+    },
+    {
+      "number": 6208,
+      "title": "records(agentos): reconcile MAS-48 after S0 carrier falsifier",
+      "merged_at": "2026-08-25T20:09:33Z"
+    },
+    {
+      "number": 6207,
+      "title": "HOLD-FOR-SOL \u00b7 chairman(cn-limit): null TuShare license-document gates; bounded canary path; active-surface CI guard",
+      "merged_at": "2026-08-26T00:21:50Z"
+    },
+    {
+      "number": 6206,
+      "title": "docs(fleet): reconcile PARKED holds and live merge-control topology",
+      "merged_at": "2026-08-22T03:03:33Z"
+    },
+    {
+      "number": 6205,
+      "title": "records(w2c): M0D-0 PASS / 04:00Z source-seal GO",
+      "merged_at": "2026-08-22T02:59:57Z"
+    },
+    {
+      "number": 6204,
+      "title": "agentos(dsc): a parent loading.tsx voids the status codes below it",
+      "merged_at": "2026-08-22T03:03:48Z"
+    },
+    {
+      "number": 6203,
+      "title": "records(imce): CPI-H1 + A4G wave closure \u2014 D1(c) released, A4 gate recorded",
+      "merged_at": "2026-08-22T02:52:56Z"
+    },
+    {
+      "number": 6202,
+      "title": "test(agentos): remove repeated compile-context process fanout",
+      "merged_at": "2026-08-22T02:32:20Z"
+    },
+    {
+      "number": 6201,
+      "title": "agentos: record that the Terminal has no migration ledger (DSC)",
+      "merged_at": "2026-08-22T01:58:55Z"
+    },
     {
       "number": 6200,
       "title": "grey-deer: GD-3 + GD-4A.1 wave records (GD-3 awaiting production receipt)",
@@ -400,6 +3039,11 @@
       "number": 6192,
       "title": "fix(govrev): close D4 score-overlay production leak",
       "merged_at": "2026-08-21T12:36:09Z"
+    },
+    {
+      "number": 6191,
+      "title": "biocatalyst(P1-1): Catalyst Radar \u2014 Trial Milestones (first post-P0 vertical)",
+      "merged_at": "2026-08-22T20:23:44Z"
     },
     {
       "number": 6190,
@@ -537,6 +3181,11 @@
       "merged_at": "2026-08-21T06:34:16Z"
     },
     {
+      "number": 6161,
+      "title": "docs(e3-0): Event Intelligence Compiler architecture freeze",
+      "merged_at": "2026-08-22T15:58:08Z"
+    },
+    {
       "number": 6160,
       "title": "fix(watchlist): A1A round-3 \u2014 auth-generation binding, risk provenance, client terminality",
       "merged_at": "2026-08-21T06:35:50Z"
@@ -642,6 +3291,11 @@
       "merged_at": "2026-08-21T00:08:35Z"
     },
     {
+      "number": 6135,
+      "title": "chore(workflow): cut over MAS-28 V1 PR metadata templates",
+      "merged_at": "2026-08-23T13:42:28Z"
+    },
+    {
       "number": 6134,
       "title": "docs(agentos): D4 company-bridge close \u2014 WS seal + handoff",
       "merged_at": "2026-08-20T22:38:22Z"
@@ -680,6 +3334,16 @@
       "number": 6127,
       "title": "records(imce): IMCE-00 architecture freeze \u2014 issuer-mechanism research extension under CPI [HOLD-FOR-SOL]",
       "merged_at": "2026-08-21T03:55:28Z"
+    },
+    {
+      "number": 6126,
+      "title": "records(intraday-flow): reconcile PR-4 merge to current-session production gate",
+      "merged_at": "2026-08-25T20:09:11Z"
+    },
+    {
+      "number": 6125,
+      "title": "records(market-os): reconcile A1A merge to bounded production acceptance",
+      "merged_at": "2026-08-23T08:26:33Z"
     },
     {
       "number": 6124,
@@ -897,6 +3561,11 @@
       "merged_at": "2026-08-20T12:03:49Z"
     },
     {
+      "number": 6080,
+      "title": "feat(polygon-gex): AD-1C0.1 \u2014 bounded lawful capture lease for partial replacement (HELD FOR SOL)",
+      "merged_at": "2026-08-22T05:32:55Z"
+    },
+    {
       "number": 6079,
       "title": "records(agentos): recover BioCatalyst Recovery V2 work identity",
       "merged_at": "2026-08-20T12:48:33Z"
@@ -975,1886 +3644,6 @@
       "number": 6059,
       "title": "govrev: fit the D3 page under a ratcheted raw-byte budget (296 KiB)",
       "merged_at": "2026-08-20T09:32:58Z"
-    },
-    {
-      "number": 6058,
-      "title": "records(prophet-lab): day-3 close-out \u2014 G-D PASS + Gate B findings + W-L1 referral + day-3 handoff",
-      "merged_at": "2026-08-20T09:28:47Z"
-    },
-    {
-      "number": 6056,
-      "title": "docs(governance): recorded holds are merge barriers (DEC + fleet-law amendment + AD-1C0.1 wave row)",
-      "merged_at": "2026-08-20T09:15:47Z"
-    },
-    {
-      "number": 6055,
-      "title": "design-system: port .skel + .mx-error verbatim from the specimen (P-MP1-SHELL gate)",
-      "merged_at": "2026-08-20T08:42:23Z"
-    },
-    {
-      "number": 6054,
-      "title": "docs(agentos): record M0A W2C three-window prospective proof",
-      "merged_at": "2026-08-20T08:37:36Z"
-    },
-    {
-      "number": 6053,
-      "title": "test(prophet-card): re-pin zh rebind test to the C8-C structural flip",
-      "merged_at": "2026-08-20T08:33:00Z"
-    },
-    {
-      "number": 6052,
-      "title": "P0-C2R2 \u2014 retain request-local validated BioCatalyst artifacts",
-      "merged_at": "2026-08-20T12:15:14Z"
-    },
-    {
-      "number": 6050,
-      "title": "china-alpha: P1 institutional visit tape collector + dossier block",
-      "merged_at": "2026-08-20T10:54:34Z"
-    },
-    {
-      "number": 6049,
-      "title": "prep(p-mp1-shell): \u00a78a stance projection + count plumbing + suite wiring \u2014 central act OWED (W-L1 referral to Sol)",
-      "merged_at": "2026-08-20T08:52:33Z"
-    },
-    {
-      "number": 6048,
-      "title": "govrev D3: temporal contract v3 + Change Tape truth",
-      "merged_at": "2026-08-20T07:56:43Z"
-    },
-    {
-      "number": 6047,
-      "title": "P0-ST: main-board risk-warning band \u00b15%\u2192\u00b110% effective 2026-07-06 (CN-LIMIT R6 wave)",
-      "merged_at": "2026-08-20T07:44:56Z"
-    },
-    {
-      "number": 6046,
-      "title": "china-alpha: RIGHTS-0 source entitlement/rights registry",
-      "merged_at": "2026-08-20T06:26:11Z"
-    },
-    {
-      "number": 6045,
-      "title": "china-alpha PR-0B: persist full intel_interest anatomy to the CN candidate plane",
-      "merged_at": "2026-08-20T06:52:27Z"
-    },
-    {
-      "number": 6044,
-      "title": "fix(cs-v2-w1b): closed-bundle atomic persistence after W1A",
-      "merged_at": "2026-08-20T09:22:26Z"
-    },
-    {
-      "number": 6043,
-      "title": "agentos(options): post-restoration census still 403; AD-1 not ready",
-      "merged_at": "2026-08-20T06:00:55Z"
-    },
-    {
-      "number": 6042,
-      "title": "docs(china-alpha): freeze activation \u2014 Sol post-merge acceptance GO, freeze effective, three waves authorized",
-      "merged_at": "2026-08-20T05:51:05Z"
-    },
-    {
-      "number": 6041,
-      "title": "fix(stocks): a subsidiary, brand or product line is not the issuer",
-      "merged_at": "2026-08-20T06:22:32Z"
-    },
-    {
-      "number": 6040,
-      "title": "prophet board: live change on the gated cards, and one \"Live now\" heading",
-      "merged_at": "2026-08-20T06:27:31Z"
-    },
-    {
-      "number": 6039,
-      "title": "docs(perf): continuation handoff through PR 3, and scout PR 4",
-      "merged_at": "2026-08-20T05:29:39Z"
-    },
-    {
-      "number": 6038,
-      "title": "research(gd1c): reconstruct leadership crack design era",
-      "merged_at": "2026-08-20T06:04:52Z"
-    },
-    {
-      "number": 6037,
-      "title": "fix(grey-deer): GD-2R1 \u2014 semantic-correctness repair of the settled envelope",
-      "merged_at": "2026-08-20T06:25:58Z"
-    },
-    {
-      "number": 6036,
-      "title": "docs(alpha-intel): FABLE-00 close-out \u2014 canonical K4-G precondition sources; next action = Sol dispatch FABLE-A",
-      "merged_at": "2026-08-20T10:41:51Z"
-    },
-    {
-      "number": 6035,
-      "title": "docs(china-alpha): post-merge authority reconciliation \u2014 hold-merge incident DSC, final merged-object pins, AgentOS reality repair",
-      "merged_at": "2026-08-20T04:57:16Z"
-    },
-    {
-      "number": 6034,
-      "title": "docs(agentos): rescue six orphaned WS:AGENT-OS executive records",
-      "merged_at": "2026-08-20T05:13:03Z"
-    },
-    {
-      "number": 6033,
-      "title": "perf(edge): give every content-hashed public asset the immutable year it already earned",
-      "merged_at": "2026-08-20T04:53:50Z"
-    },
-    {
-      "number": 6032,
-      "title": "records(grey-deer): Sol post-merge review \u2014 GD-2R1 commission, Gate 8 hold, GD-1C relay",
-      "merged_at": "2026-08-20T04:48:36Z"
-    },
-    {
-      "number": 6031,
-      "title": "docs(agentos): D2P production close \u2014 DEFENSE-PROCUREMENT-V3 lifecycle seal",
-      "merged_at": "2026-08-20T03:29:32Z"
-    },
-    {
-      "number": 6030,
-      "title": "fix(check_stock_dossier_integrity): heal three permanent-red guard defects",
-      "merged_at": "2026-08-20T03:42:46Z"
-    },
-    {
-      "number": 6029,
-      "title": "fix(hk-board): the 18 \"deterministic main reds\" are a sparse-checkout artifact \u2014 mark them",
-      "merged_at": "2026-08-20T02:57:29Z"
-    },
-    {
-      "number": 6028,
-      "title": "fix(ci): curate conviction-profile's scope \u2014 #6027 gave it whole-tree fallback smear",
-      "merged_at": "2026-08-20T00:52:50Z"
-    },
-    {
-      "number": 6027,
-      "title": "fix(ci): move #5984's dossier suites to a gate:code job \u2014 gate:data never runs on a PR",
-      "merged_at": "2026-08-19T23:09:54Z"
-    },
-    {
-      "number": 6026,
-      "title": "feat(grey-deer): GD-2 settled risk envelope + three-answer Macro hero",
-      "merged_at": "2026-08-19T23:15:52Z"
-    },
-    {
-      "number": 6025,
-      "title": "records(prophet-lab): day-2 close-out \u2014 MP-1 Amendment 2 + W4.1 done + day-2 handoff",
-      "merged_at": "2026-08-19T21:25:23Z"
-    },
-    {
-      "number": 6024,
-      "title": "ship-loop: bounded clearing path for authority-frozen merged heads",
-      "merged_at": "2026-08-19T21:05:49Z"
-    },
-    {
-      "number": 6023,
-      "title": "ci: wire all five suites audit_unrun_tests reds on main (consolidates #6015 + #6016 + the unowned dossier three)",
-      "merged_at": "2026-08-19T22:08:38Z"
-    },
-    {
-      "number": 6022,
-      "title": "fix(grey-deer): GD-4A \u2014 arm CN/HK forward-ledger advancement per-step in the Asia-close lane",
-      "merged_at": "2026-08-19T21:00:03Z"
-    },
-    {
-      "number": 6021,
-      "title": "E2-D: Canonical Macro dossier glance from event_workspace.v1",
-      "merged_at": "2026-08-20T19:40:20Z"
-    },
-    {
-      "number": 6020,
-      "title": "ci: overlap contract-delta's head/base censuses, raise timeout margin",
-      "merged_at": "2026-08-19T21:27:47Z"
-    },
-    {
-      "number": 6019,
-      "title": "records(grey-deer): Sol GD-1 acceptance \u2014 GD-1 closed, GD-1C prerequisite, GD-2/GD-4A commissioned",
-      "merged_at": "2026-08-19T20:27:56Z"
-    },
-    {
-      "number": 6018,
-      "title": "agentos(options): live entitlement still blocked; reconcile AD-1 merged state",
-      "merged_at": "2026-08-20T01:48:53Z"
-    },
-    {
-      "number": 6017,
-      "title": "ci: let data-health's workflow_run and schedule triggers actually plan",
-      "merged_at": "2026-08-20T00:04:48Z"
-    },
-    {
-      "number": 6014,
-      "title": "fix(intraday-flow): survive first render when live quotes are still empty",
-      "merged_at": "2026-08-19T22:12:19Z"
-    },
-    {
-      "number": 6013,
-      "title": "agentos: jam-recovery handoff + W-CONTRACT-DELTA wave (WS:CI-MERGE-CONTROL-PLANE)",
-      "merged_at": "2026-08-19T23:30:05Z"
-    },
-    {
-      "number": 6012,
-      "title": "fix(cs-v2-w1a): clock-independent event identity + bundle re-observation",
-      "merged_at": "2026-08-19T22:08:08Z"
-    },
-    {
-      "number": 6011,
-      "title": "design-system(C8-C): .mx ladder/mark primitives, --pv-buy retune off --up, touch-floor raises, specimen annotation",
-      "merged_at": "2026-08-19T22:03:09Z"
-    },
-    {
-      "number": 6010,
-      "title": "ship-loop: retire semantic units main is not eligible to clear",
-      "merged_at": "2026-08-19T20:14:41Z"
-    },
-    {
-      "number": 6009,
-      "title": "cn-limit R6-0: records-only landing of the Sol final architecture freeze",
-      "merged_at": "2026-08-19T20:11:43Z"
-    },
-    {
-      "number": 6008,
-      "title": "agentos(govrev): unissued candidates self-retire \u2014 B2 and B3 both refused on evidence",
-      "merged_at": "2026-08-20T01:48:58Z"
-    },
-    {
-      "number": 6007,
-      "title": "docs(cn-limit): G0 dependency census vs missing R6 freeze",
-      "merged_at": "2026-08-19T22:08:25Z"
-    },
-    {
-      "number": 6006,
-      "title": "fix(i18n,render): stop re-wrapping vix_monitor's bilingual twins \u2014 unblock the estate-wide render lane",
-      "merged_at": "2026-08-19T20:07:23Z"
-    },
-    {
-      "number": 6005,
-      "title": "ci: add differential contract-delta gate (PR-vs-base, never absolute)",
-      "merged_at": "2026-08-19T19:27:58Z"
-    },
-    {
-      "number": 6004,
-      "title": "fix(govrev): bound the unaccounted-candidate excuse to the publisher's own vintage receipt",
-      "merged_at": "2026-08-19T18:00:07Z"
-    },
-    {
-      "number": 6003,
-      "title": "docs(agentos): defense21 republish incident + heal recorded on the graph-republish DSC",
-      "merged_at": "2026-08-19T23:51:46Z"
-    },
-    {
-      "number": 6002,
-      "title": "ci: cover two new import-closure edges \u2014 greens integration-baseline, unjams the merge train",
-      "merged_at": "2026-08-19T18:19:58Z"
-    },
-    {
-      "number": 6001,
-      "title": "fix(live): keep the \"$\" a board baked when live.js patches its price",
-      "merged_at": "2026-08-19T17:57:53Z"
-    },
-    {
-      "number": 6000,
-      "title": "perf(estate): drop the eager assistant tag from the last 519 archive pages, and guard it",
-      "merged_at": "2026-08-19T20:01:08Z"
-    },
-    {
-      "number": 5999,
-      "title": "agentos: CA-TRUTH shipped \u2014 workstream state + handoff",
-      "merged_at": "2026-08-19T18:08:31Z"
-    },
-    {
-      "number": 5998,
-      "title": "design(r4.2): C8-B reference repair \u2014 prose truth, ZH sector twin, error/loading states, evidence refresh",
-      "merged_at": "2026-08-19T18:08:18Z"
-    },
-    {
-      "number": 5997,
-      "title": "govrev: candidate proof survives a reviewed-graph republish (unwedges the live lane + render gate)",
-      "merged_at": "2026-08-19T16:18:05Z"
-    },
-    {
-      "number": 5996,
-      "title": "fix(china-special-sits): block-trade count saturated at the display cap (wave 1 follow-ups)",
-      "merged_at": "2026-08-19T16:18:27Z"
-    },
-    {
-      "number": 5995,
-      "title": "feat(prophet-lab): commissioning prep \u2014 R2-first transport, baseline provisioning, e2e chain test",
-      "merged_at": "2026-08-19T19:51:58Z"
-    },
-    {
-      "number": 5994,
-      "title": "docs(mp-1): Amendment 1 \u2014 C8 composition-cycle rulings (C8-A)",
-      "merged_at": "2026-08-19T16:25:09Z"
-    },
-    {
-      "number": 5993,
-      "title": "perf(estate): stop shipping the 227 KB assistant bundle to the acquisition estate (1/2)",
-      "merged_at": "2026-08-19T16:33:33Z"
-    },
-    {
-      "number": 5992,
-      "title": "docs(research_vault): Wave 4 production acceptance results + the 918-row corpus search gap",
-      "merged_at": "2026-08-19T15:41:20Z"
-    },
-    {
-      "number": 5991,
-      "title": "docs(agentos): record the Saved Layout contract decision and the empty-layouts census",
-      "merged_at": "2026-08-19T16:05:03Z"
-    },
-    {
-      "number": 5990,
-      "title": "rig(r4-composition): C8 dual-critic pass \u2014 receipts + verdict REVISE (MP-1 amendment + R4.2 chartered)",
-      "merged_at": "2026-08-19T14:59:33Z"
-    },
-    {
-      "number": 5989,
-      "title": "Record E2-T1 production landing in Earnings Agent OS",
-      "merged_at": "2026-08-19T13:53:49Z"
-    },
-    {
-      "number": 5988,
-      "title": "agentos: record the Terminal D-sweep's durable findings",
-      "merged_at": "2026-08-19T13:36:09Z"
-    },
-    {
-      "number": 5987,
-      "title": "fix(china): W0.7 coverage banner cross-reads the tape before blaming the collectors",
-      "merged_at": "2026-08-19T13:19:34Z"
-    },
-    {
-      "number": 5986,
-      "title": "fix(research_vault): publication integrity \u2014 the vault cannot report a success it did not achieve",
-      "merged_at": "2026-08-19T14:14:37Z"
-    },
-    {
-      "number": 5985,
-      "title": "ci: wire three unrun suites (chat_launcher_stub, collectors_na_sentinel, template_site_sync_tokens)",
-      "merged_at": "2026-08-19T18:12:38Z"
-    },
-    {
-      "number": 5984,
-      "title": "fix(stocks): stop the dossier estate publishing the wrong company",
-      "merged_at": "2026-08-19T16:12:43Z"
-    },
-    {
-      "number": 5983,
-      "title": "feat(fif): FIF-2A authenticated canonical financial query bridge \u2014 Sol PASS",
-      "merged_at": "2026-08-20T05:28:35Z"
-    },
-    {
-      "number": 5982,
-      "title": "docs(perf): continuation handoff for the 7-PR site performance remediation",
-      "merged_at": "2026-08-19T14:02:36Z"
-    },
-    {
-      "number": 5981,
-      "title": "fix(ipo,quant-lab): stop raw NaN/inf sentinels from reaching site/ipo.html and site/quant_lab.html",
-      "merged_at": "2026-08-19T12:48:08Z"
-    },
-    {
-      "number": 5980,
-      "title": "fix(analyzer,china): real display twins + percentile nesting fix",
-      "merged_at": "2026-08-19T12:35:56Z"
-    },
-    {
-      "number": 5978,
-      "title": "fix(tests): three main reds where the assertion, not the artifact, was wrong",
-      "merged_at": "2026-08-19T12:16:41Z"
-    },
-    {
-      "number": 5977,
-      "title": "fix(live-quotes): cover every visible live-change board, not just China",
-      "merged_at": "2026-08-19T12:00:56Z"
-    },
-    {
-      "number": 5976,
-      "title": "fix(theme): assistant 404s on every nested route \u2014 resolve from the shared asset root, load on intent",
-      "merged_at": "2026-08-19T12:09:50Z"
-    },
-    {
-      "number": 5975,
-      "title": "fix(china-special-sits): dimensional, population and freshness truth (4 P1 defects)",
-      "merged_at": "2026-08-19T14:03:24Z"
-    },
-    {
-      "number": 5974,
-      "title": "feat(options-source): AD-1C0 \u2014 accrual failure-state durability, first-writer quality rule, log hardening",
-      "merged_at": "2026-08-19T16:04:26Z"
-    },
-    {
-      "number": 5973,
-      "title": "agentos: W-GATE-SPLIT wave recorded on WS-CI-MERGE-CONTROL-PLANE (W1+W2 merged)",
-      "merged_at": "2026-08-19T11:03:22Z"
-    },
-    {
-      "number": 5972,
-      "title": "fix(qledger): control clocks are registrar-local \u2014 ignore the dir, untrack the committed clock",
-      "merged_at": "2026-08-19T11:00:33Z"
-    },
-    {
-      "number": 5971,
-      "title": "docs(prophet-fusion): accept PR-3D after natural ledgers proof",
-      "merged_at": "2026-08-19T11:22:40Z"
-    },
-    {
-      "number": 5970,
-      "title": "fix(qledger): untrack committed control-evidence clock file + gitignore fence (fleet-wide T9 red)",
-      "merged_at": "2026-08-19T11:52:16Z"
-    },
-    {
-      "number": 5969,
-      "title": "ci(W2): merge gate packs only gate:code; data receipts move to a post-nightly data-health lane",
-      "merged_at": "2026-08-19T10:58:32Z"
-    },
-    {
-      "number": 5968,
-      "title": "ci: confine an unrepresentable semantic unit to its job instead of voiding the whole run",
-      "merged_at": "2026-08-19T11:35:23Z"
-    },
-    {
-      "number": 5967,
-      "title": "fix(ship-loop): a timed-out git status must not wedge the tree it reads",
-      "merged_at": "2026-08-19T10:44:11Z"
-    },
-    {
-      "number": 5966,
-      "title": "agentos: FIF-1 DONE \u2014 financial_intelligence_packet.v1 FROZEN",
-      "merged_at": "2026-08-19T10:29:16Z"
-    },
-    {
-      "number": 5965,
-      "title": "feat(dataos): V4-D2B1 issuer authority hardening \u2014 economic issuer axis, typed refusals, nightly refresh seam",
-      "merged_at": "2026-08-19T11:58:20Z"
-    },
-    {
-      "number": 5964,
-      "title": "fix(ci): a dark step on main must not void the whole semantic aggregate",
-      "merged_at": "2026-08-19T12:54:53Z"
-    },
-    {
-      "number": 5963,
-      "title": "records(grey-deer): GD-0A durable landing \u2014 architecture freeze, workstream, 8 decisions, program registration",
-      "merged_at": "2026-08-19T12:24:34Z"
-    },
-    {
-      "number": 5962,
-      "title": "docs(prophet-lab): day-1 continuation handoff + b5a wave status",
-      "merged_at": "2026-08-19T10:06:14Z"
-    },
-    {
-      "number": 5961,
-      "title": "research(gd1): Grey Deer August 2026 point-in-time event replay",
-      "merged_at": "2026-08-19T14:02:46Z"
-    },
-    {
-      "number": 5960,
-      "title": "perf(admin): unblock the console, and name the analytics failure instead of \"bad json\"",
-      "merged_at": "2026-08-19T12:05:48Z"
-    },
-    {
-      "number": 5959,
-      "title": "feat(cs-v2-w1): Capital Structure V2 Wave 1 \u2014 evidence identity wiring + hostile tests",
-      "merged_at": "2026-08-19T15:10:27Z"
-    },
-    {
-      "number": 5958,
-      "title": "agentos: W1-execution handoff + breadth-ledger discovery (WS:CI-MERGE-CONTROL-PLANE)",
-      "merged_at": "2026-08-19T08:36:09Z"
-    },
-    {
-      "number": 5957,
-      "title": "Remove stray Chinese sentence from English disclaimer page",
-      "merged_at": "2026-08-19T11:00:19Z"
-    },
-    {
-      "number": 5955,
-      "title": "docs(earnings): G0 post-event reinterpretation research census",
-      "merged_at": "2026-08-19T18:13:48Z"
-    },
-    {
-      "number": 5954,
-      "title": "ci(W1): classify every legacy job by which tree moves its verdict",
-      "merged_at": "2026-08-19T10:11:29Z"
-    },
-    {
-      "number": 5953,
-      "title": "research(china-alpha): canonical China Alpha Intelligence masterplan \u2014 FABLE-00 reconciliation + G0 census + builder commissions",
-      "merged_at": "2026-08-19T16:05:16Z"
-    },
-    {
-      "number": 5952,
-      "title": "fix(ci): wire the merge-gate reliability suite into a run: step",
-      "merged_at": "2026-08-19T09:03:19Z"
-    },
-    {
-      "number": 5951,
-      "title": "docs(cn): GROK-CN-E commercial supply-chain diligence \u2014 no seat purchase",
-      "merged_at": "2026-08-19T19:50:45Z"
-    },
-    {
-      "number": 5950,
-      "title": "research(cn-f): sector-clock census \u2014 only Bio and EV earn a China specialist lobe",
-      "merged_at": "2026-08-19T18:15:25Z"
-    },
-    {
-      "number": 5949,
-      "title": "docs(cn-g): empirical prior table for twelve China evidence families",
-      "merged_at": "2026-08-19T19:51:00Z"
-    },
-    {
-      "number": 5948,
-      "title": "ci(backfill): fix the push path \u2014 backfill concluded SUCCESS while publishing nothing",
-      "merged_at": "2026-08-19T12:05:40Z"
-    },
-    {
-      "number": 5947,
-      "title": "docs(cn-b): PRC corporate entity resolver bake-off, no-buy",
-      "merged_at": "2026-08-19T19:51:08Z"
-    },
-    {
-      "number": 5946,
-      "title": "research: CN project/EIA source map + lithium-battery pilot (GROK-CN-D)",
-      "merged_at": "2026-08-19T19:51:16Z"
-    },
-    {
-      "number": 5945,
-      "title": "research(cn): Tushare P0 purchase/rights matrix (GROK-CN-A)",
-      "merged_at": "2026-08-19T19:51:34Z"
-    },
-    {
-      "number": 5944,
-      "title": "research(cn-c): Government/SOE Demand first-party source map",
-      "merged_at": "2026-08-19T19:51:42Z"
-    },
-    {
-      "number": 5943,
-      "title": "docs(alpha-intel): CN-G0 China post-event reinterpretation census",
-      "merged_at": "2026-08-19T18:08:49Z"
-    },
-    {
-      "number": 5942,
-      "title": "fix(collectors): NA-ticker pandas-sentinel corruption across 18 parse sites",
-      "merged_at": "2026-08-19T11:35:02Z"
-    },
-    {
-      "number": 5941,
-      "title": "fix(tests): market-memory breadth fixtures pinned to one era",
-      "merged_at": "2026-08-19T07:38:03Z"
-    },
-    {
-      "number": 5940,
-      "title": "design(prophet-lab-r5-1): close the R5 REVISE \u2014 grid-scoped mode, unknown-not-zero, symmetric lead",
-      "merged_at": "2026-08-19T15:32:49Z"
-    },
-    {
-      "number": 5939,
-      "title": "fix(main-red-repair): ASTS ladder-rung re-pin + breadth union-universe DSC",
-      "merged_at": "2026-08-19T08:53:07Z"
-    },
-    {
-      "number": 5938,
-      "title": "ci: measure why the merge train stalls \u2014 main is green 44% of the time",
-      "merged_at": "2026-08-19T07:47:39Z"
-    },
-    {
-      "number": 5937,
-      "title": "fix(main-red-repair): the price-ladder control asserts its mechanism, not a calendar",
-      "merged_at": "2026-08-19T07:28:43Z"
-    },
-    {
-      "number": 5936,
-      "title": "fix(symbol_directory): NA ticker parsed as NaN froze the exchange roster since 2026-08-11",
-      "merged_at": "2026-08-19T07:10:58Z"
-    },
-    {
-      "number": 5934,
-      "title": "P0-C2R1 \u2014 single-validation BioCatalyst generation read",
-      "merged_at": "2026-08-19T12:45:33Z"
-    },
-    {
-      "number": 5933,
-      "title": "docs(alpha-intel): c0 adjudication \u2014 five census verdicts, FABLE-A conditional GO with amendment rider",
-      "merged_at": "2026-08-19T16:05:24Z"
-    },
-    {
-      "number": 5932,
-      "title": "D2 Identity Atlas: defense21-v1 graph + per-issuer identity vertical (five pilots + SPR control)",
-      "merged_at": "2026-08-19T13:26:47Z"
-    },
-    {
-      "number": 5930,
-      "title": "fix(main-red-repair): pin CI to a CPython the parser allowlist has reviewed",
-      "merged_at": "2026-08-19T05:15:01Z"
-    },
-    {
-      "number": 5929,
-      "title": "radar(w4.1): live-transport correction \u2014 confirmed-lane pack field + W4->W5 spool envelope contract",
-      "merged_at": "2026-08-19T17:27:25Z"
-    },
-    {
-      "number": 5928,
-      "title": "feat(prophet-lab): P-LAB-API \u2014 Prophet Operator Lab read-only projection",
-      "merged_at": "2026-08-19T14:59:00Z"
-    },
-    {
-      "number": 5927,
-      "title": "P0-C2R0: public generation read-path profile (evidence only)",
-      "merged_at": "2026-08-19T18:13:56Z"
-    },
-    {
-      "number": 5926,
-      "title": "fix(canada): CA-TRUTH \u2014 one canonical Canada Prophet board per session",
-      "merged_at": "2026-08-19T16:04:48Z"
-    },
-    {
-      "number": 5925,
-      "title": "fix(entry-radar): W4 pack snapshot reads live ProbeSet.records",
-      "merged_at": "2026-08-19T19:58:05Z"
-    },
-    {
-      "number": 5924,
-      "title": "docs(prophet-lab): LAB-0 \u2014 recut V4-B5 into B5A Operator Lab + B5B desk; commission Radar W4.1",
-      "merged_at": "2026-08-19T04:11:05Z"
-    },
-    {
-      "number": 5923,
-      "title": "agentos: mint WS:PROPHET-HK-CA-REVAMP + hardened execution packet",
-      "merged_at": "2026-08-19T04:54:33Z"
-    },
-    {
-      "number": 5922,
-      "title": "ci(baseline): keep the merge-train circuit breaker fresh on a clock",
-      "merged_at": "2026-08-19T07:57:33Z"
-    },
-    {
-      "number": 5921,
-      "title": "feat(prophet-fusion): PR-3D-R1 same-stamp revision + atomic W3 persist",
-      "merged_at": "2026-08-19T03:58:30Z"
-    },
-    {
-      "number": 5919,
-      "title": "docs(agentos): D1 closure proof \u2014 next action is Sol acceptance",
-      "merged_at": "2026-08-18T20:50:15Z"
-    },
-    {
-      "number": 5918,
-      "title": "docs(agentos): the sweeper's forward-rebase can drop a commit you pushed",
-      "merged_at": "2026-08-18T21:12:02Z"
-    },
-    {
-      "number": 5917,
-      "title": "fix(worktree-sparse): SIGTERM-first timeout, and a budget sized from the tail",
-      "merged_at": "2026-08-18T19:55:50Z"
-    },
-    {
-      "number": 5915,
-      "title": "docs(path-survival): GROK-F0 capability census",
-      "merged_at": "2026-08-18T14:41:14Z"
-    },
-    {
-      "number": 5914,
-      "title": "docs(research): GROK-E0 opportunity evidence census and casebooks",
-      "merged_at": "2026-08-18T14:25:56Z"
-    },
-    {
-      "number": 5913,
-      "title": "docs(economic-propagation): D0 graph census and casebook",
-      "merged_at": "2026-08-18T14:45:48Z"
-    },
-    {
-      "number": 5912,
-      "title": "docs(research): A0 evidence/provenance estate census",
-      "merged_at": "2026-08-18T14:38:08Z"
-    },
-    {
-      "number": 5911,
-      "title": "research(alpha-intel): GROK-B0 institutional source and capture census",
-      "merged_at": "2026-08-18T14:41:27Z"
-    },
-    {
-      "number": 5910,
-      "title": "docs(alpha-intel): PASS-0 program integration packet + WS record",
-      "merged_at": "2026-08-18T15:28:16Z"
-    },
-    {
-      "number": 5909,
-      "title": "BPC-RECON-0: soak-safe architecture freeze (canonical identity frozen; runtime registry deferred)",
-      "merged_at": "2026-08-19T19:51:49Z"
-    },
-    {
-      "number": 5908,
-      "title": "feat(fleet): AionUi/Grok SessionStart mints sparse worktrees",
-      "merged_at": "2026-08-19T19:59:22Z"
-    },
-    {
-      "number": 5907,
-      "title": "fix(worktree-sparse): never leave a tracked file truncated on a failed `add`",
-      "merged_at": "2026-08-18T16:43:39Z"
-    },
-    {
-      "number": 5906,
-      "title": "docs(biocatalyst): P0-C2 entitled acceptance \u2014 generation-read hang",
-      "merged_at": "2026-08-19T03:25:53Z"
-    },
-    {
-      "number": 5905,
-      "title": "fix(main-red-repair): re-price the HK G1 fixture for the 2359.HK adjustment",
-      "merged_at": "2026-08-18T13:46:21Z"
-    },
-    {
-      "number": 5904,
-      "title": "docs(agentos): complete the W1-A1 tripwire handoff with the session's end state",
-      "merged_at": "2026-08-18T13:10:00Z"
-    },
-    {
-      "number": 5903,
-      "title": "fix(prophet-fusion): pin C2 construction tests to the registered-era frame",
-      "merged_at": "2026-08-19T18:07:59Z"
-    },
-    {
-      "number": 5902,
-      "title": "feat(prophet): general PIT session replay harness (market, session) under DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT",
-      "merged_at": "2026-08-18T20:53:32Z"
-    },
-    {
-      "number": 5900,
-      "title": "fix(heartbeat): tier-gate mirrored the PR lane's steps but not its venv",
-      "merged_at": "2026-08-18T15:37:44Z"
-    },
-    {
-      "number": 5899,
-      "title": "fix(metabolism): repair blind main-red sentinel (owner/repo 404, dead PAT fallback, HEAD/heartbeat SHA mismatch)",
-      "merged_at": "2026-08-18T15:38:18Z"
-    },
-    {
-      "number": 5897,
-      "title": "fix(entry-radar): W4 hermetic sink proves spool path, not W5 directory absence",
-      "merged_at": "2026-08-19T03:54:00Z"
-    },
-    {
-      "number": 5896,
-      "title": "fix(hk-board): band the refresh-window re-base, not the close level",
-      "merged_at": "2026-08-18T11:46:14Z"
-    },
-    {
-      "number": 5895,
-      "title": "fix(entry-radar): the hermetic control asserted a directory it cannot create",
-      "merged_at": "2026-08-18T11:19:20Z"
-    },
-    {
-      "number": 5894,
-      "title": "research+engine(prophet-v4): V4-D2A canonical identity authority bridge (GMI \u2192 Data OS)",
-      "merged_at": "2026-08-18T14:56:25Z"
-    },
-    {
-      "number": 5893,
-      "title": "fix(prophet-fusion): assert PR-2's registered numbers against the artifact, not a rebuild",
-      "merged_at": "2026-08-18T10:55:34Z"
-    },
-    {
-      "number": 5892,
-      "title": "fix(leader-radar): make _build_fire_history honor its data_root parameter",
-      "merged_at": "2026-08-19T22:07:31Z"
-    },
-    {
-      "number": 5890,
-      "title": "feat(prophet-fusion): PR-3D W3 liveness fence and lawful status surface",
-      "merged_at": "2026-08-18T12:44:06Z"
-    },
-    {
-      "number": 5889,
-      "title": "FIF-1R3: land accepted financial_intelligence_packet.v1",
-      "merged_at": "2026-08-19T09:50:19Z"
-    },
-    {
-      "number": 5888,
-      "title": "fix(leader-radar): honour the caller's data_root when joining fire grades",
-      "merged_at": "2026-08-18T10:44:13Z"
-    },
-    {
-      "number": 5887,
-      "title": "docs(agentos): govrev event_id folds the collector's retrieval clock, so a re-run re-mints candidates",
-      "merged_at": "2026-08-18T09:45:19Z"
-    },
-    {
-      "number": 5886,
-      "title": "docs(agentos): record why the daily collect mutex cannot live in et_gate",
-      "merged_at": "2026-08-18T08:52:43Z"
-    },
-    {
-      "number": 5885,
-      "title": "fix(nightly): base-freshness fence \u2014 refuse to publish an append-only artifact over a base that moved",
-      "merged_at": "2026-08-18T16:02:10Z"
-    },
-    {
-      "number": 5884,
-      "title": "docs(agentos): D1 recovery-generation proof \u2014 Radar 48, fence next",
-      "merged_at": "2026-08-18T08:47:24Z"
-    },
-    {
-      "number": 5883,
-      "title": "docs(agentos): RESOLVED \u2014 a generation revert was the ci-pack-6 repair; correct the \"wedged\" conclusion",
-      "merged_at": "2026-08-18T09:30:40Z"
-    },
-    {
-      "number": 5882,
-      "title": "govrev: adjudicate the three deferred identity/ledger/gate defects (arm the proof gate)",
-      "merged_at": "2026-08-18T18:27:16Z"
-    },
-    {
-      "number": 5879,
-      "title": "fix(ci): hydrate the base commit's blobs so the semantic replay can check it out",
-      "merged_at": "2026-08-18T19:12:27Z"
-    },
-    {
-      "number": 5878,
-      "title": "policy(prophet): force-majeure sessions are backfilled by DEFAULT",
-      "merged_at": "2026-08-18T08:14:38Z"
-    },
-    {
-      "number": 5876,
-      "title": "docs(agentos): the ci-pack-6 red is a candidate-id race between two govrev lanes",
-      "merged_at": "2026-08-18T08:02:33Z"
-    },
-    {
-      "number": 5875,
-      "title": "fix(stock-identity): band the B live-plane tripwire on uniformity, not level",
-      "merged_at": "2026-08-18T08:21:18Z"
-    },
-    {
-      "number": 5874,
-      "title": "fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields",
-      "merged_at": "2026-08-18T14:08:18Z"
-    },
-    {
-      "number": 5873,
-      "title": "docs(agentos): correct the govrev record \u2014 the projection lane does NOT clear the ci-pack-6 red",
-      "merged_at": "2026-08-18T07:40:30Z"
-    },
-    {
-      "number": 5872,
-      "title": "feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief \u2014 runtime implementation (v1.2)",
-      "merged_at": "2026-08-19T13:25:26Z"
-    },
-    {
-      "number": 5871,
-      "title": "docs(agentos): ci-pack-6 govrev red is a lost update between two overlapping daily collect jobs",
-      "merged_at": "2026-08-18T07:02:59Z"
-    },
-    {
-      "number": 5870,
-      "title": "fix(govrev): restore the collection generation the candidate projection was frozen against",
-      "merged_at": "2026-08-18T07:38:11Z"
-    },
-    {
-      "number": 5867,
-      "title": "ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class",
-      "merged_at": "2026-08-18T09:43:33Z"
-    },
-    {
-      "number": 5866,
-      "title": "close-pass: grade the frozen launchd bootstrap against origin/main (merged is not deployed)",
-      "merged_at": "2026-08-18T08:18:58Z"
-    },
-    {
-      "number": 5865,
-      "title": "fix(stock-identity): freeze the registered B prefix off the nightly-rewritten plane",
-      "merged_at": "2026-08-18T06:45:12Z"
-    },
-    {
-      "number": 5864,
-      "title": "fix(forensics): raise FF-1 universe bind cap for live 2837-issuer parquet",
-      "merged_at": "2026-08-18T08:28:04Z"
-    },
-    {
-      "number": 5863,
-      "title": "docs(agentos): the fleet-blocking atlas red is an exact digest over a non-bit-reproducible producer",
-      "merged_at": "2026-08-18T06:09:49Z"
-    },
-    {
-      "number": 5862,
-      "title": "fix(close-pass): retry a stalled lane probe instead of losing the session",
-      "merged_at": "2026-08-18T04:36:25Z"
-    },
-    {
-      "number": 5861,
-      "title": "docs(agentos): DSC \u2014 a git rebase can splice two renders into a paywall leak",
-      "merged_at": "2026-08-18T03:47:34Z"
-    },
-    {
-      "number": 5860,
-      "title": "docs(advanced-data): AD-1P0 freeze semantic authority before implementation",
-      "merged_at": "2026-08-18T03:47:19Z"
-    },
-    {
-      "number": 5859,
-      "title": "research(prophet-v4): V4-D1 theme-source, taxonomy, identity & coverage census",
-      "merged_at": "2026-08-18T08:42:27Z"
-    },
-    {
-      "number": 5858,
-      "title": "fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan",
-      "merged_at": "2026-08-18T05:40:48Z"
-    },
-    {
-      "number": 5857,
-      "title": "fix(main-red-repair): a git REBASE published the paid board, not the renderer",
-      "merged_at": "2026-08-18T03:26:41Z"
-    },
-    {
-      "number": 5856,
-      "title": "D1.1F: PIT-safe Government Revenue agency labels",
-      "merged_at": "2026-08-18T19:31:07Z"
-    },
-    {
-      "number": 5855,
-      "title": "fix(13f-census): un-red both master-index backstop lanes",
-      "merged_at": "2026-08-18T04:15:24Z"
-    },
-    {
-      "number": 5854,
-      "title": "fix(13f-census): decide atom scan completeness on the raw feed page, not the filtered one",
-      "merged_at": "2026-08-18T04:05:04Z"
-    },
-    {
-      "number": 5853,
-      "title": "fix(sector_central): withhold the Act-Now board server-side on its second host",
-      "merged_at": "2026-08-18T15:42:19Z"
-    },
-    {
-      "number": 5852,
-      "title": "feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar",
-      "merged_at": "2026-08-18T05:41:01Z"
-    },
-    {
-      "number": 5851,
-      "title": "ci(close-pass): re-measure the stale mac-builder-1/2 pool model + per-cron concurrency",
-      "merged_at": "2026-08-18T10:42:08Z"
-    },
-    {
-      "number": 5850,
-      "title": "ci(13f-census): hourly 12-20Z fast lane + 60m cap so it stops starving the nightly",
-      "merged_at": "2026-08-18T01:45:11Z"
-    },
-    {
-      "number": 5849,
-      "title": "docs(advanced-data): AD-0 data-feasibility amendment \u2014 AD-1 scoring refrozen as v1.1",
-      "merged_at": "2026-08-18T01:34:25Z"
-    },
-    {
-      "number": 5848,
-      "title": "fix(prophet): 08-14\u219217 outage hardening \u2014 hostage-class kill + watchdog wedge/weekend closure",
-      "merged_at": "2026-08-18T02:04:31Z"
-    },
-    {
-      "number": 5847,
-      "title": "docs(prophet-v4): V4-0B reconcile post-0A state and delegate availability implementation",
-      "merged_at": "2026-08-18T00:50:19Z"
-    },
-    {
-      "number": 5846,
-      "title": "fix(us_stocks): withhold the four panels beside the board server-side too",
-      "merged_at": "2026-08-18T01:13:39Z"
-    },
-    {
-      "number": 5845,
-      "title": "radar(w6): Sol-review RP1 ranking-law corrections",
-      "merged_at": "2026-08-18T12:40:51Z"
-    },
-    {
-      "number": 5843,
-      "title": "fix(ci-authority): retry transient GitHub API failures instead of failing the fence closed",
-      "merged_at": "2026-08-18T00:30:43Z"
-    },
-    {
-      "number": 5842,
-      "title": "docs(agentos): E1P live proof handoff; E2 unblocked",
-      "merged_at": "2026-08-17T16:15:02Z"
-    },
-    {
-      "number": 5841,
-      "title": "fix(company-intelligence): unescape EDGAR index-headers for AAPL EX-99.1",
-      "merged_at": "2026-08-17T15:33:51Z"
-    },
-    {
-      "number": 5840,
-      "title": "fix(us_stocks): withhold the paid board server-side instead of in the DOM",
-      "merged_at": "2026-08-17T19:56:57Z"
-    },
-    {
-      "number": 5839,
-      "title": "feat(prophet-fusion): PR-3C durable W3 prospective evidence ledger",
-      "merged_at": "2026-08-17T18:41:06Z"
-    },
-    {
-      "number": 5838,
-      "title": "docs(advanced-data): AD-0 amendments per Sol review on #5830",
-      "merged_at": "2026-08-17T13:39:53Z"
-    },
-    {
-      "number": 5837,
-      "title": "feat(fif-1r2): harden financial_intelligence_packet.v1 contract",
-      "merged_at": "2026-08-17T16:08:09Z"
-    },
-    {
-      "number": 5836,
-      "title": "fix(govrev): D1 entitled-desk rescue \u2014 Radar, banner, agency names, typed failures",
-      "merged_at": "2026-08-17T13:45:44Z"
-    },
-    {
-      "number": 5835,
-      "title": "feat(company-intelligence): publish AAPL Q3 event_workspace on live R2",
-      "merged_at": "2026-08-17T14:32:42Z"
-    },
-    {
-      "number": 5834,
-      "title": "radar(w6): deterministic ACCRUING Research Priority",
-      "merged_at": "2026-08-17T20:56:50Z"
-    },
-    {
-      "number": 5833,
-      "title": "radar(w5.1): persist control-pool diagnostics",
-      "merged_at": "2026-08-17T12:49:55Z"
-    },
-    {
-      "number": 5832,
-      "title": "docs(prophet-v4): V4-0A estate archaeology + architecture freeze packet",
-      "merged_at": "2026-08-17T13:18:55Z"
-    },
-    {
-      "number": 5831,
-      "title": "docs(agentos): decision records for agent routing control + Opus fable-mode orchestrator seat",
-      "merged_at": "2026-08-17T12:40:59Z"
-    },
-    {
-      "number": 5830,
-      "title": "docs(advanced-data): AD-0 recovery archaeology \u2014 current-state ledger + AD-1 handoff",
-      "merged_at": "2026-08-17T12:18:37Z"
-    },
-    {
-      "number": 5829,
-      "title": "feat(prophet-fusion): PR-3B outcome-blind LOFO and member census",
-      "merged_at": "2026-08-17T12:59:10Z"
-    },
-    {
-      "number": 5828,
-      "title": "docs(ci): charter the CI Latency + Autonomous Healing wave",
-      "merged_at": "2026-08-17T10:34:30Z"
-    },
-    {
-      "number": 5827,
-      "title": "docs(agentos): close Live Entry Radar W5 after #5825",
-      "merged_at": "2026-08-17T11:04:45Z"
-    },
-    {
-      "number": 5826,
-      "title": "chore(model-routing): restore Sonnet as the builder tier",
-      "merged_at": "2026-08-17T10:22:44Z"
-    },
-    {
-      "number": 5825,
-      "title": "docs(entry-radar): W5 Panel-A/B confirmatory receipts after #5780",
-      "merged_at": "2026-08-17T10:08:44Z"
-    },
-    {
-      "number": 5823,
-      "title": "feat(agents): enforce semantic routing and worker contracts",
-      "merged_at": "2026-08-17T11:31:53Z"
-    },
-    {
-      "number": 5820,
-      "title": "feat(forensics): FF-1 incremental broad SEC source plane",
-      "merged_at": "2026-08-17T21:27:26Z"
-    },
-    {
-      "number": 5819,
-      "title": "docs(govrev): D0R closure packet for Sol acceptance",
-      "merged_at": "2026-08-17T07:12:39Z"
-    },
-    {
-      "number": 5818,
-      "title": "fix(render): restore protected-main site publisher",
-      "merged_at": "2026-08-17T08:15:36Z"
-    },
-    {
-      "number": 5817,
-      "title": "feat(earnings): publish AAPL FY2026 Q3 through event_workspace.v1",
-      "merged_at": "2026-08-17T06:21:55Z"
-    },
-    {
-      "number": 5816,
-      "title": "fix(qledger): forward registration today into the control-clock registrar",
-      "merged_at": "2026-08-17T03:17:32Z"
-    },
-    {
-      "number": 5815,
-      "title": "fix(merge): arm merge-on-green using binding checks, not any-failed",
-      "merged_at": "2026-08-17T03:58:50Z"
-    },
-    {
-      "number": 5814,
-      "title": "docs(govrev): D0R entitled census and architecture packets B\u2013H",
-      "merged_at": "2026-08-17T05:45:41Z"
-    },
-    {
-      "number": 5813,
-      "title": "fix(prophet-fusion): PR-3A baseline roles, #5705 PIT admission, freeze W3 prereg",
-      "merged_at": "2026-08-17T04:04:02Z"
-    },
-    {
-      "number": 5812,
-      "title": "docs(govrev): start D0R financial-alpha reconnaissance",
-      "merged_at": "2026-08-16T19:27:45Z"
-    },
-    {
-      "number": 5811,
-      "title": "fix(ship-loop): bind guard execution to the evaluated worktree",
-      "merged_at": "2026-08-16T19:03:45Z"
-    },
-    {
-      "number": 5810,
-      "title": "fix(biocatalyst): typed client hydration states (P0-C1)",
-      "merged_at": "2026-08-17T05:59:54Z"
-    },
-    {
-      "number": 5809,
-      "title": "feat(fif-1r): hermetic golden financial intelligence packet",
-      "merged_at": "2026-08-17T07:12:55Z"
-    },
-    {
-      "number": 5808,
-      "title": "fix(cn-prophet): make v4 intelligence ordering coverage-atomic",
-      "merged_at": "2026-08-16T20:43:01Z"
-    },
-    {
-      "number": 5807,
-      "title": "docs(prophet-fusion): add W3 build handoff after deep audit",
-      "merged_at": "2026-08-16T18:41:00Z"
-    },
-    {
-      "number": 5806,
-      "title": "docs(biocatalyst): P0-B2 production acceptance for #5804",
-      "merged_at": "2026-08-17T05:09:36Z"
-    },
-    {
-      "number": 5805,
-      "title": "fix(market-memory): accept canonical __case_v1 R2 paths in W2C technical intake",
-      "merged_at": "2026-08-16T19:45:56Z"
-    },
-    {
-      "number": 5804,
-      "title": "fix(deploy): decouple macro-api restart from W2C attestation",
-      "merged_at": "2026-08-16T17:36:58Z"
-    },
-    {
-      "number": 5803,
-      "title": "docs(govrev): upgrade Defense Procurement Intelligence OS V3 financial-alpha architecture",
-      "merged_at": "2026-08-16T19:05:39Z"
-    },
-    {
-      "number": 5802,
-      "title": "docs(biocatalyst): P0-B1 deployment blocker diagnosis",
-      "merged_at": "2026-08-17T05:09:30Z"
-    },
-    {
-      "number": 5801,
-      "title": "W1A-B: add append-only local receipt replica producer",
-      "merged_at": "2026-08-16T18:09:32Z"
-    },
-    {
-      "number": 5800,
-      "title": "docs(biocatalyst): P0-A post-merge production verification for #5793",
-      "merged_at": "2026-08-17T05:09:25Z"
-    },
-    {
-      "number": 5799,
-      "title": "docs(earnings): land E0 capability ledger and freeze E1/E2",
-      "merged_at": "2026-08-17T03:54:23Z"
-    },
-    {
-      "number": 5798,
-      "title": "docs(ux): Prophet evidence + Phase 0.1 topology integrity repair",
-      "merged_at": "2026-08-17T05:08:41Z"
-    },
-    {
-      "number": 5796,
-      "title": "docs(calcbench): add current Filing Forensics parity handoff",
-      "merged_at": "2026-08-16T10:58:20Z"
-    },
-    {
-      "number": 5795,
-      "title": "docs(seasonality): session-close handoff \u2014 what shipped, what is inert, and what cannot be built",
-      "merged_at": "2026-08-16T10:24:50Z"
-    },
-    {
-      "number": 5794,
-      "title": "FF-0 \u2014 Freshness truth and visible degradation",
-      "merged_at": "2026-08-16T18:38:08Z"
-    },
-    {
-      "number": 5793,
-      "title": "fix(biocatalyst): bind Trial Screen/Peer Matrix cursors to user id",
-      "merged_at": "2026-08-16T12:38:04Z"
-    },
-    {
-      "number": 5792,
-      "title": "fix(capital-structure): ingestion truth \u2014 fail closed on zero durable evidence",
-      "merged_at": "2026-08-16T10:37:00Z"
-    },
-    {
-      "number": 5791,
-      "title": "fix(earnings): restore end-to-end freshness after ingest recovery",
-      "merged_at": "2026-08-17T06:02:05Z"
-    },
-    {
-      "number": 5790,
-      "title": "W1A-A: add immutable local receipt verifier",
-      "merged_at": "2026-08-16T12:04:49Z"
-    },
-    {
-      "number": 5789,
-      "title": "docs(biocatalyst): P0 Phase 1 hydration diagnosis \u2014 first failing layer",
-      "merged_at": "2026-08-16T09:24:18Z"
-    },
-    {
-      "number": 5788,
-      "title": "docs(biocatalyst): add recovery and alpha-engine masterplan v2",
-      "merged_at": "2026-08-16T08:02:41Z"
-    },
-    {
-      "number": 5787,
-      "title": "cn-live(pr2): asia-close arming, keep-first ledger, confirmation receipt",
-      "merged_at": "2026-08-16T14:16:06Z"
-    },
-    {
-      "number": 5785,
-      "title": "cn-live(pr4): sentinel surface + rescue classifier",
-      "merged_at": "2026-08-16T13:00:02Z"
-    },
-    {
-      "number": 5786,
-      "title": "cn-live(pr3): runtime board on china_stocks \u2014 chips, strip, fail-closed",
-      "merged_at": "2026-08-16T10:56:15Z"
-    },
-    {
-      "number": 5784,
-      "title": "docs(prophet-fusion): w2b live acceptance PASS \u2014 14/14 on the first us_prophet_v3 board",
-      "merged_at": "2026-08-16T06:36:14Z"
-    },
-    {
-      "number": 5783,
-      "title": "feat(fleet): Cursor IDE sparse worktrees via sessionStart",
-      "merged_at": "2026-08-16T06:17:49Z"
-    },
-    {
-      "number": 5782,
-      "title": "cn-live(pr1): mainland evaluator, close pass, and VPS timer",
-      "merged_at": "2026-08-16T09:48:45Z"
-    },
-    {
-      "number": 5781,
-      "title": "docs(workspace): canonical tree is origin/main; sole local root is macro-main (operator 2026-08-15)",
-      "merged_at": "2026-08-16T05:29:13Z"
-    },
-    {
-      "number": 5780,
-      "title": "radar(w5): \u00a77 control matching sees the panel again \u2014 date-keyed lookup + bench calendar",
-      "merged_at": "2026-08-16T06:53:52Z"
-    },
-    {
-      "number": 5779,
-      "title": "docs(breathing): final-state handoff \u2014 revival wave merged+deployed; Monday W-ACCEPT is the remainder",
-      "merged_at": "2026-08-16T05:15:38Z"
-    },
-    {
-      "number": 5778,
-      "title": "feat(fleet): sparse worktrees for Cursor CLI and Grok Build",
-      "merged_at": "2026-08-16T08:47:36Z"
-    },
-    {
-      "number": 5777,
-      "title": "fix(ship-loop): an absence of red is not a pass \u2014 the other edge of the inactive-context exclusion",
-      "merged_at": "2026-08-16T05:28:57Z"
-    },
-    {
-      "number": 5776,
-      "title": "fix(ship-loop): one shared non-binding-check rule, so the merged-head gate stops owning a designed red",
-      "merged_at": "2026-08-16T04:33:23Z"
-    },
-    {
-      "number": 5775,
-      "title": "perf(entry-radar w5): 58x attach/match \u2014 stop deep-copying the session map through pandas attrs",
-      "merged_at": "2026-08-16T05:34:55Z"
-    },
-    {
-      "number": 5774,
-      "title": "radar(w5): replay progress heartbeat \u2014 [phase] k/N (elapsed Xs) on stderr across the five long loops",
-      "merged_at": "2026-08-16T07:58:44Z"
-    },
-    {
-      "number": 5773,
-      "title": "fix(ship-loop): the merged path ignores the inactive pilot authority context",
-      "merged_at": "2026-08-16T04:08:43Z"
-    },
-    {
-      "number": 5772,
-      "title": "radar(w4): records \u2014 W4 done at actual merge (#5768) with verification receipts",
-      "merged_at": "2026-08-16T03:29:44Z"
-    },
-    {
-      "number": 5771,
-      "title": "fix(ship-loop): the merged-head proof base survives the cached PR narrowing",
-      "merged_at": "2026-08-16T03:47:52Z"
-    },
-    {
-      "number": 5770,
-      "title": "research: CN Breathing Platform session-1 continuation handoff",
-      "merged_at": "2026-08-16T01:49:00Z"
-    },
-    {
-      "number": 5769,
-      "title": "fix(prophet-us): the retired v2 scorer accrues under its own name on a fusion board",
-      "merged_at": "2026-08-16T02:43:09Z"
-    },
-    {
-      "number": 5768,
-      "title": "radar(w4): PR-4 live evaluator \u2014 frozen-substrate pack + inversion proof, 5-min RTH pass, \u00a710 clocks/re-arm, spool-first ledger, liveness, staged deploy",
-      "merged_at": "2026-08-16T03:13:45Z"
-    },
-    {
-      "number": 5767,
-      "title": "docs(prophet-fusion): record the two open adjudications; re-cut W3",
-      "merged_at": "2026-08-16T02:06:38Z"
-    },
-    {
-      "number": 5766,
-      "title": "breathing: revival close \u2014 Agent OS handoff record, workstream state, final continuation doc",
-      "merged_at": "2026-08-16T01:20:17Z"
-    },
-    {
-      "number": 5765,
-      "title": "fix(ci-scope): curate cn-standout-audit + coiled-mtf-anchor-era to exclusive scope",
-      "merged_at": "2026-08-16T03:22:46Z"
-    },
-    {
-      "number": 5764,
-      "title": "fix(prophet-fusion): the board comparison must survive the board becoming v3",
-      "merged_at": "2026-08-16T01:45:42Z"
-    },
-    {
-      "number": 5763,
-      "title": "agentos: close semantic proof wave",
-      "merged_at": "2026-08-16T00:49:17Z"
-    },
-    {
-      "number": 5762,
-      "title": "feat(fleet): default Codex worktrees to sparse",
-      "merged_at": "2026-08-16T02:49:25Z"
-    },
-    {
-      "number": 5761,
-      "title": "feat(sentinel): WL1 close\u2192candidate\u2192visible liveness ruler + stale-armed-pack watchdog (breathing PR-C)",
-      "merged_at": "2026-08-16T01:00:50Z"
-    },
-    {
-      "number": 5760,
-      "title": "feat(close-pass): host-native primary clock \u2014 launchd close pass, GitHub demoted to bounded backstop (breathing PR-B)",
-      "merged_at": "2026-08-16T02:53:58Z"
-    },
-    {
-      "number": 5759,
-      "title": "cn-live(pr0): mainland session clock + calendar threading for the armed pack",
-      "merged_at": "2026-08-16T01:32:13Z"
-    },
-    {
-      "number": 5758,
-      "title": "research: Breathing Platform revival \u2014 mid-flight continuation handoff (session-limit loss-proofing)",
-      "merged_at": "2026-08-16T00:09:13Z"
-    },
-    {
-      "number": 5757,
-      "title": "fix(ship-loop): a merged head binds its proof base from the pull request",
-      "merged_at": "2026-08-15T17:10:15Z"
-    },
-    {
-      "number": 5756,
-      "title": "fix(ship-loop): a merge's own skipped ci-gate is not a competing verdict",
-      "merged_at": "2026-08-15T16:47:42Z"
-    },
-    {
-      "number": 5755,
-      "title": "fix(ci): align PC runner umask with hosted jobs",
-      "merged_at": "2026-08-15T13:05:34Z"
-    },
-    {
-      "number": 5754,
-      "title": "feat(cn-prophet): v4 \u2014 rank by board-independent intelligence, gate by entry",
-      "merged_at": "2026-08-15T14:22:11Z"
-    },
-    {
-      "number": 5753,
-      "title": "feat(prophet-us): C1 evidence-family fusion is the canonical ranker (us_prophet_v3)",
-      "merged_at": "2026-08-15T13:17:24Z"
-    },
-    {
-      "number": 5751,
-      "title": "fix: preserve Massive ticker case identity",
-      "merged_at": "2026-08-15T11:53:27Z"
-    },
-    {
-      "number": 5750,
-      "title": "ci: add semantic proof and ancestry repair v2",
-      "merged_at": "2026-08-15T13:06:43Z"
-    },
-    {
-      "number": 5749,
-      "title": "docs(biocatalyst): hand off current state and closure risks",
-      "merged_at": "2026-08-15T10:45:29Z"
-    },
-    {
-      "number": 5748,
-      "title": "docs(prophet-us): hand off earnings catalyst project",
-      "merged_at": "2026-08-15T10:44:13Z"
-    },
-    {
-      "number": 5747,
-      "title": "docs(options): hand off sparse selector activation",
-      "merged_at": "2026-08-15T10:42:06Z"
-    },
-    {
-      "number": 5746,
-      "title": "feat(close-pass): Massive close truth \u2014 full-universe same-day closes with basis parity (breathing PR-A)",
-      "merged_at": "2026-08-15T11:36:15Z"
-    },
-    {
-      "number": 5745,
-      "title": "fix(ci): bind M1 canary listeners to registrations",
-      "merged_at": "2026-08-15T11:07:27Z"
-    },
-    {
-      "number": 5744,
-      "title": "research: CN Breathing Platform architecture ruling (CN-W-L3)",
-      "merged_at": "2026-08-15T10:29:59Z"
-    },
-    {
-      "number": 5743,
-      "title": "breathing: revival session records \u2014 workstream, clock ruling, close-semantics discovery, replay harness",
-      "merged_at": "2026-08-15T10:12:47Z"
-    },
-    {
-      "number": 5741,
-      "title": "radar(w5): PR-5b \u2014 replay/outcome/controls machinery, qledger registration, nightly reconciler, \u00a724 battery",
-      "merged_at": "2026-08-15T11:39:35Z"
-    },
-    {
-      "number": 5740,
-      "title": "docs(security): WS-5 / GATE-5 full git-history secret-scan triage",
-      "merged_at": "2026-08-15T09:16:30Z"
-    },
-    {
-      "number": 5739,
-      "title": "radar(w5): PR-5a \u2014 forward-evidence preregistration (pre-outcome freeze, red-teamed)",
-      "merged_at": "2026-08-15T08:58:10Z"
-    },
-    {
-      "number": 5738,
-      "title": "fix(w4): smallest repair of signed-in watchlist acceptance defects",
-      "merged_at": "2026-08-15T09:14:38Z"
-    },
-    {
-      "number": 5736,
-      "title": "fix(brain): WS-2 quota ledger atomicity, crash-safety, and global spend ceiling",
-      "merged_at": "2026-08-15T10:25:25Z"
-    },
-    {
-      "number": 5735,
-      "title": "ci(auth): AST guard against client-supplied user identity (WS-9 / GATE-6)",
-      "merged_at": "2026-08-15T08:56:45Z"
-    },
-    {
-      "number": 5734,
-      "title": "feat(ops): GATE-4 commercial-path alerts on the existing sentinel transport",
-      "merged_at": "2026-08-15T09:33:56Z"
-    },
-    {
-      "number": 5733,
-      "title": "feat(backup): nightly encrypted customer-table dump (MMX-001 / WS-1)",
-      "merged_at": "2026-08-15T10:13:40Z"
-    },
-    {
-      "number": 5731,
-      "title": "fix(auth): require_user reuses paywall._AUTH_CACHE and bounds Supabase outages (WS-3)",
-      "merged_at": "2026-08-15T10:15:57Z"
-    },
-    {
-      "number": 5730,
-      "title": "feat(cn-intel): prospective keep-first PIT hist for broker, margin, blocks, buybacks",
-      "merged_at": "2026-08-15T09:58:09Z"
-    },
-    {
-      "number": 5729,
-      "title": "P-B3 persistence-robust certification: NULL=12, UNINFORMATIVE=8",
-      "merged_at": "2026-08-15T16:03:15Z"
-    },
-    {
-      "number": 5728,
-      "title": "docs(fleet): record the multi-pack main-red-repair exception in house law",
-      "merged_at": "2026-08-15T08:09:15Z"
-    },
-    {
-      "number": 5727,
-      "title": "fix(ci): make M1 listener canary portable",
-      "merged_at": "2026-08-15T09:47:03Z"
-    },
-    {
-      "number": 5726,
-      "title": "radar(w3): records \u2014 W3 done at actual merge (#5724 / 4b9706ef), merged-main verified",
-      "merged_at": "2026-08-15T07:17:52Z"
-    },
-    {
-      "number": 5725,
-      "title": "SP1-B: pre-register then apply the trading-day price-index fix",
-      "merged_at": "2026-08-15T08:12:01Z"
-    },
-    {
-      "number": 5724,
-      "title": "radar(w3): PR-3 \u2014 exact C1\u2013C5 specification lock (\u00a718 A5) + 1D/4H point-in-time proof battery",
-      "merged_at": "2026-08-15T06:55:31Z"
-    },
-    {
-      "number": 5723,
-      "title": "fix(nightly): stop EST-guard cron from superseding a queued EDT daily",
-      "merged_at": "2026-08-15T08:01:59Z"
-    },
-    {
-      "number": 5722,
-      "title": "ci: recover isolated M1 and PC self-hosted canaries",
-      "merged_at": "2026-08-15T06:57:07Z"
-    },
-    {
-      "number": 5721,
-      "title": "Eval OS T4: output-level health contract + admin Intelligence OS surface",
-      "merged_at": "2026-08-15T08:34:02Z"
-    },
-    {
-      "number": 5720,
-      "title": "research: audit private runner and storage allocation",
-      "merged_at": "2026-08-15T03:22:02Z"
-    },
-    {
-      "number": 5718,
-      "title": "GMI Theme Graph W3A \u2014 dual-market Local Theme Plane (CEO directive 2026-08-14; refresh contract + finviz/THS local nodes + capability sidecar + rights plane; 2 adversarial reviews folded)",
-      "merged_at": "2026-08-15T08:49:21Z"
-    },
-    {
-      "number": 5716,
-      "title": "sp1: re-run on the rebuilt panel (corrected 8-session FINRA lag) \u2014 verdict unchanged, two new defects found",
-      "merged_at": "2026-08-15T05:58:27Z"
-    },
-    {
-      "number": 5714,
-      "title": "fix(earnings-wire): reword WAVE 'validated technology' (no allowlist)",
-      "merged_at": "2026-08-15T05:18:13Z"
-    },
-    {
-      "number": 5712,
-      "title": "governance(SP1): the prereg entry rule was measured EARLY \u2014 amend in place, do not supersede",
-      "merged_at": "2026-08-15T05:03:54Z"
-    },
-    {
-      "number": 5710,
-      "title": "fix(biocatalyst): keep public workbench assets outside regwall",
-      "merged_at": "2026-08-15T01:16:01Z"
-    },
-    {
-      "number": 5709,
-      "title": "fix(synapse): drop duplicate YAML keys that safe_load silently discarded",
-      "merged_at": "2026-08-15T08:02:07Z"
-    },
-    {
-      "number": 5708,
-      "title": "guard(scripts): sealed-runtime wins over the module-load import pin",
-      "merged_at": "2026-08-15T01:18:08Z"
-    },
-    {
-      "number": 5707,
-      "title": "fix(tests): pin marketing-radar newest-snapshot clock across UTC midnight",
-      "merged_at": "2026-08-15T01:02:58Z"
-    },
-    {
-      "number": 5706,
-      "title": "fix(intl): stamp conviction profile and B2 accrual with a real session date",
-      "merged_at": "2026-08-15T09:07:46Z"
-    },
-    {
-      "number": 5705,
-      "title": "fix(short-interest): the \"conservative\" knowable-lag was 2-3 days EARLY on every settlement we hold (F-5)",
-      "merged_at": "2026-08-15T07:44:38Z"
-    },
-    {
-      "number": 5704,
-      "title": "fix(ci): enumerate unearned exclusive collectors/lib/engine globs",
-      "merged_at": "2026-08-15T01:02:25Z"
-    },
-    {
-      "number": 5703,
-      "title": "fix(factor): disclose-null on missing or direction=0 \u2014 do not coerce to SHORT",
-      "merged_at": "2026-08-15T07:37:19Z"
-    },
-    {
-      "number": 5702,
-      "title": "fix(selector): pin EXPECTED_REPO_ROOT to this checkout via __file__",
-      "merged_at": "2026-08-15T05:01:50Z"
-    },
-    {
-      "number": 5701,
-      "title": "Prove sparse selector delayed import isolation",
-      "merged_at": "2026-08-15T00:34:13Z"
-    },
-    {
-      "number": 5700,
-      "title": "research(prophet-fusion): PR-2 \u2014 C2 regularized family stack, redundancy matrices, incremental harness (W2)",
-      "merged_at": "2026-08-15T01:18:37Z"
-    },
-    {
-      "number": 5699,
-      "title": "fix(render): own build_institutional_13f_census in the push filter (main red, workflow-yaml suite)",
-      "merged_at": "2026-08-14T23:55:05Z"
-    },
-    {
-      "number": 5698,
-      "title": "radar(w2): PR-2 \u2014 detector framework + exact G0 Grey Dot consumption/parity + entry_event.v1 expert preservation",
-      "merged_at": "2026-08-15T01:19:08Z"
-    },
-    {
-      "number": 5697,
-      "title": "fix(nw): the synapse read-gate must scan code, not prose \u2014 a MENTION is not a READ",
-      "merged_at": "2026-08-14T23:54:16Z"
-    },
-    {
-      "number": 5696,
-      "title": "Fix sparse selector sealed runtime v2",
-      "merged_at": "2026-08-14T23:31:47Z"
-    },
-    {
-      "number": 5695,
-      "title": "fix(ci): heal the synapse receipt #5694 left stale \u2014 restore the two re-pinned anchors",
-      "merged_at": "2026-08-15T00:10:42Z"
-    },
-    {
-      "number": 5694,
-      "title": "feat(options): activate bounded sparse selector canary",
-      "merged_at": "2026-08-14T22:59:03Z"
-    },
-    {
-      "number": 5693,
-      "title": "fix(cortex): the attention grader graded salience flags as long calls",
-      "merged_at": "2026-08-15T01:18:29Z"
-    },
-    {
-      "number": 5692,
-      "title": "fix(ci): curate options-estate-guards scope \u2014 drop the fallback smear, lower the ratchet",
-      "merged_at": "2026-08-15T00:21:44Z"
-    },
-    {
-      "number": 5690,
-      "title": "docs(agentos): refresh governed CEO brief receipt",
-      "merged_at": "2026-08-14T22:57:06Z"
-    },
-    {
-      "number": 5689,
-      "title": "fix(registry): one-to-many grader mapping + strip 43 drifted consumer counts from synapse canon",
-      "merged_at": "2026-08-15T04:13:03Z"
-    },
-    {
-      "number": 5688,
-      "title": "fix(altdata): self-gate the alt-data ledger on nightly_advance_enabled (HOUSE-U5)",
-      "merged_at": "2026-08-15T01:18:16Z"
-    },
-    {
-      "number": 5686,
-      "title": "docs(agentos): close Phase 2b after deployed agenda E2E",
-      "merged_at": "2026-08-14T23:22:13Z"
-    },
-    {
-      "number": 5685,
-      "title": "fix(ci): enumerate intelligence-registry's scripts/ closure instead of globbing scripts/*",
-      "merged_at": "2026-08-15T00:11:36Z"
-    },
-    {
-      "number": 5684,
-      "title": "fix(qledger): cohort claims log records the ACTUAL per-claim registration outcome",
-      "merged_at": "2026-08-15T01:18:01Z"
-    },
-    {
-      "number": 5683,
-      "title": "name_score: review hardening \u2014 INTL anchor, gap-detector cadence, cutover marker, pack heals",
-      "merged_at": "2026-08-15T01:18:51Z"
-    },
-    {
-      "number": 5682,
-      "title": "ci: keep Prophet lifecycle suite in its owner job",
-      "merged_at": "2026-08-15T00:12:26Z"
-    },
-    {
-      "number": 5681,
-      "title": "fix(estate): give --check a repair \u2014 `--fix` writes the committed form",
-      "merged_at": "2026-08-15T01:17:53Z"
-    },
-    {
-      "number": 5680,
-      "title": "fix(nightly): restore the same-run Russell breadth cache",
-      "merged_at": "2026-08-15T01:18:44Z"
-    },
-    {
-      "number": 5679,
-      "title": "feat(eval-os): W3 \u2014 output_class adjudicated for 107 of 109 required engines (+2 deliberate nulls)",
-      "merged_at": "2026-08-14T22:53:59Z"
-    },
-    {
-      "number": 5678,
-      "title": "prophet(fusion): w1b record flip (#5667 merged) + day-handoff post-merge addendum",
-      "merged_at": "2026-08-14T22:23:34Z"
-    },
-    {
-      "number": 5677,
-      "title": "fix(ci): the unrun-test census must not go vacuously green in a sparse worktree",
-      "merged_at": "2026-08-14T21:56:49Z"
-    },
-    {
-      "number": 5676,
-      "title": "fix(ci): heal both workflow-yaml reds \u2014 wire the dark lifecycle-state suite + re-base the job-count ceiling",
-      "merged_at": "2026-08-14T21:56:42Z"
-    },
-    {
-      "number": 5675,
-      "title": "test(r2-delivery): evidence anchors pin their line text \u2014 displacement is a red, not a silent re-point",
-      "merged_at": "2026-08-14T22:34:28Z"
-    },
-    {
-      "number": 5674,
-      "title": "name_score: stamp the store with the board session, not the host clock",
-      "merged_at": "2026-08-14T22:22:51Z"
-    },
-    {
-      "number": 5672,
-      "title": "fix(qledger): thread `today` to the matched-control gate so a replay is point-in-time consistent",
-      "merged_at": "2026-08-14T22:18:01Z"
-    },
-    {
-      "number": 5671,
-      "title": "ci: wire the last P1 unrun suite (prophet Overtime/horizon reconciliation)",
-      "merged_at": "2026-08-14T21:29:50Z"
-    },
-    {
-      "number": 5669,
-      "title": "fix(qledger+ci): P0d reconciliation \u2014 port #5661's surviving deltas after #5665 merged first",
-      "merged_at": "2026-08-15T01:18:22Z"
-    },
-    {
-      "number": 5668,
-      "title": "fix(ci): register the stretch-oracle guard so the house-law meta-guard goes green",
-      "merged_at": "2026-08-14T21:00:38Z"
-    },
-    {
-      "number": 5667,
-      "title": "prophet(fusion): PR-1b \u2014 frozen baseline race G0/G0'/G1-G4 + C1 (counterfactual replay, non-promotion-bearing)",
-      "merged_at": "2026-08-14T21:16:57Z"
-    },
-    {
-      "number": 5666,
-      "title": "fix(ci): heal three surviving main reds after #5663",
-      "merged_at": "2026-08-14T18:49:56Z"
-    },
-    {
-      "number": 5665,
-      "title": "fix(qledger): P0d follow-up \u2014 wire demand_chain's control leg + make an unpriceable control cost coverage",
-      "merged_at": "2026-08-14T20:18:34Z"
-    },
-    {
-      "number": 5663,
-      "title": "fix(ci): pin LIVE-ENTRY-RADAR on the agentos P0 rank prefix (ci-pack-10 fleet red)",
-      "merged_at": "2026-08-14T18:14:11Z"
-    },
-    {
-      "number": 5662,
-      "title": "fix(governance): enforce branch law and bind selector proof receipts",
-      "merged_at": "2026-08-14T20:59:12Z"
-    },
-    {
-      "number": 5661,
-      "title": "fix(qledger): P0d follow-up \u2014 demand_chain controls live + unpriceable controls stay in the denominator (adopted + reviewed)",
-      "merged_at": "2026-08-14T22:19:07Z"
-    },
-    {
-      "number": 5660,
-      "title": "stock-identity W1-A1: disclose GOLD wrong issuer and add quarantined B probe",
-      "merged_at": "2026-08-14T21:05:35Z"
-    },
-    {
-      "number": 5659,
-      "title": "agentos(eval-os): T1 W2 closed at the merge \u2014 records updated, frozen-vintage red dispositioned",
-      "merged_at": "2026-08-14T20:03:51Z"
-    },
-    {
-      "number": 5656,
-      "title": "Complete authenticated sparse selector audit path",
-      "merged_at": "2026-08-14T16:00:13Z"
-    },
-    {
-      "number": 5655,
-      "title": "fix(ci): consolidate remaining integration baseline repairs",
-      "merged_at": "2026-08-14T17:09:08Z"
-    },
-    {
-      "number": 5650,
-      "title": "fix(ci): regenerate SIGNAL_BUS.md \u2014 consumer count drifted from synapse.yml",
-      "merged_at": "2026-08-14T15:04:27Z"
-    },
-    {
-      "number": 5649,
-      "title": "feat(agentos): publish non-ranked agenda readiness",
-      "merged_at": "2026-08-14T21:28:00Z"
-    },
-    {
-      "number": 5647,
-      "title": "feat(watchlist): ship W4 per-ticker Intelligence Drawer",
-      "merged_at": "2026-08-14T17:31:39Z"
-    },
-    {
-      "number": 5645,
-      "title": "ci: restore whole-tree scope guards across selection tiers",
-      "merged_at": "2026-08-14T15:37:03Z"
-    },
-    {
-      "number": 5643,
-      "title": "stock-identity W2: expert replay + provenance \u2014 31k era-pinned events, STARTER\u2192P resolution, twin parity, B/GOLD addendum (descriptive only)",
-      "merged_at": "2026-08-16T18:48:33Z"
-    },
-    {
-      "number": 5639,
-      "title": "ci: wire the last 5 dark P1 suites into the jobs that own their subjects",
-      "merged_at": "2026-08-14T17:28:48Z"
-    },
-    {
-      "number": 5636,
-      "title": "ci: wire 5 dark P1 vector/site/panel/data suites into the jobs that own their subjects",
-      "merged_at": "2026-08-14T17:28:58Z"
-    },
-    {
-      "number": 5634,
-      "title": "ci: wire 4 dark P1 contract/options suites into the jobs that own their subjects",
-      "merged_at": "2026-08-14T17:29:05Z"
-    },
-    {
-      "number": 5632,
-      "title": "fix(baskets): gold_miners wrong-issuer repair \u2014 GOLD (Gold.com dealer tape) out, Barrick in under B; ABX/GOLD identity breaks ratified; member-identity tripwire",
-      "merged_at": "2026-08-14T17:30:13Z"
-    },
-    {
-      "number": 5631,
-      "title": "earnings: the prompt that was never running, and the scale it left unanchored",
-      "merged_at": "2026-08-14T20:58:10Z"
-    },
-    {
-      "number": 5630,
-      "title": "ci: wire 4 dark P1 US board-grading suites into the jobs that own their subjects",
-      "merged_at": "2026-08-14T17:28:23Z"
     }
   ]
 }

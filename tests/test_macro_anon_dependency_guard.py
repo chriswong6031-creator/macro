@@ -17,12 +17,16 @@ Run: python -m pytest tests/test_macro_anon_dependency_guard.py -q
 from __future__ import annotations
 
 import json
+import os
+import plistlib
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
+from scripts import macro_machine_git
 from scripts.check_macro_anon_dependency import (
     REPO_ROOT,
     _load_allowlist,
@@ -80,6 +84,68 @@ def test_alias_owner_is_also_flagged() -> None:
         "synthetic.py",
     )
     assert "raw_githubusercontent" in _shapes(findings)
+
+
+@pytest.mark.parametrize(
+    "snippet, shape",
+    (
+        (
+            'URL = "https://raw.githubusercontent.com/MastermindX-Market-Intelligence/Macro/main/x.json"\n',
+            "raw_githubusercontent",
+        ),
+        (
+            'REMOTE = "git@github.com:ChrisWong6031-Creator/Macro.git"\n',
+            "wrong_owner_transport",
+        ),
+    ),
+)
+def test_github_identity_matching_is_case_insensitive(
+    snippet: str,
+    shape: str,
+) -> None:
+    findings = find_anonymous_macro_dependencies(snippet, "scripts/synthetic.py")
+    assert shape in _shapes(findings)
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        'REMOTE = "git@github.com:chriswong6031-creator/macro.git"\n',
+        'REMOTE = "git@github.com:chriswong6031-creator/macro/"\n',
+        'REMOTE = "ssh://git@github.com/chriswong6031-creator/macro.git"\n',
+        'REMOTE = "ssh://git@github.com/chriswong6031-creator/macro/"\n',
+        'git remote set-url origin git@github.com:chriswong6031-creator/macro.git\n',
+    ],
+)
+def test_old_owner_git_transport_is_flagged(snippet: str) -> None:
+    findings = find_anonymous_macro_dependencies(snippet, "scripts/synthetic.sh")
+    assert "wrong_owner_transport" in _shapes(findings)
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        'REMOTE = "git@github.com:mastermindx-market-intelligence/macro.git"\n',
+        'PR = "https://github.com/chriswong6031-creator/macro/pull/6363"\n',
+        'CMT = "https://github.com/chriswong6031-creator/macro/commit/deadbeef"\n',
+        'OTHER = "git@github.com:chriswong6031-creator/not-macro.git"\n',
+    ],
+)
+def test_canonical_ssh_and_human_old_owner_citations_are_not_wrong_owner_transport(
+    snippet: str,
+) -> None:
+    findings = find_anonymous_macro_dependencies(snippet, "scripts/synthetic.sh")
+    assert "wrong_owner_transport" not in _shapes(findings)
+
+
+def test_old_owner_ssh_subprocess_reports_the_transport_shape_only() -> None:
+    src = (
+        "import subprocess\n"
+        'REMOTE = "git@github.com:chriswong6031-creator/macro.git"\n'
+        "subprocess.run(['git', 'fetch', REMOTE])\n"
+    )
+    findings = find_anonymous_macro_dependencies(src, "scripts/synthetic.py")
+    assert _shapes(findings) == {"wrong_owner_transport"}
 
 
 def test_git_clone_subprocess_call_is_flagged() -> None:
@@ -335,6 +401,20 @@ def test_scope_exclusion_is_not_vacuous(tmp_path: Path) -> None:
     assert _walk(tmp_path, {}), "detector found nothing on a non-excluded path"
 
 
+def test_scope_does_not_exclude_ordinary_paths_named_like_worktrees(
+    tmp_path: Path,
+) -> None:
+    p = tmp_path / "scripts" / "worktrees-tools" / "download.py"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        f'URL = "https://raw.githubusercontent.com/{OWNER}/macro/main/x.json"\n',
+        encoding="utf-8",
+    )
+
+    findings = _walk(tmp_path, {})
+    assert _shapes(findings) == {"raw_githubusercontent"}
+
+
 # ---------------------------------------------------------------------------
 # main() exit-code contract, exercised as a subprocess so it also proves the
 # CLI (``--root``) works end to end.
@@ -371,3 +451,384 @@ def test_main_exits_nonzero_and_annotates_on_a_planted_offender(tmp_path: Path) 
     for line in result.stdout.splitlines():
         if "::" in line:
             assert line.startswith("::"), f"annotation did not start the line: {line!r}"
+
+
+# ---------------------------------------------------------------------------
+# M1 publisher machine-Git seam — the two pre-existing host writers must use
+# one explicit write-capable deploy key after the canonical repo goes private.
+# ---------------------------------------------------------------------------
+def test_machine_git_key_is_owner_only_under_private_root(monkeypatch, tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    home.mkdir(mode=0o700)
+    private_root = home / ".ssh"
+    private_root.mkdir(mode=0o700)
+    key = private_root / "macro-publisher"
+    key.write_text("fixture-key-material", encoding="utf-8")
+    key.chmod(0o600)
+
+    monkeypatch.setattr(macro_machine_git, "_process_home", lambda: home)
+    monkeypatch.setenv(macro_machine_git.MACHINE_GIT_KEY_ENV, str(key))
+    assert macro_machine_git._deploy_key() == key.resolve()
+
+    os.link(key, private_root / "macro-publisher-alias")
+    with pytest.raises(macro_machine_git.MachineGitError, match="filesystem aliases"):
+        macro_machine_git._deploy_key()
+
+
+def test_machine_git_environment_has_no_ambient_auth_or_user_config(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "home"
+    key = home / ".ssh" / "machine key"
+    key.parent.mkdir(parents=True, mode=0o700)
+    key.write_text("fixture-key-material", encoding="utf-8")
+    key.chmod(0o600)
+    monkeypatch.setattr(macro_machine_git, "_process_home", lambda: home)
+    monkeypatch.setenv("SSH_AUTH_SOCK", "/tmp/human-agent.sock")
+    monkeypatch.setenv("GIT_ASKPASS", "/tmp/human-askpass")
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "99")
+
+    environment = macro_machine_git._git_environment(key)
+
+    assert set(environment) == {
+        "PATH",
+        "HOME",
+        "LANG",
+        "LC_ALL",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_CONFIG_NOSYSTEM",
+        "GIT_TERMINAL_PROMPT",
+        "GCM_INTERACTIVE",
+        "GIT_SSH_COMMAND",
+        "GIT_SSH_VARIANT",
+        "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_KEY_0",
+        "GIT_CONFIG_VALUE_0",
+    }
+    assert environment["GIT_CONFIG_GLOBAL"] == "/dev/null"
+    assert environment["GIT_CONFIG_SYSTEM"] == "/dev/null"
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+    assert environment["GCM_INTERACTIVE"] == "never"
+    assert environment["GIT_CONFIG_COUNT"] == "1"
+    assert environment["GIT_CONFIG_KEY_0"] == "core.hooksPath"
+    assert environment["GIT_CONFIG_VALUE_0"] == "/dev/null"
+    assert "SSH_AUTH_SOCK" not in environment
+    assert "GIT_ASKPASS" not in environment
+    ssh_command = environment["GIT_SSH_COMMAND"]
+    assert ssh_command.startswith("/usr/bin/ssh -F /dev/null -i ")
+    assert "-o BatchMode=yes" in ssh_command
+    assert "-o IdentitiesOnly=yes" in ssh_command
+    assert "-o IdentityAgent=none" in ssh_command
+    assert "-o StrictHostKeyChecking=yes" in ssh_command
+
+
+def test_machine_git_refuses_ambient_remote_names_and_other_urls() -> None:
+    macro_machine_git._validate_repository_arguments(
+        ["ls-remote", macro_machine_git.CANONICAL_REPOSITORY_SSH, "refs/heads/main"]
+    )
+    macro_machine_git._validate_repository_arguments(
+        ["fetch", *macro_machine_git._CANONICAL_FETCH]
+    )
+    macro_machine_git._validate_repository_arguments(
+        ["push", *macro_machine_git._CANONICAL_PUSH]
+    )
+    macro_machine_git._validate_repository_arguments(
+        ["push", "--dry-run", *macro_machine_git._CANONICAL_PUSH]
+    )
+    with pytest.raises(macro_machine_git.MachineGitError, match="literal repository"):
+        macro_machine_git._validate_repository_arguments(["fetch", "origin", "main"])
+    with pytest.raises(macro_machine_git.MachineGitError, match="non-canonical"):
+        macro_machine_git._validate_repository_arguments(
+            ["clone", "https://github.com/mastermindx-market-intelligence/macro.git"]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="non-canonical"):
+        macro_machine_git._validate_repository_arguments(
+            ["push", "git@github.com:someone-else/macro.git", "HEAD:main"]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="non-canonical"):
+        macro_machine_git._validate_repository_arguments(
+            ["push", "git@evil.invalid:other.git", "HEAD:refs/heads/main"]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="clone contract"):
+        macro_machine_git._validate_repository_arguments(
+            [
+                "clone",
+                "--depth",
+                "1",
+                "--filter=blob:none",
+                "--sparse",
+                "/tmp/local-macro",
+                "/tmp/destination",
+            ]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="push contract"):
+        macro_machine_git._validate_repository_arguments(
+            [
+                "push",
+                macro_machine_git.CANONICAL_REPOSITORY_SSH,
+                "HEAD:refs/heads/other",
+            ]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="fetch contract"):
+        macro_machine_git._validate_repository_arguments(
+            [
+                "fetch",
+                "--no-tags",
+                "--depth",
+                "1",
+                macro_machine_git.CANONICAL_REPOSITORY_SSH,
+                "+refs/heads/main:refs/remotes/origin/main",
+            ]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="push contract"):
+        macro_machine_git._validate_repository_arguments(
+            [
+                "push",
+                macro_machine_git.CANONICAL_REPOSITORY_SSH,
+                "HEAD:refs/heads/main",
+            ]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="command-line configuration"):
+        macro_machine_git._validate_repository_arguments(
+            ["-c", "url.ssh://attacker.invalid/.insteadOf=git@github.com:", "fetch"]
+        )
+    with pytest.raises(macro_machine_git.MachineGitError, match="environment-backed"):
+        macro_machine_git._validate_repository_arguments(
+            ["--config-env=url.ssh://attacker.invalid/.insteadOf=POISON", "fetch"]
+        )
+    macro_machine_git._validate_repository_arguments(
+        [
+            "-c",
+            "user.name=dashboard-bot",
+            "-c",
+            "user.email=actions@users.noreply.github.com",
+            "commit",
+        ]
+    )
+
+
+def _canonical_sparse_config_fixture(tmp_path: Path) -> tuple[Path, dict[str, str]]:
+    repo = tmp_path / "push-repo"
+    subprocess.run(["git", "init", "-b", "main", str(repo)], check=True, capture_output=True)
+    for key, value in macro_machine_git._CANONICAL_LOCAL_CONFIG.items():
+        subprocess.run(
+            ["git", "-C", str(repo), "config", "--local", key, value],
+            check=True,
+            capture_output=True,
+        )
+    for key, value in macro_machine_git._CANONICAL_WORKTREE_CONFIG.items():
+        subprocess.run(
+            ["git", "-C", str(repo), "config", "--worktree", key, value],
+            check=True,
+            capture_output=True,
+        )
+    environment = {
+        "PATH": "/usr/bin:/bin",
+        "HOME": str(tmp_path),
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_SYSTEM": "/dev/null",
+        "GIT_CONFIG_NOSYSTEM": "1",
+    }
+    macro_machine_git._refuse_unsafe_local_configuration(repo, environment)
+    return repo, environment
+
+
+@pytest.mark.parametrize(
+    "scope,key,value",
+    [
+        (scope, key, value)
+        for scope in ("--local", "--worktree")
+        for key, value in (
+            (
+                "url.ssh://attacker.invalid/.insteadOf",
+                macro_machine_git.CANONICAL_REPOSITORY_SSH,
+            ),
+            ("fetch.recurseSubmodules", "on-demand"),
+            ("push.recurseSubmodules", "on-demand"),
+            ("submodule.payload.url", "git@evil.invalid:payload.git"),
+            ("core.fsmonitor", "/tmp/attacker-fsmonitor"),
+            ("diff.external", "/tmp/attacker-diff"),
+            ("diff.trustExitCode", "true"),
+            ("diff.payload.command", "/tmp/attacker-command"),
+            ("diff.payload.textconv", "/tmp/attacker-textconv"),
+            ("filter.payload.clean", "/tmp/attacker-clean"),
+            ("filter.payload.smudge", "/tmp/attacker-smudge"),
+            ("filter.payload.process", "/tmp/attacker-process"),
+        )
+    ],
+)
+def test_machine_git_refuses_every_unknown_local_or_worktree_config(
+    tmp_path: Path,
+    scope: str,
+    key: str,
+    value: str,
+) -> None:
+    repo, environment = _canonical_sparse_config_fixture(tmp_path)
+    subprocess.run(
+        ["git", "-C", str(repo), "config", scope, key, value],
+        check=True,
+        capture_output=True,
+    )
+    with pytest.raises(macro_machine_git.MachineGitError, match="canonical sparse-clone schema"):
+        macro_machine_git._refuse_unsafe_local_configuration(repo, environment)
+
+
+def test_machine_git_blocks_external_diff_that_hides_a_staged_change(tmp_path: Path) -> None:
+    repo, environment = _canonical_sparse_config_fixture(tmp_path)
+    tracked = repo / "artifact.json"
+    tracked.write_text('{"state":"old"}\n', encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", "artifact.json"], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "-m",
+            "fixture",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    tracked.write_text('{"state":"new"}\n', encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", "artifact.json"], check=True)
+    honest = subprocess.run(
+        ["git", "-C", str(repo), "diff", "--cached", "--quiet", "--", "artifact.json"],
+        check=False,
+    )
+    assert honest.returncode == 1, "fixture must contain a real staged change"
+
+    quiet_diff = tmp_path / "quiet-diff.sh"
+    quiet_diff.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    quiet_diff.chmod(0o700)
+    subprocess.run(
+        ["git", "-C", str(repo), "config", "--local", "diff.external", str(quiet_diff)],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repo), "config", "--local", "diff.trustExitCode", "true"],
+        check=True,
+    )
+    poisoned = subprocess.run(
+        ["git", "-C", str(repo), "diff", "--cached", "--quiet", "--", "artifact.json"],
+        check=False,
+    )
+    assert poisoned.returncode in {0, 1}
+    if poisoned.returncode == 1:
+        # Git 2.43 (Ubuntu 24.04, including the sealed PC runners) records
+        # diff.trustExitCode but does not yet let that setting override the
+        # --quiet staged-diff result.  The configuration is still forbidden:
+        # upgrading Git must not silently turn an accepted repository into the
+        # demonstrated return-0 bypass used by newer clients.
+        configured = subprocess.run(
+            ["git", "-C", str(repo), "config", "--local", "--get", "diff.trustExitCode"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert configured.stdout.strip() == "true"
+
+    with pytest.raises(macro_machine_git.MachineGitError, match="canonical sparse-clone schema"):
+        macro_machine_git._refuse_unsafe_local_configuration(repo, environment)
+
+
+@pytest.mark.parametrize(
+    "runner_name",
+    ["run_index_gex_history.sh", "run_theme_options_witness.sh"],
+)
+def test_m1_publishers_use_only_the_private_safe_machine_git_seam(runner_name: str) -> None:
+    text = (REPO_ROOT / "ops" / "launchd" / runner_name).read_text(encoding="utf-8")
+    executable_lines = [
+        line.strip()
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    assert 'REMOTE_URL="git@github.com:mastermindx-market-intelligence/macro.git"' in text
+    assert "MACRO_PUBLISH_GIT_SSH_KEY is required" in text
+    assert 'MACHINE_GIT="$RUNTIME/scripts/macro_machine_git.py"' in text
+    assert 'export PYTHONPATH="$REPO"' in text
+    assert "https://github.com/mastermindx-market-intelligence/macro.git" not in text
+    assert not any(line == "git" or line.startswith("git ") for line in executable_lines)
+    assert not any("$(git " in line for line in executable_lines)
+    assert " push origin " not in text
+    assert 'fetch --no-tags --no-recurse-submodules --depth 1 "$REMOTE_URL"' in text
+    assert 'push --recurse-submodules=no "$REMOTE_URL" HEAD:refs/heads/main' in text
+    post_source_manual_binding = (
+        "/Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh \\\n"
+        "#     /Users/chriswong/flow-ops-wt/.env \\\n"
+        "#     /usr/bin/env \\\n"
+        "#     MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy \\\n"
+        "#     PYTHONPATH=/Users/chriswong/flow-ops-wt \\\n"
+        "#     /bin/sh \\\n"
+        f"#     /Users/chriswong/macro-publisher-runtime/ops/launchd/{runner_name}"
+    )
+    assert post_source_manual_binding in text
+
+
+@pytest.mark.parametrize(
+    "plist_name,runner_name",
+    [
+        ("com.macro.indexgexhistory.plist", "run_index_gex_history.sh"),
+        ("com.macro.theme-options-witness.plist", "run_theme_options_witness.sh"),
+    ],
+)
+def test_m1_publisher_launch_contract_separates_current_launcher_from_pinned_engine(
+    plist_name: str,
+    runner_name: str,
+) -> None:
+    # The production plists contain legacy comments that macOS plutil accepts,
+    # including long separator runs that strict cross-platform XML parsers
+    # reject as invalid ``--`` comment bodies.  Comments are not plist data:
+    # remove them permissively, parse the actual dictionary with the stdlib,
+    # and retain native ``plutil -lint`` as a separate macOS acceptance check.
+    plist_text = (REPO_ROOT / "ops" / "launchd" / plist_name).read_text(
+        encoding="utf-8"
+    )
+    plist_without_comments = re.sub(r"<!--.*?-->", "", plist_text, flags=re.DOTALL)
+    payload = plistlib.loads(plist_without_comments.encode("utf-8"))
+    assert payload["ProgramArguments"] == [
+        "/Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh",
+        "/Users/chriswong/flow-ops-wt/.env",
+        "/usr/bin/env",
+        "MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy",
+        "PYTHONPATH=/Users/chriswong/flow-ops-wt",
+        "/bin/sh",
+        f"/Users/chriswong/macro-publisher-runtime/ops/launchd/{runner_name}",
+    ]
+    assert payload["WorkingDirectory"] == "/Users/chriswong/flow-ops-wt"
+    assert "EnvironmentVariables" not in payload
+
+
+def test_run_with_env_reasserts_publisher_identity_after_a_poisoned_env_file(
+    tmp_path: Path,
+) -> None:
+    env_file = tmp_path / "publisher.env"
+    env_file.write_text(
+        "MACRO_PUBLISH_GIT_SSH_KEY=/tmp/stale-or-human-key\n"
+        "PYTHONPATH=/tmp/stale-engine\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            str(REPO_ROOT / "ops" / "launchd" / "run_with_env.sh"),
+            str(env_file),
+            "/usr/bin/env",
+            "MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy",
+            "PYTHONPATH=/Users/chriswong/flow-ops-wt",
+            "/bin/sh",
+            "-c",
+            'test "$MACRO_PUBLISH_GIT_SSH_KEY" = '
+            "'/Users/chriswong/.ssh/macro_dashboard_deploy' && "
+            'test "$PYTHONPATH" = "/Users/chriswong/flow-ops-wt"',
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr

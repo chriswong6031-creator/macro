@@ -123,6 +123,15 @@ def _audit_bound_evidence(
     mapping, but deduplicates immutable objects and packet replays by their
     content ids.  Corrections remain distinct packet ids and therefore retain
     full historical source provenance.
+
+    A bounded catch-up generation is intentionally allowed to project a strict
+    subset of its bound evidence root. Completeness is measured by the
+    story/evidence lag and backlog, not manufactured by pretending an hourly
+    batch contains the entire upstream generation. The audit therefore proves
+    every published packet belongs to and exactly replays its bound evidence;
+    it rejects only packets outside that evidence root. This keeps partial
+    recovery roots and their immutable ancestors auditable while preserving the
+    complete object/evidence replay for everything they actually published.
     """
     from engine.earnings_narrative.story_packets import (  # noqa: PLC0415
         evidence_receipts_from_manifest,
@@ -164,8 +173,8 @@ def _audit_bound_evidence(
             or sha256_bytes(evidence_raw) != evidence_ref.get("manifest_sha256")
         ):
             raise ImmutableAddressIntegrityError("bound earnings evidence manifest receipt mismatch")
-        if set(evidence_manifest["events"]) != set(story_manifest["packets"]):
-            raise ImmutableAddressIntegrityError("story packet catalog does not exactly project its evidence root")
+        if not set(story_manifest["packets"]) <= set(evidence_manifest["events"]):
+            raise ImmutableAddressIntegrityError("story packet catalog contains an event outside its bound evidence root")
 
         policy = story_manifest["policy"]["snapshot"]
         for key, index in story_manifest["packets"].items():
@@ -644,12 +653,29 @@ def _generation_id(manifest: Mapping[str, Any]) -> str:
     return generation_id
 
 
+def _changed_receipts(manifest: Mapping[str, Any], remote: Mapping[str, Any] | None) -> list[tuple[str, Mapping[str, Any]]]:
+    local = _file_receipts(manifest)
+    remote_files = remote.get("files") if isinstance(remote, Mapping) else None
+    if not isinstance(remote_files, Mapping):
+        return sorted(local.items())
+    return [(path, receipt) for path, receipt in sorted(local.items()) if remote_files.get(path) != receipt]
+
+
 def _validate_staging(
     out_dir: Path,
     manifest: Mapping[str, Any],
     *,
+    remote_manifest: Mapping[str, Any] | None = None,
     lineage_depth: int | None = None,
 ) -> None:
+    """Validate either a complete first root or one verified bounded child delta.
+
+    A child generation may legitimately omit unchanged packet bodies locally:
+    the immutable current R2 parent already binds those bytes.  In that case we
+    require exact receipt reuse for the unchanged catalog and locally verify
+    only changed/new objects plus correction lineage.  Full remote audits still
+    replay every object in every retained generation.
+    """
     root = Path(out_dir)
     marker = canonical_json_bytes(manifest)
     try:
@@ -658,13 +684,27 @@ def _validate_staging(
         generation = root / "generations" / _generation_id(manifest)
         if (generation / "manifest.json").read_bytes() != marker:
             raise ImmutableAddressIntegrityError("local immutable story packet manifest differs from root")
-        for relative, receipt in _file_receipts(manifest).items():
+        receipts = (
+            _changed_receipts(manifest, remote_manifest)
+            if remote_manifest is not None
+            else sorted(_file_receipts(manifest).items())
+        )
+        for relative, receipt in receipts:
             object_key = str(receipt["object_key"])
             body = (root / object_key).read_bytes()
             if len(body) != receipt["bytes"] or sha256_bytes(body) != receipt["sha256"]:
                 raise ImmutableAddressIntegrityError(f"local story packet receipt mismatch: {relative}")
             _canonical_object(body, label=f"local story packet object {relative}")
-        health = _verify_store(root, manifest, lineage_depth=lineage_depth)
+        if remote_manifest is None:
+            health = _verify_store(root, manifest, lineage_depth=lineage_depth)
+        else:
+            from engine.earnings_narrative.story_store import verify_story_packet_delta_store  # noqa: PLC0415
+
+            health = verify_story_packet_delta_store(
+                root,
+                manifest,
+                prior_manifest=remote_manifest,
+            )
         if health.get("status") != "ready":
             raise ImmutableAddressIntegrityError("local story packet store is not ready")
     except ImmutableAddressIntegrityError:
@@ -714,14 +754,6 @@ def _put_immutable(s3: Any, bucket: str, key: str, body: bytes, *, dry_run: bool
             except ImmutableCreateConflict:
                 raise
         raise ImmutableAddressIntegrityError(f"immutable create failed: {key}") from exc
-
-
-def _changed_receipts(manifest: Mapping[str, Any], remote: Mapping[str, Any] | None) -> list[tuple[str, Mapping[str, Any]]]:
-    local = _file_receipts(manifest)
-    remote_files = remote.get("files") if isinstance(remote, Mapping) else None
-    if not isinstance(remote_files, Mapping):
-        return sorted(local.items())
-    return [(path, receipt) for path, receipt in sorted(local.items()) if remote_files.get(path) != receipt]
 
 
 def _shrink_allowed(local: Mapping[str, Any], remote: Mapping[str, Any] | None) -> bool:
@@ -1109,7 +1141,6 @@ def publish(
         if manifest.get("status") != "ready":
             raise ImmutableAddressIntegrityError("only ready story packet catalogs may advance the public root")
         _catalog_keys(manifest)
-        _validate_staging(Path(out_dir), manifest, lineage_depth=verify_lineage_depth)
         remote, remote_etag = _remote_marker(client, target_bucket)
         if remote is not None and remote_etag is None:
             raise ImmutableAddressIntegrityError(
@@ -1201,6 +1232,12 @@ def publish(
         if not _shrink_allowed(manifest, remote):
             log.error("refusing story packet root shrink below last-good ready packet set")
             return 1
+        _validate_staging(
+            Path(out_dir),
+            manifest,
+            remote_manifest=remote,
+            lineage_depth=verify_lineage_depth,
+        )
         objects: dict[str, bytes] = {}
         for relative, receipt in _changed_receipts(manifest, remote):
             object_key = str(receipt["object_key"])

@@ -20,6 +20,17 @@
 #      special-cased — a holiday can inflate the count by 1, which the WARN
 #      tier absorbs; the ALERT tier only false-fires if a holiday AND a real
 #      miss stack, which is exactly when a human look is cheap.)
+#   3. (AD-1T1 F8, threshold fixed RF1/R3) Daily-refresh anchor —
+#      `_manifest.json`'s `daily_refresh.D` is the incremental daily lane's
+#      own liveness record. ALERT when it is not today's NYSE session date
+#      (`lib.nyse_calendar.session_date()`) after 20:00 ET on a session day:
+#      launchd calendar fires do not wake a sleeping Mac and COALESCE on
+#      wake, so a sleeping/missed host is otherwise indistinguishable from a
+#      healthy one. This sentinel's OWN two fire points are 06:15/18:30 PT =
+#      09:15/21:30 ET — the original 22:00 ET threshold made the check DEAD
+#      (neither fire ever lands after 22:00 ET, so anchor_due was always
+#      False); 20:00 ET sits strictly before the 21:30 ET evening fire so
+#      that fire is the one that actually evaluates the anchor.
 #
 # Outputs (all append/atomic-write, never touches the parquet store):
 #   /tmp/theta_staleness.json  — machine-readable latest verdict
@@ -33,10 +44,19 @@
 set -uo pipefail
 
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
-STORE="/Users/chriswong/theta-ops-wt/data/thetadata_eod"
+# AD-1T1 F8: repo root, for importing lib.nyse_calendar (session_date()) in
+# the anchor check below. Computed relative to this script's own location so
+# it resolves correctly wherever the ops-tree copy lives (see runbook).
+# REPO_ROOT/STORE/HEALTH_URL/SENTINEL_NOW_UTC are all env-overridable
+# (`:-` defaults) — purely a test seam (N3: injecting a broken REPO_ROOT is
+# how the fail-closed anchor-eval-failure path gets exercised without
+# actually deleting lib/nyse_calendar.py); production invocation via
+# launchd never sets any of them and gets the real values below.
+REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+STORE="${STORE:-/Users/chriswong/theta-ops-wt/data/thetadata_eod}"
 OUT_JSON="/tmp/theta_staleness.json"
 LOG="/tmp/theta_staleness.log"
-HEALTH_URL="http://127.0.0.1:25503/v3/option/list/symbols"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:25503/v3/option/list/symbols}"
 
 # due-today: today's session counts as missing only after the post-close pull
 # window (16:10 ET / 13:10 PT). launchd can't vary args per StartCalendarInterval
@@ -57,6 +77,7 @@ rm -f "${term_body}"
 
 DUE_TODAY="${DUE_TODAY}" TERM_CODE="${term_code}" TERM_BYTES="${term_bytes}" \
 SYMBOLS_MIN_BYTES="${SYMBOLS_MIN_BYTES}" STORE="${STORE}" OUT_JSON="${OUT_JSON}" LOG="${LOG}" \
+REPO_ROOT="${REPO_ROOT}" SENTINEL_NOW_UTC="${SENTINEL_NOW_UTC:-}" \
 "${PYTHON}" - <<'PY'
 import datetime as dt
 import json, os, subprocess, sys
@@ -125,6 +146,97 @@ if missing is not None:
         level = "WARN"
         reasons.append(f"greeks 1 session behind (latest={latest})")
 
+# AD-1T1 F8: daily_refresh.D anchor. `_manifest.json`'s daily_refresh section
+# is the incremental daily lane's own liveness record — checked separately
+# from the greeks-staleness check above because a sleeping/missed host and a
+# healthy one look identical to launchd (calendar fires do not wake a
+# sleeping Mac and coalesce on wake).
+#
+# (K4, Sol B3) The anchor now validates HEALTH, not only freshness of D: a
+# current-D `partial`/`failed` receipt, or a `forced=true` diagnostic run,
+# ALERTs exactly like a stale D — only a normal production-healthy result
+# (D == expected AND status == "healthy" AND forced is exactly false)
+# satisfies the anchor. With K1, `healthy` now carries the >=90% AD-ready
+# settlement guarantee, so this anchor is the sentinel's proof that a real
+# S/D panel landed, not just that SOME run touched D today.
+daily_refresh_d = None
+daily_refresh_status = None
+daily_refresh_forced = None
+expected_session = None
+anchor_err = None
+try:
+    with open(f"{store}/_manifest.json") as f:
+        _manifest = json.load(f)
+    _daily_refresh = _manifest.get("daily_refresh") or {}
+    daily_refresh_d = _daily_refresh.get("D")
+    daily_refresh_status = _daily_refresh.get("status")
+    daily_refresh_forced = _daily_refresh.get("forced")
+except Exception as e:
+    anchor_err = f"manifest read failed: {type(e).__name__}: {e}"
+
+anchor_due = False
+# (N3, R3 verify-pass) FAIL CLOSED. The old shape left `anchor_due` at its
+# False default when this try block itself raised (a broken REPO_ROOT, a
+# renamed/deleted lib.nyse_calendar, an import-time error) — so the
+# `if anchor_due:` gate below was NEVER entered and the failure was
+# invisible, the exact same silent-dead-instrument class RF1 fixed for the
+# threshold. `calendar_eval_failed` is tracked SEPARATELY so a broken
+# evaluator ALERTs unconditionally, never gated on whether it also
+# (successfully, which it didn't) decided the anchor was due.
+calendar_eval_failed = False
+try:
+    sys.path.insert(0, os.environ.get("REPO_ROOT", ""))
+    from lib import nyse_calendar
+
+    # SENTINEL_NOW_UTC (ISO8601, test seam only — see header) overrides the
+    # wall clock so the anchor logic can be evaluated at an exact instant
+    # instead of only whenever this happens to run.
+    now_override = os.environ.get("SENTINEL_NOW_UTC", "").strip()
+    if now_override:
+        now_utc = dt.datetime.fromisoformat(now_override)
+        if now_utc.tzinfo is None:
+            now_utc = now_utc.replace(tzinfo=dt.timezone.utc)
+    else:
+        now_utc = dt.datetime.now(dt.timezone.utc)
+    now_et = now_utc.astimezone(nyse_calendar.ET)
+    expected_session = str(nyse_calendar.session_date(now_utc))
+    # (RF1, R3) 20:00 ET — see header: this sentinel's own 21:30 ET evening
+    # fire must land AFTER the threshold or the check is dead code.
+    anchor_due = (nyse_calendar.is_session(now_et.date())
+                 and now_et.time() >= dt.time(20, 0))
+except Exception as e:
+    calendar_eval_failed = True
+    anchor_err = anchor_err or f"nyse_calendar import/eval failed: {type(e).__name__}: {e}"
+
+if calendar_eval_failed:
+    level = "ALERT"
+    reasons.append(f"staleness anchor cannot evaluate: {anchor_err}")
+elif anchor_due:
+    if anchor_err:
+        level = "ALERT"
+        reasons.append(f"daily_refresh anchor check failed: {anchor_err}")
+    elif daily_refresh_d != expected_session:
+        level = "ALERT"
+        reasons.append(
+            f"daily_refresh.D stale: manifest={daily_refresh_d!r} "
+            f"expected={expected_session!r} (AD-1T1 F8 anchor, after 20:00 ET)")
+    elif daily_refresh_status != "healthy":
+        # (K4, Sol B3) current-D but NOT a healthy result (partial/failed) —
+        # D matching today is necessary but no longer sufficient.
+        level = "ALERT"
+        reasons.append(
+            f"daily_refresh.D current ({daily_refresh_d!r}) but status="
+            f"{daily_refresh_status!r} (not healthy) (K4 anchor, after 20:00 ET)")
+    elif daily_refresh_forced is not False:
+        # (K4, Sol B3) `forced` must be exactly JSON `false` — a `true`
+        # diagnostic run (or a missing/non-boolean field) is not a normal
+        # production-healthy result and must not silently satisfy the
+        # anchor.
+        level = "ALERT"
+        reasons.append(
+            f"daily_refresh.D current and healthy but forced={daily_refresh_forced!r} "
+            f"(expected false) (K4 anchor, after 20:00 ET)")
+
 verdict = {
     "checked_at": now,
     "level": level,
@@ -133,6 +245,12 @@ verdict = {
     "latest_greeks_date": str(latest) if latest else None,
     "sessions_missing": missing,
     "due_today": due_today,
+    "daily_refresh_d": daily_refresh_d,
+    "daily_refresh_status": daily_refresh_status,
+    "daily_refresh_forced": daily_refresh_forced,
+    "daily_refresh_expected": expected_session,
+    "daily_refresh_anchor_due": anchor_due,
+    "daily_refresh_anchor_eval_failed": calendar_eval_failed,
     "reasons": reasons,
 }
 tmp = out_json + ".tmp"

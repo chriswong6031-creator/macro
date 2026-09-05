@@ -1477,6 +1477,40 @@ def _submission_header(source: bytes | str | None) -> dict[str, str | None]:
     return values
 
 
+_SGML_FILENAME_RE = re.compile(r"^\s*<FILENAME>\s*([^\r\n<]+)", re.IGNORECASE | re.MULTILINE)
+
+
+def _sgml_document_names(source: bytes | str | None) -> tuple[str, ...]:
+    """Return every ``<FILENAME>`` value listed in an SGML submission header.
+
+    SEC's archive ``index.json`` is not a reliable document list: EDGAR has
+    intermittently served an ``index.json`` whose ``directory.item`` omits one
+    of the filing's own XML documents (measured live 2026-08-25/26 across
+    multiple accessions -- sometimes the primary Form 13F XML is missing,
+    sometimes the information table is). The SGML header document
+    (``-index-headers.html``, or the ``.txt`` complete submission when no
+    header document was fetched) embeds the authoritative ``<DOCUMENT>``/
+    ``<FILENAME>`` list straight from EDGAR's own submission manifest and is
+    used to recover whatever ``index.json`` dropped.
+    """
+
+    if source is None:
+        return ()
+    text = source.decode("latin-1") if isinstance(source, bytes) else source
+    text = unescape(text)
+    names: list[str] = []
+    seen: set[str] = set()
+    for match in _SGML_FILENAME_RE.finditer(text):
+        name = match.group(1).strip()
+        if not name or Path(name).name != name or name in {".", ".."}:
+            raise SecSourceError(f"unsafe filing document name in SGML header: {name!r}")
+        if name in seen:
+            continue
+        seen.add(name)
+        names.append(name)
+    return tuple(names)
+
+
 def _accession_from_index_url(index_url: str) -> str | None:
     matches = _ACCESSION_RE.findall(index_url)
     if matches:
@@ -1743,15 +1777,61 @@ def parse_filing_package(
 
     index_payload, index_body = _json_mapping(index_source)
     descriptors = parse_filing_index(index_payload, index_url=index_url)
-    descriptor_by_name = {item.name: item for item in descriptors}
-    expected_names = {item.name for item in descriptors}
-    unknown = sorted(set(documents) - expected_names)
-    if unknown:
-        raise SecSourceError(f"documents absent from filing index: {unknown}")
     body_by_name = {
         name: value if isinstance(value, bytes) else value.encode("utf-8")
         for name, value in documents.items()
     }
+
+    header_name = next(
+        (
+            name
+            for name in body_by_name
+            if name.lower().endswith("-index-headers.html")
+        ),
+        None,
+    )
+    if header_name is None:
+        header_name = next(
+            (name for name in body_by_name if name.lower().endswith(".txt")), None
+        )
+    header_source = body_by_name.get(header_name) if header_name is not None else None
+    header = _submission_header(header_source)
+
+    # SEC's index.json `directory.item` list has intermittently omitted one of
+    # the filing's own XML documents (measured live 2026-08-25/26). The SGML
+    # header carries the authoritative document manifest, so any name it lists
+    # that index.json did not is synthesized here as an index descriptor --
+    # recovering the omission while keeping the completeness gate below
+    # fail-closed (an SGML-listed XML that was never supplied still raises).
+    indexed_names = {item.name for item in descriptors}
+    missing = [name for name in _sgml_document_names(header_source) if name not in indexed_names]
+    synthesized: list[FilingIndexDocument] = []
+    if missing:
+        _, base = _index_json_url(index_url)
+        next_ordinal = (descriptors[-1].source_ordinal if descriptors else 0) + 1
+        for offset, name in enumerate(missing):
+            synthesized.append(
+                FilingIndexDocument(
+                    source_ordinal=next_ordinal + offset,
+                    name=name,
+                    url=urljoin(base, name),
+                    size=None,
+                    last_modified=None,
+                )
+            )
+        print(
+            "::warning title=sec-index-missing-documents::"
+            f"{index_url} index.json omitted {sorted(missing)}; "
+            "recovered from SGML header",
+            flush=True,
+        )
+    descriptors = (*descriptors, *synthesized)
+    descriptor_by_name = {item.name: item for item in descriptors}
+    expected_names = set(descriptor_by_name)
+
+    unknown = sorted(set(documents) - expected_names)
+    if unknown:
+        raise SecSourceError(f"documents absent from filing index: {unknown}")
     missing_xml = sorted(
         item.name
         for item in descriptors
@@ -1772,22 +1852,6 @@ def parse_filing_package(
                 f"body={len(body)}",
                 flush=True,
             )
-
-    header_name = next(
-        (
-            name
-            for name in body_by_name
-            if name.lower().endswith("-index-headers.html")
-        ),
-        None,
-    )
-    if header_name is None:
-        header_name = next(
-            (name for name in body_by_name if name.lower().endswith(".txt")), None
-        )
-    header = _submission_header(
-        body_by_name.get(header_name) if header_name is not None else None
-    )
     accession_candidates = {
         label: normalize_accession(value)
         for label, value in (
@@ -1925,7 +1989,7 @@ def read_filing_package(
 ) -> BulkTables:
     """Fetch through an injected callable and parse one filing package."""
 
-    json_url, _ = _index_json_url(index_url)
+    json_url, base = _index_json_url(index_url)
     index_body = _fetch_bytes(fetch, json_url)
     descriptors = parse_filing_index(index_body, index_url=json_url)
     documents: dict[str, bytes] = {}
@@ -1941,6 +2005,24 @@ def read_filing_package(
         )
         if should_fetch:
             documents[descriptor.name] = _fetch_bytes(fetch, descriptor.url)
+
+    # index.json's own directory listing has intermittently omitted one of the
+    # filing's XML documents (measured live 2026-08-25/26); recover from the
+    # SGML header's authoritative document list before handing off to
+    # parse_filing_package, which still fails closed on anything still absent.
+    header_name = next(
+        (name for name in documents if name.lower().endswith("-index-headers.html")),
+        None,
+    )
+    if header_name is None:
+        header_name = next(
+            (name for name in documents if name.lower().endswith(".txt")), None
+        )
+    header_source = documents.get(header_name) if header_name is not None else None
+    for name in _sgml_document_names(header_source):
+        if name.lower().endswith(".xml") and name not in documents:
+            documents[name] = _fetch_bytes(fetch, urljoin(base, name))
+
     return parse_filing_package(
         index_url=index_url,
         index_source=index_body,

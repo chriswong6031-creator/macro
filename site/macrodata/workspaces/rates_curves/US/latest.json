@@ -1,0 +1,2505 @@
+{
+  "alert_contract": {
+    "eligible_conditions": [
+      {
+        "condition_id": "curve_inversion_change",
+        "kind": "state_transition",
+        "label": {
+          "en": "Curve inversion change",
+          "zh": "曲线倒挂状态变化"
+        },
+        "params": [
+          "spread_id"
+        ]
+      },
+      {
+        "condition_id": "curve_level_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Curve level shock",
+          "zh": "曲线水平冲击"
+        },
+        "params": [
+          "metric_id",
+          "delta"
+        ]
+      },
+      {
+        "condition_id": "term_premium_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Term premium shock",
+          "zh": "期限溢价冲击"
+        },
+        "params": [
+          "term_premium_10y_level"
+        ]
+      },
+      {
+        "condition_id": "corridor_spread_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Corridor spread shock",
+          "zh": "政策走廊利差冲击"
+        },
+        "params": [
+          "metric_id",
+          "bp"
+        ]
+      },
+      {
+        "condition_id": "decomposition_disagreement_change",
+        "kind": "contradiction_change",
+        "label": {
+          "en": "Decomposition disagreement change",
+          "zh": "分解分歧变化"
+        },
+        "params": [
+          "kind"
+        ]
+      },
+      {
+        "condition_id": "source_stale_or_failed",
+        "kind": "source_stale_or_failed",
+        "label": {
+          "en": "Source stale or failed",
+          "zh": "数据源过期或失败"
+        },
+        "params": [
+          "source_id"
+        ]
+      }
+    ],
+    "note": "Eligible condition types are declared; this composer writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    "service_available": false,
+    "status": "ABSENT"
+  },
+  "authority": {
+    "axis_authority_ceiling": "DESCRIPTIVE",
+    "can_execute": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "class": "context_only",
+    "display_only": true
+  },
+  "availability": {
+    "contradiction": {
+      "components": [],
+      "en": null,
+      "kind": null,
+      "present": false,
+      "zh": null
+    },
+    "coverage_ratio": 1.0,
+    "degraded": [],
+    "reasons": [],
+    "required": [
+      {
+        "component_id": "us3m",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "3-month node (us3m)",
+          "zh": "3-month节点（us3m）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us6m",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "6-month node (us6m)",
+          "zh": "6-month节点（us6m）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us2y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "2-year node (us2y)",
+          "zh": "2-year节点（us2y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us5y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "5-year node (us5y)",
+          "zh": "5-year节点（us5y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us10y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year node (us10y)",
+          "zh": "10-year节点（us10y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us30y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "30-year node (us30y)",
+          "zh": "30-year节点（us30y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us5y_real",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "5-year node (us5y_real)",
+          "zh": "5-year节点（us5y_real）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us10y_real",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year node (us10y_real)",
+          "zh": "10-year节点（us10y_real）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "breakeven_10y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year node (breakeven_10y)",
+          "zh": "10-year节点（breakeven_10y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-03",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "breakeven_5y5y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "5-year, 5-year forward node (breakeven_5y5y)",
+          "zh": "5-year, 5-year forward节点（breakeven_5y5y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-03",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "term_premium_10y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year node (term_premium_10y)",
+          "zh": "10-year节点（term_premium_10y）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-08-28",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "effr",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Effective Fed Funds Rate node (effr)",
+          "zh": "Effective Fed Funds Rate节点（effr）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-03",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "sofr",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Secured Overnight Financing Rate node (sofr)",
+          "zh": "Secured Overnight Financing Rate节点（sofr）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-03",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "iorb",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Interest on Reserve Balances node (iorb)",
+          "zh": "Interest on Reserve Balances节点（iorb）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-04",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us1y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "1-year node (us1y)",
+          "zh": "1-year节点（us1y）"
+        },
+        "null_reason": null,
+        "required": false,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us3y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "3-year node (us3y)",
+          "zh": "3-year节点（us3y）"
+        },
+        "null_reason": null,
+        "required": false,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us7y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "7-year node (us7y)",
+          "zh": "7-year节点（us7y）"
+        },
+        "null_reason": null,
+        "required": false,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "us20y",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "20-year node (us20y)",
+          "zh": "20-year节点（us20y）"
+        },
+        "null_reason": null,
+        "required": false,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      },
+      {
+        "component_id": "obfr",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Overnight Bank Funding Rate node (obfr)",
+          "zh": "Overnight Bank Funding Rate节点（obfr）"
+        },
+        "null_reason": null,
+        "required": false,
+        "source_asof": "2026-09-03",
+        "status": "PRESENT"
+      }
+    ],
+    "state": "CURRENT",
+    "worst_freshness": "CURRENT"
+  },
+  "axes": {
+    "items": []
+  },
+  "changes": {
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 4.39,
+        "delta": 0.0,
+        "metric_id": "us2y_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 4.39
+      },
+      {
+        "current_value": 4.79,
+        "delta": 0.0,
+        "metric_id": "us10y_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 4.79
+      },
+      {
+        "current_value": 0.4,
+        "delta": 0.0,
+        "metric_id": "curve_2s10s_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.4
+      },
+      {
+        "current_value": 0.8751,
+        "delta": 0.0,
+        "metric_id": "term_premium_10y_level",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.8751
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-09-04",
+    "prior_generation_id": "rates_curves-US-bdfb0667dbec65b6",
+    "prior_method_version": "rates_curves.compose.v1",
+    "status": "PRESENT"
+  },
+  "corrections": {
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "rates_curves-US-bdfb0667dbec65b6"
+  },
+  "drivers": {
+    "balance_sheet": [
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "corridor_sofr_minus_iorb_bp",
+        "impact_magnitude": 1.0,
+        "impact_sign": 1,
+        "label": {
+          "en": "SOFR minus IORB",
+          "zh": "SOFR减IORB"
+        },
+        "note": "bucket reuse: published under drivers.balance_sheet because the contract's driver bucket pair is fixed as rate_side/balance_sheet and this workspace has no dedicated corridor/plumbing bucket -- see the driver_bucket_naming_note implication",
+        "owner_field": "fred.SOFR - fred.IORB",
+        "unit": "bp",
+        "value": 1.0
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "corridor_effr_minus_iorb_bp",
+        "impact_magnitude": 2.0,
+        "impact_sign": -1,
+        "label": {
+          "en": "EFFR minus IORB",
+          "zh": "EFFR减IORB"
+        },
+        "note": "bucket reuse: see corridor_sofr_minus_iorb_bp's note",
+        "owner_field": "fred.EFFR - fred.IORB",
+        "unit": "bp",
+        "value": -2.0
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "curvature_butterfly_2s5s10s",
+        "impact_magnitude": 0.1,
+        "impact_sign": -1,
+        "label": {
+          "en": "2s5s10s butterfly",
+          "zh": "2-5-10年期蝶式利差"
+        },
+        "note": "bucket reuse: see corridor_sofr_minus_iorb_bp's note",
+        "owner_field": "2*fred.DGS5 - fred.DGS2 - fred.DGS10",
+        "unit": "pct_pts",
+        "value": -0.1
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "nominal_real_breakeven_residual_10y",
+        "impact_magnitude": 0.0,
+        "impact_sign": 0,
+        "label": {
+          "en": "Nominal/real/breakeven residual (10y)",
+          "zh": "名义/实际/盈亏平衡残差（10年期）"
+        },
+        "note": "bucket reuse: see corridor_sofr_minus_iorb_bp's note",
+        "owner_field": "fred.DGS10 - (fred.DFII10 + fred.T10YIE)",
+        "unit": "pct_pts",
+        "value": 0.0
+      }
+    ],
+    "rate_side": [
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "us10y_level",
+        "impact_magnitude": 4.79,
+        "impact_sign": 1,
+        "label": {
+          "en": "10-year Treasury yield",
+          "zh": "10年期国债收益率"
+        },
+        "note": "the curve's most-watched single node; literal fit for drivers.rate_side",
+        "owner_field": "fred.DGS10",
+        "unit": "percent",
+        "value": 4.79
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "us10y_real_level",
+        "impact_magnitude": 2.45,
+        "impact_sign": 1,
+        "label": {
+          "en": "10-year real (TIPS) yield",
+          "zh": "10年期实际（TIPS）收益率"
+        },
+        "note": "higher = more restrictive real financing cost; literal fit",
+        "owner_field": "fred.DFII10",
+        "unit": "percent",
+        "value": 2.45
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "curve_2s10s_level",
+        "impact_magnitude": 0.4,
+        "impact_sign": 1,
+        "label": {
+          "en": "2s10s slope",
+          "zh": "2年-10年期利差"
+        },
+        "note": "positive = normal (upward-sloping); negative = inverted; literal fit",
+        "owner_field": "fred.DGS10 - fred.DGS2",
+        "unit": "pct_pts",
+        "value": 0.4
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "curve_3m10y_level",
+        "impact_magnitude": 0.87,
+        "impact_sign": 1,
+        "label": {
+          "en": "3m10y slope",
+          "zh": "3个月-10年期利差"
+        },
+        "note": "the NY Fed recession-model spread convention; literal fit",
+        "owner_field": "fred.DGS10 - fred.DGS3MO",
+        "unit": "pct_pts",
+        "value": 0.87
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "term_premium_10y_level",
+        "impact_magnitude": 0.8751,
+        "impact_sign": 1,
+        "label": {
+          "en": "10-year term premium",
+          "zh": "10年期期限溢价"
+        },
+        "note": "Kim-Wright model-based decomposition of the 10-year nominal yield; literal fit",
+        "owner_field": "fred.THREEFYTP10",
+        "unit": "percent",
+        "value": 0.8751
+      }
+    ]
+  },
+  "generation": {
+    "built_at": "2026-09-04T22:42:48Z",
+    "calculation_as_of": "2026-09-04",
+    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
+    "content_sha256": "6e41490d9a099c6793c400ef9ef8b9335a10139fe1b79eda1276d9f6001cbcf3",
+    "generation_id": "rates_curves-US-6e41490d9a099c67",
+    "producer": "engine.market_os.macro_workspaces.rates_curves",
+    "rendered_at": null
+  },
+  "headline": {
+    "effective_date": "2026-09-04",
+    "hysteresis": {
+      "applied": false,
+      "band": 0.0,
+      "held_prior": false,
+      "note": "Rates & Curves is a Chairman-authorized expansion added after the frozen Market Ontology architecture document's own twelve-workspace freeze, so no section of that document defines a headline model for it at all -- not even a note that none exists, the way monetary_policy/liquidity_central_banks each carry their own such note. There is accordingly no named axis pair here to attempt, and no dual-axis quadrant is asserted. A future architecture revision may ratify a genuine two-axis blueprint for this workspace, at which point this null becomes a real state the moment that blueprint is adopted. Until then, the real curve content -- node levels, thirteen-week changes, slopes, inversion status, curvature, the real/breakeven decomposition, term premium, and the policy corridor -- lives in metrics, drivers, and implications instead. See the headline_unavailable implication for the reader-facing version."
+    },
+    "method_version": "rates_curves.compose.v1",
+    "nearest_boundary": {
+      "axis": null,
+      "distance": null,
+      "null_reason": "NOT_APPLICABLE"
+    },
+    "null_reason": "NOT_APPLICABLE",
+    "one_month_vector": {
+      "dx": null,
+      "dy": null,
+      "null_reason": "NOT_APPLICABLE",
+      "status": "ABSENT"
+    },
+    "prior_state": {
+      "effective_date": "2026-09-04",
+      "method_version": "rates_curves.compose.v1",
+      "state_id": null
+    },
+    "quadrant": {
+      "x": null,
+      "x_status": "ABSENT",
+      "y": null,
+      "y_status": "ABSENT"
+    },
+    "state_id": null,
+    "state_label": {
+      "en": null,
+      "zh": null
+    },
+    "status": "ABSENT",
+    "subtitle": {
+      "en": "Curve levels, slopes, inversion, and the policy corridor",
+      "zh": "曲线水平、利差、倒挂状态与政策走廊"
+    },
+    "transition_distance": null
+  },
+  "implications": {
+    "items": [
+      {
+        "channels": [
+          "rates",
+          "curve"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "headline_unavailable",
+        "text": {
+          "en": "This page publishes no dual-axis state and no headline quadrant: the frozen Market Ontology architecture document defines twelve macro workspaces, each with its own headline blueprint (or an explicit note that none exists), and Rates & Curves is not one of the twelve -- it is a Chairman-authorized expansion added afterward, so no blueprint section for it exists to fill in or fall short of. This is a design absence, not a data gap: unlike a workspace whose blueprint exists but cannot be computed from today's inputs, there is simply no named axis pair here to attempt. A future architecture revision may ratify a two-axis blueprint for this workspace, at which point this null becomes a real state the moment that blueprint is adopted. Until then, the real curve content -- node levels, slopes, inversion status, the real/breakeven decomposition, term premium, and the policy corridor -- is published in full as metrics, drivers, and implications instead of being forced into a quadrant that has no definition to force it into.",
+          "zh": "本页不发布双轴状态,也不发布头条象限:已冻结的市场本体架构文档定义了十二个宏观工作区,每个都有各自的头条蓝图（或明确说明不存在蓝图）,而利率与曲线并非这十二个之一——它是后续经授权新增的扩展工作区,因此根本不存在可填补或未能填补的蓝图章节。这是设计层面的缺失,而非数据缺口:与蓝图存在但当前输入无法计算的工作区不同,这里根本没有可尝试的既定轴对。未来的架构修订版可能会为本工作区批准一个双轴蓝图,届时这一空值将在该蓝图被采纳的那一刻转为真实状态。在此之前,真实的曲线内容——节点水平、利差、倒挂状态、名义/实际/盈亏平衡分解、期限溢价与政策走廊——均以指标、驱动因素与含义的形式完整发布,而非被强行纳入一个没有定义可供强行纳入的象限。"
+        },
+        "trace_ref": "engine.market_os.macro_workspaces.rates_curves#headline"
+      },
+      {
+        "channels": [
+          "rates"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "seam_decision_disclosure",
+        "text": {
+          "en": "This workspace reads FRED Treasury-curve and policy-corridor parquets only. It deliberately takes no input at all from the rates_command owner artifact, even though that artifact already computes a market-implied path, an FOMC dot-plot comparison, and a yield-momentum read: those are Monetary Policy's own projection of that owner artifact, already published on this suite's Monetary Policy page. Reading rates_command here too and re-publishing its yield-momentum leg under a different workspace identity would duplicate an owner projection another workspace already carries, not add a genuinely new read. Rates & Curves stays a pure market-curve workspace instead, built only from the raw FRED series.",
+          "zh": "本工作区仅读取FRED国债收益率曲线与政策走廊的parquet数据,刻意不读取rates_command所有者产物的任何输入——尽管该产物已经计算出市场隐含路径、FOMC点阵图对比与收益率动能读数:这些已经是货币政策工作区对该所有者产物的自有投影,并已在本套件的货币政策页面发布。若本工作区也读取rates_command并在另一个工作区身份下重复发布其收益率动能分项,只是重复了另一个工作区已经承载的所有者投影,而非新增真正的读数。因此利率与曲线工作区保持为纯市场曲线工作区,仅基于原始FRED序列构建。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates",
+          "curve"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "curve_shape_read",
+        "text": {
+          "en": "Curve shape: 2s10s reads +0.40 percentage points; 3m10y reads +0.87 percentage points; 5s30s reads +0.73 percentage points.",
+          "zh": "曲线形态：2年-10年期利差为+0.40个百分点；3个月-10年期利差为+0.87个百分点；5年-30年期利差为+0.73个百分点。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates",
+          "curve",
+          "recession_signal"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "inversion_status_read",
+        "text": {
+          "en": "2s10s is currently normal (not inverted), holding that sign for 497 consecutive shared trading dates. 3m10y is currently normal (not inverted), holding that sign for 220 consecutive shared trading dates.",
+          "zh": "2年-10年期利差目前为正常（未倒挂），该方向已持续497个共同交易日。3个月-10年期利差目前为正常（未倒挂），该方向已持续220个共同交易日。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates",
+          "inflation"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "real_breakeven_decomposition_read",
+        "text": {
+          "en": "The 10-year nominal yield, 10-year real (TIPS) yield, and 10-year breakeven inflation rate are three separately-interpolated FRED constant-maturity curves, not three legs of one single calculation -- so the nominal yield rarely equals the real yield plus the breakeven exactly, even on the same date. This page publishes the residual (nominal minus the sum of the other two) as its own read, with a 0.15-percentage-point disclosed tolerance band sized to that normal interpolation noise; the current residual reads +0.000 percentage points.",
+          "zh": "10年期名义收益率、10年期实际（TIPS）收益率与10年期盈亏平衡通胀率是FRED三条各自独立插值得出的曲线,而非同一次计算的三个分项——因此即使在同一日期,名义收益率也很少恰好等于实际收益率加盈亏平衡通胀率之和。本页将残差（名义减去另外两者之和）作为独立读数发布,并设定0.15个百分点的披露容差,以吸收这种正常的跨曲线插值噪声；当前残差读数为+0.000个百分点。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "term_premium_read",
+        "text": {
+          "en": "The 10-year Kim-Wright term premium reads 0.88%, +0.12 percentage points over the trailing 13 weeks.",
+          "zh": "10年期Kim-Wright期限溢价读数为0.88%，较13周前变化+0.12个百分点。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates",
+          "funding"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "corridor_read",
+        "text": {
+          "en": "Policy corridor spreads: EFFR-IORB -2.0bp; SOFR-EFFR +3.0bp; SOFR-IORB +1.0bp.",
+          "zh": "政策走廊利差：EFFR减IORB为-2.0个基点；SOFR减EFFR为+3.0个基点；SOFR减IORB为+1.0个基点。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "same_date_discipline_disclosure",
+        "text": {
+          "en": "Every spread, curvature, and decomposition read on this page (2s10s, 3m10y, 5s30s, the butterfly, the nominal/real/breakeven decomposition, and each policy-corridor spread) is computed only from a date common to every leg it combines, never by pairing each leg's own separately-latest print. When the latest shared date across a combination's legs lags any single leg's own newest available print by more than a disclosed tolerance, this composer refuses that read rather than mixing an older print from one leg with a newer print from another under one reported date.",
+          "zh": "本页所有利差、曲率与分解读数（2年-10年期、3个月-10年期、5年-30年期利差、蝶式利差,以及名义/实际/盈亏平衡分解、各政策走廊利差）均只依据其所涉及的每一分项都共有的同一日期计算,绝不将各分项各自的最新日期拼凑在一起。当某组合中各分项的共同最新日期,相较其中任一分项自身的最新可得读数滞后超出披露容差时,本组合器会拒绝给出该读数,而不会在同一报告日期下混用一个分项的旧读数与另一分项的新读数。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "investment_basis_only_disclosure",
+        "text": {
+          "en": "Every yield node on this page is a constant-maturity, investment (bond-equivalent) basis FRED series -- the same basis convention this estate's own yield-curve engine uses for internal consistency. The discount-basis Treasury bill rate (FRED DTB3) is a different, structurally lower-reading series on a different basis and is never one of this workspace's inputs, so it can never be mixed with any node published here.",
+          "zh": "本页每一个收益率节点都是FRED发布的固定期限、投资（债券等价）基础国债收益率序列——与本估值体系自有收益率曲线引擎所用的基础保持内部一致。贴现基础的国库券利率（FRED DTB3）是另一条结构性读数更低、基础不同的序列,从未作为本工作区的输入,因此也绝不会与本页发布的任何节点混用。"
+        },
+        "trace_ref": null
+      },
+      {
+        "channels": [
+          "rates"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "HIGH",
+          "method_stability": "HIGH",
+          "revision_risk": "LOW",
+          "source_health": "HIGH"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "driver_bucket_naming_note",
+        "text": {
+          "en": "The drivers.balance_sheet bucket in this snapshot carries corridor spreads, the curvature butterfly, and the decomposition residual -- not a balance sheet. The contract's driver bucket pair is fixed as rate_side/balance_sheet and this workspace has no dedicated corridor/plumbing bucket to use, so the naming is cosmetic bucket reuse, disclosed here rather than left implicit.",
+          "zh": "本快照中drivers.balance_sheet分组承载的是政策走廊利差、蝶式利差与分解残差,而非资产负债表。合约的驱动因素分组固定为rate_side/balance_sheet,本工作区没有独立的走廊/资金面分组可用,因此命名属于用途借用,在此明确披露而非隐含处理。"
+        },
+        "trace_ref": null
+      }
+    ]
+  },
+  "learning": {
+    "event_names": [
+      "macro_workspace_opened",
+      "macro_state_changed_seen",
+      "macro_driver_expanded",
+      "macro_source_opened",
+      "macro_degraded_state_seen",
+      "macro_unknown_or_refusal_seen"
+    ],
+    "instrumentation": "first_party",
+    "privacy_note": "Event definitions reuse the existing first-party analytics owner; no second analytics store, no user identity copied into the artifact."
+  },
+  "metrics": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS3MO.us3m",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us3m_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS3MO.parquet",
+        "reference_id": "mastermind.market_reference/v1#us3m_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS3MO"
+        ],
+        "status": "PRESENT",
+        "transformation": "3-month Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 3.92,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS6MO.us6m",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us6m_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS6MO.parquet",
+        "reference_id": "mastermind.market_reference/v1#us6m_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS6MO"
+        ],
+        "status": "PRESENT",
+        "transformation": "6-month Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.0,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS1.us1y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us1y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS1.parquet",
+        "reference_id": "mastermind.market_reference/v1#us1y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS1"
+        ],
+        "status": "PRESENT",
+        "transformation": "1-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.16,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS2.us2y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us2y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS2.parquet",
+        "reference_id": "mastermind.market_reference/v1#us2y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS2"
+        ],
+        "status": "PRESENT",
+        "transformation": "2-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.39,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS3.us3y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us3y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS3.parquet",
+        "reference_id": "mastermind.market_reference/v1#us3y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS3"
+        ],
+        "status": "PRESENT",
+        "transformation": "3-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.45,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS5.us5y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us5y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS5.parquet",
+        "reference_id": "mastermind.market_reference/v1#us5y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS5"
+        ],
+        "status": "PRESENT",
+        "transformation": "5-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.54,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS7.us7y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us7y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS7.parquet",
+        "reference_id": "mastermind.market_reference/v1#us7y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS7"
+        ],
+        "status": "PRESENT",
+        "transformation": "7-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.66,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10.us10y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us10y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet",
+        "reference_id": "mastermind.market_reference/v1#us10y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 4.79,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS20.us20y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us20y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS20.parquet",
+        "reference_id": "mastermind.market_reference/v1#us20y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS20"
+        ],
+        "status": "PRESENT",
+        "transformation": "20-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 5.27,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS30.us30y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us30y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS30.parquet",
+        "reference_id": "mastermind.market_reference/v1#us30y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS30"
+        ],
+        "status": "PRESENT",
+        "transformation": "30-year Treasury constant-maturity yield (investment/bond-equivalent basis), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 5.27,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "tips_constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DFII5.us5y_real",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive_real_financing_cost",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us5y_real_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DFII5.parquet",
+        "reference_id": "mastermind.market_reference/v1#us5y_real_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DFII5"
+        ],
+        "status": "PRESENT",
+        "transformation": "5-year Treasury Inflation-Protected Securities (TIPS) constant-maturity real yield, republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 2.19,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "tips_constant_maturity_investment_basis",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DFII10.us10y_real",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_restrictive_real_financing_cost",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us10y_real_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DFII10.parquet",
+        "reference_id": "mastermind.market_reference/v1#us10y_real_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DFII10"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year Treasury Inflation-Protected Securities (TIPS) constant-maturity real yield, republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 2.45,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "market_derived_breakeven_inflation",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.T10YIE.breakeven_10y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_inflation_priced",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "breakeven_10y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/T10YIE.parquet",
+        "reference_id": "mastermind.market_reference/v1#breakeven_10y_level",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:T10YIE"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year Treasury breakeven inflation rate (nominal minus TIPS yield at that tenor), republished by FRED -- a market price, not a survey or a Fed forecast.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 2.35,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "market_derived_breakeven_inflation",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.T5YIFR.breakeven_5y5y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_inflation_priced",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "breakeven_5y5y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/T5YIFR.parquet",
+        "reference_id": "mastermind.market_reference/v1#breakeven_5y5y_level",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:T5YIFR"
+        ],
+        "status": "PRESENT",
+        "transformation": "5-year, 5-year forward Treasury breakeven inflation rate (nominal minus TIPS yield at that tenor), republished by FRED -- a market price, not a survey or a Fed forecast.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 2.33,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "kim_wright_term_premium_model",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.THREEFYTP10.term_premium_10y",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_term_compensation_demanded",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "term_premium_10y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "data/fred/THREEFYTP10.parquet",
+        "reference_id": "mastermind.market_reference/v1#term_premium_10y_level",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:THREEFYTP10"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year Kim-Wright term premium (model-based decomposition of the nominal yield into an expectations component and a term-premium component), republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 0.8751,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "realized_reference_rate",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.EFFR.effr",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_tighter_policy_stance",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "effr_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/EFFR.parquet",
+        "reference_id": "mastermind.market_reference/v1#effr_level",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:EFFR"
+        ],
+        "status": "PRESENT",
+        "transformation": "Effective Fed Funds Rate, republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 3.63,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "realized_reference_rate",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.OBFR.obfr",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_tighter_policy_stance",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "obfr_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/OBFR.parquet",
+        "reference_id": "mastermind.market_reference/v1#obfr_level",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:OBFR"
+        ],
+        "status": "PRESENT",
+        "transformation": "Overnight Bank Funding Rate, republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 3.63,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "realized_reference_rate",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.SOFR.sofr",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_tighter_policy_stance",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "sofr_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/SOFR.parquet",
+        "reference_id": "mastermind.market_reference/v1#sofr_level",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:SOFR"
+        ],
+        "status": "PRESENT",
+        "transformation": "Secured Overnight Financing Rate, republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 3.66,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "realized_reference_rate",
+        "calculation_as_of": "2026-09-04",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.IORB.iorb",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_tighter_policy_stance",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "iorb_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-04",
+        "owner_ref": "data/fred/IORB.parquet",
+        "reference_id": "mastermind.market_reference/v1#iorb_level",
+        "reference_period": "2026-09-04",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:IORB"
+        ],
+        "status": "PRESENT",
+        "transformation": "Interest on Reserve Balances, republished by FRED.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 3.65,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_level_change",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS2",
+        "definition_version": "1.0.0",
+        "direction_semantics": "positive_is_yields_rising_over_13w",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us2y_change_13w",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS2.parquet",
+        "reference_id": "mastermind.market_reference/v1#us2y_change_13w",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS2"
+        ],
+        "status": "PRESENT",
+        "transformation": "Current level minus the level roughly 13 weeks (91 days) prior, in percentage points; refused when no observation lands within 10 days of that lookback target.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.31,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_level_change",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10",
+        "definition_version": "1.0.0",
+        "direction_semantics": "positive_is_yields_rising_over_13w",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us10y_change_13w",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet",
+        "reference_id": "mastermind.market_reference/v1#us10y_change_13w",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10"
+        ],
+        "status": "PRESENT",
+        "transformation": "Current level minus the level roughly 13 weeks (91 days) prior, in percentage points; refused when no observation lands within 10 days of that lookback target.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.3,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_level_change",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS30",
+        "definition_version": "1.0.0",
+        "direction_semantics": "positive_is_yields_rising_over_13w",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "us30y_change_13w",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS30.parquet",
+        "reference_id": "mastermind.market_reference/v1#us30y_change_13w",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS30"
+        ],
+        "status": "PRESENT",
+        "transformation": "Current level minus the level roughly 13 weeks (91 days) prior, in percentage points; refused when no observation lands within 10 days of that lookback target.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.28,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_level_change",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.THREEFYTP10",
+        "definition_version": "1.0.0",
+        "direction_semantics": "positive_is_term_compensation_rising_over_13w",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "term_premium_10y_change_13w",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": "INSUFFICIENT_HISTORY",
+        "observed_at": "2026-08-28",
+        "owner_ref": "data/fred/THREEFYTP10.parquet",
+        "reference_id": "mastermind.market_reference/v1#term_premium_10y_change_13w",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:THREEFYTP10"
+        ],
+        "status": "PRESENT",
+        "transformation": "Current 10-year Kim-Wright term premium minus the level roughly 13 weeks (91 days) prior; refused when no observation lands within 10 days of that lookback target.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.121,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_spread",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10 - fred.DGS2",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_steeper_curve",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "curve_2s10s_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet + data/fred/DGS2.parquet",
+        "reference_id": "mastermind.market_reference/v1#curve_2s10s_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10",
+          "FRED:DGS2"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year minus 2-year, at the latest date common to both legs (same-date discipline); refused when no such date exists within 5 days of either leg's own newest print, rather than mixing an older print from one leg with a newer print from the other.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.4,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_spread",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10 - fred.DGS3MO",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_steeper_curve",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "curve_3m10y_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet + data/fred/DGS3MO.parquet",
+        "reference_id": "mastermind.market_reference/v1#curve_3m10y_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10",
+          "FRED:DGS3MO"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year minus 3-month, at the latest date common to both legs (same-date discipline); refused when no such date exists within 5 days of either leg's own newest print, rather than mixing an older print from one leg with a newer print from the other.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.87,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_spread",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS30 - fred.DGS5",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_steeper_curve",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "curve_5s30s_level",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS30.parquet + data/fred/DGS5.parquet",
+        "reference_id": "mastermind.market_reference/v1#curve_5s30s_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS30",
+          "FRED:DGS5"
+        ],
+        "status": "PRESENT",
+        "transformation": "30-year minus 5-year, at the latest date common to both legs (same-date discipline); refused when no such date exists within 5 days of either leg's own newest print, rather than mixing an older print from one leg with a newer print from the other.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.73,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "consecutive_shared_date_rows",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10 - fred.DGS2",
+        "definition_version": "1.0.0",
+        "direction_semantics": "longer_run_more_entrenched_regime",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "curve_2s10s_inversion_run_length_bd",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet + data/fred/DGS2.parquet",
+        "reference_id": "mastermind.market_reference/v1#curve_2s10s_inversion_run_length_bd",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10",
+          "FRED:DGS2"
+        ],
+        "status": "PRESENT",
+        "transformation": "Count of consecutive shared-date rows (walking backward from the latest one) holding the SAME sign as the 2s10s spread's current reading (inverted when the long leg reads below the short leg); refused as insufficient below 20 shared-date historical rows, independent of whether the current sign itself is known.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "business_days",
+        "value": 497,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "consecutive_shared_date_rows",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10 - fred.DGS3MO",
+        "definition_version": "1.0.0",
+        "direction_semantics": "longer_run_more_entrenched_regime",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "curve_3m10y_inversion_run_length_bd",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet + data/fred/DGS3MO.parquet",
+        "reference_id": "mastermind.market_reference/v1#curve_3m10y_inversion_run_length_bd",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10",
+          "FRED:DGS3MO"
+        ],
+        "status": "PRESENT",
+        "transformation": "Count of consecutive shared-date rows (walking backward from the latest one) holding the SAME sign as the 3m10y spread's current reading (inverted when the long leg reads below the short leg); refused as insufficient below 20 shared-date historical rows, independent of whether the current sign itself is known.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "business_days",
+        "value": 220,
+        "value_type": "count"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_butterfly",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "2*fred.DGS5 - fred.DGS2 - fred.DGS10",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_humped_curve",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "curvature_butterfly_2s5s10s",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS5.parquet + data/fred/DGS2.parquet + data/fred/DGS10.parquet",
+        "reference_id": "mastermind.market_reference/v1#curvature_butterfly_2s5s10s",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS5",
+          "FRED:DGS2",
+          "FRED:DGS10"
+        ],
+        "status": "PRESENT",
+        "transformation": "2*(5-year yield) minus 2-year yield minus 10-year yield, at the latest date common to all three legs (same-date discipline); refused unless all three legs share a sufficiently fresh date.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": -0.1,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_decomposition_residual",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.DGS10 - (fred.DFII10 + fred.T10YIE)",
+        "definition_version": "1.0.0",
+        "direction_semantics": "magnitude_indicates_cross_curve_interpolation_noise",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "nominal_real_breakeven_residual_10y",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "data/fred/DGS10.parquet + data/fred/DFII10.parquet + data/fred/T10YIE.parquet",
+        "reference_id": "mastermind.market_reference/v1#nominal_real_breakeven_residual_10y",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:DGS10",
+          "FRED:DFII10",
+          "FRED:T10YIE"
+        ],
+        "status": "PRESENT",
+        "transformation": "10-year nominal yield minus the sum of the 10-year real (TIPS) yield and the 10-year breakeven inflation rate, at the latest date common to all three legs; a disclosed 0.15-percentage-point tolerance band absorbs the normal noise of comparing three separately-interpolated FRED curves -- a residual beyond the band is flagged as a genuine disagreement, never silently averaged away.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "pct_pts",
+        "value": 0.0,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_spread",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.EFFR - fred.IORB",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_leg_a_trading_rich_to_leg_b",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "corridor_effr_minus_iorb_bp",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/EFFR.parquet + data/fred/IORB.parquet",
+        "reference_id": "mastermind.market_reference/v1#corridor_effr_minus_iorb_bp",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:EFFR",
+          "FRED:IORB"
+        ],
+        "status": "PRESENT",
+        "transformation": "EFFR minus IORB, converted to basis points at the latest date common to both legs (same-date discipline); never published in percent, never mixed with a percent-denominated level.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "bp",
+        "value": -2.0,
+        "value_type": "basis_points"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_spread",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.SOFR - fred.EFFR",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_leg_a_trading_rich_to_leg_b",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "corridor_sofr_minus_effr_bp",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/SOFR.parquet + data/fred/EFFR.parquet",
+        "reference_id": "mastermind.market_reference/v1#corridor_sofr_minus_effr_bp",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:SOFR",
+          "FRED:EFFR"
+        ],
+        "status": "PRESENT",
+        "transformation": "SOFR minus EFFR, converted to basis points at the latest date common to both legs (same-date discipline); never published in percent, never mixed with a percent-denominated level.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "bp",
+        "value": 3.0,
+        "value_type": "basis_points"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "same_date_disciplined_spread",
+        "calculation_as_of": "2026-09-03",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "fred.SOFR - fred.IORB",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_leg_a_trading_rich_to_leg_b",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "corridor_sofr_minus_iorb_bp",
+        "model_version": "rates_curves.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-03",
+        "owner_ref": "data/fred/SOFR.parquet + data/fred/IORB.parquet",
+        "reference_id": "mastermind.market_reference/v1#corridor_sofr_minus_iorb_bp",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:SOFR",
+          "FRED:IORB"
+        ],
+        "status": "PRESENT",
+        "transformation": "SOFR minus IORB, converted to basis points at the latest date common to both legs (same-date discipline); never published in percent, never mixed with a percent-denominated level.",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "bp",
+        "value": 1.0,
+        "value_type": "basis_points"
+      }
+    ]
+  },
+  "region": {
+    "code": "US",
+    "display_name": "United States",
+    "supported": true
+  },
+  "scenario_contract": {
+    "assumptions": [
+      {
+        "assumption_id": "us10y_bp",
+        "label": {
+          "en": "10-year yield",
+          "zh": "10年期收益率"
+        },
+        "max": 300.0,
+        "min": -300.0,
+        "owner_field": "fred.DGS10",
+        "step": 5.0,
+        "unit": "bp"
+      },
+      {
+        "assumption_id": "us2y_bp",
+        "label": {
+          "en": "2-year yield",
+          "zh": "2年期收益率"
+        },
+        "max": 300.0,
+        "min": -300.0,
+        "owner_field": "fred.DGS2",
+        "step": 5.0,
+        "unit": "bp"
+      },
+      {
+        "assumption_id": "curve_2s10s_bp",
+        "label": {
+          "en": "2s10s slope",
+          "zh": "2年-10年期利差"
+        },
+        "max": 300.0,
+        "min": -300.0,
+        "owner_field": null,
+        "step": 5.0,
+        "unit": "bp"
+      },
+      {
+        "assumption_id": "term_premium_10y_bp",
+        "label": {
+          "en": "10-year term premium",
+          "zh": "10年期期限溢价"
+        },
+        "max": 200.0,
+        "min": -200.0,
+        "owner_field": "fred.THREEFYTP10",
+        "step": 5.0,
+        "unit": "bp"
+      },
+      {
+        "assumption_id": "sofr_iorb_spread_bp",
+        "label": {
+          "en": "SOFR-IORB spread",
+          "zh": "SOFR减IORB利差"
+        },
+        "max": 100.0,
+        "min": -50.0,
+        "owner_field": null,
+        "step": 1.0,
+        "unit": "bp"
+      }
+    ],
+    "execution_available": false,
+    "note": "Assumption vocabulary is declared and closed; this composer ships no scenario execution endpoint (non-goal). curve_2s10s_bp / sofr_iorb_spread_bp have no owner_field because they are DERIVED reads (a spread, not a single owner series) -- a future owner-native pure scenario function produces mastermind.macro_workspace_scenario_result.v1 with no canonical write.",
+    "result_schema": "mastermind.macro_workspace_scenario_result.v1",
+    "status": "PARTIAL"
+  },
+  "schema": {
+    "contract": "mastermind.macro_workspace_snapshot.v1",
+    "version": "1.0.0"
+  },
+  "series": {
+    "items": [],
+    "null_reason": "INSUFFICIENT_HISTORY",
+    "status": "ABSENT"
+  },
+  "sources": {
+    "items": [
+      {
+        "artifact_ref": "data/fred/DGS3MO.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "3-month (DGS3MO, via FRED)",
+          "zh": "3-month（DGS3MO，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS3MO]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs3mo",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS6MO.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "6-month (DGS6MO, via FRED)",
+          "zh": "6-month（DGS6MO，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS6MO]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs6mo",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS1.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "1-year (DGS1, via FRED)",
+          "zh": "1-year（DGS1，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS1]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs1",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS2.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "2-year (DGS2, via FRED)",
+          "zh": "2-year（DGS2，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS2]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs2",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS3.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "3-year (DGS3, via FRED)",
+          "zh": "3-year（DGS3，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS3]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs3",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS5.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "5-year (DGS5, via FRED)",
+          "zh": "5-year（DGS5，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS5]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs5",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS7.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "7-year (DGS7, via FRED)",
+          "zh": "7-year（DGS7，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS7]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs7",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS10.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year (DGS10, via FRED)",
+          "zh": "10-year（DGS10，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS10]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs10",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS20.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "20-year (DGS20, via FRED)",
+          "zh": "20-year（DGS20，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS20]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs20",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DGS30.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "30-year (DGS30, via FRED)",
+          "zh": "30-year（DGS30，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DGS30]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dgs30",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DFII5.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "5-year (DFII5, via FRED)",
+          "zh": "5-year（DFII5，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DFII5]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dfii5",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/DFII10.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year (DFII10, via FRED)",
+          "zh": "10-year（DFII10，经FRED）"
+        },
+        "owner_ref": "collectors.fred[DFII10]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "dfii10",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/T10YIE.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year (T10YIE, via FRED)",
+          "zh": "10-year（T10YIE，经FRED）"
+        },
+        "owner_ref": "collectors.fred[T10YIE]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "t10yie",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/T5YIFR.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "5-year, 5-year forward (T5YIFR, via FRED)",
+          "zh": "5-year, 5-year forward（T5YIFR，经FRED）"
+        },
+        "owner_ref": "collectors.fred[T5YIFR]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "t5yifr",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/THREEFYTP10.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "10-year (THREEFYTP10, via FRED)",
+          "zh": "10-year（THREEFYTP10，经FRED）"
+        },
+        "owner_ref": "collectors.fred[THREEFYTP10]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "threefytp10",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/EFFR.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Effective Fed Funds Rate (EFFR, via FRED)",
+          "zh": "Effective Fed Funds Rate（EFFR，经FRED）"
+        },
+        "owner_ref": "collectors.fred[EFFR]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "effr",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/OBFR.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Overnight Bank Funding Rate (OBFR, via FRED)",
+          "zh": "Overnight Bank Funding Rate（OBFR，经FRED）"
+        },
+        "owner_ref": "collectors.fred[OBFR]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "obfr",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/SOFR.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Secured Overnight Financing Rate (SOFR, via FRED)",
+          "zh": "Secured Overnight Financing Rate（SOFR，经FRED）"
+        },
+        "owner_ref": "collectors.fred[SOFR]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-03",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "sofr",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/fred/IORB.parquet",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Interest on Reserve Balances (IORB, via FRED)",
+          "zh": "Interest on Reserve Balances（IORB，经FRED）"
+        },
+        "owner_ref": "collectors.fred[IORB]",
+        "provider": "FRED (Federal Reserve Bank of St. Louis)",
+        "reference_period": "2026-09-04",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "iorb",
+        "transform": null
+      }
+    ]
+  },
+  "workspace": {
+    "id": "rates_curves",
+    "subtitle": {
+      "en": "The Treasury curve, node by node",
+      "zh": "国债收益率曲线，逐节点"
+    },
+    "title": {
+      "en": "Rates & Curves",
+      "zh": "利率与曲线"
+    }
+  }
+}
