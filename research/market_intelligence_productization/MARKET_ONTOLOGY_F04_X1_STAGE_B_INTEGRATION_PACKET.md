@@ -76,10 +76,17 @@ The established rollout convention is a feature flag on the `<a>` itself —
 matching `leader_radar_enabled` (`:108`), `intraday_flow_enabled` (`:72`) and
 `darkpool_enabled` (`:104`). Use it if the entry should stay dark during rollout.
 
-The icon above reuses an existing sprite class deliberately: minting a new
-`submenu-icon-*` would add a second shared-file edit
-(`templates/navigation-refresh.css`) for no product gain. Pick a dedicated icon
-in a later pass if the nav owner wants one.
+The icon above reuses an existing sprite class deliberately. `submenu-icon-*`
+classes are styled in `templates/product-nav-icons.css` (`submenu-icon-alert` at
+`:198`), **not** in `navigation-refresh.css` — and that file is on the
+Caddyfile's `immutable` list, so minting a new icon means a second shared-file
+edit whose `?v=` re-stamp only lands on a render. Reusing an existing class
+avoids both. Pick a dedicated icon in a later pass if the nav owner wants one.
+
+Worth flagging to whoever owns the nav: `/transmission.html` — the canonical
+surface this page links to as its continuation — is itself **not** in
+`_navlinks.html.j2` today. That is out of scope here, but a reader who follows
+the continuation lands on a page with no nav entry of its own.
 
 ## B-3 · Registry derivation and the one override that is hand-written
 
