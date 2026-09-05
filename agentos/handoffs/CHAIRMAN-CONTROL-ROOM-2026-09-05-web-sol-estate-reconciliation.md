@@ -183,6 +183,7 @@ The complete ordered continuity DAG is:
   -> INSTALL1 (#340)
   -> Web PF-1 C
   -> CR-P1 exact successor/bootstrap
+  -> #355 existing Executive/OHF writer and trusted ACK bridge
   -> CR-B1 canonical ACK/CAS
   -> CR-D1
   -> separately approved real rotation
@@ -192,6 +193,8 @@ The complete ordered continuity DAG is:
 1. The exact #432 source task must resolve its current-base hold on the existing carrier through `integrations/chairman_surfaces/chatgpt.py`; no substitute carrier may modify it.
 2. A protected current-base result and fresh lawful release precede the already-bound #359 worker's no-effect host gate.
 3. Only after the profile/account gate sequence completes may Web PF-1, installation proof, CR-P1, canonical acknowledgement, and real rotation be considered in DAG order.
+Issue #355 remains the existing deferred ChatGPT binding/readiness bridge. The current RuntimeBinding provider projection admits only `openai-codex`; the Executive/OHF writer exists, but ChatGPT registration is unsupported. The existing Wake ACK owner requires a trusted worker-local projection that ChatGPT has not proven. Its CB-F0/W1/A1/D1/I1 verticals preserve those owners before CR-B1; browser response text cannot substitute for semantic ACK.
+
 ## §2 What will bite you
 
 The old #435 merge ref could not prove current-base integration. New candidate 6f632325 composes the protected base but remains Draft/held until required integration checks conclude and release is consumed. GitHub reassociating an existing review with that commit is not a new review event.
