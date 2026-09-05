@@ -100,6 +100,58 @@ with the caution sentence; a dead `/login.html` link (the house entry point is
 `/?signin=1`), now guarded by a test that walks every internal link this feature
 adds, because one 404 has previously frozen a whole site publish.
 
+## 4b. Independent non-author review — 16 defects, all fixed
+
+Two Opus reviewers with no write access attacked the branch. The first review
+commissioned was lost to a turn limit before reporting, which is itself worth
+recording: a broad commission that cannot finish returns nothing at all, so the
+work was re-cut into two narrow, turn-budgeted passes and both returned.
+
+**One BLOCKER.** `_walk_path` follows a single successor chain from one root.
+That is the correct reading of a simple path and a silently wrong reading of
+anything else. A hop list of `n1->n2` and `n3->n4`, with `n3` and `n4` observed
+FALSE, composed as `state: active` over a two-leg path — the surface answering
+"the path is active" about a path it had not read. Branching did the same thing
+more quietly, because the second out-edge was dropped when the successor map was
+built. Latent today (every live chain is a simple path, and the nightly's
+`validate_chain` enforces continuity) but this module deliberately does not call
+that validator, it is a request-time reader, and a hop edit that does not bump
+`rev` reaches a reader before any nightly runs. `_require_simple_path` now
+refuses branching, undeclared nodes and disconnection.
+
+**Majors.** The bound was measured against the walk, not the file, so a file with
+80 declared nodes and 40 disjoint hop pairs composed as "2 of 12 legs" while
+returning 40 hop rows. `confirmed_hop_count` counted hops that were not on the
+path. A contradiction was asserted from a leg that was never READ rather than
+one that was false — while the note it published says "a later leg reads true
+while an earlier one does not". An `unresolved` node was counted as observed, so
+one snapshot said all four legs were observed while its own blocking-leg block
+said that leg had no reading. A `built` stamp in the FUTURE rendered as age zero
+— `max(0, ...)` had re-opened the exact defect the stamp parser was written to
+close. Duplicate chain rows resolved silently to the first, which also defeated
+the rev-coherence check, because that check only ever saw row 0. And an
+unhandled exception escaped to Starlette's outermost middleware with NONE of the
+private header set, bypassing this route class and `app/main.py`'s no-store
+middleware together.
+
+**Also fixed.** A 405 and a HEAD are decided by Starlette's router before the
+route class is entered, so neither could ever be stamped by it — both are now
+registered explicitly and headered, hidden from the schema so the documented
+surface stays GET-only. `^...$` accepted a slug with a trailing newline (Python
+matches `$` before a final newline), which reached the composer and split one log
+call across two lines; both slug guards now use `fullmatch`. An episode row
+written under a foreign `rev` was presented as the current change. A hop to an
+undeclared node was diagnosed as an unpublished reading, inventing a positional
+title for the phantom and telling the researcher to wait for a reading that can
+never arrive. A zero-hop chain was typed as an absent source when the file was
+present and parsed. `chain=` (empty) silently served the default while every
+other malformed value was refused. And the builder's `return 0` on a missing
+paired asset made a broken build a silent success that also skipped every later
+asset.
+
+Tests: 69 → 127 (with the site-wide `test_api_no_store` and `test_api_paywall`
+guards). Every finding above has a test that fails without its fix.
+
 ## 5. Collision position
 
 The carrier's stated nav collision does not exist: neither #6828 nor #6834

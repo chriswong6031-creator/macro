@@ -47,8 +47,12 @@ def main() -> int:
     for name in PAIRED_ASSETS:
         source, target = root / "templates" / name, site / name
         if not source.exists():
+            # `return 0` from main() is SystemExit(0): a missing asset made the
+            # build a silent success that ALSO skipped every later asset in the
+            # list. A missing source file is a defect in the tree, not a data
+            # outage to be tolerated.
             log.error("paired asset missing: templates/%s", name)
-            return 0
+            return 1
         if not target.exists() or target.read_bytes() != source.read_bytes():
             target.write_bytes(source.read_bytes())
             log.info("synced %s", name)

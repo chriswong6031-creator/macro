@@ -191,3 +191,101 @@ def test_the_router_reuses_the_shared_entitlement_authority(monkeypatch, tmp_pat
     assert "require_user" in source
     assert "enforce_site_full" in source
     assert "always=True" in source
+
+
+# --------------------------------------------------------------------------
+# outcomes that never reach the endpoint at all
+#
+# The route class stamps headers by wrapping the endpoint. Three outcomes do not
+# go through it: an exception it does not catch escapes to Starlette's outermost
+# error middleware, and a method mismatch is raised by Starlette's router BEFORE
+# the wrapper is entered. An independent review measured all three arriving with
+# none of the private header set.
+# --------------------------------------------------------------------------
+def _boom_client(monkeypatch, tmp_path) -> TestClient:
+    api = _api()
+    root = fx.build_root(tmp_path)
+    monkeypatch.setattr(api, "_repo_root", lambda: root)
+    monkeypatch.setattr(api, "DEFAULT_CHAIN", fx.SLUG)
+
+    def explode(*a, **k):
+        raise ValueError("boom /Users/someone/private/path.json")
+
+    monkeypatch.setattr(api, "compose_snapshot", explode)
+    app = FastAPI()
+    app.include_router(api.router)
+    app.dependency_overrides[api.require_site_full_user] = lambda: {"id": "paid-user"}
+    return TestClient(app, raise_server_exceptions=False)
+
+
+def test_an_unexpected_exception_is_still_a_private_response(monkeypatch, tmp_path):
+    with _boom_client(monkeypatch, tmp_path) as client:
+        response = client.get(ROUTE)
+    assert response.status_code >= 500
+    _assert_private(response)
+
+
+def test_an_unexpected_exception_does_not_leak_its_message(monkeypatch, tmp_path):
+    """A stray exception string is where internal paths escape."""
+    with _boom_client(monkeypatch, tmp_path) as client:
+        body = client.get(ROUTE).text
+    assert "boom" not in body
+    assert "/Users/" not in body
+
+
+def test_a_disallowed_method_is_still_a_private_response(monkeypatch, tmp_path):
+    for method in ("post", "put", "patch", "delete"):
+        with _client(monkeypatch, tmp_path) as client:
+            response = getattr(client, method)(ROUTE)
+        assert response.status_code == 405, method
+        _assert_private(response)
+
+
+def test_head_is_answered_and_is_private(monkeypatch, tmp_path):
+    """A cache or crawler that probes with HEAD must not get an un-noindexed,
+    un-nosniffed response."""
+    with _client(monkeypatch, tmp_path) as client:
+        response = client.head(ROUTE)
+    assert response.status_code == 200
+    _assert_private(response)
+    assert response.content == b""
+
+
+# --------------------------------------------------------------------------
+# the chain parameter
+# --------------------------------------------------------------------------
+def test_a_trailing_newline_cannot_smuggle_a_slug_past_the_guard(monkeypatch, tmp_path):
+    """Python's `$` matches before a trailing newline, so `^...$` accepted a slug
+    with a line break appended — which then reached the composer and split one
+    log call across two lines."""
+    with _client(monkeypatch, tmp_path) as client:
+        response = client.get(ROUTE, params={"chain": f"{fx.SLUG}\n"})
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "unknown_chain"
+    _assert_private(response)
+
+
+def test_an_explicitly_empty_chain_is_rejected_not_silently_defaulted(monkeypatch, tmp_path):
+    """Every other malformed value is refused; an empty one asked for something
+    specific and got the default instead."""
+    with _client(monkeypatch, tmp_path) as client:
+        response = client.get(ROUTE, params={"chain": ""})
+    assert response.status_code == 400
+    _assert_private(response)
+
+
+def test_the_composer_also_refuses_a_trailing_newline_slug():
+    from engine.ontology_explorer import SourceUnavailable, compose_snapshot
+    with pytest.raises(SourceUnavailable):
+        compose_snapshot(Path("/nonexistent"), chain="oil_inflation_duration_derate\n")
+
+
+# --------------------------------------------------------------------------
+# the builder
+# --------------------------------------------------------------------------
+def test_the_builder_fails_loudly_when_a_paired_asset_is_missing(tmp_path, monkeypatch):
+    """`return 0` from main() is SystemExit(0): a missing asset made the build a
+    silent success that also skipped every later asset."""
+    import scripts.build_ontology_explorer as builder
+    monkeypatch.setattr(builder, "PAIRED_ASSETS", ("ontology.css", "definitely_absent.js"))
+    assert builder.main() == 1

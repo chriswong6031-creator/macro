@@ -56,7 +56,7 @@ _PRIVATE_HEADERS = {
     "X-Robots-Tag": "noindex, noarchive",
 }
 
-_CHAIN_PARAM_RE = re.compile(r"^[a-z0-9][a-z0-9_]{0,80}$")
+_CHAIN_PARAM_RE = re.compile(r"[a-z0-9][a-z0-9_]{0,80}")
 
 
 class _PrivateOntologyRoute(APIRoute):
@@ -79,6 +79,17 @@ class _PrivateOntologyRoute(APIRoute):
                 headers.update(_PRIVATE_HEADERS)
                 raise HTTPException(status_code=exc.status_code, detail=exc.detail,
                                     headers=headers) from exc
+            except Exception:  # noqa: BLE001 - see below
+                # Anything not caught here escapes to Starlette's ServerErrorMiddleware,
+                # which is the OUTERMOST layer — so it bypasses this route class AND
+                # app.main's no-store middleware, and the 500 goes out with none of the
+                # private header set. Measured on the real app, not just a bare one.
+                # The exception string never travels: that is where internal paths leak.
+                log.exception("ontology explorer failed unexpectedly")
+                return JSONResponse(
+                    {"detail": {"schema": ERROR_SCHEMA_ID, "code": "internal_error",
+                                "reason": "unhandled"}},
+                    status_code=500, headers=_PRIVATE_HEADERS)
             response.headers.update(_PRIVATE_HEADERS)
             return response
 
@@ -123,8 +134,14 @@ def read_snapshot(
     chain: str | None = Query(default=None, max_length=81),
 ) -> JSONResponse:
     """Return the current tenant-neutral `ontology_explorer_snapshot.v1`."""
-    slug = chain or DEFAULT_CHAIN
-    if not _CHAIN_PARAM_RE.match(slug):
+    # `chain=` asked for something specific and empty. Every other malformed
+    # value is refused; silently serving the default for this one was the odd
+    # case out, not a convenience.
+    slug = DEFAULT_CHAIN if chain is None else chain
+    # fullmatch, not match: Python's `$` also matches before a trailing newline,
+    # so `^...$` accepted a slug with a line break appended — which reached the
+    # composer and split one log call across two lines.
+    if not _CHAIN_PARAM_RE.fullmatch(slug):
         raise HTTPException(
             400,
             detail={"schema": ERROR_SCHEMA_ID, "code": "unknown_chain",
@@ -140,3 +157,23 @@ def read_snapshot(
         log.warning("ontology explorer source incoherent (%s)", exc)
         raise _unavailable("source_incoherent", str(exc).split(":", 1)[0]) from exc
     return JSONResponse(snapshot, headers=_PRIVATE_HEADERS)
+
+
+# HEAD and a method mismatch are both decided by Starlette's router BEFORE the
+# route class above is entered, so neither could ever be stamped by it. Both are
+# registered here instead: HEAD reuses the read path (the body is dropped by the
+# protocol, the headers are not), and every other verb gets an explicit, headered
+# 405. Both are hidden from the schema so the documented surface stays GET-only.
+router.add_api_route("/v1", read_snapshot, methods=["HEAD"], include_in_schema=False)
+
+
+@router.api_route("/v1", methods=["POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                  include_in_schema=False)
+def _method_not_allowed() -> Response:
+    """A read-only route says so with the same privacy guarantees as a read."""
+    raise HTTPException(
+        405,
+        detail={"schema": ERROR_SCHEMA_ID, "code": "method_not_allowed",
+                "reason": "read_only_route"},
+        headers={**_PRIVATE_HEADERS, "Allow": "GET, HEAD"},
+    )

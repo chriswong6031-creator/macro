@@ -483,3 +483,176 @@ def test_untranslated_prose_is_withheld_rather_than_served_as_english(tmp_path):
     assert snap["path"]["hops"][0]["mechanism"] is None
     assert {"kind": "text_withheld", "where": "hops.n1->n2.mechanism",
             "reason": "untranslated"} in snap["gaps"]
+
+
+# --------------------------------------------------------------------------
+# path SHAPE — a partial read must never be presented as the whole path
+#
+# `_walk_path` follows one successor chain. That is the right reading of a
+# simple path and a silently wrong reading of anything else. An independent
+# review measured a hop list of `n1->n2` and `n3->n4`, with n3 and n4 observed
+# FALSE, composing as `state: active` over a two-leg path — the surface
+# answering "active" about a path it had not read.
+# --------------------------------------------------------------------------
+def test_a_discontinuous_hop_list_fails_closed_instead_of_truncating(tmp_path):
+    doc = fx.chain_yaml()
+    doc["hops"] = [doc["hops"][0], doc["hops"][2]]          # n1->n2 , n3->n4
+    state = fx.chain_state(confirmed=(True, True, False, False))
+    from engine.ontology_explorer import SourceIncoherent
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, yaml_doc=doc, state_doc=state))
+    assert "path_disconnected" in str(excinfo.value)
+
+
+def test_a_branching_hop_list_fails_closed(tmp_path):
+    """The second out-edge was dropped when the successor map was built, so a
+    false branch simply vanished and the path read as active."""
+    from engine.ontology_explorer import SourceIncoherent
+    doc = fx.chain_yaml()
+    doc["hops"][2] = {**doc["hops"][2], "from": "n2", "to": "n4"}
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, yaml_doc=doc,
+                               state_doc=fx.chain_state(confirmed=(True, True, True, False))))
+    assert "path_branches" in str(excinfo.value)
+
+
+def test_a_hop_to_an_undeclared_node_is_incoherent_not_an_unread_leg(tmp_path):
+    """Reported as an unpublished reading it invented a positional title for the
+    phantom and told the researcher to wait for a reading that cannot arrive."""
+    from engine.ontology_explorer import SourceIncoherent
+    doc = fx.chain_yaml()
+    doc["hops"].append({"from": "n4", "to": "ghost", "sign": "+", "lag_d": [1, 2],
+                        "label": {"en": "l", "zh": "l2"},
+                        "condition": {"en": "c", "zh": "c2"},
+                        "mechanism": {"en": "m", "zh": "m2"}})
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, yaml_doc=doc))
+    assert "undeclared_node:ghost" in str(excinfo.value)
+
+
+def test_a_chain_with_no_hops_is_incoherent_not_unavailable(tmp_path):
+    """The file was present, readable and parsed. Calling that "absent" tells the
+    operator to look for a missing artifact that is sitting right there."""
+    from engine.ontology_explorer import SourceIncoherent
+    doc = fx.chain_yaml()
+    doc["hops"] = []
+    with pytest.raises(SourceIncoherent):
+        _compose(fx.build_root(tmp_path, yaml_doc=doc))
+
+
+def test_duplicate_chain_rows_fail_closed(tmp_path):
+    """Taking matches[0] made every later row invisible — including one at a
+    different rev with a different state, which also walked past the rev check,
+    because that check only ever saw row 0."""
+    from engine.ontology_explorer import SourceIncoherent
+    state = fx.chain_state()
+    duplicate = json.loads(json.dumps(state["chains"][0]))
+    duplicate["rev"], duplicate["state"] = 99, "expressed"
+    state["chains"].append(duplicate)
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, state_doc=state))
+    assert "duplicate_chain_rows" in str(excinfo.value)
+
+
+def test_the_bound_is_measured_against_the_file_not_the_walk(tmp_path):
+    """Measuring the walk let a large file compose as "2 of 12 legs" while
+    returning every one of its hop rows."""
+    from engine.ontology_explorer import MAX_PATH_LEGS, SourceIncoherent
+    doc = fx.chain_yaml()
+    nodes, hops, previous = dict(doc["nodes"]), list(doc["hops"]), "n4"
+    for i in range(MAX_PATH_LEGS + 2):
+        node_id = f"x{i}"
+        nodes[node_id] = {"title": {"en": node_id, "zh": f"{node_id}zh"},
+                          "src": "synthetic", "test": {"all": []}}
+        hops.append({"from": previous, "to": node_id, "sign": "+", "lag_d": [1, 2],
+                     "label": {"en": "l", "zh": "l2"},
+                     "condition": {"en": "c", "zh": "c2"},
+                     "mechanism": {"en": "m", "zh": "m2"}})
+        previous = node_id
+    doc["nodes"], doc["hops"] = nodes, hops
+    state = fx.chain_state()
+    state["chains"][0]["nodes"] = []          # nothing observed; the FILE is the problem
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, yaml_doc=doc, state_doc=state))
+    assert "path_exceeds_bound" in str(excinfo.value)
+
+
+# --------------------------------------------------------------------------
+# a missing reading is not a contradiction, and an unresolved leg is not observed
+# --------------------------------------------------------------------------
+def _state_with_unresolved_second_leg():
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    state["chains"][0]["nodes"][1]["resolved"] = False
+    state["chains"][0]["nodes"][1]["confirmed"] = None
+    return state
+
+
+def test_an_unresolved_leg_is_not_counted_as_observed(tmp_path):
+    """The snapshot said all four legs were observed while its own blocking-leg
+    block said that very leg had no reading."""
+    snap = _compose(fx.build_root(tmp_path, state_doc=_state_with_unresolved_second_leg()))
+    assert snap["state"]["coverage"]["legs_observed"] == 3
+    assert snap["state"]["coverage"]["legs_unobserved"] == ["n2"]
+    assert snap["state"]["code"] == "unknown"
+
+
+def test_no_contradiction_is_claimed_when_the_blocking_leg_was_never_read(tmp_path):
+    """The published note says a later leg reads true "while an earlier one does
+    not". If the earlier leg was never read, that sentence is false."""
+    snap = _compose(fx.build_root(tmp_path, state_doc=_state_with_unresolved_second_leg()))
+    assert snap["first_blocking_leg"]["reason"] == "not_resolved"
+    assert snap["contradiction"] is None
+
+
+def test_no_contradiction_is_claimed_when_the_blocking_leg_is_absent(tmp_path):
+    state = fx.chain_state(confirmed=(True, True, True, True), omit_nodes=("n1",))
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert snap["first_blocking_leg"]["reason"] == "not_observed"
+    assert snap["contradiction"] is None
+
+
+def test_a_contradiction_still_fires_when_the_blocker_is_genuinely_false(tmp_path):
+    snap = _compose(fx.build_root(tmp_path, state_doc=fx.chain_state(
+        confirmed=(False, False, False, True))))
+    assert snap["first_blocking_leg"]["reason"] == "condition_false"
+    assert snap["contradiction"]["code"] == "downstream_true_without_upstream"
+
+
+# --------------------------------------------------------------------------
+# clocks and revisions
+# --------------------------------------------------------------------------
+def test_a_build_stamp_in_the_future_is_not_an_age_of_zero(tmp_path):
+    """`max(0, ...)` re-opened the very defect the parser was written to close:
+    a stamp we cannot make sense of rendering as "built just now"."""
+    state = fx.chain_state()
+    state["built"] = "2099-01-01 00:00 UTC"
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    freshness = snap["source"]["freshness"]
+    assert freshness["source_age_seconds"] is None
+    assert freshness["source_age_basis"] == "build_stamp_in_future"
+    assert {"kind": "build_stamp_in_future", "where": "chain_state.built"} in snap["gaps"]
+
+
+def test_a_transition_from_another_revision_is_not_this_revisions_change(tmp_path):
+    """A row written under a different revision describes a different definition
+    of the path; presenting it as the current change is a category error."""
+    root = fx.build_root(tmp_path)
+    (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
+        json.dumps({"chain": fx.SLUG, "rev": 1, "transition": "armed",
+                    "asof": "2026-02-01"}) + "\n"
+        + json.dumps({"chain": fx.SLUG, "rev": 99, "transition": "armed",
+                      "asof": "2026-03-01"}) + "\n", encoding="utf-8")
+    snap = _compose(root)
+    assert snap["what_changed"]["status"] == "comparison_unavailable"
+    assert snap["evidence"]["k1"]["refs_count"] == 0
+    assert {"kind": "transitions_from_another_revision", "count": 2} in snap["gaps"]
+
+
+def test_a_transition_at_the_current_revision_is_reported(tmp_path):
+    root = fx.build_root(tmp_path)
+    (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
+        json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "armed",
+                    "asof": "2026-02-01", "hop": 1}) + "\n", encoding="utf-8")
+    snap = _compose(root)
+    assert snap["what_changed"]["status"] == "recorded_transition"
+    assert snap["what_changed"]["items"][0]["asof"] == "2026-02-01"

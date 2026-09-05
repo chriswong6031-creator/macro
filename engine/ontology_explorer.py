@@ -75,7 +75,8 @@ COMPATIBLE_STATE_SCHEMAS = frozenset({"transmission_chains.v1"})
 #: the bound fails closed instead of truncating into a half-answer.
 MAX_PATH_LEGS = 12
 
-_CHAIN_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_]{0,80}$")
+#: fullmatch below, not match: `$` also matches before a trailing newline.
+_CHAIN_SLUG_RE = re.compile(r"[a-z0-9][a-z0-9_]{0,80}")
 
 _KNOWLEDGE_REL = "knowledge/transmission"
 _STATE_REL = "data/transmission/chain_state.json"
@@ -173,6 +174,48 @@ def _walk_path(hops: list[dict]) -> tuple[list[str], list[str]]:
     return sequence, cycle
 
 
+def _require_simple_path(definition_hops: list[dict], declared_nodes: dict,
+                        sequence: list[str]) -> None:
+    """Refuse anything that is not one continuous path through every node.
+
+    `_walk_path` follows a single successor chain from one root. That is the
+    right reading of a simple path and a silently WRONG reading of anything
+    else: a hop list of `n1->n2` and `n3->n4` walks to `['n1','n2']`, and every
+    downstream calculation — coverage, activation, the bound, the legs — then
+    describes two legs as if they were the whole path. With `n3` and `n4`
+    observed FALSE, this surface answered `state: active` about a path it had
+    not read. Branching does the same thing more quietly, because the second
+    out-edge is dropped when the successor map is built.
+
+    The nightly's `validate_chain` does enforce continuity, and every live chain
+    is a simple path today, so this is latent rather than firing. It is still
+    ours to check: this module deliberately does not call that validator, it is
+    a REQUEST-TIME reader, and a hop edit that does not bump `rev` reaches a
+    reader before any nightly runs. Failing closed is the only answer that
+    cannot mislead — a partial path presented as a whole one is worse than a
+    typed 503.
+    """
+    out_degree: dict[str, int] = {}
+    referenced: set[str] = set()
+    for hop in definition_hops:
+        src, dst = str(hop.get("from")), str(hop.get("to"))
+        out_degree[src] = out_degree.get(src, 0) + 1
+        referenced.update((src, dst))
+    branching = sorted(node for node, degree in out_degree.items() if degree > 1)
+    if branching:
+        raise SourceIncoherent(f"path_branches:{branching[0]}")
+    undeclared = sorted(referenced - set(declared_nodes))
+    if undeclared:
+        # A hop pointing at a node the file never declares is an incoherent
+        # file, not an unpublished reading. Reported as the latter it invented a
+        # positional title for the phantom and told the researcher to wait for a
+        # reading that can never arrive.
+        raise SourceIncoherent(f"undeclared_node:{undeclared[0]}")
+    unreached = sorted((referenced | set(declared_nodes)) - set(sequence))
+    if unreached:
+        raise SourceIncoherent(f"path_disconnected:{unreached[0]}")
+
+
 # ---------------------------------------------------------------------------
 # composition
 # ---------------------------------------------------------------------------
@@ -180,7 +223,7 @@ def compose_snapshot(root: Path | str, *, chain: str = DEFAULT_CHAIN,
                      now: datetime | None = None) -> dict[str, Any]:
     """Compose one ``ontology_explorer_snapshot.v1`` for ``chain``."""
     root = Path(root)
-    if not _CHAIN_SLUG_RE.match(chain or ""):
+    if not _CHAIN_SLUG_RE.fullmatch(chain or ""):
         raise SourceUnavailable(f"unknown_chain:{chain!r}")
 
     yaml_rel = f"{_KNOWLEDGE_REL}/{chain}.yaml"
@@ -243,6 +286,11 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     matches = [c for c in entries if isinstance(c, dict) and c.get("chain") == chain]
     if not matches:
         raise SourceUnavailable(f"chain_absent_from_state:{chain}")
+    if len(matches) > 1:
+        # Taking matches[0] made every later row invisible — including a row at a
+        # different rev with a different state, which also walked straight past
+        # the rev-coherence check below, since that check only ever saw row 0.
+        raise SourceIncoherent(f"duplicate_chain_rows:{len(matches)}")
     observed = matches[0]
 
     if definition.get("chain") != chain:
@@ -253,10 +301,12 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
 
     declared_nodes = definition.get("nodes")
     if not isinstance(declared_nodes, dict) or not declared_nodes:
-        raise SourceUnavailable("malformed_source:nodes")
+        # The file was present, readable and parsed. That is a coherence failure,
+        # not an availability one, and calling it "absent" misdescribes it.
+        raise SourceIncoherent("malformed_nodes")
     definition_hops = definition.get("hops")
     if not isinstance(definition_hops, list) or not definition_hops:
-        raise SourceUnavailable("malformed_source:hops")
+        raise SourceIncoherent("malformed_hops")
 
     observed_nodes = {n["id"]: n for n in observed.get("nodes", [])
                       if isinstance(n, dict) and isinstance(n.get("id"), str)}
@@ -265,8 +315,14 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
         raise SourceIncoherent(f"unknown_node:{unknown[0]}")
 
     sequence, cycle_nodes = _walk_path(definition_hops)
-    if len(sequence) > MAX_PATH_LEGS:
-        raise SourceIncoherent(f"path_exceeds_bound:{len(sequence)}>{MAX_PATH_LEGS}")
+    if not cycle_nodes:
+        _require_simple_path(definition_hops, declared_nodes, sequence)
+    # The bound is measured against the FILE, not against the walk. Measuring the
+    # walk let a file with 80 declared nodes and 40 disjoint hop pairs compose as
+    # "2 of 12 legs" while returning 40 rendered hop rows.
+    declared_size = max(len(sequence), len(definition_hops) + 1, len(declared_nodes))
+    if declared_size > MAX_PATH_LEGS:
+        raise SourceIncoherent(f"path_exceeds_bound:{declared_size}>{MAX_PATH_LEGS}")
 
     gaps: list[dict[str, Any]] = []
     observed_hops = {h["id"]: h for h in observed.get("hops", [])
@@ -277,7 +333,10 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     invalidators = _invalidators(definition, gaps)
     rights = _rights(definition, gaps)
 
-    unobserved = [leg["node_id"] for leg in legs if leg["observation"] == "unobserved"]
+    # "unresolved" is not "observed". Counting it as observed produced a snapshot
+    # that said all four legs were observed while its own blocking-leg block said
+    # that very leg had no reading.
+    unobserved = [leg["node_id"] for leg in legs if leg["observation"] != "observed"]
     confirmed_hop_count = sum(1 for h in hops if h["confirmed"] is True)
     activation = bool(sequence) and not cycle_nodes and not unobserved and all(
         leg["confirmed"] is True for leg in legs)
@@ -295,7 +354,8 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     return {
         "schema": SCHEMA_ID,
         "generated_at": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        "source": _source_block(definition, state_doc, observed, chain=chain, now=now),
+        "source": _source_block(definition, state_doc, observed, chain=chain,
+                                now=now, gaps=gaps),
         "state": {
             "code": state_code,
             "label": _state_label(state_code),
@@ -325,10 +385,12 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
         },
         "first_blocking_leg": first_blocking,
         "contradiction": contradiction,
-        "what_changed": _what_changed(episodes_raw, chain=chain, rev=observed.get("rev")),
+        "what_changed": _what_changed(episodes_raw, chain=chain,
+                                      rev=observed.get("rev"), gaps=gaps),
         "why_it_matters": _why_it_matters(hops, contradiction),
         "next_action": _next_action(state_code, first_blocking, contradiction, unobserved),
-        "evidence": _evidence(episodes_raw, legs, chain=chain),
+        "evidence": _evidence(episodes_raw, legs, chain=chain,
+                              rev=observed.get("rev")),
         "clocks": _clocks(observed, state_doc, hops, now=now),
         "invalidators": invalidators,
         "rights": rights,
@@ -429,7 +491,12 @@ def _first_blocking_leg(legs: list[dict]) -> dict[str, Any] | None:
     for leg in legs:
         if leg["confirmed"] is True:
             continue
-        reason = "condition_false" if leg["confirmed"] is False else "not_observed"
+        if leg["confirmed"] is False:
+            reason = "condition_false"
+        elif leg["observation"] == "unresolved":
+            reason = "not_resolved"
+        else:
+            reason = "not_observed"
         return {
             "node_id": leg["node_id"],
             "index": leg["index"],
@@ -452,6 +519,12 @@ def _contradiction(legs: list[dict], first_blocking: dict | None) -> dict[str, A
     """
     if first_blocking is None:
         return None
+    if first_blocking["reason"] != "condition_false":
+        # The note this function publishes says a later leg reads true "while an
+        # earlier one does not". If the earlier leg was never read, that sentence
+        # is false: nothing is in tension, the coverage is simply incomplete, and
+        # the state is already `unknown` for exactly that reason.
+        return None
     downstream = [leg["node_id"] for leg in legs
                   if leg["index"] > first_blocking["index"] and leg["confirmed"] is True]
     if not downstream:
@@ -470,15 +543,17 @@ def _contradiction(legs: list[dict], first_blocking: dict | None) -> dict[str, A
     }
 
 
-def _what_changed(episodes_raw: bytes | None, *, chain: str,
-                  rev: Any) -> dict[str, Any]:
-    """Only OWNER-RECORDED transitions count as change.
+def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
+                  gaps: list[dict] | None = None) -> list[dict[str, Any]]:
+    """Recorded transitions for THIS chain at THIS revision.
 
-    An empty ledger is not evidence that the underlying conditions held still —
-    it is the absence of a baseline to compare against, which is a different
-    statement and the only one the data supports.
+    A row written under a different revision describes a different definition of
+    the path. Presenting one as the current change is a category error: it read
+    as "here is what moved" about a chain whose legs may since have been
+    redefined.
     """
     rows: list[dict[str, Any]] = []
+    foreign = 0
     if episodes_raw:
         for line in episodes_raw.decode("utf-8", "replace").splitlines():
             line = line.strip()
@@ -488,8 +563,27 @@ def _what_changed(episodes_raw: bytes | None, *, chain: str,
                 row = json.loads(line)
             except ValueError:
                 continue
-            if isinstance(row, dict) and row.get("chain") == chain:
-                rows.append(row)
+            if not isinstance(row, dict) or row.get("chain") != chain:
+                continue
+            row_rev = row.get("rev")
+            if isinstance(row_rev, int) and row_rev != rev:
+                foreign += 1
+                continue
+            rows.append(row)
+    if foreign and gaps is not None:
+        gaps.append({"kind": "transitions_from_another_revision", "count": foreign})
+    return rows
+
+
+def _what_changed(episodes_raw: bytes | None, *, chain: str, rev: Any,
+                  gaps: list[dict]) -> dict[str, Any]:
+    """Only OWNER-RECORDED transitions count as change.
+
+    An empty ledger is not evidence that the underlying conditions held still —
+    it is the absence of a baseline to compare against, which is a different
+    statement and the only one the data supports.
+    """
+    rows = _episode_rows(episodes_raw, chain=chain, rev=rev, gaps=gaps)
     if not rows:
         return {
             "status": "comparison_unavailable",
@@ -586,7 +680,7 @@ def _next_action(state_code: str, first_blocking: dict | None,
 
 
 def _evidence(episodes_raw: bytes | None, legs: list[dict], *,
-              chain: str) -> dict[str, Any]:
+              chain: str, rev: Any) -> dict[str, Any]:
     """K1 binding, plus the owner receipts that stand in its place.
 
     The K1 vocabulary admits ``txi.episode_transition`` as an owner store and
@@ -597,15 +691,7 @@ def _evidence(episodes_raw: bytes | None, legs: list[dict], *,
     papered over with a synthesised reference; a real reference is emitted only
     where a genuine eligible transition exists.
     """
-    transitions = 0
-    if episodes_raw:
-        for line in episodes_raw.decode("utf-8", "replace").splitlines():
-            try:
-                row = json.loads(line)
-            except ValueError:
-                continue
-            if isinstance(row, dict) and row.get("chain") == chain:
-                transitions += 1
+    transitions = len(_episode_rows(episodes_raw, chain=chain, rev=rev))
     if transitions:
         k1 = {"status": "available", "reason_code": None, "refs_count": transitions,
               "detail": {"eligible_owner_store": "txi.episode_transition"}}
@@ -791,11 +877,21 @@ def _parse_build_stamp(built: Any) -> datetime | None:
 
 
 def _source_block(definition: dict, state_doc: dict, observed: dict, *,
-                  chain: str, now: datetime) -> dict[str, Any]:
+                  chain: str, now: datetime, gaps: list[dict]) -> dict[str, Any]:
     built = state_doc.get("built")
     stamp = _parse_build_stamp(built)
-    age_seconds = None if stamp is None else max(0, int((now - stamp).total_seconds()))
-    age_basis = "chain_state.built" if stamp is not None else "unparseable_build_stamp"
+    if stamp is None:
+        age_seconds, age_basis = None, "unparseable_build_stamp"
+    else:
+        delta = (now - stamp).total_seconds()
+        if delta < 0:
+            # `max(0, ...)` re-opened the very defect the parser above was written
+            # to close: a stamp we cannot make sense of rendering as "built just
+            # now". A stamp in the future is not an age of zero.
+            age_seconds, age_basis = None, "build_stamp_in_future"
+            gaps.append({"kind": "build_stamp_in_future", "where": "chain_state.built"})
+        else:
+            age_seconds, age_basis = int(delta), "chain_state.built"
     return {
         "chain": chain,
         "rev": observed.get("rev"),

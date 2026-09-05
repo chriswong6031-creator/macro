@@ -61,6 +61,10 @@ verified:
       horizontal overflow, 44px touch targets, zero WCAG-AA text failures, zero
       refutation vocabulary and zero raw slugs on the live chain.
     command: "Browser pane against a local harness (removed before commit)"
+  - claim: >
+      Two independent non-author Opus reviewers found 16 defects — one blocker,
+      several majors — and every one now has a regression test.
+    command: "python3 -m pytest tests/test_ontology_explorer_*.py -q  # 117 passed"
 do_not_redo:
   - >
     Do not render owner falsifier notes verbatim on a user surface. The live WTI
@@ -85,6 +89,31 @@ do_not_redo:
     The carrier's nav collision claim is false. Neither #6828 nor #6834 touches
     templates/_navlinks.html.j2. The real four-way contention is
     .github/ci/legacy-jobs.yml.
+  - >
+    Do not measure a response bound against the WALK. `_walk_path` follows one
+    successor chain, so a discontinuous or branching hop list truncates silently
+    and every downstream number then describes a partial path as a whole one —
+    including `state: active` for a path with unread FALSE legs.
+  - >
+    Do not assert a contradiction from a leg that was never read. The note says
+    a later leg reads true "while an earlier one does not"; an unread leg makes
+    that sentence false.
+  - >
+    Do not clamp a negative age to zero. A `built` stamp in the future is not
+    "built just now" — that is the same defect the stamp parser exists to close.
+  - >
+    Do not rely on a FastAPI route class to stamp headers on a 405 or a HEAD.
+    Starlette's router decides both BEFORE the route class is entered, and an
+    unhandled exception escapes to ServerErrorMiddleware, which is outside both
+    the route class and app/main.py's no-store middleware.
+  - >
+    Do not anchor a slug guard with `^...$`. Python matches `$` before a trailing
+    newline, so a slug with a line break appended passes. Use `fullmatch`.
+  - >
+    A broad review commission that cannot finish returns NOTHING. The first
+    reviewer here hit its turn limit mid-orientation. Cut reviews into narrow
+    passes with an explicit tool-call budget and an instruction to report what
+    they have when they reach it.
 danger_areas:
   - >
     transmission_chains.run() defaults write=True and appends
