@@ -49,17 +49,19 @@ context is therefore not composed here - a future revision may extend
 composer never claims that context exists by omission: it is absent from
 ``metrics``/``drivers`` entirely, not published as a fabricated null leg.
 
-KNOWN OWNER DEFECT (disclosed, never silently corrected): cb_desk's FED
-``bs_impulse.level`` is WALCL's raw FRED reading (natively MILLIONS of USD)
-but the owner's own ``unit`` label claims "USD billions". This composer NEVER
-rescales or corrects the number. It runs one deterministic, disclosed sanity
-check scoped to ``series == "WALCL"`` (the one instance of this defect it has
-been told to expect - it does not speculatively apply the same magnitude
-check to ECB/BoJ, whose own unit labels are not currently disclosed as
-defective): if the label says "billions" but the raw level is implausible at
-that scale, the LEVEL leg (only) is refused as SOURCE_FAILED with an honest
-note; the unit-free 13-week/52-week PERCENT-CHANGE legs are unaffected and
-still published, since a percent change is scale-invariant.
+RESOLVED OWNER DEFECT (guard retained, never silently corrected): cb_desk's
+FED ``bs_impulse.level`` was historically WALCL's raw FRED reading (natively
+MILLIONS of USD) under a ``unit`` label claiming "USD billions". The owner
+fixed this at source on 2026-09-04: cb_desk now normalizes every
+balance-sheet level into its published unit via ``bs_unit_mult`` (FED/ECB
+into billions from FRED-native millions; BoJ into JPY billions from
+FRED-native 100-million JPY). This composer STILL never rescales or corrects
+the number. The deterministic sanity check scoped to ``series == "WALCL"``
+is RETAINED as a regression tripwire: if a defective vintage reappears (the
+label says "billions" but the raw level is implausible at that scale), the
+LEVEL leg (only) is refused as SOURCE_FAILED with an honest note; the
+unit-free 13-week/52-week PERCENT-CHANGE legs are unaffected and still
+published, since a percent change is scale-invariant.
 
 FRESHNESS LAW: GLT publishes on a W-FRI weekly grid (``meta.frequency``). A
 mid-week build is CURRENT relative to the last Friday grid tip; this composer
@@ -147,10 +149,11 @@ _WEEKLY_BS_STALE_DAYS = 14
 # with anything.
 _FED_FLAT_BAND_PCT = 0.5
 
-# KNOWN OWNER DEFECT sanity check (see module docstring): scoped to
+# RESOLVED OWNER DEFECT regression tripwire (see module docstring): scoped to
 # series == "WALCL" only. A raw level this large under a "billions" label is
 # implausible for any G-SIFI-scale central-bank balance sheet (WALCL's native
-# FRED unit is millions of USD, not billions) - fail closed, never rescale.
+# FRED unit is millions of USD; cb_desk normalizes into billions at source
+# since 2026-09-04) - fail closed, never rescale.
 _WALCL_LABELED_BILLIONS_KEYWORD = "billion"
 _WALCL_PLAUSIBLE_MAX_IN_LABELED_UNIT = 50_000.0
 
@@ -265,7 +268,7 @@ def _aged_freshness(built_at, asof, tolerance_days: int, value_present: bool,
 
 
 def _cb_bs_level_sane(series: Any, unit: Any, level: float | None) -> bool:
-    """KNOWN OWNER DEFECT check (module docstring): scoped to WALCL only."""
+    """RESOLVED OWNER DEFECT regression tripwire (module docstring): WALCL only."""
     if series != "WALCL" or level is None:
         return True
     if not isinstance(unit, str) or _WALCL_LABELED_BILLIONS_KEYWORD not in unit.lower():
@@ -595,8 +598,9 @@ def _cb_bs_metrics(cb_id: str, bs: Mapping | None, built_at: str, *,
         level_note = (
             f"This composer refused to publish the level reading: the owner unit "
             f"label reads {unit!r} but the raw level ({level_raw:g}) is implausible "
-            f"at that scale for {series} - a known owner cb_desk units defect (see "
-            "the WALCL disclosure note in the module docstring). This composer never "
+            f"at that scale for {series} - a regression of the owner cb_desk units "
+            "defect fixed at source on 2026-09-04 (see the WALCL disclosure note in "
+            "the module docstring). This composer never "
             "rescales or corrects the number; only the LEVEL leg fails, the unit-free "
             "13w/52w percent-change legs below are unaffected."
         )
@@ -967,11 +971,13 @@ def _implications(st, er, q, contradictions, worst_freshness, coverage_ratio,
                 "The Fed balance-sheet LEVEL figure could not be published this cycle: "
                 "the upstream central-bank desk labels its unit as billions of dollars, "
                 "but the raw number is the scale of the native millions-of-dollars WALCL "
-                "reading. Rather than guess and rescale, this composer refuses the level "
+                "reading — a regression of the owner units defect fixed at source on "
+                "2026-09-04. Rather than guess and rescale, this composer refuses the level "
                 "reading and publishes it as a failed source; the unit-free 13-week and "
                 "52-week percent changes are unaffected and remain published.",
                 "美联储资产负债表水平数值本周期无法发布：上游央行台面将单位标注为十亿美元，"
-                "但原始数字的量级实际对应原生的百万美元WALCL读数。本组合器不做猜测性换算，"
+                "但原始数字的量级实际对应原生的百万美元WALCL读数——这是上游2026-09-04已在"
+                "源头修复的单位缺陷的回归。本组合器不做猜测性换算，"
                 "而是拒绝该水平读数并将其标记为数据源失败；不涉及单位的13周与52周百分比变化"
                 "不受影响，仍照常发布。"),
             "evidence_class": "DESCRIPTIVE",
