@@ -12,11 +12,14 @@ Deliberately import-light: yaml + stdlib only. app/main.py imports this at start
 the registry tests import it directly — pulling FastAPI into a config test (or a second
 hand-typed whitelist into a test helper) is exactly the drift this file removes.
 
-Envelope v1 (DEC:ANALYTICS-EID-USES-EXISTING-EVENT-PRIMARY-KEY): events whose registry
-entry carries `envelope: v1` are the newly implemented commercial wires. For those and
-only those, acceptance additionally requires:
-  * `eid`    — a valid UUID string; it becomes the analytics_events.id primary key, so
-               an exact replay of the same event is ONE row (conflict-safe insert).
+Envelope v1: events whose registry entry carries `envelope: v1` are the newly
+implemented commercial wires. For those and only those, acceptance additionally
+requires:
+  * `eid`    — a valid UUID string; it is seated in the analytics_events.eid unique
+               column, so an exact replay of the same event is ONE row (conflict-safe
+               insert). (The handoff decision DEC:ANALYTICS-EID-USES-EXISTING-EVENT-
+               PRIMARY-KEY assumed a UUID id primary key; the live id is a bigint
+               identity, so the §16 canary corrected the seat to its own column.)
   * `schema` — the literal registry schema version ("growth_events.v1").
   * `meta`   — a dict whose keys are exactly a subset of the declared properties, every
                DECLARED property present, values matching the declared scalar/enum type.
