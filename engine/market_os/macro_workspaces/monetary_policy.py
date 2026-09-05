@@ -660,10 +660,11 @@ def _metrics(rc_asof, rate_path_row, inflation_row, risk_row, policy_row,
         _aged_freshness(built_at, _get(fed_bs, "asof") if fed_bs else None,
                          _WEEKLY_BS_STALE_DAYS, fed_bs_level is not None),
         source_refs=["FRED:WALCL"],
-        transformation=("owner-native pass-through; the owner's bs_unit label states "
-                         "'USD billions' but the raw level (~6.7 million) is consistent "
-                         "with FRED's native millions-of-dollars WALCL unit -- propagated "
-                         "AS GIVEN, not corrected by this composer (see deviations)"),
+        transformation=("owner-native pass-through; since the 2026-09-04 cb_desk units "
+                         "fix the owner normalizes WALCL from FRED's native millions of "
+                         "USD into its published 'USD billions' label at source "
+                         "(bs_unit_mult) -- the value is propagated AS GIVEN, "
+                         "not corrected by this composer"),
     ))
     for cb_id, mid, en, zh in _CB_BS_SPECS:
         row = cbs_by_id.get(cb_id)
