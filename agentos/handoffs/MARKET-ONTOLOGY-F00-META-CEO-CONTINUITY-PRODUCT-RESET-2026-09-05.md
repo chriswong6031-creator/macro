@@ -4,266 +4,345 @@ session: sol/marketontology-f00-meta-ceo-continuity-20260904
 model: sol
 ended_because: ci_handoff
 mission: >
-  Reconcile the distributed F00-F13 Market Ontology program after the bound F00
-  principal became transport-dark; consume waiting lane returns; terminate only
-  stale source writers; impose a product-first acceptance constitution; preserve
-  every canonical carrier and owner; and leave exact next actions recoverable
-  without this chat.
+  Recover the existing Market Ontology program without a duplicate lifecycle;
+  preserve exact source ownership; consume material returns; unblock bounded
+  product work; repair the product-admission candidate; and leave current
+  decisions, evidence limits and next actions recoverable without this chat.
 state_before: >
-  The prior 2026-09-04 F00 handoff still projected F06, F08, F10 and F13 as
-  unplaced and F01/F04 as reserved. Slack and GitHub had moved materially:
-  those four principals had started, several bounded PRs existed, F01 had merged
-  fourteen direct-URL pages, the original F00 native session was offline and
-  transport-dark, F09-1 and Terminal deploy-repair writers had returned without
-  terminal consumption, and no current durable record contained the product
-  experience law required to stop backend-shaped pages from being called a
-  finished suite.
+  The first version of this handoff at f47461921455456be76864f65474a10b5602ead6
+  still described F00 as waiting for app migration, full-lane F09 and the F01/F04
+  product children as unplaced, and shared navigation collisions too broadly.
+  Those projections were overtaken by actual principal/worker receipts. A later
+  chat response also described schema-rejected Slack calls as submitted. The
+  canonical successfully posted messages, not that response, determine what
+  reached operators. Existing producers and held PRs remain preserved.
 changed:
   - path: agentos/handoffs/MARKET-ONTOLOGY-F00-META-CEO-CONTINUITY-PRODUCT-RESET-2026-09-05.md
     what: >
-      Add the current F00 control topology, exact lane/carrier/watcher map,
-      source-writer terminal boundaries, Product Experience Constitution,
-      capability reclassifications, collision hazards, and ordered next actions.
-prs: [6793, 6828, 6830, 6831, 6834, 6859, 6861]
+      Reconcile this same handoff in place with the restored F00 principal,
+      actual F01/F04 source rulings, F09 plan adjudication, research placements,
+      the repaired but unaccepted product law, exact K1 current-head conflict,
+      watcher evidence limits and outstanding integration/review work.
+prs: [6793, 6828, 6830, 6831, 6834, 6859, 6861, 6864, 6865]
 verified:
   - claim: >
-      The canonical F00 operation and Slack root remain active while the old
-      Claude8 native principal is offline/transport-dark; a replacement Fable
-      continuity principal is waiting on the standardized Claude app migration.
+      The current-source inspection for this continuation used protected
+      Mastermind 0d9cf2f58f9a6a1fe895d5d199abc18735201e24 and Macro
+      31e0dd0e5f7ec19d1ce081b32bc0583a6dc72f79.
     command: >
-      Open https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788510607305039
-      and read through Meta-CEO ruling 1788582621.998329 plus
-      WAITING_CAPACITY/APP_MIGRATION_IN_PROGRESS.
+      GitHub.fetch on the Mastermind branches/master and macro branches/main
+      endpoints; GitHub.fetch_file on docs/sol_skills/INDEX.md and required
+      skills at the same exact protected SHA.
     result: >
-      No later F00 principal PICKUP_ACK or START exists. The old UUID
-      1727abca-4b22-4106-a498-6b83ad223a73 is quarantined; task
-      01a06fc3-01f2-75e0-967a-c53a23532111 owns the app migration callback.
+      Mastermind master was protected and Skillpack 1.0.1/bootstrap-major 1
+      compatible. Macro main reported protection disabled; do not mislabel it
+      as branch-protected. These are source-cut pins, not eternal current heads.
   - claim: >
-      Current Macro main at this record cut is
-      443fe9a6f7d98484710452dc98f1aed58011c823 and protected Mastermind procedure
-      is a3440f21a0d6df7666bd9ed9f3b02385dac23588 with Skillpack 1.0.1.
+      F00 has a new concrete principal and a five-part integration return on
+      the unchanged operation/root; the old principal is not to be resumed.
     command: >
-      gh api repos/mastermindx-market-intelligence/macro/branches/main --jq .commit.sha
-      && gh api repos/mastermindx-market-intelligence/Mastermind/branches/master --jq .commit.sha
+      Slack.slack_read_thread C0BSBM78V1N/1788510607.305039 through principal
+      return 1788585664.625459 to 1788585745.257959, receipt
+      1788592188.243189 and Secretary readback 1788592561.556409.
     result: >
-      Macro returned 443fe9a6f7d98484710452dc98f1aed58011c823;
-      Mastermind returned a3440f21a0d6df7666bd9ed9f3b02385dac23588.
+      Principal Code UUID 5b29ad85-0490-42c8-b5e4-1e32b1922014 maps to
+      app local_a43a5e87-f178-472b-bde0-c6f4bda22a1b, actual Claude8.
+      It reported cancelled watcher 08329229 and one new hourly resource
+      5acef0b6, schedule 23 * * * *, same scope, session-only/seven-day expiry.
+      This is a receiver-reported replacement and observed dialogue, not an
+      independent host inspection or proof the watcher survives session loss.
   - claim: >
-      F06, F08, F10 and F13 have valid started principal carriers; their first
-      returns or checkpoints were consumed with same-root product/correctness
-      rulings rather than replaced by duplicate sessions.
+      F01 Product Experience R1 now has an exact-session bounded source ruling,
+      not merely an unplaced commission.
     command: >
-      Open Slack roots
-      https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788510658514579,
-      https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788510682177519,
-      https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788510708757239,
-      and https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788510745317799.
+      Slack.slack_read_thread C0BSBM78V1N/1788583938.803689 through
+      SOL CONTINUE 1788593558.145159, including the three returns and their
+      corrected view/label paths, architecture addendum and Q2 withdrawal.
     result: >
-      F06 watcher 5171cf17, F08 watcher 31acb277, F10 watcher 2b5baf0f and F13
-      watcher 9079b830 remain the declared continuation paths. Product-first or
-      current-head rulings now follow each latest material return.
+      Receiver dd51ef8f-984a-4df6-8e6e-68b0932972b0 may start feature-owned
+      hub/Liquidity/suite-nav work after its own current local gates and separate
+      SOURCE START. No fused regime or cross-workspace magnitude ranking.
+      Global admission is still held. A source authorization is not an execution
+      or completed-PR receipt.
   - claim: >
-      F01 has fourteen generated Macro workspace pages and snapshot producers,
-      but no coherent discoverable suite hub or globally linked product journey.
+      The original Sol commissioner's F04 X1 decision is now posted on its exact
+      child root and permits bounded implementation with explicit corrections.
     command: >
-      git log --oneline --all --grep='F01\|Macro.*workspace\|Trade Flows'
-      && rg 'macro_liquidity_regime|macro_monetary' templates tests site
+      Slack.slack_send_message success receipts and child-root readback:
+      C0BSBM78V1N/1788584226.926809 at 1788593425.474829,
+      1788593451.642199 and 1788593484.110599.
     result: >
-      The #6836/#6845/#6846/#6847/#6848/#6849/#6851/#6852 sequence is merged;
-      current tests explicitly preserve direct-route-only behavior and no
-      canonical Macro & Monetary hub exists.
+      The complete three-part ruling preserves receiver
+      d6317c9b-299b-4aea-9f95-2756e9f2f6ca, resolves a narrow K1 current-head
+      exception, corrects change/freshness/coherence claims and allows the
+      feature-owned composer/auth/product phase after a separate SOURCE START.
+      Build/navigation/registry/test integration remains owed in the SAME
+      vertical before product acceptance, not an uncommissioned follow-on.
   - claim: >
-      The principal open Macro implementation carriers are still unmerged and
-      therefore remain BUILT_NOT_PROVEN or repair/review held, not product-live.
+      K1 explicitly excludes the mutable TXI current head while admitting a
+      particular episode-transition owner; required-field count is not the
+      reason for that exclusion.
     command: >
-      gh pr view 6793 --repo mastermindx-market-intelligence/macro --json state,isDraft,headRefOid
-      && gh pr view 6828 --repo mastermindx-market-intelligence/macro --json state,isDraft,headRefOid
-      && gh pr view 6830 --repo mastermindx-market-intelligence/macro --json state,isDraft,headRefOid
-      && gh pr view 6831 --repo mastermindx-market-intelligence/macro --json state,isDraft,headRefOid
-      && gh pr view 6834 --repo mastermindx-market-intelligence/macro --json state,isDraft,headRefOid
-      && gh pr view 6861 --repo mastermindx-market-intelligence/macro --json state,isDraft,headRefOid
+      GitHub.fetch_file at macro 31e0dd0e5f7ec19d1ce081b32bc0583a6dc72f79:
+      contracts/evidence_foundation/vocabulary.v1.json,
+      contracts/evidence_foundation/reference.v1.schema.json and
+      lib/evidence_foundation.py; compare F04 Amendment 3 section 5.
     result: >
-      #6793=29b60c1a, #6828=aa7648ff, #6830=693f6dd1, #6831=fca73b7a,
-      #6834=5d540baa and #6861=783060e9; all remain open/held and none supplies
-      accepted production proof.
+      Vocabulary blob 441c573dff1f04fca42ffe3d3170eb035e1b17a2 lists
+      txi.chain_state under excluded_derived_heads. txi.episode_transition
+      requires chain/rev/episode_id/transition/hop/asof. The reference schema
+      supports honest unknown/null fields. The X1 exception does not add a
+      vocabulary owner, fabricate an episode, or claim K1 interoperability.
   - claim: >
-      F09-1 and Terminal deploy-repair source writers were explicitly consumed
-      and stopped without accepting their PRs for release or production.
+      Full-lane F09 has returned and its plan has been adjudicated; it is not
+      unplaced and must not be restarted.
     command: >
-      Open Slack roots
-      https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788407688753659
-      and https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788495583842729.
+      Slack.slack_read_thread C0BSBM78V1N/1788510697.045199 through
+      FIRST RETURN 1788586485.019749 to 1788586640.793979, slate divergence
+      1788586710.424629 and ruling 1788593196.123759.
     result: >
-      F09-1 head 29b60c1a and Terminal #504 head d76108fb remain frozen Draft/Hold
-      candidates; the exact source-writing child obligations are terminal and
-      cannot be revived as implicit continuations.
+      Principal 641ca8f7-9f96-4b35-8051-129d4f2309fd remains assigned.
+      V1 capital/ownership chapter is accepted as direction only; the exact
+      29-row manifest and product/owner/consumer packet need bounded repair.
+      Debt maturity remains parallel read-only feasibility. Market Windows
+      remains owed. No source or child duplication was authorized by that ruling.
   - claim: >
-      The 130-row F00C admitted denominator remains the current in-repository
-      allocation while the retained 1,556-row corpus stays outside GitHub behind
-      byte-exact admission.
+      The F00E and F00G existing research roots have real placement/delivery
+      receipts, not merely requests or a silent provider substitution.
     command: >
-      python3 -c "import csv; p='research/market_intelligence_productization/MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv'; print(sum(1 for _ in csv.DictReader(open(p))))"
-      && cat agentos/discoveries/DSC-MARKET-ONTOLOGY-PUBLIC-P1-CORPUS-RETAINED-OUTSIDE-GITHUB.md
+      Slack.slack_read_thread C0BSBM78V1N/1788510607.305039, Secretary
+      RESEARCH PLACEMENT READBACK 1788592561.556409.
     result: >
-      The tracked ledger contains 130 rows with no unassessed row; the retained
-      corpus is referenced by exact filename/size/digest and must not be rebuilt
-      from model output.
+      Secretary reported Terra creation failed before effect with agent thread
+      limit reached, then an authorized truthful Opus fallback: F00E app
+      local_715b9eac-44ba-4852-803a-e798ea63fcb2 / Code
+      26291f09-06b1-4011-9b6c-9c31e8914680; F00G app
+      local_943def3e-aec5-4c40-b4e5-4633d6a31099 / Code
+      19ef0fcd-d5bf-449d-aadd-71fd8745839a. Placement is not receiver
+      ACK/START or a research result. The existing roots are unchanged.
+  - claim: >
+      The product-law source was repaired on its original one-file PR and the
+      completed predecessor review was explicitly closed without dismissing it.
+    command: >
+      GitHub.update_file and update_pull_request for macro#6865; get_pr_info
+      and compare_commits 1a32d4e3e68185f836f2c2b518f7688592ac1c to
+      9f04ee4b26a1794c25645fa8d108ad449982e4b3; Slack review-root receipt
+      1788593567.821259 after STOP 1788592366.179839.
+    result: >
+      Repaired head 9f04ee4b26a1794c25645fa8d108ad449982e4b3, file blob
+      32b23e2166a67933679a37fae43a0da2a4b9618a, direct one-commit advance,
+      one changed file (265 additions/64 deletions in the repair). OPEN/DRAFT.
+      Old GitHub review 5120047737 remains CHANGES_REQUESTED, undismissed.
+      Reviewer reported CronDelete 6a241169 and empty CronList. The new R1
+      independent-review placement root is 1788593709.848199, not a resumed
+      predecessor reviewer. At the CI read, fences 33952385019 succeeded and
+      ci 33952385199 was QUEUED, not passed.
 unverified:
   - claim: >
-      The standardized Claude app migration will restore a truthfully
-      authenticated Fable-capable destination for the F00, F03, F05, F09 and
-      F12 principal placements and the F01/F04 product children.
+      F01 and F04 have actually completed their local gate and begun source work
+      or produced accepted browser/production outcomes.
     what_would_verify: >
-      Task 01a06fc3-01f2-75e0-967a-c53a23532111 returns its completion receipt,
-      followed by per-root PLACED, actual-identity PICKUP_ACK, watcher and
-      separate START edges.
+      Their exact roots show receiver consumption, current identity/worktree/
+      branch/path/effect evidence and separate SOURCE START, followed later by
+      an immutable PR, required tests, real browser proof and release-specific
+      production readback. No such execution is inferred from this handoff.
   - claim: >
-      The existing F02, F07 and F11 native principal sessions still have
-      recoverable runtimes and no unreported local or remote source effects.
+      Every historical lane watcher remains enabled, fires successfully and can
+      re-enter its exact bound runtime after an app/session outage.
     what_would_verify: >
-      Each exact root returns the requested SOURCE_NONE, SOURCE_LOCAL_UNPUSHED,
-      SOURCE_REMOTE_PR, SESSION_PRESENT_TRANSPORT_DARK or EFFECT_UNKNOWN census
-      with exact worktree/branch/ref evidence.
+      Current native resource/readback and exact-carrier consumption evidence,
+      including expiry and session-survival limits. Historical WATCH_ARMED and
+      current Slack presence alone are insufficient.
   - claim: >
-      PRs #6828, #6831 and #6861 are compatible with current main and may reuse
-      prior semantic review.
+      The repaired #6865 law has passed independent review and all current-head
+      validation; #6864 is ready for source release.
     what_would_verify: >
-      Their existing carriers return REVIEW_REUSE_ALLOWED with immutable blob
-      proof and a current integration tree; otherwise FULL_REREVIEW_REQUIRED or
-      RELEASE_BLOCKED remains controlling.
+      Actual R1 reviewer pickup/result, new-head required CI and current-base
+      compatibility, plus the relevant explicit release decision. This handoff
+      has not run a local Agent OS validator or independently inspected the
+      Mac worktrees; repository validation remains owed.
   - claim: >
-      The new product-first commissions will produce user-complete workflows
-      rather than another layer of flat backend pages.
+      The current-public redesign research is complete and the retained P1
+      historical corpus is admitted.
     what_would_verify: >
-      Accepted real-data responsive compositions, a bounded Draft/Hold PR,
-      independent product review, browser proof, natural production proof and
-      value telemetry for each commissioned slice.
+      Exact existing F00E/F00G results and the F00A physical-original manifest
+      and accepted byte-exact admission. Reconstructed or substitute corpora
+      do not verify the claim.
+  - claim: >
+      Older held source PRs or current-main movement permit review reuse,
+      source transfer or release.
+    what_would_verify: >
+      Their own exact carrier/current head/current integration and effect
+      reconciliation. The prior source cut is a reference, not fresh proof of
+      every lane's present status.
 unresolved:
-  - "F00 principal placement is waiting on the standardized Claude app migration callback; the interactive Sol surface remains the current Slack/GitHub action authority."
-  - "F03, F05, full-lane F09 and F12 remain pre-START on their original exact roots; no replacement lane identity is authorized."
-  - "F01 Product Experience R1 and F04 WTI Live Trace X1 have valid new roots but no receiver while app migration is in progress."
-  - "F02, F07 and F11 owe exact continuity/effect censuses before source continuation or principal replacement."
-  - "F06 #6831, F13-X1 #6828 and F13 V1 #6861 owe current-base or current-head reconciliation; F10-X1 #6830 and F02-X1 #6834 owe product/correctness repairs."
-  - "Terminal PR #504 has a fresh independent Opus review root waiting for placement; Thesis PRs #496/#497/#501/#502 still require current-master composition and product acceptance."
-  - "Shared navigation paths are contested by #6828, #6834, F01 Product R1 and F04 X1; no child may race _navlinks.html.j2, Caddy or shared build/access wiring."
+  - "F01/F04 source authorization is posted; their actual SOURCE START/checkpoint and integrated product proof must be observed, not inferred."
+  - "Shared integration needs exact build/nav/registry/CI hunks. Help to F01 to F04 is product-admission order, not an assertion that every file overlaps or every entire PR must serialize."
+  - "#6865 is an unaccepted repaired source-law candidate; R1 reviewer placement/continuation is on root1788593709.848199. No product child waits on it by default."
+  - "#6864 remains one in-place handoff update on the original branch, Draft/Hold pending validation and source acceptance; no parallel F00 handoff is needed for the same ruling."
+  - "F09 must repair the connector-lost row manifest and its 28-versus-29 tally, exact issuer join, ETF-held-versus-outstanding distinctions, true empty-versus-no-coverage and actual machine consumer."
+  - "F00A root1787914773.931109 remains CONTINUE-PARK behind physical retained originals. Its 1556-row/460-finding corpus must not be reconstructed or confused with the 130-row admitted allocation."
+  - "F00E/F00G actual results and product-workflow comparison remain owed; candidate front-door taxonomies are research hypotheses, not accepted navigation law."
+  - "F02/F07/F11 continuity/effects and older implementation/review carriers remain governed by their latest exact roots; this record does not certify their liveness or release them."
+  - "Existing F09-1/#6793 and F06/#6831 source boundaries remain protected from adoption by the F09 full-lane principal. Terminal #504/F11 review, database and production gates remain separate."
 next_actions:
-  - "Read task 01a06fc3-01f2-75e0-967a-c53a23532111 on its next callback; place the F00 continuity principal first, then F09/F03/F05/F12 and the bounded F01/F04 Opus children on their existing roots."
-  - "Consume the next same-root returns from #6831, #6828, #6861, #6830 and #6834; issue exactly one CONTINUE, REQUEST_REPAIR or terminal STOP for each."
-  - "Require F02, F07 and F11 exact-session continuity/effect censuses; reconcile any local bytes before authorizing a new runtime."
-  - "Land F01 Product Experience R1 as one hub plus one Liquidity Regime pattern-setter and shared suite navigation; hold propagation to the other thirteen bodies until product proof."
-  - "Complete the Terminal #504 independent review and the F11 current-master dependency graph before any Thesis release or privileged database preflight."
-  - "Refresh this handoff or write its successor after the first durable F00 principal ACK/START and the first current-base review returns; do not leave the new topology only in Slack."
+  - "Observe the already-authorized F01 R1 and F04 X1 receiver consumption and SOURCE START on their existing roots; resolve a concrete returned local/path/transport blocker only, never create another worker because an ACK is delayed."
+  - "F00 resolves their returned shared integration-hunk packets; preserve real discoverability/build/registry/test work inside each vertical before product acceptance. Feature-owned work remains parallel."
+  - "Consume the #6865 R1 exact-head independent review, then repair or release under its own source/CI/current-base gates. Validate and reconcile this #6864 handoff through the existing records carrier."
+  - "Consume F09's corrected29-row manifest and V1 bounded packet under ruling1788593196.123759; do not commission a debt producer from an unverified XBRL/rights premise."
+  - "Continue F00E/F00G on their unchanged roots and consume their actual results through the redesign integration contract in macro#6819 comment5550174455. Keep F00A's original admission gate separate."
+  - "Consume older held PR returns on their own exact carriers as evidence arrives, keeping review completion, source release, deployment and production acceptance distinct."
 do_not_redo:
-  - "Do not stop every active principal or collapse the Market Ontology program into one provider account. Centralize product thesis, authority and acceptance; distribute bounded execution."
-  - "Do not resume the quarantined F00 UUID 1727abca-4b22-4106-a498-6b83ad223a73, old F01 UUID 550dc8b0-53b4-4517-ad7d-ebdcea3a594a, stopped F09-1 writer 58d45b99-0a88-4722-9138-18e12805cf43 or stopped Terminal #504 source writer."
-  - "Do not mint replacement F01-F13 lane keys, roots, workstreams, queues, identity planes, evidence stores, private-state stores, schedulers or promotion systems."
-  - "Do not call a schema, registry, producer, artifact, merged architecture, green CI run or direct-URL page product completion."
-  - "Do not reconstruct the retained 1,556-row capability corpus from model output; admit it only from the exact retained bytes."
-  - "Do not copy MarketOntology proprietary code, text, data, assets, corpus or brand identity; independently implement lawful jobs and workflows."
+  - "Do not mass-stop the fleet or move all work into one provider account. One integration responsibility does not require one conversation or one subscription."
+  - "Do not resume quarantined F00 UUID1727abca-4b22-4106-a498-6b83ad223a73 or old F01 UUID550dc8b0-53b4-4517-ad7d-ebdcea3a594a. Preserve stopped F09-1 and Terminal source-writer boundaries; no implicit resurrection from a parent continuation."
+  - "Do not relaunch full-lane F09: its principal641ca8f7-9f96-4b35-8051-129d4f2309fd has returned and received a plan-repair ruling."
+  - "Do not treat failed Slack schema-validation calls, pasted final-answer prose, sender role labels or stale PR bodies as successful delivery or authority."
+  - "Do not create another runtime, queue, retry, graph, evidence, identity, private-state, page-registry or learning control plane. Agent OS records organizational knowledge; it never decides whether something may run."
+  - "Do not fabricate a TXI episode/K1 reference, promote a computed read digest to native generation, or infer no WTI change from an empty unrelated context-change list."
+  - "Do not reconstruct retained P1 archives, copy proprietary code/text/assets/corpora, or silently turn a candidate competitor taxonomy into production architecture."
 danger_areas:
-  - "Slack prose and PR bodies are frequently stale. Pin the actual head/tree/default branch and latest exact-root semantic edge before every action."
-  - "F13 #6861 moved after review without an immediate Slack repair receipt. Unexpected branch movement is a reconciliation event, not an automatic continuation."
-  - "The shared navigation/access/build surface is already touched by #6828 and #6834. F01/F04 product children must use an explicit hunk-level ordering instead of racing them."
-  - "A session-local watcher dies with its Claude conversation. Its existence is transport evidence only and never Job, completion, retry or successor authority."
-  - "Current main advances through data/immune/render bots. Ancestry distance alone neither invalidates an immutable review nor proves compatibility; compare owned blobs, governing sources, dependencies and the current integration tree."
-  - "Backend-heavy UI can look sophisticated while being unusable. First-viewport state/changed/why/next, progressive disclosure, navigation, failure states and real browser proof are release requirements."
+  - "Source-head immutability and actual session identity matter; Slack/GitHub accounts may be shared by distinct native conversations. One account label does not prove a worker or independent source effect."
+  - "The F01 backend-first layout followed its merged architecture. R1 deliberately supersedes section6.3 for the hub/pattern-setter; it is not evidence that the original worker ignored that grammar."
+  - "The IA remains proposed pending its own approvals. Existing navigation labels are production facts; a crosswalk is not a silently deployed migration."
+  - "The suite identity registry contains twelve F01 workspaces plus rates_curves and trade_flows. It is not the page census; neither substitutes for the other's job."
+  - "Current-source diff lists can truncate at300 paths. Absence from a truncated comparison is not no-collision proof. Compare exact owned blobs and relevant shared semantics."
+  - "Stable hashes across a read do not prove cross-file generation coherence or latest deployment. Distinct owner cadences and missing compatibility proof need explicit handling."
+  - "Data-source failure is not investment importance; no cross-domain standardized magnitude, composite regime or hidden score may be introduced by a hub renderer."
+  - "Maintenance proof is proportionate, but one-line changes to rights/security/identity/numerical meaning/time/null/correction still owe affected owner and regression evidence."
 ---
 
-## §0 State — what is true right now
+## §0 State — what is true at this continuation cut
 
-The complete Market Ontology program is alive but fragmented. The correct operating
-model is one F00 product/authority control loop with distributed bounded builders—not
-one giant account and not a fleet of autonomous principals. The original F00 runtime
-is dark, so the current interactive Sol surface has consumed the waiting returns,
-closed stale writer loops and established product acceptance law while a durable
-Fable principal waits for the app migration.
+The F00 operation remains `marketontology-f00-full-site-restart-integrator-20260904-sol-001`
+on `C0BSBM78V1N/1788510607.305039`, with Macro issue #6819 as the Git program carrier.
+The original outage is no longer a reason to ask for another F00 placement: the new
+principal has ACKed, STARTed read-only integration, returned five parts and consumed
+later research decisions. Exact identity is Code `5b29ad85-0490-42c8-b5e4-1e32b1922014`
+under app `local_a43a5e87-f178-472b-bde0-c6f4bda22a1b`. Its runtime state must still be
+read from actual receipts; this knowledge record grants no execution authority.
 
-The estate is mixed. F01 has a strong fourteen-page snapshot backbone but no coherent
-Macro & Monetary product. F06, F08, F10 and F13 have active principals and held
-implementation carriers. F02, F07 and F11 have architecture returns but owe runtime
-continuity censuses. F03, F05, full-lane F09 and F12 remain pre-START. No domain is
-made `PROVEN_LIVE` by this record.
+F01 R1 and F04 X1 now have bounded source CONTINUE rulings. That is real progress from
+an unconsumed return, but it is not a source START or a finished product. F09 has a
+concrete principal and a directionally accepted capital-chapter plan with specific
+repairs. F00E/G have reported delivery to actual research sessions. None of these facts
+make a capability `PROVEN_LIVE`.
+
+The original Sol API source writer continues the same #6864 handoff, explicitly
+announced at F00 edge `1788593803.603739`. No new handoff, workstream, lifecycle or
+parallel integration owner is created. The first version remains immutable Git history.
 
 ## §1 What is left — in order
 
-1. Recover durable F00 continuity after the Claude app migration. The first lawful
-   fresh Fable principal must ACK and START on
-   `C0BSBM78V1N/1788510607.305039`, consume this handoff and own the continuing
-   cross-lane ledger without replacing the operation.
+**First, observe and integrate the two product builds already authorized.** F01 root
+`1788583938.803689`, ruling `1788593558.145159`, owns one `macro_monetary.html` hub,
+one decision-first Liquidity chapter and navigation across the fourteen existing suite
+entries. It does not redesign all fourteen bodies, synthesize a regime score or migrate
+global IA. F04 root `1788584226.926809`, complete ruling ending `1788593484.110599`,
+owns one authenticated WTI trace with the exact evidence limitation described below.
+Each receiver owes actual local gates and SOURCE START; neither needs another assignment
+or a duplicate principal.
 
-2. Finish the correctness/review loop already in motion. Consume current-base
-   returns for Macro #6831 and #6828, the transparent repaired-head return for
-   #6861, the Measurement owner repair for #6830 and the product/performance repair
-   for #6834. Each return gets one explicit Sol edge.
+Feature-owned implementation can proceed in parallel. F00 then adjudicates the exact
+shared build/entry/registry/test hunks inside those same verticals. A direct URL, a
+standalone manually run builder and a schema do not finish the promised journey.
+Product admission remains separate from source construction. Do not manufacture an
+unverified beta entitlement or use a label to bypass access/production-proof law.
 
-3. Productize F01 rather than extending its page count. The child root
-   `C0BSBM78V1N/1788583938.803689` owns exactly one discoverable Macro & Monetary
-   hub, one redesigned Liquidity Regime pattern-setter and shared in-suite
-   navigation. It must not widen into fourteen bespoke redesigns in its first PR.
+**Second, close the law and records review honestly.** #6865 is repaired at
+`9f04ee4b26a1794c25645fa8d108ad449982e4b3`, not approved. R1 review is one new finite
+child on `1788593709.848199`; its predecessor review was explicitly stopped and its
+watcher removed according to the exact receiver. Current required CI and integration
+proof remain owed. #6864 likewise remains Draft/Hold, not merged organizational truth.
+F01/F04 continue under their direct rulings and accepted source laws rather than waiting
+for this unaccepted candidate by default.
 
-4. Start the first F04 product slice only after shared-nav collisions are resolved.
-   Root `C0BSBM78V1N/1788584226.926809` owns the WTI Live Trace: an authenticated,
-   tenant-neutral, correction-safe current path that truthfully remains dormant
-   when the oil root is false.
-
-5. Reconstitute the unopened principal lanes on their original roots after app
-   migration: F03 Options/Expression, F05 Event/Impact, F09 Capital/Ownership/
-   Materials and F12 Team/Tenant/API. F09 must integrate around frozen #6793 rather
-   than recreating it.
-
-6. Reconcile F11 before any privileged database action. Review Terminal #504 on
-   root `C0BSBM78V1N/1788583747.013389`, then build a current-master composition
-   graph for #496/#497/#501/#502/#504 and prove the Thesis create/save/reopen/CAS/
-   lineage/cross-user journey before DDL or production acceptance.
+**Third, finish bounded planning/research returns, not another census loop.** F09
+ruling `1788593196.123759` requests the repaired 29-ID manifest, the capital-chapter
+owner/product/consumer packet and debt-maturity feasibility questions. It does not
+commission a debt engine. F00E/G continue the already-delivered redesign research,
+using the integration contract on #6819 comment `5550174455`. F00A remains its original
+`CONTINUE-PARK` physical-archive gate on `1787914773.931109`. Missing original files
+must be reported, never regenerated from a language model or replaced with another corpus.
 
 ## §2 What will bite you
 
-The most dangerous defect is false completion. A generated page can contain valid
-data, citations and diagnostics while still failing the user's job because it has
-no discoverable entry point, no state/change/meaning hierarchy and no next action.
-F01 is the concrete proof: fourteen sophisticated pages exist, but the suite is
-still direct-route-only and backend-first.
+The previous user-facing response overstated failed Slack calls. In particular, a
+schema error requiring `message` is not a successful send; absence of a later receipt
+cannot promote that call into authority. Several earlier valid rulings do exist, and
+newer valid rulings now supersede parts of the old summary. Read actual messages and
+GitHub facts. Do not replay the rejected old F00-resume, unplaced-F09 or #6859 hold
+instructions as though they were current. #6859 is an already-merged records carrier,
+not a currently non-Draft PR waiting to have its merge label removed.
 
-The second danger is invisible source ownership drift. PR bodies contain old heads,
-old bases and old review conclusions; #6861 already moved after review. Always read
-GitHub and the exact Slack root again. Never treat a watcher firing, a Slack
-delivery or a clean CI badge as proof that the canonical runtime, product or
-production path advanced.
+Watchers are transport. F00 reports `5acef0b6` hourly; F09 reports `31b609bf` hourly.
+Their replacement receipts are NEW_ID/SAME_SCOPE, not proof the prior IDs survived.
+Old F06/F08/F10/F13 registrations remain historical until checked. No resource here
+owns Job/Attempt/Worker lifecycle, and no session-local watcher guarantees recovery
+after the session or app dies. Existing Secretary bridge/native task
+`01a05a89-cb19-7162-99c4-54ffdc714cf1` remains the transport owner, not a second CEO.
 
-The third danger is shared-shell collision. Help, sanctions geography, the Macro
-hub and the Ontology Explorer all need navigation/access/build wiring. Feature
-workers should own new files and frozen feature paths first; one explicit shared
-owner must order `_navlinks.html.j2`, Caddy and registry changes.
+Shared-path decisions must use complete changed-file evidence. The broad assertion
+that #6828 and #6834 both own `_navlinks.html.j2` was corrected by the worker censuses;
+#6828 touches the public-nav family and neither then-current head owned that product-nav
+file. Real shared CI/build intersections must still be reconciled. Exact hunk ownership,
+product-admission order and entire-PR age are three different things.
 
 ## §3 What was decided and found
 
-The F00 Product Experience Constitution is now binding: the default surface answers
-what is happening, what changed, why it matters and what the user can do next;
-backend mechanics move behind progressive disclosure; every capability requires a
-real producer and consumer, failure/correction states, hostile tests, browser proof,
-natural production proof and telemetry.
+### Product law repair, not another constitution
 
-F01 was reclassified from “program complete” to
-`BACKBONE_BUILT_NOT_PROVEN / COHERENT_PRODUCT_NOT_BUILT`. The old completion record
-describes the page-generation milestone only.
+The repaired #6865 candidate maps its depth levels to Doctrine GLANCE/HOVER/STUDY,
+its composition lenses to the existing six-job IA, and its source inventory to twelve
+F01 workspaces plus two expansions. It requires current affected-route census evidence
+through the existing generator/overrides and supplies an actual owner-assignment path.
+Full admission is prospective for new/materially recomposed product workflows;
+maintenance uses affected proof rather than a complete flagship ceremony. Rights,
+security, identity, calculation and failure semantics do not receive a cosmetic loophole.
 
-F09-1 and Terminal deployment-repair source writers were accepted as finished
-builders and explicitly stopped. Their PRs remain held candidates. Review/release
-work is separate and gains no implicit writer authority.
+These are repaired candidate semantics, not independent acceptance. The first review
+still stands as an undismissed blocking review until the new candidate is adjudicated.
+The governing principle remains: user value must be reachable through a real workflow,
+not inferred from backend complexity or page count.
 
-The active-principal architecture returns for F02, F06, F07, F08, F10, F11 and F13
-were preserved where valid, but none can bypass the newer product constitution.
-F03, F05, F09 and F12 retain their original operation identities while waiting for
-placement.
+### F04 K1 conflict and exact exception
+
+The current K1 vocabulary explicitly excludes `txi.chain_state`. Its TXI owner is an
+actual episode transition with the six-part native key. The reference schema supports
+unknown/null states, so requiring twenty-one fields is not inherently fabrication.
+The problem is pretending that an excluded mutable current head or a nonexistent
+episode is that admitted object.
+
+Sol's X1-only ruling permits typed read-only native owner projections inside the
+already-commissioned snapshot, while K1 evidence arrays remain valid K1 or empty with
+a distinct binding-unavailable reason. It explicitly supersedes the relevant every-leg
+K1 clause of Amendment 3 §5 for this bounded current-head slice; it does not change the
+K1 vocabulary, create an evidence library/store or waive real source, rights or access
+checks. The implementation's same-PR freeze/handoff must preserve that scoped exception
+and the still-open adoption gap. F00 retains integration visibility.
+
+Two adjacent false-proof hazards were found by direct source inspection: the context
+`changes.items` list is not a WTI path-condition diff, and an empty episode history does
+not mean unchanged inputs. Likewise a composed byte digest is not a native generation,
+and read/re-hash only detects read-time mutation, not stable cross-file inconsistency.
+The X1 ruling requires discriminating tests and honest unavailable/degraded states.
+
+### F09 is returned work, not lost capacity
+
+The current F09 plan ruling preserves useful owner archaeology while requiring repair
+of its row-accounting and product claims. Public ETF-disclosed coupon/maturity fields
+exist, but held par is not issuer debt outstanding, a theme/name matcher is not a
+canonical issuer join, and no source coverage is not valid empty. Source availability,
+rights and exact units/periods must precede a debt-maturity producer claim. No duplicate
+#6793 or #6831 writer is needed to resolve the plan.
 
 ## §4 Not in scope — do not adopt
 
-This handoff does not merge, deploy, mutate a production database, create user data,
-arm a trading capability or accept any held PR. It does not turn Slack into a
-lifecycle authority or create a second orchestration store.
+This handoff neither starts a runtime nor merges, deploys, provisions a database,
+publishes user data or accepts a trade-related capability. Agent OS is the durable
+organizational knowledge plane, not an execution gate or authority grant.
 
-Do not solve coordination by moving every task into one Claude account. Provider
-accounts are execution capacity; the durable company contract is the exact
-operation/root plus GitHub and Agent OS truth. Likewise, do not solve product
-coherence by adding a universal composite score, generic causal graph or AI-authored
-summary. Preserve concrete domain jobs, exact owners and visible uncertainty.
+Preserve existing source, identity, evidence, financial, private-state, page-registry,
+telemetry and release owners. Do not centralize all execution into one subscription,
+revive quarantined sessions or create a new fleet ledger. Keep useful implementation
+moving through its specific gates, and report the exact remaining consumer/integration/
+production gap instead of calling every built component a finished product.
