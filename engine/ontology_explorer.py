@@ -641,6 +641,7 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
     rows: list[dict[str, Any]] = []
     foreign = unreadable = malformed = after_cutoff = 0
     seen_lines = 0
+    truncated = False
     if episodes_raw:
         for line in episodes_raw.decode("utf-8", "replace").splitlines():
             line = line.strip()
@@ -648,7 +649,11 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
                 continue
             seen_lines += 1
             if seen_lines > MAX_EPISODE_ROWS:
-                malformed += 1
+                # A ledger too long to read is not a ledger full of bad rows.
+                # Counting it as `malformed` told the reader the owners had
+                # written corrupt data, when the truth is that this surface
+                # stopped reading — a limitation of ours, disclosed as ours.
+                truncated = True
                 break
             try:
                 row = json.loads(line)
@@ -681,6 +686,10 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
                             (after_cutoff, "transitions_after_cutoff")):
             if count:
                 gaps.append({"kind": kind, "count": count})
+        if truncated:
+            gaps.append({"kind": "episode_ledger_truncated",
+                         "read_rows": MAX_EPISODE_ROWS,
+                         "reason": "exceeds_read_bound"})
     return rows
 
 
@@ -948,6 +957,8 @@ _GAP_REASON_LABELS = {
     "raw_identifier": {"en": "contains an internal identifier",
                        "zh": "含有内部标识符"},
     "untranslated": {"en": "published in one language only", "zh": "仅以单一语言发布"},
+    "exceeds_read_bound": {"en": "longer than this page reads in one request",
+                           "zh": "长度超出本页面单次请求的读取上限"},
     "confirmed_not_boolean": {"en": "the recorded verdict is not a true/false value",
                               "zh": "已记录的判定不是真/假值"},
 }

@@ -509,7 +509,9 @@
     text_withheld: { en: "an owner note held back from this page",
       zh: "未在本页面展示的所有者备注" },
     text_untranslated: { en: "an owner note published in one language only",
-      zh: "仅以单一语言发布的所有者备注" }
+      zh: "仅以单一语言发布的所有者备注" },
+    episode_ledger_truncated: { en: "a change history longer than this page reads",
+      zh: "长度超出本页面读取上限的变更历史" }
   };
 
   function gapLabel(gap) {

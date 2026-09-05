@@ -908,3 +908,22 @@ def test_an_action_for_an_unknown_node_degrades_instead_of_printing_the_slug():
     action = _next_action("unknown", None, None, ["ghost_node"], [])
     assert "ghost_node" not in action["label"]["en"]
     assert "ghost_node" not in action["label"]["zh"]
+
+
+def test_a_ledger_too_long_to_read_is_not_reported_as_corrupt_rows(tmp_path):
+    """The row cap used to increment `malformed` and break, so a ledger this
+    page merely stopped reading was reported to the reader as the owners having
+    written bad data. Truncation is our limitation and is disclosed as ours."""
+    from engine.ontology_explorer import MAX_EPISODE_ROWS
+    row = json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "t",
+                      "asof": "2026-01-01"})
+    root = fx.build_root(tmp_path)
+    (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
+        "\n".join([row] * (MAX_EPISODE_ROWS + 50)) + "\n", encoding="utf-8")
+    snap = _compose(root)
+    assert _has_gap(snap["gaps"], kind="episode_ledger_truncated",
+                    read_rows=MAX_EPISODE_ROWS, reason="exceeds_read_bound")
+    assert not _has_gap(snap["gaps"], kind="transitions_malformed")
+    truncation = next(g for g in snap["gaps"]
+                      if g["kind"] == "episode_ledger_truncated")
+    assert truncation["reason_label"]["en"] and truncation["reason_label"]["zh"]
