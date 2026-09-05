@@ -95,6 +95,9 @@ def test_the_receipt_is_a_read_receipt_not_an_owner_generation(tmp_path):
 # mutant class 1 — mid-read mutation
 # --------------------------------------------------------------------------
 def test_a_mid_read_mutation_fails_closed(tmp_path, monkeypatch):
+    """The nightly rewrites the state file AFTER this process has read it, so the
+    composed answer describes a generation that no longer exists. The composer
+    must notice by re-reading, not by trusting a stat it took beforehand."""
     from engine import ontology_explorer as oe
 
     root = fx.build_root(tmp_path)
@@ -103,8 +106,7 @@ def test_a_mid_read_mutation_fails_closed(tmp_path, monkeypatch):
 
     def mutating_read(path: Path):
         result = original(path)
-        if path.name == f"{fx.SLUG}.yaml":
-            # the nightly rewrites the state file after we already read the YAML
+        if path.name == "chain_state.json":
             doc = fx.chain_state(confirmed=(True, True, True, True), state="expressed")
             target.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
         return result
@@ -113,6 +115,23 @@ def test_a_mid_read_mutation_fails_closed(tmp_path, monkeypatch):
     with pytest.raises(oe.SourceIncoherent) as excinfo:
         _compose(root)
     assert "mid_read_mutation" in str(excinfo.value)
+
+
+def test_a_write_that_lands_before_its_own_read_is_covered_by_the_rev_check(tmp_path):
+    """The honest limit of digest re-verification.
+
+    If a source is rewritten BEFORE this process reads it, that read simply
+    returns the newer generation and every digest stays stable afterwards — so
+    re-reading cannot detect that a sibling artifact was read from the older
+    generation. What closes that window is not the digest but the revision
+    coherence check, which is why both exist and why neither is redundant.
+    """
+    from engine.ontology_explorer import SourceIncoherent
+    root = fx.build_root(tmp_path, yaml_doc=fx.chain_yaml(rev=4),
+                         state_doc=fx.chain_state(rev=5))
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(root)
+    assert "rev_mismatch" in str(excinfo.value)
 
 
 def test_a_stable_read_does_not_trip_the_mutation_detector(tmp_path):

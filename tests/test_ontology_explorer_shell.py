@@ -110,3 +110,22 @@ def test_the_client_requests_the_frozen_route_with_no_store():
 def test_no_current_snapshot_is_committed_under_tracked_premium_paths():
     for candidate in (ROOT / "site" / "premiumdata").glob("ontology*"):
         pytest.fail(f"a current snapshot is committed publicly at {candidate}")
+
+
+def test_every_internal_link_this_feature_adds_resolves():
+    """A dead internal link is not a cosmetic defect here.
+
+    The site publish walks links, and one 404 has previously frozen the whole
+    publish rather than degrading the single page that carried it. This feature
+    adds links from both the shell and the client, so both are checked.
+    """
+    sources = [PAGE.read_text(encoding="utf-8") if PAGE.exists() else "",
+               (ROOT / "site" / "ontology.js").read_text(encoding="utf-8")]
+    hrefs = set()
+    for text in sources:
+        hrefs.update(re.findall(r'["\'](/[a-zA-Z0-9_./-]+\.html)(?:[?#][^"\']*)?["\']', text))
+        hrefs.update(re.findall(r'href="(?!https?:|//|#|mailto:)([a-zA-Z0-9_./-]+\.html)',
+                                text))
+    missing = sorted(h for h in hrefs
+                     if not (ROOT / "site" / h.lstrip("/")).exists())
+    assert missing == [], f"dead internal link(s) added by this feature: {missing}"

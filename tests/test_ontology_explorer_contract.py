@@ -71,11 +71,17 @@ def test_snapshot_declares_the_closed_schema_id(tmp_path):
 def test_path_order_follows_the_hop_list_not_the_node_mapping(tmp_path):
     """The knowledge file stores nodes in an UNORDERED mapping; only the hop
     list carries the path. Sorting node ids would happen to look right for
-    n1..n4, so the fixture is re-keyed to prove order is really taken from hops."""
+    n1..n4, so the fixture is re-keyed to prove order is really taken from hops.
+
+    The payload calls this `path.sequence`, not `path.order`, and the blocking
+    leg carries an `index`, not a `position` — both deliberately, so that the
+    tenant-neutrality denylist below can keep banning "order" and "position"
+    outright instead of carving out exceptions that a future trade-authority
+    field could hide behind."""
     doc = fx.chain_yaml()
     doc["nodes"] = {k: doc["nodes"][k] for k in ("n4", "n2", "n1", "n3")}
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
-    assert snap["path"]["order"] == ["n1", "n2", "n3", "n4"]
+    assert snap["path"]["sequence"] == ["n1", "n2", "n3", "n4"]
 
 
 def test_first_blocking_leg_is_the_first_false_node_in_path_order(tmp_path):
@@ -84,7 +90,7 @@ def test_first_blocking_leg_is_the_first_false_node_in_path_order(tmp_path):
     state = fx.chain_state(confirmed=(False, True, False, True))
     snap = _compose(fx.build_root(tmp_path, state_doc=state))
     assert snap["first_blocking_leg"]["node_id"] == "n1"
-    assert snap["first_blocking_leg"]["position"] == 1
+    assert snap["first_blocking_leg"]["index"] == 1
     assert snap["first_blocking_leg"]["basis"] == "path_order"
 
 
@@ -141,7 +147,7 @@ def test_a_cycle_does_not_repeat_a_node_in_the_path_order(tmp_path):
         yaml_doc=fx.chain_yaml(cycle=True),
         state_doc=fx.chain_state(cycle=True),
     )
-    order = _compose(root)["path"]["order"]
+    order = _compose(root)["path"]["sequence"]
     assert len(order) == len(set(order))
 
 

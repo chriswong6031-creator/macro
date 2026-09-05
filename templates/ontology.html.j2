@@ -1,0 +1,94 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{#- F04-X1 WTI Live Trace — PUBLIC SHELL.
+
+    This template renders a public, cacheable page that contains no current
+    reading of any kind. It describes what the trace is and hands off to
+    ontology.js, which is the only thing that talks to the authenticated API.
+
+    Nothing here may be filled from `data/transmission/` at build time. A
+    "realistic" example baked into the shell to avoid an empty first paint is a
+    current premium value published to a public CDN, which is the exact leak
+    this page's transport law exists to prevent. The skeleton below is therefore
+    generic: numbered placeholders, no leg names, no readings. -#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "_interfonts.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>WTI Live Trace — Mastermind</title>
+{% set seo_title = 'WTI Live Trace — which step in the oil-to-duration path is actually met | Mastermind' %}{% set seo_desc = 'A step-by-step read of one transmission path: which conditions are met right now, which step blocks it, what the owners recorded, and what to look at next.' %}{% set seo_path = 'ontology.html' %}
+{% include "_seo_head.html.j2" %}
+<link rel="stylesheet" href="{{ nav_prefix|default('') }}theme.css">
+<link rel="stylesheet" href="{{ nav_prefix|default('') }}ontology.css">
+<style>
+/* The canvas is this page's own responsibility. theme.css defines the palette
+   but never paints <body>, so a page that omits this rule ships dark panels on
+   the browser's white default — visible only by sampling pixels, not by eye. */
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);
+  font-size:var(--fs-body);line-height:1.5;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body class="page-macro">
+{% include "_site_nav.html.j2" %}
+
+<main class="ox-wrap">
+  <div id="ox-root" class="ox-skeleton" aria-busy="true" aria-live="polite">
+    <header class="ox-hero">
+      <p class="ox-eyebrow">{{ t('WTI Live Trace', 'WTI 实时追踪') }}</p>
+      <div class="ox-state" data-state="unknown">
+        <span class="ox-state-word">{{ t('Loading', '加载中') }}</span>
+      </div>
+      <p class="ox-stance">{{ t(
+        'Reading the current state of this path.',
+        '正在读取该路径的当前状态。') }}</p>
+    </header>
+    <ol class="rail" aria-hidden="true">
+      {% for i in range(1, 5) %}
+      <li class="station" data-leg="false" data-link="false">
+        <div class="st-top"><span class="st-dot"></span><span class="st-break"></span></div>
+        <div class="st-body">
+          <div class="st-idx">{{ '%02d'|format(i) }}</div>
+          <div class="st-name">&nbsp;</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <noscript>
+    <section class="ox-gate">
+      <h2>{{ t('This page needs JavaScript', '本页面需要 JavaScript') }}</h2>
+      <p>{{ t(
+        'The current reading is fetched from a private endpoint after you sign in, so it '
+        + 'cannot be delivered as a static page.',
+        '当前读数在登录后从私有接口获取，因此无法以静态页面形式提供。') }}</p>
+      <a class="ox-cta secondary" href="{{ nav_prefix|default('') }}transmission.html">{{ t(
+        'Open the transmission overview', '打开传导链总览') }}</a>
+    </section>
+  </noscript>
+
+  <section class="ox-detail" style="border-top:0;padding-top:26px">
+    <h2 style="font-size:var(--fs-h2);margin:0 0 8px">{{ t(
+      'What this page is', '本页面是什么') }}</h2>
+    <p class="ox-note" style="max-width:66ch">{{ t(
+      'A transmission path is a claim that one thing leads to another, step by step. This '
+      + 'page reads one such path as its owners currently observe it: which steps are met, '
+      + 'which step stops it, what has been recorded, and one thing worth looking at next. '
+      + 'It does not forecast, rank, size or recommend anything, and a later step reading '
+      + 'true is never treated as evidence for an earlier one.',
+      '传导路径是一种“逐环节递进”的因果主张。本页面按照所有者当前的观测读取其中一条路径：'
+      + '哪些环节已满足、哪个环节使其中止、已记录到什么，以及下一步值得查看什么。'
+      + '本页面不做预测、排名、仓位建议或投资推荐；后段环节为真，也绝不视为前段环节的证据。') }}</p>
+  </section>
+</main>
+
+<script src="{{ nav_prefix|default('') }}supabase.js" defer></script>
+<script src="{{ nav_prefix|default('') }}theme.js" defer></script>
+<script src="{{ nav_prefix|default('') }}ontology.js" defer></script>
+</body>
+</html>

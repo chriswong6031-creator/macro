@@ -1,0 +1,144 @@
+/* ontology.css — F04-X1 WTI Live Trace.
+   Paired plain-copy asset: templates/ontology.css and site/ontology.css must stay
+   byte-identical (scripts/check_template_site_sync.py).
+
+   Every colour here resolves through theme.css's governed tokens, so light mode,
+   dark mode and the zh colour convention are inherited rather than re-authored.
+   Status tokens (--ok / --warn / --act) are deliberately the right family: they
+   encode health, and theme.css leaves them un-swapped in zh precisely because
+   they are not price direction.
+
+   THE SIGNATURE — the severed rail.
+   A transmission path is a line that carries something. When a leg does not
+   confirm, the line is not "grey", it is BROKEN: the rail visibly parts at the
+   gap, and the researcher sees where the current stops before reading a word.
+   It is pure CSS — no canvas, no SVG, no graph library — which is what lets the
+   same markup turn ninety degrees into a vertical rail on a phone.
+
+   Two hard-won rules are load-bearing here:
+     * Never write the sequence `*` `/` inside a comment. It closes the comment
+       early and the parser's error recovery then swallows the entire next rule
+       block, silently voiding every custom property in it.
+     * Language visibility uses !important. A bare `.l-zh{display:none}` is
+       (0,1,0) and loses to any descendant layout rule such as `.rail-cap span`
+       (0,1,1), which prints English and Chinese at the same time. */
+
+.ox-wrap{max-width:1120px;margin:0 auto;padding:0 20px 72px}
+
+/* ---- language dual-emit (correctness, not preference) ------------------- */
+.l-en,.l-zh{display:none!important}
+html:not([data-lang="zh"]) .l-en{display:inline!important}
+html[data-lang="zh"] .l-zh{display:inline!important}
+html:not([data-lang="zh"]) .blk>.l-en{display:block!important}
+html[data-lang="zh"] .blk>.l-zh{display:block!important}
+
+/* ---- hero -------------------------------------------------------------- */
+.ox-hero{padding:30px 0 6px}
+.ox-eyebrow{font-family:var(--font-mono);font-size:var(--fs-label);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.ox-state{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0}
+.ox-state-word{font-size:var(--fs-display);font-weight:800;letter-spacing:-.025em;
+  line-height:1.05;color:var(--text)}
+.ox-state[data-state="active"] .ox-state-word{color:var(--ok)}
+.ox-state[data-state="dormant"] .ox-state-word{color:var(--muted)}
+.ox-state[data-state="unknown"] .ox-state-word{color:var(--warn)}
+.ox-state[data-state="unavailable"] .ox-state-word{color:var(--act)}
+.ox-stance{margin:14px 0 0;font-size:var(--fs-md);color:var(--text);max-width:64ch}
+.ox-asof{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--muted)}
+
+/* ---- the severed rail --------------------------------------------------- */
+.rail{display:flex;align-items:stretch;margin:34px 0 8px;padding:0;list-style:none}
+.station{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:12px}
+.st-top{display:flex;align-items:center;gap:0;height:24px}
+
+/* ONE connector per station: [dot][outbound link]. The terminal station has no
+   outbound link. Two half-stubs per gap would read as two separate breaks the
+   moment the rail turns vertical, so each gap owns exactly one mark. */
+.st-dot{flex:none;width:14px;height:14px;border-radius:50%;box-sizing:border-box;
+  border:2px solid var(--muted);background:var(--bg)}
+.station[data-leg="true"] .st-dot{border-color:var(--ok);background:var(--ok)}
+.station[data-leg="false"] .st-dot{border-color:var(--muted)}
+.station[data-leg="unobserved"] .st-dot{border-style:dashed;border-color:var(--warn)}
+.station[data-blocking="1"] .st-dot{border-color:var(--act);border-width:3px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--act) 18%,transparent)}
+
+.st-break{flex:1 1 auto;height:2px;margin:0 6px;background:var(--line);position:relative}
+.station[data-link="true"] .st-break{background:var(--ok)}
+.station[data-link="false"] .st-break{background:transparent;
+  background-image:linear-gradient(90deg,var(--line) 0 46%,transparent 46% 54%,var(--line) 54% 100%)}
+/* the sever: a wedge of page colour cut clean through the rail */
+.station[data-link="false"] .st-break::after{content:"";position:absolute;left:50%;top:-5px;
+  width:8px;height:12px;transform:translateX(-50%) skewX(-18deg);background:var(--bg);
+  border-left:2px solid var(--act);border-right:2px solid var(--act)}
+.station:last-child .st-break{display:none}
+
+.st-body{padding-right:18px}
+.st-idx{font-family:var(--font-mono);font-size:var(--fs-micro);color:var(--muted);
+  letter-spacing:.1em}
+.st-name{font-size:var(--fs-h3);font-weight:650;color:var(--text);margin:3px 0 4px;
+  line-height:1.3}
+.st-verdict{font-size:var(--fs-sm);color:var(--muted)}
+.station[data-leg="true"] .st-verdict{color:var(--ok)}
+.station[data-blocking="1"] .st-verdict{color:var(--act);font-weight:600}
+
+/* ---- answer blocks ------------------------------------------------------ */
+.ox-answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:30px 0 0}
+.ox-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.ox-card h2{font-size:var(--fs-h2);margin:0 0 8px;color:var(--text);font-weight:650}
+.ox-card p{margin:0;font-size:var(--fs-body);color:var(--muted);line-height:1.55}
+.ox-card p strong{color:var(--text);font-weight:600}
+.ox-card[data-tone="blocked"]{border-color:color-mix(in srgb,var(--act) 42%,var(--line))}
+.ox-card[data-tone="watch"]{border-color:color-mix(in srgb,var(--warn) 42%,var(--line))}
+
+/* An unavailable comparison is a first-class answer, not an empty state. */
+.ox-unavailable{font-style:normal;color:var(--muted)}
+.ox-unavailable::before{content:"—";margin-right:8px;color:var(--line)}
+
+/* ---- progressive disclosure -------------------------------------------- */
+.ox-detail{margin:30px 0 0;border-top:1px solid var(--line);padding-top:8px}
+.ox-detail>summary{cursor:pointer;list-style:none;min-height:44px;display:flex;
+  align-items:center;gap:10px;font-size:var(--fs-body);color:var(--muted)}
+.ox-detail>summary::-webkit-details-marker{display:none}
+.ox-detail>summary::after{content:"+";font-family:var(--font-mono);color:var(--muted)}
+.ox-detail[open]>summary::after{content:"–"}
+.ox-detail>summary:hover{color:var(--text)}
+.ox-leg{border-top:1px solid var(--line);padding:16px 0}
+.ox-leg h3{font-size:var(--fs-h3);margin:0 0 6px;color:var(--text)}
+.ox-kv{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:4px 16px;margin:8px 0 0;
+  font-size:var(--fs-sm)}
+.ox-kv dt{color:var(--muted)}
+.ox-kv dd{margin:0;color:var(--text);font-family:var(--font-mono);font-size:var(--fs-sm)}
+.ox-note{font-size:var(--fs-sm);color:var(--muted);margin:8px 0 0;line-height:1.55}
+
+/* ---- gates: the states that are not a reading --------------------------- */
+.ox-gate{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:26px 24px;margin:28px 0 0;max-width:62ch}
+.ox-gate h2{font-size:var(--fs-h2);margin:0 0 8px;color:var(--text)}
+.ox-gate p{margin:0 0 16px;font-size:var(--fs-body);color:var(--muted);line-height:1.6}
+.ox-cta{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;
+  border-radius:9px;background:var(--info);color:#fff;font-size:var(--fs-body);
+  font-weight:600;border:0;cursor:pointer;text-decoration:none}
+.ox-cta:hover{filter:brightness(1.06)}
+.ox-cta.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}
+
+.ox-skeleton .st-name,.ox-skeleton .ox-state-word{color:transparent;
+  background:var(--panel2);border-radius:6px}
+[hidden]{display:none!important}
+
+/* ---- responsive: the rail turns ninety degrees -------------------------- */
+@media (max-width:860px){
+  .ox-answers{grid-template-columns:minmax(0,1fr)}
+  .rail{flex-direction:column;gap:0}
+  .station{flex:none;flex-direction:row;gap:14px;align-items:stretch}
+  .st-top{flex-direction:column;align-items:center;justify-content:flex-start;
+    width:24px;flex:none;height:auto;padding-top:2px}
+  .st-break{flex:1 1 auto;width:2px;height:auto;min-height:38px;margin:6px 0}
+  .station[data-link="false"] .st-break{
+    background-image:linear-gradient(180deg,var(--line) 0 42%,transparent 42% 58%,var(--line) 58% 100%)}
+  .station[data-link="false"] .st-break::after{left:-5px;top:50%;width:12px;height:8px;
+    transform:translateY(-50%) skewY(-18deg);border-left:0;border-right:0;
+    border-top:2px solid var(--act);border-bottom:2px solid var(--act)}
+  .st-body{padding:0 0 24px;flex:1 1 auto;min-width:0}
+  .ox-state-word{font-size:var(--fs-h1)}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
