@@ -291,3 +291,87 @@ def test_composing_never_calls_the_episode_ledger_writer(tmp_path, monkeypatch):
 
     monkeypatch.setattr(tc, "run", _boom)
     _compose(fx.build_root(tmp_path))
+
+
+# --------------------------------------------------------------------------
+# front-facing vocabulary: tripwires are shown as what is watched, never as a
+# thesis being refuted
+# --------------------------------------------------------------------------
+def _with_note(note):
+    doc = fx.chain_yaml()
+    doc["falsifiers"][0]["note"] = note
+    return doc
+
+
+@pytest.mark.parametrize(("note", "reason"), [
+    ({"en": "the derating leg is falsified", "zh": "该环节已被否定"}, "refutation_vocabulary"),
+    ({"en": "refuted by the 120d reading", "zh": "已被 120 日读数推翻"}, "refutation_vocabulary"),
+    ({"en": "yield_rise with the cohort flat", "zh": "yield_rise 与该组合持平"}, "raw_identifier"),
+    ("an English-only note with no translation", "untranslated"),
+])
+def test_an_owner_note_that_breaks_front_facing_law_is_withheld(tmp_path, note, reason):
+    """Measured on the live WTI chain: one falsifier note carried refutation
+    wording, a raw node id and no Chinese at all. Owner prose is not a user
+    surface, so it is screened rather than trusted."""
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=_with_note(note)))
+    invalidator = snap["invalidators"][0]
+    assert invalidator["note"] is None
+    assert invalidator["note_status"] == "withheld"
+    assert invalidator["note_withheld_reason"] == reason
+
+
+def test_a_clean_bilingual_owner_note_is_published(tmp_path):
+    note = {"en": "oil up sharply with breakevens flat", "zh": "油价大涨而盈亏平衡持平"}
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=_with_note(note)))
+    invalidator = snap["invalidators"][0]
+    assert invalidator["note"] == note
+    assert invalidator["note_status"] == "published"
+
+
+def test_a_withheld_note_still_shows_the_condition_being_watched(tmp_path):
+    """Withholding the prose must not withhold the substance."""
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=_with_note("English only")))
+    watched = snap["invalidators"][0]["watched"]
+    assert watched["series"] == "SYN-B"
+    assert watched["op"] == "lt"
+    assert watched["value"] == 1
+
+
+def test_no_refutation_vocabulary_reaches_reader_facing_text(tmp_path):
+    """Scoped to what a reader can see.
+
+    `note_withheld_reason: "refutation_vocabulary"` is a machine reason code
+    naming the rule that fired, and it is useful precisely because it says why.
+    The ban is on reader-facing text, so the assertion reads reader-facing text.
+    """
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=_with_note(
+        {"en": "the thesis is falsified", "zh": "该论点已被证伪"})))
+    shown = json.dumps({
+        "state": snap["state"], "path": snap["path"],
+        "what_changed": snap["what_changed"], "why_it_matters": snap["why_it_matters"],
+        "next_action": snap["next_action"], "contradiction": snap["contradiction"],
+        "invalidators": [{"note": i["note"], "watched": i["watched"]}
+                         for i in snap["invalidators"]],
+        "rights": snap["rights"],
+    }, ensure_ascii=False).lower()
+    for banned in ("falsif", "refut", "证伪", "disprov"):
+        assert banned not in shown
+
+
+@pytest.mark.needs_full_checkout("data")
+def test_the_live_default_chain_composes_without_front_facing_violations():
+    """The guard that matters: run it against the real knowledge file, not a
+    fixture. This is the test that would have caught the defect at review time
+    instead of in a browser."""
+    from engine.ontology_explorer import DEFAULT_CHAIN, compose_snapshot
+    repo = Path(__file__).resolve().parents[1]
+    if not (repo / "data" / "transmission" / "chain_state.json").exists():
+        pytest.skip("needs the full checkout (data/ is omitted in a sparse tree)")
+    snap = compose_snapshot(repo, chain=DEFAULT_CHAIN)
+    shown = json.dumps({
+        "state": snap["state"], "path": snap["path"], "invalidators": [
+            {"note": i["note"], "watched": i["watched"]} for i in snap["invalidators"]],
+        "what_changed": snap["what_changed"], "next_action": snap["next_action"],
+    }, ensure_ascii=False).lower()
+    for banned in ("falsif", "refut", "证伪", "disprov", "validated"):
+        assert banned not in shown, f"{banned!r} reaches a user surface on the live chain"

@@ -630,6 +630,53 @@ def _clocks(observed: dict, state_doc: dict, hops: list[dict], *,
     }
 
 
+#: Vocabulary that must never reach a user surface. Tripwires keep evaluating in
+#: the background; what the reader is shown is what is being watched, never a
+#: thesis being refuted. Enforced here rather than by prose review because the
+#: text comes from owner files this surface does not control.
+_REFUTATION_TERMS = ("falsif", "refut", "disprov", "invalidat", "thesis is",
+                     "\u8bc1\u4f2a", "\u63a8\u7ffb")
+
+#: A lowercase_with_underscores token is an internal identifier, not English.
+_SLUGLIKE = re.compile(r"\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b")
+
+
+def _screen_note(note: Any) -> tuple[dict[str, str] | None, str | None]:
+    """Decide whether an owner-authored note may be shown to a reader.
+
+    Measured against the live WTI chain, one falsifier note carried all three
+    defects at once: the word "falsified" on a user surface, the raw node id
+    `yield_rise`, and no Chinese at all — so a zh reader was served untranslated
+    English. Passing owner prose straight through is how all three arrived, so
+    the note is withheld and the structured condition is shown instead.
+    """
+    pair = _bilingual(note)
+    if pair is None:
+        return None, "absent"
+    blob = f"{pair['en']} {pair['zh']}".lower()
+    if any(term in blob for term in _REFUTATION_TERMS):
+        return None, "refutation_vocabulary"
+    if _SLUGLIKE.search(blob):
+        return None, "raw_identifier"
+    if pair["zh"] == pair["en"]:
+        return None, "untranslated"
+    return pair, None
+
+
+def _watched_condition(when: Any) -> dict[str, Any] | None:
+    """The condition itself, as facts rather than as prose."""
+    if not isinstance(when, dict):
+        return None
+    return {
+        "series": when.get("series"),
+        "vs": when.get("vs"),
+        "metric": when.get("metric"),
+        "window": when.get("window"),
+        "op": when.get("op"),
+        "value": when.get("value"),
+    }
+
+
 def _invalidators(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
     raw = definition.get("falsifiers")
     if not isinstance(raw, list) or not raw:
@@ -639,8 +686,16 @@ def _invalidators(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
     for i, item in enumerate(raw):
         if not isinstance(item, dict):
             continue
-        out.append({"id": f"invalidator_{i}", "when": item.get("when"),
-                    "src": item.get("src"), "note": _bilingual(item.get("note"))})
+        note, withheld = _screen_note(item.get("note"))
+        out.append({
+            "id": f"invalidator_{i}",
+            "when": item.get("when"),
+            "watched": _watched_condition(item.get("when")),
+            "src": item.get("src"),
+            "note": note,
+            "note_status": "published" if note else "withheld",
+            "note_withheld_reason": withheld,
+        })
     return out
 
 
@@ -654,17 +709,38 @@ def _rights(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
             for key, screen in raw.items() if isinstance(screen, dict)]
 
 
+def _parse_build_stamp(built: Any) -> datetime | None:
+    """Parse the owner's build stamp, or return None.
+
+    The compiled artifact stamps ``built`` in the house format
+    ``"2026-09-05 02:10 UTC"``, which ``fromisoformat`` cannot read. An earlier
+    revision of this function caught that failure and fell back to an age of
+    zero — which renders as "built just now", the most reassuring possible
+    reading of a stamp it had failed to understand. Returning None instead is
+    the whole point: an age that cannot be computed is reported as absent.
+    """
+    text = str(built or "").strip()
+    if not text:
+        return None
+    for parse in (
+        lambda s: datetime.fromisoformat(s.replace("Z", "+00:00")),
+        lambda s: datetime.strptime(s, "%Y-%m-%d %H:%M UTC").replace(tzinfo=UTC),
+        lambda s: datetime.strptime(s, "%Y-%m-%d %H:%M:%S UTC").replace(tzinfo=UTC),
+    ):
+        try:
+            stamp = parse(text)
+        except (TypeError, ValueError):
+            continue
+        return stamp if stamp.tzinfo else stamp.replace(tzinfo=UTC)
+    return None
+
+
 def _source_block(definition: dict, state_doc: dict, observed: dict, *,
                   chain: str, now: datetime) -> dict[str, Any]:
     built = state_doc.get("built")
-    age_seconds = 0
-    try:
-        stamp = datetime.fromisoformat(str(built).replace("Z", "+00:00"))
-        if stamp.tzinfo is None:
-            stamp = stamp.replace(tzinfo=UTC)
-        age_seconds = max(0, int((now - stamp).total_seconds()))
-    except (TypeError, ValueError):
-        age_seconds = 0
+    stamp = _parse_build_stamp(built)
+    age_seconds = None if stamp is None else max(0, int((now - stamp).total_seconds()))
+    age_basis = "chain_state.built" if stamp is not None else "unparseable_build_stamp"
     return {
         "chain": chain,
         "rev": observed.get("rev"),
@@ -682,7 +758,7 @@ def _source_block(definition: dict, state_doc: dict, observed: dict, *,
             "status": "verification_unavailable",
             "compared_against": None,
             "source_age_seconds": age_seconds,
-            "source_age_basis": "chain_state.built",
+            "source_age_basis": age_basis,
             "note": {
                 "en": "Age is measured against this build's own artifact stamp. Whether "
                       "it matches what the canonical transmission page is serving cannot "

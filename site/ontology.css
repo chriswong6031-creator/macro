@@ -39,13 +39,20 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
 .ox-state{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0}
 .ox-state-word{font-size:var(--fs-display);font-weight:800;letter-spacing:-.025em;
   line-height:1.05;color:var(--text)}
-.ox-state[data-state="active"] .ox-state-word{color:var(--ok)}
+.ox-state[data-state="active"] .ox-state-word{color:var(--ink-ok, var(--ok))}
 .ox-state[data-state="dormant"] .ox-state-word{color:var(--muted)}
-.ox-state[data-state="unknown"] .ox-state-word{color:var(--warn)}
-.ox-state[data-state="unavailable"] .ox-state-word{color:var(--act)}
+.ox-state[data-state="unknown"] .ox-state-word{color:var(--ink-warn, var(--warn))}
+.ox-state[data-state="unavailable"] .ox-state-word{color:var(--ink-act, var(--act))}
 .ox-stance{margin:14px 0 0;font-size:var(--fs-md);color:var(--text);max-width:64ch}
 .ox-asof{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--muted)}
 
+/* FILL tokens (--ok / --act / --warn) paint the dots, rails and sever marks.
+   TEXT never uses them: measured on the light canvas, --act reads 4.32:1 and
+   --ok 3.60:1 at 12.5px, both under the 4.5 floor. theme.css already ships the
+   text-safe rungs for exactly this — --ink-* mixes the state hue toward --text
+   with a per-theme ratio (light: ok 70%, act 88%) and is identity in dark. The
+   var(--ink-x, var(--x)) form is the house convention, so a cache-stale
+   theme.css degrades to the fill hue instead of to nothing. */
 /* ---- the severed rail --------------------------------------------------- */
 .rail{display:flex;align-items:stretch;margin:34px 0 8px;padding:0;list-style:none}
 .station{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:12px}
@@ -70,7 +77,8 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
 .station[data-link="false"] .st-break::after{content:"";position:absolute;left:50%;top:-5px;
   width:8px;height:12px;transform:translateX(-50%) skewX(-18deg);background:var(--bg);
   border-left:2px solid var(--act);border-right:2px solid var(--act)}
-.station:last-child .st-break{display:none}
+.station:last-child .st-break,
+.station[data-link="none"] .st-break{display:none}
 
 .st-body{padding-right:18px}
 .st-idx{font-family:var(--font-mono);font-size:var(--fs-micro);color:var(--muted);
@@ -78,8 +86,8 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
 .st-name{font-size:var(--fs-h3);font-weight:650;color:var(--text);margin:3px 0 4px;
   line-height:1.3}
 .st-verdict{font-size:var(--fs-sm);color:var(--muted)}
-.station[data-leg="true"] .st-verdict{color:var(--ok)}
-.station[data-blocking="1"] .st-verdict{color:var(--act);font-weight:600}
+.station[data-leg="true"] .st-verdict{color:var(--ink-ok, var(--ok))}
+.station[data-blocking="1"] .st-verdict{color:var(--ink-act, var(--act));font-weight:600}
 
 /* ---- answer blocks ------------------------------------------------------ */
 .ox-answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:30px 0 0}

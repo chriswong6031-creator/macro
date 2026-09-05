@@ -146,7 +146,7 @@ def chain_state(slug: str = SLUG, *, confirmed: tuple[bool, ...] = (False, False
     return {
         "schema": STATE_SCHEMA,
         "asof": "2026-01-02",
-        "built": "2026-01-03T02:10:00Z",
+        "built": "2026-01-03 02:10 UTC",   # the house format, not ISO
         "chains": [{
             "chain": slug,
             "rev": rev,

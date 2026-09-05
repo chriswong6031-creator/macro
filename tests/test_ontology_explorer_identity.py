@@ -86,7 +86,7 @@ def test_the_receipt_is_a_read_receipt_not_an_owner_generation(tmp_path):
     root = fx.build_root(tmp_path)
     snap = _compose(root)
     assert snap["source"]["receipt_kind"] == "composed_read"
-    assert snap["source"]["built"] == "2026-01-03T02:10:00Z"
+    assert snap["source"]["built"] == "2026-01-03 02:10 UTC"
     assert snap["source"]["asof"] == "2026-01-02"
     assert "owner_generation" not in snap["source"]
 
@@ -233,3 +233,25 @@ def test_freshness_states_the_source_age_it_can_actually_observe(tmp_path):
     freshness = snap["source"]["freshness"]
     assert isinstance(freshness["source_age_seconds"], int)
     assert freshness["source_age_basis"] == "chain_state.built"
+
+
+def test_the_house_build_stamp_format_is_actually_parsed(tmp_path):
+    """The compiled artifact stamps `built` as "2026-09-05 02:10 UTC", which
+    `datetime.fromisoformat` cannot read. The first version of this composer
+    caught that failure and reported an age of ZERO — rendering as "built just
+    now", the most reassuring possible reading of a stamp it had not understood.
+    """
+    snap = _compose(fx.build_root(tmp_path))
+    freshness = snap["source"]["freshness"]
+    assert freshness["source_age_basis"] == "chain_state.built"
+    assert isinstance(freshness["source_age_seconds"], int)
+    assert freshness["source_age_seconds"] > 0
+
+
+def test_an_unparseable_build_stamp_reports_no_age_rather_than_zero(tmp_path):
+    state = fx.chain_state()
+    state["built"] = "some day, probably"
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    freshness = snap["source"]["freshness"]
+    assert freshness["source_age_seconds"] is None
+    assert freshness["source_age_basis"] == "unparseable_build_stamp"

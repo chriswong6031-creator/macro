@@ -19,6 +19,8 @@
   "use strict";
 
   var API = "/api/ontology/explorer/v1";
+  var OPS = { gt: "\u003e", lt: "\u003c", gte: "\u2265", lte: "\u2264",
+    eq: "=", ne: "\u2260" };
   var root = document.getElementById("ox-root");
   if (!root) return;
 
@@ -94,7 +96,9 @@
         leg.observation === "unobserved" ? "unobserved" : String(leg.confirmed === true));
       if (leg.node_id === blockingId) station.setAttribute("data-blocking", "1");
       var hop = hopByFrom[leg.node_id];
-      station.setAttribute("data-link", hop ? String(hop.confirmed === true) : "true");
+      /* The terminal station has no outbound hop. Saying "true" would claim a
+         confirmed link that does not exist; "none" says there is nothing there. */
+      station.setAttribute("data-link", hop ? String(hop.confirmed === true) : "none");
 
       var top = el("div", "st-top");
       top.appendChild(el("span", "st-dot"));
@@ -177,14 +181,21 @@
     var p = el("p");
     var first = (snapshot.why_it_matters.legs || [])[0];
     if (first && first.mechanism) {
+      /* The mechanism note comes from the knowledge file and does not end in a
+         full stop. Appending the caution to the same sentence ran the two
+         together into one ungrammatical line, so the caution gets its own
+         paragraph — which is also where it belongs in the reading order. */
       p.appendChild(bi(first.mechanism));
-      p.appendChild(say(" This describes how the steps are meant to connect, not a "
-        + "measurement that they are connecting now.",
-        "这说明的是各环节理论上的连接方式，而非当前确实连通的度量。"));
-    } else {
-      p.appendChild(say("No mechanism note is published for this path.",
-        "该路径未发布机制说明。"));
+      box.appendChild(p);
+      var caution = el("p", "ox-note");
+      caution.appendChild(say("That describes how the steps are meant to connect. It is "
+        + "not a measurement that they are connecting now.",
+        "以上说明的是各环节理论上的连接方式，并非当前确实连通的度量。"));
+      box.appendChild(caution);
+      return box;
     }
+    p.appendChild(say("No mechanism note is published for this path.",
+      "该路径未发布机制说明。"));
     box.appendChild(p);
     return box;
   }
@@ -246,7 +257,8 @@
       (leg.receipts || []).forEach(function (receipt) {
         var dt = el("dt", null, receipt.series + " · " + receipt.metric
           + (receipt.window ? " " + receipt.window + "d" : ""));
-        var dd = el("dd", null, receipt.value + "  (" + receipt.op + " " + receipt.threshold + ")");
+        var dd = el("dd", null, receipt.value + "  ("
+          + (OPS[receipt.op] || receipt.op) + " " + receipt.threshold + ")");
         kv.appendChild(dt);
         kv.appendChild(dd);
       });
@@ -267,11 +279,23 @@
       var wh = el("h3");
       wh.appendChild(say("What we are watching", "我们正在观察"));
       watch.appendChild(wh);
+      /* Owner notes are shown only when the composer cleared them. When it did
+         not, the condition itself is shown as facts — which is what the reader
+         needs anyway, and never carries refutation wording, a raw node id, or
+         untranslated English into the Chinese view. */
       snapshot.invalidators.forEach(function (item) {
-        if (!item.note) return;
-        var note = el("p", "ox-note");
-        note.appendChild(bi(item.note));
-        watch.appendChild(note);
+        var row = el("p", "ox-note");
+        if (item.note) {
+          row.appendChild(bi(item.note));
+        } else if (item.watched && item.watched.series) {
+          var w = item.watched;
+          row.textContent = w.series + (w.vs ? " vs " + w.vs : "")
+            + " \u00b7 " + w.metric + (w.window ? " " + w.window + "d" : "")
+            + " " + (OPS[w.op] || w.op) + " " + w.value;
+        } else {
+          return;
+        }
+        watch.appendChild(row);
       });
       d.appendChild(watch);
     }
