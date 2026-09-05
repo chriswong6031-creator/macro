@@ -76,6 +76,9 @@ public:
     # no customer data, no write surface.
     - /about.html
     - /plans.html
+    # Non-editorial bilingual directory over already reviewed product owners.
+    # It contains links only: no signal payload, customer data or write surface.
+    - /help.html
     # Free signal-stack lead magnet. Rank 1 exposes its matching tickers; paid
     # rows are omitted server-side and render only counts + the trial CTA, so
     # the public shell contains no premium ticker payload.

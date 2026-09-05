@@ -15491,7 +15491,7 @@
    "rows": 1428
   },
   "NOTVQ": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2026-07-27",
    "rows": 7
   },
@@ -15581,7 +15581,7 @@
    "rows": 2189
   },
   "NSA-PB": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2026-07-22",
    "rows": 4
   },
@@ -15746,7 +15746,7 @@
    "rows": 1502
   },
   "NUVL": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2026-07-21",
    "rows": 5
   },
@@ -15796,7 +15796,7 @@
    "rows": 1410
   },
   "NVQ": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2024-02-21",
    "rows": 809
   },
@@ -16051,7 +16051,7 @@
    "rows": 2946
   },
   "OCTLF": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2026-09-03",
    "rows": 4
   },
@@ -16201,7 +16201,7 @@
    "rows": 2304
   },
   "OLPX": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2026-07-13",
    "rows": 5
   },
@@ -16516,9 +16516,9 @@
    "rows": 859
   },
   "OSRHW": {
-   "backfilled": "2026-09-04",
-   "last_obs": "2026-09-03",
-   "rows": 2
+   "backfilled": "2026-09-05",
+   "last_obs": "2026-09-04",
+   "rows": 3
   },
   "OSS": {
    "backfilled": "2026-08-22",
@@ -17296,7 +17296,7 @@
    "rows": 1501
   },
   "PLC": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2021-01-05",
    "rows": 368
   },
@@ -18571,7 +18571,7 @@
    "rows": 1010
   },
   "REC": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2022-10-31",
    "rows": 516
   },
@@ -18681,7 +18681,7 @@
    "rows": 10632
   },
   "RESI": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2023-12-13",
    "rows": 484
   },
@@ -20001,7 +20001,7 @@
    "rows": 3045
   },
   "SGF": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2018-04-30",
    "rows": 198
   },
@@ -20341,7 +20341,7 @@
    "rows": 6643
   },
   "SLFQF": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2025-05-28",
    "rows": 3
   },
@@ -21581,7 +21581,7 @@
    "rows": 4
   },
   "SYNT": {
-   "backfilled": "2026-09-04",
+   "backfilled": "2026-09-05",
    "last_obs": "2018-10-18",
    "rows": 5328
   },
@@ -25104,15 +25104,15 @@
   "budget_s": 480.0,
   "cap": 400,
   "census": {
-   "already_stored": 5731,
+   "already_stored": 5721,
    "bucket_1_current": 0,
    "bucket_2_recent": 618,
    "bucket_3_rest": 0,
    "hub_current_surface": 38,
    "hub_universe": 54,
    "ledger_tickers": 8080,
-   "missing": 2473,
-   "parked": 969,
+   "missing": 2483,
+   "parked": 979,
    "queue": 618,
    "union_needed": 8080,
    "unsupported_sample": [
@@ -25132,9 +25132,9 @@
    "unsupported_symbols": 886
   },
   "dry_run": false,
-  "elapsed_s": 54.3,
+  "elapsed_s": 53.0,
   "no_data": 326,
-  "parked": 360,
+  "parked": 387,
   "period": "max",
   "planned": 400,
   "ratio_anomalies": 0,
@@ -25145,11 +25145,11 @@
   "refresh_ran": false,
   "refreshable": 0,
   "refreshed": 0,
-  "remaining": 578,
-  "schema_rejected": 34,
-  "short_history": 34,
-  "started_utc": "2026-09-04T20:08:29+00:00",
-  "written": 40
+  "remaining": 605,
+  "schema_rejected": 61,
+  "short_history": 7,
+  "started_utc": "2026-09-05T06:10:48+00:00",
+  "written": 13
  },
  "parked": {
   "A11": {
@@ -34454,6 +34454,2715 @@
    "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
    "parked_utc": "2026-09-04T20:09:21+00:00",
    "reason": "fetch_failed"
+  },
+  "NOEMR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NOEMR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NOEMW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NORSE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NORSE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NOTEW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NOTEW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NOTV": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NOTV'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NOVARTIND": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NOVARTIND'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NOVARTIS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NOVARTIS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NOVN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NOVN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NR7": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NR7'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NRSNW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NSA": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NSR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NSR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NST": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NST'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NTI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NTI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NUAIW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NVA-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NVA-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:51+00:00",
+   "reason": "fetch_failed"
+  },
+  "NVAAF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NVAAF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NVACW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NVACW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NVNIW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NWAX-U": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NWAX-U'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NWSLL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NWSLL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NXGLW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NXNVW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NXNVW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NXPLW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "NXR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'NXR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "O32": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'O32'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OABIW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OAKU": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OAKU'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OANDO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OANDO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OBYSY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OBYSY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OCEAN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OCEAN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OCI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OCI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "ODVWZ": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OFX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OFX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:54+00:00",
+   "reason": "fetch_failed"
+  },
+  "OHACR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OHACR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OHB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OHB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OIOWW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OIOWW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OLT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OLT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OLY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OLY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OML": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OML'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OMN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OMN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OMX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OMX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "ONCT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ONCT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "ONFOP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ONFOP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "ONFOW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "ONMDW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "ONTEX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ONTEX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OOA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OOA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPADW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPADW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPFI-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPFI-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPIRQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPIRQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPITQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPITQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:56+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OPT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OPTXW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORBIA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ORBIA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORCLPD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ORCLPD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORGN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ORGN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORGNW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORIQW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ORK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORSTED": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ORSTED'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "ORTIN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ORTIN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OSUN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OSUN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OTAI-RI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OTAI-RI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OTC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OTC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OTOVO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OTOVO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "OXY.WS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'OXY-WS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "PAAPU": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PAAPU'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "PADINI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PADINI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:10:59+00:00",
+   "reason": "fetch_failed"
+  },
+  "PAF": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PALS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PALS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PAYA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PAYA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PCH": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PCH'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PCIB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PCIB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PCSC": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PCTN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PCTN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PCTTW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PEAK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PEAK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PEC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PEC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PEGT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PEGT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PEPTO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PEPTO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PERFF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PERFF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PET": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PET'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PETVW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PETVW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PEYS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PEYS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PGACR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PGACR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PGIM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PGIM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PGO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PGO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PGYWW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:01+00:00",
+   "reason": "fetch_failed"
+  },
+  "PH0": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PH0'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PHA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PHA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PHDL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PHDL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PICCADILY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PICCADILY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PIIIW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PIN": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PIP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PIP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PIRC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PIRC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PIXY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PIXY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PKI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PKI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PKP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PKP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PLMKW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PLSV": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PLSV'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PLTYF": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: non-positive close (min -166.853)",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PLUN-RI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PLUN-RI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PMP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PMP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PNG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PNG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "PONOR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PONOR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "POSAN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'POSAN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:04+00:00",
+   "reason": "fetch_failed"
+  },
+  "POZ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'POZ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PPGN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PPGN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PRA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PRA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PRENW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PROTEAN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PROTEAN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PRTC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PRTC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PRV": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PRV'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PSECPA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PSECPA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PSON": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PSON'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PSQH-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PSQH-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PTACW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PTACW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PTEC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PTEC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PTP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PTP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PTSB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PTSB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PUM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PUM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PVIS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PVIS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PVRINOX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PVRINOX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PVT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PVT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PWG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PWG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PYAIF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PYAIF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:06+00:00",
+   "reason": "fetch_failed"
+  },
+  "PYC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PYC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "PYFA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'PYFA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QBIM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QBIM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QCX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QCX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QETAR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QETAR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QIA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QIA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QIPT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QIPT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QLEP-UN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QLEP-UN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QLEP-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QLEP-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QLIFE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QLIFE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QOR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QOR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QRED-RI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QRED-RI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QRTEA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QRTEA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QTEXW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QUB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QUB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QVCAQ": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QVCGA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QVCGA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "QVCGB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'QVCGB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "RAAQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RAAQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "RAAQW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RAAQW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:09+00:00",
+   "reason": "fetch_failed"
+  },
+  "RAINW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RAK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RAK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RANGR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RANGR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RAPT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RAPT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RBD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RBD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RBI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RBI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RBLBANK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RBLBANK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RBOTW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RBOTW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RCKTW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RCM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RCM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RCN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RCN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RDACR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RDACR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RDZNW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "REALFI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REALFI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "REBL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REBL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "REE": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "REEWF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REEWF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "REL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RELG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RELG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:11+00:00",
+   "reason": "fetch_failed"
+  },
+  "RELIABVEN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RELIABVEN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RELIANCE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RELIANCE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RELIGAR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RELIGAR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RELIGARE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RELIGARE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "REVBW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "REXRPB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REXRPB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "REXRPC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REXRPC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "REZI-WI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'REZI-WI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RFAMR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RFAMR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RFX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RFX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RGPX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RGPX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RGTIW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RHC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RHC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RHR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RHR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RIBBR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RIBBR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RISHAB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RISHAB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RMII": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RMII'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RMMC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RMMC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:14+00:00",
+   "reason": "fetch_failed"
+  },
+  "RNAM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RNAM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RNEP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RNEP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "ROHLTD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ROHLTD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RONE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RONE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "ROQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ROQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "ROSE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'ROSE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RREVW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RREVW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RRHI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RRHI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RRL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RRL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RSE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RSE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RSM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RSM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RST": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RST'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RUMBW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RUP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RUP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RUPRF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RUPRF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RVG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RVG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RVLY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RVLY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RVMDW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RVRB": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RWTPA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RWTPA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:16+00:00",
+   "reason": "fetch_failed"
+  },
+  "RX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "RYA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'RYA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "RZLVW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAFE": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: non-positive close (min -28.788)",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SAG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAGA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SAGA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAGU-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SAGU-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAIHW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAPUY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SAPUY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SATLW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SATS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SATS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAVE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SAVE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SAVEQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SAVEQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBB-B": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBB-B'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBCWW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBEVW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBEVW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBIGW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBIGW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBIN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBIN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBPC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBPC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBPD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBPD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:19+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBSA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBSA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SBXD-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SBXD-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCAI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCAI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCHWPD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCHWPD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCHWPJ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCHWPJ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCIIR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCIIR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCIPACK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCIPACK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCLXW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCOUT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCOUT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SCP": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SCP'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SDF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SDF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SDI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SDI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SDLF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SDLF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SDM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SDM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SDR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SDR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SDSTW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SEBS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SEBS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SEIT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SEIT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SELX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SELX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:21+00:00",
+   "reason": "fetch_failed"
+  },
+  "SEM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SEM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SEN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SEN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SENTORIA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SENTORIA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SEQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SEQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SEQC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SEQC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SES-WT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SES-WT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SES.WS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SES-WS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SFE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SFE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SFPB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SFPB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SFPC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SFPC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SFPD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SFPD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SFZN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SFZN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SGMO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SGMO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SGOB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SGOB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SGPIY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SGPIY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SGR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SGR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SGRO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SGRO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SGST": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SGST'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHAH": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHAH'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:24+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHALBY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHALBY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHANKARA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHANKARA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHAZW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHAZW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHCO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHCO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHFSW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHOPH": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHOPH'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHOPI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHOPI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SHYAMCENT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SHYAMCENT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SIE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIGEY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SIGEY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIGNATURE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SIGNATURE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SILA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SILA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIMANDHAR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SIMANDHAR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIMAW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SIS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SIX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SIX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKBL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKBL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKFINDIA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKFINDIA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:26+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKHYV": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKILW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKILW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKLZ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKLZ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SKYAW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SKYAW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SLAI": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SLGPI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SLGPI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SLIS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SLIS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SLND.WS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SLND-WS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SLNO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SLNO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SLXNW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SM1": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SM1'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SMCRT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SMCRT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SMIF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SMIF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SMNRW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SMNRW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SMOL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SMOL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SMWH": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SMWH'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SMXWW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNBR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNBR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:29+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNCY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNCY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNIRY": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNSE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNSE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNTIA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNTIA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SNTORIA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SNTORIA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOARW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SOARW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOFTBPO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SOFTBPO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOHO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SOHO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOMA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SOMA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOPA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SOPA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOU": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SOU'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SOUNW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPAGO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPAGO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPARC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPARC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPGI-WI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPGI-WI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPGIW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPGIW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPGPJ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPGPJ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPI": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPI'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:32+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPKLW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPWRW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SPX": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SPX'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SQ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SQ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SQFTW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SRMEN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SRMEN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SRT": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SRT'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SRVL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SRVL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SSACW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SSACW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SSDIY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SSDIY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SSEAR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SSEAR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SSON": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SSON'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "SSTPW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SSTPW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STAR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STAR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STEAV": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STEAV'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STEL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STEL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STJNY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STJNY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STKL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STKL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STO": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STO'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:34+00:00",
+   "reason": "fetch_failed"
+  },
+  "STSS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STSS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "STTPG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'STTPG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SUM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SUM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SUMMA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SUMMA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SUNCN": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SUNCN'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SUPR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SUPR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SURAJ": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SURAJ'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SUY1V": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SUY1V'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SVA": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SVAC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SVAC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SVACU": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SVACW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SVAQW": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SVAQW'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SVREW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SWASTIK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SWASTIK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SWDR": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SWEF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SWEF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SWICH": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SWICH'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SWYBY": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SWYBY'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SXL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SXL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:37+00:00",
+   "reason": "fetch_failed"
+  },
+  "SXTPW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "SYENS": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SYENS'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "SYFPA": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SYFPA'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "SYFPB": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SYFPB'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "SYL": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SYL'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "SYNC": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SYNC'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "SYR": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'SYR'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "T82U": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'T82U'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TACHW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TACPF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TACPF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TALKW": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TAM": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TAM'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TANG": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TANG'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TATE": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TATE'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TBD": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TBD'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TBH": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TBH'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TBHC": {
+   "attempts": 3,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TBIF": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TBIF'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
+  },
+  "TBNK": {
+   "attempts": 3,
+   "error": "[backfill] no data returned for vendor symbol 'TBNK'",
+   "note": "no data returned for the requested symbol; NOT a delisting or death claim \u2014 this lane cannot distinguish a 404 from a renamed, non-US, or otherwise unreachable listing",
+   "parked_utc": "2026-09-05T06:11:39+00:00",
+   "reason": "fetch_failed"
   }
  },
  "pending": {
@@ -35554,5 +38263,5 @@
   }
  },
  "schema": "yahoo_backfill_state/1",
- "updated_utc": "2026-09-04T20:09:23+00:00"
+ "updated_utc": "2026-09-05T06:11:41+00:00"
 }
