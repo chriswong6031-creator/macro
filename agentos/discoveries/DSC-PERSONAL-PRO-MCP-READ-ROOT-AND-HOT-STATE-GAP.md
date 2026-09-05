@@ -8,13 +8,18 @@ claim: >
   diagnostic admission hot state; client connectivity alone cannot establish
   production runtime fidelity or replace the current write preflight.
 falsifier: >
-  Fresh-read the current protected GatewayConfig, server manifest and accepted
-  state-transport amendment, then obtain a real-account read receipt binding the
-  installed source/mode/schema to the canonical Executive runtime and the full
-  accepted admission/freshness/transport-readiness contract. A subsequent
-  protected source change plus that production proof can supersede this
-  discovery. A plugin scan, fresh generated_at, fixture result or empty local
-  runtime cannot.
+  In the existing approved Mastermind checkout after verifying origin/master
+  against the freshly read protected SHA, run
+  `git show origin/master:integrations/executive_mcp/adapter.py` and
+  `git show origin/master:integrations/executive_mcp/server.py`, then read
+  `research/EXECUTIVE_OS_PERSONAL_PRO_RELAY_STATE_TRANSPORT_AMENDMENT_2026-08-20.md`
+  at that same SHA. A changed canonical-root binding or an accepted replacement
+  of the diagnostic admission contract would refute the corresponding source
+  claim. Separately obtain a real-account read receipt binding installed
+  source/mode/schema to the canonical Executive runtime and full accepted
+  admission/freshness/transport-readiness contract before superseding the
+  production-proof limitation. A plugin scan, fresh generated_at, fixture result
+  or empty local runtime cannot supply that proof.
 so_what: >
   Reuse the existing MCP for the no-code Personal-Pro canary, but test account
   eligibility, canonical runtime-root fidelity and admission hot-state coverage
