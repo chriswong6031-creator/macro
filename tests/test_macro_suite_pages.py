@@ -99,6 +99,23 @@ def _build(tmp_path: Path, data_root: Path) -> str:
 
 
 @pytest.fixture(scope="module")
+def built_pages(tmp_path_factory) -> dict[str, str]:
+    """Every suite page, rendered from the CURRENT templates.
+
+    Deliberately not the committed site/*.html. Reading the shipped artifact
+    would make these assertions depend on whether the render lane has run since
+    the last template change -- and it would drag site/macro_*.html into this
+    job's import closure, which `scope: exclusive` would then have to declare.
+    Staleness of the committed copies is already owned by
+    scripts/check_template_site_sync.py and the render lane.
+    """
+    out = tmp_path_factory.mktemp("macro_suite_all") / "site"
+    root = _isolated_root(tmp_path_factory.mktemp("macro_suite_all_root"))
+    pages = builder.render(root, data_root=DATA_ROOT, out_dir=out, page_built_at=BUILT_AT)
+    return {page.name: page.read_text(encoding="utf-8") for page in pages}
+
+
+@pytest.fixture(scope="module")
 def live_html(tmp_path_factory) -> str:
     tmp_path = tmp_path_factory.mktemp("macro_suite_live")
     return _build(tmp_path, DATA_ROOT)
@@ -722,9 +739,9 @@ def test_a_method_incomparable_table_is_gated_even_though_its_rows_are_numeric()
 
 
 @pytest.mark.parametrize("page", _NULL_PAGES)
-def test_the_named_pages_never_print_python_none(page: str, tmp_path: Path) -> None:
-    """The exact three manifestations Sol named, asserted on the built artifact."""
-    html = (ROOT / "site" / f"macro_{page}.html").read_text(encoding="utf-8")
+def test_the_named_pages_never_print_python_none(page: str, built_pages: dict[str, str]) -> None:
+    """The exact three manifestations Sol named."""
+    html = built_pages[f"macro_{page}.html"]
     assert ">None<" not in html
     assert "-None\"" not in html
     assert re.search(r'class="mq-delta mq-delta-(?:up|down|flat)"[^>]*>\s*<span class="mq-absent',
@@ -749,8 +766,8 @@ def test_a_missing_boundary_distance_does_not_become_a_watch() -> None:
     assert _boundary_view(None)["token"] != "WATCH_BOUNDARY"
 
 
-def test_every_next_action_carries_a_real_route_to_an_owned_region() -> None:
-    html = (ROOT / "site" / "macro_liquidity_regime.html").read_text(encoding="utf-8")
+def test_every_next_action_carries_a_real_route_to_an_owned_region(built_pages: dict[str, str]) -> None:
+    html = built_pages["macro_liquidity_regime.html"]
     match = re.search(r'<a class="mq-next-route" href="(#[a-z0-9-]+)"', html)
     assert match, "the action must offer a real link, not a decorative CTA"
     target = match.group(1)[1:]
@@ -760,8 +777,8 @@ def test_every_next_action_carries_a_real_route_to_an_owned_region() -> None:
     assert target not in ("mq-panel-drivers", "mq-panel-history", "mq-evidence-drawer")
 
 
-def test_the_action_precedes_the_full_table_and_ribbon_in_dom_order() -> None:
-    html = (ROOT / "site" / "macro_liquidity_regime.html").read_text(encoding="utf-8")
+def test_the_action_precedes_the_full_table_and_ribbon_in_dom_order(built_pages: dict[str, str]) -> None:
+    html = built_pages["macro_liquidity_regime.html"]
     order = [m.group(1) for m in re.finditer(
         r'class="(mq-glance|mq-next mq-tone-[a-z]+|mq-study|mq-changed|mq-ribbon)"', html)]
     order = [o.split()[0] for o in order]
@@ -780,7 +797,7 @@ def test_absent_coverage_renders_a_typed_absence_not_an_unlabelled_dash() -> Non
 
 
 @pytest.mark.parametrize("page", sorted(p.output for p in builder.SUITE_PAGES))
-def test_no_built_page_ever_emits_a_none_class_or_value(page: str) -> None:
+def test_no_built_page_ever_emits_a_none_class_or_value(page: str, built_pages: dict[str, str]) -> None:
     """One invariant covering all four `mq-delta-` emission sites at once.
 
     Three of them are guarded by a `*_present` flag and the fourth sits inside a
@@ -789,7 +806,7 @@ def test_no_built_page_ever_emits_a_none_class_or_value(page: str) -> None:
     selection rule and quietly reintroduces the class -- which is exactly how the
     driver tables got there in the first place.
     """
-    html = (ROOT / "site" / page).read_text(encoding="utf-8")
+    html = built_pages[page]
     assert "mq-delta-None" not in html
     assert ">None<" not in html
     assert 'class="mq-delta mq-delta-"' not in html, "an empty sign class is the same bug"
