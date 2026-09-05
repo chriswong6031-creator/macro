@@ -1,17 +1,24 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-09-05T14:44:50.871372+00:00",
+  "produced_at": "2026-09-05T22:46:37.320197+00:00",
   "as_of": "2026-09-04",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
-    "cortex_status": "degraded",
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "cortex_status": "fresh",
+    "tool_call_batches": 3,
+    "individual_tool_calls": 9,
     "context_stale": false,
-    "summary": "cortex degraded — model_unavailable"
+    "summary": "cortex ran (9 tool calls); memo as_of 2026-09-05T22:41:05+00:00"
   },
   "what_changed": [
+    {
+      "kind": "cortex_status_changed",
+      "id": "cortex",
+      "summary": "cortex status changed: degraded → fresh",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
     {
       "kind": "lobe_row_count_changed",
       "id": "spine-index",
@@ -295,12 +302,6 @@
   },
   "operator_attention": [
     {
-      "priority": 1,
-      "area": "cortex",
-      "summary": "cortex degraded — inspect data/neuralweb/cortex/memo.json and run_status",
-      "action_type": "ops_fix"
-    },
-    {
       "priority": 2,
       "area": "causal-edges",
       "summary": "lobe causal-edges is warn — age 446.05h vs SLA 192h",
@@ -567,7 +568,7 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "phase": "REPAIR",
     "phase_confidence": 0.8,
     "who_controls": "mixed",
@@ -593,7 +594,7 @@
   },
   "causal_lab": {
     "available": true,
-    "asof": "2026-09-05T06:50:41Z",
+    "asof": "2026-09-05T22:40:37Z",
     "new_edges_this_week_by_verdict": {
       "insufficient_power": 22,
       "null": 11,
