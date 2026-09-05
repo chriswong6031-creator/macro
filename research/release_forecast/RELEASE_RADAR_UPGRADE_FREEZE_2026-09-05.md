@@ -8,6 +8,20 @@ Protected procedure: `Mastermind@0d9cf2f58f9a6a1fe895d5d199abc18735201e24`, comp
 Investigation pin: `macro@f69302500c0067e5c7f087a79cbaafe523720fd1`.
 Records authoring base: `macro@22c10fc9956791d7c68456a3cb53d70ac388cf28`.
 
+## Current continuation addendum — 2026-09-05
+
+The original investigation and architecture below remain preserved. Their **unbound / producer-owner-held / template-sequencing-held snapshot is superseded** by the current Agent OS handoff in this same PR and [Sol CONTINUE 1788601580.860639](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788601580860639?thread_ts=1788590913.182019&cid=C0BSBM78V1N). Current protected procedure for that ruling is `Mastermind@4a605932ca0c59e61b4b92d59ddb9ebddd25bf38`, compatible Skillpack 1.0.1; independently checked Macro main was `31db3cc1cab1e3e14897145c7fdc743190bc0764`.
+
+A1 has actual placement and PICKUP_ACK from Claude8/Opus, app session `local_fccca4ce-1d6f-4bda-b043-a0d96987af4a`, Code UUID `2d4ca490-fc1b-4acc-8058-12c99dd89bc5`. The existing Secretary aggregate exact-root bridge is reused; no new watcher or replacement operator is required. Source-composition CONTINUE is delivered, but **a separate implementation START is not asserted by this checkpoint**.
+
+The original F1 task returned `F1_SHARED_PRODUCER_WRITE_CLAIM=NONE` and explicitly released the additive diagnostic producer hook on its own root at `1788592894.675119`. Sol confirmed the current producer is still blob `35f8a1f29f8ae1986a9853683337e0752327f32b`. #6685's four actual template hunks remain outside the Release Radar region. A1 may proceed independently in an isolated worktree, leaving #6685 Draft/HOLD and the dirty shared checkout untouched. The shared generated site is controlled by canonical full regeneration: the candidate released second must rebuild from then-current accepted composed source and prove both capabilities survive. No splicing, whole-file rollback, numerical change, #6593 workstream edit or F1 replacement is authorized.
+
+The exact worker's pinned repository-template inspection now locates the PPI fallback at `templates/dashboard.html.j2:10284-10288`: `w_known=wc*(1-nv)`, `w_proxy=wc*nv+(1-wc)*fp`, and residual as the complement. PPI's 1.0/0.8/0.2 flags therefore reproduce 80/20/0. This closes the **repository source location** gap; it does not prove the currently deployed browser runs that exact source. The producer's `_assign_cutoff_labels` assigns T-1 to ordinal queue position zero, not from observed information availability. A1 must stop presenting that label as a verified data cutoff while leaving the raw field and scoring machinery unchanged.
+
+Three safeguards from preflight are now explicit. PPI point 0.2018 differing from p50 0.2994 is not itself a defect: distinguish point and predictive median, never recenter bands in A1. Recorded cold-start equal weights and zero scored histories must not be described as earned ensemble skill. Wrong-period or unverifiable market-implied context must not masquerade as this release's current benchmark; use structured target/unit/cutoff receipts, expose incompatibility and preserve raw evidence. No model, quantile or score contract is amended.
+
+Original records head `7feb6afe824d05c85f6db4ca0652fc670fce50db` completed fences run `33951314131` and CI run `33951314303`; no independent review was present at the check. Changed records require their own checks. No green records check, placement receipt or diagnostic fix establishes improved forecasting accuracy or production acceptance.
+
 ## 1. Outcome, value and architecture choice
 
 The researcher must be able to answer: what will the official release report; what moved this forecast; which components and sources support it; what remains unknown; and how has this exact method performed at this lead time? The machine consumer must receive the same forecast identity, target, cutoff, missingness and evidence scope. The product should support comparison and release preparation, not make a green confidence bar stand in for evidence.

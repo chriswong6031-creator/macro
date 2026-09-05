@@ -2,7 +2,7 @@
 workstream: WS:RATES-INFLATION-COMMAND
 session: sol/release-radar-upgrade-freeze-20260905
 model: sol
-ended_because: blocked
+ended_because: ci_handoff
 mission: Preserve the Chairman-directed Release Radar robustness/accuracy architecture and the first bounded product-truth
   contract, establish real coordination/projection receipts, and leave the exact continuation without replacing
   existing release/event owners.
@@ -45,41 +45,68 @@ verified:
     #6685'
   result: Observed head 6d7b0dfcb2d8d2a7e6a677b10e36ce517a494494; patch changes import, regime hero, Risk Detail
     and overlay comments. Exact-current integration and owner clearance still required.
+- claim: A1 has a deliberately placed and independently acknowledged exact native receiver.
+  command: Slack.slack_read_thread C0BSBM78V1N/1788590913.182019, complete root through 1788593776.233029
+  result: Placement 1788592704.971599 and PICKUP_ACK 1788593067.336189 identify Claude8/Opus app session local_fccca4ce-1d6f-4bda-b043-a0d96987af4a
+    and Code UUID 2d4ca490-fc1b-4acc-8058-12c99dd89bc5. Existing Secretary aggregate exact-root continuation is
+    reused; no new watcher was created.
+- claim: The original F1 owner released the narrowly additive A1 producer hook after fresh effect reconciliation.
+  command: Read F1 root C0BSBM78V1N/1787975946.019219, owner response 1788592894.675119; GitHub.fetch_file scripts/build_release_forecast.py
+    at 31db3cc1cab1e3e14897145c7fdc743190bc0764
+  result: F1_SHARED_PRODUCER_WRITE_CLAIM=NONE. Original worktree absent/unregistered; original branch no unique
+    or unpushed source. Current producer remains blob 35f8a1f29f8ae1986a9853683337e0752327f32b. F1 remains separate,
+    pre-START and nonterminal; old conditional worktree continuation cannot itself start execution.
+- claim: Sol resolved the remaining A1 source-composition hold without releasing the unrelated Grey Deer PR.
+  command: 'Fresh-read #6685 metadata and actual template patch; fresh-read A1 root; Slack.slack_send_message same-root
+    ruling 1788601580.860639'
+  result: 'Under protected Mastermind 4a605932ca0c59e61b4b92d59ddb9ebddd25bf38, A1 may implement only its disjoint
+    renderer region and additive diagnostic scope from current main. Canonical full regeneration and second-release
+    integration proof are required. #6685 remains Draft/HOLD; no splice, shared-root cleanup or old whole-file overwrite.
+    The same worker must separately START after immediate final gates; this ruling is not execution proof.'
+- claim: The original records head completed hosted CI and fences; independent review remains absent.
+  command: GitHub.fetch_commit_workflow_runs 7feb6afe824d05c85f6db4ca0652fc670fce50db; fetch_workflow_run_jobs 33951314303;
+    list_pull_request_reviews 6870
+  result: Fences 33951314131 and CI 33951314303 completed SUCCESS, including trusted packs and semantic gate; reviews
+    empty. These results cover the original records head only, not this amendment, A1, or production.
 unverified:
-- claim: A1 has an eligible exact receiver and a working reciprocal continuation path.
-  what_would_verify: Existing Capacity/Operator-Continuity placement receipt, deliberate exact delivery, actual
-    receiver PICKUP_ACK, successful continuation registration and separate START after ownership gates.
-- claim: Original F1 local worktree is currently effect-free and safely resumable.
-  what_would_verify: Current read-only native task/worktree/branch/dirt/unpushed/remote effect receipts from the
-    original owner or canonical continuity path; silence is insufficient.
-- claim: A1 diagnostic changes are implemented and deployed.
-  what_would_verify: An independent implementation PR with raw-output invariance, executed producer/JavaScript tests,
-    exact-head CI/security, non-author review, canonical site generation and real production user/machine proof.
-- claim: The upgrade improves forecast accuracy or calibrates probabilities.
-  what_would_verify: Separately preregistered target/model/horizon methods, matched independent-release evaluation
-    and genuinely prospective evidence under the accepted promotion law.
-- claim: This records candidate passes repository-wide Agent OS validation and CI.
-  what_would_verify: Run scripts/agentos.py validate and the applicable hosted exact-head checks on this records
-    PR; a local frontmatter-shape check is not that command.
+- claim: A1 has consumed the latest Sol CONTINUE and begun implementation.
+  what_would_verify: The same exact receiver posts separate START after fresh native identity/current-source/collision/bridge
+    checks, followed by its isolated worktree/branch and eventual Draft/HOLD PR receipts. No inference from ruling
+    delivery.
+- claim: A1 diagnostic changes are implemented, integrated and production-proven.
+  what_would_verify: Actual producer and executed-JavaScript regressions, raw-output numerical invariance, canonical
+    full site build, responsive browser states, exact-head CI/security, independent non-author review and real production
+    consumer proof.
+- claim: Forecast accuracy or probabilistic calibration improved.
+  what_would_verify: Separately preregistered exact target/model/horizon evaluation and genuinely prospective evidence.
+    A1 is presentation/diagnostic-only and cannot establish this claim.
+- claim: The amended records head is independently reviewed and passes current applicable validation.
+  what_would_verify: Fresh hosted checks plus repository Agent OS validation and a non-author review on the amended
+    exact head. Original-head green results do not cover a changed head.
 unresolved:
-- A1 is unbound and shared-producer ownership remains unreconciled; no current native condition-watch arm tool exists
-  on this CEO surface.
-- The current deployed frontend fallback still needs a full-checkout inspection; a research mockup is not production
-  JavaScript evidence.
-- 'The source records remain a Draft/HOLD proposal until reviewed; #6593 solely owns the existing workstream-status
-  repair.'
-- A2 is a local experiment only and needs explicit distribution-version/score-cohort isolation before adoption.
+- Latest known A1 state is ACKNOWLEDGED/PRE_START with source-composition CONTINUE delivered; separate worker START
+  and implementation receipts remain required.
+- The existing exact-root Secretary bridge is the accepted continuation path; this Chat host did not arm a native
+  watcher. Continued registration/delivery evidence is separate from general production wake correctness.
+- The repository-template fallback and ordinal T-1 mechanism have been located by the exact worker. Real deployed
+  browser identity and the repaired production path remain unproven.
+- 'The records amendment remains Draft/HOLD pending fresh checks and independent review; #6593 solely owns the existing
+  workstream-status correction.'
+- A2 remains a local uncertainty experiment, not an admitted or deployed change; model/distribution epoch and cohort
+  isolation must be frozen before adoption.
 next_actions:
-- 'Read Macro #6868 and A1 Slack root C0BSBM78V1N/1788590913.182019; consume any real placement or blocker rather
-  than creating another issue/carrier.'
-- Reconcile original F1 on C0BSBM78V1N/1787975946.019219 through its existing native-task/continuity owner; preserve
-  task 01a04bde-8ce8-7903-ae91-6c38c63ac4cf and all local state.
-- Once receiver, ownership and reciprocal continuation are proven, issue/consume the exact A1 delivery, ACK and
-  separate START; implement adapter, producer and real UI as one numerical-invariant vertical.
-- Require Draft/HOLD return, independent exact-head review, real site generation and production proof before A1
-  acceptance. Do not adopt the A2 patch or start later modeling under A1.
-- 'Review this separate records carrier for source accuracy and schema compatibility without taking over #6593 or
-  changing other RIC program dependencies.'
+- 'Read #6868 and the complete A1 root C0BSBM78V1N/1788590913.182019 from the last consumed opposite-side edge,
+  not merely after the last local post; consume any unseen START/PROGRESS/BLOCKED/RESULT.'
+- Only the placed A1 receiver consumes Sol CONTINUE 1788601580.860639, checks current native/source/collision/bridge
+  facts, separately STARTs and creates one isolated worktree. Preserve the dirty shared root and original F1 task/state.
+- Implement the numerical-invariant adapter, additive producer and real Release Radar together; no A2, no model
+  or scoring changes. Require actual executed renderer tests and canonical full-site generation.
+- 'At release, regenerate from then-current accepted composed source and verify earlier accepted capabilities survive;
+  #6685 HOLD/taste acceptance is not an A1 source-start prerequisite.'
+- 'Keep #6870 on its same two-file records branch, obtain fresh checks and a non-author review, and never equate
+  its merge with A1 deployment or improved accuracy.'
+- After an implementation return, exact action-authoritative Sol reviews against the original product outcome and
+  issues explicit CONTINUE/REPAIR or terminal STOP; preserve the existing aggregate bridge for unrelated children.
 do_not_redo:
 - No second calendar, target store, release ledger, forecast registry, evaluation plane, lifecycle, queue, collector,
   scheduler or publication owner.
@@ -96,10 +123,22 @@ danger_areas:
   evidence.
 - Same Slack identity is not same native task; a claimed old watcher does not prove current continuation.
 - This handoff covers Release Radar only; it does not re-adjudicate F2/F3 or their dependent carriers.
+- A point estimate need not equal the predictive median; do not recenter or change quantiles under a diagnostic
+  repair.
+- Wrong-period or unverifiable market context cannot masquerade as the current release benchmark. Preserve raw data,
+  use structured target/unit/cutoff identity and make incompatibility visible.
+- Cold-start equal ensemble weights are not earned accuracy weights; expose the existing cold_start/n_i receipt
+  without retuning.
+- GitHub identity chriswong6031-creator is shared by the A1 worker; another session on that identity is not its
+  independent reviewer.
 decisions:
 - DEC:RIC-CANONICAL-COMPOSITION-BOUNDARIES
 ---
 
-# Return point
+# Return point — source-composition continuation issued
 
-The product upgrade is not complete. The first source contract is [Macro #6868](https://github.com/mastermindx-market-intelligence/macro/issues/6868); its single capacity root is [A1](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788590913182019). Current live Chairman intent authorizes progress, not bypassing source-owner or continuation gates. This records-only carrier preserves the architecture; it creates no Executive Job or implementation receiver.
+This updates the earlier unbound/held snapshot without replacing its history or changing numerical methods. The complete [A1 contract is #6868](https://github.com/mastermindx-market-intelligence/macro/issues/6868); the same [A1 root](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788590913182019) carries actual placement, ACK, preflight, owner-release consumption and [Sol CONTINUE 1788601580.860639](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788601580860639?thread_ts=1788590913.182019&cid=C0BSBM78V1N). No separate implementation START or production proof is asserted by this checkpoint.
+
+The exact receiver is Claude8/Opus, app session `local_fccca4ce-1d6f-4bda-b043-a0d96987af4a`, Code UUID `2d4ca490-fc1b-4acc-8058-12c99dd89bc5`. Capacity selected that eligible avenue after Codex task-cap refusal; Sol accepted the verified bounded capability. Continuation reuses the existing Secretary aggregate bridge. The shared checkout's 173 dirty entries are not this child's work and must not be cleaned or adopted.
+
+The original F1 owner has no active producer write claim and released the narrow A1 hook at `1788592894.675119`; its absent old worktree is not silently recreated. #6685's real template hunks are disjoint from A1, but common generated output must be rebuilt from composed accepted source when releasing the second candidate. #6593 retains its workstream-record path. This handoff concerns the Release Radar subset only.
