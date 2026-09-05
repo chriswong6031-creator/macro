@@ -30,74 +30,97 @@ changed:
       rather than a pre-canary implementation requirement.
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-03-AUTONOMY-CLOSURE-SPINE.md
     what: >
-      Leaves the terminal ruling, preserved evidence, active critical path, and exact falsifier
-      recoverable without this chat.
+      Reconciles the terminal F0 ruling to the protected source train as of 2026-09-05 and leaves the
+      remaining CAP-S1, MAT-S1, Stage-B1, Runtime Continuity, installation, and canary gates recoverable.
 verified:
-  - claim: The current protected Mastermind source includes W3C-R2 and MAT-C1 without ACF-1.
+  - claim: The F0 architecture and its review child remain terminal and unmerged.
     command: >
-      Read protected Mastermind master and same-SHA Skillpack at
-      22b36b830bd5560942186ada7597508f918696af.
+      Read Slack C0BSBM78V1N/1788495922.483179 through terminal STOP 1788508703.540179 and read
+      Mastermind issue #437 plus PR #438.
     result: >
-      W3C-R2 is protected through 13c9f2918988c5ba654e311c941f8707071ea2c4; MAT-C1 PR #436 is
-      protected through 22b36b830bd5560942186ada7597508f918696af; Skillpack v1 1.0.1 is compatible.
-  - claim: F0 and its review child are terminal.
+      Issue #437 is CLOSED / NOT_PLANNED; PR #438 is CLOSED_UNMERGED at
+      d6ffac38108c5d59f6cba02140068924e444d2b2. No ACF-1 implementation child is authorized.
+  - claim: Major prerequisite source leaves have progressed without ACF-1.
     command: >
-      Read Slack thread C0BSBM78V1N/1788495922.483179 through Chairman STOP
-      1788508703.540179.
+      Read current protected Mastermind 8f3370e349ab8f1a54acac4c63697740f32715b1 and PRs #427, #415,
+      #436, #326, #485, and #448.
     result: >
-      Both operations are terminal; PR #438 must remain closed unmerged and no ACF-1 successor is
-      authorized before the stated post-golden-root falsifier.
-  - claim: GitHub reflects the terminal disposition.
+      W3C-I1 #427, C2-R1A #415, MAT-C1 #436, Control Room #326, Web diagnostic #485, and Source
+      Continuity R3 #448 are protected. They remain source receipts rather than installation, Runtime,
+      provider, or production proof.
+  - claim: The current protected source still does not contain the whole Stage-B materialization chain.
     command: >
-      Read Mastermind PR #438 and issue #437.
+      Read research/autonomy_cutover/2026-09-05-production-preflight-01a06f74.md and current MAT-S1
+      issue #430 against the protected source movement through 8f3370e349ab8f1a54acac4c63697740f32715b1.
     result: >
-      PR #438 is CLOSED_UNMERGED at d6ffac38108c5d59f6cba02140068924e444d2b2; issue #437 is
-      CLOSED / NOT_PLANNED.
-  - claim: The pre-canary train still has active source carriers.
+      C2-R1A is built in protected source; MAT-S1, first-root Stage-B1, and later-root C2-R1B remain
+      absent. MAT-S1 issue #430 remains SPEC_ONLY / held on CAP-S1 protection.
+  - claim: CAP-S1 and Runtime Continuity are active on their existing sticky carriers.
     command: >
-      Read Mastermind PRs #415, #350, and #326.
+      Read CAP carrier C0BSBM78V1N/1788511189.200899 and Runtime carrier
+      C0BSBM78V1N/1788585580.469589, plus Mastermind PRs #350 and #491.
     result: >
-      C2-R1A, CAP-S1, and Control Room remain open carriers; their completion and the real golden-root
-      proof are not replaced by the closed F0 records.
+      CAP-S1 #350 is executing the existing two-path repair/current-base proof through exact task
+      01a06b9a-eb73-7003-b9e5-ea35d5c45269 with no provider replay. Runtime Continuity #491 is an
+      incomplete whole-R2 Draft/HOLD checkpoint on exact task 01a06f73-1dba-7951-9f1e-cded7b563cef.
 unverified:
-  - claim: The existing owner train completes one real golden-root journey without ACF-1.
+  - claim: The current owner train can complete one real golden-root journey without ACF-1.
     what_would_verify: >
-      Protect and integrate C2-R1A, CAP-S1, Stage-B1, and Control Room, then run one real root through
-      exact target attention, worker materialization, terminal return, continuation, and truthful
-      projection with zero routine Chairman shuttle.
-  - claim: ACF-1 is unnecessary after multi-root adverse proof.
+      Protect CAP-S1; build and protect MAT-S1 and Stage-B1; complete the Runtime Continuity/Wake/ACK
+      physical path; install and arm the accepted components; then run one real root through placement,
+      exact worker execution, semantic return, exact Sol attention, continuation, and truthful Control
+      Room projection with zero routine Chairman shuttle.
+  - claim: ACF-1 remains unnecessary after adversarial multi-root proof.
     what_would_verify: >
-      Run observer, stale-target, conflicting-continuation, response-loss, and restart scenarios and
-      observe exactly one lawful downstream effect under existing owner enforcement.
+      Run sister-Sol, stale-target, conflicting-continuation, response-loss, restart, unsafe-retry,
+      capacity-saturation, and effect-unknown scenarios and observe exactly one lawful downstream effect
+      under existing owner enforcement.
+  - claim: Source-protected Control Room and Wake code are installed and producing truthful live joins.
+    what_would_verify: >
+      Obtain exact installed-release identities, service health, real source-attributed observations,
+      Wake delivery/ACK/source-resolution receipts, and browser-visible Control Room proof.
 unresolved:
-  - "C2-R1A PR #415 still requires its exact started task to complete and release Runtime paths."
-  - "CAP-S1 PR #350 still requires exact-session/local-effect reconciliation and current-base completion after MAT-C1 protection."
-  - "Control Room PR #326 still requires its four real-owner joins and production browser proof."
-  - "The golden-root and adversarial multi-root canaries have not run."
+  - "CAP-S1 PR #350 remains OPEN/DRAFT. Its sticky source task is performing a current-base canonical RWE proof and must return immutable source/security/review evidence before source acceptance."
+  - "MAT-S1 issue #430 remains SPEC_ONLY and held on protected CAP-S1 source; no implementation branch or provider attempt is authorized from the issue alone."
+  - "Stage-B1 and C2-R1B remain NOT_BUILT after MAT-S1; they are separate first-root and later-root children."
+  - "Runtime Continuity R2 PR #491 remains PARTIAL / DRAFT-HOLD; physical source identity, ACK/source resolution, causal return, current-base proof, review, and real canary remain owed."
+  - "W3C, C2-R1A, MAT-C1, Control Room, Web diagnostics, and R3 are BUILT_NOT_PROVEN source capabilities; installed/armed/runtime proof remains separate."
+  - "AD-RET2 sustained PROGRESS/BLOCKED/DECISION_REQUEST return proof and the production-cutover union of 18 adverse obligations remain unexecuted."
+  - "The golden-root, SHADOW measurements, two-to-three-responsibility CANARY, and adversarial multi-root runs have not occurred."
 next_actions:
   - >
-    Continue the exact existing C2-R1A, CAP-S1, and Control Room carriers; do not create ACF-1 or
-    reopen #437/#438.
+    Finish CAP-S1 on its existing task/carrier: complete the bound RWE/component proof, publish one
+    current-base candidate, obtain exact-head CI/security and independent review, then accept/STOP the
+    source child and release its paths without replaying the historical provider attempt.
   - >
-    After those owners are protected and installed, run one golden-root canary and capture exact
-    Runtime, target, dialogue, Wake, terminal-return, downstream, and Control Room receipts.
+    After CAP-S1 source protection, start MAT-S1 from issue #430 only through a fresh current-source,
+    path, host, effect, placement, and reciprocal-dialogue gate. MAT-S1 must materialize the role-null
+    carrier and canonical current-writer read without a model turn or a second Runtime plane.
   - >
-    Run the adverse multi-root matrix. Reopen the closure-spine architecture only if the recorded
-    falsifier is reproduced under current protected source.
+    After MAT-S1 protection, build first-root Stage-B1 and later-root C2-R1B as separate bounded
+    children, preserving SessionTargetRegistry, RuntimeBinding, Capacity, and Executive OS ownership.
+  - >
+    Complete Runtime Continuity R2 on PR #491 and prove the real terminal-return -> observation -> Wake
+    -> target ACK -> source resolution -> Sol attention -> Worker continuation path.
+  - >
+    Install and arm only accepted default-off components in a declared SHADOW posture, freeze real
+    endpoint/clock/denominator/latency/fairness budgets, then run the two-to-three-responsibility golden
+    canary and the adverse multi-root matrix. Reopen ACF-1 only if the recorded falsifier occurs.
 do_not_redo:
   - "Do not reopen or merge Mastermind #438 merely because its repaired checks later pass."
   - "Do not create an ACF-1 task, branch, Event family, consumer, or Control Room projection before canary evidence."
-  - "Do not delete the #438 branch or review history; they are preserved advisory evidence."
-  - "Do not treat conflicting Slack prose, watcher delivery, or model output as Runtime authority."
-  - "Do not create a duplicate lifecycle, queue, retry plane, target registry, directive store, or Slack command bus."
-  - "Do not call protected source, CI, or merge production proof."
+  - "Do not revive terminal W3C, C2-R1A, Control Room, Web #485, R3 source, or their review children as source workers."
+  - "Do not replay CAP-S1's consumed historical provider attempt or fabricate its unavailable cleanup."
+  - "Do not create a duplicate lifecycle, queue, retry plane, target registry, directive store, RuntimeBinding store, or Slack command bus."
+  - "Do not call protected source, CI, merge, installation, transport delivery, or QUEUED admission production proof."
 danger_areas:
-  - "A conceptual architecture gap is not automatically a production blocker."
-  - "The closed F0 records may look implementation-ready but carry no current implementation authority."
-  - "A later canary failure must be reproduced against current protected source before reusing the old design."
-  - "C2-R1A owns Runtime paths; CAP-S1 and Control Room retain their own sticky carriers and effects."
-  - "Golden CI, merge, Slack delivery, Runtime execution, and final production acceptance remain distinct."
-prs: [438, 415, 350, 326, 436, 6814]
+  - "A conceptual architecture gap is not automatically a production blocker; the ACF-1 falsifier remains evidence-gated."
+  - "Source protection can still leave the user journey dark because installation, arming, exact target delivery, semantic return, and continuation are separate gates."
+  - "CAP-S1 source acceptance must remain independent of a successful completed-canary issuer while still refusing forged proof."
+  - "MAT-S1 must not run a model turn or complete/tear down the role-null carrier it is supposed to materialize as the current writer."
+  - "Runtime R2 and Stage-B share dependencies but do not transfer authority or justify duplicate current-writer, target, Wake, or lifecycle owners."
+  - "Golden CI, merge, Slack delivery, Runtime execution, SHADOW measurement, CANARY, and final production acceptance remain distinct."
+prs: [438, 427, 415, 436, 326, 485, 448, 350, 491, 6814]
 decisions:
   - DEC:AUTONOMY-CLOSURE-SPINE-V1
 discoveries:
@@ -106,10 +129,12 @@ discoveries:
 
 # Return point
 
-Autonomy Closure Spine F0 is terminal and preserved as post-golden-root evidence only. The current
-critical path is the existing owner train. ACF-1 has no active operation, worker, branch, Runtime
-effect, provider action, deployment, or production claim.
+Autonomy Closure Spine F0 is terminal and preserved as post-golden-root evidence only. Protected
+source now includes W3C-I1, C2-R1A, MAT-C1, Control Room phase A, Web diagnostic hardening, and Source
+Continuity R3 without ACF-1. The current critical path is CAP-S1 source protection -> MAT-S1 ->
+Stage-B1 plus C2-R1B, in parallel with completion of Runtime Continuity R2, followed by installed
+SHADOW evidence, one real golden-root canary, and the adversarial multi-root matrix.
 
-The exact trigger for reopening is a reproduced golden-root/adversarial canary failure showing that
-more than one otherwise-lawful semantic decision becomes effective despite current exact-target and
-same-carrier enforcement.
+The exact trigger for reopening ACF-1 remains a reproduced current-source canary failure showing that
+more than one otherwise-lawful semantic decision becomes effective, or that a stale/observer decision
+causes a downstream mutation despite exact action-target and same-carrier enforcement.
