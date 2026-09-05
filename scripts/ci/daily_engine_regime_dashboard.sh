@@ -88,6 +88,19 @@ run_py "MSP W1 — market structure data spine (build_market_structure)" scripts
 # private state plus public shell/assets, and never fetches network data here. The
 # accession-aware raw engine is advanced separately once object storage is bound.
 run_py "filing forensics workbench (build_fundamental_forensics)" scripts.build_fundamental_forensics
+# F01 Macro & Monetary suite — the twelve mastermind.macro_workspace_snapshot.v1
+# artifacts (site/macrodata/workspaces/<id>/US/latest.json + one manifest).
+# BEFORE build_site: its suite-page hook renders site/macro_<id>.html FROM these
+# artifacts, so building them here makes the pages same-night instead of one
+# generation stale (the same NWS-01/MSP-W1 ordering class as the steps above).
+# Reads only committed owner artifacts + collected parquets (regime latest,
+# inflation_intelligence, rates_command, intl_risk, GLT, fred/zori/treasury/
+# auction/bis parquets, capital_structure projection, bonds latest) — no network.
+# Every composer types honest freshness/null states for anything stale or absent,
+# and the CLI exits 2 (a run_py warning, never a lane abort) only on a typed-
+# degraded workspace, so a missing owner artifact degrades one workspace loudly
+# instead of killing the nightly.
+run_py "F01 macro workspace snapshots (build_macro_workspaces)" scripts.build_macro_workspaces
 run_py "macro dashboard + US stocks (build_site)" scripts.build_site
 # Ticker dossier pages (v2) — engine-internal, reads fresh site/stockdata/*.json
 # written by build_site above; rides the engine "commit engine outputs" git add.

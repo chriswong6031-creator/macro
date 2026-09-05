@@ -2,7 +2,7 @@
   "schema": "crypto.class_state/v1",
   "tier": "display",
   "display_only": true,
-  "as_of": "2026-09-01",
+  "as_of": "2026-09-04",
   "market": {
     "stance": "Advancing, led by Bitcoin",
     "total_state": "Rising",
@@ -13,26 +13,26 @@
   "flows": {
     "etf": "Rising",
     "stablecoins": "Rising",
-    "volume": "Quiet tape"
+    "volume": "Normal"
   },
   "heat": {
     "funding": "Balanced",
-    "open_interest": "Leverage normal",
+    "open_interest": "Leverage light",
     "volatility": "Volatility compressed",
-    "altseason": "Mixed participation"
+    "altseason": "Alt participation broad"
   },
   "assets": {
     "ETH": {
       "trend": "Advancing",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "3,745 daily observations from Coinbase daily OHLCV."
+      "coverage": "3,748 daily observations from Coinbase daily OHLCV."
     },
     "SOL": {
       "trend": "Advancing",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "1,903 daily observations from Coinbase daily OHLCV."
+      "coverage": "1,906 daily observations from Coinbase daily OHLCV."
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-09-01",
+  "as_of": "2026-09-05",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,30 +25,30 @@
   },
   "pathways": [
     {
-      "family": "rates",
-      "driver": "fed_repricing",
+      "family": "inflation",
+      "driver": "oil_shock",
       "pathway_role": "primary",
-      "as_of": "2026-09-01",
-      "direction_en": "hawkish repricing — cuts priced out, front-end up",
-      "direction_zh": "鹰派重定价 — 计入更少降息、前端利率上行",
+      "as_of": "2026-09-05",
+      "direction_en": "oil spiking — energy leads, breakevens up",
+      "direction_zh": "油价飙升 — 能源领涨、盈亏平衡上行",
       "confidence_ceiling": "context_only",
       "coverage_score": 1.0,
       "coherence": "supported",
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_fed_repricing",
-          "as_of": "2026-09-01",
+          "node_id": "driver_oil_shock",
+          "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "fed_repricing",
+          "entity": "oil_shock",
           "observation": {
-            "en": "hawkish repricing — cuts priced out, front-end up",
-            "zh": "鹰派重定价 — 计入更少降息、前端利率上行"
+            "en": "oil spiking — energy leads, breakevens up",
+            "zh": "油价飙升 — 能源领涨、盈亏平衡上行"
           },
           "direction": 1,
-          "value": 0.98,
-          "z_or_percentile": 1.36,
+          "value": 0.81,
+          "z_or_percentile": 1.41,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -57,18 +57,18 @@
           ]
         },
         {
-          "node_id": "leg_fed_repricing_0",
-          "as_of": "2026-09-01",
+          "node_id": "leg_oil_shock_0",
+          "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "fed-funds futures",
+          "entity": "oil (WTI)",
           "observation": {
-            "en": "fed-funds futures (+4.0σ)",
-            "zh": "联邦基金期货 (+4.0σ)"
+            "en": "oil (WTI) (+1.0σ)",
+            "zh": "原油(WTI) (+1.0σ)"
           },
           "direction": "positive",
-          "value": 4.0,
-          "z_or_percentile": 4.0,
+          "value": 1.0,
+          "z_or_percentile": 1.0,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -77,14 +77,14 @@
           ]
         },
         {
-          "node_id": "leg_fed_repricing_1",
-          "as_of": "2026-09-01",
+          "node_id": "leg_oil_shock_1",
+          "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "2y yield",
+          "entity": "10y breakeven",
           "observation": {
-            "en": "2y yield (+1.1σ)",
-            "zh": "2年期收益率 (+1.1σ)"
+            "en": "10y breakeven (+1.1σ)",
+            "zh": "10年盈亏平衡通胀 (+1.1σ)"
           },
           "direction": "positive",
           "value": 1.1,
@@ -97,30 +97,90 @@
           ]
         },
         {
-          "node_id": "leg_fed_repricing_2",
-          "as_of": "2026-09-01",
+          "node_id": "leg_oil_shock_2",
+          "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "rate-path (2y−FF)",
+          "entity": "energy sector RS",
           "observation": {
-            "en": "rate-path (2y−FF) (+0.7σ)",
-            "zh": "利率路径(2年−联邦基金) (+0.7σ)"
+            "en": "energy sector RS (+0.4σ)",
+            "zh": "能源板块相对强度 (+0.4σ)"
           },
           "direction": "positive",
-          "value": 0.7,
-          "z_or_percentile": 0.7,
+          "value": 0.4,
+          "z_or_percentile": 0.4,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
           "evidence_refs": [
             "market_drivers.evidence_legs[2]"
           ]
+        },
+        {
+          "node_id": "transmission_sticky_inflation_order1",
+          "as_of": "2026-09-05",
+          "domain": "transmission",
+          "source_artifact": "data/transmission/latest.json",
+          "entity": "transmission channel",
+          "observation": {
+            "en": "Core PCE/CPI stuck above the 2% target → the market reprices the terminal rate higher (breakevens, policy path) → broad equities carry a valuation headwind.",
+            "zh": "核心PCE/CPI高于2%目标→市场上修终端利率（盈亏平衡、政策路径）→大盘股估值承压。"
+          },
+          "direction": "",
+          "value": null,
+          "z_or_percentile": null,
+          "source_tier": "context_only",
+          "lag_class": "same_day",
+          "pathway_role": "transmission_order_1",
+          "evidence_refs": [
+            "transmission.chains.sticky_inflation.order1"
+          ]
+        },
+        {
+          "node_id": "transmission_sticky_inflation_order2",
+          "as_of": "2026-09-05",
+          "domain": "transmission",
+          "source_artifact": "data/transmission/latest.json",
+          "entity": "transmission channel",
+          "observation": {
+            "en": "Higher-for-longer keeps real yields elevated → small caps and rate-sensitive borrowers are squeezed by financing cost.",
+            "zh": "更高更久使实际收益率维持高位→小盘股与利率敏感借款方被融资成本挤压。"
+          },
+          "direction": "",
+          "value": null,
+          "z_or_percentile": null,
+          "source_tier": "context_only",
+          "lag_class": "days_1_5",
+          "pathway_role": "transmission_order_2",
+          "evidence_refs": [
+            "transmission.chains.sticky_inflation.order2"
+          ]
+        },
+        {
+          "node_id": "transmission_sticky_inflation_order3",
+          "as_of": "2026-09-05",
+          "domain": "transmission",
+          "source_artifact": "data/transmission/latest.json",
+          "entity": "transmission channel",
+          "observation": {
+            "en": "PPI / ECI wage pressure compresses margins → defensives (staples, health care) relatively outperform.",
+            "zh": "PPI／就业成本（ECI）工资压力压缩利润率→防御板块（必需消费、医疗）相对跑赢。"
+          },
+          "direction": "",
+          "value": null,
+          "z_or_percentile": null,
+          "source_tier": "context_only",
+          "lag_class": "weeks_1_4",
+          "pathway_role": "transmission_order_3",
+          "evidence_refs": [
+            "transmission.chains.sticky_inflation.order3"
+          ]
         }
       ],
       "edges": [
         {
-          "src_node": "driver_fed_repricing",
-          "dst_node": "leg_fed_repricing_0",
+          "src_node": "driver_oil_shock",
+          "dst_node": "leg_oil_shock_0",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
           "expected_sign": "positive",
@@ -131,8 +191,8 @@
           ]
         },
         {
-          "src_node": "driver_fed_repricing",
-          "dst_node": "leg_fed_repricing_1",
+          "src_node": "driver_oil_shock",
+          "dst_node": "leg_oil_shock_1",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
           "expected_sign": "positive",
@@ -143,8 +203,8 @@
           ]
         },
         {
-          "src_node": "driver_fed_repricing",
-          "dst_node": "leg_fed_repricing_2",
+          "src_node": "driver_oil_shock",
+          "dst_node": "leg_oil_shock_2",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
           "expected_sign": "positive",
@@ -153,15 +213,51 @@
           "evidence_refs": [
             "market_drivers.evidence_legs[2]"
           ]
+        },
+        {
+          "src_node": "driver_oil_shock",
+          "dst_node": "transmission_sticky_inflation_order1",
+          "mechanism_type": "transmission_channel",
+          "expected_lag": "same_day",
+          "expected_sign": "",
+          "observed_sign": null,
+          "status": "measured",
+          "evidence_refs": [
+            "transmission.chains.sticky_inflation.order1"
+          ]
+        },
+        {
+          "src_node": "transmission_sticky_inflation_order1",
+          "dst_node": "transmission_sticky_inflation_order2",
+          "mechanism_type": "transmission_channel",
+          "expected_lag": "days_1_5",
+          "expected_sign": "",
+          "observed_sign": null,
+          "status": "measured",
+          "evidence_refs": [
+            "transmission.chains.sticky_inflation.order2"
+          ]
+        },
+        {
+          "src_node": "transmission_sticky_inflation_order2",
+          "dst_node": "transmission_sticky_inflation_order3",
+          "mechanism_type": "transmission_channel",
+          "expected_lag": "weeks_1_4",
+          "expected_sign": "",
+          "observed_sign": null,
+          "status": "measured",
+          "evidence_refs": [
+            "transmission.chains.sticky_inflation.order3"
+          ]
         }
       ]
     },
     {
-      "family": "equity-leadership",
-      "driver": "ai_semis",
+      "family": "rates",
+      "driver": "fed_repricing",
       "pathway_role": "alternate",
-      "as_of": "2026-09-01",
-      "direction_en": "AI/semis leadership — narrow tech-led tape",
+      "as_of": "2026-09-05",
+      "direction_en": "hawkish repricing — cuts priced out, front-end up",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -169,17 +265,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_ai_semis",
-          "as_of": "2026-09-01",
+          "node_id": "driver_fed_repricing",
+          "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "ai_semis",
+          "entity": "fed_repricing",
           "observation": {
-            "en": "AI/semis leadership — narrow tech-led tape",
+            "en": "hawkish repricing — cuts priced out, front-end up",
             "zh": ""
           },
           "direction": "",
-          "value": 0.72,
+          "value": 0.57,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -193,11 +289,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "china",
-      "driver": "china_stimulus",
+      "family": "fx",
+      "driver": "usd_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-09-01",
-      "direction_en": "China risk-on — A-shares/HK & copper lead up",
+      "as_of": "2026-09-05",
+      "direction_en": "dollar falling — risk tailwind, commodities & EM bid",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -205,17 +301,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_china_stimulus",
-          "as_of": "2026-09-01",
+          "node_id": "driver_usd_shock",
+          "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "china_stimulus",
+          "entity": "usd_shock",
           "observation": {
-            "en": "China risk-on — A-shares/HK & copper lead up",
+            "en": "dollar falling — risk tailwind, commodities & EM bid",
             "zh": ""
           },
           "direction": "",
-          "value": 0.51,
+          "value": 0.38,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

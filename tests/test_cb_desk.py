@@ -19,6 +19,9 @@ Coverage:
   13. irdr7_note_present          — irdr7_note key with IRD-R7 text present
   14. determinism                 — two calls identical
   15. stale_flagged               — old series (>12 days old) → stale=True
+  16. bs unit/magnitude consistency — published level is normalized into the
+      published bs_unit via bs_unit_mult (2026-09-04 units-defect regression:
+      raw FRED-native levels were published under billions/trillions labels)
 """
 from __future__ import annotations
 
@@ -454,3 +457,100 @@ class TestDeterminism:
             assert cb1["id"] == cb2["id"]
             assert cb1["policy_rate"] == cb2["policy_rate"]
             assert cb1["trend_3m"] == cb2["trend_3m"]
+
+
+class TestBSUnitMagnitudeConsistency:
+    """Regression for the 2026-09-04 units defect.
+
+    cb_desk used to publish raw FRED-native levels under wrong unit labels:
+    WALCL (native MILLIONS of USD, ~6,737,204) as "USD billions";
+    ECBASSETSW (native MILLIONS of EUR) as "EUR billions";
+    JPNASSETS (native 100-MILLION JPY) as "JPY trillions" (off by 10^4).
+    The fix wires the specs' bs_unit_mult so the published level is in the
+    published bs_unit. These tests run the REAL _CB_SPECS entries against
+    synthetic series at the verified FRED-native magnitudes.
+    """
+
+    # (series, FRED-native last obs as verified in the parquet store
+    #  2026-09-04, expected published unit, expected published level)
+    _NATIVE = {
+        "FED": ("WALCL", 6_737_204.0, "USD billions", 6_737.2),
+        "ECB": ("ECBASSETSW", 5_915_343.0, "EUR billions", 5_915.3),
+        "BOJ": ("JPNASSETS", 6_446_620.0, "JPY billions", 644_662.0),
+    }
+
+    @staticmethod
+    def _native_series(last_value: float, n: int = 120) -> pd.DataFrame:
+        idx = pd.bdate_range("2024-01-05", periods=n)
+        return pd.DataFrame({"v": np.linspace(last_value * 0.95, last_value, n)},
+                            index=idx)
+
+    @staticmethod
+    def _real_spec(cb_id: str) -> dict:
+        from engine.cb_desk import _CB_SPECS
+        return next(s for s in _CB_SPECS if s["id"] == cb_id)
+
+    @pytest.mark.parametrize("cb_id", ["FED", "ECB", "BOJ"])
+    def test_level_published_in_labeled_unit(self, cb_id):
+        """FRED-native magnitude in → level comes out in the labeled unit."""
+        series, native_last, want_unit, want_level = self._NATIVE[cb_id]
+        spec = self._real_spec(cb_id)
+        df = self._native_series(native_last)
+        gaps: list = []
+        with patch("engine.cb_desk.store.read",
+                   _make_store({("fred", series): df})):
+            bs = _bs_impulse(spec, gaps)
+        assert bs is not None
+        assert bs["unit"] == want_unit
+        assert bs["level"] == pytest.approx(want_level, abs=0.11)
+
+    @pytest.mark.parametrize("cb_id", ["FED", "ECB", "BOJ"])
+    def test_billions_label_magnitude_plausible(self, cb_id):
+        """A level labeled 'billions' must be plausible at that scale.
+
+        Raw FRED-native magnitudes are 10^3–10^4 too large for the label;
+        if bs_unit_mult is ever dropped or mis-set, this trips.
+        (Caps: no G-SIFI balance sheet exceeds $50T/€50T or ¥2,000T.)
+        """
+        series, native_last, _, _ = self._NATIVE[cb_id]
+        spec = self._real_spec(cb_id)
+        df = self._native_series(native_last)
+        with patch("engine.cb_desk.store.read",
+                   _make_store({("fred", series): df})):
+            bs = _bs_impulse(spec, [])
+        assert bs is not None
+        assert "billion" in (bs["unit"] or "").lower(), (
+            f"{cb_id}: bs_unit {bs['unit']!r} no longer labeled in billions")
+        cap = 2_000_000.0 if "JPY" in bs["unit"] else 50_000.0
+        assert abs(bs["level"]) <= cap, (
+            f"{cb_id}: level {bs['level']:g} implausible for unit {bs['unit']!r} "
+            "— raw store magnitude leaking through (units-defect regression)")
+
+    def test_every_configured_bs_series_declares_unit_and_mult(self):
+        """Spec contract: any CB with a bs_series must declare a billions
+        bs_unit and an explicit bs_unit_mult (no implicit ×1 pass-through)."""
+        from engine.cb_desk import _CB_SPECS
+        for spec in _CB_SPECS:
+            if not spec.get("bs_series"):
+                continue
+            assert spec.get("bs_unit"), f"{spec['id']}: bs_unit missing"
+            assert "billion" in spec["bs_unit"].lower(), (
+                f"{spec['id']}: bs_unit {spec['bs_unit']!r} not in billions")
+            assert spec.get("bs_unit_mult"), (
+                f"{spec['id']}: bs_unit_mult missing — raw FRED level would "
+                "be published under a billions label")
+
+    def test_impulses_scale_invariant(self):
+        """bs_unit_mult must rescale the level ONLY — %-change impulses are
+        identical whatever the multiplier."""
+        series, native_last, _, _ = self._NATIVE["FED"]
+        spec_scaled = self._real_spec("FED")
+        spec_raw = {**spec_scaled, "bs_unit_mult": 1.0}
+        df = self._native_series(native_last)
+        store_map = {("fred", series): df}
+        with patch("engine.cb_desk.store.read", _make_store(store_map)):
+            bs_scaled = _bs_impulse(spec_scaled, [])
+            bs_raw = _bs_impulse(spec_raw, [])
+        assert bs_scaled["impulse_13w"] == bs_raw["impulse_13w"]
+        assert bs_scaled["impulse_52w"] == bs_raw["impulse_52w"]
+        assert bs_scaled["level"] == pytest.approx(bs_raw["level"] * 1e-3, abs=0.11)

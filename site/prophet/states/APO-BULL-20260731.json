@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "APO-BULL-20260731",
-  "asof": "2026-08-31",
+  "asof": "2026-09-04",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 54.7,
-  "raw_confidence": 55.5,
-  "delta_vs_base": -5.3,
+  "management_confidence": 51.0,
+  "raw_confidence": 50.9,
+  "delta_vs_base": -9.0,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 22.5,
-    "pace": 28.9,
+    "progress": 16.9,
+    "pace": 19.0,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.344,
-    "dist_to_t1_r": 1.156,
-    "dist_to_t2_r": 2.656,
-    "horizon_pct_used": 53.3,
-    "p1": 0.2295,
-    "p2": 0.1147,
+    "dist_to_stop_r": 1.234,
+    "dist_to_t1_r": 1.266,
+    "dist_to_t2_r": 2.766,
+    "horizon_pct_used": 62.2,
+    "p1": 0.1557,
+    "p2": 0.0779,
     "p3": null,
-    "move_r": 0.344,
+    "move_r": 0.234,
     "mfe_r": 0.607,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 24,
-  "tau": 0.5333
+  "days_elapsed": 28,
+  "tau": 0.6222
 }

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-08-31",
+  "asof": "2026-09-03",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -23,18 +23,18 @@
     "summary": "Net liquidity is neutral but RRP exhausted or composition is mechanical — buffer is hollow; net-neutral read with limited downside cushion. RRP buffer is empty — the next liquidity drain hits bank reserves directly."
   },
   "fed": {
-    "assets_bn": 6730.912,
-    "assets_chg_20d_bn": -7.278,
-    "reserve_balances_bn": 2924.936,
-    "walcl_stale_days": 3,
+    "assets_bn": 6737.204,
+    "assets_chg_20d_bn": -11.363,
+    "reserve_balances_bn": 2894.531,
+    "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-08-31"
+    "asof": "2026-09-03"
   },
   "treasury": {
-    "tga_bn": 971.343,
-    "tga_chg_20d_bn": 94.777,
-    "net_issuance_20d_bn": 298.754,
+    "tga_bn": 944.364,
+    "tga_chg_20d_bn": 15.039,
+    "net_issuance_20d_bn": 321.551,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
@@ -47,81 +47,69 @@
       "summary_en": "No TGA impulse detected.",
       "summary_zh": "未检测到TGA冲量。"
     },
-    "asof": "2026-08-28"
+    "asof": "2026-09-02"
   },
   "rrp": {
-    "rrp_bn": 6.726,
-    "rrp_chg_20d_bn": 4.599,
+    "rrp_bn": 0.702,
+    "rrp_chg_20d_bn": -0.727,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5752.843,
-    "netliq_chg_20d_bn": -113.137,
-    "netliq_chg_65d_bn": -35.982,
-    "netliq_pctile_expanding": 0.757291,
+    "netliq_bn": 5792.138,
+    "netliq_chg_20d_bn": 6.726,
+    "netliq_chg_65d_bn": -71.573,
+    "netliq_pctile_expanding": 0.770522,
     "overlay": "neutral"
   },
   "quality": {
     "label": "neutral-hollow",
-    "fed_share": 0.36,
+    "fed_share": 0.27,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.6,
-      "hy_oas_z": -0.86,
-      "nfci": -0.566,
+      "hy_oas_pct": 2.65,
+      "hy_oas_z": -0.2,
+      "nfci": -0.558,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 3
+    "walcl_stale_days": 2
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.9138,
-    "sofr_minus_iorb_bp": 0.0,
-    "sofr_minus_iorb_d20_bp": -1.0,
-    "sofr_minus_iorb_pctile": 0.9102,
+    "effr_minus_iorb_pctile": 0.9141,
+    "sofr_minus_iorb_bp": 1.0,
+    "sofr_minus_iorb_d20_bp": 1.0,
+    "sofr_minus_iorb_pctile": 0.9348,
     "sofr_99pctl_minus_iorb_bp": 8.0,
-    "sofr_99pctl_minus_iorb_d20_bp": -2.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.8525,
+    "sofr_99pctl_minus_iorb_d20_bp": 0.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8513,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
-    "asof": "2026-08-28"
+    "asof": "2026-09-03"
   },
   "components": {
     "walcl": {
-      "level_bn": 6730.9,
-      "d20_bn": -7.3,
-      "d65_bn": 26.5,
-      "pctile": 0.7652
+      "level_bn": 6737.2,
+      "d20_bn": -11.4,
+      "d65_bn": 25.7,
+      "pctile": 0.7679
     },
     "rrp": {
-      "level_bn": 6.7,
-      "d20_bn": 4.6,
-      "d65_bn": -5.0,
-      "pctile": 0.5018
+      "level_bn": 0.7,
+      "d20_bn": -0.7,
+      "d65_bn": -1.4,
+      "pctile": 0.1657
     },
     "tga": {
-      "level_bn": 971.3,
-      "d20_bn": 101.3,
-      "d65_bn": 67.5,
-      "pctile": 0.9509
+      "level_bn": 944.4,
+      "d20_bn": -17.4,
+      "d65_bn": 98.6,
+      "pctile": 0.9417
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-06-02",
-        "v": 5835.8
-      },
-      {
-        "d": "2026-06-03",
-        "v": 5863.7
-      },
-      {
-        "d": "2026-06-04",
-        "v": 5865.9
-      },
       {
         "d": "2026-06-05",
         "v": 5885.2
@@ -364,23 +352,35 @@
       },
       {
         "d": "2026-08-31",
-        "v": 5752.8
+        "v": 5700.6
+      },
+      {
+        "d": "2026-09-01",
+        "v": 5787.4
+      },
+      {
+        "d": "2026-09-02",
+        "v": 5792.3
+      },
+      {
+        "d": "2026-09-03",
+        "v": 5792.1
       }
     ],
     "reserves": {
-      "level_bn": 2924.9,
-      "d20_bn": -191.3,
-      "d65_bn": -345.7,
-      "pctile": 0.7559
+      "level_bn": 2894.5,
+      "d20_bn": -235.1,
+      "d65_bn": -399.8,
+      "pctile": 0.7504
     }
   },
   "foreign_dollar": {
-    "swap_lines_bn": 0.121,
-    "facility_loans_bn": 4.962,
+    "swap_lines_bn": 0.132,
+    "facility_loans_bn": 5.355,
     "fima_repo_bn": null,
     "state": "quiescent",
     "note": "IRD-R5: swap-line levels are confirmation tier — they grade severity after price signals fire, never trigger alerts. FIMA repo: no free per-facility breakout; aggregate rides H.4.1 repo line.",
-    "asof": "2026-08-26"
+    "asof": "2026-09-02"
   },
   "entry_effect": {
     "direction": "neutral",
@@ -394,7 +394,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-09-01T06:57:06Z",
-  "inputs_hash": "sha256:69a666e629d467c9d72c856ba494212f113dd1956eeb9ae3eba30fb2277f6adc",
+  "produced_at": "2026-09-05T03:13:18Z",
+  "inputs_hash": "sha256:b280524ba686b295aa7c99585bfc0618b94a239a21b848940cb8f188a3457686",
   "tier": "shadow"
 }

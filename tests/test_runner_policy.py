@@ -4,6 +4,7 @@ import copy
 import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -845,3 +846,29 @@ def test_r14_refuses_a_bool_or_float_pending_slot_count(tmp_path: Path) -> None:
         result = run_guard(root, registry, workflows)
         assert result.returncode == 1, f"{value!r} must be refused"
         assert "R14" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        [],
+        ["self-hosted", "Linux"],
+        ["self-hosted", "Linux", "X64", "X64"],
+        ["self-hosted", "Linux", 7],
+        [["self-hosted"], "Linux", "X64"],
+        {"self-hosted": True},
+        "self-hosted,Linux,X64",
+    ],
+)
+def test_r14_requires_the_exact_pending_platform_label_list_without_traceback(
+    tmp_path: Path, labels: object
+) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["pool_topology"]["pc-ci"].__setitem__("pending_labels", labels),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+    assert "Traceback" not in result.stderr

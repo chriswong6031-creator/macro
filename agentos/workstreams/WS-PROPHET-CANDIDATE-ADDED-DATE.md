@@ -9,7 +9,7 @@ objective: >
   the history cannot prove is null, never fabricated), page-level "Data through"
   freshness preserved on every market, and the three clocks (board freshness, candidate
   tenure, plan/signal vintage) permanently separated.
-status: active
+status: done
 program: prophet
 repos: [macro]
 owner: fable
@@ -29,11 +29,16 @@ waves:
     status: done
   - id: W2
     title: "Nightly persistence receipt (US dates retained; CN floor row appears)"
-    status: in_progress
+    status: done
+  - id: W3
+    title: "Chairman-directed follow-up: CN/HK/CA dates lit + fold-not-truncate chip (#6752)"
+    status: done
 next_action: >
-  Confirm the nightly-persistence receipt (US live cards retain Added dates after the
-  next daily run; CN fossil gains its first more_actionable row), then flip status to
-  done. HK/CA coverage extension remains a separate unauthorized follow-up.
+  Program complete (live receipts 2026-09-02: US 3 chips persisting 2026-08-31; CN 24
+  chips over 4 dates; HK 4 over 3; CA 10 over 5; Intl null pending upstream as_of).
+  Remaining accruals are self-serve: CN's first more_actionable fossil row (self-heal
+  floor) and the optional rank-authority-safe HK/CA ledger coverage extension, each
+  needing its own authorization if pursued.
 decisions:
   - DEC:SOL-HOLD-IS-A-MERGE-BARRIER
 landmines:
@@ -47,12 +52,15 @@ landmines:
     name-visible lane (US buy+watch+leaders+laggards+ran; HK/CA
     entry_open+setting_up+watch; CN live-definition rows); the chip renders only on
     pv_card surfaces. A lane the page shows but the fossil does not persist makes
-    absence-proofs UNSOUND there — that is the coverage-floor law
-    (DSC:PROPHET-BOARD-TENURE-COVERAGE-FLOOR), and why HK and CA ship null pending a
-    rank-authority-safe ledger coverage extension (a follow-up program that needs its
-    own authorization; HK leaders/laggards and CA laggards are name-visible but
-    unfossiled, and persisting display-tier lanes into board_ledger is documented to
-    corrupt Spearman rank-IC grading)."
+    absence-proofs UNSOUND there — the coverage-floor law
+    (DSC:PROPHET-BOARD-TENURE-COVERAGE-FLOOR). Floor GATING is OFF by
+    Chairman-directed acceptance (2026-09-02, #6752): CN/HK/CA mint dates from
+    canonical-fossil streaks with the bounded demote-return limitation disclosed
+    (too-recent date possible, understatement only; CN self-heals via forward
+    more_actionable persistence; HK leaders/laggards and CA laggards remain
+    unfossiled because persisting display-tier lanes into board_ledger is documented
+    to corrupt Spearman rank-IC grading — a rank-authority-safe extension is a
+    separately authorized follow-up)."
   - "CN persists more_actionable rows under a distinct <definition>_more_actionable
     board_definition, appended ONLY when the same build has a non-empty featured set
     (scripts/build_china_library.py guard) — otherwise a zero-featured night lets the

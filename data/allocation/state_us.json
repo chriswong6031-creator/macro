@@ -3,11 +3,13 @@
   "crash": false,
   "eligible": [
     "ai_infra",
+    "ai_neoclouds",
     "ai_semiconductors",
     "ai_software",
     "big_pharma",
     "crypto",
     "cybersecurity",
+    "data_center_power",
     "defensives",
     "energy_complex",
     "gold_miners",
@@ -18,13 +20,11 @@
     "memory_storage",
     "non_ai_tech",
     "obesity_glp1",
-    "quantum_computing",
     "regional_banks",
     "reshoring",
     "robotics_automation",
     "semicap_equipment",
     "silver_miners",
-    "travel",
     "us_sector_energy",
     "us_sector_financials",
     "us_sector_health",
@@ -38,7 +38,7 @@
     "memory_storage",
     "silver_miners",
     "ai_infra",
-    "cybersecurity"
+    "big_pharma"
   ],
   "leader": "memory_storage",
   "names": {

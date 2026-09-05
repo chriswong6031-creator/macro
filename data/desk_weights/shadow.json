@@ -1,19 +1,19 @@
 {
   "schema": "desk_weights.shadow.v1",
-  "as_of": "2026-08-31",
+  "as_of": "2026-09-04",
   "armed": false,
   "arming": {
     "armed": false,
-    "n_eff": 328.0,
+    "n_eff": 358.0,
     "need_n": 12.0,
     "pooled_beats_equal": true,
-    "heldout_edge_pooled": -0.05302,
-    "heldout_edge_equal": -0.05316,
-    "margin": 0.000143,
-    "margin_required": 0.002205,
-    "heldout_n": 90.0,
+    "heldout_edge_pooled": -0.04698,
+    "heldout_edge_equal": -0.04717,
+    "margin": 0.00019,
+    "margin_required": 0.001967,
+    "heldout_n": 96.0,
     "need_heldout_n": 8.0,
-    "reason": "held: pooled loses out-of-sample (-0.05302) \u2014 losing less than equal-weight (-0.05316) is not an edge"
+    "reason": "held: pooled loses out-of-sample (-0.04698) \u2014 losing less than equal-weight (-0.04717) is not an edge"
   },
   "equal_weight": {
     "ai_desk": 0.1429,
@@ -25,13 +25,13 @@
     "thematic_desk": 0.1429
   },
   "shadow_weights": {
-    "ai_desk": 0.1496,
-    "policy_intent": 0.1484,
-    "radar": 0.143,
-    "stock_desk": 0.1391,
-    "demand_chain": 0.143,
-    "narrative_brain": 0.143,
-    "thematic_desk": 0.1339
+    "ai_desk": 0.1478,
+    "policy_intent": 0.1467,
+    "radar": 0.1421,
+    "stock_desk": 0.137,
+    "demand_chain": 0.1421,
+    "narrative_brain": 0.1505,
+    "thematic_desk": 0.1337
   },
   "live_weights": {
     "ai_desk": 0.1429,
@@ -42,15 +42,15 @@
     "narrative_brain": 0.1429,
     "thematic_desk": 0.1429
   },
-  "divergence_l1": 0.0255,
+  "divergence_l1": 0.0329,
   "per_desk": {
     "ai_desk": {
       "n": 51,
       "mean_signed": -0.0156,
       "reliability": 0.8644,
-      "pooled_edge": -0.02027,
+      "pooled_edge": -0.01944,
       "equal_w": 0.1429,
-      "shadow_w": 0.1496,
+      "shadow_w": 0.1478,
       "live_w": 0.1429,
       "wrong_sign": true
     },
@@ -58,9 +58,9 @@
       "n": 4,
       "mean_signed": -0.04927,
       "reliability": 0.3333,
-      "pooled_edge": -0.02203,
+      "pooled_edge": -0.02121,
       "equal_w": 0.1429,
-      "shadow_w": 0.1484,
+      "shadow_w": 0.1467,
       "live_w": 0.1429,
       "wrong_sign": true
     },
@@ -68,19 +68,19 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.03045,
+      "pooled_edge": -0.02838,
       "equal_w": 0.1429,
-      "shadow_w": 0.143,
+      "shadow_w": 0.1421,
       "live_w": 0.1429,
       "wrong_sign": false
     },
     "stock_desk": {
-      "n": 161,
-      "mean_signed": -0.04262,
-      "reliability": 0.9527,
-      "pooled_edge": -0.03654,
+      "n": 168,
+      "mean_signed": -0.04385,
+      "reliability": 0.9545,
+      "pooled_edge": -0.03647,
       "equal_w": 0.1429,
-      "shadow_w": 0.1391,
+      "shadow_w": 0.137,
       "live_w": 0.1429,
       "wrong_sign": true
     },
@@ -88,32 +88,32 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.03045,
+      "pooled_edge": -0.02838,
       "equal_w": 0.1429,
-      "shadow_w": 0.143,
+      "shadow_w": 0.1421,
       "live_w": 0.1429,
       "wrong_sign": false
     },
     "narrative_brain": {
-      "n": 0,
-      "mean_signed": 0.0,
-      "reliability": 0.0,
-      "pooled_edge": -0.03045,
+      "n": 6,
+      "mean_signed": -0.01482,
+      "reliability": 0.4286,
+      "pooled_edge": -0.01516,
       "equal_w": 0.1429,
-      "shadow_w": 0.143,
+      "shadow_w": 0.1505,
       "live_w": 0.1429,
-      "wrong_sign": false
+      "wrong_sign": true
     },
     "thematic_desk": {
-      "n": 161,
-      "mean_signed": -0.05713,
-      "reliability": 0.9527,
-      "pooled_edge": -0.04484,
+      "n": 183,
+      "mean_signed": -0.05293,
+      "reliability": 0.9581,
+      "pooled_edge": -0.04178,
       "equal_w": 0.1429,
-      "shadow_w": 0.1339,
+      "shadow_w": 0.1337,
       "live_w": 0.1429,
       "wrong_sign": true
     }
   },
-  "note": "SHADOW \u2014 live weights held at equal-weight (held: pooled loses out-of-sample (-0.05302) \u2014 losing less than equal-weight (-0.05316) is not an edge)."
+  "note": "SHADOW \u2014 live weights held at equal-weight (held: pooled loses out-of-sample (-0.04698) \u2014 losing less than equal-weight (-0.04717) is not an edge)."
 }

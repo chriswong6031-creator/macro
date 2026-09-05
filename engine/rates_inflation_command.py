@@ -1231,6 +1231,15 @@ def build_board(root=None) -> dict:
     tx_asof = tx.get("asof") or ""
     if not tx:
         caveats.append("transmission/latest.json absent — many legs will be null")
+    yield_momentum = tx.get("yield_momentum") if isinstance(tx.get("yield_momentum"), dict) else {
+        "schema": "yield_momentum.v1",
+        "display_only": True,
+        "authority": False,
+        "can_score": False,
+        "can_size": False,
+        "can_trade": False,
+        "series": {},
+    }
 
     # zq_path.parquet -> H1 d20
     zq_d20_bp: float | None = None
@@ -1410,6 +1419,7 @@ def build_board(root=None) -> dict:
         "divergence": divergence,
         "conditions": conditions,
         "market_check": market_check,
+        "yield_momentum": yield_momentum,
         "caveats": caveats,
     }
 

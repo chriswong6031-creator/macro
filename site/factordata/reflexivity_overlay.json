@@ -1,54 +1,450 @@
 {
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
-  "as_of": "2026-08-31",
-  "generated_utc": "2026-09-02T00:32:01Z",
+  "as_of": "2026-09-04",
+  "generated_utc": "2026-09-05T01:37:57Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 2,
-    "n_eff": 2.0,
+    "n": 9,
+    "n_eff": 2.56,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 2 candidates \u2248 2.0 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 2.56 independent bets."
   },
-  "same_thesis_groups": [],
-  "earnings_coverage_frac": 0.0,
-  "by_ticker": {
-    "DG": {
-      "verdict": "new",
-      "max_similarity": 0.0,
-      "basis": "membership-only:r2=0.12<0.2",
-      "nearest": [
-        {
-          "ticker": "PI",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.12<0.2",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
+  "same_thesis_groups": [
+    {
+      "members": [
+        "AEO",
+        "BAC",
+        "CFR",
+        "DORM",
+        "F",
+        "FBP",
+        "HCI",
+        "SMP"
       ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer PI at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 PI\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
-    },
-    "PI": {
-      "verdict": "new",
-      "max_similarity": 0.0,
+      "size": 8,
+      "basis": "membership-jaccard",
+      "label": "Consumer Discretionary"
+    }
+  ],
+  "earnings_coverage_frac": 0.667,
+  "by_ticker": {
+    "F": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9134,
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "DG",
+          "ticker": "SMP",
+          "combined": 0.9134,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9134,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "DORM",
+          "combined": 0.9087,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9087,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "BAC",
+          "combined": 0.768,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.768,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-10-22",
+        "same_week_peers": [
+          "FBP"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as SMP \u2014 Consumer Discretionary (similarity 91%).",
+      "why_zh": "\u4e0e SMP \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 91%\uff09\u3002"
+    },
+    "SMP": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "DORM",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9801,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "F",
+          "combined": 0.9134,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9134,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as AEO \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e AEO \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "AEO": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.17<0.2",
+      "nearest": [
+        {
+          "ticker": "SMP",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "DORM",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "F",
+          "combined": 0.5,
+          "membership_jaccard": 0.5,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-09-09",
+        "same_week_peers": [],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as SMP \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e SMP \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "HCI": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.12<0.2",
+      "nearest": [
+        {
+          "ticker": "FBP",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.12<0.2",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "BAC",
+          "combined": 0.5,
+          "membership_jaccard": 0.5,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.12<0.2",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "CFR",
+          "combined": 0.5,
+          "membership_jaccard": 0.5,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.12<0.2",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as FBP \u2014 Financials (similarity 100%).",
+      "why_zh": "\u4e0e FBP \u62bc\u6ce8\u76f8\u540c \u2014 Financials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "BAC": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9314,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "FBP",
+          "combined": 0.9314,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9314,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "CFR",
+          "combined": 0.9263,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": 0.9263,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "F",
+          "combined": 0.768,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.768,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-10-14",
+        "same_week_peers": [],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as FBP \u2014 Financials (similarity 93%).",
+      "why_zh": "\u4e0e FBP \u62bc\u6ce8\u76f8\u540c \u2014 Financials\uff08\u76f8\u4f3c\u5ea6 93%\uff09\u3002"
+    },
+    "DORM": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "SMP",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9801,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "F",
+          "combined": 0.9087,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9087,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-10-26",
+        "same_week_peers": [
+          "CFR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as SMP \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e SMP \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "CFR": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9854,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "FBP",
+          "combined": 0.9854,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9854,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "BAC",
+          "combined": 0.9263,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": 0.9263,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "SMP",
+          "combined": 0.8343,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8343,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-10-29",
+        "same_week_peers": [
+          "DORM"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as FBP \u2014 Financials (similarity 99%).",
+      "why_zh": "\u4e0e FBP \u62bc\u6ce8\u76f8\u540c \u2014 Financials\uff08\u76f8\u4f3c\u5ea6 99%\uff09\u3002"
+    },
+    "FBP": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "HCI",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.12<0.2",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "CFR",
+          "combined": 0.9854,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9854,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "BAC",
+          "combined": 0.9314,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9314,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Financials"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-10-22",
+        "same_week_peers": [
+          "F"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as HCI \u2014 Financials (similarity 100%).",
+      "why_zh": "\u4e0e HCI \u62bc\u6ce8\u76f8\u540c \u2014 Financials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "ARLO": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.16<0.2",
+      "nearest": [
+        {
+          "ticker": "F",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.12<0.2",
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "SMP",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "AEO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
           "shared_groups": [],
           "same_earnings_week": null
         }
@@ -59,16 +455,285 @@
         "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer DG at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 DG\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer F at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 F\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     }
   },
   "pair_basis": {
-    "DG__PI": {
+    "F__SMP": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.9134,
+      "combined": 0.9134,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "F__AEO": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "F__HCI": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": []
+    },
+    "F__BAC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.768,
+      "combined": 0.768,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "F__DORM": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.9087,
+      "combined": 0.9087,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "F__CFR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7063,
+      "combined": 0.7063,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "F__FBP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.735,
+      "combined": 0.735,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "F__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "SMP__AEO": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "SMP__HCI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": []
+    },
+    "SMP__BAC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7498,
+      "combined": 0.7498,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SMP__DORM": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9801,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "SMP__CFR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8343,
+      "combined": 0.8343,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SMP__FBP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8206,
+      "combined": 0.8206,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SMP__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "AEO__HCI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "AEO__BAC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "AEO__DORM": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "AEO__CFR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "AEO__FBP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "AEO__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "HCI__BAC": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "HCI__DORM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": []
+    },
+    "HCI__CFR": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "HCI__FBP": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "HCI__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.12<0.2",
+      "shared_groups": []
+    },
+    "BAC__DORM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7621,
+      "combined": 0.7621,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "BAC__CFR": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": 0.9263,
+      "combined": 0.9263,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "BAC__FBP": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.9314,
+      "combined": 0.9314,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "BAC__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "DORM__CFR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8088,
+      "combined": 0.8088,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "DORM__FBP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.772,
+      "combined": 0.772,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "DORM__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "CFR__FBP": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.9854,
+      "combined": 0.9854,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "CFR__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "FBP__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     }
   },
@@ -80,8 +745,8 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": null,
-    "setting_up": 2.0
+    "entry_open": 2.1,
+    "setting_up": 1.8
   },
   "source_passport": {
     "factor_betas": {
@@ -92,7 +757,7 @@
     "us_standouts_v2": {
       "path": "site/factordata/us_standouts_v2.json",
       "found": true,
-      "as_of": "2026-08-31"
+      "as_of": "2026-09-04"
     },
     "membership": {
       "path": "data/baskets/membership.json",

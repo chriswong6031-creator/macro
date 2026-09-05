@@ -1,6 +1,6 @@
 {
  "schema": "signal_golden_vectors/v1",
- "as_of": "2026-08-31",
+ "as_of": "2026-09-04",
  "oracle": "engine.canon.confluence_signals",
  "math": {
   "rsiLen": 14,
@@ -1131,12 +1131,12 @@
    "window": {
     "start": "2015-01-01",
     "end": "2024-12-31",
-    "n_daily_bars": 2463,
+    "n_daily_bars": 2454,
     "first_bar": "2015-01-02",
-    "last_bar": "2024-12-31"
+    "last_bar": "2024-12-30"
    },
-   "inputs_hash": "sha256:f1034d1652cae96bf299629dbcdb8edffcbb5d646cf110b93cdebb641f5532c7",
-   "n_signals": 58,
+   "inputs_hash": "sha256:e797796c95f5f33002394b68733437d489aea2dc5e502e6417d7b50160f657ea",
+   "n_signals": 61,
    "expected_sequence": [
     {
      "ts": "2016-02-24",
@@ -1169,7 +1169,7 @@
      }
     },
     {
-     "ts": "2016-08-05",
+     "ts": "2016-08-03",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1179,7 +1179,17 @@
      }
     },
     {
-     "ts": "2016-08-18",
+     "ts": "2016-09-20",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-09-23",
      "type": "REBUY",
      "tier": "T3",
      "regime": {
@@ -1189,7 +1199,7 @@
      }
     },
     {
-     "ts": "2016-09-19",
+     "ts": "2016-09-28",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1199,7 +1209,7 @@
      }
     },
     {
-     "ts": "2017-01-06",
+     "ts": "2017-01-05",
      "type": "BUY",
      "tier": "T4",
      "regime": {
@@ -1209,7 +1219,7 @@
      }
     },
     {
-     "ts": "2017-06-14",
+     "ts": "2017-06-08",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1219,11 +1229,11 @@
      }
     },
     {
-     "ts": "2017-10-20",
+     "ts": "2017-08-24",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
-      "weeklyBull": false,
+      "weeklyBull": true,
       "above200": true,
       "monthlyBull": false
      }
@@ -1479,7 +1489,7 @@
      }
     },
     {
-     "ts": "2021-01-15",
+     "ts": "2021-01-14",
      "type": "BUY",
      "tier": "T4",
      "regime": {
@@ -1489,7 +1499,7 @@
      }
     },
     {
-     "ts": "2021-02-25",
+     "ts": "2021-03-02",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1529,7 +1539,7 @@
      }
     },
     {
-     "ts": "2021-06-30",
+     "ts": "2021-07-06",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1559,7 +1569,7 @@
      }
     },
     {
-     "ts": "2022-02-24",
+     "ts": "2022-02-25",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1569,7 +1579,7 @@
      }
     },
     {
-     "ts": "2022-04-13",
+     "ts": "2022-04-14",
      "type": "BUY",
      "tier": "T4",
      "regime": {
@@ -1579,7 +1589,7 @@
      }
     },
     {
-     "ts": "2022-04-20",
+     "ts": "2022-04-21",
      "type": "CUT",
      "tier": "EXIT",
      "regime": {
@@ -1589,7 +1599,7 @@
      }
     },
     {
-     "ts": "2022-07-11",
+     "ts": "2022-07-07",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1599,7 +1609,7 @@
      }
     },
     {
-     "ts": "2022-08-25",
+     "ts": "2022-08-26",
      "type": "BUY",
      "tier": "T4",
      "regime": {
@@ -1609,7 +1619,7 @@
      }
     },
     {
-     "ts": "2022-09-16",
+     "ts": "2022-09-14",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1619,7 +1629,7 @@
      }
     },
     {
-     "ts": "2022-11-08",
+     "ts": "2022-11-09",
      "type": "BUY",
      "tier": "T4",
      "regime": {
@@ -1629,17 +1639,17 @@
      }
     },
     {
-     "ts": "2023-02-16",
+     "ts": "2023-02-14",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
       "weeklyBull": true,
       "above200": true,
-      "monthlyBull": false
+      "monthlyBull": true
      }
     },
     {
-     "ts": "2023-06-16",
+     "ts": "2023-06-14",
      "type": "BUY",
      "tier": "T2",
      "regime": {
@@ -1649,7 +1659,27 @@
      }
     },
     {
-     "ts": "2023-11-07",
+     "ts": "2023-07-06",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-07-14",
+     "type": "REBUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-11-03",
      "type": "BUY",
      "tier": "T4",
      "regime": {
@@ -1659,7 +1689,7 @@
      }
     },
     {
-     "ts": "2023-12-22",
+     "ts": "2023-12-27",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1669,37 +1699,27 @@
      }
     },
     {
-     "ts": "2024-06-05",
-     "type": "SELL",
-     "tier": "EXIT",
-     "regime": {
-      "weeklyBull": true,
-      "above200": true,
-      "monthlyBull": true
-     }
-    },
-    {
-     "ts": "2024-08-30",
+     "ts": "2024-02-08",
      "type": "BUY",
-     "tier": "T2",
+     "tier": "T4",
      "regime": {
       "weeklyBull": false,
-      "above200": true,
+      "above200": false,
       "monthlyBull": true
      }
     },
     {
-     "ts": "2024-09-04",
-     "type": "CUT",
-     "tier": "EXIT",
+     "ts": "2024-03-12",
+     "type": "BUY",
+     "tier": "T3",
      "regime": {
-      "weeklyBull": false,
-      "above200": true,
+      "weeklyBull": true,
+      "above200": false,
       "monthlyBull": true
      }
     },
     {
-     "ts": "2024-10-22",
+     "ts": "2024-06-12",
      "type": "SELL",
      "tier": "EXIT",
      "regime": {
@@ -1709,7 +1729,17 @@
      }
     },
     {
-     "ts": "2024-12-24",
+     "ts": "2024-10-23",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-12-30",
      "type": "BUY",
      "tier": "T3",
      "regime": {

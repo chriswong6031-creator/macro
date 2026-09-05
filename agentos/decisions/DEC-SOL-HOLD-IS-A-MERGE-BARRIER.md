@@ -16,10 +16,14 @@ answer: >
   arming any PR it did not open must first grep its title+body+comments for hold
   language. Once that protocol is complete, the exact head is pushed and clean, and
   all binding checks on that head have concluded green, the delivery state is
-  **PARKED / HOLD-FOR-SOL**: it is terminal for the current session, not SHIPPED and
-  not a retryable `SHIP LOOP BLOCKED` state. Report the evidence once and stop; do
-  not poll, re-arm, mark ready, merge, or re-enter the ship loop until the named
-  holding authority changes or releases the hold. Conditional merge authority granted
+  **PARKED / HOLD-FOR-SOL**: it is terminal for the current ship/merge attempt, not
+  SHIPPED and not a retryable `SHIP LOOP BLOCKED` state. Report the evidence once and
+  stop shipping; do not poll, re-arm, mark ready, merge, or re-enter the ship loop
+  until the named holding authority changes or releases the hold. That terminality is
+  scoped to the ship attempt, not to the worker: the reciprocal worker/Sol child
+  dialogue remains nonterminal, the same child, carrier, branch and PR resume on a
+  same-carrier Sol CONTINUE or REQUEST_REPAIR, and only an explicit same-carrier Sol
+  STOP closes the child (`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`). Conditional merge authority granted
   for one PR (e.g. Sol's #5872 finalization conditions) NEVER transfers to a sibling
   or successor PR — each PR's merge authority is granted individually or not at all.
 rationale: >

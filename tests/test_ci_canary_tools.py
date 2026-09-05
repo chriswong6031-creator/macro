@@ -7,6 +7,7 @@ import os
 import stat
 import subprocess
 import sys
+from itertools import count
 from pathlib import Path
 
 import pytest
@@ -1303,20 +1304,38 @@ def test_selector_cli_refuses_a_fifth_slot(tmp_path: Path) -> None:
 # Four CI candidates share one enforced envelope, so per-candidate host-global
 # numbers stop being evidence: they cannot tell "CI is inside its budget" from
 # "the guest happens to be quiet". The monitor therefore binds each candidate to
-# the immutable /mastermind-ci.slice hierarchy and REFUSES rather than falling
+# the immutable /mastermind.slice/mastermind-ci.slice hierarchy and REFUSES rather than falling
 # back to host-global metrics — a green produced by the wrong cgroup is worse
 # than no green at all, because it reads as proof.
 
 
-def _write_slice_tree(root: Path, cgroup: str, **overrides: str) -> Path:
+def _write_slice_tree(
+    root: Path, cgroup: str, at_slice: bool = True, **overrides: str
+) -> Path:
+    """Populate cgroup files for a fixture.
+
+    The AGGREGATE counters and the envelope live on the slice node, not on a
+    candidate's leaf `.service` (measured on the real host). So by default the
+    metric files are written at the slice node and the candidate path is merely
+    created, which is what membership needs. Pass at_slice=False to plant decoy
+    values on the leaf and prove they are never reported.
+    """
     node = root / cgroup.lstrip("/")
     node.mkdir(parents=True, exist_ok=True)
+    if at_slice:
+        chain = "/".join(MONITOR.expected_slice_chain(MONITOR.EXPECTED_SLICE))
+        if cgroup.lstrip("/").startswith(chain):
+            node = root / chain
+            node.mkdir(parents=True, exist_ok=True)
     files = {
         "cpu.stat": (
             "usage_usec 1000000\nuser_usec 700000\nsystem_usec 300000\n"
             "nr_periods 400\nnr_throttled 20\nthrottled_usec 50000\n"
         ),
         "cpu.max": "800000 100000\n",
+        "memory.high": "10737418240\n",
+        "memory.max": "12884901888\n",
+        "memory.swap.max": "2147483648\n",
         "memory.current": "1073741824\n",
         "memory.peak": "2147483648\n",
         "memory.swap.current": "0\n",
@@ -1350,7 +1369,14 @@ def _proc_cgroup(tmp_path: Path, cgroup: str) -> Path:
     return path
 
 
-CI_CGROUP = "/mastermind-ci.slice/actions.runner.macro.pc-ci-4.service"
+# The REAL systemd layout: `-` in a slice name is a cgroup path separator, so
+# mastermind-ci.slice is a child of an implicit mastermind.slice. This constant
+# was originally written without the parent and every fixture inherited the
+# error, which is why no test caught the refusal that stopped pc-ci-1 on the host.
+CI_CGROUP = (
+    "/mastermind.slice/mastermind-ci.slice/"
+    "actions.runner.macro.pc-ci-4.service"
+)
 
 
 def test_monitor_binds_a_candidate_to_the_expected_ci_slice(tmp_path: Path) -> None:
@@ -1398,7 +1424,7 @@ def test_monitor_refuses_a_foreign_slice_that_merely_looks_similar(tmp_path: Pat
 
 
 def test_monitor_refuses_a_slice_candidate_that_is_not_a_service(tmp_path: Path) -> None:
-    stray = "/mastermind-ci.slice"
+    stray = "/mastermind.slice/mastermind-ci.slice"
     root = tmp_path / "cgroup"
     _write_slice_tree(root, stray)
     sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, stray))
@@ -1440,6 +1466,11 @@ def _slice_sample(status: str = "bound", **overrides: object) -> dict:
         "status": status,
         "expected_slice": "mastermind-ci.slice",
         "cgroup": CI_CGROUP,
+        "candidate_cgroup": CI_CGROUP,
+        "aggregate_cgroup": "/mastermind.slice/mastermind-ci.slice",
+        "candidate_identity": {"device": 1, "inode": 41},
+        "aggregate_identity": {"device": 1, "inode": 40},
+        "aggregate_metric_source": "parent_slice",
         "reason": None,
         "cpu": {
             "usage_usec": 1_000_000,
@@ -1448,6 +1479,12 @@ def _slice_sample(status: str = "bound", **overrides: object) -> dict:
             "throttled_usec": 50_000,
         },
         "cpu_max": "800000 100000",
+        "limits": {
+            "cpu.max": "800000 100000",
+            "memory.high": "10737418240",
+            "memory.max": "12884901888",
+            "memory.swap.max": "2147483648",
+        },
         "memory": {"current": 1 << 30, "peak": 2 << 30, "swap_current": 0},
         "memory_events": {"low": 0, "high": 3, "max": 0, "oom": 0, "oom_kill": 0},
         "pids": {"current": 42},
@@ -1462,9 +1499,12 @@ def _slice_sample(status: str = "bound", **overrides: object) -> dict:
     return sample
 
 
+_SAMPLE_TIMES = count(1)
+
+
 def _host_sample(slice_payload: dict) -> dict:
     return {
-        "time": 1.0,
+        "time": float(next(_SAMPLE_TIMES)),
         "cpu_percent": 10.0,
         "load": [1.0, 1.0, 1.0],
         "memory_available_bytes": 32 << 30,
@@ -1515,12 +1555,74 @@ def test_receipt_reduces_bound_slice_samples_into_window_deltas(tmp_path: Path) 
     assert result["pressure_total_delta"]["io"]["some"] == 100
 
 
+def test_receipt_refuses_a_single_sample_as_a_missing_endpoint() -> None:
+    result = CAPTURE.slice_metrics([_host_sample(_slice_sample())])
+
+    assert result["status"] == "refused"
+    assert result["samples"] == 1
+    assert "distinct start and end samples" in result["reason"]
+    for key in (
+        "candidate_identity",
+        "aggregate_identity",
+        "cpu_max",
+        "effective_limits",
+        "cpu_delta",
+        "memory_events_delta",
+        "pids_events_delta",
+        "pressure_total_delta",
+        "memory_current_peak_bytes",
+        "memory_swap_peak_bytes",
+        "memory_peak_bytes_cgroup_lifetime",
+        "pids_current_peak",
+    ):
+        assert result[key] is None, key
+
+
+@pytest.mark.parametrize(
+    ("case", "expected_status", "expected_reason"),
+    [
+        (
+            "nonfinite_time",
+            "refused",
+            "aggregate samples are not strictly time ordered",
+        ),
+        ("non_bound_status", "unavailable", "slice metrics are unavailable"),
+        (
+            "malformed_parent",
+            "refused",
+            "aggregate cgroup is missing or not the fixed parent slice",
+        ),
+    ],
+)
+def test_single_sample_preserves_stronger_refusal_before_missing_endpoint(
+    case: str, expected_status: str, expected_reason: str
+) -> None:
+    slice_payload = _slice_sample()
+    sample = _host_sample(slice_payload)
+    if case == "nonfinite_time":
+        sample["time"] = float("nan")
+    elif case == "non_bound_status":
+        slice_payload.update(
+            status="unavailable", reason="slice metrics are unavailable"
+        )
+    else:
+        slice_payload["aggregate_cgroup"] = "/wrong.slice"
+
+    result = CAPTURE.slice_metrics([sample])
+
+    assert result["status"] == expected_status
+    assert result["reason"] == expected_reason
+    assert result["samples"] == 1
+
+
 def test_receipt_labels_memory_peak_as_a_cgroup_lifetime_fact() -> None:
     """memory.peak is a cgroup-lifetime high-water mark. Presenting it as a
     run-local peak without a documented reset ceremony would overstate what the
     receipt observed.
     """
-    result = CAPTURE.slice_metrics([_host_sample(_slice_sample())])
+    result = CAPTURE.slice_metrics(
+        [_host_sample(_slice_sample()), _host_sample(_slice_sample())]
+    )
     assert "memory_peak_bytes_cgroup_lifetime" in result
     assert result["memory_peak_bytes_cgroup_lifetime"] == 2 << 30
     assert "memory_peak_bytes" not in result, "no unqualified run-local peak"
@@ -1866,15 +1968,17 @@ def test_binding_alone_does_not_prove_the_envelope_is_enforced(tmp_path: Path) -
     assert any("unenforced" in reason or "cpu.max" in reason for reason in reasons)
     assert evidence["cpu_max"] == "max 100000"
 
-    # Steady state must NOT inherit this refusal: pc-ci-1..3 run today with no
-    # slice installed at all, and this carrier installs nothing.
+    # Steady state without --require-slice must NOT inherit this refusal:
+    # pc-ci-1..3 run today without that opt-in, and this carrier installs
+    # nothing. Once --require-slice is set, the exact parent envelope is
+    # deliberately mandatory for every profile.
     steady, _ = RESOURCE_GUARD.slice_reasons(
         cgroup_root=root,
         cgroup=CI_CGROUP,
         profile="steady",
         memory_available_bytes=32 * 1024**3,
         swap_used_bytes=0,
-        require_slice=True,
+        require_slice=False,
     )
     assert steady == [], "an unenforced slice must not wedge today's three slots"
 
@@ -1947,18 +2051,18 @@ def test_reducer_refuses_a_window_spanning_more_than_one_cgroup() -> None:
     """A candidate that changed cgroups mid-run has no honest aggregate: first/last
     deltas would silently straddle two different cgroups.
     """
-    moved = _slice_sample(cgroup="/mastermind-ci.slice/actions.runner.macro.pc-ci-2.service")
+    moved = _slice_sample(cgroup="/mastermind.slice/mastermind-ci.slice/actions.runner.macro.pc-ci-2.service")
     result = CAPTURE.slice_metrics([_host_sample(_slice_sample()), _host_sample(moved)])
     assert result["status"] != "bound"
     assert len(result["cgroups"]) == 2
     assert result["cpu_delta"] is None
 
 
-def test_reducer_never_collapses_an_absent_first_sample_field_into_zero() -> None:
-    """REVIEW SHOULD-FIX 3, and the precise prohibition in plan Task 3 Step 1.
-    `last - first.get(key, 0)` presents a LIFETIME TOTAL as a window delta -- and
-    these are exactly the inputs to the acceptance rule
-    nr_throttled_delta / nr_periods_delta <= 0.25.
+def test_reducer_refuses_absent_required_first_sample_fields() -> None:
+    """A missing required endpoint is unknown, never zero or a partial green.
+
+    Exact review 5084468618 tightened the earlier per-key-null behavior: missing
+    required acceptance keys poison the entire numeric window.
     """
     first = _slice_sample(
         cpu={"usage_usec": 10},
@@ -1976,12 +2080,9 @@ def test_reducer_never_collapses_an_absent_first_sample_field_into_zero() -> Non
             "io": {"full": {"avg10": 0.0, "total": 900_000}},
         },
     )
-    result = CAPTURE.slice_metrics([_host_sample(first), _host_sample(last)])
-    assert result["cpu_delta"]["usage_usec"] == 40
-    for key in ("nr_periods", "nr_throttled", "throttled_usec"):
-        assert result["cpu_delta"][key] is None, f"{key} was absent at t0; delta is unknown"
-    assert result["pressure_total_delta"]["memory"]["full"] == 20
-    assert result["pressure_total_delta"]["io"]["full"] is None
+    _assert_poisoned_window(
+        CAPTURE.slice_metrics([_host_sample(first), _host_sample(last)])
+    )
 
 
 def test_monitor_degrades_when_any_core_acceptance_file_is_missing(tmp_path: Path) -> None:
@@ -2167,3 +2268,336 @@ def test_admission_policy_digest_tracks_thresholds_not_slice_ceilings() -> None:
     assert "PREFLIGHT_PROFILES" in body
     for ceiling in ("CPUQuota", "MemoryHigh", "MemoryMax", "MemorySwapMax", "cpu_max"):
         assert ceiling not in body, f"slice ceiling {ceiling} must not feed the digest"
+
+
+# ── C3R-A follow-up: systemd slice names are a cgroup HIERARCHY ──────────────
+# Found on the real host 2026-09-02, not by any test: systemd treats `-` in a
+# slice unit name as a path separator, so `mastermind-ci.slice` is a CHILD of an
+# implicit `mastermind.slice` and its cgroup is
+#   /mastermind.slice/mastermind-ci.slice/<unit>.service
+# never /mastermind-ci.slice/<unit>.service.
+#
+# The first anchored matcher required the slice at components[0], so a correctly
+# configured pc-ci-1 was REFUSED with exit 78 and the slot could not start. The
+# fix anchors on the full systemd-derived parent chain, which keeps the nested
+# look-alike refusals that motivated anchoring in the first place.
+
+REAL_HOST_CGROUP = (
+    "/mastermind.slice/mastermind-ci.slice/"
+    "actions.runner.mastermindx-market-intelligence-macro.pc-ci-1.service"
+)
+
+
+def test_expected_slice_chain_is_derived_from_the_systemd_name() -> None:
+    assert MONITOR.expected_slice_chain("mastermind-ci.slice") == [
+        "mastermind.slice",
+        "mastermind-ci.slice",
+    ]
+    assert MONITOR.expected_slice_chain("solo.slice") == ["solo.slice"]
+    assert MONITOR.expected_slice_chain("a-b-c.slice") == [
+        "a.slice",
+        "a-b.slice",
+        "a-b-c.slice",
+    ]
+
+
+def test_monitor_binds_the_real_systemd_slice_path(tmp_path: Path) -> None:
+    """The exact cgroup a live pc-ci listener reports once Slice= is set."""
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, REAL_HOST_CGROUP)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, REAL_HOST_CGROUP))
+    assert sample["status"] == "bound", sample["reason"]
+    assert sample["cgroup"] == REAL_HOST_CGROUP
+    assert sample["cpu"]["nr_periods"] == 400
+
+
+def test_resource_guard_binds_the_real_systemd_slice_path() -> None:
+    assert RESOURCE_GUARD.is_bound_to_ci_slice(REAL_HOST_CGROUP) is True
+
+
+def test_slice_hierarchy_fix_still_refuses_every_nested_look_alike() -> None:
+    """The anchoring that motivated the original fix must survive."""
+    for stray in (
+        "/user.slice/user-1000.slice/mastermind-ci.slice/evil.service",
+        "/system.slice/x.service/mastermind.slice/mastermind-ci.slice/y.service",
+        "/foo.slice/mastermind-ci.slice/x.service",
+        "/mastermind.slice/other-mastermind-ci.slice/x.service",
+        "/mastermind.slice/mastermind-ci.slice/../../system.slice/x.service",
+        "/mastermind.slice/mastermind-ci.slice",
+        "/system.slice/actions.runner.macro.pc-ci-1.service",
+    ):
+        assert MONITOR._is_bound_to_ci_slice(stray) is False, stray
+        assert RESOURCE_GUARD.is_bound_to_ci_slice(stray) is False, stray
+
+
+def test_aggregate_metrics_come_from_the_slice_node_not_the_candidate_leaf(
+    tmp_path: Path,
+) -> None:
+    """Second real-host defect (2026-09-02): the envelope and the AGGREGATE
+    counters live on the slice node, not on the candidate's leaf `.service`
+    cgroup. Reading the leaf yields per-candidate numbers with no ceilings —
+    and labelling those "aggregate" is exactly the false-proof shape this
+    module exists to refuse. Measured on the host: the slice node carries
+    cpu.max `800000 100000` while a leaf carries none.
+    """
+    root = tmp_path / "cgroup"
+    slice_node = root / "mastermind.slice" / "mastermind-ci.slice"
+    # Aggregate truth on the slice node.
+    _write_slice_tree(root, "/mastermind.slice/mastermind-ci.slice")
+    # Decoy per-candidate values on the leaf; these must NOT be reported.
+    _write_slice_tree(
+        root,
+        REAL_HOST_CGROUP,
+        at_slice=False,
+        **{
+            "memory.current": "999999999\n",
+            "cpu.max": "max 100000\n",
+            "cpu.stat": "usage_usec 7\nnr_periods 7\nnr_throttled 7\nthrottled_usec 7\n",
+        },
+    )
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, REAL_HOST_CGROUP))
+
+    assert sample["status"] == "bound"
+    assert sample["cgroup"] == REAL_HOST_CGROUP, "membership is still the candidate's"
+    assert sample["slice_cgroup"] == "/mastermind.slice/mastermind-ci.slice"
+    # Values must be the slice's, never the leaf decoys.
+    assert sample["cpu_max"] == "800000 100000"
+    assert sample["memory"]["current"] == 1_073_741_824
+    assert sample["cpu"]["nr_periods"] == 400
+
+
+def test_guard_reads_the_envelope_from_the_slice_node(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, "/mastermind.slice/mastermind-ci.slice")
+    _write_slice_tree(root, REAL_HOST_CGROUP, at_slice=False, **{"cpu.max": "max 100000\n"})
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=REAL_HOST_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert evidence["cpu_max"] == "800000 100000", "envelope read from the slice"
+    assert reasons == [], "an enforced envelope must not be called unenforced"
+
+
+# C3R-A merged-substrate repair: every test below names a false-proof mutant.
+
+
+def test_guard_and_monitor_require_one_direct_service_below_the_real_slice() -> None:
+    for cgroup in (
+        "/mastermind.slice/mastermind-ci.slice/outer.service/inner.scope",
+        "/mastermind.slice/mastermind-ci.slice/nested/inner.service",
+        "/mastermind.slice/mastermind-ci.slice/.service",
+        "mastermind.slice/mastermind-ci.slice/runner.service",
+        "/mastermind.slice/mastermind-ci.slice/runner.service/",
+    ):
+        assert RESOURCE_GUARD.is_bound_to_ci_slice(cgroup) is False, cgroup
+        assert MONITOR._is_bound_to_ci_slice(cgroup) is False, cgroup
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("cpu.max", None),
+        ("cpu.max", "800001 100000\n"),
+        ("memory.high", "max\n"),
+        ("memory.max", "not-a-number\n"),
+        ("memory.swap.max", "2147483647\n"),
+    ],
+)
+def test_guard_refuses_every_missing_or_drifted_parent_limit(
+    tmp_path: Path, name: str, value: str | None
+) -> None:
+    root = tmp_path / "cgroup"
+    node = _write_slice_tree(root, CI_CGROUP)
+    path = node / name
+    if value is None:
+        path.unlink()
+    else:
+        path.write_text(value, encoding="utf-8")
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        root, CI_CGROUP, "four-slot-canary", 32 * 1024**3, 0, require_slice=True
+    )
+    assert any(name.split(".", 1)[0] in reason for reason in reasons)
+    assert evidence["effective_limits"][name] != RESOURCE_GUARD.EXPECTED_LIMITS[name]
+
+
+@pytest.mark.parametrize(
+    ("name", "content"),
+    [
+        ("memory.pressure", None),
+        ("io.pressure", "some avg10=0.00 total=1\n"),
+        ("memory.pressure", "full total=1\n"),
+        ("io.pressure", "full avg10=bad total=1\n"),
+        ("memory.pressure", "full avg10=nan total=1\n"),
+        ("io.pressure", "full avg10=inf total=1\n"),
+        ("memory.pressure", "full avg10=0.10 total=1\n"),
+    ],
+)
+def test_four_slot_preflight_requires_finite_strict_memory_and_io_psi(
+    tmp_path: Path, name: str, content: str | None
+) -> None:
+    root = tmp_path / "cgroup"
+    node = _write_slice_tree(root, CI_CGROUP)
+    path = node / name
+    if content is None:
+        path.unlink()
+    else:
+        path.write_text(content, encoding="utf-8")
+    reasons, _ = RESOURCE_GUARD.slice_reasons(
+        root, CI_CGROUP, "four-slot-canary", 32 * 1024**3, 0, require_slice=True
+    )
+    assert any(name.split(".", 1)[0] in reason for reason in reasons)
+
+
+def _assert_poisoned_window(result: dict) -> None:
+    assert result["status"] != "bound"
+    for key in (
+        "cpu_delta",
+        "memory_events_delta",
+        "pids_events_delta",
+        "pressure_total_delta",
+        "memory_current_peak_bytes",
+        "memory_swap_peak_bytes",
+        "memory_peak_bytes_cgroup_lifetime",
+        "pids_current_peak",
+    ):
+        assert result[key] is None, key
+
+
+@pytest.mark.parametrize("family", ["cpu", "memory", "pids", "pressure"])
+def test_reducer_refuses_each_cumulative_counter_decrease(family: str) -> None:
+    first_slice = _slice_sample()
+    last_slice = _slice_sample()
+    if family == "cpu":
+        last_slice["cpu"] = {**last_slice["cpu"], "usage_usec": 999_999}
+    elif family == "memory":
+        last_slice["memory_events"] = {**last_slice["memory_events"], "high": 2}
+    elif family == "pids":
+        first_slice["pids_events"] = {"max": 2}
+        last_slice["pids_events"] = {"max": 1}
+    else:
+        first_slice["pressure"]["memory"]["full"]["total"] = 12
+        last_slice["pressure"]["memory"]["full"]["total"] = 11
+    _assert_poisoned_window(
+        CAPTURE.slice_metrics([_host_sample(first_slice), _host_sample(last_slice)])
+    )
+
+
+def test_reducer_refuses_backward_time_and_candidate_or_parent_identity_swaps() -> None:
+    first = _host_sample(_slice_sample())
+    last = _host_sample(_slice_sample())
+    last["time"] = first["time"] - 1
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
+    for field in ("candidate_identity", "aggregate_identity"):
+        left = _host_sample(_slice_sample())
+        right_payload = _slice_sample()
+        right_payload[field] = {"device": 9, "inode": 9}
+        _assert_poisoned_window(CAPTURE.slice_metrics([left, _host_sample(right_payload)]))
+
+
+def test_reducer_refuses_a_missing_middle_endpoint() -> None:
+    first = _host_sample(_slice_sample())
+    middle = {"time": first["time"] + 0.5}
+    last = _host_sample(_slice_sample())
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, middle, last]))
+
+
+@pytest.mark.parametrize(
+    "limits",
+    [
+        None,
+        {},
+        {"cpu.max": "max 100000"},
+        {
+            "cpu.max": "800000 100000",
+            "memory.high": "10737418240",
+            "memory.max": "12884901888",
+            "memory.swap.max": "2147483647",
+        },
+    ],
+)
+def test_reducer_refuses_missing_malformed_or_drifted_parent_limits(
+    limits: object,
+) -> None:
+    first = _host_sample(_slice_sample(limits=limits))
+    last = _host_sample(_slice_sample(limits=limits))
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
+
+
+def test_reducer_refuses_cpu_max_that_disagrees_with_the_limit_tuple() -> None:
+    first = _host_sample(_slice_sample(cpu_max="max 100000"))
+    last = _host_sample(_slice_sample(cpu_max="max 100000"))
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
+
+
+def test_monitor_receipts_freeze_candidate_and_parent_identity(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["candidate_cgroup"] == CI_CGROUP
+    assert sample["aggregate_cgroup"] == "/mastermind.slice/mastermind-ci.slice"
+    assert sample["aggregate_metric_source"] == "parent_slice"
+    assert set(sample["candidate_identity"]) == {"device", "inode"}
+    assert set(sample["aggregate_identity"]) == {"device", "inode"}
+    assert sample["limits"] == {
+        "cpu.max": "800000 100000",
+        "memory.high": "10737418240",
+        "memory.max": "12884901888",
+        "memory.swap.max": "2147483648",
+    }
+
+
+@pytest.mark.parametrize(
+    ("name", "content"),
+    [
+        ("cpu.stat", "usage_usec 1000000\nnr_periods 400\n"),
+        ("memory.events", "high 0\nmax 0\n"),
+        ("pids.events", ""),
+        ("memory.pressure", "some avg10=0.00 total=1\n"),
+        ("io.pressure", "full avg10=0.00 total=1\n"),
+    ],
+)
+def test_monitor_degrades_when_required_acceptance_keys_are_missing(
+    tmp_path: Path, name: str, content: str
+) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP, **{name: content})
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["status"] == "degraded"
+    assert "required" in sample["reason"]
+
+
+def test_reducer_refuses_bound_samples_missing_required_acceptance_keys() -> None:
+    for field, malformed in (
+        ("cpu", {"usage_usec": 1}),
+        ("memory_events", {"high": 0}),
+        ("pids_events", {}),
+        ("pressure", {"memory": {"full": {"total": 1}}}),
+    ):
+        first_payload = _slice_sample()
+        last_payload = _slice_sample()
+        first_payload[field] = malformed
+        last_payload[field] = malformed
+        _assert_poisoned_window(
+            CAPTURE.slice_metrics(
+                [_host_sample(first_payload), _host_sample(last_payload)]
+            )
+        )
+
+
+def test_cleanup_refuses_symlinked_allowlisted_root_without_deleting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    foreign = tmp_path / "foreign"
+    (foreign / "_work").mkdir(parents=True)
+    marker = foreign / "_work" / "must-stay"
+    marker.write_text("untouched", encoding="utf-8")
+    sealed = tmp_path / "runner-4"
+    sealed.symlink_to(foreign, target_is_directory=True)
+    monkeypatch.setattr(CLEANUP, "PC_CI_ROOTS", frozenset({sealed}))
+    with pytest.raises(RuntimeError, match="sealed PC CI allowlist"):
+        CLEANUP.scrub_pc_state(sealed, temporary_roots=())
+    assert marker.read_text(encoding="utf-8") == "untouched"

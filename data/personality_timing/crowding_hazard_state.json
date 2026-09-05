@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-09-01",
+  "as_of": "2026-09-05",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,7 +38,7 @@
   },
   "family": "pss_cd1_correlation_dispersion_prospective",
   "gate_open": true,
-  "generated_utc": "2026-09-01T04:21:43.259105+00:00",
+  "generated_utc": "2026-09-05T00:43:56.065719+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,

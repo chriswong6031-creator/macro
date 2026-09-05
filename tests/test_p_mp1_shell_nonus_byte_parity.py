@@ -214,10 +214,19 @@ def _macros():
 #: metadata chip). Recomputed for round 3's R4 (.pv-znr gains its own bounded
 #: max-width:100%;overflow:hidden;text-overflow:ellipsis so a pathologically
 #: long zone string ellipsizes instead of hard-clipping) and R5 (the ≤680px
-#: max-width:32% cap is scoped to `.pv-added` only, not `.pv-dt`). A
-#: legitimate future edit to pv_css() must recompute and update this hash
-#: again.
-_EXPECTED_PV_CSS_SHA256 = "11b3c39a9ec2594681ff428bc7326fee18c23949b8324d31bbbe19322bf82172"
+#: max-width:32% cap is scoped to `.pv-added` only, not `.pv-dt`).
+#:
+#: RECOMPUTED 2026-09-02 for the zone-shelf FOLD (Chairman visibility report):
+#: `.pv-zn` gains `flex-wrap:wrap` + a 2px row-gap, `.pv-added` becomes
+#: `flex:0 0 auto` with no overflow/ellipsis and no padding-left (it folds to
+#: its own line instead of truncating), `.pv-znm` is hardened to `.pv-znr`'s
+#: flex:none + bounded-ellipsis contract, and the ≤680px `max-width:32%`
+#: truncation cap is removed. CSS-only: `pv_card()`'s markup is byte-unchanged,
+#: which `test_pv_card_is_byte_identical_across_representative_non_us_calls`
+#: below proves independently. The pin MECHANISM is untouched — this is a
+#: recomputed value, not a weakened assertion. A legitimate future edit to
+#: pv_css() must recompute and update this hash again.
+_EXPECTED_PV_CSS_SHA256 = "e7dd2cf07a44230d9a1b9a82b335943070ca0bad76e6fc7c1b99aa0625a12258"
 
 
 def test_pv_css_is_byte_pinned_post_rollout():

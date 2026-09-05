@@ -1,47 +1,33 @@
 {
-  "appended": 3,
-  "asof": "2026-08-31",
+  "appended": 2,
+  "asof": "2026-09-04",
   "candidates": {
-    "R": 3,
+    "R": 1,
     "T": 1,
-    "W": 12
+    "W": 4
   },
   "deduped": {
     "R": 0,
     "T": 1,
-    "W": 12
+    "W": 3
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-09-01",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
       "consulted": true,
-      "null_reasons": {
-        "ohlcv_absent": 15
-      },
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Software": {
-          "theme_thrust_frac": 0.1064,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 48,
-      "tickers_read": 63
+      "tickers_ok": 1,
+      "tickers_read": 1
     },
     "keys": [
       "relay_count_3d",
@@ -59,16 +45,11 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 132,
-      "n_covered": 80,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
       "consulted": true,
-      "last_session": "2026-08-31",
+      "last_session": "2026-09-04",
       "n_tickers": 1544,
       "ok": true,
       "reason": null,
@@ -78,9 +59,14 @@
   },
   "feature_source_w": {
     "atlas": {
-      "consulted": false,
-      "n_asked": 0,
-      "n_covered": 0
+      "consulted": true,
+      "direction": "bull",
+      "grid": "W",
+      "horizon": "13w",
+      "n_asked": 1,
+      "n_covered": 1,
+      "reason": null,
+      "source": "engine.event_atlas.receipt"
     },
     "enabled": true,
     "keys": [
@@ -102,12 +88,12 @@
   },
   "flag_tickers": {
     "R": [
-      "RHI",
-      "DOCU",
-      "PJT"
+      "VYX"
     ],
     "T": [],
-    "W": []
+    "W": [
+      "IREN"
+    ]
   },
   "n_universe": 1496,
   "overflow": {
@@ -115,41 +101,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-09-01 08:15:09",
-  "runtime_s": 111.2,
+  "run_utc": "2026-09-04 20:19:38",
+  "runtime_s": 110.9,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 0,
-    "asof": "2026-08-31",
-    "n_members": 132,
+    "age_days": 1,
+    "asof": "2026-09-03",
+    "n_members": 115,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 2.744,
+        "emerging_score": 3.602,
         "rank": 1,
-        "theme": "Cybersecurity"
+        "theme": "Commodities Agriculture"
       },
       {
-        "emerging_score": 1.795,
+        "emerging_score": 3.455,
         "rank": 2,
-        "theme": "Big Data"
+        "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.569,
+        "emerging_score": 2.234,
         "rank": 3,
-        "theme": "Software"
+        "theme": "Mega-Cap"
       },
       {
-        "emerging_score": 1.527,
+        "emerging_score": 1.727,
         "rank": 4,
-        "theme": "Artificial Intelligence"
+        "theme": "Commodities Energy"
       },
       {
-        "emerging_score": 1.343,
+        "emerging_score": 1.724,
         "rank": 5,
-        "theme": "Biometrics"
+        "theme": "Energy Traditional"
       }
     ]
   },
@@ -158,19 +144,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 12,
-    "asof_max": "2026-08-31",
+    "aligned": 4,
+    "asof_max": "2026-09-04",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-31",
-    "evaluated": 712,
-    "fresh": 12,
+    "asof_run": "2026-09-04",
+    "evaluated": 713,
+    "fresh": 4,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 20.4,
-    "skipped": 5,
+    "runtime_s": 19.3,
+    "skipped": 4,
     "source": "baskets/membership.json",
-    "state_turn": 89,
+    "state_turn": 88,
     "universe_n": 717
   }
 }

@@ -875,3 +875,189 @@ class TestLiveDotReusesTheThemeIdiom:
         assert "@keyframes dtp-pulse" in src, (
             "templates/theme.css dropped @keyframes dtp-pulse — the GD-3 live chip reuses it"
         )
+
+
+# ══ R3 GAP-1 — the materiality firing ledger ═════════════════════════════════════
+#
+# research/reactive_projection/R3_MATERIALITY_CONTRACT_V1_RISK_ENVELOPE.md (frozen on
+# PR #6774's branch claude/r1a-live-records-20260902): one `record_firing(
+# "risk_envelope_materiality", …)` row per ACCEPTED dwell transition — never on a
+# repeated/frozen observation, a still-pending (non-accepted) tick, or a
+# `precedence != "live"` supersede/settle. Grey-Deer-additive: these tests drive the
+# real dwell machine (`_advance_transition`, unchanged) through the FULL `build()`/
+# `write()` pipeline across multiple fires — never a synthetic "just call the emit
+# function" shortcut — so a regression in the dwell law itself would show up here too.
+
+def _firings(root: Path, name: str = "risk_envelope_materiality") -> list[dict]:
+    p = root / "data" / "reflexes" / name / "firings.jsonl"
+    if not p.exists():
+        return []
+    return [json.loads(line) for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+_ESCALATE_TIMES = (
+    "2026-08-20 15:00:00 UTC", "2026-08-20 15:05:00 UTC", "2026-08-20 15:10:00 UTC",
+)
+_ESCALATE_NOWS = (
+    datetime(2026, 8, 20, 15, 1, tzinfo=timezone.utc),
+    datetime(2026, 8, 20, 15, 6, tzinfo=timezone.utc),
+    datetime(2026, 8, 20, 15, 11, tzinfo=timezone.utc),
+)
+
+
+def _run_escalation(root: Path, *, final_score: int = 40) -> dict:
+    """3 distinct-observation fires, NONE (settled) -> FRAGILE (leadership
+    default 'BROKEN' + radar default 'warning'). V0 caps every hazard source's
+    `stage_ceiling` at FRAGILE (engine/risk_envelope.py default — see
+    TestPrecedence.test_l_equal_s_clears_the_transition_on_settle_catch_up's own
+    note: "every reachable live candidate here is NONE or FRAGILE"), so NONE ->
+    FRAGILE is the only escalation shape reachable through the FULL build()/
+    write() pipeline; TestDwellLaw exercises TRANSMITTING/BREAKDOWN shapes
+    directly against the pure `_advance_transition` function instead, and this
+    file follows the same split rather than fighting the ceiling. debounce_ticks
+    =3 (default) -> accepts on fire 3. `final_score` lets a test vary a
+    non-hazard leg value (Market State score) on the ACCEPTING fire only,
+    without changing the accepted stage."""
+    root = _write_root(
+        root, risk_state=_risk_state(_ESCALATE_TIMES[0]),
+        leadership=_leadership("2026-08-19", state="BROKEN"),
+        settled=_settled("2026-08-19", stage="NONE"),
+    )
+    blre.write(root=root, now=_ESCALATE_NOWS[0])
+    (root / "site" / "live" / "risk_state.json").write_text(
+        json.dumps(_risk_state(_ESCALATE_TIMES[1])))
+    blre.write(root=root, now=_ESCALATE_NOWS[1])
+    (root / "site" / "live" / "risk_state.json").write_text(
+        json.dumps(_risk_state(_ESCALATE_TIMES[2], score=final_score)))
+    return blre.write(root=root, now=_ESCALATE_NOWS[2])
+
+
+class TestMaterialityFiringLedger:
+
+    def test_accepted_escalation_emits_exactly_one_firing_with_stable_fingerprint(self, tmp_path):
+        root_a = tmp_path / "a"
+        env_a = _run_escalation(root_a)
+
+        assert env_a["live_transition"]["stable_stage"] == "FRAGILE"
+        assert env_a["live_transition"]["pending"] is None
+        # the internal acceptance marker is popped before publish — never leaks
+        # into the persisted/served artifact.
+        assert "_accepted" not in env_a["live_transition"]
+
+        firings = _firings(root_a)
+        assert len(firings) == 1, f"expected exactly one firing, got {firings}"
+        rec = firings[0]
+        assert rec["trigger_type"] == "materiality_dwell"
+        assert rec["stage_from"] == "NONE"
+        assert rec["stage_to"] == "FRAGILE"
+        assert rec["confirmations"] == 3
+        assert rec["precedence"] == "live"
+        assert rec["asof"] == "2026-08-20"
+        assert rec["live_session"] == "2026-08-20"
+        assert rec["source_event_time"] is None   # fixture never sets one
+        assert rec["recompute_time"], "recompute_time must be stamped"
+        assert isinstance(rec["fingerprint"], str) and len(rec["fingerprint"]) == 64
+        # base record_firing claim-shape conventions (matches the
+        # refresh_regime_if_stale.py precedent caller): context-only telemetry,
+        # no directional/gradeable claim.
+        assert rec["is_context_only"] is True
+        assert rec["direction"] == 0
+        assert rec["horizon_d"] is None
+        assert rec["reflex"] == "risk_envelope_materiality"
+
+        # determinism: an independent root fed byte-identical inputs at every
+        # fire produces the SAME fingerprint (not merely "a" fingerprint).
+        root_b = tmp_path / "b"
+        env_b = _run_escalation(root_b)
+        firings_b = _firings(root_b)
+        assert len(firings_b) == 1
+        assert firings_b[0]["fingerprint"] == rec["fingerprint"]
+
+    def test_repeated_observation_freeze_emits_zero_firings(self, tmp_path):
+        root = _write_root(
+            tmp_path, risk_state=_risk_state(_ESCALATE_TIMES[0]),
+            leadership=_leadership("2026-08-19", state="BROKEN"),
+            settled=_settled("2026-08-19", stage="NONE"),
+        )
+        env1 = blre.write(root=root, now=_ESCALATE_NOWS[0])
+        assert env1["live_transition"]["pending"] == {
+            "stage": "FRAGILE", "ticks": 1, "needs": 3,
+        }
+        assert not _firings(root)
+
+        # risk_state.json is NEVER rewritten again -> every further fire re-reads
+        # the SAME `built` stamp (freeze, adjudication #5). Repeat five times —
+        # well past the debounce window — and the dwell must never tick, never
+        # accept, and never fire.
+        for i in range(5):
+            env = blre.write(root=root, now=datetime(2026, 8, 20, 15, 2 + i, tzinfo=timezone.utc))
+            assert env["live_transition"]["pending"] == {
+                "stage": "FRAGILE", "ticks": 1, "needs": 3,
+            }, i
+            assert env["live_transition"]["stable_stage"] == "NONE", i
+        assert not _firings(root), "a repeated/frozen observation must never fire"
+
+    def test_accepted_deescalation_emits_one_firing(self, tmp_path):
+        root = _write_root(
+            tmp_path,
+            risk_state=_risk_state(_ESCALATE_TIMES[0], radar_state="calm", radar_score=10.0),
+            leadership=_leadership("2026-08-19", state="REPAIRING"),
+            settled=_settled("2026-08-19", stage="TRANSMITTING"),
+        )
+        blre.write(root=root, now=_ESCALATE_NOWS[0])
+        (root / "site" / "live" / "risk_state.json").write_text(json.dumps(
+            _risk_state(_ESCALATE_TIMES[1], radar_state="calm", radar_score=10.0)))
+        blre.write(root=root, now=_ESCALATE_NOWS[1])
+        (root / "site" / "live" / "risk_state.json").write_text(json.dumps(
+            _risk_state(_ESCALATE_TIMES[2], radar_state="calm", radar_score=10.0)))
+        env = blre.write(root=root, now=_ESCALATE_NOWS[2])
+
+        assert env["live_transition"]["stable_stage"] == "NONE"
+        assert env["live_transition"]["pending"] is None
+        firings = _firings(root)
+        assert len(firings) == 1
+        rec = firings[0]
+        assert rec["stage_from"] == "TRANSMITTING"
+        assert rec["stage_to"] == "NONE"
+        assert rec["confirmations"] == 3
+        assert rec["trigger_type"] == "materiality_dwell"
+
+    def test_record_firing_exception_does_not_break_the_build(self, tmp_path, monkeypatch):
+        import engine.neuralweb.reflexes as reflexes
+
+        def _boom(*_a, **_k):
+            raise RuntimeError("simulated firings-ledger failure")
+
+        monkeypatch.setattr(reflexes, "record_firing", _boom)
+
+        root = tmp_path / "root"
+        env = _run_escalation(root)
+
+        # the acceptance still happened and the envelope still published to disk —
+        # only the ledger append failed, and it failed silently (fail-open). If the
+        # try/except around the emit call were missing, build() would raise and
+        # write()'s own outer catch would return {} instead (KeyError below).
+        assert env, "build() must not fail (return {}) when record_firing raises"
+        assert env["live_transition"]["stable_stage"] == "FRAGILE"
+        assert (root / "site" / "live" / "risk_envelope.json").exists()
+        on_disk = json.loads((root / "site" / "live" / "risk_envelope.json").read_text())
+        assert on_disk["live_transition"]["stable_stage"] == "FRAGILE"
+        assert not _firings(root), "the failed append must not have written anything"
+
+    def test_fingerprint_changes_when_a_leg_value_changes(self, tmp_path):
+        env_a = _run_escalation(tmp_path / "a", final_score=40)
+        env_b = _run_escalation(tmp_path / "b", final_score=41)
+
+        firings_a = _firings(tmp_path / "a")
+        firings_b = _firings(tmp_path / "b")
+        assert len(firings_a) == 1 and len(firings_b) == 1
+        # same accepted transition (the leg that changed — Market State score — is
+        # not a hazard-evidence leg, so it never affects stage classification)...
+        assert firings_a[0]["stage_from"] == firings_b[0]["stage_from"] == "NONE"
+        assert firings_a[0]["stage_to"] == firings_b[0]["stage_to"] == "FRAGILE"
+        assert firings_a[0]["confirmations"] == firings_b[0]["confirmations"] == 3
+        # ...but the fingerprint, which hashes the full spliced live leg content,
+        # must still change.
+        assert firings_a[0]["fingerprint"] != firings_b[0]["fingerprint"], (
+            "changing a spliced leg value (score) must change the fingerprint"
+        )

@@ -17,7 +17,11 @@ Sources (all verified in store, 2026-07-12):
   BoC  : FRED/IR3TIB01CAM156N (BoC 3m interbank, monthly)
   RBA  : FRED/IR3TIB01AUM156N (RBA cash rate proxy via 3m interbank, monthly)
 Balance-sheet (impulse only where clean FRED series exist):
-  FED  : WALCL (weekly), ECB: ECBASSETSW (weekly), BoJ: JPNASSETS (monthly)
+  FED  : WALCL (weekly, FRED-native MILLIONS of USD)
+  ECB  : ECBASSETSW (weekly, FRED-native MILLIONS of EUR)
+  BoJ  : JPNASSETS (monthly, FRED-native 100-MILLION JPY)
+  Published ``bs_impulse.level`` is normalized into ``bs_unit`` (billions) via
+  ``bs_unit_mult``; the 13w/52w impulses are %-changes and scale-invariant.
   All others: honestly null (BoE annual-only on FRED; PBoC no clean keyless series).
 CB meeting dates: data/intl_risk/cb_calendar.yml
 """
@@ -43,7 +47,9 @@ _CALENDAR_PATH = Path(__file__).resolve().parent.parent / "data" / "intl_risk" /
 # CB configuration
 # ---------------------------------------------------------------------------
 # Each entry: id, name_en, name_zh, country, rate_series, rate_store, cadence,
-# bs_series, bs_store, bs_unit_mult (for USD/billion normalization, optional).
+# bs_series, bs_store, bs_unit, bs_unit_mult (raw store unit → bs_unit).
+# FRED stores WALCL/ECBASSETSW in currency MILLIONS and JPNASSETS in
+# 100-million JPY — the raw level is NOT in billions until multiplied.
 # Monthly FRED series (IR3TIB01*) lag ~1 month — disclosed in each row.
 
 _CB_SPECS: list[dict[str, Any]] = [
@@ -58,7 +64,8 @@ _CB_SPECS: list[dict[str, Any]] = [
         "rate_cadence": "daily",
         "bs_series": "WALCL",
         "bs_store": "fred",
-        "bs_unit": "USD billions (×1, raw WALCL is in billions)",
+        "bs_unit": "USD billions",
+        "bs_unit_mult": 1e-3,   # WALCL is FRED-native millions of USD
         "calendar_key": "FOMC",
     },
     {
@@ -73,6 +80,7 @@ _CB_SPECS: list[dict[str, Any]] = [
         "bs_series": "ECBASSETSW",
         "bs_store": "fred",
         "bs_unit": "EUR billions",
+        "bs_unit_mult": 1e-3,   # ECBASSETSW is FRED-native millions of EUR
         "calendar_key": "ECB",
     },
     {
@@ -86,7 +94,8 @@ _CB_SPECS: list[dict[str, Any]] = [
         "rate_cadence": "monthly",
         "bs_series": "JPNASSETS",
         "bs_store": "fred",
-        "bs_unit": "JPY trillions",
+        "bs_unit": "JPY billions",
+        "bs_unit_mult": 0.1,    # JPNASSETS is FRED-native 100-million JPY
         "calendar_key": "BoJ",
     },
     {
@@ -243,6 +252,10 @@ def _trend_3m(s: pd.Series, cadence: str = "daily") -> str | None:
 def _bs_impulse(spec: dict, gaps: list[str]) -> dict | None:
     """Compute 13w and 52w balance-sheet impulse (% change) for CBs with BS series.
 
+    ``level`` is normalized from the raw store unit into ``bs_unit`` via the
+    spec's ``bs_unit_mult`` (default 1.0) so the published number is in the
+    published unit; the impulses are %-changes and scale-invariant.
+
     Returns {impulse_13w, impulse_52w, level, asof, unit} or None.
     """
     if not spec.get("bs_series") or not spec.get("bs_store"):
@@ -255,6 +268,7 @@ def _bs_impulse(spec: dict, gaps: list[str]) -> dict | None:
     if s.empty:
         gaps.append(f"{spec['id']}: BS series empty")
         return None
+    mult = float(spec.get("bs_unit_mult") or 1.0)
 
     def _imp(weeks: int) -> float | None:
         n = min(weeks, len(s) - 1)
@@ -266,7 +280,7 @@ def _bs_impulse(spec: dict, gaps: list[str]) -> dict | None:
     return {
         "impulse_13w": _imp(13),
         "impulse_52w": _imp(52),
-        "level": _r(float(s.iloc[-1]), 1),
+        "level": _r(float(s.iloc[-1]) * mult, 1),
         "asof": str(s.index[-1].date()),
         "unit": spec.get("bs_unit", "local currency"),
         "series": spec["bs_series"],

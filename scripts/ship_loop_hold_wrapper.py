@@ -327,6 +327,57 @@ def _hold_block(probe: dict[str, Any]) -> dict[str, str] | None:
     return None
 
 
+def _parked_message(probe: dict[str, Any]) -> dict[str, str]:
+    """Compose the terminal-PARKED response for a proven green hold.
+
+    Pure text composition. Every eligibility decision was already made by
+    ``_hold_probe``; this helper performs no git, GitHub, network or filesystem
+    access, which is what makes the wording directly testable.
+
+    WHAT IS TERMINAL, AND WHAT IS NOT. The old wording called PARKED "a terminal
+    PARKED state ... do not re-enter the ship loop", which reads as terminal for the
+    whole session. That is true of the ship/merge attempt and false of the reciprocal
+    worker/Sol child dialogue. Five facts are distinct: the task/wave boundary, the PR
+    merge hold, the reasoning-session yield, the child STOP, and program completion.
+    A held worker that treats PARKED as all five goes silent on the holding authority,
+    and Mastermind's universal session-close law is explicit that silence is never a
+    terminal receipt. So the message now separates them: the ship attempt is over, the
+    dialogue is not, and the same child/carrier/branch/PR resume on a Sol continuation.
+
+    NOT a widening of permission. Reaching this function still requires every binding
+    check concluded green plus the full hold protocol, and the text keeps naming merge,
+    mark-ready, auto-merge, render, deploy and retry as forbidden.
+
+    NON-AUTHORITATIVE. The hook cannot see the carrier, so it states the worker's
+    obligation to hold a truthful continuation receipt and never claims one exists: it
+    asserts no watcher state, infers no transport state, elects no Sol, and creates no
+    successor or follow-on wave.
+    """
+    checks = ", ".join(str(name) for name in probe.get("passed", [])[:8])
+    return {
+        "systemMessage": (
+            f"SHIP LOOP PARKED: PR #{probe['number']} is lawfully {HOLD_TOKEN}. The exact "
+            "local head is pushed; the worktree is clean; the PR is draft; merge-on-green "
+            "and native auto-merge are disarmed; Sol authority plus Sol release condition "
+            f"are recorded; and all binding checks have concluded clean ({checks}). This PR "
+            "is unmerged: not SHIPPED, not deployed, not live. Merge, mark ready, arm "
+            "auto-merge, render, deploy and retry all remain forbidden while the hold "
+            "stands. "
+            "This is terminal for the current ship/merge attempt only, and is not a "
+            "terminal state for the reciprocal worker/Sol child dialogue. Before yielding "
+            f"you must already have posted one exact-carrier RESULT / {HOLD_TOKEN} and "
+            "established a truthful continuation path: report WATCH_ARMED only if a real "
+            "watcher registration was made and verified, otherwise report "
+            "WATCH_UNAVAILABLE naming the surface you checked and the exact failure. "
+            "The dialogue remains nonterminal — the same child, the same carrier, this "
+            "branch and this PR resume on a later Sol CONTINUE or REQUEST_REPAIR; only "
+            "explicit Sol STOP (or ACCEPTED / STOP, CLOSED / STOP) on that same carrier "
+            "closes this child. This hook asserts no watcher state, elects no Sol, and "
+            "creates no follow-on work."
+        )
+    }
+
+
 def main() -> None:
     payload, raw = _read_payload()
     delegate = (
@@ -348,24 +399,7 @@ def main() -> None:
             # an ambiguous ordinary guard error with permission to stop.
             probe = None
         if probe is not None and probe["status"] == "parked":
-            checks = ", ".join(str(name) for name in probe["passed"][:8])
-            print(
-                json.dumps(
-                    {
-                        "systemMessage": (
-                            f"SHIP LOOP PARKED: PR #{probe['number']} is lawfully {HOLD_TOKEN}. "
-                            "The exact local head is pushed; the worktree is clean; the PR is "
-                            "draft; merge-on-green and native auto-merge are disarmed; Sol "
-                            "authority plus Sol release condition are recorded; and all binding "
-                            f"checks have concluded clean ({checks}). Merge/render/live are "
-                            "intentionally deferred to Sol review. This is a terminal PARKED "
-                            "state, not SHIPPED and not a blocker to retry. Do not re-enter the "
-                            "ship loop unless Sol releases the hold."
-                        )
-                    },
-                    ensure_ascii=False,
-                )
-            )
+            print(json.dumps(_parked_message(probe), ensure_ascii=False))
             return
         if probe is not None:
             hold_block = _hold_block(probe)

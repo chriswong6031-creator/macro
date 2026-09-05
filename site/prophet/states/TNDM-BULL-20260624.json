@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TNDM-BULL-20260624",
-  "asof": "2026-08-31",
+  "asof": "2026-09-04",
   "phase": "between_t1_t2",
   "detection_phase": "between_t1_t2",
-  "management_confidence": 81.3,
-  "raw_confidence": 83.1,
-  "delta_vs_base": 21.3,
+  "management_confidence": 75.6,
+  "raw_confidence": 72.1,
+  "delta_vs_base": 15.6,
   "recommended_action": "hold",
   "human_state": "Advancing to T2",
   "components": {
     "validity": 100.0,
-    "progress": 79.5,
-    "pace": 87.4,
-    "retention": 82.3,
-    "overlay": 67.0
+    "progress": 67.8,
+    "pace": 73.4,
+    "retention": 57.9,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 3.37,
-    "dist_to_t1_r": -0.87,
-    "dist_to_t2_r": 0.63,
-    "horizon_pct_used": 104.4,
-    "p1": 1.5798,
-    "p2": 0.7899,
+    "dist_to_stop_r": 2.669,
+    "dist_to_t1_r": -0.169,
+    "dist_to_t2_r": 1.331,
+    "horizon_pct_used": 113.3,
+    "p1": 1.1127,
+    "p2": 0.5563,
     "p3": null,
-    "move_r": 2.37,
+    "move_r": 1.669,
     "mfe_r": 2.88,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": "2026-08-06",
   "_first_t2_ts": null,
-  "days_elapsed": 47,
-  "tau": 1.0444
+  "days_elapsed": 51,
+  "tau": 1.1333
 }
