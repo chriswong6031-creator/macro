@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LIVN-BULL-20260818",
-  "asof": "2026-09-03",
+  "asof": "2026-09-05",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 62.8,
-  "raw_confidence": 70.9,
-  "delta_vs_base": 2.8,
+  "management_confidence": 65.8,
+  "raw_confidence": 65.1,
+  "delta_vs_base": 5.8,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 39.6,
-    "pace": 84.8,
+    "progress": 33.8,
+    "pace": 65.4,
     "retention": 50.0,
     "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.729,
-    "dist_to_t1_r": 0.77,
-    "dist_to_t2_r": 2.271,
-    "horizon_pct_used": 35.6,
-    "p1": 0.4863,
-    "p2": 0.2432,
+    "dist_to_stop_r": 1.592,
+    "dist_to_t1_r": 0.908,
+    "dist_to_t2_r": 2.408,
+    "horizon_pct_used": 40.0,
+    "p1": 0.3944,
+    "p2": 0.1972,
     "p3": null,
-    "move_r": 0.729,
+    "move_r": 0.592,
     "mfe_r": 0.729,
     "mae_r": -0.474
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-18",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 18,
+  "tau": 0.4
 }

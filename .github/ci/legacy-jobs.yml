@@ -3432,6 +3432,10 @@ jobs:
       # B1A closure widening 2026-08-24 (contract-delta): lib/evidence_foundation enters via lib/dataos identity readers; the schema is read by the evidence-foundation validator surface.
       - "contracts/market_os/security_state.v1.schema.json"
       - "lib/evidence_foundation.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py now
+      # imports the macro-suite page builder (guarded hook), whose closure
+      # carries the workspace snapshot schema and the suite labels/view libs.
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
       # Eval OS T4 additions. app/: reached through scripts/freshness_sentinel.py, which
       # T4's reader-plane adapter imports for the surface table rather than copying it;
       # the sentinel's alert path imports app.mailer lazily and the closure walker sees
@@ -3494,7 +3498,12 @@ jobs:
       - "lib/filing_value_units.py"
       - "lib/finra_knowable.py"
       - "lib/forex_link.py"
+      - "lib/help_directory.py"
       - "lib/hk_calendar.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): via build_site's
+      # macro-suite hook — see the contracts/market_os entry above.
+      - "lib/macro_suite_labels.py"
+      - "lib/macro_suite_view.py"
       - "lib/nyse_calendar.py"
       - "lib/options_context.py"
       - "lib/pages.py"
@@ -3515,6 +3524,9 @@ jobs:
       - "scripts/build_index_leadership.py"
       - "scripts/build_intelligence_registry.py"
       - "scripts/build_live_overlay.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): imported by
+      # scripts/build_site.py's guarded macro-suite hook.
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
@@ -3560,6 +3572,14 @@ jobs:
       - "site/master_brief.json"
       - "site/neuralwebdata/**"
       - "site/qledger/**"
+      # F13-X1: build_site imports the source-bound help directory, whose
+      # fail-closed contract reads these exact existing owner templates.
+      - "templates/_navlinks.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
+      - "templates/support.html.j2"
       - "tests/test_check_intelligence_registry.py"
       - "tests/test_intelligence_registry.py"
       - "tests/test_output_health.py"
@@ -6491,6 +6511,34 @@ jobs:
       - name: pick lab liquidity gate regression tests
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
+  global-liquidity-transmission:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # W-LIQ.1 state-only producer. Both suites are offline and use synthetic
+    # inputs: the legacy global-liquidity calculations plus the new causal
+    # release-alignment, missing-data, contract-envelope, immutable-hash,
+    # historical-fixture, and walk-forward purge invariants. This lane has no
+    # trading, alerting, routing, or downstream transmission authority.
+    paths:
+      - "config/global_liquidity_transmission_v1.yml"
+      - "engine/global_liquidity.py"
+      - "engine/global_liquidity_transmission.py"
+      - "scripts/build_global_liquidity_transmission.py"
+      - "tests/fixtures/global_liquidity_transmission_wliq1_window.json"
+      - "tests/test_global_liquidity.py"
+      - "tests/test_global_liquidity_transmission.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install state-producer test dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: global liquidity state producers — legacy parity and W-LIQ.1 contract
+        run: python -m pytest tests/test_global_liquidity.py tests/test_global_liquidity_transmission.py -q
+
   ric-w2-surface:
     if: ${{ false }}
     gate: code
@@ -6628,6 +6676,14 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
+      # guarded macro-suite hook imports the page builder, which carries the
+      # workspace contract/registry pair. Enumerated, not globbed — the checker
+      # named exactly these three; the composers themselves are NOT in this
+      # job's closure (thin __init__).
+      - "engine/market_os/macro_workspaces/__init__.py"
+      - "engine/market_os/macro_workspaces/contract.py"
+      - "engine/market_os/macro_workspaces/registry.py"
       # Added-date closure widening 2026-09-01 (contract-delta): the serving
       # path's builder imports now reach the Prophet board_since resolver.
       - "engine/prophet_board_since.py"
@@ -7023,6 +7079,9 @@ jobs:
       - "scripts/build_fundamental_forensics.py"
       - "scripts/build_index_leadership.py"
       - "scripts/build_live_overlay.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): imported by
+      # scripts/build_site.py's guarded macro-suite hook.
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
@@ -7068,6 +7127,14 @@ jobs:
       - "site/prophet/**"
       - "site/qledger/**"
       - "site/vol/**"
+      # F13-X1: build_site imports the source-bound help directory, whose
+      # fail-closed contract reads these exact existing owner templates.
+      - "templates/_navlinks.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
+      - "templates/support.html.j2"
       - "tests/test_biocatalyst_api.py"
       - "tests/test_biocatalyst_d0b_ui.py"
       - "tests/test_biocatalyst_deploy.py"
@@ -8643,6 +8710,15 @@ jobs:
         run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors + dossier quote honesty
         run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py tests/test_dossier_quote_api.py tests/test_dossier_live_quote_surface.py -q
+      # WS:COMMERCIAL-ACTIVATION CA1A (2026-09-04): the event-spine acceptance
+      # battery — registry-as-whitelist derivation (W2-1), envelope-v1 eid/schema/
+      # meta validation and replay identity through the mounted /api/collect route,
+      # producer near-miss source contracts incl. template/site shipping-pair
+      # parity, and the deterministic activation funnel report. Lives in this job
+      # because it owns the beacon/growth-registry subject, and needs exactly the
+      # same minimal FastAPI/httpx dependency closure as the beacon suite above.
+      - name: CA1A event spine — collector envelope v1 + producer contracts + funnel report
+        run: python -m pytest tests/test_commercial_activation_event_spine.py tests/test_ca1a_producers_contract.py tests/test_activation_funnel_report.py -q
       # R1A-M (2026-09-02): the shared regular-quote projector both this job's
       # dossier route AND the Intelligence Hub batch route now use, plus the
       # deliberately public batch API itself — same minimal FastAPI/httpx
@@ -8756,7 +8832,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pyyaml jinja2
       - name: public fastlane split + rendered pricing copy pins
-        run: python -m pytest tests/test_public_render_fastlane.py -q
+        run: python -m pytest tests/test_public_render_fastlane.py tests/test_help_directory.py tests/test_help_directory_contract.py -q
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -10408,6 +10484,13 @@ jobs:
     # the declared-scope coverage audit re-checks them on every load.
     scope: exclusive
     paths:
+      # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
+      # guarded macro-suite hook imports the page builder, which carries the
+      # workspace contract/registry pair. Checker-named files only; the
+      # composers are not in this job's closure (thin __init__).
+      - "engine/market_os/macro_workspaces/__init__.py"
+      - "engine/market_os/macro_workspaces/contract.py"
+      - "engine/market_os/macro_workspaces/registry.py"
       # Added-date closure widening 2026-09-01 (contract-delta): the surfaces
       # census suite imports the intl builders, whose closure spans the intl
       # engine stack. Widened, never narrowed.
@@ -10946,6 +11029,9 @@ jobs:
       - "scripts/build_intl_library.py"
       - "scripts/build_ipo.py"
       - "scripts/build_live_overlay.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): imported by
+      # scripts/build_site.py's guarded macro-suite hook.
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
@@ -11038,7 +11124,11 @@ jobs:
       - "site/qledger/track_record.json"
       - "site/sectordata/**"
       - "site/stocktable.js"
+      # F13-X1 help source-validation closure reached through build_site.
+      - "templates/_navlinks.html.j2"
       - "templates/_prophet_card.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
       - "templates/_stock_decision.css.j2"
       - "templates/_track_record_dlg.html.j2"
       - "templates/_us_board_cards.html.j2"
@@ -11047,7 +11137,10 @@ jobs:
       - "templates/dashboard.html.j2"
       - "templates/hk.html.j2"
       - "templates/intl.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
       - "templates/stocktable.js"
+      - "templates/support.html.j2"
       - "templates/theme.css"
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
@@ -13655,3 +13748,135 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: Cell B V2 buyback source-capacity census
         run: python -m pytest tests/test_cell_b_v2_buyback_source_census.py -q
+
+  market-os-macro-workspaces:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # Market Ontology F01 R1A: mastermind.macro_workspace_snapshot.v1 producer
+    # (US Liquidity Regime composer), fail-closed contract validator, atomic
+    # publisher, CLI exit-code law, and the bounded read-only machine consumer.
+    # All four suites are offline and synthetic-fixture driven; the only real
+    # input ever read at build time is data/regime/latest.json. This lane has
+    # no trading, alerting, routing, or downstream authority.
+    paths:
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
+      - "engine/market_os/**"
+      - "scripts/build_macro_workspaces.py"
+      - "tests/test_macro_workspace_build.py"
+      - "tests/test_macro_workspace_business_activity.py"
+      - "tests/test_macro_workspace_capital_structure.py"
+      - "tests/test_macro_workspace_consumer.py"
+      # R6 2026-09-04: Consumer & Household + National Debt composer suites.
+      - "tests/test_macro_workspace_consumer_payments.py"
+      - "tests/test_macro_workspace_contract.py"
+      - "tests/test_macro_workspace_financial_conditions.py"
+      - "tests/test_macro_workspace_growth.py"
+      - "tests/test_macro_workspace_housing.py"
+      - "tests/test_macro_workspace_inflation.py"
+      - "tests/test_macro_workspace_labor.py"
+      - "tests/test_macro_workspace_liquidity_central_banks.py"
+      - "tests/test_macro_workspace_liquidity_regime.py"
+      - "tests/test_macro_workspace_monetary_policy.py"
+      - "tests/test_macro_workspace_national_debt.py"
+      # Expansion 2026-09-04: Rates & Curves + Trade Flows composer suites.
+      - "tests/test_macro_workspace_rates_curves.py"
+      - "tests/test_macro_workspace_trade_flows.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install workspace-producer test dependencies
+        run: pip install pytest pyyaml jsonschema==4.26.0
+      - name: Market OS macro workspaces — contract, composer, publisher, consumer
+        run: >-
+          python -m pytest
+          tests/test_macro_workspace_build.py
+          tests/test_macro_workspace_business_activity.py
+          tests/test_macro_workspace_capital_structure.py
+          tests/test_macro_workspace_consumer.py
+          tests/test_macro_workspace_consumer_payments.py
+          tests/test_macro_workspace_contract.py
+          tests/test_macro_workspace_financial_conditions.py
+          tests/test_macro_workspace_growth.py
+          tests/test_macro_workspace_housing.py
+          tests/test_macro_workspace_inflation.py
+          tests/test_macro_workspace_labor.py
+          tests/test_macro_workspace_liquidity_central_banks.py
+          tests/test_macro_workspace_liquidity_regime.py
+          tests/test_macro_workspace_monetary_policy.py
+          tests/test_macro_workspace_national_debt.py
+          tests/test_macro_workspace_rates_curves.py
+          tests/test_macro_workspace_trade_flows.py
+          -q
+
+  market-os-macro-suite-pages:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # Market Ontology F01 R1B: the macro-native workspace page family — shared
+    # suite shell, closed-vocab EN/zh labels, snapshot->view model, and the
+    # registry-driven fail-closed page builder. Render-only: reads the
+    # published site/macrodata/workspaces artifacts, writes site/*.html, and
+    # renders a typed refusal rather than inventing state. No trading,
+    # alerting, routing, or downstream authority. engine/market_os/** is in
+    # scope deliberately: a composer change alters the artifacts these pages
+    # render, so it should re-prove the page suite.
+    #
+    # CURATED SCOPE (2026-09-04, at birth). `scope: exclusive` so the paths
+    # below REPLACE inference: the builder's jinja FileSystemLoader is an
+    # opaque construct whose fallback smear claimed `templates/**` and put
+    # templates/index.html at 132 jobs against the 131 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs.
+    # The job reads five named templates, not the tree. Widening is the safe
+    # direction: when a new import lands, the closure-coverage audit names the
+    # exact uncovered file — add it here.
+    scope: exclusive
+    paths:
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
+      - "engine/__init__.py"
+      - "engine/market_os/**"
+      - "templates/_macro_suite_shell.html.j2"
+      - "templates/macro_liquidity_regime.html.j2"
+      # R2 pages wave 2026-09-04: the six MCS/cycle workspace pages.
+      - "templates/macro_growth_real_economy.html.j2"
+      - "templates/macro_business_activity.html.j2"
+      - "templates/macro_labor_markets.html.j2"
+      - "templates/macro_inflation_system.html.j2"
+      - "templates/macro_monetary_policy.html.j2"
+      - "templates/macro_financial_conditions.html.j2"
+      # R3 2026-09-04: the Liquidity & Central Banks page.
+      - "templates/macro_liquidity_central_banks.html.j2"
+      # R4/R5 2026-09-04: Capital Structure + Housing pages.
+      - "templates/macro_capital_structure.html.j2"
+      - "templates/macro_housing_real_estate.html.j2"
+      # R6 2026-09-04: Consumer & Household + National Debt pages.
+      - "templates/macro_consumer_payments.html.j2"
+      - "templates/macro_national_debt_liabilities.html.j2"
+      # Expansion 2026-09-04: Rates & Curves + Trade Flows pages.
+      - "templates/macro_rates_curves.html.j2"
+      - "templates/macro_trade_flows.html.j2"
+      - "templates/macro_suite.css"
+      - "templates/macro_suite.js"
+      - "templates/macro_suite_boot.js"
+      - "lib/__init__.py"
+      - "lib/config.py"
+      - "lib/macro_suite_labels.py"
+      - "lib/macro_suite_view.py"
+      - "lib/pages.py"
+      - "scripts/__init__.py"
+      - "scripts/build_macro_suite_pages.py"
+      - "site/macrodata/workspaces/**"
+      - "tests/test_macro_suite_pages.py"
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install suite-page test dependencies
+        run: pip install pytest jinja2 pyyaml jsonschema==4.26.0
+      - name: Market OS macro suite pages — shell, labels, view model, builder
+        run: python -m pytest tests/test_macro_suite_pages.py -q

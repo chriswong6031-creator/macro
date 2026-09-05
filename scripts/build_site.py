@@ -42,6 +42,7 @@ from engine.us_board_rank import (  # noqa: E402
 )
 from lib import config, site_assets, store  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
+from lib.help_directory import help_directory_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -3731,6 +3732,18 @@ def build_support_page(env: Environment, site: Path, generated: str) -> None:
     log.info("wrote support.html (public support desk)")
 
 
+def build_help_page(env: Environment, site: Path, generated: str) -> None:
+    """Render the public, source-validated bilingual owner directory.
+
+    This is deliberately fail-closed. A missing source label or invalid target
+    aborts the render instead of leaving a stale or inferred help destination.
+    """
+    vm = help_directory_view_model(config.ROOT)
+    html = env.get_template("help.html.j2").render(generated_utc=generated, **vm)
+    write_page(site / "help.html", html)
+    log.info("wrote help.html (%d source-validated links)", len(vm["entries"]))
+
+
 def build_unsubscribe_page(env: Environment, site: Path, generated: str) -> None:
     """✨ Unsubscribe — the public bilingual opt-out page (SEE W4, masterplan R5).
 
@@ -5719,6 +5732,11 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("support page failed: %s", e)
     try:
+        build_help_page(env, site, generated)
+        _tmark("help_page")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("help page failed: %s", e)
+    try:
         build_unsubscribe_page(env, site, generated)
         _tmark("plans_support_unsub_pages")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -7672,6 +7690,19 @@ def main() -> int:
         log.info("wrote %s", _cs_page)
     except Exception as _cs_e:  # noqa: BLE001 — additive; never break main build
         log.warning("capital_structure.html render failed (%s); page skipped", _cs_e)
+
+    # F01 Macro & Monetary suite — server-rendered workspace pages over the
+    # validated mastermind.macro_workspace_snapshot.v1 artifacts. The builder
+    # fails CLOSED on its own (a refused snapshot renders the typed refusal page,
+    # never a stale or empty one), so this hook only keeps a full-site rebuild
+    # from leaving the suite's pages and shared assets behind the templates.
+    try:
+        from scripts.build_macro_suite_pages import render as _render_macro_suite
+        _macro_suite_pages = _render_macro_suite(config.ROOT)
+        for _mq_page in _macro_suite_pages:
+            log.info("wrote %s", _mq_page)
+    except Exception as _mq_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("macro suite pages render failed (%s); pages skipped", _mq_e)
 
     # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
     # falsifier health, filter chips, and weekly-delta strip. Reads the four

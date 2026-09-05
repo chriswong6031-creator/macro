@@ -66,11 +66,11 @@ def test_shipped_caddyfile_line_numbers_match_known_blocks() -> None:
     assert proxies == {
         121: SAFE_PEER_STAMPED,
         146: SAFE_PEER_STAMPED,
-        348: SAFE_FIXED_REWRITE,
-        357: SAFE_FIXED_REWRITE,
-        390: SAFE_FIXED_REWRITE,
-        428: SAFE_FIXED_REWRITE,
-        770: SAFE_FIXED_REWRITE,
+        349: SAFE_FIXED_REWRITE,
+        358: SAFE_FIXED_REWRITE,
+        391: SAFE_FIXED_REWRITE,
+        429: SAFE_FIXED_REWRITE,
+        771: SAFE_FIXED_REWRITE,
     }
 
 

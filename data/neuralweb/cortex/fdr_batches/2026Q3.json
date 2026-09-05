@@ -1,0 +1,20 @@
+{
+  "schema": "neuralweb.cortex_fdr_batch.v1",
+  "batch_version": "cortex-fdr-v1",
+  "quarter": "2026Q3",
+  "family": "cortex",
+  "q": 0.1,
+  "run_at": "2026-09-05T19:41:33+00:00",
+  "dry_run": false,
+  "min_evaluator_version": "W7b-PR3",
+  "min_episodes": 8,
+  "n_candidates": 0,
+  "n_eligible": 0,
+  "n_ineligible": 0,
+  "n_survivors": 0,
+  "survivors": [],
+  "eligible": [],
+  "ineligible": [],
+  "promotion_note": "Surviving BH is NECESSARY, never sufficient, to leave shadow.  This artifact changes no authority, rank, size or gate; promotion is a separate human-gated act.",
+  "decision_changed": true
+}

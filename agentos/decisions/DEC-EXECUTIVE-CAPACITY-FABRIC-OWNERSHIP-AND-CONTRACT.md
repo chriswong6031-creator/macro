@@ -56,6 +56,8 @@ evidence:
   - "Mastermind research/EXECUTIVE_OS_PHASE1FC_CEO_POLICY_AND_IMPLEMENTATION_COMMISSION_2026-08-20.md — later accepted COO-cycle law owns schema-v4 placement/principal evidence"
   - "Mastermind control_plane/model_router.py + config/executive_worker_routes.json — current deterministic task/model routing remains separate from provider capacity"
   - "research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md — whole-repo commit is nonsemantic audit provenance; later claim evidence must bind snapshot hash plus generated time"
+  - "Capacity Runtime Contract proposed revision 2 @ SHA256 7368ad403cde6917026636bb60c4e67ff5c7f8a6e03a55fa3a48b311dd3a4e42 — Integration accepted the finite measurement-boundary and Runtime-feasibility design scope without commissioning an implementation"
+  - "Capacity fairness source map @ SHA256 764874309c48ca92c9b67726d51ba1de58e585cbaa9b778eb55ad80048880975 — immutable-source census records unavailable first-runnable/cohort/realm facts, existing owner boundaries and absence of production fairness proof"
 affects:
   - WS:EXECUTIVE-CAPACITY-FABRIC
   - shared-ai-provider-control
@@ -92,3 +94,50 @@ Do not add an Executive provider-account database, a second quota ledger, a seco
 ledger, another host/session registry, a provider-specific scheduler, a long-lived bridge daemon
 created only for convenience, or a hidden retry/failover plane. New providers extend Shared
 Provider Control plus reviewed worker harnesses; they do not change the ownership law above.
+
+## Accepted capacity-runtime fairness contract — design scope only
+
+Integration accepted the exact revision-2 design package
+`SHA256:7368ad403cde6917026636bb60c4e67ff5c7f8a6e03a55fa3a48b311dd3a4e42`.
+The package and its source map are external evidence artifacts at
+`/Users/chriswong/Documents/Cluade/exec-prestage-receipts/capacity-h0-census-20260905-01a06f73/`;
+their hashes provide design provenance but do not make that local directory a Git authority.
+Protected Macro records the portfolio acceptance separately in the two handoffs merged by
+`8e49149233713f0983a9ebfdac6f437857dc8bcf`. This addendum does not supersede the F0
+ownership decision: Macro Shared Provider Control remains the provider-fact owner, Model Router
+remains the stateless suitability filter, and Executive Runtime remains the sole Job, Attempt,
+Worker and Event owner.
+
+For a separately authorized exact Runtime commission, the original allocation command event must
+be strictly reconciled before admission transaction A and again in decision transaction B. The
+actual original-command claim or proven noncommit result must persist and reconcile even when
+optional measurement fails. Measurement failure degrades the affected coverage or denominator to
+`UNKNOWN`; it cannot block otherwise lawful execution, shrink the denominator, create a retry,
+or disguise an execution failure as an observation result. The current Event log and reserved
+internal command namespace remain the only proposed admission/result topology: a committed claim
+extends the existing original-command `JOB_CLAIMED`; a proven no-capacity/refusal/conflict result
+has no Attempt, lease or selected Worker; an unprovable decision remains an explicit unknown for
+canonical reconciliation.
+
+The accepted initial domain is command-bound Executive-root Worker allocation. C2,
+generated-ID and role-null paths are outside that frozen domain unless separately versioned.
+Runtime derives in-scope membership, callers cannot opt out to hide a bypass, and a missing
+comparable path prevents a global graduation claim. First-runnable eligibility is a write-once
+source-owned Job/Event pair independent of measurement, so its age survives retry, backoff and
+occupied capacity. A complete frozen comparable cohort, whole-epoch denominator, all-bypass
+reporting, accepted realm-independence evidence and at most three unexplained comparable bypass
+allocations per epoch remain prerequisites for any future fairness graduation.
+
+The later commission must use the existing Runtime migration/backup owner for an explicit offline
+M5 upgrade with backup, restore, quarantine and recovery proof; it may not make a writable
+startup migration. It must propagate typed no-Attempt outcomes through the existing
+Runtime/COO/service/supervisor path without a provider or harness action. Nothing here changes
+the current dispatcher, C1 tie law, manual authority, existing fences, provider execution,
+host state, or Worker harnesses, and it admits no second scheduler, lifecycle, store or
+controller.
+
+This acceptance is `SPEC_ONLY` with domain completion `PARTIAL`. It is neither a source `START`,
+implementation acceptance, installed-host result, provider execution nor production fairness
+proof. The source map's unavailable first-runnable history, full comparable cohort, allocation
+weight/resource profile and accepted realm-independence facts remain `UNKNOWN` until existing
+owners establish them through a separately authorized implementation and production proof.

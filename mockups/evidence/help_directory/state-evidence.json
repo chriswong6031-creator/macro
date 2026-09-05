@@ -1,0 +1,94 @@
+{
+  "schema": "mastermind.help_directory_state_evidence.v1",
+  "source_head": "bcf657cd0f73ea5642105cf373734a1913b05095",
+  "source_tree": "d52b1ad504374bdcbb0ec420ace237c6091f1408",
+  "captured_at": "2026-09-04T12:32:00Z",
+  "method": {
+    "browser": "headless Chromium through Playwright 1.62.0",
+    "filter_empty": "Loaded the committed site/help.html, filled #help-search through Playwright, and observed the production input listener.",
+    "mixed_unknown": "Rendered the exact committed help_directory_view_model plus templates/help.html.j2 in memory with one complete and one explicit unknown entry, then served that fixture only to the headless browser. /help-unknown.html is not a product route.",
+    "synthetic_content": "The unknown fixture uses the contract-test status labels Availability unknown and 可用性未知; it does not claim a real owner is unavailable."
+  },
+  "states": [
+    {
+      "state": "filter-empty",
+      "route": "/help.html",
+      "theme": "dark",
+      "locale": "en",
+      "viewport": [1440, 900],
+      "file": "2dd72d476b3c5a9e--filter-empty.png",
+      "sha256": "2dd72d476b3c5a9e211fd29781967f64a256e462bdc7a0b07b20f317d4702c2c",
+      "actual_state_path": true,
+      "observed": {
+        "directory_state": "empty",
+        "result_count": 0,
+        "visible_cards": 0,
+        "empty_panel_visible": true,
+        "empty_text": "NO MATCHING LINKS · 0"
+      },
+      "horizontal_overflow": false,
+      "console_errors": [],
+      "failed_responses": []
+    },
+    {
+      "state": "filter-empty",
+      "route": "/help.html",
+      "theme": "light",
+      "locale": "zh",
+      "viewport": [390, 844],
+      "file": "5a17013f355c4d6e--filter-empty.png",
+      "sha256": "5a17013f355c4d6efd093873f26e2b629ad7c1f7b1f0bf3aaa9e4ac6d80967ce",
+      "actual_state_path": true,
+      "observed": {
+        "directory_state": "empty",
+        "result_count": 0,
+        "visible_cards": 0,
+        "empty_panel_visible": true,
+        "empty_text": "没有匹配链接 · 0"
+      },
+      "horizontal_overflow": false,
+      "console_errors": [],
+      "failed_responses": []
+    },
+    {
+      "state": "mixed-unknown",
+      "route": "/help-unknown.html",
+      "theme": "dark",
+      "locale": "en",
+      "viewport": [1440, 900],
+      "file": "c767110e3d18b356--mixed-unknown.png",
+      "sha256": "c767110e3d18b3566ee2cfb09fad05ae090b30fca2fa22b1c134b857ee56df8b",
+      "actual_state_path": true,
+      "observed": {
+        "directory_state": "complete",
+        "complete_links": 1,
+        "unknown_cards": 1,
+        "unknown_links": 0,
+        "unknown_text": "AVAILABILITY UNKNOWN"
+      },
+      "horizontal_overflow": false,
+      "console_errors": [],
+      "failed_responses": []
+    },
+    {
+      "state": "mixed-unknown",
+      "route": "/help-unknown.html",
+      "theme": "light",
+      "locale": "zh",
+      "viewport": [390, 844],
+      "file": "7c50c6e1c4b30f8e--mixed-unknown.png",
+      "sha256": "7c50c6e1c4b30f8eabf6ceafb1bdcc9e31b042d591572a245b5fb90b2046ee97",
+      "actual_state_path": true,
+      "observed": {
+        "directory_state": "complete",
+        "complete_links": 1,
+        "unknown_cards": 1,
+        "unknown_links": 0,
+        "unknown_text": "可用性未知"
+      },
+      "horizontal_overflow": false,
+      "console_errors": [],
+      "failed_responses": []
+    }
+  ]
+}

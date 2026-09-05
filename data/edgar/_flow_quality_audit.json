@@ -1,19 +1,19 @@
 {
-"applied": "2026-08-29T07:21:24.903054+00:00",
-"rows_flagged": 168,
-"tickers_flagged": 51,
+"applied": "2026-09-05T12:14:35.323919+00:00",
+"rows_flagged": 169,
+"tickers_flagged": 52,
 "by_flag": {
 "ni:xsrc_scale": 89,
 "ni:xsrc_cohort": 5,
-"ni:flank_scale": 53,
+"ni:flank_scale": 54,
 "cfo:flank_scale": 6,
 "revenue:flank_scale": 12,
 "dividends:flank_scale": 1,
 "op_income:flank_scale": 2
 },
-"repaired": 168,
+"repaired": 169,
 "nulled": 0,
-"mirrors": 115,
+"mirrors": 116,
 "rows": [
 {
 "ticker": "ANET",
@@ -1220,6 +1220,15 @@
 "raw": 37900.0,
 "repair": 37900000.0,
 "note": "x1e3 flank"
+},
+{
+"ticker": "PAYX",
+"fy": 2023,
+"col": "ni",
+"flag": "flank_scale",
+"raw": 1690.0,
+"repair": 1690000000.0,
+"note": "x1e6 flank"
 },
 {
 "ticker": "PKE",

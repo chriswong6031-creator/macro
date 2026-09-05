@@ -1135,14 +1135,314 @@
 "refused_pre_tenure": 0,
 "source": "yfinance"
 },
+"ROVI": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"RRD": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"RRGB": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 949,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
 "RTN": {
 "at": "2026-07-18T14:56:49.293828+00:00",
 "n": 0,
 "source": null
 },
+"RVBD": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"RYAM": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 2310,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"SAFM": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SEE": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SENEA": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1208,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"SIAL": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SIVB": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SLCA": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SLXP": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SNCY": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SNV": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SPLS": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SPTN": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SRCL": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SSTK": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1938,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"SUNE": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1379,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"SVU": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 5511,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"SWAV": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SWI": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SWN": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SWY": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SXC": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1890,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"SYKE": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"SYNH": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TCF": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TCMD": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 949,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"TECD": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TGI": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TGNA": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"THRY": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1339,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
 "TIF": {
 "at": "2026-07-18T14:56:49.293828+00:00",
 "n": 0,
+"source": null
+},
+"TIVO": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TLAB": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TRHC": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TTEC": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1453,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"TUP": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TVTY": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TWTC": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"TWTR": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"UEIC": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1136,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"UFI": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1041,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"UMPQ": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"UNVR": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"URS": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"USNA": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1791,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"UTIW": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"UVE": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 1262,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"UVN": {
+"at": "2026-09-05T17:16:14.055749+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
 "source": null
 },
 "VAR": {

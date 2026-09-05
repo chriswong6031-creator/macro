@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-08-31",
-  "generated_at": "2026-09-01T06:55:00.005799+00:00",
+  "as_of": "2026-09-05",
+  "generated_at": "2026-09-05T14:34:45.793669+00:00",
   "region": "us",
   "gate": {
     "min_n": 150,
@@ -17,29 +17,29 @@
   "signals": {
     "radar": {
       "signal": "radar",
-      "n_matured": 8610,
-      "ic": -0.0318,
-      "t_hac": -0.496,
+      "n_matured": 8966,
+      "ic": -0.0358,
+      "t_hac": -0.588,
       "horizon": "21",
       "demoted": false,
       "trust": 1.0,
-      "reason": "not significant: 21d t=-0.496 (need |t|\u22652.0) \u2014 trust 1.0",
+      "reason": "not significant: 21d t=-0.588 (need |t|\u22652.0) \u2014 trust 1.0",
       "input": {
         "source": "site/basketdata/radar_ic.json",
-        "as_of": "2026-08-31",
+        "as_of": "2026-09-05",
         "age_days": 0,
         "stale": false
       }
     },
     "hub": {
       "signal": "hub",
-      "n_matured": 84853,
-      "ic": -0.0194,
-      "t_hac": -0.669,
+      "n_matured": 85275,
+      "ic": -0.0206,
+      "t_hac": -0.742,
       "horizon": "21",
       "demoted": false,
       "trust": 1.0,
-      "reason": "healthy: 21d IC=-0.019 not wrong-sign \u2014 trust 1.0"
+      "reason": "healthy: 21d IC=-0.021 not wrong-sign \u2014 trust 1.0"
     }
   },
   "n_demoted": 0,
@@ -47,7 +47,7 @@
   "inputs": {
     "radar": {
       "source": "site/basketdata/radar_ic.json",
-      "as_of": "2026-08-31",
+      "as_of": "2026-09-05",
       "age_days": 0,
       "stale": false
     }

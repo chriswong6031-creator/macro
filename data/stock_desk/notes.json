@@ -1,169 +1,166 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-09-03",
-  "generated_at": "2026-09-04T02:57:09.637213+00:00",
+  "as_of": "2026-09-04",
+  "generated_at": "2026-09-05T06:22:25.000907+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-09-03-ADM-20260904025709-1",
+      "id": "2026-09-04-ADM-20260905062225-1",
       "ticker": "ADM",
       "name": null,
-      "lean": "constructive",
+      "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The constructive lean follows the residual-alpha selection and an unblocked uptrend, not the board rank. Conviction stays low because entry urgency is cautious, the tape is mixed, and prior constructive directional accuracy is only 32.4%.",
+      "horizon_d": 30,
+      "thesis": "The verdict is a high-confluence leader, but the caution flags deterioration in its Consumer Staples basket and the board shows a caution urgency on a fresh buy, so the extension/don't-chase brake suppresses any constructive lean without warranting a short against momentum that is still intact.",
       "evidence": [
         "Verdict: High-confluence leader",
-        "Selection z: 1.03",
-        "Entry unblocked; direction up",
-        "Accounting flag: clean"
+        "Board state: FRESH BUY, urgency caution",
+        "Caution: Consumer Staples basket deteriorating",
+        "Entry z: 0.44, off-high -2.1%"
       ],
-      "dissent": "At only 2.8% below its high with cautious urgency, near-term upside may already be crowded despite intact momentum.",
+      "dissent": "The event-edge confluence (SUE z=1.28, insider, revisions) could persist and ADM could continue leading even with a weakening basket.",
       "falsifier": {
-        "text": "The uptrend breaks and the board state loses its fresh-buy status while ADM underperforms the S&P 500.",
+        "text": "ADM closes below its recent pullback low while the Consumer Staples basket breaks its own trend",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "ADM",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-10-01",
+      "check_by": "2026-10-16",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
-      "id": "2026-09-03-SONO-20260904025709-2",
-      "ticker": "SONO",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "The base-building verdict is supported by residual-alpha selection, an unblocked entry, and the strongest quality axis in this group; validated insider buying adds genuine event context. The weak historical accuracy of constructive calls keeps conviction below high.",
-      "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Validated insider z: 1.50",
-        "Entry percentile: 60; not blocked",
-        "Quality z: 1.94; accounting clean"
-      ],
-      "dissent": "Being 15.7% below the high may describe unresolved damage rather than a durable base, while the macro tailwind is mildly adverse.",
-      "falsifier": {
-        "text": "The base fails, direction turns down, and SONO underperforms the S&P 500 over the horizon.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "SONO",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-10-01",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-09-03-F-20260904025709-3",
+      "id": "2026-09-04-F-20260905062225-2",
       "ticker": "F",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The constructive base and turn signal argue against a bearish call, but the risk controls identify a lagging consumer-discretionary basket and accounting quality needing review. With negative fresh SUE context and only modest selection strength, relative direction is not clear enough to endorse.",
+      "horizon_d": 21,
+      "thesis": "The verdict is neutral with no clear edge, and while the board shows a turn signal and now urgency, negative SUE and accounting watch caution argue against any directional lean; the name is neither strong enough to constructively lean on nor weak enough to short.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Board state: TURN SIGNALED; direction up",
-        "SUE z: -0.89, fresh 5 days",
-        "Accounting: watch; sector basket below long-term trend"
+        "Verdict: Neutral \u2014 no clear edge",
+        "SUE z: -0.89",
+        "Accounting quality: watch",
+        "Board state: TURN SIGNALED, off-high -15.6%",
+        "Caution: Consumer Discretionary basket below trend"
       ],
-      "dissent": "Positive revisions, momentum, and an unblocked entry could turn the early base into sustained outperformance.",
+      "dissent": "A sharp turn signal with now urgency could mark an inflection if recent insider buying and revisions turn positive, producing an outsized bounce.",
       "falsifier": {
-        "text": "The turn signal develops into a sustained uptrend and F outperforms the S&P 500 over the horizon.",
+        "text": "F breaks above its recent turn-signal trigger level on strong volume",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-09-24",
-      "engine_verdict": "Constructive \u2014 building a base"
+      "check_by": "2026-10-05",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-09-03-WFC-20260904025709-4",
+      "id": "2026-09-04-WFC-20260905062225-3",
       "ticker": "WFC",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The deterministic verdict says no clear edge: the favorable unblocked entry is offset by near-zero selection, weak momentum and quality, plus the crowded-and-stretched sector risk control. That conflict supports watching rather than taking a relative direction.",
+      "horizon_d": 30,
+      "thesis": "The verdict is neutral with no clear edge, and despite a fresh buy with now urgency and positive SUE, accounting watch and a crowded Financials basket keep this a no-direction watch.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z: -0.03",
-        "Momentum z: -0.58",
-        "Quality z: -0.93; accounting watch",
-        "Financials basket crowded and stretched"
+        "SUE z: 0.96",
+        "Accounting quality: watch",
+        "Caution: Financials basket crowded and stretched",
+        "Board state: FRESH BUY, off-high -5.3%"
       ],
-      "dissent": "The fresh-buy state, positive SUE context, and favorable entry could sustain the uptrend despite weak cross-sectional context.",
+      "dissent": "Positive SUE and a fresh buy with now urgency could produce a sharp move if accounting concerns fade.",
       "falsifier": {
-        "text": "WFC sustains its fresh-buy uptrend and clearly outperforms the S&P 500 over the horizon.",
+        "text": "WFC closes below its prior consolidation low",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-10-01",
+      "check_by": "2026-10-16",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-09-03-SPNT-20260904025709-5",
-      "ticker": "SPNT",
+      "id": "2026-09-04-SMP-20260905062225-4",
+      "ticker": "SMP",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The turn signal and unblocked entry are constructive, but selection is nearly flat while quality is weak and accounting remains on watch. The neutral verdict therefore offers no accountable basis for a relative directional lean.",
+      "horizon_d": 21,
+      "thesis": "The verdict is neutral with no clear edge, and despite a fresh buy with now urgency and clean accounting, the absence of drivers and a weak tailwind leave no leg to lean on.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z: 0.11",
-        "Entry percentile: 62; not blocked",
-        "Quality z: -0.98; accounting watch",
-        "Board state: TURN SIGNALED"
+        "Board state: FRESH BUY, off-high -7.5%",
+        "No cautions, no drivers",
+        "Tailwind z: -0.32"
       ],
-      "dissent": "Positive momentum and tailwind context may confirm the turn and produce continued relative strength.",
+      "dissent": "A fresh buy state with now urgency in a low-vol small cap could offer attractive entry if the broader tape rallies.",
       "falsifier": {
-        "text": "The turn signal holds as an uptrend and SPNT outperforms the S&P 500 over the horizon.",
+        "text": "SMP closes below its current fresh-buy trigger level",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-09-24",
+      "check_by": "2026-10-05",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-09-03-FAF-20260904025709-6",
-      "ticker": "FAF",
+      "id": "2026-09-04-PCRX-20260905062225-5",
+      "ticker": "PCRX",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "The engine verdict is lagging relative weakness, and with negative revisions (z=-1.51), negative SUE, and flat momentum, the actual bearish signal supports a cautious short lean versus the S&P 500 even though the board shows an extended hold.",
+      "evidence": [
+        "Verdict: Lagging \u2014 relative weakness",
+        "Revision z: -1.51",
+        "SUE z: -0.23",
+        "Momentum z: -0.17",
+        "Board state: HOLD \u2014 EXTENDED"
+      ],
+      "dissent": "Positive tailwind and clean quality could catch a bid if the name is oversold, especially with the board showing up direction and a now urgency.",
+      "falsifier": {
+        "text": "PCRX closes above its recent extension high",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "PCRX",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-10-16",
+      "engine_verdict": "Lagging \u2014 relative weakness"
+    },
+    {
+      "id": "2026-09-04-COF-20260905062225-6",
+      "ticker": "COF",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The constructive base and unblocked cycle argue against shorting, but the explicit extension brake says not to chase while the selection and quality reads are only modest. Because extension alone is not a bearish signal, the accountable stance is neutral.",
+      "horizon_d": 21,
+      "thesis": "The verdict is neutral with no clear edge, and although the board shows a turn signal with now urgency, strong negative momentum (z=-1.39) offsets a positive SUE, leaving no reliable directional edge.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Board state: HOLD \u2014 EXTENDED",
-        "Entry includes extension; not blocked",
-        "Selection z: 0.32",
-        "Accounting flag: clean"
+        "Verdict: Neutral \u2014 no clear edge",
+        "SUE z: 1.8",
+        "Momentum z: -1.39",
+        "Revision z: -0.59",
+        "Caution: Financials basket crowded and stretched"
       ],
-      "dissent": "The intact uptrend and positive revisions could let momentum persist despite the extended entry.",
+      "dissent": "A very strong SUE on fresh earnings could catalyze a sharp bounce from a turn signal, especially with entry signals present.",
       "falsifier": {
-        "text": "FAF consolidates without losing its uptrend and then outperforms the S&P 500 over the horizon.",
+        "text": "COF breaks below its turn-signal low",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-09-24",
-      "engine_verdict": "Constructive \u2014 building a base"
+      "check_by": "2026-10-05",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
