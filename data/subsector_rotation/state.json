@@ -205,7 +205,7 @@
   "autonomoussoftware": {
     "emerging": false,
     "name": "Software",
-    "quadrant": "improving",
+    "quadrant": "lagging",
     "theme": "Autonomous Systems",
     "turn_state": "range"
   },
@@ -457,7 +457,7 @@
   "commenergyuranium": {
     "emerging": true,
     "name": "Uranium",
-    "quadrant": "improving",
+    "quadrant": "leading",
     "theme": "Commodities Energy",
     "turn_state": "range"
   },
@@ -949,7 +949,7 @@
     "name": "Charging",
     "quadrant": "leading",
     "theme": "Electric Vehicles",
-    "turn_state": "bottoming"
+    "turn_state": "turn_up"
   },
   "evschips": {
     "emerging": true,
@@ -1824,7 +1824,7 @@
     "name": "Enterprise",
     "quadrant": "weakening",
     "theme": "Virtual & Augmented Reality",
-    "turn_state": "turn_down"
+    "turn_state": "topping"
   },
   "varealityhardware": {
     "emerging": false,

@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-09-05",
-  "generated_utc": "2026-09-05T03:23:58Z",
+  "generated_utc": "2026-09-05T14:44:53Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 315,
@@ -229,7 +229,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 26316,
+        "n_open": 29134,
         "n_past_check_by": 20280
       },
       "allowed_actions": [
@@ -277,7 +277,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 26316,
+        "n_open": 29134,
         "n_past_check_by": 20280
       },
       "allowed_actions": [
@@ -465,7 +465,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 4048,
+        "n_open": 4108,
         "n_past_check_by": 2694
       },
       "allowed_actions": [
@@ -577,7 +577,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1333,
+        "n_open": 1336,
         "n_past_check_by": 423
       },
       "allowed_actions": [
@@ -1114,8 +1114,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 79710,
-        "n_with_falsifier": 744,
+        "n_claims": 85691,
+        "n_with_falsifier": 752,
         "falsifier_coverage": "0.9%",
         "blocking_reason": "falsifier coverage 0.9%; not a promotion-grade substrate"
       },
@@ -9548,7 +9548,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 4,
+        "n_open": 5,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9580,7 +9580,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 12889,
+        "n_open": 13168,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9612,7 +9612,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 16,
+        "n_open": 17,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9644,7 +9644,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 6,
+        "n_open": 7,
         "n_past_check_by": 0
       },
       "allowed_actions": [

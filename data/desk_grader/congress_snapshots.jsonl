@@ -7970,3 +7970,11 @@
 {"date":"2026-09-05","ticker":"SPGI","departed":true,"left_desk":"2026-09-05","last_rank":106,"last_score":49.8}
 {"date":"2026-09-05","ticker":"STLD","departed":true,"left_desk":"2026-09-05","last_rank":142,"last_score":37.7}
 {"date":"2026-09-05","ticker":"YUM","departed":true,"left_desk":"2026-09-05","last_rank":41,"last_score":28.9}
+{"date":"2026-09-05","ticker":"VST","rank":41,"score":31.1,"lean":1,"gate_tier":"T2","covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"YUM","rank":84,"score":20.3,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"APH","rank":104,"score":61.6,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"T","rank":112,"score":47.3,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"AMCR","rank":117,"score":45.2,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"PYPL","rank":130,"score":40.9,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"ICE","rank":139,"score":39.5,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-09-05","ticker":"LH","rank":146,"score":38.7,"lean":1,"covered":true,"unconfirmed":false}

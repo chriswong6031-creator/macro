@@ -1,7 +1,7 @@
 {
   "schema": "rates_command.v1",
   "asof": "2026-09-04",
-  "built": "2026-09-05T03:18:45.401909+00:00",
+  "built": "2026-09-05T14:40:51.374319+00:00",
   "display_only": true,
   "authority": false,
   "board": {
@@ -10,11 +10,11 @@
       "policy_rate": 3.63,
       "implied_path": {
         "m1": 3.74,
-        "m3": 3.89,
-        "m6": 4.06,
-        "m12": 4.23
+        "m3": 3.88,
+        "m6": 4.05,
+        "m12": 4.22
       },
-      "implied_bp_12m": 60,
+      "implied_bp_12m": 59,
       "implied_cuts_12m": -2,
       "path_plain": {
         "en": "about two hikes",
@@ -38,15 +38,15 @@
         "horizon_label": "end-2026",
         "horizon_months": 3,
         "fed_dot": 3.8,
-        "market": 3.89,
-        "gap_bp": 9,
+        "market": 3.88,
+        "gap_bp": 8,
         "lean_en": "market ≈ the Fed",
         "lean_zh": "市场与美联储基本一致"
       },
-      "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.23%)",
-      "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.23%）",
-      "read_en": "At end-2026 the market implies 3.89% vs the Fed's 3.80% median dot (+9bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.76pp).",
-      "read_zh": "在end-2026，市场隐含 3.89% 对比美联储 3.80% 的中位点（+9基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.76个百分点）。",
+      "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.22%)",
+      "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.22%）",
+      "read_en": "At end-2026 the market implies 3.88% vs the Fed's 3.80% median dot (+8bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.74pp).",
+      "read_zh": "在end-2026，市场隐含 3.88% 对比美联储 3.80% 的中位点（+8基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.74个百分点）。",
       "source_en": "ZQ fed-funds futures",
       "source_zh": "ZQ 联邦基金期货"
     },
@@ -64,14 +64,14 @@
         "release_type": "cpi_headline",
         "period": "2026-08",
         "release_date": "2026-09-11",
-        "days_to": 7,
+        "days_to": 6,
         "point": 0.4044,
         "surprise_skew_tag": "hotter",
         "surprise_skew_sigma": 1.596
       }
     },
     "risk_row": {
-      "real_speed_pctile": 0.48,
+      "real_speed_pctile": 0.41,
       "real_speed_note_en": "Flags risk, not return — high percentile = fast real-rate moves, not directional signal.",
       "real_speed_note_zh": "标记风险而非收益——高百分位表示实际利率快速波动，并非方向性信号。",
       "curve_regime_key": "bear_flattener",
@@ -81,9 +81,9 @@
       "term_premium_chg_bp": 8.0,
       "term_premium_note_en": "Kim-Wright model (FRED THREEFYTP10); ACM pending",
       "term_premium_note_zh": "Kim-Wright模型（FRED THREEFYTP10）；ACM待接入",
-      "front2y_speed_bp": 26.0,
-      "real10y_speed_bp": 25.0,
-      "recession_ntfs": 0.76,
+      "front2y_speed_bp": 21.0,
+      "real10y_speed_bp": 22.0,
+      "recession_ntfs": 0.74,
       "nyfed_prob": 13.0
     },
     "policy_row": {
@@ -119,9 +119,9 @@
         "key": "H1_path_repricing",
         "active": true,
         "weight": 2,
-        "value": 15.5,
-        "detail_en": "Futures added +15.5bp of 12-month rate over the last month.",
-        "detail_zh": "期货在过去一个月内将12个月利率上调了+15.5个基点。",
+        "value": 15.0,
+        "detail_en": "Futures added +15.0bp of 12-month rate over the last month.",
+        "detail_zh": "期货在过去一个月内将12个月利率上调了+15.0个基点。",
         "null_reason": null
       },
       {
@@ -227,9 +227,9 @@
     {
       "key": "D1_dots_vs_market",
       "active": false,
-      "value_bp": 9.0,
-      "detail_en": "Market vs dot gap: +9bp — within normal range (threshold: ±50bp).",
-      "detail_zh": "市场与点阵图利差：+9个基点——在正常范围内。"
+      "value_bp": 8.0,
+      "detail_en": "Market vs dot gap: +8bp — within normal range (threshold: ±50bp).",
+      "detail_zh": "市场与点阵图利差：+8个基点——在正常范围内。"
     },
     {
       "key": "D2_projection_vs_breakeven",
@@ -240,16 +240,16 @@
     {
       "key": "D3_pressure_vs_market",
       "active": false,
-      "detail_en": "Pressure-vs-market gap not active (net_state=repricing_hawkish, implied=+60bp).",
-      "detail_zh": "压力与市场背离未激活（net_state=repricing_hawkish，隐含=+60bp）。"
+      "detail_en": "Pressure-vs-market gap not active (net_state=repricing_hawkish, implied=+59bp).",
+      "detail_zh": "压力与市场背离未激活（net_state=repricing_hawkish，隐含=+59bp）。"
     }
   ],
   "conditions": [
     {
       "key": "H1_path_repricing",
       "direction": "hawkish",
-      "en": "Futures added +15.5bp of 12-month rate over the last month.",
-      "zh": "期货在过去一个月内将12个月利率上调了+15.5个基点。",
+      "en": "Futures added +15.0bp of 12-month rate over the last month.",
+      "zh": "期货在过去一个月内将12个月利率上调了+15.0个基点。",
       "watch_en": "If this pressure persists, upward rate repricing stays at risk; a deepening equity correction historically pulls the other way.",
       "watch_zh": "若该压力持续，利率上调风险上升；股市进一步下跌历史上会起到反向对冲作用。"
     },
@@ -273,12 +273,12 @@
   "market_check": {
     "futures": {
       "m1": 3.74,
-      "m3": 3.89,
-      "m6": 4.06,
-      "m12": 4.23,
-      "implied_bp_12m": 60,
-      "plain_read_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.23%)",
-      "plain_read_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.23%）"
+      "m3": 3.88,
+      "m6": 4.05,
+      "m12": 4.22,
+      "implied_bp_12m": 59,
+      "plain_read_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.22%)",
+      "plain_read_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.22%）"
     },
     "prediction_markets": {
       "as_of": "2026-09-04",
@@ -289,8 +289,8 @@
           "label_en": "Next Fed decision",
           "label_zh": "下次美联储决议",
           "top_outcome": "25 bps increase",
-          "top_prob": 51.5,
-          "chg_pp": 9.0,
+          "top_prob": 50.5,
+          "chg_pp": 2.0,
           "source": "Polymarket",
           "type": "market_implied_benchmark"
         },
@@ -299,8 +299,8 @@
           "label_en": "Fed cuts this year",
           "label_zh": "今年降息次数",
           "top_outcome": "0 (0 bps)",
-          "top_prob": 92.8,
-          "chg_pp": 4.2,
+          "top_prob": 93.2,
+          "chg_pp": 4.3,
           "source": "Polymarket",
           "type": "market_implied_benchmark"
         }
@@ -324,13 +324,13 @@
         "as_of": "2026-09-04",
         "available_at": null,
         "availability_status": "not_provided_by_feature_frame",
-        "level": 4.39,
+        "level": 4.34,
         "velocity_bp": {
-          "5d": 5.0,
-          "22d": 21.0,
-          "63d": 26.0
+          "5d": 0.0,
+          "22d": 16.0,
+          "63d": 21.0
         },
-        "acceleration_bp": 16.0,
+        "acceleration_bp": 11.0,
         "turn_watch": null,
         "null_reason": null
       },
@@ -340,13 +340,13 @@
         "as_of": "2026-09-04",
         "available_at": null,
         "availability_status": "not_provided_by_feature_frame",
-        "level": 4.54,
+        "level": 4.52,
         "velocity_bp": {
-          "5d": 6.0,
-          "22d": 21.0,
-          "63d": 28.0
+          "5d": 4.0,
+          "22d": 19.0,
+          "63d": 26.0
         },
-        "acceleration_bp": 9.0,
+        "acceleration_bp": 7.0,
         "turn_watch": "extreme_high_watch",
         "null_reason": null
       },
@@ -356,13 +356,13 @@
         "as_of": "2026-09-04",
         "available_at": null,
         "availability_status": "not_provided_by_feature_frame",
-        "level": 4.79,
+        "level": 4.77,
         "velocity_bp": {
-          "5d": 6.0,
-          "22d": 16.0,
-          "63d": 26.0
+          "5d": 4.0,
+          "22d": 14.0,
+          "63d": 24.0
         },
-        "acceleration_bp": 1.0,
+        "acceleration_bp": -1.0,
         "turn_watch": "extreme_high_watch",
         "null_reason": null
       },
@@ -372,13 +372,13 @@
         "as_of": "2026-09-04",
         "available_at": null,
         "availability_status": "not_provided_by_feature_frame",
-        "level": 5.27,
+        "level": 5.25,
         "velocity_bp": {
-          "5d": 6.0,
-          "22d": 9.0,
-          "63d": 25.0
+          "5d": 4.0,
+          "22d": 7.0,
+          "63d": 23.0
         },
-        "acceleration_bp": -10.0,
+        "acceleration_bp": -12.0,
         "turn_watch": "extreme_high_watch",
         "null_reason": null
       },
@@ -388,13 +388,13 @@
         "as_of": "2026-09-04",
         "available_at": null,
         "availability_status": "not_provided_by_feature_frame",
-        "level": 5.27,
+        "level": 5.25,
         "velocity_bp": {
-          "5d": 5.0,
-          "22d": 10.0,
-          "63d": 26.0
+          "5d": 3.0,
+          "22d": 8.0,
+          "63d": 24.0
         },
-        "acceleration_bp": -8.0,
+        "acceleration_bp": -10.0,
         "turn_watch": "extreme_high_watch",
         "null_reason": null
       }

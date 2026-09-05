@@ -36,32 +36,32 @@
   "first_lawful_comparison_read": "PENDING until 20 matured H=10 sessions",
   "honest_n_floor": 20,
   "last_run": {
-    "board_as_of": "2026-09-03",
+    "board_as_of": "2026-09-04",
     "coverage": {
-      "identical": 8,
+      "identical": 0,
       "matured": 0,
       "revisions_refused": 0,
-      "stamps": 0,
-      "written": 0
+      "stamps": 1,
+      "written": 8
     },
     "dry_run": false,
     "failures": [],
     "family": {
-      "identical": 8,
+      "identical": 0,
       "matured": 0,
       "revisions_refused": 0,
-      "stamps": 0,
-      "written": 0
+      "stamps": 1,
+      "written": 8
     },
     "n_coverage_rows": 8,
     "n_family_rows": 8,
-    "n_paired_rows": 683,
+    "n_paired_rows": 748,
     "paired": {
-      "identical": 644,
-      "matured": 39,
+      "identical": 683,
+      "matured": 0,
       "revisions_refused": 0,
       "stamps": 1,
-      "written": 39
+      "written": 65
     },
     "reconstruction_refused": [
       "2026-07-31",
@@ -72,25 +72,25 @@
       "2026-08-14",
       "2026-09-02"
     ],
-    "require_stamp": "2026-09-03",
+    "require_stamp": "2026-09-04",
     "same_stamp_revisions_refused": [],
     "sessions_written": {
       "identical": 12,
       "matured": 0,
       "refused": 0,
-      "written": 0
+      "written": 1
     }
   },
   "latest_session": {
     "liveness": "unmatured",
     "reason": "paired observation accrued; H=10 outcome pending (not zero)",
-    "stamp_date": "2026-09-03"
+    "stamp_date": "2026-09-04"
   },
   "matured_h10_sessions": 0,
   "missing_sessions": [],
   "n_degraded_or_unpaired": 7,
   "n_missing": 0,
-  "paired_sessions_accrued": 12,
+  "paired_sessions_accrued": 13,
   "same_stamp_revisions_refused": [
     {
       "changed_fields": [
@@ -1072,10 +1072,10 @@
   ],
   "schema": "us.prophet_w3_status/v1",
   "structural": {
-    "n_coverage_rows": 96,
-    "n_family_rows": 96,
+    "n_coverage_rows": 104,
+    "n_family_rows": 104,
     "outcome_blind": true,
     "schema": "prophet_fusion.w3_structural.v1"
   },
-  "unmatured_sessions": 12
+  "unmatured_sessions": 13
 }

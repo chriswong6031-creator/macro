@@ -47,8 +47,8 @@
             "zh": "油价飙升 — 能源领涨、盈亏平衡上行"
           },
           "direction": 1,
-          "value": 0.81,
-          "z_or_percentile": 1.41,
+          "value": 0.83,
+          "z_or_percentile": 1.33,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -63,12 +63,12 @@
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "oil (WTI)",
           "observation": {
-            "en": "oil (WTI) (+1.0σ)",
-            "zh": "原油(WTI) (+1.0σ)"
+            "en": "oil (WTI) (+1.1σ)",
+            "zh": "原油(WTI) (+1.1σ)"
           },
           "direction": "positive",
-          "value": 1.0,
-          "z_or_percentile": 1.0,
+          "value": 1.1,
+          "z_or_percentile": 1.1,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -253,11 +253,11 @@
       ]
     },
     {
-      "family": "rates",
-      "driver": "fed_repricing",
+      "family": "crypto",
+      "driver": "crypto_liquidity",
       "pathway_role": "alternate",
       "as_of": "2026-09-05",
-      "direction_en": "hawkish repricing — cuts priced out, front-end up",
+      "direction_en": "crypto liquidity surging — BTC/ETH lead up",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -265,17 +265,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_fed_repricing",
+          "node_id": "driver_crypto_liquidity",
           "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "fed_repricing",
+          "entity": "crypto_liquidity",
           "observation": {
-            "en": "hawkish repricing — cuts priced out, front-end up",
+            "en": "crypto liquidity surging — BTC/ETH lead up",
             "zh": ""
           },
           "direction": "",
-          "value": 0.57,
+          "value": 0.63,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -289,11 +289,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "fx",
-      "driver": "usd_shock",
+      "family": "liquidity",
+      "driver": "liquidity_impulse",
       "pathway_role": "alternate",
       "as_of": "2026-09-05",
-      "direction_en": "dollar falling — risk tailwind, commodities & EM bid",
+      "direction_en": "net liquidity expanding — broad risk-on tailwind",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -301,13 +301,13 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_usd_shock",
+          "node_id": "driver_liquidity_impulse",
           "as_of": "2026-09-05",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "usd_shock",
+          "entity": "liquidity_impulse",
           "observation": {
-            "en": "dollar falling — risk tailwind, commodities & EM bid",
+            "en": "net liquidity expanding — broad risk-on tailwind",
             "zh": ""
           },
           "direction": "",
