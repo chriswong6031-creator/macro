@@ -210,6 +210,14 @@ verified:
       symlink, switch or migration is lawful. The next runtime edge remains
       accepted existing-host/service plus canonical-read proof, then a Cockpit
       supported-interface composition read.
+  - claim: Protected Mastermind #482 merged production preflight records without changing the installed Control Room.
+    command: >
+      Parent git ls-remote and exact diff receipt for #482.
+    result: >
+      Master is a3440f21a0d6df7666bd9ed9f3b02385dac23588. Exact diff from
+      15d contains two production preflight records only, preserving the same
+      Skillpack bytes. Installed Control Room source remains 15d; this merge
+      is neither a Control Room installation nor runtime or Business proof.
   - claim: The direct Steward owner recovery consumed one authorized existing-carrier release without proving the auth repairs accepted.
     command: >
       Parent fresh carrier/source read and Slack original-root receipt
@@ -222,6 +230,20 @@ verified:
       Remote #463 remains 4d draft HOLD. The resolved app.py path release
       leaves two auth repairs local GREEN awaiting current-base and independent
       review; their independent acceptance is not claimed.
+  - claim: The existing S1 owner has a new reviewed local repair result while the remote carrier remains held.
+    command: >
+      Parent-reported owner receipt on original root 1788508146.063109,
+      canonical receipt 1788582903.285899 and independent read-only rereview.
+    result: >
+      Local commit 7ffc3821004ab4bf4a63d56f88d18cb5165424d6, tree
+      d8fc3053a766fd014d4cfc4dd313c06c541932f8, fixes a q=0 Accept path and
+      rejects bare NaN, Infinity and -Infinity before verifier/provider use
+      while preserving q=1. Focused failures 11+4 were repaired; targeted
+      tests are 15/15, exact ASGI 42/42 and expanded tests 775/775. Independent
+      read-only rereview passed and five preserved blobs match. Remote #463
+      remains 4d6 Draft/HOLD: no join, push or CI occurs without an explicit
+      portfolio edge. This is local reviewed source evidence, not independently
+      accepted auth, remote CI, runtime or Business proof.
 unverified:
   - claim: One real Business cockpit can safely be selected for MAS-242 Stage 0 of the B2 workspace canary.
     what_would_verify: >
@@ -244,11 +266,11 @@ unverified:
 unresolved:
   - "The current Control Room is informationally degraded: its timestamps and missing runtime DB prohibit using its displayed zeroes as live clearance."
   - "The intended Business workspace/admin and selected cockpit identity have not been positively proven; account labels, chat titles, recent tabs, app connectors and catalog rows remain insufficient."
-  - "Steward S1 successor #463 remains at remote 4d draft HOLD; its original carrier has an actual release-consumption receipt, app.py path release is resolved, and its two auth repairs are local GREEN awaiting current-base and independent review. Header publication is sequenced behind Integration's R1 #170, CAP #350 if ready or another blocking vertical, and S1 #463; #482 CI exists and is running, while HEADER has no CI or fresh slot. HC0 PR #247 and Executive metadata PR #469 are also unmerged held lanes."
+  - "Steward S1 successor #463 remains at remote 4d6 Draft/HOLD; its original carrier has an actual release-consumption receipt, app.py path release is resolved, and its latest local repair has read-only rereview PASS but no remote join/push/CI or independent acceptance. Header publication is sequenced behind Integration's R1 #170, CAP #350 if ready or another blocking vertical, and S1 #463; #482 is merged preflight-only, while HEADER has no CI or fresh slot. HC0 PR #247 and Executive metadata PR #469 are also unmerged held lanes."
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement; do not replace or parallelize it."
   - "The installed Control Room is now source 15d relative to #481, but it remains informationally degraded: DB absent, source clocks old and B3/B5/B6 unproven. The desktop header source/status overlap is real-preview-confirmed and still present on installed 15d pending the sequenced CSS release."
   - "The B5 vocabulary has source-level responsibility, dispatch, attention, freshness, blocker, capacity and exact-target surfaces but no current live feed. Canonical parent/child-orphan projection is absent; no aggregate lifecycle or derived next-action authority is lawful."
-  - "A read-only exact-Chrome-tab probe reached its CDP deadline before dispatch and therefore has effect=NONE. A fresh IAB live page verified source 15d; Secretary was asked to refresh that exact existing Chrome Control Room tab, with no refresh-consumption receipt yet. This is not a Business cockpit edge."
+  - "Two read-only exact-Chrome-tab probes reached their CDP deadlines before command dispatch, including a 3.0-second root-handle URL/title retry; both have effect=NONE. Secretary was informed and no more retries or bypass are allowed. A fresh IAB live page separately verified source 15d. This is not a Business cockpit edge."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Treat #481 source merge and narrow installed-host receipt as complete only for the stated Control Room source/UI plane. Preserve B3/B5/B6, Business cockpit and Executive-runtime gates as unproven."
