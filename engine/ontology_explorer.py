@@ -301,7 +301,9 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
             "label": _state_label(state_code),
             "activation": activation,
             "owner_state": observed.get("state"),
-            "owner_state_label": _bilingual(observed.get("state_label")),
+            "owner_state_label": _reader_text(
+                observed.get("state_label"), kind=IDENTITY,
+                where="state_label", gaps=gaps),
             "tier": observed.get("tier"),
             "display_only": bool(observed.get("display_only", True)),
             "confirmed_hop_count": confirmed_hop_count,
@@ -313,7 +315,9 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
             },
         },
         "path": {
-            "title": _bilingual(definition.get("title")),
+            "title": _reader_text(
+                definition.get("title"), kind=IDENTITY, where="title", gaps=gaps,
+                fallback={"en": "Transmission path", "zh": "\u4f20\u5bfc\u8def\u5f84"}),
             "sequence": sequence,
             "legs": legs,
             "hops": hops,
@@ -362,7 +366,10 @@ def _legs(sequence: list[str], declared: dict, observed: dict,
         legs.append({
             "node_id": node_id,
             "index": index,
-            "title": _bilingual(spec.get("title")) or {"en": node_id, "zh": node_id},
+            "title": _reader_text(
+                spec.get("title"), kind=IDENTITY, where=f"nodes.{node_id}.title",
+                gaps=gaps,
+                fallback={"en": f"Step {index}", "zh": f"\u7b2c {index} \u73af\u8282"}),
             "src": spec.get("src"),
             "observation": observation,
             "confirmed": confirmed,
@@ -397,9 +404,12 @@ def _hops(definition_hops: list[dict], observed_hops: dict,
             "from": hop.get("from"),
             "to": hop.get("to"),
             "sign": hop.get("sign"),
-            "label": _bilingual(hop.get("label")),
-            "condition": _bilingual(hop.get("condition")),
-            "mechanism": _bilingual(hop.get("mechanism")),
+            "label": _reader_text(hop.get("label"), kind=IDENTITY,
+                                  where=f"hops.{hop_id}.label", gaps=gaps),
+            "condition": _reader_text(hop.get("condition"), kind=PROSE,
+                                      where=f"hops.{hop_id}.condition", gaps=gaps),
+            "mechanism": _reader_text(hop.get("mechanism"), kind=PROSE,
+                                      where=f"hops.{hop_id}.mechanism", gaps=gaps),
             "lag_d": lag,
             "confirmed": seen.get("confirmed") if "confirmed" in seen else None,
             "confirmed_asof": seen.get("asof"),
@@ -635,20 +645,35 @@ def _clocks(observed: dict, state_doc: dict, hops: list[dict], *,
 #: thesis being refuted. Enforced here rather than by prose review because the
 #: text comes from owner files this surface does not control.
 _REFUTATION_TERMS = ("falsif", "refut", "disprov", "invalidat", "thesis is",
-                     "\u8bc1\u4f2a", "\u63a8\u7ffb")
+                     "validated", "\u8bc1\u4f2a", "\u63a8\u7ffb", "\u5df2\u9a8c\u8bc1")
 
 #: A lowercase_with_underscores token is an internal identifier, not English.
 _SLUGLIKE = re.compile(r"\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b")
 
 
-def _screen_note(note: Any) -> tuple[dict[str, str] | None, str | None]:
-    """Decide whether an owner-authored note may be shown to a reader.
+#: How a failed screen is handled depends on what the string is FOR.
+#: PROSE is optional explanation — withholding it costs the reader nothing they
+#: cannot get from the structured facts beside it. IDENTITY names a thing on the
+#: page; blanking it silently would leave an unlabelled step, so a law violation
+#: is replaced by an honest positional label and a named gap, and a merely
+#: untranslated label is kept while still being reported.
+PROSE = "prose"
+IDENTITY = "identity"
 
-    Measured against the live WTI chain, one falsifier note carried all three
+
+def _screen_note(note: Any) -> tuple[dict[str, str] | None, str | None]:
+    """Decide whether an owner-authored string may be shown to a reader.
+
+    Measured against the live WTI chain, one falsifier note carried three
     defects at once: the word "falsified" on a user surface, the raw node id
     `yield_rise`, and no Chinese at all — so a zh reader was served untranslated
-    English. Passing owner prose straight through is how all three arrived, so
-    the note is withheld and the structured condition is shown instead.
+    English. But the note was never the only way in. An adversarial pass put the
+    same words into `path.title`, a node title, a hop label, a hop mechanism and
+    an exposure-screen note, and every one of them reached the reader, because
+    the screen guarded exactly one field. The live chain is clean in those
+    fields TODAY, which is precisely why testing against it gave false comfort:
+    the leak fires the first time somebody edits a knowledge file. Every
+    owner-authored string a reader can see now goes through here.
     """
     pair = _bilingual(note)
     if pair is None:
@@ -661,6 +686,24 @@ def _screen_note(note: Any) -> tuple[dict[str, str] | None, str | None]:
     if pair["zh"] == pair["en"]:
         return None, "untranslated"
     return pair, None
+
+
+def _reader_text(value: Any, *, kind: str, where: str, gaps: list[dict],
+                 fallback: dict[str, str] | None = None) -> dict[str, str] | None:
+    """Screen one owner-authored string on its way to the reader."""
+    pair, reason = _screen_note(value)
+    if reason is None:
+        return pair
+    if reason == "absent":
+        return fallback
+    if reason == "untranslated" and kind == IDENTITY:
+        # A short label that was never translated is a content-quality defect,
+        # not a law violation. Blanking the path title over it would make the
+        # page unusable, so it is kept and reported.
+        gaps.append({"kind": "text_untranslated", "where": where})
+        return _bilingual(value)
+    gaps.append({"kind": "text_withheld", "where": where, "reason": reason})
+    return fallback
 
 
 def _watched_condition(when: Any) -> dict[str, Any] | None:
@@ -687,6 +730,13 @@ def _invalidators(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
         if not isinstance(item, dict):
             continue
         note, withheld = _screen_note(item.get("note"))
+        if withheld and withheld != "absent":
+            # Every reader-facing withholding is visible in ONE place. The
+            # per-invalidator fields below stay for machine consumers, but a
+            # reader who is shown the condition instead of the note is entitled
+            # to find out why in the same list as every other named gap.
+            gaps.append({"kind": "text_withheld",
+                         "where": f"falsifiers[{i}].note", "reason": withheld})
         out.append({
             "id": f"invalidator_{i}",
             "when": item.get("when"),
@@ -704,9 +754,14 @@ def _rights(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
     if not isinstance(raw, dict) or not raw:
         gaps.append({"kind": "rights_absent"})
         return []
-    return [{"id": key, "label": _bilingual(screen.get("label")),
-             "note": _bilingual(screen.get("note"))}
-            for key, screen in raw.items() if isinstance(screen, dict)]
+    return [{
+        "id": key,
+        "label": _reader_text(screen.get("label"), kind=IDENTITY,
+                              where=f"exposure_screens.{key}.label", gaps=gaps,
+                              fallback={"en": "Unnamed screen", "zh": "\u672a\u547d\u540d\u7b5b\u9009"}),
+        "note": _reader_text(screen.get("note"), kind=PROSE,
+                             where=f"exposure_screens.{key}.note", gaps=gaps),
+    } for key, screen in raw.items() if isinstance(screen, dict)]
 
 
 def _parse_build_stamp(built: Any) -> datetime | None:

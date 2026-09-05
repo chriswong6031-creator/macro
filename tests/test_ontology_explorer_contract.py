@@ -375,3 +375,111 @@ def test_the_live_default_chain_composes_without_front_facing_violations():
     }, ensure_ascii=False).lower()
     for banned in ("falsif", "refut", "证伪", "disprov", "validated"):
         assert banned not in shown, f"{banned!r} reaches a user surface on the live chain"
+
+
+# --------------------------------------------------------------------------
+# the screen must cover EVERY owner-authored string, not just the one that
+# happened to be caught first
+# --------------------------------------------------------------------------
+READER_FACING_KEYS = ("state", "path", "what_changed", "why_it_matters",
+                      "next_action", "contradiction", "rights")
+
+
+def _reader_facing(snap) -> str:
+    payload = {key: snap[key] for key in READER_FACING_KEYS}
+    payload["invalidators"] = [{"note": i["note"], "watched": i["watched"]}
+                               for i in snap["invalidators"]]
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def _plant(field: str, text: dict):
+    """Put `text` into one owner-authored field of the knowledge document."""
+    doc = fx.chain_yaml()
+    if field == "chain_title":
+        doc["title"] = text
+    elif field == "node_title":
+        doc["nodes"]["n1"]["title"] = text
+    elif field == "hop_label":
+        doc["hops"][0]["label"] = text
+    elif field == "hop_condition":
+        doc["hops"][0]["condition"] = text
+    elif field == "hop_mechanism":
+        doc["hops"][0]["mechanism"] = text
+    elif field == "screen_label":
+        doc["exposure_screens"]["synthetic_screen"]["label"] = text
+    elif field == "screen_note":
+        doc["exposure_screens"]["synthetic_screen"]["note"] = text
+    elif field == "falsifier_note":
+        doc["falsifiers"][0]["note"] = text
+    else:  # pragma: no cover - guards a typo in the parametrize list
+        raise AssertionError(f"unknown field {field}")
+    return doc
+
+
+OWNER_TEXT_FIELDS = ("chain_title", "node_title", "hop_label", "hop_condition",
+                     "hop_mechanism", "screen_label", "screen_note", "falsifier_note")
+
+
+@pytest.mark.parametrize("field", OWNER_TEXT_FIELDS)
+def test_refutation_vocabulary_cannot_reach_the_reader_through_any_owner_field(
+        tmp_path, field):
+    """The regression this test exists for.
+
+    The first version of the screen guarded the falsifier note alone, because
+    that is where the defect was found. An adversarial pass put the same words
+    into the chain title, a node title, a hop label, a hop mechanism and an
+    exposure-screen note — and every one reached the reader. The live chain is
+    clean in those fields TODAY, so testing against real data gave false
+    comfort; the leak fires the first time somebody edits a knowledge file.
+    """
+    doc = _plant(field, {"en": "the thesis is falsified", "zh": "该论点已被证伪"})
+    shown = _reader_facing(_compose(fx.build_root(tmp_path, yaml_doc=doc)))
+    for banned in ("falsif", "证伪"):
+        assert banned not in shown.lower(), f"{banned!r} leaks through {field}"
+
+
+@pytest.mark.parametrize("field", OWNER_TEXT_FIELDS)
+def test_a_raw_identifier_cannot_reach_the_reader_through_any_owner_field(
+        tmp_path, field):
+    doc = _plant(field, {"en": "watch yield_rise closely", "zh": "密切关注 yield_rise"})
+    shown = _reader_facing(_compose(fx.build_root(tmp_path, yaml_doc=doc)))
+    assert "yield_rise" not in shown, f"raw node id leaks through {field}"
+
+
+@pytest.mark.parametrize("field", OWNER_TEXT_FIELDS)
+def test_a_withheld_string_is_always_named_in_gaps(tmp_path, field):
+    """Withholding must never be silent — a reader who sees a positional label
+    instead of a name is entitled to know the name was refused."""
+    doc = _plant(field, {"en": "the thesis is falsified", "zh": "该论点已被证伪"})
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
+    withheld = [g for g in snap["gaps"] if g.get("kind") == "text_withheld"]
+    assert withheld, f"{field} was withheld silently"
+    assert all(g.get("reason") for g in withheld)
+    assert all(g.get("where") for g in withheld)
+
+
+def test_a_withheld_identity_string_falls_back_to_a_positional_label(tmp_path):
+    """Blanking a step's name would leave an unlabelled step. The honest
+    substitute is its position, not an invented name and not nothing."""
+    doc = _plant("node_title", {"en": "step one is falsified", "zh": "环节一已证伪"})
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
+    assert snap["path"]["legs"][0]["title"] == {"en": "Step 1", "zh": "第 1 环节"}
+    assert snap["path"]["legs"][1]["title"]["en"] == "Node two"
+
+
+def test_an_untranslated_identity_label_is_kept_but_reported(tmp_path):
+    """Proportionality: an untranslated short label is a content-quality defect,
+    not a law violation. Blanking the chain title over it would make the page
+    unusable, so it is kept and the gap is named."""
+    doc = _plant("chain_title", {"en": "Probe", "zh": "Probe"})
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
+    assert snap["path"]["title"] == {"en": "Probe", "zh": "Probe"}
+    assert {"kind": "text_untranslated", "where": "title"} in snap["gaps"]
+
+
+def test_untranslated_prose_is_withheld_rather_than_served_as_english(tmp_path):
+    doc = _plant("hop_mechanism", "English-only mechanism prose")
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
+    assert snap["path"]["hops"][0]["mechanism"] is None
+    assert {"kind": "text_withheld", "where": "hops.n1->n2.mechanism",
+            "reason": "untranslated"} in snap["gaps"]

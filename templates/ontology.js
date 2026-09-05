@@ -330,13 +330,31 @@
         + "证据契约不接受其作为可引用来源，且亦无已记录的状态转换可供引用。"));
       d.appendChild(k1);
     }
-    if ((snapshot.gaps || []).length) {
-      var gaps = el("p", "ox-note");
-      gaps.appendChild(say("Not everything this path needs was published: "
-        + snapshot.gaps.length + " item(s) are missing and are named above rather than "
-        + "filled in.", "该路径所需信息并未全部发布：缺失 " + snapshot.gaps.length
-        + " 项，已在上文具名列出，未作填补。"));
-      d.appendChild(gaps);
+    /* Two different things end up in `gaps` and calling them both "missing"
+       would be inaccurate: something the owners never published, and something
+       they published that this surface refused to print. Both are disclosed,
+       separately, because the second one is our decision and not their gap. */
+    var missing = (snapshot.gaps || []).filter(function (g) {
+      return g.kind !== "text_withheld" && g.kind !== "text_untranslated";
+    });
+    var withheld = (snapshot.gaps || []).filter(function (g) {
+      return g.kind === "text_withheld";
+    });
+    if (missing.length) {
+      var gapsP = el("p", "ox-note");
+      gapsP.appendChild(say("Not everything this path needs was published: "
+        + missing.length + " item(s) are absent and are named rather than filled in.",
+        "该路径所需信息并未全部发布：缺失 " + missing.length + " 项，已具名列出，未作填补。"));
+      d.appendChild(gapsP);
+    }
+    if (withheld.length) {
+      var wP = el("p", "ox-note");
+      wP.appendChild(say(withheld.length + " owner note(s) were published but not "
+        + "shown here, because the wording would not meet this page's standard for "
+        + "reader-facing text. The condition each one describes is shown above.",
+        "有 " + withheld.length + " 条所有者备注虽已发布但未在此展示，"
+        + "因其措辞不符合本页面面向读者文本的标准。其所描述的条件已在上文列出。"));
+      d.appendChild(wP);
     }
     return d;
   }
