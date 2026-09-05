@@ -3,6 +3,7 @@ workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: claude/autonomy-integrator-20260905-01a06f72
 model: sol
 status: active_checkpoint
+observed_through: '2026-09-05T03:22:49Z'
 ended_because: ci_handoff
 mission: >
   Preserve the Runtime domain's current continuity facts for the Autonomy Integrator
@@ -117,14 +118,22 @@ release remains disabled, and no accepted production Runtime interval exists.
 
 ## §1 What is left — in order
 
-The recovered source child is
+The recovered historical source child is
 `session-truth-r1-owner-record-identity-repair-20260828-sol-001`, Slack
 `C0BSBM78V1N/1787894522.353989`. The parent named Claude8, but actual ACK/results
-were Claude3 (`U0BSLFRGA79`); its exact native session remains unresolved.
+were Claude3 (`U0BSLFRGA79`). Its native session
+`2338ac1b-1559-4747-bb87-90bdb3b7df3c` was recovered, but its transcript stood
+down at `2f0dde` and ceded to a later same-carrier writer. It cannot release `14af4c7d`.
 GitHub STOP `5452114913` and source acceptance `5459830615` at `14af4c7d` do not
-prove child-source removal or `BRANCH_WRITER_RELEASED`. Runtime issued terminal
-closeout only and the existing Secretary is recovering the exact Claude3 session;
-no substitute account or source repair is authorized by that recovery.
+prove child-source removal or `BRANCH_WRITER_RELEASED` for the final writer.
+The final commit/push was positively recovered from Codex child
+`01a049a9-a8e5-78d1-8c36-4a671edfdd9c` (session_truth_whitespace_repair), parent
+CTO-ORION `01a03330-4c36-7a11-b730-44c591ed3481`. Its actual August 28 execution
+created and pushed `14af4c7d`; final receipt says NOT_WATCHER_ENABLED.
+Direct app-server input to this historical multi-agent child was rejected, so no
+closeout delivery or release receipt resulted. Runtime is routing through the
+existing parent's supported child coordination. Positive writer identity does not
+itself grant writer release or source repair.
 The original Task7 execution root is `1787829948.620029`; `1787876752.102929`
 is a separate project watcher and is preserved.
 
