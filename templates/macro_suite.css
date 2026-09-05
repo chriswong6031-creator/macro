@@ -149,6 +149,10 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
 .mq-delta-up { color: var(--ink-up); }
 .mq-delta-down { color: var(--ink-down); }
 .mq-delta-flat { color: var(--mq-muted); }
+/* Absent is not flat. Flat is a measured result and reads as success; an
+   unavailable cell must not borrow that styling, so it gets the muted-italic
+   treatment the typed absence cell already uses everywhere else. */
+.mq-delta-unavailable { color: var(--mq-muted); font-style: italic; }
 
 /* ── 2. implications ribbon ─────────────────────────────────────────────── */
 .mq-ribbon, .mq-headline, .mq-workspace, .mq-withheld, .mq-refusal {
@@ -422,6 +426,86 @@ html[data-theme="light"] .mq-suitenav-pill.is-current {
 }
 .mq-next-watch-axis { font-weight: 700; }
 .mq-next-watch-distance { color: var(--mq-muted); font-variant-numeric: tabular-nums; }
+
+/* ── the compact brief ───────────────────────────────────────────────────────
+   Two rows, both one line at desktop width: what moved, and what it means. The
+   full table and the complete implications ribbon live one disclosure below the
+   action, because putting them above it is what pushed the action off the first
+   viewport. */
+.mq-glance {
+  display: grid; gap: 6px;
+  padding: 14px 22px;
+  border: 1px solid var(--mq-line);
+  border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface);
+}
+.mq-glance-row {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0;
+  font-size: 13.5px; line-height: 1.5;
+}
+.mq-glance-key {
+  flex: 0 0 auto; min-width: 4.5rem;
+  color: var(--mq-muted);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.mq-glance-value { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; min-width: 0; }
+.mq-glance-metric { font-weight: 700; }
+.mq-glance-from { color: var(--mq-muted); font-variant-numeric: tabular-nums; }
+.mq-glance-denom {
+  margin-left: auto; flex: 0 0 auto;
+  color: var(--mq-muted); font-variant-numeric: tabular-nums; font-size: 11.5px;
+}
+.mq-glance-evidence {
+  padding: 1px 7px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-pill, 999px);
+  color: var(--mq-muted); font-size: 10.5px; white-space: nowrap;
+}
+.mq-glance-none { color: var(--mq-muted); }
+.mq-glance-meaning .mq-glance-value { max-width: 78ch; }
+
+/* The action's own route. A real link, sized as a target, never a bare word. */
+.mq-next-route {
+  justify-self: start;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 6px 14px;
+  border: 1px solid var(--mq-line-strong); border-radius: var(--r-btn, 10px);
+  color: var(--mq-ink); font-size: 13px; font-weight: 650; text-decoration: none;
+}
+.mq-next-route:hover { border-color: var(--mq-accent); color: var(--mq-accent); }
+.mq-next-route:focus-visible { outline: 2px solid var(--mq-accent); outline-offset: 2px; }
+.mq-next-route-arrow { font-size: 12px; }
+
+/* ── study depth ─────────────────────────────────────────────────────────────
+   Native disclosure: keyboard operable, findable by in-page search in browsers
+   that support it, and correct with scripting off. */
+.mq-study {
+  border: 1px solid var(--mq-line);
+  border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface);
+}
+.mq-study-summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  padding: 12px 22px; min-height: 40px;
+  cursor: pointer; list-style: none;
+}
+.mq-study-summary::-webkit-details-marker { display: none; }
+.mq-study-summary::after {
+  content: "\203A"; margin-left: auto;
+  color: var(--mq-muted); font-size: 16px; line-height: 1;
+  transform: rotate(90deg); transform-origin: center;
+}
+.mq-study[open] > .mq-study-summary::after { transform: rotate(-90deg); }
+.mq-study-summary:focus-visible { outline: 2px solid var(--mq-accent); outline-offset: -2px; }
+.mq-study-summary-label { font-size: 13px; font-weight: 700; }
+.mq-study-summary-hint { color: var(--mq-muted); font-size: 11.5px; }
+.mq-study-body { display: grid; gap: 18px; padding: 0 22px 18px; }
+.mq-study-body > * { border: 0; padding: 0; background: none; }
+
+@media (max-width: 720px) {
+  .mq-glance, .mq-study-summary { padding-left: 16px; padding-right: 16px; }
+  .mq-study-body { padding-left: 16px; padding-right: 16px; }
+  .mq-glance-denom { margin-left: 0; }
+}
 
 /* The refusal receipt is for whoever repairs the build, not for the reader. */
 .mq-refusal-receipt > .mq-method-grid { margin-top: 4px; }

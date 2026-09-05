@@ -666,3 +666,37 @@ def test_no_broad_assets_or_signal_data_prefix_was_opened_for_ihmp():
     assert "/assets/" not in prefixes
     for p in prefixes:
         assert not p.startswith("/live/"), "a live/signal-data prefix must never be public"
+
+
+def test_macro_suite_shell_assets_are_public_but_the_snapshot_payload_is_not():
+    """The three presentation assets, and nothing that carries a reading.
+
+    Production served the suite's HTML at 200 while these three answered 401,
+    so every anonymous reader got an unstyled, themeless skeleton: the pages
+    were public and their presentation was not. These are promoted as one unit
+    for that reason -- and only these. The snapshot JSON under /macrodata/ is
+    the actual product and stays gated; a prefix or wildcard promoted here
+    would take it public with them.
+    """
+    shell_paths = {"/macro_suite.css", "/macro_suite_boot.js", "/macro_suite.js"}
+    assert shell_paths <= set(POLICY["public"]["exact"])
+    assert shell_paths.isdisjoint(POLICY["free_registered"]["exact"])
+    assert shell_paths <= _caddy_public_exclusions()
+
+    # The error path excludes them too, or an anonymous 401 page renders bare.
+    error_matcher = re.search(r"@reg_asset_err\s*\{\s*not path ([^\n]+)", CADDY, flags=re.S)
+    assert error_matcher, "@reg_asset_err matcher missing"
+    assert shell_paths <= set(shlex.split(error_matcher.group(1)))
+
+    # Cacheable as public, both plain and ?v= stamped, exactly like /markets.css.
+    for block in ("@public_static", "@public_versioned"):
+        matcher = re.search(rf"{block}\s*\{{\s*path ([^\n]+)", CADDY, flags=re.S)
+        assert matcher, f"{block} matcher missing"
+        assert shell_paths <= set(shlex.split(matcher.group(1))), block
+
+    # No widening: the reading itself is not public by any route.
+    public_prefixes = set(POLICY["public"]["prefixes"])
+    assert not any(p.startswith("/macrodata") for p in public_prefixes)
+    assert not any(p.startswith("/macrodata") for p in POLICY["public"]["exact"])
+    assert not any(p.startswith("/macro_suite") and p.endswith("*")
+                   for p in _caddy_public_exclusions()), "no wildcard may ride along"

@@ -140,6 +140,11 @@ def _context(snapshot: Mapping[str, Any], page_built_at: str) -> dict[str, Any]:
         # print) needs the token, and re-deriving it from a label is a bug.
         "worst_freshness_token": availability.get("worst_freshness"),
         "coverage": L.fmt_ratio_pct(availability.get("coverage_ratio")),
+        # Same rule as the boundary distance: absent coverage must render as a
+        # typed absence, not as an unlabelled dash or an apparent 0%.
+        "coverage_ratio": availability.get("coverage_ratio") if _finite(availability.get("coverage_ratio")) else None,
+        "coverage_present": _finite(availability.get("coverage_ratio")),
+        "coverage_absence": None if _finite(availability.get("coverage_ratio")) else _absence(None),
         "required": required,
         "degraded": list(availability.get("degraded") or []),
         "reasons": list(availability.get("reasons") or []),
@@ -212,7 +217,13 @@ def _axis_view(axis: Mapping[str, Any]) -> dict[str, Any]:
             "raw": L.value_pair(component.get("raw_value")),
             "raw_absence": None if component.get("raw_value") is not None else _absence(component.get("null_reason")),
             "standardized": L.fmt_number(component.get("standardized_value")),
+            "standardized_present": _finite(component.get("standardized_value")),
+            "standardized_absence": (None if _finite(component.get("standardized_value"))
+                                     else _absence(component.get("null_reason"))),
             "contribution": L.fmt_signed(component.get("contribution")),
+            "contribution_present": _finite(component.get("contribution")),
+            "contribution_absence": (None if _finite(component.get("contribution"))
+                                     else _absence(component.get("null_reason"))),
             "contribution_sign": _sign(component.get("contribution")),
             "sign": component.get("sign"),
             "weight": L.fmt_number(component.get("weight")),
@@ -249,9 +260,12 @@ def _axis_view(axis: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _sign(value: Any) -> str:
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return "flat"
+def _sign(value: Any) -> str | None:
+    # None, never "flat". An absent value that renders as no-change is the whole
+    # defect: the reader cannot tell "we measured, nothing moved" from "we have
+    # no number", and the second is the one that should stop them.
+    if not _finite(value):
+        return None
     if value > 0:
         return "up"
     if value < 0:
@@ -295,6 +309,12 @@ def _headline(snapshot: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]) ->
         "nearest_boundary": {
             "axis_label": boundary_axis["label"] if boundary_axis else None,
             "distance": L.fmt_number(boundary.get("distance")),
+            # The raw value and an explicit present flag, because the caller has
+            # to DECIDE on this: a missing distance formats to a truthy dash, and
+            # a genuine zero-distance boundary -- sitting exactly on the line, the
+            # most urgent case there is -- formats to a falsey "0".
+            "distance_raw": boundary.get("distance") if _finite(boundary.get("distance")) else None,
+            "distance_present": _finite(boundary.get("distance")),
             "absence": None if boundary.get("distance") is not None else _absence(boundary.get("null_reason")),
         },
         "vector": {
@@ -391,13 +411,33 @@ def _changes(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     comparability = changes.get("comparability")
     deltas = []
     for delta in changes.get("deltas") or []:
+        prior_raw, current_raw = delta.get("prior_value"), delta.get("current_value")
+        delta_raw = delta.get("delta")
+        # Classify on the RAW values, format afterwards. Deciding from the
+        # formatted string is how an em dash became truthy and a real 0 became
+        # false-like; every consumer below branches on these booleans, never on
+        # the display text.
+        prior_present = _finite(prior_raw)
+        current_present = _finite(current_raw)
+        delta_present = _finite(delta_raw)
+        comparable_row = prior_present and current_present and delta_present
         deltas.append({
             "metric_id": delta.get("metric_id"),
             "label": L.label("metric", delta.get("metric_id")),
-            "prior": L.fmt_number(delta.get("prior_value")),
-            "current": L.fmt_number(delta.get("current_value")),
-            "delta": L.fmt_signed(delta.get("delta")),
-            "sign": _sign(delta.get("delta")),
+            "prior_raw": prior_raw if prior_present else None,
+            "current_raw": current_raw if current_present else None,
+            "delta_raw": delta_raw if delta_present else None,
+            "prior_present": prior_present,
+            "current_present": current_present,
+            "delta_present": delta_present,
+            "comparable": comparable_row,
+            # A real zero keeps its "0" and its flat class; an absent value gets
+            # neither a number nor a class that reads as success.
+            "prior": L.fmt_number(prior_raw) if prior_present else None,
+            "current": L.fmt_number(current_raw) if current_present else None,
+            "delta": L.fmt_signed(delta_raw) if delta_present else None,
+            "sign": _sign(delta_raw),
+            "absence": None if comparable_row else _absence(delta.get("null_reason")),
             "note": delta.get("note"),
         })
     comparable = comparability == "COMPARABLE"
@@ -497,7 +537,13 @@ def _drivers(snapshot: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]) -> 
                 "absence": None if driver.get("value") is not None else _absence(None),
                 "unit": L.label("unit", driver.get("unit")),
                 "impact": signed,
-                "impact_sign": "up" if (sign or 0) > 0 else ("down" if (sign or 0) < 0 else "flat"),
+                # `(sign or 0)` collapsed an ABSENT sign to 0 and then to "flat",
+                # so a driver with no published impact wore the same styling as a
+                # driver measured at exactly no impact. Presence first, direction
+                # second: a real 0 keeps "flat", an absent one gets no sign at all.
+                "impact_present": signed is not None,
+                "impact_sign": (("up" if sign > 0 else "down" if sign < 0 else "flat")
+                                if signed is not None and isinstance(sign, int) else None),
                 "impact_absence": None if signed is not None else _absence(None),
                 "note": driver.get("note"),
                 "coverage": L.label("presence", driver.get("coverage_state")),
@@ -738,6 +784,21 @@ _NOT_TODAYS_ANSWER = frozenset({
 })
 
 
+# Every route below points at a region that is present AND visible with client
+# state off: the default "current" tab panel, or the context detail block that
+# sits outside the tab system entirely. Routing into the Drivers or History panel
+# would look right in the markup and land on a JS-hidden target in a real
+# browser, and the evidence drawer ships `hidden inert` by design.
+_ROUTE_SOURCE_CLOCKS = ("#mq-contextdetail-title", _pair("Open source clocks and coverage", "查看数据源时钟与覆盖率"))
+_ROUTE_COMPONENTS = ("#mq-metrics-title", _pair("Open current components", "查看当前分项"))
+_ROUTE_STATE_MAP = ("#mq-map-title", _pair("Open the state map", "查看状态图"))
+
+
+def _route(target: tuple[str, dict[str, Any]]) -> dict[str, Any]:
+    href, label = target
+    return {"href": href, "label": label}
+
+
 def _next_action(context: Mapping[str, Any],
                  headline: Mapping[str, Any]) -> dict[str, Any]:
     """One typed research action, in a fixed precedence.
@@ -745,6 +806,10 @@ def _next_action(context: Mapping[str, Any],
     Precedence is deliberate and is the whole design: an unusable print outranks
     a disagreement, a disagreement outranks a boundary watch, and a settled quiet
     read says so plainly rather than manufacturing something to do.
+
+    Every branch carries a real route to a page region the reader already owns.
+    None of them is a trade instruction, a size, a rank or a composite -- the
+    action is always "go look at this", never "do this in the market".
     """
     heading = _pair("Next action", "下一步")
 
@@ -758,6 +823,7 @@ def _next_action(context: Mapping[str, Any],
                 "Do not read this as today's answer. A required source is not current — "
                 "wait for the next accepted print.",
                 "请勿将此视为今日读数。某项必需数据源并非最新 — 请等待下一次已接受的读数。"),
+            "route": _route(_ROUTE_SOURCE_CLOCKS),
             "watch": None,
         }
 
@@ -770,11 +836,16 @@ def _next_action(context: Mapping[str, Any],
                 "Required components disagree. Read them separately below — the summary "
                 "state is not settled while they conflict.",
                 "必需分项之间存在矛盾。请在下方分别查看 — 矛盾未消解前，汇总状态尚未确定。"),
+            "route": _route(_ROUTE_COMPONENTS),
             "watch": None,
         }
 
     boundary = headline.get("nearest_boundary") or {}
-    if boundary.get("distance") and boundary.get("axis_label"):
+    # `distance_present`, never the formatted `distance`: an absent distance
+    # formats to a truthy em dash, and a boundary distance of exactly 0 -- the
+    # state sitting right on the line, the single most watch-worthy case -- is a
+    # falsey "0". Both were wrong in the obvious version of this test.
+    if boundary.get("distance_present") and boundary.get("axis_label"):
         return {
             "token": "WATCH_BOUNDARY",
             "heading": heading,
@@ -786,10 +857,12 @@ def _next_action(context: Mapping[str, Any],
                 "Watch the axis closest to changing this state. Nothing here tells "
                 "you to act.",
                 "关注最接近改变当前状态的坐标轴。此处不提供任何操作指示。"),
+            "route": _route(_ROUTE_STATE_MAP),
             "watch": {
                 "label": _pair("Closest to changing", "最接近发生改变"),
                 "axis_label": boundary.get("axis_label"),
                 "distance": boundary.get("distance"),
+                "distance_raw": boundary.get("distance_raw"),
             },
         }
 
@@ -800,7 +873,45 @@ def _next_action(context: Mapping[str, Any],
         "text": _pair(
             "Nothing here asks you to act. Watch — don't chase.",
             "此处没有需要采取的操作。观察即可 — 不要追高杀跌。"),
+        "route": _route(_ROUTE_COMPONENTS),
         "watch": None,
+    }
+
+
+def _glance(changes: Mapping[str, Any],
+            implications: Mapping[str, Any]) -> dict[str, Any]:
+    """The bounded brief: one change, one meaning, both owner-published.
+
+    Deliberately NOT "the biggest move". Selecting a lead row by magnitude would
+    be a new ranking over published values, which this commission forbids; the
+    hub already takes published order for the same reason, so this takes the
+    first comparable row in published order and states the denominators beside
+    it. A reader who wants the full table is one disclosure away.
+    """
+    deltas = list(changes.get("deltas") or [])
+    comparable = [d for d in deltas if d.get("comparable")]
+    entries = list(implications.get("entries") or [])
+    lead_implication = entries[0] if entries else None
+
+    return {
+        "change": {
+            "present": bool(comparable) and bool(changes.get("comparable")),
+            "lead": comparable[0] if comparable else None,
+            # Denominators always, present or not: "3 of 11 comparable" is the
+            # honest form of a partial table, and "0 of 11" is a real statement
+            # rather than an empty section the reader has to interpret.
+            "comparable_count": len(comparable),
+            "total_count": len(deltas),
+            "absence": None if comparable else _absence(changes.get("null_reason")),
+        },
+        "meaning": {
+            "present": lead_implication is not None,
+            "text": lead_implication.get("text") if lead_implication else None,
+            "evidence_label": lead_implication.get("evidence_label") if lead_implication else None,
+            "evidence_claim": lead_implication.get("evidence_claim") if lead_implication else None,
+            "remaining": max(0, len(entries) - 1) if entries else 0,
+            "absence_text": implications.get("absence_text"),
+        },
     }
 
 
@@ -843,6 +954,7 @@ def build_view(snapshot: Mapping[str, Any], *, page_built_at: str,
         "layout": layout,
         "decision_first": layout == LAYOUT_DECISION_FIRST,
         "next_action": _next_action(context, headline),
+        "glance": _glance(changes, _implications(snapshot)),
         "workspace": {
             "id": (snapshot.get("workspace") or {}).get("id"),
             "title": _bilingual((snapshot.get("workspace") or {}).get("title")),
@@ -1064,7 +1176,10 @@ def build_hub_view(entries: Sequence[Mapping[str, Any]], *,
             # it here would spend one of the few slots saying nothing, and would
             # print a bare em dash where the reader expects a move. The workspace's
             # own what-changed table still carries the row and its typed reason.
-            if not (delta.get("delta") and delta.get("prior") and delta.get("current")):
+            # The typed flag, not the formatted strings: an em dash is truthy
+            # and a formatted "0" is not, so the string test both admitted
+            # unavailable rows and dropped real no-change ones.
+            if not delta.get("comparable"):
                 continue
             changes_pool.append({
                 "workspace_id": entry["workspace_id"],

@@ -651,3 +651,129 @@ def test_the_drawer_starts_closed_and_inert(live_html: str) -> None:
         assert token in js
     assert "https://" not in js, "the suite runtime must make no cross-origin read"
     assert "fetch(" not in js, "the page is server-rendered from a validated artifact"
+
+
+# --------------------------------------------------------------------------
+# absent is not zero, and absent is not no-change
+#
+# Every assertion below poisons ONE boundary and leaves the rest alone. The
+# defect these replace was not that the code was complicated: it was that three
+# separate renderers each decided from a FORMATTED string, where an em dash is
+# truthy and a real "0" is not.
+# --------------------------------------------------------------------------
+
+_NULL_PAGES = ("business_activity", "consumer_payments", "trade_flows")
+
+
+def _changes_view(prior: Any, current: Any, delta: Any,
+                  comparability: str = "COMPARABLE") -> dict[str, Any]:
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["changes"]["comparability"] = comparability
+    snapshot["changes"]["deltas"] = [{
+        "metric_id": "net_liquidity_4w", "prior_value": prior,
+        "current_value": current, "delta": delta, "null_reason": None,
+    }]
+    return _view_of(snapshot)["changes"]["deltas"][0]
+
+
+def test_a_real_zero_is_a_measurement_and_keeps_its_flat_class() -> None:
+    row = _changes_view(1.0, 1.0, 0.0)
+    assert row["comparable"] is True
+    assert row["delta_present"] is True
+    assert row["sign"] == "flat"
+    assert row["delta"] == "0", "a measured no-change must still print its zero"
+    assert row["absence"] is None
+
+
+def test_equal_values_are_no_change_not_an_absence() -> None:
+    row = _changes_view(763602.0, 763602.0, 0.0)
+    assert (row["sign"], row["comparable"]) == ("flat", True)
+
+
+@pytest.mark.parametrize("poison", [
+    {"prior": None}, {"current": None}, {"delta": None},
+    {"prior": "1.0"}, {"delta": float("nan")}, {"delta": True},
+])
+def test_one_absent_cell_makes_the_row_incomparable_and_never_flat(poison: dict) -> None:
+    values = {"prior": 1.0, "current": 2.0, "delta": 1.0} | poison
+    row = _changes_view(values["prior"], values["current"], values["delta"])
+    assert row["comparable"] is False
+    assert row["sign"] != "flat", "absent must never wear the no-change styling"
+    assert row["absence"] is not None, "an absent cell owes a typed reason"
+    for key in ("prior", "current", "delta"):
+        if not row[f"{key}_present"]:
+            assert row[key] is None, f"{key} must be absent, not the string 'None'"
+
+
+def test_a_method_incomparable_table_is_gated_even_though_its_rows_are_numeric() -> None:
+    """Comparability is a table-level verdict, not a per-cell one.
+
+    Every row here carries three real numbers. The table must still refuse to
+    show them as a comparison, because the method changed underneath -- a delta
+    across a method change is a fabricated baseline, not a measurement.
+    """
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["changes"]["comparability"] = "METHOD_CHANGED"
+    changes = _view_of(snapshot)["changes"]
+    assert changes["comparable"] is False
+    assert changes["absence"] is not None
+    assert all(row["comparable"] for row in changes["deltas"]), \
+        "the rows are individually fine; it is the COMPARISON that is refused"
+
+
+@pytest.mark.parametrize("page", _NULL_PAGES)
+def test_the_named_pages_never_print_python_none(page: str, tmp_path: Path) -> None:
+    """The exact three manifestations Sol named, asserted on the built artifact."""
+    html = (ROOT / "site" / f"macro_{page}.html").read_text(encoding="utf-8")
+    assert ">None<" not in html
+    assert "-None\"" not in html
+    assert re.search(r'class="mq-delta mq-delta-(?:up|down|flat)"[^>]*>\s*<span class="mq-absent',
+                     html) is None, "an absent cell is wearing a success class"
+
+
+def _boundary_view(distance: Any) -> dict[str, Any]:
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["headline"]["nearest_boundary"] = {
+        "axis": snapshot["axes"]["items"][0]["axis_id"],
+        "distance": distance, "null_reason": None}
+    return _view_of(snapshot)["next_action"]
+
+
+def test_a_boundary_distance_of_exactly_zero_is_the_most_watchable_case() -> None:
+    """Sitting ON the line is not "no boundary" — but 0 is falsey."""
+    assert _boundary_view(0.0)["token"] == "WATCH_BOUNDARY"
+
+
+def test_a_missing_boundary_distance_does_not_become_a_watch() -> None:
+    """An em dash is truthy; the absence of a distance is not a reason to watch."""
+    assert _boundary_view(None)["token"] != "WATCH_BOUNDARY"
+
+
+def test_every_next_action_carries_a_real_route_to_an_owned_region() -> None:
+    html = (ROOT / "site" / "macro_liquidity_regime.html").read_text(encoding="utf-8")
+    match = re.search(r'<a class="mq-next-route" href="(#[a-z0-9-]+)"', html)
+    assert match, "the action must offer a real link, not a decorative CTA"
+    target = match.group(1)[1:]
+    assert f'id="{target}"' in html, "the route must land on an id this page actually has"
+    # Never into a panel the tab script hides, and never into the evidence drawer,
+    # which ships `hidden inert`: both look correct in markup and fail in a browser.
+    assert target not in ("mq-panel-drivers", "mq-panel-history", "mq-evidence-drawer")
+
+
+def test_the_action_precedes_the_full_table_and_ribbon_in_dom_order() -> None:
+    html = (ROOT / "site" / "macro_liquidity_regime.html").read_text(encoding="utf-8")
+    order = [m.group(1) for m in re.finditer(
+        r'class="(mq-glance|mq-next mq-tone-[a-z]+|mq-study|mq-changed|mq-ribbon)"', html)]
+    order = [o.split()[0] for o in order]
+    assert order[:3] == ["mq-glance", "mq-next", "mq-study"], order[:5]
+    assert order.index("mq-changed") > order.index("mq-next")
+    assert order.index("mq-ribbon") > order.index("mq-next")
+
+
+def test_absent_coverage_renders_a_typed_absence_not_an_unlabelled_dash() -> None:
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["availability"]["coverage_ratio"] = None
+    context = _view_of(snapshot)["context"]
+    assert context["coverage_present"] is False
+    assert context["coverage_absence"] is not None
+    assert context["coverage_absence"]["label"]["en"], "the dash owes the reader a word"

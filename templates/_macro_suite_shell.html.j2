@@ -152,7 +152,7 @@
     </span>
     <span class="mq-context-line-item">
       <span class="mq-context-line-key">{{ t('Coverage', '覆盖率') }}</span>
-      {% if ctx.coverage %}{{ ctx.coverage }}{% else %}{{ absent(none, True) }}<span class="mq-dash" aria-hidden="true">—</span>{% endif %}
+      {% if ctx.coverage_present %}{{ ctx.coverage }}{% else %}{{ absent(ctx.coverage_absence, True) }}{% endif %}
     </span>
     <span class="mq-context-line-item">
       <span class="mq-context-line-key">{{ t('Region', '地区') }}</span>
@@ -198,6 +198,41 @@
     The authority-safe answer to "so what do I do". Chosen deterministically by
     lib.macro_suite_view._next_action from typed producer tokens; this macro only
     prints what that function decided. -#}
+{%- macro glance_brief(view) -%}
+{%- set g = view.glance -%}
+<section class="mq-glance" aria-labelledby="mq-glance-title">
+  <h3 id="mq-glance-title" class="mq-sr">{{ t('In brief', '摘要') }}</h3>
+
+  <p class="mq-glance-row mq-glance-change">
+    <span class="mq-glance-key">{{ t('Changed', '变化') }}</span>
+    {%- if g.change.present %}
+    <span class="mq-glance-value">
+      <span class="mq-glance-metric">{{ bl(g.change.lead.label) }}</span>
+      <span class="mq-delta mq-delta-{{ g.change.lead.sign }}">{{ g.change.lead.delta }}</span>
+      <span class="mq-glance-from">{{ g.change.lead.prior }} → {{ g.change.lead.current }}</span>
+    </span>
+    {%- else %}
+    <span class="mq-glance-value">{{ absent(g.change.absence, True) }}</span>
+    {%- endif %}
+    {#- Denominators in the default path, not behind the disclosure: "2 of 11
+        comparable" is the difference between a short table and a broken one. -#}
+    <span class="mq-glance-denom">{{ g.change.comparable_count }}/{{ g.change.total_count }} {{ t('comparable', '可比') }}</span>
+  </p>
+
+  <p class="mq-glance-row mq-glance-meaning">
+    <span class="mq-glance-key">{{ t('Means', '含义') }}</span>
+    {%- if g.meaning.present %}
+    <span class="mq-glance-value">
+      {{ bl(g.meaning.text) }}
+      <span class="mq-glance-evidence">{{ bl(g.meaning.evidence_label) }}</span>
+    </span>
+    {%- else %}
+    <span class="mq-glance-value mq-glance-none">{{ bl(g.meaning.absence_text) }}</span>
+    {%- endif %}
+  </p>
+</section>
+{%- endmacro -%}
+
 {%- macro next_action(view) -%}
 {%- set act = view.next_action -%}
 <section class="mq-next mq-tone-{{ act.tone }}" aria-labelledby="mq-next-title">
@@ -210,6 +245,10 @@
     <span class="mq-next-watch-distance">{{ act.watch.distance }}</span>
   </p>
   {%- endif %}
+  {#- A real anchor to a region of this page that is present AND visible with
+      scripting off. Not a button that needs client state, and not a decorative
+      CTA: every target is a section the reader already owns. -#}
+  <a class="mq-next-route" href="{{ act.route.href }}">{{ bl(act.route.label) }}<span class="mq-next-route-arrow" aria-hidden="true">→</span></a>
 </section>
 {%- endmacro -%}
 
@@ -441,9 +480,14 @@
       {%- for delta in changes.deltas %}
       <tr>
         <th scope="row">{{ bl(delta.label) }}</th>
-        <td>{{ delta.prior }}</td>
-        <td>{{ delta.current }}</td>
-        <td class="mq-delta mq-delta-{{ delta.sign }}">{{ delta.delta }}</td>
+        <td>{% if delta.prior_present %}{{ delta.prior }}{% else %}{{ absent(delta.absence, True) }}{% endif %}</td>
+        <td>{% if delta.current_present %}{{ delta.current }}{% else %}{{ absent(delta.absence, True) }}{% endif %}</td>
+        {#- No sign class at all when the delta is absent: `mq-delta-flat` is the
+            success styling for "we measured, nothing moved", and wearing it while
+            carrying no number is the defect this row exists to prevent. -#}
+        <td class="mq-delta{% if delta.delta_present %} mq-delta-{{ delta.sign }}{% else %} mq-delta-unavailable{% endif %}">
+          {%- if delta.delta_present %}{{ delta.delta }}{% else %}{{ absent(delta.absence, True) }}{% endif -%}
+        </td>
       </tr>
       {%- endfor %}
     </tbody>
@@ -558,7 +602,9 @@
           <th scope="row">{{ bl(row.label) }}<span class="mq-owner-field"><code>{{ row.owner_field }}</code></span></th>
           <td>{% if row.value %}{{ bl(row.value) }}{% else %}{{ absent(row.absence, True) }}{% endif %}</td>
           <td>{{ bl(row.unit) }}</td>
-          <td class="mq-delta mq-delta-{{ row.impact_sign }}">{% if row.impact %}{{ row.impact }}{% else %}{{ absent(row.impact_absence, True) }}{% endif %}</td>
+          <td class="mq-delta{% if row.impact_present %} mq-delta-{{ row.impact_sign }}{% else %} mq-delta-unavailable{% endif %}">
+            {%- if row.impact_present %}{{ row.impact }}{% else %}{{ absent(row.impact_absence, True) }}{% endif -%}
+          </td>
           <td>{{ chip(row.coverage, row.coverage_tone) }}</td>
         </tr>
         {%- endfor %}
@@ -603,9 +649,11 @@
         <tr>
           <th scope="row">{{ bl(component.label) }}<span class="mq-owner-field"><code>{{ component.owner_field }}</code></span></th>
           <td>{% if component.raw %}{{ bl(component.raw) }}{% else %}{{ absent(component.raw_absence, True) }}{% endif %}</td>
-          <td>{{ component.standardized }}</td>
+          <td>{% if component.standardized_present %}{{ component.standardized }}{% else %}{{ absent(component.standardized_absence, True) }}{% endif %}</td>
           <td>{{ component.weight }}</td>
-          <td class="mq-delta mq-delta-{{ component.contribution_sign }}">{{ component.contribution }}</td>
+          <td class="mq-delta{% if component.contribution_present %} mq-delta-{{ component.contribution_sign }}{% else %} mq-delta-unavailable{% endif %}">
+            {%- if component.contribution_present %}{{ component.contribution }}{% else %}{{ absent(component.contribution_absence, True) }}{% endif -%}
+          </td>
         </tr>
         {%- endfor %}
       </tbody>
@@ -804,9 +852,23 @@
 <main class="mq-shell mq-shell-decision" id="mq-shell">
   {{ context_header_compact(view) }}
   {{ headline_band(view) }}
-  {{ what_changed(view) }}
-  {{ implications_ribbon(view) }}
+  {{ glance_brief(view) }}
   {{ next_action(view) }}
+
+  {#- Study depth. The full change table and the complete implications ribbon are
+      demoted, never removed, and never more than one deliberate action away.
+      They sit BELOW the action in DOM order on purpose: putting them above it is
+      what pushed the action 1377px down the desktop page and 2200px down mobile. -#}
+  <details class="mq-study">
+    <summary class="mq-study-summary">
+      <span class="mq-study-summary-label">{{ t('Full change table and implications', '完整变化表与推论') }}</span>
+      <span class="mq-study-summary-hint">{{ t('Every metric, every published implication', '全部指标与全部已发布推论') }}</span>
+    </summary>
+    <div class="mq-study-body">
+      {{ what_changed(view) }}
+      {{ implications_ribbon(view) }}
+    </div>
+  </details>
 
   <div class="mq-workspace">
     {{ tab_bar(view) }}
