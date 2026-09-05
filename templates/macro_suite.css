@@ -336,7 +336,7 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
 .mq-suitenav-home {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 44px; padding: 0 12px 0 8px;
-  border-radius: 10px;
+  border-radius: var(--r-btn,10px);
   color: var(--mq-muted); text-decoration: none;
   font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
 }
@@ -358,7 +358,7 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
 .mq-suitenav-pill {
   display: inline-flex; align-items: center;
   min-height: 44px; padding: 0 12px;
-  border: 1px solid transparent; border-radius: 999px;
+  border: 1px solid transparent; border-radius: var(--r-pill,999px);
   color: var(--mq-muted); text-decoration: none;
   font-size: 11.5px; white-space: nowrap;
 }
@@ -372,7 +372,7 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
 html[data-theme="light"] .mq-suitenav-pill.is-current {
   background: var(--panel);
   border-color: color-mix(in srgb, var(--mq-accent) 34%, transparent);
-  box-shadow: 0 1px 2px rgba(25, 37, 53, .10);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 10%, transparent);
 }
 
 /* ── decision-first layout (Liquidity Regime pattern-setter) ─────────────────
@@ -394,7 +394,7 @@ html[data-theme="light"] .mq-suitenav-pill.is-current {
 .mq-contextdetail {
   display: grid; gap: 14px;
   padding: 20px 22px;
-  border: 1px solid var(--mq-line); border-radius: var(--mq-radius);
+  border: 1px solid var(--mq-line); border-radius: var(--r-panel, var(--mq-radius));
   background: var(--mq-surface);
 }
 
@@ -406,7 +406,7 @@ html[data-theme="light"] .mq-suitenav-pill.is-current {
   padding: 18px 22px;
   border: 1px solid var(--mq-line);
   border-left: 3px solid var(--mq-line-strong);
-  border-radius: var(--mq-radius);
+  border-radius: var(--r-panel, var(--mq-radius));
   background: var(--mq-raised);
 }
 .mq-next.mq-tone-warn { border-left-color: var(--mq-warn); }
@@ -434,7 +434,7 @@ html[data-theme="light"] .mq-suitenav-pill.is-current {
 .mq-hub { display: grid; gap: 22px; }
 .mq-hub-head {
   padding: 26px 26px 22px;
-  border: 1px solid var(--mq-line); border-radius: var(--mq-radius);
+  border: 1px solid var(--mq-line); border-radius: var(--r-panel, var(--mq-radius));
   background: var(--mq-surface); box-shadow: var(--mq-shadow);
 }
 .mq-hub-head h1 { font-size: clamp(28px, 4vw, 46px); line-height: 1.02; letter-spacing: -.045em; }
@@ -452,14 +452,14 @@ html[data-theme="light"] .mq-suitenav-pill.is-current {
 
 .mq-hub-changes, .mq-hub-attention, .mq-hub-suite {
   padding: 22px 24px;
-  border: 1px solid var(--mq-line); border-radius: var(--mq-radius);
+  border: 1px solid var(--mq-line); border-radius: var(--r-panel, var(--mq-radius));
   background: var(--mq-surface);
 }
 .mq-hub-changelist, .mq-hub-attentionlist { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .mq-hub-change {
   display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
   align-items: baseline; gap: 6px 18px;
-  padding: 11px 10px; border-radius: 10px;
+  padding: 11px 10px; border-radius: var(--r-btn,10px);
 }
 .mq-hub-change + .mq-hub-change { border-top: 1px solid var(--mq-line); border-radius: 0; }
 .mq-hub-change-link { color: var(--mq-ink); text-decoration: none; font-weight: 700; }
@@ -488,12 +488,12 @@ html[data-theme="light"] .mq-suitenav-pill.is-current {
 .mq-hub-card {
   display: grid; align-content: start; gap: 8px;
   padding: 16px 16px 18px;
-  border: 1px solid var(--mq-line); border-radius: 12px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-card,12px);
   background: var(--mq-raised);
 }
 .mq-hub-card:hover { border-color: var(--mq-line-strong); }
-html[data-theme="light"] .mq-hub-card { background: var(--panel); box-shadow: 0 1px 2px rgba(25, 37, 53, .07); }
-html[data-theme="light"] .mq-hub-card:hover { box-shadow: 0 6px 18px -10px rgba(25, 37, 53, .30); }
+html[data-theme="light"] .mq-hub-card { background: var(--panel); box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent); }
+html[data-theme="light"] .mq-hub-card:hover { box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--text) 30%, transparent); }
 .mq-hub-card-link { text-decoration: none; }
 .mq-hub-card-title { margin: 0; color: var(--mq-ink); font-size: 14px; letter-spacing: -.012em; }
 .mq-hub-card-link:hover .mq-hub-card-title { color: var(--mq-accent); }

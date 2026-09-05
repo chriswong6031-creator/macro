@@ -430,8 +430,14 @@ def test_the_quadrant_grid_follows_the_producer_classification_law() -> None:
     assert cells["C"]["current"] is True
     assert [c["current"] for c in cells.values()].count(True) == 1
     # SVG y grows downward: a weak-support reading must plot in the LOWER half.
-    assert view["quadrant_map"]["point"]["cy"] == pytest.approx(100 - 25.12)
-    assert view["quadrant_map"]["point"]["cx"] == pytest.approx(20.05)
+    # Derived from the artifact, never hard-coded: these are LIVE nightly values,
+    # and the frozen pair this once asserted (x=20.05, y=25.12) went stale the
+    # first time the producer republished — a red that looked like a plotting bug
+    # and was only ever the test pinning itself to yesterday's data.
+    quadrant = snapshot["headline"]["quadrant"]
+    assert view["quadrant_map"]["point"]["cx"] == pytest.approx(quadrant["x"])
+    assert view["quadrant_map"]["point"]["cy"] == pytest.approx(100 - quadrant["y"])
+    assert view["quadrant_map"]["point"]["cy"] > 50, "weak support must plot low"
 
 
 def test_a_missing_axis_value_plots_no_point_at_all() -> None:
