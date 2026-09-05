@@ -22,13 +22,14 @@ state_before: >
 changed:
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-05-cockpit-b0-live-recovery.md
     what: >
-      Updated this existing bounded recovery handoff at the next wave boundary
-      with the local #486 deadline repair, its dated return and current
-      Integration edge, direct #467/#488 carrier state, the installed-static
-      recheck, and current Business gate limits. The update preserves earlier
-      5ae4, 4a, 15d and PR #6874 evidence and changes no workstream, portfolio
-      projection, runtime, account, application, source carrier or execution
-      authority.
+      Updated this existing bounded recovery handoff at a later service-wave
+      boundary with the exact protected 767 source installation, two explicit
+      STARTs, finite preview, quiescent same-root fast-forward, installed HTTP
+      and browser proof, the accepted conditional B5 design, and the current
+      PR 496 carrier refusal/continuation state. The update preserves the
+      historical 08:37 and 12:31 checkpoints and changes no workstream,
+      portfolio projection, Business cockpit, Executive lifecycle, account,
+      provider, source carrier or authority.
 verified:
   - claim: Initial archaeology used protected SHA 46a24a1a4083b74bbde8876100a8ca1f720589a9; current protected #481 release is squash 15d2693e5ff319f5f09e4c555fb007328237cee4 with the relevant Skillpack bytes unchanged.
     command: >
@@ -392,75 +393,125 @@ verified:
       still absent. No source/ref/PR/CI/host mutation occurred; only
       unattached Git objects and the evidence receipt were written.
 
-  - claim: The #486 deadline residual has a clean local same-carrier repair with bounded independent source and isolated-browser proof, followed by one explicit Integration edge that still withholds Ready, merge and installation.
+  - claim: Integration accepted and STOPped the bounded exact-767 existing Control Room service operation while preserving the intended persistent service.
     command: >
-      cat /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/deadline-repair-local-6241ba1e.md;
-      python3 -m json.tool /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/browser-proof-6241ba1e58ec/browser-proof-result.json;
-      GitHub REST reads of Mastermind #486 comments 5551760164 at
-      2026-09-05T12:18:45Z and 5551823052 at 2026-09-05T12:28:55Z.
+      GitHub reads of Mastermind comments 5552814566, 5552850804 and
+      5553115278, service acceptance/STOP comment 5553186139 and cleanup return
+      5553203800; cat and shasum -a 256 of
+      /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/service-767/service-767-final-result.md;
+      python3 -m json.tool over preview-result.json,
+      quiescence-before-update.json, source-fast-forward.json,
+      installed-browser/run-2026-09-05T15-42-02-580Z/installed-browser-proof-result.json,
+      installed-browser-framing/run-2026-09-05T16-09-59-299Z/installed-browser-framing-result.json,
+      final-http-readback.json, final-service-identity.json and
+      service-stop-cleanup.json; cat and shasum -a 256 of
+      /Users/chriswong/Documents/Cluade/exec-prestage-receipts/autonomy-integrator-20260905-01a06f72/ccr486-existing-service-accept-stop-20260905.md;
+      independent artifact reviews 6fa49b16 and 5b4f7127.
     result: >
-      Existing branch and two-path ownership were retained. Clean local head
-      6241ba1e58ecc28a4fe3dfc72fc1018c74c5d4c8 has tree
-      305f958c38865314c9cb7df64a3bc34e9c5b6309, JavaScript blob
-      47d535c839b2ff582d02d339d929975f65eecdf9 and test blob
-      bdff2e3e3c70c6a3b8a490078daa7e12e582ed9d. The owning suites are
-      161 PASS; the independent semantic pass ran 77 UI tests plus 25 hostile
-      probes; the exact asset passed 23 isolated headless-browser observations
-      with zero failures. Controlled clocks cover wall-clock rollback and a
-      response consumed after the elapsed deadline but before its overdue
-      timer callback. The 12:18 return was evidence-only. At 12:28 Integration
-      authorized one history-preserving current-base join with parents ordered
-      [6241, actual protected master], preservation of both frozen blobs, 161
-      tests on the integrated tree, one plain non-force push, automatic
-      CI/security, and non-author review of the published head. No join or
-      publication effect was established by this receipt, and Ready, merge and
-      installation remain unauthorized. The desktop header overlap is separate.
+      The existing service operation consumed preview START 5552814566 and
+      replacement START 5552850804. Preview result SHA-256
+      4682ee5dfa5370a98ee6dd80d1ac0c91f9bb6d7f7c47b3c7d356ccb6d59a14f9
+      records one owned 127.0.0.1:56713 process, exact accepted JavaScript and
+      qualified GET state, followed by process and port cleanup. Quiescence at
+      2026-09-05T15:33:13.102852Z preceded a clean fast-forward of the existing
+      live root from 15d2693e to protected
+      767409b6d3e7103a3b11428b870357d4a01bbe26, tree
+      cb8486ea0bfacc1036846cc8325676eddd22ce77, at 15:33:57.589946Z;
+      the unchanged plist then bootstrapped the same service. The first finite
+      installed browser result SHA-256 3045d483 proves eight actual state GETs:
+      sequences 1-7 in flight and sequence 8 complete with newer generated and
+      composed timestamps, null refresh error, exact 767 and final refresh
+      banner hidden. Review 6fa49 accepted that bounded refresh proof and
+      rejected its premature smooth-scroll screenshots as nine-section proof.
+      The authorized framing supplement result SHA-256 3c168eb8 then passed all
+      nine Today/Autonomy/System framings at 1440x900, 834x1194 and 390x844;
+      independent review 5b4f7127 inspected all nine images and accepted the
+      correction. Final normal GET at 2026-09-05T16:13:04.806862Z returned
+      HTTP 200/no-store, expected schema, exact 767, generated 16:10:00Z,
+      composed 16:11:14Z, refresh_in_flight=false and null error. Final physical
+      identity at 16:13:31.854067Z records clean live and Macro roots, unchanged
+      plist/bindings, absent configured Executive database, closed preview and
+      both browser process sets, absent old service, and PID 49435 as the sole
+      intended persistent 8787 listener. Result comment 5553115278 was posted at
+      16:16:41Z with body SHA-256
+      df074be6f7768179bd270fc04f70edaa99028c422ba544e927177995200ea3a3.
+      Integration accepted and STOPped only the finite existing-service child in
+      comment 5553186139 at 16:28:28Z, body SHA-256
+      de458ccc012c4bad19f1f9e32c537304b23e29711b0ff0553f31b4be4f93e157.
+      Cleanup return 5553203800 at 16:31:36Z has body SHA-256
+      d82a63d311668c7afea02be52638ec478a10661b8226720b4f1f11b8e02f6bbe.
+      Post-STOP receipt SHA-256
+      4970a9a1a39ef128cb397e02ca3cf9be2c0bbceb9e1b26e6b0ab697699295b7a
+      at 16:30:22.536853Z reverified exact 767 and clean roots, unchanged plist
+      and bindings, absent database/old-service/preview/browsers, and PID 49435
+      as the sole listener. The intended installed service must remain running.
+      This is bounded local service/source/UI proof, not healthy Executive
+      Runtime, Business workspace, account, provider, admission or production
+      graduation.
 
-  - claim: The installed Control Room still serves protected #481 source and its configured local Executive database remains absent.
+  - claim: Integration accepted the owner-emitted B5 validity design and its conditional Darwin/Chrome clock profile, while B5 source START remains blocked on the existing PR 496 release.
     command: >
-      python3 -m json.tool
-      /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/installed-static-recheck-20260905.json;
-      read-only static observation recorded at 2026-09-05T12:15:13.550371Z.
+      cat and shasum -a 256
+      /Users/chriswong/Documents/Cluade/exec-prestage-receipts/autonomy-integrator-20260905-01a06f72/b5-integration-design-adjudication-20260905.md
+      and b5-clock-profile-adjudication-20260905.md; Root and Integration
+      native acknowledgement of both exact artifacts.
     result: >
-      HTTP 200 served JavaScript SHA-256
-      28c24f24bb8804b07a5b8384e7b33ff8a038051b6a7814d015d0f9cc2d5108a6
-      and Git blob 0130ccd9c11fa38e81276153e0eb1b9393779898 from clean installed
-      root 15d2693e5ff319f5f09e4c555fb007328237cee4. The configured local
-      database path did not exist. This was a static GET and filesystem read;
-      it did not refresh /api/state, access the production database, install
-      #486, or prove an Executive, account or Business effect.
+      Integration design adjudication SHA-256
+      2da054e58f06cb03ab9021cee2559b53c7bbea6012393a449c488e0a98ecdef8
+      accepts finite owner-emitted validity beside the existing snapshot,
+      diminishing cache/browser duration, distinct card/decision/dispatch/
+      owed_open_age components, compare-at-handoff navigation guards and the
+      nonpersistent verified-navigation outcome when no safe conditional binding
+      update exists. Clock adjudication SHA-256
+      ccf5e9c64fd735af3d37fdae5d99f11ce6b5a0f4c75473143477093c132d36c8
+      accepts conditional profile b5.darwin-chrome-paired-v1 with D=8ms,
+      U=16ms per independent stage, H=1ms and Q=4ms, fail-closed unsupported
+      clocks and no unconditional stale-pixel guarantee. These are accepted
+      design contracts only. The nine-path B5 source START remains blocked until
+      actual PR 496 release plus fresh source, ownership and collision gates;
+      implementation, installed B5 behavior and operational acceptance are absent.
 
-  - claim: Direct carrier readback and current GitHub state distinguish #467's published green source candidate from #488's unanswered parent placement request.
+  - claim: Current carrier evidence preserves Integration's PR 496-first release sequence before any resulting-current-base qualification of PR 492.
     command: >
-      python3 -m json.tool
-      /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/direct-carrier-recheck-20260905.json;
-      exact original-root Slack connector read at 2026-09-05T12:16:02.969289Z;
-      gh pr view 492 and gh pr checks 492 at 2026-09-05T12:25:58Z;
-      Secretary exact native return read of existing receiver task
-      01a06162-9e13-7f40-81ce-57bd9e532282 completed at
-      2026-09-05T12:22:07Z;
-      python3 -m json.tool
-      /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/strict-v2-492-ci-identity.json.
+      Read current-767-492-496-composition-proposal.md; python3 -m json.tool
+      /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/496-auth-carrier-read-1607.json;
+      cat /Users/chriswong/Documents/Cluade/exec-prestage-receipts/autonomy-integrator-20260905-01a06f72/496-independent-canonical-reader-start-20260905.md;
+      GitHub reads of Mastermind comments 5552941302 and 5553124015 plus the
+      bounded remote PR 496 state at 2026-09-05T16:04Z.
     result: >
-      Issue #467 root C0BSBM78V1N/1788603072.004189 has direct readback of
-      placement 1788607732.374319, worker ACK 1788608088.672089 and separately
-      authored START 1788608167.630249 for existing receiver
-      01a06162-9e13-7f40-81ce-57bd9e532282. That worker published
-      https://github.com/mastermindx-market-intelligence/Mastermind/pull/492
-      at c56e80091c00fc3fce2c5bb130713a2ea30279a2 against
-      0106aaa832a8146810e0905d52b7d5444f6827f0, changing exactly three
-      Executive Inbox paths. It is OPEN/DRAFT, labels are empty, native
-      auto-merge is null, reviews and comments are empty, and all five checks
-      are SUCCESS through CI 33964774613 and CodeQL 33964773535. The actual CI
-      checkout 4676fc15a8bdd54931f56591c6c7a423bc863ae3 has tree
-      c9d7fcadd7ccfdee4338996b97cce2f1842ce463, equal to the candidate tree,
-      and parents 0106aaa8 plus c56e; all three candidate blobs match. The
-      latest attributed worker return reports 69 Inbox, 285 dependent and 23
-      strict-matrix passes, but its internal approval report is not a formal
-      GitHub review and the semantic claims remain independently unaccepted.
-      This is a published green source candidate, not release, Runtime
-      execution or production proof. Issue #488 root 1788603418.877459 has
-      zero replies and remains parent-only waiting placement.
+      PR 492 remained on its existing issue-467 receiver at semantic head
+      c56e8009; its approved semantic bytes and old-base checks do not prove a
+      checked composition or release against the base that will result after PR
+      496. Integration requires PR 496 protection/source release first, followed
+      by fresh resulting-current-base qualification of PR 492 on its same carrier.
+      For PR 496, original carrier START 1788622609.098559 created clean local
+      unpublished head ec83e0088c3b3498270466649aa9fd2b310b4c22, tree
+      95e00ca4e342648796a0e81950052d36b07bf3ef, parents [450ab134, 767409b6],
+      with the three frozen blobs retained and every other 767 byte/mode
+      preserved. The source session actually invoked the unchanged canonical
+      verifier at 1788622814.762739; it returned schema
+      mastermind.source_continuity_refusal/v1, AUTH_UNAVAILABLE and exit 2 because
+      established GitHub authentication context was absent. That valid canonical
+      refusal stopped the continuation; no tests, push, CI, security, review,
+      Ready, merge, installation or runtime effect followed. After authentication
+      amendment 5552941302, the source session separately declined to realize the
+      credential input under its session restriction, without running a new
+      credential command or verifier invocation. Comment 5553124015, created
+      2026-09-05T16:18:08Z with body SHA-256
+      e9619370b0c89e859f9ced58d306404458d47974f4bc75a34812edff19c97dcb,
+      supersedes replay of comment 5552941302 by starting one Integration-owned
+      read-only canonical checkpoint after Secretary transport and Root readback.
+      The existing source writer remains frozen on ec83; no rejoin, credential
+      transfer or source authority is granted. A later Integration native update
+      reports that this independent reader stopped before any credential command
+      or canonical invocation because its preflight found 90 ignored/untracked
+      leaves despite clean ordinary status. That native report has no durable
+      artifact pointer in this record yet and is not a canonical refusal or
+      authentication failure; ec83, its tree and the three frozen blobs remained
+      intact, with no Root source/index/ref/auth/adapter effect. The complete 16:07
+      source-carrier read and 16:04 remote read remain dated observations: no later
+      source-writer START was then present and remote PR 496 was OPEN/DRAFT at
+      450ab134.
 
   - claim: Current Linear projection still has no selected Business cockpit or real registered-host/read/admission proof; the protected A1 merge is reconfirmed history rather than new source progress.
     command: >
@@ -499,20 +550,21 @@ unverified:
       request to QUEUED/dispatched=false/zero attempts, validate the H1
       receipt, and prove rollback/readback.
 unresolved:
-  - "The current Control Room is informationally degraded: its timestamps and missing runtime DB prohibit using its displayed zeroes as live clearance."
+  - "The current Control Room is installed at exact protected 767 and has bounded real-browser refresh/framing proof, but it remains informationally degraded: its Executive database is absent, attention is unavailable, Macro Agent OS input is dated 2026-08-24 and active-build evidence is dated 2026-08-11. Fresh composition does not make those inputs healthy or current."
+  - "Integration accepted and STOPped the finite existing-service child in comment 5553186139; cleanup return 5553203800 and receipt 4970a9a1 reverified its closed preview/browser processes and PID 49435 as the sole intended 8787 listener. The installed persistent service must remain running. This closes only the service child and grants no further service effect or portfolio graduation."
   - "The intended Business workspace/admin and selected cockpit identity have not been positively proven; account labels, chat titles, recent tabs, app connectors and catalog rows remain insufficient."
-  - "Steward S1 #463 is published at exact 7ffc with candidate CI and CodeQL SUCCESS. It remains Draft/HOLD, labels empty and native auto-merge null. Formal review 5112237723 remains CHANGES_REQUESTED on obsolete 506e; a fresh attributable non-author published-head review and separate current-4a integration/release decision are owed. Header 1bf, HC0 #247 and Executive metadata #469 remain held lanes."
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement. The original writer effect remains UNKNOWN; Secretary receipt 1788587467.719949 is read-only/provider=none/source=none and does not classify that effect. Do not replace or parallelize the carrier."
-  - "The installed Control Room remains source 15d relative to #481 and is informationally degraded: DB absent, source clocks old and B3/B5/B6 unproven. Unavailable attention inputs do not prove actual ATTENTION_BROKEN. The desktop header source/status overlap is real-preview-confirmed on installed 15d; header candidate 1bf remains separately held."
-  - "The B5 vocabulary has source-level responsibility, dispatch, attention, freshness, blocker, capacity and exact-target surfaces but no current live feed. Canonical parent/child-orphan projection is absent; no aggregate lifecycle or derived next-action authority is lawful."
-  - "Two read-only exact-Chrome-tab probes reached their CDP deadlines before command dispatch, including a 3.0-second root-handle URL/title retry; both have effect=NONE. Secretary was informed; no refresh was dispatched, no bypass was used, and supported transport recovery remains pending. A fresh IAB live page separately verified source 15d. This is not a Business cockpit edge."
-  - "The #486 deadline repair exists on clean local head 6241ba1e with semantic and isolated-browser evidence. Integration has authorized one current-base join, plain publication, automatic checks and non-author published-head review, but no join or publication effect is established here. Ready, merge and installation remain unauthorized. The old 5ae4 publication and its old-base checks remain dated evidence."
-  - "Issue #467's existing worker published OPEN/DRAFT PR #492 at c56e8009 with all five candidate checks green and exact CI checkout identity recovered. Reviews and comments remain empty; worker-reported tests and internal approval are not formal GitHub review or independent semantic acceptance. Issue #488 has no reply to its original placement request. Neither state authorizes a duplicate task, reviewer bypass, carrier or source lane."
+  - "The accepted B5 design and conditional clock profile remain design-only. No B5 source START, implementation, installed B5 behavior or exhaustive 40-card owed-action proof exists; source admission still waits on actual PR 496 release and fresh ownership/collision/source gates."
+  - "PR 496 has a clean local unpublished ec83 current-767 composition. At 1788622814.762739 the source session actually invoked the canonical verifier and received mastermind.source_continuity_refusal/v1 AUTH_UNAVAILABLE / exit 2 because established authentication context was absent. After amendment 5552941302, it separately declined credential realization under its session restriction without a new credential command or verifier invocation. Integration comment 5553124015 then started one independent read-only canonical checkpoint; a later native update reports that reader stopped before credential or verifier invocation when preflight found 90 ignored/untracked leaves despite clean ordinary status. No durable manifest/result pointer is recorded here yet, no cleanup is authorized, and this third event is neither another canonical refusal nor an authentication failure. Keep the original writer frozen and do not rejoin, publish, transfer credentials or infer checkpoint/source success."
+  - "PR 492's approved semantic head and old-base checks remain dated evidence. Integration requires PR 496 protection/source release first; only then may the existing PR 492 carrier perform fresh qualification against the resulting current base. Its publication, source acceptance, installation and Runtime effect remain separate; do not create another worker/reviewer lane."
+  - "The desktop header source/status cluster still overlaps and crowds Theme. Today still lacks its heading ID/aria-labelledby relationship. The nine accepted framings are representative dark-mode section proof, not light-mode, every-row, full keyboard/screen-reader or exhaustive accessibility acceptance."
+  - "Steward S1, header 1bf, HC0 #247 and Executive metadata #469 remain separately held or unproven lanes at their last recorded states; this service wave did not revalidate or release them."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
-  - "Treat #481 source merge and narrow installed-host receipt as complete only for the stated Control Room source/UI plane. Preserve B3/B5/B6, Business cockpit and Executive-runtime gates as unproven."
-  - "For #486, first fresh-read the original PR, exact head, current source carrier, latest governing edge and actual protected master. If the authorized integration or publication already occurred, or any identity moved, reconcile the current state and do not replay this dated instruction. Otherwise execute only Integration comment 5551823052's same-operation candidate: join history-preservingly with parents ordered [6241, actual protected master]; preserve the two frozen blobs; run the 161 owning tests, syntax and diff checks on the integrated tree; plain non-force push once; allow one automatic CI/security run; obtain non-author review on the published head; and return the immutable checks/review result. Any conflict, owner/head change or semantic-blob change requires a concrete return. Ready, merge and installation remain unauthorized. Header publication remains separately held."
-  - "Preserve #467 on existing receiver 01a06162-9e13-7f40-81ce-57bd9e532282 and exact Draft PR #492 head c56e8009. Obtain one proper non-author review of that immutable head before any acceptance or release classification; green checks and worker-reported internal approval do not substitute. Keep #488 parent-only waiting placement until an attributed placement, ACK and separate START are directly read. Do not create a replacement worker, duplicate reviewer lane, infer Executive RUNNING, or turn Agent OS into capacity authority."
+  - "Preserve Integration's accepted/STOPped service operation autonomy-integrator-ccr486-existing-service-20260905-001 at comment 5553186139 and its cleanup return 5553203800. Keep the exact installed 767 service and sole intended PID 49435 running; do not replay the closed preview/browser/service child or infer broader product graduation."
+  - "Treat exact 767 installation, the eight-GET natural transition, nine corrected framings and final physical cleanup as complete only for the bounded local Control Room service/source/UI plane. Preserve absent Executive DB, stale Macro inputs, B3/B5/B6, Business cockpit, account/provider, Runtime and admission gates as unproven."
+  - "Preserve PR 496's existing writer, branch, worktree and frozen local ec83 composition. Do not replay comment 5552941302 or reader START 5553124015 while the independently reported 90 ignored/untracked leaves lack a durable manifest and an authorized disposition; no cleanup is authorized. Integration must first record and adjudicate that exact preflight blocker through its existing operation. If a later canonical checkpoint passes, Secretary may deliver its credential-free receipt and Root continuation to the original writer, which must freshly re-read current source before resuming its already-authorized tests/publication/normal checks. Do not rejoin ec83, transfer credentials or give the reader source authority. Any concrete refusal, source movement or unknown effect returns specifically. B5 remains blocked until PR 496 is actually released and freshly requalified."
+  - "Preserve PR 492 on existing receiver 01a06162-9e13-7f40-81ce-57bd9e532282 and semantic head c56e8009. Wait for PR 496 protection/source release first; only then may that same PR 492 carrier perform fresh qualification against the resulting current base. Do not independently join it to 767, create a replacement worker or review lane, infer Executive RUNNING state, or treat Agent OS as capacity authority."
   - "Before any MAS-242 Stage 0 effect, obtain real-host account/workspace proof and run the three-cockpit continuity/effect/watcher census. If no clean cockpit exists, return NO_ELIGIBLE_CANARY_COCKPIT with effect=NONE."
   - "If and only if Stage 0 selects one clean cockpit, perform only the authorized reversible MAS-242 workspace join and Personal to Business to Personal proof; retain both controls and do not import, authenticate, install or admit anything in that stage."
   - "Keep P1 import, authenticated Steward reads, Executive admission, H1 receipt validation and rollback as separately evidenced gates after the workspace proof."
@@ -523,10 +575,10 @@ do_not_redo:
   - "Do not fail over an ambiguous cockpit, workspace, OAuth or admission action to a second cockpit; preserve the same carrier as EFFECT_UNKNOWN and reconcile it."
   - "Do not treat synthetic fixture-browser validation as operational/runtime/host proof, or mark the product, MAS-242 or U1 complete from this handoff."
 danger_areas:
-  - "The installed #481 Control Room now qualifies empty attention when runtime/inbox state is absent, but a degraded UI remains non-operational evidence. At 1440px, long synthetic source/status text visibly overruns rightward across the badge/theme controls even though document width does not overflow; this is real-preview-confirmed on installed 15d and persists until a sequenced CSS release, not comprehensive visual acceptance."
+  - "The installed 767 Control Room qualifies missing attention inputs and passed nine representative dark-mode framings, but degraded UI remains non-operational evidence. At 1440px the source/status cluster still overlaps and crowds Theme even though document width does not overflow; Today also lacks its heading ID/aria-labelledby relationship. These remain inherited unresolved product/accessibility limits, not comprehensive visual acceptance."
   - "Actual Business account/workspace confirmation is sensitive: record opaque references and state outcomes only; never put account secrets, cookies, tokens, private account locators or browser targets in Agent OS."
   - "HC0 is a sticky existing child with a session-loss reconciliation hold. A second writer or blind transport retry would violate the one-carrier rule."
-prs: [247, 302, 310, 326, 361, 463, 469, 481, 482, 486]
+prs: [247, 302, 310, 326, 361, 463, 469, 481, 482, 486, 492, 496]
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CCR-SOL-IDENTITY-IS-NOT-A-CHAT
@@ -624,3 +676,153 @@ MAS-243 remains Todo with no workspace, package, app, OAuth, Steward read,
 Executive admission or RuntimeBinding effect. A1 protection through PR #310
 is reconfirmed prior source history, not new progress. HC0 still lacks current
 source release and a separately controlled real registered-host receipt.
+## 2026-09-05 service checkpoint — exact 767 installed; finite child accepted and STOPped
+
+The historical return through `2026-09-05T08:37:56Z` and the dated 12:31
+next-wave checkpoint above remain preserved evidence. Their 5ae4, 6241, 15d,
+PR 492 and unanswered-issue-488 statements describe those earlier epochs; they
+are not current service or carrier instructions and must not be replayed.
+
+Mastermind protected source `767409b6d3e7103a3b11428b870357d4a01bbe26`,
+tree `cb8486ea0bfacc1036846cc8325676eddd22ce77`, is installed in the existing
+`gui/501/com.mastermind.chairman-control-room` service. The operation executed
+preview START [5552814566](https://github.com/mastermindx-market-intelligence/Mastermind/pull/486#issuecomment-5552814566)
+and replacement START [5552850804](https://github.com/mastermindx-market-intelligence/Mastermind/pull/486#issuecomment-5552850804).
+The finite preview served the accepted JavaScript and one qualified state
+response, then exited with its port refusing; receipt SHA-256 is
+`4682ee5dfa5370a98ee6dd80d1ac0c91f9bb6d7f7c47b3c7d356ccb6d59a14f9`.
+The existing service became quiescent at `2026-09-05T15:33:13.102852Z`; its
+clean live root fast-forwarded from 15d to exact 767 at
+`15:33:57.589946Z`, with the LaunchAgent plist unchanged, and the same plist
+bootstrapped successfully. No rollback was required.
+
+The first installed browser run, result SHA-256
+`3045d48309c9f620f4d3a1127e746f8f81662632712aaf13be2296285c4dfca1`,
+observed eight actual `/api/state` GETs. Sequences 1-7 were in flight;
+sequence 8 at `15:43:42.069Z` was complete with newer generated/composed
+timestamps, exact 767 and no refresh error. The final DOM banner was hidden,
+but no initial banner-visibility sample was saved. Independent review
+`6fa49b16…` accepted the bounded refresh evidence and rejected the first nine
+screenshots as premature smooth-scroll captures.
+
+A separately authorized framing supplement, result SHA-256
+`3c168eb8d240e74468196358813cdfbe99911c75b38f5aba28420f99d1856794`,
+settled native anchor geometry and passed all nine Today, Autonomy and System
+framings at `1440x900`, `834x1194` and `390x844`. Independent review
+`5b4f7127…` opened all nine images and accepted target heading/content framing,
+with native anchor error at most 0.469px, capture-time movement zero and no
+document/body horizontal overflow. Its four state responses were all in flight,
+so it does not repeat the first run's completion proof. Both seven-process
+browser sets and the preview process were closed.
+
+Final normal GET receipt SHA-256
+`f3a2a1c75accbe0e0a4b1e321f778f14d90f0c512b151a42a3c627c412946cc9`
+at `2026-09-05T16:13:04.806862Z` returned HTTP 200/no-store, expected schema,
+exact 767, generated `16:10:00Z`, composed `16:11:14Z`,
+`refresh_in_flight=false` and null error. Final physical receipt SHA-256
+`619ee1a702d144440cb79c76eef20033e3a57eb23dc2f0b9dcd87f2b0adf5fdc`
+at `16:13:31.854067Z` records clean live and Macro roots, unchanged plist and
+bindings, absent Executive database, closed preview/first-browser/supplement
+processes, absent old service, and PID 49435 as the sole intended persistent
+8787 listener. The bounded service result is
+[comment 5553115278](https://github.com/mastermindx-market-intelligence/Mastermind/pull/486#issuecomment-5553115278),
+posted `2026-09-05T16:16:41Z`, body SHA-256
+`df074be6f7768179bd270fc04f70edaa99028c422ba544e927177995200ea3a3`.
+Integration accepted and STOPped only the bounded existing-service child in
+[comment 5553186139](https://github.com/mastermindx-market-intelligence/Mastermind/pull/486#issuecomment-5553186139),
+posted `2026-09-05T16:28:28Z`, body SHA-256
+`de458ccc012c4bad19f1f9e32c537304b23e29711b0ff0553f31b4be4f93e157`.
+Cleanup return
+[comment 5553203800](https://github.com/mastermindx-market-intelligence/Mastermind/pull/486#issuecomment-5553203800),
+posted `2026-09-05T16:31:36Z`, has body SHA-256
+`d82a63d311668c7afea02be52638ec478a10661b8226720b4f1f11b8e02f6bbe`.
+Post-STOP receipt SHA-256
+`4970a9a1a39ef128cb397e02ca3cf9be2c0bbceb9e1b26e6b0ab697699295b7a`
+at `2026-09-05T16:30:22.536853Z` reverified exact 767 and clean live/Macro
+roots, unchanged plist and bindings, absent configured database, old service,
+preview and both browser groups, and PID 49435 as the sole intended 8787
+listener. The finite child is closed. The installed service must remain running;
+STOP is not an unload or process-stop instruction and grants no further effect.
+
+This installation composes honestly degraded inputs. The configured Executive
+database remains absent; attention is unavailable rather than all-clear. Macro
+Agent OS input remains `2026-08-24T01:18:31Z`, active-build evidence remains
+`2026-08-11T13:24:20.082810+00:00`, and 40 historical cards are not 40 running
+workers. The desktop status/header overlap and missing Today heading/ARIA
+relationship remain. Nine framings do not establish light-mode, every-row,
+complete keyboard/screen-reader, exhaustive card-actionability or global product
+acceptance.
+
+Integration accepted the owner-emitted B5 validity design in artifact SHA-256
+`2da054e58f06cb03ab9021cee2559b53c7bbea6012393a449c488e0a98ecdef8`
+and the conditional `b5.darwin-chrome-paired-v1` clock contract in artifact
+SHA-256 `ccf5e9c64fd735af3d37fdae5d99f11ce6b5a0f4c75473143477093c132d36c8`.
+The design keeps finite validity with the existing source owner and snapshot,
+separates card/decision/dispatch/owed-open components, checks exact proof and
+binding identity at provider handoff, and permits a verified nonpersistent
+navigation result where no safe conditional binding write exists. The clock
+contract fixes D=8ms, U=16ms per independent stage, H=1ms and Q=4ms under its
+explicit supported-profile assumptions. Unsupported or uncertain clocks fail
+closed. These are conditional design decisions, not B5 implementation or
+installed behavior. B5 source START still waits on actual PR 496 release and
+fresh source, owner and collision gates.
+
+PR 496 is no longer an unanswered placement request. Its existing receiver
+started the current-base proof at carrier timestamp `1788622609.098559` and
+created clean local unpublished `ec83e0088c3b3498270466649aa9fd2b310b4c22`,
+tree `95e00ca4e342648796a0e81950052d36b07bf3ef`, parents `[450ab134…,
+767409b6…]`, preserving the three frozen blobs and every other protected byte
+and mode. At `1788622814.762739` the source session actually invoked the
+unchanged canonical verifier. Its terminal receipt used schema
+`mastermind.source_continuity_refusal/v1` and returned `AUTH_UNAVAILABLE` /
+exit 2 because established GitHub authentication context was absent. This was a
+valid canonical refusal and stopped the continuation; planned tests, push, CI,
+security and publication did not occur.
+Root's original bounded authentication-context continuation is
+[comment 5552941302](https://github.com/mastermindx-market-intelligence/Mastermind/pull/496#issuecomment-5552941302);
+Secretary delivered that edge at `1788624292.319279`. The complete source-carrier
+receipt SHA-256
+`cf974a8853e41ed65fd837ebb2ba06c3a5f9a9c497780c33647d9f4d4b911925`
+at 16:07 found no later source-writer START, and the 16:04 remote read remained
+OPEN/DRAFT at `450ab134…`; both are preserved as dated observations.
+
+After that amendment, the source session separately declined to realize the
+credential input under its stated session restriction. It attempted no new
+credential command and no new canonical invocation. That later restriction did
+not rewrite the original verifier refusal or demonstrate another authentication
+failure.
+
+Integration's newer
+[comment 5553124015](https://github.com/mastermindx-market-intelligence/Mastermind/pull/496#issuecomment-5553124015),
+created `2026-09-05T16:18:08Z` with body SHA-256
+`e9619370b0c89e859f9ced58d306404458d47974f4bc75a34812edff19c97dcb`,
+supersedes replay of that source-auth setup. After Secretary transport and Root
+actual readback, it started one Integration-owned independent read-only canonical
+checkpoint using Root's existing CLI authentication context. The original source
+writer remained frozen on ec83; this granted no rejoin, credential transfer,
+source authority or source effect.
+
+A later Integration native update reports that the reader stopped before any
+credential command or canonical invocation because `git ls-files --others`
+preflight found 90 ignored/untracked leaves despite clean ordinary status. The
+same update reports ec83, tree 95e00ca and the three frozen blobs intact, with no
+Root source/index/ref/auth/adapter effect. This record has no durable manifest or
+result pointer for that update yet, so it remains native-attributed. It is not a
+new canonical refusal or authentication failure, and no cleanup is authorized.
+Do not replay either auth-context or reader START while Integration prepares and
+adjudicates the exact leaf manifest through the existing operation. If a later
+canonical checkpoint passes, Secretary may return only the credential-free
+receipt and Root continuation; the original writer must then freshly read current
+source before its already-authorized tests and publication sequence. Do not start
+B5 around this unreleased owner.
+
+Integration also fixes the dependent source sequence: PR 496 protection/source
+release comes first. Only after that release may PR 492's existing carrier
+qualify its frozen semantic work against the resulting current base. Do not
+independently compose PR 492 onto 767.
+
+HC0 and the Business path are unchanged. The original HC0 writer effect remains
+`UNKNOWN`; a real registered-host receipt, selected Business cockpit, reversible
+workspace round trip, authenticated Steward read and bounded Executive admission
+remain absent. Installing the read-only local Control Room cannot satisfy those
+gates, create provider/account authority or graduate the domain.
