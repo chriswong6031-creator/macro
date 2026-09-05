@@ -377,24 +377,36 @@
     return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
   }
   function ownerPopulation() {
-    var all = qs('#hk-stage-filter [data-stagepick="all"] .pbf-n');
-    if (!all) return null;
-    var raw = String(all.textContent || "").trim();
+    var owner = qs("#hk-owner-population-proof");
+    if (!owner) return null;
+    var raw = owner.getAttribute("data-owner-board-population");
+    raw = raw === null ? "" : String(raw).trim();
     return /^\d+$/.test(raw) ? Number(raw) : null;
   }
   function watchPopulation() {
-    var grid = qs("#standouts .watch-strip .watch-grid");
-    return grid ? qsa("a[href]", grid).length : null;
+    var owner = qs("#hk-owner-population-proof");
+    if (!owner) return null;
+    var raw = owner.getAttribute("data-owner-watch-population");
+    raw = raw === null ? "" : String(raw).trim();
+    return /^\d+$/.test(raw) ? Number(raw) : null;
   }
-  function populationCopy(shown, total, watch) {
+  function uniquePopulation() {
+    var owner = qs("#hk-owner-population-proof");
+    if (!owner) return null;
+    var raw = owner.getAttribute("data-owner-unique-population");
+    raw = raw === null ? "" : String(raw).trim();
+    return /^\d+$/.test(raw) ? Number(raw) : null;
+  }
+  function populationCopy(shown, total, watch, unique) {
     if (total === null) {
       return watch === null
         ? bi(shown + " actionable cards shown · stage board unavailable · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单暂不可用 · 观察名单暂不可用")
         : bi(shown + " actionable cards shown · stage board unavailable · " + watch + " watch names", "显示 " + shown + " 张可操作卡片 · 阶段榜单暂不可用 · 观察 " + watch + " 只");
     }
-    return watch === null
-      ? bi(shown + " actionable cards shown · " + total + " stage-board names · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + total + " 只 · 观察名单暂不可用")
-      : bi(shown + " actionable cards shown · " + (total + watch) + " current names (" + total + " stage board + " + watch + " watch)", "显示 " + shown + " 张可操作卡片 · 当前共 " + (total + watch) + " 只（阶段榜单 " + total + " + 观察 " + watch + "）");
+    if (watch === null) return bi(shown + " actionable cards shown · " + total + " stage-board names · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + total + " 只 · 观察名单暂不可用");
+    return unique === null
+      ? bi(shown + " actionable cards shown · " + total + " stage-board names · " + watch + " watch names · unique total unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + total + " 只 · 观察 " + watch + " 只 · 去重总数暂不可用")
+      : bi(shown + " actionable cards shown · " + unique + " current names (" + total + " stage board + " + watch + " watch)", "显示 " + shown + " 张可操作卡片 · 当前共 " + unique + " 只（阶段榜单 " + total + " + 观察 " + watch + "）");
   }
   function applyFilter() {
     var shown = 0;
@@ -402,8 +414,8 @@
     var empty = qs("#hk-v37-grid-empty");
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var total = ownerPopulation();
-    var result = qs("#hk-v37-result"), watch = watchPopulation();
-    if (result) result.innerHTML = populationCopy(shown, total, watch);
+    var result = qs("#hk-v37-result"), watch = watchPopulation(), unique = uniquePopulation();
+    if (result) result.innerHTML = populationCopy(shown, total, watch, unique);
     var pill = qs("#hk-v37-filter"), item = itemForFilter();
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi("Sector", "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();

@@ -1,0 +1,71 @@
+{
+  "as_of": "2026-09-03",
+  "board_definition": "hk_prophet_v2",
+  "lanes": {
+    "buy": [
+      {"ticker": "0966.HK", "name": "China Taiping", "name_zh": "中国太平", "stage": "live"},
+      {"ticker": "9926.HK", "name": "Akeso", "name_zh": "康方生物", "stage": "live"},
+      {"ticker": "2057.HK", "name": "ZTO Express", "name_zh": "中通快递", "stage": "setting_up"}
+    ],
+    "ripening": [
+      {"ticker": "6060.HK", "name": "ZhongAn Online", "name_zh": "众安在线"},
+      {"ticker": "1766.HK", "name": "CRRC Corporation", "name_zh": "中国中车"},
+      {"ticker": "0285.HK", "name": "BYD Electronic", "name_zh": "比亚迪电子"},
+      {"ticker": "1177.HK", "name": "Sino Biopharmaceutical", "name_zh": "中国生物制药"},
+      {"ticker": "2688.HK", "name": "ENN Energy", "name_zh": "新奥能源"},
+      {"ticker": "1088.HK", "name": "China Shenhua", "name_zh": "中国神华"},
+      {"ticker": "0027.HK", "name": "Galaxy Entertainment", "name_zh": "银河娱乐"},
+      {"ticker": "0388.HK", "name": "HKEX", "name_zh": "香港交易所"},
+      {"ticker": "1066.HK", "name": "Shandong Weigao", "name_zh": "山东威高"},
+      {"ticker": "1928.HK", "name": "Sands China", "name_zh": "金沙中国"},
+      {"ticker": "2196.HK", "name": "Shanghai Pharmaceuticals", "name_zh": "上海医药"},
+      {"ticker": "9633.HK", "name": "Nongfu Spring", "name_zh": "农夫山泉"}
+    ],
+    "ran": [
+      {"ticker": "2318.HK", "name": "Ping An Insurance", "name_zh": null},
+      {"ticker": "1810.HK", "name": "Xiaomi", "name_zh": null},
+      {"ticker": "2020.HK", "name": "Anta Sports", "name_zh": null},
+      {"ticker": "2628.HK", "name": "China Life", "name_zh": null},
+      {"ticker": "6098.HK", "name": "Country Garden Services", "name_zh": null},
+      {"ticker": "0778.HK", "name": "Fortune REIT", "name_zh": null},
+      {"ticker": "3800.HK", "name": "GCL Technology", "name_zh": null},
+      {"ticker": "0017.HK", "name": "New World Development", "name_zh": null},
+      {"ticker": "1799.HK", "name": "Xinte Energy", "name_zh": null},
+      {"ticker": "2015.HK", "name": "Li Auto", "name_zh": null},
+      {"ticker": "0998.HK", "name": "CITIC Bank", "name_zh": null},
+      {"ticker": "1898.HK", "name": "China Coal Energy", "name_zh": null}
+    ],
+    "vetoed": [
+      {"ticker": "0639.HK", "name": "Shougang Resources", "name_zh": "首钢资源"},
+      {"ticker": "2899.HK", "name": "Zijin Mining", "name_zh": "紫金矿业"},
+      {"ticker": "0322.HK", "name": "Tingyi", "name_zh": "顶益控股"},
+      {"ticker": "0772.HK", "name": "China Literature", "name_zh": "阅文集团"},
+      {"ticker": "1208.HK", "name": "MMG", "name_zh": "五矿资源"},
+      {"ticker": "1038.HK", "name": "CK Infrastructure", "name_zh": "长江基建集团"},
+      {"ticker": "2007.HK", "name": "Country Garden", "name_zh": "碧桂园"},
+      {"ticker": "6862.HK", "name": "Haidilao", "name_zh": "海底捞"},
+      {"ticker": "1359.HK", "name": "China Cinda Asset Mgmt", "name_zh": "中国信达"},
+      {"ticker": "0016.HK", "name": "Sun Hung Kai Properties", "name_zh": "新鸿基地产"},
+      {"ticker": "0934.HK", "name": "Sinopec Kantons", "name_zh": "新域天然气"},
+      {"ticker": "9698.HK", "name": "GDS Holdings", "name_zh": "万国数据"}
+    ],
+    "watch": [
+      {"ticker": "2331.HK", "name": "Li Ning", "name_zh": "李宁"},
+      {"ticker": "1299.HK", "name": "AIA Group", "name_zh": "友邦保险"},
+      {"ticker": "1336.HK", "name": "New China Life Insurance", "name_zh": "新华保险"},
+      {"ticker": "3618.HK", "name": "Chongqing Rural Commercial Bank", "name_zh": "重庆农村商业银行"},
+      {"ticker": "0392.HK", "name": "Beijing Enterprises", "name_zh": "北京企业控股"},
+      {"ticker": "1209.HK", "name": "China Resources Mixc", "name_zh": "华润万象生活"},
+      {"ticker": "1057.HK", "name": "Zhejiang Shibao", "name_zh": "浙江世宝"},
+      {"ticker": "2378.HK", "name": "Prudential", "name_zh": "保诚"}
+    ]
+  },
+  "market": "hk",
+  "provenance": {
+    "extraction": "identity fields only from the named owner lanes; non-owner presentation fields are neutral fixture values",
+    "source_git_commit": "8173ca2767c08c045e9cfcdddf54eb214981f02c",
+    "source_path": "site/factordata/hk_standouts.json",
+    "source_sha256": "176e8c6d4bd22027336f5cf5785bab83d47558762348a36a16433f153e68013f"
+  },
+  "schema": "mastermind.stock_dashboard_owner_fixture.v1"
+}

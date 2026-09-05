@@ -2,12 +2,12 @@
 
 _Heuristics identify review targets; they do not determine that a page is bad._
 
-Generated 2026-09-05T15:47:00Z · schema `mastermind.ux_smell_report.v1`
+Generated 2026-09-05T19:38:00Z · schema `mastermind.ux_smell_report.v1`
 
 | route | page_id | words | h1 | panels | height px | h-overflow | slug hits | TODO hits | as-of | source | shots |
 | --- | --- | ---: | ---: | ---: | ---: | :---: | ---: | ---: | :---: | :---: | ---: |
-| /canada_stocks.html | macro:canada_stocks | 550 | 1 | 9 | 2327 | no | 0 | 0 | no | no | 1.0 |
-| /hk_stocks.html | macro:hk_stocks | 2392 | 1 | 121 | 6179 | no | 1 | 0 | yes | no | 1.0 |
+| /canada_stocks.html | macro:canada_stocks | 415 | 1 | 9 | 2851 | no | 0 | 0 | no | no | 1.0 |
+| /hk_stocks.html | macro:hk_stocks | 901 | 1 | 9 | 3553 | no | 1 | 0 | yes | no | 1.0 |
 
 ## Metric notes
 

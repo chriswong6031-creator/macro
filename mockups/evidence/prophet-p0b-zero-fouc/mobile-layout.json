@@ -9,26 +9,27 @@
   },
   "verifier": {
     "path": "scripts/verify_stock_dashboard_mobile_layout.cjs",
-    "sha256": "1dbf671b1754caf57a54b8260862cdd5eba1e8e771aca60748eb890a399bda63"
+    "sha256": "71f05897ae8615b2a491a8f95c76d8e1094efa27ee3a99da96ed7cec573e4826"
   },
   "browser": {
     "engine": "chromium",
-    "version": "152.0.7977.8"
+    "version": "151.0.7922.34"
   },
   "fixture_receipt": {
     "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-    "sha256": "c0b43196d7643b5ae3b54ff1babdb241e24ccea02cf2c78d6dc5b26d5d7493b0"
+    "sha256": "3172d9f0b3bb7d50ee1c06e742bbc585b75d1389f07230ba85891bfe8e529576"
   },
+  "fixture_assets_root": "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data",
   "fixture_market": "hk",
   "input_html": {
     "path": "hk_stocks.html",
     "route": "/hk_stocks.html",
-    "sha256": "4403ab98ba82127ec52c2da47fdc03c67092e7339265a5438539b57f432736c1"
+    "sha256": "5ba9170a6c84b44b474123ce152f22b9e8d3ce2d55e8586e182a3fdc98379685"
   },
   "construction_inputs": {
     "engine/i18n.py": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44",
-    "scripts/render_stock_dashboard_fixture.py": "bc2fb1a9d1518defc2b2c7fe2700f4a784f849ece44316f4b8ac2a97831938be",
-    "site/factordata/hk_standouts.json": "176e8c6d4bd22027336f5cf5785bab83d47558762348a36a16433f153e68013f",
+    "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json": "f0df976899677d3ff14ac0874b5b82e96ba77d52b9f1c0b7638927329e94ee95",
+    "scripts/render_stock_dashboard_fixture.py": "4b4e1dee9c994018e66e672ab8a12bd797396f2ca18572cf6a0a5c98fc2d3a6b",
     "templates/_aibrief_body.html.j2": "f758be7fc256a9dad50ea07542ef6d75b1aa6694be58eabd5627a351b74bd7c5",
     "templates/_aibrief_css.j2": "1c341bc8204ba2203cd6f1953419a58ace9ccc8c3048767658d276072cde5d81",
     "templates/_cmd_hero.css.j2": "86d3c260212c477d990b82dd424078dcb2227e252dcc83a2ba92f3e629b5170e",
@@ -44,9 +45,12 @@
     "templates/_risk_radar_dlg.html.j2": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43",
     "templates/_seo_head.html.j2": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee",
     "templates/_site_nav.html.j2": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482",
-    "templates/hk.html.j2": "3bb84123744ee18c2e3505736de24d95a020906413f3037a73db4958cb9aa932"
+    "templates/hk.html.j2": "cb03e7bf4b94f06fedc1de5d1031060ef34b1ff414128b30baccf49343e7bf96"
   },
   "loaded_assets": {
+    "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/quotes.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/marketdata/rotation_events_hk.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
     "site/account.js": "521f0e4bd309a1b19d7dcee243667839d21a2903b20cc69ed14b72784bd276bd",
     "site/charts.js": "5372d2a229f4d2b16319a2d02c9fb2bfba19ad65c680d415796b12103aeff6ff",
     "site/dashboard-icons.css": "be32e541eabb7deeb4a6c88ff20bd1a0a53a96c873fb3773ed01da470682b0e9",
@@ -56,16 +60,12 @@
     "site/fonts/Inter-600.woff2": "f9a06e79cd3a2a20951c0f0e28f66dd0e6d3fda73911d640a2125c8fcb78f21a",
     "site/fonts/Inter-700.woff2": "6f56409fd3d64bb85f7d070bce20749db2d66b6d63cec586cc22d1c761be2491",
     "site/fonts/Inter-800.woff2": "a7d0a50f15d389cad679238466bdb5fc9787aa0715719064ce25abaff042820d",
-    "site/fonts/Inter-900.woff2": "d5c0ed7b8b5dde97d48b97947d740bbd8ad3ba9f2c5cc6b8280f16acba2d828e",
-    "site/hk-stock-v36.js": "63afc85249a7e94fd8c8f21b30947a3fa33e43c4f799bebfd2898f666371d75a",
+    "site/hk-stock-v36.js": "95f4c1f2b236f78c6f34185a5372c6dcc48cbc8ebe234281f7080e9884ac0efc",
     "site/illus.css": "cbe6a0b4f83095ed300ee49a5d9f4d03e88005170a4792a7a9f41805a67e5f07",
     "site/illus.js": "8e0a3779784525f15bb4a1b20e50f39ef4d0ddf243827f5ab609cfb08a69c620",
     "site/live.js": "f7bdf7cce1606c07d806408b7feb8b134c99e838acc3ee887bf5e1a15a9f4478",
-    "site/live/overlay.json": "4fa121928968154aee591a1c85ae0aa5ca106da874f212627dcd11df78a087a4",
-    "site/live/quotes.json": "812af30033cb0f84e755d8fb5d8f5424ad170a429f89d361505ce3d2f5fe94dd",
     "site/live_config.js": "52943e92422103557d94066ceb65f4402816322281f95e8bd376293fe14d9c10",
     "site/logo_config.js": "b37d33d3194c191b1bb64db3f5c33d17c7dc06a74892e4aa8ea4d50320aae215",
-    "site/marketdata/rotation_events_hk.json": "9082a36bbf5dab22bf67c4b3fe2830a4e7aeb00ee9713b350eb6cdee6e431459",
     "site/mtf.js": "b62aea2f86b81a2d06e156c9e8f63f43804cd183868f209f3c450cdf2b39a1c0",
     "site/nav_market.js": "24985e3240b509bfa197a5203b7bd28bb039b82b77a624481393203c74463497",
     "site/navigation-refresh.css": "c299c32498d25c412608eca40e53686b891076dd11a0c452b7dfe048c3d25584",
@@ -147,6 +147,10 @@
       "theme": "dark",
       "javascript_enabled": false,
       "composer": "loaded",
+      "screenshot": {
+        "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-js-disabled-dark-390.png",
+        "sha256": "53f367b713218868269076ae36d842c8e136294abdcc1c504b5f5999808bd332"
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,
@@ -161,6 +165,10 @@
       "theme": "light",
       "javascript_enabled": true,
       "composer": "failed",
+      "screenshot": {
+        "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-composer-failed-light-390.png",
+        "sha256": "46cc65e4f77daec559e7716c849445876a634888de07f62ab8557f9603c8b91d"
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,

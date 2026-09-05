@@ -20,7 +20,7 @@ function usage(message) {
   if (message) process.stderr.write(`error: ${message}\n`);
   process.stderr.write(
     "usage: verify_stock_dashboard_mobile_layout.cjs " +
-      "--html FILE --site-dir DIR --fixture-receipt FILE " +
+      "--html FILE --site-dir DIR --fixture-receipt FILE --fixture-assets-dir DIR " +
       "[--composer FILE] [--browser FILE] [--out FILE] [--screenshot-dir DIR]\n"
   );
   process.exit(2);
@@ -33,8 +33,9 @@ function parseArgs(argv) {
     if (!key || !key.startsWith("--") || i + 1 >= argv.length) usage("invalid arguments");
     parsed[key.slice(2)] = argv[i + 1];
   }
-  if (!parsed.html || !parsed["site-dir"] || !parsed["fixture-receipt"]) {
-    usage("--html, --site-dir, and --fixture-receipt are required");
+  if (!parsed.html || !parsed["site-dir"] || !parsed["fixture-receipt"] ||
+      !parsed["fixture-assets-dir"]) {
+    usage("--html, --site-dir, --fixture-receipt, and --fixture-assets-dir are required");
   }
   return parsed;
 }
@@ -235,6 +236,8 @@ async function main() {
   const siteDir = realDir(args["site-dir"], "--site-dir");
   const repoRoot = path.dirname(siteDir);
   const fixtureReceiptFile = realFile(args["fixture-receipt"], "--fixture-receipt");
+  const fixtureAssetsDir = realDir(args["fixture-assets-dir"], "--fixture-assets-dir");
+  const fixtureAssetsRoot = relativeRepoPath(repoRoot, fixtureAssetsDir);
   const fixtureBinding = bindFixtureReceipt(fixtureReceiptFile, htmlFile, repoRoot);
   const composer = args.composer || MARKET_COMPOSERS[fixtureBinding.market];
   if (!composer || path.basename(composer) !== composer) {
@@ -289,10 +292,16 @@ async function main() {
         if (path.basename(url.pathname) === composer && state.composerMode === "pending") {
           await new Promise((resolve) => setTimeout(resolve, 2500));
         }
+        const relative = url.pathname.replace(/^\/+/, "");
+        const fixtureCandidate = path.resolve(fixtureAssetsDir, relative);
+        const fixtureOverride = fixtureCandidate.startsWith(fixtureAssetsDir + path.sep) &&
+          fs.existsSync(fixtureCandidate) && fs.statSync(fixtureCandidate).isFile();
         const candidate = url.pathname === fixtureBinding.route
           ? htmlFile
-          : path.resolve(siteDir, url.pathname.replace(/^\/+/, ""));
-        if (candidate !== htmlFile && !candidate.startsWith(siteDir + path.sep)) {
+          : fixtureOverride ? fixtureCandidate : path.resolve(siteDir, relative);
+        if (candidate !== htmlFile &&
+            !candidate.startsWith(siteDir + path.sep) &&
+            !candidate.startsWith(fixtureAssetsDir + path.sep)) {
           await route.fulfill({status: 403, body: ""});
           return;
         }
@@ -378,6 +387,7 @@ async function main() {
       version: browserVersion,
     },
     fixture_receipt: fixtureBinding.receipt,
+    fixture_assets_root: fixtureAssetsRoot,
     fixture_market: fixtureBinding.market,
     input_html: {
       path: fixtureBinding.output,

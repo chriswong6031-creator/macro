@@ -313,26 +313,37 @@
     return /^\d+$/.test(raw) ? Number(raw) : null;
   }
   function watchPopulation() {
-    var grid = qs("#standouts .watch-strip .watch-grid");
-    return grid ? qsa("a[href]", grid).length : null;
+    var owner = qs("#ca-v36-card-grid");
+    if (!owner) return null;
+    var raw = owner.getAttribute("data-owner-watch-population");
+    raw = raw === null ? "" : String(raw).trim();
+    return /^\d+$/.test(raw) ? Number(raw) : null;
   }
-  function populationCopy(shown, board, watch) {
+  function uniquePopulation() {
+    var owner = qs("#ca-v36-card-grid");
+    if (!owner) return null;
+    var raw = owner.getAttribute("data-owner-unique-population");
+    raw = raw === null ? "" : String(raw).trim();
+    return /^\d+$/.test(raw) ? Number(raw) : null;
+  }
+  function populationCopy(shown, board, watch, unique) {
     if (board === null) {
       return watch === null
         ? bi(shown + " cards shown · board unavailable · watch unavailable", "显示 " + shown + " 张卡片 · 榜单暂不可用 · 观察名单暂不可用")
         : bi(shown + " cards shown · board unavailable · " + watch + " watch names", "显示 " + shown + " 张卡片 · 榜单暂不可用 · 观察 " + watch + " 只");
     }
-    return watch === null
-      ? bi(shown + " cards shown · " + board + " board names · watch unavailable", "显示 " + shown + " 张卡片 · 榜单 " + board + " 只 · 观察名单暂不可用")
-      : bi(shown + " cards shown · " + (board + watch) + " current names (" + board + " board + " + watch + " watch)", "显示 " + shown + " 张卡片 · 当前共 " + (board + watch) + " 只（榜单 " + board + " + 观察 " + watch + "）");
+    if (watch === null) return bi(shown + " cards shown · " + board + " board names · watch unavailable", "显示 " + shown + " 张卡片 · 榜单 " + board + " 只 · 观察名单暂不可用");
+    return unique === null
+      ? bi(shown + " cards shown · " + board + " board names · " + watch + " watch names · unique total unavailable", "显示 " + shown + " 张卡片 · 榜单 " + board + " 只 · 观察 " + watch + " 只 · 去重总数暂不可用")
+      : bi(shown + " cards shown · " + unique + " current names (" + board + " board + " + watch + " watch)", "显示 " + shown + " 张卡片 · 当前共 " + unique + " 只（榜单 " + board + " + 观察 " + watch + "）");
   }
   function applyFilter() {
     var shown = 0;
     state.cards.forEach(function (card) { var show = allowed(ticker(card.getAttribute("data-ticker"))); card.hidden = !show; if (show) shown++; });
     var empty = qs("#ca-v36-grid-empty");
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
-    var board = boardPopulation(), result = qs("#ca-v36-result"), watch = watchPopulation();
-    if (result) result.innerHTML = populationCopy(shown, board, watch);
+    var board = boardPopulation(), result = qs("#ca-v36-result"), watch = watchPopulation(), unique = uniquePopulation();
+    if (result) result.innerHTML = populationCopy(shown, board, watch, unique);
     var pill = qs("#ca-v36-filter"), item = itemForFilter();
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi(item.kind === "theme" ? "Theme" : "Sector", item.kind === "theme" ? "主题" : "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();

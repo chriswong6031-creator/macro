@@ -2234,23 +2234,59 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% set _ca_watch_known = _ca_watch_source is sequence and _ca_watch_source is not string and _ca_watch_source is not mapping %}
 {% set _ca_board = _ca_board_source if _ca_board_known else [] %}
 {% set _ca_watch = _ca_watch_source if _ca_watch_known else [] %}
-{% set _ca_board_n = _ca_board|length %}
-{% set _ca_watch_n = _ca_watch|length %}
+{# A raw list length is not a unique population. Validate stable ticker identities
+   inside each owner and prove board/watch disjointness before exposing a union
+   total to either the JS-free frame or the composer. #}
+{% set _ca_owner = namespace(board_ids=[], watch_ids=[], board_valid=_ca_board_known, watch_valid=_ca_watch_known, intersection=[]) %}
+{% if _ca_board_known %}
+  {% for _ca_row in _ca_board %}
+    {% set _ca_raw_ticker = _ca_row.get('ticker') if _ca_row is mapping else none %}
+    {% set _ca_ticker = (_ca_raw_ticker|trim|upper) if _ca_raw_ticker is string else '' %}
+    {% if not _ca_ticker or _ca_ticker in _ca_owner.board_ids %}
+      {% set _ca_owner.board_valid = false %}
+    {% else %}
+      {% set _ = _ca_owner.board_ids.append(_ca_ticker) %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% if _ca_watch_known %}
+  {% for _ca_row in _ca_watch %}
+    {% set _ca_raw_ticker = _ca_row.get('ticker') if _ca_row is mapping else none %}
+    {% set _ca_ticker = (_ca_raw_ticker|trim|upper) if _ca_raw_ticker is string else '' %}
+    {% if not _ca_ticker or _ca_ticker in _ca_owner.watch_ids %}
+      {% set _ca_owner.watch_valid = false %}
+    {% else %}
+      {% set _ = _ca_owner.watch_ids.append(_ca_ticker) %}
+      {% if _ca_ticker in _ca_owner.board_ids %}
+        {% set _ = _ca_owner.intersection.append(_ca_ticker) %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% set _ca_board_n = _ca_owner.board_ids|length %}
+{% set _ca_watch_n = _ca_owner.watch_ids|length %}
+{% set _ca_union_known = _ca_owner.board_valid and _ca_owner.watch_valid and not _ca_owner.intersection %}
+{% set _ca_unique_n = (_ca_owner.board_ids + _ca_owner.watch_ids)|length if _ca_union_known else none %}
 <section class="ca-v36-panel" id="ca-v36-prophet">
   <div class="ca-v36-sec-hd">
     <h2>Prophet</h2>
     <span class="ca-v36-result" id="ca-v36-result">
-      {% if _ca_board_known and _ca_watch_known %}
+      {% if _ca_union_known %}
       {{ t(
-        _ca_board_n ~ ' board + ' ~ _ca_watch_n ~ ' watch = ' ~ (_ca_board_n + _ca_watch_n) ~ ' current names',
-        '榜单 ' ~ _ca_board_n ~ ' 只 + 观察 ' ~ _ca_watch_n ~ ' 只 = 当前共 ' ~ (_ca_board_n + _ca_watch_n) ~ ' 只'
+        _ca_board_n ~ ' board + ' ~ _ca_watch_n ~ ' watch = ' ~ _ca_unique_n ~ ' current names',
+        '榜单 ' ~ _ca_board_n ~ ' 只 + 观察 ' ~ _ca_watch_n ~ ' 只 = 当前共 ' ~ _ca_unique_n ~ ' 只'
       ) }}
-      {% elif _ca_board_known %}
+      {% elif _ca_owner.board_valid and _ca_owner.watch_valid %}
+      {{ t(
+        _ca_board_n ~ ' board names · ' ~ _ca_watch_n ~ ' watch names · unique total unavailable',
+        '榜单 ' ~ _ca_board_n ~ ' 只 · 观察 ' ~ _ca_watch_n ~ ' 只 · 去重总数暂不可用'
+      ) }}
+      {% elif _ca_owner.board_valid %}
       {{ t(
         _ca_board_n ~ ' board names · watch unavailable',
         '榜单 ' ~ _ca_board_n ~ ' 只 · 观察名单暂不可用'
       ) }}
-      {% elif _ca_watch_known %}
+      {% elif _ca_owner.watch_valid %}
       {{ t(
         'board unavailable · ' ~ _ca_watch_n ~ ' watch names',
         '榜单暂不可用 · 观察 ' ~ _ca_watch_n ~ ' 只'
@@ -2276,7 +2312,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       </span>
     </div>
   </div>
-  <div class="ca-v36-card-grid" id="ca-v36-card-grid"{% if _ca_board_known %} data-owner-population="{{ _ca_board_n }}"{% endif %}>
+  <div class="ca-v36-card-grid" id="ca-v36-card-grid"{% if _ca_owner.board_valid %} data-owner-population="{{ _ca_board_n }}"{% endif %}{% if _ca_owner.watch_valid %} data-owner-watch-population="{{ _ca_watch_n }}"{% endif %}{% if _ca_union_known %} data-owner-unique-population="{{ _ca_unique_n }}"{% endif %}>
 {% if _ca_board %}
 {# ── W8-G: JSON data block — feeds StockTable.init(); serialized in system (board) order.
    NO re-sorting here: _branch_b_order already delivered the correct system order; this

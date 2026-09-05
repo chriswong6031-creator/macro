@@ -3577,18 +3577,63 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
      nothing to say. The board stamps its own definition; that is what we read.
      `rank_by` is the same string under the older key, kept as the fallback so an
      artifact written between the two stamps still lights the layer. #}
-  {%- set _hkb = setups.buy or [] -%}
+  {%- set _hk_buy_source = setups.get('buy') -%}
+  {%- set _hk_buy_known = _hk_buy_source is sequence and _hk_buy_source is not string and _hk_buy_source is not mapping -%}
+  {%- set _hkb = _hk_buy_source if _hk_buy_known else [] -%}
   {%- set _hk_def = setups.get('board_definition') or setups.get('rank_by') -%}
   {%- set _hsg = namespace(any=(_hk_def or '').startswith('hk_prophet_v')) -%}
-  {%- set _hk_ran = (setups.get('ran') or []) if _hsg.any else [] -%}
+  {%- set _hk_ran_source = setups.get('ran') if _hsg.any else [] -%}
+  {%- set _hk_ran_known = _hk_ran_source is sequence and _hk_ran_source is not string and _hk_ran_source is not mapping -%}
+  {%- set _hk_ran = _hk_ran_source if _hk_ran_known else [] -%}
   {# Ripening shelf (CN W8-R1 port, 2026-08-07): non-eligible names whose weekly
      setups are live. Fail-soft — pre-shelf artifacts carry no `ripening` key and
      render exactly as before. #}
-  {%- set _hk_rip = (setups.get('ripening') or []) if _hsg.any else [] -%}
+  {%- set _hk_rip_source = setups.get('ripening') if _hsg.any else [] -%}
+  {%- set _hk_rip_known = _hk_rip_source is sequence and _hk_rip_source is not string and _hk_rip_source is not mapping -%}
+  {%- set _hk_rip = _hk_rip_source if _hk_rip_known else [] -%}
   {%- set _hk_rip_ready  = (_hk_rip | selectattr('zone', 'equalto', 'READY')  | list) if _hk_rip else [] -%}
   {%- set _hk_rip_basing = (_hk_rip | selectattr('zone', 'equalto', 'BASING') | list) if _hk_rip else [] -%}
   {%- set _hk_ldrs = (setups.get('leaders') or []) if _hsg.any else [] -%}
-  {%- set _hk_veto = (setups.get('vetoed') or []) if _hsg.any else [] -%}
+  {%- set _hk_veto_source = setups.get('vetoed') if _hsg.any else [] -%}
+  {%- set _hk_veto_known = _hk_veto_source is sequence and _hk_veto_source is not string and _hk_veto_source is not mapping -%}
+  {%- set _hk_veto = _hk_veto_source if _hk_veto_known else [] -%}
+  {# Counts alone cannot prove a unique owner population. Validate a stable,
+     duplicate-free ticker identity for every rendered board/watch owner and
+     expose the union only when the two populations are also disjoint. #}
+  {%- set _hk_watch_owner = setups.get('watch') -%}
+  {%- set _hk_watch_known = _hk_watch_owner is sequence and _hk_watch_owner is not string and _hk_watch_owner is not mapping -%}
+  {%- set _hk_owner = namespace(board_ids=[], watch_ids=[], board_valid=(_hk_buy_known and _hk_ran_known and _hk_rip_known and _hk_veto_known), watch_valid=_hk_watch_known, intersection=[]) -%}
+  {%- for _hk_lane in [_hkb, _hk_rip, _hk_ran, _hk_veto] -%}
+    {%- if _hk_lane is not sequence or _hk_lane is string or _hk_lane is mapping -%}
+      {%- set _hk_owner.board_valid = false -%}
+    {%- else -%}
+      {%- for _hk_row in _hk_lane -%}
+        {%- set _hk_raw_ticker = _hk_row.get('ticker') if _hk_row is mapping else none -%}
+        {%- set _hk_ticker = (_hk_raw_ticker|trim|upper) if _hk_raw_ticker is string else '' -%}
+        {%- if not _hk_ticker or _hk_ticker in _hk_owner.board_ids -%}
+          {%- set _hk_owner.board_valid = false -%}
+        {%- else -%}
+          {%- set _ = _hk_owner.board_ids.append(_hk_ticker) -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if _hk_watch_known -%}
+    {%- for _hk_row in _hk_watch_owner -%}
+      {%- set _hk_raw_ticker = _hk_row.get('ticker') if _hk_row is mapping else none -%}
+      {%- set _hk_ticker = (_hk_raw_ticker|trim|upper) if _hk_raw_ticker is string else '' -%}
+      {%- if not _hk_ticker or _hk_ticker in _hk_owner.watch_ids -%}
+        {%- set _hk_owner.watch_valid = false -%}
+      {%- else -%}
+        {%- set _ = _hk_owner.watch_ids.append(_hk_ticker) -%}
+        {%- if _hk_ticker in _hk_owner.board_ids -%}
+          {%- set _ = _hk_owner.intersection.append(_hk_ticker) -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+  {%- set _hk_union_known = _hk_owner.board_valid and _hk_owner.watch_valid and not _hk_owner.intersection -%}
+  {%- set _hk_unique_n = (_hk_owner.board_ids + _hk_owner.watch_ids)|length if _hk_union_known else none -%}
   {# ── STANCE, PRINTED ONCE ──────────────────────────────────────────────────
        Every display-lane row now carries the engine's own `stance`/`stance_zh`.
        Printed per row it would be a constant repeated 12–15 times, which Law 4
@@ -3767,6 +3812,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {%- endif -%}{%- endfor -%}
   {%- set _hk_xu_allfeat = (_hk_xu_c.feat > 0 and _hk_xu_c.feat_unknown == _hk_xu_c.feat) -%}
   <div class="panel span12" id="standouts">
+    <span id="hk-owner-population-proof" hidden{% if _hk_owner.board_valid %} data-owner-board-population="{{ _hk_owner.board_ids|length }}"{% endif %}{% if _hk_owner.watch_valid %} data-owner-watch-population="{{ _hk_owner.watch_ids|length }}"{% endif %}{% if _hk_union_known %} data-owner-unique-population="{{ _hk_unique_n }}"{% endif %}></span>
     <h2>{{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
       {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, " ~ _hk_ext_en ~ ", capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、" ~ _hk_ext_zh ~ "，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}

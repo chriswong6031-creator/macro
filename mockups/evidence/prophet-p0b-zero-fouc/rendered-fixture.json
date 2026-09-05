@@ -14,14 +14,14 @@
           "sha256": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44"
         },
         {
-          "path": "scripts/render_stock_dashboard_fixture.py",
-          "role": "recipe",
-          "sha256": "bc2fb1a9d1518defc2b2c7fe2700f4a784f849ece44316f4b8ac2a97831938be"
+          "path": "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-owner-fixture.json",
+          "role": "frozen_owner_fixture",
+          "sha256": "dc93511b93517c9ecd096bcb5a79144d95f2ee565fc12d98a2410ff9aa1ad72b"
         },
         {
-          "path": "site/factordata/canada_standouts.json",
-          "role": "owner_fixture",
-          "sha256": "902d097d89ffc6cc6d9846c8ae70ab4aa24092752b4a92423c87fb86895fa5ce"
+          "path": "scripts/render_stock_dashboard_fixture.py",
+          "role": "recipe",
+          "sha256": "4b4e1dee9c994018e66e672ab8a12bd797396f2ca18572cf6a0a5c98fc2d3a6b"
         },
         {
           "path": "templates/_cmd_hero.css.j2",
@@ -91,13 +91,15 @@
         {
           "path": "templates/canada.html.j2",
           "role": "jinja_template",
-          "sha256": "fe6b914170db6f26a7d6e9e4a4b122b2a1debd8c1b7937cb2382b6ee7686dee4"
+          "sha256": "79b71ef9bb4caad94da8fb2d4a4af488590bd5966b8dc4c327a1088570f7cee5"
         }
       ],
       "output": "canada_stocks.html",
-      "output_sha256": "1a0ce962b600357544e86ffe6685b5297e5c83d66d3a51574aa19361bcb8f94d",
+      "output_sha256": "81b33c28c0913b07ec8799db16569a6ab6476cf893a46c01cce4fb8e23aeb127",
       "owner_population": {
         "board": 9,
+        "intersection": [],
+        "unique_total": 17,
         "watch": 8
       },
       "route": "/canada_stocks.html"
@@ -110,14 +112,14 @@
           "sha256": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44"
         },
         {
-          "path": "scripts/render_stock_dashboard_fixture.py",
-          "role": "recipe",
-          "sha256": "bc2fb1a9d1518defc2b2c7fe2700f4a784f849ece44316f4b8ac2a97831938be"
+          "path": "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json",
+          "role": "frozen_owner_fixture",
+          "sha256": "f0df976899677d3ff14ac0874b5b82e96ba77d52b9f1c0b7638927329e94ee95"
         },
         {
-          "path": "site/factordata/hk_standouts.json",
-          "role": "owner_fixture",
-          "sha256": "176e8c6d4bd22027336f5cf5785bab83d47558762348a36a16433f153e68013f"
+          "path": "scripts/render_stock_dashboard_fixture.py",
+          "role": "recipe",
+          "sha256": "4b4e1dee9c994018e66e672ab8a12bd797396f2ca18572cf6a0a5c98fc2d3a6b"
         },
         {
           "path": "templates/_aibrief_body.html.j2",
@@ -197,13 +199,15 @@
         {
           "path": "templates/hk.html.j2",
           "role": "jinja_template",
-          "sha256": "3bb84123744ee18c2e3505736de24d95a020906413f3037a73db4958cb9aa932"
+          "sha256": "cb03e7bf4b94f06fedc1de5d1031060ef34b1ff414128b30baccf49343e7bf96"
         }
       ],
       "output": "hk_stocks.html",
-      "output_sha256": "4403ab98ba82127ec52c2da47fdc03c67092e7339265a5438539b57f432736c1",
+      "output_sha256": "5ba9170a6c84b44b474123ce152f22b9e8d3ce2d55e8586e182a3fdc98379685",
       "owner_population": {
         "board": 39,
+        "intersection": [],
+        "unique_total": 47,
         "watch": 8
       },
       "route": "/hk_stocks.html"
@@ -214,5 +218,5 @@
     "jinja2": "3.1.6"
   },
   "schema": "mastermind.stock_dashboard_rendered_fixture.v1",
-  "transform": "jinja2_candidate_template_render"
+  "transform": "jinja2_candidate_template_render_from_frozen_owner_identity"
 }

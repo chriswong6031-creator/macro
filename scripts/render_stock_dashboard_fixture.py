@@ -2,9 +2,9 @@
 """Reproduce the P0B stock-dashboard browser fixture without ambient state.
 
 This is an evidence recipe, not a production builder.  It renders the candidate
-HK and Canada Jinja templates with fixed auxiliary context and the named,
-checked-in ``site/factordata/*_standouts.json`` owner fixtures.  It never reads a
-developer VM cache, runs a collector, publishes into ``site/``, or advances a
+HK and Canada Jinja templates with fixed auxiliary context and small immutable
+owner-identity fixtures committed beside the evidence.  It never reads a live
+``site/factordata`` snapshot, developer VM cache, collector, publish target, or
 ledger.  The receipt binds every repository input actually loaded by Jinja and
 the exact output bytes with SHA-256.
 """
@@ -31,15 +31,247 @@ sys.path.insert(0, str(ROOT))
 MARKETS = {
     "hk": {
         "template": "hk.html.j2",
-        "owner_fixture": "site/factordata/hk_standouts.json",
+        "owner_fixture": (
+            "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json"
+        ),
         "output": "hk_stocks.html",
     },
     "ca": {
         "template": "canada.html.j2",
-        "owner_fixture": "site/factordata/canada_standouts.json",
+        "owner_fixture": (
+            "mockups/evidence/prophet-p0b-zero-fouc/inputs/"
+            "canada-owner-fixture.json"
+        ),
         "output": "canada_stocks.html",
     },
 }
+
+OWNER_LANES = {
+    "hk": ("buy", "ripening", "ran", "vetoed", "watch"),
+    "ca": ("buy", "watch"),
+}
+
+OWNER_SOURCES = {
+    "hk": "site/factordata/hk_standouts.json",
+    "ca": "site/factordata/canada_standouts.json",
+}
+
+IDENTITY_EXTRACTION = (
+    "identity fields only from the named owner lanes; non-owner presentation "
+    "fields are neutral fixture values"
+)
+
+
+class FixtureBlank:
+    """False/empty scalar used only for deliberately absent non-owner fields.
+
+    The frozen input records owner identity and membership, while this sentinel
+    lets the existing templates render their unrelated numeric and collection
+    decorations deterministically.  It never enters the receipt or owner-count
+    calculation; those use the explicit JSON lanes only.
+    """
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __str__(self) -> str:
+        return ""
+
+    def __repr__(self) -> str:
+        return "FixtureBlank()"
+
+    def __len__(self) -> int:
+        return 0
+
+    def __iter__(self):
+        return iter(())
+
+    def __float__(self) -> float:
+        return 0.0
+
+    def __int__(self) -> int:
+        return 0
+
+    def __format__(self, spec: str) -> str:
+        return format(0.0, spec)
+
+    def __getitem__(self, _key: object) -> "FixtureBlank":
+        return self
+
+    def __getattr__(self, _key: str) -> "FixtureBlank":
+        return self
+
+    def get(self, _key: object, default: Any = None) -> Any:
+        return default
+
+    def keys(self) -> tuple[()]:
+        return ()
+
+    def values(self) -> tuple[()]:
+        return ()
+
+    def items(self) -> tuple[()]:
+        return ()
+
+    def __call__(self, *_args: object, **_kwargs: object) -> "FixtureBlank":
+        return self
+
+    def __eq__(self, _other: object) -> bool:
+        return False
+
+    def __lt__(self, _other: object) -> bool:
+        return False
+
+    def __le__(self, _other: object) -> bool:
+        return False
+
+    def __gt__(self, _other: object) -> bool:
+        return False
+
+    def __ge__(self, _other: object) -> bool:
+        return False
+
+    def __add__(self, other: Any) -> Any:
+        return other
+
+    def __radd__(self, other: Any) -> Any:
+        return other
+
+    def __sub__(self, other: Any) -> Any:
+        return -other
+
+    def __rsub__(self, other: Any) -> Any:
+        return other
+
+    def __mul__(self, _other: object) -> int:
+        return 0
+
+    def __rmul__(self, _other: object) -> int:
+        return 0
+
+    def __truediv__(self, _other: object) -> int:
+        return 0
+
+    def __rtruediv__(self, _other: object) -> int:
+        return 0
+
+
+FIXTURE_BLANK = FixtureBlank()
+
+
+class FixtureRow(dict[str, Any]):
+    """Mapping whose absent presentation-only fields degrade deterministically."""
+
+    def __missing__(self, _key: str) -> FixtureBlank:
+        return FIXTURE_BLANK
+
+
+def _fixture_row(identity: dict[str, Any], lane: str, ordinal: int) -> FixtureRow:
+    """Expand one immutable owner identity into a neutral presentation row."""
+    row = FixtureRow(identity)
+    stage = identity.get("stage") or {
+        "ripening": "setting_up",
+        "ran": "ran",
+        "vetoed": "blocked",
+    }.get(lane, lane)
+    row.update(
+        {
+            "alpha": 0.0,
+            "board_pos": ordinal,
+            "conviction": FixtureRow(
+                {
+                    "score": 0,
+                    "verdict": "Fixture",
+                    "verdict_zh": "固定样本",
+                }
+            ),
+            "display_only": True,
+            "display_rank": ordinal,
+            "label": "Fixture",
+            "label_zh": "固定样本",
+            "lane": lane,
+            "price": 100.0 + ordinal,
+            "score_rank": ordinal,
+            "sector": "Fixture sector",
+            "sector_zh": "固定板块",
+            "stage": stage,
+            "stance": "Fixture",
+            "stance_zh": "固定样本",
+        }
+    )
+    return row
+
+
+def load_owner_fixture(market: str) -> tuple[FixtureRow, Path]:
+    """Validate and expand the immutable identity fixture for one market."""
+    spec = MARKETS[market]
+    path = ROOT / spec["owner_fixture"]
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"{market}: owner fixture root must be an object")
+    if payload.get("schema") != "mastermind.stock_dashboard_owner_fixture.v1":
+        raise ValueError(f"{market}: unknown owner fixture schema")
+    if payload.get("market") != market:
+        raise ValueError(f"{market}: owner fixture market mismatch")
+    provenance = payload.get("provenance")
+    if not isinstance(provenance, dict):
+        raise ValueError(f"{market}: owner fixture provenance must be an object")
+    if provenance.get("source_path") != OWNER_SOURCES[market]:
+        raise ValueError(f"{market}: owner fixture source path mismatch")
+    if provenance.get("extraction") != IDENTITY_EXTRACTION:
+        raise ValueError(f"{market}: owner fixture extraction contract mismatch")
+    for key, length in (("source_git_commit", 40), ("source_sha256", 64)):
+        value = provenance.get(key)
+        if (
+            not isinstance(value, str)
+            or len(value) != length
+            or any(char not in "0123456789abcdef" for char in value)
+        ):
+            raise ValueError(f"{market}: owner fixture {key} is not lowercase hex")
+    lanes = payload.get("lanes")
+    if not isinstance(lanes, dict) or set(lanes) != set(OWNER_LANES[market]):
+        raise ValueError(f"{market}: owner fixture lanes mismatch")
+
+    setups = FixtureRow({"as_of": payload.get("as_of")})
+    if market == "hk":
+        board_definition = payload.get("board_definition")
+        if not isinstance(board_definition, str) or not board_definition.startswith(
+            "hk_prophet_v"
+        ):
+            raise ValueError("hk: owner fixture requires a Prophet board definition")
+        setups["board_definition"] = board_definition
+    seen: set[str] = set()
+    for lane in OWNER_LANES[market]:
+        identities = lanes[lane]
+        if not isinstance(identities, list):
+            raise ValueError(f"{market}.{lane}: owner lane must be a list")
+        rows: list[FixtureRow] = []
+        for ordinal, identity in enumerate(identities, start=1):
+            if not isinstance(identity, dict):
+                raise ValueError(f"{market}.{lane}: owner identity must be an object")
+            ticker = identity.get("ticker")
+            name = identity.get("name")
+            if (
+                not isinstance(ticker, str)
+                or not ticker.strip()
+                or not isinstance(name, str)
+                or not name.strip()
+            ):
+                raise ValueError(f"{market}.{lane}: owner identity requires ticker/name")
+            normalized_ticker = ticker.strip().upper()
+            if normalized_ticker in seen:
+                raise ValueError(f"{market}: duplicate owner ticker {normalized_ticker}")
+            if market == "hk" and lane == "buy" and identity.get("stage") not in {
+                "live",
+                "setting_up",
+            }:
+                raise ValueError("hk.buy: owner identity requires a valid stage")
+            seen.add(normalized_ticker)
+            normalized_identity = dict(identity)
+            normalized_identity["ticker"] = normalized_ticker
+            rows.append(_fixture_row(normalized_identity, lane, ordinal))
+        setups[lane] = rows
+    return setups, path
 
 
 def sha256(path: Path) -> str:
@@ -206,19 +438,27 @@ def canada_context(setups: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def owner_population(market: str, setups: dict[str, Any]) -> dict[str, int]:
+def owner_population(market: str, setups: dict[str, Any]) -> dict[str, Any]:
     board = setups.get("buy")
     watch = setups.get("watch")
     if not isinstance(board, list) or not isinstance(watch, list):
         raise ValueError(f"{market}: checked-in owner fixture is not list-backed")
     if market == "ca":
-        board_count = len(board)
+        board_rows = board
     else:
         lanes = (board, setups.get("ripening"), setups.get("ran"), setups.get("vetoed"))
         if any(not isinstance(lane, list) for lane in lanes):
             raise ValueError("hk: priority owner lanes are not all list-backed")
-        board_count = sum(len(lane) for lane in lanes)
-    return {"board": board_count, "watch": len(watch)}
+        board_rows = [row for lane in lanes for row in lane]
+    board_ids = [str(row["ticker"]).strip().upper() for row in board_rows]
+    watch_ids = [str(row["ticker"]).strip().upper() for row in watch]
+    intersection = sorted(set(board_ids).intersection(watch_ids))
+    return {
+        "board": len(board_ids),
+        "watch": len(watch_ids),
+        "intersection": intersection,
+        "unique_total": len(set(board_ids).union(watch_ids)),
+    }
 
 
 def input_row(path: Path, role: str) -> dict[str, str]:
@@ -229,10 +469,7 @@ def render_market(market: str, out_dir: Path) -> dict[str, Any]:
     from engine import i18n
 
     spec = MARKETS[market]
-    owner_path = ROOT / spec["owner_fixture"]
-    setups = json.loads(owner_path.read_text(encoding="utf-8"))
-    if not isinstance(setups, dict):
-        raise ValueError(f"{market}: owner fixture root must be an object")
+    setups, owner_path = load_owner_fixture(market)
 
     loader = TrackingLoader(TEMPLATES)
     env = Environment(loader=loader, autoescape=False)
@@ -245,7 +482,7 @@ def render_market(market: str, out_dir: Path) -> dict[str, Any]:
     inputs = [
         input_row(Path(__file__), "recipe"),
         input_row(ROOT / "engine" / "i18n.py", "jinja_globals"),
-        input_row(owner_path, "owner_fixture"),
+        input_row(owner_path, "frozen_owner_fixture"),
     ]
     inputs.extend(input_row(path, "jinja_template") for path in sorted(loader.loaded))
     inputs = sorted({row["path"]: row for row in inputs}.values(), key=lambda row: row["path"])
@@ -278,7 +515,7 @@ def main() -> int:
     receipt = {
         "schema": "mastermind.stock_dashboard_rendered_fixture.v1",
         "proof_class": "rendered_fixture",
-        "transform": "jinja2_candidate_template_render",
+        "transform": "jinja2_candidate_template_render_from_frozen_owner_identity",
         "ambient_inputs": [],
         "effects": {"publish": False, "ledger_advance": False, "collectors": False},
         "runtime": {

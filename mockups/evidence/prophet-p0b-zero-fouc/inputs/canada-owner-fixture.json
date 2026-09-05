@@ -1,0 +1,34 @@
+{
+  "as_of": "2026-09-03",
+  "lanes": {
+    "buy": [
+      {"ticker": "SU.TO", "name": "SUNCOR ENERGY INC."},
+      {"ticker": "SOBO.TO", "name": "SOUTH BOW CORPORATION"},
+      {"ticker": "NWC.TO", "name": "THE NORTH WEST COMPANY INC"},
+      {"ticker": "QSR.TO", "name": "RESTAURANT BRANDS INTERNATIONAL"},
+      {"ticker": "RCH.TO", "name": "RICHELIEU HARDWARE LTD"},
+      {"ticker": "CSH-UN.TO", "name": "CHARTWELL RETIREMENT RESIDENCES"},
+      {"ticker": "TPZ.TO", "name": "TOPAZ ENERGY CORP"},
+      {"ticker": "TVK.TO", "name": "TERRAVEST INDUSTRIES INC"},
+      {"ticker": "TOU.TO", "name": "TOURMALINE OIL CORP"}
+    ],
+    "watch": [
+      {"ticker": "PMZ-UN.TO", "name": "PRIMARIS REIT SERIES A"},
+      {"ticker": "MTL.TO", "name": "MULLEN GROUP LTD."},
+      {"ticker": "QBR-B.TO", "name": "QUEBECOR INC CLASS B SV"},
+      {"ticker": "BB.TO", "name": "BLACKBERRY LIMITED"},
+      {"ticker": "GWO.TO", "name": "GREAT-WEST LIFECO INC"},
+      {"ticker": "EIF.TO", "name": "EXCHANGE INCOME CORPORATION"},
+      {"ticker": "EXE.TO", "name": "EXTENDICARE INC"},
+      {"ticker": "ARE.TO", "name": "AECON GROUP INC"}
+    ]
+  },
+  "market": "ca",
+  "provenance": {
+    "extraction": "identity fields only from the named owner lanes; non-owner presentation fields are neutral fixture values",
+    "source_git_commit": "8173ca2767c08c045e9cfcdddf54eb214981f02c",
+    "source_path": "site/factordata/canada_standouts.json",
+    "source_sha256": "902d097d89ffc6cc6d9846c8ae70ab4aa24092752b4a92423c87fb86895fa5ce"
+  },
+  "schema": "mastermind.stock_dashboard_owner_fixture.v1"
+}

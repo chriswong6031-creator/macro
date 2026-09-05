@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-09-05T15:47:00Z",
+  "generated_at": "2026-09-05T19:38:00Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -19,24 +19,24 @@
         "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 6179,
+            "document_height_px": 3553,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 13211,
+            "document_height_px": 5401,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 6179,
+        "document_height_px": 3553,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
           "h1": 1,
-          "h2": 7,
-          "h3": 2,
+          "h2": 6,
+          "h3": 0,
           "h4": 0,
           "h5": 0,
           "h6": 0
@@ -49,8 +49,8 @@
           "theme": "dark",
           "viewport": "desktop"
         },
-        "panel_count": 121,
-        "payload_bytes_total": 465212,
+        "panel_count": 9,
+        "payload_bytes_total": 547004,
         "raw_slug_hit_count": 1,
         "raw_slug_hits": [
           "hk_prophet_v2"
@@ -61,7 +61,7 @@
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 2392
+        "visible_word_count": 901
       },
       "page_id": "macro:hk_stocks",
       "route": "/hk_stocks.html"
@@ -71,18 +71,18 @@
         "asof_present": false,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 2327,
+            "document_height_px": 2851,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 3924,
+            "document_height_px": 3169,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 2327,
+        "document_height_px": 2851,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -102,7 +102,7 @@
           "viewport": "desktop"
         },
         "panel_count": 9,
-        "payload_bytes_total": 384865,
+        "payload_bytes_total": 216832,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 30,
@@ -111,7 +111,7 @@
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 550
+        "visible_word_count": 415
       },
       "page_id": "macro:canada_stocks",
       "route": "/canada_stocks.html"
@@ -119,11 +119,28 @@
   ],
   "schema": "mastermind.ux_smell_report.v1",
   "target": {
-    "base_url": "http://127.0.0.1:8767",
-    "kind": "base_url",
+    "base_url": null,
+    "canonical_build_proof": "unavailable",
+    "fixture_receipt": {
+      "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
+      "sha256": "3172d9f0b3bb7d50ee1c06e742bbc585b75d1389f07230ba85891bfe8e529576"
+    },
+    "kind": "rendered_fixture",
+    "production_proof": "none",
+    "proof_class": "browser_fixture_proof_reproducible",
+    "rendered_pages": {
+      "/canada_stocks.html": {
+        "output": "canada_stocks.html",
+        "sha256": "81b33c28c0913b07ec8799db16569a6ab6476cf893a46c01cce4fb8e23aeb127"
+      },
+      "/hk_stocks.html": {
+        "output": "hk_stocks.html",
+        "sha256": "5ba9170a6c84b44b474123ce152f22b9e8d3ce2d55e8586e182a3fdc98379685"
+      }
+    },
     "resolved_gitdir_or_none": null,
     "resolved_sha_or_none": null,
-    "resolved_sha_source": "unavailable: a live origin does not disclose the commit it is serving",
+    "resolved_sha_source": "candidate bytes are bound by the rendered-fixture receipt; this is not a canonical builder or production-origin claim",
     "site_dir": null
   },
   "tool": {

@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BROWSER_RECEIPT = ROOT / "scripts" / "verify_stock_dashboard_mobile_layout.cjs"
 FIXTURE_RECIPE = ROOT / "scripts" / "render_stock_dashboard_fixture.py"
 EVIDENCE_DIR = ROOT / "mockups" / "evidence" / "prophet-p0b-zero-fouc"
+FIXTURE_ASSETS = EVIDENCE_DIR / "inputs" / "browser-data"
 
 MARKETS = {
     "hk": {
@@ -224,29 +225,43 @@ def test_canada_top_picks_remains_the_first_five_owner_cards() -> None:
 
 
 @pytest.mark.parametrize(
-    ("market", "board_phrase"),
-    (("hk", "stage board"), ("ca", "board")),
+    ("market", "owner_selector", "board_phrase"),
+    (
+        ("hk", "#hk-owner-population-proof", "stage board"),
+        ("ca", "#ca-v36-card-grid", "board"),
+    ),
 )
-def test_result_copy_counts_watch_population_dynamically(
-    market: str, board_phrase: str
+def test_result_copy_requires_an_identity_proven_unique_population(
+    market: str, owner_selector: str, board_phrase: str
 ) -> None:
-    """Result copy reports the whole estate without inventing a missing watch zero."""
+    """A combined current-name total is admitted only by the server union proof."""
     text = _read(MARKETS[market]["composer"])
     watch = re.search(r"function watchPopulation\b.*?(?=\n  function )", text, re.S)
     assert watch, f"{market}: watchPopulation() missing"
-    assert 'qs("#standouts .watch-strip .watch-grid")' in watch.group(0)
-    assert 'qsa("a[href]", grid).length' in watch.group(0)
+    assert f'qs("{owner_selector}")' in watch.group(0)
+    assert 'getAttribute("data-owner-watch-population")' in watch.group(0)
+
+    unique = re.search(r"function uniquePopulation\b.*?(?=\n  function )", text, re.S)
+    assert unique, f"{market}: uniquePopulation() missing"
+    assert f'qs("{owner_selector}")' in unique.group(0)
+    assert 'getAttribute("data-owner-unique-population")' in unique.group(0)
 
     apply = _function_source(text, "applyFilter")
     population_copy = _function_source(text, "populationCopy")
     body = apply + population_copy
     assert "watchPopulation()" in body
+    assert "uniquePopulation()" in body
     assert "watch === null" in body
+    assert "unique === null" in body
     assert "current names (" in body
+    assert "unique total unavailable" in body
     assert board_phrase in body
     assert "watch unavailable" in body
     assert "当前共" in body
+    assert "去重总数暂不可用" in body
     assert "观察名单暂不可用" in body
+    assert "total + watch" not in population_copy
+    assert "board + watch" not in population_copy
     assert "47 current names" not in text
     assert "17 current names" not in text
 
@@ -260,7 +275,12 @@ def test_hk_stage_owner_count_is_fail_closed_and_preserves_numeric_zero() -> Non
 const cases = [null, "unavailable", "0", "39"];
 console.log(JSON.stringify(cases.map(function (ownerText) {
   state = {rows: new Array(91), cards: new Array(5)};
-  qs = function () { return ownerText === null ? null : {textContent: ownerText}; };
+  qs = function (selector) {
+    if (selector !== "#hk-owner-population-proof" || ownerText === null) return null;
+    return {getAttribute: function (name) {
+      return name === "data-owner-board-population" ? ownerText : null;
+    }};
+  };
   qsa = function () { return []; };
   return ownerPopulation();
 })));
@@ -271,7 +291,7 @@ console.log(JSON.stringify(cases.map(function (ownerText) {
 
 def test_canada_board_count_requires_the_server_owner_marker() -> None:
     template = _read(MARKETS["ca"]["template"])
-    assert "{% if _ca_board_known %}" in template
+    assert "{% if _ca_owner.board_valid %}" in template
     assert 'data-owner-population="{{ _ca_board_n }}"' in template
 
     text = _read(MARKETS["ca"]["composer"])
@@ -312,9 +332,9 @@ def _render_canada_owner_fixture(setups: object = _MISSING) -> BeautifulSoup:
 
 def test_canada_static_first_frame_counts_both_proven_owner_lists() -> None:
     """The JS-free first frame names the complete 9-board + 8-watch estate."""
-    setups = json.loads(
-        _read(ROOT / "site" / "factordata" / "canada_standouts.json")
-    )
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("ca")
     soup = _render_canada_owner_fixture(setups)
     result = soup.find(id="ca-v36-result")
     grid = soup.find(id="ca-v36-card-grid")
@@ -323,6 +343,8 @@ def test_canada_static_first_frame_counts_both_proven_owner_lists() -> None:
     assert "9 board + 8 watch = 17 current names" in copy
     assert "cards shown" not in copy
     assert grid.get("data-owner-population") == "9"
+    assert grid.get("data-owner-watch-population") == "8"
+    assert grid.get("data-owner-unique-population") == "17"
     assert len(soup.select("#standouts .watch-strip .watch-grid a[href]")) == 8
 
 
@@ -339,6 +361,124 @@ def test_canada_static_first_frame_preserves_explicit_empty_owner_lists() -> Non
     assert "0 board + 0 watch = 0 current names" in copy
     assert "cards shown" not in copy
     assert grid.get("data-owner-population") == "0"
+    assert grid.get("data-owner-watch-population") == "0"
+    assert grid.get("data-owner-unique-population") == "0"
+
+
+def test_canada_static_first_frame_refuses_an_overlapping_owner_union() -> None:
+    """The same ticker on board and watch can never be counted twice as current."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("ca")
+    setups["watch"][0]["ticker"] = setups["buy"][0]["ticker"]
+    soup = _render_canada_owner_fixture(setups)
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert result is not None and grid is not None
+    copy = result.get_text(" ", strip=True)
+    assert "9 board names · 8 watch names · unique total unavailable" in copy
+    assert "current names" not in copy
+    assert grid.get("data-owner-population") == "9"
+    assert grid.get("data-owner-watch-population") == "8"
+    assert grid.get("data-owner-unique-population") is None
+
+
+@pytest.mark.parametrize(
+    ("lane", "unavailable", "known_attr"),
+    (
+        ("buy", "board unavailable", "data-owner-watch-population"),
+        ("watch", "watch unavailable", "data-owner-population"),
+    ),
+)
+def test_canada_static_first_frame_rejects_duplicate_owner_identities(
+    lane: str, unavailable: str, known_attr: str
+) -> None:
+    """An owner lane with duplicate stable identities is not a known population."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("ca")
+    setups[lane][1]["ticker"] = setups[lane][0]["ticker"]
+    soup = _render_canada_owner_fixture(setups)
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert result is not None and grid is not None
+    copy = result.get_text(" ", strip=True)
+    assert unavailable in copy
+    assert "current names" not in copy
+    assert grid.get(known_attr) is not None
+    assert grid.get("data-owner-unique-population") is None
+
+
+def _render_hk_owner_fixture(setups: object) -> BeautifulSoup:
+    """Render the actual HK template with a controlled priority owner artifact."""
+    from tests.test_hk_board_ui import _render
+
+    return BeautifulSoup(_render(setups), "html.parser")
+
+
+def test_hk_owner_marker_binds_disjoint_identity_proven_populations() -> None:
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    soup = _render_hk_owner_fixture(setups)
+    proof = soup.find(id="hk-owner-population-proof")
+    assert proof is not None
+    assert proof.get("data-owner-board-population") == "39"
+    assert proof.get("data-owner-watch-population") == "8"
+    assert proof.get("data-owner-unique-population") == "47"
+
+
+def test_hk_owner_marker_refuses_an_overlapping_owner_union() -> None:
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    setups["watch"][0]["ticker"] = setups["buy"][0]["ticker"]
+    soup = _render_hk_owner_fixture(setups)
+    proof = soup.find(id="hk-owner-population-proof")
+    assert proof is not None
+    assert proof.get("data-owner-board-population") == "39"
+    assert proof.get("data-owner-watch-population") == "8"
+    assert proof.get("data-owner-unique-population") is None
+
+
+def test_hk_owner_marker_rejects_a_duplicate_board_identity() -> None:
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    setups["ripening"][0]["ticker"] = setups["buy"][0]["ticker"]
+    soup = _render_hk_owner_fixture(setups)
+    proof = soup.find(id="hk-owner-population-proof")
+    assert proof is not None
+    assert proof.get("data-owner-board-population") is None
+    assert proof.get("data-owner-watch-population") == "8"
+    assert proof.get("data-owner-unique-population") is None
+
+
+def test_hk_owner_marker_rejects_a_duplicate_watch_identity() -> None:
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    setups["watch"][1]["ticker"] = setups["watch"][0]["ticker"]
+    soup = _render_hk_owner_fixture(setups)
+    proof = soup.find(id="hk-owner-population-proof")
+    assert proof is not None
+    assert proof.get("data-owner-board-population") == "39"
+    assert proof.get("data-owner-watch-population") is None
+    assert proof.get("data-owner-unique-population") is None
+
+
+def test_hk_owner_marker_requires_every_priority_lane_to_be_explicit() -> None:
+    """A missing lane is unknown, not proof that the lane is empty."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    setups.pop("ran")
+    soup = _render_hk_owner_fixture(setups)
+    proof = soup.find(id="hk-owner-population-proof")
+    assert proof is not None
+    assert proof.get("data-owner-board-population") is None
+    assert proof.get("data-owner-watch-population") == "8"
+    assert proof.get("data-owner-unique-population") is None
 
 
 @pytest.mark.parametrize(
@@ -374,6 +514,9 @@ def test_canada_static_first_frame_never_coerces_malformed_owner_to_zero(
     assert "17 current names" not in copy
     if owner == "buy":
         assert grid.get("data-owner-population") is None
+    else:
+        assert grid.get("data-owner-watch-population") is None
+    assert grid.get("data-owner-unique-population") is None
 
 
 @pytest.mark.parametrize("setups", (_MISSING, None))
@@ -388,6 +531,8 @@ def test_canada_static_first_frame_missing_setups_is_unavailable(
     assert "board unavailable" in copy
     assert "watch unavailable" in copy
     assert grid.get("data-owner-population") is None
+    assert grid.get("data-owner-watch-population") is None
+    assert grid.get("data-owner-unique-population") is None
 
 
 def _sha256(path: Path) -> str:
@@ -428,9 +573,11 @@ def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
     assert receipt == json.loads(_read(EVIDENCE_DIR / "rendered-fixture.json"))
     assert receipt["schema"] == "mastermind.stock_dashboard_rendered_fixture.v1"
     assert receipt["proof_class"] == "rendered_fixture"
-    assert receipt["transform"] == "jinja2_candidate_template_render"
+    assert receipt["transform"] == (
+        "jinja2_candidate_template_render_from_frozen_owner_identity"
+    )
     assert receipt["ambient_inputs"] == []
-    for market, expected in (("hk", (39, 8)), ("ca", (9, 8))):
+    for market, expected in (("hk", (39, 8, 47)), ("ca", (9, 8, 17))):
         page = first / receipt["markets"][market]["output"]
         assert _sha256(page) == receipt["markets"][market]["output_sha256"]
         soup = BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser")
@@ -440,10 +587,38 @@ def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
         assert receipt["markets"][market]["owner_population"] == {
             "board": expected[0],
             "watch": expected[1],
+            "intersection": [],
+            "unique_total": expected[2],
         }
+        if market == "hk":
+            all_count = soup.select_one(
+                '#hk-stage-filter [data-stagepick="all"] .pbf-n'
+            )
+            assert all_count is not None and all_count.get_text(strip=True) == "39"
+            stage_counts = {
+                button["data-stagepick"]: button.select_one(".pbf-n").get_text(
+                    strip=True
+                )
+                for button in soup.select(
+                    "#hk-stage-filter [data-stagepick]:not([data-stagepick='all'])"
+                )
+            }
+            assert stage_counts == {
+                "live": "2",
+                "setting_up": "13",
+                "ran": "12",
+                "blocked": "12",
+            }
         input_paths = {item["path"] for item in receipt["markets"][market]["inputs"]}
         assert f"templates/{'hk' if market == 'hk' else 'canada'}.html.j2" in input_paths
-        assert f"site/factordata/{'hk' if market == 'hk' else 'canada'}_standouts.json" in input_paths
+        owner_name = (
+            "hk-owner-fixture.json" if market == "hk" else "canada-owner-fixture.json"
+        )
+        assert (
+            f"mockups/evidence/prophet-p0b-zero-fouc/inputs/{owner_name}"
+            in input_paths
+        )
+        assert not any(path.startswith("site/factordata/") for path in input_paths)
         for item in receipt["markets"][market]["inputs"]:
             assert _sha256(ROOT / item["path"]) == item["sha256"]
 
@@ -478,6 +653,9 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     assert browser["fixture_receipt"]["sha256"] == _sha256(
         EVIDENCE_DIR / "rendered-fixture.json"
     )
+    assert browser["fixture_assets_root"] == (
+        "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data"
+    )
     assert browser["input_html"]["sha256"] == fixture["markets"][market]["output_sha256"]
     template = "hk.html.j2" if market == "hk" else "canada.html.j2"
     assert browser["construction_inputs"][f"templates/{template}"] == _sha256(
@@ -491,6 +669,35 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     assert browser["loaded_assets"][f"site/{composer}"] == _sha256(
         ROOT / "site" / composer
     )
+    frozen_requests = {
+        "canadabasketdata/baskets.json",
+        "canadabasketdata/sector_pulse_canada.json",
+        "live/overlay.json",
+        "live/quotes.json",
+        "marketdata/rotation_events_hk.json",
+    }
+    assert not frozen_requests.intersection(
+        path.removeprefix("site/") for path in browser["loaded_assets"]
+    )
+    loaded_fixture_assets = {
+        str((ROOT / path).relative_to(FIXTURE_ASSETS))
+        for path in browser["loaded_assets"]
+        if (ROOT / path).is_relative_to(FIXTURE_ASSETS)
+    }
+    expected_frozen_assets = {
+        "hk": {
+            "live/overlay.json",
+            "live/quotes.json",
+            "marketdata/rotation_events_hk.json",
+        },
+        "ca": {
+            "canadabasketdata/baskets.json",
+            "canadabasketdata/sector_pulse_canada.json",
+            "live/overlay.json",
+            "live/quotes.json",
+        },
+    }
+    assert loaded_fixture_assets == expected_frozen_assets[market]
     assert {row["state"] for row in browser["states"]} >= {
         "en-dark",
         "en-light",
@@ -500,15 +707,14 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
         "composer-failed",
         "composer-pending",
     }
-    if market == "ca":
-        degraded = {
-            row["state"]: row["screenshot"]
-            for row in browser["states"]
-            if row["state"] in {"js-disabled", "composer-failed"}
-        }
-        assert set(degraded) == {"js-disabled", "composer-failed"}
-        for screenshot in degraded.values():
-            assert _sha256(ROOT / screenshot["path"]) == screenshot["sha256"]
+    degraded = {
+        row["state"]: row["screenshot"]
+        for row in browser["states"]
+        if row["state"] in {"js-disabled", "composer-failed"}
+    }
+    assert set(degraded) == {"js-disabled", "composer-failed"}
+    for screenshot in degraded.values():
+        assert _sha256(ROOT / screenshot["path"]) == screenshot["sha256"]
 
 
 def test_visual_manifest_names_fixture_only_provenance() -> None:
@@ -516,6 +722,7 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
     fixture_path = EVIDENCE_DIR / "rendered-fixture.json"
     fixture = json.loads(_read(fixture_path))
     manifest = json.loads(_read(EVIDENCE_DIR / "manifest.json"))
+    smells = json.loads(_read(EVIDENCE_DIR / "ux-smells.json"))
     target = manifest["target"]
     assert target["kind"] == "rendered_fixture"
     assert target["proof_class"] == "browser_fixture_proof_reproducible"
@@ -532,6 +739,7 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
         spec["route"]: spec["output_sha256"]
         for spec in fixture["markets"].values()
     }
+    assert smells["target"] == target
     assert manifest["totals"] == {
         "pages": 2,
         "states_attempted": 16,
@@ -549,9 +757,16 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
     (
         (
             "hk",
-            [[3, 39, 8], [3, None, 8], [3, None, None], [0, 0, 8]],
+            [
+                [3, 39, 8, 47],
+                [3, 39, 8, None],
+                [3, None, 8, None],
+                [3, None, None, None],
+                [0, 0, 8, 8],
+            ],
             [
                 "3 actionable cards shown · 47 current names (39 stage board + 8 watch)",
+                "3 actionable cards shown · 39 stage-board names · 8 watch names · unique total unavailable",
                 "3 actionable cards shown · stage board unavailable · 8 watch names",
                 "3 actionable cards shown · stage board unavailable · watch unavailable",
                 "0 actionable cards shown · 8 current names (0 stage board + 8 watch)",
@@ -559,9 +774,16 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
         ),
         (
             "ca",
-            [[3, 9, 8], [3, None, 8], [3, None, None], [0, 0, 8]],
+            [
+                [3, 9, 8, 17],
+                [3, 9, 8, None],
+                [3, None, 8, None],
+                [3, None, None, None],
+                [0, 0, 8, 8],
+            ],
             [
                 "3 cards shown · 17 current names (9 board + 8 watch)",
+                "3 cards shown · 9 board names · 8 watch names · unique total unavailable",
                 "3 cards shown · board unavailable · 8 watch names",
                 "3 cards shown · board unavailable · watch unavailable",
                 "0 cards shown · 8 current names (0 board + 8 watch)",
