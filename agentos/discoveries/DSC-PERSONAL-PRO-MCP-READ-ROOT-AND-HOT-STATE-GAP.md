@@ -1,55 +1,60 @@
 ---
 key: PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP
 claim: >
-  At protected Mastermind 767409b6d3e7103a3b11428b870357d4a01bbe26,
-  the existing readonly Executive MCP does not merely default lifecycle reads to
-  its selected repository root: GatewayConfig has no independent readonly
-  runtime-root field, runtime_root returns repo_root, state/inbox collect against
-  repo_root, and Job/intent reads open that same root. The authenticated Executive
-  app inherits the same read-only gateway composition. Therefore successful
-  client connectivity cannot establish canonical production-runtime fidelity
-  unless the current host positively proves a lawful single-root mapping or the
-  existing owner adds the smallest reviewed read-root seam. Rich MCP orientation
-  also remains distinct from diagnostic admission hot state and cannot by itself
-  replace current write preflight.
+  At protected Mastermind c707b7c196b1a547cc9fc7fc43907bf2fdfb4c36,
+  the direct readonly Executive MCP and authenticated Executive app bind all four
+  lifecycle reads to repo_root, while the accepted Executive service contract
+  explicitly separates runtime_root from proof_source_repository and
+  proof_workspace_root. The intended production root split is therefore proven
+  in source even though current installed-host availability is not. The selected
+  production architecture preserves the existing five-tool MCP and Secure MCP
+  Tunnel but routes its four reads through one dedicated read-only AF_UNIX port
+  composed inside the existing ExecutiveControlService over the already-open
+  canonical Runtime and trusted proof-source grounding. Direct production SQLite,
+  a runtime-path argument in the tunnel process, broad Operator access, CeoIngress
+  widening and a Steward/Executive super-MCP are rejected. Rich MCP orientation
+  remains distinct from diagnostic admission hot state and cannot alone replace
+  current write preflight.
 falsifier: >
   In an approved current Mastermind checkout after verifying origin/master, run
   `git show origin/master:integrations/executive_mcp/adapter.py`,
-  `git show origin/master:integrations/mastermind_executive_app/gateway.py`, and
-  `git show origin/master:control_plane/executive_inbox.py`, then inspect
-  `docs/EXECUTIVE_MCP.md` and
-  `research/EXECUTIVE_OS_PERSONAL_PRO_RELAY_STATE_TRANSPORT_AMENDMENT_2026-08-20.md`
-  at that same SHA. An independently configurable read-only runtime root, a
-  canonical owner-native service read that no longer depends on the repository
-  root, or an accepted replacement for the diagnostic admission contract would
-  refute the corresponding source claim. Separately, a current sanitized host
-  receipt proving repo_root equals the canonical installed Executive runtime and
-  a real Personal-account read receipt binding source/mode/schema/root/freshness
-  would supersede the production-proof limitation. A plugin scan, fresh
-  generated_at, fixture result, missing checkout DB or empty local runtime cannot.
+  `git show origin/master:control_plane/executive_service.py`,
+  `git show origin/master:ops/executive_os/control.json.template`,
+  `git show origin/master:control_plane/executive_ceo_ingress.py`, and
+  `git show origin/master:control_plane/executive_dialogue_observation.py`.
+  A protected change that gives the existing MCP a canonical service-backed read
+  path with equivalent least-privilege, source/runtime-generation and no-write
+  semantics refutes the NOT_BUILT portion; a protected service contract no longer
+  separating Runtime and proof source refutes the split-root claim. Separately,
+  a current sanitized host receipt plus real Personal-account calls must bind the
+  installed service, source, tool schema, tunnel association, canonical Runtime
+  generation and freshness to supersede the production-proof limitation. A
+  plugin scan, fresh generated_at, fixture result, missing checkout database,
+  direct SQLite read or empty local Runtime cannot.
 so_what: >
-  Run the unchanged five-tool Personal-Pro canary first to discriminate client
-  eligibility, manifest and per-tool behavior, but do not call its reads
-  production-canonical until the existing native owner proves the root mapping.
-  If source repair is required, decouple only the read root inside the existing
-  gateway/inbox ownership or reuse an accepted owner-native read service; do not
-  build another backend, state store, API policy or admission system. Keep
-  SOL_STATE/admission-hot-state preflight until equivalent proof and a protected
-  amendment replace it.
-kind: landmine
+  Use the unchanged server first to classify Personal-Pro client case A/B/C/D,
+  but treat that as client evidence only. For production, extend the existing
+  Executive service with a dedicated read port and connect the existing MCP
+  gateway to it; keep repo-local reads development/fixture-only. Do not implement
+  while active PR 491 owns executive_service.py or PR 492 owns
+  executive_inbox.py. Preserve CeoIngress as submit/status/hot-state, Steward as
+  a separate truthful-PARTIAL organizational cockpit, and SOL_STATE/admission
+  preflight until equivalent production proof and a protected amendment replace it.
+kind: architecture
 verified_at: 2026-09-05
 verified_by: >
   GitHub.fetch of protected Mastermind branches/master at
-  767409b6d3e7103a3b11428b870357d4a01bbe26; same-SHA GitHub.fetch_file reads of
-  integrations/executive_mcp/server.py and adapter.py,
-  integrations/mastermind_executive_app/gateway.py,
-  control_plane/executive_inbox.py, docs/EXECUTIVE_MCP.md and
-  research/EXECUTIVE_OS_PERSONAL_PRO_RELAY_STATE_TRANSPORT_AMENDMENT_2026-08-20.md.
-  Historical runtime evidence: Mastermind PR 482 comment 5550334229 and complete
-  Slack carriers C0BSBM78V1N/1788507455.090679 and
-  C0BSBM78V1N/1788521402.466429. Detailed study: Mastermind PR 489 head
-  a54f7c67a4b0ef26a03019486102260c99926199, still draft rather than protected
-  architecture or production proof.
+  c707b7c196b1a547cc9fc7fc43907bf2fdfb4c36; same-SHA GitHub.fetch_file reads of
+  integrations/executive_mcp/server.py, adapter.py and schemas.py,
+  integrations/mastermind_executive_app/gateway.py and admission.py,
+  control_plane/executive_inbox.py, executive_service.py,
+  executive_ceo_ingress.py, executive_hot_state.py,
+  executive_dialogue_observation.py, ops/executive_os/control.json.template,
+  docs/EXECUTIVE_MCP.md, docs/CEO_INTENT_BRIDGE.md, and the protected Personal-Pro
+  and Business surface architecture records. Existing collision evidence:
+  Mastermind PRs #491, #492, #463 and #469. Steward limitation and disposition:
+  issue #458 comment #5553996467. Detailed architecture freeze: Mastermind PR
+  #489 head 3529b1a7567a0acbc4377270e487913fb9ccf1fd, still draft and production-inert.
 scope:
   - executive-os
   - personal-pro
@@ -60,111 +65,124 @@ confidence: verified
 
 # Personal-Pro MCP connectivity is not canonical Executive readiness
 
-This record distinguishes four facts that must not be collapsed: client
-eligibility, tool invocation, canonical runtime-root fidelity, and diagnostic
-admission readiness. It is a current source finding, not a diagnosis that the
-Chairman's installed host is misconfigured. No actual Personal-Pro custom-MCP
-invocation or privileged host read occurred in this authoring session.
+This record distinguishes client eligibility, tool invocation, source grounding,
+canonical Runtime fidelity and diagnostic admission readiness. No actual
+Personal-Pro MCP call, privileged host read, account association, source
+implementation or production effect occurred in the authoring session.
 
-## The source coupling is stronger than a default
+## Current direct gateway and canonical service disagree by design
 
-The protected five-tool server retains four read tools and
-`submit_ceo_intent`. Readonly mode refuses submission with
-`production_write_disabled`; it does not hide the modifying tool from the
-manifest. The CLI has no production-write arm.
+The existing five-tool MCP remains the correct external product contract.
+Readonly mode advertises four reads plus `submit_ceo_intent`, and refuses the
+modifying tool with `production_write_disabled` before any production write path.
 
-For reads, current `GatewayConfig` accepts `repo_root` but no independent
-readonly `runtime_root`. Its `runtime_root` property returns `repo_root` whenever
-no fixture is present. The gateway then:
+Its current read adapter, however, accepts one `repo_root`. Outside fixture mode
+`GatewayConfig.runtime_root` returns that same root. State and Inbox use
+`repo_root`; Job and intent status open the same root; Executive Inbox looks for
+`data/control_plane/executive.sqlite3` beneath it. The authenticated Executive app
+uses the same direct read gateway.
 
-- builds `executive_state` and `executive_inbox` from that repository root;
-- opens `executive_job` and `ceo_intent_status` through `Runtime.at` at that same
-  root; and
-- labels the result only by mode plus root basename, which is useful but does
-  not prove the directory is the canonical installed runtime.
+The accepted production control configuration is intentionally different:
 
-`control_plane.executive_inbox` independently resolves one `repo_root` and looks
-for `data/control_plane/executive.sqlite3` beneath it. The authenticated
-`mastermind_executive_app` constructs the same readonly `GatewayConfig` from one
-repository root. Thus neither current read surface has a separate production
-runtime-root coordinate.
+- Runtime: `/var/db/mastermind-executive/control/db`;
+- proof source: `/var/db/mastermind-executive/control/admin-checkout/<sha>`;
+- job workspace: `/var/db/mastermind-executive/jobs/workspaces`.
 
-This does not prove a host mismatch. A lawful deployment could select one root
-whose repository, grounding inputs and canonical runtime database are
-intentionally co-located. That exact mapping must be observed, not inferred from
-source names or a successful response.
+`ExecutiveControlService` opens the authoritative Runtime and owns source
+attestation under those distinct coordinates. Thus the direct repo-local gateway
+cannot become a canonical production lifecycle reader merely by pointing it at
+one of the roots. Current installed-host state may be stale, absent or blocked by
+permissions, but the intended source topology is no longer ambiguous.
 
-## Historical evidence does not close the root question
+## Selected boundary
 
-The September 4 BSC host receipt reported a ready tunnel serving fixture mode
-from checkout `7191702e`; that operation later received STOP. A later production
-qualification likewise observed fixture mode, the same reviewed checkout and an
-absent database at that checkout while root-owned production database/config
-remained unknown behind permissions. These are dated observations, not proof of
-current host state, zero runtime population or a permanent platform limitation.
+Keep the existing MCP server and private Secure MCP Tunnel. In production, its
+surface process keeps only source/orientation access and calls a new read-only
+local client. That client talks to a dedicated AF_UNIX listener composed inside
+the existing Executive service. The listener receives the already-open Runtime
+and trusted grounding provider and exposes exactly the four existing read
+projections.
 
-The existing W3C native-host operation owns the approved read-only root census.
-Its accepted helper remains pre-effect and HOST START is withheld. Reuse that
-owner and receipt path. Do not restart, repoint or replace the tunnel, create an
-empty runtime, request another administrator ceremony or treat an unreadable
-root as absent.
+The pattern follows protected `executive_dialogue_observation`: closed schemas,
+exact peer, default-disabled all-or-none configuration, one request per
+connection, bounded bytes/time, symlink/foreign-inode refusal and no independent
+daemon or store. The read principal must be distinct from Executive UID 450,
+CeoIngress/Relay UID 452 and Agent Relay UID 457 unless a later host-security
+review explicitly proves reuse safe.
 
-## What the no-code canary can and cannot prove
+The production surface may never access the Runtime database tree, general
+Operator socket or CeoIngress submit socket. CeoIngress stays narrow. Intent
+status reuses the same canonical resolver logic through the read service rather
+than granting a read principal modification-socket access.
 
-The unchanged five-tool Personal-Pro canary remains the fastest way to establish:
+## Tool behavior
 
-- whether the account can associate the existing tunnel;
-- whether the mixed manifest scans;
-- which tools are visible or enabled;
-- whether each read invocation succeeds or is refused; and
-- whether the platform exposes or blocks the modifying action.
+`executive_state` joins reviewed source orientation to canonical in-process hot
+state and bounded lifecycle facts while preserving separate source/service/
+Runtime generations and freshness. It is rich orientation, not a write token.
 
-It cannot by itself prove that returned state came from the canonical production
-runtime. A fresh response timestamp, `ok=true`, a tool description, a public app
-search or a fixture Job is not root fidelity. Bind every useful read receipt to
-the server source, mode, schema, account/workspace association, independently
-observed grounding, root identity, backend freshness and explicit degradation.
+`executive_inbox` refactors the existing producer to accept the already-open
+Runtime separately from source context. It is not copied into a second Inbox.
+Current strict-v2 provenance work remains under PR #492.
 
-Job and intent reads use only identifiers already obtained from authorized
-canonical evidence. If none exist, report those positive tests
-`NOT_EXERCISED`; do not fabricate IDs, create a Job or populate an empty store.
+`executive_job` returns one exact Job only; there is no list-all, dispatch or
+Operator surface. `ceo_intent_status` reuses existing exact intent-resolution
+semantics and receives no submission authority.
 
-## Smallest lawful correction if the host proves a mismatch
+If the Personal account rejects the mixed manifest only after tunnel/auth/schema
+causes are excluded, a four-read projection of the same registry/gateway/client
+is permitted. It is not another backend.
 
-A demonstrated mismatch does not justify a second Executive MCP, another
-runtime, a parallel API policy or a new state database. The correction belongs
-inside existing owners and should do only one of two things:
+## Steward and hot-state roles remain separate
 
-1. add a closed, host-controlled read-root coordinate to the existing gateway
-   and inbox composition while preserving repository grounding and all
-   create-false/read-only laws; or
-2. reuse an already accepted owner-native diagnostic/read service and project
-   its existing schema through the same MCP boundary.
+Steward/Secretary supplies organizational responsibility and attention context.
+Current PR #463 and product ruling #5553996467 truthfully leave four fact families
+PARTIAL/DEGRADED. It must not synthesize missing Runtime binding, requested action,
+objective or surface-health facts and must not absorb the Executive read plane.
 
-The empirical canary chooses whether any source repair is needed. Architecture
-review chooses the smaller of these reuse paths only after current native root
-evidence exists.
+Direct canonical MCP is the target primary **rich** Executive orientation path.
+`MMX/SOL_STATE_V1` / `executive_hot_state` remains compact admission and
+transport-health evidence, write preflight and outage telemetry. Current law does
+not change until production proof and a protected amendment activate that role
+split. C1's original effect must still be reconciled.
 
-The accepted hot-state amendment still gives `executive_hot_state` and
-`MMX/SOL_STATE_V1` a separate admission/transport-health job from rich MCP
-orientation. Missing or stale backend data must not become green through a new
-wrapper timestamp. Current write-preflight law survives until equivalent
-production proof and a protected amendment change it.
+## No-code canary and production proof
 
-The detailed product study, A/B/C/D client matrix, parity checklist and
-failure/retry laws remain in
-[Mastermind PR 489](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489).
-This discovery is the organizational landmine and falsifier, not a copy of that
-masterplan and not another lifecycle or state owner.
+The unchanged Personal-Pro canary still answers whether the account associates
+the tunnel, scans the mixed manifest, exposes/enables the tools, invokes reads
+and blocks or exposes modify. It does not prove the canonical service backend.
 
-The Personal-Pro read-only census remains on
+Production proof additionally binds server source/version/schema, surface source
+SHA, service generation, canonical Runtime high-water, trusted proof-source
+identity, freshness and independent owner-native read agreement. Missing or
+unreadable Runtime is unavailable, not zero; absent legitimate Job/intent IDs
+leave those tests NOT_EXERCISED rather than fabricated.
+
+A production outage must remain visible. The surface never falls back to
+repo-local lifecycle reads, direct SQLite or the broad Operator socket. A new
+wrapper timestamp cannot refresh old state.
+
+## Implementation hold and collision law
+
+No build is released by this record. PR #491 owns Executive service/dialogue
+paths on a STARTed nonterminal Runtime Continuity carrier. PR #492 owns Executive
+Inbox. PR #463 owns the Steward slice, PR #469 owns separate BSC metadata, and
+the W3C carrier owns native host/install observation. Obtain terminal/release or
+a jointly authorized path transfer before one canonical-read vertical starts.
+
+The complete product contract, data/time/null/failure semantics, execution DAG,
+acceptance matrix and source manifest are in
+[Mastermind PR #489](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489).
+This discovery is the durable organizational landmine, not another API, Runtime,
+queue, memory or control plane.
+
+The Personal-Pro census remains on
 [its exact carrier](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788605608765019),
-operation `personal-pro-executive-read-census-20260905-sol-001`. At the latest
-read before this commit it was `DELIVERY_UNCONSUMED`, with no receiver ACK or
-START. Re-read it; do not infer progress or send a replacement operation.
+operation `personal-pro-executive-read-census-20260905-sol-001`. At the last read
+it was `DELIVERY_UNCONSUMED`, with no receiver ACK or START. Do not infer progress
+or send a replacement operation.
 
-C1 Step D remains `EFFECT_UNKNOWN` on its original operation and RuntimeBinding
-at `C0BSBM78V1N/1787889177.672699`. This discovery and the separate root census
-cannot reconcile or replay that effect. S0-R1, B2 and C2 retain their existing
-gates. The protected Personal-Pro native-SaaS decision and existing fixture
-principal discovery remain controlling within their scopes.
+C1 Step D remains `EFFECT_UNKNOWN` on its original RuntimeBinding at
+`C0BSBM78V1N/1787889177.672699`. S0-R1, B2 and C2 retain their gates. Neither this
+source freeze nor any records merge authorizes replay, installation, account
+change, provider action or production write.
