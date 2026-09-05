@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-09-04",
+  "as_of": "2026-09-05",
   "desks": [
     {
       "name": "AI Desk",
@@ -10,11 +10,11 @@
       "hit_rate": 0.943,
       "dir_accuracy": 0.642,
       "null_hit_rate": 0.896,
-      "null_dir_rate": 0.4894,
+      "null_dir_rate": 0.4893,
       "p_hit": 0.12149,
       "p_hit_holm": 0.36447,
-      "p_dir": 0.01835,
-      "p_dir_holm": 0.05505,
+      "p_dir": 0.01833,
+      "p_dir_holm": 0.05499,
       "independent_blocks": 3,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -92,8 +92,8 @@
       "open": 427,
       "hit_rate": 0.669,
       "dir_accuracy": 0.466,
-      "null_hit_rate": 0.7331,
-      "null_dir_rate": 0.5029,
+      "null_hit_rate": 0.7326,
+      "null_dir_rate": 0.5025,
       "p_hit": null,
       "p_hit_holm": null,
       "p_dir": null,
@@ -106,8 +106,8 @@
       "placebo_by_kind": {
         "rel_return": {
           "n": 117,
-          "null_hit_rate": 0.7331,
-          "null_dir_rate": 0.5029
+          "null_hit_rate": 0.7326,
+          "null_dir_rate": 0.5025
         }
       },
       "conviction_monotone": null,
@@ -154,44 +154,44 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 168,
-      "open": 40,
-      "hit_rate": 0.667,
-      "dir_accuracy": 0.429,
-      "null_hit_rate": 0.7613,
-      "null_dir_rate": 0.5076,
+      "scored": 169,
+      "open": 41,
+      "hit_rate": 0.663,
+      "dir_accuracy": 0.426,
+      "null_hit_rate": 0.761,
+      "null_dir_rate": 0.5077,
       "p_hit": null,
       "p_hit_holm": null,
       "p_dir": null,
       "p_dir_holm": null,
       "independent_blocks": 3,
-      "placebo_coverage": 0.994,
+      "placebo_coverage": 0.9941,
       "placebo_available": false,
-      "placebo_note": "reconstructed 167 graded predicates but the track record has 168 \u2014 cannot pair observed outcomes to their nulls",
+      "placebo_note": "reconstructed 168 graded predicates but the track record has 169 \u2014 cannot pair observed outcomes to their nulls",
       "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "rel_return": {
-          "n": 167,
-          "null_hit_rate": 0.7613,
-          "null_dir_rate": 0.5076
+          "n": 168,
+          "null_hit_rate": 0.761,
+          "null_dir_rate": 0.5077
         }
       },
       "conviction_monotone": true,
-      "conviction_note": "conviction ordering holds (medium 73% \u2265 low 65%; medium n=26, low n=140)",
+      "conviction_note": "conviction ordering holds (medium 73% \u2265 low 64%; medium n=26, low n=141)",
       "conviction_tiers": {
         "high": 2,
         "medium": 26,
-        "low": 140
+        "low": 141
       },
       "regimes": [],
       "health": "inverted",
-      "health_note": "not-falsified 67% vs 76% of these same falsifiers go untriggered by chance (the 167 of 168 graded we could price, 3 independent windows); direction called right 43% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering holds (medium 73% \u2265 low 65%; medium n=26, low n=140)."
+      "health_note": "not-falsified 66% vs 76% of these same falsifiers go untriggered by chance (the 168 of 169 graded we could price, 3 independent windows); direction called right 43% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering holds (medium 73% \u2265 low 64%; medium n=26, low n=141)."
     },
     {
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 59,
+      "open": 60,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -221,7 +221,7 @@
       "name": "Thematic Desk",
       "slug": "thematic_desk",
       "scored": 183,
-      "open": 81,
+      "open": 85,
       "hit_rate": 0.601,
       "dir_accuracy": 0.399,
       "null_hit_rate": 0.8525,
@@ -257,7 +257,7 @@
       "name": "Narrative Brain",
       "slug": "narrative_brain",
       "scored": 6,
-      "open": 37,
+      "open": 38,
       "hit_rate": 0.667,
       "dir_accuracy": 0.333,
       "null_hit_rate": null,
@@ -294,10 +294,10 @@
       "dir_accuracy": 0.583,
       "null_hit_rate": 0.8289,
       "null_dir_rate": 0.473,
-      "p_hit": 0.66343,
+      "p_hit": 0.66351,
       "p_hit_holm": 1.0,
-      "p_dir": 0.31484,
-      "p_dir_holm": 0.62968,
+      "p_dir": 0.31483,
+      "p_dir_holm": 0.62966,
       "independent_blocks": 2,
       "placebo_coverage": 1.0,
       "placebo_available": true,

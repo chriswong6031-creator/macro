@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-09-04",
-  "n_events_logged": 611,
+  "asof": "2026-09-05",
+  "n_events_logged": 617,
   "n_events_graded": 294,
   "classes": [
     {
@@ -86,7 +86,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 189,
+      "n": 192,
       "n_graded": 63,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -104,7 +104,7 @@
       "hit_5d": 0.3333333333333333,
       "hit_21d": 0.5555555555555556,
       "avg_rel_5d": 0.0293330037037037,
-      "avg_rel_21d": 0.08422353333333334,
+      "avg_rel_21d": 0.08381442222222223,
       "wilson_low_5d": 0.120582,
       "wilson_high_5d": 0.645803,
       "verdict": "insufficient"
@@ -112,12 +112,12 @@
     {
       "event_type": "guidance_cut",
       "direction": "bearish",
-      "n": 18,
+      "n": 19,
       "n_graded": 9,
       "hit_5d": 0.3333333333333333,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.0013525000000000004,
-      "avg_rel_21d": 0.066092875,
+      "avg_rel_21d": 0.06586475,
       "wilson_low_5d": 0.120582,
       "wilson_high_5d": 0.645803,
       "verdict": "insufficient"
@@ -138,7 +138,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 156,
+      "n": 157,
       "n_graded": 127,
       "hit_5d": 0.4881889763779528,
       "hit_21d": 0.34782608695652173,
@@ -151,7 +151,7 @@
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 45,
+      "n": 46,
       "n_graded": 5,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -234,7 +234,7 @@
       "hit_5d": 0.75,
       "hit_21d": 0.5,
       "avg_rel_5d": -0.025298499999999998,
-      "avg_rel_21d": 0.0030685,
+      "avg_rel_21d": 0.0027420000000000014,
       "wilson_low_5d": 0.300636,
       "wilson_high_5d": 0.954414,
       "verdict": "insufficient"
@@ -260,7 +260,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.0014954999999999997,
-      "avg_rel_21d": 0.0342934,
+      "avg_rel_21d": 0.0330434,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -273,14 +273,14 @@
       "hit_5d": 0.75,
       "hit_21d": 0.75,
       "avg_rel_5d": -0.0090145,
-      "avg_rel_21d": -0.03799229166666667,
+      "avg_rel_21d": -0.03814929166666667,
       "wilson_low_5d": 0.300636,
       "wilson_high_5d": 0.954414,
       "verdict": "insufficient"
     }
   ],
   "reject_audit": {
-    "n_sampled": 1017,
+    "n_sampled": 1035,
     "n_graded": 0,
     "classes": []
   }

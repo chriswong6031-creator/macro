@@ -199,7 +199,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-08-28",
-    "prior_generation_id": "liquidity_central_banks-US-b06aeee9f14d1572",
+    "prior_generation_id": "liquidity_central_banks-US-05c7b8485b9940a1",
     "prior_method_version": "liquidity_central_banks.compose.v1",
     "status": "PRESENT"
   },
@@ -207,7 +207,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "liquidity_central_banks-US-b06aeee9f14d1572"
+    "predecessor_generation_id": "liquidity_central_banks-US-05c7b8485b9940a1"
   },
   "drivers": {
     "balance_sheet": [
@@ -300,11 +300,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-05T12:05:54Z",
     "calculation_as_of": "2026-09-04T11:03:41.497178+00:00",
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "05c7b8485b9940a18b4334120d434d49d77656d8f6a027cd7a057ed6667f5841",
-    "generation_id": "liquidity_central_banks-US-05c7b8485b9940a1",
+    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
+    "content_sha256": "d70fba4d531327bd5008f9bb4b1e272e7d5a16e666c6507aa7d4044909b1ba21",
+    "generation_id": "liquidity_central_banks-US-d70fba4d531327bd",
     "producer": "engine.market_os.macro_workspaces.liquidity_central_banks",
     "rendered_at": null
   },
@@ -440,8 +440,8 @@
         "horizon": "current",
         "implication_id": "fed_balance_sheet_level_unit_defect",
         "text": {
-          "en": "The Fed balance-sheet LEVEL figure could not be published this cycle: the upstream central-bank desk labels its unit as billions of dollars, but the raw number is the scale of the native millions-of-dollars WALCL reading. Rather than guess and rescale, this composer refuses the level reading and publishes it as a failed source; the unit-free 13-week and 52-week percent changes are unaffected and remain published.",
-          "zh": "美联储资产负债表水平数值本周期无法发布：上游央行台面将单位标注为十亿美元，但原始数字的量级实际对应原生的百万美元WALCL读数。本组合器不做猜测性换算，而是拒绝该水平读数并将其标记为数据源失败；不涉及单位的13周与52周百分比变化不受影响，仍照常发布。"
+          "en": "The Fed balance-sheet LEVEL figure could not be published this cycle: the upstream central-bank desk labels its unit as billions of dollars, but the raw number is the scale of the native millions-of-dollars WALCL reading — a regression of the owner units defect fixed at source on 2026-09-04. Rather than guess and rescale, this composer refuses the level reading and publishes it as a failed source; the unit-free 13-week and 52-week percent changes are unaffected and remain published.",
+          "zh": "美联储资产负债表水平数值本周期无法发布：上游央行台面将单位标注为十亿美元，但原始数字的量级实际对应原生的百万美元WALCL读数——这是上游2026-09-04已在源头修复的单位缺陷的回归。本组合器不做猜测性换算，而是拒绝该水平读数并将其标记为数据源失败；不涉及单位的13周与52周百分比变化不受影响，仍照常发布。"
         },
         "trace_ref": "data/intl_risk/latest.json#cb_desk"
       },
@@ -1216,7 +1216,7 @@
           "FRED:WALCL"
         ],
         "status": "ABSENT",
-        "transformation": "This composer refused to publish the level reading: the owner unit label reads 'USD billions (×1, raw WALCL is in billions)' but the raw level (6.7372e+06) is implausible at that scale for WALCL - a known owner cb_desk units defect (see the WALCL disclosure note in the module docstring). This composer never rescales or corrects the number; only the LEVEL leg fails, the unit-free 13w/52w percent-change legs below are unaffected.",
+        "transformation": "This composer refused to publish the level reading: the owner unit label reads 'USD billions (×1, raw WALCL is in billions)' but the raw level (6.7372e+06) is implausible at that scale for WALCL - a regression of the owner cb_desk units defect fixed at source on 2026-09-04 (see the WALCL disclosure note in the module docstring). This composer never rescales or corrects the number; only the LEVEL leg fails, the unit-free 13w/52w percent-change legs below are unaffected.",
         "uncertainty": {
           "kind": null,
           "value": null
@@ -1697,7 +1697,7 @@
         },
         "owner_ref": "engine.cb_desk",
         "provider": "FRED",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",

@@ -141,7 +141,7 @@
         },
         "null_reason": null,
         "required": true,
-        "source_asof": "2026-09-01",
+        "source_asof": "2026-09-03",
         "status": "PRESENT"
       },
       {
@@ -168,7 +168,7 @@
         "components": [
           {
             "component_id": "rates_channel",
-            "contribution": 14.7,
+            "contribution": 14.4,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -178,9 +178,9 @@
             "null_reason": null,
             "owner_field": "channels.rates_channel_score",
             "owner_ref": "engine.market_os.macro_workspaces.financial_conditions",
-            "raw_value": 99.0,
+            "raw_value": 98.0,
             "sign": 1,
-            "standardized_value": 99.0,
+            "standardized_value": 98.0,
             "weight": 0.3
           },
           {
@@ -262,7 +262,7 @@
           }
         },
         "transformation": "weighted mean of 4 Mastermind channel scores (renormalized over available channels; the 'lending' channel is declared but always ABSENT/NOT_COVERED -- no owner source exists): rates 0.30 (real-10y-yield percentile only, min_components=1/coverage_floor=1.0), credit 0.30 (HY OAS z 0.45 + NFCI credit subindex 0.25 + IG OAS declared-not-sourced 0.30, min_components=2/coverage_floor=0.5), dollar_funding 0.20 (OFR FSI funding functional leg 0.50 + broad-dollar-index declared-not-sourced 0.50, min_components=1/coverage_floor=0.5), equities_vol 0.20 (vol-regime risk score 0.60 + MOVE percentile 0.40, min_components=1/coverage_floor=0.5). boundary=50.0, hysteresis_band=5.0. NONE of these channel inputs is the blended official nfci/ofr_fsi value itself (those are published separately, unmodified, as their own metrics) -- no hidden blend (architecture 7.9/10.8).",
-        "value": 58.06,
+        "value": 57.76,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of 4 channel-score components, weights renormalized over available channels; rates_channel 0.30, credit_channel 0.30, dollar_funding_channel 0.20, equities_vol_channel 0.20 (a 5th declared channel, lending, is always ABSENT/NOT_COVERED and carries no weight here -- see the lending_channel_score metric for its own disclosure)"
       },
@@ -306,7 +306,7 @@
           },
           {
             "component_id": "real_10y_chg_63d_bp",
-            "contribution": 7.5,
+            "contribution": 6.6,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -316,9 +316,9 @@
             "null_reason": null,
             "owner_field": "rate_inflation_transmission.state.rates.real_10y_chg_63d_bp",
             "owner_ref": "engine.sector_rate_inflation.rate_inflation_transmission",
-            "raw_value": 25.0,
+            "raw_value": 22.0,
             "sign": 1,
-            "standardized_value": 75.0,
+            "standardized_value": 72.0,
             "weight": 0.3
           }
         ],
@@ -349,7 +349,7 @@
           }
         },
         "transformation": "weighted mean of 3 momentum legs (13-week/63-day rate-of-change, distinct from R1A's LEVEL-only funding_pressure axis, which never reads a _change field): NFCI 13w change 0.35 (scale=0.5 index-pt -> full half-swing), OFR FSI 13w change 0.35 (scale=1.0), real-10y-yield 63d change 0.30 (scale=50bp). min_components=2/coverage_floor=0.5. boundary=50.0, hysteresis_band=5.0, positive move = tightening impulse (sign=+1 on all three legs).",
-        "value": 50.57,
+        "value": 49.67,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of 3 owner-native momentum legs, weights renormalized over available; nfci_change_13w 0.35, ofr_fsi_change_13w 0.35, real_10y_chg_63d_bp 0.30"
       }
@@ -359,31 +359,35 @@
     "comparability": "COMPARABLE",
     "deltas": [
       {
-        "current_value": 58.06,
-        "delta": -0.08,
+        "current_value": 57.76,
+        "delta": -0.3,
         "metric_id": "financial_conditions_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 58.14
+        "prior_value": 58.06
       },
       {
-        "current_value": 50.57,
-        "delta": -3.74,
+        "current_value": 49.67,
+        "delta": -0.9,
         "metric_id": "financial_conditions_impulse",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 54.31
+        "prior_value": 50.57
       }
     ],
     "null_reason": null,
-    "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "financial_conditions-US-8239a1249b1d4991",
+    "prior_effective_date": "2026-09-04",
+    "prior_generation_id": "financial_conditions-US-1c7b9a7d00b5ffaa",
     "prior_method_version": "financial_conditions.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [],
-    "correction_state": "none",
-    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
-    "predecessor_generation_id": "financial_conditions-US-8239a1249b1d4991"
+    "changed_fingerprints": [
+      "us10y:real_10y:7b1c8da14209f193",
+      "us10y:real_10y_chg_63d_bp:8b1115e4140b951b",
+      "us10y:real_10y_pctile:1353905afdb64d5d"
+    ],
+    "correction_state": "superseded",
+    "note": "Same reference period as the predecessor print, but one or more owner-native source values changed: this print supersedes the prior one as a revision.",
+    "predecessor_generation_id": "financial_conditions-US-1c7b9a7d00b5ffaa"
   },
   "drivers": {
     "balance_sheet": [
@@ -448,16 +452,16 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "real_10y_pctile",
-        "impact_magnitude": 49.0,
+        "impact_magnitude": 48.0,
         "impact_sign": 1,
         "label": {
           "en": "Real 10Y yield percentile",
           "zh": "10年期实际收益率分位"
         },
-        "note": "signed push = (standardized-50)*weight toward tighter; standardized=99.0, weight=1.0",
+        "note": "signed push = (standardized-50)*weight toward tighter; standardized=98.0, weight=1.0",
         "owner_field": "rate_inflation_transmission.state.rates.real_10y_pctile",
         "unit": "percentile",
-        "value": 0.99
+        "value": 0.98
       },
       {
         "coverage_state": "PRESENT",
@@ -504,11 +508,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-05T12:05:54Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "1c7b9a7d00b5ffaaf49d5e2518bdd781d37d92a9453929af9a7d3655a80eb0cb",
-    "generation_id": "financial_conditions-US-1c7b9a7d00b5ffaa",
+    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
+    "content_sha256": "669f7127a24a970471bb3e3edff2b70d194743ddc3077a687e2bbd4848f841b7",
+    "generation_id": "financial_conditions-US-669f7127a24a9704",
     "producer": "engine.market_os.macro_workspaces.financial_conditions",
     "rendered_at": null
   },
@@ -517,31 +521,31 @@
     "hysteresis": {
       "applied": true,
       "band": 5.0,
-      "held_prior": false,
-      "note": "raw classification already matches the prior print; no boundary crossing, hysteresis not engaged"
+      "held_prior": true,
+      "note": "prior quadrant held: conditions_impulse crossed the 50 boundary since the prior print but stayed within the 5.0-pt hysteresis band of ITS OWN boundary"
     },
     "method_version": "financial_conditions.compose.v1",
     "nearest_boundary": {
       "axis": "conditions_impulse",
-      "distance": 0.57,
+      "distance": 0.33,
       "null_reason": null
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -0.08,
-      "dy": -3.74,
+      "dx": -0.3,
+      "dy": -0.9,
       "null_reason": null,
       "status": "PRESENT"
     },
     "prior_state": {
-      "effective_date": "2026-09-03",
+      "effective_date": "2026-09-04",
       "method_version": "financial_conditions.compose.v1",
       "state_id": "B"
     },
     "quadrant": {
-      "x": 58.06,
+      "x": 57.76,
       "x_status": "PRESENT",
-      "y": 50.57,
+      "y": 49.67,
       "y_status": "PRESENT"
     },
     "state_id": "B",
@@ -554,7 +558,7 @@
       "en": "Financial conditions regime",
       "zh": "金融条件体制"
     },
-    "transition_distance": 3.74
+    "transition_distance": 0.95
   },
   "implications": {
     "items": [
@@ -578,8 +582,8 @@
         "horizon": "current",
         "implication_id": "state_descriptive",
         "text": {
-          "en": "US financial conditions read B - Tight conditions / Tightening impulse (level x=58.06, impulse y=50.57, boundary 50).",
-          "zh": "美国金融条件读数为 B - 紧张条件 / 边际收紧（水平 x=58.06，边际冲量 y=50.57，分界 50）。"
+          "en": "US financial conditions read B - Tight conditions / Tightening impulse (level x=57.76, impulse y=49.67, boundary 50).",
+          "zh": "美国金融条件读数为 B - 紧张条件 / 边际收紧（水平 x=57.76，边际冲量 y=49.67，分界 50）。"
         },
         "trace_ref": "data/regime/latest.json#conditions"
       },
@@ -861,7 +865,7 @@
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-01",
+        "calculation_as_of": "2026-09-03",
         "collected_at": null,
         "coverage": null,
         "definition_id": "rate_inflation_transmission.state.rates.real_10y",
@@ -872,10 +876,10 @@
         "metric_id": "real_10y",
         "model_version": "financial_conditions.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-01",
+        "observed_at": "2026-09-03",
         "owner_ref": "engine.sector_rate_inflation.rate_inflation_transmission",
         "reference_id": "mastermind.market_reference/v1#real_10y",
-        "reference_period": "2026-09-01",
+        "reference_period": "2026-09-03",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -890,14 +894,14 @@
           "value": null
         },
         "unit": "pct",
-        "value": 2.45,
+        "value": 2.42,
         "value_type": "percent"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-01",
+        "calculation_as_of": "2026-09-03",
         "collected_at": null,
         "coverage": null,
         "definition_id": "rate_inflation_transmission.state.rates.real_10y_pctile",
@@ -908,10 +912,10 @@
         "metric_id": "real_10y_pctile",
         "model_version": "financial_conditions.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-01",
+        "observed_at": "2026-09-03",
         "owner_ref": "engine.sector_rate_inflation.rate_inflation_transmission",
         "reference_id": "mastermind.market_reference/v1#real_10y_pctile",
-        "reference_period": "2026-09-01",
+        "reference_period": "2026-09-03",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -926,14 +930,14 @@
           "value": null
         },
         "unit": "pct",
-        "value": 0.99,
+        "value": 0.98,
         "value_type": "percent"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "roc_63d",
-        "calculation_as_of": "2026-09-01",
+        "calculation_as_of": "2026-09-03",
         "collected_at": null,
         "coverage": null,
         "definition_id": "rate_inflation_transmission.state.rates.real_10y_chg_63d_bp",
@@ -944,10 +948,10 @@
         "metric_id": "real_10y_chg_63d_bp",
         "model_version": "financial_conditions.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-01",
+        "observed_at": "2026-09-03",
         "owner_ref": "engine.sector_rate_inflation.rate_inflation_transmission",
         "reference_id": "mastermind.market_reference/v1#real_10y_chg_63d_bp",
-        "reference_period": "2026-09-01",
+        "reference_period": "2026-09-03",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -962,7 +966,7 @@
           "value": null
         },
         "unit": "bp",
-        "value": 25.0,
+        "value": 22.0,
         "value_type": "basis_points"
       },
       {
@@ -1394,7 +1398,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 99.0,
+        "value": 98.0,
         "value_type": "score_0_100"
       },
       {
@@ -1538,7 +1542,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 58.06,
+        "value": 57.76,
         "value_type": "score_0_100"
       },
       {
@@ -1574,7 +1578,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 50.57,
+        "value": 49.67,
         "value_type": "score_0_100"
       }
     ]
@@ -1740,7 +1744,7 @@
         },
         "owner_ref": "engine.sector_rate_inflation.rate_inflation_transmission",
         "provider": "Treasury / FRED",
-        "reference_period": "2026-09-01",
+        "reference_period": "2026-09-03",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",

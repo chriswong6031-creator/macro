@@ -8,7 +8,7 @@
   "scope_en": "United Kingdom national economy; FTSE 100 and FTSE 250 are market context.",
   "scope_zh": "英国全国经济；富时100与富时250仅作市场背景。",
   "asof": "2026-09-04",
-  "built": "2026-09-05 02:46 UTC",
+  "built": "2026-09-05 14:10 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -183,7 +183,7 @@
     "index_label": "FTSE 100 / FTSE 250",
     "currency_label": "GBP/USD",
     "equity": {
-      "price": 10831.09,
+      "price": 10831.1,
       "off_52w_high": -0.7,
       "above_50d": true,
       "above_200d": true,
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 52,
+    "top_score": 47,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.186,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 52.0,
+      "intensity": 47.2,
       "peak": 80.7,
       "peak_days_ago": 26,
-      "off_peak": 28.7,
-      "velocity": 41.7,
+      "off_peak": 33.4,
+      "velocity": 36.9,
       "phase": "rising",
       "reached_risk": true,
       "state_now": "calm",
@@ -244,17 +244,17 @@
         28.0,
         31.0,
         43.7,
-        56.3,
-        52.0
+        49.2,
+        47.2
       ],
-      "spark_pts": "3.0,3.6 6.9,3.0 10.8,8.2 14.7,8.0 18.7,6.5 22.6,5.6 26.5,13.0 30.4,12.3 34.3,12.8 38.2,9.4 42.1,10.1 46.0,14.4 50.0,17.8 53.9,21.0 57.8,21.0 61.7,21.7 65.6,23.0 69.5,21.7 73.4,22.4 77.3,16.7 81.3,15.8 85.2,11.7 89.1,7.7 93.0,9.1",
+      "spark_pts": "3.0,3.6 6.9,3.0 10.8,8.2 14.7,8.0 18.7,6.5 22.6,5.6 26.5,13.0 30.4,12.3 34.3,12.8 38.2,9.4 42.1,10.1 46.0,14.4 50.0,17.8 53.9,21.0 57.8,21.0 61.7,21.7 65.6,23.0 69.5,21.7 73.4,22.4 77.3,16.7 81.3,15.8 85.2,11.7 89.1,10.0 93.0,10.6",
       "spark_peak": {
         "x": 6.9,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 9.1
+        "y": 10.6
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,17 +266,17 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 72.2,
-        "band": "caution",
+        "score": 67.4,
+        "band": "watch",
         "firing_legs": [
           {
             "leg": "us_rate_2y",
-            "pctile": 0.836,
+            "pctile": 0.792,
             "confirmed": false
           },
           {
             "leg": "us_rate_10y",
-            "pctile": 0.789,
+            "pctile": 0.75,
             "confirmed": false
           }
         ]
@@ -286,7 +286,7 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 65.2,
+        "score": 65.4,
         "band": "watch",
         "firing_legs": [
           {
@@ -296,7 +296,7 @@
           },
           {
             "leg": "ext_etf",
-            "pctile": 0.638,
+            "pctile": 0.642,
             "confirmed": false
           }
         ]
@@ -306,7 +306,7 @@
         "tier": "A",
         "label_en": "Sterling depreciation / outflows",
         "label_zh": "英镑贬值／资金外流",
-        "score": 47.4,
+        "score": 47.0,
         "band": "calm",
         "firing_legs": []
       }
@@ -372,7 +372,7 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 1.3513,
+      "raw": 1.3517,
       "value": "1.35",
       "unit": "",
       "asof": null
