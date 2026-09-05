@@ -84,8 +84,15 @@ waves:
       malformed and legacy-absent evidence preserve existing fail-closed law;
       the existing refresh lease remains the sole duplicate-dispatch guard.
       Evidence: DEC:STALE-SEMANTIC-PROOF-HAS-NO-CURRENT-VERDICT-AUTHORITY and
-      DSC:SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS. The wave remains awaiting_ci
-      and HOLD-FOR-SOL; it does not modify or operate PR #6391.
+      DSC:SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS. 2026-09-05 same-carrier
+      recovery reconciled the candidate onto current main by merge (both
+      histories preserved, sole conflict a union of discovery keys) and added
+      one bounded repair exposed by #6855/#6854: an unreadable changed-file
+      inventory is PROOF_SURFACE_UNAVAILABLE and defers with zero non-GET
+      effects instead of re-proving, while truncated/broad and
+      complete-unclassified inventories keep their conservative reproof. The
+      wave remains awaiting_ci and HOLD-FOR-SOL; it does not modify or operate
+      PR #6391.
   - id: W-PR-EVENT-CAUSALITY
     title: Candidate authority and lifecycle-event causality closure
     status: done

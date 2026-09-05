@@ -17,6 +17,7 @@ import ast
 import base64
 import datetime as dt
 import json
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -8859,3 +8860,187 @@ def test_the_mark_only_pass_never_removes_the_arm_label(monkeypatch):
         assert "remove-label merge-on-green" in law, (
             f"{doc} must name the exact command that caused it"
         )
+
+
+# ── PROOF_SURFACE_UNAVAILABLE ────────────────────────────────────────────────
+#
+# The pull request's own changed-file inventory is an OBSERVATION. When the
+# transport carrying it fails, the sweep has learned nothing about the tested
+# surface — and "I could not look" is not "the surface moved". Before this
+# repair every unreadable answer collapsed into one `None` that `stale_for`
+# reported as affirmative staleness, so an HTTP 429 or a 500 on
+# `/pulls/{n}/files` produced `reprove()` — an update-branch, a NON-GET write
+# against a pull request, caused purely by a failed read. #6855/#6854 exposed
+# it. A write can never repair a transport failure; the next ordinary sweep
+# re-reads instead. Genuinely OBSERVED conditions keep their conservative
+# reproof: a truncated/broad footprint and a complete inventory that matches no
+# gate are answers, not silence.
+
+
+def _surface_probe_freshness():
+    """Freshness whose window holds a candidate, so `stale_for` MUST consult the
+    pull request's own footprint — the exact seam this class governs."""
+    return _freshness(
+        commits=[(MAIN_MOVED_AT_1026, ["engine/signal_quality.py"])],
+        gates=[{"workflow": "ci.yml", "patterns": ["engine/**"]}],
+    )
+
+
+def _files_only_request(responder, calls):
+    """Route `/pulls/{n}/files` to `responder(page)`; record every call made."""
+
+    def fake_request(method, url, token, payload=None):
+        calls.append((method, url))
+        assert "/files?" in url, f"unexpected read {method} {url}"
+        page = int(url.rsplit("page=", 1)[1].split("&")[0])
+        return responder(page)
+
+    return fake_request
+
+
+UNAVAILABLE_INVENTORIES = [
+    ("http-429-rate-limited", lambda page: (429, {"message": "API rate limit exceeded"}), "HTTP 429"),
+    ("http-500-server-error", lambda page: (500, {"message": "Server Error"}), "HTTP 500"),
+    ("http-403-forbidden", lambda page: (403, {"message": "Resource not accessible"}), "HTTP 403"),
+    ("http-404-missing", lambda page: (404, {"message": "Not Found"}), "HTTP 404"),
+    ("non-list-payload", lambda page: (200, {"message": "unexpected object"}), "non-list response"),
+    ("malformed-row", lambda page: (200, [{"filename": "engine/a.py"}, 42]), "malformed row"),
+]
+
+
+@pytest.mark.parametrize(
+    "case,responder,expected_class",
+    UNAVAILABLE_INVENTORIES,
+    ids=[case for case, _r, _e in UNAVAILABLE_INVENTORIES],
+)
+def test_an_unreadable_files_inventory_defers_and_never_writes(
+    monkeypatch, case, responder, expected_class
+):
+    """RED before the repair: every one of these returned `True` (re-prove), and
+    `True` is what makes the caller issue update-branch. A failed READ must never
+    author a WRITE."""
+    calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(MOG, "_request", _files_only_request(responder, calls))
+    freshness = _surface_probe_freshness()
+
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+
+    assert stale is None, (
+        f"{case}: an unreadable proof surface must be INDETERMINATE (defer), not "
+        f"affirmative staleness — got {stale!r} ({reason})"
+    )
+    assert [method for method, _url in calls] == ["GET"] * len(calls), (
+        f"{case}: an indeterminate read produced a non-GET effect: {calls}"
+    )
+    assert calls, f"{case}: the inventory was never actually read"
+    assert expected_class in reason, f"{case}: reason must name the failure class: {reason}"
+
+
+def test_a_transport_exception_reading_files_defers_and_never_writes(monkeypatch):
+    """A socket/DNS/TLS failure is the same class of not-knowing as an HTTP 5xx,
+    and previously escaped `pull_files` as an exception rather than a verdict."""
+    calls: list[tuple[str, str]] = []
+
+    def exploding(method, url, token, payload=None):
+        calls.append((method, url))
+        raise urllib.error.URLError("connection reset by peer")
+
+    monkeypatch.setattr(MOG, "_request", exploding)
+    freshness = _surface_probe_freshness()
+
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+
+    assert stale is None, f"a transport failure must defer, not re-prove ({reason})"
+    assert [method for method, _url in calls] == ["GET"] * len(calls), calls
+    assert "transport" in reason.lower(), reason
+
+
+def test_unavailable_surface_diagnostics_carry_no_body_header_or_secret(monkeypatch):
+    """Diagnostics are bounded to PR number, failure class, page and numeric
+    status. A response body is attacker-influenced and may carry a token echo."""
+    secret = "ghp_S3CRETLEAKCANARY"
+    monkeypatch.setattr(
+        MOG,
+        "_request",
+        _files_only_request(
+            lambda page: (500, {"message": f"boom {secret}", "documentation_url": "https://x"}),
+            [],
+        ),
+    )
+    freshness = _surface_probe_freshness()
+
+    _stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+
+    assert secret not in reason, f"the response body leaked into diagnostics: {reason}"
+    assert "documentation_url" not in reason and "https://" not in reason, reason
+    assert "4242" in reason and "HTTP 500" in reason and "page 1" in reason, (
+        f"reason must still be diagnosable (PR, class, status, page): {reason}"
+    )
+
+
+def test_a_truncated_broad_footprint_still_reproves_conservatively(monkeypatch):
+    """Three FULL pages is an observed answer — the footprint is genuinely too
+    broad to bound — so the pre-existing conservative reproof is preserved. This
+    is the case the repair must NOT relax."""
+    calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        MOG,
+        "_request",
+        _files_only_request(
+            lambda page: (200, [{"filename": f"docs/p{page}_{i}.md"} for i in range(100)]),
+            calls,
+        ),
+    )
+    freshness = _surface_probe_freshness()
+
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+
+    assert stale is True, f"a truncated/broad footprint must still re-prove ({reason})"
+    assert len(calls) == MOG.PR_FILE_PAGE_CAP, calls
+
+
+def test_a_complete_inventory_matching_no_gate_still_reproves_conservatively(monkeypatch):
+    """A COMPLETE inventory that satisfies no gate entry resolves to the empty
+    surface. That is knowledge, not silence, and merging on it would be the no-op
+    this gate exists to prevent — conservative reproof preserved."""
+    monkeypatch.setattr(
+        MOG,
+        "_request",
+        _files_only_request(lambda page: (200, [{"filename": "notes/whatever.txt"}]), []),
+    )
+    freshness = _surface_probe_freshness()
+
+    stale, reason = freshness.stale_for(
+        _pull(), [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+    )
+
+    assert stale is True, f"a complete-but-unclassified surface must re-prove ({reason})"
+
+
+def test_an_unreadable_inventory_is_re_observed_by_the_next_sweep(monkeypatch):
+    """No persistent negative cache: `ProofFreshness` is per-sweep, so a fresh
+    sweep re-reads a surface that was unavailable in the previous one."""
+    state = {"fail": True}
+
+    def flaky(method, url, token, payload=None):
+        if state["fail"]:
+            return 503, {"message": "unavailable"}
+        return 200, [{"filename": "engine/signal_quality.py"}]
+
+    monkeypatch.setattr(MOG, "_request", flaky)
+    runs = [_run("ci-pack-1", conclusion="success", started_at=PROVEN_AT_0742)]
+
+    first, _reason = _surface_probe_freshness().stale_for(_pull(), runs)
+    assert first is None
+
+    state["fail"] = False
+    second, _reason2 = _surface_probe_freshness().stale_for(_pull(), runs)
+    assert second is True, "the re-read must be able to reach an affirmative verdict"

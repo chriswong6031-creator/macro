@@ -54,3 +54,21 @@ This decision changes decision order, not the meaning of semantic evidence.
 Semantic CI remains the sole authority for the exact tested merge tree and base;
 ProofFreshness remains the sole controller for whether that proof still describes
 the current candidate surface.
+
+## Amendment 2026-09-05 — unavailable is not stale
+
+Question: when the pull request's own changed-file inventory cannot be read, may
+that failure be treated as affirmative staleness and trigger update-branch?
+
+No. Staleness is an observation that main moved inside a surface. A failed
+transport is the absence of observation, and an update-branch cannot repair a
+failed read; issuing one lets a GET failure author a non-GET effect. Such a read
+is `PROOF_SURFACE_UNAVAILABLE` and defers (freshness-deferred, zero writes),
+while genuinely observed conditions — a truncated/broad footprint, and a complete
+inventory that matches no gate — keep their existing conservative reproof.
+
+This extends the ordering law without changing any verdict vocabulary, and
+introduces no dispatcher, proof store, queue, retry loop or negative cache.
+Diagnostics are bounded to PR number, failure class, page and numeric HTTP
+status; response bodies and headers are never emitted, because a body is
+attacker-influenced and can echo a token.

@@ -455,6 +455,17 @@ COMMIT_FILES_TRUNCATED_AT = 300
 # `/pulls/{n}/files` pages, 100 each. A pull request bigger than this has a footprint
 # we cannot fully see, and an UNDER-read footprint under-detects, so it is re-proven.
 PR_FILE_PAGE_CAP = 3
+# How a pull request's changed-file inventory was OBSERVED. `pull_files` answers
+# `None` for several unrelated reasons, and they do not deserve the same verdict:
+# a truncated/broad footprint and a complete inventory matching no gate are
+# ANSWERS the sweep may act on conservatively, while a failed transport is
+# SILENCE. Collapsing silence into affirmative staleness made a failed read
+# author an update-branch write (#6855/#6854) — a non-GET effect caused purely by
+# not being able to look. These are per-sweep only; nothing is cached across
+# sweeps, so the next ordinary sweep simply re-observes.
+PR_FILES_COMPLETE = "complete"
+PR_FILES_UNAVAILABLE = "proof_surface_unavailable"
+PR_FILES_TRUNCATED_BROAD = "truncated_broad"
 OPEN_PULL_PAGE_CAP = 10
 # `/issues/{n}/comments` pages, 100 each, for the recorded-hold guard below. A pull
 # request carrying more than this many comments is not fully readable, and an
@@ -1843,6 +1854,12 @@ class ProofFreshness:
         self._recursive_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
         self._blobs: dict[str, bytes] = {}
         self._pr_files: dict[Any, list[str] | None] = {}
+        # Observation class + sanitized diagnostic for each inventory read above.
+        # Absent means "not read through `pull_files` in this sweep" (a directly
+        # seeded inventory, for instance), which stays on the pre-existing
+        # conservative path rather than inheriting the new deferral.
+        self._pr_files_class: dict[Any, str] = {}
+        self._pr_files_detail: dict[Any, str] = {}
         # Exact checked head -> newest main commit already contained by that head.
         # This is a compatibility fallback for older/external check records that do
         # not expose the exact pull_request base SHA used by the primary path below.
@@ -2277,26 +2294,65 @@ class ProofFreshness:
         return answer
 
     def pull_files(self, number: Any) -> list[str] | None:
-        """The pull request's own changed files, or None when they cannot be seen."""
+        """The pull request's own changed files, or None when they cannot be seen.
+
+        The ``None`` contract is unchanged, and every existing caller keeps its
+        fail-closed reading of it. What is new is that this method also RECORDS
+        why it answered ``None``, because the reasons are not equivalent: a
+        transport failure is silence, while a truncated footprint is an answer.
+        ``surface_class`` exposes that distinction to the freshness decision.
+        """
         if number in self._pr_files:
             return self._pr_files[number]
         names: list[str] = []
         seen: set[str] = set()
         answer: list[str] | None = names
+        outcome = PR_FILES_COMPLETE
+        detail = ""
         for page in range(1, PR_FILE_PAGE_CAP + 1):
             query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
-            status, payload = _request(
-                "GET",
-                f"{GITHUB_API}/repos/{self.repo}/pulls/{number}/files?{query}",
-                self.token,
-            )
-            if status >= 400 or not isinstance(payload, list):
-                answer = None
+            try:
+                status, payload = _request(
+                    "GET",
+                    f"{GITHUB_API}/repos/{self.repo}/pulls/{number}/files?{query}",
+                    self.token,
+                )
+            except RateLimited:
+                # Rate-limit refusal keeps its own established propagation law.
+                raise
+            except Exception as exc:
+                # Socket/DNS/TLS failure. Previously this escaped as an exception
+                # from a read; it is the same not-knowing as an HTTP 5xx. Only the
+                # exception TYPE is recorded — the message can carry a URL, a
+                # header echo or a token fragment.
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: transport error reading changed files "
+                    f"(page {page}, {type(exc).__name__})"
+                )
+                break
+            if status >= 400:
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: HTTP {int(status)} reading changed files "
+                    f"(page {page})"
+                )
+                break
+            if not isinstance(payload, list):
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: non-list response reading changed files "
+                    f"(page {page}, HTTP {int(status)})"
+                )
                 break
             try:
                 page_paths = _changed_file_paths(payload)
             except RuntimeError:
-                answer = None
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: malformed row reading changed files "
+                    f"(page {page}, HTTP {int(status)})"
+                )
                 break
             for path in page_paths:
                 if path not in seen:
@@ -2306,10 +2362,32 @@ class ProofFreshness:
                 break
         else:
             # Every page was full: the footprint is truncated, and an UNDER-read
-            # footprint under-detects. Not knowing is re-prove, never merge.
-            answer = None
+            # footprint under-detects. Not knowing is re-prove, never merge. This
+            # is an OBSERVED answer, so it keeps the conservative reproof.
+            answer, outcome = None, PR_FILES_TRUNCATED_BROAD
+            detail = (
+                f"PR #{number}: changed-file inventory exceeds "
+                f"{PR_FILE_PAGE_CAP} full pages"
+            )
         self._pr_files[number] = answer
+        self._pr_files_class[number] = outcome
+        self._pr_files_detail[number] = detail
         return answer
+
+    def surface_class(self, number: Any) -> str:
+        """How this sweep OBSERVED the pull request's changed-file inventory.
+
+        Defaults to ``PR_FILES_COMPLETE`` when the inventory did not come from
+        ``pull_files`` in this sweep, so an unclassified answer keeps the
+        pre-existing conservative disposition instead of silently acquiring the
+        new deferral. Only a read this sweep actually attempted and lost can
+        report ``PR_FILES_UNAVAILABLE``.
+        """
+        return self._pr_files_class.get(number, PR_FILES_COMPLETE)
+
+    def surface_unavailable_detail(self, number: Any) -> str:
+        """Sanitized diagnostic: PR number, failure class, page, numeric status."""
+        return self._pr_files_detail.get(number, "")
 
     def included_main_base(self, pull: dict[str, Any]) -> str | None:
         """Newest snapshot-main commit already contained by the exact checked head.
@@ -2572,6 +2650,33 @@ class ProofFreshness:
 
         surface = self.surface_of(number)
         if surface is None:
+            inventory = self.surface_class(number)
+            if inventory == PR_FILES_UNAVAILABLE:
+                # SILENCE, not evidence. The sweep could not look at the footprint,
+                # which says nothing about whether main's movement is inside it. An
+                # update-branch cannot repair a transport failure, so returning
+                # ``True`` here would let a failed READ author a non-GET WRITE
+                # against a pull request (#6855/#6854). Defer with zero effect; the
+                # next ordinary sweep re-observes. Nothing is cached across sweeps
+                # and no retry is scheduled.
+                return None, (
+                    (
+                        self.surface_unavailable_detail(number)
+                        or f"PR #{number}: changed-file inventory unavailable"
+                    )
+                    + " — proof surface unavailable, deferring without update-branch"
+                )
+            if inventory == PR_FILES_TRUNCATED_BROAD:
+                # An OBSERVED answer: the footprint is genuinely too broad to bound.
+                # Conservative reproof is preserved exactly as before.
+                return True, (
+                    "the pull request's own changed files could not be established "
+                    "because its footprint exceeds the readable page cap, so its "
+                    "tested surface is unknown"
+                )
+            # A COMPLETE inventory that satisfies no gate entry resolves to the
+            # empty surface. That is knowledge, and merging on it would be the
+            # no-op this gate exists to prevent — conservative reproof preserved.
             return True, (
                 "the pull request's own changed files could not be established, so "
                 "its tested surface is unknown"

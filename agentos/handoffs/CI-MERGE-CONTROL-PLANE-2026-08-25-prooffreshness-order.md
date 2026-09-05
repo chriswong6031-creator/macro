@@ -193,3 +193,64 @@ The implementation is locally built and independently reviewed, but the wave is
 not accepted or merge-authorized. PR #6391 remains a separate unchanged
 production witness. The disposable canary is evidence infrastructure only and
 must never land.
+
+## Same-carrier recovery — 2026-09-05 (Claude8 Opus, operation ci-prooffreshness-order-recovery-20260829-sol-001)
+
+The original session above ended pre-CI. Sol re-placed the SAME operation on the
+SAME PR #6426 and SAME branch; the preserved head
+`9b47c60d9fc5ca8f0e1b5fe9a5d0693fb141eb6e` was never rebased, reset, forced or
+replaced.
+
+**Current-base integration.** `origin/main` was merged into the branch with
+`--no-ff` (merge commit 0ebb026948ff414499052bba7f1ba6be1e324abf, parents 9b47c60d9fc5 and
+aabae60174ab). Both histories are preserved. The single conflict was
+`agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md`, where main and this branch
+each appended to `discoveries:`; resolved as a union with no entry dropped and
+no unrelated main byte altered. The candidate's delta against current main is
+exactly the seven authorized paths.
+
+**Supersession re-checked, not assumed.** Macro main moved four times during
+this session (443fe9a6 → a1b3d9ea → 88af13cf → aabae601). At each re-pin the
+newest commit touching `scripts/merge_on_green.py` was still
+`8a1b938890614408d7cf3da654d998fc5fe9808a` (2026-08-21), so the temporal-authority
+defect was never functionally superseded.
+
+**Bounded repair added** (`PROOF_SURFACE_UNAVAILABLE`, see the DEC amendment and
+the DSC's second failure mode): `pull_files()` now classifies HOW the inventory
+was observed rather than collapsing five conditions into one `None`. Only a
+positively observed transport failure defers with zero non-GET effects;
+truncated/broad and complete-unclassified inventories keep their prior
+conservative reproof, and an inventory not read through `pull_files` this sweep
+also stays on the conservative path.
+
+**Proof.**
+- RED→GREEN (new repair): 9 focused tests failed on the merge parent, pass after.
+- RED→GREEN (ordering): disabling ONLY the `proof_freshness_disposition()` call
+  ahead of semantic classification fails 5 tests, including
+  `test_stale_6391_semantic_receipt_reproves_before_unknown_can_block`; restoring
+  returns 417 passed. The discriminator is real in both directions.
+- Owning suites green: merge_on_green, merge_on_green_semantic, ci_authority,
+  ci_semantic_proof, ci_canary_tools, ci_canary_workflows, ship_loop_guard,
+  ship_loop_hold_wrapper, ship_loop_semantic — **1018 passed, 0 failed**.
+- `python3 scripts/agentos.py validate` — 0 errors.
+
+**do_not_redo**
+- Do not treat an unreadable changed-file inventory as staleness. A failed read
+  may not author a write; that is the whole point of this repair.
+- Do not relax the truncated/broad or complete-unclassified branches — both are
+  observed ANSWERS and were passing before this change. They are the control.
+- Do not add a retry loop, negative cache, dispatcher or proof store.
+  `ProofFreshness` is per-sweep; the next ordinary sweep re-observes.
+- Do not emit response bodies or headers in diagnostics. A body is
+  attacker-influenced and can echo a token.
+- Do not mutate PR #6391 (merged, immutable) or merge #6423 (DO-NOT-MERGE fixture).
+
+**danger_areas**
+- `pull_files()` has five callers. Three fail closed on `None`
+  (`_touches_semantic_authority` → True, live-inherited-red → None,
+  `semantic_main_circuit_decision` → no bypass). Verify any new caller does too:
+  transport exceptions now return `None` instead of propagating.
+- `note_merged_commit(..., pull_files(n))` records `None` as an EMPTY complete
+  file list. That is pre-existing post-merge bookkeeping, deliberately NOT changed
+  here (out of commissioned scope), but it is a latent under-read worth a separate
+  look.
