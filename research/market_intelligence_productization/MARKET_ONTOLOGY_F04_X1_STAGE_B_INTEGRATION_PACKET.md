@@ -339,3 +339,48 @@ withdrawn.
 The four suites need real `ci-pack` selection plus import/dependency wiring —
 which is what `contract-delta` is red about, and what B-6 returns as the
 expansion request.
+
+## B-8 · The exact patch, proven against the real gates without touching the held file
+
+`contract-delta`'s eight findings were returned in B-6 as a request. They are now
+returned as a **verified patch**. Both gates were run against a copy of the manifest
+in scratch, never against the tracked file, which stayed byte-identical throughout
+(`git diff -- .github/ci/legacy-jobs.yml` → 0 lines at every step).
+
+Method: `scripts/run_ci_pack.curated_exclusive_closure_findings` takes a manifest
+*path*, and `scripts.audit_unrun_tests.CI_MANIFEST` is a rebindable module global,
+so both halves of the gate can be pointed at a candidate file.
+
+| Half | Gate | Unpatched | Patched |
+|---|---|---|---|
+| Import closure | `curated_exclusive_closure_findings` | 4 findings, identical to CI | `NONE` |
+| Unwired suites | `gated_unrun_suites` | 4 of mine gated | 0 gated, no collateral change |
+
+**Shape of the patch: 5 hunks, +27 lines, −0.** Four single-line `paths:` insertions
+(`biocatalyst-history`, `biocatalyst-serving`, `flow-surface`,
+`unrun-government-revenue-grader`), each declaring `engine/ontology_explorer.py`,
+which they reach through `app/main.py:2248` → `app/ontology_explorer.py:40`. Plus one
+contiguous `ontology-explorer` job appended at end-of-file — a new block, so no other
+lane's lines are touched in a manifest twelve open PRs are queued behind.
+
+### The correction that only validation caught
+
+The first draft of that job was `scope: exclusive` with a curated six-path scope, and
+it was **wrong**. `load_legacy_jobs` rejected it outright — an exclusive job must
+declare the test files its own commands read — and once those four test paths were
+added, its inferred closure expanded to roughly **500 files**, because these suites
+drive the router through the application and therefore transitively import most of
+`app/`, `engine/` and `lib/`. Curating that would have produced a job re-selected by
+nearly every change in the repository: the precise opposite of what exclusive scoping
+is for.
+
+The job is therefore deliberately **not** exclusive; inference derives its scope. This
+is the load-bearing detail of B-8, and it is the reason the patch is worth proving
+rather than proposing — the proposal in B-6 would have shipped a hunk that was both
+invalid and absurd, and no amount of re-reading it would have revealed that.
+
+### What is still not proven
+
+Nothing here proves the job *passes* — only that it satisfies the two gates that are
+currently red. The suites pass locally (185 green); their behaviour on a CI runner is
+unproven until the job actually runs, which cannot happen until the manifest opens.
