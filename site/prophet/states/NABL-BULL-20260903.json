@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "NABL-BULL-20260903",
-  "asof": "2026-09-04",
+  "asof": "2026-09-05",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 67.2,
-  "raw_confidence": 67.2,
-  "delta_vs_base": 7.2,
+  "management_confidence": 67.0,
+  "raw_confidence": 66.7,
+  "delta_vs_base": 7.0,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
-    "validity": 96.1,
+    "validity": 94.4,
     "progress": 0.0,
     "pace": 100.0,
     "retention": 50.0,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.971,
+    "dist_to_stop_r": 0.958,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 0.0,
-    "p1": -0.0194,
-    "p2": -0.0097,
+    "horizon_pct_used": 2.2,
+    "p1": -0.0278,
+    "p2": -0.0139,
     "p3": null,
-    "move_r": -0.029,
+    "move_r": -0.042,
     "mfe_r": 0.0,
-    "mae_r": -0.029
+    "mae_r": -0.042
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -0.0350001907348636,
+  "_mae": -0.050000057220459304,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 0,
-  "tau": 0.0
+  "days_elapsed": 1,
+  "tau": 0.0222
 }

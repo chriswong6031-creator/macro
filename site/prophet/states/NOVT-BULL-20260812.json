@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "NOVT-BULL-20260812",
-  "asof": "2026-09-04",
+  "asof": "2026-09-05",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 63.0,
-  "raw_confidence": 63.0,
-  "delta_vs_base": 3.0,
+  "management_confidence": 62.8,
+  "raw_confidence": 62.5,
+  "delta_vs_base": 2.8,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 100.0,
-    "progress": 1.3,
+    "validity": 99.9,
+    "progress": 0.0,
     "pace": 100.0,
     "retention": 50.0,
     "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.008,
-    "dist_to_t1_r": 1.492,
-    "dist_to_t2_r": 2.992,
-    "horizon_pct_used": 0.0,
-    "p1": 0.0053,
-    "p2": 0.0027,
+    "dist_to_stop_r": 0.999,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 2.2,
+    "p1": -0.0007,
+    "p2": -0.0004,
     "p3": null,
-    "move_r": 0.008,
+    "move_r": -0.001,
     "mfe_r": 0.008,
-    "mae_r": 0.0
+    "mae_r": -0.001
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.2925048828124943,
-  "_mae": 0.0,
+  "_mae": -0.039999389648443184,
   "_max_p1": 0.005330870836750397,
   "_first_trigger_ts": "2026-09-04",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 0,
-  "tau": 0.0
+  "days_elapsed": 1,
+  "tau": 0.0222
 }

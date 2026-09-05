@@ -1334,17 +1334,6 @@
     "china_pboc": {
       "source": "china_pboc",
       "status": "ok",
-      "rows": 9011,
-      "last_date": "2026-09-03",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 0.5,
-      "checked_at": "2026-09-04T19:45:49.688157+00:00"
-    },
-    "china_pboc": {
-      "source": "china_pboc",
-      "status": "ok",
       "rows": 9013,
       "last_date": "2026-09-04",
       "error": null,
@@ -1825,8 +1814,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-09-05T02:30:26.300146+00:00",
-      "checked_at": "2026-09-05T02:30:28.479954+00:00"
+      "as_of": "2026-09-05T13:50:04.261363+00:00",
+      "checked_at": "2026-09-05T13:50:07.030476+00:00"
     },
     "broad_flows": {
       "source": "broad_flows",
@@ -1885,12 +1874,12 @@
     },
     "flow_signals": {
       "status": "ok",
-      "n_new": 769,
-      "n_graded_ok": 921,
+      "n_new": 0,
+      "n_graded_ok": 0,
       "n_scored_this_run": 0,
-      "elapsed_sec": 6.1,
+      "elapsed_sec": 5.3,
       "last_date": "2026-09-05",
-      "checked_at": "2026-09-05T02:44:27.817275+00:00"
+      "checked_at": "2026-09-05T14:08:07.702473+00:00"
     },
     "cboe_cor_vol": {
       "source": "cboe_cor_vol",

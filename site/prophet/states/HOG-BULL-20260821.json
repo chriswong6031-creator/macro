@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "HOG-BULL-20260821",
-  "asof": "2026-09-04",
+  "asof": "2026-09-05",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 57.8,
@@ -11,20 +11,20 @@
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 100.0,
-    "progress": 3.3,
-    "pace": 54.4,
+    "progress": 2.2,
+    "pace": 47.8,
     "retention": 50.0,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.027,
-    "dist_to_t1_r": 1.473,
-    "dist_to_t2_r": 2.973,
-    "horizon_pct_used": 31.1,
-    "p1": 0.0177,
-    "p2": 0.0088,
+    "dist_to_stop_r": 1.015,
+    "dist_to_t1_r": 1.485,
+    "dist_to_t2_r": 2.985,
+    "horizon_pct_used": 33.3,
+    "p1": 0.0101,
+    "p2": 0.0051,
     "p3": null,
-    "move_r": 0.027,
+    "move_r": 0.015,
     "mfe_r": 0.027,
     "mae_r": -0.108
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 14,
-  "tau": 0.3111
+  "days_elapsed": 15,
+  "tau": 0.3333
 }
