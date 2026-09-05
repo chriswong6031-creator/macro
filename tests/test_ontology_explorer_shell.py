@@ -164,3 +164,17 @@ def test_a_missing_paired_asset_raises_instead_of_reporting_success(tmp_path,
     monkeypatch.setattr(builder, "PAIRED_ASSETS", ("ontology.css", "not-a-real-asset.js"))
     with pytest.raises(FileNotFoundError, match="not-a-real-asset.js"):
         builder.build_shell(env, tmp_path / "site")
+
+
+def test_the_client_uses_the_house_sign_in_return_convention():
+    """A bare `/?signin=1` strands a reader who came for one specific trace: the
+    house wall carries `&ret=<root-relative path>`, consumed by onboard.js's
+    retTarget(), which accepts same-origin "/..." only. The bounce is this
+    page's, so the return is this page's responsibility."""
+    client = (ROOT / "templates" / "ontology.js").read_text(encoding="utf-8")
+    assert "signin=1&ret=" in client
+    assert "encodeURIComponent" in client
+    # the guard retTarget() applies, mirrored on our side before we hand it over
+    assert 'path.slice(0, 2) !== "//"' in client
+    # and never the bare form, which is the regression this pins
+    assert '"/?signin=1"' not in client

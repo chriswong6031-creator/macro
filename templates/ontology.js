@@ -70,6 +70,20 @@
     root.classList.remove("ox-skeleton");
   }
 
+  /* The house sign-in convention carries the page to come back to:
+     `?signin=1&ret=<root-relative path>`, consumed by onboard.js:retTarget(),
+     which accepts same-origin "/..." only. Without it a reader who came here
+     for one specific trace is dropped on the hub after signing in and has to
+     find their way back — the bounce is the product's, so the return is too. */
+  function signinHref() {
+    var here = "/ontology.html";
+    try {
+      var path = location.pathname + location.search;
+      if (path.charAt(0) === "/" && path.slice(0, 2) !== "//") here = path;
+    } catch (e) { /* keep the static fallback */ }
+    return "/?signin=1&ret=" + encodeURIComponent(here);
+  }
+
   function gate(titleEn, titleZh, bodyEn, bodyZh, ctaEn, ctaZh, href) {
     var box = el("section", "ox-gate");
     var h = el("h2");
@@ -728,7 +742,7 @@
             "This page describes the product. The current reading is served only to a "
             + "signed-in account.",
             "本页面介绍该产品。当前读数仅向已登录账户提供。",
-            "Sign in", "登录", "/?signin=1");
+            "Sign in", "登录", signinHref());
           return null;
         }
         if (response.status === 403) {
