@@ -6,212 +6,281 @@ ended_because: blocked
 mission: >
   Establish the minimum current-source path to Personal-Pro-primary Mastermind
   CEO operation, preserving existing Executive, Agent OS, C1, S0-R1 and BSC owners
-  and making the real-account proof gates recoverable without this chat.
+  and making real-account proof recoverable without this chat.
 state_before: >
-  The Chairman delivered the Astra Personal-Pro convergence program. Existing
-  five-tool Executive MCP and authenticated BSC app source were reusable, while
-  C1 Step D was effect-unknown, S0-R1 was not proven, B2/C2 were held, and current
-  Personal-Pro custom MCP behavior had not been empirically established.
+  The first program turn produced Mastermind PR 489 and Macro PR 6877 as drafts,
+  corrected stale MAS-48 projection and delivered one read-only census. No native
+  receiver consumed that census. C1 Step D remained effect-unknown, S0-R1 was not
+  proven, B2/C2 were held and Personal-Pro custom MCP behavior was untested.
 changed:
   - path: agentos/discoveries/DSC-PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP.md
     what: >
-      Record the verified distinction between tool connectivity, canonical
-      runtime-root fidelity and diagnostic admission hot state, with a falsifier.
+      Preserve the distinction between connectivity, canonical runtime-root
+      fidelity and admission hot state. Repair the actual CI-rejected falsifier
+      with explicit git-show commands, without weakening the validator.
   - path: agentos/handoffs/AGENT-OS-2026-09-05-personal-pro-convergence.md
     what: >
-      Preserve the source-study pointer, exact existing carriers, unproven
-      capabilities, no-rebuild boundaries and next account/host proof.
+      Record the immutable research correction, actual CI failure and bounded
+      repair, completed projection correction, exact attention deliveries,
+      unresolved native proof and continuation. No second workstream is created.
 verified:
   - claim: >
-      Protected Mastermind procedure was pinned at
-      b0f85b0f1c66825ecec4bf6ce32dcbfac0c14b93 with compatible Skillpack 1.0.1.
+      This continuation loaded compatible procedure at protected Mastermind
+      0106aaa832a8146810e0905d52b7d5444f6827f0.
     command: >
-      GitHub.fetch branches/master; GitHub.fetch_file INDEX.md and required
-      Sol skills with ref=b0f85b0f1c66825ecec4bf6ce32dcbfac0c14b93.
+      GitHub.fetch branches/master; GitHub.fetch_file INDEX.md, COLD_START.md,
+      RECONCILE_STATE.md, REVIEW_RETURN.md, COMMISSION_WAVE.md,
+      WORKER_AVENUE_ROUTING.md, CLOSEOUT.md and applicable source-law companions
+      with ref=0106aaa832a8146810e0905d52b7d5444f6827f0.
     result: >
-      Protected branch and schema mastermind.sol_skillpack.v1,
-      minimum_bootstrap_major 1 observed; same-SHA procedure reads completed.
-  - claim: The organizational source inputs remained unchanged as Macro main advanced.
+      Skillpack mastermind.sol_skillpack.v1, version 1.0.1, bootstrap-major 1.
+      GitHub.compare_commits from b0f85b0f1c66825ecec4bf6ce32dcbfac0c14b93
+      showed only nonseat_canary_vendors.py and test_nonseat_canary.py changed;
+      no existing Executive MCP, Skillpack or this research path changed.
+  - claim: The first Macro candidate failed for an actual error authored in this PR.
     command: >
-      GitHub.compare_commits(repo_full_name=mastermindx-market-intelligence/macro,
-      base=8eabf462ddadbc92a81dc6a9f92202602a4d88d4,
-      head=72ef56eb6ec7b536b74d5e8927ead8766539b502).
+      GitHub.fetch_commit_workflow_runs at b75f114a7b5d1a10afc71624d0a9ca5e8d33d53f;
+      fetch_workflow_run_jobs for 33962727649; fetch_workflow_job_logs for
+      101298171625; inspect scripts/agentos.py at
+      03a971458f4d2977a29e12fdae16a2a35553d2bc.
     result: >
-      Two commits ahead; only CI-status/immune and research-vault data changed.
-      Agent OS records, schemas and applicable source documents were unchanged.
-  - claim: The detailed current-source study exists as an unmerged records-only draft.
+      The record validator reported 1062 records, 1 error, 45 warnings. The sole
+      error was unfalsifiable-claim for this PR's discovery: its falsifier named
+      no runnable token. Fences and the other trusted pack passed. This is not
+      an inherited infrastructure failure.
+  - claim: The discovery repair is narrow and discriminates the reported defect.
     command: >
-      GitHub.create_file followed by GitHub.create_pull_request for Mastermind
-      branch codex/personal-pro-convergence-20260905-astra-765019.
+      Python scratch harness using the exact PROVENANCE_RE from scripts/agentos.py;
+      GitHub.update_file followed by GitHub.compare_commits from
+      b75f114a7b5d1a10afc71624d0a9ca5e8d33d53f to
+      43ea495ac9c46897743895b1f7e277e4d30a14c6.
     result: >
-      PR 489 returned OPEN/DRAFT at 299a4880626080a6397200c44eb73a0afba3437c,
-      one new research file and no implementation/config changes.
-  - claim: The complete visible sol-runtime history did not contain a state publication.
+      Old falsifier rejected; repaired falsifier accepted. Native comparison
+      confirms one forward commit changing only the discovery falsifier, +12/-7.
+      New discovery blob is 174eee9b38a33c00dacbffbc419759fb7b0fb7d0. This focused
+      check is not the full repository validator or a production test.
+  - claim: The research now refuses unsupported comparative parity and an empty-runtime test deadlock.
     command: >
-      Slack.slack_read_channel(channel_id=C0BSGABKBFY, limit=30,
-      response_format=detailed), followed by slack_list_channel_members.
+      GitHub.update_file and fetch_commit for Mastermind
+      a54f7c67a4b0ef26a03019486102260c99926199;
+      GitHub.compare_commits from 299a4880626080a6397200c44eb73a0afba3437c.
     result: >
-      Complete history returned no MMX/SOL_STATE_V1; six current members observed.
-      This is not proof that C1 Step D had zero host effects.
-  - claim: One bounded read-only census handoff was delivered but not consumed.
+      Same PR 489, one research path, +31/-14. Seven unpaired positive parity
+      labels withdrawn; all twenty comparative rows remain BLOCKER pending paired
+      evidence. Section 7.1 permits finite state/inbox testing while explicitly
+      marking Job/intent reads NOT_EXERCISED when no legitimate canonical IDs
+      exist. No fabricated IDs, new Job, empty database or fixture switch is allowed.
+  - claim: The initial stale MAS-48 projection was already corrected.
     command: >
-      Slack.slack_send_message to C0BSBM78V1N, followed by full
-      slack_read_thread(message_ts=1788605608.765019, limit=100).
+      Linear.save_issue atomic patch at 2026-09-05T11:14:32.086Z;
+      GitHub.fetch_issue_comments for Mastermind PR 489, comment 5551411858.
     result: >
-      Root 1788605608.765019 and addendum 1788606075.371379 are present.
-      Latest read contained only a Linear bot reply and Sol addendum, no receiver
-      ACK/START/result. DELIVERY_UNCONSUMED is the observation, not an admission.
+      Stale S0/B1/C1 and next-action paragraphs corrected. In Progress/PARTIAL,
+      existing completion law and held B2/C2 gates preserved. The research now
+      labels the old Linear table as the initial observation, not current work owed.
+  - claim: The existing census received bounded attention but no proven native pickup.
+    command: >
+      Slack.slack_read_thread for C0BSBM78V1N/1788605608.765019;
+      slack_send_message with same-root reply_broadcast; one attention-only DM;
+      slack_search_public_and_private for the exact operation key.
+    result: >
+      Same-root attention reply 1788613553.374149 and DM pointer
+      D0BTEAXBVMJ/1788613766.893199 delivered. Latest complete root read contained
+      only the original Linear bot reply and Sol's two replies, no receiver
+      ACK/START/result. Neither attention delivery proves a native wake or host
+      effect. The DM directs all work and returns to the original root.
 unverified:
-  - claim: Personal Pro can invoke the unchanged Executive MCP against canonical live state.
+  - claim: Personal Pro invokes the unchanged Executive MCP against canonical live state.
     what_would_verify: >
-      A qualified native account and existing owner-approved readonly tunnel
-      target, real four-tool invocation, and source/mode/schema/root/freshness
-      receipts. This session exposes no Executive tools and ran no such canary.
+      Qualified native account/workspace and owner-approved readonly target,
+      actual per-tool results under Mastermind research section 7.1 and
+      source/mode/schema/root/freshness receipts. No Executive tool is exposed in
+      this session. Missing Job/intent input IDs must not be manufactured.
   - claim: C1 Step D is canonically reconciled.
     what_would_verify: >
-      Exact original RuntimeBinding/status reconciliation on
-      C0BSBM78V1N/1787889177.672699; no return establishing the effect was found.
+      Original RuntimeBinding/status reconciliation on
+      C0BSBM78V1N/1787889177.672699. No conclusive receipt was recovered; no replay
+      or substitute receiver is authorized by this handoff.
   - claim: S0-R1 and the selected production modification path pass acceptance.
     what_would_verify: >
-      Current native fixture grant remediation and verifier, final three-seat
-      proof where still required, accepted transport release and harmless real
-      canonical admission/reconciliation. None was run here.
-  - claim: Routine Personal-Pro CEO parity and interactive production latency are proven.
+      Same-fixture native grant remediation, fresh verifier, the final three-seat
+      proof where required, selected transport release and harmless canonical
+      admission/reconciliation. None was run here.
+  - claim: Routine Personal-Pro CEO parity and production latency are proven.
     what_would_verify: >
-      Paired real-account 20-row tests including execution/return/continue/stop,
-      outage/restart/reconnect and timed production receipts. Production sample
-      count is zero; no p50 or p95 result exists.
-  - claim: The new Macro records pass the full repository validator and CI.
+      Actual paired account results for all twenty jobs, including execution,
+      return, continue/stop and recovery. Production latency sample count remains
+      zero; no p50 or p95 exists. Common code and one-sided SaaS access are not parity.
+  - claim: The final current candidates have full validation and independent acceptance.
     what_would_verify: >
-      Run python3 scripts/agentos.py validate in an authorized isolated current
-      checkout and inspect concluded checks on the exact PR head. No full
-      repository validator or local host tests were run by this SaaS session.
+      Concluded checks on the exact current heads, python3 scripts/agentos.py
+      validate over the actual Macro candidate, current integration/source-law
+      compatibility and genuine non-author review. At the last observation,
+      Macro 43ea495ac9c46897743895b1f7e277e4d30a14c6 had fences SUCCESS and ci
+      QUEUED; Mastermind a54f7c67a4b0ef26a03019486102260c99926199 had CI IN_PROGRESS.
+      This handoff update itself requires fresh-head checks; do not inherit those
+      observations as its green result. Both review lists were empty.
+prs: [6877]
 decisions:
   - DEC:PERSONAL-PRO-NATIVE-WRITE-P0-REQUALIFICATION
 discoveries:
   - DSC:PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP
   - DSC:PERSONAL-PRO-INGRESS-PRINCIPAL-GAP
 unresolved:
-  - Current tunnel owner, source/mode, account association and canonical read-root mapping.
-  - Contradictory official OpenAI Pro read/write eligibility descriptions versus actual account behavior.
-  - C1 original Step-D effect and continuation authority.
-  - Existing S0-R1 fixture installed grant and subsequent final proof.
-  - Production write-route selection, B2/C2 acceptance and real worker-return loop.
-  - Unconsumed diagnostic delivery and absence of a qualified background watcher in this session.
+  - Current tunnel owner, source/mode, account association and canonical runtime-root mapping.
+  - Actual Personal-Pro MCP behavior despite contradictory official eligibility descriptions.
+  - C1 original Step-D effect and original RuntimeBinding recovery.
+  - Same S0-R1 fixture installed grant and final proof.
+  - Production write-route selection, B2/C2 acceptance and real worker-return workflow.
+  - Diagnostic delivery not consumed; no qualified native host/browser/wake tool exposed here.
+  - Current-head validation, independent review and protected acceptance for both source records.
 next_actions:
   - >
-    Fresh-read C0BSBM78V1N/1788605608.765019 and reconcile actual pickup/result
-    before any new delivery. If unconsumed, use only an existing qualified
-    attention/placement path for this same carrier; do not invent a new operation.
+    Fresh-read C0BSBM78V1N/1788605608.765019 after the latest accepted attention
+    edge 1788613553.374149 and consume any actual pickup/refusal/result before
+    another delivery. Preserve the same operation and root; do not repeat the DM
+    or broadcast merely because no new evidence exists.
   - >
-    Obtain the bounded native host/root receipt, then run the no-code Personal-Pro
-    canary on the owner-approved existing READONLY MCP and classify A/B/C/D.
+    Obtain the bounded native host/root receipt, then deliver a qualified finite
+    READONLY account canary using section 7.1 of Mastermind research at
+    a54f7c67a4b0ef26a03019486102260c99926199. Keep platform, backend and parity
+    results separate; do not create source adaptation before reuse is falsified.
   - >
-    Recover original C1 RuntimeBinding evidence without replay and resolve the
-    same S0 fixture's native grant through its existing secret-safe owner.
+    Obtain exact current-head checks and genuine independent review for Mastermind
+    PR 489 and Macro PR 6877. Repair only actual failures; do not cancel a live
+    baseline, relax validation, force-update, create replacement branches or
+    merge protected source merely to make behind_by zero.
   - >
-    Review Mastermind PR 489 and this Macro records PR on exact current heads,
-    validate the records, and correct MAS-48 projection without releasing B2/C2.
+    Recover original C1 effect evidence without replay and use the existing S0
+    native secret-owner path. Source-record review does not release either gate.
   - >
-    Use actual account and canonical-read results to freeze any protected
-    transport amendment before commissioning one bounded implementation vertical.
+    Use actual account and canonical-read proof to protect the required transport
+    ruling before one bounded implementation vertical. No production or parity
+    acceptance is implied by merging these records.
 do_not_redo:
-  - Do not build another Executive MCP backend; reuse the existing five-tool source first.
-  - Do not rebuild B1; MAS-108 records its merged implementation and C1 owns production proof.
-  - Do not create another C1 operation, replay Step D or reinterpret missing output as zero effect.
-  - Do not make BSC Auth0/Steward setup a prerequisite of the independent stdio Personal-Pro read test.
-  - Do not replace Agent OS, invent a program mapping, or overwrite WS-AGENT-OS's unrelated MAS-28 next action.
-  - Do not post a second read-census carrier or call Slack delivery a worker ACK.
+  - Do not build another Executive MCP backend; reuse the current five-tool source first.
+  - Do not rebuild B1; its implementation is merged and C1 owns production proof.
+  - Do not create another C1 operation, replay Step D or equate missing output with zero effect.
+  - Do not require BSC Auth0/Steward work before the independent stdio Personal-Pro read test.
+  - Do not create another workstream, program mapping, watcher or state store for this program.
+  - Do not repeat the completed initial MAS-48 projection correction without new evidence.
+  - Do not reapply the discovery falsifier repair; it is committed at 43ea495ac9c46897743895b1f7e277e4d30a14c6.
+  - Do not call seven one-sided SaaS observations FUNCTIONALLY_EQUIVALENT without paired proof.
+  - Do not duplicate the read-census root or treat an attention DM as receiver pickup.
 danger_areas:
-  - A ready tunnel can serve old fixture data rather than current production Executive state.
+  - A ready tunnel can serve an old fixture instead of current production state.
   - Gateway runtime_root defaults to repo_root; a fresh timestamp does not establish correct backend identity.
-  - Rich executive_state is not the diagnostic hot-state/admission contract.
-  - Personal write eligibility, server write capability and production authority are three separate facts.
-  - BSC app REST and protected-resource metadata are not an MCP JSON-RPC adapter.
-  - Current lack of SOL_STATE publication does not settle earlier host effects.
-  - Personal data controls and Project information clearance cannot inherit Business defaults by assumption.
+  - Rich executive_state is not the diagnostic admission hot-state contract.
+  - Account eligibility, server write capability and production authority are separate facts.
+  - A truly empty canonical runtime supplies no legitimate positive Job/intent test IDs.
+  - BSC REST and protected-resource metadata do not implement MCP JSON-RPC transport.
+  - No visible SOL_STATE publication does not settle earlier host effects.
+  - Personal information-clearance and data controls do not inherit Business defaults.
+  - A semantically plausible discovery can fail the runnable-provenance authoring contract.
+  - Old-head green checks and a metadata review request are not current-head independent acceptance.
 ---
 
 ## §0 State — what is true right now
 
-Personal-Pro-primary Mastermind operation remains **PARTIAL**. Native source and
-organizational reads and ordinary Slack handoff delivery were observed; no live
-Executive receipt, real Personal-Pro custom MCP result, production write or final
-parity was obtained. The detailed study is a **SPEC_ONLY** architecture/proof
-candidate in [Mastermind PR 489](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489),
-not a protected release or implemented capability.
+Personal-Pro-primary Mastermind operation remains **PARTIAL**. The existing
+source/organizational reads and ordinary Slack deliveries are real, but no live
+Executive receipt, actual Personal-Pro custom MCP canary, production modification
+or paired parity proof was obtained. Both source PRs remain records-only drafts;
+no implementation, host, credential, tunnel or runtime effect was performed.
 
-The study's source is
-`research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_CONVERGENCE_2026-09-05.md` at
-Mastermind `299a4880626080a6397200c44eb73a0afba3437c`. It contains the complete
-capability ledger, scoped PR census, Linear disagreements, conditional route
-freeze, no-rebuilds, bounded dependency plan, 20-row parity matrix, failure
-contract, measurement protocol and remaining native actions. Keep that full
-research in Mastermind; this handoff is its organizational pointer and delta.
+The detailed study lives in
+[Mastermind PR 489](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489),
+file `research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_CONVERGENCE_2026-09-05.md`, current
+review candidate `a54f7c67a4b0ef26a03019486102260c99926199`, blob
+`d1587e3ec446c9f9bf15596b7abb8e60db061d22`. That candidate withdraws seven premature
+comparative labels and makes the READONLY canary executable without inventing
+records in an empty canonical runtime. The full twenty-row matrix, architecture,
+failure contract and execution plan stay in that one research artifact.
+
+Macro PR 6877's initial validator failure was caused by this session's discovery
+falsifier, not infrastructure. The same-branch repair is
+`43ea495ac9c46897743895b1f7e277e4d30a14c6`; only the falsifier changed and the
+existing validator was not relaxed. This handoff update follows that repair.
+Current final-head CI and independent review still require direct verification.
 
 ## §1 What is LEFT — in order
 
-First inspect the single diagnostic carrier
-`C0BSBM78V1N/1788605608.765019` and addendum `1788606075.371379` for a real pickup
-or return. The target is the existing Secretary placement service, not an
-already-bound host worker. The requested result is a current, sanitized,
-read-only tunnel/source/runtime-root census. The assignment expressly forbids
-host/account changes, canary execution, C1 replay and a second control plane.
-No background watcher is claimed by this session: **WATCH_UNAVAILABLE**.
+First recover the actual result or explicit placement refusal on
+`C0BSBM78V1N/1788605608.765019`. The original addendum is
+`1788606075.371379`; the current same-root attention broadcast is
+`1788613553.374149`. One additional DM at
+`D0BTEAXBVMJ/1788613766.893199` is an attention pointer only and directs all work
+and returns to the original root. No new assignment or native wake is proven by
+that DM. The latest complete root read still had no receiver ACK or START.
 
-Use that receipt to qualify the existing readonly target and actual Personal
-account. Test the unchanged five-tool manifest before an adapter proposal. A
-successful rich read must separately prove canonical runtime-root fidelity; it
-does not remove the accepted hot-state write-preflight contract. Official
-OpenAI descriptions conflict on Pro modification eligibility, so a platform
-refusal must be distinguished from server `production_write_disabled`.
+The actual blocker is native target qualification and delivery consumption, not
+an unbuilt Executive backend. This session's connected surface provides GitHub,
+Slack, Linear and Plugin Management, but no direct Executive, authenticated
+Chairman-host browser, native Mac execution or exact-task wake tool. Relevant
+plugin-directory searches produced no qualified replacement. Plugin permission
+inspection is not an install/connect capability and must not be used as an
+installation probe. **WATCH_UNAVAILABLE**: no host-native Task/Automation or
+accepted exact-carrier waiter is exposed here; no background operation is claimed.
 
-C1 remains operation `autonomy-c1-native-production-proof-20260827-sol-001` on
-`C0BSBM78V1N/1787889177.672699`, with original Claude4 RuntimeBinding and
-`EFFECT_UNKNOWN / SAME_RUNTIME_RECONCILIATION_REQUIRED`. S0-R1 remains MAS-112's
-single final experiment after remediation of the same fixture app's installed
-grant and fresh verifier qualification. MAS-102/B2 and MAS-101/C2 stay held.
+After the existing owner returns a current host/root receipt, run the finite
+READONLY account canary in research section 7.1. Test state and inbox through the
+actual account. Read Job/intent only with already-observed canonical identifiers;
+otherwise record NOT_EXERCISED for those tests and keep their positive proof owed.
+This avoids both unsafe test-data creation and an all-four-tools prerequisite
+that could never resolve in an empty real runtime. It does not reduce final
+parity or authorize the modifying tool.
 
-The source study and these records require exact-head review and concluded
-records checks before merge. No runtime program row or strategic-state
-mutation was created. Linear may project the source findings, not override them.
+In parallel, finish exact-head source validation and genuine independent review
+on the two existing PRs. Do not reuse the old Mastermind green run as proof of the
+new research semantics. Do not turn an empty review list into self-approval.
+
+C1 remains `autonomy-c1-native-production-proof-20260827-sol-001` on
+`C0BSBM78V1N/1787889177.672699`, with original Claude4 RuntimeBinding and unknown
+Step-D effect. S0-R1 remains the same fixture grant/verifier/final-proof sequence.
+B2/C2 remain held. Neither source PR authorizes replay, host action or a successor
+runtime operation.
 
 ## §2 What will bite you
 
-The historical BSC host receipt at `C0BSBM78V1N/1788507455.090679` was stopped
-and only proves loopback/test-issuer reads. Its then-ready tunnel served an
-older fixture. The separate Business browser carrier
-`C0BSBM78V1N/1788507245.001099` remains dependency-held under its existing owner.
-Do not adopt either operation or touch open BSC PR 469 to accelerate this one.
+The September 4 BSC host carrier `C0BSBM78V1N/1788507455.090679` is terminal and
+proves only its exact loopback/test-issuer result. The then-ready tunnel served
+an older fixture. The Business browser carrier
+`C0BSBM78V1N/1788507245.001099` remains independently dependency-held. Do not adopt
+those operations or the BSC metadata branch to accelerate this one.
 
-The current absence of a published Slack state message is a product-path
-failure, not a host-effect receipt. A current parent Linear description is also
-not necessarily current evidence: MAS-48 still describes an earlier B1 stage,
-whereas MAS-108/MAS-109 carry later implementation and effect-unknown evidence.
+The initial MAS-48 projection mismatch was fixed; its old description is no
+longer an outstanding correction simply because an earlier research table says
+so. Old source/check/worker observations are dated evidence, not current truth.
+The initial lack of SOL_STATE publication still cannot prove zero Step-D effects.
 
-MCP read-mode refusal, platform tool blocking and authentication failure are
-different failure layers. Only a controlled mixed-manifest rejection justifies
-a four-read-tool projection. A new wrapper or another database is not a remedy
-for an unqualified runtime root or a missing account association.
+Current-session SaaS success is not paired Personal-versus-Business evidence.
+All twenty comparative rows are unaccepted until measured. Tool discovery,
+server refusal, account permissions, initialization, authentication, backend
+freshness and complete product behavior require separate interpretation.
+
+The discovery validator checks runnable/openable provenance in addition to
+schema. A long paragraph can fail if it contains only conceptual instructions;
+name the exact command or source path without weakening the validator.
 
 ## §3 What was decided and found
 
-`DSC:PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP` captures the newly verified
-readiness distinction. Existing
+The existing `DSC:PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP` retains its source
+finding and now has an executable falsifier. Existing
 `DEC:PERSONAL-PRO-NATIVE-WRITE-P0-REQUALIFICATION` and
-`DSC:PERSONAL-PRO-INGRESS-PRINCIPAL-GAP` remain scoped predecessors. No new DEC
-claims final transport selection before the real-account canary.
+`DSC:PERSONAL-PRO-INGRESS-PRINCIPAL-GAP` retain their scoped ownership. There is no
+new final transport DEC before real account evidence.
 
-The invariant proposal keeps Personal Pro as the primary CEO, existing MCP as
-the first read candidate, one selected authorized carrier into dedicated
-CeoIngress, Executive OS as lifecycle truth and Agent OS as organizational
-truth. Slack is a conditional modification transport, not a permanent plan
-limitation. Current protected write gates are not changed by a draft study.
+The proposal keeps Personal Pro primary, the existing MCP as first read
+candidate, one authorized selected modifying carrier into CeoIngress, Executive
+OS as lifecycle truth, and Agent OS as organizational truth. The new research
+correction changes evidence grading and test sequencing only; it does not retire
+protected hot-state law, relax C1/S0, or authorize a second backend.
 
 ## §4 Not in scope — do not adopt
 
-No production admission, provider execution, credentials, tunnel reconfiguration,
-public app exposure, runtime/queue/retry/session store, generic Operator access,
-new watcher or automatic cross-carrier retry. No BSC source takeover, no C1
-replacement, no S0-R2 and no claim of unattended supervision. The native SaaS
-records branch is not a Chairman-host worktree or a report of local tests.
+No production admission/provider execution, secret handling, tunnel or account
+reconfiguration, public app exposure, runtime/queue/retry/session store, generic
+Operator access, new watcher, source-writer takeover or automatic carrier failover.
+No C1 replacement, S0-R2, speculative account installation or claimed unattended
+supervision. No whole-Secretary shutdown or duplicate permanent inbox scanner.
+The native GitHub records branches are not Chairman-host worktrees.
