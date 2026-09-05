@@ -4464,6 +4464,28 @@ jobs:
             echo "::warning title=chronicle_governor::rc=$rc (chronicle events/state_log/rollups may be stale)"
           fi
           exit 0
+      - name: capability health & freshness projection (F13 V1 — display-only)
+        if: always()
+        # F13 V1: engine/capability_health.py is a PURE join over EXISTING receipts
+        # (output_health view, data/run_status.json nightly lanes) — no new
+        # observability store, no scheduler/retry/probe/failover logic. Same wiring
+        # SHAPE as the chronicle step immediately above (set +e; capture rc; a bare
+        # `::warning` on failure per the GitHub-annotation law — never a logger; always
+        # exit 0). Writes ONE artifact, data/capability_health/state.json, covered by
+        # 'git add data/ site/' in 'commit engine outputs' below — same as the other
+        # display-tier builders in this job (build_thematic_state, grade_thematic,
+        # build_entity_thesis_mechanism_registry, build_mechanism_pathways).
+        # Placed after chronicle (a receipt this module may join against later) and
+        # before the commit-publish timing mark; ordering is not load-bearing today —
+        # this module reads only already-committed/already-written receipts.
+        run: |
+          set +e
+          python -m scripts.build_capability_health > "$RUNNER_TEMP/capability_health.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/capability_health.log"
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=capability_health::rc=$rc (data/capability_health/state.json may be stale — last committed artifact stands)"
+          fi
+          exit 0
       - name: timings band — commit-publish (W2)
         run: python3 scripts/nightly_timings.py mark --band commit-publish || echo "::warning::timings band mark failed (non-fatal)"
       - name: commit chronicle artifacts

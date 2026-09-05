@@ -1,0 +1,127 @@
+# config/capability_health.yml — F13 V1 capability registry (declarative CONFIG, not a
+# store). Read by scripts/build_capability_health.py, resolved by
+# engine/capability_health.py.
+#
+# SEED COHORT LAW (frozen commission §1): every entry below names ONLY receipt sources
+# verified to exist in the code read while building this registry (2026-09-04) — no
+# receipt source here is invented. Two commission candidates were DROPPED rather than
+# guessed at:
+#   * "brain chat gateway" — no synapse artifact is produced by
+#     engine/neuralweb/brain_gateway.py (it is a live FastAPI service, not a nightly
+#     artifact producer), and no confirmed engine.llm_auth `lane` string for its model
+#     calls was found in the code read. Adding it would have required inventing either
+#     an artifact id or a provider_rung ref.
+#   * "research vault (quota state)" — the download-quota ledger
+#     (engine/research_vault/download_quota.py) is per-user runtime state under
+#     $MACRO_API_STATE_DIR, not a deterministic repo artifact; data/research_vault/ has
+#     no config/synapse.yml registration and no data/run_status.json source key.
+# Both are reported as GAPS in the F13 V1 build packet, not silently worked around.
+#
+# receipt_sources[].type is a CLOSED vocabulary enforced by
+# engine.capability_health.validate_registry / RECEIPT_TYPES:
+#   output_health_artifact — ref is a config/synapse.yml artifact id; the loader reads
+#                             it out of scripts.build_output_health's resolved view.
+#   nightly_lane            — ref is a data/run_status.json `sources.<ref>` key (or the
+#                             literal `__global__` for the top-level `last_run` heartbeat).
+#   provider_rung           — ref is the `lane` string engine/provider_health.py rows are
+#                             recorded under (engine.llm_auth.make_call(lane=...)).
+#   sentinel_probe          — ref is a scripts/freshness_sentinel.py SURFACES id, read
+#                             from the already-written site/live/staleness.json (this
+#                             builder makes no network calls of its own).
+#
+# clocks declared per receipt_sources[i] name which of last_attempted / last_successful /
+# data_as_of / render_release that specific source can supply; the loader only ever
+# writes the clocks it declares.
+
+capabilities:
+  - id: prophet_us
+    label_en: "Prophet — US Board"
+    owner: "prophet program"
+    artifacts:
+      - site/prophet/index.json
+    receipt_sources:
+      - type: output_health_artifact
+        ref: prophet-index
+        clocks: [data_as_of]
+      - type: nightly_lane
+        ref: __global__
+        # __global__ binds last_attempted only, deliberately not last_successful:
+        # scripts/collect.py writes data/run_status.json's top-level `last_run`
+        # unconditionally once the collect pass reaches that line, regardless of
+        # whether individual sources failed — it proves an ATTEMPT reached that point,
+        # never a verified success. Claiming last_successful from it would be exactly
+        # the "I looked and it was clean" overclaim this registry exists to refuse.
+        clocks: [last_attempted]
+    stale_after_hours: 30
+    next_action_hint: >-
+      Check the nightly-liveness.yml watchdog and site/prophet/index.json's own
+      source_asof; scripts/prophet_rescue.py is the sole auto-redispatcher.
+
+  - id: market_reference
+    label_en: "Market Reference Data Build"
+    owner: "data ingestion"
+    artifacts:
+      - data/run_status.json
+    receipt_sources:
+      - type: nightly_lane
+        ref: fred
+        clocks: [last_attempted, last_successful, data_as_of]
+      - type: nightly_lane
+        ref: yahoo
+        clocks: [last_attempted, last_successful, data_as_of]
+    stale_after_hours: 30
+    next_action_hint: >-
+      Check daily.yml's collect/engine job logs for the fred/yahoo sources in
+      data/run_status.json.
+
+  - id: stock_dossiers
+    label_en: "Stock Dossiers (R2 stockdata)"
+    owner: "long-hold / stockdata"
+    artifacts:
+      - site/stockdata/mag7_regime.json
+      - "site/stockdata/<TICKER>.json"
+    receipt_sources:
+      - type: output_health_artifact
+        ref: mag7-regime-site
+        clocks: [data_as_of]
+      - type: output_health_artifact
+        ref: stock-personality-block
+        clocks: [data_as_of]
+    stale_after_hours: 30
+    next_action_hint: >-
+      A could_not_look here on a checkout is expected — mag7-regime-site is
+      gitignored-local and stock-personality-block is an R2 per-ticker family path;
+      neither is probeable from a repo checkout. Verify on the live host or via publish_r2.
+
+  - id: foresight_desk
+    label_en: "Thematic Foresight Desk"
+    owner: "qualitative-intelligence"
+    artifacts:
+      - site/basketdata/foresight_cascade.json
+      - data/foresight/health_log.jsonl
+    receipt_sources:
+      - type: output_health_artifact
+        ref: site-foresight-cascade
+        clocks: [data_as_of]
+    stale_after_hours: 30
+    next_action_hint: >-
+      Check scripts/build_foresight.py and data/foresight/health_log.jsonl's most
+      recent row for which legs are DARK/PARTIAL.
+
+  - id: chronicle
+    label_en: "Market Context Chronicle"
+    owner: "chronicle / event spine"
+    artifacts:
+      - data/chronicle/manifest.json
+      - data/chronicle/state_log.jsonl
+    receipt_sources:
+      - type: output_health_artifact
+        ref: chronicle-manifest
+        clocks: [data_as_of]
+      - type: output_health_artifact
+        ref: chronicle-state-log
+        clocks: [data_as_of]
+    stale_after_hours: 30
+    next_action_hint: >-
+      Check daily.yml's "Chronicle — market context timeline spine" step and
+      scripts/build_chronicle.py's own stdout for rc != 0.
