@@ -309,3 +309,38 @@ silence as absence):
   interpolates `{exc}` into its reason. This repair removes the PR-files transport
   path from reaching it, and the canary test proves that path is clean, but other
   exception sources still flow through that older interpolation.
+
+### Second review pass — the TRUE post-merge invariant (2026-09-05)
+
+A narrow independent pass confirmed the `note_merged_commit` fix clean on all
+four load-bearing counts: every `files_of()` consumer (there are exactly three —
+`proof_bound_sha`, `_newer_tip_is_only_skip_ci`, and the `stale_for` window loop)
+treats `truncated=True` conservatively; a seeded truncated value cannot be
+demoted, because the `_truncated_pipeline_paths` flip is reachable only past a
+cache MISS while a seed returns from the cache branch above it; and an ordinary
+readable merge still records `truncated=False`, so nothing over-blocks.
+
+**It also refuted the rationale this session first wrote down, and the correction
+matters more than the fix.** The claim "if `pull_files` raises, nothing is seeded
+and a later `files_of` performs the real GET" is FALSE. `note_merged_commit` is
+the ONLY writer that inserts the squash into `self.commits`, and every consumer
+iterates `self.commits`. If it is never invoked the squash is **absent from the
+timeline**, not truncated within it — so nothing ever calls `files_of` on that
+sha and there is no later GET to be conservative.
+
+**The real invariant, which a future session must preserve:** post-merge
+bookkeeping must either be exception-proof, or the sweep must STOP. Today safety
+rests on two lines that are easy to edit apart without noticing:
+`pull_files` converts every non-`RateLimited` failure into `None`, and a
+`RateLimited` escaping `sweep_pull` hits `break` rather than `continue`, ending
+the sweep.
+
+**Latent, currently unreachable, do not "fix" casually:** if a future edit lets
+another exception type out of `pull_files`, or demotes that `break` to
+`continue`, the sweep continues with the accepted squash missing from
+`freshness.commits` entirely. That is STRICTLY WORSE than the empty-list defect
+this session repaired, because an absent commit is invisible to all three
+consumers rather than merely conservative in them. No code was added for it here:
+it is not reachable today, and defensive code around that call risks swallowing
+the `RateLimited` propagation the sweep depends on. It is recorded so the
+invariant is preserved deliberately rather than by luck.
