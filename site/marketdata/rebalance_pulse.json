@@ -1,22 +1,22 @@
 {
   "as_of": "2026-09-04",
-  "built_at": "2026-09-05T02:30:28Z",
+  "built_at": "2026-09-05T13:50:28Z",
   "latest_pulse": {
     "date": "2026-09-04",
     "class": "quiet",
-    "market_vol_ratio": 0.445,
-    "up_share": 0.443,
+    "market_vol_ratio": 0.934,
+    "up_share": 0.425,
     "basis": "updown",
     "n_megacap_rvol2": 0,
     "megacap_rvol": {
-      "TSLA": 1.35,
-      "AVGO": 0.91,
-      "NFLX": 0.81,
-      "NVDA": 0.8,
-      "ORCL": 0.74,
-      "AMD": 0.71,
-      "COST": 0.58,
-      "AAPL": 0.57
+      "TSLA": 1.94,
+      "AVGO": 1.7,
+      "UNH": 1.51,
+      "NFLX": 1.48,
+      "COST": 1.31,
+      "NVDA": 1.23,
+      "ORCL": 1.21,
+      "XOM": 1.18
     },
     "calendar": {
       "is_quarter_end": false,

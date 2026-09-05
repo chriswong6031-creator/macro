@@ -1,10 +1,10 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-09-03",
-  "generated_at": "2026-09-05T01:36:58.448572+00:00",
+  "as_of": "2026-09-04",
+  "generated_at": "2026-09-05T12:58:17.837810+00:00",
   "is_context_only": true,
-  "n_snapshots": 585,
-  "n_days": 20,
+  "n_snapshots": 614,
+  "n_days": 21,
   "horizons": {
     "5": {
       "n_matured": 476,
@@ -31,17 +31,17 @@
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 386,
+      "n_matured": 399,
       "by_stage": {
         "running": {
-          "n": 339,
-          "mean_fwd_rel": -0.0027,
-          "hit_rate": 0.487
+          "n": 351,
+          "mean_fwd_rel": -0.0035,
+          "hit_rate": 0.476
         },
         "coiling": {
-          "n": 21,
-          "mean_fwd_rel": -0.0082,
-          "hit_rate": 0.286
+          "n": 22,
+          "mean_fwd_rel": -0.0066,
+          "hit_rate": 0.318
         },
         "coiling_primed": {
           "n": 26,
@@ -49,8 +49,8 @@
           "hit_rate": 0.731
         }
       },
-      "running_ic": 0.0962,
-      "running_ic_t_hac": 2.369,
+      "running_ic": 0.0758,
+      "running_ic_t_hac": 2.353,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
@@ -59,7 +59,7 @@
       "by_stage": {
         "running": {
           "n": 209,
-          "mean_fwd_rel": -0.0019,
+          "mean_fwd_rel": -0.0014,
           "hit_rate": 0.531
         },
         "coiling": {
@@ -73,7 +73,7 @@
           "hit_rate": 0.7
         }
       },
-      "running_ic": -0.173,
+      "running_ic": -0.1745,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
@@ -99,7 +99,7 @@
     }
   },
   "lead_time_d": 10,
-  "peak_ic": 0.0962,
+  "peak_ic": 0.0758,
   "proven": {
     "5": false,
     "10": true,
@@ -120,18 +120,18 @@
     },
     {
       "date": "2026-08-13",
-      "id": "subsectors:electronic-components",
-      "name": "Electronic Components",
+      "id": "baskets:ai-infra",
+      "name": "AI Infrastructure",
       "stage": "running",
-      "fwd_rel": -0.1794,
+      "fwd_rel": -0.093,
       "horizon_d": 21
     },
     {
       "date": "2026-08-13",
-      "id": "baskets:ai-infra",
-      "name": "AI Infrastructure",
+      "id": "subsectors:electronic-components",
+      "name": "Electronic Components",
       "stage": "running",
-      "fwd_rel": -0.1136,
+      "fwd_rel": -0.0804,
       "horizon_d": 21
     },
     {

@@ -331,7 +331,7 @@
       <div><dt><span class="l-en">Calculation as-of</span><span class="l-zh">计算截止</span></dt>
            <dd><time>2026-09-30</time></dd></div>
       <div class="mq-nonclock"><dt><span class="l-en">Page built</span><span class="l-zh">页面生成</span></dt>
-           <dd><time>2026-09-05T01:36:17Z</time></dd></div>
+           <dd><time>2026-09-05T12:57:34Z</time></dd></div>
     </dl>
     <p class="mq-context-caveat"><span class="l-en">Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.</span><span class="l-zh">页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。</span></p>
   </div>
@@ -398,7 +398,7 @@
       <div class="mq-implication-badges">
         <span class="mq-chip mq-chip-evidence"><span class="l-en">Descriptive</span><span class="l-zh">描述性</span></span><span class="mq-chip"><span class="l-en">Horizon</span><span class="l-zh">时间跨度</span> · <span class="l-en">Current reading</span><span class="l-zh">当前读数</span></span><span class="mq-chip mq-chip-channel"><span class="l-en">Orders</span><span class="l-zh">Orders</span></span><span class="mq-chip mq-chip-channel"><span class="l-en">Production</span><span class="l-zh">Production</span></span><span class="mq-chip mq-chip-channel"><span class="l-en">Inventory</span><span class="l-zh">Inventory</span></span>
       </div>
-      <p class="mq-implication-text"><span class="l-en">Leading tier: 6-month momentum 0.7097366800869338, direction rising, breadth 100.0 (share of legs rising over the diffusion window, 0-100).</span><span class="l-zh">领先层：6个月动量 0.7097366800869338，方向 rising，广度 100.0（扩散窗口内上升分项占比，0-100）。</span></p>
+      <p class="mq-implication-text"><span class="l-en">Leading tier: 6-month momentum 0.7084035025522297, direction rising, breadth 100.0 (share of legs rising over the diffusion window, 0-100).</span><span class="l-zh">领先层：6个月动量 0.7084035025522297，方向 rising，广度 100.0（扩散窗口内上升分项占比，0-100）。</span></p>
       <p class="mq-implication-claim"><span class="l-en">States what the accepted data shows.</span><span class="l-zh">陈述已接受数据所显示的事实。</span></p>
       <details class="mq-confidence">
         <summary><span class="l-en">Confidence basis</span><span class="l-zh">置信度依据</span></summary>
@@ -530,21 +530,21 @@
       </tr>
       <tr>
         <th scope="row"><span class="l-en">Coincident tier momentum 6m</span><span class="l-zh">Coincident tier momentum 6m</span></th>
-        <td>-0.2177</td>
         <td>-0.216</td>
-        <td class="mq-delta mq-delta-up">+0.0016</td>
+        <td>-0.216</td>
+        <td class="mq-delta mq-delta-flat">0</td>
       </tr>
       <tr>
         <th scope="row"><span class="l-en">Lagging tier momentum 6m</span><span class="l-zh">Lagging tier momentum 6m</span></th>
-        <td>0.5854</td>
+        <td>None</td>
         <td>None</td>
         <td class="mq-delta mq-delta-flat">None</td>
       </tr>
       <tr>
         <th scope="row"><span class="l-en">Coincident lagging ratio momentum 6m</span><span class="l-zh">Coincident lagging ratio momentum 6m</span></th>
-        <td>-0.6817</td>
         <td>-0.5722</td>
-        <td class="mq-delta mq-delta-up">+0.1095</td>
+        <td>-0.5722</td>
+        <td class="mq-delta mq-delta-flat">0</td>
       </tr>
     </tbody>
   </table>
@@ -2119,14 +2119,14 @@
     <h3 id="mq-lineage-title"><span class="l-en">Correction and method lineage</span><span class="l-zh">更正与方法沿革</span></h3>
   </div>
   <dl class="mq-method-grid">
-    <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">Superseded</span><span class="l-zh">已被取代</span></dd></div>
+    <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">No correction recorded</span><span class="l-zh">无更正记录</span></dd></div>
     <div><dt><span class="l-en">Predecessor generation</span><span class="l-zh">前一代产物</span></dt>
-         <dd><code>business_activity-US-efb253dce41f6771</code></dd></div>
+         <dd><code>business_activity-US-3726ed67e1cd1c40</code></dd></div>
     <div><dt><span class="l-en">Changed fingerprints</span><span class="l-zh">已变更指纹</span></dt>
-         <dd>business_cycle:coincident_tier_index:20f9d561b3d00975, business_cycle:coincident_tier_momentum_6m:36c731906966a3a0, business_cycle:lagging_tier_diffusion:398189de017e65e7, business_cycle:lagging_tier_index:804eb82fefa2bce7, business_cycle:lagging_tier_momentum_6m:a5ba15aae07e6926</dd></div>
+         <dd><span class="mq-dash">—</span></dd></div>
     <div><dt><span class="l-en">Hysteresis</span><span class="l-zh">滞回</span></dt><dd>no dual-axis quadrant is computed for business_activity: the blueprinted new-demand/orders x production/utilization decomposition is not separable from the currently published engine.business_cycle tier composites (legs are blended within leading/coincident/lagging, never individually published); see metrics[*_tier_*] for the real available composite reads and implications[headline_unavailable] for the full disclosure</dd></div>
   </dl>
-  <p class="mq-lineage-note">Same reference period as the predecessor print, but one or more owner-native tier fields changed value: this print supersedes the prior one as a revision.</p>
+  <p class="mq-lineage-note">Same reference period as the predecessor print; no tracked tier field changed value (no-change republication).</p>
 </section>
     </section>
   </div>
@@ -2296,11 +2296,11 @@
       <dl class="mq-clocks">
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Artifact built</span><span class="l-zh">产物生成</span></span><span class="mq-clock-meaning"><span class="l-en">Producer generation time. Not an economic clock.</span><span class="l-zh">生产端生成时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-05T00:51:12Z</time></dd>
+          <dd><time>2026-09-05T12:05:54Z</time></dd>
         </div>
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Page built</span><span class="l-zh">页面生成</span></span><span class="mq-clock-meaning"><span class="l-en">Static page render time. Not an economic clock.</span><span class="l-zh">静态页面渲染时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-05T01:36:17Z</time></dd>
+          <dd><time>2026-09-05T12:57:34Z</time></dd>
         </div>
       </dl>
     </section>
@@ -2310,11 +2310,11 @@
       <dl class="mq-method-grid">
         <div><dt><span class="l-en">Artifact path</span><span class="l-zh">产物路径</span></dt><dd><code>macrodata/workspaces/business_activity/US/latest.json</code></dd></div>
         <div><dt><span class="l-en">Manifest path</span><span class="l-zh">清单路径</span></dt><dd><code>macrodata/workspaces/manifest.json</code></dd></div>
-        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">3726ed67e1cd1c4024e1a5033f4106a333f3a857473d55ba32dadcde84b3901e</code></dd></div>
-        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>61884</dd></div>
-        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>business_activity-US-3726ed67e1cd1c40</code></dd></div>
+        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">d3adeed80af8f142bfaf64904dfa8b2f50cd84dada1a47e72fd5dc112557c9ae</code></dd></div>
+        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>61489</dd></div>
+        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>business_activity-US-d3adeed80af8f142</code></dd></div>
         <div><dt><span class="l-en">Producer</span><span class="l-zh">生产者</span></dt><dd><code>engine.market_os.macro_workspaces.business_activity</code></dd></div>
-        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>42e9bb9308978d033f9e4bf986d7eb21e486feac</code></dd></div>
+        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>cf2d84392d55d3894cea08b10c4acc0d4d347266</code></dd></div>
         <div><dt><span class="l-en">Client contract</span><span class="l-zh">客户端契约</span></dt><dd><code>mastermind.macro_workspace_snapshot.v1@1.0.0</code></dd></div>
       </dl>
       <p class="mq-lineage-note"><span class="l-en">The page validated this artifact against the closed schema and recomputed its content hash before rendering. A mismatch renders a refusal page instead of a state.</span><span class="l-zh">本页在渲染前已按封闭 schema 校验该产物并重新计算其内容哈希。若不匹配，将呈现拒绝页面而非任何状态读数。</span></p>

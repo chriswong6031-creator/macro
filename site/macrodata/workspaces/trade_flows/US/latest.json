@@ -203,7 +203,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": null,
-    "prior_generation_id": "trade_flows-US-81b6bc6d3bd103f3",
+    "prior_generation_id": "trade_flows-US-bf73c3af7e262334",
     "prior_method_version": "trade_flows.compose.v1",
     "status": "PRESENT"
   },
@@ -211,7 +211,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "trade_flows-US-81b6bc6d3bd103f3"
+    "predecessor_generation_id": "trade_flows-US-bf73c3af7e262334"
   },
   "drivers": {
     "balance_sheet": [
@@ -346,11 +346,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-05T12:05:54Z",
     "calculation_as_of": null,
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "bf73c3af7e2623347867b1291e4a4e7b92bd1d7b3db395d1fb67b002af879a31",
-    "generation_id": "trade_flows-US-bf73c3af7e262334",
+    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
+    "content_sha256": "1b3e1de4f2c60bbdb3120d337e471d5db04382b468ba1d6089ff3d198f65207e",
+    "generation_id": "trade_flows-US-1b3e1de4f2c60bbd",
     "producer": "engine.market_os.macro_workspaces.trade_flows",
     "rendered_at": null
   },

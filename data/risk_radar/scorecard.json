@@ -1,12 +1,12 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-09-05T02:44:32+00:00",
+  "generated_at": "2026-09-05T14:08:12+00:00",
   "markets": {
     "us": {
       "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 16,
         "backlog_cutoff_bd": 28,
@@ -63,7 +63,7 @@
       "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 10,
         "backlog_cutoff_bd": 28,
@@ -134,7 +134,7 @@
       "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 11,
         "backlog_cutoff_bd": 28,
@@ -205,7 +205,7 @@
       "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 16,
         "backlog_cutoff_bd": 28,
@@ -259,12 +259,12 @@
       }
     },
     "kr": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-03",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 15,
+        "awaiting_maturity": 16,
         "backlog_cutoff_bd": 28,
         "graded_n": 8
       },
@@ -316,12 +316,12 @@
       }
     },
     "jp": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-03",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 15,
+        "awaiting_maturity": 16,
         "backlog_cutoff_bd": 28,
         "graded_n": 6
       },
@@ -387,12 +387,12 @@
       }
     },
     "tw": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-03",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 13,
+        "awaiting_maturity": 14,
         "backlog_cutoff_bd": 28,
         "graded_n": 9
       },
@@ -482,14 +482,14 @@
       }
     },
     "in": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 2,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 12,
         "backlog_cutoff_bd": 28,
-        "graded_n": 9
+        "graded_n": 10
       },
       "windows": {
         "full": {
@@ -506,9 +506,9 @@
             "precursor_rate": 0.0
           },
           "calm": {
-            "n": 2,
+            "n": 3,
             "dd_missed": 0,
-            "quiet": 2,
+            "quiet": 3,
             "quiet_rate": null
           },
           "by_scare": {
@@ -535,9 +535,9 @@
             "precursor_rate": 0.0
           },
           "calm": {
-            "n": 2,
+            "n": 3,
             "dd_missed": 0,
-            "quiet": 2,
+            "quiet": 3,
             "quiet_rate": null
           },
           "by_scare": {
@@ -553,12 +553,12 @@
       }
     },
     "au": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-03",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 15,
+        "awaiting_maturity": 16,
         "backlog_cutoff_bd": 28,
         "graded_n": 9
       },
@@ -610,12 +610,12 @@
       }
     },
     "gb": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 2,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
-        "awaiting_maturity": 13,
+        "awaiting_maturity": 14,
         "backlog_cutoff_bd": 28,
         "graded_n": 10
       },
@@ -667,14 +667,14 @@
       }
     },
     "ez": {
-      "asof_last_row": "2026-09-02",
+      "asof_last_row": "2026-09-04",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 2,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 0,
         "awaiting_maturity": 13,
         "backlog_cutoff_bd": 28,
-        "graded_n": 10
+        "graded_n": 11
       },
       "windows": {
         "full": {
@@ -691,9 +691,9 @@
             "precursor_rate": 0.0
           },
           "calm": {
-            "n": 0,
+            "n": 1,
             "dd_missed": 0,
-            "quiet": 0,
+            "quiet": 1,
             "quiet_rate": null
           },
           "by_scare": {},
@@ -713,9 +713,9 @@
             "precursor_rate": 0.0
           },
           "calm": {
-            "n": 0,
+            "n": 1,
             "dd_missed": 0,
-            "quiet": 0,
+            "quiet": 1,
             "quiet_rate": null
           },
           "by_scare": {},

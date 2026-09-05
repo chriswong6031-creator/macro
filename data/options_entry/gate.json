@@ -1,6 +1,6 @@
 {
  "schema": "options_entry.gate.v3",
- "generated_at": "2026-09-05 03:01 UTC",
+ "generated_at": "2026-09-05 14:25 UTC",
  "scored": false,
  "status": "building_history",
  "weight": 0.0,
@@ -1124,9 +1124,9 @@
   "S-WALL": {
    "n_eligible": 414,
    "n_priced": 414,
-   "wall_touches": 220,
-   "fixed_stop_touches": 190,
-   "wall_before_fixed": 195,
+   "wall_touches": 221,
+   "fixed_stop_touches": 191,
+   "wall_before_fixed": 196,
    "price_store_available": true,
    "limitation": "close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3."
   },
@@ -1735,7 +1735,7 @@
   "S-DOI: building history (fires=123/39 dates=16/14 overlap_dates=13; need 30 fires, 30 dates, 30 overlapping dates/bucket)",
   "S-VOI: building history (fires=219/93 dates=30/24 overlap_dates=24; need 30 fires, 30 dates, 30 overlapping dates/bucket)",
   "S-VOI-fast (5d): fires=219/93 dates=30/24 overlap_dates=24 \u2192 descriptive_status=building_history",
-  "S-WALL: 414/414 eligible fires priced (price_store_available=True); wall_touches=220, fixed\u22125%_touches=190, wall_before_fixed=195. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
+  "S-WALL: 414/414 eligible fires priced (price_store_available=True); wall_touches=221, fixed\u22125%_touches=191, wall_before_fixed=196. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
   "S-IVSPREAD-F: building history (fires=180/169 dates=30/29 overlap_dates=29; need 30 fires, 30 dates, 30 overlapping dates/bucket)",
   "S-SKEW_DECEL: building history (fires=40/308 dates=22/29 overlap_dates=21; need 30 fires, 30 dates, 30 overlapping dates/bucket)",
   "S-TOP_RISK: building history (fires=234/114 dates=29/30 overlap_dates=29; need 30 fires, 30 dates, 30 overlapping dates/bucket) \u2014 CAUTION-ONLY (RO-3): beneficial direction = flagged fires show WORSE outcomes (correctly identifies bad entries). NEVER initiates a negative position.",

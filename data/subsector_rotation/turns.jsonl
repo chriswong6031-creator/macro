@@ -113,3 +113,4 @@
 {"date":"2026-09-04","key":"cybersecuritythreatops","name":"ThreatOps","theme":"Cybersecurity","state":"turn_down","since":"2026-08-20","score":0.746,"n_members":6,"breadth":1.0,"dd_from_peak":-8.5,"up_from_trough":76.1}
 {"date":"2026-09-04","key":"cybersecurityappsecurity","name":"App Security","theme":"Cybersecurity","state":"turn_down","since":"2026-08-20","score":0.72,"n_members":8,"breadth":0.875,"dd_from_peak":-7.48,"up_from_trough":62.47}
 {"date":"2026-09-04","key":"varealityenterprise","name":"Enterprise","theme":"Virtual & Augmented Reality","state":"turn_down","since":"2026-09-04","score":0.71,"n_members":8,"breadth":0.857,"dd_from_peak":-12.04,"up_from_trough":15.2}
+{"date":"2026-09-04","key":"evscharging","name":"Charging","theme":"Electric Vehicles","state":"turn_up","since":"2026-09-04","score":0.801,"n_members":8,"breadth":0.75,"dd_from_peak":-15.09,"up_from_trough":13.52}

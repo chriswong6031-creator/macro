@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-09-03",
+  "asof": "2026-09-04",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -29,12 +29,12 @@
     "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-09-03"
+    "asof": "2026-09-04"
   },
   "treasury": {
-    "tga_bn": 944.364,
-    "tga_chg_20d_bn": 15.039,
-    "net_issuance_20d_bn": 321.551,
+    "tga_bn": 903.928,
+    "tga_chg_20d_bn": -57.798,
+    "net_issuance_20d_bn": 276.519,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
@@ -47,18 +47,18 @@
       "summary_en": "No TGA impulse detected.",
       "summary_zh": "未检测到TGA冲量。"
     },
-    "asof": "2026-09-02"
+    "asof": "2026-09-03"
   },
   "rrp": {
-    "rrp_bn": 0.702,
-    "rrp_chg_20d_bn": -0.727,
+    "rrp_bn": 0.675,
+    "rrp_chg_20d_bn": -0.775,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5792.138,
-    "netliq_chg_20d_bn": 6.726,
-    "netliq_chg_65d_bn": -71.573,
-    "netliq_pctile_expanding": 0.770522,
+    "netliq_bn": 5832.601,
+    "netliq_chg_20d_bn": 39.597,
+    "netliq_chg_65d_bn": -33.251,
+    "netliq_pctile_expanding": 0.779602,
     "overlay": "neutral"
   },
   "quality": {
@@ -82,9 +82,9 @@
     "sofr_minus_iorb_bp": 1.0,
     "sofr_minus_iorb_d20_bp": 1.0,
     "sofr_minus_iorb_pctile": 0.9348,
-    "sofr_99pctl_minus_iorb_bp": 8.0,
-    "sofr_99pctl_minus_iorb_d20_bp": 0.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.8513,
+    "sofr_99pctl_minus_iorb_bp": 9.0,
+    "sofr_99pctl_minus_iorb_d20_bp": 1.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8821,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
@@ -95,25 +95,21 @@
       "level_bn": 6737.2,
       "d20_bn": -11.4,
       "d65_bn": 25.7,
-      "pctile": 0.7679
+      "pctile": 0.768
     },
     "rrp": {
       "level_bn": 0.7,
-      "d20_bn": -0.7,
-      "d65_bn": -1.4,
-      "pctile": 0.1657
+      "d20_bn": -0.8,
+      "d65_bn": -0.4,
+      "pctile": 0.1645
     },
     "tga": {
-      "level_bn": 944.4,
-      "d20_bn": -17.4,
-      "d65_bn": 98.6,
-      "pctile": 0.9417
+      "level_bn": 903.9,
+      "d20_bn": -50.2,
+      "d65_bn": 59.4,
+      "pctile": 0.9281
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-06-05",
-        "v": 5885.2
-      },
       {
         "d": "2026-06-08",
         "v": 5865.4
@@ -364,7 +360,11 @@
       },
       {
         "d": "2026-09-03",
-        "v": 5792.1
+        "v": 5832.6
+      },
+      {
+        "d": "2026-09-04",
+        "v": 5832.6
       }
     ],
     "reserves": {
@@ -394,7 +394,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-09-05T03:13:18Z",
-  "inputs_hash": "sha256:b280524ba686b295aa7c99585bfc0618b94a239a21b848940cb8f188a3457686",
+  "produced_at": "2026-09-05T14:36:54Z",
+  "inputs_hash": "sha256:a0947d65fb6ae57c8b75dec5e25831fae6bfa7c3bb03eec35c86e85452fe5997",
   "tier": "shadow"
 }
