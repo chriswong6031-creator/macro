@@ -44,12 +44,15 @@ verified:
       Thirty-one files published; additional raw logs remain local. Worker reports
       v1 cells461 passes each and v2 cell455 passes/6 failures; all full safety
       contracts FAIL. Sol did not independently replay or rehash the entire matrix.
-  - claim: R3 review placement has a bounded independence-versus-compute remedy.
-    command: Read C0BSBM78V1N/1788585336.519589 and Sol ruling1788593112.611679; PR448 comment5550304925.
+  - claim: R3 review preserves independent judgment and full testing without an accidental old-chat dependency.
+    command: Read C0BSBM78V1N/1788585336.519589, ruling1788593112.611679 and superseding ruling1788596843.300119; PR448 comments5550304925 and5550612836.
     result: >
-      Independent Y7 reviewer may choose tests/evaluate/author one verdict while
-      a deterministic executor supplies attributable results. Actual reviewer
-      ACK/START is not established by the ruling; complete original suites remain required.
+      An independent reviewer chooses probes, evaluates attributable results and
+      alone authors the verdict; a bounded deterministic executor may supply tests.
+      The review remains CAPACITY_SELECTABLE before START. The old Y7 conversation
+      and its unrelated RCH2 STOP consumption are not R3 prerequisites. A fresh
+      idle eligible receiver still requires proven placement, independence and
+      no prior effect uncertainty. Actual ACK/START and complete test proof remain owed.
   - claim: The research output defect has one canonical repair packet and corrected SDK contract.
     command: Create/read Mastermind487; read exact carrier1788593637.332099 and correction5550336685.
     result: >
@@ -111,10 +114,16 @@ existing compatibility owner remains the only SDK bridge.
 
 Exact live lookup targets (not runtime/liveness assertions):
 - R3 source: C0BSBM78V1N/1788497726.398429, task01a06ac9-0e91-7063-b470-f4f6ea4047db.
-- R3 review: C0BSBM78V1N/1788585336.519589; Y7 target6a97a2b3-f470-83ea-a8bf-636b2fb2b8a3 after its prior reviewer STOP consumption.
+- R3 review: C0BSBM78V1N/1788585336.519589; CAPACITY_SELECTABLE under1788596843.300119, not bound to the previous RCH2 conversation.
 - JSON repair: C0BSBM78V1N/1788593637.332099, Mastermind487.
 - Company bridge: C0BSBM78V1N/1788519240.998129, Mastermind466.
 - Records: Macro6700, original sol/sol-capability-fabric-agentos-closeout-20260830 branch.
+
+The later pre-START ruling1788596843.300119 supersedes only the old-conversation
+restriction introduced in1788593112.611679. RCH2 remains terminal and keeps its
+own cleanup obligation; no R3 independence, source test, currentness, effect or
+one-review limit is waived. If a prior R3 input/create/START effect is discovered,
+reconcile that exact receiver rather than treating capacity selection as failover.
 
 Capability is PARTIAL. This records update makes no provider call, installed
 change, Executive admission, RuntimeBinding, Wake, trade or production claim.
