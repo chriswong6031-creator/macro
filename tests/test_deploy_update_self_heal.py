@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+import urllib.parse
 from collections import deque
 from pathlib import Path
 
@@ -11,6 +12,55 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = ROOT / "app" / "deploy" / "update.sh"
 SCRIPT = SCRIPT_PATH.read_text(encoding="utf-8")
+
+
+def test_full_site_builder_guards_help_as_an_additive_public_page() -> None:
+    """The deployment lane already owns build_site.py's builder closure."""
+    tree = ast.parse((ROOT / "scripts" / "build_site.py").read_text(encoding="utf-8"))
+
+    guarded_calls = [
+        call
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Try)
+        for statement in node.body
+        for call in ast.walk(statement)
+        if isinstance(call, ast.Call)
+        and isinstance(call.func, ast.Name)
+        and call.func.id == "build_help_page"
+    ]
+
+    assert len(guarded_calls) == 1
+
+
+def test_deployed_regwall_keeps_help_public() -> None:
+    """Execute the regwall's public-path policy without its FastAPI runtime."""
+    source = ROOT / "app" / "regwall.py"
+    tree = ast.parse(source.read_text(encoding="utf-8"))
+    contract_nodes: list[ast.stmt] = []
+    assignment_counts = {"PUBLIC_PATHS": 0, "PUBLIC_PREFIXES": 0}
+
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            names = {
+                target.id for target in node.targets if isinstance(target, ast.Name)
+            }
+            for name in assignment_counts.keys() & names:
+                assignment_counts[name] += 1
+                contract_nodes.append(node)
+        elif isinstance(node, ast.FunctionDef) and node.name == "_is_public":
+            contract_nodes.append(node)
+
+    assert assignment_counts == {"PUBLIC_PATHS": 1, "PUBLIC_PREFIXES": 1}
+    assert sum(
+        isinstance(node, ast.FunctionDef) and node.name == "_is_public"
+        for node in contract_nodes
+    ) == 1
+
+    namespace = {"urllib": urllib}
+    exec(compile(ast.Module(contract_nodes, []), source, "exec"), namespace)
+
+    assert "/help.html" in namespace["PUBLIC_PATHS"]
+    assert namespace["_is_public"]("/help.html") is True
 
 
 def test_update_script_has_valid_shell_syntax():

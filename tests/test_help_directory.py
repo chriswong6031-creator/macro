@@ -1,7 +1,6 @@
 """Public /help directory integration and truth-boundary guards."""
 from __future__ import annotations
 
-import ast
 import re
 from dataclasses import replace
 from pathlib import Path
@@ -66,11 +65,9 @@ def test_help_directory_renders_only_the_frozen_owner_targets(tmp_path: Path) ->
 
 def test_help_route_is_registered_as_public_and_extensionless() -> None:
     policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
-    regwall = (ROOT / "app" / "regwall.py").read_text()
     caddy = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
 
     assert "/help.html" in policy["public"]["exact"]
-    assert '"/help.html"' in regwall
     assert "redir /help /help.html 301" in caddy
     assert caddy.count("/help.html") >= 5
 
@@ -132,23 +129,6 @@ def test_public_builder_defers_help_failure_until_other_public_pages_land(
     assert not (tmp_path / "help.html").exists()
     for name in ("plans.html", "support.html", "unsubscribe.html"):
         assert (tmp_path / name).is_file(), name
-
-
-def test_full_site_builder_guards_help_as_an_additive_public_page() -> None:
-    tree = ast.parse((ROOT / "scripts" / "build_site.py").read_text(encoding="utf-8"))
-
-    guarded_calls = [
-        call
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Try)
-        for statement in node.body
-        for call in ast.walk(statement)
-        if isinstance(call, ast.Call)
-        and isinstance(call.func, ast.Name)
-        and call.func.id == "build_help_page"
-    ]
-
-    assert len(guarded_calls) == 1
 
 
 def test_help_is_discoverable_in_shared_public_nav() -> None:
