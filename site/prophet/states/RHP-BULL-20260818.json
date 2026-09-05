@@ -10,21 +10,21 @@
   "recommended_action": "trim",
   "human_state": "Deep Giveback \u2014 Reassess",
   "components": {
-    "validity": 0.3,
+    "validity": 15.7,
     "progress": 32.8,
     "pace": 51.1,
     "retention": 0.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.041,
+    "dist_to_stop_r": 0.254,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 37.8,
-    "p1": -0.6396,
-    "p2": -0.3198,
+    "p1": -0.4973,
+    "p2": -0.2486,
     "p3": null,
-    "move_r": -0.959,
+    "move_r": -0.746,
     "mfe_r": 1.899,
     "mae_r": -0.959
   },

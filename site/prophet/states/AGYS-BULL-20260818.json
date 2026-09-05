@@ -4,29 +4,29 @@
   "asof": "2026-09-04",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 50.7,
-  "raw_confidence": 47.7,
-  "delta_vs_base": -9.3,
+  "management_confidence": 49.1,
+  "raw_confidence": 47.0,
+  "delta_vs_base": -10.9,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 92.4,
+    "validity": 91.1,
     "progress": 0.0,
     "pace": 41.0,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.943,
+    "dist_to_stop_r": 0.933,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 35.6,
-    "p1": -0.0377,
-    "p2": -0.0189,
+    "p1": -0.0443,
+    "p2": -0.0222,
     "p3": null,
-    "move_r": -0.057,
+    "move_r": -0.067,
     "mfe_r": 0.067,
-    "mae_r": -0.059
+    "mae_r": -0.067
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,7 +40,7 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 3.799999999999997,
-  "_mae": -3.320002746582034,
+  "_mae": -3.7500030517578153,
   "_max_p1": 0.04493319143904454,
   "_first_trigger_ts": "2026-08-27",
   "_first_t1_ts": null,
