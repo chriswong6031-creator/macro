@@ -1028,6 +1028,7 @@ def test_stock_dashboard_first_frame_contract_is_executed_by_pr_code_gate() -> N
     data_suite = "tests/test_stock_dashboard_first_frame_data.py"
 
     assert code_job["gate"] == "code"
+    assert code_job["scope"] == "exclusive"
     required_paths = {
         "templates/hk.html.j2",
         "templates/canada.html.j2",
@@ -3635,6 +3636,16 @@ CURATED_EXCLUSIVE = {
     # hook guard moved to tests/test_render_builder_ownership.py so this
     # job's closure stays the page family rather than the whole site builder.
     "market-os-macro-suite-pages",
+    # 2026-09-05 (P0B current-head repair): the first-frame suite executes its
+    # frozen Jinja/browser recipes through subprocess boundaries. Inference
+    # therefore conservatively added scripts/**, site/**, and templates/**,
+    # making this four-second gate a fallback selector for unrelated index and
+    # free-content edits. The suite no longer imports the broad Canada/HK test
+    # helpers; its measured 30-file closure is now declared exactly (including
+    # the two moving-data path *labels* the recipe validates but never opens).
+    # Exclusivity drops only those three opaque fallback roots while retaining
+    # every executable, template, fixture, receipt, and helper input it owns.
+    "stock-dashboard-first-frame",
 }
 
 

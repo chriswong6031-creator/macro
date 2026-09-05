@@ -2436,6 +2436,7 @@ jobs:
   stock-dashboard-first-frame:
     if: ${{ false }}
     gate: code
+    scope: exclusive
     # P0B repair: engine-render-guards is a nightly gate:data lane and therefore
     # cannot prove the hermetic zero-FOUC contract before a PR merges. Keep the
     # generated-page population receipt there, while this small source-only job
@@ -2445,6 +2446,13 @@ jobs:
       - "templates/canada.html.j2"
       - "templates/stock-dashboard.css"
       - "templates/dashboard-icons.js"
+      - "engine/__init__.py"
+      - "engine/i18n.py"
+      # Selector-visible provenance labels only: the frozen recipe validates
+      # these path names but never opens the moving bytes. Current-source
+      # identity truth remains in the separate gate:data suite below.
+      - "site/factordata/canada_standouts.json"
+      - "site/factordata/hk_standouts.json"
       - "site/hk-stock-v36.js"
       - "site/canada-stock-v36.js"
       - "site/stock-dashboard.css"

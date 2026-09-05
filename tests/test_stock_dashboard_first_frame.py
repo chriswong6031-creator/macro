@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 from bs4 import BeautifulSoup
+from jinja2 import Environment
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -318,15 +319,24 @@ _MISSING = object()
 
 
 def _render_canada_owner_fixture(setups: object = _MISSING) -> BeautifulSoup:
-    """Render the actual Canada template through the production Jinja globals."""
-    from tests.test_canada_build import _env, _vm
+    """Render Canada from the bounded frozen-fixture context used by P0B."""
+    from engine import i18n
+    from scripts.render_stock_dashboard_fixture import (
+        TEMPLATES,
+        TrackingLoader,
+        canada_context,
+        load_owner_fixture,
+    )
 
-    vm = _vm()
+    frozen_setups, _owner_path = load_owner_fixture("ca")
+    vm = canada_context(frozen_setups)
     if setups is _MISSING:
         vm.pop("setups")
     else:
         vm["setups"] = setups
-    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    env = Environment(loader=TrackingLoader(TEMPLATES), autoescape=False)
+    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    html = env.get_template("canada.html.j2").render(**vm)
     return BeautifulSoup(html, "html.parser")
 
 
@@ -350,9 +360,10 @@ def test_canada_static_first_frame_counts_both_proven_owner_lists() -> None:
 
 def test_canada_static_first_frame_preserves_explicit_empty_owner_lists() -> None:
     """An explicit empty list is the only shape allowed to prove owner zero."""
-    from tests.test_canada_build import _vm
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
 
-    setups = {**_vm()["setups"], "buy": [], "watch": []}
+    setups, _owner_path = load_owner_fixture("ca")
+    setups = {**setups, "buy": [], "watch": []}
     soup = _render_canada_owner_fixture(setups)
     result = soup.find(id="ca-v36-result")
     grid = soup.find(id="ca-v36-card-grid")
@@ -410,10 +421,18 @@ def test_canada_static_first_frame_rejects_duplicate_owner_identities(
 
 
 def _render_hk_owner_fixture(setups: object) -> BeautifulSoup:
-    """Render the actual HK template with a controlled priority owner artifact."""
-    from tests.test_hk_board_ui import _render
+    """Render HK from the bounded frozen-fixture context used by P0B."""
+    from engine import i18n
+    from scripts.render_stock_dashboard_fixture import (
+        TEMPLATES,
+        TrackingLoader,
+        hk_context,
+    )
 
-    return BeautifulSoup(_render(setups), "html.parser")
+    env = Environment(loader=TrackingLoader(TEMPLATES), autoescape=False)
+    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    html = env.get_template("hk.html.j2").render(**hk_context(setups))
+    return BeautifulSoup(html, "html.parser")
 
 
 def test_hk_owner_marker_binds_disjoint_identity_proven_populations() -> None:
@@ -498,9 +517,10 @@ def test_canada_static_first_frame_never_coerces_malformed_owner_to_zero(
     owner: str, value: object
 ) -> None:
     """Missing/null/string/mapping owners render unavailable without exceptions."""
-    from tests.test_canada_build import _vm
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
 
-    setups = dict(_vm()["setups"])
+    setups, _owner_path = load_owner_fixture("ca")
+    setups = dict(setups)
     if value is _MISSING:
         setups.pop(owner)
     else:

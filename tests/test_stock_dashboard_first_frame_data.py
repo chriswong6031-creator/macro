@@ -82,29 +82,31 @@ def test_hk_generated_page_preserves_complete_candidate_action_population() -> N
     watch_owner = _lane_tickers(owner, "watch")
     buy_rows = owner["buy"]
     assert isinstance(buy_rows, list)
+    buy_stage_counts = Counter(str(row.get("stage")) for row in buy_rows)
+    stage_counts = {
+        "live": buy_stage_counts["live"],
+        "setting_up": buy_stage_counts["setting_up"] + len(ripening),
+        "ran": buy_stage_counts["ran"] + len(ran),
+        "basing": buy_stage_counts["basing"],
+        "blocked": buy_stage_counts["blocked"] + len(vetoed),
+    }
     expected_counts = {
         "all": len(buy) + len(ripening) + len(ran) + len(vetoed),
-        "live": sum(row.get("stage") == "live" for row in buy_rows),
-        "setting_up": (
-            sum(row.get("stage") == "setting_up" for row in buy_rows)
-            + len(ripening)
-        ),
-        "ran": len(ran),
-        "blocked": len(vetoed),
+        **{stage: count for stage, count in stage_counts.items() if count},
     }
     assert counts == expected_counts
     assert counts["all"] == sum(
-        counts[key] for key in ("live", "setting_up", "ran", "blocked")
+        count for stage, count in counts.items() if stage != "all"
     )
 
-    live_and_setting_cards = soup.select("#standouts .pvcard[href]")
+    buy_cards = soup.select("#standouts .pvcard[href]")
     setting_rows = soup.select("#standouts .rip-card[href]")
     ran_rows = soup.select("#standouts .pbr[data-stage='ran'] a[href]")
     blocked_rows = soup.select("#standouts .pbv[data-stage='blocked'] a[href]")
-    assert Counter(card.get("data-stage") for card in live_and_setting_cards) == Counter(
+    assert Counter(card.get("data-stage") for card in buy_cards) == Counter(
         str(row.get("stage")) for row in buy_rows
     )
-    assert tuple(map(len, (live_and_setting_cards, setting_rows, ran_rows, blocked_rows))) == (
+    assert tuple(map(len, (buy_cards, setting_rows, ran_rows, blocked_rows))) == (
         len(buy),
         len(ripening),
         len(ran),
@@ -112,7 +114,7 @@ def test_hk_generated_page_preserves_complete_candidate_action_population() -> N
     )
 
     stage = _href_tickers(
-        live_and_setting_cards + setting_rows + ran_rows + blocked_rows
+        buy_cards + setting_rows + ran_rows + blocked_rows
     )
     watch = _href_tickers(soup.select("#standouts .watch-strip .watch-grid a[href]"))
     expected_stage = buy + ripening + ran + vetoed

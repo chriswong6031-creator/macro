@@ -76,7 +76,7 @@
     "site/stocktable.js": "56f6f93366f2e21024b4cd5c971766a7c9506aea49c21b37b428674b8f086819",
     "site/tablesort.js": "484d93337c0288b95b920d82d893600c97d7e4313c715d6bd9263222c9e4cc78",
     "site/theme.css": "f41f9a211e2a7404150a58eb015c9919879222c49cd91cdb8edc53b95a1a21d6",
-    "site/theme.js": "f0609099c7689499c7d0a1137cd5817f389f701b0032549d18123706a889b0ba"
+    "site/theme.js": "53939d13755aefcdf31611943d795286efbef3004852a0106b2976df801e2acc"
   },
   "viewport": {
     "width": 390,
@@ -150,7 +150,7 @@
       "composer": "loaded",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-js-disabled-dark-390.png",
-        "sha256": "fe359a69a028828a70b9f0e6a156366f69bab43c4f0c5715ae1b70b0b95cb06b"
+        "sha256": "5d0e3fa8e7890962b668cdc7ab9cf24d06f5c4a3d60e21f3ea32be5b3eddefe6"
       },
       "client_width": 390,
       "scroll_width": 390,
@@ -168,7 +168,7 @@
       "composer": "failed",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-composer-failed-light-390.png",
-        "sha256": "f1cadedccd49c9f97a54d68492b38f954f612ff72c2882c304d02e717561beb7"
+        "sha256": "08b880f1b6c5fb7e33b5a422a8fb6bf48b70a2047403f71297698c24cb56d2e3"
       },
       "client_width": 390,
       "scroll_width": 390,
