@@ -194,7 +194,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-08-28",
-    "prior_generation_id": "liquidity_central_banks-US-564fd8bc77f79112",
+    "prior_generation_id": "liquidity_central_banks-US-9dcb0e92cf498347",
     "prior_method_version": "liquidity_central_banks.compose.v1",
     "status": "PRESENT"
   },
@@ -202,7 +202,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "liquidity_central_banks-US-564fd8bc77f79112"
+    "predecessor_generation_id": "liquidity_central_banks-US-9dcb0e92cf498347"
   },
   "drivers": {
     "balance_sheet": [
@@ -295,11 +295,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T20:31:50Z",
+    "built_at": "2026-09-04T22:42:48Z",
     "calculation_as_of": "2026-09-04T11:03:41.497178+00:00",
-    "code_version": "692b64327ce552fb5cde04465716db802eb76403",
-    "content_sha256": "1210d285af41f3330fdd152c8c12903998c6156c967acdaf87285c28df20f0f3",
-    "generation_id": "liquidity_central_banks-US-1210d285af41f333",
+    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
+    "content_sha256": "b06aeee9f14d157296fe72e215c74c0cab02aa3735b88ca6f75eb2d930dae90d",
+    "generation_id": "liquidity_central_banks-US-b06aeee9f14d1572",
     "producer": "engine.market_os.macro_workspaces.liquidity_central_banks",
     "rendered_at": null
   },

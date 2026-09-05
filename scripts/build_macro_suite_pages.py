@@ -210,6 +210,30 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
             "rather than fabricated."
         ),
     ),
+    SuitePage(
+        workspace_id="rates_curves",
+        region="US",
+        template="macro_rates_curves.html.j2",
+        output="macro_rates_curves.html",
+        seo_title="US Rates & Curves — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "The Treasury curve node by node — slopes, inversions, real yields, "
+            "breakevens, term premium and the policy corridor — every read dated "
+            "and same-day-disciplined."
+        ),
+    ),
+    SuitePage(
+        workspace_id="trade_flows",
+        region="US",
+        template="macro_trade_flows.html.j2",
+        output="macro_trade_flows.html",
+        seo_title="US Trade Flows — Macro & Monetary | MastermindX",
+        seo_desc=(
+            "The US trade balance, exports, imports and trade prices on a "
+            "balance-of-payments basis — collection state shown honestly while "
+            "the source lanes come online."
+        ),
+    ),
 )
 
 

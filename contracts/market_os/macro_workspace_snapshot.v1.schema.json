@@ -337,7 +337,8 @@
         "liquidity_regime", "growth_real_economy", "capital_structure",
         "business_activity", "labor_markets", "inflation_system", "monetary_policy",
         "financial_conditions", "liquidity_central_banks", "housing_real_estate",
-        "consumer_payments", "national_debt_liabilities"
+        "consumer_payments", "national_debt_liabilities",
+        "rates_curves", "trade_flows"
       ]
     },
     "freshnessState": {

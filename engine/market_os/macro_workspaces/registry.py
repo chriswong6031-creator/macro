@@ -1,9 +1,11 @@
-"""Closed registry of Macro & Monetary workspace identities (F01).
+"""Closed registry of Macro & Monetary workspace identities.
 
-The twelve workspace ids are frozen by the architecture (section 7.2). Only ids
-in :data:`WORKSPACE_IDS` may appear in a snapshot; the schema enforces the same
-set. R1A implements exactly one entry (``liquidity_regime`` / US). The other
-eleven are declared here as ``NOT_BUILT`` placeholders so the registry is a
+The twelve F01 workspace ids are frozen by the architecture (section 7.2);
+expansion ids (Chairman-authorized 2026-09-04) append after them and never
+interleave. Only ids in :data:`WORKSPACE_IDS` may appear in a snapshot; the
+schema's ``$defs.workspaceId`` enum enforces the same set (cross-pinned by
+tests/test_macro_workspace_contract.py). Any id without an explicit ``BUILT``
+entry below is declared as a ``NOT_BUILT`` placeholder so the registry is a
 single, honest source of truth for the suite — a workspace does not become
 "registered as live" merely by appearing in this list.
 """
@@ -11,7 +13,8 @@ from __future__ import annotations
 
 from typing import Mapping
 
-# The closed, ordered set of the twelve workspace identities (architecture 7.2).
+# The closed, ordered set of workspace identities: the frozen F01 twelve
+# (architecture 7.2) followed by appended expansion ids.
 WORKSPACE_IDS: tuple[str, ...] = (
     "liquidity_regime",
     "growth_real_economy",
@@ -25,6 +28,10 @@ WORKSPACE_IDS: tuple[str, ...] = (
     "housing_real_estate",
     "consumer_payments",
     "national_debt_liabilities",
+    # Beyond-F01 expansion (Chairman-authorized 2026-09-04): the closed F01 set
+    # is the twelve above; expansion ids are appended, never interleaved.
+    "rates_curves",
+    "trade_flows",
 )
 
 # Build state of the *dedicated workspace* (never the substrate).
@@ -228,6 +235,54 @@ REGISTRY: dict[str, dict] = {
             "net_issuance",
             "withheld_taxes",
             "auction_demand",
+        ),
+    },
+    "rates_curves": {
+        "id": "rates_curves",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.rates_curves",
+        "method_version": "rates_curves.compose.v1",
+        "title_en": "Rates & Curves",
+        "title_zh": "利率与曲线",
+        "subtitle_en": "The Treasury curve node by node",
+        "subtitle_zh": "逐点解读美债收益率曲线",
+        "required_components": (
+            "us3m",
+            "us6m",
+            "us2y",
+            "us5y",
+            "us10y",
+            "us30y",
+            "us5y_real",
+            "us10y_real",
+            "breakeven_10y",
+            "breakeven_5y5y",
+            "term_premium_10y",
+            "effr",
+            "sofr",
+            "iorb",
+        ),
+    },
+    "trade_flows": {
+        "id": "trade_flows",
+        "build_state": _BUILT,
+        "regions_supported": ("US",),
+        "producer": "engine.market_os.macro_workspaces.trade_flows",
+        "method_version": "trade_flows.compose.v1",
+        "title_en": "Trade Flows",
+        "title_zh": "贸易流动",
+        "subtitle_en": "Goods & services dollar flows x import/export price indexes",
+        "subtitle_zh": "货物与服务美元贸易流量 × 进出口价格指数",
+        # All five are config-appended and uncollected at ship time: the first
+        # print honestly reads SOURCE_FAILED / coverage 0.0 and self-heals the
+        # day the nightly collect lands the parquets (by design, disclosed).
+        "required_components": (
+            "trade_balance",
+            "exports",
+            "imports",
+            "import_price_index",
+            "export_price_index",
         ),
     },
 }

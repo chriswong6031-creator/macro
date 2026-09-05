@@ -10,23 +10,23 @@
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 9.8,
+    "validity": 6.5,
     "progress": 0.0,
     "pace": 12.8,
     "retention": 50.0,
-    "overlay": 64.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.203,
+    "dist_to_stop_r": 0.169,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 48.9,
-    "p1": -0.5312,
-    "p2": -0.2656,
+    "p1": -0.554,
+    "p2": -0.277,
     "p3": null,
-    "move_r": -0.797,
+    "move_r": -0.831,
     "mfe_r": 0.11,
-    "mae_r": -0.797
+    "mae_r": -0.831
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,7 +40,7 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 1.449997253417962,
-  "_mae": -10.510001831054694,
+  "_mae": -10.959998779296882,
   "_max_p1": 0.0732877055050777,
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,

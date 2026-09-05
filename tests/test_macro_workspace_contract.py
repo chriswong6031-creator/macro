@@ -163,8 +163,15 @@ def test_unsealed_placeholder_digest_is_rejected() -> None:
 
 
 def test_workspace_id_is_from_the_closed_registry() -> None:
+    # The schema enum and the registry tuple are the SAME closed vocabulary —
+    # cross-pinned so neither can drift without the other (was a bare ==12
+    # count; widened 2026-09-04 when the Chairman-authorized expansion added
+    # rates_curves as the 13th id — the F01 twelve stay frozen, expansion ids
+    # append).
+    from engine.market_os.macro_workspaces import registry
     snap = _sealed(_base_regime())
     schema = contract.load_schema()
     allowed = set(schema["$defs"]["workspaceId"]["enum"])
     assert snap["workspace"]["id"] in allowed
-    assert len(allowed) == 12
+    assert allowed == set(registry.WORKSPACE_IDS)
+    assert len(allowed) == 14

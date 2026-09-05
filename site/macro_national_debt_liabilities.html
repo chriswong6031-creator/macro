@@ -52,9 +52,11 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script src="macro_suite_boot.js"></script>
-<link rel="stylesheet" href="theme.css">
-<link rel="stylesheet" href="macro_suite.css">
+<script src="macro_suite_boot.js?v=768a4342" defer></script>
+<link rel="stylesheet" href="theme.css?v=f41f9a21">
+<link rel="stylesheet" href="macro_suite.css?v=f2fd5724">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
 <body class="mq-page" data-mq-workspace="national_debt_liabilities" data-mq-region="US">
 
@@ -65,7 +67,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
     <div class="nav-links">
 
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -278,10 +280,10 @@
     </div>
   </div>
 
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=f7bdf7cc" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -329,7 +331,7 @@
       <div><dt><span class="l-en">Calculation as-of</span><span class="l-zh">计算截止</span></dt>
            <dd><time>2026-09-03</time></dd></div>
       <div class="mq-nonclock"><dt><span class="l-en">Page built</span><span class="l-zh">页面生成</span></dt>
-           <dd><time>2026-09-04T20:31:51Z</time></dd></div>
+           <dd><time>2026-09-04T23:45:35Z</time></dd></div>
     </dl>
     <p class="mq-context-caveat"><span class="l-en">Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.</span><span class="l-zh">页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。</span></p>
   </div>
@@ -468,7 +470,7 @@
            <dd><time>2026-09-03</time></dd></div>
       <div><dt><span class="l-en">Method version</span><span class="l-zh">方法版本</span></dt><dd><code>national_debt_liabilities.compose.v1</code></dd></div>
       <div><dt><span class="l-en">Prior accepted print</span><span class="l-zh">上一已接受读数</span></dt>
-           <dd><span class="mq-absent mq-absent-inline"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Warm-up: first accepted print</span><span class="l-zh">预热期：首个已接受读数</span></span></span></dd></div>
+           <dd></dd></div>
     </dl>
   </div>
 
@@ -517,10 +519,6 @@
   </div>
   <ul class="mq-diag-list">
     <li class="mq-diag mq-tone-neutral">
-      <strong><span class="l-en">No method-comparable prior print</span><span class="l-zh">无方法可比的历史读数</span></strong>
-      <span><span class="l-en">No comparable prior print</span><span class="l-zh">没有可比的历史读数</span></span>
-    </li>
-    <li class="mq-diag mq-tone-neutral">
       <strong><span class="l-en">Component histories not published</span><span class="l-zh">未发布分项历史序列</span></strong>
       <span><span class="l-en">Insufficient history</span><span class="l-zh">历史数据不足</span></span>
     </li>
@@ -539,11 +537,47 @@
     <h3 id="mq-changed-title"><span class="l-en">What changed</span><span class="l-zh">发生了什么变化</span></h3>
     <span class="mq-section-note"><span class="l-en">Current accepted snapshot against the prior accepted snapshot, under the same method version.</span><span class="l-zh">在相同方法版本下，将当前已接受快照与上一已接受快照对比。</span></span>
   </div>
-  <p class="mq-changed-verdict mq-tone-neutral"><span class="l-en">No comparable prior print</span><span class="l-zh">没有可比的历史读数</span></p>
-  <div class="mq-changed-empty">
-    <span class="mq-absent"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Warm-up: first accepted print</span><span class="l-zh">预热期：首个已接受读数</span></span></span>
-    <p><span class="l-en">No numeric comparison is shown. A change table would have to invent a baseline that does not exist, and a method-version change is reported as a method change — never as a delta.</span><span class="l-zh">此处不展示任何数值对比。展示变化表将不得不虚构一个并不存在的基准；方法版本变更只按方法变更呈现，绝不伪装成数值变化。</span></p>
-  </div>
+  <p class="mq-changed-verdict mq-tone-ok"><span class="l-en">Comparable with the prior accepted print</span><span class="l-zh">与上一已接受读数可比</span></p>
+  <table class="mq-table">
+    <thead><tr>
+      <th scope="col"><span class="l-en">Metric</span><span class="l-zh">指标</span></th>
+      <th scope="col"><span class="l-en">Prior</span><span class="l-zh">上期</span></th>
+      <th scope="col"><span class="l-en">Current</span><span class="l-zh">当前</span></th>
+      <th scope="col"><span class="l-en">Change</span><span class="l-zh">变化</span></th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <th scope="row"><span class="l-en">Tga level</span><span class="l-zh">Tga level</span></th>
+        <td>944,364.0</td>
+        <td>944,364.0</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Net issuance sum 13w</span><span class="l-zh">Net issuance sum 13w</span></th>
+        <td>835,231.0</td>
+        <td>835,231.0</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Auction bid to cover recent avg</span><span class="l-zh">Auction bid to cover recent avg</span></th>
+        <td>2.92</td>
+        <td>2.92</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Household debt service ratio level</span><span class="l-zh">Household debt service ratio level</span></th>
+        <td>14.10</td>
+        <td>14.10</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+      <tr>
+        <th scope="row"><span class="l-en">Bond desk health score level</span><span class="l-zh">Bond desk health score level</span></th>
+        <td>89.00</td>
+        <td>89.00</td>
+        <td class="mq-delta mq-delta-flat">0</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
       <section class="mq-metrics" aria-labelledby="mq-metrics-title">
   <div class="mq-section-head">
@@ -2340,12 +2374,12 @@
   <dl class="mq-method-grid">
     <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">No correction recorded</span><span class="l-zh">无更正记录</span></dd></div>
     <div><dt><span class="l-en">Predecessor generation</span><span class="l-zh">前一代产物</span></dt>
-         <dd><span class="mq-dash">—</span></dd></div>
+         <dd><code>national_debt_liabilities-US-797b109a53ed5811</code></dd></div>
     <div><dt><span class="l-en">Changed fingerprints</span><span class="l-zh">已变更指纹</span></dt>
          <dd><span class="mq-dash">—</span></dd></div>
     <div><dt><span class="l-en">Hysteresis</span><span class="l-zh">滞回</span></dt><dd>architecture section 10.12 defines a real two-axis blueprint (refinancing/issuance pressure low-to-high; fiscal capacity/interest-burden resilience weak-to-strong), but the owner substrate this composer has cannot fill it in: the x-axis bundles issuance pressure (computable from net issuance) with REFINANCING pressure specifically (needs the absent maturity/WAM ladder), and the y-axis needs a genuine fiscal-capacity/interest-burden composite (debt stock, net interest expense, revenue -- all absent per the load-bearing gap). Publishing the issuance-pressure half alone as the full axis, or inventing a different unnamed axis pair the architecture never specified, would both fabricate a methodology the data does not honestly support. The real, computable content (issuance pressure, auction demand absorption, BIS DSR/credit-gap levels, the bond-desk coverage passthrough, and a genuine cross-source contradiction check) is published as real metrics/drivers/implications instead. See the headline_unavailable implication for the reader-facing version of this note.</dd></div>
   </dl>
-  <p class="mq-lineage-note">First-known snapshot for this owner input; predecessor recorded when a prior accepted print exists.</p>
+  <p class="mq-lineage-note">Same reference period as the predecessor print; no tracked metric changed value (no-change republication).</p>
 </section>
     </section>
   </div>
@@ -2747,11 +2781,11 @@
       <dl class="mq-clocks">
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Artifact built</span><span class="l-zh">产物生成</span></span><span class="mq-clock-meaning"><span class="l-en">Producer generation time. Not an economic clock.</span><span class="l-zh">生产端生成时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-04T20:31:50Z</time></dd>
+          <dd><time>2026-09-04T22:42:48Z</time></dd>
         </div>
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Page built</span><span class="l-zh">页面生成</span></span><span class="mq-clock-meaning"><span class="l-en">Static page render time. Not an economic clock.</span><span class="l-zh">静态页面渲染时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-04T20:31:51Z</time></dd>
+          <dd><time>2026-09-04T23:45:35Z</time></dd>
         </div>
       </dl>
     </section>
@@ -2761,11 +2795,11 @@
       <dl class="mq-method-grid">
         <div><dt><span class="l-en">Artifact path</span><span class="l-zh">产物路径</span></dt><dd><code>macrodata/workspaces/national_debt_liabilities/US/latest.json</code></dd></div>
         <div><dt><span class="l-en">Manifest path</span><span class="l-zh">清单路径</span></dt><dd><code>macrodata/workspaces/manifest.json</code></dd></div>
-        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">2f2c0ba8c9f0b2ec53d06fbc79343aa9408c2153cc65632e4afbc175c502780b</code></dd></div>
-        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>84489</dd></div>
-        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>national_debt_liabilities-US-2f2c0ba8c9f0b2ec</code></dd></div>
+        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">7df07bb461781c80b90bedab31e870a5d12a6d1279fbfbb220abbbb8f245d4e8</code></dd></div>
+        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>85767</dd></div>
+        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>national_debt_liabilities-US-7df07bb461781c80</code></dd></div>
         <div><dt><span class="l-en">Producer</span><span class="l-zh">生产者</span></dt><dd><code>engine.market_os.macro_workspaces.national_debt</code></dd></div>
-        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>692b64327ce552fb5cde04465716db802eb76403</code></dd></div>
+        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>93e4faa768119a100d390ef84a3d345cc8db8149</code></dd></div>
         <div><dt><span class="l-en">Client contract</span><span class="l-zh">客户端契约</span></dt><dd><code>mastermind.macro_workspace_snapshot.v1@1.0.0</code></dd></div>
       </dl>
       <p class="mq-lineage-note"><span class="l-en">The page validated this artifact against the closed schema and recomputed its content hash before rendering. A mismatch renders a refusal page instead of a state.</span><span class="l-zh">本页在渲染前已按封闭 schema 校验该产物并重新计算其内容哈希。若不匹配，将呈现拒绝页面而非任何状态读数。</span></p>
@@ -2774,7 +2808,7 @@
 </aside>
 <div class="mq-scrim" id="mq-scrim" hidden></div>
 
-<script src="theme.js" defer></script>
-<script src="macro_suite.js" defer></script>
+<script src="theme.js?v=f0609099" defer></script>
+<script src="macro_suite.js?v=e202c862" defer></script>
 </body>
 </html>
