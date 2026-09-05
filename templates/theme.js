@@ -5433,6 +5433,23 @@
     return !!(ctrl && ctrl !== t && t.contains(ctrl));
   }
   var pop = null, scrim = null, cur = null, openTimer = 0, closeTimer = 0, scrollRaf = 0;
+  // A tap on a focusable trigger FOCUSES it first: focusin -> show(t) mounts the
+  // sheet + scrim mid-gesture, the browser retargets the tap's own trailing click
+  // to <body> (down-target and up-target no longer share a hit path), and a naive
+  // "click outside closes" read hides the tip inside the very tap that opened it —
+  // open-then-vanish on every bare [data-tip-en] chip in sheet mode, toggle-close
+  // on non-sheet touch. On touch the focusin lands AFTER pointerup (compat mouse
+  // events follow the pointer sequence), so "is a pointer down" cannot gate this;
+  // instead gestureSeq counts pointerdown gestures, focusin stamps the gesture it
+  // opened under, and a click still carrying that same gesture is the tap's own
+  // artifact, never a dismissal. A real dismissal tap always brings a NEW
+  // pointerdown (seq mismatch), and keyboard activation clicks carry detail === 0
+  // (no pointer gesture), so Enter on a <button> trigger still toggles as before.
+  var gestureSeq = 0, focusShowSeq = -1, focusShowEl = null;
+  function gestureOpenedTip(e) {
+    return e.detail !== 0 && focusShowSeq === gestureSeq &&
+           cur && cur === focusShowEl && isOpen();
+  }
 
   var CSS =
     '.lens-src{display:none}' +
@@ -5723,6 +5740,7 @@
       if (isOpen()) scheduleClose();
     }
   }, true);
+  document.addEventListener('pointerdown', function () { gestureSeq++; }, true);
   document.addEventListener('focusin', function (e) {
     var t = e.target && e.target.closest && e.target.closest(SEL);
     if (!t) return;
@@ -5735,6 +5753,8 @@
     // floating card steals nothing, so keyboard focus still discloses the tip on every
     // viewport that can safely show one. Keep this gate in step with show().
     if (isSheet() && nestedCtrl(e.target, t)) return;
+    focusShowSeq = gestureSeq;   // this gesture's own trailing click is NOT a dismissal
+    focusShowEl = t;
     show(t);
   }, true);
   document.addEventListener('focusout', function (e) {
@@ -5746,7 +5766,10 @@
     var _h = e.target.closest('span.help:not([data-tip-en])'); if (_h) upgradeOne(_h);  // JIT-upgrade client-rendered icons
     var t = e.target.closest(SEL);
     if (!t) {
-      if (isOpen() && !(pop && pop.contains(e.target))) hide();
+      if (isOpen() && !(pop && pop.contains(e.target))) {
+        if (gestureOpenedTip(e)) return;   // the opening tap's own retargeted click
+        hide();
+      }
       return;
     }
     // If the tap landed on an interactive control NESTED INSIDE the tip container
@@ -5763,11 +5786,11 @@
     if (touchMode()) {
       if (!contentFor(t)) return;               // no resolvable tip — never swallow the tap
       e.preventDefault(); e.stopPropagation();
-      if (cur === t && isOpen()) hide(); else show(t);
+      if (cur === t && isOpen()) { if (!gestureOpenedTip(e)) hide(); } else show(t);
       return;
     }
     if (dedicated) {                            // desktop pin-toggle on purpose-built triggers only
-      if (cur === t && isOpen()) hide(); else show(t);
+      if (cur === t && isOpen()) { if (!gestureOpenedTip(e)) hide(); } else show(t);
       return;
     }
     // bare data-tip chips: desktop clicks pass through (hover already shows the tip)

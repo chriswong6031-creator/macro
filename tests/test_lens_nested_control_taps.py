@@ -137,6 +137,95 @@ def test_carve_out_covers_every_focusable_control_kind(name, src):
     assert not missing, f"{name}: carve-out selector misses {missing}"
 
 
+# ---------------------------------------------------------------------------
+# Phantom-click self-dismissal: the tap whose focusin opened the tip must not
+# be read as "tap elsewhere to dismiss" by its own trailing click.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_focusin_show_stamps_the_gesture_it_opened_under(name, src):
+    """The bug verbatim: tapping a focusable trigger fires focusin -> show(t),
+    sheet mode mounts the full-viewport scrim MID-TAP, the browser retargets the
+    tap's own trailing click to <body>, and the click handler's outside-closes
+    branch hid the tip inside the very tap that opened it. The focusin path must
+    stamp the pointer gesture (after the nested-control carve-out, before show)
+    so the click handler can tell that tap's own artifact from a dismissal."""
+    src = _require(name, src)
+    body = _handler_body(_lens_region(src), "focusin")
+    assert "focusShowSeq = gestureSeq" in body, (
+        f"{name}: focusin no longer stamps the gesture it opened under — the tap "
+        "that opens the sheet will dismiss it via its own retargeted click"
+    )
+    carve = body.index("nestedCtrl")
+    stamp = body.index("focusShowSeq = gestureSeq")
+    show = body.index("show(t)")
+    assert carve < stamp < show, (
+        f"{name}: the stamp must sit after the nested-control carve-out (a "
+        "carved-out tap never shows, so it must not stamp) and before show(t)"
+    )
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_every_pointer_gesture_advances_the_sequence(name, src):
+    """A real dismissal tap always brings its own pointerdown; that is the only
+    thing that distinguishes it from the opening tap's trailing click. On touch,
+    focusin lands AFTER pointerup (compat mouse events follow the pointer
+    sequence), so an is-a-pointer-down flag cannot gate this — only a counter."""
+    src = _require(name, src)
+    region = _lens_region(src)
+    assert re.search(
+        r"addEventListener\('pointerdown',\s*function\s*\(\)\s*\{\s*gestureSeq\+\+;?\s*\}", region
+    ), f"{name}: no pointerdown listener advancing gestureSeq in the lens region"
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_gesture_guard_keys_on_pointer_reality_not_timing(name, src):
+    """The guard must (a) exclude keyboard activation — Enter on a <button>
+    trigger emits click with detail === 0 and must keep toggling — and (b) match
+    the exact gesture, never a time window."""
+    src = _require(name, src)
+    region = _lens_region(src)
+    assert region.count("function gestureOpenedTip(") == 1, (
+        f"{name}: gestureOpenedTip must be defined exactly once and shared"
+    )
+    m = re.search(r"function gestureOpenedTip\(e\)\s*\{(.*?)\n  \}", region, re.S)
+    assert m, f"{name}: gestureOpenedTip body not found"
+    g = m.group(1)
+    assert "e.detail !== 0" in g, (
+        f"{name}: the guard must exempt keyboard clicks (detail === 0) or Enter "
+        "can never close a focus-opened tip"
+    )
+    assert "focusShowSeq === gestureSeq" in g, (
+        f"{name}: the guard must compare gesture SEQUENCE, not wall-clock timing"
+    )
+    assert "isOpen()" in g and "focusShowEl" in g, (
+        f"{name}: the guard must require the stamped trigger to still own an open tip"
+    )
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_click_consults_the_gesture_guard_on_every_self_dismiss_path(name, src):
+    """Three paths could eat the opening tap: the retargeted-to-body branch
+    (sheet scrim), the touch toggle branch (non-sheet touch, click lands on the
+    chip), and the desktop pin-toggle (focus arrives at mousedown). Each must
+    consult the guard before hiding."""
+    src = _require(name, src)
+    body = _handler_body(_lens_region(src), "click")
+    assert body.count("gestureOpenedTip(e)") >= 3, (
+        f"{name}: expected the gesture guard on all three self-dismiss paths "
+        "(body-retarget, touch toggle, desktop pin-toggle); found "
+        f"{body.count('gestureOpenedTip(e)')}"
+    )
+    no_trigger = body[: body.index("nestedCtrl")]
+    assert "gestureOpenedTip(e)" in no_trigger, (
+        f"{name}: the no-trigger (retargeted click) branch lost its guard"
+    )
+    assert no_trigger.index("gestureOpenedTip(e)") < no_trigger.index("hide()"), (
+        f"{name}: the retargeted-click guard must run BEFORE hide()"
+    )
+
+
 def test_the_toggle_this_healed_still_carries_its_tooltip():
     """#us-st-view-toggle keeps data-tip-*: the fix makes the markup safe."""
     dash = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
