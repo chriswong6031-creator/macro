@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-09-05T02:11:13.947604+00:00",
+  "generated_at": "2026-09-05T13:31:33.442096+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -45,11 +45,11 @@
           "max_dd": -0.2426,
           "calmar": 0.47,
           "n_months": 275,
-          "dsr": 0.988,
+          "dsr": 0.987,
           "worst_decile_ret": -0.0489
         },
         "top4_mom12_dual": {
-          "cagr": 0.1088,
+          "cagr": 0.1087,
           "sharpe": 0.9,
           "max_dd": -0.2032,
           "calmar": 0.54,
@@ -60,8 +60,8 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0543,
-          "ic_t_hac": 1.96,
+          "mean_ic": 0.0545,
+          "ic_t_hac": 1.966,
           "hit": 0.553,
           "n_steps": 275
         },
@@ -88,7 +88,7 @@
           "n": 748
         },
         "mean_diff_t": -1.01,
-        "mean_diff_p": 0.3143
+        "mean_diff_p": 0.3144
       },
       "extension_drawdown": {
         "fwd_days": 63,

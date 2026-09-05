@@ -13166,3 +13166,11 @@
 {"date":"2026-09-04","kind":"ticker","subject":"QBTS","ticker":"QBTS","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-09-04","kind":"ticker","subject":"QNT","ticker":"QNT","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-09-04","kind":"ticker","subject":"RGTI","ticker":"RGTI","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"SNOW","ticker":"SNOW","edge_score":53,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-09-04","kind":"ticker","subject":"TKO","ticker":"TKO","edge_score":17,"state":"POSITIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"CHD","ticker":"CHD","edge_score":13,"state":"POSITIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"CAMT","ticker":"CAMT","edge_score":10,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"CAH","ticker":"CAH","edge_score":9,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"AGI","ticker":"AGI","edge_score":6,"state":"POSITIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"WFC","ticker":"WFC","edge_score":5,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"GM","ticker":"GM","edge_score":2,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}

@@ -85,7 +85,7 @@
   },
   "corn": {
     "cycle_ref": "agriculture",
-    "pos": 91.5,
+    "pos": 91.4,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
@@ -97,7 +97,7 @@
   },
   "wheat": {
     "cycle_ref": "agriculture",
-    "pos": 91.5,
+    "pos": 91.4,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
@@ -109,7 +109,7 @@
   },
   "soybeans": {
     "cycle_ref": "agriculture",
-    "pos": 91.5,
+    "pos": 91.4,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,

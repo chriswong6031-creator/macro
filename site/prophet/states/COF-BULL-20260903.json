@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "COF-BULL-20260903",
-  "asof": "2026-09-04",
+  "asof": "2026-09-05",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 67.3,
-  "raw_confidence": 67.3,
-  "delta_vs_base": 7.3,
+  "management_confidence": 67.5,
+  "raw_confidence": 67.6,
+  "delta_vs_base": 7.5,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
-    "validity": 97.6,
+    "validity": 98.9,
     "progress": 0.0,
     "pace": 100.0,
     "retention": 50.0,
     "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.982,
+    "dist_to_stop_r": 0.992,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 0.0,
-    "p1": -0.0118,
-    "p2": -0.0059,
+    "horizon_pct_used": 2.2,
+    "p1": -0.0055,
+    "p2": -0.0028,
     "p3": null,
-    "move_r": -0.018,
+    "move_r": -0.008,
     "mfe_r": 0.0,
     "mae_r": -0.018
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 0,
-  "tau": 0.0
+  "days_elapsed": 1,
+  "tau": 0.0222
 }

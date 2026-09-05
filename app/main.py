@@ -236,11 +236,12 @@ _MM_MAX_BATCH = 40
 # pins the derivation: reintroducing a hardcoded set literal here turns its
 # registry-authority guard red.
 _MM_EVENT_TYPES = growth_registry.accepted_wires()
-# Envelope-v1 wires (CA1A, DEC:ANALYTICS-EID-USES-EXISTING-EVENT-PRIMARY-KEY): these
-# additionally require a stable UUID `eid` (becomes the analytics_events.id primary
-# key, so an exact replay is ONE row), the frozen `schema` tag, and a closed, typed
-# `meta` validated against the registry — invalid events are dropped with a bounded
-# diagnostic, never coerced.
+# Envelope-v1 wires (CA1A): these additionally require a stable UUID `eid` (seated in
+# the analytics_events.eid unique column, so an exact replay is ONE row), the frozen
+# `schema` tag, and a closed, typed `meta` validated against the registry — invalid
+# events are dropped with a bounded diagnostic, never coerced. The handoff decision
+# DEC:ANALYTICS-EID-USES-EXISTING-EVENT-PRIMARY-KEY assumed a UUID id primary key; the
+# live table's id is a bigint identity, so the §16 canary moved eid to its own column.
 _MM_V1_WIRES = growth_registry.envelope_v1_wires()
 
 _MM_V1_DROP_COUNTS: dict[str, int] = {}
@@ -430,12 +431,12 @@ def _mm_analytics_insert(rows: list, access_token: str | None = None) -> None:
                 r["user_id"] = uid
     try:
         req = urllib.request.Request(
-            # on_conflict=id + ignore-duplicates: an exact replay of an envelope-v1
-            # event (same eid) is ONE row — the duplicate insert is ignored rather
-            # than failing the batch, and a same-id-different-payload replay can
-            # never mutate the original row (append-only facts, CA1A handoff §11).
-            # Server-minted legacy ids are fresh UUIDs and never conflict.
-            f"{SUPABASE_URL}/rest/v1/analytics_events?on_conflict=id",
+            # on_conflict=eid + ignore-duplicates: an exact replay of an envelope-v1
+            # event (same eid, unique-indexed) is ONE row — the duplicate insert is
+            # ignored rather than failing the batch, and a same-eid-different-payload
+            # replay can never mutate the original row (append-only facts, CA1A
+            # handoff §11). Legacy rows carry eid NULL, which never conflicts.
+            f"{SUPABASE_URL}/rest/v1/analytics_events?on_conflict=eid",
             data=json.dumps(rows).encode(),
             method="POST",
             headers={
@@ -554,11 +555,14 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
             pass
         tk = e.get("ticker")
         rows.append({
-            # Event identity = row identity (DEC:ANALYTICS-EID-USES-EXISTING-EVENT-
-            # PRIMARY-KEY): envelope-v1 events supply their validated eid; legacy
-            # events get a server-minted UUID, which is exactly what the DB default
-            # produced before — replay semantics change only for v1 wires.
-            "id": row_id or str(uuid.uuid4()),
+            # Envelope-v1 identity rides its own `eid uuid UNIQUE` column — the §16
+            # canary's correction to DEC:ANALYTICS-EID-USES-EXISTING-EVENT-PRIMARY-KEY.
+            # The live analytics_events.id is a bigint identity the DB mints; seating a
+            # UUID there made PostgREST reject the WHOLE batch (22P02), which the
+            # best-effort insert swallowed — every envelope-v1 event was dropped and
+            # took its co-batched legacy rows with it. Legacy events carry eid NULL
+            # (UNIQUE ignores NULLs); the bigint id stays DB-minted for every row.
+            "eid": row_id,
             "type": etype,
             "site": _mm_clamp(e.get("site"), 16) or "macro",
             "path": _mm_clamp(e.get("path"), 512),
