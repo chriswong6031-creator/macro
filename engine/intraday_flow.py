@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -489,12 +490,12 @@ def confluence_legs(
     elif price is not None and prev_close is not None:
         l2 = price > prev_close
 
-    # ── L3: rvol_elevated ─────────────────────────────────────────────────────
+    # ── L3: rvol_elevated ──────────────────────────────────────────────────────
     l3: bool | None = None
     if rvol_tod_val is not None:
         l3 = rvol_tod_val >= rvol_confirm
 
-    # ── L4: vol_durable ───────────────────────────────────────────────────────
+    # ── L4: vol_durable ────────────────────────────────────────────────────────
     l4: bool | None = None
     if vol_durability_val is not None:
         l4 = vol_durability_val >= durability_min
@@ -683,9 +684,15 @@ def _finite_number(value: Any) -> float | None:
     """Return a finite numeric value, rejecting booleans and malformed inputs."""
     if value is None or isinstance(value, bool):
         return None
+    # Use the same decimal grammar in Python and JavaScript. Neither hexadecimal
+    # strings nor Python-only digit separators are financial price evidence.
+    if isinstance(value, str) and not re.fullmatch(
+        r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", value.strip()
+    ):
+        return None
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     return number if math.isfinite(number) else None
 
@@ -853,18 +860,19 @@ def stance(
                 pass
         return False
 
-    # pin_watch: OPEX close + long-gamma + near wall/magnet
+    # Pin distance is percentage of current spot, not volatility-sigma units.
+    # This mirrors the existing browser's four-level pin predicate.
     def _pin_watch() -> bool:
-        opex = _dealer("opex_days")
-        regime = _dealer("regime")
-        cw_sigma = _dealer("call_wall_dist_sigma")
-        if opex is None or regime is None:
+        opex = _finite_number(_dealer("opex_days"))
+        price = _finite_number(current_price)
+        if opex is None or opex > 5 or _dealer("regime") != "long":
             return False
-        try:
-            if int(opex) <= 5 and str(regime).lower() == "long" and cw_sigma is not None:
-                return float(cw_sigma) <= 0.01  # ~1% approx
-        except (TypeError, ValueError):
-            pass
+        if price is None or price <= 0:
+            return False
+        for key in ("call_wall", "put_wall", "magnet_up", "magnet_down"):
+            level = _finite_number(_dealer(key))
+            if level is not None and level > 0 and abs((level - price) / price) * 100 <= 1.0:
+                return True
         return False
 
     # into_ceiling: hard call wall is close
