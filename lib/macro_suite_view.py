@@ -19,6 +19,8 @@ Pure: no I/O, no clock read, no network. ``page_built_at`` is supplied.
 """
 from __future__ import annotations
 
+import math
+
 from typing import Any, Mapping, Sequence
 
 from lib import macro_suite_labels as L
@@ -319,6 +321,20 @@ def _headline(snapshot: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]) ->
 # liquidity-only widget. The letter grid follows the producer's classification
 # law: A = low-x/high-y, B = high-x/high-y, C = low-x/low-y, D = high-x/low-y.
 
+def _finite(value: Any) -> bool:
+    """A plottable coordinate: numeric, not a bool, and actually a number.
+
+    ``isinstance(True, int)`` is True in Python and ``json.loads`` parses a bare
+    ``NaN`` into a float, so the obvious numeric check accepts two values that
+    are not readings: ``true`` plotted at cx=1.0 and ``NaN`` rendered as
+    ``cx="nan"``, which most renderers drop. Either way the point disappears or
+    lands somewhere arbitrary while the page still claims a plotted state, which
+    is the "missing looks like zero" failure the typed-absence cell exists to
+    prevent.
+    """
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
 _QUADRANT_GRID = (
     # (letter, x-half, y-half, css position)
     ("A", "low", "high", "tl"),
@@ -351,7 +367,7 @@ def _quadrant_map(headline: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]
         })
 
     x_value, y_value = headline.get("x"), headline.get("y")
-    plotted = isinstance(x_value, (int, float)) and isinstance(y_value, (int, float))
+    plotted = _finite(x_value) and _finite(y_value)
     return {
         "x_axis": x_axis,
         "y_axis": y_axis,
