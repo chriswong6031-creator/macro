@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-09-05T17:10:28.951676+00:00",
+  "generated_at": "2026-09-05T20:25:12.583977+00:00",
   "as_of": "2026-09-05",
   "absent_stores": [],
   "feature_coverage": {
@@ -520,7 +520,7 @@
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-09-05 14:25 UTC",
+          "latest_as_of": "2026-09-05 03:01 UTC",
           "age_days_from_today": 0,
           "status": "FRESH"
         },
@@ -534,7 +534,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-09-05T17:10:28.864934+00:00",
+      "generated_at": "2026-09-05T20:25:12.500000+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-08-13 (16 NYSE session(s) behind last_session=2026-09-04); threshold=1 \u2014 OI snapshot may have been missed",
@@ -547,7 +547,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-09-05T17:10:28.951666+00:00",
+    "generated_at_utc": "2026-09-05T20:25:12.583969+00:00",
     "as_of": "2026-09-05",
     "absent_stores": []
   }
