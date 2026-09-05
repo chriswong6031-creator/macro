@@ -11312,3 +11312,5 @@
 {"ts":"2026-09-05T15:28:36Z","event":"attempt","lane":"marketing-auditor","context":"marketing_auditor","rung":"codex","cap_id":"codex_account","model":"gpt-5.6-terra","ok":true,"error_class":"","latency_ms":11963}
 {"ts":"2026-09-05T15:28:50Z","event":"attempt","lane":"marketing-auditor","context":"marketing_auditor","rung":"codex","cap_id":"codex_account","model":"gpt-5.6-terra","ok":true,"error_class":"","latency_ms":14062}
 {"ts":"2026-09-05T15:28:57Z","event":"attempt","lane":"marketing-auditor","context":"marketing_auditor","rung":"codex","cap_id":"codex_account","model":"gpt-5.6-terra","ok":true,"error_class":"","latency_ms":7071}
+{"ts":"2026-09-05T17:46:17Z","event":"waterfall","lane":"unknown","context":"","n_rungs":1,"rungs":[{"rung":"codex","cap_id":"codex_account","model":"gpt-5.6-sol"}]}
+{"ts":"2026-09-05T17:46:40Z","event":"attempt","lane":"unknown","context":"altdata_brain","rung":"codex","cap_id":"codex_account","model":"gpt-5.6-sol","ok":true,"error_class":"","latency_ms":22768}
