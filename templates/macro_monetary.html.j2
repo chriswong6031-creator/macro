@@ -1,0 +1,175 @@
+{#
+  Macro & Monetary — the suite hub (F01 / R1).
+
+  ONE discoverable entry point to fourteen research workspaces. The hub owns no
+  producer and publishes no state of its own: every row is the snapshot the
+  workspace page beside it was built from, so the two cannot disagree.
+
+  Three things it deliberately does NOT do, because each is a closed
+  construction rather than a missing feature:
+
+    * It does not score, rank or fuse the fourteen workspaces into one reading
+      (DNR:KILL-FUSED-COMPOSITE, DNR:KILL-REGIME-SCORECARD). The order is the
+      closed producer registry's order and never changes with the data.
+    * It does not promote operational trouble into investment importance. A
+      failed, stale or conflicted input goes in its own attention notice; it
+      never reorders the suite, because "this source broke" is not "this
+      matters most".
+    * It does not present its change list as a curated set of what matters. It
+      shows the first few in suite order, says how many it did not show, and
+      sends the reader to the workspace for the rest.
+
+  No JavaScript beyond the shared theme/boot scripts: the hub is HTML and CSS.
+#}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro bl(node) -%}
+{%- if node %}{{ t(node.en, node.zh) }}{% endif -%}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title }} — MastermindX</title>
+{% set seo_title = page_seo_title %}
+{% set seo_desc = page_seo_desc %}
+{% set seo_path = page_seo_path %}
+{% include "_seo_head.html.j2" %}
+<script src="macro_suite_boot.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="macro_suite.css">
+</head>
+<body class="mq-page mq-hub-page">
+{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
+{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+{% include "_site_nav.html.j2" %}
+
+<main class="mq-shell mq-hub" id="mq-shell">
+
+  <header class="mq-hub-head">
+    <p class="mq-kicker">{{ bl(view.kicker) }}</p>
+    <h1>{{ bl(view.title) }}</h1>
+    <p class="mq-deck">{{ bl(view.deck) }}</p>
+    <p class="mq-hub-asof" data-mq-hub-asof>
+      <span class="mq-hub-asof-item">
+        <span class="mq-hub-asof-key">{{ bl(view.as_of.label) }}</span>
+        {% if view.as_of.effective_date %}<time>{{ view.as_of.effective_date }}</time>{% else %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('no workspace published a dated print', '没有工作区发布带日期的读数') }}</span>{% endif %}
+      </span>
+      <span class="mq-hub-asof-item">
+        <span class="mq-hub-asof-key">{{ bl(view.coverage.label) }}</span>
+        <strong class="mq-tone-{{ 'ok' if view.coverage.complete else 'warn' }}">{{ view.coverage.available }} / {{ view.coverage.total }}</strong>
+      </span>
+    </p>
+    <p class="mq-hub-asof-note">{{ bl(view.as_of.note) }}</p>
+  </header>
+
+  {# ── what changed ─────────────────────────────────────────────────────────
+     Bounded, in suite order, and honest about its own boundary. #}
+  <section class="mq-hub-changes" aria-labelledby="mq-hub-changes-title" data-mq-hub-changes>
+    <div class="mq-section-head">
+      <h2 id="mq-hub-changes-title">{{ bl(view.changes.heading) }}</h2>
+      <span class="mq-section-note">{{ bl(view.changes.note) }}</span>
+    </div>
+    {%- if view.changes.entries %}
+    <ul class="mq-hub-changelist">
+      {%- for change in view.changes.entries %}
+      <li class="mq-hub-change">
+        <a class="mq-hub-change-link" href="{{ change.href }}">{{ bl(change.workspace_title) }}</a>
+        <span class="mq-hub-change-metric">{{ bl(change.label) }}</span>
+        <span class="mq-hub-change-move">
+          <span class="mq-hub-change-prior">{{ change.prior }}</span>
+          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
+          <span class="mq-hub-change-current">{{ change.current }}</span>
+          <span class="mq-delta mq-delta-{{ change.sign }}">{{ change.delta }}</span>
+        </span>
+      </li>
+      {%- endfor %}
+    </ul>
+    <p class="mq-hub-remaining" data-mq-changes-remaining="{{ view.changes.remaining }}">
+      {%- if view.changes.remaining %}
+      {{ t('Showing', '显示') }} {{ view.changes.shown }} {{ t('of', '/') }} {{ view.changes.total }}.
+      {{ t('The other', '其余') }} {{ view.changes.remaining }} {{ t('are on the workspace pages below.', '项请见下方各工作区页面。') }}
+      {%- else %}
+      {{ t('That is every method-comparable change in this build.', '这是本次构建中全部方法可比的变化。') }}
+      {%- endif %}
+    </p>
+    {%- else %}
+    <p class="mq-hub-empty" data-mq-changes-remaining="0">{{ bl(view.changes.empty_text) }}</p>
+    {%- endif %}
+  </section>
+
+  {# ── data attention ───────────────────────────────────────────────────────
+     A separate operational notice. Never an ordering, never a severity ranking
+     across workspaces. #}
+  <section class="mq-hub-attention" aria-labelledby="mq-hub-attention-title"
+           data-mq-hub-attention{% if view.unavailable %} data-mq-hub-unavailable{% endif %}>
+    <div class="mq-section-head">
+      <h2 id="mq-hub-attention-title">{{ bl(view.attention.heading) }}</h2>
+      <span class="mq-section-note">{{ bl(view.attention.note) }}</span>
+    </div>
+    {%- if view.attention.entries %}
+    <ul class="mq-hub-attentionlist">
+      {%- for item in view.attention.entries %}
+      <li class="mq-hub-attention-row{{ ' mq-hub-absent' if item.tone == 'bad' else '' }}"
+          data-mq-workspace="{{ item.workspace_id }}">
+        <a class="mq-hub-attention-link" href="{{ item.href }}">{{ bl(item.title) }}</a>
+        <span class="mq-chip mq-tone-{{ item.tone }}">{{ bl(item.reason.label) }}</span>
+      </li>
+      {%- endfor %}
+    </ul>
+    {%- else %}
+    <p class="mq-hub-empty">{{ bl(view.attention.clear_text) }}</p>
+    {%- endif %}
+  </section>
+
+  {# ── the fourteen ─────────────────────────────────────────────────────────
+     Closed registry order. Not sorted, not ranked, not grouped by magnitude. #}
+  <section class="mq-hub-suite" aria-labelledby="mq-hub-suite-title">
+    <div class="mq-section-head">
+      <h2 id="mq-hub-suite-title">{{ t('The fourteen workspaces', '十四个工作区') }}</h2>
+      <span class="mq-section-note">{{ t('Listed in the research suite’s own fixed order — not by size of move and not by importance.', '按研究套件既定的固定顺序排列 — 既非按变动幅度，也非按重要性。') }}</span>
+    </div>
+    <ul class="mq-hub-grid" data-mq-hub-grid>
+      {%- for row in view.workspaces %}
+      <li class="mq-hub-card{{ '' if row.available else ' mq-hub-absent' }}"
+          data-mq-workspace="{{ row.workspace_id }}">
+        <a class="mq-hub-card-link" href="{{ row.href }}">
+          <h3 class="mq-hub-card-title">{{ bl(row.title) }}</h3>
+        </a>
+        <p class="mq-hub-card-deck">{{ bl(row.subtitle) }}</p>
+        {%- if row.available %}
+        <p class="mq-hub-card-state">
+          {%- if row.state_label %}<strong>{{ bl(row.state_label) }}</strong>
+          {%- else %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('no state published', '未发布状态') }}</span>{% endif %}
+        </p>
+        <dl class="mq-hub-card-meta">
+          <div><dt>{{ t('Effective', '生效') }}</dt>
+               <dd>{% if row.effective_date %}<time>{{ row.effective_date }}</time>{% else %}<span class="mq-dash" aria-hidden="true">—</span>{% endif %}</dd></div>
+          <div><dt>{{ t('Sources', '数据源') }}</dt>
+               <dd class="mq-tone-{{ row.freshness_tone }}">{{ bl(row.freshness) }}</dd></div>
+          <div><dt>{{ t('Coverage', '覆盖率') }}</dt>
+               <dd>{% if row.coverage %}{{ row.coverage }}{% else %}<span class="mq-dash" aria-hidden="true">—</span>{% endif %}</dd></div>
+        </dl>
+        {%- else %}
+        <p class="mq-hub-card-absence">
+          <span class="mq-chip mq-tone-bad">{{ bl(row.absence.label) }}</span>
+        </p>
+        <p class="mq-hub-card-absence-text">{{ bl(row.absence_text) }}</p>
+        <p class="mq-hub-card-recovery">{{ bl(row.recovery_text) }}</p>
+        {%- endif %}
+      </li>
+      {%- endfor %}
+    </ul>
+  </section>
+
+  <p class="mq-hub-foot">
+    {{ t('This page composes what each workspace owner published. It produces no score and no ordering of its own, and it never tells you what to do.', '本页仅汇总各工作区所有者已发布的内容，不产生任何自有评分或排序，也不提供任何操作指示。') }}
+    <span class="mq-hub-foot-built">{{ t('Page built', '页面生成') }} <time>{{ view.page_built_at }}</time></span>
+  </p>
+</main>
+
+<script src="theme.js" defer></script>
+</body>
+</html>

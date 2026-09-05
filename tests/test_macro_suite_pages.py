@@ -36,6 +36,8 @@ PAGE = builder.SUITE_PAGES[0]
 BUILT_AT = "2026-09-04T12:00:00Z"
 
 _TEMPLATE_NAMES = (
+    "macro_monetary.html.j2",
+    "_macro_suite_nav.html.j2",
     "macro_liquidity_regime.html.j2",
     "macro_growth_real_economy.html.j2",
     "macro_business_activity.html.j2",
@@ -88,7 +90,9 @@ def _build(tmp_path: Path, data_root: Path) -> str:
     root = _isolated_root(tmp_path)
     pages = builder.render(root, data_root=data_root, out_dir=tmp_path / "site",
                            page_built_at=BUILT_AT)
-    assert len(pages) == len(builder.SUITE_PAGES)
+    # The fourteen workspace pages plus the one suite hub.
+    assert len(pages) == len(builder.SUITE_PAGES) + 1
+    assert pages[-1].name == builder.HUB_PAGE.output
     return pages[0].read_text(encoding="utf-8")
 
 

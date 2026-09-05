@@ -1,0 +1,56 @@
+{#
+  In-suite navigation for the Macro & Monetary suite (F01 / R1).
+
+  A MACRO LIBRARY, imported the same way as the shell:
+
+      {% import "_macro_suite_nav.html.j2" as suitenav %}
+      {{ suitenav.suite_bar(suite_nav) }}
+
+  It is imported rather than {% include %}d on purpose: an include would resolve
+  t() from whichever template pulled it in, and the shell calls this from inside
+  a macro, where that context is not the page's. The nav takes its data as an
+  ARGUMENT, so it can never read a different suite inventory from the hub.
+
+  This is a THIRD navigation LEVEL, not a third page header: the global site
+  header (_site_nav.html.j2) is untouched above it, and this bar only moves a
+  reader between the fourteen workspaces of one suite.
+
+  Its inventory comes from scripts/build_macro_suite_pages.suite_nav(), built
+  from the closed producer registry in registry order — never sorted, never
+  ranked. The list key is `entries`, never `items`: in Jinja `nav.items`
+  resolves to the built-in dict method, not the value
+  (tests/test_template_items_footgun.py).
+
+  No JavaScript: the rail scrolls, the links are links, and the current page is
+  marked with aria-current="page" so it survives with CSS disabled.
+#}
+
+{%- macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro -%}
+
+{%- macro bl(node) -%}
+{%- if node %}{{ t(node.en, node.zh) }}{% endif -%}
+{%- endmacro -%}
+
+{#- The bar carried by every workspace page: one way back to the suite entry
+    point, and one way sideways to any sibling workspace. -#}
+{%- macro suite_bar(nav) -%}
+<nav class="mq-suitenav" aria-label="Macro and Monetary suite">
+  <a class="mq-suitenav-home" href="{{ nav.hub.href }}">
+    <span class="mq-suitenav-home-mark" aria-hidden="true">←</span>
+    <span class="mq-suitenav-home-text">{{ t('Macro & Monetary', '宏观与货币') }}</span>
+  </a>
+  <p class="mq-suitenav-label" id="mq-suitenav-label">{{ t('Workspaces', '工作区') }}</p>
+  <ul class="mq-suitenav-rail" aria-labelledby="mq-suitenav-label">
+    {%- for item in nav.entries %}
+    <li>
+      <a class="mq-suitenav-pill{{ ' is-current' if item.current else '' }}"
+         href="{{ item.href }}"
+         data-mq-workspace="{{ item.workspace_id }}"
+         {%- if item.current %} aria-current="page"{% endif %}>{{ bl(item.title) }}</a>
+    </li>
+    {%- endfor %}
+  </ul>
+</nav>
+{%- endmacro -%}

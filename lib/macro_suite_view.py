@@ -23,6 +23,13 @@ from typing import Any, Mapping, Sequence
 
 from lib import macro_suite_labels as L
 
+# Reading orders the shell can compose. The grammar order is merged architecture
+# section 6.3 and remains the default for every workspace; the decision-first
+# order is the narrowly amended one (see build_view's docstring).
+LAYOUT_GRAMMAR = "grammar"
+LAYOUT_DECISION_FIRST = "decision_first"
+_LAYOUTS = frozenset({LAYOUT_GRAMMAR, LAYOUT_DECISION_FIRST})
+
 EM_DASH = L.EM_DASH
 
 
@@ -127,6 +134,9 @@ def _context(snapshot: Mapping[str, Any], page_built_at: str) -> dict[str, Any]:
         "state_tone": L.tone("freshness", state),
         "worst_freshness": L.label("freshness", availability.get("worst_freshness")),
         "worst_freshness_tone": L.tone("freshness", availability.get("worst_freshness")),
+        # Raw token beside the label: a consumer that must DECIDE (rather than
+        # print) needs the token, and re-deriving it from a label is a bug.
+        "worst_freshness_token": availability.get("worst_freshness"),
         "coverage": L.fmt_ratio_pct(availability.get("coverage_ratio")),
         "required": required,
         "degraded": list(availability.get("degraded") or []),
@@ -698,15 +708,108 @@ def _withheld_tabs(snapshot: Mapping[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+# --- next action -------------------------------------------------------------
+# The doctrine requires every signal surface to answer "so what do I do", and the
+# authority ceiling forbids this lane from answering with a position, a size or a
+# gate. The compliant answer is a RESEARCH action, and it is chosen by a total
+# function over typed tokens the producer already published — no model, no
+# weighting, no judgement. When the honest answer is "watch, don't chase", that
+# is what it says.
+
+#: Freshness tokens that mean this print cannot be read as today's answer.
+_NOT_TODAYS_ANSWER = frozenset({
+    "SOURCE_FAILED", "STALE_SOURCE", "RIGHTS_BLOCKED", "SIMULATED", "NOT_YET_RELEASED",
+})
+
+
+def _next_action(context: Mapping[str, Any],
+                 headline: Mapping[str, Any]) -> dict[str, Any]:
+    """One typed research action, in a fixed precedence.
+
+    Precedence is deliberate and is the whole design: an unusable print outranks
+    a disagreement, a disagreement outranks a boundary watch, and a settled quiet
+    read says so plainly rather than manufacturing something to do.
+    """
+    heading = _pair("Next action", "下一步")
+
+    state = context.get("state")
+    if state in _NOT_TODAYS_ANSWER or context.get("worst_freshness_token") in _NOT_TODAYS_ANSWER:
+        return {
+            "token": "WAIT_FOR_SOURCES",
+            "heading": heading,
+            "tone": "warn",
+            "text": _pair(
+                "Do not read this as today's answer. A required source is not current — "
+                "wait for the next accepted print.",
+                "请勿将此视为今日读数。某项必需数据源并非最新 — 请等待下一次已接受的读数。"),
+            "watch": None,
+        }
+
+    if context.get("contradiction"):
+        return {
+            "token": "TREAT_AS_UNSETTLED",
+            "heading": heading,
+            "tone": "warn",
+            "text": _pair(
+                "Required components disagree. Read them separately below — the summary "
+                "state is not settled while they conflict.",
+                "必需分项之间存在矛盾。请在下方分别查看 — 矛盾未消解前，汇总状态尚未确定。"),
+            "watch": None,
+        }
+
+    boundary = headline.get("nearest_boundary") or {}
+    if boundary.get("distance") and boundary.get("axis_label"):
+        return {
+            "token": "WATCH_BOUNDARY",
+            "heading": heading,
+            "tone": "neutral",
+            # Plain words on purpose, and no "recommendation": the merged authority
+            # guard in tests/test_macro_suite_pages.py bans that vocabulary from
+            # the surface outright, and a denial is still a use.
+            "text": _pair(
+                "Watch the axis closest to changing this state. Nothing here tells "
+                "you to act.",
+                "关注最接近改变当前状态的坐标轴。此处不提供任何操作指示。"),
+            "watch": {
+                "label": _pair("Closest to changing", "最接近发生改变"),
+                "axis_label": boundary.get("axis_label"),
+                "distance": boundary.get("distance"),
+            },
+        }
+
+    return {
+        "token": "WATCH_ONLY",
+        "heading": heading,
+        "tone": "neutral",
+        "text": _pair(
+            "Nothing here asks you to act. Watch — don't chase.",
+            "此处没有需要采取的操作。观察即可 — 不要追高杀跌。"),
+        "watch": None,
+    }
+
+
 # --- public entry points ------------------------------------------------------
 
 def build_view(snapshot: Mapping[str, Any], *, page_built_at: str,
-               artifact: Mapping[str, Any]) -> dict[str, Any]:
+               artifact: Mapping[str, Any],
+               layout: str = LAYOUT_GRAMMAR) -> dict[str, Any]:
     """The complete section 6.3 view for one validated snapshot.
 
     ``artifact`` carries the publication receipt the page shows in the evidence
     drawer: ``{"path", "sha256", "bytes", "manifest_path", "min_client_contract"}``.
+
+    ``layout`` selects the reading order the shell composes. ``LAYOUT_GRAMMAR``
+    is the merged architecture section 6.3 order and stays the default for every
+    workspace. ``LAYOUT_DECISION_FIRST`` leads with state / what changed / why it
+    matters / next action and demotes the expanded diagnostics behind disclosure;
+    it is authorized for the Liquidity Regime pattern-setter alone by the Sol
+    ruling of 2026-09-05, recorded in
+    ``research/market_intelligence_productization/MARKET_ONTOLOGY_F01_R1_DECISION_FIRST_AMENDMENT_2026-09-05.md``.
+    The selector is a rendering order only: it changes no producer semantics, no
+    metric, and no freshness or null verdict.
     """
+    if layout not in _LAYOUTS:
+        raise ValueError(f"unknown layout {layout!r}; expected one of {sorted(_LAYOUTS)}")
     axes = [_axis_view(a) for a in (snapshot.get("axes") or {}).get("items") or []]
     context = _context(snapshot, page_built_at)
     headline = _headline(snapshot, axes)
@@ -721,6 +824,9 @@ def build_view(snapshot: Mapping[str, Any], *, page_built_at: str,
 
     return {
         "ok": True,
+        "layout": layout,
+        "decision_first": layout == LAYOUT_DECISION_FIRST,
+        "next_action": _next_action(context, headline),
         "workspace": {
             "id": (snapshot.get("workspace") or {}).get("id"),
             "title": _bilingual((snapshot.get("workspace") or {}).get("title")),
@@ -762,6 +868,8 @@ def degraded_view(*, workspace_id: str, title: Mapping[str, str],
     """
     return {
         "ok": False,
+        "layout": LAYOUT_GRAMMAR,
+        "decision_first": False,
         "workspace": {"id": workspace_id, "title": dict(title), "subtitle": dict(subtitle)},
         "region": _region_view(region_code, region_display_name, True),
         "page_built_at": page_built_at,
@@ -781,4 +889,235 @@ def degraded_view(*, workspace_id: str, title: Mapping[str, str],
                           "下一次生产端成功构建后，本页将自动恢复。"),
         },
         "artifact": dict(artifact),
+    }
+
+
+# ==========================================================================
+# Macro & Monetary suite hub (F01 / R1)
+# ==========================================================================
+#
+# The hub COMPOSES what each workspace owner already published. It runs the
+# same `_context`, `_headline` and `_changes` composers the workspace pages
+# use, so the hub and the page can never disagree about a state, a clock or a
+# delta. It originates nothing.
+#
+# Three constructions are deliberately absent, and must stay absent
+# (`DNR:KILL-FUSED-COMPOSITE`, `DNR:KILL-REGIME-SCORECARD`, and the Sol ruling
+# of 2026-09-05):
+#   * no cross-workspace normalized magnitude,
+#   * no fused composite or single "macro regime" verdict,
+#   * no importance score, ranking or reordering of the closed registry order.
+# Operational trouble is carried in its own attention notice precisely so that
+# "this source broke" is never rendered as "this matters most".
+
+#: How many change lines the hub prints before it defers to the workspaces.
+HUB_CHANGE_LIMIT = 5
+
+#: Freshness tokens that mean a reader must not treat the row as settled.
+_ATTENTION_FRESHNESS = frozenset({
+    "SOURCE_FAILED", "STALE_SOURCE", "RIGHTS_BLOCKED", "SIMULATED",
+})
+
+#: Null reasons that mean the same thing, in the null-reason vocabulary.
+_ATTENTION_NULL_REASON = frozenset({
+    "SOURCE_FAILED", "RIGHTS_BLOCKED", "DISAGREEMENT", "REVISION_PENDING_REBUILD",
+})
+
+#: Comparability states that mean a printed delta cannot be read as a like-for-like move.
+_ATTENTION_COMPARABILITY = frozenset({
+    "METHOD_CHANGED", "DEFINITION_INCOMPARABLE",
+})
+
+
+def _attention(vocabulary: str, token: Any) -> dict[str, Any]:
+    """One typed attention cell, labelled in the vocabulary it actually came from.
+
+    Resolving a comparability token through the null-reason table would mint an
+    unreviewed label and register an unknown token, so the namespace travels
+    with the token rather than being assumed at the call site.
+    """
+    return {
+        "namespace": vocabulary,
+        "token": str(token),
+        "label": L.label(vocabulary, token),
+        "tone": L.tone("freshness", token) if vocabulary == "freshness" else "warn",
+    }
+
+
+def _hub_attention_reason(context: Mapping[str, Any],
+                          changes: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The one typed reason this row needs attention, or None when it is settled.
+
+    Deterministic and token-driven: it reads the owner's own published freshness,
+    null-reason and comparability vocabularies in a fixed precedence. It never
+    weighs one workspace against another, and it never invents a severity — the
+    attention notice is an operational note, not an importance ordering.
+    """
+    for token in (context.get("state"), context.get("worst_freshness_token")):
+        if token in _ATTENTION_FRESHNESS:
+            return _attention("freshness", token)
+    if context.get("contradiction"):
+        return _attention("null_reason", "DISAGREEMENT")
+    for reason in context.get("reasons") or []:
+        if reason in _ATTENTION_NULL_REASON:
+            return _attention("null_reason", reason)
+    if changes.get("comparability") in _ATTENTION_COMPARABILITY:
+        return _attention("comparability", changes["comparability"])
+    return None
+
+
+def build_hub_view(entries: Sequence[Mapping[str, Any]], *,
+                   page_built_at: str) -> dict[str, Any]:
+    """The Macro & Monetary hub view.
+
+    ``entries`` arrive in the closed registry order and are rendered in that
+    order. Each entry is
+    ``{"workspace_id", "region", "output", "title", "subtitle",
+       "snapshot" | None, "failure" | None}``.
+    """
+    rows: list[dict[str, Any]] = []
+    changes_pool: list[dict[str, Any]] = []
+    attention: list[dict[str, Any]] = []
+    unavailable: list[dict[str, Any]] = []
+    effective_dates: list[str] = []
+
+    for entry in entries:
+        snapshot = entry.get("snapshot")
+        row: dict[str, Any] = {
+            "workspace_id": entry["workspace_id"],
+            "href": entry["output"],
+            "title": dict(entry["title"]),
+            "subtitle": dict(entry["subtitle"]),
+            "region": entry.get("region"),
+        }
+
+        if not snapshot:
+            failure = entry.get("failure") or {}
+            kind = failure.get("kind") or "UNKNOWN"
+            row.update({
+                "available": False,
+                "absence": _absence(kind),
+                # An unreadable workspace is NEVER calm and NEVER zero. It says
+                # so in words, and it says what would fix it.
+                "absence_text": _pair(
+                    "Not readable in this build — no state is shown for it.",
+                    "本次构建无法读取 — 因此不展示任何状态读数。"),
+                "recovery_text": _pair(
+                    "Recovers on the next accepted producer build.",
+                    "下一次生产端成功构建后自动恢复。"),
+            })
+            rows.append(row)
+            unavailable.append({"workspace_id": entry["workspace_id"],
+                                "title": dict(entry["title"]),
+                                "reason": _absence(kind)})
+            attention.append({"workspace_id": entry["workspace_id"],
+                              "title": dict(entry["title"]),
+                              "href": entry["output"],
+                              "reason": _attention("null_reason", kind),
+                              "tone": "bad"})
+            continue
+
+        axes = [_axis_view(a) for a in (snapshot.get("axes") or {}).get("items") or []]
+        context = _context(snapshot, page_built_at)
+        headline = _headline(snapshot, axes)
+        changes = _changes(snapshot)
+
+        if headline.get("effective_date"):
+            effective_dates.append(str(headline["effective_date"]))
+
+        row.update({
+            "available": True,
+            "state_id": headline.get("state_id"),
+            "state_label": headline.get("state_label"),
+            "effective_date": headline.get("effective_date"),
+            "freshness": context.get("state_label"),
+            "freshness_tone": context.get("state_tone"),
+            "coverage": context.get("coverage"),
+            "comparability_label": changes.get("comparability_label"),
+            "comparable": changes.get("comparable"),
+            "change_count": len(changes.get("deltas") or []),
+            "changes_absence": changes.get("absence"),
+        })
+        rows.append(row)
+
+        # Changes are pooled in registry order and truncated in registry order.
+        # No magnitude comparison decides what a reader sees first.
+        for delta in changes.get("deltas") or []:
+            # A row the producer published with no prior, no current and no delta
+            # is not a change — it is a metric that could not be compared. Putting
+            # it here would spend one of the few slots saying nothing, and would
+            # print a bare em dash where the reader expects a move. The workspace's
+            # own what-changed table still carries the row and its typed reason.
+            if not (delta.get("delta") and delta.get("prior") and delta.get("current")):
+                continue
+            changes_pool.append({
+                "workspace_id": entry["workspace_id"],
+                "workspace_title": dict(entry["title"]),
+                "href": entry["output"],
+                "label": delta.get("label"),
+                "prior": delta.get("prior"),
+                "current": delta.get("current"),
+                "delta": delta.get("delta"),
+                "sign": delta.get("sign"),
+            })
+
+        reason = _hub_attention_reason(context, changes)
+        if reason:
+            attention.append({"workspace_id": entry["workspace_id"],
+                              "title": dict(entry["title"]),
+                              "href": entry["output"],
+                              "reason": reason,
+                              "tone": reason["tone"]})
+
+    available = [r for r in rows if r.get("available")]
+    shown = changes_pool[:HUB_CHANGE_LIMIT]
+
+    return {
+        "page_built_at": page_built_at,
+        "kicker": _pair("Macro & Monetary", "宏观与货币"),
+        "title": _pair("Macro & Monetary", "宏观与货币"),
+        "deck": _pair("Fourteen research workspaces, one current read.",
+                      "十四个研究工作区，一个当前读数。"),
+        "as_of": {
+            # The suite is only as current as its oldest accepted print.
+            "effective_date": min(effective_dates) if effective_dates else None,
+            "newest_effective_date": max(effective_dates) if effective_dates else None,
+            "label": _pair("Suite effective date", "套件生效日期"),
+            "note": _pair(
+                "The suite is dated by its oldest accepted workspace print, never its newest.",
+                "套件日期取自最旧的已接受工作区读数，而非最新读数。"),
+        },
+        "coverage": {
+            "available": len(available),
+            "total": len(rows),
+            "complete": len(available) == len(rows),
+            "label": _pair("Workspaces readable", "可读取工作区"),
+        },
+        "workspaces": rows,
+        "changes": {
+            "entries": shown,
+            "shown": len(shown),
+            "remaining": max(0, len(changes_pool) - len(shown)),
+            "total": len(changes_pool),
+            "heading": _pair("Recent changes", "近期变化"),
+            # Named honestly: these are the first N in the suite's own order, not
+            # a curated set of the N that matter most.
+            "note": _pair(
+                "The first few changes in suite order — not a ranking. Open a workspace for its full list.",
+                "按套件既定顺序列出的前几项变化 — 并非重要性排序。完整列表请进入相应工作区。"),
+            "empty_text": _pair(
+                "No workspace published a method-comparable change in this build.",
+                "本次构建中，没有工作区发布方法可比的变化。"),
+        },
+        "attention": {
+            "entries": attention,
+            "count": len(attention),
+            "heading": _pair("Needs data attention", "数据需要关注"),
+            "note": _pair(
+                "Source or revision trouble. This is an operational note, not a judgement about what matters.",
+                "数据源或修订问题。这是运行状态提示，不代表重要性判断。"),
+            "clear_text": _pair("Every workspace read cleanly in this build.",
+                                "本次构建中所有工作区均读取正常。"),
+        },
+        "unavailable": unavailable,
     }

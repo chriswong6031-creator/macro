@@ -35,7 +35,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
@@ -237,6 +237,66 @@ SUITE_PAGES: tuple[SuitePage, ...] = (
 )
 
 
+@dataclass(frozen=True)
+class HubPage:
+    """The one suite entry point. It owns no producer and publishes no state of
+    its own — it composes what the fourteen workspace owners already published."""
+
+    template: str
+    output: str
+    seo_title: str
+    seo_desc: str
+
+
+HUB_PAGE = HubPage(
+    template="macro_monetary.html.j2",
+    output="macro_monetary.html",
+    seo_title="Macro & Monetary — the current read across fourteen workspaces | MastermindX",
+    seo_desc=(
+        "One entry point to the Macro & Monetary research suite: the current state of "
+        "each of the fourteen workspaces, what changed, and which inputs need attention "
+        "— every read dated and every gap typed."
+    ),
+)
+
+#: Workspaces whose body renders decision-first rather than in the frozen §6.3
+#: order. R1 sets the pattern on ONE page (Sol ruling 2026-09-05); extending it is
+#: one entry here, and the amendment record
+#: research/market_intelligence_productization/MARKET_ONTOLOGY_F01_R1_DECISION_FIRST_AMENDMENT_2026-09-05.md
+#: is what authorizes the supersession.
+DECISION_FIRST_WORKSPACES = frozenset({"liquidity_regime"})
+
+
+def _layout_for(workspace_id: str) -> str:
+    return (macro_suite_view.LAYOUT_DECISION_FIRST
+            if workspace_id in DECISION_FIRST_WORKSPACES
+            else macro_suite_view.LAYOUT_GRAMMAR)
+
+
+def suite_nav(current_output: str | None) -> dict[str, Any]:
+    """The in-suite navigation context shared by the hub and all fourteen pages.
+
+    Built from the closed registry in SUITE_PAGES order, so the switcher can
+    never advertise a workspace the producer registry does not carry, and can
+    never present a different order from the hub.
+    """
+    # `entries`, never `items`: `nav.items` in Jinja resolves to the dict method.
+    entries = []
+    for page in SUITE_PAGES:
+        identity = _identity(page)
+        entries.append({
+            "workspace_id": page.workspace_id,
+            "href": page.output,
+            "title": identity["title"],
+            "current": page.output == current_output,
+        })
+    return {
+        "hub": {"href": HUB_PAGE.output, "current": HUB_PAGE.output == current_output},
+        "entries": entries,
+    }
+
+
+
 class SnapshotRefused(Exception):
     """The published artifact did not clear the closed contract.
 
@@ -377,6 +437,7 @@ def render_page(env: Environment, page: SuitePage, view: Mapping[str, Any]) -> s
         page_seo_path=page.output,
         active_section="research",
         active_page=Path(page.output).stem,
+        suite_nav=suite_nav(page.output),
     )
     # The shared navigation partials indent around conditional blocks; normalise
     # generated-only trailing whitespace so the committed page stays diff-clean.
@@ -397,8 +458,10 @@ def build_page(root: Path, page: SuitePage, *, data_root: Path, out_dir: Path,
     }
     try:
         snapshot, artifact = read_workspace(data_root, page)
-        view = macro_suite_view.build_view(snapshot, page_built_at=page_built_at, artifact=artifact)
+        view = macro_suite_view.build_view(snapshot, page_built_at=page_built_at,
+                                           artifact=artifact, layout=_layout_for(page.workspace_id))
         ok = True
+        hub_entry: dict[str, Any] = {"snapshot": snapshot, "failure": None}
     except SnapshotRefused as refusal:
         print(
             f"::warning title=macro_suite_page::{page.workspace_id}/{page.region} refused "
@@ -417,6 +480,8 @@ def build_page(root: Path, page: SuitePage, *, data_root: Path, out_dir: Path,
             failure_detail=refusal.detail,
         )
         ok = False
+        hub_entry = {"snapshot": None,
+                     "failure": {"kind": refusal.kind, "detail": refusal.detail}}
 
     html = render_page(env, page, view)
 
@@ -432,7 +497,50 @@ def build_page(root: Path, page: SuitePage, *, data_root: Path, out_dir: Path,
         os.replace(temp, destination)
     finally:
         temp.unlink(missing_ok=True)
-    return destination, ok
+
+    hub_entry.update({
+        "workspace_id": page.workspace_id,
+        "region": page.region,
+        "output": page.output,
+        "title": identity["title"],
+        "subtitle": identity["subtitle"],
+    })
+    return destination, ok, hub_entry
+
+
+def build_hub(entries: Sequence[Mapping[str, Any]], *, out_dir: Path,
+              env: Environment, page_built_at: str) -> Path:
+    """Render the suite hub from what the fourteen pages just read.
+
+    The hub reads NO artifact of its own. Every row is the snapshot (or the typed
+    refusal) that the workspace page beside it was built from, so the hub and the
+    page it links to cannot disagree about state, date or coverage. A workspace
+    the builder could not read arrives here as a refusal, and the hub says so.
+    """
+    view = macro_suite_view.build_hub_view(entries, page_built_at=page_built_at)
+    html = env.get_template(HUB_PAGE.template).render(
+        view=view,
+        page_title="Macro & Monetary",
+        page_seo_title=HUB_PAGE.seo_title,
+        page_seo_desc=HUB_PAGE.seo_desc,
+        page_seo_path=HUB_PAGE.output,
+        active_section="research",
+        active_page=Path(HUB_PAGE.output).stem,
+        suite_nav=suite_nav(HUB_PAGE.output),
+    )
+    html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
+
+    from lib.pages import write_page  # noqa: PLC0415
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    destination = out_dir / HUB_PAGE.output
+    temp = _temp_sibling(destination)
+    try:
+        write_page(temp, html)
+        os.replace(temp, destination)
+    finally:
+        temp.unlink(missing_ok=True)
+    return destination
 
 
 def render(root: Path | str = _REPO_ROOT, *, data_root: Path | str | None = None,
@@ -446,10 +554,13 @@ def render(root: Path | str = _REPO_ROOT, *, data_root: Path | str | None = None
     env = _environment(root)
 
     written: list[Path] = []
+    entries: list[Mapping[str, Any]] = []
     for page in SUITE_PAGES:
-        path, _ok = build_page(root, page, data_root=data, out_dir=site, env=env,
-                               page_built_at=stamp)
+        path, _ok, entry = build_page(root, page, data_root=data, out_dir=site, env=env,
+                                      page_built_at=stamp)
         written.append(path)
+        entries.append(entry)
+    written.append(build_hub(entries, out_dir=site, env=env, page_built_at=stamp))
     for asset in SHARED_ASSETS:
         _atomic_copy(root / "templates" / asset, site / asset)
     return written
