@@ -8,7 +8,7 @@
   "scope_en": "Euro area aggregate (current EA21 composition), not the European Union. STOXX Europe 600 is broader market context only.",
   "scope_zh": "欧元区当前21国总量（EA21），并非欧盟整体。STOXX Europe 600仅作更广泛市场背景。",
   "asof": "2026-09-04",
-  "built": "2026-09-05 02:46 UTC",
+  "built": "2026-09-05 14:10 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 50,
+    "top_score": 42,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.2,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 50.0,
+      "intensity": 42.1,
       "peak": 89.7,
       "peak_days_ago": 28,
-      "off_peak": 39.7,
-      "velocity": 11.9,
+      "off_peak": 47.6,
+      "velocity": 4.0,
       "phase": "rising",
       "reached_risk": true,
       "state_now": "calm",
@@ -244,17 +244,17 @@
         36.7,
         43.7,
         51.4,
-        59.3,
-        50.0
+        53.4,
+        42.1
       ],
-      "spark_pts": "3.0,3.0 6.9,7.9 10.8,7.8 14.7,6.8 18.7,6.4 22.6,10.8 26.5,9.9 30.4,9.2 34.3,7.7 38.2,8.3 42.1,13.8 46.0,18.0 50.0,21.2 53.9,20.2 57.8,21.2 61.7,23.0 65.6,20.2 69.5,20.7 73.4,14.9 77.3,15.3 81.3,13.1 85.2,10.7 89.1,8.2 93.0,11.1",
+      "spark_pts": "3.0,3.0 6.9,7.9 10.8,7.8 14.7,6.8 18.7,6.4 22.6,10.8 26.5,9.9 30.4,9.2 34.3,7.7 38.2,8.3 42.1,13.8 46.0,18.0 50.0,21.2 53.9,20.2 57.8,21.2 61.7,23.0 65.6,20.2 69.5,20.7 73.4,14.9 77.3,15.3 81.3,13.1 85.2,10.7 89.1,10.1 93.0,13.6",
       "spark_peak": {
         "x": 3.0,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 11.1
+        "y": 13.6
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -262,36 +262,41 @@
     },
     "scares": [
       {
-        "scare": "rate_shock",
-        "tier": "A",
-        "label_en": "US rate shock",
-        "label_zh": "美债利率冲击",
-        "score": 64.1,
-        "band": "watch",
-        "firing_legs": [
-          {
-            "leg": "us_rate_2y",
-            "pctile": 0.766,
-            "confirmed": false
-          },
-          {
-            "leg": "us_rate_10y",
-            "pctile": 0.655,
-            "confirmed": false
-          }
-        ]
-      },
-      {
         "scare": "extension",
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 60.6,
+        "score": 60.9,
         "band": "watch",
         "firing_legs": [
           {
             "leg": "ext_idx",
             "pctile": 0.663,
+            "confirmed": false
+          },
+          {
+            "leg": "ext_etf",
+            "pctile": 0.555,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "rate_shock",
+        "tier": "A",
+        "label_en": "US rate shock",
+        "label_zh": "美债利率冲击",
+        "score": 57.0,
+        "band": "watch",
+        "firing_legs": [
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.679,
+            "confirmed": false
+          },
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.593,
             "confirmed": false
           }
         ]
@@ -301,7 +306,7 @@
         "tier": "A",
         "label_en": "Euro depreciation / outflows",
         "label_zh": "欧元贬值／资金外流",
-        "score": 44.2,
+        "score": 43.3,
         "band": "calm",
         "firing_legs": []
       }
@@ -367,7 +372,7 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 1.1616,
+      "raw": 1.1621,
       "value": "1.16",
       "unit": "",
       "asof": null

@@ -1,0 +1,19 @@
+{
+  "schema": "baskets_china_ths.scrape_receipt.v1",
+  "date": "2026-09-05",
+  "started_at": "2026-09-05T15:37:59Z",
+  "finished_at": "2026-09-05T17:01:01Z",
+  "concepts_attempted": 375,
+  "concepts_fetched": 375,
+  "members_total": 16869,
+  "complete": true,
+  "truncated": [],
+  "source": "q.10jqka.com.cn",
+  "writer": "scripts.scrape_ths_weekly",
+  "passes": 1,
+  "budget_minutes": 150.0,
+  "budget_exhausted": false,
+  "promoted": true,
+  "pit_rows_added": 11262,
+  "note": ""
+}

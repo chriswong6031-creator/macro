@@ -258,3 +258,4 @@
 {"asof": "2026-09-04", "domain": "dispersion", "field": "dispersion_state", "from_value": "lean_in", "to_value": "neutral", "macro_context_id": "9dae79205ff5c9c0"}
 {"asof": "2026-09-04", "domain": "intl", "field": "intl_ez_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "9dae79205ff5c9c0"}
 {"asof": "2026-09-04", "domain": "intl", "field": "intl_in_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-05", "domain": "fx", "field": "fx_regime_radar", "from_value": "intervention_risk", "to_value": null, "macro_context_id": "fe32993f8426a656"}

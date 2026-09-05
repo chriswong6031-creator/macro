@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "VIR-BULL-20260821",
-  "asof": "2026-09-04",
+  "asof": "2026-09-05",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 75.7,
-  "raw_confidence": 76.1,
-  "delta_vs_base": 15.7,
+  "management_confidence": 75.8,
+  "raw_confidence": 76.0,
+  "delta_vs_base": 15.8,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 41.7,
+    "progress": 41.3,
     "pace": 100.0,
     "retention": 50.0,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.781,
-    "dist_to_t1_r": 0.719,
-    "dist_to_t2_r": 2.219,
-    "horizon_pct_used": 24.4,
-    "p1": 0.5208,
-    "p2": 0.2604,
+    "dist_to_stop_r": 1.772,
+    "dist_to_t1_r": 0.728,
+    "dist_to_t2_r": 2.228,
+    "horizon_pct_used": 26.7,
+    "p1": 0.5148,
+    "p2": 0.2574,
     "p3": null,
-    "move_r": 0.781,
+    "move_r": 0.772,
     "mfe_r": 0.832,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 11,
-  "tau": 0.2444
+  "days_elapsed": 12,
+  "tau": 0.2667
 }

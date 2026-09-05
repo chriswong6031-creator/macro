@@ -1554,3 +1554,7 @@
 {"date": "2026-09-04", "ticker": "LH", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 8, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 10.0, "session_source": "stage_source_asof"}
 {"date": "2026-09-04", "ticker": "MSI", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.8, "performance": 9.5, "session_source": "stage_source_asof"}
 {"date": "2026-09-04", "ticker": "MYO", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.6111111111111112, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-09-04", "ticker": "FSBW", "sga_score": 58, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-09-04", "ticker": "CBFV", "sga_score": 52, "gate_tier": "T2", "weeks_in_stage": 4, "earnings_present": false, "sentiment": null, "performance": null, "session_source": "stage_source_asof"}
+{"date": "2026-09-04", "ticker": "SABR", "sga_score": 45, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.6, "performance": 7.5, "session_source": "stage_source_asof"}
+{"date": "2026-09-04", "ticker": "BDX", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 5, "earnings_present": true, "sentiment": 0.6, "performance": 7.5, "session_source": "stage_source_asof"}

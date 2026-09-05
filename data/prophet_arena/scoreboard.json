@@ -1,6 +1,6 @@
 {
   "schema": "prophet_arena.scoreboard/v1",
-  "as_of": "2026-09-04",
+  "as_of": "2026-09-05",
   "tier": "display",
   "authority": {
     "tier": "display",
@@ -72,48 +72,16 @@
   "headline_min_closed": 20,
   "harness_validity": {
     "c0_plan_ids": [
-      "ADM-BULL-20260831",
-      "AEP-BULL-20260904",
-      "ALGM-BULL-20260617",
-      "ASTH-BULL-20260904",
-      "ATO-BULL-20260706",
-      "CARR-BULL-20260904",
-      "CMS-BULL-20260904",
-      "COF-BULL-20260903",
-      "ELV-BULL-20260903",
-      "ETR-BULL-20260623",
-      "F-BULL-20260903",
-      "LZB-BULL-20260727",
-      "MO-BULL-20260903",
-      "NABL-BULL-20260903",
-      "NOVT-BULL-20260812",
-      "OKE-BULL-20260813",
-      "PLMR-BULL-20260903",
-      "SGI-BULL-20260831",
-      "SMP-BULL-20260903",
-      "WFC-BULL-20260903"
+      "NX-BULL-20260903",
+      "TEL-BULL-20260903",
+      "VRT-BULL-20260903",
+      "VST-BULL-20260903"
     ],
     "live_plan_ids": [
-      "ADM-BULL-20260831",
-      "AEP-BULL-20260904",
-      "ALGM-BULL-20260617",
-      "ASTH-BULL-20260904",
-      "ATO-BULL-20260706",
-      "CARR-BULL-20260904",
-      "CMS-BULL-20260904",
-      "COF-BULL-20260903",
-      "ELV-BULL-20260903",
-      "ETR-BULL-20260623",
-      "F-BULL-20260903",
-      "LZB-BULL-20260727",
-      "MO-BULL-20260903",
-      "NABL-BULL-20260903",
-      "NOVT-BULL-20260812",
-      "OKE-BULL-20260813",
-      "PLMR-BULL-20260903",
-      "SGI-BULL-20260831",
-      "SMP-BULL-20260903",
-      "WFC-BULL-20260903"
+      "NX-BULL-20260903",
+      "TEL-BULL-20260903",
+      "VRT-BULL-20260903",
+      "VST-BULL-20260903"
     ],
     "c0_mismatch_count": 0,
     "missing_from_mirror": [],
@@ -127,19 +95,19 @@
       "label": "the live rule, mirrored",
       "label_zh": "\u5b9e\u76d8\u89c4\u5219\u955c\u50cf",
       "grain": "selection",
-      "n_open": 221,
-      "n_closed": 25,
-      "win_rate_pct": 72.0,
-      "avg_pct": 3.98,
-      "median_pct": 2.71,
+      "n_open": 224,
+      "n_closed": 26,
+      "win_rate_pct": 73.1,
+      "avg_pct": 3.96,
+      "median_pct": 2.77,
       "expired_share_pct": 0.0,
       "time_stopped_share_pct": 0.0,
       "outcomes": {
         "INVALIDATED": 13,
-        "T1_HIT": 11,
+        "T1_HIT": 12,
         "T2_HIT": 1
       },
-      "nights_recorded": 15,
+      "nights_recorded": 16,
       "reading": "readable \u2014 enough closed shadow plans for a headline",
       "readable": true
     },
@@ -149,26 +117,26 @@
       "label_zh": "\u4f18\u5148\u8f83\u65e9\u5165\u573a",
       "grain": "selection",
       "n_open": 71,
-      "n_closed": 4,
-      "win_rate_pct": 25.0,
-      "avg_pct": -13.09,
-      "median_pct": -14.22,
+      "n_closed": 5,
+      "win_rate_pct": 40.0,
+      "avg_pct": -9.77,
+      "median_pct": -2.32,
       "expired_share_pct": 0.0,
       "time_stopped_share_pct": 0.0,
       "outcomes": {
         "INVALIDATED": 3,
-        "T1_HIT": 1
+        "T1_HIT": 2
       },
-      "nights_recorded": 14,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 4",
+      "nights_recorded": 15,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 5",
       "readable": false,
       "vs_champion": {
         "shared_nights": 3,
-        "n_policy": 4,
-        "n_champion": 8,
-        "avg_pct": -13.09,
-        "champion_avg_pct": -5.09,
-        "diff_pp": -8.0
+        "n_policy": 5,
+        "n_champion": 9,
+        "avg_pct": -9.77,
+        "champion_avg_pct": -4.14,
+        "diff_pp": -5.64
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -177,27 +145,27 @@
       "label": "washout turns added",
       "label_zh": "\u7eb3\u5165\u8d85\u8dcc\u8f6c\u6298",
       "grain": "selection",
-      "n_open": 100,
-      "n_closed": 7,
-      "win_rate_pct": 57.1,
-      "avg_pct": 3.28,
-      "median_pct": 2.83,
+      "n_open": 99,
+      "n_closed": 8,
+      "win_rate_pct": 62.5,
+      "avg_pct": 3.31,
+      "median_pct": 3.16,
       "expired_share_pct": 0.0,
       "time_stopped_share_pct": 0.0,
       "outcomes": {
         "INVALIDATED": 3,
-        "T1_HIT": 4
+        "T1_HIT": 5
       },
       "nights_recorded": 15,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 7",
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 8",
       "readable": false,
       "vs_champion": {
         "shared_nights": 3,
-        "n_policy": 5,
-        "n_champion": 8,
-        "avg_pct": -5.78,
-        "champion_avg_pct": -5.09,
-        "diff_pp": -0.69
+        "n_policy": 6,
+        "n_champion": 9,
+        "avg_pct": -4.24,
+        "champion_avg_pct": -4.14,
+        "diff_pp": -0.1
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -206,27 +174,27 @@
       "label": "book size follows dispersion",
       "label_zh": "\u6301\u4ed3\u6570\u91cf\u968f\u79bb\u6563\u5ea6",
       "grain": "selection",
-      "n_open": 69,
-      "n_closed": 4,
-      "win_rate_pct": 25.0,
-      "avg_pct": -13.09,
-      "median_pct": -14.22,
+      "n_open": 68,
+      "n_closed": 5,
+      "win_rate_pct": 40.0,
+      "avg_pct": -9.77,
+      "median_pct": -2.32,
       "expired_share_pct": 0.0,
       "time_stopped_share_pct": 0.0,
       "outcomes": {
         "INVALIDATED": 3,
-        "T1_HIT": 1
+        "T1_HIT": 2
       },
       "nights_recorded": 15,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 4",
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 5",
       "readable": false,
       "vs_champion": {
         "shared_nights": 3,
-        "n_policy": 4,
-        "n_champion": 8,
-        "avg_pct": -13.09,
-        "champion_avg_pct": -5.09,
-        "diff_pp": -8.0
+        "n_policy": 5,
+        "n_champion": 9,
+        "avg_pct": -9.77,
+        "champion_avg_pct": -4.14,
+        "diff_pp": -5.64
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -235,7 +203,7 @@
       "label": "weekly-aligned only",
       "label_zh": "\u4ec5\u9650\u5468\u7ebf\u540c\u5411",
       "grain": "selection",
-      "n_open": 35,
+      "n_open": 36,
       "n_closed": 6,
       "win_rate_pct": 66.7,
       "avg_pct": -2.12,
@@ -246,7 +214,7 @@
         "INVALIDATED": 5,
         "T2_HIT": 1
       },
-      "nights_recorded": 12,
+      "nights_recorded": 13,
       "reading": "too early to read \u2014 needs 20 closed shadow plans, has 6",
       "readable": false,
       "vs_champion": {
@@ -264,28 +232,28 @@
       "label": "cut dead money at 21 sessions",
       "label_zh": "21\u4e2a\u4ea4\u6613\u65e5\u6b62\u635f\u79bb\u573a",
       "grain": "closure",
-      "n_open": 221,
-      "n_closed": 25,
-      "win_rate_pct": 72.0,
-      "avg_pct": 3.98,
-      "median_pct": 2.71,
+      "n_open": 224,
+      "n_closed": 26,
+      "win_rate_pct": 73.1,
+      "avg_pct": 3.96,
+      "median_pct": 2.77,
       "expired_share_pct": 0.0,
       "time_stopped_share_pct": 0.0,
       "outcomes": {
         "INVALIDATED": 13,
-        "T1_HIT": 11,
+        "T1_HIT": 12,
         "T2_HIT": 1
       },
-      "nights_recorded": 15,
+      "nights_recorded": 16,
       "reading": "readable \u2014 enough closed shadow plans for a headline",
       "readable": true,
       "vs_champion": {
-        "n_paired": 25,
+        "n_paired": 26,
         "avg_diff_pp": 0.0,
         "median_diff_pp": 0.0,
         "better": 0,
         "worse": 0,
-        "same": 25,
+        "same": 26,
         "unpaired_plans": 0
       },
       "vs_champion_basis": "per-plan paired \u2014 same plan ids and entries as the live rule, different exits"
@@ -295,27 +263,27 @@
       "label": "almost-ready entries admitted",
       "label_zh": "\u7eb3\u5165\u300c\u5373\u5c06\u4e70\u5165\u300d\u6863",
       "grain": "selection",
-      "n_open": 74,
-      "n_closed": 4,
-      "win_rate_pct": 25.0,
-      "avg_pct": -13.09,
-      "median_pct": -14.22,
+      "n_open": 75,
+      "n_closed": 5,
+      "win_rate_pct": 40.0,
+      "avg_pct": -9.77,
+      "median_pct": -2.32,
       "expired_share_pct": 0.0,
       "time_stopped_share_pct": 0.0,
       "outcomes": {
         "INVALIDATED": 3,
-        "T1_HIT": 1
+        "T1_HIT": 2
       },
-      "nights_recorded": 14,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 4",
+      "nights_recorded": 15,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 5",
       "readable": false,
       "vs_champion": {
         "shared_nights": 3,
-        "n_policy": 4,
-        "n_champion": 8,
-        "avg_pct": -13.09,
-        "champion_avg_pct": -5.09,
-        "diff_pp": -8.0
+        "n_policy": 5,
+        "n_champion": 9,
+        "avg_pct": -9.77,
+        "champion_avg_pct": -4.14,
+        "diff_pp": -5.64
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     }
@@ -336,7 +304,7 @@
     }
   ],
   "tonight": {
-    "asof": "2026-09-04",
+    "asof": "2026-09-05",
     "standouts_as_of": "2026-09-04",
     "price_through": "2026-09-04",
     "source_delayed": false,
@@ -347,7 +315,7 @@
     "dispersion": {
       "mode": "not_lean_in",
       "state": "neutral",
-      "artifact_as_of": "2026-09-04",
+      "artifact_as_of": "2026-09-05",
       "stale_sessions": 0,
       "cap": 6,
       "path": "data/dispersion/regime.json"
@@ -366,7 +334,7 @@
         "reason": null,
         "evaluated": 713,
         "skipped": 4,
-        "state_turn": 88,
+        "state_turn": 89,
         "fresh": 4,
         "aligned": 4,
         "asof_max": "2026-09-04",
@@ -376,87 +344,72 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 20.0
+        "runtime_s": 19.9
       }
     },
     "policies": {
       "C0_champion_mirror": {
         "selected_tickers": [
-          "ADM",
-          "F",
           "KMI",
           "ETR",
           "PG",
           "AEP",
-          "ATO",
+          "F",
           "WFC",
+          "LEA",
           "SPNT",
           "SMP",
-          "ED",
+          "NX",
           "PLMR",
           "PCRX",
-          "COF",
-          "NOVT",
+          "VRT",
           "OKE",
+          "NOVT",
+          "AEO",
           "SGI",
+          "VST",
           "MC",
-          "ELV",
           "ACM",
           "ASTH",
           "MO",
-          "LZB",
           "HWKN",
           "GPI",
           "CMS",
+          "LUMN",
           "RBLX",
           "TTD",
-          "CARR",
           "ALGM",
           "ARLO",
+          "SMPL",
           "TEL",
+          "CNM",
           "BXMT",
           "NABL",
           "MIR"
         ],
         "plan_ids": [
-          "ADM-BULL-20260831",
-          "AEP-BULL-20260904",
-          "ALGM-BULL-20260617",
-          "ASTH-BULL-20260904",
-          "ATO-BULL-20260706",
-          "CARR-BULL-20260904",
-          "CMS-BULL-20260904",
-          "COF-BULL-20260903",
-          "ELV-BULL-20260903",
-          "ETR-BULL-20260623",
-          "F-BULL-20260903",
-          "LZB-BULL-20260727",
-          "MO-BULL-20260903",
-          "NABL-BULL-20260903",
-          "NOVT-BULL-20260812",
-          "OKE-BULL-20260813",
-          "PLMR-BULL-20260903",
-          "SGI-BULL-20260831",
-          "SMP-BULL-20260903",
-          "WFC-BULL-20260903"
+          "NX-BULL-20260903",
+          "TEL-BULL-20260903",
+          "VRT-BULL-20260903",
+          "VST-BULL-20260903"
         ],
-        "n_plans": 20,
+        "n_plans": 4,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": null,
           "cap_applied": false,
           "selection_basis": "lossless live champion mirror",
           "truncated": 0
         },
         "origination": {
-          "offered": 35,
-          "skipped_duplicate_id": 3,
-          "skipped_open_plan": 6,
+          "offered": 36,
+          "skipped_duplicate_id": 19,
+          "skipped_open_plan": 7,
           "skipped_clock_provenance": 6,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -509,40 +462,33 @@
               ]
             }
           ],
-          "originated": 20,
+          "originated": 4,
           "validation_failed": 6
         },
-        "ledger_rows_appended": 20,
-        "ledger_closures_appended": 4
+        "ledger_rows_appended": 4,
+        "ledger_closures_appended": 1
       },
       "C1_buy_soon_first": {
         "selected_tickers": [
-          "ADM",
-          "F",
           "KMI",
           "ETR",
           "PG",
           "AEP",
-          "ATO",
+          "F",
           "WFC",
+          "LEA",
           "SPNT",
           "SMP",
-          "ED",
-          "PLMR"
+          "NX",
+          "PLMR",
+          "PCRX"
         ],
         "plan_ids": [
-          "ADM-BULL-20260831",
-          "AEP-BULL-20260904",
-          "ATO-BULL-20260706",
-          "ETR-BULL-20260623",
-          "F-BULL-20260903",
-          "PLMR-BULL-20260903",
-          "SMP-BULL-20260903",
-          "WFC-BULL-20260903"
+          "NX-BULL-20260903"
         ],
-        "n_plans": 8,
+        "n_plans": 1,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": 12,
           "cap_applied": true,
           "act_level_2": 0,
@@ -550,13 +496,13 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 7,
           "skipped_open_plan": 2,
-          "skipped_clock_provenance": 1,
+          "skipped_clock_provenance": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -567,42 +513,44 @@
               "errors": [
                 "formation_date '2026-09-03' postdates tier_event_date '2026-09-02'"
               ]
+            },
+            {
+              "ticker": "PCRX",
+              "id": "PCRX-BULL-20260903",
+              "stage": "clock_provenance",
+              "errors": [
+                "formation_date '2026-09-03' postdates tier_event_date '2026-08-31'"
+              ]
             }
           ],
-          "originated": 8,
-          "validation_failed": 1
+          "originated": 1,
+          "validation_failed": 2
         },
-        "ledger_rows_appended": 8,
-        "ledger_closures_appended": 0
+        "ledger_rows_appended": 1,
+        "ledger_closures_appended": 1
       },
       "C3_door_w_union": {
         "selected_tickers": [
-          "ADM",
-          "F",
           "KMI",
           "ETR",
           "PG",
           "AEP",
-          "ATO",
+          "F",
           "WFC",
+          "LEA",
+          "SPNT",
           "CCJ",
           "IREN",
           "ALM",
           "KR"
         ],
         "plan_ids": [
-          "ADM-BULL-20260831",
-          "AEP-BULL-20260904",
-          "ATO-BULL-20260706",
           "CCJ-BULL-20260904",
-          "ETR-BULL-20260623",
-          "F-BULL-20260903",
-          "KR-BULL-20260904",
-          "WFC-BULL-20260903"
+          "KR-BULL-20260904"
         ],
-        "n_plans": 8,
+        "n_plans": 2,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": 12,
           "cap_applied": true,
           "door_w_offered": 4,
@@ -613,13 +561,13 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
-          "skipped_open_plan": 2,
+          "skipped_duplicate_id": 5,
+          "skipped_open_plan": 4,
           "skipped_clock_provenance": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -632,42 +580,37 @@
               ]
             }
           ],
-          "originated": 8,
+          "originated": 2,
           "validation_failed": 1
         },
-        "ledger_rows_appended": 8,
-        "ledger_closures_appended": 0
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 1
       },
       "C4_dispersion_cap": {
         "selected_tickers": [
-          "ADM",
-          "F",
           "KMI",
           "ETR",
           "PG",
-          "AEP"
+          "AEP",
+          "F",
+          "WFC"
         ],
-        "plan_ids": [
-          "ADM-BULL-20260831",
-          "AEP-BULL-20260904",
-          "ETR-BULL-20260623",
-          "F-BULL-20260903"
-        ],
-        "n_plans": 4,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": 6,
           "cap_applied": true
         },
         "origination": {
           "offered": 6,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 5,
           "skipped_open_plan": 0,
           "skipped_clock_provenance": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -680,58 +623,53 @@
               ]
             }
           ],
-          "originated": 4,
+          "originated": 0,
           "validation_failed": 1
         },
-        "ledger_rows_appended": 4,
-        "ledger_closures_appended": 0
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 1
       },
       "C5_align2_gate": {
         "selected_tickers": [
           "AEP",
-          "ATO",
           "WFC",
-          "COF",
           "OKE",
+          "AEO",
           "ACM",
           "CMS",
           "RBLX",
           "TTD",
+          "SMPL",
           "TEL",
           "MIR"
         ],
         "plan_ids": [
-          "AEP-BULL-20260904",
-          "ATO-BULL-20260706",
-          "CMS-BULL-20260904",
-          "COF-BULL-20260903",
-          "OKE-BULL-20260813",
-          "WFC-BULL-20260903"
+          "TEL-BULL-20260903"
         ],
-        "n_plans": 6,
+        "n_plans": 1,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": 12,
           "cap_applied": true,
           "align_gate": {
             "admitted": 11,
-            "admitted_via_fallback": 3,
-            "excluded_misaligned": 24,
+            "admitted_via_fallback": 5,
+            "excluded_misaligned": 25,
             "excluded_unreadable": 0,
             "basis": "event_atlas weekly align_class == 2 (its full value), falling back to align_now == 3 (its full value) when the name has no weekly event on record; a name the atlas cannot read is excluded, never admitted"
           },
           "passed_gate": 11,
-          "excluded": 24
+          "excluded": 25
         },
         "origination": {
           "offered": 11,
-          "skipped_duplicate_id": 2,
+          "skipped_duplicate_id": 7,
           "skipped_open_plan": 1,
           "skipped_clock_provenance": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -752,89 +690,74 @@
               ]
             }
           ],
-          "originated": 6,
+          "originated": 1,
           "validation_failed": 2
         },
-        "ledger_rows_appended": 6,
+        "ledger_rows_appended": 1,
         "ledger_closures_appended": 0
       },
       "C6_time_stop_21": {
         "selected_tickers": [
-          "ADM",
-          "F",
           "KMI",
           "ETR",
           "PG",
           "AEP",
-          "ATO",
+          "F",
           "WFC",
+          "LEA",
           "SPNT",
           "SMP",
-          "ED",
+          "NX",
           "PLMR",
           "PCRX",
-          "COF",
-          "NOVT",
+          "VRT",
           "OKE",
+          "NOVT",
+          "AEO",
           "SGI",
+          "VST",
           "MC",
-          "ELV",
           "ACM",
           "ASTH",
           "MO",
-          "LZB",
           "HWKN",
           "GPI",
           "CMS",
+          "LUMN",
           "RBLX",
           "TTD",
-          "CARR",
           "ALGM",
           "ARLO",
+          "SMPL",
           "TEL",
+          "CNM",
           "BXMT",
           "NABL",
           "MIR"
         ],
         "plan_ids": [
-          "ADM-BULL-20260831",
-          "AEP-BULL-20260904",
-          "ALGM-BULL-20260617",
-          "ASTH-BULL-20260904",
-          "ATO-BULL-20260706",
-          "CARR-BULL-20260904",
-          "CMS-BULL-20260904",
-          "COF-BULL-20260903",
-          "ELV-BULL-20260903",
-          "ETR-BULL-20260623",
-          "F-BULL-20260903",
-          "LZB-BULL-20260727",
-          "MO-BULL-20260903",
-          "NABL-BULL-20260903",
-          "NOVT-BULL-20260812",
-          "OKE-BULL-20260813",
-          "PLMR-BULL-20260903",
-          "SGI-BULL-20260831",
-          "SMP-BULL-20260903",
-          "WFC-BULL-20260903"
+          "NX-BULL-20260903",
+          "TEL-BULL-20260903",
+          "VRT-BULL-20260903",
+          "VST-BULL-20260903"
         ],
-        "n_plans": 20,
+        "n_plans": 4,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": null,
           "cap_applied": false,
           "selection_basis": "identical to lossless C0 by construction",
           "truncated": 0
         },
         "origination": {
-          "offered": 35,
-          "skipped_duplicate_id": 3,
-          "skipped_open_plan": 6,
+          "offered": 36,
+          "skipped_duplicate_id": 19,
+          "skipped_open_plan": 7,
           "skipped_clock_provenance": 6,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -887,57 +810,51 @@
               ]
             }
           ],
-          "originated": 20,
+          "originated": 4,
           "validation_failed": 6
         },
-        "ledger_rows_appended": 20,
-        "ledger_closures_appended": 4
+        "ledger_rows_appended": 4,
+        "ledger_closures_appended": 1
       },
       "C7_buy_soon_admitted": {
         "selected_tickers": [
-          "ADM",
-          "F",
+          "AN",
           "KMI",
           "ETR",
           "PG",
           "AEP",
-          "ATO",
+          "F",
           "WFC",
+          "LEA",
           "SPNT",
           "SMP",
-          "ED",
+          "NX",
           "PLMR"
         ],
         "plan_ids": [
-          "ADM-BULL-20260831",
-          "AEP-BULL-20260904",
-          "ATO-BULL-20260706",
-          "ETR-BULL-20260623",
-          "F-BULL-20260903",
-          "PLMR-BULL-20260903",
-          "SMP-BULL-20260903",
-          "WFC-BULL-20260903"
+          "AN-BULL-20260903",
+          "NX-BULL-20260903"
         ],
-        "n_plans": 8,
+        "n_plans": 2,
         "selection": {
-          "admitted": 35,
+          "admitted": 36,
           "cap": 12,
           "cap_applied": true,
-          "admitted_with_widening": 35,
-          "buy_soon_in_board": 1,
-          "buy_soon_admitted_by_widening": 0,
-          "buy_soon_selected": 0,
+          "admitted_with_widening": 37,
+          "buy_soon_in_board": 3,
+          "buy_soon_admitted_by_widening": 1,
+          "buy_soon_selected": 1,
           "widening": "the status-class gate is relaxed for buy_soon rows only; tone, band, tier, entry-signal presence and the champion's own ordering stay the champion's"
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 7,
           "skipped_open_plan": 2,
           "skipped_clock_provenance": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-04",
+          "recorded_at": "2026-09-05",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -950,11 +867,11 @@
               ]
             }
           ],
-          "originated": 8,
+          "originated": 2,
           "validation_failed": 1
         },
-        "ledger_rows_appended": 8,
-        "ledger_closures_appended": 0
+        "ledger_rows_appended": 2,
+        "ledger_closures_appended": 1
       }
     }
   },
