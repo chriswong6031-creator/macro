@@ -777,3 +777,19 @@ def test_absent_coverage_renders_a_typed_absence_not_an_unlabelled_dash() -> Non
     assert context["coverage_present"] is False
     assert context["coverage_absence"] is not None
     assert context["coverage_absence"]["label"]["en"], "the dash owes the reader a word"
+
+
+@pytest.mark.parametrize("page", sorted(p.output for p in builder.SUITE_PAGES))
+def test_no_built_page_ever_emits_a_none_class_or_value(page: str) -> None:
+    """One invariant covering all four `mq-delta-` emission sites at once.
+
+    Three of them are guarded by a `*_present` flag and the fourth sits inside a
+    presence check, so `mq-delta-None` cannot be reached today. This asserts the
+    OUTPUT rather than the guards, so it still fails if a later change moves a
+    selection rule and quietly reintroduces the class -- which is exactly how the
+    driver tables got there in the first place.
+    """
+    html = (ROOT / "site" / page).read_text(encoding="utf-8")
+    assert "mq-delta-None" not in html
+    assert ">None<" not in html
+    assert 'class="mq-delta mq-delta-"' not in html, "an empty sign class is the same bug"
