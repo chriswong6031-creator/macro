@@ -207,6 +207,18 @@ Slack roots use workspace `mastermindxgroup` and the exact channel/root shown.
 - **Cockpit:** protected CR1A -> installed-source/degraded-state correction may proceed
   in parallel with sticky HC0 reconciliation. A host probe is not an admission receipt.
 
+HF1-A's bounded repair ruling was delivered through Capacity on the original
+`C0BSBM78V1N/1788495795.043839` carrier as `SOL REQUEST_REPAIR 1788577790.295019`.
+It authorizes the existing #471 writer to add only three release-closure paths beyond
+its fifteen: `control_plane/chairman_control_room_remote.py`,
+`ops/control_room_remote/install.sh` and `tests/test_control_room_remote_install.py`.
+The shared worker contract must appear in both explicit release lists and the exact
+isolated import-closure test. The new semantic head requires fresh review and checks.
+Frozen #392 is ordered behind #471 and remains terminal evidence; it must not be
+merged, cherry-picked or revived into HF1's changed provider-home API. Any future
+cancellation-hardening successor requires separate authority after #471 release.
+This source repair grants no host/provider/runtime/deployment effect.
+
 ## Current domain returns
 
 These are domain-attributed observations returned to the exact integrator task. They
@@ -275,9 +287,10 @@ this summary does not reduce it to the minimum number of realms or completions.
 
 ## Return point
 
-Reserved disjoint domain handoffs are runtime-continuity-r0-r1 (content supplied to
-the integrator's records lane), web-sol-estate-reconciliation and
-cockpit-b0-live-recovery, all under `CHAIRMAN-CONTROL-ROOM-2026-09-05-`.
+The [Runtime R0/R1 evidence handoff](CHAIRMAN-CONTROL-ROOM-2026-09-05-runtime-continuity-r0-r1.md)
+shares this records carrier. Reserved disjoint domain handoffs are
+web-sol-estate-reconciliation and cockpit-b0-live-recovery, both under
+`CHAIRMAN-CONTROL-ROOM-2026-09-05-`.
 Production prepares its evidence/scorecard in owning Mastermind
 `research/autonomy_cutover/`. These are evidence pointers, not additional portfolio
 matrices or execution stores; exact protected links are added after review/release.
