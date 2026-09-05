@@ -146,7 +146,7 @@ unresolved:
   - "The existing navigation binding classifies an opaque ChatGPT1 CEO row for WS:CHAIRMAN-CONTROL-ROOM as NON_PROJECT. It is navigation-only and does not establish a canonical Sol chat, target, account, or authority."
 next_actions:
   - "Keep the existing #432 task as the only source carrier; reconcile its current-base hold through the corrected integrations/chairman_surfaces/chatgpt.py owner and return a typed same-carrier result or hold."
-  - "After protected current-base integration and a fresh lawful release, let the existing #359 operation alone re-read its prerequisites and return the bounded no-effect host gate; do not start a replacement host task."
+  - "After protected current-base integration and a fresh lawful release, let the existing #359 operation alone re-read its prerequisites and return the bounded host preflight and local-bootstrap boundary; do not start a replacement host task."
   - "After #359 and the discrete profile/account gates complete lawfully, execute Web PF-1 A/B (#338), INSTALL1 (#340), then Web PF-1 C before any CR-P1 work."
   - "For CR-P1, prove exact same-profile/same-Project successor and deterministic bootstrap without RuntimeBinding transfer; then require canonical ACK/CAS before CR-B1, CR-D1, and any approved real rotation."
   - "Complete INSTALL1 through its existing issue and exact host/profile owner; pure bundle rendering alone is not installation evidence."
@@ -177,7 +177,7 @@ This is an as-of reconciliation for 2026-09-05T02:47:00Z through 2026-09-05T03:0
 The complete ordered continuity DAG is:
 ```text
 #435 current-base integration
-  -> #359 no-effect host gate
+  -> #359 read-only preflight, then separately authorized local bootstrap
   -> #359 governed profile_B provision and eligible disposable account/Project release
   -> Web PF-1 A/B (#338)
   -> INSTALL1 (#340)
@@ -191,9 +191,11 @@ The complete ordered continuity DAG is:
 ## §1 What is LEFT — in order
 
 1. The exact #432 source task must resolve its current-base hold on the existing carrier through `integrations/chairman_surfaces/chatgpt.py`; no substitute carrier may modify it.
-2. A protected current-base result and fresh lawful release precede the already-bound #359 worker's no-effect host gate.
+2. A protected current-base result and fresh lawful release precede the already-bound #359 worker's read-only preflight and separate local-bootstrap boundary.
 3. Only after the profile/account gate sequence completes may Web PF-1, installation proof, CR-P1, canonical acknowledgement, and real rotation be considered in DAG order.
 Issue #355 remains the existing deferred ChatGPT binding/readiness bridge. The current RuntimeBinding provider projection admits only `openai-codex`; the Executive/OHF writer exists, but ChatGPT registration is unsupported. The existing Wake ACK owner requires a trusted worker-local projection that ChatGPT has not proven. Its CB-F0/W1/A1/D1/I1 verticals preserve those owners before CR-B1; browser response text cannot substitute for semantic ACK.
+
+The existing `bootstrap-peer-lifecycle` command can create or reconcile fixed private lifecycle/fence/witness records after its confirmation boundary. It has no Keychain, vendor, profile or account effect, but is not globally read-only. Keep the read-only preflight, this bounded local bootstrap, and later profile_B START distinct; do not revive `enroll-seats` or the six-private-input ceremony.
 
 ## §2 What will bite you
 
