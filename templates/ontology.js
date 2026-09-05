@@ -23,6 +23,8 @@
     eq: "=", ne: "\u2260" };
   var root = document.getElementById("ox-root");
   if (!root) return;
+  var LEG_DETAIL_ID = "ox-steps";
+  var legDetail = null;
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -59,6 +61,15 @@
       .catch(function () { return headers; });
   }
 
+  /* aria-busy must be cleared on every terminal state, success or failure. A
+     screen reader parked on a page that finished loading an ERROR is still
+     being told the region is updating, so it waits for a result that already
+     came and went. */
+  function settle() {
+    root.setAttribute("aria-busy", "false");
+    root.classList.remove("ox-skeleton");
+  }
+
   function gate(titleEn, titleZh, bodyEn, bodyZh, ctaEn, ctaZh, href) {
     var box = el("section", "ox-gate");
     var h = el("h2");
@@ -75,6 +86,7 @@
     }
     root.textContent = "";
     root.appendChild(box);
+    settle();
   }
 
   function legVerdict(leg) {
@@ -145,6 +157,53 @@
     simple.appendChild(bi(name));
     simple.appendChild(say(".", "。"));
     return simple;
+  }
+
+  /* Three facts the reader needs before trusting anything below: how much of
+     the path was actually read, how old those readings are, and what this page
+     cannot verify. Compact by design — the full receipts live in Study, and a
+     diagnostic wall in the first viewport buries the answer it is qualifying. */
+  function renderMeta(snapshot) {
+    var meta = el("p", "ox-meta");
+    var cov = snapshot.state.coverage;
+
+    var covSpan = el("span", "ox-meta-item");
+    if (cov.legs_unobserved && cov.legs_unobserved.length) {
+      covSpan.setAttribute("data-flag", "1");
+      covSpan.appendChild(say(
+        cov.legs_observed + " of " + cov.legs_declared + " steps have a current reading",
+        cov.legs_declared + " 个环节中有 " + cov.legs_observed + " 个具备当前读数"));
+    } else {
+      covSpan.appendChild(say("All " + cov.legs_declared + " steps have a current reading",
+        "全部 " + cov.legs_declared + " 个环节均有当前读数"));
+    }
+    meta.appendChild(covSpan);
+
+    var fresh = snapshot.source.freshness;
+    var age = el("span", "ox-meta-item");
+    if (fresh.observation_asof && fresh.observation_age_days != null) {
+      age.appendChild(say(
+        "Readings dated " + fresh.observation_asof + " ("
+          + (fresh.observation_age_days === 0 ? "today"
+             : fresh.observation_age_days === 1 ? "1 day ago"
+             : fresh.observation_age_days + " days ago") + ")",
+        "读数日期 " + fresh.observation_asof + "（"
+          + (fresh.observation_age_days === 0 ? "今日"
+             : fresh.observation_age_days + " 天前") + "）"));
+    } else {
+      age.setAttribute("data-flag", "1");
+      age.appendChild(say("Reading date not published", "读数日期未发布"));
+    }
+    meta.appendChild(age);
+
+    if (fresh.status === "verification_unavailable") {
+      var unc = el("span", "ox-meta-item");
+      unc.setAttribute("data-flag", "1");
+      unc.appendChild(say("Not verified against the published page",
+        "未与已发布页面比对核验"));
+      meta.appendChild(unc);
+    }
+    return meta;
   }
 
   function card(titleEn, titleZh, tone) {
@@ -229,11 +288,102 @@
     return box;
   }
 
+  function reducedMotion() {
+    return !!(window.matchMedia
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  /* The action actually performs the thing its label promises: it opens the
+     step-by-step section, brings the named step into view and moves focus onto
+     it, so a keyboard or screen-reader user lands where a sighted user is
+     looking. The target id is stable and derived from the owner's node id, so
+     the anchor survives a re-render and can be linked to directly. */
+  function focusLeg(nodeId) {
+    var target = document.getElementById("ox-leg-" + nodeId);
+    if (!target) return false;
+    var wasClosed = !!(legDetail && !legDetail.open);
+    if (wasClosed) legDetail.open = true;
+    /* Opening a <details> reveals content that has not been laid out yet, so a
+       scroll issued in the same tick measures the pre-open position and lands
+       somewhere else entirely — measured: the step ended up 200px below the
+       fold. Wait for the frame that includes the newly revealed content. */
+    var inView = function () {
+      var box = target.getBoundingClientRect();
+      return box.top >= 0 && box.bottom <= (window.innerHeight
+        || document.documentElement.clientHeight);
+    };
+    var go = function () {
+      if (!target.scrollIntoView) { target.focus({ preventScroll: true }); return; }
+      var smooth = !reducedMotion();
+      target.scrollIntoView(smooth
+        ? { block: "center", behavior: "smooth" }
+        : { block: "center" });
+      target.focus({ preventScroll: true });
+      /* Smooth scrolling is an animation, and an animation is not a guarantee:
+         a hidden or throttled tab never runs it, and a competing scroll can
+         interrupt it — measured, the step stayed 200px below the fold while the
+         focus ring sat on something the reader could not see. Motion is the
+         enhancement; arriving is the requirement, so the destination is checked
+         and corrected without it. */
+      if (!smooth) return;
+      window.setTimeout(function () {
+        if (!inView()) target.scrollIntoView({ block: "center" });
+      }, 500);
+    };
+    if (!wasClosed) {
+      go();
+      return true;
+    }
+    /* rAF is the right clock for "after the next paint", but a background or
+       hidden tab throttles it to nothing — measured here: the callback never
+       ran and the action silently did half its job. A timeout is racing it so
+       the action always completes; whichever wins, `go` runs once. */
+    var done = false;
+    var once = function () { if (done) return; done = true; go(); };
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () { window.requestAnimationFrame(once); });
+    }
+    window.setTimeout(once, 60);
+    return true;
+  }
+
   function renderNextAction(snapshot) {
+    var action = snapshot.next_action;
     var box = card("Next", "下一步", "watch");
-    var p = el("p");
-    p.appendChild(bi(snapshot.next_action.label));
-    box.appendChild(p);
+
+    if (action.handler === "focus_leg" && action.target) {
+      var button = el("button", "ox-action");
+      button.type = "button";
+      button.setAttribute("aria-controls", LEG_DETAIL_ID);
+      button.appendChild(bi(action.label));
+      button.addEventListener("click", function () {
+        if (!focusLeg(action.target)) {
+          /* The step this action names is not on the page. Silently doing
+             nothing would leave the reader clicking a dead control, so the
+             button states that instead of pretending it worked. */
+          button.disabled = true;
+          button.textContent = "";
+          button.appendChild(say("That step is not on this page",
+            "该环节不在本页面上"));
+        }
+      });
+      box.appendChild(button);
+      var hint = el("p", "ox-note");
+      hint.appendChild(say("Opens the step-by-step readings below.",
+        "将展开下方的逐环节读数。"));
+      box.appendChild(hint);
+      return box;
+    }
+
+    var link = el("a", "ox-action");
+    link.href = "transmission.html";
+    link.appendChild(bi(action.label));
+    box.appendChild(link);
+    var note = el("p", "ox-note");
+    note.appendChild(say("The transmission overview carries every path the owners "
+      + "publish, not only this one.",
+      "传导链总览页面涵盖所有者发布的全部路径，而不仅是本条。"));
+    box.appendChild(note);
     return box;
   }
 
@@ -248,8 +398,13 @@
   function renderLegDetail(snapshot) {
     var d = detail("Inspect each step: readings, timing and what we are watching",
       "查看各环节：读数、时间窗口与我们正在观察的条件");
+    d.id = LEG_DETAIL_ID;
     snapshot.path.legs.forEach(function (leg) {
       var box = el("div", "ox-leg");
+      box.id = "ox-leg-" + leg.node_id;
+      /* -1 keeps the step out of the tab order — it is a destination, not a
+         control — while still allowing focus() to land on it. */
+      box.tabIndex = -1;
       var h = el("h3");
       h.appendChild(bi(leg.title));
       box.appendChild(h);
@@ -302,8 +457,69 @@
     return d;
   }
 
+  var GAP_TEXT = {
+    node_incomplete: { en: "a step the owners have not finished recording",
+      zh: "所有者尚未记录完整的环节" },
+    node_unresolved: { en: "a step the owners have not resolved",
+      zh: "所有者尚未判定的环节" },
+    node_unjudged: { en: "a step recorded without a verdict",
+      zh: "已记录但未给出判定的环节" },
+    node_unreadable: { en: "a step whose verdict could not be read",
+      zh: "判定无法读取的环节" },
+    node_undeclared: { en: "a step referenced by the path but never declared",
+      zh: "路径引用但从未声明的环节" },
+    path_incomplete: { en: "part of the path the walk never reached",
+      zh: "遍历未触及的路径片段" },
+    build_stamp_unparseable: { en: "a build stamp this page could not read",
+      zh: "本页面无法解析的构建时间戳" },
+    build_stamp_in_future: { en: "a build stamp dated ahead of now",
+      zh: "时间戳晚于当前时刻的构建记录" },
+    text_withheld: { en: "an owner note held back from this page",
+      zh: "未在本页面展示的所有者备注" },
+    text_untranslated: { en: "an owner note published in one language only",
+      zh: "仅以单一语言发布的所有者备注" }
+  };
+
+  function gapLabel(gap) {
+    var known = GAP_TEXT[gap.kind];
+    if (known) return say(known.en, known.zh);
+    /* An unmapped kind is still disclosed. Hiding it because this page has no
+       sentence for it would turn a known gap into a silent one. */
+    return say(gap.kind.replace(/_/g, " "), gap.kind.replace(/_/g, " "));
+  }
+
+  function renderExposure(snapshot) {
+    var screens = snapshot.exposure_screens || [];
+    if (!screens.length) return null;
+    var d = detail("What this path bears on", "该路径涉及什么");
+    var lead = el("p", "ox-note");
+    lead.appendChild(say(
+      "The owners flag these as the exposures this path would run through. They are "
+      + "descriptions of where the mechanism lands, not a list of names, a screen you "
+      + "can run, or a suggestion to act.",
+      "所有者将以下项标注为该路径可能传导至的敞口类别。它们是机制落点的描述，"
+      + "并非标的名单、可直接运行的筛选器，也不构成任何操作建议。"));
+    d.appendChild(lead);
+    screens.forEach(function (screen) {
+      var box = el("div", "ox-leg");
+      var h = el("h3");
+      h.appendChild(bi(screen.label));
+      box.appendChild(h);
+      if (screen.note) {
+        var note = el("p", "ox-note");
+        note.appendChild(bi(screen.note));
+        box.appendChild(note);
+      }
+      d.appendChild(box);
+    });
+    return d;
+  }
+
   function renderSourceDetail(snapshot) {
-    var d = detail("Source and timing", "数据来源与时间");
+    var d = detail("Study: where every number on this page came from",
+      "溯源：本页面每个数字的来源");
+    var src = snapshot.source;
+
     var kv = el("dl", "ox-kv");
     function row(labelEn, labelZh, value) {
       var dt = el("dt");
@@ -311,57 +527,154 @@
       kv.appendChild(dt);
       kv.appendChild(el("dd", null, value));
     }
-    row("Effective as of", "数据截至", snapshot.source.asof || "—");
-    row("Artifact built", "产物构建于", snapshot.source.built || "—");
-    row("Read receipt", "读取凭证", (snapshot.source.source_manifest_hash || "—").slice(0, 23));
+    row("Effective as of", "数据截至", src.asof || "—");
+    row("Artifact built", "产物构建于", src.built || "—");
+    row("Composed at", "本次生成于", snapshot.generated_at || "—");
+    row("Path revision", "路径版本", src.rev == null ? "—" : String(src.rev));
+    row("Owner state schema", "所有者状态模式", src.state_schema || "—");
+    row("Composed by", "生成方法", src.composer_method || "—");
+    row("Snapshot contract", "快照契约", snapshot.schema || "—");
     d.appendChild(kv);
 
+    /* The full digest, not a prefix. A truncated hash cannot be recomputed
+       against, which is the only thing a read receipt is for. */
+    var manifest = el("p", "ox-hash");
+    manifest.appendChild(say("Read manifest", "读取清单"));
+    manifest.appendChild(el("code", null, src.source_manifest_hash || "—"));
+    d.appendChild(manifest);
+    var manifestNote = el("p", "ox-note");
+    manifestNote.appendChild(say(
+      "That digest binds the composing method above together with the exact bytes of "
+      + "every file read below. It identifies this read; it is not a signature by the "
+      + "owners of the data.",
+      "该摘要将上述生成方法与下列各文件本次读取的确切字节绑定在一起。"
+      + "它用于标识本次读取，并非数据所有者的签名。"));
+    d.appendChild(manifestNote);
+
+    var readsBox = el("div", "ox-leg");
+    var rh = el("h3");
+    rh.appendChild(say("Files read for this answer", "为本次回答读取的文件"));
+    readsBox.appendChild(rh);
+    (src.reads || []).forEach(function (read) {
+      var line = el("p", "ox-hash");
+      line.appendChild(el("span", "ox-hash-path", read.path));
+      line.appendChild(el("code", null, "sha256:" + read.sha256));
+      line.appendChild(el("span", "ox-hash-size", read.bytes + " B"));
+      readsBox.appendChild(line);
+    });
+    if (!(src.reads || []).length) {
+      var none = el("p", "ox-note");
+      none.appendChild(say("No read receipts were recorded.", "未记录任何读取凭证。"));
+      readsBox.appendChild(none);
+    }
+    d.appendChild(readsBox);
+
     var freshness = el("p", "ox-note");
-    freshness.appendChild(bi(snapshot.source.freshness.note));
+    freshness.appendChild(bi(src.freshness.note));
     d.appendChild(freshness);
 
-    if (snapshot.evidence.k1.status !== "available") {
-      var k1 = el("p", "ox-note");
-      k1.appendChild(say(
-        "Formal evidence links are not available for this reading: the current summary is "
-        + "a derived view that the evidence contract does not accept as a citable source, "
-        + "and no recorded transition exists to link to instead.",
-        "本次读数无法提供正式证据链接：当前汇总属于派生视图，"
-        + "证据契约不接受其作为可引用来源，且亦无已记录的状态转换可供引用。"));
-      d.appendChild(k1);
+    var k1 = snapshot.evidence.k1;
+    if (k1.status !== "available") {
+      var k1p = el("p", "ox-note");
+      if (k1.reason_code === "eligible_transition_not_k1_resolved") {
+        k1p.appendChild(say(
+          "The owners have recorded " + k1.recorded_transitions + " transition(s) for this "
+          + "path, but this page resolved none of them into a formal evidence reference, so "
+          + "none is cited. A recorded transition is not itself a reference.",
+          "所有者已记录该路径的 " + k1.recorded_transitions + " 次状态转换，"
+          + "但本页面未将其中任何一次解析为正式证据引用，故不予引用。"
+          + "已记录的状态转换本身并不构成引用。"));
+      } else {
+        k1p.appendChild(say(
+          "No formal evidence reference is cited for this reading. The current summary is a "
+          + "derived view the evidence contract does not accept as a citable source, and no "
+          + "recorded transition exists to cite instead. The readings above come straight "
+          + "from the owner fields, with the read receipts listed here.",
+          "本次读数未引用正式证据。当前汇总属于派生视图，证据契约不接受其作为可引用来源，"
+          + "亦无已记录的状态转换可供引用。上文读数直接取自所有者字段，"
+          + "其读取凭证已在此列出。"));
+      }
+      d.appendChild(k1p);
     }
+
+    if (snapshot.display_permission
+        && snapshot.display_permission.status !== "determined") {
+      var perm = el("p", "ox-note");
+      perm.appendChild(say(
+        "Whether the underlying sources may be redistributed is not determined on this "
+        + "page. Access to this reading is controlled by your account, which is a "
+        + "different question.",
+        "本页面不判定底层数据源是否可再分发。本次读数的访问权限由您的账户控制，"
+        + "两者并非同一问题。"));
+      d.appendChild(perm);
+    }
+
     /* Two different things end up in `gaps` and calling them both "missing"
        would be inaccurate: something the owners never published, and something
-       they published that this surface refused to print. Both are disclosed,
-       separately, because the second one is our decision and not their gap. */
+       they published that this surface refused to print. Both are named
+       individually — a count tells the reader something is absent without ever
+       letting them find out what. */
     var missing = (snapshot.gaps || []).filter(function (g) {
       return g.kind !== "text_withheld" && g.kind !== "text_untranslated";
     });
     var withheld = (snapshot.gaps || []).filter(function (g) {
-      return g.kind === "text_withheld";
+      return g.kind === "text_withheld" || g.kind === "text_untranslated";
     });
+
+    function gapList(items, headEn, headZh) {
+      var box = el("div", "ox-leg");
+      var h = el("h3");
+      h.appendChild(say(headEn, headZh));
+      box.appendChild(h);
+      var ul = el("ul", "ox-gaps");
+      items.forEach(function (gap) {
+        var li = el("li");
+        li.appendChild(gapLabel(gap));
+        /* The reader-facing location only. `gap.where` is the machine field
+           path — it names internal fields and, for the watch list, carries the
+           refutation family this page does not print. Making a gap reachable
+           must not smuggle either onto the surface. */
+        if (gap.where_label) {
+          var where = el("span", "ox-gap-where");
+          where.appendChild(bi(gap.where_label));
+          li.appendChild(where);
+        }
+        if (gap.reason_label) {
+          var why = el("span", "ox-gap-why");
+          why.appendChild(bi(gap.reason_label));
+          li.appendChild(why);
+        }
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      return box;
+    }
+
     if (missing.length) {
-      var gapsP = el("p", "ox-note");
-      gapsP.appendChild(say("Not everything this path needs was published: "
-        + missing.length + " item(s) are absent and are named rather than filled in.",
-        "该路径所需信息并未全部发布：缺失 " + missing.length + " 项，已具名列出，未作填补。"));
-      d.appendChild(gapsP);
+      var mBox = gapList(missing,
+        "Published by the owners incompletely", "所有者发布不完整之处");
+      var mNote = el("p", "ox-note");
+      mNote.appendChild(say("These are named rather than filled in.",
+        "以上各项仅具名列出，未作填补。"));
+      mBox.appendChild(mNote);
+      d.appendChild(mBox);
     }
     if (withheld.length) {
-      var wP = el("p", "ox-note");
-      wP.appendChild(say(withheld.length + " owner note(s) were published but not "
-        + "shown here, because the wording would not meet this page's standard for "
-        + "reader-facing text. The condition each one describes is shown above.",
-        "有 " + withheld.length + " 条所有者备注虽已发布但未在此展示，"
-        + "因其措辞不符合本页面面向读者文本的标准。其所描述的条件已在上文列出。"));
-      d.appendChild(wP);
+      var wBox = gapList(withheld, "Published, but not shown here", "已发布但未在此展示");
+      var wNote = el("p", "ox-note");
+      wNote.appendChild(say(
+        "This page held these back — the wording would not meet its standard for "
+        + "reader-facing text. The condition each one describes is shown with its step.",
+        "本页面主动保留了以上内容——其措辞不符合本页面面向读者文本的标准。"
+        + "其所描述的条件已随对应环节展示。"));
+      wBox.appendChild(wNote);
+      d.appendChild(wBox);
     }
     return d;
   }
 
   function render(snapshot) {
     root.textContent = "";
-    root.classList.remove("ox-skeleton");
 
     var hero = el("header", "ox-hero");
     var eyebrow = el("p", "ox-eyebrow");
@@ -380,6 +693,7 @@
     var stanceP = el("p", "ox-stance");
     stanceP.appendChild(stance(snapshot));
     hero.appendChild(stanceP);
+    hero.appendChild(renderMeta(snapshot));
     root.appendChild(hero);
 
     root.appendChild(renderRail(snapshot));
@@ -391,8 +705,12 @@
     answers.appendChild(renderNextAction(snapshot));
     root.appendChild(answers);
 
-    root.appendChild(renderLegDetail(snapshot));
+    legDetail = renderLegDetail(snapshot);
+    root.appendChild(legDetail);
+    var exposure = renderExposure(snapshot);
+    if (exposure) root.appendChild(exposure);
     root.appendChild(renderSourceDetail(snapshot));
+    settle();
   }
 
   function load() {

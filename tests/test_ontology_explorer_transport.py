@@ -54,6 +54,7 @@ def _client(monkeypatch, tmp_path, *, entitled: bool = True, authed: bool = True
     root = fx.build_root(tmp_path) if root is None else root
     monkeypatch.setattr(api, "_repo_root", lambda: root)
     monkeypatch.setattr(api, "DEFAULT_CHAIN", chain)
+    monkeypatch.setattr(api, "ACCEPTED_CHAINS", frozenset({chain}))
     app = FastAPI()
     app.include_router(api.router)
 
@@ -207,6 +208,7 @@ def _boom_client(monkeypatch, tmp_path) -> TestClient:
     root = fx.build_root(tmp_path)
     monkeypatch.setattr(api, "_repo_root", lambda: root)
     monkeypatch.setattr(api, "DEFAULT_CHAIN", fx.SLUG)
+    monkeypatch.setattr(api, "ACCEPTED_CHAINS", frozenset({fx.SLUG}))
 
     def explode(*a, **k):
         raise ValueError("boom /Users/someone/private/path.json")
@@ -289,3 +291,26 @@ def test_the_builder_fails_loudly_when_a_paired_asset_is_missing(tmp_path, monke
     import scripts.build_ontology_explorer as builder
     monkeypatch.setattr(builder, "PAIRED_ASSETS", ("ontology.css", "definitely_absent.js"))
     assert builder.main() == 1
+
+
+def test_a_chain_that_composes_is_not_thereby_an_accepted_product(monkeypatch, tmp_path):
+    """The composer is chain-generic because it is a library. A slug it can parse
+    is not a product this vertical has built and proven, and serving every valid
+    slug would advertise surfaces nobody verified."""
+    api = _api()
+    root = fx.build_root(tmp_path)
+    monkeypatch.setattr(api, "_repo_root", lambda: root)
+    app = FastAPI()
+    app.include_router(api.router)
+    app.dependency_overrides[api.require_site_full_user] = lambda: {"id": "paid-user"}
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get(ROUTE, params={"chain": fx.SLUG})
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "chain_not_admitted"
+    _assert_private(response)
+
+
+def test_the_admitted_chain_is_the_wti_path_only():
+    from app.ontology_explorer import ACCEPTED_CHAINS, DEFAULT_CHAIN
+    assert ACCEPTED_CHAINS == {"oil_inflation_duration_derate"}
+    assert DEFAULT_CHAIN in ACCEPTED_CHAINS

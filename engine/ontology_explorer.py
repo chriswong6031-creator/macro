@@ -63,6 +63,11 @@ import yaml
 log = logging.getLogger(__name__)
 
 SCHEMA_ID = "ontology_explorer_snapshot.v1"
+#: The manifest answers "did two responses see the same thing". Two responses can
+#: read byte-identical sources and still differ, because the meaning is produced
+#: by THIS code — so the method that read them is part of what the digest binds.
+#: It is still a read receipt, never a native owner generation.
+COMPOSER_METHOD = "ontology_explorer.compose.v2"
 ERROR_SCHEMA_ID = "ontology_explorer_error.v1"
 DEFAULT_CHAIN = "oil_inflation_duration_derate"
 
@@ -75,8 +80,16 @@ COMPATIBLE_STATE_SCHEMAS = frozenset({"transmission_chains.v1"})
 #: the bound fails closed instead of truncating into a half-answer.
 MAX_PATH_LEGS = 12
 
+#: Bytes, not rows: a bound that counts only nodes leaves the payload unbounded.
+MAX_SOURCE_BYTES = 2_000_000
+MAX_EPISODE_ROWS = 5_000
+
 #: fullmatch below, not match: `$` also matches before a trailing newline.
 _CHAIN_SLUG_RE = re.compile(r"[a-z0-9][a-z0-9_]{0,80}")
+
+#: distinct from a present-but-null field — "never written" and "written as null"
+#: are different owner statements and neither is a verdict.
+_MISSING = object()
 
 _KNOWLEDGE_REL = "knowledge/transmission"
 _STATE_REL = "data/transmission/chain_state.json"
@@ -114,14 +127,16 @@ def _digest(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def manifest_hash_for(reads: list[dict[str, Any]]) -> str:
+def manifest_hash_for(reads: list[dict[str, Any]], *,
+                      method: str = COMPOSER_METHOD) -> str:
     """Reproduce the manifest hash from the receipts alone.
 
     A caller comparing two responses must be able to decide whether they saw the
     same owner generation without trusting either response's own summary, so the
     hash is a pure function of ``(path, sha256)`` pairs in sorted order.
     """
-    joined = "\n".join(f"{r['path']}:{r['sha256']}" for r in sorted(reads, key=lambda r: r["path"]))
+    joined = "\n".join([method] + [f"{r['path']}:{r['sha256']}"
+                                   for r in sorted(reads, key=lambda r: r["path"])])
     return "sha256:" + hashlib.sha256(joined.encode("utf-8")).hexdigest()
 
 
@@ -174,6 +189,14 @@ def _walk_path(hops: list[dict]) -> tuple[list[str], list[str]]:
     return sequence, cycle
 
 
+def _unreached_nodes(definition_hops: list[dict], declared_nodes: dict,
+                     sequence: list[str]) -> list[str]:
+    referenced: set[str] = set()
+    for hop in definition_hops:
+        referenced.update((str(hop.get("from")), str(hop.get("to"))))
+    return sorted((referenced | set(declared_nodes)) - set(sequence))
+
+
 def _require_simple_path(definition_hops: list[dict], declared_nodes: dict,
                         sequence: list[str]) -> None:
     """Refuse anything that is not one continuous path through every node.
@@ -211,7 +234,7 @@ def _require_simple_path(definition_hops: list[dict], declared_nodes: dict,
         # positional title for the phantom and told the researcher to wait for a
         # reading that can never arrive.
         raise SourceIncoherent(f"undeclared_node:{undeclared[0]}")
-    unreached = sorted((referenced | set(declared_nodes)) - set(sequence))
+    unreached = _unreached_nodes(definition_hops, declared_nodes, sequence)
     if unreached:
         raise SourceIncoherent(f"path_disconnected:{unreached[0]}")
 
@@ -238,6 +261,9 @@ def compose_snapshot(root: Path | str, *, chain: str = DEFAULT_CHAIN,
             raws[rel] = _read_source(path)
         except OSError as exc:
             raise SourceUnavailable(f"unreadable_source:{rel}") from exc
+        if len(raws[rel]) > MAX_SOURCE_BYTES:
+            raise SourceIncoherent(
+                f"source_exceeds_bound:{rel}:{len(raws[rel])}>{MAX_SOURCE_BYTES}")
     digests = {rel: _digest(raw) for rel, raw in raws.items()}
 
     try:
@@ -271,11 +297,13 @@ def compose_snapshot(root: Path | str, *, chain: str = DEFAULT_CHAIN,
     reads = [{"path": rel, "sha256": digests[rel], "bytes": len(raws[rel])} for rel in rels]
     snapshot["source"]["reads"] = reads
     snapshot["source"]["source_manifest_hash"] = manifest_hash_for(reads)
+    snapshot["source"]["composer_method"] = COMPOSER_METHOD
     return snapshot
 
 
 def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
            chain: str, now: datetime) -> dict[str, Any]:
+    gaps: list[dict[str, Any]] = []
     state_schema = state_doc.get("schema")
     if state_schema not in COMPATIBLE_STATE_SCHEMAS:
         raise SourceIncoherent(f"schema_incompatible:{state_schema!r}")
@@ -314,9 +342,21 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     if unknown:
         raise SourceIncoherent(f"unknown_node:{unknown[0]}")
 
+    observed_node_rows = [n for n in observed.get("nodes", []) if isinstance(n, dict)]
+    row_ids = [n.get("id") for n in observed_node_rows if isinstance(n.get("id"), str)]
+    if len(row_ids) != len(set(row_ids)):
+        raise SourceIncoherent(f"duplicate_node_rows:{len(row_ids) - len(set(row_ids))}")
+
     sequence, cycle_nodes = _walk_path(definition_hops)
     if not cycle_nodes:
         _require_simple_path(definition_hops, declared_nodes, sequence)
+    else:
+        # A cycle already forces `unknown`, so this degrades rather than raises —
+        # but it must still be SEEN. Skipping the completeness check entirely
+        # under a cycle left a whole disconnected component invisible.
+        unreached = _unreached_nodes(definition_hops, declared_nodes, sequence)
+        if unreached:
+            gaps.append({"kind": "path_incomplete", "unreached": unreached})
     # The bound is measured against the FILE, not against the walk. Measuring the
     # walk let a file with 80 declared nodes and 40 disjoint hop pairs compose as
     # "2 of 12 legs" while returning 40 rendered hop rows.
@@ -324,14 +364,13 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     if declared_size > MAX_PATH_LEGS:
         raise SourceIncoherent(f"path_exceeds_bound:{declared_size}>{MAX_PATH_LEGS}")
 
-    gaps: list[dict[str, Any]] = []
     observed_hops = {h["id"]: h for h in observed.get("hops", [])
                      if isinstance(h, dict) and isinstance(h.get("id"), str)}
 
     legs = _legs(sequence, declared_nodes, observed_nodes, gaps)
     hops = _hops(definition_hops, observed_hops, gaps)
     invalidators = _invalidators(definition, gaps)
-    rights = _rights(definition, gaps)
+    exposure_screens = _exposure_screens(definition, gaps)
 
     # "unresolved" is not "observed". Counting it as observed produced a snapshot
     # that said all four legs were observed while its own blocking-leg block said
@@ -351,7 +390,7 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     first_blocking = _first_blocking_leg(legs) if not activation else None
     contradiction = _contradiction(legs, first_blocking)
 
-    return {
+    payload = {
         "schema": SCHEMA_ID,
         "generated_at": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "source": _source_block(definition, state_doc, observed, chain=chain,
@@ -386,17 +425,26 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
         "first_blocking_leg": first_blocking,
         "contradiction": contradiction,
         "what_changed": _what_changed(episodes_raw, chain=chain,
-                                      rev=observed.get("rev"), gaps=gaps),
+                                      rev=observed.get("rev"),
+                                      cutoff=state_doc.get("asof"), gaps=gaps),
         "why_it_matters": _why_it_matters(hops, contradiction),
-        "next_action": _next_action(state_code, first_blocking, contradiction, unobserved),
+        "next_action": _next_action(state_code, first_blocking, contradiction, unobserved, legs),
         "evidence": _evidence(episodes_raw, legs, chain=chain,
-                              rev=observed.get("rev")),
+                              rev=observed.get("rev"), cutoff=state_doc.get("asof")),
         "clocks": _clocks(observed, state_doc, hops, now=now),
         "invalidators": invalidators,
-        "rights": rights,
+        "exposure_screens": exposure_screens,
+        "display_permission": {
+            "status": "not_determined_here",
+            "policy": "site_full entitlement, enforced at the transport layer",
+        },
         "gaps": gaps,
         "bounds": {"legs": len(sequence), "max_legs": MAX_PATH_LEGS, "truncated": False},
     }
+    # Last, because the composers above are still appending to `gaps` while the
+    # payload literal is being built.
+    _label_gaps(gaps, legs)
+    return payload
 
 
 def _state_label(code: str) -> dict[str, str]:
@@ -405,6 +453,36 @@ def _state_label(code: str) -> dict[str, str]:
         "dormant": {"en": "Dormant", "zh": "休眠"},
         "unknown": {"en": "Unknown", "zh": "未知"},
     }[code]
+
+
+def _read_leg_verdict(node_id: str, seen: dict,
+                      gaps: list[dict]) -> tuple[bool | None, str]:
+    """Read one leg's verdict under the owner's TYPED semantics.
+
+    Truthiness is not a reading. `bool("false")` is True, so a string in the
+    owner artifact could ACTIVATE a leg the owners had marked as not holding;
+    `bool(None)` is False, so an unwritten verdict became a definite negative;
+    and defaulting `resolved` to True asserted a judgement the owners may simply
+    not have made. Each of those invents market state out of a Python
+    conversion. Only a real bool is a verdict, only a real bool `resolved` is a
+    judgement, and everything else preserves UNKNOWN and says which kind it is.
+    """
+    resolved = seen.get("resolved", _MISSING)
+    if resolved is _MISSING or not isinstance(resolved, bool):
+        gaps.append({"kind": "node_incomplete", "node_id": node_id})
+        return None, "incomplete"
+    if not resolved:
+        gaps.append({"kind": "node_unresolved", "node_id": node_id})
+        return None, "unresolved"
+    verdict = seen.get("confirmed", _MISSING)
+    if verdict is None or verdict is _MISSING:
+        gaps.append({"kind": "node_unjudged", "node_id": node_id})
+        return None, "incomplete"
+    if not isinstance(verdict, bool):
+        gaps.append({"kind": "node_unreadable", "node_id": node_id,
+                     "reason": "confirmed_not_boolean"})
+        return None, "unreadable"
+    return verdict, "observed"
 
 
 def _legs(sequence: list[str], declared: dict, observed: dict,
@@ -419,12 +497,8 @@ def _legs(sequence: list[str], declared: dict, observed: dict,
             observation = "unobserved"
             receipts: list[dict[str, Any]] = []
         else:
-            resolved = bool(seen.get("resolved", True))
-            confirmed = bool(seen.get("confirmed")) if resolved else None
-            observation = "observed" if resolved else "unresolved"
-            if not resolved:
-                gaps.append({"kind": "node_unresolved", "node_id": node_id})
             receipts = [r for r in seen.get("receipts", []) if isinstance(r, dict)]
+            confirmed, observation = _read_leg_verdict(node_id, seen, gaps)
         legs.append({
             "node_id": node_id,
             "index": index,
@@ -491,12 +565,13 @@ def _first_blocking_leg(legs: list[dict]) -> dict[str, Any] | None:
     for leg in legs:
         if leg["confirmed"] is True:
             continue
-        if leg["confirmed"] is False:
-            reason = "condition_false"
-        elif leg["observation"] == "unresolved":
-            reason = "not_resolved"
-        else:
-            reason = "not_observed"
+        reason = {
+            "observed": "condition_false",
+            "unresolved": "not_resolved",
+            "incomplete": "not_judged",
+            "unreadable": "not_readable",
+            "unobserved": "not_observed",
+        }[leg["observation"]]
         return {
             "node_id": leg["node_id"],
             "index": leg["index"],
@@ -543,7 +618,18 @@ def _contradiction(legs: list[dict], first_blocking: dict | None) -> dict[str, A
     }
 
 
+def _is_iso_date(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return False
+    return True
+
+
 def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
+                  cutoff: Any = None,
                   gaps: list[dict] | None = None) -> list[dict[str, Any]]:
     """Recorded transitions for THIS chain at THIS revision.
 
@@ -553,15 +639,23 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
     redefined.
     """
     rows: list[dict[str, Any]] = []
-    foreign = 0
+    foreign = unreadable = malformed = after_cutoff = 0
+    seen_lines = 0
     if episodes_raw:
         for line in episodes_raw.decode("utf-8", "replace").splitlines():
             line = line.strip()
             if not line:
                 continue
+            seen_lines += 1
+            if seen_lines > MAX_EPISODE_ROWS:
+                malformed += 1
+                break
             try:
                 row = json.loads(line)
             except ValueError:
+                # Silently dropping a corrupt line hides the fact that the
+                # comparison was made over an incomplete ledger.
+                unreadable += 1
                 continue
             if not isinstance(row, dict) or row.get("chain") != chain:
                 continue
@@ -569,21 +663,36 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
             if isinstance(row_rev, int) and row_rev != rev:
                 foreign += 1
                 continue
+            if not isinstance(row.get("transition"), str) or not _is_iso_date(row.get("asof")):
+                # Owner-native transition identity: a row without a transition
+                # and a date is not a transition, whatever else it carries.
+                malformed += 1
+                continue
+            if cutoff and str(row["asof"]) > str(cutoff):
+                # The artifact cannot have observed a change dated after its own
+                # effective date.
+                after_cutoff += 1
+                continue
             rows.append(row)
-    if foreign and gaps is not None:
-        gaps.append({"kind": "transitions_from_another_revision", "count": foreign})
+    if gaps is not None:
+        for count, kind in ((foreign, "transitions_from_another_revision"),
+                            (unreadable, "transitions_unreadable"),
+                            (malformed, "transitions_malformed"),
+                            (after_cutoff, "transitions_after_cutoff")):
+            if count:
+                gaps.append({"kind": kind, "count": count})
     return rows
 
 
 def _what_changed(episodes_raw: bytes | None, *, chain: str, rev: Any,
-                  gaps: list[dict]) -> dict[str, Any]:
+                  cutoff: Any, gaps: list[dict]) -> dict[str, Any]:
     """Only OWNER-RECORDED transitions count as change.
 
     An empty ledger is not evidence that the underlying conditions held still —
     it is the absence of a baseline to compare against, which is a different
     statement and the only one the data supports.
     """
-    rows = _episode_rows(episodes_raw, chain=chain, rev=rev, gaps=gaps)
+    rows = _episode_rows(episodes_raw, chain=chain, rev=rev, cutoff=cutoff, gaps=gaps)
     if not rows:
         return {
             "status": "comparison_unavailable",
@@ -640,18 +749,38 @@ def _why_it_matters(hops: list[dict], contradiction: dict | None) -> dict[str, A
 
 
 def _next_action(state_code: str, first_blocking: dict | None,
-                 contradiction: dict | None, unobserved: list[str]) -> dict[str, Any]:
-    """Exactly one action, chosen by what the researcher can actually do next."""
+                 contradiction: dict | None, unobserved: list[str],
+                 legs: list[dict]) -> dict[str, Any]:
+    """Exactly one action, chosen by what the researcher can actually do next.
+
+    Every branch names a ``handler`` the client actually implements and a
+    ``target`` that resolves to something on the page. An action the reader
+    cannot perform is a caption pretending to be a control, so there is no
+    branch here for a comparison this vertical has not built: an inverse-path
+    switch would need a proven inverse path, and none is defined.
+    """
+    titles = {leg["node_id"]: leg["title"] for leg in legs}
+
+    def _named(node_id: str) -> dict[str, str]:
+        # Reader-facing text never carries a raw node id. The title is the
+        # owner's own bilingual name for that leg; falling back to the slug
+        # would put an internal identifier on a customer surface.
+        title = titles.get(node_id)
+        return title if title else {"en": "that step", "zh": "该环节"}
+
     if unobserved:
+        name = _named(unobserved[0])
         return {
             "code": "wait_for_named_condition",
+            "handler": "focus_leg",
             "target": unobserved[0],
-            "label": {"en": f"Wait for the {unobserved[0]} reading to be published",
-                      "zh": f"等待 {unobserved[0]} 读数发布"},
+            "label": {"en": f"See what is missing for {name['en']}",
+                      "zh": f"查看{name['zh']}缺少什么"},
         }
     if contradiction is not None:
         return {
             "code": "inspect_contradiction",
+            "handler": "focus_leg",
             "target": contradiction["confirmed_downstream"][0],
             "label": {
                 "en": "Inspect what is driving the later leg on its own terms",
@@ -661,18 +790,14 @@ def _next_action(state_code: str, first_blocking: dict | None,
     if first_blocking is not None:
         return {
             "code": "inspect_blocking_leg",
+            "handler": "focus_leg",
             "target": first_blocking["node_id"],
             "label": {"en": "Open the evidence behind the first blocking leg",
                       "zh": "查看首个受阻环节背后的证据"},
         }
-    if state_code == "active":
-        return {
-            "code": "compare_inverse_path",
-            "target": None,
-            "label": {"en": "Compare the inverse path", "zh": "对比反向路径"},
-        }
     return {
         "code": "open_owner_workspace",
+        "handler": "open_transmission",
         "target": None,
         "label": {"en": "Open the canonical transmission surface",
                   "zh": "打开传导链规范页面"},
@@ -680,7 +805,7 @@ def _next_action(state_code: str, first_blocking: dict | None,
 
 
 def _evidence(episodes_raw: bytes | None, legs: list[dict], *,
-              chain: str, rev: Any) -> dict[str, Any]:
+              chain: str, rev: Any, cutoff: Any) -> dict[str, Any]:
     """K1 binding, plus the owner receipts that stand in its place.
 
     The K1 vocabulary admits ``txi.episode_transition`` as an owner store and
@@ -691,22 +816,30 @@ def _evidence(episodes_raw: bytes | None, legs: list[dict], *,
     papered over with a synthesised reference; a real reference is emitted only
     where a genuine eligible transition exists.
     """
-    transitions = len(_episode_rows(episodes_raw, chain=chain, rev=rev))
-    if transitions:
-        k1 = {"status": "available", "reason_code": None, "refs_count": transitions,
-              "detail": {"eligible_owner_store": "txi.episode_transition"}}
-    else:
-        k1 = {
-            "status": "unavailable_for_object",
-            "reason_code": "excluded_derived_head_no_eligible_transition",
-            "refs_count": 0,
-            "detail": {
-                "current_head": "txi.chain_state",
-                "current_head_class": "excluded_derived_head",
-                "eligible_owner_store": "txi.episode_transition",
-                "eligible_transitions_found": 0,
-            },
-        }
+    transitions = len(_episode_rows(episodes_raw, chain=chain, rev=rev, cutoff=cutoff))
+    # A recorded transition is a TRANSITION. A reference is a reference that
+    # resolved against the K1 contract. The first version conflated them and
+    # declared K1 "available" off a row count while creating and validating no
+    # EvidenceRef at all — so any JSON object carrying a matching chain name
+    # manufactured evidence, and the client then hid the binding limitation.
+    # This module resolves no references (building a second evidence library is
+    # forbidden), so the reference count is zero and the status stays
+    # unavailable; only the REASON changes once an eligible transition exists.
+    k1 = {
+        "status": "unavailable_for_object",
+        "reason_code": ("eligible_transition_not_k1_resolved" if transitions
+                        else "excluded_derived_head_no_eligible_transition"),
+        "refs": [],
+        "refs_count": 0,
+        "recorded_transitions": transitions,
+        "detail": {
+            "current_head": "txi.chain_state",
+            "current_head_class": "excluded_derived_head",
+            "eligible_owner_store": "txi.episode_transition",
+            "eligible_transitions_found": transitions,
+            "resolver": "none_in_this_module",
+        },
+    }
     return {
         "k1": k1,
         "receipts": [{"node_id": leg["node_id"], "receipts": leg["receipts"]}
@@ -792,6 +925,95 @@ def _reader_text(value: Any, *, kind: str, where: str, gaps: list[dict],
     return fallback
 
 
+_GAP_WHERE_LABELS = (
+    ("nodes.", ".title", {"en": "A step's name", "zh": "某环节的名称"}),
+    ("hops.", ".label", {"en": "A link's name", "zh": "某链接的名称"}),
+    ("hops.", ".condition", {"en": "A link's condition", "zh": "某链接的条件"}),
+    ("hops.", ".mechanism", {"en": "A link's mechanism note", "zh": "某链接的机制说明"}),
+    ("exposure_screens.", ".label", {"en": "An exposure name", "zh": "某敞口类别名称"}),
+    ("exposure_screens.", ".note", {"en": "An exposure note", "zh": "某敞口类别说明"}),
+)
+
+_GAP_WHERE_EXACT = {
+    "title": {"en": "The path name", "zh": "路径名称"},
+    "state_label": {"en": "The state name", "zh": "状态名称"},
+    "chain_state.built": {"en": "The artifact build stamp", "zh": "产物构建时间戳"},
+    "chain_state.asof": {"en": "The reading date", "zh": "读数日期"},
+}
+
+_GAP_REASON_LABELS = {
+    "refutation_vocabulary": {
+        "en": "worded as a verdict on the thesis rather than as a condition",
+        "zh": "措辞是对论点的裁定，而非对条件的描述"},
+    "raw_identifier": {"en": "contains an internal identifier",
+                       "zh": "含有内部标识符"},
+    "untranslated": {"en": "published in one language only", "zh": "仅以单一语言发布"},
+    "confirmed_not_boolean": {"en": "the recorded verdict is not a true/false value",
+                              "zh": "已记录的判定不是真/假值"},
+}
+
+
+def _gap_where_label(where: Any) -> dict[str, str] | None:
+    """A reader-facing name for the place a gap sits.
+
+    The machine path stays on the payload for machine consumers, but it cannot
+    be what the page prints: `falsifiers[0].note` is an internal field path AND
+    carries the refutation family this product forbids on a reader surface, so
+    printing it to make the gap "reachable" would trade one law for another.
+    The label names the location by family, never by node id.
+    """
+    if not isinstance(where, str) or not where:
+        return None
+    exact = _GAP_WHERE_EXACT.get(where)
+    if exact is not None:
+        return dict(exact)
+    if where.startswith("falsifiers[") and where.endswith("].note"):
+        inner = where[len("falsifiers["):-len("].note")]
+        if inner.isdigit():
+            n = int(inner) + 1
+            return {"en": f"What we are watching \u00b7 note {n}",
+                    "zh": f"我们正在观察 \u00b7 备注 {n}"}
+        return {"en": "What we are watching", "zh": "我们正在观察"}
+    for prefix, suffix, label in _GAP_WHERE_LABELS:
+        if where.startswith(prefix) and where.endswith(suffix):
+            return dict(label)
+    return None
+
+
+def _label_gaps(gaps: list[dict], legs: list[dict]) -> None:
+    """Give every gap a reader-facing location and reason, in place.
+
+    Done as one pass over the finished list rather than at each append site, so
+    a gap minted by a future code path cannot arrive unlabelled and fall back to
+    printing its raw field path.
+    """
+    by_node = {leg["node_id"]: leg for leg in legs}
+    for gap in gaps:
+        node_id = gap.get("node_id")
+        if node_id is not None and "where_label" not in gap:
+            leg = by_node.get(node_id)
+            if leg is not None:
+                title = leg.get("title") or {}
+                gap["where_label"] = {
+                    "en": f"Step {leg['index']} \u00b7 {title.get('en', '')}".strip(" \u00b7"),
+                    "zh": f"第 {leg['index']} 环节 \u00b7 {title.get('zh', '')}".strip(" \u00b7"),
+                }
+            else:
+                # The step is not on the page at all, which is itself the gap.
+                # Naming it by slug would put an internal id on the surface.
+                gap["where_label"] = {"en": "A step not shown on this page",
+                                      "zh": "未在本页面展示的环节"}
+        if "where_label" not in gap:
+            label = _gap_where_label(gap.get("where"))
+            if label is not None:
+                gap["where_label"] = label
+        reason = gap.get("reason")
+        if isinstance(reason, str) and "reason_label" not in gap:
+            known = _GAP_REASON_LABELS.get(reason)
+            if known is not None:
+                gap["reason_label"] = dict(known)
+
+
 def _watched_condition(when: Any) -> dict[str, Any] | None:
     """The condition itself, as facts rather than as prose."""
     if not isinstance(when, dict):
@@ -835,10 +1057,19 @@ def _invalidators(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
     return out
 
 
-def _rights(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
+def _exposure_screens(definition: dict, gaps: list[dict]) -> list[dict[str, Any]]:
+    """The knowledge file's `exposure_screens` — and nothing more.
+
+    These are valuation / refinancing / capex / FCF EXPOSURE context: which kinds
+    of company the leg would bear on. They are not permission to display source
+    data. Mapping them to a field called `rights` invented a license status the
+    owners never granted, and put it where a reader would take it for one.
+    Display permission is decided by the existing entitlement policy, not here,
+    so this surface reports it as undetermined rather than answering it.
+    """
     raw = definition.get("exposure_screens")
     if not isinstance(raw, dict) or not raw:
-        gaps.append({"kind": "rights_absent"})
+        gaps.append({"kind": "exposure_screens_absent"})
         return []
     return [{
         "id": key,
@@ -892,6 +1123,12 @@ def _source_block(definition: dict, state_doc: dict, observed: dict, *,
             gaps.append({"kind": "build_stamp_in_future", "where": "chain_state.built"})
         else:
             age_seconds, age_basis = int(delta), "chain_state.built"
+    observation_age_days: int | None = None
+    try:
+        observed_on = datetime.strptime(str(state_doc.get("asof")), "%Y-%m-%d").replace(tzinfo=UTC)
+        observation_age_days = max(0, (now - observed_on).days)
+    except (TypeError, ValueError):
+        gaps.append({"kind": "unparseable_observation_date", "where": "chain_state.asof"})
     return {
         "chain": chain,
         "rev": observed.get("rev"),
@@ -899,6 +1136,7 @@ def _source_block(definition: dict, state_doc: dict, observed: dict, *,
         "asof": state_doc.get("asof"),
         "built": built,
         "receipt_kind": "composed_read",
+        "composer_method": COMPOSER_METHOD,
         "reads": [],
         "source_manifest_hash": None,
         "freshness": {
@@ -908,8 +1146,18 @@ def _source_block(definition: dict, state_doc: dict, observed: dict, *,
             # is asserted.
             "status": "verification_unavailable",
             "compared_against": None,
+            # Two different clocks, deliberately separated. GENERATION age is how
+            # long ago this artifact was built; OBSERVATION age is how old the
+            # data it observed is. A freshly generated old observation is not a
+            # current one, and reporting only the first would say it was.
             "source_age_seconds": age_seconds,
             "source_age_basis": age_basis,
+            "generation_age_seconds": age_seconds,
+            "generation_age_basis": age_basis,
+            "observation_asof": state_doc.get("asof"),
+            "observation_age_days": observation_age_days,
+            "observation_age_basis": ("chain_state.asof" if observation_age_days is not None
+                                      else "unparseable_asof"),
             "note": {
                 "en": "Age is measured against this build's own artifact stamp. Whether "
                       "it matches what the canonical transmission page is serving cannot "

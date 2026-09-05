@@ -118,6 +118,45 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
 .ox-kv dd{margin:0;color:var(--text);font-family:var(--font-mono);font-size:var(--fs-sm)}
 .ox-note{font-size:var(--fs-sm);color:var(--muted);margin:8px 0 0;line-height:1.55}
 
+/* ---- the qualifying line under the stance ------------------------------- */
+/* Three short facts, not a diagnostic panel: how much was read, how old it is,
+   and what cannot be verified. The flagged items get the ink rung rather than
+   the fill token, because this is TEXT and the fill tokens are tuned for
+   swatches - measured 3.60:1 against the light canvas. */
+.ox-meta{display:flex;flex-wrap:wrap;gap:6px 0;margin:14px 0 0;padding:0;
+  font-size:var(--fs-sm);color:var(--muted);line-height:1.5}
+.ox-meta-item{display:inline-flex;align-items:center}
+.ox-meta-item + .ox-meta-item::before{content:"";display:inline-block;width:1px;
+  height:11px;margin:0 12px;background:var(--line)}
+.ox-meta-item[data-flag="1"]{color:var(--ink-warn,var(--warn))}
+
+/* ---- the action --------------------------------------------------------- */
+.ox-action{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;
+  border-radius:9px;background:transparent;color:var(--text);
+  border:1px solid var(--line);font-family:inherit;font-size:var(--fs-body);
+  font-weight:600;cursor:pointer;text-decoration:none;text-align:left}
+.ox-action:hover{border-color:var(--info);color:var(--ink-info,var(--info))}
+.ox-action[disabled]{cursor:default;color:var(--muted);border-color:var(--line)}
+.ox-action[disabled]:hover{border-color:var(--line);color:var(--muted)}
+
+/* ---- study: receipts and named gaps ------------------------------------- */
+/* A focused step is a destination, not a control, so it gets the focus ring
+   without entering the tab order (tabIndex -1 in the client). */
+.ox-leg:focus-visible{outline:2px solid var(--info);outline-offset:6px;border-radius:8px}
+.ox-hash{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:8px 0 0;
+  font-size:var(--fs-sm);color:var(--muted)}
+.ox-hash code{font-family:var(--font-mono);font-size:var(--fs-micro);color:var(--text);
+  overflow-wrap:anywhere;word-break:break-all}
+.ox-hash-path{font-family:var(--font-mono);color:var(--text)}
+.ox-hash-size{color:var(--muted);white-space:nowrap}
+.ox-gaps{margin:8px 0 0;padding:0;list-style:none;font-size:var(--fs-sm)}
+.ox-gaps li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;
+  padding:5px 0;border-bottom:1px solid var(--line);color:var(--text)}
+.ox-gaps li:last-child{border-bottom:0}
+.ox-gap-where{font-family:var(--font-mono);font-size:var(--fs-micro);color:var(--muted);
+  overflow-wrap:anywhere}
+.ox-gap-why{font-size:var(--fs-micro);color:var(--muted)}
+
 /* ---- gates: the states that are not a reading --------------------------- */
 .ox-gate{background:var(--panel);border:1px solid var(--line);border-radius:12px;
   padding:26px 24px;margin:28px 0 0;max-width:62ch}
@@ -148,5 +187,8 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
     border-top:2px solid var(--act);border-bottom:2px solid var(--act)}
   .st-body{padding:0 0 24px;flex:1 1 auto;min-width:0}
   .ox-state-word{font-size:var(--fs-h1)}
+  /* Stacked, the separator rules read as bullets in a list nobody wrote. */
+  .ox-meta{flex-direction:column;align-items:flex-start}
+  .ox-meta-item + .ox-meta-item::before{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

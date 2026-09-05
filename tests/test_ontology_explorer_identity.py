@@ -255,3 +255,56 @@ def test_an_unparseable_build_stamp_reports_no_age_rather_than_zero(tmp_path):
     freshness = snap["source"]["freshness"]
     assert freshness["source_age_seconds"] is None
     assert freshness["source_age_basis"] == "unparseable_build_stamp"
+
+
+def test_every_gap_carries_a_reader_facing_location(tmp_path):
+    """A gap the reader cannot locate is a count, and a gap located by its raw
+    field path puts internal names — and, for the watch list, the refutation
+    family — onto a customer surface. Every gap gets a labelled location."""
+    snapshot = _compose(fx.build_root(tmp_path))
+    assert snapshot["gaps"], "fixture must produce at least one gap to test"
+    for gap in snapshot["gaps"]:
+        assert "where_label" in gap, gap
+        assert set(gap["where_label"]) == {"en", "zh"}
+        assert gap["where_label"]["en"] and gap["where_label"]["zh"]
+        if gap.get("reason"):
+            assert "reason_label" in gap, gap
+
+
+def test_a_gap_location_never_carries_a_field_path_or_the_refutation_family():
+    from engine.ontology_explorer import _REFUTATION_TERMS, _gap_where_label
+    wheres = ["falsifiers[0].note", "falsifiers[3].note", "title", "state_label",
+              "chain_state.built", "chain_state.asof", "nodes.oil_shock.title",
+              "hops.a->b.label", "hops.a->b.condition", "hops.a->b.mechanism",
+              "exposure_screens.long_duration_valuation.label",
+              "exposure_screens.long_duration_valuation.note"]
+    for where in wheres:
+        label = _gap_where_label(where)
+        assert label is not None, where
+        blob = f"{label['en']} {label['zh']}".lower()
+        assert not any(term in blob for term in _REFUTATION_TERMS), (where, label)
+        for fragment in ("falsifier", "oil_shock", "long_duration_valuation",
+                         "chain_state", "hops.", "nodes.", "[0]", "->"):
+            assert fragment not in blob, (where, fragment)
+
+
+def test_an_unmapped_field_path_yields_no_label_rather_than_leaking_itself():
+    """Failing closed matters more than completeness here: an unrecognised path
+    must not fall back to printing itself."""
+    from engine.ontology_explorer import _gap_where_label
+    assert _gap_where_label("some.future.field") is None
+    assert _gap_where_label("") is None
+    assert _gap_where_label(None) is None
+
+
+def test_a_node_gap_is_located_by_step_number_not_by_slug(tmp_path):
+    from engine.ontology_explorer import _label_gaps
+    legs = [{"node_id": "oil_shock", "index": 2,
+             "title": {"en": "Oil supply shock", "zh": "油价供给冲击"}}]
+    gaps = [{"kind": "node_unresolved", "node_id": "oil_shock"},
+            {"kind": "node_unresolved", "node_id": "ghost"}]
+    _label_gaps(gaps, legs)
+    assert gaps[0]["where_label"]["en"] == "Step 2 · Oil supply shock"
+    assert "oil_shock" not in gaps[0]["where_label"]["en"]
+    assert "ghost" not in gaps[1]["where_label"]["en"]
+    assert "ghost" not in gaps[1]["where_label"]["zh"]

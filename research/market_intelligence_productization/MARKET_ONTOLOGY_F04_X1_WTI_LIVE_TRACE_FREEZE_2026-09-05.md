@@ -182,3 +182,146 @@ and K3-D #6514 protected path sets remain disjoint from this branch's paths.
 Small, shared-owner hunks only: register `scripts/build_ontology_explorer.py` in
 the site build; add the nav entry once #6828/#6834 reconcile; add the page
 registry row; add the four test files to CI selection.
+
+---
+
+# Repair round 2 — Sol REQUEST_REPAIR / CONTINUE (2026-09-05)
+
+Sol's review of head `7fbdc0a0` returned five truth blockers plus a product
+completion order. What follows is what each one actually was in the code, not a
+restatement of the instruction.
+
+## The five truth blockers, and the shape of each defect
+
+**B1 — K1 reported AVAILABLE with no reference.** `_evidence()` counted any JSON
+object whose chain matched and set `status=available` with `refs_count=N`, while
+constructing and validating **zero** `EvidenceRef`s. A recorded transition is a
+transition; a reference is a reference. The counts are now separate fields
+(`recorded_transitions` vs `refs_count`), status stays `unavailable_for_object`
+until an actual unchanged-K1 resolution succeeds, and the reason is machine
+readable (`eligible_transition_not_k1_resolved` when transitions exist but none
+resolved, `excluded_derived_head_no_eligible_transition` when the head itself is
+excluded). No second evidence library was built.
+
+**B2 — UNKNOWN collapsed into FALSE/TRUE.** The reader took `confirmed`
+truthily, so `"false"`, `0`, `""` and a missing key all became a market verdict.
+`_read_leg_verdict()` now enforces typed Boolean/null semantics and separates
+*observed* from *resolved* from *complete*: a non-Boolean is `node_unreadable`, a
+missing `resolved` is `node_incomplete`, an unresolved node is
+`node_unresolved`, and a resolved node with a null verdict is `node_unjudged`.
+Every one of them stays UNKNOWN and is named in `gaps`.
+
+**B3 — an incomplete path could render as a complete ACTIVE one.** Length of the
+selected walk was the only check, so a fork, a duplicate identity, a hop into an
+undeclared node, and a disconnected component beside a cycle all survived.
+Topology is now validated before a simple path is rendered: branches, undeclared
+nodes and disconnected walks raise; a cycle degrades with the unreached nodes
+named; duplicate rows fail closed. `run()` is still never invoked and the ledger
+is never written.
+
+**B4 — the wrong change and the wrong clock.** Transition identity is now bound
+to the owner-native revision and cutoff, and rows from another revision, rows
+after the cutoff, malformed rows and unreadable rows are each counted and
+disclosed rather than silently dropped. Generation age and observation age are
+now distinct fields with distinct bases: a freshly rendered old observation is
+reported as an old observation. Where the comparison cannot be observed, the
+answer is a typed limitation (`verification_unavailable`), never an invented
+clock.
+
+**B5 — `rights` was the wrong object.** The YAML's `exposure_screens` are
+valuation / refinancing / capex / FCF exposures. Presenting them as `rights`
+invented a license status the owners never granted. The key is gone; the payload
+carries `exposure_screens` and a separate `display_permission` whose status is
+`not_determined_here`. Permission unknown stays unknown. No rights registry was
+created.
+
+**Plus the manifest.** `manifest_hash_for()` now folds `COMPOSER_METHOD` into the
+digest alongside the read bytes, so the receipt identifies the method that
+produced the answer as well as the inputs. It is still called a read receipt,
+never an owner generation.
+
+## RED → GREEN, in this repo
+
+The witness tests were run against the pre-repair engine at HEAD `3d118196`
+(the commit Sol's reviewed head became), with the repaired app module kept in
+place so transport failures could not be counted as collateral:
+
+```
+48 failed, 101 passed      # pre-repair engine, current tests
+151 passed                 # repaired engine
+```
+
+The witness sets: B1 → 3 tests, B2 → 9, B3 → 3, B4 → 4, B5 → 3, manifest → 1,
+the action contract → 4, gap reachability → 4. The remaining 17 are the
+parametrized vocabulary suites, which fail pre-repair because they read
+`snap["exposure_screens"]` — B5 collateral, not an independent regression. That
+distinction is stated because attributing all 48 to the five blockers would
+overstate the result.
+
+## Product completion
+
+**The action is now an action.** `renderNextAction()` rendered a paragraph; a
+card reading "Open the evidence" with nothing behind it is a caption. Every
+`next_action` branch now names a `handler` the client implements and a `target`
+that resolves to something on the page. `focus_leg` opens the step section,
+scrolls the named step into view and moves focus onto it (`tabindex="-1"`, so it
+is a destination and not a tab stop); `open_transmission` links the canonical
+`/transmission.html`. The `compare_inverse_path` branch was **deleted** — an
+inverse comparison needs a proven inverse path, and none is defined, so it is not
+advertised. A test asserts no branch can ever offer it.
+
+Two things the browser caught that reading could not:
+
+* Opening a `<details>` and scrolling in the same tick measures the pre-open
+  layout, and the step landed ~200px below the fold with the focus ring on
+  something invisible. The scroll now waits for the frame that includes the
+  revealed content.
+* `requestAnimationFrame` and smooth scrolling are both animation-clocked, and a
+  hidden or throttled tab runs neither — the action silently did half its job.
+  A timeout races the frame callback, and the destination is verified and
+  corrected without animation. Motion is the enhancement; arriving is the
+  requirement.
+
+**Product admission is not slug syntax.** The composer stays chain-generic
+because it is a library, but the route now serves only `ACCEPTED_CHAINS`; any
+other slug is a typed 404 (`chain_not_admitted`) even when it exists and composes
+cleanly.
+
+**Disclosure.** The first viewport carries three compact facts — coverage, how
+old the readings are, and what cannot be verified — instead of a state and a date
+with the limitation collapsed inside Study. Study now exposes the full digest
+(not a 23-character prefix), every read receipt with path, sha256 and byte
+count, and the composer method, contract, revision and owner state schema.
+Withheld and missing details are listed individually with a reader-facing
+location and reason; a count is not reachability. `aria-busy` is cleared on
+every terminal state — success, 401, 403, 503 and a malformed 200 — because a
+screen reader parked on a finished error is otherwise still told the region is
+updating.
+
+**One trap worth carrying forward.** Making the gaps reachable initially printed
+`falsifiers[0].note` on the page: an internal field path *and* the refutation
+vocabulary this product forbids on a reader surface. Reachability traded one law
+for another. The machine path stays in the payload for machine consumers, and a
+`where_label` / `reason_label` pair carries the reader-facing location — named by
+family, never by node id, and for steps by ordinal ("Step 2 · Oil supply shock").
+
+## Measured on the built page
+
+Driven in a real browser against the real shell and the real router, with
+synthetic fixture data so every measurement is shareable:
+
+* action: section opens, scroll 0 → 688, target centred and fully visible, focus
+  on the target
+* terminal states: 401 / 403 / 503 / malformed-200 all render their own honest
+  gate, all clear `aria-busy`, none falls back to a stale reading
+* contrast: worst text class 5.07:1 dark, 4.72:1 light, measured against each
+  element's actual painted ancestor
+* bilingual: 301 visible `.l-en` / 0 `.l-zh` in EN, exactly inverted in ZH; no
+  Latin prose leaks into the ZH reader surface
+* mobile 375px: rail turns vertical, meta stacks, 44px action target, zero
+  horizontal overflow
+
+A measurement note: the first contrast pass reported 1.1:1 on two classes and the
+design was fine — `color-mix()` resolves to `color(srgb 0.87 …)`, whose 0–1
+floats the parser was reading as 0–255. The measuring instrument failed before
+the thing being measured did.

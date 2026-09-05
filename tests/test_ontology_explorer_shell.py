@@ -129,3 +129,38 @@ def test_every_internal_link_this_feature_adds_resolves():
     missing = sorted(h for h in hrefs
                      if not (ROOT / "site" / h.lstrip("/")).exists())
     assert missing == [], f"dead internal link(s) added by this feature: {missing}"
+
+
+def test_the_builder_exposes_an_entry_point_the_site_build_can_call(tmp_path):
+    """Stage B's hunk in scripts/build_site.py must be one self-contained block.
+    If the only entry point were `main()`, the site build would have to stand up
+    a second Jinja environment with its own autoescape settings — one page
+    rendered by two differently-configured environments is how escaping drifts
+    between the nightly build and a manual one."""
+    from jinja2 import Environment, FileSystemLoader
+    from scripts.build_ontology_explorer import PAGE, PAIRED_ASSETS, build_shell
+
+    env = Environment(
+        loader=FileSystemLoader(str(ROOT / "templates")), autoescape=True)
+    site = tmp_path / "site"
+    build_shell(env, site)
+
+    assert (site / PAGE).exists()
+    for name in PAIRED_ASSETS:
+        assert (site / name).read_bytes() == (
+            ROOT / "templates" / name).read_bytes()
+
+
+def test_a_missing_paired_asset_raises_instead_of_reporting_success(tmp_path,
+                                                                    monkeypatch):
+    """The site build wraps every page in an additive try/except, so a raise is
+    what that pattern expects. Returning quietly would let a page ship without
+    its stylesheet and still count as a successful build."""
+    import scripts.build_ontology_explorer as builder
+    from jinja2 import Environment, FileSystemLoader
+
+    env = Environment(
+        loader=FileSystemLoader(str(ROOT / "templates")), autoescape=True)
+    monkeypatch.setattr(builder, "PAIRED_ASSETS", ("ontology.css", "not-a-real-asset.js"))
+    with pytest.raises(FileNotFoundError, match="not-a-real-asset.js"):
+        builder.build_shell(env, tmp_path / "site")

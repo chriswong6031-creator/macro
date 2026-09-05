@@ -35,29 +35,45 @@ PAGE = "ontology.html"
 PAIRED_ASSETS = ("ontology.css", "ontology.js")
 
 
-def main() -> int:
-    root = config.ROOT
-    env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
-    html = env.get_template(TEMPLATE).render(nav_prefix="")
+def build_shell(env: Environment, site: Path) -> None:
+    """Render the public shell and sync its paired assets into ``site``.
 
-    site = root / config.load()["storage"]["site_dir"]
+    Kept separate from ``main`` so the normal site build can call it with the
+    environment it already has, instead of standing up a second Jinja
+    environment with its own autoescape settings — one page rendered by two
+    differently-configured environments is how escaping drifts between the
+    nightly build and a manual one. Stage B's hunk in ``scripts/build_site.py``
+    is then a single self-contained block with nothing to define locally.
+
+    Raises rather than returning a code: the caller in the site build wraps
+    every page in its own additive ``try/except``, so a raise is what that
+    pattern expects. ``main`` translates it back to an exit code.
+    """
     site.mkdir(parents=True, exist_ok=True)
-    write_page(site / PAGE, html)
+    write_page(site / PAGE, env.get_template(TEMPLATE).render(nav_prefix=""))
 
     for name in PAIRED_ASSETS:
-        source, target = root / "templates" / name, site / name
+        source, target = config.ROOT / "templates" / name, site / name
         if not source.exists():
-            # `return 0` from main() is SystemExit(0): a missing asset made the
-            # build a silent success that ALSO skipped every later asset in the
-            # list. A missing source file is a defect in the tree, not a data
-            # outage to be tolerated.
-            log.error("paired asset missing: templates/%s", name)
-            return 1
+            raise FileNotFoundError(f"paired asset missing: templates/{name}")
         if not target.exists() or target.read_bytes() != source.read_bytes():
             target.write_bytes(source.read_bytes())
             log.info("synced %s", name)
 
-    log.info("wrote %s/%s (%d KB)", site, PAGE, len(html) // 1024)
+
+def main() -> int:
+    root = config.ROOT
+    env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
+    site = root / config.load()["storage"]["site_dir"]
+    try:
+        build_shell(env, site)
+    except FileNotFoundError as exc:
+        # A missing source asset is a defect in the tree, not a data outage to
+        # be tolerated. `return 0` here once made the build a silent success
+        # that ALSO skipped every later asset in the list.
+        log.error("%s", exc)
+        return 1
+    log.info("wrote %s/%s", site, PAGE)
     return 0
 
 

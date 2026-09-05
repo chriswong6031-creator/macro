@@ -45,6 +45,17 @@ FORBIDDEN_KEY_SUBSTRINGS = (
 )
 
 
+def _has_gap(gaps, **fields):
+    """A gap is present when it carries the fields under test.
+
+    Not whole-dict equality: the composer also stamps every gap with a
+    reader-facing `where_label`/`reason_label`, and pinning the entire dict here
+    would make these tests fail on a labelling change that is not the defect any
+    of them is about.
+    """
+    return any(all(gap.get(k) == v for k, v in fields.items()) for gap in gaps)
+
+
 def _compose(root: Path, **kwargs):
     from engine.ontology_explorer import compose_snapshot
     return compose_snapshot(root, chain=kwargs.pop("chain", fx.SLUG), **kwargs)
@@ -160,7 +171,7 @@ def test_a_node_missing_from_owner_state_degrades_with_a_named_gap(tmp_path):
     leg = next(x for x in snap["path"]["legs"] if x["node_id"] == "n3")
     assert leg["observation"] == "unobserved"
     assert leg["confirmed"] is None
-    assert {"kind": "node_unobserved", "node_id": "n3"} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="node_unobserved", node_id="n3")
     assert snap["state"]["code"] == "unknown"
 
 
@@ -169,15 +180,15 @@ def test_a_chain_without_invalidators_reports_the_absence(tmp_path):
     doc.pop("falsifiers")
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
     assert snap["invalidators"] == []
-    assert {"kind": "invalidators_absent"} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="invalidators_absent")
 
 
 def test_a_chain_without_exposure_screens_reports_the_absence(tmp_path):
     doc = fx.chain_yaml()
     doc.pop("exposure_screens")
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
-    assert snap["rights"] == []
-    assert {"kind": "rights_absent"} in snap["gaps"]
+    assert snap["exposure_screens"] == []
+    assert _has_gap(snap["gaps"], kind="exposure_screens_absent")
 
 
 def test_a_hop_without_a_lag_window_reports_a_clock_gap(tmp_path):
@@ -186,7 +197,7 @@ def test_a_hop_without_a_lag_window_reports_a_clock_gap(tmp_path):
     state = fx.chain_state()
     state["chains"][0]["hops"][1].pop("lag_d")
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc, state_doc=state))
-    assert {"kind": "clock_absent", "hop_id": "n2->n3"} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="clock_absent", hop_id="n2->n3")
 
 
 # --------------------------------------------------------------------------
@@ -352,7 +363,7 @@ def test_no_refutation_vocabulary_reaches_reader_facing_text(tmp_path):
         "next_action": snap["next_action"], "contradiction": snap["contradiction"],
         "invalidators": [{"note": i["note"], "watched": i["watched"]}
                          for i in snap["invalidators"]],
-        "rights": snap["rights"],
+        "exposure_screens": snap["exposure_screens"],
     }, ensure_ascii=False).lower()
     for banned in ("falsif", "refut", "证伪", "disprov"):
         assert banned not in shown
@@ -382,7 +393,7 @@ def test_the_live_default_chain_composes_without_front_facing_violations():
 # happened to be caught first
 # --------------------------------------------------------------------------
 READER_FACING_KEYS = ("state", "path", "what_changed", "why_it_matters",
-                      "next_action", "contradiction", "rights")
+                      "next_action", "contradiction", "exposure_screens")
 
 
 def _reader_facing(snap) -> str:
@@ -474,15 +485,14 @@ def test_an_untranslated_identity_label_is_kept_but_reported(tmp_path):
     doc = _plant("chain_title", {"en": "Probe", "zh": "Probe"})
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
     assert snap["path"]["title"] == {"en": "Probe", "zh": "Probe"}
-    assert {"kind": "text_untranslated", "where": "title"} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="text_untranslated", where="title")
 
 
 def test_untranslated_prose_is_withheld_rather_than_served_as_english(tmp_path):
     doc = _plant("hop_mechanism", "English-only mechanism prose")
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc))
     assert snap["path"]["hops"][0]["mechanism"] is None
-    assert {"kind": "text_withheld", "where": "hops.n1->n2.mechanism",
-            "reason": "untranslated"} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="text_withheld", where="hops.n1->n2.mechanism",             reason= "untranslated")
 
 
 # --------------------------------------------------------------------------
@@ -630,7 +640,7 @@ def test_a_build_stamp_in_the_future_is_not_an_age_of_zero(tmp_path):
     freshness = snap["source"]["freshness"]
     assert freshness["source_age_seconds"] is None
     assert freshness["source_age_basis"] == "build_stamp_in_future"
-    assert {"kind": "build_stamp_in_future", "where": "chain_state.built"} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="build_stamp_in_future", where="chain_state.built")
 
 
 def test_a_transition_from_another_revision_is_not_this_revisions_change(tmp_path):
@@ -639,20 +649,262 @@ def test_a_transition_from_another_revision_is_not_this_revisions_change(tmp_pat
     root = fx.build_root(tmp_path)
     (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
         json.dumps({"chain": fx.SLUG, "rev": 1, "transition": "armed",
-                    "asof": "2026-02-01"}) + "\n"
+                    "asof": "2026-01-01"}) + "\n"
         + json.dumps({"chain": fx.SLUG, "rev": 99, "transition": "armed",
-                      "asof": "2026-03-01"}) + "\n", encoding="utf-8")
+                      "asof": "2026-01-01"}) + "\n", encoding="utf-8")
     snap = _compose(root)
     assert snap["what_changed"]["status"] == "comparison_unavailable"
     assert snap["evidence"]["k1"]["refs_count"] == 0
-    assert {"kind": "transitions_from_another_revision", "count": 2} in snap["gaps"]
+    assert _has_gap(snap["gaps"], kind="transitions_from_another_revision", count=2)
 
 
 def test_a_transition_at_the_current_revision_is_reported(tmp_path):
     root = fx.build_root(tmp_path)
     (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
         json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "armed",
-                    "asof": "2026-02-01", "hop": 1}) + "\n", encoding="utf-8")
+                    "asof": "2026-01-01", "hop": 1}) + "\n", encoding="utf-8")
     snap = _compose(root)
     assert snap["what_changed"]["status"] == "recorded_transition"
-    assert snap["what_changed"]["items"][0]["asof"] == "2026-02-01"
+    assert snap["what_changed"]["items"][0]["asof"] == "2026-01-01"
+
+
+# ==========================================================================
+# Sol REQUEST_REPAIR 1788598030.999859 — five truth blockers
+# ==========================================================================
+
+# B1 — a recorded transition is NOT an evidence reference
+def _root_with_episodes(tmp_path, rows: list[dict]):
+    root = fx.build_root(tmp_path)
+    (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    return root
+
+
+def test_a_recorded_transition_alone_never_makes_k1_available(tmp_path):
+    """`_evidence` counted any row with a matching chain and declared K1
+    AVAILABLE — while creating and validating no EvidenceRef at all. The client
+    then hid the binding limitation. A transition is a transition; a reference is
+    a reference that resolved."""
+    root = _root_with_episodes(tmp_path, [
+        {"chain": fx.SLUG, "rev": 2, "transition": "armed", "asof": "2026-01-02"}])
+    snap = _compose(root)
+    assert snap["evidence"]["k1"]["status"] == "unavailable_for_object"
+    assert snap["evidence"]["k1"]["refs"] == []
+    assert snap["evidence"]["k1"]["refs_count"] == 0
+
+
+def test_transition_count_is_reported_separately_from_reference_count(tmp_path):
+    root = _root_with_episodes(tmp_path, [
+        {"chain": fx.SLUG, "rev": 2, "transition": "armed", "asof": "2026-01-02"}])
+    k1 = _compose(root)["evidence"]["k1"]
+    assert k1["recorded_transitions"] == 1
+    assert k1["refs_count"] == 0
+    assert k1["reason_code"] == "eligible_transition_not_k1_resolved"
+
+
+def test_an_arbitrary_json_object_cannot_manufacture_evidence(tmp_path):
+    root = _root_with_episodes(tmp_path, [{"chain": fx.SLUG}])
+    k1 = _compose(root)["evidence"]["k1"]
+    assert k1["status"] == "unavailable_for_object"
+    assert k1["refs_count"] == 0
+
+
+# B2 — typed boolean / null semantics; never invent state from truthiness
+def _state_with_node_field(field: str, value):
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    state["chains"][0]["nodes"][0][field] = value
+    return state
+
+
+@pytest.mark.parametrize("value", ["false", "true", 0, 1, "", "yes"])
+def test_a_non_boolean_confirmed_is_unknown_not_coerced(tmp_path, value):
+    """`bool("false")` is True. A string in the owner artifact could activate a
+    leg that the owners had marked as not holding."""
+    snap = _compose(fx.build_root(tmp_path, state_doc=_state_with_node_field("confirmed", value)))
+    leg = snap["path"]["legs"][0]
+    assert leg["confirmed"] is None
+    assert leg["observation"] == "unreadable"
+    assert snap["state"]["code"] == "unknown"
+    assert snap["state"]["activation"] is False
+
+
+def test_a_missing_confirmed_is_unknown_not_false(tmp_path):
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    del state["chains"][0]["nodes"][0]["confirmed"]
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert snap["path"]["legs"][0]["confirmed"] is None
+    assert snap["state"]["code"] == "unknown"
+
+
+def test_a_missing_resolved_flag_is_not_assumed_resolved(tmp_path):
+    """Defaulting `resolved` to True asserts the owners judged something they
+    may simply not have written down."""
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    del state["chains"][0]["nodes"][0]["resolved"]
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert snap["path"]["legs"][0]["observation"] == "incomplete"
+    assert snap["state"]["code"] == "unknown"
+    assert _has_gap(snap["gaps"], kind="node_incomplete", node_id="n1")
+
+
+def test_a_null_confirmed_on_a_resolved_node_stays_unknown(tmp_path):
+    snap = _compose(fx.build_root(tmp_path, state_doc=_state_with_node_field("confirmed", None)))
+    assert snap["path"]["legs"][0]["confirmed"] is None
+    assert snap["state"]["activation"] is False
+
+
+# B3 — topology completeness must also hold when a cycle is present
+def test_a_disconnected_component_beside_a_cycle_is_not_invisible(tmp_path):
+    doc = fx.chain_yaml(cycle=True)
+    doc["nodes"]["z1"] = {"title": {"en": "Z one", "zh": "Z一"}, "src": "synthetic",
+                          "test": {"all": []}}
+    doc["nodes"]["z2"] = {"title": {"en": "Z two", "zh": "Z二"}, "src": "synthetic",
+                          "test": {"all": []}}
+    doc["hops"].append({"from": "z1", "to": "z2", "sign": "+", "lag_d": [1, 2],
+                        "label": {"en": "l", "zh": "l2"},
+                        "condition": {"en": "c", "zh": "c2"},
+                        "mechanism": {"en": "m", "zh": "m2"}})
+    snap = _compose(fx.build_root(tmp_path, yaml_doc=doc,
+                                  state_doc=fx.chain_state(cycle=True)))
+    assert snap["state"]["code"] == "unknown"
+    assert any(g["kind"] == "path_incomplete" for g in snap["gaps"])
+
+
+def test_duplicate_node_rows_in_owner_state_fail_closed(tmp_path):
+    from engine.ontology_explorer import SourceIncoherent
+    state = fx.chain_state()
+    state["chains"][0]["nodes"].append(json.loads(json.dumps(state["chains"][0]["nodes"][0])))
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, state_doc=state))
+    assert "duplicate_node_rows" in str(excinfo.value)
+
+
+def test_an_oversized_source_fails_closed_on_bytes(tmp_path):
+    """The bound must cover payload size, not only node count."""
+    from engine.ontology_explorer import SourceIncoherent
+    state = fx.chain_state()
+    state["chains"][0]["padding"] = "x" * 3_000_000
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, state_doc=state))
+    assert "source_exceeds_bound" in str(excinfo.value)
+
+
+# B4 — transition identity, and generation age vs observation age
+def test_a_transition_row_missing_its_identity_is_not_a_change(tmp_path):
+    root = _root_with_episodes(tmp_path, [{"chain": fx.SLUG, "rev": 2}])
+    snap = _compose(root)
+    assert snap["what_changed"]["status"] == "comparison_unavailable"
+    assert any(g["kind"] == "transitions_malformed" for g in snap["gaps"])
+
+
+def test_a_transition_dated_after_the_owner_cutoff_is_refused(tmp_path):
+    """A row dated past the artifact's own `asof` cannot be a change this
+    artifact observed."""
+    root = _root_with_episodes(tmp_path, [
+        {"chain": fx.SLUG, "rev": 2, "transition": "armed", "asof": "2099-01-01"}])
+    snap = _compose(root)
+    assert snap["what_changed"]["status"] == "comparison_unavailable"
+    assert any(g["kind"] == "transitions_after_cutoff" for g in snap["gaps"])
+
+
+def test_corrupt_ledger_lines_are_disclosed_not_silently_dropped(tmp_path):
+    root = fx.build_root(tmp_path)
+    (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
+        "{not json\n" + json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "armed",
+                                    "asof": "2026-01-02"}) + "\n", encoding="utf-8")
+    snap = _compose(root)
+    assert any(g["kind"] == "transitions_unreadable" for g in snap["gaps"])
+
+
+def test_generation_age_and_observation_age_are_distinct(tmp_path):
+    """`built` is when the artifact was generated; `asof` is what it observed.
+    A freshly generated old observation is not a current one."""
+    freshness = _compose(fx.build_root(tmp_path))["source"]["freshness"]
+    assert freshness["generation_age_basis"] == "chain_state.built"
+    assert freshness["observation_asof"] == "2026-01-02"
+    assert "observation_age_days" in freshness
+
+
+# B5 — exposure screens are not display rights
+def test_exposure_screens_are_not_presented_as_rights(tmp_path):
+    """The YAML's `exposure_screens` are valuation / refinancing / capex / FCF
+    context. They are not permission to display anything, and labelling them
+    `rights` invented a license status the owners never granted."""
+    snap = _compose(fx.build_root(tmp_path))
+    assert "rights" not in snap
+    assert snap["exposure_screens"][0]["id"] == "synthetic_screen"
+
+
+def test_display_permission_is_reported_as_not_determined_here(tmp_path):
+    snap = _compose(fx.build_root(tmp_path))
+    assert snap["display_permission"]["status"] == "not_determined_here"
+
+
+# B6 — the manifest must bind the composer method, not only the bytes read
+def test_the_manifest_hash_binds_the_composer_method_version(tmp_path):
+    from engine.ontology_explorer import COMPOSER_METHOD, manifest_hash_for
+    snap = _compose(fx.build_root(tmp_path))
+    source = snap["source"]
+    assert source["composer_method"] == COMPOSER_METHOD
+    assert source["source_manifest_hash"] == manifest_hash_for(
+        source["reads"], method=COMPOSER_METHOD)
+    assert manifest_hash_for(source["reads"], method="something.else.v9") != \
+        source["source_manifest_hash"]
+
+
+def test_every_next_action_names_a_handler_the_client_implements():
+    """A card that says 'open the evidence' with nothing behind it is a caption,
+    not an action. Every branch must name a handler and, where the handler needs
+    one, a target that resolves to a leg actually on the page."""
+    from engine.ontology_explorer import _next_action
+    legs = [
+        {"node_id": "a", "index": 1, "title": {"en": "First step", "zh": "第一环节"}},
+        {"node_id": "b", "index": 2, "title": {"en": "Second step", "zh": "第二环节"}},
+    ]
+    blocking = {"node_id": "a", "index": 1, "title": legs[0]["title"]}
+    contradiction = {"confirmed_downstream": ["b"], "blocking_upstream": "a"}
+    cases = [
+        _next_action("unknown", None, None, ["b"], legs),
+        _next_action("dormant", blocking, contradiction, [], legs),
+        _next_action("dormant", blocking, None, [], legs),
+        _next_action("active", None, None, [], legs),
+    ]
+    node_ids = {leg["node_id"] for leg in legs}
+    for action in cases:
+        assert action["handler"] in {"focus_leg", "open_transmission"}
+        if action["handler"] == "focus_leg":
+            assert action["target"] in node_ids
+        else:
+            assert action["target"] is None
+
+
+def test_no_action_advertises_an_inverse_comparison_that_was_never_built():
+    """An inverse-path switch needs a proven inverse path. None is defined for
+    this chain, so no state may offer the comparison."""
+    from engine.ontology_explorer import _next_action
+    legs = [{"node_id": "a", "index": 1, "title": {"en": "First", "zh": "第一"}}]
+    for state in ("active", "dormant", "unknown", "degraded"):
+        for blocking in (None, {"node_id": "a", "index": 1, "title": legs[0]["title"]}):
+            action = _next_action(state, blocking, None, [], legs)
+            assert action["code"] != "compare_inverse_path"
+            assert "inverse" not in json.dumps(action).lower()
+
+
+def test_the_action_label_never_carries_a_raw_node_id():
+    """`wait_for_named_condition` used to interpolate the slug straight into the
+    sentence, putting an internal identifier on a customer surface in both
+    languages."""
+    from engine.ontology_explorer import _next_action
+    legs = [{"node_id": "breakeven_rise", "index": 1,
+             "title": {"en": "Breakevens rise", "zh": "盈亏平衡上行"}}]
+    action = _next_action("unknown", None, None, ["breakeven_rise"], legs)
+    assert "breakeven_rise" not in action["label"]["en"]
+    assert "breakeven_rise" not in action["label"]["zh"]
+    assert "Breakevens rise" in action["label"]["en"]
+
+
+def test_an_action_for_an_unknown_node_degrades_instead_of_printing_the_slug():
+    from engine.ontology_explorer import _next_action
+    action = _next_action("unknown", None, None, ["ghost_node"], [])
+    assert "ghost_node" not in action["label"]["en"]
+    assert "ghost_node" not in action["label"]["zh"]

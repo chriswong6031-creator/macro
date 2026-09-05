@@ -141,15 +141,14 @@ unverified:
       shell is cacheable while every API outcome stays private,no-store.
   - claim: "The page is discoverable."
     what_would_verify: >
-      Stage B: build registration, a nav entry, and a page-registry row. Today
-      /ontology.html is reachable by direct URL only.
+      Stage B: build registration, the nav entry, and a page-registry row. Today
+      /ontology.html is reachable by direct URL only. The nav FAMILY is not an
+      open question - Amendment 3 section 2 assigns this product the
+      _site_nav/_navlinks family plus a toolbar below the global nav. An earlier
+      revision of this handoff wrongly listed the family as unresolved; the only
+      thing outstanding is applying the hunk, which waits on sibling ownership
+      of _navlinks.html.j2, not on a decision.
 unresolved:
-  - >
-    Whether the nav entry belongs to the authenticated family (_site_nav) or the
-    anonymous family (_public_nav). The page is public but its payload is paid,
-    so it sits across the two families the doctrine separates. Deliberately not
-    decided here: both nav templates are held by open sibling carriers
-    (#6828 owns _public_nav.html.j2) and this branch touches neither.
   - >
     Whether other transmission chains should get the same surface. The composer
     is chain-generic and the route takes a `chain` parameter, but only the
@@ -161,8 +160,9 @@ next_actions:
   - >
     Return the Stage B integration-hunk packet to F00: register
     scripts/build_ontology_explorer.py in the site build, add the page-registry
-    row, add the four test files to CI selection, and add the nav entry once
-    #6828/#6834 reconcile.
+    row, add the four test files to CI selection, and add the _navlinks entry
+    (family already fixed by Amendment 3 section 2) once sibling ownership of
+    that template clears.
   - >
     Prove production: a real authenticated read with a real site_full
     entitlement, then observe a correction/failure transition on the deployed

@@ -58,6 +58,12 @@ _PRIVATE_HEADERS = {
 
 _CHAIN_PARAM_RE = re.compile(r"[a-z0-9][a-z0-9_]{0,80}")
 
+#: PRODUCT ADMISSION, not syntax. The composer is chain-generic on purpose — it
+#: is a library — but a slug the composer can parse is not thereby a product X1
+#: has been built and proven for. Only chains admitted here are served; anything
+#: else is refused even when it exists and composes cleanly.
+ACCEPTED_CHAINS = frozenset({"oil_inflation_duration_derate"})
+
 
 class _PrivateOntologyRoute(APIRoute):
     """Stamp the private header set on every outcome, not just on success."""
@@ -146,6 +152,13 @@ def read_snapshot(
             400,
             detail={"schema": ERROR_SCHEMA_ID, "code": "unknown_chain",
                     "reason": "chain_slug_rejected"},
+            headers=_PRIVATE_HEADERS,
+        )
+    if slug not in ACCEPTED_CHAINS:
+        raise HTTPException(
+            404,
+            detail={"schema": ERROR_SCHEMA_ID, "code": "chain_not_admitted",
+                    "reason": "not_an_accepted_x1_product"},
             headers=_PRIVATE_HEADERS,
         )
     try:
