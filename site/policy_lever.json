@@ -1,21 +1,21 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-09-03",
+  "as_of": "2026-09-04",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -20.39,
-    "drawdown_z": -2.63,
-    "as_of": "2026-09-03",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -20.4% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-20.4%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -18.29,
+    "drawdown_z": -2.25,
+    "as_of": "2026-09-04",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -18.3% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-18.3%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
     "n_7d": 5,
-    "n_30d": 35,
+    "n_30d": 34,
     "last_alert_ts": "2026-09-03T00:35:13+00:00",
     "last_alert_summary": "U.S. takes control of 65B Venezuelan oil barrels \u2014 refiners gain, crude faces pressure",
     "last_alert_summary_zh": "\u7f8e\u56fd\u63a7\u5236\u59d4\u5185\u745e\u62c9650\u4ebf\u6876\u77f3\u6cb9\u2014\u2014\u70bc\u6cb9\u5546\u53d7\u76ca\uff0c\u6cb9\u4ef7\u627f\u538b"
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 100.0,
-        "stoch_d": 85.94,
+        "stoch_k": 97.83,
+        "stoch_d": 95.17,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0795,
+        "flatness": 0.1014,
         "armed": false,
         "stoch_curl_recent": false,
         "stoch_traverse": true,
