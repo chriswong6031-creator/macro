@@ -310,8 +310,37 @@ def test_every_seeded_workstream_compiles_and_every_line_is_cited() -> None:
     provenance — exactly what §8's "everything is cited" exists to forbid.
     """
     assert SEED_KEYS, "the seeded store has no workstreams to compile"
+    # Parse and validate the committed store once, then exercise the same pure
+    # compiler over every target.  Spawning the CLI once per workstream reparsed
+    # all 863 records 49 times; exact-head #6505 measured that single test at
+    # more than 50 minutes on pc-ci-3.  Representative CLI-routing tests below
+    # still cross the process/argument/JSON boundary.  This acceptance gate
+    # retains every workstream and every assertion; it only removes quadratic
+    # fixture transport.
+    module = _load_cli()
+    store = module.load_store(STORE, module._load_programs())
+    active_builds_degraded = module.Degraded()
+    builds = module.load_active_builds(active_builds_degraded)
+    now = module._parse_moment(FROZEN)
+    assert now is not None
+    # This gate asserts graph coverage, citations, authority and budget behavior;
+    # it does not assert Git-history timestamps.  Resolving those timestamps here
+    # spawned thousands of `git log` processes over the same records and made the
+    # all-workstream proof the pack's hidden hour-long tail.  The status contract
+    # test separately proves that real tracked records resolve Git-derived dates.
+    module.git_dates = lambda _path: (None, None)
+    repo_sha = module._repo_sha()
+    module._repo_sha = lambda: repo_sha
     for key in SEED_KEYS:
-        bundle = _bundle(_compile("--workstream", key))
+        degraded = module.Degraded()
+        degraded.items.extend(active_builds_degraded.items)
+        bundle = module.compile_bundle(
+            store,
+            workstream=key,
+            now=now,
+            builds=builds,
+            degraded=degraded,
+        )
         assert bundle["schema"] == "context_bundle.v1"
         assert bundle["target"]["workstream"] == f"WS:{key}"
         assert bundle["target"]["resolution"] == "explicit"
@@ -1213,3 +1242,319 @@ def test_the_store_this_suite_compiles_is_the_committed_one(tmp_path: Path) -> N
     scratch = tmp_path / "agentos"
     shutil.copytree(STORE, scratch)
     assert _run("validate", "--root", str(scratch)).returncode == 0
+
+
+# -------------------------------------------------------- source-record identity
+
+
+def _load_source_digest_agentos():
+    spec = importlib.util.spec_from_file_location("agentos_source_digest", CLI)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _source_digest_tree(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+    repo = tmp_path / "repo"
+    records = repo / "agentos"
+    target = records / "workstreams" / "WS-TARGET.md"
+    other = records / "workstreams" / "WS-OTHER.md"
+    clock = records / "discoveries" / "DSC-CLOCK.md"
+    target.parent.mkdir(parents=True)
+    clock.parent.mkdir(parents=True)
+    target.write_bytes(b"target-v1\n")
+    other.write_bytes(b"other-v1\n")
+    clock.write_bytes(b"clock-v1\n")
+    return repo, records, target, clock
+
+
+def _source_digest_context_store(agentos, records: Path, target: Path, clock: Path):
+    other = records / "workstreams" / "WS-OTHER.md"
+    store = agentos.Store(records)
+    store.records = {
+        "WS/TARGET": {
+            "key": "TARGET",
+            "title": "Target",
+            "objective": "Prove direct-record identity.",
+            "status": "active",
+            "program": None,
+            "repos": ["macro"],
+            "owner": "sol",
+            "class": "build",
+            "blast_radius": "reversible",
+            "ambiguity": "specified",
+            "waves": [],
+            "next_action": "Run the identity proof.",
+            "depends_on": [],
+            "decisions": [],
+            "discoveries": ["DSC:CLOCK"],
+            "artifacts": [],
+            "owns_paths": [],
+            "landmines": [],
+            "do_not_redo": [],
+            "_body": "Target body.",
+        },
+        "WS/OTHER": {
+            "key": "OTHER",
+            "title": "Other",
+            "status": "active",
+            "program": None,
+            "repos": ["macro"],
+            "_body": "Unrelated body.",
+        },
+        "DSC/CLOCK": {
+            "key": "CLOCK",
+            "kind": "runtime",
+            "claim": "The source bytes are unchanged.",
+            "so_what": "Acquisition clocks must not move content identity.",
+            "confidence": "verified",
+            "verified_at": "2026-01-01",
+            "expires": "2026-06-01",
+            "scope": ["TARGET"],
+            "falsifier": "Change the authored bytes.",
+            "_body": "Clock body.",
+        },
+    }
+    store.paths = {
+        "WS/TARGET": target,
+        "WS/OTHER": other,
+        "DSC/CLOCK": clock,
+    }
+    store.counts = {
+        "workstreams": 2,
+        "decisions": 0,
+        "discoveries": 1,
+        "handoffs": 0,
+    }
+    return store
+
+
+def test_digest_envelope_is_order_independent_and_binds_path_and_exact_bytes(
+    tmp_path: Path,
+) -> None:
+    """Removing sorting, the path, or the exact file hash must change this literal."""
+    agentos = _load_source_digest_agentos()
+    repo, _records, target, clock = _source_digest_tree(tmp_path)
+
+    digest = agentos._source_records_digest([target, clock], repository_root=repo)
+
+    assert digest == "sha256:bdc09aa0ca00d32f39423fd1049f03930b811b000373960d9228251e8b5161a6"
+    assert agentos._source_records_digest(
+        [clock, target], repository_root=repo
+    ) == digest
+    target.write_bytes(b"target-v2\n")
+    assert agentos._source_records_digest(
+        [target, clock], repository_root=repo
+    ) == "sha256:61b1b11fa25e4d866871429f5e82c1583245eb3733c64d977ce8914c235f50e5"
+
+
+def test_state_projects_every_direct_record_into_the_pure_contract(tmp_path: Path) -> None:
+    """Omitting a direct file or PURE_SECTIONS membership must fail this contract."""
+    agentos = _load_source_digest_agentos()
+    _repo, records, _target, _clock = _source_digest_tree(tmp_path)
+    store = agentos.Store(records)
+    now = agentos._parse_moment("2026-01-01T00:00:00Z")
+    assert now is not None
+
+    state = agentos.build_state(
+        store,
+        now=now,
+        degraded=agentos.Degraded(),
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+    expected = "sha256:41bacffd3a25258ac30ecacd9d5eb75e25c74370c92ab11549863173f9f4e3aa"
+    assert state["source_records_digest"] == expected
+    assert agentos.pure_section(state)["source_records_digest"] == expected
+
+
+def test_context_digest_tracks_candidates_not_clock_filter_or_unrelated_records(
+    tmp_path: Path,
+) -> None:
+    """Expiry movement may move projection rows, never the candidate-source identity."""
+    agentos = _load_source_digest_agentos()
+    _repo, records, target, clock = _source_digest_tree(tmp_path)
+    store = _source_digest_context_store(agentos, records, target, clock)
+    before_bytes = {
+        path: path.read_bytes()
+        for path in (target, clock, records / "workstreams" / "WS-OTHER.md")
+    }
+    january = agentos._parse_moment("2026-01-01T00:00:00Z")
+    july = agentos._parse_moment("2026-07-01T00:00:00Z")
+    assert january is not None and july is not None
+
+    fresh = agentos.compile_bundle(store, workstream="TARGET", now=january)
+    expired = agentos.compile_bundle(store, workstream="TARGET", now=july)
+
+    expected = "sha256:bdc09aa0ca00d32f39423fd1049f03930b811b000373960d9228251e8b5161a6"
+    assert fresh["source_records_digest"] == expected
+    assert expired["source_records_digest"] == expected
+    assert any(row["key"] == "DSC:CLOCK" for row in expired["excluded"])
+    assert all(path.read_bytes() == value for path, value in before_bytes.items())
+
+    target.write_bytes(b"target-v2\n")
+    changed = agentos.compile_bundle(store, workstream="TARGET", now=july)
+    assert changed["source_records_digest"] == (
+        "sha256:61b1b11fa25e4d866871429f5e82c1583245eb3733c64d977ce8914c235f50e5"
+    )
+
+
+
+def _superseded_source_tree(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
+    repo = tmp_path / "repo"
+    records = repo / "agentos"
+    target = records / "workstreams" / "WS-TARGET.md"
+    old = records / "decisions" / "DEC-OLD.md"
+    new = records / "decisions" / "DEC-NEW.md"
+    target.parent.mkdir(parents=True)
+    old.parent.mkdir(parents=True)
+    target.write_bytes(b"target-v1\n")
+    old.write_bytes(b"old-v1\n")
+    new.write_bytes(b"new-v1\n")
+    return repo, records, target, old, new
+
+
+def _superseded_context_store(agentos, records: Path, target: Path, old: Path, new: Path):
+    """WS:TARGET cites DEC:OLD; DEC:OLD is superseded by DEC:NEW; DEC:NEW affects nothing.
+
+    DEC:NEW is therefore consulted by the walk — it is the reason DEC:OLD is evicted —
+    while never becoming a candidate in its own right, so it produces no envelope row.
+    """
+    store = agentos.Store(records)
+    store.records = {
+        "WS/TARGET": {
+            "key": "TARGET",
+            "title": "Target",
+            "objective": "Prove candidate-set completeness.",
+            "status": "active",
+            "program": None,
+            "repos": ["macro"],
+            "owner": "sol",
+            "class": "build",
+            "blast_radius": "reversible",
+            "ambiguity": "specified",
+            "waves": [],
+            "next_action": "Run the completeness fence.",
+            "depends_on": [],
+            "decisions": ["DEC:OLD"],
+            "discoveries": [],
+            "artifacts": [],
+            "owns_paths": [],
+            "landmines": [],
+            "do_not_redo": [],
+            "_body": "Target body.",
+        },
+        "DEC/OLD": {
+            "key": "OLD",
+            "question": "Which enumeration owns digest membership?",
+            "answer": "The walk did, once.",
+            "rationale": "Superseded by the current record.",
+            "confidence": "verified",
+            "decided_at": "2025-12-01",
+            "affects": [],
+            "superseded_by": "DEC:NEW",
+            "_body": "Old body.",
+        },
+        "DEC/NEW": {
+            "key": "NEW",
+            "question": "Which enumeration owns digest membership?",
+            "answer": "The canonical candidate walk.",
+            "rationale": "Output shape must not decide source identity.",
+            "confidence": "verified",
+            "decided_at": "2026-01-01",
+            # Deliberately empty: DEC:NEW must never become a candidate of its own.
+            "affects": [],
+            "supersedes": ["DEC:OLD"],
+            "_body": "New body.",
+        },
+    }
+    store.paths = {"WS/TARGET": target, "DEC/OLD": old, "DEC/NEW": new}
+    store.counts = {"workstreams": 1, "decisions": 2, "discoveries": 0, "handoffs": 0}
+    return store
+
+
+def _envelope_row_paths(envelope: dict) -> set:
+    """Every path the emitted bundle names — the whole surface an output-shaped
+    enumeration can see."""
+    rows = [item for section in envelope["sections"] for item in section["items"]]
+    rows += list(envelope["excluded"]) + list(envelope["omitted_due_to_budget"])
+    return {row.get("path") for row in rows}
+
+
+def test_context_digest_covers_a_record_the_walk_uses_but_never_emits(
+    tmp_path: Path,
+) -> None:
+    """Amendment 2.3(8) completeness fence, over the real compiler walk.
+
+    `_supersession` evicts a candidate ONLY when the `superseded_by` citation resolves in
+    the store, so the replacement record decides what the bundle contains while producing
+    no row of its own.  Deleting it moves DEC:OLD from EXCLUDED into DECISIONS — a
+    material content change driven by a direct authored source — so it must move the
+    source identity.  Any enumeration read back from the emitted envelope is blind here.
+    """
+    agentos = _load_source_digest_agentos()
+    _repo, records, target, old, new = _superseded_source_tree(tmp_path)
+    store = _superseded_context_store(agentos, records, target, old, new)
+    now = agentos._parse_moment("2026-01-01T00:00:00Z")
+    assert now is not None
+
+    with_replacement = agentos.compile_bundle(store, workstream="TARGET", now=now)
+
+    assert any(
+        row["key"] == "DEC:OLD" and row["reason"] == "superseded_by DEC:NEW"
+        for row in with_replacement["excluded"]
+    )
+    # The premise: the used record is nowhere in the emitted bundle.
+    assert agentos._rel(new) not in _envelope_row_paths(with_replacement)
+
+    store.records.pop("DEC/NEW")
+    store.paths.pop("DEC/NEW")
+    new.unlink()
+    without_replacement = agentos.compile_bundle(store, workstream="TARGET", now=now)
+
+    assert any(
+        item["key"] == "DEC:OLD"
+        for section in without_replacement["sections"]
+        if section["id"] == "decisions"
+        for item in section["items"]
+    ), "premise broken: DEC:OLD should be rendered once its replacement is gone"
+    assert (
+        without_replacement["source_records_digest"]
+        != with_replacement["source_records_digest"]
+    ), "a direct record the walk used changed the bundle without moving the digest"
+
+
+def test_omitting_any_eligible_candidate_from_the_digest_set_is_detected(
+    tmp_path: Path,
+) -> None:
+    """The fence's own falsifier: the digest must equal the FULL walk candidate set, and
+    dropping any single member of it must change the value.
+
+    The expected set is stated from the amendment's law (the target, the cited decision,
+    and the replacement that evicts it), never read back from the producer's enumeration,
+    so a producer that silently drops one candidate cannot pass this by construction.
+    """
+    agentos = _load_source_digest_agentos()
+    repo, records, target, old, new = _superseded_source_tree(tmp_path)
+    store = _superseded_context_store(agentos, records, target, old, new)
+    now = agentos._parse_moment("2026-01-01T00:00:00Z")
+    assert now is not None
+
+    bundle = agentos.compile_bundle(store, workstream="TARGET", now=now)
+
+    candidates = [target, old, new]
+    assert bundle["source_records_digest"] == agentos._source_records_digest(
+        candidates, repository_root=repo
+    )
+    for dropped in candidates:
+        kept = [path for path in candidates if path != dropped]
+        assert agentos._source_records_digest(kept, repository_root=repo) != bundle[
+            "source_records_digest"
+        ], f"omitting {dropped.name} from digest enumeration went undetected"
+
+# MAS-65 extends the canonical always-on collection without relocating its tests.
+from tests.linear_portfolio_plan_cases import *  # noqa: E402,F401,F403
+from tests.linear_portfolio_plan_live_cases import *  # noqa: E402,F401,F403

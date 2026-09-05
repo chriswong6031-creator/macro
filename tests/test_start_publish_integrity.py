@@ -10,10 +10,18 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from scripts.workflow_run_source import resolved_workflow_text
+
 
 ROOT = Path(__file__).resolve().parents[1]
 START = ROOT / "site" / "start.html"
 WORKFLOWS = ROOT / ".github" / "workflows"
+
+
+def _lane_text(lane: str) -> str:
+    # 512KB-cap diet: some daily.yml bodies live in scripts/ci/ — splice them
+    # back IN PLACE so the count/order assertions keep their meaning.
+    return resolved_workflow_text(WORKFLOWS / lane, ROOT)
 
 
 def _script_basenames(html: str) -> list[str]:
@@ -60,7 +68,7 @@ def test_start_writing_lanes_guard_before_commit_and_after_rebase() -> None:
     guard = "python3 scripts/check_conflict_markers.py --file site/start.html"
     sync = "python -m scripts.check_template_site_sync --fix"
     for lane in ("render.yml", "engine-render.yml", "daily.yml"):
-        text = (WORKFLOWS / lane).read_text(encoding="utf-8")
+        text = _lane_text(lane)
         assert text.count(guard) >= 2, f"{lane} lacks pre-commit and post-rebase marker gates"
         for match in re.finditer(re.escape(sync), text):
             next_guard = text.find(guard, match.end())
@@ -86,7 +94,7 @@ def test_start_writing_lanes_gate_runtime_single_instance() -> None:
     post-rebase healing from the freshly rebased origin/main."""
     marker_gate = "python3 scripts/check_conflict_markers.py --file site/start.html"
     for lane in ("render.yml", "engine-render.yml", "daily.yml"):
-        text = (WORKFLOWS / lane).read_text(encoding="utf-8")
+        text = _lane_text(lane)
         assert text.count("python3 scripts/check_start_runtime.py --heal-from HEAD") == 1, (
             f"{lane} lacks the pre-commit start-runtime gate (heal from HEAD)"
         )

@@ -28,7 +28,7 @@ landmines:
   - Public ToS and sales pages describe internal-system embedding. That is not customer-facing derived display.
   - Tianyancha geo-blocks the United States. An onshore 工商 API is not a default-network spine.
   - QCC public ToS §8.1 forbids derivative datasets, scoring systems, and redistribution.
-  - TuShare personal tokens remain non-commercial; that is CN-A, not a reason to buy Wind.
+  - "[NULL / SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE — this landmine FORMERLY read 'TuShare personal tokens remain non-commercial'. TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED and settled outside coding scope; a public-terms reading may not reopen it. The surviving point is unchanged and is the one that mattered here: TuShare is not a reason to buy Wind.] Every other landmine above concerns a DIFFERENT vendor and is untouched."
 waves:
   - id: W0
     title: GROK-CN-E commercial diligence (this packet)

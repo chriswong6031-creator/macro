@@ -1,0 +1,42 @@
+{#
+  Monetary Policy — workspace 6 of the twelve-page Macro & Monetary suite.
+
+  This file is deliberately THIN. Everything in the shared research grammar
+  (section 6.3) lives in _macro_suite_shell.html.j2 and is driven by the view
+  model that scripts/build_macro_suite_pages.py builds from the validated
+  mastermind.macro_workspace_snapshot.v1 artifact. A new workspace page is this
+  file with a different identity block plus one registry entry in the builder.
+
+  The local `t()` macro exists because the shared navigation partial calls a bare
+  t(en, zh) from the including page's context; the shell's own copy is not in
+  scope for an {% include %}.
+#}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% import "_macro_suite_shell.html.j2" as shell with context %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title }} — MastermindX</title>
+{% set seo_title = page_seo_title %}
+{% set seo_desc = page_seo_desc %}
+{% set seo_path = page_seo_path %}
+{% include "_seo_head.html.j2" %}
+<script src="macro_suite_boot.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="macro_suite.css">
+</head>
+<body class="mq-page" data-mq-workspace="{{ workspace_id }}" data-mq-region="{{ region_code }}">
+{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
+{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+{% include "_site_nav.html.j2" %}
+
+{% if view.ok %}{{ shell.body(view) }}{% else %}{{ shell.degraded_body(view) }}{% endif %}
+
+<script src="theme.js" defer></script>
+<script src="macro_suite.js" defer></script>
+</body>
+</html>

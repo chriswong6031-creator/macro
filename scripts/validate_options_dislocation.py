@@ -84,7 +84,13 @@ def _fwd_ic(panel: pd.DataFrame, col: str, h: int) -> dict:
             ics.append(ic)
     if not ics:
         return {"n_dates": 0}
-    summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h))
+    # hac_lags=h pins the Newey-West lag to the true overlap depth (daily-sampled
+    # cross-sections vs an h-session forward window). The ppy//2 default was wrong at
+    # BOTH ends: at h=21 it under-corrected the 21-deep overlap, while at h=5/10 it
+    # requested lag ~n, where the Bartlett variance degenerates (gamma_0 cancels at
+    # L=n-1) and t INFLATES — bigger lag is NOT automatically more conservative.
+    # Verdicts stay behind _MIN_DATES=120, clear of both regimes.
+    summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h), hac_lags=h)
 
     def _f(k):
         v = summ.get(k)

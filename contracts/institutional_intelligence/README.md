@@ -46,6 +46,40 @@ canonical owner-reader selection from an immutable catalog generation, with the
 selected row tied to the exact raw receipt/accession and security. A pointer or a
 caller assertion cannot substitute for that owner read.
 
+## K2-C owner-row basis (v1.1.0)
+
+The commissioned owner-reader selection above now exists
+(`alpha-k2c-institutional-adapter-20260826-sol-001`). One additive basis,
+`source_backed_owner_row`, represents a REAL two-period owner-read security
+observation. Such an observation MUST carry `owner_row_binding` (forbidden on
+every other basis): a `security` block whose canonical identity is the
+owner-native CUSIP (`DEC:K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP` — the Data
+OS axis is carried as typed unresolved, never silently bridged), plus `previous`
+and `current` period bindings, each naming a listed
+`institutional_13f.catalog_generation` reference, a listed
+`institutional_13f.raw_receipt` reference, and the asserted selected-row
+identity (`accession`, `infotable_sk`, `row_hash`, `cusip` — replayable against
+the immutable owner store; the in-memory validator itself cannot read the
+store). The validator enforces store/identity/clock equality against the listed
+K1 refs, row↔accession parity, strictly increasing report periods,
+`subject_id == "cusip:<CUSIP>"`, that the observation's primary reference is
+the current-period raw receipt, and a per-store PINNED availability clock on
+every sub-binding (raw receipt: `max(accepted_at, retained_at)`; catalog
+generation: `published_at`; `freshness.clock_field` pinned to match). The
+compiler additionally gates positivity on PIT availability of all four bound
+refs at the compile cutoff, recomputed from each reference's own clocks, and
+reports each ref's state in `owner_row_reference_states`. `q_prev`/`q_now` under this basis must be real
+numbers (typed unavailable is the lawful absence shape — a null quantity is
+refused, and a missing predecessor period is `insufficient_history`, never
+zero).
+
+The producing adapter is `lib/institutional_13f_adapter.py`: a read-only,
+persistence-free composition over the canonical institutional owner
+(`engine/institutional_census/**`) that emits a deterministic
+`institutional_intelligence.owner_read_receipt/v1` and never authors compiler
+results. Its proof lane is `.github/workflows/smart-money-13f-k2c-pilot.yml`
+(dispatch-only, read-only, main-gated).
+
 ## Epoch identity and China actor extensions
 
 Manager complexes, filers, and vehicles are immutable epochs with distinct

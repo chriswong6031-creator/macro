@@ -1,0 +1,320 @@
+{
+  "study_id": "s-mlc-3-weekly-wait-cost",
+  "prereg": "research/S_MLC_3_WEEKLY_WAIT_COST_PREREG.md",
+  "generated_by": "scripts/s_mlc_3_weekly_wait_cost.py",
+  "frozen_params": {
+    "rs_window_primary": 60,
+    "high_window": 252,
+    "high_threshold": -0.02,
+    "min_separation": 21,
+    "entry_lag": 1,
+    "confirm_anchor_offset": 5,
+    "delta_primary": 0.0,
+    "delta_sensitivity": 0.01,
+    "primary_horizon": "21d",
+    "magnitude_floor": 0.003,
+    "era_split_date": "2010-01-01",
+    "effective_n_floor": 100,
+    "n_perm": 10000,
+    "hac_t_gate": 2.0,
+    "perm_p_gate": 0.05,
+    "bh_alpha": 0.1
+  },
+  "sample": {
+    "n_raw_events": 620,
+    "n_primary_cell": 617,
+    "effective_n_floor_met": true
+  },
+  "primary_cell_21d_delta0": {
+    "mean_cost": 0.0030907423337589966,
+    "hac": {
+      "mean": 0.00309,
+      "se": 0.00049,
+      "t": 6.256,
+      "p": 0.0,
+      "n": 617,
+      "lags": 8,
+      "lags_requested": 8
+    },
+    "permutation": {
+      "observed_mean": 0.0030907423337589966,
+      "p_value": 0.0,
+      "n_perm": 10000,
+      "n_months": 238,
+      "n_events": 617
+    }
+  },
+  "era_split": {
+    "pre2010": {
+      "n": 178,
+      "mean": 0.0022256108582080847,
+      "hac": {
+        "mean": 0.00223,
+        "se": 0.00103,
+        "t": 2.153,
+        "p": 0.0313,
+        "n": 178,
+        "lags": 5,
+        "lags_requested": 5
+      },
+      "lags": 5
+    },
+    "post2010": {
+      "n": 439,
+      "mean": 0.0034415245721372708,
+      "hac": {
+        "mean": 0.00344,
+        "se": 0.00057,
+        "t": 6.018,
+        "p": 0.0,
+        "n": 439,
+        "lags": 7,
+        "lags_requested": 7
+      },
+      "lags": 7
+    }
+  },
+  "era_signs_agree": true,
+  "split_half": {
+    "half1_mean": 0.0029860356081435383,
+    "half2_mean": 0.0031957890162758033,
+    "median_date": "2014-09-15"
+  },
+  "split_half_agree": true,
+  "episode_first_month_block": {
+    "block_mean_of_monthly_means": 0.0025874233650362084,
+    "n_months": 238,
+    "agrees_with_pooled": true
+  },
+  "bh_fdr_matrix": {
+    "40d_pre2010": {
+      "p": 0.3704,
+      "q": 0.3704,
+      "reject": false
+    },
+    "63d_pre2010": {
+      "p": 0.1021,
+      "q": 0.1114,
+      "reject": false
+    },
+    "21d_pre2010": {
+      "p": 0.0313,
+      "q": 0.0376,
+      "reject": true
+    },
+    "10d_pre2010": {
+      "p": 0.0255,
+      "q": 0.034,
+      "reject": true
+    },
+    "40d_pooled": {
+      "p": 0.0001,
+      "q": 0.0002,
+      "reject": true
+    },
+    "63d_post2010": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    },
+    "63d_pooled": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    },
+    "40d_post2010": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    },
+    "21d_post2010": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    },
+    "21d_pooled": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    },
+    "10d_post2010": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    },
+    "10d_pooled": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    }
+  },
+  "bh_reject_primary": true,
+  "confirm_miss_rate": 0.4651539708265802,
+  "magnitude_floor_met": true,
+  "descriptive_horizon_ladder": {
+    "10d": {
+      "n": 619,
+      "mean": 0.0030424661044673143,
+      "hac": {
+        "mean": 0.00304,
+        "se": 0.00045,
+        "t": 6.797,
+        "p": 0.0,
+        "n": 619,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    },
+    "21d": {
+      "n": 617,
+      "mean": 0.0030907423337589966,
+      "hac": {
+        "mean": 0.00309,
+        "se": 0.00049,
+        "t": 6.256,
+        "p": 0.0,
+        "n": 617,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    },
+    "40d": {
+      "n": 615,
+      "mean": 0.0027336675642454364,
+      "hac": {
+        "mean": 0.00273,
+        "se": 0.00068,
+        "t": 3.997,
+        "p": 0.0001,
+        "n": 615,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    },
+    "63d": {
+      "n": 612,
+      "mean": 0.0037004178631609326,
+      "hac": {
+        "mean": 0.0037,
+        "se": 0.00088,
+        "t": 4.218,
+        "p": 0.0,
+        "n": 612,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    }
+  },
+  "verdict": {
+    "outcome": "A",
+    "label": "COST-IS-REAL"
+  },
+  "confirm_reference_ambiguity": {
+    "note": "Prereg SS1.5's raw formula compares the Friday close to close[s,t] (event day); the freeze record (Ruling 3) and the machine-checkable frontmatter both instead say 'weekly close >= entry close' (t+1). This harness uses entry_close (t+1) as PRIMARY; event_close (t) is reported here for transparency because it moves the pooled 21d mean cost across the 0.3% magnitude floor.",
+    "primary_reference": "entry_close (t+1)",
+    "primary_reference_mean_cost_21d": 0.0030907423337589966,
+    "alternate_reference": "event_close (t), literal SS1.5 formula",
+    "alternate_reference_mean_cost_21d": 0.0029612105429848595,
+    "alternate_reference_hac": {
+      "mean": 0.00296,
+      "se": 0.00047,
+      "t": 6.261,
+      "p": 0.0,
+      "n": 617,
+      "lags": 8,
+      "lags_requested": 8
+    },
+    "alternate_clears_magnitude_floor": false,
+    "verdict_sensitive_to_choice": true
+  },
+  "robustness_non_promotable": {
+    "rs_window_20d_sensitivity_21d_delta0": {
+      "n": 690,
+      "mean": 0.0029674541477473187,
+      "hac": {
+        "mean": 0.00297,
+        "se": 0.0006,
+        "t": 4.971,
+        "p": 0.0,
+        "n": 690,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    },
+    "delta_0_01_sensitivity_21d": {
+      "n": 617,
+      "mean": 0.0033923809480176964,
+      "hac": {
+        "mean": 0.00339,
+        "se": 0.00047,
+        "t": 7.234,
+        "p": 0.0,
+        "n": 617,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    },
+    "xlre_xlc_only_21d_delta0": {
+      "n": 47,
+      "mean": 0.0023728527718064473,
+      "hac": {
+        "mean": 0.00237,
+        "se": 0.00209,
+        "t": 1.136,
+        "p": 0.2561,
+        "n": 47,
+        "lags": 3,
+        "lags_requested": 3
+      },
+      "lags": 3
+    },
+    "cyclicals_21d_delta0": {
+      "n": 341,
+      "mean": 0.0028404211993632057,
+      "hac": {
+        "mean": 0.00284,
+        "se": 0.00061,
+        "t": 4.64,
+        "p": 0.0,
+        "n": 341,
+        "lags": 6,
+        "lags_requested": 6
+      },
+      "lags": 6
+    },
+    "defensives_21d_delta0": {
+      "n": 229,
+      "mean": 0.0036108310509674435,
+      "hac": {
+        "mean": 0.00361,
+        "se": 0.00106,
+        "t": 3.398,
+        "p": 0.0007,
+        "n": 229,
+        "lags": 6,
+        "lags_requested": 6
+      },
+      "lags": 6
+    },
+    "nonconfirm_cash_instead_of_spy_21d_delta0": {
+      "n": 617,
+      "mean": 0.001301950414010403,
+      "hac": {
+        "mean": 0.0013,
+        "se": 0.0008,
+        "t": 1.624,
+        "p": 0.1043,
+        "n": 617,
+        "lags": 8,
+        "lags_requested": 8
+      },
+      "lags": 8
+    }
+  }
+}

@@ -218,6 +218,7 @@
               <a class="mega-item nm-feat" href="fundamental_forensics.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M9 6h24l6 6v28H9z"/><path d="M7 4h24l6 6v23H7zM31 4v7h6"/><path d="M13 15h16M13 21h12M13 27h8"/><circle class="soft-fill" cx="31" cy="31" r="8"/><circle cx="29" cy="29" r="7"/><path class="accent" d="m34 34 7 7M25 29h8M29 25v8"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Filing Forensics</span><span class="l-zh">财报排雷</span></span><span class="item-desc d"><span class="l-en">Find the accounting changes worth reviewing</span><span class="l-zh">找出值得复核的会计变动</span></span></span></a>
               <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
               <a class="mega-item nm-feat" href="market_memory.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 10h32v28H8z"/><path d="M7 8h14c5 0 8 3 8 8v24c0-5-3-8-8-8H7zM41 8H27v32c0-5 3-8 8-8h6z"/><path class="accent" d="M13 16h9M13 21h7M33 15h4M33 20h4"/><circle class="soft-fill" cx="27" cy="29" r="4"/><path d="M24 29h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Market Memory</span><span class="l-zh">市场记忆</span></span><span class="item-desc d"><span class="l-en">Put today beside comparable episodes</span><span class="l-zh">将今天与可比历史片段并排</span></span></span></a>
+              <a class="mega-item nm-feat" href="reference.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M10 14h28v26H10z"/><path d="M7 12h28a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V15a3 3 0 0 1 3-3Z"/><path class="accent" d="M16 12V8h12v4"/><path d="M11 22h18M11 28h13"/><circle class="soft-fill" cx="33" cy="28" r="3"/><path class="accent" d="M11 34h9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Market Reference</span><span class="l-zh">市场参考</span></span><span class="item-desc d"><span class="l-en">Look up any indicator or term</span><span class="l-zh">查询任意指标与术语</span></span></span></a>
             </div>
           </section>
           <section class="mega-section nav-mega-section">
@@ -276,7 +277,7 @@
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=cfb8c072" defer></script>
+  <script src="live.js?v=f7bdf7cc" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -355,7 +356,7 @@
     
     
     <p class="mh-fwd">
-      <span class="mh-fwd-num">101</span><span class="l-en">seasonal windows on the record</span><span class="l-zh">个季节性窗口在案</span>
+      <span class="mh-fwd-num">113</span><span class="l-en">seasonal windows on the record</span><span class="l-zh">个季节性窗口在案</span>
       <span class="mh-fwd-sep" aria-hidden="true">&middot;</span>
       <span class="mh-fwd-num">2</span><span class="l-en">scored so far</span><span class="l-zh">个已打分</span>
       <span class="l-en">&mdash; the next one closes 2026-08-21</span><span class="l-zh">——下一个 2026-08-21 收官</span>
@@ -1748,8 +1749,8 @@
             <span class="verdict verdict-none">blocked</span>
             
           </td>
-          <td class="mh-exp-cb">2026-08-16</td>
-          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Do not read the scorecard until the substrate is fixed: (a) grade baskets off a fixed-base level series or store a base anchor per frozen row (basket_freeze.py:394-406 — this defect is SHARED SUBSTRATE for every frozen_level_series() return-math consumer across all 5 domains); (b) grade horizons in TRADING bars for both kinds; (c) restrict mean_excess_vs_bench to matured-benchmark rows and print its own n; (d) drop dir=flat from the hit-rate denominator; (e) split rank-IC by kind; (f) stamp as_of from the equity session, not sector_cycles last_ts; (g) add the nightly_advance_enabled() lane gate to append_central_log (+ china sibling) and list both in tests/test_foresight_ledger_lane_gates.py.</td>
+          <td class="mh-exp-cb">2026-09-14</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">(1) Diagnose why the us basket freeze store stopped 2026-08-06 — that blocks all basket grading. (2) Drop dir=flat from the hit denominator and split rank_ic by kind before the scorecard is surfaced again. (3) Stamp as_of from the equity session (11/41 weekend stamps). (4) Print n_excess.</td>
         </tr>
         
         <tr>
@@ -1983,46 +1984,46 @@
       <div class="sg-family">
         <div class="sg-fam-hd">
           <span class="sg-fam-name"><span class="l-en">US Sector</span><span class="l-zh">美国板块</span></span>
-          <span class="sg-fam-date">2026-08-31</span>
+          <span class="sg-fam-date">2026-09-30</span>
         </div>
         <div class="sg-sync-val" style="color:var(--act-ink)">
-          0.118
+          0.082
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:11%"></div>
+          <div class="sg-sync-fill" style="width:8%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 21%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 24%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Advance</strong> 31%</span>
+          <span class="sg-frac-chip"><strong>Advance</strong> 12%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Peak</strong> 21%</span>
+          <span class="sg-frac-chip"><strong>Peak</strong> 42%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Decline</strong> 27%</span>
+          <span class="sg-frac-chip"><strong>Decline</strong> 21%</span>
           
           
         </div>
         
         <div class="sg-hist-stats">
           
-          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.529</span>
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.528</span>
           
           
-          <span>P10 0.245</span>
+          <span>P10 0.236</span>
           
           
           <span>P90 0.817</span>
           
-          <span><span class="l-en">n</span><span class="l-zh">n</span>=324</span>
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=325</span>
         </div>
         <svg class="sg-sparkline" data-fam="us_sector" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
           <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="us_sector"/>
@@ -2032,46 +2033,46 @@
       <div class="sg-family">
         <div class="sg-fam-hd">
           <span class="sg-fam-name"><span class="l-en">Country ETF</span><span class="l-zh">国家ETF</span></span>
-          <span class="sg-fam-date">2026-08-31</span>
+          <span class="sg-fam-date">2026-09-30</span>
         </div>
         <div class="sg-sync-val" style="color:var(--act-ink)">
-          0.040
+          0.082
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:4%"></div>
+          <div class="sg-sync-fill" style="width:8%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 28%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 21%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Advance</strong> 20%</span>
+          <span class="sg-frac-chip"><strong>Advance</strong> 29%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Peak</strong> 30%</span>
+          <span class="sg-frac-chip"><strong>Peak</strong> 26%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Decline</strong> 22%</span>
+          <span class="sg-frac-chip"><strong>Decline</strong> 24%</span>
           
           
         </div>
         
         <div class="sg-hist-stats">
           
-          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.596</span>
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.594</span>
           
           
-          <span>P10 0.312</span>
+          <span>P10 0.311</span>
           
           
           <span>P90 0.844</span>
           
-          <span><span class="l-en">n</span><span class="l-zh">n</span>=356</span>
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=357</span>
         </div>
         <svg class="sg-sparkline" data-fam="country" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
           <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="country"/>
@@ -2081,25 +2082,27 @@
       <div class="sg-family">
         <div class="sg-fam-hd">
           <span class="sg-fam-name"><span class="l-en">China Sector (Shenwan)</span><span class="l-zh">中国申万板块</span></span>
-          <span class="sg-fam-date">2026-08-31</span>
+          <span class="sg-fam-date">2026-09-30</span>
         </div>
         <div class="sg-sync-val" style="color:var(--ok-ink)">
-          0.805
+          0.732
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:80%"></div>
+          <div class="sg-sync-fill" style="width:73%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 83%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 64%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Advance</strong> 17%</span>
+          <span class="sg-frac-chip"><strong>Advance</strong> 32%</span>
           
           
+          
+          <span class="sg-frac-chip"><strong>Peak</strong> 3%</span>
           
           
           
@@ -2116,7 +2119,7 @@
           
           <span>P90 0.977</span>
           
-          <span><span class="l-en">n</span><span class="l-zh">n</span>=302</span>
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=303</span>
         </div>
         <svg class="sg-sparkline" data-fam="cn_sector" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
           <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="cn_sector"/>
@@ -3006,20 +3009,22 @@
             </div>
           </td>
           
-          <td class="ac-num">2146</td>
+          <td class="ac-num">2686</td>
           <td class="ac-num">60</td>
-          <td class="ac-num">37</td>
+          <td class="ac-num">46</td>
           <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-07-02<br>2026-08-25
+            2026-07-02<br>2026-09-04
           </td>
           <td class="ac-num">
             
-            1.5d
+            1.4d
             
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-08-29</span>
+            <span class="ac-proj ac-proj-done">
+              <span class="l-en">Reached (46)</span><span class="l-zh">已达到（46）</span>
+            </span>
             
           </td>
           
@@ -3032,20 +3037,22 @@
             </div>
           </td>
           
-          <td class="ac-num">1147</td>
+          <td class="ac-num">1426</td>
           <td class="ac-num">31</td>
-          <td class="ac-num">37</td>
+          <td class="ac-num">46</td>
           <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-07-02<br>2026-08-25
+            2026-07-02<br>2026-09-04
           </td>
           <td class="ac-num">
             
-            1.5d
+            1.4d
             
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-08-29</span>
+            <span class="ac-proj ac-proj-done">
+              <span class="l-en">Reached (46)</span><span class="l-zh">已达到（46）</span>
+            </span>
             
           </td>
           
@@ -3058,20 +3065,22 @@
             </div>
           </td>
           
-          <td class="ac-num">1961</td>
+          <td class="ac-num">2332</td>
           <td class="ac-num">53</td>
-          <td class="ac-num">37</td>
+          <td class="ac-num">44</td>
           <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-26<br>2026-08-25
+            2026-06-26<br>2026-09-04
           </td>
           <td class="ac-num">
             
-            1.7d
+            1.6d
             
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-08-30</span>
+            <span class="ac-proj ac-proj-done">
+              <span class="l-en">Reached (44)</span><span class="l-zh">已达到（44）</span>
+            </span>
             
           </td>
           
@@ -3084,21 +3093,21 @@
             </div>
           </td>
           
-          <td class="ac-num">2314</td>
+          <td class="ac-num">2794</td>
           <td class="ac-num">60</td>
-          <td class="ac-num">40</td>
+          <td class="ac-num">48</td>
           <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-28<br>2026-08-25
+            2026-06-28<br>2026-09-03
           </td>
           <td class="ac-num">
             
-            1.5d
+            1.4d
             
           </td>
           <td>
             
             <span class="ac-proj ac-proj-done">
-              <span class="l-en">Reached (40)</span><span class="l-zh">已达到（40）</span>
+              <span class="l-en">Reached (48)</span><span class="l-zh">已达到（48）</span>
             </span>
             
           </td>
@@ -3112,11 +3121,11 @@
             </div>
           </td>
           
-          <td class="ac-num">2014</td>
+          <td class="ac-num">2385</td>
           <td class="ac-num">53</td>
-          <td class="ac-num">38</td>
+          <td class="ac-num">45</td>
           <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-26<br>2026-08-25
+            2026-06-26<br>2026-09-04
           </td>
           <td class="ac-num">
             
@@ -3125,7 +3134,9 @@
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-08-28</span>
+            <span class="ac-proj ac-proj-done">
+              <span class="l-en">Reached (45)</span><span class="l-zh">已达到（45）</span>
+            </span>
             
           </td>
           
@@ -3160,8 +3171,8 @@
         <span class="l-zh"><strong>拟合日期：</strong>2026-07-03</span>
       </div>
       <div class="pl-meta-chip">
-        <span class="l-en"><strong>Days since fit:</strong> 54</span>
-        <span class="l-zh"><strong>距拟合天数：</strong>54</span>
+        <span class="l-en"><strong>Days since fit:</strong> 63</span>
+        <span class="l-zh"><strong>距拟合天数：</strong>63</span>
       </div>
       <div class="pl-meta-chip">
         <span class="l-en"><strong>Refit cadence:</strong> quarterly (per D5)</span>
@@ -3327,7 +3338,7 @@
             <span class="pl-gap-tag">machine</span>
           </div>
           <div class="pl-gap-note">
-            <span class="l-en">hazard_1m_p non-null in 97.4% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 97.4% 行中非空 — W4.3 前的行为空值</span>
+            <span class="l-en">hazard_1m_p non-null in 97.9% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 97.9% 行中非空 — W4.3 前的行为空值</span>
           </div>
           <div class="pl-gap-meta">
             <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
@@ -3341,7 +3352,7 @@
             <span class="pl-gap-tag">machine</span>
           </div>
           <div class="pl-gap-note">
-            <span class="l-en">hazard_1m_p non-null in 97.3% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 97.3% 行中非空 — W4.3 前的行为空值</span>
+            <span class="l-en">hazard_1m_p non-null in 97.8% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 97.8% 行中非空 — W4.3 前的行为空值</span>
           </div>
           <div class="pl-gap-meta">
             <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
@@ -3355,7 +3366,7 @@
             <span class="pl-gap-tag">machine</span>
           </div>
           <div class="pl-gap-note">
-            <span class="l-en">hazard_1m_p non-null in 84.9% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 84.9% 行中非空 — W4.3 前的行为空值</span>
+            <span class="l-en">hazard_1m_p non-null in 87.0% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 87.0% 行中非空 — W4.3 前的行为空值</span>
           </div>
           <div class="pl-gap-meta">
             <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
@@ -3929,8 +3940,8 @@
       <div class="eg-subhd">
         <h3><span class="l-en">Grading Closure</span><span class="l-zh">评分闭环</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">34 ledgers — 24 closed · 10 grader-starved · 0 log-only</span>
-          <span class="l-zh">34 个账本 — 24 已关闭 · 10 评分器缺失 · 0 仅记录</span>
+          <span class="l-en">34 ledgers — 25 closed · 9 grader-starved · 0 log-only</span>
+          <span class="l-zh">34 个账本 — 25 已关闭 · 9 评分器缺失 · 0 仅记录</span>
         </span>
       </div>
       <p class="eg-note">
@@ -3952,8 +3963,8 @@
           
           <tr>
             <td class="eg-mono">qledger_claims</td>
-            <td class="eg-num">63176</td>
-            <td class="eg-num">84352</td>
+            <td class="eg-num">79242</td>
+            <td class="eg-num">103711</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -3968,8 +3979,8 @@
           
           <tr>
             <td class="eg-mono">qledger_grades</td>
-            <td class="eg-num">84352</td>
-            <td class="eg-num">84352</td>
+            <td class="eg-num">103711</td>
+            <td class="eg-num">103711</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -3984,8 +3995,8 @@
           
           <tr>
             <td class="eg-mono">board_ledger_hk</td>
-            <td class="eg-num">538</td>
-            <td class="eg-num">235</td>
+            <td class="eg-num">668</td>
+            <td class="eg-num">383</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4000,8 +4011,8 @@
           
           <tr>
             <td class="eg-mono">board_ledger_ca</td>
-            <td class="eg-num">468</td>
-            <td class="eg-num">181</td>
+            <td class="eg-num">554</td>
+            <td class="eg-num">253</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4016,8 +4027,8 @@
           
           <tr>
             <td class="eg-mono">us_board_ledger</td>
-            <td class="eg-num">5405</td>
-            <td class="eg-num">5405</td>
+            <td class="eg-num">6942</td>
+            <td class="eg-num">6942</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4032,8 +4043,8 @@
           
           <tr>
             <td class="eg-mono">signal_archive_track_record</td>
-            <td class="eg-num">59402</td>
-            <td class="eg-num">59181</td>
+            <td class="eg-num">59691</td>
+            <td class="eg-num">59464</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4048,8 +4059,8 @@
           
           <tr>
             <td class="eg-mono">china_standout_track</td>
-            <td class="eg-num">2119</td>
-            <td class="eg-num">840</td>
+            <td class="eg-num">2912</td>
+            <td class="eg-num">1165</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4064,7 +4075,7 @@
           
           <tr>
             <td class="eg-mono">sector_cycles_forward_log</td>
-            <td class="eg-num">2146</td>
+            <td class="eg-num">2566</td>
             <td class="eg-num">1937</td>
             <td>
               
@@ -4080,7 +4091,7 @@
           
           <tr>
             <td class="eg-mono">china_sector_cycles_forward_log</td>
-            <td class="eg-num">1908</td>
+            <td class="eg-num">2332</td>
             <td class="eg-num">5081</td>
             <td>
               
@@ -4096,7 +4107,7 @@
           
           <tr>
             <td class="eg-mono">country_cycles_forward_log</td>
-            <td class="eg-num">1147</td>
+            <td class="eg-num">1364</td>
             <td class="eg-num">5769</td>
             <td>
               
@@ -4112,8 +4123,8 @@
           
           <tr>
             <td class="eg-mono">breadth_divergence_forward_log</td>
-            <td class="eg-num">366</td>
-            <td class="eg-num">0</td>
+            <td class="eg-num">455</td>
+            <td class="eg-num">103</td>
             <td>
               
               <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
@@ -4121,15 +4132,15 @@
             </td>
             <td class="eg-starvation">
               
-              <span class="eg-stv-time">accruing (time-starved)</span>
+              <span class="eg-stv-closed">closed / partial</span>
               
             </td>
           </tr>
           
           <tr>
             <td class="eg-mono">risk_radar_forward_log</td>
-            <td class="eg-num">37</td>
-            <td class="eg-num">20</td>
+            <td class="eg-num">42</td>
+            <td class="eg-num">25</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4144,7 +4155,7 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_cn</td>
-            <td class="eg-num">15</td>
+            <td class="eg-num">22</td>
             <td class="eg-num">12</td>
             <td>
               
@@ -4160,7 +4171,7 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_hk</td>
-            <td class="eg-num">14</td>
+            <td class="eg-num">22</td>
             <td class="eg-num">11</td>
             <td>
               
@@ -4176,8 +4187,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_ca</td>
-            <td class="eg-num">28</td>
-            <td class="eg-num">12</td>
+            <td class="eg-num">33</td>
+            <td class="eg-num">17</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4192,8 +4203,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_kr</td>
-            <td class="eg-num">17</td>
-            <td class="eg-num">2</td>
+            <td class="eg-num">22</td>
+            <td class="eg-num">8</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4208,8 +4219,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_jp</td>
-            <td class="eg-num">15</td>
-            <td class="eg-num">2</td>
+            <td class="eg-num">20</td>
+            <td class="eg-num">6</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4224,8 +4235,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_tw</td>
-            <td class="eg-num">16</td>
-            <td class="eg-num">3</td>
+            <td class="eg-num">21</td>
+            <td class="eg-num">9</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4240,8 +4251,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_in</td>
-            <td class="eg-num">16</td>
-            <td class="eg-num">3</td>
+            <td class="eg-num">20</td>
+            <td class="eg-num">8</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4256,8 +4267,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_au</td>
-            <td class="eg-num">18</td>
-            <td class="eg-num">3</td>
+            <td class="eg-num">23</td>
+            <td class="eg-num">9</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4272,8 +4283,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_gb</td>
-            <td class="eg-num">18</td>
-            <td class="eg-num">4</td>
+            <td class="eg-num">22</td>
+            <td class="eg-num">9</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4288,8 +4299,8 @@
           
           <tr>
             <td class="eg-mono">risk_radar_intl_ez</td>
-            <td class="eg-num">18</td>
-            <td class="eg-num">4</td>
+            <td class="eg-num">22</td>
+            <td class="eg-num">9</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4304,8 +4315,8 @@
           
           <tr>
             <td class="eg-mono">market_state_forward_log</td>
-            <td class="eg-num">36</td>
-            <td class="eg-num">18</td>
+            <td class="eg-num">41</td>
+            <td class="eg-num">23</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4368,7 +4379,7 @@
           
           <tr>
             <td class="eg-mono">btc_override_ledger</td>
-            <td class="eg-num">39</td>
+            <td class="eg-num">45</td>
             <td class="eg-num">0</td>
             <td>
               
@@ -4384,7 +4395,7 @@
           
           <tr>
             <td class="eg-mono">foresight_log</td>
-            <td class="eg-num">180</td>
+            <td class="eg-num">198</td>
             <td class="eg-num">0</td>
             <td>
               
@@ -4400,8 +4411,8 @@
           
           <tr>
             <td class="eg-mono">foresight_policy_calendar_ledger</td>
-            <td class="eg-num">579</td>
-            <td class="eg-num">469</td>
+            <td class="eg-num">679</td>
+            <td class="eg-num">571</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4416,16 +4427,16 @@
           
           <tr>
             <td class="eg-mono">froth_fragility_log</td>
-            <td class="eg-num">34</td>
-            <td class="eg-num">0</td>
+            <td class="eg-num">39</td>
+            <td class="eg-num">4</td>
             <td>
               
-              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
               
             </td>
             <td class="eg-starvation">
               
-              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08-25 (n=5)</span>
+              <span class="eg-stv-closed">closed / partial</span>
               
             </td>
           </tr>
@@ -4448,7 +4459,7 @@
           
           <tr>
             <td class="eg-mono">species_antichase_shadow_ledger</td>
-            <td class="eg-num">2351</td>
+            <td class="eg-num">2887</td>
             <td class="eg-num">0</td>
             <td>
               
@@ -4464,7 +4475,7 @@
           
           <tr>
             <td class="eg-mono">species_f1d_shadow_ledger</td>
-            <td class="eg-num">2351</td>
+            <td class="eg-num">2887</td>
             <td class="eg-num">0</td>
             <td>
               
@@ -4498,8 +4509,8 @@
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Generated: 2026-08-25T09:11:14.401236+00:00. Source: <code>data/governance/grading_closure.json</code>.</span>
-        <span class="l-zh">生成时间：2026-08-25T09:11:14.401236+00:00。来源：<code>data/governance/grading_closure.json</code>。</span>
+        <span class="l-en">Generated: 2026-09-04T19:51:34.071316+00:00. Source: <code>data/governance/grading_closure.json</code>.</span>
+        <span class="l-zh">生成时间：2026-09-04T19:51:34.071316+00:00。来源：<code>data/governance/grading_closure.json</code>。</span>
       </div>
     </div>
     
@@ -4510,8 +4521,8 @@
       <div class="eg-subhd">
         <h3><span class="l-en">Trial Budgets by Family</span><span class="l-zh">按族分类的试验预算</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">1671 rows · 149 families</span>
-          <span class="l-zh">1671 行 · 149 个族</span>
+          <span class="l-en">1674 rows · 149 families</span>
+          <span class="l-zh">1674 行 · 149 个族</span>
         </span>
       </div>
       <div class="eg-table-wrap">
@@ -4689,8 +4700,8 @@
           
           <tr>
             <td class="eg-mono">cortex</td>
-            <td class="eg-num">14</td>
-            <td class="eg-mono eg-ts">2026-08-23T05:47:21</td>
+            <td class="eg-num">17</td>
+            <td class="eg-mono eg-ts">2026-08-31T06:21:57</td>
           </tr>
           
           <tr>
@@ -5423,8 +5434,8 @@
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (1671 rows total).</span>
-        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 1671 行）。</span>
+        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (1674 rows total).</span>
+        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 1674 行）。</span>
       </div>
     </div>
     
@@ -5520,22 +5531,22 @@
       <div class="eg-subhd">
         <h3><span class="l-en">qledger Reliability Accrual</span><span class="l-zh">qledger 可靠性积累</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">16 families · max n_dates=49 of 25 floor · horizon 5d only today</span>
-          <span class="l-zh">16 个族 · max n_dates=49，floor为25 · 当前仅5d周期</span>
+          <span class="l-en">17 families · max n_dates=60 of 25 floor · horizon 5d only today</span>
+          <span class="l-zh">17 个族 · max n_dates=60，floor为25 · 当前仅5d周期</span>
         </span>
       </div>
 
       
       <div class="eg-accrual-banner">
         <strong><span class="l-en">NOT YET CALIBRATED — trust/accrual surface, not authority.</span><span class="l-zh">尚未校准——信任/积累面板，非权威。</span></strong>
-        <span class="l-en">All families are ACCRUING today (max n_dates=49 of the 25-date floor needed for GRADED status). Do not use these numbers to de-escalate signals or make allocation decisions.</span>
-        <span class="l-zh">当前所有族均处于积累状态（max n_dates=49，GRADED状态需25日期）。请勿使用这些数字降级信号或做出配置决策。</span>
+        <span class="l-en">All families are ACCRUING today (max n_dates=60 of the 25-date floor needed for GRADED status). Do not use these numbers to de-escalate signals or make allocation decisions.</span>
+        <span class="l-zh">当前所有族均处于积累状态（max n_dates=60，GRADED状态需25日期）。请勿使用这些数字降级信号或做出配置决策。</span>
       </div>
 
       
       <p class="eg-ci-caveat">
-        <span class="l-en">Wilson CI is computed on independent date clusters (n_dates), not on the larger correlated n_obs. The pooled hit rate is projected onto n_dates: hits_cluster = round(hit_rate × n_dates), n = n_dates. This is the cluster-honest convention per the ticker-cluster time-confound law and the altdata_brain.py article3 convention. n_dates is shown beside every CI. Max n_dates across all families is currently 49 of the 25-date floor. Not yet calibrated — trust/accrual surface, not authority.</span>
-        <span class="l-zh">威尔逊置信区间基于独立日期簇（n_dates）计算，而非较大的相关n_obs。汇总命中率投影到n_dates：hits_cluster = round(hit_rate × n_dates)，n = n_dates。这是依据票据簇时间混淆法则和altdata_brain.py article3惯例的簇诚实约定。每个置信区间旁均显示n_dates。当前所有族中n_dates最大值为49，floor为25。尚未校准——信任/积累面板，非权威结论。</span>
+        <span class="l-en">Wilson CI is computed on independent date clusters (n_dates), not on the larger correlated n_obs. The pooled hit rate is projected onto n_dates: hits_cluster = round(hit_rate × n_dates), n = n_dates. This is the cluster-honest convention per the ticker-cluster time-confound law and the altdata_brain.py article3 convention. n_dates is shown beside every CI. Max n_dates across all families is currently 60 of the 25-date floor. Not yet calibrated — trust/accrual surface, not authority.</span>
+        <span class="l-zh">威尔逊置信区间基于独立日期簇（n_dates）计算，而非较大的相关n_obs。汇总命中率投影到n_dates：hits_cluster = round(hit_rate × n_dates)，n = n_dates。这是依据票据簇时间混淆法则和altdata_brain.py article3惯例的簇诚实约定。每个置信区间旁均显示n_dates。当前所有族中n_dates最大值为60，floor为25。尚未校准——信任/积累面板，非权威结论。</span>
       </p>
 
       <div class="eg-table-wrap">
@@ -5590,17 +5601,35 @@
           </tr>
           
           <tr>
-            <td class="eg-mono">altdata_event</td>
-            <td class="eg-num">21d</td>
-            <td class="eg-num">85</td>
+            <td class="eg-mono">altdata</td>
+            <td class="eg-num">63d</td>
+            <td class="eg-num">109</td>
             <td class="eg-num">
-              12
+              8
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">45.9%</td>
+            <td class="eg-num">40.4%</td>
             <td class="eg-num">
-              0.2538
-              <span class="eg-dates-note">(n_dates=12)</span>
+              0.1368
+              <span class="eg-dates-note">(n_dates=8)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">altdata_event</td>
+            <td class="eg-num">21d</td>
+            <td class="eg-num">92</td>
+            <td class="eg-num">
+              17
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">47.8%</td>
+            <td class="eg-num">
+              0.2616
+              <span class="eg-dates-note">(n_dates=17)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5610,14 +5639,14 @@
           <tr>
             <td class="eg-mono">altdata_event</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">100</td>
+            <td class="eg-num">104</td>
             <td class="eg-num">
               19
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">49.0%</td>
+            <td class="eg-num">51.0%</td>
             <td class="eg-num">
-              0.2733
+              0.3171
               <span class="eg-dates-note">(n_dates=19)</span>
             </td>
             <td>
@@ -5628,15 +5657,15 @@
           <tr>
             <td class="eg-mono">altdata_flow</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">38</td>
+            <td class="eg-num">46</td>
             <td class="eg-num">
-              11
+              14
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">44.7%</td>
+            <td class="eg-num">45.7%</td>
             <td class="eg-num">
-              0.2127
-              <span class="eg-dates-note">(n_dates=11)</span>
+              0.2138
+              <span class="eg-dates-note">(n_dates=14)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5664,15 +5693,15 @@
           <tr>
             <td class="eg-mono">altdata_mid</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">20</td>
+            <td class="eg-num">40</td>
             <td class="eg-num">
-              7
+              10
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">55.0%</td>
+            <td class="eg-num">47.5%</td>
             <td class="eg-num">
-              0.2505
-              <span class="eg-dates-note">(n_dates=7)</span>
+              0.2366
+              <span class="eg-dates-note">(n_dates=10)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5700,15 +5729,15 @@
           <tr>
             <td class="eg-mono">altdata_slow</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">87</td>
+            <td class="eg-num">108</td>
             <td class="eg-num">
-              12
+              18
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">50.6%</td>
+            <td class="eg-num">50.0%</td>
             <td class="eg-num">
-              0.2538
-              <span class="eg-dates-note">(n_dates=12)</span>
+              0.2903
+              <span class="eg-dates-note">(n_dates=18)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5772,15 +5801,15 @@
           <tr>
             <td class="eg-mono">cn_importance_v0</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">1025</td>
+            <td class="eg-num">1249</td>
             <td class="eg-num">
-              40
+              49
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=40)</span>
+              <span class="eg-dates-note">(n_dates=49)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -5808,15 +5837,15 @@
           <tr>
             <td class="eg-mono">cn_importance_v0_pit</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">1025</td>
+            <td class="eg-num">1249</td>
             <td class="eg-num">
-              40
+              49
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=40)</span>
+              <span class="eg-dates-note">(n_dates=49)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -5844,15 +5873,15 @@
           <tr>
             <td class="eg-mono">cn_special_sits</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">19</td>
+            <td class="eg-num">21</td>
             <td class="eg-num">
-              14
+              16
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=14)</span>
+              <span class="eg-dates-note">(n_dates=16)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5878,17 +5907,17 @@
           </tr>
           
           <tr>
-            <td class="eg-mono">intel_hub</td>
-            <td class="eg-num">21d</td>
-            <td class="eg-num">854</td>
+            <td class="eg-mono">demand_chain</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">3</td>
             <td class="eg-num">
-              24
+              2
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">57.3%</td>
+            <td class="eg-num">33.3%</td>
             <td class="eg-num">
-              0.3883
-              <span class="eg-dates-note">(n_dates=24)</span>
+              0.0945
+              <span class="eg-dates-note">(n_dates=2)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5897,13 +5926,31 @@
           
           <tr>
             <td class="eg-mono">intel_hub</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">2514</td>
+            <td class="eg-num">21d</td>
+            <td class="eg-num">1185</td>
             <td class="eg-num">
               35
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">56.8%</td>
+            <td class="eg-num">57.9%</td>
+            <td class="eg-num">
+              0.4086
+              <span class="eg-dates-note">(n_dates=35)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">intel_hub</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">2530</td>
+            <td class="eg-num">
+              35
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">56.6%</td>
             <td class="eg-num">
               0.4086
               <span class="eg-dates-note">(n_dates=35)</span>
@@ -5916,15 +5963,15 @@
           <tr>
             <td class="eg-mono">narrative_source_call</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">321</td>
+            <td class="eg-num">327</td>
             <td class="eg-num">
-              10
+              13
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=10)</span>
+              <span class="eg-dates-note">(n_dates=13)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5952,15 +5999,15 @@
           <tr>
             <td class="eg-mono">policy</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">26</td>
+            <td class="eg-num">37</td>
             <td class="eg-num">
-              6
+              8
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">47.4%</td>
+            <td class="eg-num">50.0%</td>
             <td class="eg-num">
-              0.1876
-              <span class="eg-dates-note">(n_dates=6)</span>
+              0.2152
+              <span class="eg-dates-note">(n_dates=8)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -5970,7 +6017,7 @@
           <tr>
             <td class="eg-mono">policy</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">36</td>
+            <td class="eg-num">38</td>
             <td class="eg-num">
               8
               <span class="eg-dates-note">/ 25</span>
@@ -5988,15 +6035,15 @@
           <tr>
             <td class="eg-mono">policy</td>
             <td class="eg-num">63d</td>
-            <td class="eg-num">2</td>
+            <td class="eg-num">6</td>
             <td class="eg-num">
-              1
+              2
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">50.0%</td>
+            <td class="eg-num">33.3%</td>
             <td class="eg-num">
-              0.0000
-              <span class="eg-dates-note">(n_dates=1)</span>
+              0.0945
+              <span class="eg-dates-note">(n_dates=2)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -6006,15 +6053,15 @@
           <tr>
             <td class="eg-mono">radar</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">8409</td>
+            <td class="eg-num">9000</td>
             <td class="eg-num">
-              36
+              39
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">46.7%</td>
+            <td class="eg-num">47.2%</td>
             <td class="eg-num">
-              0.3199
-              <span class="eg-dates-note">(n_dates=36)</span>
+              0.3157
+              <span class="eg-dates-note">(n_dates=39)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -6024,7 +6071,7 @@
           <tr>
             <td class="eg-mono">radar</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">9435</td>
+            <td class="eg-num">9529</td>
             <td class="eg-num">
               39
               <span class="eg-dates-note">/ 25</span>
@@ -6042,15 +6089,15 @@
           <tr>
             <td class="eg-mono">radar</td>
             <td class="eg-num">63d</td>
-            <td class="eg-num">153</td>
+            <td class="eg-num">2062</td>
             <td class="eg-num">
-              2
+              11
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">40.5%</td>
+            <td class="eg-num">39.7%</td>
             <td class="eg-num">
-              0.0945
-              <span class="eg-dates-note">(n_dates=2)</span>
+              0.1517
+              <span class="eg-dates-note">(n_dates=11)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
@@ -6060,15 +6107,15 @@
           <tr>
             <td class="eg-mono">us_importance_v0</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">5784</td>
+            <td class="eg-num">6678</td>
             <td class="eg-num">
-              36
+              44
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=36)</span>
+              <span class="eg-dates-note">(n_dates=44)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -6078,15 +6125,15 @@
           <tr>
             <td class="eg-mono">us_importance_v0</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">4468</td>
+            <td class="eg-num">9076</td>
             <td class="eg-num">
-              48
+              60
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=48)</span>
+              <span class="eg-dates-note">(n_dates=60)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -6096,15 +6143,15 @@
           <tr>
             <td class="eg-mono">us_importance_v0_pit</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">5784</td>
+            <td class="eg-num">6678</td>
             <td class="eg-num">
-              36
+              44
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=36)</span>
+              <span class="eg-dates-note">(n_dates=44)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -6114,15 +6161,15 @@
           <tr>
             <td class="eg-mono">us_importance_v0_pit</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">4468</td>
+            <td class="eg-num">9076</td>
             <td class="eg-num">
-              48
+              60
               <span class="eg-dates-note">/ 25</span>
             </td>
             <td class="eg-num">—</td>
             <td class="eg-num">
               —
-              <span class="eg-dates-note">(n_dates=48)</span>
+              <span class="eg-dates-note">(n_dates=60)</span>
             </td>
             <td>
               <span class="verdict verdict-accruing"><span class="l-en">GRADED</span><span class="l-zh">积累中</span></span>
@@ -6151,8 +6198,8 @@
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Source: <code>site/qledger/track_record.json</code> (generated 2026-08-25T09:09:26.011259+00:00). RUL-6: only trust/accrual fields exposed; no composite, no escalation-eligible score. The 21d and 63d horizons have zero grades today.</span>
-        <span class="l-zh">来源：<code>site/qledger/track_record.json</code>（生成时间：2026-08-25T09:09:26.011259+00:00）。RUL-6：仅展示信任/积累字段；无复合分数，无可升级评分。当前21d和63d周期零评分。</span>
+        <span class="l-en">Source: <code>site/qledger/track_record.json</code> (generated 2026-09-04T19:49:14.434967+00:00). RUL-6: only trust/accrual fields exposed; no composite, no escalation-eligible score. The 21d and 63d horizons have zero grades today.</span>
+        <span class="l-zh">来源：<code>site/qledger/track_record.json</code>（生成时间：2026-09-04T19:49:14.434967+00:00）。RUL-6：仅展示信任/积累字段；无复合分数，无可升级评分。当前21d和63d周期零评分。</span>
       </div>
     </div>
     
@@ -6246,12 +6293,12 @@
       <span class="l-en">Forward windows, re-drawn nightly. Every night the Fund Flows page publishes a
       consensus board; the nightly ledger writes down exactly what it published, then fills in what those
       names did once each window closes — outright and against SPY. Windows close 5, 21 and
-      63 trading sessions after a board is logged. <strong>6</strong> board dates
-      logged through 2026-08-24. Context only — the board's ranking does not
+      63 trading sessions after a board is logged. <strong>12</strong> board dates
+      logged through 2026-09-03. Context only — the board's ranking does not
       read this record, and nothing here sizes or gates anything.</span>
       <span class="l-zh">前瞻窗口，每夜重绘。资金流向页每晚发布一份共识榜；夜间台账原样记录当晚所发布的内容，
       待每个窗口收官后再补入这些个股的表现——绝对涨跌，以及相对 SPY 的差额。窗口分别在登记后的
-      5、21、63 个交易日收官。已登记 <strong>6</strong> 个榜单日期，截至 2026-08-24。
+      5、21、63 个交易日收官。已登记 <strong>12</strong> 个榜单日期，截至 2026-09-03。
       仅作背景参考——榜单排序不读取本记录，此处也不参与任何仓位或门槛。</span>
     </p>
 
@@ -6264,14 +6311,14 @@
           <span class="l-en">1 week (5 sessions)</span><span class="l-zh">1周（5个交易日）</span>
         </div>
         
-        <div class="mh-metric-val">-6.3%</div>
+        <div class="mh-metric-val">-1.0%</div>
         <div class="mh-metric-ci">
-          <span class="l-en">median vs SPY · 18 graded rows from 1 board date</span>
-          <span class="l-zh">相对 SPY 中位数 · 来自 1 个榜单日期的 18 行已打分记录</span>
+          <span class="l-en">median vs SPY · 103 graded rows from 7 board dates</span>
+          <span class="l-zh">相对 SPY 中位数 · 来自 7 个榜单日期的 103 行已打分记录</span>
         </div>
         <div class="mh-metric-note">
-          <span class="l-en">5 of 18 ahead of SPY · outright median -7.5% · 103 windows still open</span>
-          <span class="l-zh">5 of 18 跑赢 SPY · 绝对中位数 -7.5% · 仍有 103 个窗口未收官</span>
+          <span class="l-en">48 of 103 ahead of SPY · outright median -0.8% · 138 windows still open</span>
+          <span class="l-zh">48 of 103 跑赢 SPY · 绝对中位数 -0.8% · 仍有 138 个窗口未收官</span>
         </div>
         
       </div>
@@ -6283,8 +6330,8 @@
         
         <div class="mh-metric-val">—</div>
         <div class="mh-metric-ci">
-          <span class="l-en">collecting — 121 windows still open</span>
-          <span class="l-zh">积累中——仍有 121 个窗口未收官</span>
+          <span class="l-en">collecting — 241 windows still open</span>
+          <span class="l-zh">积累中——仍有 241 个窗口未收官</span>
         </div>
         <div class="mh-metric-note">
           <span class="l-en">A window closes 21 trading sessions after its board is logged. Nothing to report until one does.</span>
@@ -6300,8 +6347,8 @@
         
         <div class="mh-metric-val">—</div>
         <div class="mh-metric-ci">
-          <span class="l-en">collecting — 121 windows still open</span>
-          <span class="l-zh">积累中——仍有 121 个窗口未收官</span>
+          <span class="l-en">collecting — 241 windows still open</span>
+          <span class="l-zh">积累中——仍有 241 个窗口未收官</span>
         </div>
         <div class="mh-metric-note">
           <span class="l-en">A window closes 63 trading sessions after its board is logged. Nothing to report until one does.</span>
@@ -6336,183 +6383,243 @@
         <tbody>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">NVDA</td>
-            <td class="eg-num">1</td>
-            <td class="eg-num">7</td>
+            <td class="eg-mono eg-ts">2026-08-26</td>
+            <td class="eg-mono">BABA</td>
+            <td class="eg-num">18</td>
+            <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-7.3%</td>
-            <td class="eg-num">-6.2%</td>
+            <td class="eg-num">-3.9%</td>
+            <td class="eg-num">-4.1%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
+            <td class="eg-mono eg-ts">2026-08-26</td>
+            <td class="eg-mono">TSM</td>
+            <td class="eg-num">20</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-2.4%</td>
+            <td class="eg-num">-2.7%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">NVDA</td>
+            <td class="eg-num">1</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+2.1%</td>
+            <td class="eg-num">+2.6%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-24</td>
             <td class="eg-mono">SPCX</td>
             <td class="eg-num">2</td>
             <td class="eg-num">6</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-7.7%</td>
-            <td class="eg-num">-6.5%</td>
+            <td class="eg-num">+3.1%</td>
+            <td class="eg-num">+3.6%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">CBRS</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">TSLA</td>
             <td class="eg-num">3</td>
-            <td class="eg-num">5</td>
+            <td class="eg-num">6</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-26.4%</td>
-            <td class="eg-num">-25.2%</td>
+            <td class="eg-num">+1.7%</td>
+            <td class="eg-num">+2.2%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
             <td class="eg-mono">CRCL</td>
             <td class="eg-num">4</td>
             <td class="eg-num">5</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">+17.6%</td>
-            <td class="eg-num">+18.8%</td>
+            <td class="eg-num">-2.8%</td>
+            <td class="eg-num">-2.2%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">TSLA</td>
-            <td class="eg-num">5</td>
-            <td class="eg-num">5</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+2.8%</td>
-            <td class="eg-num">+4.0%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
             <td class="eg-mono">CRWV</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">4</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-7.0%</td>
+            <td class="eg-num">-6.5%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">CBRS</td>
             <td class="eg-num">6</td>
             <td class="eg-num">4</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-18.6%</td>
-            <td class="eg-num">-17.4%</td>
+            <td class="eg-num">-6.1%</td>
+            <td class="eg-num">-5.6%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">COIN</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">AVGO</td>
             <td class="eg-num">8</td>
             <td class="eg-num">4</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">+19.2%</td>
-            <td class="eg-num">+20.4%</td>
+            <td class="eg-num">+3.6%</td>
+            <td class="eg-num">+4.2%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">SMCI</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">CRWD</td>
             <td class="eg-num">9</td>
             <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-8.1%</td>
-            <td class="eg-num">-6.9%</td>
+            <td class="eg-num">+16.0%</td>
+            <td class="eg-num">+16.6%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">META</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">NET</td>
             <td class="eg-num">10</td>
             <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-1.7%</td>
-            <td class="eg-num">-0.6%</td>
+            <td class="eg-num">+2.9%</td>
+            <td class="eg-num">+3.4%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">KTOS</td>
-            <td class="eg-num">12</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">COIN</td>
+            <td class="eg-num">11</td>
             <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-16.1%</td>
-            <td class="eg-num">-15.0%</td>
+            <td class="eg-num">-5.5%</td>
+            <td class="eg-num">-5.0%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">LUNR</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">META</td>
             <td class="eg-num">13</td>
             <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-18.3%</td>
-            <td class="eg-num">-17.1%</td>
+            <td class="eg-num">+1.5%</td>
+            <td class="eg-num">+2.0%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
             <td class="eg-mono">XYZ</td>
             <td class="eg-num">14</td>
             <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">+1.5%</td>
-            <td class="eg-num">+2.7%</td>
+            <td class="eg-num">-5.9%</td>
+            <td class="eg-num">-5.3%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">TSM</td>
-            <td class="eg-num">15</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">LUNR</td>
+            <td class="eg-num">16</td>
             <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-4.8%</td>
-            <td class="eg-num">-3.6%</td>
+            <td class="eg-num">-11.3%</td>
+            <td class="eg-num">-10.8%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">CRWD</td>
-            <td class="eg-num">16</td>
-            <td class="eg-num">2</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-10.9%</td>
-            <td class="eg-num">-9.7%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">CIFR</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">KTOS</td>
             <td class="eg-num">17</td>
-            <td class="eg-num">2</td>
+            <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-17.0%</td>
-            <td class="eg-num">-15.8%</td>
+            <td class="eg-num">-6.3%</td>
+            <td class="eg-num">-5.7%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">RIOT</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">BABA</td>
             <td class="eg-num">18</td>
-            <td class="eg-num">2</td>
+            <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-0.2%</td>
-            <td class="eg-num">+1.0%</td>
+            <td class="eg-num">-5.5%</td>
+            <td class="eg-num">-5.0%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">COHR</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">AMZN</td>
             <td class="eg-num">19</td>
-            <td class="eg-num">2</td>
+            <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-21.6%</td>
-            <td class="eg-num">-20.4%</td>
+            <td class="eg-num">-2.4%</td>
+            <td class="eg-num">-1.8%</td>
           </tr>
           
           <tr>
-            <td class="eg-mono eg-ts">2026-08-14</td>
-            <td class="eg-mono">SNOW</td>
-            <td class="eg-num">20</td>
-            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">BWXT</td>
+            <td class="eg-num">19</td>
+            <td class="eg-num">3</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">-2.2%</td>
-            <td class="eg-num">-1.0%</td>
+            <td class="eg-num">+7.9%</td>
+            <td class="eg-num">+8.4%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-24</td>
+            <td class="eg-mono">TSM</td>
+            <td class="eg-num">20</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-0.8%</td>
+            <td class="eg-num">-0.3%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">NVDA</td>
+            <td class="eg-num">1</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+5.9%</td>
+            <td class="eg-num">+5.4%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">TSLA</td>
+            <td class="eg-num">2</td>
+            <td class="eg-num">7</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+5.4%</td>
+            <td class="eg-num">+5.0%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">SPCX</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">6</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+6.4%</td>
+            <td class="eg-num">+6.0%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">CRCL</td>
+            <td class="eg-num">4</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+8.9%</td>
+            <td class="eg-num">+8.5%</td>
           </tr>
           
         </tbody>
@@ -6538,11 +6645,11 @@
     <div class="mh-prov-grid">
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Build date</span><span class="l-zh">构建日期</span></dt>
-        <dd>2026-08-26</dd>
+        <dd>2026-09-04</dd>
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-08-25T17:45:14.411853Z</dd>
+        <dd>2026-09-05T02:19:01.333757Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
@@ -6573,7 +6680,7 @@
 
 </div>
 
-<script src="measurementdata/measurement_data.js?v=21d51bf5" defer></script>
+<script src="measurementdata/measurement_data.js?v=2180a397" defer></script>
 <script>
 (function(){
   "use strict";
@@ -6646,6 +6753,7 @@
   })();
 })();
 </script>
-<script src="theme.js?v=7ddb5b23" defer></script>
+<script src="theme.js?v=83cd230b" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

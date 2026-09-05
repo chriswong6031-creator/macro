@@ -587,7 +587,7 @@ artifacts:
     owner_program: oracle
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: logged_at
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -862,7 +862,7 @@ artifacts:
     owner_program: engine-fix
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -1848,7 +1848,7 @@ artifacts:
     owner_program: btc-vector
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -1897,7 +1897,7 @@ artifacts:
     owner_program: engine-fix
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -1919,7 +1919,7 @@ artifacts:
     owner_program: engine-fix
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -1974,7 +1974,7 @@ artifacts:
     owner_program: options-alpha
     cadence: on-demand
     storage: git
-    asof_field: null
+    asof_field: asof
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
@@ -2050,7 +2050,7 @@ artifacts:
     owner_program: oracle
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: as_of
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -2070,7 +2070,7 @@ artifacts:
     owner_program: qualitative-intelligence
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: as_of
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -2426,7 +2426,7 @@ artifacts:
     owner_program: btc-vector
     cadence: daily-engine
     storage: git
-    asof_field: asof
+    asof_field: date
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
@@ -2453,7 +2453,7 @@ artifacts:
     owner_program: btc-vector
     cadence: daily-engine
     storage: git
-    asof_field: asof
+    asof_field: date
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
@@ -2654,7 +2654,7 @@ artifacts:
     owner_program: intl-fix
     cadence: on-demand
     storage: git
-    asof_field: null
+    asof_field: asof
     freshness_sla_hours: 8760
     schema: implicit
     tier: shadow
@@ -2998,7 +2998,7 @@ artifacts:
     owner_program: oracle
     cadence: daily-engine
     storage: git
-    asof_field: none
+    asof_field: null
     freshness_sla_hours: 30
     schema: none
     tier: display
@@ -3832,7 +3832,7 @@ artifacts:
     owner_program: qualitative-intelligence
     cadence: daily-engine
     storage: git
-    asof_field: asof
+    asof_field: as_of
     freshness_sla_hours: 30
     schema: none
     tier: display
@@ -4151,7 +4151,7 @@ artifacts:
     owner_program: qualitative-intelligence
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: state_asof
     freshness_sla_hours: 30
     schema: none
     tier: display
@@ -4301,7 +4301,7 @@ artifacts:
     owner_program: china-system
     cadence: asia-close
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 30
     schema: china_cycle_phase.v1
     tier: display
@@ -4365,7 +4365,7 @@ artifacts:
     owner_program: neural-web
     cadence: daily-engine
     storage: git
-    asof_field: generated_utc
+    asof_field: as_of
     freshness_sla_hours: 30
     schema: artifact_manifest.v1
     tier: infrastructure
@@ -4387,7 +4387,7 @@ artifacts:
     owner_program: neural-web
     cadence: daily-engine
     storage: git
-    asof_field: generated_utc
+    asof_field: as_of
     freshness_sla_hours: 30
     schema: none
     tier: infrastructure
@@ -4535,7 +4535,7 @@ artifacts:
     owner_program: qualitative-intelligence
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 30
     schema: none
     tier: display
@@ -4643,7 +4643,7 @@ artifacts:
     owner_program: engine-fix
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: date
     freshness_sla_hours: 30
     schema: none
     tier: display
@@ -4687,7 +4687,7 @@ artifacts:
     owner_program: neural-web
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: produced_at
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
@@ -4735,7 +4735,7 @@ artifacts:
     owner_program: neural-web
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: produced_at
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
@@ -7710,7 +7710,7 @@ artifacts:
     owner_program: long-hold
     cadence: on-demand
     storage: git
-    asof_field: generated_at
+    asof_field: as_of
     freshness_sla_hours: 8760
     schema: winner_episodes_manifest.v1
     tier: display
@@ -7813,7 +7813,7 @@ artifacts:
     owner_program: long-hold
     cadence: daily-engine
     storage: git
-    asof_field: generated_at
+    asof_field: as_of
     freshness_sla_hours: 30
     schema: winner_autopsy_manifest.v1
     tier: display
@@ -10286,7 +10286,7 @@ artifacts:
     owner_program: thematic-intelligence
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 30
     schema: foresight.theme_placebo.v1
     tier: shadow
@@ -11990,7 +11990,7 @@ artifacts:
     owner_program: macro-release-intel
     cadence: daily-engine
     storage: git
-    asof_field: null
+    asof_field: release_date
     freshness_sla_hours: 99999
     schema: release_cpi_official_truth.v1
     tier: shadow
@@ -13625,7 +13625,7 @@ artifacts:
     owner_program: causal-hypothesis-factory
     cadence: weekly
     storage: git
-    asof_field: run_dt
+    asof_field: asof
     freshness_sla_hours: 192
     schema: implicit
     tier: display
@@ -13675,7 +13675,7 @@ artifacts:
     owner_program: causal-hypothesis-factory
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 36
     schema: implicit
     tier: display
@@ -13725,7 +13725,7 @@ artifacts:
     owner_program: causal-hypothesis-factory
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 36
     schema: causal_lab_state.v1
     tier: display
@@ -13749,7 +13749,7 @@ artifacts:
     owner_program: causal-hypothesis-factory
     cadence: daily-engine
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 36
     schema: causal_lab_state.v1
     tier: display
@@ -13984,7 +13984,7 @@ artifacts:
     owner_program: oracle
     cadence: daily-engine
     storage: git
-    asof_field: pit_stamp
+    asof_field: asof
     freshness_sla_hours: 30
     schema: oracle_tape_onset_ledger.v1
     tier: shadow
@@ -15005,7 +15005,7 @@ artifacts:
     owner_program: signal-foundry
     cadence: on-demand
     storage: git
-    asof_field: as_of
+    asof_field: asof
     freshness_sla_hours: 200
     schema: signal_foundry.lane_status.v1
     tier: display
@@ -15807,7 +15807,7 @@ artifacts:
     owner_program: rotation-command
     cadence: daily-engine
     storage: git
-    asof_field: asof
+    asof_field: closed_asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -17206,7 +17206,7 @@ artifacts:
     owner_program: government-revenue-foresight
     cadence: collect
     storage: git
-    asof_field: last_observed_at
+    asof_field: last_successful_observed_at
     freshness_sla_hours: 30
     schema: government_revenue.subaward_projection_state.v1
     tier: infrastructure

@@ -1,0 +1,180 @@
+{
+  "fixtures": {
+    "golden_dual_read": {
+      "bytes": 9620,
+      "kind": "golden",
+      "receipts": [
+        "Dual-read law receipt: constructs.macro_chain_state note (operator 2026-08-09 gold/real-rate case) plus CLAUDE.md 'Instrument verdicts are NOT market verdicts'.",
+        "t0 authentication: owner_pit_reference digest-pinned to research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md (sha256 4baa27cc...13c025ca), git committer date 2026-08-09 = t0 -> zero recording lag, lawfully live."
+      ],
+      "sha256": "b84cba6822f43a94fb8a049c63d7a93095c1d861fd39193d07678111d6c19fd4"
+    },
+    "golden_fpi_absence": {
+      "bytes": 9290,
+      "kind": "golden",
+      "receipts": [
+        "FPI zero-EDGAR-statements rule: contracts/opportunity_evidence/slot_registry.v1.json constructs.forensics_scalars note ('Canadian/FPI names may have zero EDGAR rows: missing filings are not missing operations'); recorded verbatim at research/opportunity_evidence/E0_PEER_RELATIVE_CASEBOOK.md line 93 ('Canadian/FPI names (CCJ) miss US EDGAR fundamentals').",
+        "t0 authentication: owner_pit_reference digest-pinned to that casebook's committed bytes (sha256 f8f5d744...c4bc97592, git committer date 2026-08-18). That is 8 days AFTER t0 2026-08-10, past the 5-day live budget, so the vector declares t0_mode retrospective_research rather than claiming operational PIT."
+      ],
+      "sha256": "503d55427b1fa8e6a85bc9be6d42b11d343677cc6b74d11c15deb6afa33f79fd"
+    },
+    "golden_imxi_drl_event": {
+      "bytes": 18276,
+      "kind": "golden",
+      "receipts": [
+        "IMXI DRL residual shock values are illustrative event-day figures in the shape read by engine.price_pressure.ledger.read_ledger (resid/resid_z/peer_ret/peer_basis, market basis).",
+        "t0 authentication: t0_source drl_event_date, owner_store data/price_pressure/ (registry t0_sources pin), recorded_clock harvested_asof 2026-08-14 = t0 -> zero recording lag, live."
+      ],
+      "sha256": "65460501d4c4d454c919b070b26662780e6e15d78af57669c200cf57fb8f5bde"
+    },
+    "golden_optional_expectation": {
+      "bytes": 8031,
+      "kind": "golden",
+      "receipts": [
+        "constructs.prospective_expectation_src_a1 note: 'OPTIONAL evidence family only ... never a prerequisite for composition'.",
+        "t0 authentication: the native_digest on this fixture's t0_evidence_ref is ILLUSTRATIVE. SRC-A1 observation artifacts live at a configurable, append-only path and are not committed to this repository, so the reference proves the required SHAPE (a generic owner_pit_reference must carry a KNOWN immutability receipt) and not a specific committed object. Every other golden's digest is the real sha256 of real committed bytes."
+      ],
+      "sha256": "7b38eb3144dde5a5a7dff93d11e41ef012ba0da9eda10403a24a7ba566f0a897"
+    },
+    "hostile_admission_as_entry": {
+      "bytes": 10731,
+      "expected_codes": [
+        "K3E_R011"
+      ],
+      "kind": "hostile",
+      "sha256": "2e78b4bbfb8c096f4771bacff3c969b32a4d7d5bf86eceb6ea6279a865811038"
+    },
+    "hostile_authority_leak": {
+      "bytes": 9319,
+      "expected_codes": [
+        "K3E_R011"
+      ],
+      "kind": "hostile",
+      "sha256": "a6416daae3b661abe793aebb4cc8aeeccfdd091627ac2c61fc7b244d48f55586"
+    },
+    "hostile_cause_from_epsilon": {
+      "bytes": 9535,
+      "expected_codes": [
+        "K3E_R009"
+      ],
+      "kind": "hostile",
+      "sha256": "bad47b3518f224ddbcb90dcf831e01d30c39d51a899769d5aeed15a3706476b4"
+    },
+    "hostile_clock_collapse": {
+      "bytes": 10687,
+      "expected_codes": [
+        "K3E_R006"
+      ],
+      "kind": "hostile",
+      "sha256": "7bcd8b2f0c8809722e0f3865f0681a4df049047b95e102d25563161261c520b5"
+    },
+    "hostile_composite_scalar": {
+      "bytes": 10463,
+      "expected_codes": [
+        "K3E_R001",
+        "K3E_R004"
+      ],
+      "kind": "hostile",
+      "sha256": "32be1cc02f6039105ea97221e51f4429ea8e6e3a985979da4ffa8415d4e3378f"
+    },
+    "hostile_denominator_tamper": {
+      "bytes": 10932,
+      "expected_codes": [
+        "K3E_R015"
+      ],
+      "kind": "hostile",
+      "sha256": "d4468320fb7f18e5a46671fde079ef87d39a7dc701ed1256fae8f79851d9133e"
+    },
+    "hostile_disloc_reconstitution": {
+      "bytes": 14210,
+      "expected_codes": [
+        "K3E_R004"
+      ],
+      "kind": "hostile",
+      "sha256": "fd7f4105bb43a34aa92a79755ff230dab25ad3c22cbb2660d5cdb41cfe34b532"
+    },
+    "hostile_double_family": {
+      "bytes": 10608,
+      "expected_codes": [
+        "K3E_R002",
+        "K3E_R003"
+      ],
+      "kind": "hostile",
+      "sha256": "ddb4929ee2bac3feb617195b096376e74758be47cffe07c9d3d18cb472a8ee49"
+    },
+    "hostile_flow_nominal": {
+      "bytes": 10752,
+      "expected_codes": [
+        "K3E_R012"
+      ],
+      "kind": "hostile",
+      "sha256": "329bd3b930c42f5738680e3423653ab873c4e76294a987185c13d4dffe6303c5"
+    },
+    "hostile_generic_live_t0": {
+      "bytes": 9367,
+      "expected_codes": [
+        "K3E_R021"
+      ],
+      "kind": "hostile",
+      "sha256": "13e45c64ddefc8a560c78aaa41661b99844017b95f26fea5c0f4d8d74462112a"
+    },
+    "hostile_identity_launder": {
+      "bytes": 10623,
+      "expected_codes": [
+        "K3E_R010"
+      ],
+      "kind": "hostile",
+      "sha256": "eea5daefd7ee6b09937bb917d86e04a848320314b069811332014ceb6b7f8889"
+    },
+    "hostile_impairment_axis": {
+      "bytes": 10460,
+      "expected_codes": [
+        "K3E_R001",
+        "K3E_R017"
+      ],
+      "kind": "hostile",
+      "sha256": "5ee4eee5a40d6ed627a5d9a637a3167faaacca7bf2effca527c5f9300fe778a2"
+    },
+    "hostile_llm_provenance": {
+      "bytes": 9274,
+      "expected_codes": [
+        "K3E_SCHEMA_ENUM"
+      ],
+      "kind": "hostile",
+      "sha256": "5e6880491ac4bba43a26edaaf7680c7a956c89f363d8d582677b3f3f7659e54c"
+    },
+    "hostile_lookahead": {
+      "bytes": 10691,
+      "expected_codes": [
+        "K3E_R007"
+      ],
+      "kind": "hostile",
+      "sha256": "c3f22bf9f371a022d788a09edc9a4c99aae369df58adddcdd5594b099dd0340d"
+    },
+    "hostile_missing_neutral": {
+      "bytes": 9285,
+      "expected_codes": [
+        "K3E_R005"
+      ],
+      "kind": "hostile",
+      "sha256": "10f37d10a9dd3276c3257e58ecf6357db568c3d73ef00649ab6ca4552c787cef"
+    },
+    "hostile_residual_rederived": {
+      "bytes": 9209,
+      "expected_codes": [
+        "K3E_R008"
+      ],
+      "kind": "hostile",
+      "sha256": "525ed92044c6d338bf066e7d6ddb3aa0f16eabc7164c99952e8c3d3be2dbddf3"
+    },
+    "hostile_retrospective_t0": {
+      "bytes": 9285,
+      "expected_codes": [
+        "K3E_R021"
+      ],
+      "kind": "hostile",
+      "sha256": "53a134b33f1d466d09cab8348579f61352acc6aca31f67943127df65d5fd3f77"
+    }
+  },
+  "schema": "opportunity_evidence.fixture_manifest.v1"
+}

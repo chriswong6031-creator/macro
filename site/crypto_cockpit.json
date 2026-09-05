@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-24",
-  "generated_at": "2026-08-25T18:07:05+00:00",
+  "as_of": "2026-09-04",
+  "generated_at": "2026-09-05T02:46:12+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 78869.95,
-    "change_24h_pct": 1.47,
+    "price": 79577.7,
+    "change_24h_pct": -2.08,
     "stance_en": "STRONG RISK-ON",
     "stance_zh": "强烈偏多",
-    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and the pace of the move; the drag comes from futures positioning and the market cycle. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向明显偏多。支撑来自动量与涨跌节奏；拖累来自期货持仓与所处周期。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 49,
+    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and fundamentals; the drag comes from behaviour versus stocks and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向明显偏多。支撑来自动量与基本面；拖累来自与美股的联动与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 37,
     "exposure_pct": 100,
     "gate_active": false
   },
@@ -48,9 +48,9 @@
           "label_en": "Impulse",
           "label_zh": "脉冲",
           "source": "master.board.impulse",
-          "state_en": "Accelerating",
-          "state_zh": "加速",
-          "tone": "bull",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "DIRECTIONAL"
         }
       ]
@@ -109,13 +109,13 @@
       "label_zh": "流动性与资金流",
       "primary": {
         "key": "etf",
-        "label_en": "Etf",
-        "label_zh": "etf",
+        "label_en": "ETF flows",
+        "label_zh": "ETF 资金流",
         "source": "master.board.etf",
-        "state_en": "Unavailable",
-        "state_zh": "暂无",
+        "state_en": "Neutral",
+        "state_zh": "中性",
         "tone": "neutral",
-        "grade": null
+        "grade": "DIRECTIONAL"
       },
       "spark_source": "signals.etf_flow_z",
       "receipt_members": [
@@ -124,9 +124,9 @@
           "label_en": "Stablecoin tide",
           "label_zh": "稳定币潮汐",
           "source": "master.board.stbl",
-          "state_en": "Contracting",
-          "state_zh": "收缩",
-          "tone": "bear",
+          "state_en": "Expanding",
+          "state_zh": "扩张",
+          "tone": "bull",
           "grade": "DIRECTIONAL"
         },
         {
@@ -134,9 +134,9 @@
           "label_en": "Coinbase premium",
           "label_zh": "Coinbase 溢价",
           "source": "master.board.premium",
-          "state_en": "Neutral",
-          "state_zh": "中性",
-          "tone": "neutral",
+          "state_en": "Healthy demand",
+          "state_zh": "健康需求",
+          "tone": "bull",
           "grade": "EXTREMES"
         }
       ]
@@ -153,19 +153,19 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-24"
+        "as_of": "2026-09-04"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
         {
           "key": "funding",
-          "label_en": "Funding",
-          "label_zh": "funding",
+          "label_en": "Perp funding",
+          "label_zh": "永续资金费率",
           "source": "master.board.funding",
-          "state_en": "Unavailable",
-          "state_zh": "暂无",
-          "tone": "neutral",
-          "grade": null
+          "state_en": "Crowded long",
+          "state_zh": "多头拥挤",
+          "tone": "bear",
+          "grade": "EXTREMES"
         },
         {
           "key": "cot",
@@ -210,9 +210,9 @@
           "label_en": "Holder spread (STH/LTH)",
           "label_zh": "持有者价差",
           "source": "master.board.holders",
-          "state_en": "Accumulation",
-          "state_zh": "累积",
-          "tone": "bull",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "NEW"
         },
         {
@@ -220,9 +220,9 @@
           "label_en": "Attention (Wikipedia)",
           "label_zh": "关注度",
           "source": "master.board.attention",
-          "state_en": "Apathy (bottoming)",
-          "state_zh": "冷清（筑底）",
-          "tone": "bull",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "NEW"
         }
       ]

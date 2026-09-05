@@ -2,21 +2,67 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-25T05:11:07.879738+00:00",
-  "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-24",
-  "tldr": [],
-  "summary": null,
-  "regime_read": null,
-  "conflicts": [],
-  "rotation_check": null,
-  "transmission": [],
-  "watch_items": [],
-  "confidence": "low",
+  "generated_at": "2026-09-05T02:48:48.197994+00:00",
+  "model": "gpt-5.6-sol",
+  "served_by": "codex",
+  "state_asof": "2026-09-04",
+  "tldr": [
+    "Driver: Oil is pushing energy and inflation pressure higher.",
+    "Drift: Reflation is giving way to Stagflation, but the shift remains unconfirmed.",
+    "Support: Credit is healthy, labor firm, and financial stress calm.",
+    "What to do: Get ready \u2014 watch inflation data and avoid chasing risk."
+  ],
+  "summary": "Oil is lifting inflation pressure as US growth cools, but calm credit and firm labor keep this from becoming a crisis.",
+  "regime_read": "The US is still Reflation on the map, but it is transitioning toward Stagflation as growth cools and inflation warms. Confirmation is incomplete, so this is a shift in odds, not a settled call.\n\nToday's clear driver is an oil shock. Energy is leading and inflation expectations have risen, while credit and financial stress remain calm.",
+  "conflicts": [
+    "Protection: Credit says stress is low, while bonds no longer cushion stocks \u2014 calm markets still carry weaker shock protection.",
+    "Regions: US markets say risk-on, while China and Hong Kong show growth fear and shrinking liquidity \u2014 global strength is uneven.",
+    "Inflation: Oil says near-term pressure is rising, while long-run expectations remain anchored \u2014 the shock has not become entrenched."
+  ],
+  "rotation_check": "AI hardware leadership is marked broken while Bitcoin stays risk-on; the sequence is not moving cleanly from US leaders outward.",
+  "transmission": [
+    "If the oil surge keeps up \u2192 inflation pressure rises and rate-sensitive growth stocks face more pressure",
+    "If restrictive real yields keep up \u2192 long-duration assets and Bitcoin stay under pressure"
+  ],
+  "watch_items": [
+    "Oil reversal: Inflation pressure eases and the main driver loses force.",
+    "Stagflation confirmation: Cooling growth and rising prices become the settled map.",
+    "Credit widening: Bonds turn worried and the calm-market read weakens.",
+    "China liquidity turn: Regional growth fear starts to ease."
+  ],
+  "confidence": "medium",
   "theses": [],
-  "raw_text": null,
-  "degraded_reason": "llm_error",
+  "raw_text": "{\"tldr\":[\"Driver: Oil is pushing energy and inflation pressure higher.\",\"Drift: Reflation is giving way to Stagflation, but the shift remains unconfirmed.\",\"Support: Credit is healthy, labor firm, and financial stress calm.\",\"What to do: Get ready \u2014 watch inflation data and avoid chasing risk.\"],\"summary\":\"Oil is lifting inflation pressure as US growth cools, but calm credit and firm labor keep this from becoming a crisis.\",\"regime_read\":\"The US is still Reflation on the map, but it is transitioning toward Stagflation as growth cools and inflation warms. Confirmation is incomplete, so this is a shift in odds, not a settled call.\\n\\nToday's clear driver is an oil shock. Energy is leading and inflation expectations have risen, while credit and financial stress remain calm.\",\"conflicts\":[\"Protection: Credit says stress is low, while bonds no longer cushion stocks \u2014 calm markets still carry weaker shock protection.\",\"Regions: US markets say risk-on, while China and Hong Kong show growth fear and shrinking liquidity \u2014 global strength is uneven.\",\"Inflation: Oil says near-term pressure is rising, while long-run expectations remain anchored \u2014 the shock has not become entrenched.\"],\"transmission\":[\"If the oil surge keeps up \u2192 inflation pressure rises and rate-sensitive growth stocks face more pressure\",\"If restrictive real yields keep up \u2192 long-duration assets and Bitcoin stay under pressure\"],\"rotation_check\":\"AI hardware leadership is marked broken while Bitcoin stays risk-on; the sequence is not moving cleanly from US leaders outward.\",\"watch_items\":[\"Oil reversal: Inflation pressure eases and the main driver loses force.\",\"Stagflation confirmation: Cooling growth and rising prices become the settled map.\",\"Credit widening: Bonds turn worried and the calm-market read weakens.\",\"China liquidity turn: Regional growth fear starts to ease.\"],\"confidence\":\"medium\",\"forward_watch\":[{\"date\":\"2026-09-04\",\"label\":\"Jobs report (nonfarm payrolls)\",\"kind\":\"NFP\",\"note\":\"Tests whether firm hiring can offset the broader cooling in growth.\"},{\"date\":\"2026-09-10\",\"label\":\"PPI (producer prices)\",\"kind\":\"PPI\",\"note\":\"Shows whether the oil shock is reaching business costs.\"},{\"date\":\"2026-09-11\",\"label\":\"CPI (consumer prices)\",\"kind\":\"CPI\",\"note\":\"Tests whether sticky inflation is cooling or regaining heat.\"},{\"date\":\"2026-09-16\",\"label\":\"FOMC rate decision (SEP \u00b7 dot-plot)\",\"kind\":\"FOMC\",\"note\":\"The Fed must weigh cooling growth against renewed inflation pressure.\"}],\"forward_read\":\"Producer and consumer inflation arrive before the Fed decision, making the oil shock and sticky prices the main test. The jobs report tests whether firm labor can resist the broader cooling trend.\"}",
+  "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
+  "style_flags": [],
+  "forward_watch": [
+    {
+      "date": "2026-09-04",
+      "label": "Jobs report (nonfarm payrolls)",
+      "kind": "NFP",
+      "note": "Tests whether firm hiring can offset the broader cooling in growth."
+    },
+    {
+      "date": "2026-09-10",
+      "label": "PPI (producer prices)",
+      "kind": "PPI",
+      "note": "Shows whether the oil shock is reaching business costs."
+    },
+    {
+      "date": "2026-09-11",
+      "label": "CPI (consumer prices)",
+      "kind": "CPI",
+      "note": "Tests whether sticky inflation is cooling or regaining heat."
+    },
+    {
+      "date": "2026-09-16",
+      "label": "FOMC rate decision (SEP \u00b7 dot-plot)",
+      "kind": "FOMC",
+      "note": "The Fed must weigh cooling growth against renewed inflation pressure."
+    }
+  ],
+  "forward_read": "Producer and consumer inflation arrive before the Fed decision, making the oil shock and sticky prices the main test. The jobs report tests whether firm labor can resist the broader cooling trend.",
   "nw_context_used": true,
   "cortex_status": "absent",
   "refresh_days": 1,
@@ -33,17 +79,17 @@
       "key": "risk",
       "label_en": "Market risk",
       "label_zh": "\u5e02\u573a\u98ce\u9669",
-      "value_en": "Moderate",
-      "value_zh": "\u4e2d\u7b49",
-      "tone": "neutral"
+      "value_en": "Low",
+      "value_zh": "\u4f4e",
+      "tone": "good"
     },
     {
       "key": "money",
       "label_en": "Money",
       "label_zh": "\u8d44\u91d1\u9762",
-      "value_en": "Tightening",
-      "value_zh": "\u6536\u7d27",
-      "tone": "warn"
+      "value_en": "Neutral",
+      "value_zh": "\u4e2d\u6027",
+      "tone": "neutral"
     },
     {
       "key": "bonds",
@@ -65,9 +111,35 @@
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "Crypto liquidity",
-      "value_zh": "Crypto liquidity",
+      "value_en": "Oil shock",
+      "value_zh": "Oil shock",
       "tone": "info"
     }
-  ]
+  ],
+  "zh": {
+    "summary": "\u968f\u7740\u7f8e\u56fd\u7ecf\u6d4e\u589e\u957f\u964d\u6e29\uff0c\u6cb9\u4ef7\u6b63\u63a8\u5347\u901a\u80c0\u538b\u529b\uff0c\u4f46\u4fe1\u8d37\u5e73\u7a33\u3001\u52b3\u52a8\u529b\u5e02\u573a\u7a33\u5065\uff0c\u5c1a\u672a\u6f14\u53d8\u6210\u5371\u673a\u3002",
+    "regime_read": "\u7f8e\u56fd\u5728\u5b8f\u89c2\u56fe\u8c31\u4e0a\u4ecd\u5904\u4e8e\u518d\u901a\u80c0\uff0c\u4f46\u968f\u7740\u589e\u957f\u964d\u6e29\u3001\u901a\u80c0\u5347\u6e29\uff0c\u6b63\u8f6c\u5411\u6ede\u80c0\u3002\u786e\u8ba4\u4fe1\u53f7\u5c1a\u4e0d\u5b8c\u6574\uff0c\u56e0\u6b64\u8fd9\u53ea\u662f\u6982\u7387\u53d8\u5316\uff0c\u5e76\u975e\u5b9a\u8bba\u3002\n\n\u4eca\u65e5\u7684\u660e\u786e\u9a71\u52a8\u56e0\u7d20\u662f\u6cb9\u4ef7\u51b2\u51fb\u3002\u80fd\u6e90\u677f\u5757\u9886\u6da8\uff0c\u901a\u80c0\u9884\u671f\u4e0a\u5347\uff0c\u800c\u4fe1\u8d37\u548c\u91d1\u878d\u538b\u529b\u4ecd\u7136\u5e73\u7a33\u3002",
+    "rotation_check": "AI\u786c\u4ef6\u7684\u9886\u5148\u5730\u4f4d\u5df2\u786e\u8ba4\u7834\u4f4d\uff0c\u800cBitcoin\u4ecd\u5904\u4e8e\u98ce\u9669\u504f\u597d\u72b6\u6001\uff1b\u884c\u60c5\u5e76\u672a\u4ece\u7f8e\u56fd\u9f99\u5934\u5411\u5916\u90e8\u5e02\u573a\u987a\u7545\u6269\u6563\u3002",
+    "tldr": [
+      "\u9a71\u52a8\u56e0\u7d20\uff1a\u6cb9\u4ef7\u6b63\u5728\u63a8\u9ad8\u80fd\u6e90\u4ef7\u683c\u548c\u901a\u80c0\u538b\u529b\u3002",
+      "\u8d8b\u52bf\u53d8\u5316\uff1a\u518d\u901a\u80c0\u6b63\u8ba9\u4f4d\u4e8e\u6ede\u80c0\uff0c\u4f46\u8fd9\u4e00\u8f6c\u53d8\u5c1a\u672a\u5f97\u5230\u786e\u8ba4\u3002",
+      "\u652f\u6491\u56e0\u7d20\uff1a\u4fe1\u8d37\u72b6\u51b5\u5065\u5eb7\uff0c\u52b3\u52a8\u529b\u5e02\u573a\u7a33\u5065\uff0c\u91d1\u878d\u538b\u529b\u5e73\u9759\u3002",
+      "\u5e94\u5bf9\u7b56\u7565\uff1a\u505a\u597d\u51c6\u5907\u2014\u2014\u5173\u6ce8\u901a\u80c0\u6570\u636e\uff0c\u907f\u514d\u8ffd\u9010\u98ce\u9669\u3002"
+    ],
+    "conflicts": [
+      "\u9632\u62a4\uff1a\u4fe1\u8d37\u663e\u793a\u538b\u529b\u8f83\u4f4e\uff0c\u4f46\u503a\u5238\u5df2\u65e0\u6cd5\u4e3a\u80a1\u7968\u63d0\u4f9b\u7f13\u51b2\u2014\u2014\u5e02\u573a\u867d\u5e73\u9759\uff0c\u62b5\u5fa1\u51b2\u51fb\u7684\u80fd\u529b\u5374\u5728\u51cf\u5f31\u3002",
+      "\u5730\u533a\uff1a\u7f8e\u56fd\u5e02\u573a\u663e\u793a\u98ce\u9669\u504f\u597d\uff0c\u800c\u4e2d\u56fd\u5185\u5730\u548c\u9999\u6e2f\u5219\u663e\u73b0\u589e\u957f\u62c5\u5fe7\u4e0e\u6d41\u52a8\u6027\u6536\u7f29\u2014\u2014\u5168\u7403\u5f3a\u52bf\u5e76\u4e0d\u5747\u8861\u3002",
+      "\u901a\u80c0\uff1a\u6cb9\u4ef7\u663e\u793a\u77ed\u671f\u538b\u529b\u6b63\u5728\u4e0a\u5347\uff0c\u4f46\u957f\u671f\u9884\u671f\u4ecd\u7136\u951a\u5b9a\u2014\u2014\u8fd9\u6b21\u51b2\u51fb\u5c1a\u672a\u56fa\u5316\u3002"
+    ],
+    "transmission": [
+      "\u5982\u679c\u6cb9\u4ef7\u6301\u7eed\u98d9\u5347 \u2192 \u901a\u80c0\u538b\u529b\u4e0a\u5347\uff0c\u5229\u7387\u654f\u611f\u578b\u6210\u957f\u80a1\u9762\u4e34\u66f4\u5927\u538b\u529b",
+      "\u5982\u679c\u5b9e\u9645\u6536\u76ca\u7387\u6301\u7eed\u5904\u4e8e\u9650\u5236\u6027\u6c34\u5e73 \u2192 \u957f\u4e45\u671f\u8d44\u4ea7\u548c\u6bd4\u7279\u5e01\u7ee7\u7eed\u627f\u538b"
+    ],
+    "watch_items": [
+      "\u6cb9\u4ef7\u53cd\u8f6c\uff1a\u901a\u80c0\u538b\u529b\u7f13\u89e3\uff0c\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u5931\u53bb\u52a8\u529b\u3002",
+      "\u6ede\u80c0\u5f97\u5230\u786e\u8ba4\uff1a\u589e\u957f\u964d\u6e29\u4e0e\u7269\u4ef7\u4e0a\u6da8\u6210\u4e3a\u5e02\u573a\u7684\u65e2\u5b9a\u683c\u5c40\u3002",
+      "\u4fe1\u7528\u5229\u5dee\u6269\u5927\uff1a\u503a\u5238\u5e02\u573a\u8f6c\u8d8b\u62c5\u5fe7\uff0c\u5e02\u573a\u5e73\u9759\u7684\u5224\u65ad\u88ab\u524a\u5f31\u3002",
+      "\u4e2d\u56fd\u6d41\u52a8\u6027\u8f6c\u5411\uff1a\u533a\u57df\u589e\u957f\u62c5\u5fe7\u5f00\u59cb\u7f13\u89e3\u3002"
+    ]
+  }
 }

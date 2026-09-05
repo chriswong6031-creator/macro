@@ -49,6 +49,7 @@ import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Generator, Iterable
@@ -3480,6 +3481,55 @@ def _earnings_evidence_allowed(user_id: str, root: Path | None = None) -> bool:
     return allowed
 
 
+@dataclass(frozen=True)
+class _ExactSourceAttachment:
+    """One request-scoped result; resolved bytes never enter Brain persistence/log context."""
+
+    resolved: Any | None
+    failure: str | None
+    receipt_json: str
+
+
+def _resolve_company_source_attachment(
+    reference: object,
+    user_id: str,
+    root: Path,
+    tx_root: Path,
+) -> _ExactSourceAttachment:
+    """Enforce entitlement before archive I/O, then resolve the fixed Terminal receipt.
+
+    This is intentionally a request-time seam: it has no cache, thread/global state,
+    fuzzy retrieval, or ticker-only fallback.  The exact-source resolver owns all
+    identity/hash/UTF-8 checks and returns only an ephemeral prompt block + receipt.
+    """
+
+    allowed, entitlement = _earnings_evidence_entitlement(user_id, root)
+    if not allowed:
+        receipt = {
+            "schema": "mastermind.exact-source-receipt/v1",
+            "state": "refused",
+            "code": "entitlement_denied",
+            "tier": str(entitlement.get("tier") or "free"),
+            "status": str(entitlement.get("status") or "none"),
+        }
+        return _ExactSourceAttachment(None, "entitlement_denied", json.dumps(receipt, sort_keys=True))
+    from engine import earnings_transcript_intake as _transcripts  # noqa: PLC0415
+    try:
+        resolved = _transcripts.resolve_company_source_span(reference, tx_root)
+    except _transcripts.CompanySourceSpanError as exc:
+        receipt = {
+            "schema": "mastermind.exact-source-receipt/v1",
+            "state": "refused",
+            "code": exc.code,
+        }
+        return _ExactSourceAttachment(None, exc.code, json.dumps(receipt, sort_keys=True))
+    return _ExactSourceAttachment(
+        resolved,
+        None,
+        json.dumps(resolved.receipt, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+    )
+
+
 def _dispatch_brain_tool(
     tool_name: str,
     tool_params: dict,
@@ -5876,6 +5926,7 @@ def _run_brain_loop(
     effort: str | None = None,
     thinking_mode: str | None = None,
     deepseek_thinking: str | None = None,
+    source_prompt: str = "",
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -5966,6 +6017,8 @@ def _run_brain_loop(
     if _digests:
         _combined_digest = "\n\n".join(_digests)
         user_content = f"{_combined_digest}\n\n[USER QUESTION]\n{user_content}"
+    if source_prompt:
+        user_content = f"{source_prompt}\n\n[USER QUESTION]\n{user_content}"
 
     # Fix #4: filter client history — only role in {user,assistant} with non-empty str content
     def _filter_history(h: list[dict]) -> list[dict]:
@@ -6653,11 +6706,22 @@ def _run_brain_loop_stream(
     effort: str | None = None,
     thinking_mode: str | None = None,
     deepseek_thinking: str | None = None,
+    context_receipt: dict | None = None,
+    source_prompt: str = "",
+    source_receipt: dict | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) →
+    Event sequence: meta (first) → context_receipt (W1-C, 0/1 — only when the
+    caller supplies one; see below) → status*/tool*/annotate*/command*/chart* (0+) →
     delta+ (1 or more, W5) → retract (0/1) → suggest (0/1, W6d) → done (last).
+
+    context_receipt: optional pre-compiled `ai_context_receipt.v1` body (see
+        `engine/intelligence_workspace/context_compiler.py`). When provided, it is
+        yielded as one `{"type": "context_receipt", ...}` event immediately after
+        `meta` and before any status/tool event — every real `chat_stream()` deep
+        turn supplies one. Defaults to `None` (no event emitted) so every existing
+        direct caller of this generator keeps today's exact event sequence.
     `status` events are ADDITIVE reasoning transparency; their copy comes from
     _STAGE_LABELS/_TOOL_LABELS and costs no network or file I/O — see the leak note above
     those tables.
@@ -6728,8 +6792,16 @@ def _run_brain_loop_stream(
         return "data: " + json.dumps({"type": "done", "route": timing["route"],
                                       "usage": usage, **fields}) + "\n\n"
 
+    source_receipt_event = (
+        "data: " + json.dumps({"type": "exact_source_receipt", **source_receipt}) + "\n\n"
+        if source_receipt else ""
+    )
     # Emit meta first (always)
     yield f"data: {json.dumps(meta_event)}\n\n"
+    if context_receipt is not None:
+        yield "data: " + json.dumps({"type": "context_receipt", **context_receipt}) + "\n\n"
+    if source_receipt_event:
+        yield source_receipt_event
     yield _status_event("start", _t0, _STAGE_LABELS["start"])
 
     annotations: list[dict] = []
@@ -6805,6 +6877,8 @@ def _run_brain_loop_stream(
         user_content = f"{_combined_digest}\n\n[USER QUESTION]\n{user_content}"
         # Digest text itself NEVER goes on the wire — only that we loaded it.
         yield _status_event("grounding", _t0, _STAGE_LABELS["grounding"])
+    if source_prompt:
+        user_content = f"{source_prompt}\n\n[USER QUESTION]\n{user_content}"
 
     # Fix #4: filter client history — only role in {user,assistant} with non-empty str content
     def _filter_history_stream(h: list[dict]) -> list[dict]:
@@ -7338,6 +7412,8 @@ def _run_brain_loop_stream(
     # consumer contradicts this: mm_brain.js's finalizeDone reads only `citations` and
     # `quota`, and the response log never sees this turn (_log_brain_response drops
     # empty answers, and answer_out below still carries the REAL empty answer).
+    if source_receipt:
+        citations = citations + [source_receipt]
     yield _done_event(citations=citations, quota=meta_event.get("quota", {}),
                       usage=usage_dict, filtered=was_filtered, degraded=stub_shipped,
                       is_context_only=True)
@@ -8387,6 +8463,7 @@ def chat(
     thread_id: str | None = None,
     history: list[dict] | None = None,
     context: dict | None = None,
+    company_source_span: dict | None = None,
     root: Path | None = None,
     mode: str = "chat",
     images: list[str] | None = None,
@@ -8484,6 +8561,22 @@ def chat(
             "is_context_only": True,
         }
 
+    # Exact source grounding is a request-scoped authorization + deterministic
+    # resolution gate.  It deliberately precedes quota/provider work and keeps
+    # resolved source bytes outside `context`, thread persistence, and response logs.
+    source_attachment = None
+    if company_source_span is not None:
+        source_attachment = _resolve_company_source_attachment(
+            company_source_span, user_id, root, terminal_data_dir / "tx"
+        )
+        if source_attachment.failure:
+            return {
+                "ok": False, "error": source_attachment.failure,
+                "exact_source_receipt": json.loads(source_attachment.receipt_json),
+                "lane": lane, "thread_id": None, "quota": {}, "citations": [],
+                "filtered": False, "degraded": True, "is_context_only": True,
+            }
+
     # 2. Tier resolution (guests never touch Supabase — they are a synthetic 'guest' tier).
     if is_guest:
         tier, status, cpe = "guest", "active", None
@@ -8548,22 +8641,32 @@ def chat(
             "screened": True,
         }
 
-    # 3c. Instant routing decision. W1-B plans registered native facts first; the
+    # 3c. W1-C: compile the deterministic visible-context envelope ONCE per request,
+    #     at the same point `context` is first consumed for routing — see
+    #     research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. Lazy import:
+    #     `engine.intelligence_workspace` pulls in the W1-A registry/jsonschema
+    #     validators, so this is deferred to first actual request exactly like the
+    #     existing native-fact execution import below (never at API import time).
+    from engine.intelligence_workspace import context_compiler as _ctx_compiler  # noqa: PLC0415
+    _ctx_envelope = _ctx_compiler.compile_envelope(clean_msg, context)
+    _ctx_receipt = _ctx_compiler.compile_receipt(_ctx_envelope)
+
+    # 3d. Instant routing decision. W1-B plans registered native facts first; the
     #     existing quote-only W5 route remains the non-US compatibility island. Both
     #     decisions are pure and happen after quota/prescreen but before providers.
     _instant_t0 = time.monotonic()
     _native_plan_t0 = time.monotonic()
     _native_plan_hit = (
-        None if images or mode == "research"
-        else _native_facts.plan_native_facts(clean_msg, context)
+        None if images or mode == "research" or source_attachment is not None
+        else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
     )
     _native_route_decision_ms = _ms_since(_native_plan_t0)
     _instant_route_hit = (
-        None if images or _native_plan_hit is not None
+        None if images or source_attachment is not None or _native_plan_hit is not None
         else _instant_route(clean_msg, context)
     )
 
-    # 3d. W1-B deterministic native serve. This branch intentionally precedes
+    # 3e. W1-B deterministic native serve. This branch intentionally precedes
     #     provider construction: canonical local truth cannot depend on model health,
     #     and a typed stale/null/rights-blocked result must not fall into a model loop.
     if _native_plan_hit is not None:
@@ -8616,6 +8719,7 @@ def chat(
             "route": _native_facts.NATIVE_FACT_ROUTE,
             "symbol": _native_plan_hit.symbol,
             "native_fact_receipt": _nf_receipt,
+            "context_receipt": _ctx_receipt,
         }
 
     # 4. Build providers
@@ -8747,12 +8851,15 @@ def chat(
                 "is_context_only": True,
                 "route": "instant",
                 "latency": _i_timing,
+                "context_receipt": _ctx_receipt,
             }
             if _i_res.get("symbol"):
                 _i_result["symbol"] = _i_res["symbol"]
             return _i_result
 
     # 6. Run the tool loop
+    loop_source_kwargs = ({"source_prompt": source_attachment.resolved.prompt_block}
+                          if source_attachment else {})
     try:
         answer_text, citations, annotations, final_messages, usage_dict, commands, charts = _run_brain_loop(
             clean_msg, lane, active_history, context or {},
@@ -8762,6 +8869,7 @@ def chat(
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
             deepseek_thinking=deepseek_thinking,
+            **loop_source_kwargs,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -8802,6 +8910,11 @@ def chat(
     # 9. Cost settlement from response.usage (fix #1: real tokens, never zeros)
     in_tok = int(usage_dict.get("input_tokens") or 0)
     out_tok = int(usage_dict.get("output_tokens") or 0)
+    stream_source_kwargs = (
+        {"source_prompt": source_attachment.resolved.prompt_block,
+         "source_receipt": source_attachment.resolved.receipt}
+        if source_attachment else {}
+    )
     try:
         _ac.record_usage(
             lane=usage_lane,
@@ -8831,7 +8944,7 @@ def chat(
     result: dict = {
         "ok": True,
         "reply": answer_text,
-        "citations": citations,
+        "citations": citations + ([source_attachment.resolved.receipt] if source_attachment else []),
         "lane": lane,
         "model": model,
         "thread_id": effective_thread_id,
@@ -8843,6 +8956,8 @@ def chat(
         # hands the record back on the usage dict; see _run_brain_loop's docstring).
         "route": "deep",
         "latency": usage_dict.get("latency") or _new_turn_timing("deep"),
+        "context_receipt": _ctx_receipt,
+        "exact_source_receipt": source_attachment.resolved.receipt if source_attachment else None,
     }
     if all_annotations:
         result["annotations"] = all_annotations
@@ -8874,6 +8989,7 @@ def chat_stream(
     thread_id: str | None = None,
     history: list[dict] | None = None,
     context: dict | None = None,
+    company_source_span: dict | None = None,
     root: Path | None = None,
     mode: str = "chat",
     images: list[str] | None = None,
@@ -8950,6 +9066,18 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
         return
 
+    source_attachment = None
+    if company_source_span is not None:
+        source_attachment = _resolve_company_source_attachment(
+            company_source_span, user_id, root, terminal_data_dir / "tx"
+        )
+        if source_attachment.failure:
+            receipt = json.loads(source_attachment.receipt_json)
+            yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'none', 'thread_id': None, 'quota': {}})}\n\n"
+            yield f"data: {json.dumps({'type': 'exact_source_receipt', **receipt})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True, 'exact_source_receipt': receipt})}\n\n"
+            return
+
     # 2. Tier + quota (guests never touch Supabase — synthetic 'guest' tier).
     if is_guest:
         tier, status, cpe = "guest", "active", None
@@ -8996,21 +9124,30 @@ def chat_stream(
             flags={"screened": True})
         return
 
-    # 2c. Instant routing decision — W1-B native facts first, then the preserved
+    # 2c. W1-C: compile the deterministic visible-context envelope ONCE per request
+    #     — see research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. Lazy
+    #     import for the same reason as chat(): defer the W1-A registry/jsonschema
+    #     pull to first actual request, never API import time.
+    from engine.intelligence_workspace import context_compiler as _ctx_compiler  # noqa: PLC0415
+    _ctx_envelope = _ctx_compiler.compile_envelope(clean_msg, context)
+    _ctx_receipt = _ctx_compiler.compile_receipt(_ctx_envelope)
+    _ctx_receipt_event = "data: " + json.dumps({"type": "context_receipt", **_ctx_receipt}) + "\n\n"
+
+    # 2d. Instant routing decision — W1-B native facts first, then the preserved
     #     quote-only compatibility route. Both remain behind quota and prescreen.
     _instant_t0 = time.monotonic()
     _native_plan_t0 = time.monotonic()
     _native_plan_hit = (
-        None if images or mode == "research"
-        else _native_facts.plan_native_facts(clean_msg, context)
+        None if images or mode == "research" or source_attachment is not None
+        else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
     )
     _native_route_decision_ms = _ms_since(_native_plan_t0)
     _instant_route_hit = (
-        None if images or _native_plan_hit is not None
+        None if images or source_attachment is not None or _native_plan_hit is not None
         else _instant_route(clean_msg, context)
     )
 
-    # 2d. Deterministic W1-B native stream. Meta/status go out before owner I/O;
+    # 2e. Deterministic W1-B native stream. Meta/status go out before owner I/O;
     #     the first delta already contains a typed fact, so TTFV is never gamed by
     #     content-free progress. Typed unavailability stays on this route.
     if _native_plan_hit is not None:
@@ -9020,6 +9157,7 @@ def chat_stream(
             if _nf_thread_id:
                 _append_message(_nf_thread_id, "user", clean_msg)
         yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'native-fact.v1', 'thread_id': _nf_thread_id, 'quota': quota_info})}\n\n"
+        yield _ctx_receipt_event
         yield _status_event("native", _instant_t0, _STAGE_LABELS["native"],
                             detail=_native_plan_hit.symbol)
         _nf_exec = _native_facts.execute_native_fact_plan(
@@ -9047,6 +9185,7 @@ def chat_stream(
             "degraded": bool(_nf_receipt.get("failure")),
             "is_context_only": True,
             "native_fact_receipt": _nf_receipt,
+            "context_receipt": _ctx_receipt,
         }) + "\n\n"
         if _nf_thread_id:
             try:
@@ -9145,7 +9284,6 @@ def chat_stream(
         "thread_id": effective_thread_id,
         "quota": quota_info,
     }
-
     # 5b. Instant-fact serve (W5 Contract I). Event shape is the contract's own minimum:
     #     meta → delta → done, exactly like the pre-screen path the widget already
     #     handles. ANY failure inside _instant_answer returns None and the deep loop
@@ -9163,11 +9301,13 @@ def chat_stream(
             _i_model = _i_res.get("model") or model
             _i_usage = dict(_i_res.get("usage") or {})
             yield f"data: {json.dumps({**meta_event, 'model': _i_model})}\n\n"
+            yield _ctx_receipt_event
             yield _delta_sse(_i_res["text"], _i_timing, _instant_t0)
             _timing_stamp(_i_timing, "total_ms", _instant_t0)
             _i_usage["latency"] = _i_timing
             yield "data: " + json.dumps({
                 "type": "done", "route": "instant", "citations": [],
+                "context_receipt": _ctx_receipt,
                 "quota": quota_info, "usage": _i_usage, "filtered": False,
                 "degraded": False, "is_context_only": True}) + "\n\n"
 
@@ -9213,6 +9353,11 @@ def chat_stream(
     usage_out: list = []
     answer_out: list = []
     thinking_out: list = []
+    stream_source_kwargs = (
+        {"source_prompt": source_attachment.resolved.prompt_block,
+         "source_receipt": source_attachment.resolved.receipt}
+        if source_attachment else {}
+    )
     try:
         yield from _run_brain_loop_stream(
             clean_msg, lane, active_history, context or {},
@@ -9226,6 +9371,8 @@ def chat_stream(
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
             deepseek_thinking=deepseek_thinking,
+            context_receipt=_ctx_receipt,
+            **stream_source_kwargs,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)

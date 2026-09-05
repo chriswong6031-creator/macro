@@ -203,3 +203,58 @@
 {"asof": "2026-08-25", "domain": "commodity", "field": "commodity_ladder", "from_value": "TOP WATCH", "to_value": "RALLY ON", "macro_context_id": "437f31d965334cd7"}
 {"asof": "2026-08-25", "domain": "commodity", "field": "commodity_shock_state", "from_value": "blowoff", "to_value": "normal", "macro_context_id": "437f31d965334cd7"}
 {"asof": "2026-08-25", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Blowing off \u2014 extended", "to_value": "Extended \u2014 late cycle", "macro_context_id": "437f31d965334cd7"}
+{"asof": "2026-08-26", "domain": "us", "field": "us_rate_pressure", "from_value": "neutral", "to_value": "pressure", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "us", "field": "us_froth_band", "from_value": "calm", "to_value": "watch", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "us", "field": "us_gamma_regime", "from_value": "short", "to_value": "long", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "us", "field": "us_vrp_state", "from_value": "collapsing (de-risk)", "to_value": "normal", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "fx", "field": "fx_risk", "from_value": "risk-on", "to_value": "risk-off", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "soft", "to_value": "supportive", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "fx", "field": "fx_regime_radar", "from_value": "reflation_risk_on", "to_value": null, "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "fx", "field": "usd_valuation", "from_value": "rich", "to_value": "fair", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-26", "domain": "commodity", "field": "commodity_ladder", "from_value": "RALLY ON", "to_value": "TURN SIGNALED", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-27", "domain": "us", "field": "us_froth_band", "from_value": "watch", "to_value": "calm", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "collapsing (de-risk)", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "fx", "field": "fed_path_lean", "from_value": "dovish_repricing", "to_value": "steady", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "commodity", "field": "commodity_ladder", "from_value": "TURN SIGNALED", "to_value": "RALLY ON", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "intl", "field": "intl_au_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-28", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bear_steepener", "to_value": "bull_steepener", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "fx", "field": "fx_risk", "from_value": "risk-off", "to_value": "risk-on", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "fx", "field": "fed_path_lean", "from_value": "steady", "to_value": "dovish_repricing", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "fx", "field": "fx_usdchf_action", "from_value": "FLAT", "to_value": "LONG", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "commodity", "field": "commodity_mtf_grade", "from_value": "TREND-FOLLOW", "to_value": "BUY-THE-DIP", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "commodity", "field": "commodity_ladder", "from_value": "RALLY ON", "to_value": "TOP WATCH", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "commodity", "field": "commodity_shock_state", "from_value": "normal", "to_value": "blowoff", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Extended \u2014 late cycle", "to_value": "Blowing off \u2014 extended", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "commodity", "field": "gold_action", "from_value": "BUY", "to_value": "HOLD", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-28", "domain": "intl", "field": "intl_gb_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "3a9bfb99ed70a96e"}
+{"asof": "2026-08-29", "domain": "us", "field": "us_vrp_state", "from_value": "collapsing (de-risk)", "to_value": "normal", "macro_context_id": "c6a06d2f9fe0285f"}
+{"asof": "2026-08-29", "domain": "fx", "field": "fed_path_lean", "from_value": "dovish_repricing", "to_value": "steady", "macro_context_id": "c6a06d2f9fe0285f"}
+{"asof": "2026-08-29", "domain": "commodity", "field": "silver_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "c6a06d2f9fe0285f"}
+{"asof": "2026-08-31", "domain": "fx", "field": "fx_regime_radar", "from_value": null, "to_value": "carry_unwind", "macro_context_id": "b83677f4126f3056"}
+{"asof": "2026-08-31", "domain": "commodity", "field": "commodity_shock_state", "from_value": "blowoff", "to_value": "normal", "macro_context_id": "b83677f4126f3056"}
+{"asof": "2026-08-31", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Blowing off \u2014 extended", "to_value": "Extended \u2014 late cycle", "macro_context_id": "b83677f4126f3056"}
+{"asof": "2026-08-31", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "b83677f4126f3056"}
+{"asof": "2026-09-01", "domain": "us", "field": "us_liquidity_quality", "from_value": "contracting", "to_value": "neutral-hollow", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "us", "field": "us_liquidity_overlay", "from_value": "contracting", "to_value": "neutral", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bull_steepener", "to_value": "bull_flattener", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "fx", "field": "fx_regime_radar", "from_value": "carry_unwind", "to_value": null, "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "fx", "field": "fed_path_lean", "from_value": "steady", "to_value": "hawkish_repricing", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "fx", "field": "fx_usdchf_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "commodity", "field": "commodity_shock_state", "from_value": "normal", "to_value": "blowoff", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "commodity", "field": "commodity_confluence_state", "from_value": "Extended \u2014 late cycle", "to_value": "Neutral", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "hk", "field": "hk_quad", "from_value": "Q4", "to_value": "Q1", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-01", "domain": "canada", "field": "canada_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "f3d5a242fd6d3e27"}
+{"asof": "2026-09-04", "domain": "us", "field": "us_risk_radar", "from_value": "calm", "to_value": "watch", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "us", "field": "us_rate_pressure", "from_value": "pressure", "to_value": "neutral", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bull_flattener", "to_value": "bear_flattener", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "fx", "field": "usd_regime", "from_value": "US growth premium", "to_value": "Global reflation", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "fx", "field": "fx_regime_radar", "from_value": null, "to_value": "intervention_risk", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "commodity", "field": "commodity_mtf_grade", "from_value": "BUY-THE-DIP", "to_value": "TREND-FOLLOW", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "commodity", "field": "commodity_ladder", "from_value": "TOP WATCH", "to_value": "TURN SIGNALED", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "commodity", "field": "commodity_shock_state", "from_value": "blowoff", "to_value": "normal", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "hk", "field": "hk_quad", "from_value": "Q1", "to_value": "Q4", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "canada", "field": "canada_quad", "from_value": "Q3", "to_value": "Q2", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "dispersion", "field": "dispersion_state", "from_value": "lean_in", "to_value": "neutral", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "intl", "field": "intl_ez_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "9dae79205ff5c9c0"}
+{"asof": "2026-09-04", "domain": "intl", "field": "intl_in_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "9dae79205ff5c9c0"}

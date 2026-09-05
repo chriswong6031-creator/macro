@@ -33,6 +33,22 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 :root{
+  /* LIGHT-ONLY, AND THE BROWSER MUST BE TOLD (2026-08-26).
+     This page has no dark skin — no [data-theme] rules, no prefers-color-scheme
+     block, just the fixed light tokens below. A page that declares no
+     color-scheme is fair game for the UA's own dark-mode transform (Chrome/Edge
+     "Auto Dark Mode for Web Contents", and the same class of extension), which
+     repaints backgrounds by luminance while leaving text set through custom
+     properties exactly where it was. The result is not our dark mode; it is our
+     light mode with the surfaces inverted underneath it — reported from the
+     wild as dark bands still carrying --ink navy headlines, all but invisible.
+
+     `only` is the load-bearing keyword, not decoration: plain `light` states a
+     preference the UA may still override, while `only light` forbids the
+     override (CSS Color Adjust §2.1). Do NOT add a dark path here to "support"
+     the transform — the fix is to opt out of it and stay the one design this
+     page was drawn as. A page that grows a real dark skin drops the `only`. */
+  color-scheme:only light;
   --bg:#f7f8fa; --panel:#ffffff; --panel-2:#fbfcfd;
   /* STROKE TIERS — border weight is information (DIRECTION §2). Four weights, not one:
      weak = dividers INSIDE a card; hair = the default/subtle card edge; hair-2 = a

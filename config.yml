@@ -490,6 +490,30 @@ fred:
       # MRI-W11 Track S data adoptions (context series; no champion spec change — chartered for future use):
       TRMMEANCPIM158SFRBCLE: trimmed_mean_cpi  # Cleveland Fed 16% trimmed-mean CPI (monthly, % change SA) — alternative core inflation measure
       JTSQUR: jolts_quits_rate              # JOLTS quits rate (monthly, %) — voluntary separation signal; leading labor-market health indicator
+    # F01 R6 (2026-09-04): consumer_payments workspace composable core — the census-
+    # sanctioned "trivial config completeness" appends (R5/R6 source census section
+    # Consumer). The nightly keyless-CSV collect creates data/fred/<ID>.parquet on its
+    # next run; until then the workspace composer types these SOURCE_FAILED and
+    # self-heals when the parquets land. Additive only — no other lane reads them yet.
+    consumer_household:
+      TOTALSL: consumer_credit_total          # G.19 total consumer credit owned & securitized ($bn SA, monthly, ~5th business day of M+2)
+      REVOLSL: consumer_credit_revolving      # G.19 revolving consumer credit ($bn SA, monthly)
+      NONREVSL: consumer_credit_nonrevolving  # G.19 nonrevolving consumer credit ($bn SA, monthly)
+      PSAVERT: personal_saving_rate           # personal saving rate (% of DPI, monthly SA, BEA ~end of M+1)
+      DSPIC96: real_disposable_income         # real disposable personal income (chained $bn SAAR, monthly SA)
+      DRCCLACBS: cc_delinquency_rate          # credit-card delinquency rate, all commercial banks (%, quarterly SA, ~70d after quarter end)
+      DRSFRMACBS: mortgage_delinquency_rate   # single-family mortgage delinquency rate (%, quarterly SA)
+    # Expansion (2026-09-04): trade_flows workspace composable core — the FT-900
+    # BoP-basis dollar flows + BLS trade price indexes, all keyless-CSV
+    # reachable. None collected before this append: the workspace publishes an
+    # honestly-degraded first print and self-heals when the nightly collect
+    # lands the parquets. Additive only — no other lane reads them yet.
+    trade_flows:
+      BOPGSTB: trade_balance_goods_services   # trade balance, goods+services, BoP basis ($M SA monthly; negative = deficit; FT-900 ~35-40d after month end)
+      BOPTEXP: exports_goods_services         # exports of goods+services, BoP basis ($M SA monthly)
+      BOPTIMP: imports_goods_services         # imports of goods+services, BoP basis ($M SA monthly)
+      IR: import_price_index                  # import price index, all commodities (index, NSA monthly, BLS ~mid-M+1)
+      IQ: export_price_index                  # export price index, all commodities (index, NSA monthly)
   # NOTE (2026-07-16): a header-less copy of the OLD yahoo ticker block (retries/
   # backoff_base_s/batch_size + a stale tickers: map) used to sit right here — a
   # remnant of the 2026-06-29 "KeyError: 'yahoo'" incident, absorbed into fred: when
@@ -2318,15 +2342,19 @@ breadth:
                   # are keyed on it.
     FISV: FI      # Fiserv renamed FISV->FI in 2023 — the page still shows the OLD symbol
                   # (Yahoo does too, hence the inverse entry in lib/ticker_aliases)
-    VMRK: EQR     # Equity Residential renamed EQR->VMRK on the NYSE 2026-08-18 (SEC EDGAR
-                  # CIK 0000906107, 8-K accession 0001140361-26-033377, Item 5.03 —
-                  # research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md
-                  # AMENDMENT ruling 7 / M6). EQR stays the stored key (same MMC->MRSH
-                  # precedent; lib/ticker_aliases.YAHOO_FETCH_ALIASES["EQR"]="VMRK"
-                  # fetches under the NEW symbol and stores under the OLD one). Does NOT
-                  # retire the pre-existing data/stocks/EQR.parquet + VMRK.parquet double
-                  # store — that is an owed breadth-lane retirement, out of scope here
-                  # (§10 forbids editing price stores).
+    # VMRK: EQR was removed 2026-08-28 (the owed breadth-lane retirement named by
+    # D2B1_R1_FROZEN_CONTRACT AMENDMENT ruling 7 / M6, executed as the EQR->VMRK key
+    # migration under the #4622 protocol, operator-ratified). The pin was measured
+    # actively harmful here: collectors/breadth.py fetches the PINNED key literally
+    # (it never imports lib/ticker_aliases), and Yahoo stopped serving 'EQR' after the
+    # 2026-08-18 NYSE rename (SEC EDGAR CIK 0000906107, 8-K accession
+    # 0001140361-26-033377, Item 5.03) — so from 2026-08-20 the pin froze BOTH cache
+    # columns: EQR advanced only on 0-volume 63.66 ghost bars through 08-21, and the
+    # live VMRK column stopped being written at 08-19. VMRK is now the stored key
+    # everywhere (stocks/baskets/breadth/ledger); the EQR cache-column history was
+    # spliced into the VMRK columns in the same change (overlap ratio 1.0, ghost bars
+    # dropped). The MMC/FISV pins above remain valid: Yahoo still serves those old
+    # symbols, so their pinned fetches still return live bars.
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
@@ -2627,6 +2655,20 @@ stock_search:
     - ARES   # Ares Management
     - ARLP   # Alliance Resource Partners
     - ARQT   # Arcutis Biotherapeutics
+    - AVB    # AvalonBay Communities — DELISTED 2026-08-17 (acquired by Vivmark
+             # Residential via merger; last session 08-14). Membership kept for the
+             # same reason as CTRA/TPH: page, search entry and deep links stay alive
+             # (CSP-R1). The exit row in config/delisted_symbols.yml stops the
+             # nightly fetch — Yahoo answers this dead string with the acquirer's
+             # re-based tape, so fetching it splices a foreign series (2026-08-22
+             # incident). Do NOT delete this line.
+    - LEG    # Leggett & Platt — DELISTED 2026-08-27 (acquired by Somnigroup
+             # International; merger closed 08-26, 25-NSE accession
+             # 0000876661-26-000712). Membership added WITH the exit row: LEG was
+             # only ever universe()-reachable through the S&P 600 constituents,
+             # and the exit-ledger scrape exclusion removes it there — without a
+             # curated line its page and deep links would go dark (CSP-R1), the
+             # exact drop the CTRA/TPH/AVB lines above exist to prevent.
     - AWK    # American Water Works
     - AXP    # American Express
     - AZO    # AutoZone
@@ -2695,6 +2737,11 @@ stock_search:
     - ERIE   # Erie Indemnity
     - ET     # Energy Transfer
     - FBIN   # Fortune Brands Innovations
+    - FBRX   # Forte Biosciences — DELISTED 2026-08-27 (acquired by argenx, US$77.00
+             # cash tender; last session 08-26). Membership kept for the same reason
+             # as CTRA/TPH/AVB: page, search entry and deep links stay alive
+             # (CSP-R1). The exit row in config/delisted_symbols.yml stops the
+             # nightly fetch. Do NOT delete this line.
     - FCFS   # FirstCash Holdings
     - FCNCA  # First Citizens BancShares
     - FDS    # FactSet Research
@@ -2839,6 +2886,12 @@ stock_search:
     - TTD    # The Trade Desk
     - TTWO   # Take-Two Interactive
     - TWLO   # Twilio
+    - TWO    # Two Harbors Investment — DELISTED 2026-08-25 (acquired by CrossCountry
+             # Mortgage, US$12.00 cash + $0.20326 stub dividend; last session 08-24).
+             # Common stock only — the TWO-PA/PB/PC preferreds and TWOD notes remain
+             # NYSE-listed. Membership kept per CSP-R1 (page/search/deep links stay
+             # alive); the exit row in config/delisted_symbols.yml stops the nightly
+             # fetch. Do NOT delete this line.
     - TXN    # Texas Instruments
     - TYL    # Tyler Technologies
     - UNP    # Union Pacific
@@ -3089,6 +3142,13 @@ stock_search:
     # one that says Coterra Energy stopped trading.
     CTRA:  {name: "Coterra Energy", sector: "Energy"}
     TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
+    AVB:   {name: "AvalonBay Communities", sector: "Real Estate"}
+    LEG:   {name: "Leggett & Platt", sector: "Consumer Discretionary"}
+    # FBRX and TWO: same rule — delisted 2026-08 (config/delisted_symbols.yml),
+    # labels keep their pages naming the company. TWO is a mortgage REIT, which
+    # GICS files under Financials, not Real Estate.
+    FBRX:  {name: "Forte Biosciences", sector: "Health Care"}
+    TWO:   {name: "Two Harbors Investment", sector: "Financials"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
@@ -3871,6 +3931,22 @@ quality:
     GOLD: "Gold.com, Inc. (NASDAQ dir 'Gold.com, Inc. Common Stock'; EDGAR CIK 1591588; FIGI BBG005ZVDK48; fka A-Mark Precious Metals) under its 2025-12-02 NASDAQ AMRK->NYSE GOLD transfer — store holds A-Mark/Gold.com's full history (2014-03-17->, its spinoff listing) and NEVER held Barrick: the file was born 2026-06-30, after the reuse. Prior symbol holders: Barrick (NYSE GOLD 2019-01-02 -> 2025-05-08; renamed Barrick Mining, NYSE 'B' since 2025-05-09); Randgold Resources (NASDAQ GOLD until the 2019-01-01 Barrick merger). CONSUMER DEFECT REPAIRED (PR #5632): gold_miners removes the Barrick-labelled GOLD row entirely, carries Barrick Mining (EDGAR CIK 756894) under NYSE 'B', and seeds curated data/baskets/ohlcv/B.parquet. GOLD remains a valid Gold.com instrument; this was a consumer-label repair, not a store quarantine."
   delisted_printing_acks:
     - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
+    - ANGPY                      # OTC (Pink) ADR — Valterra Platinum Limited, JSE-primary PGM producer
+                                 # (renamed from Anglo American Platinum 2025; ADR ticker unchanged).
+                                 # SEC CIK 1673520 formerNames 'Anglo American Platinum Limited/ADR'
+                                 # -> Valterra; F-6EF accession 0001019155-25-000173 (2025-05-14);
+                                 # OpenFIGI ANGPY = 'VALTERRA PLATINUM-SPON ADR' (live). Same
+                                 # never-in-the-directory-by-design shape as RHHBY; pgm_miners member.
+    - IMPUY                      # OTCQX ADR — Impala Platinum Holdings Ltd, JSE-primary (unchanged
+                                 # issuer: SEC CIK 12318, formerNames empty; routine F-6 renewal
+                                 # accession 0001193805-26-000853 eff. 2026-06-30; OpenFIGI IMPUY =
+                                 # 'IMPALA PLATINUM-SPON ADR', live). Same RHHBY shape; pgm_miners member.
+    - STRS                       # Stratus Properties — voluntarily left NASDAQ under its Plan of
+                                 # Complete Liquidation and Dissolution (Form 25 2026-07-31, effective
+                                 # ~08-10; Forms 15 08-10; CIK 885508) but the shares legitimately keep
+                                 # printing real OTC bars while liquidating distributions are pending.
+                                 # NOT an exit-row candidate while the tape lives — see the STRS note in
+                                 # config/delisted_symbols.yml for receipts and the graduation path.
   # --- ticker key migrations (engine/ledger_identity) ---
   # The MACHINE-READABLE half of the ack text above. The acks say a rename happened in
   # prose; nothing could read "under its 2026-06-24 SATS->ECHO rename" and act on it, so
@@ -3897,6 +3973,19 @@ quality:
   # `python scripts/migrate_track_record_keys.py --apply`, which refuses to run unless
   # its own losslessness receipt is clean.
   ticker_key_migrations:
+    # EQR -> VMRK (Equity Residential renamed Vivmark Residential, NYSE EQR->VMRK eff.
+    # 2026-08-18, SEC EDGAR CIK 0000906107, 8-K accession 0001140361-26-033377) is a
+    # ratified KEY MIGRATION executed 2026-08-28 at the STORE/membership/claims layer,
+    # but deliberately NOT declared here: track_record.parquet holds TWO NON-IDENTICAL
+    # computations of the company's history (266 EQR rows first_seen 2026-06/07 + 253
+    # VMRK rows re-fired first_seen 2026-08-05 on the re-adjusted tape — 61 shared
+    # (date,type) keys with 1,155 disagreeing cells, ~1% entry/forward price deltas
+    # from the different dividend-adjustment epochs), so migration_receipt is NOT
+    # lossless and tests/test_ledger_identity.py::TestLiveLedger refuses a declared
+    # row until the ledger's duplicate is adjudicated (the candidate repair — pruning
+    # the 2026-08-05 VMRK re-admission block — is an append-only-charter act needing
+    # its own operator ratification). With the EQR price stores retired, no scan can
+    # re-fire EQR rows, so the map's ingest-guard value is moot in the meantime.
     SATS: ECHO   # EchoStar Corp renamed SATS->ECHO effective 2026-06-24 (NASDAQ dir
                  # 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00 — the
                  # same receipts as the ECHO ack above). ECHO is the key the stack now
@@ -4861,6 +4950,33 @@ master_brain:
   max_tokens: 8000                # V4 Pro is a REASONING model — thinking tokens count
                                   # against this cap, so the JSON needs headroom above
                                   # the ~1.2k it occupies (4000 truncated china/btc mid-JSON)
+  # provider ladder (Codex -> Claude oauth/API -> DeepSeek). DeepSeek stays LAST
+  # because it is the only metered pay-per-use rung — Codex and Claude are
+  # subscriptions already paid for. A DeepSeek balance exhaustion now falls
+  # back instead of blanking the brief.
+  provider_order: [codex, oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  oauth_pool_lane: master-brain
+  anthropic_key_env: ANTHROPIC_API_KEY
+  opus_model: claude-opus-4-8
+  deepseek_key_env: DEEPSEEK_API_KEY
+  deepseek_model: deepseek-v4-pro
+  usage_lane: master-brain
+  # KEEP THE MANDATED ORDER even when subscription keys are cooling. llm_auth's
+  # cooling sort moves recently-429'd cap_ids to the back; the DeepSeek rung
+  # carries a cap_id and ANTHROPIC_API_KEY is not a configured repo secret, so on
+  # a night when every Claude key is cooling (that exact shape happened
+  # 2026-08-03) DeepSeek becomes the only non-cooling rung and sorts to FIRST —
+  # the metered floor silently serving the whole night. That is the "SILENT
+  # ROUTING INVERSION" llm_auth warns about, and it inverts the one thing this
+  # lane's order exists to state. Cooling rungs are still tried here, just in the
+  # configured order: a cooling key fails fast with a 429 and the waterfall moves
+  # on, which costs a cheap failed request instead of a paid DeepSeek brief.
+  respect_provider_cooling: false
+  # NOTE: on the DeepSeek rung, build_providers wraps the client in
+  # _deepseek_no_thinking(), so V4 Pro serves this lane WITHOUT reasoning mode.
+  # The max_tokens note above budgets for thinking tokens and no longer applies
+  # when DeepSeek serves; it still applies to the Claude rungs.
   translate_zh: true              # attach a 中文 version (cheap V4-Flash pass) per brief
   # rotation_thesis: "<override the macro lens's liquidity-rotation hypothesis>"
   # china_thesis: "<override the china lens's working thesis>"
@@ -4886,6 +5002,25 @@ ai_desk:
   llm_base_url: https://api.deepseek.com/anthropic
   llm_model: deepseek-v4-pro      # reasoning tier; swap to claude-opus-4-8 later
   max_tokens: 8000                # reasoning model — thinking tokens count vs cap
+  # provider ladder (Codex -> Claude oauth/API -> DeepSeek). DeepSeek stays LAST
+  # because it is the only metered pay-per-use rung — Codex and Claude are
+  # subscriptions already paid for. Own oauth_pool_lane/usage_lane keep AI
+  # Desk cost attribution distinct from master-brain.
+  provider_order: [codex, oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  oauth_pool_lane: ai-desk
+  anthropic_key_env: ANTHROPIC_API_KEY
+  opus_model: claude-opus-4-8
+  deepseek_key_env: DEEPSEEK_API_KEY
+  deepseek_model: deepseek-v4-pro
+  usage_lane: ai-desk
+  # Keep the mandated order even when subscription keys are cooling — see the
+  # master_brain block above for why the cooling sort would otherwise promote the
+  # metered DeepSeek rung to FIRST on exactly the nights it should serve last.
+  respect_provider_cooling: false
+  # As above: the DeepSeek rung is wrapped by _deepseek_no_thinking(), so V4 Pro
+  # serves this lane with reasoning mode OFF; the max_tokens note is a Claude-rung
+  # budget now.
   max_theses: 3                   # cap leans per note (honesty over content)
   default_horizon_d: 20           # trading-day horizon when the model omits one
   falsifier_defaults:

@@ -22,6 +22,7 @@ import json
 import pathlib
 import sys
 import tempfile
+from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import patch
 
@@ -29,6 +30,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
+from engine.intelligence_workspace import context_compiler as cc  # noqa: E402
 from engine.neuralweb import brain_gateway as gw  # noqa: E402
 from engine.neuralweb import native_facts as nf  # noqa: E402
 from scripts import brain_latency_bench as bench  # noqa: E402
@@ -346,10 +348,12 @@ def test_instant_stream_emits_meta_delta_done_with_route_and_latency(tmp_path):
     with patch.object(gw, "_tool_get_quote", return_value=dict(_GOOD_QUOTE)):
         events = _sse(_stream(_root(), tmp_path, client))
 
-    assert [e["type"] for e in events] == ["meta", "delta", "done"]
+    # W1-C: context_receipt is now a first-class event, always right after meta.
+    assert [e["type"] for e in events] == ["meta", "context_receipt", "delta", "done"]
     assert events[0]["lane"] == "fast"
-    assert events[1]["text"].startswith("AAPL is at 214.30")
-    done = events[2]
+    assert events[1]["schema"] == "ai_context_receipt.v1"
+    assert events[2]["text"].startswith("AAPL is at 214.30")
+    done = events[3]
     assert done["route"] == "instant"
     assert done["citations"] == []
     assert done["degraded"] is False
@@ -398,7 +402,7 @@ def _deep_stream_spy(calls: list):
     def _loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb,
               meta_event, usage_out=None, answer_out=None, thinking_out=None,
               mode="chat", image_blocks=None, providers=None, user_id="", user_email="",
-              effort=None, thinking_mode=None, deepseek_thinking=None):
+              effort=None, thinking_mode=None, deepseek_thinking=None, context_receipt=None):
         calls.append(message)
         yield f"data: {json.dumps(meta_event)}\n\n"
         yield f"data: {json.dumps({'type': 'delta', 'text': _DEEP_REPLY})}\n\n"
@@ -2348,13 +2352,17 @@ def test_w1b_gateway_native_stream_is_resumable_shape_and_first_delta_is_a_fact(
                                 "INOD Stage", "u_native_stream", lane="fast", root=_root(),
                                 context={"symbol": "AAOI"},
                             )))
-    assert [event["type"] for event in events] == ["meta", "status", "delta", "done"]
+    # W1-C: context_receipt is now a first-class event, always right after meta.
+    assert [event["type"] for event in events] == \
+        ["meta", "context_receipt", "status", "delta", "done"]
     assert events[0]["model"] == "native-fact.v1"
-    assert "stage.current" in events[2]["text"]
+    assert events[1]["schema"] == "ai_context_receipt.v1"
+    assert "stage.current" in events[3]["text"]
     done = events[-1]
     assert done["route"] == "instant/native-fact"
     assert done["native_fact_receipt"]["facts"][0]["fact_fingerprint"] == \
         "fp-stage.current"
+    assert done["context_receipt"]["schema"] == "ai_context_receipt.v1"
     latency = done["usage"]["latency"]
     assert latency["route"] == "instant/native-fact"
     assert isinstance(latency["ttfv_ms"], int)
@@ -2412,17 +2420,21 @@ def test_w1b_native_stream_disconnect_resume_replays_tail_without_second_quota(t
                                         user_id="u_native_resume",
                                     )
                                     first = brain_runs.follow(run, interval=0.05)
-                                    received = [next(first), next(first), next(first)]
+                                    # W1-C: context_receipt is now a first-class event,
+                                    # always right after meta — one more event to drain
+                                    # before the disconnect.
+                                    received = [next(first), next(first), next(first), next(first)]
                                     first.close()
                                     tail = list(brain_runs.follow(
-                                        run, cursor=3, interval=0.05,
+                                        run, cursor=4, interval=0.05,
                                     ))
         first_events = [json.loads(chunk[5:].strip()) for chunk in received]
         tail_events = [json.loads(chunk[5:].strip()) for chunk in tail
                        if chunk.startswith("data:")]
-        assert [event["type"] for event in first_events] == ["meta", "status", "delta"]
+        assert [event["type"] for event in first_events] == \
+            ["meta", "context_receipt", "status", "delta"]
         assert [event["type"] for event in tail_events] == ["done"]
-        assert first_events[2]["text"].startswith("INOD — Stage: 2")
+        assert first_events[3]["text"].startswith("INOD — Stage: 2")
         assert tail_events[0]["native_fact_receipt"]["facts"][0]["field_id"] == \
             "stage.current"
         assert quota_calls == 1
@@ -2437,3 +2449,257 @@ def test_w1b_simple_price_with_receipt_instructions_still_plans_native():
     assert plan is not None
     assert plan.symbol == "AAPL"
     assert plan.field_ids == ("market.price.last",)
+
+
+# ---------------------------------------------------------------------------
+# W1-C: context_receipt — guest/authenticated stream+chat parity (12, 13),
+# resume replay with the original revision (14), five-fact parity through an
+# explicit ai_context envelope (16), and deep-route receipt carriage (17).
+# See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("is_guest", [False, True])
+def test_w1c_native_stream_emits_context_receipt_for_guest_and_authenticated(tmp_path, is_guest):
+    """12+13: both guest and authenticated stream turns carry a context_receipt
+    right after meta, and quota/thread behavior is exactly what it always was —
+    guest is stateless, authenticated persists one user+assistant turn."""
+    plan = nf.plan_native_facts("INOD Stage", {"symbol": "AAOI"})
+    appended: list[tuple[str, str]] = []
+    quota_calls = 0
+
+    def _quota(*args, **kwargs):
+        nonlocal quota_calls
+        quota_calls += 1
+        return True, {"lane": "fast", "remaining": 9, "limit": 10, "period": "fixture"}
+
+    with patch.object(gw, "_resolve_tier", return_value={
+            "tier": "pro", "status": "active", "current_period_end": None}):
+        with patch.object(gw, "_check_and_increment_quota", side_effect=_quota):
+            with patch.object(gw, "_check_and_increment_guest_quota", side_effect=_quota):
+                with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                    with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                      return_value=_gateway_native_execution()):
+                        with patch.object(gw, "_build_lane_providers",
+                                          side_effect=AssertionError("provider must not be built")):
+                            with patch.object(gw, "_ensure_thread", return_value="thread-1"):
+                                with patch.object(
+                                    gw, "_append_message",
+                                    side_effect=lambda thread, role, text, **kw:
+                                        appended.append((thread, role)),
+                                ):
+                                    events = _sse(list(gw.chat_stream(
+                                        "INOD Stage", "u_ctx_guest_vs_auth", lane="fast",
+                                        root=_root(), context={"symbol": "AAOI"},
+                                        is_guest=is_guest, guest_aid="gaid", guest_ip="gip",
+                                    )))
+    assert [e["type"] for e in events] == ["meta", "context_receipt", "status", "delta", "done"]
+    receipt_event = events[1]
+    assert receipt_event["schema"] == "ai_context_receipt.v1"
+    assert receipt_event["effective_context"]["source"] == "explicit"
+    done = events[-1]
+    assert done["context_receipt"]["schema"] == "ai_context_receipt.v1"
+    assert quota_calls == 1
+    if is_guest:
+        # Guests are stateless: no thread row, nothing appended.
+        assert appended == []
+        assert events[0]["thread_id"] is None
+    else:
+        assert [row[1] for row in appended] == ["user", "assistant"]
+        assert events[0]["thread_id"] == "thread-1"
+
+
+@pytest.mark.parametrize("is_guest", [False, True])
+def test_w1c_native_chat_response_carries_context_receipt_for_guest_and_authenticated(
+        tmp_path, is_guest):
+    """Same as above for the non-streaming chat() response shape."""
+    plan = nf.plan_native_facts("INOD Stage", {"symbol": "AAOI"})
+
+    def _quota(*args, **kwargs):
+        return True, {"lane": "fast", "remaining": 9, "limit": 10, "period": "fixture"}
+
+    with patch.object(gw, "_resolve_tier", return_value={
+            "tier": "pro", "status": "active", "current_period_end": None}):
+        with patch.object(gw, "_check_and_increment_quota", side_effect=_quota):
+            with patch.object(gw, "_check_and_increment_guest_quota", side_effect=_quota):
+                with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                    with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                      return_value=_gateway_native_execution()):
+                        with patch.object(gw, "_build_lane_providers",
+                                          side_effect=AssertionError("provider must not be built")):
+                            with patch.object(gw, "_ensure_thread", return_value="thread-1"):
+                                with patch.object(gw, "_append_message"):
+                                    result = gw.chat(
+                                        "INOD Stage", "u_ctx_chat", lane="fast", root=_root(),
+                                        context={"symbol": "AAOI"},
+                                        is_guest=is_guest, guest_aid="gaid", guest_ip="gip",
+                                    )
+    assert result["context_receipt"]["schema"] == "ai_context_receipt.v1"
+    assert result["context_receipt"]["effective_context"]["source"] == "explicit"
+    assert result["thread_id"] == (None if is_guest else "thread-1")
+
+
+def test_w1c_resumed_run_replays_context_receipt_with_its_original_revision(tmp_path):
+    """14: the run buffer persists whatever chat_stream() yielded, so a resumed
+    reader sees the SAME context_receipt (same revision) the live client saw —
+    never a recompiled one against moved UI state."""
+    from app import brain_runs
+
+    brain_runs.reset_for_tests()
+    ai_context = {
+        "schema": "ai_context_client.v1", "origin_id": "mount-resume", "context_revision": 7,
+        "captured_at": "2026-08-25T19:59:00Z", "pinned": [], "active": None,
+        "ambient": {"symbol": None, "timeframe": "1D", "page": "terminal", "panel": None},
+    }
+    plan = nf.plan_native_facts("INOD Stage", {"ai_context": ai_context})
+
+    def _quota(*args, **kwargs):
+        return True, {"lane": "fast", "remaining": 9, "limit": 10, "period": "fixture"}
+
+    try:
+        with patch.object(gw, "_resolve_tier", return_value={
+                "tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw, "_check_and_increment_quota", side_effect=_quota):
+                with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                    with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                      return_value=_gateway_native_execution()):
+                        with patch.object(gw, "_build_lane_providers",
+                                          side_effect=AssertionError("provider must not be built")):
+                            with patch.object(gw, "_ensure_thread", return_value=None):
+                                with patch.object(gw, "_log_brain_response"):
+                                    run = brain_runs.start(
+                                        gw.chat_stream(
+                                            "INOD Stage", "u_ctx_resume", lane="fast",
+                                            root=_root(), context={"ai_context": ai_context},
+                                        ),
+                                        user_id="u_ctx_resume",
+                                    )
+                                    # Let the run finish, then resume from a cold cursor —
+                                    # the exact "I left and came back" path.
+                                    all_events = list(brain_runs.follow(run, interval=0.05))
+        resumed = list(brain_runs.follow(run, cursor=0, interval=0.05))
+        parsed_live = [json.loads(c[5:].strip()) for c in all_events if c.startswith("data:")]
+        parsed_resumed = [json.loads(c[5:].strip()) for c in resumed if c.startswith("data:")]
+        assert parsed_live == parsed_resumed
+        receipt = next(e for e in parsed_resumed if e["type"] == "context_receipt")
+        assert receipt["origin"]["origin_id"] == "mount-resume"
+        assert receipt["origin"]["context_revision"] == 7
+    finally:
+        brain_runs.reset_for_tests()
+
+
+def test_w1c_five_fact_parity_through_explicit_context_envelope():
+    """16: for the five frozen parity fields, identity/value/status/as_of/
+    fingerprint are identical between (a) a direct resolver.resolve() call and
+    (b) the brain packet facts produced under an EXPLICIT-context request whose
+    single entity was resolved through a compiled W1-C envelope — extends the
+    existing W1-B direct-parity idiom (test_w1b_real_w1a_runtime_preserves_
+    direct_parity_and_dynamic_theme_denial) across the full frozen set."""
+    from engine.intelligence_workspace.consumers import PARITY_KEYS
+    from engine.intelligence_workspace.contracts import EntityRequest, ResolutionRequest
+    from engine.intelligence_workspace.runtime import build_runtime
+
+    repo_root = pathlib.Path(__file__).resolve().parents[1]
+    runtime = build_runtime(repo_root=repo_root)
+
+    message = ("AAPL price, Stage, industry rank, within-industry member RS percentile "
+               "and next earnings date")
+    now = datetime(2026, 8, 25, 20, 0, 0, tzinfo=timezone.utc)
+    envelope = cc.compile_envelope(message, {}, now=now, request_id="parity-r1")
+    assert envelope["effective_context"]["source"] == "explicit"
+    assert envelope["effective_context"]["entities"] == [{"type": "security", "id": "AAPL"}]
+
+    plan = nf.plan_native_facts(message, envelope=envelope)
+    assert plan is not None
+    brain = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=repo_root)
+    brain_facts = {fact["field_id"]: fact for fact in brain.receipt["facts"]}
+
+    canonical = runtime.identity_normalizer.normalize_many(
+        (EntityRequest(type="security", symbol="AAPL", universe="us_equity"),)
+    )[0]
+
+    direct_by_field: dict[str, dict] = {}
+    security_fields = [
+        "market.price.last", "stage.current", "security.industry_member.rs_percentile",
+        "earnings.next_date",
+    ]
+    for envelope_fact in runtime.resolve(ResolutionRequest(
+        entities=(EntityRequest(type="security", id=canonical.id, universe="us_equity"),),
+        field_ids=tuple(security_fields), audience="subscriber", consumer_use="ai_fact",
+    )):
+        direct_by_field[envelope_fact["field_id"]] = envelope_fact
+
+    relationship = runtime.resolve_current_industry_relationship(canonical)
+    industry_target = relationship.get("to") if isinstance(relationship, dict) else None
+    if industry_target and industry_target.get("id"):
+        for envelope_fact in runtime.resolve(ResolutionRequest(
+            entities=(EntityRequest(type="industry", id=industry_target["id"],
+                                     universe="us_industry"),),
+            field_ids=("industry.rank.percentile",), audience="subscriber",
+            consumer_use="ai_fact",
+        )):
+            direct_by_field[envelope_fact["field_id"]] = envelope_fact
+
+    checked = 0
+    for field_id, direct_fact in direct_by_field.items():
+        brain_fact = brain_facts.get(field_id)
+        if brain_fact is None:
+            continue  # an honestly-unavailable field carries no typed envelope either side
+        assert {key: brain_fact[key] for key in PARITY_KEYS} == \
+            {key: direct_fact[key] for key in PARITY_KEYS}
+        checked += 1
+    assert checked >= 1, "at least one frozen field must be directly comparable"
+
+
+def test_w1c_deep_route_request_keeps_legacy_context_byte_identical_and_carries_receipt():
+    """17: an unsupported-wording (analytical) request still deep-routes, and the
+    deep loop receives the EXACT legacy `context` dict it has always seen —
+    same keys/values, nothing added, nothing rewritten.
+
+    NB-6 docstring correction (review repair): `_run_brain_loop_stream` is
+    replaced here by `_spy_loop`, which re-implements the SSE yields itself —
+    so this test does NOT prove the real internal event ordering inside that
+    generator (meta -> context_receipt -> status/tool -> delta -> done); that
+    ordering is proven against the REAL function by
+    test_brain_gateway.py::test_status_event_sequence_two_round_tool_turn
+    (lines ~4814-4820 there, driven through the real `chat_stream()` ->
+    `_run_brain_loop_stream` path via `_stream_events()`). What THIS test
+    proves is narrower and still real: `chat_stream()` computes the envelope/
+    receipt and threads `context_receipt=` into the loop call, and the deep
+    lane's legacy `context` dict argument is byte-identical to what a caller
+    passed in — the receipt is additive, never a prompt-construction change."""
+    seen_contexts: list[dict] = []
+
+    def _spy_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb,
+                  meta_event, usage_out=None, answer_out=None, thinking_out=None,
+                  mode="chat", image_blocks=None, providers=None, user_id="", user_email="",
+                  effort=None, thinking_mode=None, deepseek_thinking=None, context_receipt=None):
+        seen_contexts.append(dict(context))
+        yield f"data: {json.dumps(meta_event)}\n\n"
+        if context_receipt is not None:
+            yield "data: " + json.dumps({"type": "context_receipt", **context_receipt}) + "\n\n"
+        yield f"data: {json.dumps({'type': 'delta', 'text': 'Deep loop answer.'})}\n\n"
+        yield "data: " + json.dumps({"type": "done", "citations": [], "usage": {}}) + "\n\n"
+        if answer_out is not None:
+            answer_out.append("Deep loop answer.")
+
+    message = "Should I buy AAPL? What's your outlook and price target?"
+    raw_context = {"symbol": "AAOI", "page": "terminal"}
+    with patch.object(gw, "_brain_quota_dir", return_value=pathlib.Path(tempfile.mkdtemp())):
+        with patch.object(gw, "_resolve_tier", return_value={
+                "tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw, "_build_lane_providers",
+                              return_value=[{"client": _Client(), "model": "deepseek-v4-flash"}]):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch.object(gw, "_run_brain_loop_stream", side_effect=_spy_loop):
+                        events = _sse(list(gw.chat_stream(
+                            message, "u_ctx_deep", lane="fast", root=_root(),
+                            context=dict(raw_context),
+                        )))
+    assert [e["type"] for e in events] == ["meta", "context_receipt", "delta", "done"]
+    assert seen_contexts, "the deep loop must have been invoked"
+    # The legacy context dict the deep prompt path sees is untouched by W1-C —
+    # same keys/values it always carried (plus nothing new).
+    assert seen_contexts[0] == raw_context
+    assert events[1]["schema"] == "ai_context_receipt.v1"
+    assert events[1]["effective_context"]["source"] == "active"
+    assert events[1]["effective_context"]["entities"] == [{"type": "security", "id": "AAOI"}]

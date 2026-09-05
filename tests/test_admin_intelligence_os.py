@@ -541,3 +541,49 @@ def test_census_counts_agree_with_the_rows_they_summarize(tmp_path):
     assert census["by_assessment_status"].get("could_not_look", 0) == (
         census["artifacts"] - census["outputs_assessed"]
     )
+
+
+# ---------------------------------------------------------------------------
+# The reader plane rides along
+# ---------------------------------------------------------------------------
+
+def _capture_builder_kwargs(monkeypatch) -> dict:
+    """Route _derive's lazy import through a capturing wrapper around the real builder."""
+    import scripts.build_output_health as boh
+
+    seen: dict = {}
+    real = boh.build_with_registry
+
+    def capture(root_arg, **kw):
+        seen.update(kw)
+        return real(root_arg, **kw)
+
+    monkeypatch.setattr(boh, "build_with_registry", capture)
+    return seen
+
+
+def test_the_panel_hands_the_sentinel_file_to_the_builder_when_it_exists(
+    tmp_path, monkeypatch
+):
+    """Reader evidence is sovereign (resolver §8), and the sentinel's staleness.json IS
+    the reader plane's live source on the deployed estate. The T4 CLI already defaults
+    to it; a panel that dropped it was reader-blind on exactly the plane it runs on."""
+    root = one_engine(tmp_path)
+    staleness = root / "site" / "live" / "staleness.json"
+    staleness.parent.mkdir(parents=True, exist_ok=True)
+    staleness.write_text(json.dumps({"surfaces": {}}), encoding="utf-8")
+
+    seen = _capture_builder_kwargs(monkeypatch)
+    assert IOS.panel(root=root, force=True)["ok"] is True
+    assert seen.get("staleness_json") == staleness
+
+
+def test_an_absent_sentinel_file_is_passed_as_none_never_a_dangling_path(
+    tmp_path, monkeypatch
+):
+    """No sentinel file is a legitimate state (a checkout, a fresh estate) — the builder
+    must see None, not a path to nothing, so absence stays disclosed as absence."""
+    root = one_engine(tmp_path)
+    seen = _capture_builder_kwargs(monkeypatch)
+    assert IOS.panel(root=root, force=True)["ok"] is True
+    assert seen.get("staleness_json") is None

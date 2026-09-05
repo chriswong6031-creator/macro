@@ -70,7 +70,7 @@ def test_shipped_caddyfile_line_numbers_match_known_blocks() -> None:
         357: SAFE_FIXED_REWRITE,
         390: SAFE_FIXED_REWRITE,
         428: SAFE_FIXED_REWRITE,
-        769: SAFE_FIXED_REWRITE,
+        770: SAFE_FIXED_REWRITE,
     }
 
 

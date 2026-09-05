@@ -16,12 +16,14 @@ class: build
 blast_radius: reversible
 ambiguity: specified
 next_action: >
-  A1's Aug-14 debt is settled by the accepted A1R and natural-run receipt indexed in
-  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md. Close issue
-  #5742 only after that records PR lands. The availability program remains active:
-  re-pin W0/W3 against current merged evidence and close only their remaining deltas;
-  then complete W1's launchd operator act and W2's full fire-drill week. A1 proves the
-  US settlement slice, not all five boards or the program done-bar.
+  2026-08-27 CEO-takeover wave (handoff
+  agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-27-ceo-takeover.md): permanence
+  net PR #6534 and display-truth PR #6532 armed on merge-on-green. Verify tonight's
+  B1 nightly (run 33036497832) yields a fresh session-2026-08-26 board live, close
+  the open prophet-outage issues with receipts, then observe #6534's two §0
+  production proofs on NATURAL runs (never dispatch to force them). W2's full
+  fire-drill week remains the program done-bar; chip follow-ups
+  task_7df1337c/b0e6bfee/a194ca27/0c033ef2 close the known instrument gaps.
 owns_paths:
   - scripts/prophet_rescue.py
   - .github/workflows/prophet-rescue.yml

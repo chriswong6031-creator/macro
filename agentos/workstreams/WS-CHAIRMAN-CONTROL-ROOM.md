@@ -45,16 +45,31 @@ waves:
     status: in_progress
     depends_on: [P0A]
     next_action: >
-      Chairman intent on 2026-08-25 resumes P0B from the current merged fixed-port substrate, not
-      from the obsolete 501/bearer failure boundary. Preserve the three-seat enrollment and the
-      already-provisioned stopped disposable profile. On the Chairman host, require action-time
-      native credential confirmation through the existing secret-owning Keychain helper, then run
-      the exact `configure-canary-port --vendor multilogin` path from current protected Mastermind.
-      Only EXACT_CONFIGURED may continue; EFFECT_UNKNOWN, unsupported or drifted state stops for
-      reconciliation with no blind retry. After exact configuration, run exactly one disposable
-      `run-canary --vendor multilogin` and return its redacted C0-C10 + cleanup receipt to Sol before
-      any real-seat operation. Programmatic OS-window foreground remains a separate completion gate;
-      no Chairman seat may be touched by this disposable proof.
+      Preserve Mastermind PR #396 merge 771a95586c7a31933ee612eafaa4d1471f57527b as historical
+      Realm1-C1 lifecycle source, not current release authorization. The canonical profile_B host
+      child web-sol-realm1-profile-b-host-provision-20260902-sol-001 on Slack root
+      C0BSBM78V1N/1788455715.526229 has an actual task ACK from
+      Codex-01a06846-1b1b-7212-aa67-e6d303802489 plus a prior clean detached-checkout and approved-host
+      readback, but no lifecycle, Keychain, vendor, profile, account or browser effect. Its controlling
+      state is PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE. Issue #431 is the CLOSED terminal
+      duplicate with effect=NONE. Canonical issue #432 is OPEN / STARTED / SOURCE_ONLY. Its worker
+      published a GitHub source checkpoint in #432 comment 5533580505 for Draft PR #435 head
+      `62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
+      `BUILT_NOT_PROVEN / PRODUCTION_INERT`; that checkpoint is not a reciprocal Slack completion.
+      The Slack root ends at 1788475247.999589 without a worker RESULT / HOLD; that exact root is
+      C0BSBM78V1N/1788472184.797999. GitHub #432 comment 5533655499 records the exact-head
+      `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in the best-effort census producer; comment
+      5533704747's green hosted `test` and CodeQL receipts are mechanical only and do not clear it.
+      The immediate upstream next action is a Sol path-ceiling ruling for the same #432 task, branch and
+      Draft PR #435 to repair the source scope through at least
+      `integrations/mastermind_slack_app/chatgpt.py`. Independent review or protection of the current
+      five-path head alone is not a release condition. This Macro PR remains exact-two Agent OS paths
+      and does not add that upstream source path. Profile_A remains the only proven disposable profile;
+      profile_B and any account realm remain unproven. Keep #359 PRE_START until the path-widened source
+      repair is independently reviewed, protected and read back, then require a fresh same-root Sol
+      continuation before re-running only the exact no-effect host gate. PF-1 A/B, INSTALL1, PF-1
+      C15-C18 and intended-seat foreground proof remain ordered downstream gates; #355 remains
+      architecture/semantic-readiness work only, with no implementation start or account ceremony child.
   - id: ASD-F0
     title: Active-Session Dialogue architecture and authority freeze
     status: done
@@ -124,6 +139,7 @@ artifacts:
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-24-mas115-live-canary-repair.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-24-x1-accepted.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-25-p0a-close-p0b-start.md
+  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-03-realm1-source-protected-profile-b-placement.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_ARCHITECTURE_AND_FABLE01_COMMISSION_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_CURRENT_STATE_AMENDMENT_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_A0_TOKEN_ISOLATION_FALSIFIER_2026-08-23.md
@@ -152,6 +168,9 @@ landmines:
   - "The macOS security CLI bare -w prompt truncated the current long Multilogin JWT to 128 bytes on this host. MAS-115 credential enrollment must use the fixed secret-owning Security.framework helper; never pass the token through argv, environment, shell, temp files, logs or model-visible output."
   - "Historical P0B receipts include a Multilogin HTTP 501/non-JSON cloud-search result and a rejected launcher bearer. They remain valid adverse evidence but are superseded as the current start gate by later protected Mastermind repairs and must not be replayed as current capability truth."
   - "The fixed-port MAS-115 profile update is a one-profile, one-policy mutation. Any changed profile, port, payload, pre-state or ambiguous effect requires reconciliation; never blind-retry EFFECT_UNKNOWN."
+  - "Mastermind PR #396 merge 771a9558 is source proof only. It does not prove profile_B, Keychain readiness, a vendor effect, a ChatGPT account realm, PF-1, INSTALL1 or production behavior."
+  - "The sole canonical profile_B host carrier is C0BSBM78V1N/1788455715.526229 under web-sol-realm1-profile-b-host-provision-20260902-sol-001. Its receiver ACK and prior local checkout/host proof establish neither host execution nor profile capability: it remains PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE until #432's Sol-approved path-ceiling repair eliminates LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING at least through integrations/mastermind_slack_app/chatgpt.py, then earns applicable independent review and protected-master readback, and a fresh same-root continuation arrives."
+  - "PF-1 A/B precedes INSTALL1, while PF-1 C15-C18 requires the exact installed generation after INSTALL1. Collapsing PF-1 into one pre-install prerequisite creates a circular gate."
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
   - "Do not create a Session OS, task database, tmux lifecycle registry, second Executive service, mutable seat inbox or new active-build compiler."
@@ -168,28 +187,49 @@ do_not_redo:
   - "Do not recreate ASD A0/A1 or create another MAS-125 implementation carrier. Exact accepted PR #125 merge eb9910681a6db9f9675b25233c8865bb43325c32 is the sole DEVELOPMENT_UNARMED core."
   - "Do not re-open H0 because the persistent 8787 adoption gate is complete; treat future CCR reliability regressions as new evidence, not unfinished H0."
   - "Do not re-open X1 merely to absorb later capabilities. X1 is the accepted read-only command surface; managed-seat actuation, production dialogue, dispatch and wake remain separate waves."
-  - "Do not replay any historical P0B failure receipt as a new lifecycle attempt. Use the current merged fixed-port carrier and one fresh exact operation only after current preflight; ambiguous modification or launch effects are reconciled, never retried blindly."
+  - "Do not reopen or rebuild Mastermind PR #396 or issue #385; protected 771a9558 is the sole accepted Realm1-C1 source release."
+  - "Do not use the superseded web-sol-realm1-profile-b-host-create-20260902-sol-001 key or create another profile_B carrier/task while C0BSBM78V1N/1788455715.526229 is unresolved."
+  - "Do not treat source merge, green CI, Slack delivery, Secretary attention, Keychain-item presence or a vendor response as profile_B proof."
+  - "Do not refresh Chairman bindings merely to pass an age gate, reuse a Chairman profile/account, choose an unqualified stopped profile, fall back to GoLogin, create a third profile or start a browser in the profile_B child."
+  - "Do not blind-retry a profile update, lifecycle bootstrap, release-receipt, Keychain or vendor effect after uncertainty; reconcile the same operation/task/host and exact fixed coordinates."
 next_action: >
-  Chairman intent on 2026-08-25 makes P0B the active continuation from the merged fixed-port
-  substrate. Preserve P0A/H0 and X1 as accepted; no reopening is owed. On the Chairman host, use
-  current protected Mastermind and the existing stopped disposable profile, obtain action-time
-  native credential confirmation, run exact `configure-canary-port --vendor multilogin`, and only
-  after EXACT_CONFIGURED run one fresh `run-canary --vendor multilogin`. Return the redacted live
-  receipt to Sol under REVIEW_RETURN before any real-seat proof. ASD-A2/A3 remains an independent
-  separately gated lane; do not start ASD-A4, real-seat mutation, generic Wake or P1 from this P0B
-  records release.
+  Keep the exact #359 host child at PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE while the
+  sole #432 source repair remains blocked by the exact-head
+  LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING hold. The current five-path Draft PR #435 checkpoint
+  is a GitHub receipt, not a Slack worker result, and green hosted checks do not make it protectable.
+  The next upstream action is a Sol path-ceiling ruling for the same #432 task, branch and Draft PR #435
+  to add at least integrations/mastermind_slack_app/chatgpt.py; this exact-two-record Macro PR must not
+  carry that source change. Do not recreate a host child, revive #431, rerun the attended ceremony, or
+  start a host gate from a source-only checkpoint. Only after the path-widened source repair has
+  independent exact-head review and protected-master readback may one fresh same-root Sol continuation
+  re-read protected source and run the packet's no-effect HOST_PROFILE_GATE. Only a later
+  PROFILE_B_PROVEN return can release the separate non-sensitive account ceremony: the Chairman then
+  makes one closed choice between an eligible existing dedicated account and one explicitly approved
+  free account; no account child or paid-plan authority exists now. PF-1, INSTALL1 and real-seat proof
+  remain separate ordered gates, while #355 remains architecture-only and ASD-A2/A3 remain independent
+  lanes.
 ---
 
 ## Capability state
 
 `PARTIAL` overall because final P0B real-seat Open Sol foreground reachability and the production ASD
 transport path remain unproven. P0A plus H0 is `PROVEN_LIVE` on the persistent Chairman path, X1 is
-`ACCEPTED / PROVEN_LIVE_LOCAL`, and MAS-114 is complete. The P0B disposable substrate is now
-`BUILT_NOT_PROVEN` on the merged fixed-port carrier rather than `DARK_OR_DISCONNECTED`: several
-underlying vendor lifecycle/navigation predicates have been proven live, but the full current C0-C10
-fixed-port receipt is still owed and no real Chairman seat is authorized by that substrate. The
-supervised loopback service is running the exact X1 merge
-`12117ca576cec2c4f054664dd62c4e0809f27e75` at `http://127.0.0.1:8787/`.
+`ACCEPTED / PROVEN_LIVE_LOCAL`, and MAS-114 is complete. Mastermind PR #396 merge
+`771a95586c7a31933ee612eafaa4d1471f57527b` remains source proof for the bounded Realm1-C1 lifecycle,
+not profile capability. The current canonical source repair is issue #432: GitHub comment 5533580505
+records its worker's source checkpoint for Draft PR #435 head
+`62eaf50af3b18b8ea165de2213393223f9e16f57` as `DRAFT / HOLD-FOR-SOL` and
+`BUILT_NOT_PROVEN / PRODUCTION_INERT` in Codex task `01a0694f-56bb-71c0-9c35-6a0644691f20`. Slack root
+`C0BSBM78V1N/1788472184.797999` ends at 1788475247.999589 without a worker `RESULT / HOLD`. The
+reproduced `LIVE_CENSUS_COMPLETENESS_REQUIRES_PATH_WIDENING` hold in GitHub comment 5533655499 means
+the current five-path head cannot be made protected merely by review/readback; comment 5533704747's
+green hosted checks establish mechanical evidence only. It remains at most `BUILT_NOT_PROVEN /
+PRODUCTION_INERT` and neither `PROTECTED` nor `PROVEN_LIVE` pending a Sol path-ceiling ruling and
+same-task/branch/PR repair through at least `integrations/mastermind_slack_app/chatgpt.py`. The #359 host task
+`01a06846-1b1b-7212-aa67-e6d303802489` has an ACK plus prior clean detached-checkout and approved-host
+proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE`; no host, Keychain, vendor,
+profile, account or browser effect has occurred. Exactly profile_A is proven; profile_B and the
+dedicated account realm remain unproven.
 
 X1 is the accepted daily command surface over the existing truth model: truthful Needs You,
 deterministic Focus, 47-row All Work, Surface Dock, detail drawer, local Command-K search and System
@@ -220,6 +260,15 @@ Mastermind PR #145 then merged the fixed `127.0.0.1:65535` origin, v3 provision,
 port-whitelist configuration/reconciliation and a run-canary path structurally unable to configure the
 profile. PR #145 itself is still `BUILT_NOT_PROVEN`: no live fixed-port configuration or complete
 post-merge C0-C10 receipt was produced by the PR.
+
+Mastermind PR #308 later protected the bounded T1 native transport as merge
+`caa47c1e66fe36dc3521299c918f4b9e7b2a47ca`, still not installed. Mastermind PR #396 then protected
+exactly five Realm1-C1 paths as merge `771a95586c7a31933ee612eafaa4d1471f57527b` after current-base
+CI/security success and independent approval `5104658908`. That source can bind the exact historical
+v3 profile_A to the v5 lifecycle, issue at most one peer create, reconcile by response ID plus one
+census, persist the peer provision and fence one later trash-only remove. No source review or merge
+performed a Keychain read, vendor request, local lifecycle bootstrap, profile/account/browser action,
+PF-1 experiment or Web-Sol installation.
 
 Active-Session Dialogue F0 is accepted and A0/A1 is `BUILT_NOT_PROVEN / DEVELOPMENT_UNARMED` in
 Mastermind PR #125 merge `eb9910681a6db9f9675b25233c8865bb43325c32`. The accepted core is
@@ -300,28 +349,31 @@ separately authorized real canaries pass.
   transaction and fail-closed ambiguity reconciliation, while keeping ordinary `run-canary`
   structurally unable to mutate profile configuration. Merge is implementation proof only; the live
   fixed-port C0-C10 receipt is still owed.
+- Mastermind PR #396 exact integrated head `52b78464311e924a5f4d73a89ad5cd33cf559010` passed repository
+  CI `33780327726`, CodeQL and all analyzers, received independent approval `5104658908`, and merged as
+  protected `771a95586c7a31933ee612eafaa4d1471f57527b`. The five protected blobs match the approved
+  semantic candidate exactly. The result is `BUILT_NOT_PROVEN / PRODUCTION_INERT`: no profile_B or
+  external profile/account/browser effect occurred during the source wave or release.
 
 ### What is still false
 
 1. Current GUI-started Chairman managed-browser seats are not automation-adoptable under a documented vendor contract.
 2. No supported programmatic OS-window foreground operation has been accepted; Open Sol therefore remains incomplete even if exact URL navigation can be proven on an automation-owned disposable profile.
-3. No full fixed-port P0B non-seat C0-C10 canary has passed from merged PR #145; the prior adverse
-   attempts remain contained historical evidence, and no real Chairman seat may be changed by them.
-4. The removed fixture is not a production principal, and no production Agent Relay app or credential is installed.
-5. No real `MMX/AGENT_DIALOGUE_V1` Slack exchange has occurred. A2/A3/A4 remain unstarted.
-6. Three-seat enrollment and disposable provisioning are complete, and underlying disposable
-   credential/search/start/WebDriver/cleanup subcapabilities have been proven live; however current
-   action-time credential readiness, exact fixed-port configuration and the complete current canary
-   receipt are not yet proven together on the merged release.
-7. Agent OS brief latency remains a separate Macro performance problem.
-8. X1 acceptance does not make managed-seat Open Sol, production Agent Relay dialogue, Executive
-   dispatch, automatic wake or later Control Room waves complete.
+3. Exactly one of two required disposable profiles is proven. Profile_B has no live bootstrap/create/reconciliation/provision receipt. The canonical #359 carrier has a receiver ACK plus prior no-effect checkout/approved-host proof, but remains `PRE_START / WAITING_SOURCE_REPAIR_432 / effect=NONE` while #432 needs a Sol-authorized path-widened repair, then independent review and protected-source readback; that is neither execution nor profile capability.
+4. No dedicated non-sensitive ChatGPT test account is proven or normally signed into both disposable profiles. A secret owner may later perform an authorized credential ceremony, but cannot authorize account creation or any paid plan: after profile_B is proven and released, the Chairman alone makes the closed existing-account versus explicitly approved one-free-account choice. Terms, CAPTCHA, email/phone verification and 2FA remain separate human gates.
+5. PF-1 A/B, INSTALL1 and PF-1 C15-C18 have not started on the required disposable realm sequence. No Web-Sol generation is installed or proven on the two-profile matrix.
+6. The removed ASD fixture is not a production principal, and no production Agent Relay app or credential is installed. No real `MMX/AGENT_DIALOGUE_V1` exchange has occurred; A2/A3/A4 remain unstarted.
+7. The protected fixed-port/T1/Realm1 source lineage remains implementation proof only. Current action-time credential readiness, host/profile identity, local lifecycle bootstrap, live vendor effect and complete installed fault/cleanup proof have not been established together.
+8. Agent OS brief latency remains a separate Macro performance problem.
+9. X1 acceptance does not make managed-seat Open Sol, production Agent Relay dialogue, Executive dispatch, automatic wake or later Control Room waves complete.
 
 ## Completion boundary
 
-MAS-114/H0, X1 and ASD A0/A1 are complete at their stated boundaries. MAS-113 remains nonterminal until P0B proves the vendor-supported
-managed-seat Open Sol journey including intended-seat foreground reachability, zero cross-seat
-fallback, zero message send, zero managed-environment state mutation and required restart/failure
-proof. ASD becomes `PROVEN_LIVE` only after separately authorized A2 and A3 canaries prove a real
-already-active Sol↔Fable project dialogue through the production path. The A1 merge alone authorizes
-no credential installation, production message, A3/A4, generic Wake or P1.
+MAS-114/H0, X1 and ASD A0/A1 are complete at their stated boundaries. MAS-113/P0B remains
+nonterminal until the current Realm1 sequence proves profile_B, a dedicated account realm, PF-1 A/B,
+release to INSTALL1, the exact installed two-profile generation, PF-1 C15-C18 and the supported
+intended-seat foreground journey with zero cross-seat fallback, zero message send, zero unauthorized
+managed-environment mutation and required restart/failure proof. ASD becomes `PROVEN_LIVE` only after
+separately authorized A2 and A3 canaries prove a real already-active Sol↔Fable project dialogue
+through the production path. The A1 merge alone authorizes no credential installation, production
+message, A3/A4, generic Wake or P1.

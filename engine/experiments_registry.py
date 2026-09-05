@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 OUT = "marketdata/experiments.json"
 SEED = "data/experiments/registry_seed.json"
-_DONE = {"validated", "proven", "gate_open"}  # already concluded — don't re-flag on come-back date
+_DONE = {"validated", "proven", "gate_open", "no_go"}  # already concluded — don't re-flag on come-back date
 _NO_AUTO_READY = {"parked_research"}           # never auto-matures a result on a date
 # Date the seed's hand-authored `state` strings were last grounded by a codebase audit.
 # Used when the seed itself carries no top-level `audited` key. Any state the build could
@@ -160,8 +160,12 @@ def _refresh_track_record(e: dict) -> dict:
     # results are "ready" once the read has GRADED. 'accruing' and 'measuring' are both
     # pre-verdict accrual states ('measuring' = rows matured but the significance gate is
     # not yet callable — engine/subsector_track_record.py); any other verdict (validated /
-    # a printed null / …) is a real result and must flag ready.
-    if verdict and verdict not in ("accruing", "measuring"):
+    # a printed null / …) is a real result and must flag ready — but only until the seed
+    # ACKNOWLEDGES it. A seed whose `status` already records the artifact's verdict has
+    # been read (the audit writes the verdict back); flagging it daily forever pins the
+    # panel (index-leadership sat "ready" for weeks after its 2026-08-26 read). A verdict
+    # that CHANGES after acknowledgment re-flags.
+    if verdict and verdict not in ("accruing", "measuring") and verdict != (e.get("status") or ""):
         out["ready"] = True
     return out
 
@@ -455,9 +459,22 @@ def _refresh_cortex_evaluator(e: dict) -> dict:
             "passed": "gate_open",
             "failed": "no_go",
             "insufficient-n": "accruing",
-            "budget-rejected": "accruing",
+            # terminal in metabolism (a rejected REGISTRATION never re-arms) —
+            # the old "accruing" mapping presented it as a live accrual forever
+            "budget-rejected": "no_go",
             "retired": "no_go",
             "invalid": "no_go",
+            # W7b-PR3 terminal instrument verdicts (metabolism.TERMINAL_STATUSES):
+            # the instrument refused to grade, and a corrected gate/query needs a
+            # NEW registration — so the row is concluded. Without these the map's
+            # "accruing" default presents a terminal row as accruing forever
+            # (come_back is cleared on terminal rows, so it never re-flags, but
+            # the panel line would still read as a live accrual).
+            "invalid-self-reference": "no_go",
+            "unresolvable-query": "no_go",
+            "invalid-gate": "no_go",
+            "uncomputable-metric": "no_go",
+            "expired-insufficient-n": "no_go",
         }
         out_status = status_map.get(status, "accruing")
         come_back = row.get("come_back")

@@ -104,6 +104,16 @@ def _static_body(name: str, path) -> bytes:
 # briefly in-process. Browser caching remains forbidden because these payloads contain
 # private operator data; the session guard runs before this cache is consulted.
 _API_CACHE_TTL_S = 15.0
+# The first-party analytics panels are the one family where 15s is the wrong number.
+# Each is a snapshot of an append-only event store over a window measured in hours or
+# days, so a minute of staleness cannot change what the operator is reading — but 15s
+# is shorter than the time it takes to read one of these tables, so every trip back to
+# a tab re-folded the whole panel. The one genuinely live reading on that screen
+# (/fp/realtime, the "N active" pill) is on _API_CACHE_BYPASS_PATHS below and is not
+# cached at all, so nothing being watched for freshness is affected by this.
+_API_CACHE_TTL_OVERRIDES: tuple[tuple[str, float], ...] = (
+    ("/api/analytics/fp/", 60.0),
+)
 _API_CACHE_MAX_ENTRIES = 256
 _API_RESPONSE_CACHE: OrderedDict[str, tuple[float, bytes]] = OrderedDict()
 _API_RESPONSE_CACHE_LOCK = threading.Lock()
@@ -115,6 +125,13 @@ _API_CACHE_BYPASS_PATHS = {
     "/api/runtime-state",
     "/api/analytics/fp/realtime",
 }
+
+
+def _api_cache_ttl(path: str) -> float:
+    for prefix, ttl in _API_CACHE_TTL_OVERRIDES:
+        if path.startswith(prefix):
+            return ttl
+    return _API_CACHE_TTL_S
 
 
 def _cacheable_api_get(path: str, query: dict) -> bool:
@@ -139,7 +156,8 @@ def _cached_api_body(key: str) -> bytes | None:
         return body
 
 
-def _store_api_body(key: str, body: bytes, generation: int) -> None:
+def _store_api_body(key: str, body: bytes, generation: int,
+                    ttl: float = _API_CACHE_TTL_S) -> None:
     now = time.monotonic()
     with _API_RESPONSE_CACHE_LOCK:
         if generation != _API_RESPONSE_CACHE_GENERATION:
@@ -148,7 +166,7 @@ def _store_api_body(key: str, body: bytes, generation: int) -> None:
                    if expires_at <= now]
         for old_key in expired:
             _API_RESPONSE_CACHE.pop(old_key, None)
-        _API_RESPONSE_CACHE[key] = (now + _API_CACHE_TTL_S, body)
+        _API_RESPONSE_CACHE[key] = (now + ttl, body)
         _API_RESPONSE_CACHE.move_to_end(key)
         while len(_API_RESPONSE_CACHE) > _API_CACHE_MAX_ENTRIES:
             _API_RESPONSE_CACHE.popitem(last=False)
@@ -190,6 +208,7 @@ _CSP = ("default-src 'none'; "
         "base-uri 'none'; "
         "form-action 'self'; "
         "object-src 'none'; "
+        "frame-src https://control.mastermind-x.com; "
         "frame-ancestors 'none'")
 
 
@@ -465,8 +484,8 @@ class Handler(BaseHTTPRequestHandler):
         cache_key = getattr(self, "_response_cache_key", None)
         cache_status = None
         if code == 200 and cache_key:
-            key, generation = cache_key
-            _store_api_body(key, body, generation)
+            key, generation, ttl = cache_key
+            _store_api_body(key, body, generation, ttl)
             cache_status = "MISS"
         self._response_cache_key = None
         self._json_body(body, code=code, cookies=cookies, cache_status=cache_status)
@@ -668,9 +687,26 @@ class Handler(BaseHTTPRequestHandler):
             attrs += "; Secure"
         age = 0 if clear else settings.session_ttl_hours() * 3600
         sv, cv = ("" if clear else session), ("" if clear else csrf)
-        return [
+        cookies = [
             f"{auth.SESSION_COOKIE}={sv}; HttpOnly{attrs}; Max-Age={age}",
-            f"{auth.CSRF_COOKIE}={cv}{attrs}; Max-Age={age}",   # readable by JS (double-submit)
+        ]
+        if clear and settings.deployed():
+            cookies.append(
+                f"{auth.SESSION_COOKIE}=; HttpOnly; Domain=mastermind-x.com"
+                f"{attrs}; Max-Age=0"
+            )
+        cookies.append(
+            f"{auth.CSRF_COOKIE}={cv}{attrs}; Max-Age={age}"  # readable by JS (double-submit)
+        )
+        return cookies
+
+    def _promote_session_cookie(self, session: str) -> list[str]:
+        attrs = "; Path=/; SameSite=Strict; Secure"
+        age = settings.session_ttl_hours() * 3600
+        return [
+            f"{auth.SESSION_COOKIE}={session}; HttpOnly; Domain=mastermind-x.com"
+            f"{attrs}; Max-Age={age}",
+            f"{auth.SESSION_COOKIE}=; HttpOnly{attrs}; Max-Age=0",
         ]
 
     def _host_ok(self) -> bool:
@@ -728,13 +764,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "service": "macro-admin",
                                    "deployed": settings.deployed()})
             if path == "/api/session":
+                auth_enabled = settings.auth_enabled()
+                authenticated = (not auth_enabled) or self._authed()
+                cookies = None
+                if settings.deployed() and auth_enabled and authenticated:
+                    cookies = self._promote_session_cookie(
+                        self._cookie_val(auth.SESSION_COOKIE) or ""
+                    )
                 return self._json({
-                    "auth_enabled": settings.auth_enabled(),
-                    "authenticated": (not settings.auth_enabled()) or self._authed(),
+                    "auth_enabled": auth_enabled,
+                    "authenticated": authenticated,
                     "deployed": settings.deployed(),
                     "public_url": settings.public_url(),
                     "integrations": _integrations(),
-                })
+                }, cookies=cookies)
 
             # everything else under /api requires a session when auth is on
             if settings.auth_enabled() and not self._authed():
@@ -745,7 +788,8 @@ class Handler(BaseHTTPRequestHandler):
                 cached_body = _cached_api_body(cache_key)
                 if cached_body is not None:
                     return self._json_body(cached_body, cache_status="HIT")
-                self._response_cache_key = (cache_key, _response_cache_generation())
+                self._response_cache_key = (cache_key, _response_cache_generation(),
+                                            _api_cache_ttl(path))
 
             # Caddy uses this same-origin, cookie-authenticated probe before
             # serving /research-tools/* from the generated site tree.

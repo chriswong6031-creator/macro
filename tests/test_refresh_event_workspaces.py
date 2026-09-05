@@ -709,8 +709,9 @@ def test_workspace_publisher_is_marker_last_and_never_touches_v1(tmp_path: Path)
     assert workspace["completeness"]["consensus"]["status"] == "unlicensed"
     assert workspace["completeness"]["slides"]["status"] == "absent"
     assert workspace["completeness"]["reaction"]["status"] == "not_joined"
-    questions = next(fact for fact in workspace["facts"] if fact["fact_id"] == "fact_questions_count")
-    assert "typed_absence" in questions
+    assert all(fact.get("fact_id") != "fact_questions_count" for fact in workspace["facts"])
+    assert len(workspace.get("qa_exchanges") or []) == 7
+    assert all(item.get("topics") == ["unavailable"] for item in workspace["qa_exchanges"])
     assert workspace["authority"] == "context_only"
     assert workspace["prophet_flags"] == {
         "may_rank": False,

@@ -1576,6 +1576,73 @@ def _mb_reply_cache_put(prompt_hash: str, text: str, cfg: dict, root=None) -> No
 # --------------------------------------------------------------------------- #
 # the model call (DeepSeek V4 Pro via the Anthropic-compatible endpoint)
 # --------------------------------------------------------------------------- #
+def _is_deepseek_lane(cfg: dict) -> bool:
+    """True when this lane's legacy llm_* keys describe DeepSeek's endpoint.
+
+    The shipped config points at DeepSeek's Anthropic-compatible endpoint, so
+    the legacy keys can be safely re-expressed in build_providers' vocabulary.
+    An operator who deliberately pinned some OTHER endpoint keeps the historic
+    single-provider behaviour rather than being silently re-routed off it.
+    """
+    base = str(cfg.get("llm_base_url") or "").lower()
+    env = str(cfg.get("api_key_env") or "DEEPSEEK_API_KEY").upper()
+    return "deepseek" in base or "DEEPSEEK" in env
+
+
+def _ladder_cfg(cfg: dict) -> dict:
+    """Translate master_brain's legacy llm_* config into build_providers' keys.
+
+    THE KEY COLLISION THIS FUNCTION EXISTS TO CLOSE. master_brain's
+    ``api_key_env`` has always named the DEEPSEEK key, while build_providers
+    reads ``api_key_env`` as the ANTHROPIC key and ``deepseek_key_env`` as
+    DeepSeek's. Handing this cfg over untranslated would build an
+    anthropic.Anthropic() against api.anthropic.com holding a DeepSeek key — a
+    rung that 401s on every call and burns a waterfall step to do it.
+
+    THE LEGACY KEYS ARE ONLY INHERITED WHEN THEY ACTUALLY DESCRIBE DEEPSEEK.
+    `_is_deepseek_lane` accepts a lane on the base URL *or* the key name, so a
+    PARTIALLY swapped config — the documented one-line Opus swap done to
+    `api_key_env`/`llm_model` but not `llm_base_url` — reaches here mixed. Blind
+    `or cfg["api_key_env"]` fallbacks would then hand the operator's ANTHROPIC
+    key to `deepseek_key_env` and ship it to api.deepseek.com, which is the
+    mirror image of the collision above and strictly worse: the first merely
+    401s, this one transmits a live credential to a third party. Each legacy key
+    is therefore inherited only if it is DeepSeek-shaped, and a Claude-shaped
+    `llm_model` is routed to `opus_model` where it belongs instead of being
+    served to DeepSeek under its own id.
+    """
+    out = dict(cfg)
+    legacy_env = str(cfg.get("api_key_env") or "").upper()
+    legacy_base = str(cfg.get("llm_base_url") or "").lower()
+    legacy_model = str(cfg.get("llm_model") or "")
+
+    out["deepseek_key_env"] = (
+        cfg.get("deepseek_key_env")
+        or (cfg.get("api_key_env") if "DEEPSEEK" in legacy_env else None)
+        or "DEEPSEEK_API_KEY")
+    out["deepseek_base_url"] = (
+        cfg.get("deepseek_base_url")
+        or (cfg.get("llm_base_url") if "deepseek" in legacy_base else None)
+        or "https://api.deepseek.com/anthropic")
+    out["deepseek_model"] = (
+        cfg.get("deepseek_model")
+        or (legacy_model if legacy_model.lower().startswith("deepseek") else None)
+        or "deepseek-v4-pro")
+    out["api_key_env"] = (cfg.get("anthropic_key_env")
+                          or (cfg.get("api_key_env") if "DEEPSEEK" not in legacy_env
+                              and legacy_env else None)
+                          or "ANTHROPIC_API_KEY")
+    out.setdefault("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
+    out.setdefault("provider_order", ["codex", "oauth", "anthropic", "deepseek"])
+    out.setdefault("oauth_pool_lane", "master-brain")
+    out.setdefault("usage_lane", "master-brain")
+    out["opus_model"] = (
+        cfg.get("opus_model")
+        or (legacy_model if legacy_model.lower().startswith("claude") else None)
+        or "claude-opus-4-8")
+    return out
+
+
 def _client(cfg: dict):
     try:
         import anthropic
@@ -1592,8 +1659,20 @@ def _client(cfg: dict):
         return None
 
 
-def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | None]:
+def _call_model(system: str, user: str, cfg: dict,
+                 served: dict | None = None) -> tuple[str | None, str | None]:
     """Return (reply_text, degraded_reason). Never raises.
+
+    served: OPTIONAL out-parameter (matches llm_auth.make_call's own `attempts`
+    idiom — see its docstring for why an out-param beats widening the return
+    tuple: engine/ai_desk.py and several tests stub _call_model with a 2-tuple
+    lambda, and every one of them would break if the return type grew). When a
+    dict is passed, on SUCCESS this sets served["provider"] to the rung name
+    make_call returned and served["model"] to that rung's model id (matched
+    out of `providers` by name; left unset if the match is ambiguous). Left
+    untouched on failure. Population is wrapped so a defect in it can never
+    break a call that otherwise worked — same discipline as make_call's own
+    _note().
 
     Determinism kit (W7 #33): temperature=0 + seed=0 for greedy/deterministic
     sampling. Content-hash cache: SHA-256(model‖system‖user) → cached reply text.
@@ -1604,24 +1683,48 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     provider (llm_base_url / api_key_env configurable). The waterfall is built via
     engine.llm_auth.build_providers() so a 401 from any provider falls back cleanly.
     The degraded_reason distinguishes "auth_invalid:<provider>" from "llm_error".
+
+    RUNG ORDER (operator mandate): Codex (ChatGPT oauth) first, then Claude
+    (oauth pool, then Anthropic API), then DeepSeek last — DeepSeek is the
+    only metered pay-per-use rung; Codex and Claude are subscriptions already
+    paid for. When this lane's legacy llm_* keys describe DeepSeek's endpoint
+    (_is_deepseek_lane), the ladder is built via llm_auth.build_providers()
+    after translating the legacy keys (_ladder_cfg) so a single DeepSeek
+    balance exhaustion no longer blanks the whole brief. An operator who
+    pinned some OTHER endpoint keeps the historic single-provider descriptor.
     """
     from engine import llm_auth
 
-    # master_brain uses a non-standard provider config: the default provider is
-    # DeepSeek, but it is fully config-overridable via llm_base_url/api_key_env.
-    # We build a minimal provider descriptor directly rather than using build_providers()
-    # (which assumes the oauth→anthropic→deepseek order), because master_brain
-    # intentionally sends derived market state to an endpoint the operator chose.
-    client = _client(cfg)
-    if client is None:
-        return None, "no_client_or_key"
-    model = cfg.get("llm_model", "deepseek-v4-pro")
-    env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
-    providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
-                  "client": client, "model": model,
-                  "usage_lane": "master-brain",
-                  # sub-component drill-down (macro/china/btc lens, ai-desk, etc.)
-                  "usage_stage": str(cfg.get("usage_stage") or "")}]
+    if _is_deepseek_lane(cfg):
+        lcfg = _ladder_cfg(cfg)
+        providers = llm_auth.build_providers(
+            lcfg, opus_model=lcfg["opus_model"], deepseek_model=lcfg["deepseek_model"])
+        if not providers:
+            return None, "no_client_or_key"
+    else:
+        log.info(
+            "master_brain: lane pins a custom endpoint (%s); bypassing the "
+            "provider ladder and using the single configured client.",
+            cfg.get("llm_base_url") or "<no llm_base_url>",
+        )
+        client = _client(cfg)
+        if client is None:
+            return None, "no_client_or_key"
+        model = cfg.get("llm_model", "deepseek-v4-pro")
+        env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
+        # This branch is reached ONLY when the endpoint is not DeepSeek, so calling
+        # the rung "deepseek" was harmless while the name stayed internal — it is
+        # not any more. served_by publishes it into the brief (where it would
+        # contradict the Claude model id sitting beside it) and
+        # llm_auth.LEDGER_PROVIDER maps "deepseek" to ("deepseek", "metered"),
+        # which books the operator's Anthropic spend as a DeepSeek bill on the AI
+        # Cost page. "custom" is unmapped, and ledger_provider_for() records an
+        # unmapped rung as ITSELF rather than charging it to someone else.
+        providers = [{"name": "custom", "env_var": env_var, "cred": "present",
+                      "client": client, "model": model,
+                      "usage_lane": "master-brain",
+                      # sub-component drill-down (macro/china/btc lens, ai-desk, etc.)
+                      "usage_stage": str(cfg.get("usage_stage") or "")}]
 
     # NB: no caching here — synthesize() is the SOLE cache reader/writer, so only
     # FINAL post-lint text ever lands under the prompt hash (a raw pre-lint reply
@@ -1669,10 +1772,11 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
 
     text: str | None = None
     reason: str | None = None
+    provider_used: str | None = None
     for attempt in range(max_attempts):
         seed = 0 if attempt == 0 else attempt   # primary deterministic; retries vary
         try:
-            text, reason, _ = llm_auth.make_call(
+            text, reason, provider_used = llm_auth.make_call(
                 providers, _make_do_call(seed), context="master_brain")
         except Exception as e:  # noqa: BLE001 — degrade, never raise
             log.warning("master_brain model call failed (%s)", e)
@@ -1680,9 +1784,52 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
         if text is not None or reason not in _RETRYABLE:
             break
         if attempt + 1 < max_attempts:
+            # AN EMPTY REPLY DOES NOT WALK THE WATERFALL BY ITSELF. make_call only
+            # advances on an EXCEPTION; a returned (None, "empty_reply") counts as
+            # that rung having served, so every attempt here re-enters the ladder at
+            # rung 1 and gets the same rung again. That was survivable while the lane
+            # had ONE rung, but the ladder now leads with Codex — whose adapter
+            # ignores unknown kwargs, so the seed nudge below cannot change its
+            # output — and a rung stuck returning empty text would blank the brief
+            # with two healthy providers sitting behind it. That is the very symptom
+            # the ladder was added to stop.
+            #
+            # So: retry the SAME rung once (the seed nudge is the proven fix — it is
+            # what recovered the China lens on 2026-07-20), then strike it off so the
+            # remaining attempts fall through to the next provider. mark_dead is
+            # keyed on (name, env_var) — for pooled rungs env_var is the cap_id — so
+            # this retires one account, not the whole provider class.
+            if attempt > 0 and provider_used:
+                env_var = next(
+                    (p.get("env_var", "") for p in providers
+                     if p.get("name") == provider_used), "")
+                llm_auth.mark_dead(provider_used, env_var, reason=reason or "empty_reply")
+                log.warning(
+                    "master_brain: '%s' twice from rung '%s' — marking it dead so "
+                    "attempt %d falls through to the next provider.",
+                    reason, provider_used, attempt + 2)
             log.warning(
                 "master_brain: '%s' on attempt %d/%d — retrying (seed=%d)",
                 reason, attempt + 1, max_attempts, attempt + 1)
+
+    if text is not None and served is not None:
+        try:  # telemetry only — never let this break a call that otherwise worked
+            served["provider"] = provider_used
+            # DISTINCT model ids, not distinct rungs. One provider NAME routinely
+            # covers several rungs — the oauth pool contributes one per present
+            # CLAUDE_CODE_OAUTH_TOKEN_n (up to seven) and Codex one per attached
+            # account — and they all serve the SAME model id. Counting rungs here
+            # made every pool-served brief ambiguous, so `model` silently fell back
+            # to the legacy DeepSeek label on exactly the runs the ladder was built
+            # to enable. Genuine ambiguity (one name, two model ids) still declines
+            # to guess and leaves the configured default in place.
+            matched = {p.get("model") for p in providers
+                       if p.get("name") == provider_used and p.get("model")}
+            if len(matched) == 1:
+                served["model"] = matched.pop()
+        except Exception as e:  # noqa: BLE001
+            log.debug("master_brain: served-by telemetry failed (%s)", e)
+
     return text, reason
 
 
@@ -1807,6 +1954,11 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
         "schema": "master_brief.v2", "lens": lens, "is_context_only": True,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
+        # rung that served this brief — "codex" / "oauth" / "anthropic" / "deepseek",
+        # "cache" on a reply-cache hit, or None on a degraded call. Populated below
+        # from _call_model's `served` out-param so the ladder is verifiable from
+        # the artifact instead of always reading as the legacy DeepSeek label.
+        "served_by": None,
         "state_asof": _state_asof(state),
         "tldr": [],
         "summary": None, "regime_read": None, "conflicts": [], "rotation_check": None,
@@ -1831,9 +1983,23 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     if _cache_was_hit:
         log.debug("master_brain: reply cache HIT (%s)", phash[:12])
         reply, reason = cached, None
+        brief["served_by"] = "cache"
     else:
         # Tag the lens (macro/china/btc) as the usage stage for cost drill-down.
-        reply, reason = _call_model(system, user, {**cfg, "usage_stage": lens})
+        served: dict = {}
+        try:
+            reply, reason = _call_model(
+                system, user, {**cfg, "usage_stage": lens}, served=served)
+        except TypeError:
+            # Stub with the OLD 2-arg-plus-cfg signature (several tests monkeypatch
+            # _call_model this way, e.g. `lambda system, user, cfg: (...)`) — tolerate
+            # and retry without the new kwarg rather than breaking those callers.
+            reply, reason = _call_model(system, user, {**cfg, "usage_stage": lens})
+            served = {}
+        if reply is not None:
+            brief["served_by"] = served.get("provider")
+            if served.get("model"):
+                brief["model"] = served["model"]
 
     brief["raw_text"] = reply
     if reply is None:
@@ -1860,7 +2026,18 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
                     "replacing every banned token with plain language a non-finance "
                     "reader understands. Return only the JSON."
                 )
-                rw_reply, _rw_reason = _call_model(rewrite_system, reply, {**cfg, "usage_stage": lens})
+                # THE REWRITE IS A SECOND TRIP DOWN THE LADDER, so it can be served
+                # by a DIFFERENT rung than the original draft — mark_dead and pool
+                # cooling both move between the two calls. When the rewrite is
+                # ACCEPTED below it becomes the published text, so served_by/model
+                # must follow it; otherwise the brief carries the draft's label over
+                # the rewrite's words, and the field the operator reads to check
+                # "did DeepSeek quietly serve this?" answers about a reply that was
+                # thrown away. Tracked separately and only promoted on acceptance.
+                rw_served: dict = {}
+                rw_reply, _rw_reason = _call_model(
+                    rewrite_system, reply, {**cfg, "usage_stage": lens},
+                    served=rw_served)
                 if rw_reply:
                     rw_parsed = _extract_json(rw_reply)
                     if isinstance(rw_parsed, dict):
@@ -1870,6 +2047,10 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
                             reply = rw_reply
                             parsed = rw_parsed
                             violations = rw_violations
+                            if rw_served.get("provider"):
+                                brief["served_by"] = rw_served["provider"]
+                            if rw_served.get("model"):
+                                brief["model"] = rw_served["model"]
                 style_flags = violations
             # Cache the FINAL post-lint text under the ORIGINAL prompt hash. On a
             # lint failure above we cache NOTHING (next run re-calls and re-lints)
@@ -2421,18 +2602,76 @@ def _normalize_zh_lexicon(s: str | None) -> str | None:
     return s
 
 
-def _translate_brief(brief: dict, cfg: dict) -> None:
-    """Attach a Chinese version (brief['zh']) via the shared DeepSeek translator
-    (engine/translate.translate_to_zh) so the dashboard's 中文 toggle shows the brief
-    in Chinese. The brief is unique daily, so it's translated fresh each run — a cheap
-    V4-Flash pass. Degrade-never-raise: on any failure brief['zh'] is omitted and the
-    panel falls back to English (per field)."""
+_ZH_SYSTEM = (
+    "You are a professional financial translator. Translate each item of the JSON "
+    "array into concise, natural Simplified Chinese. Preserve ticker symbols, company "
+    "names commonly used in English, numbers, and market terms such as ETF names. Do "
+    "not add analysis, commentary, or extra items. Return ONLY a JSON array of "
+    "strings, exactly one output per input, in the same order."
+)
+
+
+def _extract_zh_array(text: str) -> list | None:
+    """Pull a JSON array out of a model reply, tolerating fences and prose. PURE."""
+    if not text:
+        return None
+    i, j = text.find("["), text.rfind("]")
+    if i < 0 or j <= i:
+        return None
+    try:
+        out = json.loads(text[i:j + 1])
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return out if isinstance(out, list) else None
+
+
+def _zh_batch(texts: list[str], cfg: dict, lens: str) -> list[str | None]:
+    """Translate ONE batch through the SAME ladder that wrote the brief.
+
+    Returns a same-length list, None per item on any failure. The batch fails
+    CLOSED on a count mismatch: a short array would silently shift every later
+    field onto the wrong key, which is far worse than falling back to English.
+    """
+    none: list[str | None] = [None] * len(texts)
+    user = ("Translate each item to Simplified Chinese and return a JSON array of the "
+            "same length and order:\n" + json.dumps(texts, ensure_ascii=False))
+    reply, _reason = _call_model(_ZH_SYSTEM, user, {**cfg, "usage_stage": f"{lens}-zh"})
+    arr = _extract_zh_array(reply or "")
+    if arr is None or len(arr) != len(texts):
+        log.warning("master_brain zh: batch malformed (got %s for %d items) — "
+                    "keeping English", None if arr is None else len(arr), len(texts))
+        return none
+    out: list[str | None] = []
+    for v in arr:
+        s = str(v).strip() if v is not None else ""
+        # Accept only non-empty strings that actually contain CJK — a model that
+        # echoes the English back must not be recorded as a translation.
+        out.append(s if (s and any("一" <= ch <= "鿿" for ch in s)) else None)
+    return out
+
+
+def _translate_brief(brief: dict, cfg: dict, lens: str = "macro") -> None:
+    """Attach a Chinese version (brief['zh']) so the dashboard's 中文 toggle shows the
+    brief in Chinese.
+
+    THE WRITER TRANSLATES ITS OWN BRIEF (operator 2026-08-27). This used to build a
+    hardcoded DeepSeek V4-Flash client and call engine.translate, which has no
+    provider ladder — so the English half survived a DeepSeek balance exhaustion and
+    the 中文 half did not, and every zh pass was billed to the one metered provider
+    even on nights Codex and Claude wrote the brief for free. It now goes through
+    _call_model, i.e. the same codex → oauth → anthropic → deepseek waterfall, the
+    same lane and the same cooling policy that produced the English text; the lens's
+    usage_stage is suffixed "-zh" so the cost ledger can still tell the two apart.
+
+    Batched (6 items) so a truncated or malformed reply costs one batch, not the whole
+    brief. Degrade-never-raise: on any failure brief['zh'] is omitted or partial and
+    the panel falls back to English per field.
+    """
     if not cfg.get("translate_zh", True):
         return
     if brief.get("degraded_reason") and not brief.get("regime_read"):
         return                                       # nothing usable to translate
     try:
-        from engine import translate as _tr
         texts: list[str] = []
         layout: list[tuple[str, int | None]] = []
         for k in _ZH_SCALARS:
@@ -2445,17 +2684,15 @@ def _translate_brief(brief: dict, cfg: dict) -> None:
                     layout.append((k, i)); texts.append(v)
         if not texts:
             return
-        tcfg = {                                     # force-on Flash translate (independent of profile_translation)
-            "enabled": True,
-            "base_url": cfg.get("llm_base_url", "https://api.deepseek.com/anthropic"),
-            "api_key_env": cfg.get("api_key_env", "DEEPSEEK_API_KEY"),
-            "model": cfg.get("translate_model", "deepseek-v4-flash"),
-            # small batches + generous cap: a Flash batch that hits max_tokens fails the
-            # WHOLE batch closed (translate._translate_one_batch), and a long brief in one
-            # 24-item batch blows the cap -> zero zh. Split it so any truncation is local.
-            "max_chars": 2000, "max_tokens": 8000, "batch_size": 6,
-        }
-        zh_list = _tr.translate_to_zh(texts, tcfg)
+        # Small batches on purpose: a reply that hits max_tokens fails its batch
+        # CLOSED, so a 24-item single batch that truncates yields zero 中文. Six keeps
+        # any truncation local to a handful of fields.
+        batch_size = max(1, int(cfg.get("zh_batch_size", 6)))
+        max_chars = max(1, int(cfg.get("zh_max_chars", 2000)))
+        zh_list: list[str | None] = []
+        for start in range(0, len(texts), batch_size):
+            chunk = [t[:max_chars] for t in texts[start:start + batch_size]]
+            zh_list.extend(_zh_batch(chunk, cfg, lens))
         if not zh_list or all(x is None for x in zh_list):
             return
         zh: dict = {"summary": None, "regime_read": None, "rotation_check": None,
@@ -2521,7 +2758,7 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
             brief["key_facts"] = _key_facts_for(lens, state)
         except Exception:  # noqa: BLE001 — additive, never fatal
             brief["key_facts"] = []
-        _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
+        _translate_brief(brief, cfg, lens)    # attach brief['zh'] for the 中文 toggle
         if persist:
             try:
                 payload = json.dumps(brief, indent=2, default=str)

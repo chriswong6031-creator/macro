@@ -8,9 +8,9 @@ on:
         type: string
         default: "0"
       slots:
-        description: "1 = parity/contamination canary; 3 = bounded CI capacity plus render reservation probe."
+        description: "1 = parity/contamination canary; 3 = bounded CI capacity plus render reservation probe; 4 = pending fourth-slot capacity diagnostic (requires an activated pc-ci-4)."
         type: choice
-        options: ["1", "3"]
+        options: ["1", "3", "4"]
         default: "1"
 
 permissions:
@@ -53,6 +53,19 @@ jobs:
       head_sha: ${{ steps.ref.outputs.head_sha }}
       contamination_sha: ${{ steps.ref.outputs.contamination_sha }}
       control_sha: ${{ github.sha }}
+      # The identity actually handed to the planner, distinct from the
+      # resolver's raw `base_sha` above (#6351 P0R bridge addendum). For a PR
+      # candidate (pr_number>0) the two agree: the resolver's base_sha IS the
+      # PR base. For the pr_number=0 / main dispatch, `role: main` requires
+      # tested_tree_sha == subject_head_sha == base_sha, but the resolver's
+      # own base_sha is the PARENT of the tested SHA (kept only so the
+      # contamination probe has a genuinely different second tree to detach
+      # to) — feeding that parent to the planner as `base_sha` would violate
+      # the main-role invariant and ManifestError. `head_sha` needs no
+      # equivalent: the resolver already returns head_sha == tested_sha for
+      # pr_number=0, so it is already the correct planned subject_head_sha in
+      # both cases and is reused as-is by the consumer steps below.
+      planned_base_sha: ${{ inputs.pr_number != '0' && steps.ref.outputs.base_sha || steps.ref.outputs.tested_sha }}
     steps:
       - name: checkout trusted canary control code
         uses: actions/checkout@v4
@@ -67,6 +80,21 @@ jobs:
           cp scripts/resolve_ci_canary_ref.py \
              scripts/select_ci_canary_packs.py \
              "$RUNNER_TEMP/ci-canary-control/"
+          mkdir -p "$RUNNER_TEMP/ci-canary-compare-control/scripts"
+          cp scripts/__init__.py \
+             scripts/compare_ci_canary_receipts.py \
+             scripts/ci_semantic_proof.py \
+             "$RUNNER_TEMP/ci-canary-compare-control/scripts/"
+      # Publish the immutable main-defined comparator before checking out or
+      # executing any candidate-authored code. The package-shaped bundle is
+      # runtime-complete without a repository checkout in the compare jobs.
+      - name: publish trusted receipt comparator
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-compare-control
+          path: ${{ runner.temp }}/ci-canary-compare-control
+          if-no-files-found: error
+          retention-days: 14
       - id: ref
         name: resolve an immutable trusted candidate
         env:
@@ -88,24 +116,59 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "${{ steps.ref.outputs.tested_sha }}"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.13"
       - name: install isolated planner
         run: |
           python -m venv "$RUNNER_TEMP/ci-canary-plan-runner"
           "$RUNNER_TEMP/ci-canary-plan-runner/bin/pip" install pyyaml
+      # Full explicit provenance (#6351 P0R bridge, spec item C.2). The
+      # engine's diagnostic pair is admitted ONLY for
+      # (role, event) == ("pr_head", "workflow_dispatch") with
+      # workflow == "infrastructure-selfhosted-ci-canary", or the ordinary
+      # ("main", "workflow_dispatch") pair — every other shape ManifestErrors
+      # before a single legacy job runs. The two branches below are the two
+      # lawful shapes: a same-repository PR candidate diffs and replays its
+      # exact base; the main dispatch (pr_number=0) is one identical
+      # tree/head/base SHA with no --changed-from at all. The prior version
+      # of this step passed --changed-from unconditionally, including for
+      # pr_number=0 — an unsupported shape that ManifestErrors under current
+      # law (role=main forbids changed_from). This is a fix, not preserved
+      # behavior.
       - id: plan
         name: freeze the current logical plan
-        run: >-
-          "$RUNNER_TEMP/ci-canary-plan-runner/bin/python" scripts/run_ci_pack.py
-          --workflow .github/ci/legacy-jobs.yml
-          --pack-count 12
-          --scope-mode active
-          --matrix-mode active
-          --plan-only
-          --github-output "$GITHUB_OUTPUT"
-          --emit-plan-json "$RUNNER_TEMP/ci-canary-plan/plan.json"
-          --emit-changed-files "$RUNNER_TEMP/ci-canary-plan/changed-files.json"
-          --changed-from "${{ steps.ref.outputs.base_sha }}"
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNNER_PY="$RUNNER_TEMP/ci-canary-plan-runner/bin/python"
+          COMMON_ARGS=(
+            --workflow .github/ci/legacy-jobs.yml
+            --gate code
+            --pack-count 12
+            --scope-mode active
+            --matrix-mode active
+            --plan-only
+            --github-output "$GITHUB_OUTPUT"
+            --emit-plan-json "$RUNNER_TEMP/ci-canary-plan/plan.json"
+            --emit-changed-files "$RUNNER_TEMP/ci-canary-plan/changed-files.json"
+            --workflow-run-id "$GITHUB_RUN_ID"
+            --workflow-name infrastructure-selfhosted-ci-canary
+            --event workflow_dispatch
+            --tested-tree-sha "${{ steps.ref.outputs.tested_sha }}"
+          )
+          if [ "${{ inputs.pr_number }}" != "0" ]; then
+            "$RUNNER_PY" scripts/run_ci_pack.py \
+              "${COMMON_ARGS[@]}" \
+              --role pr_head \
+              --subject-head-sha "${{ steps.ref.outputs.head_sha }}" \
+              --base-sha "${{ steps.ref.outputs.base_sha }}" \
+              --changed-from "${{ steps.ref.outputs.base_sha }}"
+          else
+            "$RUNNER_PY" scripts/run_ci_pack.py \
+              "${COMMON_ARGS[@]}" \
+              --role main \
+              --subject-head-sha "${{ steps.ref.outputs.tested_sha }}" \
+              --base-sha "${{ steps.ref.outputs.tested_sha }}"
+          fi
       - id: select
         name: select the current heaviest non-empty pack or top three
         run: |
@@ -122,10 +185,18 @@ jobs:
           retention-days: 14
 
   hosted-control:
-    name: diagnostic-hosted-control-pack-${{ needs.plan.outputs.primary_pack }}
+    # slots=3|4 (spec item C.5): this becomes a matrix over the SAME selected
+    # packs the self-hosted matrix below runs, instead of a single job pinned
+    # to the heaviest pack — one hosted control per self-hosted pack, so
+    # `compare` can require strict parity for every pack the run actually
+    # selected, not only the primary one.
+    name: diagnostic-hosted-control-pack-${{ matrix.pack }}
     needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: mark hosted job start
         run: date +%s.%N > "$RUNNER_TEMP/job-start"
@@ -162,7 +233,7 @@ jobs:
           date +%s.%N > "$RUNNER_TEMP/dependency-start"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.13"
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -174,6 +245,13 @@ jobs:
         with:
           name: ci-canary-plan
           path: ${{ runner.temp }}/ci-canary-plan
+      # Single-plan consumption (#6351 P0R bridge, spec item C.3), mirroring
+      # ci.yml's ci-pack step: --plan-json/--changed-files-file/--expect-*
+      # /--gate code, never re-planning from --changed-from. The prior
+      # version of this step re-derived its own plan on every runner via
+      # --changed-from + --expect-plan-sha, which only coincidentally agreed
+      # with the published plan when nothing raced; the published plan is now
+      # the sole authority every consumer loads and verifies bytewise.
       - name: execute the frozen logical pack and retain its actual result
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/ci-canary-plan/changed-files.json
@@ -183,18 +261,23 @@ jobs:
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
-          touch .ci-canary-contamination-sentinel
+          mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
           set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
-            --pack-index "${{ needs.plan.outputs.primary_pack }}" \
-            --pack-count 12 \
-            --scope-mode active \
-            --changed-from "${{ needs.plan.outputs.base_sha }}" \
+            --gate code \
+            --plan-json "$RUNNER_TEMP/ci-canary-plan/plan.json" \
+            --changed-files-file "$CI_CHANGED_FILES_FILE" \
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
+            --expect-tested-tree-sha "${{ needs.plan.outputs.tested_sha }}" \
+            --expect-subject-head-sha "${{ needs.plan.outputs.head_sha }}" \
+            --expect-base-sha "${{ needs.plan.outputs.planned_base_sha }}" \
+            --pack-index "${{ matrix.pack }}" \
+            --pack-count 12 \
+            --emit-semantic-fragment "$RUNNER_TEMP/ci-semantic-fragments/hosted-fragment.json" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
           set -e
@@ -211,7 +294,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/capture_ci_canary_receipt.py" \
             --log "$RUNNER_TEMP/pack.log" \
             --plan "$RUNNER_TEMP/ci-canary-plan/plan.json" \
-            --pack "${{ needs.plan.outputs.primary_pack }}" \
+            --pack "${{ matrix.pack }}" \
             --exit-code "$(cat "$RUNNER_TEMP/pack.rc")" \
             --tested-sha "${{ needs.plan.outputs.tested_sha }}" \
             --base-sha "${{ needs.plan.outputs.base_sha }}" \
@@ -224,18 +307,60 @@ jobs:
             --test-seconds "$RUNNER_TEMP/test-seconds" \
             --wall-seconds "$RUNNER_TEMP/wall-seconds" \
             --workspace-object-bytes "$object_bytes" \
+            --fragment "$RUNNER_TEMP/ci-semantic-fragments/hosted-fragment.json" \
             --output "$RUNNER_TEMP/hosted-receipt.json"
       - uses: actions/upload-artifact@v4
         with:
-          name: ci-canary-hosted-${{ needs.plan.outputs.primary_pack }}
+          name: ci-canary-hosted-${{ matrix.pack }}
           path: ${{ runner.temp }}/hosted-receipt.json
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-hosted-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/ci-semantic-fragments/hosted-fragment.json
+          if-no-files-found: error
+          retention-days: 14
+
+  four-slot-preflight:
+    name: diagnostic-four-slot-parent-envelope-preflight
+    if: inputs.slots == '4'
+    needs: plan
+    runs-on: [self-hosted, ci-linux-canary]
+    timeout-minutes: 5
+    steps:
+      # No checkout and no candidate code: the installed root-owned guard
+      # proves the fixed aggregate envelope before four-way diagnostic fanout.
+      - name: require the parent CI-slice envelope before four-way fanout
+        run: |
+          /usr/local/libexec/mastermind-ci-resource-guard \
+            --path "$RUNNER_TEMP" \
+            --require-slice \
+            --preflight-profile four-slot-canary
 
   selfhosted-pack:
     name: diagnostic-selfhosted-pack-${{ matrix.pack }}
-    needs: plan
-    runs-on: ${{ fromJSON(inputs.slots == '1' && '["self-hosted","ci-linux-canary"]' || '["self-hosted","ci-linux"]') }}
+    needs: [plan, four-slot-preflight]
+    if: >-
+      always() && needs.plan.result == 'success' &&
+      (inputs.slots != '4' || needs.four-slot-preflight.result == 'success')
+    # slots=4 temporarily binds the existing canary label to its selected
+    # primary pack. The primary must be the canonical numeric identity of the
+    # selector's first entry: a missing, malformed, or inconsistent output
+    # therefore reaches fromJSON('') and fails before choosing a runner label.
+    runs-on: >-
+      ${{ fromJSON(
+        (inputs.slots == '1' ||
+          (inputs.slots == '4' &&
+            matrix.pack == fromJSON(
+              needs.plan.outputs.primary_pack ==
+                toJSON(fromJSON(needs.plan.outputs.selected_packs)[0].index) &&
+              needs.plan.outputs.primary_pack ||
+              ''
+            ))) &&
+        '["self-hosted","ci-linux-canary"]' ||
+        '["self-hosted","ci-linux"]'
+      ) }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -294,7 +419,7 @@ jobs:
           date +%s.%N > "$RUNNER_TEMP/dependency-start"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.13"
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -315,6 +440,7 @@ jobs:
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
+          mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
           expected_home="$(dirname "$RUNNER_TEMP")/_home"
           test "$HOME" = "$expected_home"
           touch .ci-canary-contamination-sentinel
@@ -335,11 +461,16 @@ jobs:
           set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
+            --gate code \
+            --plan-json "$RUNNER_TEMP/ci-canary-plan/plan.json" \
+            --changed-files-file "$CI_CHANGED_FILES_FILE" \
+            --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
+            --expect-tested-tree-sha "${{ needs.plan.outputs.tested_sha }}" \
+            --expect-subject-head-sha "${{ needs.plan.outputs.head_sha }}" \
+            --expect-base-sha "${{ needs.plan.outputs.planned_base_sha }}" \
             --pack-index "${{ matrix.pack }}" \
             --pack-count 12 \
-            --scope-mode active \
-            --changed-from "${{ needs.plan.outputs.base_sha }}" \
-            --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
+            --emit-semantic-fragment "$RUNNER_TEMP/ci-semantic-fragments/selfhosted-fragment.json" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
           set -e
@@ -373,6 +504,7 @@ jobs:
             --cache-before "$RUNNER_TEMP/cache-before" \
             --cache-after "$RUNNER_TEMP/cache-after" \
             --workspace-object-bytes "$object_bytes" \
+            --fragment "$RUNNER_TEMP/ci-semantic-fragments/selfhosted-fragment.json" \
             --output "$RUNNER_TEMP/selfhosted-${{ matrix.pack }}.json"
       - uses: actions/upload-artifact@v4
         with:
@@ -380,8 +512,17 @@ jobs:
           path: ${{ runner.temp }}/selfhosted-${{ matrix.pack }}.json
           if-no-files-found: error
           retention-days: 14
-      - name: surface a red pack after preserving its three-slot receipt
-        if: inputs.slots == '3'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-selfhosted-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/ci-semantic-fragments/selfhosted-fragment.json
+          if-no-files-found: error
+          retention-days: 14
+      # Every MULTI-slot identity, not the literal '3'. Naming one count here is
+      # how a slots=4 run would upload its receipt and then exit green whatever
+      # pack.rc held, hiding a real red behind a capacity diagnostic.
+      - name: surface a red pack after preserving its multi-slot receipt
+        if: inputs.slots != '1'
         run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0
 
   cache-negative-control:
@@ -448,7 +589,10 @@ jobs:
 
   render-reservation-probe:
     name: diagnostic-render-reserved-slot
-    if: inputs.slots == '3'
+    # Fires for BOTH multi-slot identities: the whole point of the fourth slot is
+    # that render stays independently routable while CI saturates, so a slots=4
+    # run without this probe would prove nothing about coexistence.
+    if: inputs.slots != '1'
     needs: plan
     runs-on: [self-hosted, Linux, X64, render-linux]
     timeout-minutes: 10
@@ -462,11 +606,21 @@ jobs:
           sleep 30
 
   compare:
-    name: diagnostic-hosted-selfhosted-result-parity
-    if: always() && inputs.slots == '1'
+    # Runs for BOTH slots (spec item C.6: "slots=3 comparison covers all
+    # three packs"), as a matrix over the same selected packs hosted-control
+    # and selfhosted-pack ran. `always()` at job level because
+    # cache-negative-control/contamination-probe are slots==1-only and would
+    # otherwise SKIP this job by default propagation; the first step makes
+    # the real gating explicit instead, so a slots=3 run is not silently
+    # waiting on two jobs that never ran.
+    name: diagnostic-hosted-selfhosted-result-parity-pack-${{ matrix.pack }}
+    if: always()
     needs: [plan, hosted-control, selfhosted-pack, cache-negative-control, contamination-probe]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: require every infrastructure leg to conclude
         env:
@@ -475,26 +629,47 @@ jobs:
           SELFHOSTED: ${{ needs.selfhosted-pack.result }}
           NEGATIVE: ${{ needs.cache-negative-control.result }}
           CONTAMINATION: ${{ needs.contamination-probe.result }}
+          SLOTS: ${{ inputs.slots }}
         run: |
-          for result in "$PLAN" "$HOSTED" "$SELFHOSTED" "$NEGATIVE" "$CONTAMINATION"; do
+          for result in "$PLAN" "$HOSTED" "$SELFHOSTED"; do
             test "$result" = success
           done
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.plan.outputs.control_sha }}
-          persist-credentials: false
-          filter: blob:none
-          fetch-depth: 1
+          if [ "$SLOTS" = "1" ]; then
+            test "$NEGATIVE" = success
+            test "$CONTAMINATION" = success
+          fi
+      # Receipt comparison needs one trusted helper, not a multi-gigabyte
+      # repository worktree. The planner published this helper from the
+      # main-defined control checkout in the same run.
       - uses: actions/download-artifact@v4
         with:
-          name: ci-canary-hosted-${{ needs.plan.outputs.primary_pack }}
+          name: ci-canary-compare-control
+          path: ${{ runner.temp }}/control
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-hosted-${{ matrix.pack }}
           path: ${{ runner.temp }}/hosted
       - uses: actions/download-artifact@v4
         with:
-          name: ci-canary-selfhosted-${{ needs.plan.outputs.primary_pack }}
+          name: ci-canary-hosted-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/hosted
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-selfhosted-${{ matrix.pack }}
           path: ${{ runner.temp }}/selfhosted
-      - name: compare logical jobs, failures, and immutable identity
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-selfhosted-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/selfhosted
+      # Diagnostic-only: compare_ci_canary_receipts.py never calls
+      # scripts/merge_on_green.py or scripts/ci_semantic_proof.reconcile_evidence
+      # (#6351 spec item C.6) — strict fragment equality here is evidence FOR
+      # the bridge's own promotion decision, never a merge-gating verdict
+      # itself.
+      - name: compare logical jobs, failures, receipts, and semantic fragments
         run: |
-          python3 scripts/compare_ci_canary_receipts.py \
+          python3 "$RUNNER_TEMP/control/scripts/compare_ci_canary_receipts.py" \
             --hosted "$RUNNER_TEMP/hosted/hosted-receipt.json" \
-            --selfhosted "$RUNNER_TEMP/selfhosted/selfhosted-${{ needs.plan.outputs.primary_pack }}.json"
+            --selfhosted "$RUNNER_TEMP/selfhosted/selfhosted-${{ matrix.pack }}.json" \
+            --hosted-fragment "$RUNNER_TEMP/hosted/hosted-fragment.json" \
+            --selfhosted-fragment "$RUNNER_TEMP/selfhosted/selfhosted-fragment.json"

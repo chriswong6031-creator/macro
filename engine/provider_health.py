@@ -35,6 +35,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import stat
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,6 +53,14 @@ _HEALTH_REL = "data/ai_costs/provider_health.jsonl"
 _MAX_BYTES = 8 * 1024 * 1024
 
 _FALSE = {"", "0", "false", "no", "off"}
+
+# The legacy Claude OAuth rung predates capability IDs and therefore records
+# its configured environment-variable *name* in the health ledger.  Collapse
+# that known identifier at this secret-free source seam so downstream capacity
+# projection never needs to know or emit an auth variable name.
+_CAPACITY_CAP_ID_ALIASES = {
+    "CLAUDE_CODE_OAUTH_TOKEN": "claude_code_oauth",
+}
 
 _write_lock = threading.Lock()
 
@@ -250,3 +259,83 @@ def read_rows(*, lane: str | None = None, limit: int = 5000) -> list[dict]:
             continue
         rows.append(row)
     return rows
+
+
+def capacity_health_observations(
+    *,
+    root: Path | None = None,
+    limit: int = 5000,
+) -> dict:
+    """Return a strict, secret-free view of provider-attempt telemetry.
+
+    ``read_rows`` intentionally preserves the historic NEVER-RAISE display
+    contract and therefore cannot distinguish an absent ledger from an
+    unreadable or corrupt one.  Capacity projection needs that distinction so
+    unknown source quality never becomes a healthy/available fact.  This seam
+    reads the same owning ledger but returns only the bounded fields consumed by
+    provider capacity; ``detail`` and all raw exception text are discarded.
+    """
+    path = (Path(root) / _HEALTH_REL) if root is not None else health_path()
+    result = {"quality": "ok", "rows": [], "codes": []}
+    try:
+        try:
+            mode = path.lstat().st_mode
+        except FileNotFoundError:
+            result["quality"] = "missing"
+            result["codes"] = ["PROVIDER_HEALTH_UNKNOWN"]
+            return result
+        except OSError:
+            result["quality"] = "unreadable"
+            result["codes"] = ["SOURCE_UNREADABLE", "PROVIDER_HEALTH_UNKNOWN"]
+            return result
+        if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+            result["quality"] = "unreadable"
+            result["codes"] = ["SOURCE_UNREADABLE", "PROVIDER_HEALTH_UNKNOWN"]
+            return result
+        lines = path.read_text(encoding="utf-8").splitlines()[-max(1, int(limit)):]
+    except Exception:  # noqa: BLE001
+        result["quality"] = "unreadable"
+        result["codes"] = ["SOURCE_UNREADABLE", "PROVIDER_HEALTH_UNKNOWN"]
+        return result
+
+    safe_rows: list[dict] = []
+    corrupt = False
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            corrupt = True
+            continue
+        if not isinstance(row, dict):
+            corrupt = True
+            continue
+        if row.get("event") != "attempt":
+            continue
+        ts = row.get("ts")
+        if (
+            not isinstance(ts, str)
+            or not ts.strip()
+            or not isinstance(row.get("ok"), bool)
+        ):
+            corrupt = True
+            continue
+        raw_cap_id = str(row.get("cap_id") or "") or None
+        safe_rows.append({
+            "ts": ts,
+            "rung": str(row.get("rung") or "unknown"),
+            "cap_id": _CAPACITY_CAP_ID_ALIASES.get(raw_cap_id, raw_cap_id),
+            "ok": bool(row.get("ok")),
+            "error_class": str(row.get("error_class") or ""),
+        })
+
+    if corrupt:
+        # A partial tail cannot establish that the newest attempt was healthy.
+        result["quality"] = "corrupt"
+        result["codes"] = ["SOURCE_CORRUPT", "PROVIDER_HEALTH_UNKNOWN"]
+        return result
+    result["rows"] = safe_rows
+    if not safe_rows:
+        result["codes"] = ["PROVIDER_HEALTH_UNKNOWN"]
+    return result

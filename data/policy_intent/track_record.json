@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-08-24",
-  "scored_total": 3,
-  "open": 27,
+  "as_of": "2026-09-04",
+  "scored_total": 4,
+  "open": 30,
   "unscored_soft": 3,
   "expired": 0,
   "overall": {
-    "n": 3,
-    "hits": 1,
+    "n": 4,
+    "hits": 2,
     "misses": 2,
-    "hit_rate": 0.333,
-    "dir_accuracy": 0.333
+    "hit_rate": 0.5,
+    "dir_accuracy": 0.5
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 3,
-      "hits": 1,
+      "n": 4,
+      "hits": 2,
       "misses": 2,
-      "hit_rate": 0.333,
-      "dir_accuracy": 0.333
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.5
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 3,
-      "hits": 1,
+      "n": 4,
+      "hits": 2,
       "misses": 2,
-      "hit_rate": 0.333,
-      "dir_accuracy": 0.333
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.5
     },
     "level": {
       "n": 0,
@@ -58,10 +58,26 @@
       "misses": 2,
       "hit_rate": 0.333,
       "dir_accuracy": 0.333
+    },
+    "Reflation": {
+      "n": 1,
+      "hits": 1,
+      "misses": 0,
+      "hit_rate": 1.0,
+      "dir_accuracy": 1.0
     }
   },
-  "calibration_note": "3 scored, hit-rate 0.333 (directional accuracy 0.333). Sample is tiny \u2014 treat conviction as provisional and lean low.",
+  "calibration_note": "4 scored, hit-rate 0.5 (directional accuracy 0.5). Sample is tiny \u2014 treat conviction as provisional and lean low.",
   "recent": [
+    {
+      "id": "2026-08-01-022230-2",
+      "subject": "XLE",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0473,
+      "check_by": "2026-08-31"
+    },
     {
       "id": "2026-07-25-015718-4",
       "subject": "XLE",
@@ -90,5 +106,5 @@
       "check_by": "2026-08-21"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 3 \u6761\uff0c\u547d\u4e2d\u7387 0.333\uff08\u65b9\u5411\u51c6\u786e\u7387 0.333\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 4 \u6761\uff0c\u547d\u4e2d\u7387 0.5\uff08\u65b9\u5411\u51c6\u786e\u7387 0.5\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
 }

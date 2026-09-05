@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-25",
+ "as_of": "2026-09-04",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -44,12 +44,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "MPWR",
@@ -98,16 +98,16 @@
      "name": "Datadog Inc"
     },
     {
-     "ticker": "ADSK",
-     "name": "Autodesk Inc"
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "WDAY",
      "name": "Workday Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
+     "ticker": "ADSK",
+     "name": "Autodesk Inc"
     },
     {
      "ticker": "PAYX",
@@ -200,12 +200,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "DASH",
-     "name": "DoorDash Inc"
-    },
-    {
      "ticker": "MELI",
      "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
     }
    ]
   },
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
@@ -346,6 +346,10 @@
      "name": "KTOS"
     },
     {
+     "ticker": "AVAV",
+     "name": "AVAV"
+    },
+    {
      "ticker": "LUNR",
      "name": "LUNR"
     },
@@ -398,12 +402,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "MPWR",
@@ -540,16 +544,16 @@
      "name": "Datadog Inc"
     },
     {
-     "ticker": "ADSK",
-     "name": "Autodesk Inc"
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "WDAY",
      "name": "Workday Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
+     "ticker": "ADSK",
+     "name": "Autodesk Inc"
     },
     {
      "ticker": "PAYX",
@@ -584,6 +588,10 @@
      "name": "KTOS"
     },
     {
+     "ticker": "AVAV",
+     "name": "AVAV"
+    },
+    {
      "ticker": "LUNR",
      "name": "LUNR"
     },
@@ -610,11 +618,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
@@ -630,12 +638,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "DASH",
-     "name": "DoorDash Inc"
-    },
-    {
      "ticker": "MELI",
      "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
     },
     {
      "ticker": "TMUS",

@@ -58,9 +58,9 @@ def fake_ledger(monkeypatch):
 # The shipping ledger — the resolution itself, not just its plumbing
 # ---------------------------------------------------------------------------
 
-def test_shipping_ledger_holds_the_two_resolved_delistings():
+def test_shipping_ledger_holds_the_resolved_delistings():
     rows = ds.ledger()
-    assert set(rows) == {"CTRA", "TPH"}
+    assert set(rows) == {"CTRA", "TPH", "AVB", "LEG", "FBRX", "TWO"}
     assert rows["CTRA"]["delisted_on"] == "2026-05-07"
     assert rows["CTRA"]["acquirer"] == "Devon Energy"
     assert rows["TPH"]["delisted_on"] == "2026-05-14"
@@ -68,6 +68,29 @@ def test_shipping_ledger_holds_the_two_resolved_delistings():
     # conflating the two would put the wrong date on the page.
     assert rows["TPH"]["last_session"] == "2026-05-13"
     assert rows["TPH"]["acquirer"] == "Sumitomo Forestry"
+    # AVB (PR #6082 row): Friday last session before the Monday merger close.
+    assert rows["AVB"]["delisted_on"] == "2026-08-17"
+    assert rows["AVB"]["last_session"] == "2026-08-14"
+    # LEG (EQR->VMRK migration PR row): merger closed ON the last session (08-26,
+    # the 13.7M-share final print); the 25-NSE followed the next day.
+    assert rows["LEG"]["delisted_on"] == "2026-08-27"
+    assert rows["LEG"]["last_session"] == "2026-08-26"
+    assert rows["LEG"]["acquirer"] == "Somnigroup International"
+    # FBRX: the $77 cash tender expired one minute after 11:59 p.m. ET on 08-26
+    # and the DGCL 251(h) merger closed the next morning — last session precedes
+    # the delisting date, the TPH shape.
+    assert rows["FBRX"]["delisted_on"] == "2026-08-27"
+    assert rows["FBRX"]["last_session"] == "2026-08-26"
+    assert rows["FBRX"]["acquirer"] == "argenx"
+    # TWO: 25-NSE filed the morning after the 19.4M-share final session. Common
+    # stock only — the preferreds and TWOD notes remain listed.
+    assert rows["TWO"]["delisted_on"] == "2026-08-25"
+    assert rows["TWO"]["last_session"] == "2026-08-24"
+    assert rows["TWO"]["acquirer"] == "CrossCountry Mortgage"
+    # STRS is deliberately NOT a row: delisted from NASDAQ 2026-08 under its
+    # liquidation plan but still printing real OTC bars — a live tape must never
+    # be filed as an exit (it is acked in quality.delisted_printing_acks).
+    assert "STRS" not in rows
 
 
 def test_no_shipping_row_claims_a_successor_ticker():
@@ -99,6 +122,35 @@ def test_tcnnf_migrated_to_trlv_across_config_and_store():
     # A live rename must never be filed as an exit — that is the mistake the whole
     # resolution protocol exists to prevent, in the direction that loses a real feed.
     assert "TCNNF" not in ds.ledger() and "TRLV" not in ds.ledger()
+
+
+@pytest.mark.needs_full_checkout("data")
+def test_issc_migrated_to_ia_across_name_map_and_store():
+    """ISSC -> NASDAQ:IA (same issuer, CIK 836690; ticker change ~2026-08-25).
+    Nothing durable keyed on ISSC except the ZH name map; the vendor re-served
+    the FULL tape under IA (the Russell screener picked IA up on 2026-08-28), so
+    the frozen ISSC store was the same company under a dead key. It was removed
+    — not left to age out — because fetch_basket_ohlcv's --store leg re-requests
+    every on-disk ticker nightly forever, and a rename may not use the exit
+    ledger to leave the fetch set."""
+    import json as _json
+    zh = _json.loads((REPO / "config" / "us_names_zh.json").read_text())
+    assert "ISSC" not in zh
+    assert zh.get("IA")
+    assert (REPO / "data" / "baskets" / "ohlcv" / "IA.parquet").exists()
+    assert not (REPO / "data" / "baskets" / "ohlcv" / "ISSC.parquet").exists()
+    # A rename is never filed as an exit, in either key.
+    assert "ISSC" not in ds.ledger() and "IA" not in ds.ledger()
+
+
+def test_strs_liquidation_is_acked_not_exited():
+    """STRS left NASDAQ under its liquidation plan but the shares still print
+    real OTC bars — the delisted_printing ack is the honest mechanism while the
+    tape lives; an exit row would freeze a live tape (graduation path documented
+    in config/delisted_symbols.yml)."""
+    q = config.load()["quality"]
+    assert "STRS" in (q.get("delisted_printing_acks") or [])
+    assert "STRS" not in ds.ledger()
 
 
 # ---------------------------------------------------------------------------
@@ -302,3 +354,100 @@ def test_delisted_recs_never_reach_the_demotion_map_or_its_breaker_denominator(c
     assert demote_map == {}
     assert n_dark == 0
     assert "gate disarmed" not in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# The data/stocks lane (collectors/sector_holdings + scripts/heal_stocks_basis) —
+# the AVB 2026-08 successor-splice incident. A delisted feed is not merely
+# useless: Yahoo can answer the dead string with a merger successor's CONTINUING
+# series (AVB's whole 1994-2026 history came back re-based by the ~2.793 exchange
+# ratio plus live post-delisting successor bars), and the collector's
+# basis-rebase path then imports it wholesale via a period='max' re-pull.
+# ---------------------------------------------------------------------------
+
+def test_stocks_retention_drops_ledger_names_but_union_wins():
+    """_fetch_universe semantics with the exit ledger folded into `dead`: a name
+    kept only by on-disk retention is dropped; a name in TODAY's union is fetched
+    anyway (symbol reuse — the union side always wins)."""
+    from collectors import sector_holdings as sh
+    dead = frozenset({"AVB"})
+    assert sh._fetch_universe(["AAPL"], ["AAPL", "AVB"], dead) == ["AAPL"]
+    assert sh._fetch_universe(["AVB", "AAPL"], ["AVB"], dead) == ["AAPL", "AVB"]
+
+
+def test_stocks_fetch_excludes_ledger_names_from_retention(fake_ledger, monkeypatch):
+    """The wiring: StockPriceAdapter.fetch() passes ledger tickers into the
+    retention exclusion, so a delisted-but-still-on-disk name is never requested."""
+    from collectors import sector_holdings as sh
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.",
+                             last_session="2026-08-14", delisted_on="2026-08-17")})
+    monkeypatch.setattr(sh, "top10_union", lambda: ["AAPL"])
+    monkeypatch.setattr(sh, "_dead_tickers", lambda: frozenset())
+    monkeypatch.setattr(sh.config, "load", lambda: {
+        "yahoo": {"retries": 1, "backoff_base_s": 0, "batch_size": 50,
+                  "upsert_basis_tol": 1e-3}})
+    ad = sh.StockPriceAdapter()
+    monkeypatch.setattr(ad, "stored_series", lambda: ["AAPL", "AVB"])
+    monkeypatch.setattr(ad, "_needs_full", lambda t: False)
+    requested: list[str] = []
+
+    def fake_pull(period, tlist, frames, rebase, tol):
+        requested.extend(tlist)
+        for t in tlist:
+            frames[t] = pd.DataFrame({"close": [1.0]})
+
+    monkeypatch.setattr(ad, "_pull", fake_pull)
+    frames = ad.fetch()
+    assert "AAPL" in requested
+    assert "AVB" not in requested
+    assert "AVB" not in frames
+
+
+def test_stocks_delisted_exclusion_is_announced_at_column_zero(fake_ledger, capsys):
+    from collectors import sector_holdings as sh
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.",
+                             last_session="2026-08-14", delisted_on="2026-08-17")})
+    dropped = sh._report_delisted_exclusions(["AAPL"], ["AAPL", "AVB"], ds.tickers())
+    assert dropped == ["AVB"]
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if ln.startswith("::notice title=stocks collector delisted::")]
+    assert len(lines) == 1
+    assert "AVB(last session 2026-08-14)" in lines[0]
+
+
+def test_stocks_union_side_ledger_name_is_not_announced(fake_ledger, capsys):
+    """A ledger name still in today's union is being fetched (union wins), so the
+    exclusion notice must not name it — a notice that is always on is a notice
+    nobody reads."""
+    from collectors import sector_holdings as sh
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.")})
+    assert sh._report_delisted_exclusions(["AVB"], ["AVB"], ds.tickers()) == []
+    assert "::notice title=stocks collector delisted::" not in capsys.readouterr().out
+
+
+def test_heal_stocks_basis_refuses_ledger_names_even_explicitly(fake_ledger, monkeypatch):
+    """heal() must refuse an exit-ledger name even via --tickers: the wholesale
+    period='max' rewrite is exactly the path that imported the AVB splice."""
+    from scripts import heal_stocks_basis as hsb
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.")})
+
+    def boom(*a, **k):  # network sentinel — a refused name must never be fetched
+        raise AssertionError("download attempted for a delisted name")
+
+    monkeypatch.setattr(hsb, "_download", boom)
+    assert hsb.heal(["AVB"], dry_run=False) == []
+
+
+def test_heal_stocks_basis_detect_skips_ledger_names(fake_ledger, monkeypatch, tmp_path):
+    from scripts import heal_stocks_basis as hsb
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.")})
+    d = tmp_path / "stocks"
+    d.mkdir(parents=True)
+    (d / "AVB.parquet").touch()  # glob only needs the name; no read should happen
+    monkeypatch.setattr(hsb.config, "data_dir", lambda: tmp_path)
+
+    def boom(*a, **k):
+        raise AssertionError("download attempted for a delisted-only store")
+
+    monkeypatch.setattr(hsb, "_download", boom)
+    assert hsb.detect(tol=0.005) == []

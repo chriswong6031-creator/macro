@@ -4814,6 +4814,9 @@ def test_status_event_sequence_two_round_tool_turn(tmp_path):
 
     assert [(e["type"], e.get("phase")) for e in parsed] == [
         ("meta", None),
+        # W1-C: context_receipt is now a first-class event, always right after meta
+        # (research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md).
+        ("context_receipt", None),
         ("status", "start"),
         ("status", "grounding"),
         ("status", "model"),

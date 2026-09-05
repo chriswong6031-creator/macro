@@ -2,25 +2,150 @@
   "schema": "policy_intent_desk.v1",
   "is_context_only": true,
   "lens": "realpolitik",
-  "generated_at": "2026-08-25T17:45:16.076450+00:00",
-  "state_asof": "2026-08-26",
+  "generated_at": "2026-09-04T11:42:39.843502+00:00",
+  "state_asof": "2026-09-04",
   "model": "deepseek-v4-pro",
-  "regime_context": null,
-  "regime_context_zh": null,
-  "theses": [],
+  "regime_context": "The live regime is reflationary and stagflation-prone: the Administration is suppressing funding costs structurally while directing capital toward energy security and domestic capacity, but the Fed is still banking inflation credibility rather than delivering near-term easing. Consensus may focus on eventual coordinated cuts; revealed interest favors hawkish optionality now, with lower real yields pursued through Treasury plumbing until inflation permits a pivot.",
+  "regime_context_zh": "\u5f53\u524d\u5904\u4e8e\u518d\u901a\u80c0\u4e14\u6613\u9677\u5165\u6ede\u80c0\u7684\u653f\u7b56\u73af\u5883\uff1a\u653f\u5e9c\u6b63\u901a\u8fc7\u7ed3\u6784\u6027\u624b\u6bb5\u538b\u4f4e\u878d\u8d44\u6210\u672c\uff0c\u5e76\u5f15\u5bfc\u8d44\u672c\u6d41\u5411\u80fd\u6e90\u5b89\u5168\u548c\u56fd\u5185\u4ea7\u80fd\uff0c\u4f46\u7f8e\u8054\u50a8\u4ecd\u5728\u79ef\u7d2f\u6297\u901a\u80c0\u4fe1\u8a89\uff0c\u800c\u975e\u7acb\u5373\u5bbd\u677e\u3002\u5171\u8bc6\u53ef\u80fd\u805a\u7126\u4e8e\u6700\u7ec8\u7684\u534f\u540c\u964d\u606f\uff1b\u4f46\u4ece\u5229\u76ca\u548c\u884c\u4e3a\u770b\uff0c\u773c\u4e0b\u66f4\u504f\u5411\u4fdd\u7559\u9e70\u6d3e\u9009\u62e9\u6743\uff0c\u5728\u901a\u80c0\u5141\u8bb8\u8f6c\u5411\u524d\u5148\u901a\u8fc7\u8d22\u653f\u90e8\u7684\u5e02\u573a\u673a\u5236\u538b\u4f4e\u5b9e\u9645\u6536\u76ca\u7387\u3002",
+  "theses": [
+    {
+      "id": "2026-09-04-20260904114239-1",
+      "actor": "admin",
+      "subject": "XLE",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 42,
+      "thesis": "Iran re-escalation gives the Administration a security incentive to tolerate and support domestic energy capacity, while disruption risk supplies an oil-risk premium. That revealed interest is more durable than ceasefire rhetoric, although the expression remains headline-fragile.",
+      "thesis_zh": "\u4f0a\u6717\u5c40\u52bf\u518d\u5ea6\u5347\u7ea7\uff0c\u4f7f\u653f\u5e9c\u51fa\u4e8e\u5b89\u5168\u5229\u76ca\u66f4\u613f\u610f\u5bb9\u5fcd\u5e76\u652f\u6301\u56fd\u5185\u80fd\u6e90\u4ea7\u80fd\uff0c\u800c\u4f9b\u5e94\u4e2d\u65ad\u98ce\u9669\u5219\u5e26\u6765\u77f3\u6cb9\u98ce\u9669\u6ea2\u4ef7\u3002\u8fd9\u4e00\u5df2\u663e\u9732\u7684\u5229\u76ca\u53d6\u5411\u6bd4\u505c\u706b\u8a00\u8bba\u66f4\u6301\u4e45\uff0c\u4f46\u8be5\u65b9\u5411\u4ecd\u5bf9\u65b0\u95fb\u51b2\u51fb\u9ad8\u5ea6\u654f\u611f\u3002",
+      "evidence": [
+        "Iran ceasefire collapsed as of July 8, with US strikes and an intraday Brent spike near $80.",
+        "Energy was the top ETF-inflow sector in Q1 2026, indicating an established rotation.",
+        "The theater assessment describes oil as two-sided but upside-skewed and the energy rotation as re-primed."
+      ],
+      "dissent": "A durable ceasefire and uninterrupted Hormuz transit could rapidly remove the geopolitical premium, while weaker growth suppresses underlying oil demand.",
+      "dissent_zh": "\u6301\u4e45\u505c\u706b\u53ca\u970d\u5c14\u6728\u5179\u6d77\u5ce1\u8fd0\u8f93\u4e0d\u53d7\u5e72\u6270\uff0c\u53ef\u80fd\u8fc5\u901f\u6d88\u9664\u5730\u7f18\u653f\u6cbb\u6ea2\u4ef7\uff0c\u800c\u589e\u957f\u8d70\u5f31\u4e5f\u4f1a\u538b\u5236\u77f3\u6cb9\u7684\u57fa\u7840\u9700\u6c42\u3002",
+      "falsifier": {
+        "text": "XLE lags SPY over the next 42 trading days while Hormuz transit remains uninterrupted and strike activity subsides.",
+        "text_zh": "\u672a\u676542\u4e2a\u4ea4\u6613\u65e5\u5185\uff0c\u5728\u970d\u5c14\u6728\u5179\u6d77\u5ce1\u8fd0\u8f93\u4fdd\u6301\u7545\u901a\u4e14\u6253\u51fb\u6d3b\u52a8\u51cf\u5f31\u7684\u540c\u65f6\uff0cXLE\u8dd1\u8f93SPY\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLE",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 42
+        }
+      },
+      "check_by": "2026-11-03"
+    },
+    {
+      "id": "2026-09-04-20260904114239-2",
+      "actor": "admin",
+      "subject": "KBE",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 63,
+      "thesis": "Bill-heavy issuance, Treasury buybacks, central-clearing expansion and eSLR reform align the Administration's funding interest with stronger dealer intermediation. KBE is a scorable proxy for the banking system's prospective balance-sheet relief, though the policy transmission is indirect.",
+      "thesis_zh": "\u504f\u91cd\u77ed\u671f\u56fd\u5e93\u5238\u7684\u53d1\u884c\u3001\u8d22\u653f\u90e8\u56de\u8d2d\u3001\u56fd\u503a\u4e2d\u592e\u6e05\u7b97\u6269\u5c55\u53caeSLR\u6539\u9769\uff0c\u4f7f\u653f\u5e9c\u7684\u878d\u8d44\u5229\u76ca\u4e0e\u589e\u5f3a\u4ea4\u6613\u5546\u4e2d\u4ecb\u80fd\u529b\u76f8\u4e00\u81f4\u3002KBE\u662f\u8861\u91cf\u94f6\u884c\u4f53\u7cfb\u6f5c\u5728\u8d44\u4ea7\u8d1f\u503a\u8868\u51cf\u8d1f\u7684\u53ef\u8bc4\u5206\u4ee3\u7406\uff0c\u4f46\u653f\u7b56\u4f20\u5bfc\u5e76\u4e0d\u76f4\u63a5\u3002",
+      "evidence": [
+        "An open prediction calls for concrete eSLR-reform progress from a banking regulator.",
+        "An open prediction expects the SEC to advance Treasury central clearing.",
+        "Treasury is expected to keep bills as the shock absorber and avoid increasing coupon auction sizes at the August refunding."
+      ],
+      "dissent": "A stagflationary downturn could raise credit losses and flatten profitable bank activity faster than regulatory relief improves intermediation economics.",
+      "dissent_zh": "\u6ede\u80c0\u578b\u4e0b\u884c\u53ef\u80fd\u63a8\u9ad8\u4fe1\u8d37\u635f\u5931\u5e76\u538b\u7f29\u94f6\u884c\u7684\u76c8\u5229\u6d3b\u52a8\uff0c\u5176\u901f\u5ea6\u6216\u5feb\u4e8e\u76d1\u7ba1\u653e\u677e\u6539\u5584\u4e2d\u4ecb\u4e1a\u52a1\u7ecf\u6d4e\u6027\u7684\u901f\u5ea6\u3002",
+      "falsifier": {
+        "text": "No proposed or final eSLR rule and no Treasury central-clearing milestone occur within 63 trading days.",
+        "text_zh": "\u672a\u676563\u4e2a\u4ea4\u6613\u65e5\u5185\uff0c\u65e2\u6ca1\u6709\u63d0\u51fa\u6216\u6700\u7ec8\u6572\u5b9aeSLR\u89c4\u5219\uff0c\u4e5f\u6ca1\u6709\u51fa\u73b0\u56fd\u503a\u4e2d\u592e\u6e05\u7b97\u91cc\u7a0b\u7891\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "KBE",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 63
+        }
+      },
+      "check_by": "2026-12-02"
+    },
+    {
+      "id": "2026-09-04-20260904114239-3",
+      "actor": "fed",
+      "subject": "TLT",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 42,
+      "thesis": "Warsh's revealed preference remains inflation-mandate first: strict-2% framing, reduced forward guidance and refusal to pre-commit preserve hiking optionality as inflation runs hot. With the market already close to the Fed's path, long-duration Treasuries lack a clear dovish repricing catalyst and remain exposed to the oil-driven inflation shock.",
+      "thesis_zh": "Warsh\u663e\u9732\u51fa\u7684\u504f\u597d\u4ecd\u662f\u901a\u80c0\u4f7f\u547d\u4f18\u5148\uff1a\u4e25\u683c\u76842%\u76ee\u6807\u6846\u67b6\u3001\u51cf\u5c11\u524d\u77bb\u6307\u5f15\u4ee5\u53ca\u62d2\u7edd\u9884\u5148\u627f\u8bfa\uff0c\u90fd\u4fdd\u7559\u4e86\u52a0\u606f\u9009\u62e9\u6743\uff0c\u800c\u5f53\u524d\u901a\u80c0\u4ecd\u7136\u504f\u70ed\u3002\u7531\u4e8e\u5e02\u573a\u5b9a\u4ef7\u5df2\u63a5\u8fd1\u7f8e\u8054\u50a8\u8def\u5f84\uff0c\u957f\u671f\u56fd\u503a\u7f3a\u4e4f\u660e\u786e\u7684\u9e3d\u6d3e\u91cd\u5b9a\u4ef7\u50ac\u5316\u5242\uff0c\u5e76\u7ee7\u7eed\u66b4\u9732\u4e8e\u6cb9\u4ef7\u9a71\u52a8\u7684\u901a\u80c0\u51b2\u51fb\u3002",
+      "evidence": [
+        "May core PCE rose 0.3% month over month and 3.4% year over year in the supplied intelligence.",
+        "Warsh declined to signal a July move and maintained that prices were too high.",
+        "FedWatch had shifted to a greater-than-70% probability of a September hike, while the end-2026 market path was only 8 basis points from the Fed dot."
+      ],
+      "dissent": "The payroll deterioration and revisions could broaden into a labor-market break, forcing data-driven easing and a duration rally despite elevated inflation.",
+      "dissent_zh": "\u5c31\u4e1a\u589e\u957f\u6076\u5316\u53ca\u5411\u4e0b\u4fee\u6b63\u53ef\u80fd\u6269\u5927\u4e3a\u52b3\u52a8\u529b\u5e02\u573a\u65ad\u88c2\uff0c\u8feb\u4f7f\u7f8e\u8054\u50a8\u8fdb\u884c\u6570\u636e\u9a71\u52a8\u7684\u5bbd\u677e\uff0c\u5e76\u5728\u901a\u80c0\u4ecd\u9ad8\u7684\u60c5\u51b5\u4e0b\u63a8\u52a8\u4e45\u671f\u8d44\u4ea7\u4e0a\u6da8\u3002",
+      "falsifier": {
+        "text": "The Fed cuts rates within 42 trading days after further material labor-market deterioration.",
+        "text_zh": "\u672a\u676542\u4e2a\u4ea4\u6613\u65e5\u5185\uff0c\u52b3\u52a8\u529b\u5e02\u573a\u8fdb\u4e00\u6b65\u660e\u663e\u6076\u5316\u540e\uff0c\u7f8e\u8054\u50a8\u5b9e\u65bd\u964d\u606f\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "TLT",
+          "vs": "SPY",
+          "via": "direct",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 42
+        }
+      },
+      "check_by": "2026-11-03"
+    },
+    {
+      "id": "2026-09-04-20260904114239-4",
+      "actor": "admin",
+      "subject": "OKLO",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 84,
+      "thesis": "Nuclear-for-AI policy serves two Administration interests simultaneously: expanding strategic domestic power capacity and relieving the electricity constraint on AI infrastructure. The capital-direction mechanism is explicit, but OKLO remains a high-beta proxy dependent on implementation rather than policy language alone.",
+      "thesis_zh": "\u6838\u80fd\u652f\u6301AI\u653f\u7b56\u540c\u65f6\u670d\u52a1\u4e8e\u653f\u5e9c\u7684\u4e24\u9879\u5229\u76ca\uff1a\u6269\u5927\u5177\u6709\u6218\u7565\u610f\u4e49\u7684\u56fd\u5185\u7535\u529b\u4ea7\u80fd\uff0c\u5e76\u7f13\u89e3AI\u57fa\u7840\u8bbe\u65bd\u9762\u4e34\u7684\u7535\u529b\u7ea6\u675f\u3002\u8d44\u672c\u5f15\u5bfc\u673a\u5236\u5341\u5206\u660e\u786e\uff0c\u4f46OKLO\u4ecd\u662f\u9ad8\u8d1d\u5854\u4ee3\u7406\uff0c\u5176\u8868\u73b0\u53d6\u51b3\u4e8e\u653f\u7b56\u843d\u5730\uff0c\u800c\u4e0d\u53ea\u662f\u653f\u7b56\u8868\u6001\u3002",
+      "evidence": [
+        "Nuclear, uranium and the HALEU fuel cycle are identified as targeted rotation beneficiaries under a fact-based policy mechanism.",
+        "Power, grid and data-center capex are identified as beneficiaries of AI-compute demand.",
+        "An open prediction expects DOE to release at least 20 metric tons of HALEU into the fuel bank for private and AI projects."
+      ],
+      "dissent": "HALEU availability, licensing and project execution can delay commercialization long enough for valuation compression to overwhelm the policy tailwind.",
+      "dissent_zh": "HALEU\u4f9b\u5e94\u3001\u8bb8\u53ef\u5ba1\u6279\u548c\u9879\u76ee\u6267\u884c\u90fd\u53ef\u80fd\u4f7f\u5546\u4e1a\u5316\u957f\u671f\u5ef6\u540e\uff0c\u4ece\u800c\u4ee4\u4f30\u503c\u538b\u7f29\u76d6\u8fc7\u653f\u7b56\u987a\u98ce\u3002",
+      "falsifier": {
+        "text": "DOE does not announce a HALEU fuel-bank release for private or AI projects within 84 trading days.",
+        "text_zh": "\u672a\u676584\u4e2a\u4ea4\u6613\u65e5\u5185\uff0cDOE\u672a\u5ba3\u5e03\u9762\u5411\u79c1\u4eba\u6216AI\u9879\u76ee\u7684HALEU\u71c3\u6599\u5e93\u6295\u653e\u3002",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "OKLO",
+          "vs": "SPY",
+          "via": "direct",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 84
+        }
+      },
+      "check_by": "2026-12-31"
+    }
+  ],
   "track_record": {
     "schema": "ai_desk_track_record.v1",
-    "as_of": "2026-08-24",
-    "scored_total": 3,
-    "open": 27,
+    "as_of": "2026-08-31",
+    "scored_total": 4,
+    "open": 26,
     "unscored_soft": 3,
     "expired": 0,
     "overall": {
-      "n": 3,
-      "hits": 1,
+      "n": 4,
+      "hits": 2,
       "misses": 2,
-      "hit_rate": 0.333,
-      "dir_accuracy": 0.333
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.5
     },
     "by_conviction": {
       "high": {
@@ -38,20 +163,20 @@
         "dir_accuracy": null
       },
       "low": {
-        "n": 3,
-        "hits": 1,
+        "n": 4,
+        "hits": 2,
         "misses": 2,
-        "hit_rate": 0.333,
-        "dir_accuracy": 0.333
+        "hit_rate": 0.5,
+        "dir_accuracy": 0.5
       }
     },
     "by_kind": {
       "rel_return": {
-        "n": 3,
-        "hits": 1,
+        "n": 4,
+        "hits": 2,
         "misses": 2,
-        "hit_rate": 0.333,
-        "dir_accuracy": 0.333
+        "hit_rate": 0.5,
+        "dir_accuracy": 0.5
       },
       "level": {
         "n": 0,
@@ -68,10 +193,26 @@
         "misses": 2,
         "hit_rate": 0.333,
         "dir_accuracy": 0.333
+      },
+      "Reflation": {
+        "n": 1,
+        "hits": 1,
+        "misses": 0,
+        "hit_rate": 1.0,
+        "dir_accuracy": 1.0
       }
     },
-    "calibration_note": "3 scored, hit-rate 0.333 (directional accuracy 0.333). Sample is tiny \u2014 treat conviction as provisional and lean low.",
+    "calibration_note": "4 scored, hit-rate 0.5 (directional accuracy 0.5). Sample is tiny \u2014 treat conviction as provisional and lean low.",
     "recent": [
+      {
+        "id": "2026-08-01-022230-2",
+        "subject": "XLE",
+        "lean": "overweight",
+        "conviction": "low",
+        "outcome": "hit",
+        "realized": 0.0473,
+        "check_by": "2026-08-31"
+      },
       {
         "id": "2026-07-25-015718-4",
         "subject": "XLE",
@@ -100,19 +241,19 @@
         "check_by": "2026-08-21"
       }
     ],
-    "calibration_note_zh": "\u5df2\u8bc4\u5206 3 \u6761\uff0c\u547d\u4e2d\u7387 0.333\uff08\u65b9\u5411\u51c6\u786e\u7387 0.333\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
+    "calibration_note_zh": "\u5df2\u8bc4\u5206 4 \u6761\uff0c\u547d\u4e2d\u7387 0.5\uff08\u65b9\u5411\u51c6\u786e\u7387 0.5\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
   },
   "confidence": "low",
-  "degraded_reason": "llm_error",
+  "degraded_reason": null,
   "disclaimer": "Policy intent desk \u2014 realpolitik, context only, never scored or sized. Each lean is a fallible, checkable judgement (proxy vs SPY, with a check-by date), not a trade or a position size. Intent is inferred from interests; treat it as a hypothesis with a track record, not an oracle.",
   "disclaimer_zh": "\u610f\u56fe\u53f0 \u2014\u2014 \u73b0\u5b9e\u653f\u6cbb\u3001\u4ec5\u4f9b\u53c2\u8003\uff0c\u4ece\u4e0d\u8bc4\u5206\u6216\u5b9a\u4ed3\u3002\u6bcf\u6761\u5224\u65ad\u90fd\u662f\u53ef\u68c0\u9a8c\u3001\u4f1a\u51fa\u9519\u7684\u5224\u65ad\uff08\u4ee3\u7406\u6807\u7684 vs SPY\uff0c\u9644\u6838\u67e5\u65e5\u671f\uff09\uff0c\u5e76\u975e\u4ea4\u6613\u6216\u4ed3\u4f4d\u5927\u5c0f\u3002\u610f\u56fe\u7531\u5229\u76ca\u63a8\u65ad\u800c\u6765\uff1b\u8bf7\u5c06\u5176\u89c6\u4e3a\u6709\u6218\u7ee9\u8bb0\u5f55\u7684\u5047\u8bbe\uff0c\u800c\u975e\u795e\u8c15\u3002",
   "passport": {
     "state": "measured",
     "earned": true,
-    "label_en": "measured \u00b7 n=3",
-    "label_zh": "\u5df2\u9a8c\u8bc1 \u00b7 n=3",
-    "n": 3,
-    "hit_rate": 0.3333,
+    "label_en": "measured \u00b7 n=4",
+    "label_zh": "\u5df2\u9a8c\u8bc1 \u00b7 n=4",
+    "n": 4,
+    "hit_rate": 0.5,
     "detail": "",
     "last_validated": null,
     "expected_max_age_days": null,
