@@ -117,6 +117,17 @@ release remains disabled, and no accepted production Runtime interval exists.
 
 ## §1 What is left — in order
 
+The recovered source child is
+`session-truth-r1-owner-record-identity-repair-20260828-sol-001`, Slack
+`C0BSBM78V1N/1787894522.353989`. The parent named Claude8, but actual ACK/results
+were Claude3 (`U0BSLFRGA79`); its exact native session remains unresolved.
+GitHub STOP `5452114913` and source acceptance `5459830615` at `14af4c7d` do not
+prove child-source removal or `BRANCH_WRITER_RELEASED`. Runtime issued terminal
+closeout only and the existing Secretary is recovering the exact Claude3 session;
+no substitute account or source repair is authorized by that recovery.
+The original Task7 execution root is `1787829948.620029`; `1787876752.102929`
+is a separate project watcher and is preserved.
+
 1. Preserve #170's exact holder and obtain its current immutable evidence or a typed release; do
    not substitute a new Session Truth carrier.
 2. Repair the measured 60-second Session Truth acquisition timeout through its existing source

@@ -214,6 +214,12 @@ its fifteen: `control_plane/chairman_control_room_remote.py`,
 `ops/control_room_remote/install.sh` and `tests/test_control_room_remote_install.py`.
 The shared worker contract must appear in both explicit release lists and the exact
 isolated import-closure test. The new semantic head requires fresh review and checks.
+The subsequent full CAP-S1 census found #350's incumbent owns all three additional
+paths. They remain held until CAP-S1 source acceptance, terminal consumption and
+`BRANCH_WRITER_RELEASED`. HF1 follows that release and must preserve CAP's
+`executive_capability_packages.py` addition alongside its own common contract.
+The final package count is derived from the then-protected exact closure, never from
+the earlier 26-to-27 estimate. The fresh collision guard prevents concurrent edits.
 Frozen #392 is ordered behind #471 and remains terminal evidence; it must not be
 merged, cherry-picked or revived into HF1's changed provider-home API. Any future
 cancellation-hardening successor requires separate authority after #471 release.
