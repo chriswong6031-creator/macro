@@ -103,6 +103,26 @@
     settle();
   }
 
+  /* A separate line under the state, because "the owners are not running this"
+     and "the conditions do not currently hold" are different claims and the
+     reader needs both. */
+  function conditionsLine(snapshot) {
+    var conditions = snapshot.state.conditions;
+    if (!conditions) return null;
+    var p = el("p", "ox-note");
+    if (conditions.all_current_met === true) {
+      p.appendChild(say("All current conditions met \u00b7 describes today's readings only",
+        "当前条件均已满足 \u00b7 仅描述当日读数"));
+    } else if (conditions.all_current_met === false) {
+      p.appendChild(say("Not all current conditions are met",
+        "当前条件未全部满足"));
+    } else {
+      p.appendChild(say("Current conditions could not be read in full",
+        "当前条件无法完整读取"));
+    }
+    return p;
+  }
+
   function legVerdict(leg) {
     if (leg.observation === "unobserved") return say("No current reading", "暂无当前读数");
     if (leg.confirmed === true) return say("Met", "已满足");
@@ -145,15 +165,53 @@
     return rail;
   }
 
+  /* The episode and today's conditions are two different facts and the stance
+     says which one it is speaking about. A chain can sit here with every
+     condition true and still be dormant, stopped, or already finished — the
+     owner's chain is a history, and this sentence used to read the history off
+     today's booleans. */
   function stance(snapshot) {
     var blocking = snapshot.first_blocking_leg;
     var name = blocking ? blocking.title : null;
-    if (snapshot.state.code === "active") {
-      return say("Every step on this path is currently met.", "该路径的每个环节当前均已满足。");
+    var code = snapshot.state.code;
+    var allMet = snapshot.state.conditions && snapshot.state.conditions.all_current_met;
+
+    if (code === "unknown") {
+      return say("The owners' record for this path could not be read, so its state "
+        + "cannot be called.",
+        "无法读取所有者对该路径的记录，因此无法判定其状态。");
     }
-    if (snapshot.state.code === "unknown") {
-      return say("Part of this path has no current reading, so its state cannot be called.",
-        "该路径部分环节暂无当前读数，因此无法判定其状态。");
+    if (code === "active") {
+      return say("The owners have this path running.", "所有者记录该路径正在运行。");
+    }
+    if (code === "completed") {
+      return say("This path ran all the way through. What follows is the record of "
+        + "that, not a live reading.",
+        "该路径已完整传导。以下为其记录，并非实时读数。");
+    }
+    if (code === "stopped") {
+      return say("This path started and then stopped: one of the conditions the "
+        + "owners watch for came true.",
+        "该路径曾启动后中止：所有者所观察的条件之一已发生。");
+    }
+    if (code === "ended") {
+      return say("This path started and ended without completing.",
+        "该路径曾启动，但未完成即结束。");
+    }
+    if (allMet === true) {
+      /* The case the old code got wrong in the other direction: everything true
+         today, and still dormant. Saying "every step is met" as the headline
+         invited the reader to treat a coincidence as a running path. */
+      return say("Every step reads true right now, but the owners have not recorded "
+        + "this path as running. Conditions lining up on one day is not the same as "
+        + "the path having carried through.",
+        "当前各环节读数均为真，但所有者并未将该路径记录为运行中。"
+        + "某一天条件同时成立，与路径确已传导并非同一回事。");
+    }
+    if (allMet === null || allMet === undefined) {
+      return say("Part of this path has no current reading, and the owners have not "
+        + "recorded it as running.",
+        "该路径部分环节暂无当前读数，且所有者未将其记录为运行中。");
     }
     if (snapshot.contradiction) {
       var frag = document.createDocumentFragment();
@@ -236,6 +294,12 @@
       var item = snapshot.what_changed.items[0];
       p.appendChild(say("A transition was recorded on " + (item.asof || "an earlier date") + ".",
         "已于 " + (item.asof || "较早日期") + " 记录到一次状态转换。"));
+    } else if (snapshot.what_changed.status === "comparison_incomplete") {
+      /* An unread history is not a history of nothing, and this branch exists so
+         the page stops answering in the owners' voice about records it could
+         not read. */
+      p.className = "ox-unavailable";
+      p.appendChild(bi(snapshot.what_changed.note));
     } else {
       p.className = "ox-unavailable";
       p.appendChild(say(
@@ -511,7 +575,19 @@
     text_untranslated: { en: "an owner note published in one language only",
       zh: "仅以单一语言发布的所有者备注" },
     episode_ledger_truncated: { en: "a change history longer than this page reads",
-      zh: "长度超出本页面读取上限的变更历史" }
+      zh: "长度超出本页面读取上限的变更历史" },
+    owner_state_absent: { en: "the owners' recorded state for this path",
+      zh: "所有者为该路径记录的状态" },
+    owner_state_unrecognised: { en: "an owner state this page does not recognise",
+      zh: "本页面无法识别的所有者状态" },
+    observation_date_in_future: { en: "a reading dated ahead of now",
+      zh: "日期晚于当前时刻的读数" },
+    receipts_malformed: { en: "a set of readings this page could not read",
+      zh: "本页面无法读取的一组读数" },
+    receipt_value_not_finite: { en: "a reading that is not a usable number",
+      zh: "并非可用数值的读数" },
+    receipt_field_not_scalar: { en: "a reading that was not a single value",
+      zh: "并非单一数值的读数" }
   };
 
   function gapLabel(gap) {
@@ -727,6 +803,8 @@
     var stanceP = el("p", "ox-stance");
     stanceP.appendChild(stance(snapshot));
     hero.appendChild(stanceP);
+    var conditions = conditionsLine(snapshot);
+    if (conditions) hero.appendChild(conditions);
     hero.appendChild(renderMeta(snapshot));
     root.appendChild(hero);
 

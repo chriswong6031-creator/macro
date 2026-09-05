@@ -43,6 +43,12 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
 .ox-state[data-state="dormant"] .ox-state-word{color:var(--muted)}
 .ox-state[data-state="unknown"] .ox-state-word{color:var(--ink-warn, var(--warn))}
 .ox-state[data-state="unavailable"] .ox-state-word{color:var(--ink-act, var(--act))}
+/* The owner's episode vocabulary, not a traffic light. `completed` ran all the
+   way through and `ended` did not, so they must not read alike; `stopped` is the
+   one the reader is most likely to act on, so it takes the alert rung. */
+.ox-state[data-state="completed"] .ox-state-word{color:var(--ink-ok, var(--ok))}
+.ox-state[data-state="stopped"] .ox-state-word{color:var(--ink-act, var(--act))}
+.ox-state[data-state="ended"] .ox-state-word{color:var(--ink-warn, var(--warn))}
 .ox-stance{margin:14px 0 0;font-size:var(--fs-md);color:var(--text);max-width:64ch}
 .ox-asof{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--muted)}
 

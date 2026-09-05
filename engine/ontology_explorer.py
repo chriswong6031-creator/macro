@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import logging
 import re
 from datetime import UTC, datetime
@@ -83,6 +84,10 @@ MAX_PATH_LEGS = 12
 #: Bytes, not rows: a bound that counts only nodes leaves the payload unbounded.
 MAX_SOURCE_BYTES = 2_000_000
 MAX_EPISODE_ROWS = 5_000
+
+#: The owner's closed transition vocabulary (`transmission_chains._mk_transition`
+#: call sites). A row naming anything else is not one of the owner's events.
+OWNER_TRANSITIONS = frozenset({"arming", "propagating", "expressed", "failed", "expired"})
 
 #: fullmatch below, not match: `$` also matches before a trailing newline.
 _CHAIN_SLUG_RE = re.compile(r"[a-z0-9][a-z0-9_]{0,80}")
@@ -336,13 +341,18 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     if not isinstance(definition_hops, list) or not definition_hops:
         raise SourceIncoherent("malformed_hops")
 
-    observed_nodes = {n["id"]: n for n in observed.get("nodes", [])
+    # A malformed node COLLECTION is a source problem, and it used to escape as a
+    # generic internal error because the code went straight to iterating it.
+    observed_node_list = observed.get("nodes", [])
+    if not isinstance(observed_node_list, list):
+        raise SourceIncoherent("malformed_nodes")
+    observed_nodes = {n["id"]: n for n in observed_node_list
                       if isinstance(n, dict) and isinstance(n.get("id"), str)}
     unknown = sorted(set(observed_nodes) - set(declared_nodes))
     if unknown:
         raise SourceIncoherent(f"unknown_node:{unknown[0]}")
 
-    observed_node_rows = [n for n in observed.get("nodes", []) if isinstance(n, dict)]
+    observed_node_rows = [n for n in observed_node_list if isinstance(n, dict)]
     row_ids = [n.get("id") for n in observed_node_rows if isinstance(n.get("id"), str)]
     if len(row_ids) != len(set(row_ids)):
         raise SourceIncoherent(f"duplicate_node_rows:{len(row_ids) - len(set(row_ids))}")
@@ -377,17 +387,28 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     # that very leg had no reading.
     unobserved = [leg["node_id"] for leg in legs if leg["observation"] != "observed"]
     confirmed_hop_count = sum(1 for h in hops if h["confirmed"] is True)
-    activation = bool(sequence) and not cycle_nodes and not unobserved and all(
-        leg["confirmed"] is True for leg in legs)
 
-    if cycle_nodes or unobserved:
-        state_code = "unknown"
-    elif activation:
-        state_code = "active"
-    else:
-        state_code = "dormant"
+    # Today's conditions all reading true is a DESCRIPTION OF TODAY. It is not an
+    # episode. The owner's chain is temporal: a chain whose conditions coincide
+    # may be merely `arming`, a fired falsifier can stop it while the same
+    # conditions still read true, and `failed`/`expired` episodes end with their
+    # conditions unchanged. Deriving activation from the node booleans emitted
+    # `active` with the owner reading `failed` and ZERO confirmed hops.
+    conditions_all_met = (
+        None if (cycle_nodes or unobserved or not sequence)
+        else all(leg["confirmed"] is True for leg in legs))
+    episode = _episode_state(observed, gaps)
+    # Tri-state on purpose. Collapsing an unreadable owner episode to False would
+    # assert "not running" about a chain whose state we could not read, which is
+    # the same collapse this repair exists to remove one level up.
+    activation = episode["running"]
+    state_code = episode["code"]
 
-    first_blocking = _first_blocking_leg(legs) if not activation else None
+    # The first unmet leg is a fact about today's conditions, so it is computed
+    # from them regardless of what the owner's episode is doing, and it is absent
+    # only when every leg actually reads true. Gating it on the episode hid the
+    # blocking leg whenever a leg was unread — the unread leg IS the blocker.
+    first_blocking = _first_blocking_leg(legs)
     contradiction = _contradiction(legs, first_blocking)
 
     payload = {
@@ -405,8 +426,20 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
                 where="state_label", gaps=gaps),
             "tier": observed.get("tier"),
             "display_only": bool(observed.get("display_only", True)),
+            "basis": episode["basis"],
+            "episode_id": episode["episode_id"],
+            "watch_condition_fired": episode["watch_condition_fired"],
+            "arm_veto": episode["arm_veto"],
             "confirmed_hop_count": confirmed_hop_count,
             "hop_count": len(hops),
+            # A SEPARATE FACT, deliberately not folded into `code`: whether every
+            # condition happens to read true right now. It describes today, and
+            # an episode is a history — a chain can sit here with everything true
+            # and still be dormant, stopped or already ended.
+            "conditions": {
+                "all_current_met": conditions_all_met,
+                "describes": "current_readings_only",
+            },
             "coverage": {
                 "legs_declared": len(sequence),
                 "legs_observed": len(sequence) - len(unobserved),
@@ -447,12 +480,116 @@ def _build(definition: dict, state_doc: dict, episodes_raw: bytes | None, *,
     return payload
 
 
+#: The owner's own episode vocabulary (`engine/transmission_chains.py`).
+_OWNER_RUNNING = frozenset({"arming", "propagating"})
+_OWNER_COMPLETED = frozenset({"expressed"})
+_OWNER_ENDED = frozenset({"failed", "expired"})
+_OWNER_DORMANT = frozenset({"dormant"})
+
+
+def _episode_state(observed: dict, gaps: list[dict]) -> dict[str, Any]:
+    """The product state, taken from the OWNER's episode — never from today.
+
+    Returns ``code`` plus ``running``, which is True only while the owner has a
+    live episode that no falsifier or arming veto has stopped. An owner state
+    this module does not recognise is UNKNOWN and is named: guessing would put
+    the whole surface back on instantaneous coincidence through a default.
+    """
+    raw = observed.get("state")
+    veto = observed.get("arm_veto")
+    fired = observed.get("falsifier_fired")
+    detail: dict[str, Any] = {
+        "owner_state": raw if isinstance(raw, str) else None,
+        "arm_veto": bool(veto) if veto is not None else False,
+        # The owner spells this key with the refutation family; this product does
+        # not ship that word anywhere a reader can reach, and the payload is a
+        # reader-facing surface. Same fact, this surface's vocabulary.
+        "watch_condition_fired": bool(fired) if fired is not None else False,
+        "episode_id": observed.get("episode_id"),
+        "basis": "owner_episode",
+    }
+    if not isinstance(raw, str) or not raw:
+        gaps.append({"kind": "owner_state_absent"})
+        return {"code": "unknown", "running": None, **detail}
+    if raw in _OWNER_RUNNING:
+        # A falsifier that has fired stops the episode even while the same
+        # conditions still read true; the owner records the receipt rather than
+        # rewriting the state, so this surface must apply it.
+        if detail["watch_condition_fired"] or detail["arm_veto"]:
+            return {"code": "stopped", "running": False, **detail}
+        return {"code": "active", "running": True, **detail}
+    if raw in _OWNER_COMPLETED:
+        return {"code": "completed", "running": False, **detail}
+    if raw in _OWNER_ENDED:
+        return {"code": "ended", "running": False, **detail}
+    if raw in _OWNER_DORMANT:
+        return {"code": "dormant", "running": False, **detail}
+    gaps.append({"kind": "owner_state_unrecognised", "reason": "not_in_owner_vocabulary"})
+    return {"code": "unknown", "running": None, **detail}
+
+
 def _state_label(code: str) -> dict[str, str]:
     return {
-        "active": {"en": "Active", "zh": "运行中"},
+        "active": {"en": "Running", "zh": "运行中"},
+        "completed": {"en": "Ran to the end", "zh": "已完整传导"},
+        "stopped": {"en": "Stopped", "zh": "已中止"},
+        "ended": {"en": "Ended without completing", "zh": "未完成即结束"},
         "dormant": {"en": "Dormant", "zh": "休眠"},
         "unknown": {"en": "Unknown", "zh": "未知"},
     }[code]
+
+
+#: The receipt shape this product declares. A receipt is projected onto exactly
+#: these fields; anything else the owners carry stays in the owner artifact.
+_RECEIPT_FIELDS = ("series", "vs", "metric", "window", "value", "op",
+                   "threshold", "passed")
+
+
+def _receipts(rows: Any, *, where: str, gaps: list[dict]) -> list[dict[str, Any]]:
+    """Project owner receipts onto the declared contract.
+
+    Passing the owner's dicts through whole made this response's shape whatever
+    the owner artifact happened to contain: a nested object rode straight into a
+    tenant-neutral payload, and a non-finite float survived composition and then
+    broke strict JSON serialisation at the transport edge, turning an upstream
+    data problem into a 500 on our side.
+
+    This is a STRUCTURAL contract, not a blacklist of field names — an unknown
+    key is dropped because it is not in the contract, not because someone
+    predicted it. Numeric zero, boolean False and null all survive; only values
+    that cannot be serialised are refused, and their absence is disclosed.
+    """
+    if not isinstance(rows, list):
+        if rows is not None:
+            gaps.append({"kind": "receipts_malformed", "where": where})
+        return []
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            gaps.append({"kind": "receipts_malformed", "where": where})
+            continue
+        projected: dict[str, Any] = {}
+        for field in _RECEIPT_FIELDS:
+            if field not in row:
+                continue
+            value = row[field]
+            if isinstance(value, bool) or value is None or isinstance(value, str):
+                projected[field] = value
+            elif isinstance(value, (int, float)):
+                if math.isfinite(value):
+                    projected[field] = value
+                else:
+                    projected[field] = None
+                    gaps.append({"kind": "receipt_value_not_finite",
+                                 "where": f"{where}.{field}"})
+            else:
+                # A nested structure is not a reading. Dropping it keeps the
+                # response shape the one this product declares.
+                gaps.append({"kind": "receipt_field_not_scalar",
+                             "where": f"{where}.{field}"})
+        if projected:
+            out.append(projected)
+    return out
 
 
 def _read_leg_verdict(node_id: str, seen: dict,
@@ -497,7 +634,8 @@ def _legs(sequence: list[str], declared: dict, observed: dict,
             observation = "unobserved"
             receipts: list[dict[str, Any]] = []
         else:
-            receipts = [r for r in seen.get("receipts", []) if isinstance(r, dict)]
+            receipts = _receipts(seen.get("receipts"),
+                                 where=f"nodes.{node_id}.receipts", gaps=gaps)
             confirmed, observation = _read_leg_verdict(node_id, seen, gaps)
         legs.append({
             "node_id": node_id,
@@ -549,7 +687,8 @@ def _hops(definition_hops: list[dict], observed_hops: dict,
             "lag_d": lag,
             "confirmed": seen.get("confirmed") if "confirmed" in seen else None,
             "confirmed_asof": seen.get("asof"),
-            "value_receipt": [r for r in seen.get("value_receipt", []) if isinstance(r, dict)],
+            "value_receipt": _receipts(seen.get("value_receipt"),
+                                       where=f"hops.{hop_id}.value_receipt", gaps=gaps),
             "base_rate": base_block,
         })
     return out
@@ -630,7 +769,8 @@ def _is_iso_date(value: Any) -> bool:
 
 def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
                   cutoff: Any = None,
-                  gaps: list[dict] | None = None) -> list[dict[str, Any]]:
+                  gaps: list[dict] | None = None,
+                  report: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Recorded transitions for THIS chain at THIS revision.
 
     A row written under a different revision describes a different definition of
@@ -664,13 +804,26 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
                 continue
             if not isinstance(row, dict) or row.get("chain") != chain:
                 continue
+            # THE OWNER'S KEY, whole. `transmission_chains._ledger_key` is
+            # (chain, rev, episode_id, transition, hop, asof) and `_mk_transition`
+            # emits exactly that shape. Excluding only a DIFFERENT INTEGER rev let
+            # a missing, null or string revision through, and a bare date plus any
+            # string was accepted as an event with episode_id=None and hop=None.
+            # A date and an arbitrary string are not an owner transition.
             row_rev = row.get("rev")
-            if isinstance(row_rev, int) and row_rev != rev:
+            if not isinstance(row_rev, int) or isinstance(row_rev, bool):
+                malformed += 1
+                continue
+            if row_rev != rev:
                 foreign += 1
                 continue
-            if not isinstance(row.get("transition"), str) or not _is_iso_date(row.get("asof")):
-                # Owner-native transition identity: a row without a transition
-                # and a date is not a transition, whatever else it carries.
+            episode_id = row.get("episode_id")
+            hop = row.get("hop")
+            transition = row.get("transition")
+            if (not isinstance(episode_id, str) or not episode_id
+                    or not isinstance(hop, int) or isinstance(hop, bool)
+                    or transition not in OWNER_TRANSITIONS
+                    or not _is_iso_date(row.get("asof"))):
                 malformed += 1
                 continue
             if cutoff and str(row["asof"]) > str(cutoff):
@@ -690,6 +843,12 @@ def _episode_rows(episodes_raw: bytes | None, *, chain: str, rev: Any,
             gaps.append({"kind": "episode_ledger_truncated",
                          "read_rows": MAX_EPISODE_ROWS,
                          "reason": "exceeds_read_bound"})
+    if report is not None:
+        # Whether the READ was complete is a different fact from what the read
+        # found, and the caller cannot answer "is this the latest" without it.
+        report["truncated"] = truncated
+        report["unreadable"] = unreadable
+        report["complete"] = not truncated and unreadable == 0
     return rows
 
 
@@ -701,7 +860,29 @@ def _what_changed(episodes_raw: bytes | None, *, chain: str, rev: Any,
     it is the absence of a baseline to compare against, which is a different
     statement and the only one the data supports.
     """
-    rows = _episode_rows(episodes_raw, chain=chain, rev=rev, cutoff=cutoff, gaps=gaps)
+    read: dict[str, Any] = {}
+    rows = _episode_rows(episodes_raw, chain=chain, rev=rev, cutoff=cutoff,
+                         gaps=gaps, report=read)
+
+    # An UNREAD history is not a history of nothing, and a truncated prefix is
+    # not the latest. Both used to answer with the owners' own voice: an
+    # entirely corrupt ledger said "the owners have recorded no transition", and
+    # a 5,001-row ledger reported its 5,000th-from-the-start row as the change.
+    if not read.get("complete", True):
+        return {
+            "status": "comparison_incomplete",
+            "reason": "ledger_read_incomplete",
+            "items": [],
+            "note": {
+                "en": "This page could not read the whole change history for this "
+                      "path, so it cannot say what changed most recently — or "
+                      "whether anything did. That is a limit of this read, not a "
+                      "statement about what the owners recorded.",
+                "zh": "本页面未能完整读取该路径的变更历史，"
+                      "因此无法判断最近发生了什么变化，也无法判断是否发生过变化。"
+                      "这是本次读取的局限，而非对所有者记录内容的结论。",
+            },
+        }
     if not rows:
         return {
             "status": "comparison_unavailable",
@@ -725,7 +906,10 @@ def _what_changed(episodes_raw: bytes | None, *, chain: str, rev: Any,
             "hop": latest.get("hop"),
             "asof": latest.get("asof"),
             "episode_id": latest.get("episode_id"),
-            "rev": latest.get("rev", rev),
+            # Never defaulted from the caller: every surviving row carries the
+            # owner's own integer revision, and substituting the requested one
+            # would manufacture the identity the row failed to prove.
+            "rev": latest["rev"],
         }],
         "note": None,
     }
@@ -1135,11 +1319,23 @@ def _source_block(definition: dict, state_doc: dict, observed: dict, *,
         else:
             age_seconds, age_basis = int(delta), "chain_state.built"
     observation_age_days: int | None = None
+    observation_basis = "chain_state.asof"
     try:
         observed_on = datetime.strptime(str(state_doc.get("asof")), "%Y-%m-%d").replace(tzinfo=UTC)
-        observation_age_days = max(0, (now - observed_on).days)
     except (TypeError, ValueError):
+        observation_basis = "unparseable_observation_date"
         gaps.append({"kind": "unparseable_observation_date", "where": "chain_state.asof"})
+    else:
+        days = (now - observed_on).days
+        if days < 0:
+            # The same non-fabrication rule the build stamp already follows, applied
+            # to the second clock: `max(0, ...)` turned a reading dated in the FUTURE
+            # into "observed today", which is the most confident possible answer to
+            # a question the data cannot answer at all.
+            observation_basis = "observation_date_in_future"
+            gaps.append({"kind": "observation_date_in_future", "where": "chain_state.asof"})
+        else:
+            observation_age_days = days
     return {
         "chain": chain,
         "rev": observed.get("rev"),
@@ -1167,8 +1363,10 @@ def _source_block(definition: dict, state_doc: dict, observed: dict, *,
             "generation_age_basis": age_basis,
             "observation_asof": state_doc.get("asof"),
             "observation_age_days": observation_age_days,
-            "observation_age_basis": ("chain_state.asof" if observation_age_days is not None
-                                      else "unparseable_asof"),
+            # One basis field for both outcomes: a null age can mean the date was
+            # unreadable OR that it sits in the future, and collapsing them to
+            # "unparseable" mislabelled the second as the first.
+            "observation_age_basis": observation_basis,
             "note": {
                 "en": "Age is measured against this build's own artifact stamp. Whether "
                       "it matches what the canonical transmission page is serving cannot "

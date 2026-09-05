@@ -363,3 +363,113 @@ the code is not a continuation the reader can reach.
   all (`reviews: []`, `reviewDecision: ""`). The consumed review was two
   commissioned Opus `reviewer` subagents against head `7fbdc0a0`; that cannot
   approve a repaired successor by implication.
+
+---
+
+# Repair round 3 — Sol analytical support `F04-EXACT-MODULE-SUPPORT-56649`
+
+A support session executed the complete composer and router at `56649cdf` (blobs
+byte-identical at `eaf6ac78`) and returned five classes. All five were real.
+
+## A · The owner's episode was being replaced by today's coincidence
+
+The primary blocker, and the worst defect in the whole vertical: `state.code`
+came from the current node booleans, so **four conditions reading true emitted
+`active` while the owner's own episode read `failed`, `expired`, or dormant with
+an arming veto, and zero hops were confirmed.**
+
+The owner's chain is *temporal*. `engine/transmission_chains.py` advances an
+episode through `arming → propagating → expressed`, ends it at `failed` /
+`expired`, and records `arm_veto` / `falsifier_fired` receipts rather than
+rewriting state. A chain whose conditions coincide today may be merely arming; a
+fired watch condition stops an episode while those same conditions still read
+true; a failed episode ends with its conditions unchanged. Reading the history
+off today's booleans cannot see any of that.
+
+The state now derives from `_episode_state()` over the owner's own vocabulary,
+and today's coincidence is a **separate** field that decides nothing:
+
+```
+state.code            active | completed | stopped | ended | dormant | unknown
+state.activation      True | False | None      (tri-state; None = unreadable)
+state.basis           "owner_episode"
+state.conditions      {all_current_met: True|False|None,
+                       describes: "current_readings_only"}
+```
+
+`activation` is deliberately tri-state: collapsing an unreadable owner episode to
+`False` would assert "not running" about a chain we could not read — the same
+collapse this repair exists to remove, one level up. An owner state outside the
+owner's vocabulary is `unknown` and named, because a default branch would put the
+whole surface back on instantaneous coincidence.
+
+The regression varies owner state, veto and confirmation history while holding
+the current node verdicts **identical** — the axis the old predicate could not
+see. On the page, the previously-`active` case now reads "Ended without
+completing" above "All current conditions met · describes today's readings only".
+
+One consequence worth stating: the older tests asserting `state.code ==
+"unknown"` for incomplete coverage were migrated, not deleted. What they were
+always about is that a bad input must never *inflate* the state, so they now pin
+`activation is False` and `conditions.all_current_met is None` directly. The
+owner's episode stays knowable even when this surface cannot read every current
+condition; the incompleteness belongs to the conditions, and is reported there.
+
+## B · Native transition identity
+
+`_episode_rows` excluded only a *different integer* revision, so missing, null
+and string revisions survived, and `_what_changed` then filled a missing one in
+from the caller — manufacturing the identity the row had failed to prove. A bare
+date plus any string was accepted as an event with `episode_id=None, hop=None`.
+
+The owner's key is whole: `_ledger_key` is
+`(chain, rev, episode_id, transition, hop, asof)` and `_mk_transition` emits
+exactly that. All six are now required, `transition` must be in the owner's
+closed vocabulary (`arming / propagating / expressed / failed / expired`), and
+`rev` is never defaulted from the caller.
+
+## C · An unread history is not a history of nothing
+
+Two overclaims, both answering in the owners' voice about records this page
+could not read: an entirely corrupt ledger reported "the owners have recorded no
+transition", and a ledger longer than the read bound was answered from its
+**oldest** prefix, reporting a 1993 row as the change while a 2026 row sat
+unread past the cap. `_episode_rows` now reports whether the READ was complete,
+and an incomplete read returns `comparison_incomplete / ledger_read_incomplete`
+— no "no history" claim and no "latest" claim.
+
+## D · The future-time false zero, on the second clock
+
+Generation age already refused a future build stamp; the newer observation clock
+still did `max(0, …)`, so a reading dated 2099 became "observed today" — the most
+confident possible answer to a question the data cannot answer. Both clocks now
+follow the same non-fabrication rule, and `observation_age_basis` distinguishes
+an unreadable date from a future one.
+
+## E · The output and typed-failure boundary
+
+Receipts were passed through whole, so this tenant-neutral response's shape was
+whatever the owner artifact happened to carry: a nested object rode straight in,
+and a non-finite float survived composition and then broke strict JSON at the
+transport edge — turning an upstream data problem into a 500 of ours. Receipts
+are now projected onto a declared field contract. It is **structural, not a
+blacklist**: an unknown key is dropped because it is outside the contract, a
+declared field that is not a scalar is dropped *and named*, and numeric zero,
+boolean `False` and `null` all survive untouched. A malformed node collection
+(`nodes: 7`) went straight to iteration and escaped as a generic internal error;
+it is now the typed source failure it always was.
+
+## Measured
+
+183 tests green. The real chain composes `dormant / activation False /
+all_current_met False`, serialises under `allow_nan=False`, and the
+previously-false-`active` fixture now renders "Ended without completing" with the
+coincidence stated separately. New state colours measured 8.37:1 dark and 4.72:1
+light against their actual painted ancestor.
+
+A measurement note, for the same reason as the last one: the first contrast read
+came back as plain body text, which looked like the new rule not applying. The
+rule was on disk and served correctly — the browser was holding a cached
+stylesheet, because the local harness has no `?v=` stamp. Re-fetching with
+`cache: "reload"` and applying the served text showed the real values. Check what
+is *served* before concluding anything about what was *written*.

@@ -148,7 +148,12 @@ def test_a_cycle_is_detected_and_cannot_inflate_state(tmp_path):
     snap = _compose(root)
     assert snap["path"]["cycle"]["detected"] is True
     assert snap["path"]["cycle"]["nodes"]
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
     assert snap["state"]["activation"] is False
 
 
@@ -172,7 +177,12 @@ def test_a_node_missing_from_owner_state_degrades_with_a_named_gap(tmp_path):
     assert leg["observation"] == "unobserved"
     assert leg["confirmed"] is None
     assert _has_gap(snap["gaps"], kind="node_unobserved", node_id="n3")
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
 
 
 def test_a_chain_without_invalidators_reports_the_absence(tmp_path):
@@ -603,7 +613,12 @@ def test_an_unresolved_leg_is_not_counted_as_observed(tmp_path):
     snap = _compose(fx.build_root(tmp_path, state_doc=_state_with_unresolved_second_leg()))
     assert snap["state"]["coverage"]["legs_observed"] == 3
     assert snap["state"]["coverage"]["legs_unobserved"] == ["n2"]
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
 
 
 def test_no_contradiction_is_claimed_when_the_blocking_leg_was_never_read(tmp_path):
@@ -648,9 +663,9 @@ def test_a_transition_from_another_revision_is_not_this_revisions_change(tmp_pat
     of the path; presenting it as the current change is a category error."""
     root = fx.build_root(tmp_path)
     (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
-        json.dumps({"chain": fx.SLUG, "rev": 1, "transition": "armed",
+        json.dumps({"chain": fx.SLUG, "rev": 1, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0,
                     "asof": "2026-01-01"}) + "\n"
-        + json.dumps({"chain": fx.SLUG, "rev": 99, "transition": "armed",
+        + json.dumps({"chain": fx.SLUG, "rev": 99, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0,
                       "asof": "2026-01-01"}) + "\n", encoding="utf-8")
     snap = _compose(root)
     assert snap["what_changed"]["status"] == "comparison_unavailable"
@@ -661,7 +676,7 @@ def test_a_transition_from_another_revision_is_not_this_revisions_change(tmp_pat
 def test_a_transition_at_the_current_revision_is_reported(tmp_path):
     root = fx.build_root(tmp_path)
     (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
-        json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "armed",
+        json.dumps({"chain": fx.SLUG, "rev": 2, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0,
                     "asof": "2026-01-01", "hop": 1}) + "\n", encoding="utf-8")
     snap = _compose(root)
     assert snap["what_changed"]["status"] == "recorded_transition"
@@ -686,7 +701,7 @@ def test_a_recorded_transition_alone_never_makes_k1_available(tmp_path):
     then hid the binding limitation. A transition is a transition; a reference is
     a reference that resolved."""
     root = _root_with_episodes(tmp_path, [
-        {"chain": fx.SLUG, "rev": 2, "transition": "armed", "asof": "2026-01-02"}])
+        {"chain": fx.SLUG, "rev": 2, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0, "asof": "2026-01-02"}])
     snap = _compose(root)
     assert snap["evidence"]["k1"]["status"] == "unavailable_for_object"
     assert snap["evidence"]["k1"]["refs"] == []
@@ -695,7 +710,7 @@ def test_a_recorded_transition_alone_never_makes_k1_available(tmp_path):
 
 def test_transition_count_is_reported_separately_from_reference_count(tmp_path):
     root = _root_with_episodes(tmp_path, [
-        {"chain": fx.SLUG, "rev": 2, "transition": "armed", "asof": "2026-01-02"}])
+        {"chain": fx.SLUG, "rev": 2, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0, "asof": "2026-01-02"}])
     k1 = _compose(root)["evidence"]["k1"]
     assert k1["recorded_transitions"] == 1
     assert k1["refs_count"] == 0
@@ -724,7 +739,12 @@ def test_a_non_boolean_confirmed_is_unknown_not_coerced(tmp_path, value):
     leg = snap["path"]["legs"][0]
     assert leg["confirmed"] is None
     assert leg["observation"] == "unreadable"
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
     assert snap["state"]["activation"] is False
 
 
@@ -733,7 +753,12 @@ def test_a_missing_confirmed_is_unknown_not_false(tmp_path):
     del state["chains"][0]["nodes"][0]["confirmed"]
     snap = _compose(fx.build_root(tmp_path, state_doc=state))
     assert snap["path"]["legs"][0]["confirmed"] is None
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
 
 
 def test_a_missing_resolved_flag_is_not_assumed_resolved(tmp_path):
@@ -743,7 +768,12 @@ def test_a_missing_resolved_flag_is_not_assumed_resolved(tmp_path):
     del state["chains"][0]["nodes"][0]["resolved"]
     snap = _compose(fx.build_root(tmp_path, state_doc=state))
     assert snap["path"]["legs"][0]["observation"] == "incomplete"
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
     assert _has_gap(snap["gaps"], kind="node_incomplete", node_id="n1")
 
 
@@ -766,7 +796,12 @@ def test_a_disconnected_component_beside_a_cycle_is_not_invisible(tmp_path):
                         "mechanism": {"en": "m", "zh": "m2"}})
     snap = _compose(fx.build_root(tmp_path, yaml_doc=doc,
                                   state_doc=fx.chain_state(cycle=True)))
-    assert snap["state"]["code"] == "unknown"
+    # The state now reports the OWNER's episode, which stays knowable even when
+    # this surface cannot read every current condition. What these tests have
+    # always been about is that an unreadable input must never INFLATE the
+    # state, so they now pin that directly rather than through a proxy code.
+    assert snap["state"]["activation"] is False
+    assert snap["state"]["conditions"]["all_current_met"] is None
     assert any(g["kind"] == "path_incomplete" for g in snap["gaps"])
 
 
@@ -801,7 +836,7 @@ def test_a_transition_dated_after_the_owner_cutoff_is_refused(tmp_path):
     """A row dated past the artifact's own `asof` cannot be a change this
     artifact observed."""
     root = _root_with_episodes(tmp_path, [
-        {"chain": fx.SLUG, "rev": 2, "transition": "armed", "asof": "2099-01-01"}])
+        {"chain": fx.SLUG, "rev": 2, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0, "asof": "2099-01-01"}])
     snap = _compose(root)
     assert snap["what_changed"]["status"] == "comparison_unavailable"
     assert any(g["kind"] == "transitions_after_cutoff" for g in snap["gaps"])
@@ -810,7 +845,7 @@ def test_a_transition_dated_after_the_owner_cutoff_is_refused(tmp_path):
 def test_corrupt_ledger_lines_are_disclosed_not_silently_dropped(tmp_path):
     root = fx.build_root(tmp_path)
     (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
-        "{not json\n" + json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "armed",
+        "{not json\n" + json.dumps({"chain": fx.SLUG, "rev": 2, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0,
                                     "asof": "2026-01-02"}) + "\n", encoding="utf-8")
     snap = _compose(root)
     assert any(g["kind"] == "transitions_unreadable" for g in snap["gaps"])
@@ -915,7 +950,7 @@ def test_a_ledger_too_long_to_read_is_not_reported_as_corrupt_rows(tmp_path):
     page merely stopped reading was reported to the reader as the owners having
     written bad data. Truncation is our limitation and is disclosed as ours."""
     from engine.ontology_explorer import MAX_EPISODE_ROWS
-    row = json.dumps({"chain": fx.SLUG, "rev": 2, "transition": "t",
+    row = json.dumps({"chain": fx.SLUG, "rev": 2, "episode_id": "ep-synthetic-1", "transition": "arming", "hop": 0,
                       "asof": "2026-01-01"})
     root = fx.build_root(tmp_path)
     (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
@@ -927,3 +962,242 @@ def test_a_ledger_too_long_to_read_is_not_reported_as_corrupt_rows(tmp_path):
     truncation = next(g for g in snap["gaps"]
                       if g["kind"] == "episode_ledger_truncated")
     assert truncation["reason_label"]["en"] and truncation["reason_label"]["zh"]
+
+
+# ==========================================================================
+# Sol analytical support F04-EXACT-MODULE-SUPPORT-56649 — class A:
+# owner episode state is not instantaneous coincidence
+# ==========================================================================
+
+@pytest.mark.parametrize(
+    "owner_state,extra,expected_code",
+    [
+        ("failed", {}, "ended"),
+        ("expired", {}, "ended"),
+        ("dormant", {"arm_veto": {"why": "synthetic"}}, "dormant"),
+        ("arming", {"arm_veto": {"why": "synthetic"}}, "stopped"),
+        ("arming", {"falsifier_fired": True}, "stopped"),
+        ("propagating", {"falsifier_fired": True}, "stopped"),
+        ("arming", {}, "active"),
+        ("propagating", {}, "active"),
+        ("expressed", {}, "completed"),
+    ],
+)
+def test_all_conditions_true_does_not_override_the_owner_episode(
+        tmp_path, owner_state, extra, expected_code):
+    """Today's conditions all reading true is a description of TODAY, not an
+    episode. The owner's chain is temporal: a chain whose conditions coincide may
+    be merely arming, a fired watch condition stops it while those same
+    conditions still read true, and failed/expired episodes end with their
+    conditions unchanged. Deriving state from the node booleans emitted `active`
+    against an owner reading `failed` with ZERO confirmed hops.
+
+    Every case here holds the current node verdicts IDENTICAL (all true) and
+    varies only the owner's episode, which is exactly the axis the old predicate
+    could not see.
+    """
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    state["chains"][0]["state"] = owner_state
+    state["chains"][0].update(extra)
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+
+    # the coincidence is reported, as its own separate fact
+    assert snap["state"]["conditions"]["all_current_met"] is True
+    assert snap["state"]["conditions"]["describes"] == "current_readings_only"
+    # ... and it does not decide the state
+    assert snap["state"]["code"] == expected_code
+    assert snap["state"]["activation"] is (expected_code == "active")
+    assert snap["state"]["basis"] == "owner_episode"
+
+
+def test_a_stopped_episode_is_not_reported_as_merely_dormant(tmp_path):
+    """`dormant` reads as "never started". An episode a watch condition stopped
+    did start, and saying otherwise loses the thing the reader most needs."""
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    state["chains"][0]["state"] = "propagating"
+    state["chains"][0]["falsifier_fired"] = True
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert snap["state"]["code"] == "stopped"
+    assert snap["state"]["watch_condition_fired"] is True
+
+
+def test_an_owner_state_outside_the_owner_vocabulary_is_unknown_not_guessed(tmp_path):
+    """Defaulting an unrecognised owner state would put the whole surface back on
+    instantaneous coincidence through the fallback branch."""
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    state["chains"][0]["state"] = "synthetic_not_a_real_owner_state"
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert snap["state"]["code"] == "unknown"
+    assert snap["state"]["activation"] is None
+    assert _has_gap(snap["gaps"], kind="owner_state_unrecognised")
+
+
+def test_a_missing_owner_state_is_unknown_and_named(tmp_path):
+    state = fx.chain_state(confirmed=(True, True, True, True))
+    state["chains"][0].pop("state", None)
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert snap["state"]["code"] == "unknown"
+    assert snap["state"]["activation"] is None
+    assert _has_gap(snap["gaps"], kind="owner_state_absent")
+
+
+def test_the_payload_never_ships_the_owners_refutation_key_name(tmp_path):
+    """The owner spells this `falsifier_fired`. The payload is a reader-facing
+    surface and this product does not ship that family anywhere on one."""
+    snap = _compose(fx.build_root(tmp_path))
+    assert "watch_condition_fired" in snap["state"]
+    assert "falsifier_fired" not in json.dumps(snap)
+
+
+# class D — the future-time false zero, on the SECOND clock
+def test_an_observation_dated_in_the_future_is_not_an_age_of_zero(tmp_path):
+    """`max(0, ...)` on the new observation clock turned a reading dated in the
+    future into "observed today" — the most confident possible answer to a
+    question the data cannot answer. The build stamp already refused this."""
+    state = fx.chain_state()
+    state["asof"] = "2099-01-01"
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    freshness = snap["source"]["freshness"]
+    assert freshness["observation_age_days"] is None
+    assert freshness["observation_age_basis"] == "observation_date_in_future"
+    assert _has_gap(snap["gaps"], kind="observation_date_in_future")
+
+
+def test_an_unreadable_observation_date_is_distinguished_from_a_future_one(tmp_path):
+    state = fx.chain_state()
+    state["asof"] = "not-a-date"
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    freshness = snap["source"]["freshness"]
+    assert freshness["observation_age_days"] is None
+    assert freshness["observation_age_basis"] == "unparseable_observation_date"
+
+
+# class B — the owner's whole native transition key
+@pytest.mark.parametrize("bad_rev", [None, "2", "99", True])
+def test_a_non_integer_revision_is_not_an_owner_transition(tmp_path, bad_rev):
+    """`_episode_rows` excluded only a DIFFERENT INTEGER revision, so missing,
+    null and string revisions survived — and `_what_changed` then filled the
+    missing one in from the caller, manufacturing the identity the row failed."""
+    row = {"chain": fx.SLUG, "episode_id": "ep-1", "transition": "arming",
+           "hop": 0, "asof": "2026-01-02"}
+    if bad_rev is not None:
+        row["rev"] = bad_rev
+    snap = _compose(_root_with_episodes(tmp_path, [row]))
+    assert snap["what_changed"]["status"] != "recorded_transition"
+    assert snap["evidence"]["k1"]["recorded_transitions"] == 0
+
+
+def test_an_arbitrary_transition_name_is_not_an_owner_event(tmp_path):
+    """The owner's vocabulary is closed (`_mk_transition` call sites). A date
+    plus any string was being accepted as an event."""
+    snap = _compose(_root_with_episodes(tmp_path, [
+        {"chain": fx.SLUG, "rev": 2, "episode_id": "ep-1", "hop": 0,
+         "transition": "SYNTHETIC_NOT_AN_OWNER_TRANSITION", "asof": "2026-01-02"}]))
+    assert snap["what_changed"]["status"] != "recorded_transition"
+
+
+@pytest.mark.parametrize("missing", ["episode_id", "hop"])
+def test_a_row_without_the_owners_whole_key_is_not_a_transition(tmp_path, missing):
+    """The native key is (chain, rev, episode_id, transition, hop, asof). A row
+    was being accepted with episode_id=None and hop=None."""
+    row = {"chain": fx.SLUG, "rev": 2, "episode_id": "ep-1", "transition": "arming",
+           "hop": 0, "asof": "2026-01-02"}
+    row.pop(missing)
+    snap = _compose(_root_with_episodes(tmp_path, [row]))
+    assert snap["what_changed"]["status"] != "recorded_transition"
+
+
+# class C — an unread history is not a history of nothing
+def test_an_entirely_corrupt_ledger_is_not_reported_as_no_history(tmp_path):
+    """The prose said the owners recorded no transition. They may have recorded
+    many; this page could not read them."""
+    root = fx.build_root(tmp_path)
+    (root / "data" / "transmission" / "chain_episodes.jsonl").write_text(
+        "{not json\n{also not json\n", encoding="utf-8")
+    snap = _compose(root)
+    changed = snap["what_changed"]
+    assert changed["status"] == "comparison_incomplete"
+    assert changed["reason"] == "ledger_read_incomplete"
+    assert "recorded no transition" not in changed["note"]["en"]
+
+
+def test_a_truncated_history_is_not_reported_as_the_latest_change(tmp_path):
+    """A ledger longer than the read bound was answered from its OLDEST prefix:
+    the reported change was the 5,000th row from the start, not the newest."""
+    from engine.ontology_explorer import MAX_EPISODE_ROWS
+    old = [{"chain": fx.SLUG, "rev": 2, "episode_id": "ep-1", "transition": "arming",
+            "hop": 0, "asof": "1993-09-08"}] * (MAX_EPISODE_ROWS + 10)
+    newest = {"chain": fx.SLUG, "rev": 2, "episode_id": "ep-2",
+              "transition": "expressed", "hop": 2, "asof": "2026-01-02"}
+    snap = _compose(_root_with_episodes(tmp_path, [*old, newest]))
+    changed = snap["what_changed"]
+    assert changed["status"] == "comparison_incomplete"
+    assert changed["items"] == []
+    assert _has_gap(snap["gaps"], kind="episode_ledger_truncated")
+
+
+# ==========================================================================
+# class E — the output and typed-failure boundary
+# ==========================================================================
+
+def test_a_nested_object_in_an_owner_receipt_does_not_ride_into_the_response(tmp_path):
+    """A contract witness, not an observed incident: receipts were passed through
+    whole, so this tenant-neutral response's shape was whatever the owner
+    artifact happened to carry — including a nested object."""
+    state = fx.chain_state()
+    state["chains"][0]["nodes"][0]["receipts"][0]["user"] = {"id": "SYNTHETIC-SENTINEL"}
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    # An UNDECLARED field is outside this product's shape, so it is dropped as a
+    # boundary rather than reported as a gap in the owner's data.
+    assert "SYNTHETIC-SENTINEL" not in json.dumps(snap)
+    assert "user" not in snap["path"]["legs"][0]["receipts"][0]
+    # the legitimate fields still arrive
+    assert snap["path"]["legs"][0]["receipts"][0]["series"]
+
+
+def test_a_nested_value_inside_a_declared_receipt_field_is_dropped_and_named(tmp_path):
+    """A DECLARED field that is not a reading is a different thing from a field
+    outside the contract: this one the reader was promised, so its absence is
+    disclosed rather than silently trimmed."""
+    state = fx.chain_state()
+    state["chains"][0]["nodes"][0]["receipts"][0]["value"] = {"id": "SYNTHETIC-SENTINEL"}
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    assert "SYNTHETIC-SENTINEL" not in json.dumps(snap)
+    assert "value" not in snap["path"]["legs"][0]["receipts"][0]
+    assert _has_gap(snap["gaps"], kind="receipt_field_not_scalar")
+
+
+def test_a_non_finite_receipt_value_is_refused_before_serialisation(tmp_path):
+    """A non-finite float survived composition and then broke strict JSON at the
+    transport edge, turning an upstream data problem into a 500 of ours."""
+    state = fx.chain_state()
+    state["chains"][0]["nodes"][0]["receipts"][0]["value"] = float("inf")
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    json.dumps(snap, allow_nan=False)  # the assertion: this must not raise
+    assert snap["path"]["legs"][0]["receipts"][0]["value"] is None
+    assert _has_gap(snap["gaps"], kind="receipt_value_not_finite")
+
+
+def test_legitimate_zero_false_and_null_survive_the_receipt_contract(tmp_path):
+    """The projection must not confuse "cannot be serialised" with "falsy"."""
+    state = fx.chain_state()
+    receipt = state["chains"][0]["nodes"][0]["receipts"][0]
+    receipt["value"] = 0
+    receipt["passed"] = False
+    receipt["window"] = None
+    snap = _compose(fx.build_root(tmp_path, state_doc=state))
+    got = snap["path"]["legs"][0]["receipts"][0]
+    assert got["value"] == 0
+    assert got["passed"] is False
+    assert got["window"] is None
+
+
+def test_a_malformed_node_collection_is_a_typed_source_failure(tmp_path):
+    """`nodes: 7` went straight to iteration and escaped as a generic internal
+    error. A malformed owner structure is a source problem and says so."""
+    from engine.ontology_explorer import SourceIncoherent
+    state = fx.chain_state()
+    state["chains"][0]["nodes"] = 7
+    with pytest.raises(SourceIncoherent) as excinfo:
+        _compose(fx.build_root(tmp_path, state_doc=state))
+    assert "malformed_nodes" in str(excinfo.value)
