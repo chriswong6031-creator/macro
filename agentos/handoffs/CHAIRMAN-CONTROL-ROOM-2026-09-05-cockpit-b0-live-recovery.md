@@ -26,6 +26,9 @@ changed:
       current source/package ledger, MAS-242 Stage 0 selection boundary, active HC0 child,
       and exact handoff to the Integration task without changing the
       workstream, portfolio projection, runtime, account, or application state.
+      Macro PR #6853 remote head remains e5866552b95438018b911fa0dbeb72f128a0bde5;
+      local checkpoints are unpushed commits on its branch, not a separate
+      local-only branch or remote effect.
 verified:
   - claim: Initial archaeology used protected SHA 46a24a1a4083b74bbde8876100a8ca1f720589a9; current protected #481 release is squash 15d2693e5ff319f5f09e4c555fb007328237cee4 with the relevant Skillpack bytes unchanged.
     command: >
@@ -143,7 +146,7 @@ verified:
       657 tests passed in 19.16 seconds on predecessor combined head 6cbb.
       It remains supporting source evidence, not final-head proof or a
       substitute for CI, merge, host installation or runtime proof.
-  - claim: The current source candidate rendered every requested synthetic fixture and viewport combination without horizontal overflow, while retaining source-qualified empty and nonempty attention behavior.
+  - claim: The final #481 source head and its installed source/UI plane rendered the requested synthetic fixture and viewport combinations without false-clear or document overflow.
     command: >
       Parent supported-CUA browser validation against the temporary loopback
       fixture harness: 11 fixture states at 1440x900, 834x1194 and 390x844,
@@ -158,6 +161,23 @@ verified:
       entries and refuses missing, malformed and explicit ok=false payloads
       before rendering. This is synthetic fixture-browser evidence only, never
       operational, runtime, account, host-installation or Business proof.
+  - claim: The header-fit child has a local CSS-only source candidate with bounded source and fixture-browser evidence, but no publication or production effect.
+    command: >
+      Parent-reported child local commit/tree and independent acceptance;
+      supported-CUA matrix against temporary local fixtures at 14 cases by
+      three breakpoints, plus boundary cases and tablet/keyboard checks.
+    result: >
+      Child chairman-control-room-header-fit-20260905-cockpit-001 is local
+      commit 1bf1f4042be1d844366f6a42de978f3ae6d3616c, tree
+      cff9d0967cf5be83e215b4139d9a91eef6d04baa, base 15d, with CSS-only SHA
+      d610490953530fbde241857472dbc19213c1b2d1cba8680fd209b1e2490cc04b.
+      Independent source acceptance and the 42-case matrix passed: 14 cases
+      at three breakpoints, including 22 local-unknown/remote-unavailable
+      boundary observations at 517px and 954px. The final 80rem query/tablet
+      reset passed; proposed 44/64rem thresholds and initial tablet containment
+      were rejected. Keyboard Space/focus and tablet light inspection passed.
+      This is local source/fixture-browser evidence only: no PR, push, hosted
+      CI, production or CSS release occurred.
   - claim: The accepted stop-before-checkout procedure installed merged #481 into the existing Control Room service with a narrow host receipt.
     command: >
       Parent actual host receipt under
@@ -182,10 +202,13 @@ verified:
       1788581457.316749, with original return 1788581884.876559.
     result: >
       Existing carrier received one authorized app.py path release; local
-      worker commit 1e8470b was reported with 770 tests. Remote #463 remains
-      4d draft HOLD and no new CI exists until #482. The two auth repairs still
-      require app.py exact verifier-policy binding, pre-auth Accept and
-      malformed-JSON rejection; their independent acceptance is not claimed.
+      worker commit 1e8470b was reported with expanded 770 tests. Canonical
+      correction 1788582026.125769 establishes the original unchanged RED
+      blob as 34 PASS plus 3 FAIL, 37 total; current result is 37 PASS.
+      Remote #463 remains 4d draft HOLD and no new CI exists until fresh
+      source-order capacity. The two auth repairs still require app.py exact
+      verifier-policy binding, pre-auth Accept and malformed-JSON rejection;
+      their independent acceptance is not claimed.
 unverified:
   - claim: One real Business cockpit can safely be selected for MAS-242 Stage 0 of the B2 workspace canary.
     what_would_verify: >
@@ -208,14 +231,14 @@ unverified:
 unresolved:
   - "The current Control Room is informationally degraded: its timestamps and missing runtime DB prohibit using its displayed zeroes as live clearance."
   - "The intended Business workspace/admin and selected cockpit identity have not been positively proven; account labels, chat titles, recent tabs, app connectors and catalog rows remain insufficient."
-  - "Steward S1 successor #463 remains at remote 4d draft HOLD; its original carrier has an actual release-consumption receipt, but app.py path collision and the two auth repairs remain independently unaccepted pending #482/CI. HC0 PR #247 and Executive metadata PR #469 are also unmerged held lanes."
+  - "Steward S1 successor #463 remains at remote 4d draft HOLD; its original carrier has an actual release-consumption receipt, but app.py path collision and the two auth repairs remain independently unaccepted. Header publication is sequenced behind Integration's R1 #170, CAP #350 if ready or another blocking vertical, and S1 #463; there is no fresh header slot or #482 CI yet. HC0 PR #247 and Executive metadata PR #469 are also unmerged held lanes."
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement; do not replace or parallelize it."
-  - "The installed Control Room is now source 15d relative to #481, but it remains informationally degraded: DB absent, source clocks old and B3/B5/B6 unproven. The observed desktop header source/status contents overlap adjacent header controls under long degraded synthetic text; real-preview confirmation remains required."
+  - "The installed Control Room is now source 15d relative to #481, but it remains informationally degraded: DB absent, source clocks old and B3/B5/B6 unproven. The desktop header source/status overlap is real-preview-confirmed and still present on installed 15d pending the sequenced CSS release."
   - "The B5 vocabulary has source-level responsibility, dispatch, attention, freshness, blocker, capacity and exact-target surfaces but no current live feed. Canonical parent/child-orphan projection is absent; no aggregate lifecycle or derived next-action authority is lawful."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Treat #481 source merge and narrow installed-host receipt as complete only for the stated Control Room source/UI plane. Preserve B3/B5/B6, Business cockpit and Executive-runtime gates as unproven."
-  - "Header child chairman-control-room-header-fit-20260905-cockpit-001 is authorized for CSS-only work plus the existing UI-test ceiling in its separate worktree. Independent review accepted its patch, but root label-boundary browser proof and #482 source protection remain pending; do not open a PR or claim visual acceptance."
+  - "Integration owns the next edge: wait for R1 #170, then CAP #350 if ready or another blocking vertical, then S1 #463, and only a fresh explicit header slot may permit the child to open a PR/push/full CI. Until then header child chairman-control-room-header-fit-20260905-cockpit-001 remains local source evidence, even though its root label-boundary browser matrix passed."
   - "Before any MAS-242 Stage 0 effect, obtain real-host account/workspace proof and run the three-cockpit continuity/effect/watcher census. If no clean cockpit exists, return NO_ELIGIBLE_CANARY_COCKPIT with effect=NONE."
   - "If and only if Stage 0 selects one clean cockpit, perform only the authorized reversible MAS-242 workspace join and Personal to Business to Personal proof; retain both controls and do not import, authenticate, install or admit anything in that stage."
   - "Keep P1 import, authenticated Steward reads, Executive admission, H1 receipt validation and rollback as separately evidenced gates after the workspace proof."
@@ -226,7 +249,7 @@ do_not_redo:
   - "Do not fail over an ambiguous cockpit, workspace, OAuth or admission action to a second cockpit; preserve the same carrier as EFFECT_UNKNOWN and reconcile it."
   - "Do not treat synthetic fixture-browser validation as operational/runtime/host proof, or mark the product, MAS-242 or U1 complete from this handoff."
 danger_areas:
-  - "The installed #481 Control Room now qualifies empty attention when runtime/inbox state is absent, but a degraded UI remains non-operational evidence. At 1440px, long synthetic source/status text visibly overruns rightward across the badge/theme controls even though document width does not overflow; this is an observed visual follow-up, not comprehensive acceptance."
+  - "The installed #481 Control Room now qualifies empty attention when runtime/inbox state is absent, but a degraded UI remains non-operational evidence. At 1440px, long synthetic source/status text visibly overruns rightward across the badge/theme controls even though document width does not overflow; this is real-preview-confirmed on installed 15d and persists until a sequenced CSS release, not comprehensive visual acceptance."
   - "Actual Business account/workspace confirmation is sensitive: record opaque references and state outcomes only; never put account secrets, cookies, tokens, private account locators or browser targets in Agent OS."
   - "HC0 is a sticky existing child with a session-loss reconciliation hold. A second writer or blind transport retry would violate the one-carrier rule."
 prs: [247, 302, 310, 326, 361, 463, 469, 481]
@@ -261,3 +284,11 @@ numbered PR links below are in the Mastermind repository: [P1 #302](https://gith
 [Executive metadata #469](https://github.com/mastermindx-market-intelligence/Mastermind/pull/469),
 [degraded-attention candidate #481](https://github.com/mastermindx-market-intelligence/Mastermind/pull/481),
 and the [HC0 exact Slack carrier](https://mastermindxgroup.slack.com/archives/C0BRDFZPLHK/p1788311510473749?thread_ts=1788311510.473749&cid=C0BRDFZPLHK).
+
+The current action owner is Integration task
+`01a06f72-aaae-77f1-a3fb-28f5d05c107a`: sequence R1 #170, CAP #350 if ready
+or another blocking vertical, then S1 #463. The exact next edge for this
+Cockpit record is a fresh explicit header slot; without it, no header PR,
+push, full CI, deployment or Chris action is owed. Macro PR #6853 remains on
+remote head `e5866552b95438018b911fa0dbeb72f128a0bde5`; local checkpoint
+commits are intentionally unpushed pending that edge.
