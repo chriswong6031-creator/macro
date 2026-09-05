@@ -26,9 +26,6 @@ changed:
       current source/package ledger, MAS-242 Stage 0 selection boundary, active HC0 child,
       and exact handoff to the Integration task without changing the
       workstream, portfolio projection, runtime, account, or application state.
-      Macro PR #6853 remote head remains e5866552b95438018b911fa0dbeb72f128a0bde5;
-      local checkpoints are unpushed commits on its branch, not a separate
-      local-only branch or remote effect.
 verified:
   - claim: Initial archaeology used protected SHA 46a24a1a4083b74bbde8876100a8ca1f720589a9; current protected #481 release is squash 15d2693e5ff319f5f09e4c555fb007328237cee4 with the relevant Skillpack bytes unchanged.
     command: >
@@ -172,8 +169,8 @@ verified:
       cff9d0967cf5be83e215b4139d9a91eef6d04baa, base 15d, with CSS-only SHA
       d610490953530fbde241857472dbc19213c1b2d1cba8680fd209b1e2490cc04b.
       Independent source acceptance and the 42-case matrix passed: 14 cases
-      at three breakpoints, including 22 local-unknown/remote-unavailable
-      boundary observations at 517px and 954px. The final 80rem query/tablet
+      at three breakpoints, plus 22 local-unknown/remote-unavailable boundary
+      observations at 517px and 954px, 64 observations total. The final 80rem query/tablet
       reset passed; proposed 44/64rem thresholds and initial tablet containment
       were rejected. Keyboard Space/focus and tablet light inspection passed.
       This is local source/fixture-browser evidence only: no PR, push, hosted
@@ -196,6 +193,23 @@ verified:
       source-path or bindings change occurred. Rollback was not needed or run.
       This is narrow existing-host source/UI proof only, not B3/B5/B6,
       Executive-runtime, account, cockpit or Business proof.
+  - claim: Runtime/Integrator reconciliation distinguishes a production database permission denial from the local Control Room database absence.
+    command: >
+      Integration runtime-owner census at source 0cd around 2026-09-05T04:03Z,
+      plus parent-supported read evidence; no production database write.
+    result: >
+      Authoritative runtime owner is ExecutiveControlService through
+      send_control_request, with runtime root
+      /var/db/mastermind-executive/control/db and DB-relative path
+      data/control_plane/executive.sqlite3. Control/worker/CEO-ingress and
+      dialogue sockets were absent; system control and worker.codex were
+      disabled/not found (113). Production DB returned
+      UNKNOWN_PERMISSION_DENIED, which cannot be inferred as absent and is
+      distinct from the local CCR DB-absent observation. Existing host owner
+      01a06c33 remains under review with no activation; no database copy,
+      symlink, switch or migration is lawful. The next runtime edge remains
+      accepted existing-host/service plus canonical-read proof, then a Cockpit
+      supported-interface composition read.
   - claim: The direct Steward owner recovery consumed one authorized existing-carrier release without proving the auth repairs accepted.
     command: >
       Parent fresh carrier/source read and Slack original-root receipt
@@ -203,12 +217,11 @@ verified:
     result: >
       Existing carrier received one authorized app.py path release; local
       worker commit 1e8470b was reported with expanded 770 tests. Canonical
-      correction 1788582026.125769 establishes the original unchanged RED
-      blob as 34 PASS plus 3 FAIL, 37 total; current result is 37 PASS.
-      Remote #463 remains 4d draft HOLD and no new CI exists until fresh
-      source-order capacity. The two auth repairs still require app.py exact
-      verifier-policy binding, pre-auth Accept and malformed-JSON rejection;
-      their independent acceptance is not claimed.
+      correction 1788582026.125769 establishes the pre-repair unchanged RED
+      blob as 34 PASS plus 3 FAIL, 37 total; post-repair result is 37 PASS.
+      Remote #463 remains 4d draft HOLD. The resolved app.py path release
+      leaves two auth repairs local GREEN awaiting current-base and independent
+      review; their independent acceptance is not claimed.
 unverified:
   - claim: One real Business cockpit can safely be selected for MAS-242 Stage 0 of the B2 workspace canary.
     what_would_verify: >
@@ -231,10 +244,11 @@ unverified:
 unresolved:
   - "The current Control Room is informationally degraded: its timestamps and missing runtime DB prohibit using its displayed zeroes as live clearance."
   - "The intended Business workspace/admin and selected cockpit identity have not been positively proven; account labels, chat titles, recent tabs, app connectors and catalog rows remain insufficient."
-  - "Steward S1 successor #463 remains at remote 4d draft HOLD; its original carrier has an actual release-consumption receipt, but app.py path collision and the two auth repairs remain independently unaccepted. Header publication is sequenced behind Integration's R1 #170, CAP #350 if ready or another blocking vertical, and S1 #463; there is no fresh header slot or #482 CI yet. HC0 PR #247 and Executive metadata PR #469 are also unmerged held lanes."
+  - "Steward S1 successor #463 remains at remote 4d draft HOLD; its original carrier has an actual release-consumption receipt, app.py path release is resolved, and its two auth repairs are local GREEN awaiting current-base and independent review. Header publication is sequenced behind Integration's R1 #170, CAP #350 if ready or another blocking vertical, and S1 #463; #482 CI exists and is running, while HEADER has no CI or fresh slot. HC0 PR #247 and Executive metadata PR #469 are also unmerged held lanes."
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement; do not replace or parallelize it."
   - "The installed Control Room is now source 15d relative to #481, but it remains informationally degraded: DB absent, source clocks old and B3/B5/B6 unproven. The desktop header source/status overlap is real-preview-confirmed and still present on installed 15d pending the sequenced CSS release."
   - "The B5 vocabulary has source-level responsibility, dispatch, attention, freshness, blocker, capacity and exact-target surfaces but no current live feed. Canonical parent/child-orphan projection is absent; no aggregate lifecycle or derived next-action authority is lawful."
+  - "A read-only exact-Chrome-tab probe reached its CDP deadline before dispatch and therefore has effect=NONE. A fresh IAB live page verified source 15d; Secretary was asked to refresh that exact existing Chrome Control Room tab, with no refresh-consumption receipt yet. This is not a Business cockpit edge."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Treat #481 source merge and narrow installed-host receipt as complete only for the stated Control Room source/UI plane. Preserve B3/B5/B6, Business cockpit and Executive-runtime gates as unproven."
@@ -289,6 +303,5 @@ The current action owner is Integration task
 `01a06f72-aaae-77f1-a3fb-28f5d05c107a`: sequence R1 #170, CAP #350 if ready
 or another blocking vertical, then S1 #463. The exact next edge for this
 Cockpit record is a fresh explicit header slot; without it, no header PR,
-push, full CI, deployment or Chris action is owed. Macro PR #6853 remains on
-remote head `e5866552b95438018b911fa0dbeb72f128a0bde5`; local checkpoint
-commits are intentionally unpushed pending that edge.
+push, full CI, deployment or Chris action is owed. This published handoff is
+independent of the separately held header source order.
