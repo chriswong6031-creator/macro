@@ -5084,8 +5084,10 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
         }
         var shown = expanded ? rows : rows.slice(0, CAP);
         body.innerHTML = shown.map(function (r) {
-          return '<tr>' + cols.map(function (c) { return '<td class="' + (c.l ? 'l' : '') + '">' + c.cell(r) + '</td>'; }).join('') + '</tr>';
-        }).join('') || '<tr><td>—</td></tr>';
+          return '<tr>' + cols.map(function (c) {
+            return '<td class="' + (c.l ? 'l' : '') + '" data-label-en="' + c.en + '" data-label-zh="' + c.zh + '">' + c.cell(r) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') || '<tr><td class="l" data-label-en="Status" data-label-zh="状态">—</td></tr>';
         if (moreBtn) {
           if (rows.length > CAP) {
             moreBtn.style.display = 'block';

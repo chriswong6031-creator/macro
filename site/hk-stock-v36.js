@@ -378,12 +378,23 @@
   }
   function ownerPopulation() {
     var all = qs('#hk-stage-filter [data-stagepick="all"] .pbf-n');
-    var count = all ? parseInt(all.textContent, 10) : NaN;
-    return isNaN(count) ? Math.max(state.rows.length, state.cards.length) : count;
+    if (!all) return null;
+    var raw = String(all.textContent || "").trim();
+    return /^\d+$/.test(raw) ? Number(raw) : null;
   }
   function watchPopulation() {
     var grid = qs("#standouts .watch-strip .watch-grid");
     return grid ? qsa("a[href]", grid).length : null;
+  }
+  function populationCopy(shown, total, watch) {
+    if (total === null) {
+      return watch === null
+        ? bi(shown + " actionable cards shown · stage board unavailable · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单暂不可用 · 观察名单暂不可用")
+        : bi(shown + " actionable cards shown · stage board unavailable · " + watch + " watch names", "显示 " + shown + " 张可操作卡片 · 阶段榜单暂不可用 · 观察 " + watch + " 只");
+    }
+    return watch === null
+      ? bi(shown + " actionable cards shown · " + total + " stage-board names · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + total + " 只 · 观察名单暂不可用")
+      : bi(shown + " actionable cards shown · " + (total + watch) + " current names (" + total + " stage board + " + watch + " watch)", "显示 " + shown + " 张可操作卡片 · 当前共 " + (total + watch) + " 只（阶段榜单 " + total + " + 观察 " + watch + "）");
   }
   function applyFilter() {
     var shown = 0;
@@ -392,11 +403,7 @@
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var total = ownerPopulation();
     var result = qs("#hk-v37-result"), watch = watchPopulation();
-    if (result) {
-      result.innerHTML = watch === null
-        ? bi(shown + " actionable cards shown · " + total + " stage-board names · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + total + " 只 · 观察名单暂不可用")
-        : bi(shown + " actionable cards shown · " + (total + watch) + " current names (" + total + " stage board + " + watch + " watch)", "显示 " + shown + " 张可操作卡片 · 当前共 " + (total + watch) + " 只（阶段榜单 " + total + " + 观察 " + watch + "）");
-    }
+    if (result) result.innerHTML = populationCopy(shown, total, watch);
     var pill = qs("#hk-v37-filter"), item = itemForFilter();
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi("Sector", "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();

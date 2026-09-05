@@ -1037,6 +1037,7 @@ def test_stock_dashboard_first_frame_contract_is_executed_by_pr_code_gate() -> N
         "site/canada-stock-v36.js",
         "site/stock-dashboard.css",
         "site/dashboard-icons.js",
+        "scripts/verify_stock_dashboard_mobile_layout.cjs",
         code_suite,
     }
     assert required_paths <= set(code_job["paths"])

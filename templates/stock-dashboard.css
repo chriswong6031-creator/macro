@@ -915,6 +915,42 @@ html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-sb { background: var(--pa
 
 @media (max-width: 680px) {
   .mx-stockdash--hk { font-size: 15.8px; }
+  .mx-stockdash--hk .flows-grid > .flow-col { min-width: 0; }
+  .mx-stockdash--hk #hk-screener .tbl-scroll > .sb-table,
+  .mx-stockdash--hk #hk-screener > .sb-table {
+    display: block; width: 100%; max-width: 100%; table-layout: auto;
+  }
+  .mx-stockdash--hk #hk-screener .sb-table thead,
+  .mx-stockdash--hk #hk-screener .sb-table tbody { display: block; width: 100%; }
+  .mx-stockdash--hk #hk-screener .sb-table thead tr {
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 0 0 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .mx-stockdash--hk #hk-screener .sb-table th {
+    flex: 1 1 calc(33.333% - 4px); min-width: 88px; padding: 6px 7px;
+    border: 1px solid var(--line); border-radius: var(--r-ctl, 8px); background: var(--panel2);
+    text-align: center; white-space: normal;
+  }
+  .mx-stockdash--hk #hk-screener .sb-table tbody { display: grid; gap: 8px; }
+  .mx-stockdash--hk #hk-screener .sb-table tbody tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 10px; padding: 10px; border: 1px solid var(--line);
+    border-radius: var(--r-card, 12px); background: var(--panel2);
+  }
+  .mx-stockdash--hk #hk-screener .sb-table td {
+    display: block; min-width: 0; padding: 0; border: 0; text-align: left;
+    white-space: normal; overflow-wrap: anywhere;
+  }
+  .mx-stockdash--hk #hk-screener .sb-table td::before {
+    content: attr(data-label-en); display: block; margin-bottom: 2px;
+    color: var(--muted); font-size: 9px; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  html[data-lang=zh] .mx-stockdash--hk #hk-screener .sb-table td::before {
+    content: attr(data-label-zh); letter-spacing: 0;
+  }
+  .mx-stockdash--hk #hk-screener .sb-table td:first-child,
+  .mx-stockdash--hk #hk-screener .sb-table td:nth-child(2) { grid-column: 1 / -1; }
   .mx-stockdash--hk .hk-v37-sec-hd { align-items: flex-start; flex-wrap: wrap; padding: 11px 12px; }
   .mx-stockdash--hk .hk-v37-sec-hd h2 { font-size: 17px; }
   .mx-stockdash--hk .hk-v37-result { width: 100%; white-space: normal; }

@@ -2243,7 +2243,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       </span>
     </div>
   </div>
-  <div class="ca-v36-card-grid" id="ca-v36-card-grid">
+  <div class="ca-v36-card-grid" id="ca-v36-card-grid"{% if setups and setups.buy is defined %} data-owner-population="{{ setups.buy|length }}"{% endif %}>
 {% if setups and setups.buy %}
 {# ── W8-G: JSON data block — feeds StockTable.init(); serialized in system (board) order.
    NO re-sorting here: _branch_b_order already delivered the correct system order; this
