@@ -5,28 +5,28 @@ model: sol
 ended_because: blocked
 mission: >
   Make the Personal-Pro-primary Executive convergence program recoverable from
-  current canonical sources, preserve every existing runtime and transport owner,
-  and leave the next native proof executable without inventing a second backend,
-  lifecycle, queue, watcher, identity or memory plane.
+  current canonical sources, preserve every existing runtime, transport and
+  organizational owner, and leave the next proof executable without inventing a
+  second backend, lifecycle, queue, watcher, identity, retry or memory plane.
 state_before: >
-  Mastermind PR 489 and Macro PR 6877 existed as records-only drafts. Their
-  source heads had green CI but no independent reviews or current-base integrated
-  proof. The real Personal-Pro MCP canary had not run, its host census delivery
-  remained unconsumed, C1 Step D remained effect-unknown, S0-R1 remained blocked,
-  and Linear MAS-48 had silently moved to Done despite its own PARTIAL completion
-  law and description saying In Progress.
+  Mastermind PR 489 and Macro PR 6877 were records-only drafts with source-green
+  predecessors but no independent review or current-base integrated proof. The
+  Personal-Pro account canary had not run, its host census remained unconsumed,
+  C1 Step D was effect-unknown, S0-R1 was unproven, B2/C2 were held, Linear MAS-48
+  had repeatedly become false-green, and the records understated the current
+  Executive MCP's hard coupling between repository and lifecycle read roots.
 changed:
   - path: agentos/discoveries/DSC-PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP.md
     what: >
-      Preserve the verified separation between client connectivity, canonical
-      runtime-root fidelity and diagnostic admission hot state. Its previously
-      repaired executable falsifier remains unchanged.
+      Correct the source finding from a runtime-root default to a hard readonly
+      repo-root coupling at protected Mastermind 767409b6d3e7103a3b11428b870357d4a01bbe26.
+      Preserve the executable falsifier, no-code client test and smallest
+      existing-owner correction boundary without deciding that a repair is needed.
   - path: agentos/handoffs/AGENT-OS-2026-09-05-personal-pro-convergence.md
     what: >
-      Replace the stale continuation with current protected pins, exact source
-      and CI receipts, the repeated Linear false-green diagnosis and repair,
-      current platform-document disagreement, existing host-owner coordinates,
-      independent-review carrier, unresolved native proof and no-redo boundaries.
+      Replace the prior continuation with the exact root-coupling amendment,
+      current protected/source/check/projection receipts, existing host and review
+      carriers, unresolved native proof and bounded next actions.
 verified:
   - claim: Current protected procedure was loaded atomically and is compatible.
     command: >
@@ -39,142 +39,152 @@ verified:
       ref=767409b6d3e7103a3b11428b870357d4a01bbe26.
     result: >
       Protected Mastermind was 767409b6d3e7103a3b11428b870357d4a01bbe26,
-      tree cb8486ea0bfacc1036846cc8325676eddd22ce77. Every loaded file reported
-      mastermind.sol_skillpack.v1 version 1.0.1 and minimum bootstrap major 1.
-  - claim: The detailed research candidate is immutable, records-only and source-green.
+      tree cb8486ea0bfacc1036846cc8325676eddd22ce77. Every loaded Skillpack file
+      reported mastermind.sol_skillpack.v1 version 1.0.1 and minimum bootstrap
+      major 1. A final branch reread returned the same protected revision.
+  - claim: The readonly Executive MCP binds all lifecycle reads to repo_root in current source.
     command: >
-      GitHub.get_pr_info and fetch_commit_workflow_runs for Mastermind PR 489
-      head a54f7c67a4b0ef26a03019486102260c99926199; list_pull_request_reviews;
-      GitHub.compare_commits base=767409b6d3e7103a3b11428b870357d4a01bbe26
-      head=a54f7c67a4b0ef26a03019486102260c99926199.
+      GitHub.fetch_file integrations/executive_mcp/adapter.py,
+      integrations/executive_mcp/server.py,
+      integrations/mastermind_executive_app/gateway.py,
+      control_plane/executive_inbox.py and docs/EXECUTIVE_MCP.md with
+      ref=767409b6d3e7103a3b11428b870357d4a01bbe26.
     result: >
-      PR 489 is OPEN/DRAFT, one research path, CI run 33968324987 SUCCESS,
-      no submitted review. It is two commits ahead and four behind current
-      protected with merge base b0f85b0f1c66825ecec4bf6ce32dcbfac0c14b93.
-      Protected movement touched Control Room, GitHub release assessment,
-      nonseat canary and Source Continuity source/tests, not the research path,
-      Skillpack or existing Executive MCP files. Current integrated proof remains owed.
-  - claim: The organizational candidate passed its exact source-head workflows before this refresh.
+      GatewayConfig has repo_root and no independent readonly runtime-root field;
+      runtime_root returns repo_root outside fixture mode; config parsing accepts
+      no other read root. State/inbox build against repo_root, Job/intent reads
+      open config.runtime_root, and Executive Inbox looks for
+      data/control_plane/executive.sqlite3 beneath that root. The authenticated
+      Executive app constructs the same readonly GatewayConfig.
+  - claim: The detailed research now records that stronger source coupling without implementing it.
     command: >
-      GitHub.get_pr_info and fetch_commit_workflow_runs for Macro PR 6877
-      head 21994802261ecaae20fc2fdbef725d4a6f36e428; list_pull_request_reviews;
-      GitHub.compare_commits base=600835e7d5c6301fc2f28476e16f879e045a7b32
-      head=21994802261ecaae20fc2fdbef725d4a6f36e428.
+      GitHub.create_file
+      research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_READ_ROOT_COUPLING_AMENDMENT_2026-09-05.md
+      on Mastermind PR 489; GitHub.get_pr_info PR 489.
     result: >
-      PR 6877 was OPEN/DRAFT with two additive Agent OS paths. Fences
-      33968687287 and CI 33968687285 both concluded SUCCESS; no submitted review.
-      It was four commits ahead and 36 behind current Macro main with merge base
-      72ef56eb6ec7b536b74d5e8927ead8766539b502. Both candidate paths were absent
-      from current main. This handoff refresh creates a new head requiring new checks.
-  - claim: The initial Macro validation defect was authored here and repaired without weakening policy.
+      Mastermind PR 489 advanced to bba27fb113230acbf5f2d8f463f58f06b6733b8d
+      with exactly two additive research paths and no implementation/config file.
+      The amendment supersedes only the weaker word defaults, defines independent
+      client and root verdict axes, permits source repair only after a proved
+      mismatch and rejects copied Runtime/second backend/state-store remedies.
+  - claim: The organizational discovery was updated on the same existing records branch.
     command: >
-      GitHub.fetch_workflow_job_logs job=101298171625; inspect scripts/agentos.py;
-      GitHub.compare_commits b75f114a7b5d1a10afc71624d0a9ca5e8d33d53f
-      to 43ea495ac9c46897743895b1f7e277e4d30a14c6.
+      GitHub.update_file
+      agentos/discoveries/DSC-PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP.md
+      from blob 174eee9b38a33c00dacbffbc419759fb7b0fb7d0.
     result: >
-      Initial validation reported 1062 records, one error and 45 warnings. The
-      sole error was this discovery's missing runnable-token falsifier. Commit
-      43ea495ac9c46897743895b1f7e277e4d30a14c6 changed only that paragraph and
-      added exact git-show commands; the validator and thresholds were unchanged.
-  - claim: Comparative parity and read-canary evidence grading were corrected.
+      Commit 6abb7004bae7799f77c0c82711f68a3b90b64c40 produced discovery blob
+      bb4e562d14bf62e3f24f69caf9362916a8a96a50. The key, scope and no-duplicate
+      boundary remain; claim, falsifier and body now name the actual coupling and
+      owner-native proof needed to refute it.
+  - claim: The parent research's comparative evidence grading remains corrected.
     command: >
-      GitHub.fetch_commit Mastermind a54f7c67a4b0ef26a03019486102260c99926199;
-      GitHub.fetch_file research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_CONVERGENCE_2026-09-05.md
+      GitHub.fetch_commit a54f7c67a4b0ef26a03019486102260c99926199;
+      GitHub.fetch_file
+      research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_CONVERGENCE_2026-09-05.md
       at that ref.
     result: >
-      Seven unpaired FUNCTIONALLY_EQUIVALENT classifications were withdrawn and
+      Seven unpaired FUNCTIONALLY_EQUIVALENT classifications are withdrawn and
       all 20 comparative rows remain BLOCKER pending paired evidence. State and
-      inbox can be tested without arguments; Job and intent reads require already
-      observed canonical identifiers or remain explicitly NOT_EXERCISED. No fake
-      ID, new Job, empty database or fixture switch is permitted.
-  - claim: Official OpenAI product documentation remains materially inconsistent.
+      inbox may be tested without arguments; Job and intent reads require already
+      observed canonical identifiers or remain NOT_EXERCISED. No fake ID, new
+      Job, empty database or fixture switch is permitted.
+  - claim: Official OpenAI product sources remain materially inconsistent.
     command: >
-      web.open https://developers.openai.com/api/docs/guides/developer-mode and
-      https://help.openai.com/en/articles/12584461 plus
-      https://developers.openai.com/api/docs/guides/secure-mcp-tunnels on 2026-09-05.
+      web.open https://developers.openai.com/api/docs/guides/developer-mode;
+      web.open https://help.openai.com/en/articles/12584461;
+      web.open https://developers.openai.com/api/docs/guides/secure-mcp-tunnels.
     result: >
-      The Developer page says full read/write MCP and eligibility including Plus
-      and Pro. The Help Center says full MCP is Business/Enterprise/Edu and Pro
-      may connect read/fetch MCPs. Tunnel permission, organization association and
-      ChatGPT developer-mode access are separate. Actual account A/B/C/D behavior
-      is therefore still empirical; documentation grants no production authority.
+      The Developer page describes full read/write MCP and eligibility including
+      Pro; the Help Center says full modify/write MCP is Business, Enterprise and
+      Edu while Pro may connect read/fetch MCPs. Tunnel permission, organization
+      association and ChatGPT developer-mode access are separate. Actual Personal
+      account A/B/C/D behavior remains empirical and grants no production authority.
   - claim: No current public or installed Mastermind Executive app was found in this account surface.
     command: >
-      Plugin_Management.search_plugins query=Mastermind and query=Mastermind Executive;
-      prior get_app_permissions app_id=plugin_asdk_app_6a967e92f93081919fa9bc55b7df839e.
+      Plugin_Management.search_plugins query=Mastermind and
+      query=Mastermind Executive; prior Plugin_Management.get_app_permissions
+      app_id=plugin_asdk_app_6a967e92f93081919fa9bc55b7df839e.
     result: >
-      Mastermind search returned no public result; Mastermind Executive returned
+      Mastermind returned no public result; Mastermind Executive returned
       unrelated public apps. The exact prior private app returned not_installed.
-      This is not proof that a private tunnel target cannot be created or associated.
-  - claim: Linear MAS-48 was false-green and was repaired at the projection layer.
+      This does not prove an owner-approved private tunnel cannot be associated.
+  - claim: Linear MAS-48's repeated false-green completion was repaired only as projection.
     command: >
-      Linear.get_issue id=MAS-48; Linear.list_issue_statuses team=MastermindX;
-      Linear.save_issue id=MAS-48 state=In Progress; readback from save_issue.
+      Linear.get_issue id=MAS-48; Linear.save_issue id=MAS-48 state=In Progress;
+      Linear.save_comment issueId=MAS-48; Linear.get_issue id=MAS-48.
     result: >
-      Before repair, the description and PARTIAL label said In Progress while
-      statusType was completed, status Done and completedAt 2026-09-05T11:15:45.324Z.
-      The completed state violated MAS-48's own production completion law. At
-      2026-09-05T18:42:51.035Z it was restored to In Progress, completedAt cleared,
-      PARTIAL preserved and no source/runtime gate changed.
+      MAS-48 was Done with completedAt 2026-09-05T11:15:45.324Z while its
+      description, PARTIAL label and production completion law remained
+      nonterminal. At 2026-09-05T18:42:51.035Z it returned to In Progress and
+      completedAt cleared. Current history shows three separate Done episodes;
+      the exact actor/automation cause is not proven and is not attributed.
   - claim: The Personal-Pro host census remains unconsumed rather than active.
     command: >
-      Slack.slack_read_thread channel=C0BSBM78V1N root=1788605608.765019 limit=1000.
+      Slack.slack_read_thread channel_id=C0BSBM78V1N
+      message_ts=1788605608.765019 limit=1000.
     result: >
-      Latest complete thread contained the Linear bot and Sol messages only: no
-      actual receiver PICKUP_ACK, START, current host receipt or placement refusal.
+      The complete root contains the Linear bot and Sol messages only: no actual
+      receiver PICKUP_ACK, START, current host receipt or placement refusal.
       Operation personal-pro-executive-read-census-20260905-sol-001 remains
       DELIVERY_UNCONSUMED / PRE_START / WAITING_CAPACITY.
-  - claim: The existing native host-read prerequisite has an owner and must not be duplicated.
+  - claim: The native host-read prerequisite already has an owner and was not duplicated.
     command: >
-      Slack.slack_read_thread channel=C0BSBM78V1N root=1788521402.466429 limit=1000;
-      GitHub.fetch_file ops/executive_os/install.sh at protected Mastermind
-      8f3370e349ab8f1a54acac4c63697740f32715b1.
+      Slack.slack_read_thread channel_id=C0BSBM78V1N
+      message_ts=1788521402.466429 limit=1000.
     result: >
       Existing operation w3c-host-install-default-disarmed-20260904-sol-001 is
-      bound to native task 01a06c33-e5f2-73c0-aa66-44ad9ca36ec1 with domain and
-      Integration owners. Its accepted read-only helper is SHA256
+      bound to native task 01a06c33-e5f2-73c0-aa66-44ad9ca36ec1 under existing
+      domain and Integration owners. Its accepted helper SHA256 is
       e34c667d98df2db88344115efcfac21a3852adba31d2c4ceceb514e5594e25c2;
-      HOST START remains withheld. A possible non-root codesign readability artifact
-      was delivered as hypothesis only; root-context runtime health remains unknown.
-  - claim: One independent linked-records review child was lawfully commissioned but not picked up.
+      HOST START remains withheld and current production root health is unknown.
+  - claim: One independent linked-record review child exists but was not picked up before these source changes.
     command: >
-      Slack.slack_send_message then slack_read_thread channel=C0BSBM78V1N
-      root=1788633533.339369.
+      Slack.slack_read_thread channel_id=C0BSBM78V1N
+      message_ts=1788633533.339369 limit=100.
     result: >
       Operation personal-pro-convergence-linked-records-independent-review-20260905-sol-001
-      exists as one top-level Terra-preferred CAPACITY_SELECTABLE review carrier.
-      Latest read contained only the Linear bot reply, no reviewer ACK/START.
-      Its candidate-head addendum must be refreshed after this commit.
+      has one top-level Terra-preferred CAPACITY_SELECTABLE carrier. The latest
+      read contained only the Linear bot and Sol pre-START refresh, no reviewer
+      ACK/START. Its candidate references require one final pre-START refresh.
 unverified:
-  - claim: Personal Pro accepts and invokes the unchanged five-tool Executive MCP against canonical live state.
+  - claim: Personal Pro accepts and invokes the unchanged five-tool Executive MCP.
     what_would_verify: >
-      A qualified Personal account/workspace, owner-approved existing readonly
-      tunnel, actual visible per-tool scan and calls, and receipts binding source,
-      mode, schema, account association, canonical runtime root and freshness.
-  - claim: A current approved nonfixture Executive read route exists on the Chairman host.
+      Qualified Personal account/workspace, owner-approved existing tunnel,
+      visible tool scan and calls, and receipts separating client eligibility,
+      per-tool invocation and native confirmation behavior.
+  - claim: The selected MCP read root is the canonical production Runtime root.
     what_would_verify: >
-      The existing W3C/Integration native owner returns a current sanitized
-      root-context observation showing installed generation, service/mode/root and
-      canonical backend availability or one typed blocker. No replacement installer.
-  - claim: C1 Step D is reconciled.
+      The existing native host owner returns a sanitized current receipt binding
+      server source/mode/schema, selected repo_root, canonical installed Runtime
+      database/service generation and freshness. If the roots differ, current
+      source cannot supply canonical lifecycle reads without a bounded correction.
+  - claim: A read-root source correction is required or one of its two candidate paths is selected.
     what_would_verify: >
-      Read-only evidence from the original RuntimeBinding on
-      C0BSBM78V1N/1787889177.672699 classifying the prior authorized Step-D effect.
-      No replay, substitute receiver, reinstall, credential action or publication.
+      First prove root case R1 in the protected amendment. Then architecture review
+      chooses either the smallest host-controlled read-root coordinate inside the
+      existing gateway/inbox or reuse of an accepted owner-native read service.
+      Client inconvenience, fixture data or missing permissions do not decide it.
+  - claim: C1 Step D is canonically reconciled.
+    what_would_verify: >
+      Read-only original-RuntimeBinding evidence on
+      C0BSBM78V1N/1787889177.672699 classifying the prior authorized effect. No
+      replay, substitute receiver, reinstall, credential action or publication.
   - claim: S0-R1 passes and B2/C2 may release.
     what_would_verify: >
       Same-fixture least-privilege grant remediation through its existing secret
-      owner, fresh verifier qualification, final framed three-seat proof where
-      required and an explicit current Sol release. None occurred here.
+      owner, fresh verifier, final framed proof where required and explicit Sol
+      release. None occurred here.
   - claim: Personal and Business provide routine CEO parity or measured interactive latency.
     what_would_verify: >
       Paired real-account execution of the 20-row matrix plus production timings
       from tool call through canonical receipt and visible return. Current n=0.
-  - claim: The refreshed Macro head is integrated, independently reviewed and acceptable.
+  - claim: The final current records heads are integrated, independently reviewed and acceptable.
     what_would_verify: >
-      Concluded exact-new-head fences/CI, a clean current-main integrated candidate,
-      python3 scripts/agentos.py validate over that tree, reference and duplicate-key
-      proof, and a genuine non-author commit-anchored review. No self-review.
+      Concluded exact-head checks, clean current-base integrated candidates,
+      python3 scripts/agentos.py validate plus reference/duplicate-key proof for
+      Macro, and genuine non-author commit-anchored reviews. This handoff write
+      creates another exact Macro head whose checks cannot be inherited.
 prs:
   - 6877
 decisions:
@@ -184,107 +194,120 @@ discoveries:
   - DSC:PERSONAL-PRO-INGRESS-PRINCIPAL-GAP
 unresolved:
   - Personal-Pro mixed-manifest and per-tool behavior on the actual account.
-  - Tunnel owner, workspace/organization association and canonical runtime-root binding.
+  - Tunnel owner, workspace/organization association and current server generation.
+  - Canonical production Runtime root versus the MCP/app selected repo_root.
   - Current nonfixture Executive service/database/read availability behind native permissions.
+  - Whether a smallest existing-owner read-root correction is actually needed.
   - C1 original Step-D effect on its original RuntimeBinding.
-  - S0-R1 same-fixture installed OAuth grant and final proof.
-  - Production write-route selection, B2/C2 and real execution/return workflow.
-  - Independent review and current-base integration for both records candidates.
-  - Recurring Linear merge/attachment automation can advance MAS-48 beyond canonical truth.
+  - S0-R1 installed OAuth grant and final proof; B2/C2 release remains held.
+  - Current-base integration and genuine independent review for both records candidates.
+  - Recurring Linear completion projection can advance MAS-48 beyond canonical truth.
 next_actions:
   - >
-    Fresh-read review carrier C0BSBM78V1N/1788633533.339369, publish the exact new
-    Macro head before reviewer pickup, and obtain one non-author review over both
-    immutable records candidates plus current-base integrated validation.
+    Fresh-read C0BSBM78V1N/1788633533.339369, publish both exact new candidate
+    heads before reviewer pickup, and obtain one non-author integrated review of
+    the linked records. Do not review obsolete a54f7c67 or 6abb7004 successors.
   - >
     Consume only a real result or concrete refusal on the original host census
-    C0BSBM78V1N/1788605608.765019. Do not repeat the same broadcast or DM on silence.
+    C0BSBM78V1N/1788605608.765019. Do not repeat its broadcast or DM on silence.
   - >
-    Through the existing W3C/Integration native owner, establish a current
-    approved nonfixture read binding or typed blocker; do not create another host install.
+    Through the existing W3C/Integration native owner, establish root case
+    R0/R1/R2/R3 from the protected amendment; do not create another host install.
   - >
-    Run the finite real-account READONLY canary only after target/root qualification.
-    Keep scan, platform entitlement, invocation, backend fidelity and parity separate.
+    Run the finite real-account unchanged-manifest canary when the selected tunnel
+    is qualified. Keep client case, root case, backend freshness and parity separate.
   - >
-    Reconcile C1 on the original runtime without replay and complete S0-R1 through
-    its existing credential-safe owner. B2/C2 remain held.
+    If and only if root case R1 is proved, freeze the smallest existing-owner
+    read correction before commissioning one useful vertical. Otherwise reuse.
+  - >
+    Reconcile C1 on its original runtime and complete S0-R1 through its existing
+    credential-safe owner. B2/C2 remain held.
 do_not_redo:
-  - Do not build another Executive MCP backend or semantic API.
+  - Do not build another Executive MCP backend, semantic API or authenticated policy copy.
+  - Do not copy the production Runtime database beneath a repository checkout.
   - Do not create another Job, queue, retry ledger, watcher registry, session registry or Agent OS.
-  - Do not rebuild B1; its implementation is merged and C1 owns production proof.
+  - Do not rebuild B1; C1 owns its production proof.
   - Do not replay C1 Step D or infer no effect from missing output or missing SOL_STATE.
-  - Do not create S0-R2, weaken the verifier or expose a token in chat, Slack, GitHub or logs.
-  - Do not duplicate the Personal-Pro host-census carrier or its attention messages.
-  - Do not revive terminal CF2-H0 root 1788467076.080209 or confuse AI Hub H0 PR 424 with W3C host ownership.
+  - Do not create S0-R2, weaken the verifier or expose a token in any transport.
+  - Do not duplicate either Personal-Pro host-census or linked-review carrier.
+  - Do not revive terminal CF2-H0 root 1788467076.080209.
   - Do not call one-sided SaaS success Personal-versus-Business parity.
   - Do not restore MAS-48 to Done from a records merge, attachment or green CI.
-  - Do not merge protected base into records branches solely to make behind_by zero.
+  - Do not merge protected bases into records branches solely to make behind_by zero.
   - Do not treat a review request, merge ref, Slack mention or green CI as independent acceptance.
 danger_areas:
-  - A healthy tunnel can still serve old fixture data from the wrong checkout/root.
-  - A fresh wrapper timestamp does not prove current canonical backend data.
+  - A healthy tunnel can serve fixture data from an old checkout and still look fresh.
+  - Current readonly MCP/app source has no independent lifecycle read-root coordinate.
+  - A fresh timestamp or ok=true does not prove canonical backend identity.
   - Rich executive_state does not replace diagnostic admission hot state.
-  - Account eligibility, visible tool, successful invocation and production authority are separate facts.
-  - The two current official OpenAI documentation surfaces materially disagree about Pro write support.
-  - An empty canonical runtime provides no legitimate Job/intent test identifiers.
-  - Strict-v2 Inbox provenance can be degraded independently of underlying runtime existence.
+  - Account eligibility, visible tool, invocation, root fidelity and production authority are separate facts.
+  - Official OpenAI sources disagree about Pro modification support.
+  - An empty canonical Runtime supplies no legitimate positive Job/intent test IDs.
+  - Strict-v2 Inbox provenance degradation is not proof the Runtime is empty.
   - W3C Python-signature evidence may differ by privilege context; hypothesis is not health proof.
-  - Linear can become false-green even when its own description and labels remain PARTIAL.
-  - Current-base GitHub merge refs can lag protected movement and must not be called integrated proof.
+  - Linear has repeatedly become false-green while its own completion law remains unmet.
+  - Stale GitHub merge refs and old-head checks are not current integrated proof.
 ---
 
 # Personal-Pro Executive convergence — current continuation
 
 ## Capability delta
 
-Before this refresh, the records correctly held the product at PARTIAL but the
-portfolio projection had silently marked MAS-48 Done. The current projection is
-again In Progress/PARTIAL, source and runtime gates are unchanged, and a fresh
-session can recover the precise host, review and account-test dependencies from
-this record.
+The program remains **PARTIAL**, but the records now identify a stronger and
+more actionable source constraint. Current readonly Executive MCP and
+authenticated app code bind lifecycle reads to `repo_root`; they do not expose a
+separate production Runtime read root. The no-code account canary is still the
+right first client test, but it cannot establish production data fidelity without
+joining to native host-root evidence.
 
-This is a records correction, not a production capability. Personal Pro still
-has no proven canonical Executive read or write in the current account. The
-program remains **PARTIAL**.
+No product capability was made live. No host, account, tunnel, credential,
+Runtime, Job, Attempt, Worker, Wake or provider effect occurred.
 
-## Current immutable records
+## Current source records
 
-The full architecture and proof design remains in
-[Mastermind PR 489](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489)
-at `a54f7c67a4b0ef26a03019486102260c99926199`, research blob
-`d1587e3ec446c9f9bf15596b7abb8e60db061d22`. It is source-green and unreviewed.
-Its merge would preserve research only, not connect an account or prove parity.
+The full product study and narrow source correction are in
+[Mastermind PR 489](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489),
+current pre-review head `bba27fb113230acbf5f2d8f463f58f06b6733b8d`:
 
-This Macro PR retains the discovery plus this continuation only. The discovery
-blob remains `174eee9b38a33c00dacbffbc419759fb7b0fb7d0`. The head created by this refresh
-must receive new exact-head checks and replace all older Macro-head references in
-the independent review carrier before reviewer pickup.
+- `research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_CONVERGENCE_2026-09-05.md`;
+- `research/MASTERMIND_PERSONAL_PRO_EXECUTIVE_READ_ROOT_COUPLING_AMENDMENT_2026-09-05.md`.
 
-## Native proof order
+The amendment supersedes only the parent's weaker `defaults` wording. It does
+not decide the host is misconfigured or authorize Path 1/Path 2 implementation.
 
-1. Qualify the existing native Executive/tunnel owner and canonical runtime root.
-2. Use the actual Personal account to scan the unchanged five-tool MCP.
-3. Invoke state and inbox; use only already-observed canonical IDs for Job/intent.
-4. Grade client entitlement, invocation, backend fidelity, freshness and parity separately.
-5. Preserve current write-preflight law until an accepted equivalent is protected.
-6. Reconcile original C1 effects and S0-R1 through their existing owners.
-7. Release at most one selected production modification transport after evidence.
+This Macro PR contains this continuation and discovery blob
+`bb4e562d14bf62e3f24f69caf9362916a8a96a50`. The PR head produced by this file
+write is the candidate to validate and review; older Macro heads are historical.
 
-No account canary should connect the historical fixture and call it production.
-No source adapter is justified until the actual account falsifies reuse.
+## Two-axis canary
 
-## Dialogue and review state
+The account test returns a client case A/B/C/D. The host evidence returns a root
+case R0/R1/R2/R3. Both are required for a production-read conclusion.
 
-The host-census operation at `C0BSBM78V1N/1788605608.765019` is still PRE_START
-and unconsumed. The linked-record review operation at
-`C0BSBM78V1N/1788633533.339369` is also PRE_START at this record's write time.
-Both are separate exact carriers. A later ACK/START/result must be read from its
-own root and must receive an explicit Sol continuation or terminal STOP.
+- A client success plus R0 or R3 can reuse existing owners without source repair.
+- A client success plus R1 proves a bounded read-root correction is needed.
+- Any client case plus R2 remains degraded/blocked; it cannot be relabeled green.
+- Client Case C justifies a thin read-only tool projection only after non-manifest
+  causes are excluded; it does not justify another backend.
+
+## Existing carrier state
+
+The Personal-Pro host census at `C0BSBM78V1N/1788605608.765019` remains
+DELIVERY_UNCONSUMED/PRE_START. The linked records review at
+`C0BSBM78V1N/1788633533.339369` was also PRE_START before these source changes.
+Any later ACK/START/result must be consumed from its own exact root and receive an
+explicit Sol continuation or terminal STOP.
+
+The existing W3C host owner remains the only native root-census path. C1 remains
+effect-unknown on its original RuntimeBinding. S0-R1 remains unproven. B2/C2
+remain held.
 
 ## Exact next action
 
-First bind the new Macro head into the existing independent-review carrier and
-obtain exact-current-head integrated validation and non-author review. In
-parallel, the existing native W3C/Integration owner may return its already-owed
-read-only host/root qualification. Only then is the Personal-account canary a
-truthful next product proof.
+First bind the exact new Mastermind and Macro heads into the existing independent
+review carrier and obtain current-base integrated validation plus non-author
+review. In parallel, consume any real owner-native root receipt already returned
+on the existing W3C/Personal-Pro carriers. Run the actual account canary only
+against the qualified existing target. Commission source implementation only if
+root case R1 is positively proved and the smallest existing-owner correction is
+frozen.
