@@ -44,7 +44,7 @@ changed:
       New discovery: user-scoped watchlists already live in Terminal
       lib/watchlists.ts + Supabase RLS tables, bound by Macro watchstore.js; S4 is
       owned, not empty.
-prs: [6792, 6819, 6828, 6864, 6872, 6873]
+prs: [6792, 6819, 6828, 6864, 6872, 6873, 6876, 6890]
 verified:
   - claim: >
       RCTX-1 (same-document span → Ask → return) is BUILT in source on both
@@ -123,15 +123,72 @@ verified:
       python3 -c "import json;v=json.load(open('contracts/evidence_foundation/vocabulary.v1.json'));print('txi.chain_state' in v['excluded_derived_heads'],'txi.episode_transition' in v['owner_stores'])"
     result: >
       True True at origin/main a232b1743e54.
+  - claim: >
+      The production origin serves mastermind-x.com / www.mastermind-x.com and the
+      Help publication blocker is host storage plus a stale checkout, not the
+      updater's flock and not a site outage (Boundary 2 correction of the
+      unverified cron claim recorded at Boundary 1).
+    command: >
+      HOST_DIAGNOSIS_RESULT 1788635437 on Slack root C0BSBM78V1N/1788600409.396209
+      (accepted/closed by Sol 1788636103.500379); curl -sI on www.mastermind-x.com
+      /, /help.html and on mastermindx.ai /.
+    result: >
+      Loaded Caddy hosts = .com/www only; /opt/macro available_bytes=0; updater
+      failures are no-space; checkout HEAD 761a4df8 (108 behind); Help absent from
+      /opt/macro/site and the served root; macro-update.service/.timer
+      LoadState=not-found, no cron.d match; installed update.sh and Caddyfile
+      byte-equal to the checkout. www 200 (TencentEdgeOne), /help.html 404,
+      mastermindx.ai 525 (cloudflare) = separate unqualified mapping.
+      DSC:MACRO-SERVED-ORIGIN-IS-MASTERMIND-X-COM. Storage recovery is Sol's lane
+      and was NOT_STARTED at record time.
+  - claim: >
+      F04 #6872 B-1/B-3 at head ba62f5a598ea: the app/deploy/update.sh
+      restart-trigger hunk is admitted as path 25, the B-1 build_site.py anchor
+      (after _tmark("biocatalyst") :7682) is accepted but the returned body would
+      have silently skipped, B-3 is accepted, and #6872 × #6873 collide on the
+      same four Caddyfile lines with no ordering dependency.
+    command: >
+      git fetch origin refs/pull/6872/head refs/pull/6873/head; git diff
+      --name-only $(git merge-base ba62f5a5 origin/main) ba62f5a5 (35 paths);
+      grep -n "def build_shell" scripts/build_ontology_explorer.py; git
+      merge-tree --write-tree --name-only --messages ba62f5a5 b7d237f0.
+    result: >
+      build_shell(env: Environment, site: Path) -> None, so the proposed caller
+      _render_ontology(config.ROOT) raises TypeError inside the additive
+      try/except and the page is skipped without failing the build; corrected
+      hunk (build_shell(env, site) + _tmark("ontology_explorer")) and a RED-first
+      nightly-hook test were ruled owed at 1788633496.506309 on root
+      1788584226.926809. B-3 = macro:ontology archetype instrument_analyzer after
+      page_registry_overrides.yml :176 (archetype validator-known, 119 uses).
+      merge-tree conflicts on app/deploy/Caddyfile (:344/:470/:514/:549, different
+      insertion points) plus 13 site/macro_*.html (F01 render vs nightly);
+      config/site_access.yml merges clean. Ruling: keep both, second to land
+      re-applies its tokens; no serialization.
+  - claim: >
+      F01 #6873 Slot-2 hunks at head b7d237f067f2 are accepted: hub admission is
+      the HubPage registration, the page registry is derived, the build_site hook
+      and render dirty-scope entry pre-exist on main, and telemetry is none.
+    command: >
+      git diff --name-only $(git merge-base b7d237f0 origin/main) b7d237f0 (49
+      paths: 15 source / 16 site / 18 evidence / 0 data); grep -n "HUB_PAGE =
+      HubPage(" scripts/build_macro_suite_pages.py; git diff origin/main b7d237f0
+      -- scripts/build_site.py; grep -n "site/\*.html" scripts/build_product_page_registry.py.
+    result: >
+      HubPage at scripts/build_macro_suite_pages.py:251; build_site.py identical
+      to main (macro-suite hook :7700 and render.yml:152 pre-exist); registry
+      derives from git ls-files site/*.html (build_product_page_registry.py:612);
+      Caddy/site_access/boundary-test hunks identical to 8e08c27c (three exact
+      asset paths after /markets.css). Ruling posted on root 1788583938.803689
+      after 1788639616.516889; CI 33988162571 success; 0 reviews.
 unverified:
   - claim: >
-      The failing publication stage is the VPS macro-update cron (flock
-      /var/lock/macro-update.lock) rather than a checkout, rsync, config or
-      scheduler failure.
+      The VPS has a working pull scheduler at all: macro-update.service/.timer
+      answered LoadState=not-found and no cron.d entry matched, so the "3-minute
+      VPS pull" this repo's law assumes is unevidenced on the diagnosed host.
     what_would_verify: >
-      The HOST_DIAGNOSIS_RESULT owed on Slack root C0BSBM78V1N/1788600409.396209:
-      /opt/macro HEAD, installed update.sh digest, timer/cron last attempts, real
-      flock ownership, served-root digests versus 8431aeaf.
+      The storage-recovery lane's host report naming the unit, cron or manual
+      procedure that last updated /opt/macro, with its last-run timestamp; until
+      then a merged Caddy/site_access change has no proven activation path.
   - claim: >
       A canonical join ticker ↔ issuer_cik ↔ isin/cusip6 does not exist anywhere in
       the repository.
@@ -157,13 +214,18 @@ unresolved:
   - "MO-DELTA-010 ('no rendered indicator library') is stale against source: config/market_reference.yml, scripts/build_market_reference.py, templates/reference.html.j2 exist and #6792 (DRAFT @7853ffea, MOR-1) owns that surface; the ledger row is reconciled through #6792's owner, never a second catalogue; presence is neither coverage nor PROVEN_LIVE."
   - "V-A (security → options continuation) is NOT frozen: F03 and F06 must first return the exact existing source→destination consumer, native identity tuple (possibly multi-field), parser/resolver and supported instance; the one-key-per-hop convention proposed in the seam return is withdrawn."
   - "V-B (RCTX-1 production proof) is proof-first but a real Ask turn is not read-only (chat/telemetry rows, model quota): the existing proof carrier, approved test identity, entitlement, isolated browser, persistence/cost and mutation gate must be recovered before any live turn; invalid-reference injection runs on the hermetic path unless a live test is explicitly authorized."
-  - "F04 #6872 (head 56649cdf at record time, DRAFT/HOLD) still owes Sol's remaining repair subset (K1 false-available, typed Boolean/null legs, rev/cutoff identity, exposure_screens mislabelled as rights, method version in manifest) and the Stage B integration packet; F00 rules Stage B hunks when they land with the same presentation-asset audit."
-  - "F01 #6873 owes back the hub admission / page-registry / normal-build / telemetry hunks with file:line; global admission stays HELD under Slot 2; the null-as-flat fix is the one permitted same-PR maintenance exception."
+  - "F04 #6872 (head ba62f5a598ea at Boundary 2, DRAFT/HOLD, 35 paths) owes the corrected B-1 body, the RED-first nightly-hook test and a RESULT / HOLD-FOR-SOL; Stage B (site_access :107 two literals, Caddy :344/:470/:514/:549, legacy-jobs additive job after transmission-chains with if:false + gate:code like all 209 jobs, pack 6 validated) was verified by diff and ruled at 1788608265.003859; the earlier repair subset (K1 false-available, typed legs, rev/cutoff identity, exposure_screens, method version) landed at ebca50bf per observer 1788607834.596239."
+  - "F01 #6873 is at RESULT / HOLD-FOR-SOL (head b7d237f0, Draft, no labels, auto-merge null, 0 reviews); Slot-2 hunks accepted by F00; independent review cannot come from the shared Claude8 identity, Sol places it via Capacity; global admission stays HELD; the NaN/True finite-number obligation (lib/macro_suite_view.py _finite) stays in #6873 and is explicitly NOT fixed by the repair child."
+  - "Pack-5 main red (tests/test_macro_suite_pages.py :269 neutral-hollow unknown token, :424-429 hard-coded C/cy/cx) is settled by chain, not by F00: F00 option 1788637042.194119 → Sol amendment 1788645638.002919 on root 1788583938.803689 (sole exception to the 1788615927.409309 no-new-PR ruling; canonical macro#6819 issuecomment-5555062885, 6,692 bytes, SHA256 2901b934…4957) → repair root C0BSBM78V1N/1788645583.769389 → F01 owner dd51ef8f ACK 1788646076 / START 1788646503 → macro#6890 (Draft, labels none, auto-merge null, head 7eb8f7305a24, 2 paths, 52 passed locally, contract-delta 0/0, CI 33995832426 in flight, reviews REQUESTED from mastermindx-2/-3 but not submitted). Sol has not accepted or released #6890; #6873 and #6426 are not released."
+  - "Terminal OAuth continuity break (Sol support c5551301450): terminal/components/onboarding/oauth.ts builds `next` from location.pathname + '?onboard=resume' and drops search/hash, so the requested company/analysis subpage is lost across the Google round-trip (six cases reproduced hermetically at blob 8027b6f7); Terminal #508 (094d061c, 34 paths) does not touch oauth.ts/StepAccount/OnboardingProvider/auth callback and is not that fix; #445 owns OnboardingSheet — any repair reconciles that hunk. Adjacent bounded follow-up, not an F00 build; no second session/navigation store."
+  - "F03 specimen v4 (per c5551301450): whole-collar risk withheld without stock basis, debit vs hypothetical stock-basis separated, model-mark/EOD qualifications visible, keyed mobile legend; disposition belongs to the F03 action-authoritative Sol (five decisions: C0 release stays with C0 #6604, 16-row corrections with the ledger owner, Express in the existing workspace/parser, server-save ownership distinct from local drafting, one producer→contract→risk→return vertical when gates clear)."
+  - "F00E archive subset is VERIFIED-USABLE (manifest 7488cf17…eaeda737 unchanged; 14 sampled event captures carry the unpublished-transmission message and no /equities/ anchors; 68 news URLs ⊂ event sitemap; corrected union 5,282 URLs) while route-universe categorization, the 337/5,009 vs 335/4,947 split rule, crosswalk method and paid-behaviour completeness stay OPEN; F00 consumes only REPAIRED F00E/F00G candidates."
   - "Research Vault #6862 (root C0BSBM78V1N/1788581036.874359) has an older START/effect-unknown on the same VPS; it is not adopted, bypassed or touched from the Help path."
   - "Per-route access tier for /transmission, /stocks and capital pages is not mapped route-by-route in config/site_access.yml; delivery/receipt states for alerts were not found in the two alert modules read (repo-wide absence unknown)."
 next_actions:
-  - "Consume HOST_DIAGNOSIS_RESULT on root 1788600409.396209; return the smallest existing-owner recovery boundary with before/after proof from the hashes above; only then run the browser nav→Help→destination/filter readback. No reset, kill, Caddy reload or updater run from F00."
-  - "Rule the F01 returned admission/registry/build/telemetry hunks against Slot 2; then rule F04 Stage B (presentation-asset byte classification via existing boundary tests, legacy-jobs disjointness re-checked against the then-current contender set)."
+  - "Host child is CLOSED (Sol 1788636103.500379); the storage-recovery lane is Sol's and was NOT_STARTED at Boundary 2. When it reports, re-verify Help live on www.mastermind-x.com by body hash (help.html → f7c67b2d0090, /help → 301 → 200 anonymous) and then run the 12-shot readback. Nothing on the host is F00's to run."
+  - "Consume the F01 repair child's RESULT on root 1788645583.769389 and Sol's disposition of macro#6890; when #6890 merges, re-verify main's pack-5 by the newest main ci.yml run, then the pinned contenders (#6873, #6872, #6876) can be re-proven against a green base. F00 never arms, readies or merges any of them."
+  - "Rule F04's corrected B-1 body + RED-first nightly-hook test when the worker returns the new head (compare against the hunk at 1788633496.506309; re-run merge-tree against the then-current #6873 head and fresh main); consume its RESULT / HOLD-FOR-SOL."
   - "Route the MO-PAID-020 DECISION_REQUEST to Sol once; do not build a renderer or an identity plane while it is open."
   - "Have F03/F06 return the V-A seam facts (consumer, identity tuple, resolver, instance) and F06/F11 recover the V-B proof carrier before any V-A/V-B source commission."
   - "Reconcile MO-DELTA-010 through #6792's owner; fold F09's ledger correction (MO-PAID-066 / MO-DELTA-025 'CONFIRMED-ABSENT' is false for ETF-disclosed bonds) into the next ledger write."
@@ -175,6 +237,10 @@ do_not_redo:
   - "Do not propose reset --hard, live-plane rollback, wedged-process termination or 'run the updater once' as Help recovery; update.sh also arms Market Memory runtime fences."
   - "Do not widen public access beyond the three exact asset paths, and never with a prefix, wildcard or JSON/payload path."
   - "Do not order the shared CI contender list by PR number or age; only intersecting hunks serialize."
+  - "Do not serialize #6872 and #6873 over their shared Caddyfile lines; keep-both was ruled, the second to land re-applies its tokens."
+  - "Do not re-ACK, re-START, review from the Claude8 identity, arm, Ready or merge macro#6890 (F01 repair child, exact receiver dd51ef8f); do not open a second main-red-repair for pack 5; do not fold lib/macro_suite_view.py into that child."
+  - "Do not relay a mastermindx.ai 525 as a site outage or re-scope any child on it (DSC:MACRO-SERVED-ORIGIN-IS-MASTERMIND-X-COM)."
+  - "Do not commission a Terminal OAuth rewrite or a second navigation/session store; the auth-return boundary is an adjacent follow-up reconciled with #445/#508 owners."
 danger_areas:
   - "Sparse worktrees omit site/, data/ and mockups/; a write into an omitted tree truncates the committed artifact. Materialize with scripts/worktree_sparse.py before comparing site/ blobs."
   - "The clone is blobless: `git show <old>:<file>` on an old commit fetches over the network and can exceed 100 s; compare live bodies with `git hash-object --stdin` against `git rev-parse \"<commit>:<path>\"` (zsh requires the quoted ${c}:path form)."
@@ -182,6 +248,8 @@ danger_areas:
   - "Routed scout subagents die at roughly fourteen turns with findings only in tool results; cap them at ten calls and write once at the end."
   - "A merged PR is not live: the VPS pulls on its own cadence and the served copy can lag main by hours; verify by body hash on the real route, never by GitHub state."
   - "Shared fleet identity: every worktree commits and posts as the same account; a same-account post is not proof of which session acted."
+  - "zsh parses `$r:app/deploy/Caddyfile` as the `:a` modifier ('ambiguous argument'); write `\"${r}:app/deploy/Caddyfile\"`. `git merge-tree --write-tree` takes exactly two branches; `origin/main A B` is a usage error."
+  - "A held-PR push is an ACT: re-read the Slack carrier immediately before every push to #6876, and re-arm exactly one check watcher afterwards because a new head re-opens the checks."
 decisions:
   - DEC:RESEARCH-CONTEXT-IS-PORTABLE-REFERENCE-NOT-MEMORY
   - DEC:SOL-HOLD-IS-A-MERGE-BARRIER
@@ -189,6 +257,7 @@ discoveries:
   - DSC:MARKET-ONTOLOGY-K1-VOCABULARY-EXCLUDES-TXI-CHAIN-STATE
   - DSC:MARKET-ONTOLOGY-USER-STATE-STORE-IS-TERMINAL-WATCHLISTS
   - DSC:MARKET-ONTOLOGY-PUBLIC-P1-CORPUS-RETAINED-OUTSIDE-GITHUB
+  - DSC:MACRO-SERVED-ORIGIN-IS-MASTERMIND-X-COM
 ---
 
 # Seam map — where a user's context is lost today
@@ -289,3 +358,42 @@ typed states, both art directions) → RED-first journey test → merge =
 BUILT_NOT_PROVEN → live readback on the real route → telemetry receipt =
 PROVEN_LIVE. Help today: SOURCE_RELEASED at 8431aeaf, public-render succeeded,
 served copy stale; host stage UNKNOWN until the host child returns.
+
+# Boundary 2 addendum (2026-09-05 ~22:40Z, F00 principal 5b29ad85)
+
+Recorded at the boundary Sol named in amendment 1788645638.002919 ("F00 records
+the bounded amendment at its next existing record boundary"). Additive; nothing
+above is withdrawn except where a row says so.
+
+**Production correction.** F00's relay 1788633512.480849 ("origin unreachable,
+525 on every path") was wrong at the altitude it claimed. The host child proved
+the served hosts are `.com` (200 via TencentEdgeOne) and that `.ai` is an
+unqualified edge mapping; F00 corrected itself at 1788637058.742439. The real
+publication blocker is disk (`/opt/macro available_bytes=0`), a checkout 108
+commits behind, and no loaded pull scheduler. Storage recovery is Sol's lane.
+
+**F04 ruling (1788633496.506309).** Path 25 admitted; B-1 body corrected (the
+returned caller would have TypeError'd inside the additive guard and skipped the
+page silently — the exact failure the guard pattern hides); B-3 accepted; RED-first
+nightly-hook test owed; keep-both on the four shared Caddyfile lines with #6873.
+
+**F01 Slot-2 acceptance.** Ruled at head b7d237f0 after RESULT 1788639616.516889.
+Corrections issued: the worker's outage claim was stale; "no separate CI-fix PR"
+was a worker position, not a ruling; no independent review can come from the
+shared identity. Sol-ruled ledger facts from the F01 root: a shared test that
+pins a live snapshot is data-as-fixture (1788615927.409309), and a candidate-owned
+pack-4 design-governance red needs mockups/evidence EVIDENCE.yml + p0_evidence.v2
+manifest + 8-cell PNGs (1788616061.860239).
+
+**Pack-5 settlement chain.** F00 returned one bounded option and commissioned
+nothing; Sol amended its own no-new-PR ruling for exactly that shape; the same F01
+owner executed it as #6890. F00 consumes the child's returns as parent control and
+records them; it does not review, arm, ready or merge. The NaN/True finite-number
+dependency is deliberately outside the child and stays owed by #6873.
+
+**Records routing.** The F03 v4 specimen disposition, the F00E verified subset,
+the Terminal OAuth auth-return boundary and the #508/#445 collision identities are
+carried in `unresolved:` above from Sol support c5551301450; F00 folds them, it
+does not adjudicate them. The risk_envelope_live admission item remains with its
+own owner and is not an F00 hunk.
+
