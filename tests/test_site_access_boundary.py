@@ -112,6 +112,46 @@ def test_biocatalyst_shell_assets_are_public_but_payload_api_stays_paid():
     assert "enforce_site_full" in api_source
 
 
+def test_ontology_trace_assets_are_public_but_the_snapshot_api_stays_paid():
+    """F04-X1: the shell's CSS/JS are reachable anonymously; every current value is not.
+
+    The page is a public-safe shell whose only endpoint reference is the
+    authenticated snapshot API, so its presentation assets must be anonymously
+    reachable or the shell renders unstyled and inert for logged-out visitors.
+    The asset route is default-deny and compared byte-for-byte against this
+    policy, so an omission here is invisible until someone opens the page.
+    """
+    assets = {"/ontology.css", "/ontology.js"}
+    assert assets <= set(POLICY["public"]["exact"])
+    assert assets.isdisjoint(POLICY["free_registered"]["exact"])
+    assert assets <= _caddy_public_exclusions()
+
+    error_matcher = re.search(
+        r"@reg_asset_err\s*\{\s*not path ([^\n]+)", CADDY, flags=re.S
+    )
+    assert error_matcher, "Caddy matcher @reg_asset_err missing"
+    assert assets <= set(shlex.split(error_matcher.group(1)))
+
+    for matcher in ("public_static", "public_versioned"):
+        block = re.search(rf"@{matcher}\s*\{{(.*?)^\s*\}}", CADDY, flags=re.S | re.M)
+        assert block, f"Caddy matcher @{matcher} missing"
+        paths = {
+            token
+            for path_line in re.findall(r"^\s*path\s+([^\n]+)", block.group(1), flags=re.M)
+            for token in shlex.split(path_line)
+        }
+        assert assets <= paths
+
+    # The snapshot itself is never public: no payload path is whitelisted, and
+    # the router resolves the shared authority rather than declaring a second one.
+    public_exact = set(POLICY["public"]["exact"])
+    assert not any(path.startswith("/api/ontology") for path in public_exact)
+    api_source = (ROOT / "app" / "ontology_explorer.py").read_text()
+    assert "from app.main import require_user" in api_source
+    assert "enforce_site_full" in api_source
+    assert "always=True" in api_source
+
+
 def test_retired_movers_route_redirects_to_the_consolidated_hub_section():
     redirect_lines = [
         line.strip()

@@ -18,6 +18,7 @@ Run: python -m pytest tests/test_caddy_hub_boundary.py -q
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -325,3 +326,24 @@ def test_loopback_peer_carrying_the_edge_stamped_header_is_denied() -> None:
 def test_loopback_peer_with_no_peer_header_is_authorized() -> None:
     request = _hub_request(client_host="127.0.0.1")
     assert prophet_lab_api._hub_prophet_authorized(request) is True  # noqa: SLF001
+
+
+def test_ontology_trace_assets_are_static_only_and_cannot_select_a_backend() -> None:
+    """F04-X1 asset admission must not touch the proxy topology this file guards.
+
+    ``/ontology.css`` and ``/ontology.js`` were added to four path matchers so a
+    logged-out visitor can render the shell. That is a STATIC concern; if either
+    literal ever appeared inside a ``reverse_proxy``/``rewrite`` block it would
+    become a caller-controlled path into the backend, which is exactly the shape
+    ``_hub_prophet_authorized`` depends on never existing.
+    """
+    caddy = CADDYFILE_PATH.read_text(encoding="utf-8")
+    assert "/ontology.css" in caddy and "/ontology.js" in caddy
+
+    for block in re.findall(r"(reverse_proxy[^\n]*\{.*?^\s*\}|rewrite[^\n]*)", caddy, flags=re.S | re.M):
+        assert "/ontology." not in block, f"ontology asset leaked into a proxy/rewrite block: {block[:120]}"
+
+    # And the topology itself is unchanged by the admission.
+    proxies = classify_backend_proxies(caddy)
+    assert len(proxies) == 7
+    assert not [p for p in proxies if p.classification == UNSAFE]

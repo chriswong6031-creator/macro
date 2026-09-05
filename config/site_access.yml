@@ -105,6 +105,10 @@ public:
     - /biocatalyst.html
     - /biocatalyst.css
     - /biocatalyst.js
+    # WTI Live Trace presentation assets only; every current value is served
+    # by authenticated /api/ontology/explorer/v1, never by these files.
+    - /ontology.css
+    - /ontology.js
     # Tier-preview shells, promoted from free_registered to ANONYMOUS-public
     # (SEO_SUPERCHARGE_MASTERPLAN §A1/W1a). The pages themselves are preview
     # SHELLS: honest totals + methodology + a small newest-first preview slice +
