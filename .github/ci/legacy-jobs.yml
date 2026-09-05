@@ -2262,16 +2262,16 @@ jobs:
       # pair pins (visibility declarations, stance/lane inks, light-presence
       # fence, token cleanliness via scripts.check_design_system.scan_text —
       # repo-import only, no new deps), full checkout has site/. No new job.
-      # tests/test_stock_dashboard_first_frame.py (P0B zero-FOUC) rides the
-      # same HK/Canada dashboard subject: static template ownership, in-place
-      # composer enhancement, preserved owner populations, and no mounted
-      # visibility gate. Uses the existing bs4/jinja2 install. No new job.
+      # tests/test_stock_dashboard_first_frame_data.py (P0B zero-FOUC) pins
+      # the checked-in generated HK/Canada populations and duplicate-id truth.
+      # Its source-only contract is intentionally split into the dedicated
+      # gate:code job below; generated site/** truth stays gate:data here.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_canada_canonical_board.py
           tests/test_canada_v36_composer.py
-          tests/test_stock_dashboard_first_frame.py
+          tests/test_stock_dashboard_first_frame_data.py
           tests/test_stock_dashboard_css.py
           tests/test_hk_v37_composer.py
           tests/test_commodity_signals.py
@@ -2432,6 +2432,34 @@ jobs:
       # (tests/test_statement_tape.py) is inside the sweep, one step above.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+
+  stock-dashboard-first-frame:
+    if: ${{ false }}
+    gate: code
+    # P0B repair: engine-render-guards is a nightly gate:data lane and therefore
+    # cannot prove the hermetic zero-FOUC contract before a PR merges. Keep the
+    # generated-page population receipt there, while this small source-only job
+    # follows the prophet-lab split precedent and runs in the actual PR code gate.
+    paths:
+      - "templates/hk.html.j2"
+      - "templates/canada.html.j2"
+      - "templates/stock-dashboard.css"
+      - "templates/dashboard-icons.js"
+      - "site/hk-stock-v36.js"
+      - "site/canada-stock-v36.js"
+      - "site/stock-dashboard.css"
+      - "site/dashboard-icons.js"
+      - "tests/test_stock_dashboard_first_frame.py"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: stock dashboard first-frame source contract
+        run: python -m pytest tests/test_stock_dashboard_first_frame.py -q
 
   prophet-lab:
     if: ${{ false }}
