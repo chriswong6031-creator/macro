@@ -40,8 +40,10 @@ from typing import Any, Mapping
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+# Unconditional insert at position 0 — the conditional shape is not a pin: a repo
+# root already present LATER in sys.path leaves a decoy tree ahead of it, which is
+# exactly what the import-pin guard's hostile-tree proof rejects.
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.market_os.macro_workspaces import contract, registry  # noqa: E402
 from lib import macro_suite_view  # noqa: E402

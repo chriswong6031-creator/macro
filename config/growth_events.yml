@@ -7,15 +7,17 @@
 # assembled from six vocabularies cannot be joined. Spec:
 # research/MASTERMIND_GROWTH_INSTRUMENTATION_SPEC.md.
 #
-# WHAT IT IS NOT
-# --------------
-# Not a second source of truth for the beacon. `app/main.py::_MM_EVENT_TYPES` is the
-# closed whitelist that decides which client events are ACCEPTED; unknown types are
-# dropped silently, which is how an instrumentation program ships dead. Wave W2-1 makes
-# that whitelist read this file. Until then, `tests/test_growth_events_registry.py`
-# enforces the weaker but still load-bearing direction: **every type the beacon already
-# accepts appears here, marked `status: live`** — so the registry cannot start life out
-# of step with the running system.
+# WHAT IT IS (since W2-1, landed by WS:COMMERCIAL-ACTIVATION CA1A)
+# ----------------------------------------------------------------
+# THE source of truth for the beacon. `app/main.py::_MM_EVENT_TYPES` is DERIVED from
+# this file via lib/growth_registry: the beacon accepts a wire IFF an entry here is
+# `status: live`. Unknown types are still dropped silently at /api/collect, so the way
+# an event ships is by flipping its entry live IN THE SAME CARRIER as its producer —
+# never by editing a whitelist. Entries additionally marked `envelope: v1` require the
+# CA1A envelope (stable UUID `eid` mapped onto analytics_events.id for one-row replay,
+# the frozen `schema` tag, and closed typed `meta` validated against `properties`
+# below). `tests/test_growth_events_registry.py` asserts both directions plus an AST
+# guard against a hardcoded whitelist creeping back.
 #
 # `wire` VS `name`
 # ----------------
@@ -157,7 +159,13 @@ events:
   - name: intelligence.viewed
     wire: intelligence.viewed
     marketing_alias: first_value_reached
-    status: planned
+    # CA1A (WS:COMMERCIAL-ACTIVATION): live + envelope v1 — the collector requires a
+    # stable UUID eid (mapped onto analytics_events.id, so replay is one row), the
+    # frozen schema tag, and this closed typed property set. First producer:
+    # templates/flow_velocity.html.j2 (server-baked rows make the genuine-read
+    # discriminator exact: empty/none states bake rows_visible=0 and never emit).
+    status: live
+    envelope: v1
     source: client
     funnel: intelligence_experienced
     purpose: >
@@ -260,7 +268,10 @@ events:
 
   - name: personal.act
     wire: personal.act
-    status: planned
+    # CA1A: live + envelope v1. First producer: templates/watchlist.js — fires once
+    # per tab session on the first deliberate watchlist_add.
+    status: live
+    envelope: v1
     source: client
     funnel: personal_act
     purpose: >
@@ -272,7 +283,13 @@ events:
 
   - name: watchlist.symbol_added
     wire: watchlist.symbol_added
-    status: planned
+    # CA1A: live + envelope v1. First producer: templates/watchlist.js add() — fires
+    # only when the in-memory store accepts a NEW distinct symbol while the local
+    # persistence path is eligible; a duplicate symbol is not a new add. The one
+    # deliberately-added symbol is the ONLY event allowed to carry a symbol
+    # (privacy boundary, CA1A handoff §10).
+    status: live
+    envelope: v1
     source: client
     funnel: personal_act
     purpose: The create-before-register funnel, step by step.
@@ -284,7 +301,12 @@ events:
   - name: watchlist.saved
     wire: watchlist.saved
     marketing_alias: watchlist_saved
-    status: planned
+    # CA1A: live + envelope v1. First producer: templates/watchlist.js — fires only
+    # inside the localStorage persist SUCCESS branch (acknowledged write, never a
+    # pre-write optimistic state), on the first crossing to >=3 distinct symbols;
+    # re-arms only after the list drops below three.
+    status: live
+    envelope: v1
     source: client
     funnel: activation
     purpose: Activation condition 1 — a saved list of >=3 symbols.

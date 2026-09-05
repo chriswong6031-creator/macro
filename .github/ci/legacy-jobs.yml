@@ -8643,6 +8643,15 @@ jobs:
         run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors + dossier quote honesty
         run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py tests/test_dossier_quote_api.py tests/test_dossier_live_quote_surface.py -q
+      # WS:COMMERCIAL-ACTIVATION CA1A (2026-09-04): the event-spine acceptance
+      # battery — registry-as-whitelist derivation (W2-1), envelope-v1 eid/schema/
+      # meta validation and replay identity through the mounted /api/collect route,
+      # producer near-miss source contracts incl. template/site shipping-pair
+      # parity, and the deterministic activation funnel report. Lives in this job
+      # because it owns the beacon/growth-registry subject, and needs exactly the
+      # same minimal FastAPI/httpx dependency closure as the beacon suite above.
+      - name: CA1A event spine — collector envelope v1 + producer contracts + funnel report
+        run: python -m pytest tests/test_commercial_activation_event_spine.py tests/test_ca1a_producers_contract.py tests/test_activation_funnel_report.py -q
       # R1A-M (2026-09-02): the shared regular-quote projector both this job's
       # dossier route AND the Intelligence Hub batch route now use, plus the
       # deliberately public batch API itself — same minimal FastAPI/httpx
