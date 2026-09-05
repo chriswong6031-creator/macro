@@ -6,9 +6,16 @@ claim: >
   non-strict JSON outputs. Claude SDK 0.2.152 reads handler is_error and converts
   it to wire isError; a camelCase-only handler error flag is not preserved.
 falsifier: >
-  Run the real imported helper and an actual SDK-created in-memory server at
-  the exact cited source. Disprove the size or representation counterexamples,
-  or show that the cited SDK conversion preserves a camelCase-only handler flag.
+  In a disposable Mastermind checkout at 0d9cf2f58f9a6a1fe895d5d199abc18735201e24
+  with its permitted SDK dependencies, read
+  `git show 0d9cf2f58f9a6a1fe895d5d199abc18735201e24:brain/bot_mcp.py` and run
+  `python -c "from brain.bot_mcp import _json; r=_json({f'k{i}':'x'*200 for i in range(150)}); print(len(r['content'][0]['text'].encode('utf-8'))); print(_json({'v':float('nan')})['content'][0]['text'])"`.
+  The output must reproduce 31,782 bytes and a non-strict NaN literal; a bounded
+  strict-JSON result at those original bytes disproves the respective claim.
+  Read the separate SDK converter with
+  `gh api 'repos/anthropics/claude-agent-sdk-python/contents/src/claude_agent_sdk/__init__.py?ref=v0.2.152' -H 'Accept: application/vnd.github.raw+json'`.
+  A converter that preserves a camelCase-only handler isError flag disproves
+  the SDK claim. These read/probe commands are falsifiers, not executed wire proof.
 so_what: >
   Continue only Mastermind issue487 and its exact carrier. Require real-source
   RED, final strict UTF-8 payload measurement, explicit bounded transport errors,

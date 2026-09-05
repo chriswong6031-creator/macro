@@ -5,10 +5,16 @@ claim: >
   from the same current-worker snapshot. That observation does not independently
   authenticate the process calling a terminal Company Dialogue MCP bridge.
 falsifier: >
-  Inspect the cited observation client and WP-3 resolver. Disprove the shared
-  identity derivation, or prove a proposed terminal composition independently
-  binds the calling process to its launching Attempt and generation before
-  comparing fresh current-worker facts.
+  From a Mastermind checkout, run
+  `git show 0d9cf2f58f9a6a1fe895d5d199abc18735201e24:integrations/slack_agent_dialogue/executive_observation_client.py`
+  and
+  `git show 0d9cf2f58f9a6a1fe895d5d199abc18735201e24:integrations/slack_agent_dialogue/company_dialogue_runtime_binding.py`.
+  Inspect _active, resolve and the WP-3 caller comparison. This claim is false
+  if that exact observer constructs actor from independently authenticated
+  launching-process identity rather than from its current-worker snapshot.
+  For a later proposed bridge, hold trusted caller A fixed while the current
+  snapshot advances to B and demonstrate refusal before any downstream send;
+  that resolves the composition risk without rewriting the historical finding.
 so_what: >
   Keep issue466 with its existing owner. Reuse observation and WP-3 validation,
   but require an independent trusted Operator-Harness launch identity. Hold
