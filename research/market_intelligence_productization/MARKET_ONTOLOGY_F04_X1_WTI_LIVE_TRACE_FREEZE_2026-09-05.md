@@ -325,3 +325,41 @@ A measurement note: the first contrast pass reported 1.1:1 on two classes and th
 design was fine — `color-mix()` resolves to `color(srgb 0.87 …)`, whose 0–1
 floats the parser was reading as 0–255. The measuring instrument failed before
 the thing being measured did.
+
+## Two continuations the first repair pass still got wrong
+
+**Sign-in did not come back.** The 401 gate linked a bare `/?signin=1`, so a
+reader who followed a link to one specific trace signed in and landed on the
+hub. The house convention is `?signin=1&ret=<root-relative path>`, consumed by
+`templates/onboard.js:2624` (`retTarget()`), which accepts same-origin `/…`
+only — and the server-side regwall sets the same param when it bounces, so a
+returning visitor with a live session is silently refreshed rather than
+re-prompted. The gate now carries it, applies the consumer's own `//` guard
+before handing the path over, and preserves the deep link's query. Verified by
+re-running `retTarget()`'s acceptance test against the href this page produces.
+
+**The canonical surface was reachable from one rare branch.** `open_transmission`
+only fires when nothing blocks and nothing is unobserved. In every ordinary
+reading the link to `/transmission.html` existed solely inside `<noscript>` —
+exactly where a reader who can see the page never looks. It is now a quiet
+secondary line in the Next card in every state, beneath whatever the primary
+action is: 7.12:1 dark, 5.59:1 light, target resolves, default view still four
+cards.
+
+Both are the same mistake in different clothes: a continuation that exists in
+the code is not a continuation the reader can reach.
+
+## What is still not proven, named rather than implied
+
+* **Production authentication.** The 401/403/503/malformed proofs use FastAPI
+  dependency overrides. That is local proof, not deployed auth. What *is* proven
+  is that the route depends on the real `app.main.require_user` →
+  `app.paywall.enforce_site_full(always=True)` chain rather than a stub
+  (`app/ontology_explorer.py:112-117`).
+* **CI coverage of these suites.** `grep -rn "ontology_explorer" .github/`
+  returns nothing. The 153 tests pass locally and do not run in CI, so a green
+  PR says nothing about them until the Stage B job lands.
+* **No review stands on the current head.** `#6872` carries no GitHub review at
+  all (`reviews: []`, `reviewDecision: ""`). The consumed review was two
+  commissioned Opus `reviewer` subagents against head `7fbdc0a0`; that cannot
+  approve a repaired successor by implication.
