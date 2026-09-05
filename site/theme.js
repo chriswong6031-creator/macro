@@ -189,8 +189,8 @@
 
       /* CA1A growth envelope (WS:COMMERCIAL-ACTIVATION, config/growth_events.yml
          `envelope: v1`): registry events ride the SAME queue/beacon with a stable
-         event id — the collector maps `eid` onto the analytics_events.id primary
-         key, so an exact replay is ONE row — plus the frozen schema tag and a
+         event id — the collector seats `eid` in the analytics_events.eid unique
+         column, so an exact replay is ONE row — plus the frozen schema tag and a
          closed typed `meta`. No crypto.randomUUID (older WebViews) means no eid,
          and an unidentifiable growth event is dropped HERE rather than minting an
          unreplayable row. Fire-and-forget like everything else on this beacon. */
