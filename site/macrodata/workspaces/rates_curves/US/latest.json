@@ -365,7 +365,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "rates_curves-US-bdfb0667dbec65b6",
+    "prior_generation_id": "rates_curves-US-6e41490d9a099c67",
     "prior_method_version": "rates_curves.compose.v1",
     "status": "PRESENT"
   },
@@ -373,7 +373,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "rates_curves-US-bdfb0667dbec65b6"
+    "predecessor_generation_id": "rates_curves-US-6e41490d9a099c67"
   },
   "drivers": {
     "balance_sheet": [
@@ -508,11 +508,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T22:42:48Z",
+    "built_at": "2026-09-05T00:51:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
-    "content_sha256": "6e41490d9a099c6793c400ef9ef8b9335a10139fe1b79eda1276d9f6001cbcf3",
-    "generation_id": "rates_curves-US-6e41490d9a099c67",
+    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
+    "content_sha256": "3f919c8d696a04feeacc25c360f69417d55d150e24d99e6ad6e21251c2345102",
+    "generation_id": "rates_curves-US-3f919c8d696a04fe",
     "producer": "engine.market_os.macro_workspaces.rates_curves",
     "rendered_at": null
   },

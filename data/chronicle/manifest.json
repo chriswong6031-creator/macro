@@ -1,9 +1,9 @@
 {
   "adapters": {
     "earnings": {
-      "count": 4771,
-      "dropped_from_source": 1,
-      "gap": "coverage: 1211/2069 tickers carried reported surprises; 1 event(s) retained after their source row left the current snapshot (union-merge, never deleted)",
+      "count": 5237,
+      "dropped_from_source": 2,
+      "gap": "coverage: 1328/2104 tickers carried reported surprises; 2 event(s) retained after their source row left the current snapshot (union-merge, never deleted)",
       "retracted_by_authority": 0
     },
     "earnings_call": {
@@ -19,13 +19,13 @@
       "retracted_by_authority": 0
     },
     "prophet_ledger": {
-      "count": 78,
+      "count": 85,
       "dropped_from_source": 0,
       "gap": null,
       "retracted_by_authority": 0
     },
     "regime_flip": {
-      "count": 8,
+      "count": 9,
       "dropped_from_source": 0,
       "gap": null,
       "retracted_by_authority": 0
@@ -43,18 +43,18 @@
       "retracted_by_authority": 0
     }
   },
-  "as_of": "2026-09-04",
+  "as_of": "2026-09-05",
   "coverage": {
-    "end": "2026-09-03",
-    "note": "10240 events across 621 distinct date(s)",
+    "end": "2026-09-04",
+    "note": "10715 events across 622 distinct date(s)",
     "start": "2013-05-21"
   },
-  "elapsed_s": 2.247,
+  "elapsed_s": 2.43,
   "gap_notes": [
-    "earnings: coverage: 1211/2069 tickers carried reported surprises; 1 event(s) retained after their source row left the current snapshot (union-merge, never deleted)",
+    "earnings: coverage: 1328/2104 tickers carried reported surprises; 2 event(s) retained after their source row left the current snapshot (union-merge, never deleted)",
     "macro_release: 20/20 release event(s) joined to a scored actual print"
   ],
-  "inputs_hash": "sha256:77a6def0df8ee93d669fd1b47404a5b04233d064b28ef5402f26a5ab412f7eb4",
+  "inputs_hash": "sha256:393854db767c82a49933b0eb89bcf546bf3aca0b2a6e5c16628e7b8ccf815da9",
   "ledgers": {
     "earnings_calls": {
       "path": "data/chronicle/earnings_call_events.jsonl",
@@ -65,17 +65,17 @@
     "events": {
       "path": "data/chronicle/events.jsonl",
       "present": true,
-      "rows": 10240,
-      "sha256": "sha256:eea4c3c490692bdb0b8775887288ed961fdb8a013ce33ac5806dcfc383b5ab66"
+      "rows": 10715,
+      "sha256": "sha256:bee88fdd1ab994a951e9d590482ce36b598f3a12f295ffab370a27f706e3e802"
     },
     "state_log": {
       "path": "data/chronicle/state_log.jsonl",
       "present": true,
-      "rows": 25,
-      "sha256": "sha256:f09cc9059f9958e3ef4dcaacaa7b9c913f91413c78cb39574fc84fdcfcd6cbd4"
+      "rows": 26,
+      "sha256": "sha256:af5cdba9578b8f7d04059bd5603c753aa5265c995653a332f07fec611c0e820e"
     }
   },
-  "produced_at": "2026-09-04T12:58:34Z",
+  "produced_at": "2026-09-05T03:23:37Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,
@@ -86,15 +86,15 @@
     },
     "data/chronicle/state_log.jsonl": {
       "present": true,
-      "sha256": "sha256:f09cc9059f9958e3ef4dcaacaa7b9c913f91413c78cb39574fc84fdcfcd6cbd4"
+      "sha256": "sha256:af5cdba9578b8f7d04059bd5603c753aa5265c995653a332f07fec611c0e820e"
     },
     "data/earnings/earnings.parquet": {
       "present": true,
-      "sha256": "sha256:c3ea550632d34e2796b02a741e03aaa6b8bd4443c2bad5386a38be5d8e5c9125"
+      "sha256": "sha256:89861b5021287d54c895e8f53ee1891e084cdc66d36b576e654ef0cd4674a3f8"
     },
     "data/prophet/ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:17e96f9d5a4d062ee97656ecf12b58dadae2316abd4af5c185277ca6a6de7195"
+      "sha256": "sha256:9d1f2a0c093378ffd3bb4480b2bdcce61b9e1ba587eb1322430227f8bfba79bb"
     },
     "data/prophet/ledger_corrections.jsonl": {
       "present": true,
@@ -106,15 +106,15 @@
     },
     "data/release_forecast/forward_ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:1a4efe418cd650d6d1bc9d7dca3395752c514f7c3de0149997e1972889dbe774"
+      "sha256": "sha256:1d9550022f6c12c96c5f2b2e295fbe4b227e502dd7446626d1f90696e13bc404"
     },
     "data/research_vault/catalog.json": {
       "present": true,
-      "sha256": "sha256:ee3eaf3faf1830697fa663862dfbfa8c88c78ea53d3aacafe029cb0fcd738302"
+      "sha256": "sha256:c52a33d3d24e5a45197f1a3975ce48145de11dc73b62fdb85177cc8de5317525"
     },
     "data/risk_radar/forward_log.jsonl": {
       "present": true,
-      "sha256": "sha256:300258ecf42ea91fbc51d814f4605d0779e496cbf3407cd6adb687b44b7c42c1"
+      "sha256": "sha256:79852e3d1f05c9b418eec4811a0f1b82dfc03402506a6a69e28c0ae1aed7c809"
     }
   },
   "tier": "display"

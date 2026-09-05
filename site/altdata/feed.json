@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-09-04T23:24:04.585447+00:00",
-  "as_of": "2026-09-04",
+  "generated_utc": "2026-09-05T03:04:16.843419+00:00",
+  "as_of": "2026-09-05",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6460,7 +6460,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 22,
+        "count": 21,
         "items": "8.01"
       },
       {
@@ -6474,11 +6474,6 @@
         "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
-        "ticker": "CTVA",
-        "count": 5,
-        "items": "1.01, 7.01, 8.01"
-      },
-      {
         "ticker": "MLM",
         "count": 5,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
@@ -6489,14 +6484,9 @@
         "items": "7.01, 8.01"
       },
       {
-        "ticker": "ASPI",
+        "ticker": "CTVA",
         "count": 4,
-        "items": "1.01, 2.03, 7.01"
-      },
-      {
-        "ticker": "EQR",
-        "count": 4,
-        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
+        "items": "1.01, 7.01, 8.01"
       },
       {
         "ticker": "MOS",
@@ -6514,19 +6504,19 @@
         "items": "7.01"
       },
       {
+        "ticker": "ASPI",
+        "count": 3,
+        "items": "1.01, 2.03, 7.01"
+      },
+      {
         "ticker": "BNY",
         "count": 3,
         "items": "5.02, 8.01"
       },
       {
-        "ticker": "KRMN",
+        "ticker": "EQR",
         "count": 3,
-        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "LAC",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01, 8.01"
+        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "LH",
@@ -6554,21 +6544,6 @@
         "items": "5.02, 7.01"
       },
       {
-        "ticker": "RMD",
-        "count": 3,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "TSCO",
-        "count": 3,
-        "items": "1.01, 2.03, 5.02, 8.01"
-      },
-      {
-        "ticker": "UAMY",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "UHS",
         "count": 3,
         "items": "1.01, 2.03, 8.01"
@@ -6582,6 +6557,31 @@
         "ticker": "USAR",
         "count": 3,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "YUM",
+        "count": 3,
+        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "ABBV",
+        "count": 2,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "ALB",
+        "count": 2,
+        "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "AMD",
+        "count": 2,
+        "items": "1.01, 2.03, 5.02"
+      },
+      {
+        "ticker": "AME",
+        "count": 2,
+        "items": "8.01"
       }
     ],
     "special_situations": [
@@ -6688,14 +6688,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "GORO",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "GNRV",
@@ -7336,6 +7328,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CRMT",
+        "category": "Strategic Reviews",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
       },
       {
         "ticker": "BORR",
@@ -8619,11 +8619,11 @@
       },
       {
         "ticker": "FLEX",
-        "category": "Spin-Offs",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Spin-Offs"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "GRL",
@@ -8696,14 +8696,6 @@
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
-      },
-      {
-        "ticker": "CLGN",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "DMYD-B",
@@ -8971,11 +8963,11 @@
       },
       {
         "ticker": "ASA",
-        "category": "Activist Campaigns",
+        "category": "Strategic Reviews",
         "confidence": "high",
-        "activist": true,
+        "activist": false,
         "filer": null,
-        "detail": "Activist Campaigns"
+        "detail": "Strategic Reviews"
       },
       {
         "ticker": "BIO",
@@ -11706,6 +11698,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "LPSN",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "LLM",
         "category": "Acquisitions",
         "confidence": "high",
@@ -11896,14 +11896,6 @@
         "activist": false,
         "filer": null,
         "detail": "Spin-Offs"
-      },
-      {
-        "ticker": "MATW",
-        "category": "Strategic Reviews",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Strategic Reviews"
       },
       {
         "ticker": "ACLX",
@@ -13115,11 +13107,11 @@
       },
       {
         "ticker": "QNCX",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "NEOE3",
@@ -16811,11 +16803,11 @@
       },
       {
         "ticker": "NIXX",
-        "category": "Deal Terminations",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Deal Terminations"
+        "detail": "Delistings"
       },
       {
         "ticker": "CXXIF",
@@ -17642,6 +17634,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "REAX",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "NFJ",
         "category": "Issuer Tenders",
         "confidence": "high",
@@ -18008,22 +18008,6 @@
         "activist": false,
         "filer": null,
         "detail": "Issuer Tenders"
-      },
-      {
-        "ticker": "CDTTW",
-        "category": "Acquisitions",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "NMAD",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "MXCT",
@@ -18464,14 +18448,6 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
-      },
-      {
-        "ticker": "HTOO",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "TGHL",
@@ -19386,6 +19362,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "BTTC",
+        "category": "Delistings",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "QNBC",
         "category": "Acquisitions",
         "confidence": "high",
@@ -19584,6 +19568,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "GRMLW",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "UTL",
@@ -20378,14 +20370,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "FNGR",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "HUBG",
         "category": "Delistings",
         "confidence": "high",
@@ -20723,11 +20707,11 @@
       },
       {
         "ticker": "MTNB",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "DCBG",
@@ -22082,14 +22066,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "BXDIF",
-        "category": "Issuer Tenders",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Issuer Tenders"
-      },
-      {
         "ticker": "BRUNW",
         "category": "Delistings",
         "confidence": "high",
@@ -22747,14 +22723,6 @@
       },
       {
         "ticker": "CYRX",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "APGE",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -23635,11 +23603,11 @@
       },
       {
         "ticker": "LXP-PC",
-        "category": "Going-Private",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "MGY",
@@ -24074,6 +24042,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "BSP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "WILCF",
         "category": "Delistings",
         "confidence": "high",
@@ -24291,6 +24267,14 @@
       },
       {
         "ticker": "FCT",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "ACHR-WT",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -24880,6 +24864,22 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CHEV",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "BLFS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       }
     ],
     "unusual_options": [
@@ -25069,13 +25069,13 @@
       },
       {
         "ticker": "INTC",
-        "net_up_30d": 32,
+        "net_up_30d": 33,
         "breadth": 1.0,
-        "est_chg_30d": 30.94,
-        "n_analysts": 32,
+        "est_chg_30d": 0.8,
+        "n_analysts": 33,
         "bull_ratio": 1.0,
         "rising": true,
-        "revision_delta": 32,
+        "revision_delta": 33,
         "hot": true
       },
       {
@@ -25203,22 +25203,11 @@
         "ticker": "ISRG",
         "net_up_30d": 23,
         "breadth": 0.92,
-        "est_chg_30d": 0.5,
+        "est_chg_30d": 0.0,
         "n_analysts": 25,
         "bull_ratio": 0.96,
         "rising": true,
         "revision_delta": 23,
-        "hot": true
-      },
-      {
-        "ticker": "JBHT",
-        "net_up_30d": 22,
-        "breadth": 1.0,
-        "est_chg_30d": 0.22,
-        "n_analysts": 22,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 22,
         "hot": true
       },
       {
@@ -25255,14 +25244,14 @@
         "hot": true
       },
       {
-        "ticker": "GS",
-        "net_up_30d": 21,
+        "ticker": "JBHT",
+        "net_up_30d": 22,
         "breadth": 1.0,
-        "est_chg_30d": 10.69,
-        "n_analysts": 21,
+        "est_chg_30d": 0.0,
+        "n_analysts": 22,
         "bull_ratio": 1.0,
         "rising": true,
-        "revision_delta": 21,
+        "revision_delta": 22,
         "hot": true
       },
       {
@@ -25303,6 +25292,17 @@
         "net_up_30d": 21,
         "breadth": 1.0,
         "est_chg_30d": 2.59,
+        "n_analysts": 21,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 21,
+        "hot": true
+      },
+      {
+        "ticker": "GS",
+        "net_up_30d": 21,
+        "breadth": 1.0,
+        "est_chg_30d": 10.69,
         "n_analysts": 21,
         "bull_ratio": 1.0,
         "rising": true,
@@ -25894,7 +25894,7 @@
       {
         "ticker": "MRK",
         "phase3_starts": 11,
-        "halts": 4,
+        "halts": 3,
         "hot": true,
         "sample": "A Study of Raludotatug Deruxtecan (R-DXd) With or Without Bevacizumab as Maintenance Therapy in Second-Line Platinum-Sensitive Recurrent Ovarian Cancer (REJOICE"
       },
@@ -25913,18 +25913,18 @@
         "sample": "Study to Assess Adverse Events and How Effective NOA LIFT is Compared to JUV\u00c9DERM VOLIFT With Lidocaine for the Correction of Nasolabial Folds in Adults"
       },
       {
-        "ticker": "AMGN",
-        "phase3_starts": 9,
-        "halts": 4,
-        "hot": true,
-        "sample": "Phase 3 Trial of Tarlatamab (SC vs IV) in Extensive-Stage Small Cell Lung Cancer After Platinum Based First-line Chemotherapy (ES-SCLC)"
-      },
-      {
         "ticker": "NVS",
         "phase3_starts": 9,
         "halts": 4,
         "hot": true,
         "sample": "A 52-week Study of Remibrutinib in IgE-mediated Food Allergy"
+      },
+      {
+        "ticker": "AMGN",
+        "phase3_starts": 8,
+        "halts": 4,
+        "hot": true,
+        "sample": "Phase 3 Trial of Tarlatamab (SC vs IV) in Extensive-Stage Small Cell Lung Cancer After Platinum Based First-line Chemotherapy (ES-SCLC)"
       },
       {
         "ticker": "NVO",
@@ -26159,20 +26159,6 @@
         "top_issue": "Energy/Nuclear"
       },
       {
-        "ticker": "KLAR",
-        "spend_usd": 90000.0,
-        "filings": 1,
-        "spike_x": 1.12,
-        "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
-        "ticker": "BEN",
-        "spend_usd": 270000.0,
-        "filings": 1,
-        "spike_x": 1.0,
-        "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
         "ticker": "CHRS",
         "spend_usd": 95000.0,
         "filings": 1,
@@ -26192,6 +26178,20 @@
         "filings": 1,
         "spike_x": 0.68,
         "top_issue": "Taxation/Internal Revenue Code"
+      },
+      {
+        "ticker": "OII",
+        "spend_usd": 30000.0,
+        "filings": 1,
+        "spike_x": 0.6,
+        "top_issue": null
+      },
+      {
+        "ticker": "CRMD",
+        "spend_usd": 220000.0,
+        "filings": 1,
+        "spike_x": 0.58,
+        "top_issue": "Health Issues"
       }
     ],
     "offexchange": [
@@ -29278,56 +29278,56 @@
       {
         "ticker": "ASO",
         "next_date": "2026-09-09",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 2.06,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "ORCL",
         "next_date": "2026-09-10",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": 1.4,
         "last_surprise_pct": 13.3
       },
       {
         "ticker": "FIZZ",
         "next_date": "2026-09-10",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "LEN",
         "next_date": "2026-09-16",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 1.31,
         "last_surprise_pct": 6.5
       },
       {
         "ticker": "AZO",
         "next_date": "2026-09-22",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 54.97,
         "last_surprise_pct": 5.2
       },
       {
         "ticker": "GIS",
         "next_date": "2026-09-23",
-        "days_to": 19,
+        "days_to": 18,
         "eps_forecast": 0.71,
         "last_surprise_pct": 15.8
       },
       {
         "ticker": "COST",
         "next_date": "2026-09-24",
-        "days_to": 20,
+        "days_to": 19,
         "eps_forecast": 6.5,
         "last_surprise_pct": null
       }
@@ -29471,7 +29471,18 @@
           "special_situation",
           "trump"
         ],
-        "why": "clinical_phase3_start: 11 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers \u00b7 trump: MERCK & COMPANY INC"
+        "why": "clinical_phase3_start: 11 new Phase-3, 3 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers \u00b7 trump: MERCK & COMPANY INC"
+      },
+      {
+        "ticker": "ABBV",
+        "score": 3,
+        "weighted_score": 1.45,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion",
+          "material_8k"
+        ],
+        "why": "clinical_phase3_start: 9 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: LINZESS \u00b7 material_8k: 2 material 8-Ks (items 7.01, 8.01)"
       },
       {
         "ticker": "INTC",
@@ -29483,7 +29494,7 @@
           "patent_cluster",
           "stocktwits_bull"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +32 revision delta \u00b7 gov_grant: $11,196,831 federal grant/loan \u00b7 patent_cluster: 464 grants, 48 IPC classes \u00b7 stocktwits_bull: 88% bull \u00b7 207,907 watching"
+        "why": "analyst_upgrade_cluster: net upgrades +33 revision delta \u00b7 gov_grant: $11,196,831 federal grant/loan \u00b7 patent_cluster: 464 grants, 48 IPC classes \u00b7 stocktwits_bull: 88% bull \u00b7 207,907 watching"
       },
       {
         "ticker": "SPCX",
@@ -29517,6 +29528,18 @@
           "special_situation"
         ],
         "why": "lobbying_spike: $510,000, 3.0x spike \u00b7 material_8k: 4 material 8-Ks (items 2.03, 8.01) \u00b7 special_situation: Issuer Tenders"
+      },
+      {
+        "ticker": "AMD",
+        "score": 4,
+        "weighted_score": 1.2,
+        "channel_list": [
+          "analyst_upgrade_cluster",
+          "material_8k",
+          "retail_buzz",
+          "stocktwits_bull"
+        ],
+        "why": "analyst_upgrade_cluster: net upgrades +31 revision delta \u00b7 material_8k: 2 material 8-Ks (items 1.01, 2.03, 5.02) \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 84% bull \u00b7 563,282 watching"
       },
       {
         "ticker": "MLM",
@@ -29615,6 +29638,16 @@
         "why": "github_momentum: +0.22% stars \u00b7 patent_cluster: 206 grants, 23 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: Acquisitions"
       },
       {
+        "ticker": "ALB",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "gov_grant",
+          "material_8k"
+        ],
+        "why": "gov_grant: $7,266,048 federal grant/loan \u00b7 material_8k: 2 material 8-Ks (items 5.02, 7.01)"
+      },
+      {
         "ticker": "CEG",
         "score": 2,
         "weighted_score": 1.05,
@@ -29664,39 +29697,6 @@
           "special_situation"
         ],
         "why": "13f_add: Curated Wealth Partners LLC +$2,030,517,264 \u00b7 analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 special_situation: Acquisitions"
-      },
-      {
-        "ticker": "GOOGL",
-        "score": 3,
-        "weighted_score": 0.95,
-        "channel_list": [
-          "app_demand",
-          "cnbc_pick",
-          "github_momentum"
-        ],
-        "why": "app_demand: 4.7\u2605 \u00d7 26,395,006 reviews \u00b7 cnbc_pick: Karen Finerman \u00b7 github_momentum: +0.54% stars"
-      },
-      {
-        "ticker": "SBUX",
-        "score": 3,
-        "weighted_score": 0.95,
-        "channel_list": [
-          "analyst_upgrade_cluster",
-          "app_demand",
-          "special_situation"
-        ],
-        "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,242,224 reviews \u00b7 special_situation: Strategic Reviews"
-      },
-      {
-        "ticker": "VST",
-        "score": 3,
-        "weighted_score": 0.95,
-        "channel_list": [
-          "insider_mspr",
-          "news_sentiment",
-          "special_situation"
-        ],
-        "why": "insider_mspr: MSPR 100.0 \u00b7 news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs"
       }
     ]
   }

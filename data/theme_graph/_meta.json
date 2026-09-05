@@ -1,5 +1,5 @@
 {
-  "belief_time": "2026-09-04",
+  "belief_time": "2026-09-05",
   "capability_counts": {
     "measurement_candidate": 505,
     "semantic_only": 138
@@ -12,7 +12,7 @@
       "symbol": "IBIT"
     }
   ],
-  "computed_at": "2026-09-04T11:52:40Z",
+  "computed_at": "2026-09-05T02:22:17Z",
   "counts": {
     "capability": 644,
     "edges": 14737,
@@ -120,10 +120,10 @@
   },
   "rows_appended": {
     "capability": 643,
-    "edges": 1,
+    "edges": 0,
     "evidence": 0,
     "identity_resolution": 2805,
-    "nodes": 1
+    "nodes": 0
   },
   "skipped_suites": {},
   "ths_unmapped_concept_count": 314,

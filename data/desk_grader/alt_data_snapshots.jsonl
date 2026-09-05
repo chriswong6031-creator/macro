@@ -3091,3 +3091,11 @@
 {"date":"2026-09-04","ticker":"V","departed":true,"left_desk":"2026-09-04","last_rank":25,"last_score":33}
 {"date":"2026-09-04","ticker":"VST","departed":true,"left_desk":"2026-09-04","last_rank":null,"last_score":26}
 {"date":"2026-09-04","ticker":"MU","rank":30,"score":31,"lean":1,"broken":false}
+{"date":"2026-09-04","ticker":"SMCI","rank":7,"score":53,"lean":1,"broken":false}
+{"date":"2026-09-04","ticker":"MKTX","rank":26,"score":32,"lean":1,"broken":false}
+{"date":"2026-09-04","ticker":"UNP","rank":29,"score":31,"lean":1,"broken":false}
+{"date":"2026-09-04","ticker":"PYPL","rank":null,"score":22,"lean":1,"broken":true}
+{"date":"2026-09-04","ticker":"ADSK","rank":null,"score":20,"lean":1,"broken":true}
+{"date":"2026-09-04","ticker":"IBM","rank":null,"score":16,"lean":1,"broken":true}
+{"date":"2026-09-04","ticker":"BABA","rank":null,"score":15,"lean":1,"broken":true}
+{"date":"2026-09-04","ticker":"GSK","rank":null,"score":10,"lean":1,"broken":true}

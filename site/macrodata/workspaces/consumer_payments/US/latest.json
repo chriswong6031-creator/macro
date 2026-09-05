@@ -437,7 +437,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-07-01",
-    "prior_generation_id": "consumer_payments-US-129eb4dc3a7771fc",
+    "prior_generation_id": "consumer_payments-US-34abcae985b41777",
     "prior_method_version": "consumer_payments.compose.v1",
     "status": "PRESENT"
   },
@@ -445,7 +445,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
-    "predecessor_generation_id": "consumer_payments-US-129eb4dc3a7771fc"
+    "predecessor_generation_id": "consumer_payments-US-34abcae985b41777"
   },
   "drivers": {
     "balance_sheet": [
@@ -538,11 +538,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-04T22:42:48Z",
+    "built_at": "2026-09-05T00:51:12Z",
     "calculation_as_of": "2026-07-01",
-    "code_version": "93e4faa768119a100d390ef84a3d345cc8db8149",
-    "content_sha256": "34abcae985b41777d20664fd8aaa81dd3e17e282bd03f3394fd5ff5888d48f65",
-    "generation_id": "consumer_payments-US-34abcae985b41777",
+    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
+    "content_sha256": "983d4404806724aa93df826108063b9fe11cccf42304bfa030eb5a8e2ad7615e",
+    "generation_id": "consumer_payments-US-983d4404806724aa",
     "producer": "engine.market_os.macro_workspaces.consumer_payments",
     "rendered_at": null
   },
