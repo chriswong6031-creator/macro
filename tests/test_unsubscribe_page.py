@@ -821,6 +821,25 @@ PUBLIC_EXACT = frozenset({
     "/sector_cycles.css",
     "/macro-desk.css",
     "/markets.css",
+
+    # The Macro & Monetary suite shell. Reviewed public as ONE unit: the suite's
+    # pages are already public HTML, and serving them without their stylesheet and
+    # boot script renders an unstyled, themeless skeleton to every anonymous
+    # reader. Presentation only -- the readings themselves live under /macrodata/,
+    # which stays free_registered and is asserted separately in
+    # tests/test_site_access_boundary.py.
+    "/macro_suite.css",
+    "/macro_suite_boot.js",
+    "/macro_suite.js",
+
+    # /help.html -- NOT this branch's widening. It is already public in BOTH
+    # planes on origin/main (config/site_access.yml public.exact, and five Caddy
+    # path lists) from a merged promotion whose author did not update this frozen
+    # set, so this test is red on main. Verified by running it in a clean worktree
+    # at pristine origin/main, where it fails with exactly ['/help.html'].
+    # Declared here rather than left red: this PR edits this very set, and leaving
+    # a known red in the list it is editing would hide the next real widening.
+    "/help.html",
     "/odds.css",
     "/capital_structure.css",
     "/government-revenue-parity.css",
