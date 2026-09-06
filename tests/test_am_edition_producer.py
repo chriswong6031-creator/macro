@@ -17,6 +17,7 @@ from scripts.build_am_edition import (
     STATES,
     CLASSIFICATIONS,
     build_payload,
+    _is_session_open_now,
 )
 
 FORBIDDEN_KEYS = {
@@ -48,8 +49,13 @@ def _fresh_tree(tmp_path: Path, *, tape_asof: str, session_date: str) -> tuple[P
         "asof": session_date, "quad_name": "Reflation", "label": "Reflation",
     })
     _write(data / "neuralweb" / "market_plane.json", {
-        "asof": session_date, "verdict": "confirming", "contradiction_count": 0,
-        "stale": False, "gaps": [],
+        "asof": session_date,
+        "verdict": {
+            "verdict": "RISK_ON", "score": 75, "label_en": "Risk-on", "label_zh": "风险偏好",
+        },
+        "contradiction_count": 0,
+        "stale": False,
+        "gaps": ["options_structure: no usable options_hub/gex payload for SPX/SPY/QQQ"],
     })
     _write(data / "release_forecast" / "latest.json", {
         "asof": f"{session_date}T10:00:00Z",
@@ -146,7 +152,9 @@ def test_feasibility_is_computed_not_assumed(tmp_path):
     site_b, data_b = _fresh_tree(tmp_path / "b", tape_asof="2026-07-27T22:32:09Z", session_date="2026-09-08")
     payload_b = build_payload(site_b, data_b, now=now)
     assert payload_b["morning_source_feasibility"] == "DEGRADED"
-    assert "site/live/quotes.json" in payload_b["morning_source_feasibility_cause"]
+    assert payload_b["morning_source_feasibility_cause_en"]
+    assert payload_b["morning_source_feasibility_cause_zh"]
+    assert "site/live/quotes.json" not in payload_b["morning_source_feasibility_cause_en"]
     for b in payload_b["blocks"]:
         for row in b.get("rows") or []:
             if isinstance(row, dict) and "last" in row:
@@ -155,7 +163,8 @@ def test_feasibility_is_computed_not_assumed(tmp_path):
     site_c, data_c = _empty_tree(tmp_path / "c")
     payload_c = build_payload(site_c, data_c, now=now)
     assert payload_c["morning_source_feasibility"] == "BLOCKED"
-    assert "site/live/quotes.json" in payload_c["morning_source_feasibility_cause"]
+    assert payload_c["morning_source_feasibility_cause_en"]
+    assert payload_c["morning_source_feasibility_cause_zh"]
 
 
 def test_no_authority_fields_are_emitted(tmp_path):
@@ -200,7 +209,18 @@ def test_weekend_and_before_open_states(tmp_path):
     payload2 = build_payload(site2, data2, now=weekday_before_open)
     assert payload2["session_state"] == "NOT_YET_OPEN"
     tape2 = next(b for b in payload2["blocks"] if b["key"] == "tape_since_prior_close")
-    assert tape2["state"] != "CURRENT"
+    # A 1-minute-old premarket reading IS current — session_open alone must
+    # never force a fresh reading to STALE (that was the bug).
+    assert tape2["state"] == "CURRENT"
+    assert "Premarket" in (tape2["state_reason_en"] or "")
+
+    # A genuinely stale premarket reading (well past the 240min budget) must
+    # still read STALE_WITH_LAST_KNOWN with a bilingual disclosure.
+    site3, data3 = _fresh_tree(tmp_path / "wk2", tape_asof="2026-09-08T05:00:00Z", session_date="2026-09-08")
+    payload3 = build_payload(site3, data3, now=weekday_before_open)
+    tape3 = next(b for b in payload3["blocks"] if b["key"] == "tape_since_prior_close")
+    assert tape3["state"] == "STALE_WITH_LAST_KNOWN"
+    assert tape3["state_reason_en"] and tape3["state_reason_zh"]
 
 
 def test_output_is_deterministic(tmp_path):
@@ -239,3 +259,53 @@ def test_producer_never_breaks_the_render(tmp_path):
     finally:
         mod.config.load = orig_load
         mod.config.ROOT = orig_root
+
+
+def test_prior_close_date_walks_back_to_a_trading_day(tmp_path):
+    # Monday 2026-09-07 11:00 UTC, premarket. Calendar walk-back would land
+    # on Sunday 2026-09-06, a date on which no close exists.
+    monday_premarket = datetime(2026, 9, 7, 11, 0, tzinfo=timezone.utc)
+    site, data = _fresh_tree(tmp_path, tape_asof="2026-09-04T20:00:00Z", session_date="2026-09-07")
+    payload = build_payload(site, data, now=monday_premarket)
+    assert payload["prior_close_date"] == "2026-09-04"  # Friday, not Sunday
+
+
+def test_nested_verdict_objects_never_leak_authority_fields(tmp_path):
+    now = datetime(2026, 9, 8, 15, 0, tzinfo=timezone.utc)
+    site, data = _fresh_tree(tmp_path, tape_asof="2026-09-08T13:00:00Z", session_date="2026-09-08")
+    payload = build_payload(site, data, now=now)
+    plane = next(b for b in payload["blocks"] if b["key"] == "cross_asset_plane")
+    verdict = plane["rows"][0]["verdict"]
+    assert set(verdict) == {"verdict", "label_en", "label_zh"}
+    assert "score" not in json.dumps(plane)
+    assert "gaps" not in plane["rows"][0]
+
+
+def test_regime_row_carries_no_raw_quad_slug(tmp_path):
+    now = datetime(2026, 9, 8, 15, 0, tzinfo=timezone.utc)
+    site, data = _fresh_tree(tmp_path, tape_asof="2026-09-08T13:00:00Z", session_date="2026-09-08")
+    payload = build_payload(site, data, now=now)
+    regime = next(b for b in payload["blocks"] if b["key"] == "regime")
+    raw = json.dumps(regime)
+    assert '"Q2"' not in raw
+    assert regime["rows"][0]["quad_name_en"] and regime["rows"][0]["quad_name_zh"]
+
+
+def test_stale_block_never_ships_a_null_reason(tmp_path):
+    stale_now = datetime(2026, 9, 8, 15, 0, tzinfo=timezone.utc)
+    site, data = _fresh_tree(tmp_path, tape_asof="2026-09-08T13:00:00Z", session_date="2026-08-01")
+    payload = build_payload(site, data, now=stale_now)
+    for b in payload["blocks"]:
+        if b["state"] == "STALE_WITH_LAST_KNOWN":
+            assert b["state_reason_en"], b["key"]
+            assert b["state_reason_zh"], b["key"]
+
+
+def test_dst_does_not_shift_the_open_by_an_hour(tmp_path):
+    # 2026-01-15 (EST, UTC-5): 09:30 ET == 14:30 UTC. Under the old fixed
+    # 13:30 UTC constant the session would falsely read OPEN a full hour
+    # early; the EDT-tuned 13:30 UTC (09:30 ET summertime) must NOT open here.
+    winter_at_old_edt_open = datetime(2026, 1, 15, 13, 30, tzinfo=timezone.utc)
+    assert _is_session_open_now(winter_at_old_edt_open) is False
+    winter_at_true_est_open = datetime(2026, 1, 15, 14, 30, tzinfo=timezone.utc)
+    assert _is_session_open_now(winter_at_true_est_open) is True

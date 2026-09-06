@@ -24,6 +24,7 @@ import logging
 import sys
 from datetime import datetime, timezone, timedelta, date
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -48,9 +49,19 @@ _TAPE_SYMBOLS = (
     ("^RUT", "Russell 2000", "罗素2000指数"),
 )
 
-# US regular session opens 13:30 UTC (09:30 ET) on a weekday.
-_US_OPEN_UTC_HOUR = 13
-_US_OPEN_UTC_MINUTE = 30
+# US regular session opens 09:30 America/New_York on a weekday (DST-aware).
+_US_OPEN_HOUR_LOCAL = 9
+_US_OPEN_MINUTE_LOCAL = 30
+_NY_TZ = ZoneInfo("America/New_York")
+
+# Regime quad code -> plain-word EN/ZH label (engine/regime.py:25-26 is the
+# authoritative code->name map; this is display copy only, never re-derived).
+_QUAD_LABELS = {
+    "Q1": ("Goldilocks", "金发姑娘（低通胀增长）"),
+    "Q2": ("Reflation", "再通胀"),
+    "Q3": ("Stagflation", "滞胀"),
+    "Q4": ("Growth-scare / Deflation", "增长恐慌/通缩"),
+}
 
 
 def _load_json_safe(path: Path) -> dict | list | None:
@@ -120,8 +131,10 @@ def _classify(
     if age_seconds < 0:
         # Future-stamped source: never trust it as CURRENT.
         return "UNAVAILABLE", age_minutes
-    if not session_open:
-        return "STALE_WITH_LAST_KNOWN", age_minutes
+    # Freshness is judged purely by age against the source's own budget —
+    # premarket is a real product window (intraday-fastpath runs
+    # */30 11-21 UTC) and a reading from this morning must be able to read
+    # CURRENT before the cash open, not be forced STALE by session_open alone.
     if max_age_minutes is not None and age_minutes <= max_age_minutes:
         return "CURRENT", age_minutes
     return "STALE_WITH_LAST_KNOWN", age_minutes
@@ -143,13 +156,19 @@ def _block(
     reason_zh: str | None = None,
     covered: bool = True,
     session_open: bool = True,
+    precision: str | None = None,
 ) -> dict:
-    """Builds ONE contract-shaped block."""
+    """Builds ONE contract-shaped block. `precision` MUST be the precision
+    returned alongside source_as_of by the caller's own _norm_clock() call —
+    re-deriving it here from the already-normalised ISO string always
+    reads "minute" (the ...T00:00:00+00:00 padding looks second-exact) and
+    silently upgrades a day-precision source into a false-precise one."""
     assert classification in CLASSIFICATIONS, f"invalid classification: {classification}"
     state, age_minutes = _classify(
         source_as_of, generated_at, max_age_minutes, covered=covered, session_open=session_open
     )
-    _, precision = _norm_clock(source_as_of) if source_as_of else (None, "day")
+    if precision is None:
+        _, precision = _norm_clock(source_as_of) if source_as_of else (None, "day")
     out = {
         "key": key,
         "title_en": title_en,
@@ -166,6 +185,14 @@ def _block(
     if state in ("UNAVAILABLE", "NOT_COVERED", "NOT_YET_OPEN"):
         out["state_reason_en"] = reason_en or "Not available yet."
         out["state_reason_zh"] = reason_zh or "暂不可用。"
+    elif state == "STALE_WITH_LAST_KNOWN" and not reason_en:
+        hours = (age_minutes or 0) // 60
+        if hours >= 1:
+            out["state_reason_en"] = f"Last updated {hours} hour(s) ago — showing the last known reading, not a fresh one."
+            out["state_reason_zh"] = f"最近一次更新在{hours}小时前——展示的是最新已知读数，而非最新数据。"
+        else:
+            out["state_reason_en"] = f"Last updated {age_minutes} minute(s) ago — showing the last known reading, not a fresh one."
+            out["state_reason_zh"] = f"最近一次更新在{age_minutes}分钟前——展示的是最新已知读数，而非最新数据。"
     else:
         out["state_reason_en"] = reason_en
         out["state_reason_zh"] = reason_zh
@@ -175,12 +202,23 @@ def _block(
 
 
 def _is_session_open_now(now: datetime) -> bool:
-    """True once the US regular session has opened for the given UTC instant
-    on a weekday (holiday calendar not modelled here -> weekday-only gate)."""
-    if now.weekday() >= 5:
+    """True once the US regular session (09:30 America/New_York, DST-aware)
+    has opened for the given UTC instant on a weekday (exchange holiday
+    calendar not modelled here -> weekday-only gate)."""
+    local = now.astimezone(_NY_TZ)
+    if local.weekday() >= 5:
         return False
-    open_dt = now.replace(hour=_US_OPEN_UTC_HOUR, minute=_US_OPEN_UTC_MINUTE, second=0, microsecond=0)
-    return now >= open_dt
+    open_local = local.replace(hour=_US_OPEN_HOUR_LOCAL, minute=_US_OPEN_MINUTE_LOCAL, second=0, microsecond=0)
+    return local >= open_local
+
+
+def _previous_trading_day(d: date) -> date:
+    """Walk back to the previous weekday (Mon-Fri). Exchange holiday calendar
+    is not modelled here -> weekend-only gate, same scope as _is_session_open_now."""
+    prev = d - timedelta(days=1)
+    while prev.weekday() >= 5:
+        prev = prev - timedelta(days=1)
+    return prev
 
 
 def _session_clock_block(generated_at: str, now: datetime) -> dict:
@@ -261,10 +299,14 @@ def _tape_block(site: Path, generated_at: str, now: datetime, prior_close_date: 
             generated_at=generated_at,
             rows=rows,
             session_open=session_open,
+            precision=precision,
         )
-        if blk["state"] == "STALE_WITH_LAST_KNOWN":
-            blk["state_reason_en"] = "Last reading is not from this morning; showing the last known values, not a fresh move."
-            blk["state_reason_zh"] = "最新读数并非来自今早，展示的是最新已知数值，而非最新行情。"
+        if blk["state"] == "CURRENT" and not session_open:
+            # Premarket is a real reading window (intraday-fastpath runs
+            # */30 11-21 UTC) — a fresh reading before the cash open is not
+            # stale, but it IS worth disclosing as premarket, not a live tape.
+            blk["state_reason_en"] = "Premarket reading — the regular session has not opened yet."
+            blk["state_reason_zh"] = "盘前读数——正式交易时段尚未开始。"
         return blk
     except Exception as exc:  # noqa: BLE001
         log.debug("am_edition: tape block failed (%s)", exc)
@@ -296,7 +338,7 @@ def _owner_state_block(site: Path, data_dir: Path, generated_at: str) -> dict:
                 reason_en="Market state has not been generated yet.",
                 reason_zh="市场状态尚未生成。",
             )
-        as_of_iso, _ = _norm_clock(d.get("asof"))
+        as_of_iso, precision = _norm_clock(d.get("asof"))
         rows = [{
             "label_en": d.get("label_en"), "label_zh": d.get("label_zh"),
             "posture_en": d.get("posture_en"), "posture_zh": d.get("posture_zh"),
@@ -306,7 +348,7 @@ def _owner_state_block(site: Path, data_dir: Path, generated_at: str) -> dict:
             "market_state", title_en="Market state", title_zh="市场状态",
             source_ref="data/market_state/latest.json", source_owner="nightly",
             classification="owner_fact", source_as_of=as_of_iso, max_age_minutes=1440,
-            generated_at=generated_at, rows=rows,
+            generated_at=generated_at, rows=rows, precision=precision,
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("am_edition: market_state block failed (%s)", exc)
@@ -331,13 +373,15 @@ def _regime_block(site: Path, data_dir: Path, generated_at: str) -> dict:
                 reason_en="Regime has not been generated yet.", reason_zh="宏观周期尚未生成。",
             )
         as_of_raw = d.get("asof") or d.get("date")
-        as_of_iso, _ = _norm_clock(as_of_raw)
-        rows = [{"quad_name": d.get("quad_name"), "label": d.get("label")}]
+        as_of_iso, precision = _norm_clock(as_of_raw)
+        quad_code = d.get("label")  # internal slug e.g. "Q2" — never surfaced raw
+        label_en, label_zh = _QUAD_LABELS.get(quad_code, (d.get("quad_name"), d.get("quad_name")))
+        rows = [{"quad_name_en": label_en, "quad_name_zh": label_zh}]
         return _block(
             "regime", title_en="Regime", title_zh="宏观周期",
             source_ref="data/regime/latest.json", source_owner="nightly",
             classification="owner_fact", source_as_of=as_of_iso, max_age_minutes=1440,
-            generated_at=generated_at, rows=rows,
+            generated_at=generated_at, rows=rows, precision=precision,
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("am_edition: regime block failed (%s)", exc)
@@ -362,18 +406,31 @@ def _plane_block(site: Path, data_dir: Path, generated_at: str) -> dict:
                 reason_en="Cross-asset plane has not been generated yet.",
                 reason_zh="跨资产全景尚未生成。",
             )
-        as_of_iso, _ = _norm_clock(d.get("asof"))
+        as_of_iso, precision = _norm_clock(d.get("asof"))
+        verdict_raw = d.get("verdict")
+        if isinstance(verdict_raw, dict):
+            # Authority-shaped verdict objects (e.g. a `score`/rank field) are
+            # NEVER passed through whole — only the plain-word verdict label
+            # is display_only; whitelist it field-by-field.
+            verdict_val = {
+                "verdict": verdict_raw.get("verdict"),
+                "label_en": verdict_raw.get("label_en"),
+                "label_zh": verdict_raw.get("label_zh"),
+            }
+        else:
+            verdict_val = verdict_raw
         rows = [{
-            "verdict": d.get("verdict"),
+            "verdict": verdict_val,
             "contradiction_count": d.get("contradiction_count"),
             "stale": d.get("stale"),
-            "gaps": d.get("gaps"),
+            # "gaps" carries internal component slugs (e.g. "options_structure")
+            # with no bilingual plain-word pair -> dropped, never surfaced raw.
         }]
         return _block(
             "cross_asset_plane", title_en="Cross-asset plane", title_zh="跨资产全景",
             source_ref="data/neuralweb/market_plane.json", source_owner="nightly",
             classification="owner_fact", source_as_of=as_of_iso, max_age_minutes=1440,
-            generated_at=generated_at, rows=rows,
+            generated_at=generated_at, rows=rows, precision=precision,
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("am_edition: plane block failed (%s)", exc)
@@ -398,14 +455,14 @@ def _calendar_block(site: Path, data_dir: Path, generated_at: str, session_date:
                 reason_en="Today's calendar has not been generated yet.",
                 reason_zh="今日日程尚未生成。",
             )
-        as_of_iso, _ = _norm_clock(d.get("asof"))
+        as_of_iso, precision = _norm_clock(d.get("asof"))
         upcoming = d.get("upcoming") or []
         rows = [u for u in upcoming if isinstance(u, dict) and str(u.get("date", "")).startswith(session_date)]
         return _block(
             "todays_calendar", title_en="Today's calendar", title_zh="今日日程",
             source_ref="data/release_forecast/latest.json", source_owner="nightly",
             classification="deterministic_calendar", source_as_of=as_of_iso, max_age_minutes=1440,
-            generated_at=generated_at, rows=rows,
+            generated_at=generated_at, rows=rows, precision=precision,
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("am_edition: calendar block failed (%s)", exc)
@@ -429,7 +486,7 @@ def _prior_brief_ref_block(site: Path, data_dir: Path, generated_at: str) -> dic
                 source_as_of=None, max_age_minutes=1440, generated_at=generated_at, covered=False,
                 reason_en="No prior-close brief is available yet.", reason_zh="暂无昨日收盘简报。",
             )
-        as_of_iso, _ = _norm_clock(d.get("generated_at"))
+        as_of_iso, precision = _norm_clock(d.get("generated_at"))
         rows = [{
             "generated_at": as_of_iso,
             "state_asof": d.get("state_asof"),
@@ -441,6 +498,7 @@ def _prior_brief_ref_block(site: Path, data_dir: Path, generated_at: str) -> dic
             source_ref="site/master_brief.json", source_owner="master_brain",
             classification="existing_model_generated_prior_close_brief",
             source_as_of=as_of_iso, max_age_minutes=1440, generated_at=generated_at, rows=rows,
+            precision=precision,
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("am_edition: prior brief ref block failed (%s)", exc)
@@ -453,13 +511,19 @@ def _prior_brief_ref_block(site: Path, data_dir: Path, generated_at: str) -> dic
         )
 
 
-def _feasibility(tape_block: dict, prior_close_cut: str) -> tuple[str, str]:
+def _feasibility(tape_block: dict, prior_close_cut: str) -> tuple[str, str, str | None, str | None]:
+    """-> (feasibility, internal_cause_for_logs_only, cause_en, cause_zh).
+    The internal cause (repo paths, line numbers, raw timestamps) is for the
+    build log ONLY — it is never a customer-facing field. cause_en/cause_zh
+    are the plain-word pair actually shipped in the payload."""
     src = tape_block.get("source_as_of")
     if src is None:
         return (
             "BLOCKED",
-            "site/live/quotes.json is gitignored (.gitignore:60) and only force-added by "
-            "intraday-fastpath.yml:224; no committed tape reading is readable at all",
+            "site/live/quotes.json is gitignored (.gitignore) and only force-added by "
+            "intraday-fastpath.yml; no committed tape reading is readable at all",
+            "No live tape reading has been committed yet.",
+            "暂无已提交的实时行情读数。",
         )
     try:
         src_dt = datetime.fromisoformat(src)
@@ -467,16 +531,19 @@ def _feasibility(tape_block: dict, prior_close_cut: str) -> tuple[str, str]:
     except Exception:  # noqa: BLE001
         return (
             "BLOCKED",
-            "site/live/quotes.json is gitignored (.gitignore:60) and only force-added by "
-            "intraday-fastpath.yml:224; the committed as_of could not be parsed",
+            "site/live/quotes.json is gitignored and only force-added by intraday-fastpath.yml; "
+            "the committed as_of could not be parsed",
+            "The committed tape reading could not be read.",
+            "无法读取已提交的实时行情读数。",
         )
     if src_dt >= cut_dt:
-        return "AVAILABLE", ""
+        return "AVAILABLE", "", None, None
     return (
         "DEGRADED",
-        f"site/live/quotes.json is gitignored (.gitignore:60) and only force-added by "
-        f"intraday-fastpath.yml:224; newest committed as_of={src} is older than the "
-        f"prior-close cut {prior_close_cut}",
+        f"site/live/quotes.json is gitignored and only force-added by intraday-fastpath.yml; "
+        f"newest committed as_of={src} is older than the prior-close cut {prior_close_cut}",
+        "The newest committed tape reading is older than yesterday's close — showing the last known values.",
+        "最新已提交的行情读数早于昨日收盘——展示的是最新已知数值。",
     )
 
 
@@ -487,8 +554,13 @@ def build_payload(site: Path, data_dir: Path, *, now: datetime | None = None) ->
         now = now.replace(tzinfo=timezone.utc)
     generated_at = now.isoformat()
     session_date = now.strftime("%Y-%m-%d")
-    prior_close_date = (now - timedelta(days=1)).strftime("%Y-%m-%d")
-    # Prior-close cut: 20:00 UTC (4pm ET, approx) on the prior session date.
+    # Previous TRADING day, not previous calendar day: a calendar walk-back
+    # publishes Sunday as "prior_close_date" every Monday premarket (and any
+    # day after a market holiday), which then falsely DEGRADEs feasibility
+    # against a close that never happened. Exchange holiday calendar is not
+    # modelled here (weekend-only gate, same scope as _is_session_open_now).
+    prior_close_date = _previous_trading_day(now.date()).strftime("%Y-%m-%d")
+    # Prior-close cut: 20:00 UTC (4pm ET, approx) on the prior trading date.
     prior_close_cut = f"{prior_close_date}T20:00:00+00:00"
     session_open = _is_session_open_now(now)
 
@@ -502,7 +574,11 @@ def build_payload(site: Path, data_dir: Path, *, now: datetime | None = None) ->
     blocks.append(_calendar_block(site, data_dir, generated_at, session_date))
     blocks.append(_prior_brief_ref_block(site, data_dir, generated_at))
 
-    feasibility, feasibility_cause = _feasibility(tape, prior_close_cut)
+    feasibility, feasibility_cause_internal, feasibility_cause_en, feasibility_cause_zh = _feasibility(
+        tape, prior_close_cut
+    )
+    if feasibility_cause_internal:
+        log.debug("am_edition: feasibility=%s cause=%s", feasibility, feasibility_cause_internal)
 
     null_count = sum(1 for b in blocks if b["state"] in ("UNAVAILABLE", "NOT_COVERED"))
 
@@ -515,7 +591,8 @@ def build_payload(site: Path, data_dir: Path, *, now: datetime | None = None) ->
         "session_state": "NOT_YET_OPEN" if not session_open else "OPEN",
         "prior_close_date": prior_close_date,
         "morning_source_feasibility": feasibility,
-        "morning_source_feasibility_cause": feasibility_cause,
+        "morning_source_feasibility_cause_en": feasibility_cause_en,
+        "morning_source_feasibility_cause_zh": feasibility_cause_zh,
         "null_count": null_count,
         "blocks": blocks,
     }
