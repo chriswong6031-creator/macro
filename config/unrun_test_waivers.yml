@@ -90,3 +90,10 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_special_situations_premium.py: >-
+  B-F09-4 (WS:MO ledger MO-PAID-064/MO-DELTA-023). Display-only M&A premium math suite,
+  collected generically by scripts/run_ci_pack.py's ci.yml pack distribution alongside
+  tests/test_special_situations.py (also unnamed by any legacy-jobs.yml run: step).
+  Not wired into a dedicated legacy-jobs.yml step because it needs no bespoke fixtures
+  beyond the packaged tests/fixtures/special_situations/premium_*.json. Delete this
+  waiver if a future packet gives the suite a dedicated named step.

@@ -1,0 +1,41 @@
+{
+  "event": {
+    "cik": "714256",
+    "company": "Sample Target Inc",
+    "category": "Acquisitions",
+    "form_type": "DEFM14A",
+    "date_filed": "2026-09-04",
+    "accession": "0001213900-26-097669",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/714256/0001213900-26-097669-index.htm",
+    "llm_terms": "{\"price_per_share\": 35.0, \"currency\": \"USD\", \"consideration\": \"cash\"}"
+  },
+  "lifecycle_row": {
+    "first_date": "2026-06-02",
+    "last_date": "2026-09-04",
+    "n_amendments": 2,
+    "n_filings": 6,
+    "terminal": null
+  },
+  "closes": {
+    "2026-05-20": 21.5,
+    "2026-05-26": 21.8,
+    "2026-05-27": 21.9,
+    "2026-05-28": 21.95,
+    "2026-05-29": 22.0,
+    "2026-05-30": 22.02,
+    "2026-06-01": 24.1,
+    "2026-06-02": 30.0,
+    "2026-06-18": 30.5,
+    "2026-09-04": 34.8
+  },
+  "ledger": {
+    "SMTI": 714256
+  },
+  "expected": {
+    "status": "computed",
+    "ticker": "SMTI",
+    "unaffected_price": 24.1,
+    "unaffected_price_date": "2026-06-01",
+    "premium_pct": 45.2
+  }
+}

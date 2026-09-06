@@ -479,8 +479,15 @@ def snapshot() -> dict:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     df = build_situations()
     if df.empty:
+        try:
+            from engine import special_situations_premium
+            premium = special_situations_premium.featured_premium(df=df)
+        except Exception as e:  # noqa: BLE001 — premium is best-effort, never blocks the desk
+            log.warning("special_situations premium (empty snapshot) failed: %s", e)
+            premium = {"status": "refused", "refusal": "computation_unavailable"}
         return {"scored": SCORED, "is_context_only": True, "disclaimer": DISCLAIMER,
-                "built": now, "situations": [], "counts": {}, "coverage": {}}
+                "built": now, "situations": [], "counts": {}, "coverage": {},
+                "premium": premium}
 
     ok = df[df.status == "ok"].copy()
     # desk view: classified AND not below the floor (unknown mc kept, flagged)
@@ -502,9 +509,18 @@ def snapshot() -> dict:
     keep_cols = [c for c in keep_cols if c in desk.columns]
     sits = (desk.sort_values("date_filed", ascending=False)[keep_cols]
             .to_dict("records"))
+    try:
+        from engine import special_situations_premium
+        # Major-1 fix: reuse the frame already built above instead of re-running
+        # build_situations() + lifecycle() + _closes_panel() a second time.
+        premium = special_situations_premium.featured_premium(df=df)
+    except Exception as e:  # noqa: BLE001 — premium is best-effort, never blocks the desk
+        log.warning("special_situations premium failed: %s", e)
+        premium = {"status": "refused", "refusal": "computation_unavailable"}
     return {
         "scored": SCORED, "is_context_only": True, "disclaimer": DISCLAIMER,
         "built": now, "counts": by_cat, "coverage": coverage, "situations": sits,
+        "premium": premium,
     }
 
 
@@ -988,6 +1004,11 @@ def main() -> int:
         xb = " [cross-border]" if s.get("cross_border") else ""
         mc = f"${s['mc_musd']:.0f}M" if s.get("mc_musd") else "mc?"
         print(f"  {s['category']:18} {s.get('ticker') or '—':8} {s['company'][:34]:34} {s['stage']:16} {mc}{xb}")
+    try:
+        from engine import special_situations_premium
+        special_situations_premium.write_receipt()
+    except Exception as e:  # noqa: BLE001 — best-effort, never affects exit code
+        log.warning("special_situations premium receipt write failed: %s", e)
     return 0
 
 

@@ -1,0 +1,22 @@
+{
+  "event": {
+    "cik": "714256",
+    "company": "Sample Target Inc",
+    "category": "Acquisitions",
+    "form_type": "SC 14D9",
+    "date_filed": "2026-06-05",
+    "accession": "0001213900-26-000111",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/714256/0001213900-26-000111-index.htm",
+    "llm_terms": "{}"
+  },
+  "lifecycle_row": {
+    "first_date": "2026-06-02",
+    "last_date": "2026-06-05",
+    "n_amendments": 0,
+    "n_filings": 2,
+    "terminal": null
+  },
+  "closes": {"2026-05-30": 22.02, "2026-06-02": 30.00},
+  "ledger": {"SMTI": 714256},
+  "expected": {"status": "refused", "refusal": "offer_terms_absent"}
+}

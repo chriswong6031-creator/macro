@@ -58,6 +58,55 @@
     </div>
   </section>
 
+  {# B-F09-4 PREMIUM BLOCK START — additive, self-contained; see packet B-F09-4 #}
+  {% set premium = premium if premium is defined else none %}
+  <section class="cs-latest-card" id="cs-premium" aria-labelledby="cs-premium-title">
+    <div class="cs-section-heading">
+      <div>
+        <p class="cs-kicker">{{ t('One deal, checked', '一宗交易，逐项核对') }}</p>
+        <h2 id="cs-premium-title">{{ t('What the buyer is paying above the old share price', '买方出价比原股价高出多少') }}</h2>
+      </div>
+      <span class="cs-state-chip">{{ t('Reading only — not a trade call', '仅供查阅 — 不是交易指令') }}</span>
+    </div>
+    {% if premium and premium.status == 'computed' %}
+    <p>{{ t('A buyer has offered', '买方出价') }} <strong>{{ premium.currency }} {{ '%.2f'|format(premium.offer_price) }}</strong>
+       {{ t('a share for', '每股，收购') }} <strong>{{ premium.ticker }}</strong>.
+       {{ t('That is', '相当于') }} <strong>{{ '%+.1f'|format(premium.premium_pct) }}%</strong>
+       {{ t('above the share price on the last trading day before the deal reached the SEC record.', '高于该交易进入 SEC 记录前最后一个交易日的股价。') }}</p>
+    <div class="cs-latest-grid">
+      <div><span>{{ t('Offer price', '出价') }}</span><strong>{{ premium.currency }} {{ '%.2f'|format(premium.offer_price) }}</strong></div>
+      <div><span>{{ t('Filing it came from', '出处文件') }}</span><strong>{{ premium.offer_form_type }} · {{ premium.offer_accession }}</strong></div>
+      <div><span>{{ t('That filing is dated', '该文件日期') }}</span><strong>{{ premium.offer_filing_date }}</strong></div>
+      <div><span>{{ t('Deal first reached the record', '交易首次进入记录') }}</span><strong>{{ premium.announcement_filing_date }}</strong></div>
+      <div><span>{{ t('Share price used', '所用股价') }}</span><strong>{{ premium.currency }} {{ '%.2f'|format(premium.unaffected_price) }}</strong></div>
+      <div><span>{{ t('Price date', '股价日期') }}</span><strong>{{ premium.unaffected_price_date }}</strong></div>
+      <div><span>{{ t('Filings so far', '已提交文件数') }}</span><strong>{{ premium.amendment_vintage.filings_in_deal }}</strong></div>
+      <div><span>{{ t('Revisions so far', '修订次数') }}</span><strong>{{ premium.amendment_vintage.n_amendments }}</strong></div>
+    </div>
+    {% if premium.offer_price_provenance != 'filing_text_confirmed' %}
+    <p class="cs-section-note">{{ t('The offer price is read from the filing summary and has not been re-checked against the filing body.', '出价读取自文件摘要，尚未与文件正文逐字复核。') }}</p>
+    {% endif %}
+    <p class="cs-section-note"><a href="{{ premium.source_url }}" rel="noopener noreferrer" target="_blank">{{ t('Open this filing on SEC EDGAR', '在 SEC EDGAR 打开该文件') }}</a></p>
+    {% elif premium %}
+    <div class="cs-unavailable">
+      <span class="cs-unavailable-mark" aria-hidden="true">↳</span>
+      <div><strong>{{ t(premium.null_en, premium.null_zh) }}</strong></div>
+    </div>
+    {% else %}
+    <div class="cs-unavailable">
+      <span class="cs-unavailable-mark" aria-hidden="true">↳</span>
+      <div><strong>{{ t('No deal is ready to show right now.', '目前没有可展示的交易。') }}</strong>
+      <span>{{ t('When one is, its offer price, the share price it is measured against, and both dates appear here.', '一旦有，其出价、所对比的股价及两个日期都会显示在此。') }}</span></div>
+    </div>
+    {% endif %}
+    <div class="cs-unavailable">
+      <span class="cs-unavailable-mark" aria-hidden="true">↳</span>
+      <div><strong>{{ t('Not covered here', '此处不涉及') }}</strong>
+      <span>{{ t('How the buyer would fund it, what competition regulators may say, and what either side would pay to walk away are not part of this reading.', '买方如何融资、竞争监管机构可能的意见，以及任何一方退出需支付的费用，均不在本次查阅范围内。') }}</span></div>
+    </div>
+  </section>
+  {# B-F09-4 PREMIUM BLOCK END #}
+
   <div class="cs-workspace">
     <aside class="cs-rail" aria-labelledby="cs-rail-title">
       <div class="cs-rail-head">
