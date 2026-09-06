@@ -191,6 +191,16 @@ def td(en: str) -> Markup:
 # composed sentences are translated at their source, not here.
 # --------------------------------------------------------------------------- #
 LEX: dict[str, str] = {
+    # sanctions map — OFAC-named countries (packet A-F02-1)
+    "Russia": "俄罗斯",
+    "Iran": "伊朗",
+    "North Korea": "朝鲜",
+    "Syria": "叙利亚",
+    "Cuba": "古巴",
+    "Venezuela": "委内瑞拉",
+    "Belarus": "白俄罗斯",
+    "Burma": "缅甸",
+    "Myanmar": "缅甸",
     # regimes / quadrants (both long and short forms)
     "Goldilocks": "理想增长",
     "Reflation": "再通胀",

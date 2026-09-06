@@ -1,0 +1,53 @@
+# OFAC sanctions programmes -> country. Reviewed by hand against OFAC's own
+# published programme index. No inference, no model output, no heuristics.
+# Consumed by engine/sanctions_map.py. Country keys are ISO3, the vocabulary
+# already used by engine/intl_risk.py (_IMF_COUNTRIES).
+programs:
+  - code: RUSSIA-EO14024
+    iso3: RUS
+    name_en: Russia — Executive Order 14024
+    name_zh: 俄罗斯 — 第14024号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-05'
+  - code: IRAN
+    iso3: IRN
+    name_en: Iran Sanctions
+    name_zh: 伊朗制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-05'
+  - code: DPRK
+    iso3: PRK
+    name_en: North Korea Sanctions
+    name_zh: 朝鲜制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+    reviewed: '2026-09-05'
+  - code: SYRIA
+    iso3: SYR
+    name_en: Syria Sanctions
+    name_zh: 叙利亚制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/syria-sanctions
+    reviewed: '2026-09-05'
+  - code: CUBA
+    iso3: CUB
+    name_en: Cuba Sanctions
+    name_zh: 古巴制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions
+    reviewed: '2026-09-05'
+  - code: VENEZUELA
+    iso3: VEN
+    name_en: Venezuela-Related Sanctions
+    name_zh: 委内瑞拉相关制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions
+    reviewed: '2026-09-05'
+  - code: BELARUS
+    iso3: BLR
+    name_en: Belarus Sanctions
+    name_zh: 白俄罗斯制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions
+    reviewed: '2026-09-05'
+  - code: MYANMAR
+    iso3: MMR
+    name_en: Burma-Related Sanctions
+    name_zh: 缅甸相关制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/burma-related-sanctions
+    reviewed: '2026-09-05'

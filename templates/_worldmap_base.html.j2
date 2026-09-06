@@ -1,0 +1,32 @@
+{# World base geometry — Natural Earth 1:110m Admin 0 (public domain / CC0).
+   Regenerate: python3 scripts/gen_worldmap_svg.py <path-to-geojson> > templates/_worldmap_base.html.j2
+   Expects: `rungs` (dict iso3 -> 1|2|3) in the render context.
+
+   PLACEHOLDER GEOMETRY (packet A-F02-1, 2026-09-05): the real Natural Earth
+   1:110m Admin-0 GeoJSON was not available inside this build's tool budget,
+   so each country below is a simplified rectangular placeholder positioned
+   near its real centroid rather than traced coastline. gen_worldmap_svg.py
+   is the reproducible provenance path to replace every `d=` with real
+   geometry without touching this file's contract (one <path> per ISO3, no
+   presentation attributes, no <title>). #}
+<svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+<defs><pattern id="sm-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>
+<path class="wm-c" data-iso3="USA"{% if rungs.get('USA') %} data-rung="{{ rungs['USA'] }}"{% endif %} d="M120,150 L260,150 L260,220 L120,220 Z"/>
+<path class="wm-c" data-iso3="CAN"{% if rungs.get('CAN') %} data-rung="{{ rungs['CAN'] }}"{% endif %} d="M120,90 L280,90 L280,148 L120,148 Z"/>
+<path class="wm-c" data-iso3="BRA"{% if rungs.get('BRA') %} data-rung="{{ rungs['BRA'] }}"{% endif %} d="M240,290 L330,290 L330,380 L240,380 Z"/>
+<path class="wm-c" data-iso3="VEN"{% if rungs.get('VEN') %} data-rung="{{ rungs['VEN'] }}"{% endif %} d="M225,260 L260,260 L260,285 L225,285 Z"/>
+<path class="wm-c" data-iso3="CUB"{% if rungs.get('CUB') %} data-rung="{{ rungs['CUB'] }}"{% endif %} d="M215,225 L245,225 L245,238 L215,238 Z"/>
+<path class="wm-c" data-iso3="GBR"{% if rungs.get('GBR') %} data-rung="{{ rungs['GBR'] }}"{% endif %} d="M468,120 L482,120 L482,140 L468,140 Z"/>
+<path class="wm-c" data-iso3="FRA"{% if rungs.get('FRA') %} data-rung="{{ rungs['FRA'] }}"{% endif %} d="M478,145 L500,145 L500,168 L478,168 Z"/>
+<path class="wm-c" data-iso3="DEU"{% if rungs.get('DEU') %} data-rung="{{ rungs['DEU'] }}"{% endif %} d="M500,130 L520,130 L520,150 L500,150 Z"/>
+<path class="wm-c" data-iso3="RUS"{% if rungs.get('RUS') %} data-rung="{{ rungs['RUS'] }}"{% endif %} d="M540,70 L820,70 L820,160 L540,160 Z"/>
+<path class="wm-c" data-iso3="BLR"{% if rungs.get('BLR') %} data-rung="{{ rungs['BLR'] }}"{% endif %} d="M525,120 L545,120 L545,138 L525,138 Z"/>
+<path class="wm-c" data-iso3="SYR"{% if rungs.get('SYR') %} data-rung="{{ rungs['SYR'] }}"{% endif %} d="M556,175 L572,175 L572,190 L556,190 Z"/>
+<path class="wm-c" data-iso3="IRN"{% if rungs.get('IRN') %} data-rung="{{ rungs['IRN'] }}"{% endif %} d="M590,175 L630,175 L630,205 L590,205 Z"/>
+<path class="wm-c" data-iso3="PRK"{% if rungs.get('PRK') %} data-rung="{{ rungs['PRK'] }}"{% endif %} d="M810,175 L825,175 L825,190 L810,190 Z"/>
+<path class="wm-c" data-iso3="MMR"{% if rungs.get('MMR') %} data-rung="{{ rungs['MMR'] }}"{% endif %} d="M735,210 L755,210 L755,235 L735,235 Z"/>
+<path class="wm-c" data-iso3="CHN"{% if rungs.get('CHN') %} data-rung="{{ rungs['CHN'] }}"{% endif %} d="M700,140 L820,140 L820,205 L700,205 Z"/>
+<path class="wm-c" data-iso3="IND"{% if rungs.get('IND') %} data-rung="{{ rungs['IND'] }}"{% endif %} d="M650,205 L700,205 L700,255 L650,255 Z"/>
+<path class="wm-c" data-iso3="AUS"{% if rungs.get('AUS') %} data-rung="{{ rungs['AUS'] }}"{% endif %} d="M780,330 L870,330 L870,390 L780,390 Z"/>
+<path class="wm-c" data-iso3="ZAF"{% if rungs.get('ZAF') %} data-rung="{{ rungs['ZAF'] }}"{% endif %} d="M520,350 L560,350 L560,385 L520,385 Z"/>
+</svg>
