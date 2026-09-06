@@ -1,0 +1,137 @@
+{#- FROZEN SPEC B-F07-1 -- Valuation under different assumptions (V1).
+    Tier-3 panel: one question -- "what could this be worth per share if
+    these stated things were true?" Included from templates/ticker.html.j2
+    between #valuation and #financials. Governed CSS lives in this partial's
+    own <style> block -- never authored as a runtime JS stylesheet. -#}
+<style>
+.vs-lede{margin:2px 0 16px;font-size:13px;line-height:1.55;color:var(--muted);max-width:62ch;}
+.vs-ruler{position:relative;height:64px;margin:6px 4px 30px;}
+.vs-ruler .vs-track{position:absolute;left:0;right:0;top:28px;height:6px;border-radius:var(--r-ctl,3px);
+  background:var(--line);border:1px solid var(--hair);}
+.vs-ruler .vs-mark{position:absolute;top:16px;width:12px;height:12px;border-radius:var(--r-ctl,3px);
+  transform:translateX(-50%);background:var(--muted);}
+.vs-ruler .vs-mark.m-base{background:var(--link);box-shadow:0 0 10px color-mix(in srgb,var(--link) 55%,transparent);}
+.vs-ruler .vs-mark.m-upbeat{background:color-mix(in srgb,var(--link) 55%,var(--text));}
+.vs-ruler .vs-mark.m-gap{background:transparent;border:1px dashed var(--hair);box-shadow:none;}
+.vs-ruler .vs-mark:hover,.vs-ruler .vs-mark:focus-visible{height:14px;top:15px;transition:height var(--t-fast,.14s) ease,top var(--t-fast,.14s) ease;}
+.vs-ruler .vs-lbl{position:absolute;top:44px;transform:translateX(-50%);font-size:10.5px;
+  font-weight:650;color:var(--muted);white-space:nowrap;text-align:center;}
+.vs-ruler .vs-lbl.below{top:auto;bottom:-14px;}
+.vs-ruler .vs-lbl b{display:block;font-size:11.5px;font-weight:750;color:var(--text);font-variant-numeric:tabular-nums;}
+.vs-ruler .vs-price{position:absolute;top:6px;bottom:6px;width:2px;background:var(--text);
+  box-shadow:0 0 0 3px var(--panel);}
+.vs-ruler .vs-price-lbl{position:absolute;top:-14px;transform:translateX(-50%);font-size:9.5px;
+  font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap;}
+[data-theme="light"] .vs-ruler .vs-track{background:transparent;border:none;border-bottom:1px solid var(--line);}
+[data-theme="light"] .vs-ruler .vs-mark{border-radius:var(--r-ctl,2px);background:transparent;border:1.5px solid var(--muted);}
+[data-theme="light"] .vs-ruler .vs-mark.m-base{background:var(--link);border-color:var(--link);
+  box-shadow:none;border:1px solid color-mix(in srgb,var(--link) 55%,var(--panel));box-shadow:0 2px 6px -3px color-mix(in srgb,var(--text) 28%,transparent);}
+[data-theme="light"] .vs-ruler .vs-mark.m-upbeat{background:color-mix(in srgb,var(--link) 50%,var(--panel));border-color:var(--text);}
+[data-theme="light"] .vs-ruler .vs-mark.m-cautious{background:transparent;border-color:var(--muted);}
+[data-theme="light"] .vs-ruler .vs-price{width:1.5px;background:var(--text);box-shadow:0 0 0 3px var(--panel);}
+
+.vs-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.vs-card{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);
+  border-radius:var(--r-card,13px);padding:14px 15px;min-width:0;}
+[data-theme="light"] .vs-card{background:var(--panel);border:1px solid var(--hair);box-shadow:0 6px 18px -12px color-mix(in srgb,var(--text) 18%,transparent);}
+.vs-card .vk{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+[data-lang="zh"] .vs-card .vk{letter-spacing:0;text-transform:none;}
+.vs-card .vv{margin-top:6px;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.vs-card .vv.vv-null{font-size:12.5px;font-weight:600;color:var(--muted);}
+.vs-card .va{margin-top:8px;font-size:11.5px;line-height:1.5;color:var(--muted);}
+
+.vs-base{display:flex;flex-direction:column;gap:0;margin-top:2px;}
+.vs-base .r6{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;
+  border-bottom:1px solid var(--hair);font-size:12.5px;}
+.vs-base .r6:last-child{border-bottom:none;}
+.vs-base .k6{color:var(--muted);}
+.vs-base .k6 small{display:block;font-size:10.5px;margin-top:2px;}
+.vs-base .v6{font-weight:650;text-align:right;font-variant-numeric:tabular-nums;}
+.vs-base .v6.v6-null{font-weight:500;color:var(--muted);font-variant-numeric:normal;}
+.vs-base .v6 em{display:block;font-style:normal;font-size:10px;font-weight:500;color:var(--muted);margin-top:2px;}
+
+@media(max-width:720px){.vs-cards{grid-template-columns:1fr;}}
+@media(max-width:390px){
+  .vs-base .r6{flex-direction:column;gap:2px;align-items:flex-start;}
+  .vs-base .v6{text-align:left;}
+}
+</style>
+{% if valuation_scenario and valuation_scenario.any_computable %}
+{% set vscn = valuation_scenario %}
+{% set vs_by_key = {} %}
+{% for s in vscn.scenarios %}{% set _ = vs_by_key.update({s.key: s}) %}{% endfor %}
+{% set vs_marks = [] %}
+{% for s in vscn.scenarios if s.computable %}{% set _ = vs_marks.append(s.per_share) %}{% endfor %}
+{% set vs_price_val = (vscn.price.value if vscn.price else none) %}
+{% if vs_price_val is not none %}{% set _ = vs_marks.append(vs_price_val) %}{% endif %}
+{% set vs_lo = (vs_marks | min) * 0.9 if vs_marks else 0 %}
+{% set vs_hi = (vs_marks | max) * 1.1 if vs_marks else 1 %}
+{% set vs_span = (vs_hi - vs_lo) if (vs_hi - vs_lo) > 0 else 1 %}
+{% macro vs_pct(v) %}{{ (((v - vs_lo) / vs_span) * 100) | round(1) }}{% endmacro %}
+<section class="mod rv" id="valuation-scenario" data-valuation-scenario="v1">
+  <div class="mod-hd">
+    <h2>{{ t('What could it be worth?', '可能值多少？') }}</h2>
+    <span class="hint">{{ t('reported SEC figures · FY' ~ vscn.fy, 'SEC披露数据 · ' ~ vscn.fy ~ '财年') }}
+      {% if 'valuation_scenario' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-valuation_scenario')">{{ t('Full detail', '完整数据') }}</button>{% endif %}
+    </span>
+  </div>
+  <p class="vs-lede">{{ t("Three sets of assumptions applied to " ~ vscn.ticker ~ "'s last reported year. Change the assumption, change the answer.", '把三组假设套在' ~ vscn.ticker ~ '最近一个披露财年上。假设变，答案就变。') }}</p>
+
+  <div class="vs-ruler" role="img" aria-label="{{ t('Per-share value scale across three assumption scenarios and today\'s price', '三种假设情景与当前股价的每股价值刻度') }}">
+    <div class="vs-track"></div>
+    {% for s in vscn.scenarios %}
+      {% set names = {'cautious': (t('Cautious','保守')), 'base': (t('Base','基准')), 'upbeat': (t('Upbeat','乐观'))} %}
+      {% if s.computable %}
+      <div class="vs-mark m-{{ s.key }}" style="left:{{ vs_pct(s.per_share) }}%" tabindex="0"></div>
+      <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ vs_pct(s.per_share) }}%">{{ names[s.key] }}<b>${{ '%.0f'|format(s.per_share) }}</b></div>
+      {% else %}
+      <div class="vs-mark m-gap" style="left:50%" tabindex="0" aria-label="{{ t("Can't be computed without " ~ (s.missing[0] or 'a reported input'), '缺少' ~ (s.missing[0] or '一项披露数据') ~ '，无法计算') }}"></div>
+      {% endif %}
+    {% endfor %}
+    {% if vs_price_val is not none %}
+    <div class="vs-price" style="left:{{ vs_pct(vs_price_val) }}%"></div>
+    <div class="vs-price-lbl" style="left:{{ vs_pct(vs_price_val) }}%">{{ t("Today's price", '当前股价') }}</div>
+    {% endif %}
+  </div>
+
+  <div class="vs-cards">
+    {% set card_meta = [
+      ('cautious', t('Cautious','保守')),
+      ('base', t('Base','基准')),
+      ('upbeat', t('Upbeat','乐观')),
+    ] %}
+    {% for key, label in card_meta %}
+      {% set s = vs_by_key[key] %}
+      <div class="vs-card">
+        <div class="vk">{{ label }}</div>
+        {% if s.computable %}
+        <div class="vv num">${{ '%.2f'|format(s.per_share) }}</div>
+        {% else %}
+        <div class="vv vv-null">{{ t("Can't be computed without " ~ (s.missing[0] or 'a reported input'), '缺少' ~ (s.missing[0] or '一项披露数据') ~ '，无法计算') }}</div>
+        {% endif %}
+        <div class="va">
+          {% if key == 'cautious' %}{{ t('Sales fall 2% a year, margins narrow, valued at 14× earnings.', '销售每年下滑2%，利润率收窄，按14倍市盈率估值。') }}
+          {% elif key == 'base' %}{{ t('Sales grow 3% a year, margins hold, valued at 18× earnings.', '销售每年增长3%，利润率不变，按18倍市盈率估值。') }}
+          {% else %}{{ t('Sales grow 7% a year, margins widen, valued at 22× earnings.', '销售每年增长7%，利润率扩大，按22倍市盈率估值。') }}{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="vs-base kv6">
+    {% set b = vscn.base %}
+    <div class="r6"><span class="k6">{{ t('Revenue','营业收入') }}<small>{{ b.revenue.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
+      {% if b.revenue.reported %}<span class="v6 num">${{ '%.1f'|format(b.revenue.value / 1e9) }}B</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
+    <div class="r6"><span class="k6">{{ t('Operating income','营业利润') }}<small>{{ b.op_income.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
+      {% if b.op_income.reported %}<span class="v6 num">${{ '%.1f'|format(b.op_income.value / 1e9) }}B</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
+    <div class="r6"><span class="k6">{{ t('Net income','净利润') }}<small>{{ b.net_income.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
+      {% if b.net_income.reported %}<span class="v6 num">${{ '%.1f'|format(b.net_income.value / 1e9) }}B</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
+    <div class="r6"><span class="k6">{{ t('Share count','股数') }}<small>{{ b.share_count.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
+      {% if b.share_count.reported %}<span class="v6 num">{{ '%.2f'|format(b.share_count.value / 1e9) }}B<em>{% if b.share_count.identity == 'diluted' %}{{ t('Diluted, as reported','披露的摊薄股数') }}{% else %}{{ t('Shares outstanding as reported (a diluted count is not reported)', '披露的流通股数（未披露摊薄股数）') }}{% endif %}</em></span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
+    <div class="r6"><span class="k6">{{ t('Net cash / debt','净现金／净负债') }}<small>{{ b.net_debt.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
+      {% if b.net_debt.reported %}<span class="v6 num">{% if b.net_debt.sign == 'net_cash' %}{{ t('Net cash','净现金') }} ${{ '%.1f'|format((-b.net_debt.value) / 1e9) }}B{% else %}{{ t('Net debt','净负债') }} ${{ '%.1f'|format(b.net_debt.value / 1e9) }}B{% endif %}</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
+  </div>
+
+  <div class="mod-ft">{{ t('Research display only — not advice.', '仅供研究展示，非投资建议。') }}</div>
+</section>
+{% endif %}

@@ -1569,6 +1569,7 @@ def _build_deep(blob: dict | None, per: dict, agg: dict, ticker: str,
     dialogs = [d for d in (
         _soft(_deep_stats, blob, performance, stats),
         _soft(_deep_financials, blob),
+        _soft(_deep_valuation_scenario, blob),
         _soft(_deep_technicals, blob, ts_row),
         _soft(_deep_earnings, blob),
         _soft(_deep_options, blob, per.get("gex_v1")),
@@ -2447,6 +2448,42 @@ def _build_financials(blob: dict | None) -> dict | None:
         "roe": fin.get("roe"),
         "roa": fin.get("roa"),
     }
+
+
+def _valuation_scenario_view(blob: dict | None) -> dict | None:
+    """Passthrough read of the pre-computed valuation_scenario.v1 blob written
+    by scripts/build_stock_library.py (numbers-only contract; no transform
+    happens here -- the producer already emits the exact view shape)."""
+    if not blob:
+        return None
+    return (blob.get("valuation_scenario") or {}).get("v1")
+
+
+def _deep_valuation_scenario(blob: dict | None) -> dict | None:
+    vscn = (blob or {}).get("valuation_scenario", {}).get("v1") if blob else None
+    if not vscn:
+        return None
+    panels: list = []
+    rows = [
+        {"k_en": "Fiscal year", "k_zh": "财年", "v": str(vscn.get("fy")), "v_en": "", "v_zh": ""},
+        {"k_en": "Period end", "k_zh": "期末日期", "v": str(vscn.get("period_end")), "v_en": "", "v_zh": ""},
+        {"k_en": "Source", "k_zh": "来源", "v": "SEC filings", "v_en": "", "v_zh": ""},
+        {"k_en": "Tier", "k_zh": "层级", "v": "research_display_only", "v_en": "", "v_zh": ""},
+    ]
+    panels.append({"kind": "kv", "title_en": "Basis", "title_zh": "计算依据", "rows": rows})
+    for s in vscn.get("scenarios", []):
+        a = s.get("assumptions", {})
+        srows = [
+            {"k_en": "Sales growth", "k_zh": "销售增长", "v": f"{a.get('sales_growth_pct')}%", "v_en": "", "v_zh": ""},
+            {"k_en": "Margin change", "k_zh": "利润率变化", "v": f"{a.get('margin_delta_pp')}pp", "v_en": "", "v_zh": ""},
+            {"k_en": "Earnings multiple", "k_zh": "市盈率倍数", "v": f"{a.get('earnings_multiple')}x", "v_en": "", "v_zh": ""},
+            {"k_en": "Per-share (computed)", "k_zh": "每股价值（计算值）",
+             "v": (f"${s['per_share']:.2f}" if s.get("computable") else "not computable"),
+             "v_en": "", "v_zh": ""},
+        ]
+        panels.append({"kind": "kv", "title_en": s.get("key", "").title(), "title_zh": "", "rows": srows})
+    return _mk_dialog(
+        "valuation_scenario", "How this was worked out", "计算方式说明", panels)
 
 
 def _build_valuation(blob: dict | None) -> list | None:
@@ -4349,6 +4386,7 @@ def build_page_context(
     performance = _build_performance(ticker, trailing_returns)
     financials = _build_financials(blob)
     valuation = _build_valuation(blob)
+    valuation_scenario = _valuation_scenario_view(blob)
     earnings = _build_earnings(blob)
     technicals = _build_technicals(ticker, blob, tech_screener)
     options = _build_options(blob, gex_v1, flow)
@@ -4427,6 +4465,7 @@ def build_page_context(
         "performance": performance,
         "financials": financials,
         "valuation": valuation,
+        "valuation_scenario": valuation_scenario,
         "earnings": earnings,
         "technicals": technicals,
         "options": options,

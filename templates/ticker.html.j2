@@ -1277,6 +1277,8 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
   </section>
   {% endif %}
 
+  {% include "_valuation_scenario.html.j2" %}
+
   {% if financials %}
   <section class="mod rv" id="financials">
     <div class="mod-hd"><h2>{{ t('Financials', '财务数据') }}</h2><span class="hint">{{ t('fiscal years', '财年') }} {% if 'financials' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-financials')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
