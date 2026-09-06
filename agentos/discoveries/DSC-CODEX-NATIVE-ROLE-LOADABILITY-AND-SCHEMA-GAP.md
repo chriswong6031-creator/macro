@@ -23,7 +23,7 @@ so_what: >
 kind: landmine
 verified_at: 2026-09-06
 verified_by: >
-  Mastermind PR 513 head 137a8e490a9bb6e8c7eca225e53a3128971e9160;
+  Mastermind #513 head 137a8e490a9bb6e8c7eca225e53a3128971e9160;
   full changed module 52 passed; meaningful original REDs and three guard mutations;
   independent APPROVE 5126704695; refreshed hosted run 34062500773 passed503 modules;
   comments 5562263619 and5562600431 preserve the schema gap and unresolved release.
