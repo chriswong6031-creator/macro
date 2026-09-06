@@ -456,9 +456,9 @@ def glossary_view_model(root: Path, terms: Iterable[GlossaryTerm] = GLOSSARY_TER
     validate_glossary(root, terms)
 
     domains_out = []
+    seen_letters: set[str] = set()
     for domain in GLOSSARY_DOMAINS:
         domain_terms = [t for t in terms if t.domain == domain.id]
-        seen_letters: set[str] = set()
         term_rows = []
         for t in domain_terms:
             letter = t.name_en[0].upper()

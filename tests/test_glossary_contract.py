@@ -56,6 +56,16 @@ def test_rendered_letter_rail_marks_empty_letters_disabled():
             assert frag_re.search(html), letter["id"]
 
 
+def test_rendered_letter_rail_anchors_are_unique_ids():
+    """Each gl-letter-X anchor id must appear at most once across the whole
+    page: it is a jump target for the A-Z rail, and a duplicate id both makes
+    the page invalid HTML and strands every non-first term of that letter —
+    the rail can only ever land on the FIRST element with a given id."""
+    html = _render()
+    ids = re.findall(r'id="(gl-letter-[A-Z])"', html)
+    assert len(ids) == len(set(ids)), f"duplicate letter-anchor ids: {sorted(set(x for x in ids if ids.count(x) > 1))}"
+
+
 def test_rendered_glance_text_passes_the_banned_vocabulary_grep():
     site_path = config.site_dir() / "glossary.html"
     html = site_path.read_text(encoding="utf-8")

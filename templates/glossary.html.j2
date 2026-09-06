@@ -205,7 +205,13 @@ html[data-theme="light"] .gl-letter:hover,html[data-theme="light"] .gl-letter:fo
     letters.forEach(function(letter){
       var on=!!live[letter.getAttribute('data-letter')];
       letter.classList.toggle('is-empty',!on);
-      if(on){letter.removeAttribute('aria-disabled');} else {letter.setAttribute('aria-disabled','true');}
+      if(on){
+        letter.removeAttribute('aria-disabled');
+        if(letter.tagName==='A'&&letter.dataset.href){letter.setAttribute('href',letter.dataset.href);}
+      } else {
+        letter.setAttribute('aria-disabled','true');
+        if(letter.tagName==='A'&&letter.hasAttribute('href')){letter.dataset.href=letter.getAttribute('href');letter.removeAttribute('href');}
+      }
     });
     count.textContent=String(visible);
     panel.hidden=visible!==0;
