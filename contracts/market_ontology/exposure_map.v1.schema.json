@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_ontology/exposure_map.v1.schema.json",
+  "title": "market_ontology.exposure_map/v1",
+  "description": "Pure read-only shock -> theme -> company GMI exposure projection. authority_ceiling is always research_display_only: no score, rank, confidence, weight, ordering-by-magnitude, gate, size or trade semantic is representable here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "asof", "authority_ceiling", "display_only", "shock", "themes", "unavailable", "provenance"],
+  "properties": {
+    "schema": {"const": "market_ontology.exposure_map/v1"},
+    "asof": {"type": "string", "format": "date"},
+    "authority_ceiling": {"const": "research_display_only"},
+    "display_only": {"const": true},
+    "shock": {"$ref": "#/$defs/shock"},
+    "themes": {"type": "array", "items": {"$ref": "#/$defs/theme"}},
+    "unavailable": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/unavailable"}]},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge_reader", "identity_reader", "chain_reader", "store_meta", "engine_version", "belief_collapse"],
+      "properties": {
+        "edge_reader": {"const": "engine.theme_graph.store.read_edges(latest_belief=True)"},
+        "identity_reader": {"const": "engine.theme_graph.store.read_identity_resolution(latest=True)"},
+        "chain_reader": {"const": "engine.transmission_chains.load_chains()"},
+        "store_meta": {"anyOf": [{"type": "null"}, {"type": "object"}]},
+        "engine_version": {"const": "market_ontology.exposure_map.v1"},
+        "belief_collapse": {"const": "max belief_time <= asof per edge_id; ties on computed_at then edge_id"}
+      }
+    }
+  },
+  "$defs": {
+    "bilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh"],
+      "properties": {"en": {"type": ["string", "null"]}, "zh": {"type": ["string", "null"]}}
+    },
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "reason", "subject_id", "detail"],
+      "properties": {
+        "code": {
+          "enum": [
+            "SHOCK_UNKNOWN", "NO_THEMES_DECLARED", "NO_THEME_EDGES", "NO_MEMBERSHIP_YET",
+            "RIGHTS_SUPPRESSED", "IDENTITY_UNRESOLVED", "STORE_UNAVAILABLE", "NO_ETF_EDGES",
+            "BELIEF_AFTER_ASOF", "IDENTITY_COLLISION"
+          ]
+        },
+        "reason": {"$ref": "#/$defs/bilingual"},
+        "subject_id": {"type": ["string", "null"]},
+        "detail": {"type": ["string", "null"]}
+      }
+    },
+    "shock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shock_id", "vocabulary", "title", "tier", "declared_by", "note"],
+      "properties": {
+        "shock_id": {"type": "string"},
+        "vocabulary": {"const": "knowledge/transmission/*.yaml (TXI chain library)"},
+        "title": {"$ref": "#/$defs/bilingual"},
+        "tier": {"anyOf": [{"type": "null"}, {"enum": ["hypothesis", "probe", "calibrated"]}]},
+        "declared_by": {"type": "string"},
+        "note": {"type": ["string", "null"]}
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "edge_id", "type", "src", "dst", "valid_from", "valid_to", "evidence_time",
+        "belief_time", "era", "source_class", "date_provenance", "evidence_refs",
+        "confidence_basis", "computed_at", "engine_version"
+      ],
+      "properties": {
+        "edge_id": {"type": ["string", "null"]},
+        "type": {"enum": ["MEMBER_OF", "EXPRESSES", "TRACKS"]},
+        "src": {"type": ["string", "null"]},
+        "dst": {"type": ["string", "null"]},
+        "valid_from": {"type": ["string", "null"], "format": "date"},
+        "valid_to": {"type": ["string", "null"], "format": "date"},
+        "evidence_time": {"type": ["string", "null"], "format": "date"},
+        "belief_time": {"type": ["string", "null"], "format": "date"},
+        "era": {"type": ["string", "null"]},
+        "source_class": {"type": ["string", "null"]},
+        "date_provenance": {"type": ["string", "null"]},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "confidence_basis": {"type": ["string", "null"]},
+        "computed_at": {"type": ["string", "null"]},
+        "engine_version": {"type": ["string", "null"]}
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "security_id", "listing_key", "issuer_id", "resolution_asof", "refusal_reason", "collision_group"],
+      "properties": {
+        "state": {"type": "string"},
+        "security_id": {"type": ["string", "null"]},
+        "listing_key": {"type": ["string", "null"]},
+        "issuer_id": {"type": ["string", "null"]},
+        "resolution_asof": {"type": ["string", "null"], "format": "date"},
+        "refusal_reason": {"type": ["string", "null"]},
+        "collision_group": {"type": ["string", "null"]}
+      }
+    },
+    "path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path_kind", "hops", "via_node_id", "edges"],
+      "properties": {
+        "path_kind": {"enum": ["direct_membership", "basket_bridge", "local_theme_bridge"]},
+        "hops": {"enum": [1, 2]},
+        "via_node_id": {"type": ["string", "null"]},
+        "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}}
+      }
+    },
+    "company": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["company_node_id", "market_scope", "rights_family", "identity", "paths"],
+      "properties": {
+        "company_node_id": {"type": "string"},
+        "market_scope": {"anyOf": [{"type": "null"}, {"enum": ["us", "cn", "hk", "ca", "intl"]}]},
+        "rights_family": {"type": "null"},
+        "identity": {"$ref": "#/$defs/identity"},
+        "paths": {"type": "array", "items": {"$ref": "#/$defs/path"}}
+      }
+    },
+    "etf_proxy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["etf_node_id", "via_basket_node_id", "rights_family", "edges"],
+      "properties": {
+        "etf_node_id": {"type": "string"},
+        "via_basket_node_id": {"type": "string"},
+        "rights_family": {"type": ["string", "null"]},
+        "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}}
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_node_id", "theme_plane", "rights_family", "name", "state", "unavailable",
+        "companies", "company_count", "distinct_security_count", "etf_proxies", "abstentions"
+      ],
+      "properties": {
+        "theme_node_id": {"type": "string"},
+        "theme_plane": {"anyOf": [{"type": "null"}, {"enum": ["local_theme", "canonical_theme"]}]},
+        "rights_family": {"type": ["string", "null"]},
+        "name": {"$ref": "#/$defs/bilingual"},
+        "state": {
+          "enum": [
+            "OK", "NO_THEME_EDGES", "NO_MEMBERSHIP_YET", "RIGHTS_SUPPRESSED", "IDENTITY_UNRESOLVED"
+          ]
+        },
+        "unavailable": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/unavailable"}]},
+        "companies": {"anyOf": [{"type": "null"}, {"type": "array", "items": {"$ref": "#/$defs/company"}}]},
+        "company_count": {"type": ["integer", "null"], "minimum": 0},
+        "distinct_security_count": {"type": ["integer", "null"], "minimum": 0},
+        "etf_proxies": {"anyOf": [{"type": "null"}, {"type": "array", "items": {"$ref": "#/$defs/etf_proxy"}}]},
+        "abstentions": {"type": "array", "items": {"$ref": "#/$defs/unavailable"}}
+      }
+    }
+  }
+}

@@ -9105,6 +9105,8 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_local_plane.py -q
       - name: theme graph — source-rights registry shape + F20 grandfather pin
         run: TZ=UTC python -m pytest tests/test_theme_sources_registry.py -q
+      - name: market ontology — GMI exposure composer (shock->theme->company, rights + as-of + typed nulls)
+        run: TZ=UTC python -m pytest tests/test_market_ontology_exposure_map.py -q
       - name: CN limit-rule registry — schema, continuity, parity vs china_microstructure
         run: TZ=UTC python -m pytest tests/test_cn_limit_rules.py -q
       # GMI W2 — the exposure-decomposition probe's pure math. The probe script itself is a
