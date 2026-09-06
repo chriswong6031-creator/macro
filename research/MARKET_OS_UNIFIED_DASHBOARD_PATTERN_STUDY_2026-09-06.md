@@ -28,29 +28,40 @@ group. Session date 2026-09-06 (page clocks read 11:07–11:08 PM local on the m
 
 Total: 8 screenshots at scale 0.5, none written into this repository.
 
-### 0.2 The honest limit on this study — read before using it
+### 0.2 What was and was not observed — read before using it
 
-**The authenticated dashboard ("Capital Command") was NOT reachable from this browser session.**
-Every authenticated route (`/dashboard`, `/public`) redirected to `/auth?redirect=…` with a
-create-account form. The Chairman's message said the site is logged in; this Chrome profile, as
-exposed through the extension's MCP tab group, is not. Signing in is prohibited to me (entering
-credentials is a prohibited action, and no session cookie was available to reuse), so I did not
-attempt it and did not create an account.
+**The authenticated dashboard ("Capital Command") WAS observed, on 2026-09-06, by Meta-CEO B.**
+The first designer pass (rows 1–7 above) could not sign in. A second pass ran inside the Claude
+desktop app's own Browser pane, on a tab already holding the operator's live signed-in session.
+Nothing was signed in or out and nothing was written: no brokerage connect, no recompute, no
+settings save, no sign-out, no theme change.
+
+What that second pass measured, and at what width:
+
+| # | Surface | Width observed | Capture |
+|---|---|---|---|
+| 8 | Capital Command — all seven sub-tabs (next moves, decision OS, today, portfolio, intelligence, decisions, workflows) | 780×583 | a11y tree + full text per sub-tab |
+| 9 | Capital Command — full rail, top family strip, workflows module expanded | 1440×900 | screenshot + full text |
+| 10 | Capital Command — authenticated, true mobile, mobile UA + touch, reloaded so device gates re-ran | 375×812 | screenshot + full text |
+| 11 | Anonymous marketing root served to the mobile UA before the workspace resolved | 375×812 | screenshot + text |
 
 Consequently:
 
-* **Sections 1.1–1.9 are grounded in the *unauthenticated* product surfaces** — which are
-  substantial: the live Intelligence Feed panel renders real, dated, scored rows inside `/map`
-  and `/map/desk`, the prediction ledger is a full product-grade data page, and the marketing
-  spine states the product's own workflow vocabulary. What I could NOT observe is the rail
-  grouping, top product tabs, sub-tabs, KPI strip, and settings of the logged-in shell.
-* **Every claim below is labelled `[observed]` or `[inferred]`.** Nothing about the logged-in
-  rail is asserted as observed.
-* **Meta-CEO A/B should re-run §1 against the logged-in shell** before freezing an IA. §4 lists
-  exactly which questions that re-run must answer.
-* Mobile: the resize call succeeded at the window level but the page's own viewport still
-  reported 1095×906 at capture time, so **I did not obtain a true 390px rendering.** Responsive
-  claims in §1.9 are `[inferred]` from the composition, not measured.
+* **§1.11–§1.13 are measured.** The rail zones and their item counts, the five product families,
+  the seven sub-tabs and their module counts, the page-header anatomy, the nine-field status strip
+  and its null vocabulary, the per-module empty copy, and the 375 px behaviour are now
+  `[observed]`, not inferred.
+* **§1.1–§1.9 stand as written**, grounded in the unauthenticated surfaces, with their original
+  `[observed]`/`[inferred]` labels intact. Where the authenticated pass extends or contradicts
+  them the correction is stated in §1.11–§1.13 and in the marked §2 revisions — **no earlier label
+  was silently upgraded.** One outright contradiction is recorded: §1.9 says no light toggle was
+  exposed; the authenticated shell does carry a theme toggle. It was not exercised, so their light
+  art direction remains unobserved and §4 Q7 is unaffected.
+* **The calm state is still not observable.** The account has no linked book, so every module
+  renders its *empty* state. "Nothing happened today, on a populated account" — the state our own
+  users will see most often — was not seen. §4 Q1 records what remains open.
+* **Mobile is now measured** (§1.13). §1.9's responsive paragraph stays `[inferred]` because it
+  describes the *public* pages, which were not re-measured at 375.
 
 ### 0.3 No-copy statement (charter §7)
 
@@ -321,6 +332,49 @@ Five L1 sections — at the archetype-A budget, under the hard ceiling of 7. Abo
 1440×900: chrome + THE READ + the first row of WHAT CHANGED, satisfying the above-fold budget
 (`research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:359-361`).
 
+**[revised after authenticated pass]** — five amendments to §2, drawn from §1.11–§1.13:
+
+1. **§2.2 / §2.3 — the fourteen workspaces become sub-tab groups, not one flat grid.** The
+   reference's structural move is *seven sub-tabs over twenty-two modules replacing twenty-two
+   pages*, with the rail item, the URL and the whole chrome held still while the tab changes the
+   module set. Our L1-3 "fourteen workspaces" grid should adopt the same device: three or four
+   named groups as sub-tabs beneath the KPI strip, each showing only its own tiles, with the
+   group's eyebrow stating the active group and how many tiles it is showing (the reference's
+   "sub-tab · n modules" eyebrow is *state*, and it costs one line where a breadcrumb costs one
+   line and says less). This does not add an L1 section — it replaces the three-column grid inside
+   L1-3, so the §2.3 five-section budget is unchanged.
+
+2. **§2.3 — the top strip and the rail are two different levels.** Measured: the top strip
+   re-scopes the rail; the rail chooses the page. Twenty-four destinations stay navigable while
+   never showing more than about a dozen. We cannot copy this (CLAUDE.md §Navigation forbids a
+   third header family, and the `_site_nav` family owns our inventory), but the *principle* —
+   never show a user the whole destination set at once; let one control choose which subset the
+   next control offers — is what the fourteen-workspace group headers in L1-3 should encode.
+
+3. **§2.4 — the strip needs an evidence majority, not an evidence footnote.** Measured: four of
+   the reference's nine tiles describe the quality of the evidence (age of oldest input,
+   integrity, freshness, coverage) rather than the money. Our five tiles are already
+   evidence-heavy; freeze that as a rule rather than an accident: **at least three of five tiles
+   must answer "what do we know and how well", and they may not be demoted below the money tiles
+   at any width.** Our five-tile count stands — nine is more than our page has honest fields for,
+   and padding a strip is the failure §1.4 already names.
+
+4. **§2.5 — the calm/empty paragraph gets a floor as well as a ceiling.** Measured: the reference's
+   empty-state paragraph is ~33 words and it *names its required inputs* (reconciled holdings,
+   stated objectives, dated event records) before naming the one action. A word ceiling alone
+   produces "No data." Our budget for a module's empty paragraph is therefore **25–40 words, and
+   it must name what would have to arrive**, in the three-part shape recorded in §1.12.
+
+5. **§2.9 — the KPI grid is confirmed; the closed-accordion default is contradicted.** Measured at
+   375: all nine status fields survive in a two-column grid, nothing is dropped, and nothing is
+   put in a horizontal scroller — our "3+2 grid, never a scroller" call is right and is now
+   evidence-backed rather than doctrinal. But the reference does *not* collapse module bodies on
+   mobile: the explanatory paragraph renders in full at 375, and the only thing allowed to scroll
+   horizontally is the **tab strip**, which is a control rather than a fact. Revise §2.9
+   accordingly: the three workspace groups render **open** at 390 with their tiles stacked, the
+   group sub-tabs may scroll horizontally, and no explanatory or null-disclosure text may be
+   truncated or collapsed at any width.
+
 ### 2.4 The KPI strip — five tiles, every field from data we already produce
 
 Each tile is **label (plain) / value / one-line meaning**. No tile shows a number our own doctrine
@@ -548,12 +602,25 @@ your seat limit just now" — and disable invite rather than guessing a number.
 
 ## 4. Open questions for Meta-CEO A and B
 
-1. **Re-run §1 authenticated.** Someone with the live session must record: the rail groups and
-   their labels, the top product tabs and sub-tabs, the real KPI strip fields and their null
-   forms, and — most important — **the calm state** (§1.5 gap). Until then §1.2 and §1.4 are
-   partly inferred and this study must not be cited as a measured reference for the rail.
-2. **True 390px evidence is missing** (§0.2). Our §2.9 reduction is designed from doctrine, not
-   from their behaviour. Someone should measure at a real 390 viewport before we claim parity.
+1. **[answered — re-run completed 2026-09-06; one part still open.]** The authenticated
+   re-run is §1.11–§1.13: rail zones and counts, the five product families and their inventories,
+   the seven sub-tabs and their module counts, the header anatomy, the nine-field status strip and
+   its three-way null vocabulary, and the per-module empty copy are all measured, and §1.2/§1.4
+   may now be read alongside them. **Still open:** the *calm* state (§1.5). The observed account
+   has no linked book, so every module showed an empty state; nobody has yet seen "the book is
+   connected and today nothing happened", which is the state our users will meet most often and
+   the one our estate handles worst. Whoever next has a populated session should capture exactly
+   that, plus one populated module at 375. Until then the calm-state design in §2/§3 is ours to
+   invent from doctrine, not to copy.
+
+2. **[answered — 390 px evidence obtained at 375×812.]** §1.13 records it: the rail vanishes to a
+   single toggle, the five families collapse to one chip, the status strip reflows nine fields into
+   a two-column grid with nothing dropped and no horizontal scroller, the sub-tab strip becomes the
+   one thing that scrolls sideways, and module bodies — including the ~33-word explanatory
+   paragraph — render in full and uncut. Our §2.9 reduction is amended against that evidence in the
+   marked §2 revision; the "never a scroller for the KPI tiles" rule is now measured, and the
+   "accordions closed by default" rule is withdrawn.
+
 3. **Which half owns the macro command page?** §2 is macro-side (`templates/`, `_site_nav` family);
    §3 is Terminal-side. If A takes §2 and B takes §3, the shared artefacts are the stance
    vocabulary, the four source outcomes, and the null copy patterns — those must be written once
@@ -617,3 +684,161 @@ status strip whose empty values are honest states written as two-word sentences,
 sub-tabs instead of fourteen pages, (c) one calm explanatory empty paragraph per module with a
 single action, and (d) a rail of one-word verbs. Those four moves are what make the reference
 read as "not too much text" — not smaller type or fewer features.
+
+---
+
+## 1.11 Authenticated IA (measured, 2026-09-06)
+
+`[observed]` Measured by Meta-CEO B inside the operator's live signed-in session, in the Claude
+desktop app's own Browser pane, at 780×583, 1440×900 and 375×812. Read-only: no state was written.
+Structure is described in my own words; no label text, code, CSS, icon or datum is carried over.
+
+**Left rail — one column of one-word destinations, in three zones.** A small-caps heading names
+the active product family. Under it, nine destinations in that family: a command home, then eight
+single-word workspaces covering deciding, analysing, a morning edition, policy, transactions,
+single stocks, evaluation, and macro. A gap, then two inbox-shaped items (an inbox and a live
+pulse). A second gap, then three pinned to the bottom edge: a desk, settings, and sign-out.
+Fourteen destinations plus a rail-collapse toggle. Every label is one word except one two-word
+bottom item. **No counts, no badges, no descriptions.** The active row carries a warm accent bar
+on its leading edge over a slightly raised ground; nothing else in the rail is coloured.
+
+**Top strip — five product families with item counts, and they are not page tabs.** Measured
+inventories: capital 9, team 1, quant 3, decision tools 7, sector intelligence 4 — **24
+destinations**, of which the rail shows one family's set at a time. Activating a family name did
+not change the canvas in any of my attempts: it re-scopes the rail. The idea worth naming is that
+**the top strip chooses which nine things the rail offers; the rail chooses the page** — two
+levels, 24 destinations, and never more than about a dozen visible at once. Right of the families:
+a search field with its keyboard hint, an onboarding progress chip (an "n of 6" completion count),
+a region selector, a notifications bell, and a theme toggle. Six controls, no menus, no flyouts.
+
+**Page header anatomy — four bands, in this order:**
+
+1. **Title line.** A two-word page title, large, sentence case; the eyebrow sits *inline to its
+   right* and states the active sub-tab plus how many modules that sub-tab is showing. The eyebrow
+   is therefore **state, not a breadcrumb** — where you are and how much is on screen, in one line.
+2. **Actions, right-aligned on the same line.** A page-scoped "find a feature" search, exactly one
+   primary action (link a brokerage account), and a module filter pill.
+3. **Scope line.** Two short phrases: that no book is linked, and that the scope is none. This is
+   the page telling you the size of the lens before showing you anything through it.
+4. **Status strip** (semantics below).
+
+**Sub-tabs — seven, small-caps, active one filled:** next moves, decision OS, today, portfolio,
+intelligence, decisions, workflows. Measured module counts: next moves 1, decision OS 1, today 1
+(rendering four stacked blocks), portfolio 5, intelligence 4, decisions 1, workflows 1. **A sub-tab
+is a module group, not a page** — the rail item, the address and the entire chrome hold still. This
+is the most important structural finding for us: **seven groups over roughly twenty-two modules
+replace twenty-two pages.**
+
+**Status-strip semantics — nine fields, one row, small-caps label above a one- or two-word value.**
+In order: three money fields (net asset value, gross exposure, net exposure), one period field
+(profit and loss for the period), one clock field (market session), then four **evidence** fields
+(age of the oldest input, integrity, freshness, coverage). The proportion is the design decision:
+**four of nine tiles describe the quality of the evidence rather than the money.** A reader learns
+what the product knows before learning what anything is worth.
+
+**Persona and density.** A pill anchored bottom-right names the current analyst mode and opens an
+assistant. Separately, the workflows module carries a six-way persona filter (all, plus five job
+titles — macro PM, equity analyst, credit analyst, options trader, family office) that re-ranks a
+catalogue without changing the page. Persona is therefore applied **per module**, not to the shell.
+
+**Module chrome.** Every module is a titled band: small-caps head at the left, one right-aligned
+text control that expands it to full height. Modules load lazily and say so — the workspace boot
+renders a labelled skeleton naming what is loading, and a fetching module states it in words
+rather than spinning.
+
+**How technical detail is demoted, measured on a populated module.** The causal module leads with
+a single plain sentence of consequence, then four labelled one-line readings — the primary path,
+the most exposed thing, the weakest link, and the condition that would invalidate the read — and
+only then a scrollable list of paths with confidences and horizons. Confidence percentages, hop
+counts and basis points all exist, but they arrive **after** the sentence, as attributes of a named
+row, never as the headline. The invalidator is phrased as a plain "if this holds and that does not
+follow" condition — a watch condition, not a verdict. That is the shape our own falsifier law
+already requires (`docs/DESIGN_DOCTRINE.md`, and CLAUDE.md §Design), executed well.
+
+---
+
+## 1.12 Module empty / degraded states (measured, 2026-09-06)
+
+`[observed]` The observed account has no linked book, so **every** module rendered its empty state.
+That accident is the richest single finding in this study, because the shape is identical across
+all of them:
+
+> **[what is absent, stated as a fact] → [the rule that explains why, naming its required inputs]
+> → [the one action that would change it].** Three sentences at most. No apology, no exclamation,
+> no illustration, no spinner.
+
+Measured, module by module (paraphrased — no copy reproduced):
+
+| Sub-tab · module | Empty pattern |
+|---|---|
+| Next moves | Section head, a coverage label carrying a placeholder value, one action, then ~33 words: nothing is available; recommendations are computed only from reconciled holdings, stated capital objectives and dated event records; nothing is generated without them; recompute once a book is linked. **It names its three required inputs.** |
+| Today · priority decision | One sentence: nothing is waiting on a decision — and the three things that could have been waiting (monitors, the action queue, reconciliation) are each named as clear. **Emptiness is enumerated, not asserted.** |
+| Today · review queue | A zero shown as a labelled count chip, plus four words stating the queue is empty. |
+| Today · portfolio state | Six labelled fields: two carry an em dash, three carry the words for "cannot be evaluated", one carries a real zero. Then one sentence saying analytics have not been computed for this book yet. **"Not evaluable" and "0" are visibly different values.** |
+| Today · since your last review | A line stating no review has been recorded, then four counters at zero (changed threads, new evidence, monitor conditions, repriced symbols), beside a live indicator. |
+| Portfolio | Five module heads render with no bodies; one carries a zero-breaks chip. The group shows its skeleton rather than collapsing to nothing. |
+| Intelligence · opportunities | A one-line description of what the module produces, then a status triplet — a count of zero active, an update time given as not-applicable, and a link to the archive. The six-control filter bar and the sort row stay **enabled** over the empty list. |
+| Workflows | Not empty, and instructive: a create action, a natural-language search that invites the user to describe a job in ordinary words, a fallback line offering to draft a custom workflow when no template fits, a persona filter, five recent items with relative ages, and a catalogue of twelve templates each showing its step chain and a step count. |
+
+**Null vocabulary — three distinct forms, not interchangeable:**
+
+* **Em dash** — the field exists as a concept but has no number yet (the money fields).
+* **A two-word plain state** — the value cannot be produced, and the phrase says why: awaiting a
+  baseline; a non-trading session; input not supplied; not reconciled; no source stamp; not
+  evaluable.
+* **A real zero** — the count is genuinely zero, and it is shown as a digit.
+
+That three-way distinction is exactly the discipline our doctrine demands and our estate keeps
+losing (a source that failed to read printed as a cheerful zero). Here it is executed as a
+**first-class design element**: with no data connected at all, the status strip is still fully
+legible and still honest. **This, not the dark palette, is why the reference reads as
+trustworthy.**
+
+**One-action rule, measured.** Every empty module offers exactly one action, and it is the action
+that would actually end the emptiness — the page primary is "link an account", the next-moves
+module's is "recompute". No module offers two competing calls to action; none offers a dead-end
+"learn more".
+
+---
+
+## 1.13 Mobile (measured at 375×812, 2026-09-06)
+
+`[observed]` Emulated at 375×812 with a mobile user agent and touch input, then reloaded so
+load-time device gates re-ran. The authenticated dashboard renders. What actually changes:
+
+* **The rail disappears entirely** into a single toggle at the top-left. Not a squeezed rail, not
+  an icon strip — gone until asked for.
+* **The five product families collapse into one chip** showing the active family, plus an overflow
+  control; the item counts are dropped. The onboarding progress chip and the region selector
+  survive.
+* **The page header stacks.** Title and eyebrow stay on one line (both are short enough); the
+  "find a feature" field takes the next line at full width with the primary connect action beside
+  it; the scope line stays.
+* **The status strip reflows from nine-across to a two-column grid**, five rows. **Nothing is
+  dropped, and nothing is put in a horizontal scroller.** All four evidence fields survive at 375 —
+  the correct call, because the tiles a user must not be able to miss are the null ones.
+* **The sub-tab strip becomes the one horizontal scroller**, showing about four of seven with the
+  active one first. A tab strip is a control, not a fact; that is the defensible thing to hide.
+* **Module bodies are unchanged.** The ~33-word explanatory paragraph renders in full at 375. The
+  reference does not solve small screens by cutting its explanation.
+* **The persona pill stays pinned bottom-right.**
+* **Density, counted from the rendered text.** Above the fold at 375, excluding the collapsed rail:
+  roughly **88 words**, of which ~33 are the single explanatory paragraph and ~25 are the status
+  strip's labels and values — so the chrome itself is about **55 words**. At 1440×900 the same
+  chrome plus the rail and family strip reads about **72 words** before any module content.
+* **Route observation.** The authenticated workspace and the anonymous marketing page are served
+  from the same address; a cold mobile load painted the marketing page first, then resolved to the
+  workspace behind a labelled loading skeleton. A deep link to a signed-in route resolved back to
+  that same address rather than to a distinct dashboard path.
+
+**Consequence for us** is recorded as the fifth marked amendment in §2: our two-row KPI grid is
+confirmed by measurement, and our "workspace groups collapsed by default" rule is withdrawn.
+
+---
+
+*Authenticated pass appended 2026-09-06 by Meta-CEO B. Screens observed: Capital Command and all
+seven sub-tabs at 780×583; Capital Command with full rail and expanded workflows module at
+1440×900; Capital Command authenticated at 375×812; the anonymous root at 375×812. Not reached:
+the four non-capital product families as distinct canvases (their strip entries re-scope the rail
+rather than navigating), any rail destination other than the command home, settings, and any
+populated (calm) module state. No text, code, CSS, icon or datum was copied; no state was written.*
