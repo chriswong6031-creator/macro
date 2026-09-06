@@ -10,7 +10,7 @@
 
 ## 1. Terminal disposition
 
-All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in the F00C ledger's `next_bounded_child` column. No engineering wave in Half-B, or any wave after it, may open these rows on its own initiative: each is blocked on a named party outside engineering — a Chairman/commercial contract decision (gate family A, 15 rows), an upstream internal owner review by the K1 Evidence Foundation owner (gate family B, 3 rows), or an upstream acceptance decision already standing at the K2-C carrier, PR #6498 (gate family C, 2 rows). Four rows (MO-DELTA-026, MO-DELTA-030, MO-PAID-041, MO-PAID-030) carry a compound gate across two of these families and are recorded once, under their primary family, with the second gate named in the row body.
+All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in the F00C ledger's `next_bounded_child` column. No engineering wave in Half-B, or any wave after it, may open these rows on its own initiative: each is blocked on a named party outside engineering — a Chairman/commercial contract decision (gate family A, 15 rows), an upstream internal owner review by the K1 Evidence Foundation owner (gate family B, 3 rows), or an upstream acceptance decision already standing at the K2-C carrier, PR #6498 (gate family C, 2 rows). Four rows carry a compound gate and are recorded once, under their primary family, with the second gate named in the row body: MO-DELTA-026 and MO-PAID-030 are gated across two of these three families (A+B and A+C respectively); MO-DELTA-030 and MO-PAID-041 are gated across family A plus a fourth, non-family gate -- the Evaluation OS promotion gauntlet -- which sits outside the three commercial/upstream families named here.
 
 ## 2. Gate family A — commercial rights (party: Chairman / commercial contract authority)
 
@@ -183,7 +183,7 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 12. The same physical-versus-financial signal at the materials level: today, nothing; absent, the signal, with the same never-a-trading-signal-until-tested limit.
 13. A sovereign fund mapped to its holdings: today, public ownership filings where they exist; absent, the sovereign classification layer (this row also needs an internal acceptance step before it can open).
 14. Analyst-style valuation built on real estimates: today, the filed financial statements; absent, the estimate figures a valuation needs.
-15. Bull/base/bear scenarios over a real valuation: today, nothing; absent, the scenario view, which cannot exist before the three items above land.
+15. Bull/base/bear scenarios over a real valuation: today, nothing; absent, the scenario view, which cannot exist until the valuation-estimate item directly above opens, plus two further licensed-estimate dependencies this docket does not itself cover.
 
 
 **Family A --- 逐行说明（ZH）：**
@@ -201,7 +201,7 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 12. 同一层面在原材料上的物理与金融对比信号：目前没有；缺少的是该信号，同样在检验前绝不作为交易信号。
 13. 将一家主权基金对应到其持仓：目前有已申报的公开持股信息（若存在）；缺少的是主权基金分类层（此行还需先完成一项内部接受步骤才能开启）。
 14. 建立在真实预估之上的分析师式估值：目前有已申报的财务报表；缺少的是估值所需的预估数字。
-15. 基于真实估值的乐观/基准/悲观情景：目前没有；缺少的是情景视图，且必须等以上三项先落地才能存在。
+15. 基于真实估值的乐观/基准/悲观情景：目前没有；缺少的是情景视图，必须等上一项的估值预估开启，且另外两项本文件未涵盖的授权预估条件也一并满足后才能存在。
 
 
 **Family B -- row by row (EN):**

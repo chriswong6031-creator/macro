@@ -289,3 +289,52 @@ def test_no_k2c_or_k3d_recommission():
         window = text[max(0, m.start() - 15): m.start()]
         assert re.search(r"never|does not", window, re.I), window
     assert "never recommission" in text.lower() or "does not recommission" in text.lower()
+
+
+def test_item_15_names_the_real_dependency_not_the_items_directly_above():
+    """Round-4 review MAJOR: item 15 (the plain-word row for MO-PAID-037) used
+    to claim it 'cannot exist before the three items above land' -- i.e.
+    items 12-14 (MO-PAID-041 physical-financial signal, MO-PAID-030
+    sovereign, MO-PAID-035 valuation estimate). But section 2's own
+    MO-PAID-037 row says its real dependency is MO-PAID-022, MO-PAID-026 and
+    MO-PAID-035 (all F07-VALUATION-SCENARIO), of which only MO-PAID-035
+    (item 14) is one of 'the items above' -- MO-PAID-022 and MO-PAID-026 are
+    not in this docket's row list at all, and are explicitly NOT the F09
+    rows of the same numeric suffix that this docket does list. The false
+    back-reference must be gone, and section 5 may not name raw MO-xxx ids
+    (test_customer_section_uses_plain_words), so the fix has to describe the
+    real gap in plain words instead."""
+    text = _docket_text()
+    section5 = _section5_text(text)
+    assert "cannot exist before the three items above land" not in section5
+    assert "且必须等以上三项先落地才能存在" not in text
+    assert (
+        "cannot exist until the valuation-estimate item directly above opens"
+        in section5
+    )
+    assert (
+        "two further licensed-estimate dependencies this docket does not itself cover"
+        in section5
+    )
+    assert "必须等上一项的估值预估开启" in text
+    assert "本文件未涵盖的授权预估条件" in text
+
+
+def test_section1_compound_gate_prose_names_the_eval_os_gauntlet_correctly():
+    """Round-4 review MINOR: MO-DELTA-030 and MO-PAID-041 compound with the
+    Evaluation OS promotion gauntlet, not with a second one of the three
+    named families (A/B/C) -- section 1 must say so. This matches this test
+    file's own PURE_FAMILY_A_ROWS comment ('not compound-gated
+    A+B/A+C/A+EvalOS/derived') and each row's own 'Who can open it' line
+    ('...THEN Evaluation OS gauntlet'), which section 1's prose previously
+    contradicted by calling all four rows compound 'across two of these
+    families'."""
+    text = _docket_text()
+    section1 = re.search(
+        r"## 1\. Terminal disposition\n(.*?)\n## 2\.", text, re.S
+    ).group(1)
+    assert "Evaluation OS" in section1
+    for row_id in ("MO-DELTA-026", "MO-PAID-030", "MO-DELTA-030", "MO-PAID-041"):
+        assert row_id in section1
+    assert "across two of these three families (A+B and A+C" in section1
+    assert "non-family gate" in section1
