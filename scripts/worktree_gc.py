@@ -84,6 +84,11 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts import worktree_storage
+except ModuleNotFoundError:
+    import worktree_storage
+
 log = logging.getLogger("worktree_gc")
 
 DEFAULT_CONFIG_REL = "config/worktree_gc.json"
@@ -494,11 +499,20 @@ def classify(
     if _under(self_cwd, wt.path):
         wt.verdict = "SELF"
         return
+    policy = cfg.get("_storage_policy")
+    external = policy is not None and Path(policy["root"]) in wt.path.parents
+    if external:
+        try:
+            worktree_storage.check_storage(policy, wt.path, check_space=False)
+        except (worktree_storage.StorageError, OSError) as exc:
+            wt.verdict = "ERROR"
+            wt.reasons.append(f"external volume unverified: {exc}")
+            return
     if not wt.path.exists():
         wt.verdict = "MISSING"
         wt.reasons.append("registered but directory gone (git worktree prune)")
         return
-    if wt.locked:
+    if wt.locked and not (external and wt.lock_reason == worktree_storage.LOCK_REASON):
         wt.verdict = "LOCKED"
         wt.reasons.append(wt.lock_reason or "git worktree lock present")
         return
@@ -662,6 +676,13 @@ def apply_deletions(
     hosts: list[Path] | None = None,
 ) -> dict:
     summary = {"deleted": [], "pruned": False, "branches_deleted": [], "errors": [], "skipped_cap": 0}
+    policy = cfg.get("_storage_policy")
+    if policy is not None:
+        try:
+            worktree_storage.check_storage(policy, check_space=False)
+        except (worktree_storage.StorageError, OSError) as exc:
+            summary["errors"].append(f"external storage unverified; deletion and prune refused: {exc}")
+            return summary
     now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
     host = socket.gethostname()
 
@@ -696,6 +717,37 @@ def apply_deletions(
             summary["deleted"].append(str(wt.path))
             continue
 
+        external = policy is not None and Path(policy["root"]) in wt.path.parents
+        storage_unlocked = False
+        if external:
+            try:
+                worktree_storage.check_storage(policy, wt.path, check_space=False)
+            except (worktree_storage.StorageError, OSError) as exc:
+                summary["errors"].append(f"{wt.path}: {exc}")
+                continue
+            # Never recurse over external grouping directories as if they were
+            # individual orphan checkouts. Only registered Git worktrees qualify.
+            if wt.orphan or wt.verdict == "ORPHAN":
+                summary["errors"].append(f"{wt.path}: external orphan retained")
+                continue
+            rc, listing, err = _git(primary, "worktree", "list", "--porcelain")
+            current = next((w for w in parse_worktree_list(listing) if w.path == wt.path), None)
+            rc2, status, _ = _git(wt.path, "status", "--porcelain", "--untracked-files=all")
+            procs = proc_cwd_map([wt.path])
+            if (rc or rc2 or current is None or current.head != wt.head or status.strip()
+                    or procs is None or any(ps for cwd, ps in procs.items() if _under(Path(cwd), wt.path))):
+                summary["errors"].append(f"{wt.path}: external deletion revalidation failed")
+                continue
+            if current.locked:
+                if current.lock_reason != worktree_storage.LOCK_REASON:
+                    summary["errors"].append(f"{wt.path}: foreign lock retained")
+                    continue
+                rc, _, err = _git(primary, "worktree", "unlock", str(wt.path))
+                if rc:
+                    summary["errors"].append(f"{wt.path}: storage unlock failed: {err}")
+                    continue
+                storage_unlocked = True
+
         if wt.verdict == "ORPHAN":
             try:
                 shutil.rmtree(wt.path)
@@ -703,8 +755,25 @@ def apply_deletions(
             except OSError as exc:
                 ok, err = False, str(exc)
         else:
-            rc, _, err = _git(primary, "worktree", "remove", "--force", str(wt.path), timeout=600)
-            ok = rc == 0
+            remove_args = ("worktree", "remove", str(wt.path)) if external else ("worktree", "remove", "--force", str(wt.path))
+            ok, err = False, ""
+            try:
+                rc, _, err = _git(primary, *remove_args, timeout=600)
+                ok = rc == 0
+            except (OSError, subprocess.SubprocessError) as exc:
+                err = str(exc)
+            finally:
+                if not ok and storage_unlocked:
+                    # The registration lives in the shared Git store. It needs
+                    # its lock most when the external directory is unavailable.
+                    rc, listing, relock_error = _git(primary, "worktree", "list", "--porcelain")
+                    retained = next((w for w in parse_worktree_list(listing) if w.path == wt.path), None)
+                    if rc:
+                        err += f"; storage registration recheck failed: {relock_error}"
+                    elif retained and not retained.locked:
+                        relock_rc, _, relock_error = _git(primary, "worktree", "lock", "--reason", worktree_storage.LOCK_REASON, str(wt.path))
+                        if relock_rc:
+                            err += f"; storage relock failed: {relock_error}"
 
         _ledger_write({
             "ts": now_iso, "host": host, "path": str(wt.path), "branch": wt.branch,
@@ -716,6 +785,10 @@ def apply_deletions(
             log.info("removed %s (%s; %s; %s kB)", wt.path.name, wt.verdict, wt.proof, wt.size_kb)
         else:
             summary["errors"].append(f"{wt.path}: {err.strip()[:200]}")
+            if storage_unlocked:
+                # Stop this sweep on a failed removable-volume transaction.
+                # Do not prune after an uncertain removal/recovery boundary.
+                return summary
             continue
 
         # Local branch cleanup — only when the merge proof held and the branch
@@ -734,6 +807,12 @@ def apply_deletions(
                     log.info("branch -D %s refused: %s", wt.branch, err2.strip()[:120])
 
     if not dry_run:
+        if policy is not None:
+            try:
+                worktree_storage.check_storage(policy, check_space=False)
+            except (worktree_storage.StorageError, OSError) as exc:
+                summary["errors"].append(f"prune refused: {exc}")
+                return summary
         rc, _, err = _git(primary, "worktree", "prune", timeout=120)
         summary["pruned"] = rc == 0
         if rc != 0:
@@ -818,6 +897,10 @@ def load_config(primary: Path, override: str | None) -> dict:
     except (OSError, ValueError) as exc:
         # An unreadable config must not un-arm into a broken apply run.
         raise SystemExit(f"config unreadable: {path}: {exc}")
+    policy = worktree_storage.load_policy()
+    if policy is not None:
+        cfg["_storage_policy"] = policy
+        cfg["roots"] = list(cfg["roots"]) + [str(Path(policy["root"]) / client) for client in ("claude", "codex", "manual")]
     return cfg
 
 
@@ -870,7 +953,11 @@ def main(argv: list[str] | None = None) -> int:
                 w.root = str(r)
                 in_scope.append(w)
                 break
-    orphans = scan_orphans(hosts, roots, registered)
+    # External roots contain app/repository grouping directories; the Git
+    # registry is authoritative there, not a depth-one orphan directory scan.
+    policy = cfg.get("_storage_policy")
+    orphan_roots = [r for r in roots if policy is None or not _under(r, Path(policy["root"]))]
+    orphans = scan_orphans(hosts, orphan_roots, registered)
 
     fetch_ok = False if args.no_fetch else fetch_origin(primary)
     pr_states: dict[str, dict] | None = None

@@ -1,5 +1,29 @@
 # Macro Dashboard — shared agent operating rules
 
+## External SSD storage on configured hosts (operator 2026-09-06)
+
+A host with `~/.config/mastermind/worktree-storage.json` must create new local
+agent worktrees under that policy's external root. This storage placement rule
+supersedes the internal session-root placement rules below on that host only.
+The canonical Git remote, branch/review rules, and existing checkout identities
+are unchanged. No missing-drive, full-drive, or wrong-volume condition permits
+an internal fallback. The checked-in creation hook delegates to
+`scripts/worktree_storage.py`; user-level Claude hooks use its installed copy.
+Codex's native Worktree root and every Claude Desktop profile's Worktree location
+must point to their client directories under the same external root. Standalone
+creation uses that helper's `create` command with JSON `cwd`, `name`, and the
+actual `session_id`; do not invent or reuse another session's identity.
+
+Existing active worktrees and the shared Git stores stay in place. New external
+worktrees retain sparse defaults. Storage-owned removable-volume locks may be
+released by the existing GC only after current volume, process, clean-tree and
+recoverability checks; unrelated locks remain protected. An unavailable SSD
+blocks cleanup/pruning. This is a physical storage policy, not an additional
+scheduler, authority registry or host concurrency rule. See
+`research/EXTERNAL_WORKTREE_STORAGE_ROLLOUT_2026_09_06.md` for installation,
+verification, activation boundaries and rollback.
+
+
 This repository is operated by multiple Claude accounts and Codex sessions. Repository files are the durable, shared source of instructions; promises or “memory” recorded only inside one chat do not carry to another session.
 
 ## Required context at the start of every task

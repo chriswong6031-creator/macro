@@ -69,6 +69,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 import sys
 from pathlib import Path
 
@@ -250,6 +251,20 @@ def main() -> int:
     if not SAFE_NAME.match(name):
         return fail(f"unsafe worktree name: {name}")
 
+    # A configured host owns physical placement; keep the portable fallback below.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts import worktree_storage
+    try:
+        policy = worktree_storage.load_policy()
+        if policy is not None:
+            import uuid
+            dest = worktree_storage.create_worktree(
+                policy, Path(cwd), name, payload.get("session_id") or str(uuid.uuid4()))
+            print(dest)
+            return 0
+    except (worktree_storage.StorageError, OSError, ValueError) as exc:
+        return fail(str(exc))
+
     try:
         common = Path(git(Path(cwd), "rev-parse", "--path-format=absolute", "--git-common-dir"))
         toplevel = Path(git(Path(cwd), "rev-parse", "--path-format=absolute", "--show-toplevel"))
@@ -271,14 +286,33 @@ def main() -> int:
             print(dest)
             return 0
         return fail(f"destination already exists and is not a worktree: {dest}")
+    attach_existing = False
     if ref_exists(repo_root, f"refs/heads/{branch}"):
-        return fail(f"local branch already exists: {branch}")
+        # A sibling hook wiring (the legacy zsh hook) can mint the branch and then
+        # die on a `.git/config` lock before registering the worktree; attach to
+        # its branch instead of failing the spawn (fleet contention, 2026-09-06).
+        log(f"local branch already exists: {branch}; attaching to it")
+        attach_existing = True
 
     worktree_root.mkdir(parents=True, exist_ok=True)
 
     try:
         log("refreshing origin/main")
-        git(repo_root, "fetch", "--prune", "origin", "main")
+        fetch_err = None
+        for attempt in range(3):
+            try:
+                git(repo_root, "fetch", "--prune", "origin", "main")
+                fetch_err = None
+                break
+            except RuntimeError as exc:  # ref-lock contention: retry, then tolerate
+                fetch_err = exc
+                if "cannot lock ref" not in str(exc) and "could not lock" not in str(exc):
+                    raise
+                time.sleep(2 + attempt * 2)
+        if fetch_err is not None:
+            if not ref_exists(repo_root, "refs/remotes/origin/main"):
+                raise fetch_err
+            log(f"fetch hit a ref lock 3x; proceeding on the existing origin/main ({fetch_err})")
         base = "refs/remotes/origin/main"
         pr = PR_NAME.match(name)
         if pr:
@@ -294,7 +328,26 @@ def main() -> int:
         sparse = bool(profile.get("enabled", True))
         log(f"host checkout: {repo_root}")
         log(f"creating {'sparse' if sparse else 'full'} worktree at {dest}")
-        git(repo_root, "worktree", "add", "--no-checkout", "-b", branch, str(dest), base)
+        # `--no-track` keeps `git worktree add` from writing branch.<name>.* into the
+        # shared .git/config, which is what made parallel spawns collide on the
+        # config lock; retry the ref/config lock races that remain.
+        add_args = (("worktree", "add", "--no-checkout", str(dest), branch) if attach_existing
+                    else ("worktree", "add", "--no-checkout", "--no-track", "-b", branch, str(dest), base))
+        for attempt in range(3):
+            try:
+                git(repo_root, *add_args)
+                break
+            except RuntimeError as exc:
+                if is_registered_worktree(repo_root, dest):
+                    log("worktree registered despite the error; continuing")
+                    break
+                lock_race = "could not lock" in str(exc) or "cannot lock ref" in str(exc)
+                if "already exists" in str(exc) and ref_exists(repo_root, f"refs/heads/{branch}"):
+                    add_args = ("worktree", "add", "--no-checkout", str(dest), branch)
+                    lock_race = True
+                if attempt == 2 or not lock_race:
+                    raise
+                time.sleep(2 + attempt * 2)
         created = True
         if sparse:
             apply_sparse(dest, repo_root, base, set(profile.get("exclude_dirs") or ()))

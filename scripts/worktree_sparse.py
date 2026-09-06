@@ -449,6 +449,16 @@ def path_under_session_root(root: Path) -> bool:
         parts = Path(root).resolve().parts
     except OSError:
         parts = Path(root).parts
+    try:
+        from scripts import worktree_storage
+    except ModuleNotFoundError:
+        import worktree_storage
+    policy = worktree_storage.load_policy()
+    if policy is not None:
+        approved = Path(policy["root"])
+        if approved in Path(root).parents:
+            worktree_storage.check_storage(policy, Path(root), check_space=False)
+            return True
     for marker in SESSION_WORKTREE_MARKERS:
         length = len(marker)
         for index in range(len(parts) - length + 1):
@@ -584,6 +594,16 @@ def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
     if not is_session_worktree(root):
         print("worktree-sparse: auto skipped — only session worktrees are changed")
         return 0
+
+    # Codex's setup and SessionStart both use this entry point. Protect its
+    # removable-volume registration even when sparsity is disabled or already set.
+    try:
+        from scripts import worktree_storage
+    except ModuleNotFoundError:
+        import worktree_storage
+    policy = worktree_storage.load_policy()
+    if policy is not None and Path(policy["root"]) in Path(root).parents:
+        worktree_storage.protect_worktree(policy, root, sparsify=False)
 
     profile_path = config_path or root / "config" / "sparse_worktree.json"
     profile = load_profile(profile_path)
