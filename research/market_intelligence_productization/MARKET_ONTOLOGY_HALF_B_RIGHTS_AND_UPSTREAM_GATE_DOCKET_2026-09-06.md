@@ -55,19 +55,19 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 - **Row-accounting repair (charter 10.3), also written into the ledger col 14:** ROW-ACCOUNTING REPAIR (charter 10.3): the available quantity is ETF-held par, not issuer debt outstanding, and must never be summed with issuer debt outstanding; the theme registry is a theme/name matcher, not a canonical issuer join
 
 ### MO-DELTA-026
-- **Blocked on (verbatim from the ledger):** `rating-agency licensing + ingestion source; K1 store`
+- **Blocked on (verbatim from the ledger):** `rating-agency licensing + ingestion source; K1 store` + `rating-agency (Moody's/S&P) licensing not confirmed (UNVERIFIED)`
 - **Who can open it:** Chairman / commercial contract authority (rating licensing) AND K1 Evidence Foundation owner (store)
 - **Authority ceiling if it opens (verbatim):** `evidence_navigation_only`
 - **First bounded slice on the day it opens:** ON BOTH GATES OPEN: one rating action navigable as evidence, never as a score.
 
 ### MO-DELTA-027
-- **Blocked on (verbatim from the ledger):** `Material Flow Map (pair)`
+- **Blocked on (verbatim from the ledger):** `Material Flow Map (pair)` + `cross-commodity/cross-layer physical-flow source not identified (UNVERIFIED)`
 - **Who can open it:** Chairman / commercial contract authority
 - **Authority ceiling if it opens (verbatim):** `context_only`
 - **First bounded slice on the day it opens:** ON GATE OPEN ONLY: one commodity's layer map as context.
 
 ### MO-PAID-040
-- **Blocked on (verbatim from the ledger):** `cross-layer decomposition (raw->chokepoint->refining->fabrication->distribution->end-market) and its data source`
+- **Blocked on (verbatim from the ledger):** `cross-layer decomposition (raw->chokepoint->refining->fabrication->distribution->end-market) and its data source` + `EIA public covered for oil; metals/ag/semis supply-chain source UNVERIFIED`
 - **Who can open it:** Chairman / commercial contract authority
 - **Authority ceiling if it opens (verbatim):** `display-only LEAF, never feeds scoring`
 - **First bounded slice on the day it opens:** ON GATE OPEN ONLY: one commodity documents a >=3-layer sourced chain.
@@ -91,7 +91,7 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 - **First bounded slice on the day it opens:** ON BOTH GATES: research-only display. Carries no signal authority absent prospective validation.
 
 ### MO-PAID-030
-- **Blocked on (verbatim from the ledger):** `sovereign-entity master + institutional->sovereign classification; K2-C acceptance precondition`
+- **Blocked on (verbatim from the ledger):** `sovereign-entity master + institutional->sovereign classification; K2-C acceptance precondition` + `SWFs mostly do NOT file 13F; no licensed sovereign-ownership source in repo (UNVERIFIED whether any contract exists)`
 - **Who can open it:** Chairman / commercial contract authority (sovereign source) AND K2-C carrier
 - **Authority ceiling if it opens (verbatim):** `pre-authority`
 - **First bounded slice on the day it opens:** ON BOTH GATES: >=1 sovereign fund mapped to holdings via a named lawful source, as a classification read over accepted K2-C output -- never a sovereign entity master (F09 do_not_redo).
@@ -104,7 +104,7 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 
 ### MO-PAID-037
 - **Blocked on (verbatim from the ledger):** `triple dependency 022+026+035`
-- **Who can open it:** closes only after MO-DELTA-022, MO-DELTA-026 and MO-PAID-035 open
+- **Who can open it:** Chairman / commercial contract authority, via its own dependency chain -- closes only after MO-PAID-022, MO-PAID-026 and MO-PAID-035 open (all F07-VALUATION-SCENARIO; not the F09 rows of the same numeric suffix, which this docket files separately under gate families C and A)
 - **Authority ceiling if it opens (verbatim):** `research_display_only`
 - **First bounded slice on the day it opens:** NONE. No independent slice exists; this row cannot be sliced before its three dependencies.
 
@@ -164,6 +164,63 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 **Family C (upstream acceptance) — EN:** Today you can see who is reported to own a company through public ownership filings. What we do not yet show is how those owners connect to a company's full capital picture, because the step that links them has not been accepted yet.
 
 **Family C — ZH:** 目前你可以透过公开的持股申报，看到谁被报告为公司的持有人。我们尚未展示的是这些持有人如何与公司的完整资本结构相连，因为串接这一步尚未获得接受。
+
+
+**Family A -- row by row (EN):**
+1. Private placement/deal-flow record for one type of new-issue deal: today, only the public filing; absent, the bookrunner-level deal record.
+2. Bookrunner, coupon, tenor and greenshoe detail on new-issue deals: today, the headline terms already public; absent, the underwriter-desk detail.
+3. Depth on one company's IPO pricing path: today, the public IPO announcement; absent, the full pricing-history path.
+4. Float, lock-up, greenshoe and aftermarket detail on one deal: today, the listing price; absent, the deal's full pricing precedent.
+5. Comparing one bond's terms against its peers: today, aggregate fund-level exposure; absent, a per-issuer bond-terms comparison.
+6. The underlying per-issuer bond-terms source itself: today, the same aggregate exposure view; absent, per-bond coupon/spread/tenor detail.
+7. A rating action shown as evidence: today, nothing rating-specific; absent, the rating action itself (this row also needs an internal library review before it can open).
+8. One commodity's full flow map: today, price and signal context; absent, the map from raw material to end market.
+9. A multi-step chain for metals, agriculture or semiconductors: today, that chain for oil only; absent, the same depth for the other commodities.
+10. Vessel-transit monitoring at one chokepoint: today, nothing; absent, the transit context itself.
+11. Any physical-versus-financial materials signal: today, nothing; absent, the signal, and even once it exists it stays research-only until independently tested.
+12. The same physical-versus-financial signal at the materials level: today, nothing; absent, the signal, with the same never-a-trading-signal-until-tested limit.
+13. A sovereign fund mapped to its holdings: today, public ownership filings where they exist; absent, the sovereign classification layer (this row also needs an internal acceptance step before it can open).
+14. Analyst-style valuation built on real estimates: today, the filed financial statements; absent, the estimate figures a valuation needs.
+15. Bull/base/bear scenarios over a real valuation: today, nothing; absent, the scenario view, which cannot exist before the three items above land.
+
+
+**Family A --- 逐行说明（ZH）：**
+1. 一类新发行交易的私下交易记录：目前只有公开申报；缺少的是承销商层级的交易记录。
+2. 新发行交易的承销商、票息、期限与超额配售细节：目前已有公开的主要条款；缺少的是承销台账层面的细节。
+3. 一家公司IPO定价路径的深度信息：目前有公开的IPO公告；缺少的是完整的定价历程。
+4. 一笔交易的流通量、锁定期、超额配售与上市后表现细节：目前有上市价格；缺少的是该交易的完整定价先例。
+5. 将一只债券条款与同类比较：目前只有基金层面的汇总持仓；缺少的是逐发行人债券条款比较。
+6. 逐发行人债券条款数据源本身：目前是同样的汇总持仓视图；缺少的是逐笔票息/利差/期限细节。
+7. 作为证据展示的一次评级行动：目前没有任何与评级相关的内容；缺少的是评级行动本身（此行还需先完成一项内部资料库审查才能开启）。
+8. 一种商品的完整流向图：目前有价格与信号背景；缺少的是从原材料到终端市场的完整地图。
+9. 金属、农产品或半导体的多层级链条：目前只有原油具备这一深度；缺少的是其他商品的同等深度。
+10. 一个关键航运节点的船舶通行监测：目前没有；缺少的是通行背景本身。
+11. 任何物理与金融对比信号：目前没有；缺少的是该信号，而且即便建成也要等独立检验后才不再只是研究用途。
+12. 同一层面在原材料上的物理与金融对比信号：目前没有；缺少的是该信号，同样在检验前绝不作为交易信号。
+13. 将一家主权基金对应到其持仓：目前有已申报的公开持股信息（若存在）；缺少的是主权基金分类层（此行还需先完成一项内部接受步骤才能开启）。
+14. 建立在真实预估之上的分析师式估值：目前有已申报的财务报表；缺少的是估值所需的预估数字。
+15. 基于真实估值的乐观/基准/悲观情景：目前没有；缺少的是情景视图，且必须等以上三项先落地才能存在。
+
+
+**Family B -- row by row (EN):**
+16. Every document and its corrections browsable in one place: today, documents open one at a time from the pages that cite them; absent, the single library view.
+17. One issuer page joining two or more data streams: today, single-stream views only; absent, the joined page with visible correction lineage.
+18. A cap-table view backed by a reviewed evidence record: today, nothing; absent, the reviewed record itself.
+
+**Family C -- row by row (EN):**
+19. How a reported owner connects to a company's full capital picture: today, who is reported to own shares through public filings; absent, the connection step.
+20. A full ownership-to-valuation bridge for one company: today, the same public ownership view; absent, the bridge that turns it into a valuation read.
+
+
+**Family B --- 逐行说明（ZH）：**
+16. 所有文件及其更正可在同一处浏览：目前文件需从引用它们的页面逐份打开；缺少的是统一的资料库视图。
+17. 一个发行人页面串联两条或以上数据流：目前只有单一数据流视图；缺少的是带有可见更正脉络的合并页面。
+18. 由经审议证据支持的资本结构表视图：目前没有；缺少的是经审议的证据记录本身。
+
+**Family C --- 逐行说明（ZH）：**
+19. 已申报的持有人如何与公司完整资本结构相连：目前有透过公开申报得知的持股人身份；缺少的是连接这一步。
+20. 一家公司完整的持股到估值链路：目前有同样的公开持股视图；缺少的是把它转化为估值判读的桥梁。
+
 
 This copy is prescriptive text for a future surface. This packet ships no surface, so no page, nav entry or theme treatment is created here; the consuming packet owes the dark and light art directions and the EN/ZH x 1440/390 evidence matrix.
 
