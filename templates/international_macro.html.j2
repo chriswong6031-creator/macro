@@ -147,7 +147,7 @@ button.imd-face:focus-visible,.imd-close:focus-visible{outline:2px solid var(--l
 .imd-dos-word{font:700 22px/1.1 var(--imd-num);letter-spacing:-.03em;color:var(--dos-ink,var(--dos))}
 .imd-dos-chips{display:flex;gap:6px;flex-wrap:wrap}
 .imd-dos-mean{margin:8px 0 0;font-size:12px;color:var(--text)}
-.imd-dos-seats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}
+.imd-dos-seats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
 .imd-dos-seat{padding:16px}
 .imd-dos-plate{padding-bottom:8px;border-bottom:1px solid var(--imd-hair);font:600 9.5px/1.5 var(--imd-num);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .imd-dos-plate b{display:block;color:var(--text);font-weight:700}
@@ -469,8 +469,8 @@ body.imd-lock{overflow:hidden}
       <div class="imd-dos-stance-top">
         <div class="imd-dos-word">{{ t(STANCE_EN[dos.stance.key], STANCE_ZH[dos.stance.key]) }}</div>
         <div class="imd-dos-chips">
-          <span class="imd-chip fresh">{{ t('Confirmed','确认于') }} {{ dos.stance.known_at_human_en }}</span>
-          {% if dos.state == 'stale' %}<span class="imd-chip stale">{{ t('Last checked ' ~ dos.reviewed_at_human_en ~ ' — older than our 180-day review, so read it as background.','最近核对于 ' ~ dos.reviewed_at_human_zh ~ ' — 已超过我们的180天复核周期，请仅作背景参考。') }}</span>{% endif %}
+          <span class="imd-chip fresh">{{ t('Confirmed ' ~ dos.stance.known_at_human_en, '确认于 ' ~ dos.stance.known_at_human_zh) }}</span>
+          {% if dos.state == 'stale' %}<span class="imd-chip stale">{{ t('Last checked ' ~ dos.reviewed_at_human_en ~ ' — older than our ' ~ dos.review_interval_days ~ '-day review, so read it as background.','最近核对于 ' ~ dos.reviewed_at_human_zh ~ ' — 已超过我们的' ~ dos.review_interval_days ~ '天复核周期，请仅作背景参考。') }}</span>{% endif %}
           <span class="imd-chip">{{ t('Watch — don’t chase','观察，不追涨') }}</span>
         </div>
       </div>
@@ -499,7 +499,7 @@ body.imd-lock{overflow:hidden}
         <div class="imd-dos-holder na">{{ t("We can't republish this seat's detail — read it at the publisher.",'我们无权转载该职位的细节 — 请前往发布方查看。') }}</div>
         {% else %}
         <div class="imd-dos-holder">{{ t(seat.holder.en, seat.holder.zh) }}</div>
-        <div class="imd-dos-since">{% if seat.since_human_en %}{{ t('Since','任职自') }} {{ seat.since_human_en }}{% else %}{{ t('Start date not published','未公布任职起始日期') }}{% endif %}</div>
+        <div class="imd-dos-since">{% if seat.since_human_en %}{{ t('Since ' ~ seat.since_human_en, '任职自 ' ~ seat.since_human_zh) }}{% else %}{{ t('Start date not published','未公布任职起始日期') }}{% endif %}</div>
         <p class="imd-dos-note">{{ t(seat.note.en, seat.note.zh) }}</p>
         {% endif %}
         <details class="imd-dos-src">
@@ -508,7 +508,7 @@ body.imd-lock{overflow:hidden}
             <dt>{{ t('Publisher','发布方') }}</dt><dd><a href="{{ seat.evidence.source_url }}" target="_blank" rel="noopener">{{ t(seat.evidence.publisher.en, seat.evidence.publisher.zh) }}</a></dd>
             {% if seat.evidence.document %}<dt>{{ t('Document','文件') }}</dt><dd>{{ t(seat.evidence.document.en, seat.evidence.document.zh) }}</dd>{% endif %}
             {% if seat.evidence.version %}<dt>{{ t('Version','版本') }}</dt><dd>{{ seat.evidence.version }}</dd>{% endif %}
-            <dt>{{ t('Confirmed','确认于') }}</dt><dd>{{ seat.known_at_human_en }}</dd>
+            <dt>{{ t('Confirmed','确认于') }}</dt><dd>{{ t(seat.known_at_human_en, seat.known_at_human_zh) }}</dd>
             <dt>{{ t('Basis','依据') }}</dt><dd>{% if seat.claim == 'FACT' %}{{ t('Stated in the document','文件明确载明') }}{% else %}{{ t('Our reading of the document','我们对文件的解读') }}{% endif %}</dd>
           </dl>
         </details>

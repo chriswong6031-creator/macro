@@ -232,8 +232,12 @@ def test_malformed_schema_fails_closed(tmp_path: Path) -> None:
 
     view = build_country_view(_jp_record(), today=TODAY)
     view["dossier"] = bad
-    with pytest.raises(ValueError, match="country dossier failed its contract"):
-        validate_view(view)
+    # A context-only dossier (never feeds a score/regime/rank/trade call) must not
+    # hard-fail the country build on a curator typo — it degrades to a typed null
+    # with the original reason preserved instead of raising.
+    validate_view(view)
+    assert view["dossier"]["state"] == "no_coverage"
+    assert view["dossier"]["reason"] == bad["reason"]
 
 
 def test_stale_is_a_state_not_an_error(tmp_path: Path) -> None:

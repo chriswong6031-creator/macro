@@ -407,15 +407,20 @@ def test_view_carries_a_dossier_block() -> None:
     validate_view(view)
 
 
-def test_validate_view_rejects_an_invalid_dossier() -> None:
+def test_validate_view_degrades_an_invalid_dossier_to_no_coverage() -> None:
+    # A context-only dossier (never feeds a score/regime/rank/trade call) must not
+    # be able to hard-fail the whole country build on a curator typo — it degrades
+    # to a typed null with the reason preserved, per country_dossier.py's own
+    # "Never raises into the build" contract.
     import copy
 
     view = build_country_view(_record("JP"), today=date(2026, 9, 6))
     broken = copy.deepcopy(view)
     broken["dossier"]["state"] = "invalid"
     broken["dossier"]["reason"] = "test"
-    with pytest.raises(ValueError, match="country dossier failed its contract"):
-        validate_view(broken)
+    validate_view(broken)  # must not raise
+    assert broken["dossier"]["state"] == "no_coverage"
+    assert broken["dossier"]["reason"] == "test"
 
 
 def test_a_country_without_a_dossier_still_renders() -> None:
@@ -444,4 +449,20 @@ def test_dossier_copy_has_no_banned_vocabulary(tmp_path, monkeypatch) -> None:
     )[0]
     for m in re.finditer(r'title="([^"]*)"', section):
         assert all(ord(ch) < 128 for ch in m.group(1)), m.group(0)
+    # EN/ZH parity: every rendered date must carry a Chinese-form counterpart
+    # inside its own l-zh span, never a bare "31 Jul 2026" left over from the
+    # producer's *_human_en field.
+    zh_spans = re.findall(r'<span class="l-zh">(.*?)</span>', section, re.S)
+    assert zh_spans, "expected at least one l-zh span in the dossier section"
+    assert any("年" in zh for zh in zh_spans), (
+        "expected a Chinese-form date (containing 年) inside an l-zh span"
+    )
+    en_month_names = (
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    )
+    for zh in zh_spans:
+        assert not any(mon in zh for mon in en_month_names), (
+            f"EN-formatted date leaked into a ZH span: {zh!r}"
+        )
 

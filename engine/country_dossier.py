@@ -21,7 +21,6 @@ STANCE_KEYS = ("tightening_bias", "easing_bias", "on_hold", "mixed", "not_stated
 SEAT_KEYS = ("head_of_government", "central_bank", "finance", "legislature")
 CLAIMS = ("FACT", "INFERENCE")
 MAX_SEATS = 4
-STALE_AFTER_DAYS = 180
 DOSSIER_DIRNAME = ("knowledge", "policy_geo", "country_dossier")
 
 _MONTH_EN = (
@@ -94,6 +93,7 @@ def _empty_block(cc_up: str) -> dict[str, Any]:
         "reviewed_at_human_en": None,
         "reviewed_at_human_zh": None,
         "age_days": None,
+        "review_interval_days": None,
         "stance": None,
         "seats": [],
         "reason": None,
@@ -199,6 +199,7 @@ def _validate_and_build(
         "reviewed_at_human_en": _human_en(reviewed_at),
         "reviewed_at_human_zh": _human_zh(reviewed_at),
         "age_days": age_days,
+        "review_interval_days": interval,
         "stance": stance,
         "seats": seats,
         "reason": "stale" if state == "stale" else None,

@@ -1143,7 +1143,16 @@ def validate_view(view: dict[str, Any]) -> None:
     if not isinstance(dossier, dict) or dossier.get("schema") != "country_dossier.v1":
         raise ValueError("country dossier block missing or wrong schema")
     if dossier.get("state") == "invalid":
-        raise ValueError(f"country dossier failed its contract: {dossier.get('reason')}")
+        # A context-only dossier must never fail the whole country build (its own
+        # module docstring promises "Never raises into the build" — a curator typo
+        # is not a liveness incident). Degrade to a typed null and warn instead.
+        reason = dossier.get("reason")
+        print(
+            f"::warning title=country-dossier-invalid::{view.get('cc')} {reason}",
+            flush=True,
+        )
+        dossier["state"] = "no_coverage"
+        dossier["reason"] = reason
     if dossier.get("state") not in {"ok", "no_coverage", "stale", "rights_suppressed"}:
         raise ValueError("unknown country dossier state")
 
