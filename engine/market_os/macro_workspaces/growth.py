@@ -66,6 +66,7 @@ owner input always yields an identical snapshot body.
 """
 from __future__ import annotations
 
+from datetime import date
 from hashlib import sha256
 from typing import Any, Mapping
 
@@ -291,6 +292,21 @@ def _axis(axis_id, label_en, label_zh, direction, value, value_status, null_reas
 # --------------------------------------------------------------------------- #
 # the composer
 # --------------------------------------------------------------------------- #
+def _tier_reference_period(tier: Mapping[str, Any]) -> str | None:
+    """Preserve an owner's period, never borrow the global leading-tier clock.
+
+    A month-end label can be later than the calculation day; it identifies a
+    monthly bucket, not a future observation or release timestamp.
+    """
+    period = _get(tier, "asof")
+    if not isinstance(period, str) or len(period) != 10:
+        return None
+    try:
+        return period if date.fromisoformat(period).isoformat() == period else None
+    except ValueError:
+        return None
+
+
 def compose(regime_latest: Mapping[str, Any], *, built_at: str,
             prior_snapshot: Mapping[str, Any] | None = None,
             code_version: str | None = None) -> dict:
@@ -304,11 +320,12 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
     labor_nowcast = _get(cond, "labor_nowcast") or {}
     bc = _get(r, "business_cycle") or {}
     bc_available = bc.get("available") if isinstance(bc, Mapping) else None
-    bc_asof = _get(bc, "asof") or asof
     tiers = _get(bc, "tiers") or {}
     leading = _get(tiers, "leading") or {}
     coincident = _get(tiers, "coincident") or {}
     lagging = _get(tiers, "lagging") or {}
+    tier_periods = {name: _tier_reference_period(tier) for name, tier in
+                    (("leading", leading), ("coincident", coincident), ("lagging", lagging))}
     calibration = _get(bc, "calibration_resolution") or {}
     bc_calibration_version = calibration.get("calibration_version") if isinstance(calibration, Mapping) else None
     artifact_freshness = _get(r, "freshness") or {}
@@ -415,8 +432,8 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
     src_asof = {
         "gdpnow_growth": asof,
         "wei_growth": asof,
-        "leading_diffusion": bc_asof,
-        "coincident_diffusion": bc_asof,
+        "leading_diffusion": tier_periods["leading"],
+        "coincident_diffusion": tier_periods["coincident"],
     }
     required_avail = _required_availability(by_id, required_ids, labels, src_asof)
     worst = _worst_freshness([c["freshness"] for c in required_avail])
@@ -512,7 +529,7 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
             gdpnow_raw, wei_raw, leading_mom6_raw, coincident_mom6_raw,
             leading_diffusion_raw, coincident_diffusion_raw, coincident_index_raw,
             growth_score_raw, leading, lagging, recession, labor_nowcast,
-            asof, bc_asof, bc_available, artifact_stale,
+            asof, tier_periods, bc_available, artifact_stale,
         )},
         "series": {
             "items": [],
@@ -526,7 +543,7 @@ def compose(regime_latest: Mapping[str, Any], *, built_at: str,
         )},
         "scenario_contract": _scenario_contract(),
         "alert_contract": _alert_contract(),
-        "sources": {"items": _sources(asof, bc_asof, artifact_stale)},
+        "sources": {"items": _sources(asof, tier_periods, artifact_stale)},
         "corrections": _corrections(x_components, y_components, asof, prior_snapshot),
         "learning": {
             "instrumentation": "first_party",
@@ -793,7 +810,7 @@ def _metrics(x_value, x_status, x_null, x_components, y_value, y_status, y_null,
              gdpnow_raw, wei_raw, leading_mom6_raw, coincident_mom6_raw,
              leading_diffusion_raw, coincident_diffusion_raw, coincident_index_raw,
              growth_score_raw, leading, lagging, recession, labor_nowcast,
-             asof, bc_asof, bc_available, artifact_stale) -> list[dict]:
+             asof, tier_periods, bc_available, artifact_stale) -> list[dict]:
     x_fresh = _worst_freshness([c["freshness"] for c in x_components]) if x_components else "SOURCE_FAILED"
     y_fresh = _worst_freshness([c["freshness"] for c in y_components]) if y_components else "SOURCE_FAILED"
     by_x = {c["component_id"]: c for c in x_components}
@@ -869,35 +886,35 @@ def _metrics(x_value, x_status, x_null, x_components, y_value, y_status, y_null,
                 "engine.conditions.growth_nowcast", "conditions.growth_nowcast.wei", asof,
                 (by_x.get("wei_growth") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("leading_tier_momentum", leading_mom6_raw, "number", "index_pts_mom6", "six_month_momentum",
-                "higher_accelerating", "engine.business_cycle", "business_cycle.tiers.leading.mom6", bc_asof,
+                "higher_accelerating", "engine.business_cycle", "business_cycle.tiers.leading.mom6", tier_periods["leading"],
                 (by_x.get("leading_tier_momentum") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("coincident_tier_momentum", coincident_mom6_raw, "number", "index_pts_mom6", "six_month_momentum",
-                "higher_accelerating", "engine.business_cycle", "business_cycle.tiers.coincident.mom6", bc_asof,
+                "higher_accelerating", "engine.business_cycle", "business_cycle.tiers.coincident.mom6", tier_periods["coincident"],
                 (by_x.get("coincident_tier_momentum") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("leading_diffusion", leading_diffusion_raw, "percent", "pct_legs_positive", "level",
-                "higher_broader", "engine.business_cycle", "business_cycle.tiers.leading.diffusion", bc_asof,
+                "higher_broader", "engine.business_cycle", "business_cycle.tiers.leading.diffusion", tier_periods["leading"],
                 (by_y.get("leading_diffusion") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("coincident_diffusion", coincident_diffusion_raw, "percent", "pct_legs_positive", "level",
-                "higher_broader", "engine.business_cycle", "business_cycle.tiers.coincident.diffusion", bc_asof,
+                "higher_broader", "engine.business_cycle", "business_cycle.tiers.coincident.diffusion", tier_periods["coincident"],
                 (by_y.get("coincident_diffusion") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("coincident_index_level", coincident_index_raw, "index", "index_0_100", "level",
-                "higher_stronger", "engine.business_cycle", "business_cycle.tiers.coincident.index", bc_asof,
+                "higher_stronger", "engine.business_cycle", "business_cycle.tiers.coincident.index", tier_periods["coincident"],
                 (by_y.get("coincident_index_level") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("growth_axis_score", growth_score_raw, "z_score", "z", "level", "higher_stronger",
                 "engine.axes", "growth_score", asof,
                 (by_y.get("growth_axis_score") or {}).get("freshness", "SOURCE_FAILED")),
         _metric("leading_tier_index", leading_index_raw, "index", "index_0_100", "level", "higher_stronger",
-                "engine.business_cycle", "business_cycle.tiers.leading.index", bc_asof, leading_index_fresh,
+                "engine.business_cycle", "business_cycle.tiers.leading.index", tier_periods["leading"], leading_index_fresh,
                 transformation="context-only (leading tier), not part of the growth_momentum/growth_level_breadth composite"),
         _metric("lagging_tier_index", lagging_index_raw, "index", "index_0_100", "level", "higher_stronger",
-                "engine.business_cycle", "business_cycle.tiers.lagging.index", bc_asof, lagging_index_fresh,
+                "engine.business_cycle", "business_cycle.tiers.lagging.index", tier_periods["lagging"], lagging_index_fresh,
                 transformation="confirmation-only (lagging tier), intentionally excluded from the headline composite"),
         _metric("lagging_tier_diffusion", lagging_diffusion_raw, "percent", "pct_legs_positive", "level",
-                "higher_broader", "engine.business_cycle", "business_cycle.tiers.lagging.diffusion", bc_asof,
+                "higher_broader", "engine.business_cycle", "business_cycle.tiers.lagging.diffusion", tier_periods["lagging"],
                 lagging_diffusion_fresh,
                 transformation="confirmation-only (lagging tier), intentionally excluded from the headline composite"),
         _metric("lagging_tier_momentum", lagging_mom6_raw, "number", "index_pts_mom6", "six_month_momentum",
-                "higher_accelerating", "engine.business_cycle", "business_cycle.tiers.lagging.mom6", bc_asof,
+                "higher_accelerating", "engine.business_cycle", "business_cycle.tiers.lagging.mom6", tier_periods["lagging"],
                 lagging_momentum_fresh,
                 transformation="confirmation-only (lagging tier), intentionally excluded from the headline composite"),
         _metric("recession_risk_score", recession_score_raw, "ratio", "probability_0_1", "level",
@@ -911,6 +928,13 @@ def _metrics(x_value, x_status, x_null, x_components, y_value, y_status, y_null,
                 real_income_proxy_fresh,
                 transformation="high-frequency PROXY (withheld tax receipts YoY), NOT BEA real personal income; disclosed as a proxy, not a canonical income series"),
     ]
+    # Tier asof values are reference buckets, not observation timestamps.
+    # Keep known calculation time separate without inventing missing release
+    # or availability times. The numeric method and hysteresis are unchanged.
+    for item in items:
+        if item["definition_id"].startswith("business_cycle.tiers."):
+            item["observed_at"] = None
+            item["calculation_as_of"] = asof
     return items
 
 
@@ -1071,7 +1095,7 @@ def _alert_contract() -> dict:
     }
 
 
-def _sources(asof, bc_asof, artifact_stale: bool) -> list[dict]:
+def _sources(asof, tier_periods, artifact_stale: bool) -> list[dict]:
     def _src(source_id, en, zh, owner_ref, provider, ref_period):
         fresh = "STALE_SOURCE" if artifact_stale else "CURRENT"
         return {
@@ -1100,15 +1124,15 @@ def _sources(asof, bc_asof, artifact_stale: bool) -> list[dict]:
         _src("business_cycle_leading",
              "Leading tier composite (claims/permits/new orders/S&P 500/HY OAS/yield curve/consumer sentiment)",
              "领先层综合指数（初次申请/开工许可/新订单/标普500/高收益利差/收益率曲线/消费者信心）",
-             "engine.business_cycle", "Mastermind engine.business_cycle (multi-source; see calibration config)", bc_asof),
+             "engine.business_cycle", "Mastermind engine.business_cycle (multi-source; see calibration config)", tier_periods["leading"]),
         _src("business_cycle_coincident",
              "Coincident tier composite (nonfarm payrolls/real income/mfg-trade sales/industrial production)",
              "同步层综合指数（非农就业/实际收入/制造贸易销售/工业生产）",
-             "engine.business_cycle", "Mastermind engine.business_cycle (multi-source; see calibration config)", bc_asof),
+             "engine.business_cycle", "Mastermind engine.business_cycle (multi-source; see calibration config)", tier_periods["coincident"]),
         _src("business_cycle_lagging",
              "Lagging tier composite (avg unemployment duration/inventory-sales ratio/business loans/prime rate/shelter CPI)",
              "滞后层综合指数（平均失业时长/库存销售比/工商贷款/最优惠利率/住房CPI）",
-             "engine.business_cycle", "Mastermind engine.business_cycle (multi-source; see calibration config)", bc_asof),
+             "engine.business_cycle", "Mastermind engine.business_cycle (multi-source; see calibration config)", tier_periods["lagging"]),
         _src("growth_axis", "Growth axis composite", "增长轴综合评分",
              "engine.axes", "Mastermind engine.axes (internal composite over hard + survey inputs)", asof),
         _src("recession_context", "Recession-risk context (NY Fed probability, Sahm rule, EBP, yield curve)",

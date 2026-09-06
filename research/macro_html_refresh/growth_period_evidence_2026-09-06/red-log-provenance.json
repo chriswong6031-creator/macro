@@ -1,0 +1,6 @@
+{
+  "original_sha256": "23f0736b31d597ff73f09ffafbdbc9ce8927fa717ddfef0bbea14d8a5cf34bcb",
+  "normalized_sha256": "24b075e2529ea7d7cd06f1b61f18038a6531935db4bcd1c50a18be6e9c10c138",
+  "raw_preserved_in": "red-raw.log.gz",
+  "normalization": "Trailing whitespace removed only for a diff-clean text preview. Compressed raw bytes are unchanged."
+}

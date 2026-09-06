@@ -1,0 +1,16 @@
+CANONICAL_JOB: market-os-macro-workspaces
+COMMAND: python -m pytest tests/test_macro_workspace_build.py tests/test_macro_workspace_business_activity.py tests/test_macro_workspace_capital_structure.py tests/test_macro_workspace_consumer.py tests/test_macro_workspace_consumer_payments.py tests/test_macro_workspace_contract.py tests/test_macro_workspace_financial_conditions.py tests/test_macro_workspace_growth.py tests/test_macro_workspace_housing.py tests/test_macro_workspace_inflation.py tests/test_macro_workspace_labor.py tests/test_macro_workspace_liquidity_central_banks.py tests/test_macro_workspace_liquidity_regime.py tests/test_macro_workspace_monetary_policy.py tests/test_macro_workspace_national_debt.py tests/test_macro_workspace_rates_curves.py tests/test_macro_workspace_trade_flows.py -q
+........................................................................ [  7%]
+................s....................................................... [ 15%]
+........................................................................ [ 23%]
+........................................................................ [ 30%]
+........................................................................ [ 38%]
+.............................................................s.......... [ 46%]
+........................................................................ [ 53%]
+.s......................................................s............... [ 61%]
+........................................................................ [ 69%]
+....................s................................................... [ 77%]
+........................................................................ [ 84%]
+........................................................................ [ 92%]
+......................................................................   [100%]
+929 passed, 5 skipped in 11.74s
