@@ -151,7 +151,7 @@ EDGE_ENUMS: dict[str, set[str]] = {
     "source_class": {"curated", "scrape", "filing", "co_movement",
                      "llm_proposed_ratified"},
     "date_provenance": {"curated_changelog", "seed_constant", "raw_snapshot",
-                        "crosswalk"},
+                        "crosswalk", "membership_pit"},
     "economic_share_display": {"none", "weak", "core"},
     "trading_beta_display": {"none", "weak", "core"},
     "attention_share_display": {"none", "weak", "core"},

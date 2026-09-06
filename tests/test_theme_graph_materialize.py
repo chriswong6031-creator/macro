@@ -184,7 +184,13 @@ def _edge(view, edge_type, src, dst):
 
 
 def test_ths_owner_history_keeps_first_observed_boundary_and_reappearance():
-    """D2C: owner snapshots, never today's membership, define THS PIT intervals."""
+    """D2C: owner snapshots, never today's membership, define THS PIT intervals.
+
+    Dump-shaped rows are REFUSED by default — their concept→basket resolution used
+    the current map, so admitting them would backdate a mapping we do not historically
+    possess. The filter lives inside ``ths_membership_intervals`` so every caller
+    inherits it.
+    """
     history = pd.DataFrame([
         {"snapshot_date": "2026-06-30", "basket_id": "thsc900001",
          "ticker": "600001.SS", "source_shape": "ths_concept_dump"},
@@ -200,11 +206,14 @@ def test_ths_owner_history_keeps_first_observed_boundary_and_reappearance():
 
     assert [(iv.basket_id, iv.ticker, iv.valid_from, iv.valid_to,
              iv.source_shape) for iv in intervals] == [
-        ("thsc900001", "600001.SS", "2026-06-30", "2026-07-08",
-         "ths_concept_dump"),
         ("thsc900001", "600002.SS", "2026-07-08", None, "membership"),
         ("thsc900001", "600001.SS", "2026-07-15", None, "membership"),
-    ]
+    ], "ths_concept_dump rows must be refused by the default shape filter"
+
+    # Explicit opt-in still admits dump rows for intentional exercises.
+    with_dumps = local_sources.ths_membership_intervals(
+        history, shapes=frozenset({"membership", "ths_concept_dump"}))
+    assert any(iv.source_shape == "ths_concept_dump" for iv in with_dumps)
 
 
 def test_ths_owner_history_staggered_multi_basket_collection_never_fabricates_exits():
@@ -263,7 +272,33 @@ def test_ths_graph_declines_current_membership_when_owner_history_is_absent(tree
     view = _build(tree, ths_history=pd.DataFrame())
     assert not [edge for edge in _by_type(view, "MEMBER_OF")
                 if edge["dst"].startswith("basket:baskets_china_ths:")]
-    assert view.per_suite["baskets_china_ths"]["member_edges"] == 0
+    report = view.per_suite["baskets_china_ths"]
+    assert report["member_edges"] == 0
+    # m1: degraded path still emits the full key set consumers inspect.
+    for key in ("closed_member_edges", "skipped_unidentifiable", "tracks_edges",
+                "membership_published_at", "seed_constant", "unlabelled_nodes", "note"):
+        assert key in report
+    assert report["closed_member_edges"] == 0
+    assert report["tracks_edges"] == 0
+    assert report["membership_published_at"] == THS_DOC_DATE
+    assert report["seed_constant"] == CN_SEED
+    assert report["note"]
+
+
+def test_ths_per_suite_keeps_coverage_disclosure_fields(tree):
+    """M1: membership_published_at / seed_constant / tracks_edges stay cited."""
+    view = _build(tree)
+    report = view.per_suite["baskets_china_ths"]
+    assert report["membership_published_at"] == THS_DOC_DATE
+    assert report["seed_constant"] == CN_SEED
+    assert report["tracks_edges"] == 0
+    assert "closed_member_edges" in report
+    assert "skipped_unidentifiable" in report
+    assert "unlabelled_nodes" in report
+    assert report["note"] is None
+    ths_member = _edge(view, "MEMBER_OF", "co:cn:600001.SS",
+                       f"basket:baskets_china_ths:thsc{KNOWN_CODE}")
+    assert ths_member["date_provenance"] == "membership_pit"
 
 
 def test_ths_canonical_join_declines_a_mapping_receipted_after_the_crosswalk(tree):
@@ -637,3 +672,69 @@ def test_the_reserved_exposure_axes_are_declared_null(tree):
     for e in view.edges:
         for f in store.RESERVED_EDGE_FIELDS:
             assert e[f] is None
+
+
+def test_ths_membership_doc_generation_closes_when_pit_edges_arrive(tree):
+    """B1: a stored membership_doc.v1 THS MEMBER_OF generation must close on cutover.
+
+    The PIT re-key mints disjoint edge_ids; without an explicit close of the prior
+    generation, ``changed_edges`` leaves both open. Assert no company/basket pair ends
+    with two open MEMBER_OF edges, and that orphans absent from the PIT also close.
+    """
+    root, _xwalk = tree
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+
+    def _doc_edge(src: str) -> dict:
+        row = {
+            "edge_id": f"member_of:{src}->{basket}@{CN_SEED}",
+            "type": "MEMBER_OF", "src": src, "dst": basket,
+            "valid_from": CN_SEED, "valid_to": None,
+            "evidence_time": THS_DOC_DATE, "belief_time": "2026-06-01",
+            "era": "reconstruction", "source_class": "scrape",
+            "date_provenance": "seed_constant",
+            "evidence_refs": ["ev:deadbeefdeadbeef"],
+            "confidence_basis": "membership_doc.v1",
+            "computed_at": "2026-06-01T00:00:00Z",
+            "engine_version": store.ENGINE_VERSION,
+        }
+        for field in store.RESERVED_EDGE_FIELDS:
+            row[field] = None
+        return row
+
+    prior = [_doc_edge("co:cn:600001.SS"), _doc_edge("co:cn:600099.SS")]
+    store.write_edges(prior, lane="nightly")
+
+    view = _build(tree, era="observed", belief_time="2026-08-12")
+    history = pd.read_parquet(root / "baskets_china_ths" / "membership_history.parquet")
+    pit_birth = materialize.ths_membership_pit_birth(history)
+    assert pit_birth == THS_DOC_DATE
+
+    closings = materialize.supersede_ths_membership_doc_edges(
+        store.read_edges(), valid_to=pit_birth, belief_time="2026-08-12",
+        era="observed", computed_at="2026-08-12T00:00:00Z")
+    assert {c["edge_id"] for c in closings} == {e["edge_id"] for e in prior}
+    assert all(c["valid_to"] == pit_birth for c in closings)
+
+    computed = list(view.edges) + closings
+    delta = materialize.changed_edges(computed, store.read_edges())
+    store.write_edges(delta, lane="nightly")
+
+    latest = store.read_edges()
+    ths = latest[
+        (latest["type"] == "MEMBER_OF")
+        & latest["dst"].astype(str).str.startswith("basket:baskets_china_ths:")
+    ]
+    open_ths = ths[ths["valid_to"].isna()]
+    assert not open_ths.duplicated(subset=["src", "dst"]).any(), (
+        "no company/basket pair may carry two open MEMBER_OF edges after cutover")
+    for eid in (e["edge_id"] for e in prior):
+        row = latest[latest["edge_id"] == eid].iloc[0]
+        assert row["valid_to"] == pit_birth
+    pit_open = open_ths[open_ths["confidence_basis"] == "membership_pit.ths.v1"]
+    assert set(pit_open["src"]) == {"co:cn:600001.SS", "co:cn:600002.SS"}
+    # Generation cutover is a named full-family close — shrink wall must waive it.
+    assert materialize.source_shrink_refusals(
+        delta, pd.DataFrame(prior), allow={materialize.THS_FAMILY}) == []
+    # Without the waiver the wall refuses (sanity that we are not greening vacuously).
+    refusals = materialize.source_shrink_refusals(closings, pd.DataFrame(prior), allow=())
+    assert refusals and materialize.THS_FAMILY in refusals[0]

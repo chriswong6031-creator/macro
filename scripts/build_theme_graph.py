@@ -114,17 +114,36 @@ def run(*, backfill: bool, force_backfill: bool,
                   "--force-backfill only if that is genuinely what you want.", len(stored))
         return 1
 
+    ths_history = basket_membership_pit.read_history(basket_membership_pit.SUITE_THS)
     view = materialize.build(era=era, raw_snapshot=_newest_raw_snapshot(),
-                             ths_history=basket_membership_pit.read_history(
-                                 basket_membership_pit.SUITE_THS),
+                             ths_history=ths_history,
                              retired_node_ids=_retired_node_ids())
-    edges = view.edges if backfill else materialize.changed_edges(view.edges, stored)
+    # B1: close the superseded membership_doc.v1 THS MEMBER_OF generation so the
+    # PIT re-key cannot leave both generations live. Closings reuse the stored
+    # edge_id with valid_to = PIT birth and land through changed_edges.
+    belief_time = materialize.utc_today()
+    pit_birth = materialize.ths_membership_pit_birth(ths_history)
+    closings: list[dict] = []
+    if pit_birth and not stored.empty:
+        closings = materialize.supersede_ths_membership_doc_edges(
+            stored, valid_to=pit_birth, belief_time=belief_time, era=era,
+            computed_at=view.edges[0]["computed_at"] if view.edges else materialize.utc_now_stamp())
+        if closings:
+            log.info("THS membership_doc→pit cutover: closing %d open membership_doc.v1 "
+                     "MEMBER_OF edges at valid_to=%s (PIT birth)", len(closings), pit_birth)
+    computed = list(view.edges) + closings
+    edges = computed if backfill else materialize.changed_edges(computed, stored)
 
     # SECOND WALL (§2). The refresh contract's interlocks guard the path a refresh takes;
     # this one guards the path every WRITE takes, so a hand-edited or truncated input
     # that never went through a refresh still cannot mass-close a source family. Refusing
     # here is cheap; un-closing 2,000 permanent rows in an append-only store is not.
-    refusals = materialize.source_shrink_refusals(edges, stored, allow=allow_source_shrink)
+    # The membership_doc→pit generation cutover IS a deliberate full-family close of the
+    # superseded edge_ids — auto-waive ths_concepts for that named act only.
+    allow = set(allow_source_shrink)
+    if closings:
+        allow.add(materialize.THS_FAMILY)
+    refusals = materialize.source_shrink_refusals(edges, stored, allow=allow)
     if refusals:
         for r in refusals:
             log.error("theme graph shrink wall: %s", r)

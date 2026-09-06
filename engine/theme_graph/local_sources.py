@@ -340,24 +340,36 @@ def membership_intervals(ladder: Ladder) -> list[Interval]:
     return out
 
 
-def ths_membership_intervals(history) -> list[THSInterval]:
+def ths_membership_intervals(
+    history,
+    *,
+    shapes: frozenset[str] = frozenset({"membership"}),
+) -> list[THSInterval]:
     """Turn the canonical THS owner history into observed membership intervals.
 
     ``history`` is intentionally duck-typed: the graph remains a pure consumer of
     the owner parquet and never inherits its writer or append semantics.  A member
     opens only at the first snapshot that contains it; the first later snapshot
     where it is absent closes the interval; a reappearance opens a new interval.
+
+    ``shapes`` defaults to ``{"membership"}`` only: ``ths_concept_dump`` rows used
+    the current concept map for basket resolution, so admitting them would backdate
+    a mapping we do not historically possess. Pass an explicit broader set only in
+    tests that intentionally exercise dump-row behaviour.
     """
     rows = history.to_dict("records") if hasattr(history, "to_dict") else list(history)
+    allowed = frozenset(shapes)
     snapshots: dict[str, dict[tuple[str, str], str]] = {}
     for row in rows:
+        shape = str(row.get("source_shape") or "").strip() or "unknown"
+        if shape not in allowed:
+            continue
         date = str(row.get("snapshot_date") or "").strip()
         basket = str(row.get("basket_id") or "").strip()
         ticker = str(row.get("ticker") or "").strip()
         if not date or not basket or not ticker:
             continue
-        snapshots.setdefault(date, {}).setdefault(
-            (basket, ticker), str(row.get("source_shape") or "unknown"))
+        snapshots.setdefault(date, {}).setdefault((basket, ticker), shape)
     pairs = sorted({pair for entries in snapshots.values() for pair in entries})
     # The presence axis MUST be the dates on which THAT basket was actually
     # collected, never the global set of snapshot dates. A multi-basket THS
@@ -365,11 +377,11 @@ def ths_membership_intervals(history) -> list[THSInterval]:
     # was observed but basket B was not must read as a GAP for B, never as
     # an absence that closes/reopens B's interval (see local_sources tests
     # for a staggered-collection regression).
-    basket_dates: dict[str, list[str]] = {}
+    basket_date_sets: dict[str, set[str]] = {}
     for date, entries in snapshots.items():
         for basket, _ticker in entries:
-            basket_dates.setdefault(basket, set()).add(date)  # type: ignore[union-attr]
-    basket_dates = {basket: sorted(dates) for basket, dates in basket_dates.items()}
+            basket_date_sets.setdefault(basket, set()).add(date)
+    basket_dates = {basket: sorted(dates) for basket, dates in basket_date_sets.items()}
     out: list[THSInterval] = []
     for basket, ticker in pairs:
         dates = basket_dates.get(basket, [])
