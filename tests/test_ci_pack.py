@@ -341,6 +341,39 @@ def test_selection_fails_safe_toward_running_everything() -> None:
         assert job in hit, f"{job.job_id} must run when {probe} changes"
 
 
+def test_zhc509_canada_build_suite_has_a_code_gate_owner() -> None:
+    """The Canada build/render contract must be owned by a PR-time (code-gate) job.
+
+    ZHC-509: `tests/test_canada_build.py` was named by exactly one manifest job,
+    `engine-render-guards`, which is `gate: data` and therefore lives outside the
+    pull-request merge gate entirely. The semantic plan reported the path UNOWNED
+    ("1 unowned path(s) did not widen"), so a candidate editing
+    `templates/canada.html.j2` could conclude all-green while that suite never
+    executed once. `contract-delta` passing proves only that the suite is NAMED
+    somewhere in the repository — never that this candidate runs it.
+
+    Main-heartbeat / nightly revalidation is a COMPLEMENTARY proof path, not
+    PR-time ownership, so this pins the code-gate owner directly.
+    """
+    code_jobs, summary = PACK.infer_job_scopes(
+        PACK.load_legacy_jobs(MANIFEST, gate="code")
+    )
+    owner = "unrun-template-chips"
+    assert any(job.job_id == owner for job in code_jobs), (
+        f"{owner} must exist as a code-gate job; {summary}"
+    )
+
+    for probe in ("tests/test_canada_build.py", "templates/canada.html.j2"):
+        selected, reason = PACK.select_jobs(code_jobs, [probe])
+        assert "did not widen" not in reason, (
+            f"{probe} is UNOWNED in the PR code gate — the exact ZHC-509 defect: {reason}"
+        )
+        assert any(job.job_id == owner for job in selected), (
+            f"{probe} must select {owner}; "
+            f"got {sorted(j.job_id for j in selected)[:12]} :: {reason}"
+        )
+
+
 def test_declared_scope_must_cover_paths_the_job_itself_reads() -> None:
     """A scope narrower than the job's own commands is a hard manifest error.
 

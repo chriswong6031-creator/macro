@@ -256,6 +256,124 @@ _CA_TABLE_COLS = [
 ]
 
 
+def _w8g_payload() -> tuple[dict, list[dict], str]:
+    """Render the real stocks-mode payload once for ZHC-509 contract assertions."""
+    import json
+    import re
+
+    vm = _w8g_vm()
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    match = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    assert match, "Canada stocktable-data block missing"
+    return vm, json.loads(match.group(1))["rows"], html
+
+
+def test_zhc509_ca_entry_status_serializes_owner_native_labels():
+    """Machine status survives unchanged beside the exact owner-native display pair."""
+    vm, serialized_rows, _html = _w8g_payload()
+    expected = {row["ticker"]: row["entry_signal"] for row in vm["setups"]["buy"]}
+
+    assert [row["ticker"] for row in serialized_rows] == list(expected)
+    for row in serialized_rows:
+        owner = expected[row["ticker"]]
+        assert row["entry_status"] == owner["status"]
+        assert row["entry_status_label"] == owner["headline"]
+        assert row["entry_status_label_zh"] == owner["headline_zh"]
+        assert row["entry_status_label"]
+        assert row["entry_status_label_zh"]
+
+
+def _entry_status_column(html: str) -> str:
+    """Slice the Entry column config out of a rendered stocks-mode page.
+
+    The template writes `{ key:'entry_status'` WITH a space after the brace, so a
+    `\\{key:` anchor never matches and the test would fail as a locator miss rather
+    than on the behaviour under test. Tolerate the whitespace deliberately.
+    """
+    import re
+
+    match = re.search(
+        r"\{\s*key:'entry_status'.*?\},\s*\{\s*key:'days_since_signal'",
+        html,
+        re.DOTALL,
+    )
+    assert match, "Entry-status column configuration missing"
+    return match.group(0)
+
+
+def test_zhc509_ca_entry_formatter_uses_row_labels_not_status_slug():
+    """Entry rendering is row-aware bilingual copy; status remains the sort key."""
+    _vm_data, _rows, html = _w8g_payload()
+    column = _entry_status_column(html)
+
+    assert "fmt:function(v,row)" in column
+    assert "row.entry_status_label" in column
+    assert "row.entry_status_label_zh" in column
+    assert "replace(/_/g" not in column
+    # v remains the sort/filter/colour authority, not a label.
+    assert "key:'entry_status'" in column
+    assert "sortable:true" in column
+    assert "v==='buy_now'" in column
+
+
+def test_zhc509_ca_entry_formatter_renders_through_shared_bilingual_helper():
+    """Labels go through the shared bi() helper (.l-en/.l-zh), EN first, ZH second.
+
+    Pins argument ORDER, so swapping the pair at the formatter reds here; swapping it
+    at serialization reds in the provenance test above.
+    """
+    _vm_data, _rows, html = _w8g_payload()
+    column = _entry_status_column(html)
+
+    assert "b(esc(_en), esc(_zh))" in column, "must use the shared bilingual helper in EN,ZH order"
+    # No page-local translation map may be introduced for this column.
+    assert "ENTRY_ZH" not in column
+    assert "STATUS_ZH" not in column
+
+
+def test_zhc509_ca_entry_formatter_fails_closed_on_incomplete_owner_pair():
+    """A nonempty status with a missing mate renders the muted idiom, never English in ZH."""
+    _vm_data, _rows, html = _w8g_payload()
+    column = _entry_status_column(html)
+
+    assert "if(!_en || !_zh) return '<span class=\"st-muted\">—</span>';" in column
+    # An EN-for-ZH fallback is exactly what this operation exists to remove.
+    assert "_zh || _en" not in column
+    assert "entry_status_label_zh || " not in column
+
+
+def test_zhc509_ca_entry_missing_owner_zh_serializes_empty_not_english():
+    """If the owner emits no headline_zh, serialization must not substitute English."""
+    import copy
+    import json
+    import re
+
+    vm = copy.deepcopy(_w8g_vm())
+    vm["setups"]["buy"][0]["entry_signal"].pop("headline_zh")
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    match = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    assert match
+    row = json.loads(match.group(1))["rows"][0]
+
+    assert row["entry_status"] == "partial"          # machine identity survives
+    assert row["entry_status_label"] == "Partial entry"
+    assert row["entry_status_label_zh"] == ""        # empty -> formatter fails closed
+    assert row["entry_status_label_zh"] != row["entry_status_label"]
+
+
+def test_zhc509_entry_signal_owner_family_has_distinct_bilingual_pairs():
+    """The owner lexicon already covers the live Canada family with distinct EN/ZH."""
+    from engine.entry_signal import _HEADLINE
+
+    for status in ("extended", "await_confluence", "buy_soon", "wait_pullback"):
+        assert status in _HEADLINE, f"owner lexicon lost {status}"
+
+    for status, pair in _HEADLINE.items():
+        en, zh = pair
+        assert en and zh, f"{status} has an incomplete owner pair"
+        assert en != zh, f"{status} ZH is a copy of EN"
+
+
 def test_w8g_ca_stocktable_data_block_present():
     """stocks mode must emit a <script type=application/json id=stocktable-data> block."""
     import json
