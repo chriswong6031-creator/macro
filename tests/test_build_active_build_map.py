@@ -22,6 +22,7 @@ Tests
 18. render_files_truncated_distinct — files_truncated renders "files-truncated", NOT "files:error".
 19. render_unknown_mergeability     — UNKNOWN annotation line rendered when PRs remain UNKNOWN.
 20. render_no_unknown_annotation    — UNKNOWN line absent when all PRs resolved.
+21. collect_null_files_typed_error  — explicit GitHub files:null degrades one PR without crashing.
 """
 from __future__ import annotations
 
@@ -35,6 +36,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.build_active_build_map import (
+    _collect_pr_files,
     compute_collisions,
     is_protected_path,
     protected_paths_for_pr,
@@ -319,3 +321,17 @@ def test_render_no_unknown_annotation():
     payload = _fixture_payload(open_prs=[pr])
     md = render_markdown(payload)
     assert "mergeability not yet computed by GitHub" not in md
+
+
+# ---------------------------------------------------------------------------
+# 21: Nullable GitHub file-list boundary regression
+# ---------------------------------------------------------------------------
+
+def test_collect_pr_files_treats_null_files_as_typed_error():
+    """An explicit files:null response degrades one PR instead of crashing the map."""
+    response = {"files": None, "mergeStateStatus": "UNKNOWN"}
+
+    with mock.patch("scripts.build_active_build_map._run_gh", return_value=response):
+        result = _collect_pr_files(123)
+
+    assert result == ([], False, True, "UNKNOWN")
