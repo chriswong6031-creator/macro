@@ -297,8 +297,8 @@
         "label": "Inflation / commodities",
         "label_zh": "\u901a\u80c0/\u5927\u5b97",
         "family": "inflation",
-        "projection": -0.48,
-        "strength": 0.48,
+        "projection": -0.51,
+        "strength": 0.51,
         "direction": "upstream disinflation \u2014 PPI, coal, nonferrous & oil lead down"
       },
       {
@@ -342,9 +342,9 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": 0.01,
-        "strength": 0.01,
-        "direction": "stimulus-on \u2014 CSI300, brokers, property & copper/rebar lead up"
+        "projection": -0.04,
+        "strength": 0.04,
+        "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
       }
     ],
     "note": "Deterministic China cross-asset attribution \u2014 a regime READ, not a signal; never gates a score or the quad."

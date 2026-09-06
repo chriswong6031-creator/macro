@@ -30,10 +30,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": -0.55,
+        "z": -0.54,
         "sign": -1,
         "risk": "on",
-        "level": 99.157
+        "level": 99.16
       },
       {
         "key": "vix",
@@ -414,7 +414,7 @@
       "hk_roro_copper_gold": 1.274,
       "hk_roro_spy": -0.577,
       "hk_roro_vix": 1.101,
-      "hk_roro_dxy": 0.43,
+      "hk_roro_dxy": 0.428,
       "hk_roro_eem": 0.4,
       "hk_roro_usdcny": -0.053,
       "hk_roro_southbound": -1.485,
@@ -449,7 +449,7 @@
           "key": "dxy",
           "name_en": "US Dollar (20d)",
           "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-          "value": 0.43,
+          "value": 0.428,
           "lean": "risk-on"
         },
         {
@@ -6953,7 +6953,7 @@
         "key": "dxy",
         "name_en": "US Dollar (20d)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-        "value": 0.43,
+        "value": 0.428,
         "pct": 64,
         "lean": "risk-on"
       },
