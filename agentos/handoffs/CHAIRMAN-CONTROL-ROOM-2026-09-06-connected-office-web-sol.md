@@ -1,17 +1,19 @@
 ---
 workstream: WS:CHAIRMAN-CONTROL-ROOM
-session: codex/connected-office-lane-observation-20260906-websol
+session: web-sol-connected-office-macro-adoption-20260906
 model: sol
 ended_because: ci_handoff
-mission: Advance the connected-office recorded-lane reader by repairing exact schema qualification on the existing
-  PR508, preserving the full cross-account outcome and existing Runtime/Cockpit/Integration owners.
-state_before: PR508 d530 supplied a reader and fixture consumer but review5125728864 proved it could label foreign
-  look-alike or schema-tampered data as Executive OS truth. Earlier no-blocker commentary was withdrawn by5560099391;
-  original source was unchanged and no replacement writer or release was observed.
+mission: Advance the connected office by adopting the verified current organizational read source in the existing
+  running Control Room, preserving Executive Runtime and native-session authority and the existing MCP implementation
+  owners.
+state_before: The running Control Room used Macro87686190 and an August24 Agent OS artifact despite a newer canonical
+  publication. Its live build cache had been refreshed separately, but the underlying organizational root remained
+  stale; Runtime was explicitly unavailable. Mastermind508 already had accepted repaired source, not an installed
+  plural MCP/native-session interface.
 changed:
 - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-06-connected-office-web-sol.md
-  what: Record same-PR508 B1 schema repair at e7e8f1db, seven discriminating regressions, 34 focused/135 dual-interpreter
-    passes and pending current-head review/integration.
+  what: Record actual installed Control Room organizational read-root adoption, API proof, existing cache refresh,
+    source fingerprint, and explicit browser/coverage/Runtime limitations; retain historical R0 source evidence.
 verified:
 - claim: 'Historical first checkpoint: The existing workstream remains the organizational home; no new workstream
     was made.'
@@ -96,57 +98,111 @@ verified:
   command: Fresh Slack thread read followed by slack_send_message to D0BTAKPHX8S/1788689346.571769.
   result: Delivery 1788705440.125369 names PR508 and requests existing-owner review/adoption. No native consumption,
     reviewer assignment or integration START inferred.
-- claim: The original author repaired B1 on the same PR and source branch.
+- claim: 'Historical B1 checkpoint: The original author repaired B1 on the same PR and source branch.'
   command: Guarded same-worktree source correction, commit, one ordinary fast-forward push, then exact remote ref/PR/commit
     readback.
   result: Mastermind508 head e7e8f1db0313c0ba6368b8672477c7f636839057, tree e3a57ab2b0cef9ef2394b19f89fc9f4b03276e57,
     sole parent d5301d65df5f2ed6565a0635aa8f51d668f53000. Only reader/tests/plan changed; full PR retains four paths
     and Draft/Hold. Same-source continuation5560234370 and result5560330868.
-- claim: The schema correction passes discriminating native regressions on both supported test interpreters.
+- claim: 'Historical B1 checkpoint: The schema correction passes discriminating native regressions on both supported
+    test interpreters.'
   command: python3 and /opt/homebrew/bin/python3.12 -B -m pytest -p no:cacheprovider -o addopts= -q tests/test_executive_lane_observation.py
     tests/test_executive_os_phase1fb.py tests/test_executive_steward.py tests/test_executive_os_sqlite.py
   result: 135 passed on Python3.14.7; 135 passed on Python3.12.13/SQLite3.53.4. Focused file34PASS. Seven new cases
     fail before the correction and pass afterward; removing only the verification call in memory makes all seven
     fail again. Main-file bytes/mode/mtime unchanged; WAL/SHM-free filesystem proof is not claimed.
-- claim: The current immutable repair is returned for genuine re-review and existing-owner adoption.
+- claim: 'Historical B1 checkpoint: The current immutable repair is returned for genuine re-review and existing-owner
+    adoption.'
   command: gh api requested_reviewers POST for original reviewer mastermindx-2; fresh Slack parent read then one
     repair-result reply.
   result: GitHub requested reviewer mastermindx-2 confirmed, not native pickup or approval. Existing product carrier
     D0BTAKPHX8S/1788689346.571769 received reply1788709774.530289. No new child, reviewer account, source ownership
     transfer, watcher or Runtime admission.
+- claim: The newer organizational artifact matches the canonical authored records and the unchanged installed compositor
+    consumes it.
+  command: Exact git-object reads at Macro5812a584; execute the existing _direct_record_paths/_source_records_digest
+    functions on immutable exported records; existing compose_control_room old/new/order/failure controls.
+  result: All1065 authored records match published digest sha256:9b3e8637bfc5b1de907b9104cb2b59bffcd8d26de677f6931e0156027ac1d40a.17
+    compositor checks pass; old47/new69 workstreams, no removed keys, timestamps preserved, no invented Runtime/bindings.
+    This is source/API preparation, not browser/provider proof.
+- claim: A full clean detached Macro read candidate passed the real gather and HTTP canary with existing navigation
+    bindings.
+  command: One detached worktree at5812a58468b92c71dc5f5f92abd838059d7d3d1c; actual build_control_room/agentos brief
+    --json --no-remember; existing warm cache composition and temporary loopback HTTP server.
+  result: Candidate /Users/chriswong/Documents/Cluade/macro-ccr-readcandidate-20260906-5812a584, tree2db01b74da538cf6deb390c4404f8eac125c7dab,
+    clean. Gather8/8, warm5/5, HTTP13/13, then existing-bindings HTTP15/15 checks pass. Canaries are separate checks,
+    not cumulative case-count or full-suite claims. Provider capability discovery was not exercised. Both owned
+    canary servers stopped; source/artifact/binding controls unchanged.
+- claim: The existing installed Control Room now serves the newer organizational root and refreshed GitHub cache.
+  command: Same-carrier guarded one-field LaunchAgent plist update; one launchctl bootout and one bootstrap; one
+    new-instance POST /api/refresh-builds; actual authenticated-origin GET /api/state and launchctl/plist readbacks.
+  result: 'Operation connected-office-control-room-macro-adoption-20260906-sol-001: only --macro-root changed. PID49435
+    stopped; same gui/501/com.mastermind.chairman-control-room restarted as3107. New plistSHA256f204001e9ed0f66fabdf46e28b28cd395490ed5ca84473e647880fef932bcfa0.
+    Refresh returnedHTTP200/oktrue at22:43:18Z, collection22:38:41.596527Z. Final12/12 checks at22:44:51Z: all69
+    published WS,70work cards,155unjoined PRrows, livebuilds active, no binding conflict or refresh error, exactMacro5812
+    and unchangedMastermind767409. Counts are NOT agent counts.'
+- claim: Later Macro main movement did not invalidate the qualified organizational sources.
+  command: Full5812a584-to-f701fd28 diff plus exact authored-record subtree/compiler/artifact/actual config/mastermind_programs.yml
+    comparisons.
+  result: Only five marketing/metabolism/research paths changed; all four authored-record subtrees, AgentOS compiler/artifact,
+    build compiler and actual program registry7720ac04f931e899589e5ac802298e70b2ee0819 are identical.5812 is the
+    qualified pinned read snapshot, not latest whole-repository main.
+- claim: The active-build compiler's incomplete-coverage flags are lost in the current Control Room projection.
+  command: Compare byte-exact compose_control_room outputs for the actual22:13:35 build snapshot versus the same
+    data with only truncation flags changed tofalse.
+  result: Outputs are identical. The real compiler reports Macro open_prs_truncated=true at100 rows and file-list
+    truncation for6832/6834, but the dashboard carries no corresponding warning. This is a reproduced information-loss
+    defect, not proof of complete inventory or safe duplicate-work exclusion.
+- claim: R0 source-review history has advanced beyond the earlier B1-pending checkpoint while release remains unmerged.
+  command: Fresh Mastermind508 PR and reviews reads on2026-09-06; preserve review body and original submission identity
+    separately from mutable API association.
+  result: PR508 remains OPEN/DRAFT/unmerged at3b0e97e7133153ecf4cc2539936f2dc9d7ca929f. B1 approval5125912140 is
+    historical accepted semantic evidence; exact3b0 approval5126216280 was submitted18:23:24Z. Earlier no-approval/current-review-pending
+    wording is superseded, not converted into installed or latest-base release proof. Existing R0 release owner
+    retains sequencing.
 unverified:
-- claim: The repaired e7e8f1db head has passed non-author review and owner adoption.
-  what_would_verify: Genuine new-head review closing5125728864 and explicit existing Runtime/Cockpit/Integration
-    adoption; requested_reviewers and Slack delivery do not prove either.
-- claim: The repaired reader passes full hosted current-base CI and is installed.
-  what_would_verify: Actual new-head CI34043089434/test101513230139 completed test/security plus exact tested merge
-    identity; separately qualified installation and Web/native consumer proof.
-- claim: Real cross-account or native subagent visibility is live from Web CEO.
-  what_would_verify: Actual provider/native-child facts through the authorized integrated read and visible Web consumer,
-    including identity, coverage, source age and failure proof.
-- claim: Full Agent OS validation of this continuation record has run.
-  what_would_verify: The owning repository validator on this exact candidate. Only structural checks are performed
-    here; the additional native canonical-validator source inspection was tool-blocked and not retried.
+- claim: The adopted live Control Room has browser-render acceptance.
+  what_would_verify: A permitted browser proof of the actual installed HTML/JavaScript/API path. The prepared isolated
+    Chrome verification call was platform-blocked before execution; no browser intent/result/screenshot was created,
+    and it is not retried, rerouted or delegated.
+- claim: The current office inventory is complete and prevents duplicate work.
+  what_would_verify: Preserved upstream completeness/omission data through the real consumer and canonical conflict
+    admission. The reproduced truncation-warning repair's workspace request was platform-blocked before branch/path/intent
+    creation; no alternate implementation route is authorized by this record.
+- claim: Executive Runtime, native subagents and all accounts are visible through the installed office/MCP.
+  what_would_verify: Existing Runtime identity/read-root qualification and real provider/native-child observations
+    through the authenticated shared read path. Current installed API still reports runtime_db_present=false and
+    three source-degraded entries.
+- claim: Mastermind508 is released and integrated into authenticated plural reads.
+  what_would_verify: Existing owner's current-source integration/release receipts and actual managed-root/native-child
+    consumer proof. This host change did not install508 or add an MCP tool.
+- claim: This refreshed handoff passes the complete canonical Agent OS validator.
+  what_would_verify: The exact candidate's permitted owning-validator execution. Only YAML/required-field structural
+    checks and exact remote readback are performed; prior blocked validation is not replayed.
 unresolved:
-- B1 source repair is published but the historical REQUEST_CHANGES is not dismissed or overridden by author tests;
-  current-head review remains open.
-- PR508 is built and tested source plus a fixture consumer, not an installed connected office.
-- R0 reads only recorded Executive descendants; native helpers, RuntimeBinding, host/enrollment, effects and current
-  permission remain unprojected.
-- Existing first-read MCP source, installed connection identity, C1 effect uncertainty and W3C host gates remain
-  separately owned and unchanged.
-- No native task/watcher was created, and source publication does not prove owner pickup or review.
+- 'Full connected-office capability remains PARTIAL: installed organizational/API source adoption is real, but Runtime,
+  cross-account/native-child visibility, acknowledged communication and duplicate-work prevention remain unproven.'
+- Current compositor drops explicit upstream PR/file-list truncation flags; absence of joined PRs cannot safely
+  imply no work or conflict.
+- Browser-render verification and proposed coverage-repair workspace creation are platform-blocked, with no retry
+  or alternate actor/route.
+- The pinned read checkout is materially current at qualification but does not auto-advance. Existing deployment
+  owners must preserve future read-root maintenance without inventing a new publisher or state plane.
+- The GitHub build override remains process-local; a later restart requires the existing supported refresh and honest
+  partial-coverage reporting, not reliance on the stale disk snapshot.
 next_actions:
-- Original non-author reviewer re-reviews Mastermind508 repair head e7e8f1db0313c0ba6368b8672477c7f636839057 and
-  the unchanged complete capability boundary. Keep historical REQUEST_CHANGES until genuine new disposition; no
-  source-author approval or dismissal.
-- Qualify natural new-head CI34043089434/test101513230139 and its exact merge checkout independently from old d530
-  CI. Runtime/Cockpit/Integration then decide adoption into their existing authenticated read and visible-consumer
-  boundary; no new MCP tool or Personal14 expansion by inference.
-- Prove one real managed parent/native child visible from Web CEO, then original505 cross-account, overlap prevention,
-  acknowledged-return and additional-host journeys. Recorded Executive children are not native helper enrollment.
-- Validate and review this same Macro6946 record; no new continuity workstream or PR. Keep W3C/C1 and separately
-  owned installed file-handle identity qualification unchanged.
+- Preserve the live adopted Macro5812 read root and existing service configuration; use exact preimage rollback
+  only under a new reconciled maintenance decision. Do not repeat the completed unload/load/cache-refresh operation.
+- Existing Runtime/Cockpit/Integration finish the incumbent Personal Task2 fourteen-path source and its required
+  acceptance; qualify the installed Runtime root separately rather than copying SQLite or widening the temporary-source
+  contract.
+- Keep the reproduced coverage loss and blocked browser proof explicit. Resume only through a genuinely permitted
+  future boundary, never a different tool/account that replays the blocked operation.
+- Existing R0 release owner settles current-base integration and source-only release of508, then authenticates one
+  real root/native-child read through Web CEO. Preserve its four-path semantics and current source-writer/release
+  state.
+- Review and validate this same one-file Macro6946 record at its current head; no new handoff PR, workstream, runtime,
+  queue, registry or watcher.
 do_not_redo:
 - No new office workstream, runtime, task/identity/memory/transcript store, router, queue, lease or watcher plane.
 - Do not redo the original first-read addendum or make Business publication a predecessor to constructing its Personal
@@ -169,6 +225,35 @@ prs: []
 decisions: []
 discoveries: []
 ---
+
+## Current checkpoint — live organizational read-root adoption, not full office acceptance
+
+**Before:** the running Control Room composed new wrapper timestamps around an August24 organizational artifact from Macro87686190. **After:** its existing LaunchAgent consumes the qualified clean full Macro5812 read snapshot and the already-published September6 artifact, plus a refreshed in-memory GitHub build map. The actual installed API returns all69 published workstreams in70 work cards. These are organizational records, not agent counts.
+
+Operation `connected-office-control-room-macro-adoption-20260906-sol-001` remained on the authorized Mac and existing `gui/501/com.mastermind.chairman-control-room` service. Exactly one `--macro-root` argument changed in its plist; old PID49435 was unloaded once and the same service loaded once as PID3107. Installed Mastermind code/root767409b6d3e7103a3b11428b870357d4a01bbe26, port8787, bindings, logs, other arguments and environment settings remain unchanged. No provider/account/tunnel/Executive Runtime action occurred.
+
+The adopted full detached root is `/Users/chriswong/Documents/Cluade/macro-ccr-readcandidate-20260906-5812a584`, commit5812a58468b92c71dc5f5f92abd838059d7d3d1c/tree2db01b74da538cf6deb390c4404f8eac125c7dab. Current-source comparison tof701fd28 shows only five unrelated marketing/metabolism/research changes; the organizational record subtrees, compiler, published artifact and actual program registry are identical. This is a qualified pinned read snapshot, not a claim that5812 is current whole-repository main or will automatically advance.
+
+The published state generated2026-09-06T17:11:19Z has SHA25627479053dd58ce31eee5ca6b6b4767e3d9c4d6fcefaa8df468a1ccc72f03fd1a and a canonical content fingerprint matching all1065 authored records. The unchanged compositor passes17 controls, the actual gather8, warm composition5, the first temporary HTTP canary13, and the same HTTP canary with existing navigation bindings15. These overlapping verification groups are not one summed test suite. Both temporary servers were stopped; capability/provider discovery was not tested by those canaries.
+
+After the live service adoption, one NEW cache refresh returned HTTP200/oktrue at22:43:18Z with collection2026-09-06T22:38:41.596527+00:00. It was not a repeat of the earlier21:32 refresh. Final actualAPI readback22:44:51Z passed12 controls: exact newMacro/oldMastermind identities, all69records,70cards,155unjoinedPRrows, newcacheactive, exact collection, no binding conflict/refresh error and clean candidate. Runtime remains explicitly absent at the unchanged configured lookup, with three degraded entries. A later22:53 seal retained PID3107 and the one-field configuration delta.
+
+**Coverage limitation:** the real compiler snapshot has Macro100-PR truncation and capped file lists for6832/6834. Changing only those flags produces identical current Control Room output. The consumer loses the warning; it must not be used as complete-fleet, no-conflict or idle-capacity evidence. The proposed bounded source repair's workspace request was platform-blocked before any branch/path/intent was created. No alternate implementation route or source edit followed.
+
+**Browser limitation:** the isolated read-only Chrome proof was platform-blocked before execution. Browser intent, result and screenshots are absent. The successful real API read and earlier same-code HTTP canaries do not substitute for rendered-page acceptance. Do not retry or reroute that blocked request, attach an existing account/profile, or waive browser proof.
+
+**Recovery:** exact original plist SHA2564a4953f6e2c694828d99ea791b8518f403303094b383d7a4e49ea227c8739f4d and original clean Macro root are retained. Current plist SHA256f204001e9ed0f66fabdf46e28b28cd395490ed5ca84473e647880fef932bcfa0. Rollback is not automatic permission: reconcile the current service/configuration/effect first, restore only the preserved preimage under the original owner, and requalify health. A process restart forgets the GitHub override; use the existing supported refresh, never silently accept the old disk snapshot.
+
+All prospective commands, exits, intents, redacted results, exact preimage and hashes are in `exec-prestage-receipts/office-native-visibility-4pp8fsio/macro-read-root-qualification/`. Final API receipt SHA256f4e0a3dfc21f93b33e3dd3fafa5072fdd38d2df4c3a0966a34abea549bd0c2c7; newcache result9286fccba3596384aff1fab82186672b381b6d4b25623c3c1d33fb3124ad5ed5. No rawresponse, nonce, native session handle or transcript was retained in the live result receipts.
+
+The existing Personal Task2 controller/Terra and original fourteen-path carrier remain exclusive. This maintenance neither edits nor accepts that source, grants installed Runtime identity, installs R0#508, or adds an MCP tool. R0 source approval has advanced beyond the old pending-B1 text, but its PR remains OPEN/DRAFT/unmerged and its existing release owner controls current-base adoption. The full native parent/child, multiple-account, acknowledged-return and duplicate-work prevention outcomes remain PARTIAL/unproven.
+
+This checkpoint is an update to the same one-file Macro6946 handoff. YAML/required-field structural checks and remote readback are not complete canonical validation or protected-main publication. Historical sections below are retained as historical evidence; their old source/review/host-unavailable assertions do not override this dated checkpoint.
+
+---
+
+## Historical B1 and earlier checkpoints — preserved, not current operational state
+
 
 ## Current checkpoint — B1 schema repair, not installed-office acceptance
 
