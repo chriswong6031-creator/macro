@@ -3,7 +3,7 @@
 **Lane:** F13 (Operations / Learning / Product Reliability) · **Wave:** B2 · **Packet:** B-F13-2 · **Kind:** records
 **Live surface:** **no live surface** — records only. Nothing in this packet renders, deploys, or changes a byte of `site/`.
 **Closes:** ledger rows `MO-PAID-057` and `MO-PAID-058` in
-`research/market_intelligence_productization/MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv` (rows 2 and 3 of that CSV, ids `MO-PAID-057`/`MO-PAID-058`), each dispositioned `DEFER — needs a product spec that does not exist` / `DEFER — needs a dedicated-channel product decision`.
+`research/market_intelligence_productization/MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv` (cited by id, never row number, per CLAUDE.md House laws), each dispositioned `DEFER — needs a product spec that does not exist` / `DEFER — needs a dedicated-channel product decision`.
 
 ## 0. Availability findings (measured in this checkout, 2026-09-06)
 
@@ -12,11 +12,67 @@
 | `lib/help_directory.py`, `templates/help.html.j2` | **EXISTS, merged** | `lib/help_directory.py:42` `HelpLink`; `:56` `HELP_CATEGORIES`; `:64` `HELP_LINKS`; `:177` `validate_help_directory`; `:214` `help_directory_view_model`; `templates/help.html.j2:85-88` hero block |
 | `app/mailer.py` | **EXISTS, merged** | `:80` `CLASSES = ("transactional", "marketing")`; `:121` `support_to`; `:126` `is_configured`; `:139` `DuplicateKey`; `:181` `_ledger_insert`; `:342` `send(...)`; `:701` `render_email` |
 | `app/support.py` | **EXISTS, merged** | `:289` `_tier_for`; `:301` `ticket_ref`; `:334` `_mail_configured`; `:349` `_notify_operator`; `:391` `_ack_submitter`; `:469` `_send_ticket_mail`; `:505` `create_ticket` |
-| `engine/capability_health.py`, `config/capability_health.yml` | **DOES NOT EXIST** | `git ls-tree -r --name-only HEAD \| grep -c capability_health` → `0` against `87156` tracked paths |
+| `engine/capability_health.py`, `config/capability_health.yml` | **DOES NOT EXIST** | `git ls-tree -r --name-only HEAD \| grep -c capability_health` → `0` against `87157` tracked paths (re-measured at this head, round-3 fix; supersedes the round-2 `87156` figure) |
 | `alert_outbox` drain (an F08 delivery path) | **DOES NOT EXIST AS CODE** | repo-wide grep across `*.py/*.sql/*.j2/*.md` returns exactly one hit, a plan document: `research/MARKET_ONTOLOGY_F08_SLICE1_VERTICAL_HANDOFF_2026-09-05.md` |
 | A release/changelog producer | **DOES NOT EXIST** | no `CHANGELOG*` anywhere in the tree |
 
 **Consequence, printed not hidden:** the ONLY notification channel that exists is `app/mailer.py`. There is no second channel to choose between and no release-truth producer to read. Both specs are written against that fact. **No builder may create one** — the F13 handoff's `do_not_redo` (`agentos/handoffs/MARKET-ONTOLOGY-F13-OPS-LEARNING-RELIABILITY-FABLE-COO-2026-08-26.md:32`) forbids a second observability platform, evaluation ledger, release truth, support case system, or source scheduler; `:35`'s `danger_areas` adds false-green health, privacy leakage, vanity usage metrics.
+
+## 0.5 Ruling amendments (Meta-CEO B, round-3 fix, 2026-09-06, 17:05Z)
+
+The round-2 review (checked_head `f5dc21714541dc4016a9953b552fbf89b15df598`) found the A7 email
+notification unbuildable as written. The binding ruling resolves it as follows; this section is
+the amendment record the ruling asked for.
+
+1. **A7's email send is DROPPED from V1 (BLOCKERS B1/B2).** A7 claimed `scripts/build_public_pages.py`
+   "already runs every night as part of `.github/workflows/daily.yml`'s site-build step". Re-measured
+   in this checkout:
+   - `git grep -n "build_public_pages" -- .github/workflows/` → only `.github/workflows/public-render.yml:21`,
+     a `push` **path filter**, not an invocation.
+   - `.github/workflows/public-render.yml`'s `on:` (lines 6-36) = `workflow_dispatch: {}` +
+     `push(branches:[main], paths:[...])`; that file has no `schedule:` block at all.
+   - The one real invoker of `build_public_pages` is `scripts/ci/public_render.sh:13`
+     (`python -m scripts.build_public_pages`), itself only reached by that push-triggered workflow.
+   - `.github/workflows/daily.yml` does carry its own `schedule:` (`:7`), but
+     `grep -n "build_public_pages\|build_site\|public_pages\|public-render" .github/workflows/daily.yml`
+     returns **zero hits** — the nightly pipeline never calls this builder.
+   - Repo-wide: no `.github/workflows/*.yml` combines a `schedule:` block with `mailer`,
+     `marketing_emails`, `drain_campaigns`, `drain_parked`, or `refresh_digest` (checked every file).
+   The chosen call site is push-triggered, not nightly, and not scheduled at all. Making the digest
+   nightly needs a NEW `schedule:` block — a second scheduler, banned by the F13 handoff's
+   `do_not_redo` (`:32`, cited above). **The ONLY lawful send host would be an EXISTING scheduled
+   invocation of the mailer; none exists**, so A7's send is dropped rather than hosted on an
+   invented lane. See the rewritten A7 below for the DEFERRED child this becomes.
+2. **Independent second DROP reason (MAJOR-2).** A7 also named `app/email_segments.py:273 get()`
+   as something a builder could "iterate ... members" from. Measured: `get()` (`:273`) returns a
+   `Segment` **definition**, not a recipient iterable; the membership predicate (`:258`) is a SQL
+   fragment consumed only by `where_sql()` (`:286`). The one caller that actually executes it is
+   `app/marketing_emails.py:375 segment_page()`, against Supabase via the service-role credential
+   path in `lib/user_prefs.py:118-123` (`SUPABASE_SERVICE_ROLE_KEY`) — and `segment_page` itself is
+   invoked only from the campaign/parked-row drains in `app/marketing_emails.py`, which (per point 1)
+   have no scheduled workflow host either. So even naming the real query owner does not restore a
+   lawful nightly call site.
+3. **`idem_key`, amended on record — supersedes the round-2 form.** The round-2 ruling's
+   `sha256('release:<release_id>:<user_id>')` referenced a `release_id` this packet's own §0
+   records as non-existent (no release-truth producer, no `CHANGELOG*`). Amendment:
+   - That exact string, `idem_key = sha256('release:<release_id>:<user_id>')`, binds the **deferred
+     child** the day a `release_id` producer exists — not before, and not to this packet.
+   - **V1 (this packet) sends no email at all, so V1 carries no `idem_key`.**
+   - If a later V1' ships a send on a genuinely scheduled mailer host with still no `release_id`,
+     its key is day-granular: `sha256('digest:<user_id>:<YYYY-MM-DD>')` — never a raw timestamp —
+     and that child's own acceptance test must assert exactly that string form.
+4. **MAJOR-4 (opt-in/opt-out header contradiction) resolved by removal**, not by a wording fix:
+   the contradictory header lived only in A7's now-dropped prose. The rewritten A7 below carries
+   no "opt-in" language anywhere; the standing rule everywhere else in this packet (A2, B-side) is
+   the existing **opt-OUT** membership rule — no new consent surface.
+5. **MAJOR-1 (mailer.py:352 vs :355) resolved by removal for the same reason** — the coercion
+   citation lived only in A7's dropped mailer-return-contract prose (verified: `app/mailer.py:355`
+   is `cls = cls if cls in CLASSES else "marketing"`; `:352` is a docstring line). Recorded here so
+   a reviewer does not go looking for a citation this rewrite deliberately removed.
+6. **MINOR fixes carried through below:** A4's kwargs-span citation corrected to `:122-123`
+   (`:121` is the `.render(` call opener, `:124` is the closing `),`); B3's `add_task` citation
+   corrected to `app/support.py:619`; B2's mailer citation split into `:342` (`send()` def) and
+   `:343` (`headers` param, not `:342`); §0's tracked-path denominator re-measured to `87157`.
 
 **Title reconciliation.** The ledger rows read narrower than the packet's framing: `MO-PAID-057` asks for a priority-tier SLO / differentiated refresh (`acceptance_test`: "a PRO-tier refresh measurably completes first, logged"; `real_producer`: `.github/workflows/daily.yml` — no priority tiers); `MO-PAID-058` asks for tier-differentiated support routing/queue/SLA (`acceptance_test`: "a PRO ticket provably routes to a different queue/alert"). This spec answers the ledger rows because they are the closure target: 057's honest product is a **refresh/release disclosure**, not a sold-faster refresh; 058's honest product is **one channel, labelled**, not a second queue.
 
@@ -32,12 +88,12 @@
 "Is what I'm reading current, and did anything change since I last looked? If it's stale, say so in words I understand and tell me the one thing that would fix it."
 
 ## A2. The decision (what is NOT built)
-**The tier-differentiated refresh in the ledger row is REFUSED.** A priority queue over `.github/workflows/daily.yml` is a source scheduler, banned by the F13 `do_not_redo`. Selling a faster refresh also manufactures the false-green `danger_areas` failure — a paying user believing their data is fresher than it is. Also not built: a changelog generator, release ledger, version manifest, in-app notification centre, web-push, or second delivery path. The product is **disclosure of the refresh truth that already exists**, plus an email of the same truth gated by the existing marketing opt-out preference (see A7 — this is the standing `cls="marketing"` opt-OUT model every other marketing mail already uses, not a new opt-in list).
+**The tier-differentiated refresh in the ledger row is REFUSED.** A priority queue over `.github/workflows/daily.yml` is a source scheduler, banned by the F13 `do_not_redo`. Selling a faster refresh also manufactures the false-green `danger_areas` failure — a paying user believing their data is fresher than it is. Also not built in V1: a changelog generator, release ledger, version manifest, in-app notification centre, web-push, second delivery path, **or an email digest** — see A7, DROPPED from V1 (no lawful scheduled mailer host exists in this repo; see Ruling amendments §0.5). **V1 ships PULL-only**: disclosure of the refresh truth that already exists, read on `/help.html` — the user sees it by visiting the page; V1 pushes nothing to anyone by email.
 
 ## A3. Existing owner extended
-1. The nightly build stamp already threaded through every public page: `scripts/build_public_pages.py:121-122` (the `.render(` call opens at :121; `generated_utc=generated` is the kwarg on :122) passes it into `help.html.j2`; `scripts/build_site.py:3741-3742` does the same.
+1. The nightly build stamp already threaded through every public page: `scripts/build_public_pages.py:121-124` (the `.render(` call opens at :121; `generated_utc=generated` and `**help_vm` are the two kwargs, spanning :122-123; the call closes at :124) passes it into `help.html.j2`; `scripts/build_site.py:3741-3742` does the same.
 2. The frozen, source-validated help directory: `lib/help_directory.py:64` `HELP_LINKS`, validated at `:177`, projected at `:214`.
-3. The one mail path: `app/mailer.py:342` `send(...)`.
+3. `app/mailer.py:342` `send(...)` remains the one mail path in the repo, used by Spec B (support ticket mail) — V1 of Spec A does not call it (A7).
 
 ## A4. Files a builder touches
 | File | Change |
@@ -45,13 +101,12 @@
 | `lib/help_directory.py` | add `refresh_disclosure(root, generated_utc)` → dict (contract A5); add the EN/ZH copy tuples as module constants beside `HELP_CATEGORIES` (`:56`); no change to `HelpLink` (`:42`) or `HELP_LINKS` (`:64`) |
 | `templates/help.html.j2` | one `<p class="help-refresh" data-refresh-state="{{ refresh.state }}">` inside `<header class="help-hero">` (`:85-89`), after `help-owners` (`:88`); no new section |
 | `templates/_public_chrome_css.html.j2` | `.help-refresh` rule only (A8) |
-| `scripts/build_public_pages.py` | inside the `.render(` call opened at `:121` (kwargs span :121-124), add `refresh=refresh_disclosure(config.ROOT, generated)` alongside the existing `generated_utc=generated` kwarg (:122) |
+| `scripts/build_public_pages.py` | inside the `.render(` call opened at `:121`, add `refresh=refresh_disclosure(config.ROOT, generated)` as a new kwarg alongside the existing two kwargs, which span `:122-123` (`generated_utc=generated,` at `:122`, `**help_vm,` at `:123`; the call closes at `:124`) |
 | `scripts/build_site.py` | same one-line addition at `:3742` |
-| `scripts/build_public_pages.py` | **also** the new call site for the refresh-digest send (A7): after computing `refresh` (row above), iterate `email_segments.get("marketing_eligible")` members and call `mailer.send(template="refresh_digest", ...)` once per recipient — this is the file's existing nightly invocation via `.github/workflows/daily.yml`'s site-build step, not a new lane |
-| `app/mailer.py` | no change — `render_email` (`:701`) and `send` (`:342`) as they stand; called with new args from the new site above |
-| `app/email_segments.py` | no change — `get("marketing_eligible")` (`:253-258` membership rule) is the recipient source read by the new call site |
 | `tests/test_help_directory.py` | extend (A9) |
 | `tests/test_refresh_disclosure.py` | new (A9) |
+
+**Not touched by V1:** `app/mailer.py`, `app/email_segments.py` — the email call site A7 originally proposed is dropped (see A7).
 
 ## A5. Data contract (frozen)
 ```python
@@ -86,19 +141,50 @@ def refresh_disclosure(root: Path, generated_utc: str | None,
 
 Banned words above the fold: `generated_utc`, `stale`, `state`, `SLO`, `tier`, `pipeline`, `render`, `artifact`, any slug, any raw ISO timestamp. The raw `stamp_utc` may appear only in a `title`-free hover/detail line in English only — `title=` must never carry translated text.
 
-## A7. The notification (opt-in, mailer only)
-One template, `refresh_digest`. **No existing per-user nightly digest lane exists** — measured: the marketing-class senders are `app/marketing_emails.py:562` (welcome) and `:876` (campaign), both request/campaign-driven, not a nightly step; `scripts/freshness_sentinel.py:2156` is an operator sentinel, not a user mailer. The one new call site is inside `scripts/build_public_pages.py` (A4) — that file already runs every night as part of `.github/workflows/daily.yml`'s site-build step, so this extends an EXISTING nightly step rather than standing up a new lane, scheduler, or workflow file. **Audience source:** `app/email_segments.py:253-258` `marketing_eligible` (`s.email is null and coalesce(p.marketing_opt_out, false) = false`) — the existing opt-OUT membership rule every `cls="marketing"` send already reads; no new consent surface is built.
-```python
-mailer.send(template="refresh_digest", cls="marketing",
-            to_email=addr, subject=subj, html=html, text=text,
-            idem_key=f"refresh_digest:{user_id}:{stamp_utc}", user_id=user_id)
-```
-- **`cls="marketing"` is mandatory.** A "what changed" email is not transactional: `app/mailer.py:20-22`'s class law says `marketing` consults `email_suppression`/`email_prefs.marketing_opt_out` and refuses to send when either says no; `transactional` never does. Mislabelling this transactional would mail people who opted out — the privacy `danger_areas` failure. `send()` also coerces an unknown class to `marketing` (`:352`), so the strict path is the default.
-- **`send()`'s actual return contract (`app/mailer.py:12`, its own module docstring, verified against every literal `return` in the function body at `:359,362,371,385,403,406,411,419,426`):** exactly one of `"sent"`, `"failed"`, `"skipped_no_smtp"`, `"suppressed"`, `"queued"`, `"duplicate"` — never a seventh value, never a raised exception a caller must catch. Idempotency is per-user, per-stamp: `_ledger_insert` (`:181`) claims `idem_key` before SMTP, and a unique-violation raises `DuplicateKey` (`:139`), which `send()` returns verbatim as `"duplicate"` (`:371`) — a second call with the same key sends nothing, while the ledger is reachable.
-- **Degraded path, printed not hidden:** `app/mailer.py:373-381` — when `_ledger_insert` raises anything other than `DuplicateKey` (no service-role key, network, table absent), `send()` sets `ledgered=False` and proceeds WITHOUT the idempotency guarantee, by the function's own comment, for "a support reply, an operator alert" — the same low-volume, human-facing risk this nightly digest inherits by reusing that one send path.
-- **There is no batch-abort semantics, and this spec does not invent one.** Verified: no caller in `app/mailer.py` or `app/marketing_emails.py` (the campaign drain `:779` `drain_campaigns`, the parked-row drain `:918` `drain_parked`) ever inspects one recipient's `send()` result to decide whether to call `send()` for the NEXT recipient — each iterates its own membership independently, and one recipient's `"failed"` or degraded `"sent"` never stops delivery to the rest of the run. The new call site follows the same pattern: it sends to every eligible recipient in the run regardless of an individual result.
-- **A failed or degraded send is retried by the next drain run, not by an abort-and-resume design.** The idem_key is `refresh_digest:{user_id}:{stamp_utc}` (A5) — tomorrow's `stamp_utc` is a fresh key, not a retry of tonight's, so a recipient missed or degraded-sent tonight is simply evaluated again tomorrow under a different key; nothing is ever double-counted as a `"duplicate"` of last night's send. Separately, the ONE queued-row case this call site can produce — a suppression-lookup failure (`_finish("queued", "suppression_lookup_failed")`, `:403`, DRAIN CONTRACT comment `:395-400`) — is completed by the existing W4 drain (`app/marketing_emails.py:918 drain_parked`) without any new code; that path already exists for every other `cls="marketing"` sender and needs no change here.
-- **The body may contain ONLY the six A5 keys.** No "what changed" list — no release-truth producer exists (§0). If every digest would say only "updated", the correct build is **not to send at all**.
+## A7. The notification — DROPPED from V1 (deferred)
+**Not built in V1.** Round-3 binding ruling (B1/B2): the ONLY lawful send host would be an EXISTING
+scheduled invocation of the mailer, and none exists — see Ruling amendments §0.5 for the full
+grep evidence (no `schedule:`-bearing workflow invokes `build_public_pages`, `mailer`,
+`marketing_emails`, or any drain). Making the digest nightly would require a NEW `schedule:` block,
+a second scheduler forbidden by the F13 handoff's `do_not_redo` (`:32`). This spec does not add one.
+
+**V1 ships PULL-only**: the refresh-truth line on `/help.html` (A1-A6, A8, A9), no email
+counterpart, no new consent surface, no `idem_key` (there is no send to key).
+
+**The email digest is DEFERRED**, recorded as a child gated on BOTH:
+(a) a release-truth producer (§0 confirms none exists today — no `CHANGELOG*`, no version manifest);
+(b) a scheduled mailer host (a `schedule:`-bearing workflow already, or separately authorized to,
+invoke the mailer — this packet authorizes none).
+
+**`idem_key` for the deferred child (amended, §0.5):** `sha256('release:<release_id>:<user_id>')`,
+binding the day a `release_id` producer exists. If a later V1' instead ships a send on a genuinely
+scheduled mailer host with still no `release_id`, its key is day-granular —
+`sha256('digest:<user_id>:<YYYY-MM-DD>')`, never a raw timestamp.
+
+**Reference notes for the deferred child's future author (non-normative for V1 — verified facts
+about the one mail path, kept so the next builder does not re-derive them):**
+- Template would be `refresh_digest`; audience source would be `app/email_segments.py:258`
+  `marketing_eligible` (`s.email is null and coalesce(p.marketing_opt_out, false) = false`) via
+  the query owner `app/marketing_emails.py:375 segment_page()` — the existing opt-OUT membership
+  rule every `cls="marketing"` send already reads; no new consent surface.
+- `cls="marketing"` would be mandatory: `app/mailer.py:20-22`'s class law says `marketing`
+  consults `email_suppression`/`email_prefs.marketing_opt_out` and refuses to send when either
+  says no; `transactional` never does. `send()` coerces an unknown class to `marketing` at `:355`
+  (`cls = cls if cls in CLASSES else "marketing"`), so the strict path is the default.
+- `send()`'s actual return contract (`app/mailer.py:12` module docstring, verified against every
+  literal `return` in the function body at `:359,362,371,385,403,406,411,419,426`): exactly one of
+  `"sent"`, `"failed"`, `"skipped_no_smtp"`, `"suppressed"`, `"queued"`, `"duplicate"` — never a
+  seventh value, never a raised exception a caller must catch. `_ledger_insert` (`:181`) claims
+  `idem_key` before SMTP; a unique-violation raises `DuplicateKey` (`:139`), returned verbatim as
+  `"duplicate"` (`:371`).
+- Degraded path (`app/mailer.py:373-381`): when `_ledger_insert` raises anything other than
+  `DuplicateKey`, `send()` sets `ledgered=False` and proceeds without the idempotency guarantee.
+- No caller in `app/mailer.py` or `app/marketing_emails.py` (`:779 drain_campaigns`,
+  `:918 drain_parked`) inspects one recipient's result before calling `send()` for the next — no
+  batch-abort semantics exist to inherit or invent.
+- **The body may contain ONLY the six A5 keys.** No "what changed" list — no release-truth producer
+  exists (§0). If every digest would say only "updated", the correct build is not to send at all —
+  this is the terminating clause the deferred child inherits unchanged from the round-2 draft.
 
 ## A8. Theme treatment
 `.help-refresh` is one line of text inside the existing public-chrome hero (anonymous/corporate nav family — no third header).
@@ -113,10 +199,7 @@ mailer.send(template="refresh_digest", cls="marketing",
 3. `…::test_copy_carries_no_machine_words` — none of `{"generated_utc","stale","SLO","tier","pipeline","artifact","refresh_disclosure"}` appears in any EN/ZH line.
 4. `tests/test_help_directory.py::test_help_page_prints_refresh_state` — builds the page via the real builder, asserts `data-refresh-state=` present with one of the three literals, and the raw ISO stamp does NOT appear in the hero text.
 5. `…::test_missing_stamp_still_renders_the_page` — `generated_utc=None` still renders with the `unknown` sentence, never a blank/crash/false "just now".
-6. `tests/test_mailer.py::test_refresh_digest_is_marketing_class` — the digest call uses `cls="marketing"`; a suppressed address yields no SMTP attempt.
-7. `…::test_refresh_digest_is_idempotent_per_stamp` — a second `send` with the same `idem_key` returns `duplicate` and sends nothing.
-8. `…::test_refresh_digest_continues_the_run_on_ledger_failure` — with `_ledger_insert` forced to raise a non-`DuplicateKey` exception for one recipient, the build-step loop still calls `send()` for every remaining eligible recipient in the same run (no batch-abort); and `…::test_refresh_digest_key_changes_nightly` — the same user_id sent under two different `stamp_utc` values produces two distinct `idem_key`s and two independent sends, neither returning `"duplicate"` of the other.
-9. Reviewer confirms **no** file under `.github/workflows/` gains a tier, priority, or queue concept — the refusal in A2 is itself an acceptance line.
+6. Reviewer confirms **no** file under `.github/workflows/` gains a `schedule:` block, tier, priority, or queue concept; that `app/mailer.py` and `app/email_segments.py` are byte-unchanged by this packet; and that `scripts/build_public_pages.py` / `scripts/build_site.py` gain only the `refresh=` kwarg — no new mailer call site, no new consent surface. The A2/A7 refusal (email dropped from V1) is itself the acceptance line.
 
 ---
 
@@ -138,7 +221,7 @@ answer: >
   Nothing new is stood up. The only change is that the tier already captured at submission
   time (app/support.py:289 _tier_for, stored in the ticket row) becomes VISIBLE to the operator
   as a routing LABEL on the notification mail — a subject prefix and an X-MX-Queue header via
-  the headers= parameter of app/mailer.py:342 — and the user is told, in plain words, what
+  the headers= parameter of app/mailer.py:343 (send() def opens at :342) — and the user is told, in plain words, what
   actually happens next. No second queue, no SLA promise, no response-time number.
 rationale: >
   The F13 handoff's do_not_redo forbids a support case system. A second queue with an SLA
@@ -158,7 +241,7 @@ alternatives:
     why_not: "Unmeasurable today — there is no response-time instrument. An unverifiable promise is the false-green failure this lane exists to prevent."
 evidence:
   - "app/support.py:289 _tier_for; tier snapshot read but never routed (matches ledger MO-PAID-058 missing_contract)"
-  - "app/mailer.py:342 send(..., headers: dict | None) — the label carrier already exists"
+  - "app/mailer.py:342 send() def; :343 headers: dict | None = None — the label carrier already exists"
   - "agentos/handoffs/MARKET-ONTOLOGY-F13-OPS-LEARNING-RELIABILITY-FABLE-COO-2026-08-26.md:32,:35"
 confidence: high
 reversibility: easy
@@ -166,9 +249,9 @@ reversibility: easy
 
 ## B3. Existing owner extended
 - `app/support.py:505` `create_ticket` — the one route.
-- `:349` `_notify_operator` (operator mail), `:391` `_ack_submitter` (user ack), `:469` `_send_ticket_mail` (the background pair), `:620`-area where it is scheduled via `background_tasks.add_task`.
+- `:349` `_notify_operator` (operator mail), `:391` `_ack_submitter` (user ack), `:469` `_send_ticket_mail` (the background pair), `:619` `background_tasks.add_task` scheduling that pair.
 - `:301` `ticket_ref` — the `MX-` + 8 hex reference already printed on the success slip, the ack subject, and the admin thread.
-- `app/mailer.py:121` `support_to()`, `:342` `send(..., headers=)`, `:701` `render_email`.
+- `app/mailer.py:121` `support_to()`, `:342` `send(...)` def / `:343` `headers: dict | None`, `:701` `render_email`.
 - `lib/help_directory.py:64` `HELP_LINKS` and `templates/help.html.j2:113`-ish the card grid.
 
 ## B4. Files a builder touches
@@ -231,8 +314,8 @@ No new component. The support entry renders through the existing `.help-card` sh
 ---
 
 ## C. Packet-level acceptance (records)
-1. Every claim about existing code above cites `file:line` and was read in the checkout on 2026-09-06.
+1. Every claim about existing code above cites `file:line` and was re-read in this checkout on 2026-09-06 for the round-3 fix (head after this commit).
 2. Each spec names the existing owner it extends; neither creates an observability platform, a release-truth producer, a source scheduler, or a support case system.
-3. The only notification channel used is `app/mailer.py`; `alert_outbox` and `engine/capability_health.py` are recorded as non-existent, not assumed.
+3. V1 ships no notification email at all — Spec A's digest is DEFERRED (A7/§0.5), gated on a release-truth producer and a scheduled mailer host, neither of which this packet builds. `app/mailer.py` remains the one channel used elsewhere in this packet (Spec B's ticket mail, unchanged); `alert_outbox` and `engine/capability_health.py` are recorded as non-existent, not assumed.
 4. Nulls are printed in plain words in every state table; no number, no SLA, no changelog is fabricated.
 5. No product code ships in this packet. **Live proof: records only — merged path is the proof.**
