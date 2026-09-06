@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "COLL-BULL-20260819",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 13.8,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": -1.62,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 37.8,
+    "horizon_pct_used": 40.0,
     "p1": -1.7464,
     "p2": -0.8732,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 17,
-  "tau": 0.3778
+  "days_elapsed": 18,
+  "tau": 0.4
 }

@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "BIIB-BULL-20260731",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 55.6,
-  "raw_confidence": 54.7,
-  "delta_vs_base": -4.4,
+  "management_confidence": 55.1,
+  "raw_confidence": 54.6,
+  "delta_vs_base": -4.9,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 22.5,
-    "pace": 27.1,
+    "pace": 26.3,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.344,
     "dist_to_t1_r": 1.156,
     "dist_to_t2_r": 2.656,
-    "horizon_pct_used": 57.8,
+    "horizon_pct_used": 60.0,
     "p1": 0.2292,
     "p2": 0.1146,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 26,
-  "tau": 0.5778
+  "days_elapsed": 27,
+  "tau": 0.6
 }

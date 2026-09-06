@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AEO-BULL-20260415",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 39.2,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 100.0,
     "progress": 16.8,
-    "pace": 23.3,
+    "pace": 22.0,
     "retention": 27.9,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.232,
     "dist_to_t1_r": 1.268,
     "dist_to_t2_r": 2.768,
-    "horizon_pct_used": 111.1,
+    "horizon_pct_used": 113.3,
     "p1": 0.1548,
     "p2": 0.0774,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-20",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 50,
-  "tau": 1.1111
+  "days_elapsed": 51,
+  "tau": 1.1333
 }

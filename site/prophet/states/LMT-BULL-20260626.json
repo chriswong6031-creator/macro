@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LMT-BULL-20260626",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "between_t1_t2",
   "detection_phase": "post_t1_failed_hold",
   "management_confidence": 39.6,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.045,
     "dist_to_t1_r": 1.455,
     "dist_to_t2_r": 2.955,
-    "horizon_pct_used": 124.4,
+    "horizon_pct_used": 126.7,
     "p1": 0.0299,
     "p2": 0.015,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-25",
   "_first_t1_ts": "2026-08-10",
   "_first_t2_ts": null,
-  "days_elapsed": 56,
-  "tau": 1.2444
+  "days_elapsed": 57,
+  "tau": 1.2667
 }
