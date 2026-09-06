@@ -1,0 +1,73 @@
+"""Entry point for the thesis condition monitor (F11 packet B-F11-1).
+
+    python -m scripts.run_thesis_condition_monitor [--dry-run] [--limit N]
+        [--now ISO8601] [--evidence-base URL]
+
+Dormant by default (F08 precedent): only writes real rows when
+THESIS_MONITOR_ENABLE=1 is set in the environment; otherwise forces --dry-run.
+Imports ONLY engine.thesis_condition_monitor -- never a sender. This step
+enqueues rows; scripts/drain_alert_outbox.py (F08) sends them.
+Always exits 0: a missing table, missing credentials, or an unmerged
+migration is a known deployment state, not a build failure.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+from engine import thesis_condition_monitor as monitor
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--limit", type=int, default=500)
+    parser.add_argument("--now", default=None)
+    parser.add_argument("--evidence-base", default=monitor.EVIDENCE_BASE)
+    args = parser.parse_args(argv)
+
+    enabled = os.environ.get("THESIS_MONITOR_ENABLE") == "1"
+    dry_run = args.dry_run or not enabled
+    if not enabled:
+        print(
+            "thesis-monitor: DORMANT (THESIS_MONITOR_ENABLE unset) — "
+            "decisions only, no writes",
+            flush=True,
+        )
+
+    result = monitor.run(
+        now_utc=args.now,
+        limit=args.limit,
+        dry_run=dry_run,
+        evidence_base=args.evidence_base,
+    )
+
+    if result.read_state == monitor.READ_UNAVAILABLE:
+        print(
+            "::warning title=thesis-monitor-read-unavailable::"
+            "thesis/alert tables not readable (%s) — 0 enqueued, 0 writes"
+            % result.error_class,
+            flush=True,
+        )
+
+    print(
+        "thesis-monitor: outcome=%s evaluated=%d matched=%d enqueued=%d "
+        "duplicate=%d no_coverage=%d unmappable=%d run_id=%s"
+        % (
+            result.outcome,
+            result.evaluated_n,
+            result.matched_n,
+            result.enqueued_n,
+            result.duplicate_n,
+            result.no_coverage_n,
+            result.unmappable_n,
+            result.run_id,
+        ),
+        flush=True,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
