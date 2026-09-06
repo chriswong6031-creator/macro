@@ -17,10 +17,12 @@ production:
 from __future__ import annotations
 
 import json
+import math
 import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any, Mapping
 
 import pytest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
@@ -411,23 +413,133 @@ def test_a_traversal_path_in_the_manifest_is_refused(tmp_path: Path) -> None:
 # the dominant visualization
 # --------------------------------------------------------------------------
 
-def test_the_quadrant_grid_follows_the_producer_classification_law() -> None:
-    """A = low-x/high-y, B = high-x/high-y, C = low-x/low-y, D = high-x/low-y."""
-    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
-    view = macro_suite_view.build_view(
+def _view_of(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    return macro_suite_view.build_view(
         snapshot, page_built_at=BUILT_AT,
         artifact={"path": "x", "manifest_path": "y", "sha256": "z", "bytes": 1,
                   "min_client_contract": builder.MIN_CLIENT_CONTRACT})
+
+
+def _snapshot_at(state_id: Any, x: Any, y: Any) -> dict[str, Any]:
+    """The live artifact's SHAPE, carrying a chosen state and coordinate pair.
+
+    Only the three values under test are overridden, so the fixture cannot drift
+    away from the real contract, and the assertions cannot depend on what the
+    producer published tonight.
+    """
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["headline"]["state_id"] = state_id
+    snapshot["headline"]["quadrant"]["x"] = x
+    snapshot["headline"]["quadrant"]["y"] = y
+    return snapshot
+
+
+def _is_plain_finite_number(value: Any) -> bool:
+    """Deliberately re-stated here rather than imported from the view.
+
+    A test that borrows the implementation's own definition of "a number" agrees
+    with it by construction, including when it is wrong.
+    """
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+# Independently chosen: the coordinates and the expected point are written out
+# by hand from the stated law (A = low-x/high-y, B = high/high, C = low/low,
+# D = high/low; SVG y grows downward, so cy = 100 - y). Nothing here is obtained
+# by calling _QUADRANT_GRID or _quadrant_map, which is the whole point -- a table
+# derived from the implementation would agree with any implementation.
+_QUADRANT_LAW = (
+    # state, x,    y,    expected cx, expected cy
+    ("A", 20.0, 80.0, 20.0, 20.0),
+    ("B", 80.0, 80.0, 80.0, 20.0),
+    ("C", 20.0, 20.0, 20.0, 80.0),
+    ("D", 80.0, 20.0, 80.0, 80.0),
+)
+
+_QUADRANT_MEANING = {
+    "A": "Easy funding / Strong support",
+    "B": "Tight funding / Strong support",
+    "C": "Easy funding / Weak support",
+    "D": "Tight funding / Weak support",
+}
+
+
+@pytest.mark.parametrize(("state", "x", "y", "cx", "cy"), _QUADRANT_LAW)
+def test_the_quadrant_grid_follows_the_producer_classification_law(
+    state: str, x: float, y: float, cx: float, cy: float,
+) -> None:
+    """The mapping law, on fixtures: every corner, at a coordinate we chose.
+
+    This used to read the live snapshot and assert that C was current and that
+    the point sat at one night's numbers. Both were true of that publication, not
+    of the law: a legitimate A/B/D reading reddened this test -- and, because it
+    runs in a shared pack, every unrelated PR in that pack too.
+    """
+    view = _view_of(_snapshot_at(state, x, y))
     cells = {cell["letter"]: cell for cell in view["quadrant_map"]["cells"]}
-    assert cells["A"]["label"]["en"] == "Easy funding / Strong support"
-    assert cells["B"]["label"]["en"] == "Tight funding / Strong support"
-    assert cells["C"]["label"]["en"] == "Easy funding / Weak support"
-    assert cells["D"]["label"]["en"] == "Tight funding / Weak support"
-    assert cells["C"]["current"] is True
-    assert [c["current"] for c in cells.values()].count(True) == 1
-    # SVG y grows downward: a weak-support reading must plot in the LOWER half.
-    assert view["quadrant_map"]["point"]["cy"] == pytest.approx(100 - 25.12)
-    assert view["quadrant_map"]["point"]["cx"] == pytest.approx(20.05)
+
+    assert set(cells) == set(_QUADRANT_MEANING)
+    for letter, meaning in _QUADRANT_MEANING.items():
+        assert cells[letter]["label"]["en"] == meaning
+
+    current = [letter for letter, cell in cells.items() if cell["current"]]
+    assert current == [state]
+    assert view["quadrant_map"]["point"] == {"cx": cx, "cy": cy}
+
+
+def test_the_current_artifact_agrees_with_itself() -> None:
+    """Live-data smoke: identity only, never today's letter, half-plane or value.
+
+    Whatever the producer published, the page must show THAT -- not a state the
+    view decided on, and not a coordinate it invented. Every assertion below
+    holds for all four quadrants, so a regime change cannot red this test.
+    """
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    view = _view_of(snapshot)
+    quadrant_map = view["quadrant_map"]
+    headline = snapshot["headline"]
+    state_id = headline.get("state_id")
+
+    current = [cell["letter"] for cell in quadrant_map["cells"] if cell["current"]]
+    if state_id in _QUADRANT_MEANING:
+        assert current == [state_id], "the page must show the producer's state, not its own"
+    else:
+        assert current == [], "an unclassified reading must not light up a quadrant"
+
+    x, y = headline["quadrant"].get("x"), headline["quadrant"].get("y")
+    if _is_plain_finite_number(x) and _is_plain_finite_number(y):
+        assert quadrant_map["plotted"] is True
+        assert quadrant_map["point"]["cx"] == pytest.approx(x)
+        assert quadrant_map["point"]["cy"] == pytest.approx(100 - y)
+    elif x is None or y is None:
+        assert quadrant_map["plotted"] is False
+        assert quadrant_map["point"] is None
+    # A NaN, infinite or boolean axis reading is deliberately NOT asserted here.
+    # Rejecting those requires the view-side finite-number guard, which is a
+    # product change owned by the held F01 R1 candidate, not by this repair.
+
+
+@pytest.mark.parametrize("state_id", [None, "", "Z", "AB", 0])
+def test_an_unclassified_reading_never_invents_a_current_quadrant(state_id: Any) -> None:
+    """Absent or invalid producer classification must light up nothing."""
+    view = _view_of(_snapshot_at(state_id, 20.0, 80.0))
+    assert [c["letter"] for c in view["quadrant_map"]["cells"] if c["current"]] == []
+
+
+@pytest.mark.parametrize("value", [None, "20", "", [], {}])
+def test_a_non_numeric_axis_value_plots_no_point(value: Any) -> None:
+    """missing != zero, on the axis itself.
+
+    Restricted to the non-numeric shapes the current view already classifies as
+    unavailable. `True`, `NaN` and the infinities are excluded on purpose: bool
+    is a subclass of int and json.loads parses a bare NaN, so today they still
+    plot. Closing that hole is a view-side change carried by the held F01 R1
+    candidate; this repair must not import it.
+    """
+    for x, y in ((value, 80.0), (20.0, value)):
+        view = _view_of(_snapshot_at("A", x, y))
+        assert view["quadrant_map"]["plotted"] is False
+        assert view["quadrant_map"]["point"] is None
 
 
 def test_a_missing_axis_value_plots_no_point_at_all() -> None:
