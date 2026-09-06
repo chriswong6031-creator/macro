@@ -1046,10 +1046,22 @@ def compose_alert(payload: dict, *, lang: str = "en") -> dict:
     """
     payload = payload or {}
     ticker = _alert_plain(payload.get("ticker"), "this name", "该标的")
-    condition_plain = _alert_plain(payload.get("condition_plain"),
-                                   "a condition you set was met", "你设置的条件已触发")
-    condition_plain_zh = _alert_plain(payload.get("condition_plain"),
-                                      "a condition you set was met", "你设置的条件已触发", zh=True)
+    raw_condition = str(payload.get("condition_plain") or "")
+    # The frozen outbox payload carries ONE source string with no zh field (F08 freeze
+    # section 6) -- there is nothing to genuinely select between, and fabricating a
+    # translation is out of scope (no LLM-originated text, section 8). Detect which
+    # language the source actually is and keep the OTHER slot on its neutral fallback,
+    # rather than showing the untranslated source in both slots under a language label
+    # it does not match -- that was the parity bug (title_zh == English condition_plain).
+    if any("\u4e00" <= ch <= "\u9fff" for ch in raw_condition):
+        condition_plain = _alert_plain(None, "a condition you set was met", "你设置的条件已触发")
+        condition_plain_zh = _alert_plain(raw_condition, "a condition you set was met",
+                                          "你设置的条件已触发", zh=True)
+    else:
+        condition_plain = _alert_plain(payload.get("condition_plain"),
+                                       "a condition you set was met", "你设置的条件已触发")
+        condition_plain_zh = _alert_plain(None, "a condition you set was met",
+                                          "你设置的条件已触发", zh=True)
     evidence_url = payload.get("evidence_url") or ""
     if any(tok in str(evidence_url) for tok in _ALERT_BANNED_TOKENS):
         evidence_url = ""

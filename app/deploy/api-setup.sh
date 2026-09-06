@@ -445,6 +445,7 @@ if ! w2c_reconcile_timer; then
   exit 1
 fi
 systemctl enable --now macro-market-memory-production-records.timer
+systemctl enable --now macro-alert-drain.timer
 if [ "$OPTIONS_CREDENTIAL_READY" -eq 1 ]; then
   if ! systemctl enable --now macro-market-memory-options.timer || \
      ! systemctl is-enabled macro-market-memory-options.timer >/dev/null 2>&1 || \

@@ -212,33 +212,43 @@ def quiet_decision(now_utc: datetime, prefs: AlertPrefs) -> tuple:
 _LAPSED_STATUSES = {"canceled", "past_due", "unpaid", "incomplete_expired"}
 
 
+_TIER_RANK = {"free": 0, "plus": 1, "pro": 2}
+
+
 def entitlement_decision(read: TypedRead, now_utc: datetime, requires_tier: str | None = None) -> str:
-    """'send' | 'suppress' | 'unavailable'."""
+    """'send' | 'suppress' | 'unavailable'. Fail-closed (freeze section 5): an
+    unrecognised status, an unparsable period, or a tier below ``requires_tier``
+    suppresses rather than sends -- this is the paid lane (MO-PAID-085/MO-PAID-027)."""
     if read.state == READ_UNAVAILABLE:
         return "unavailable"
     if read.state == READ_OK_ZERO:
-        return "send"
+        # No entitlement row at all: only a no-gate (free) alert may send.
+        return "send" if not requires_tier else "suppress"
     row = (read.rows or [{}])[0]
     status = row.get("status")
     tier = row.get("tier")
     source = row.get("source")
     period_end = row.get("current_period_end")
-    if source == "comp" and not period_end:
+    if not (source == "comp" and not period_end):
+        if status in _LAPSED_STATUSES:
+            return "suppress"
+        if period_end:
+            try:
+                pe = datetime.fromisoformat(str(period_end).replace("Z", "+00:00"))
+                if pe.tzinfo is None:
+                    pe = pe.replace(tzinfo=timezone.utc)
+                if pe < now_utc:
+                    return "suppress"
+            except Exception:  # noqa: BLE001
+                return "suppress"  # unparsable period_end fails closed
+    if requires_tier:
+        have = _TIER_RANK.get(str(tier or "free"), -1)
+        need = _TIER_RANK.get(str(requires_tier), 99)
+        if have < need:
+            return "suppress"
+    if status in ("active", "trialing", "none") or source == "comp":
         return "send"
-    if status in _LAPSED_STATUSES:
-        return "suppress"
-    if period_end:
-        try:
-            pe = datetime.fromisoformat(str(period_end).replace("Z", "+00:00"))
-            if pe.tzinfo is None:
-                pe = pe.replace(tzinfo=timezone.utc)
-            if pe < now_utc:
-                return "suppress"
-        except Exception:  # noqa: BLE001
-            pass
-    if status == "none" and tier == "free":
-        return "send"
-    return "send"
+    return "suppress"  # fail-closed: an unrecognised status never sends
 
 
 # --------------------------------------------------------------------------- #
@@ -264,17 +274,26 @@ def decide_row(row: dict, *, user_state: str, record: dict | None,
     to_email = str(record.get("email") or "")
     if not prefs.email_optin:
         return Decision(action="suppress", reason="not_opted_in", to_email=to_email, lang=prefs.lang)
+    payload = row.get("payload") or {}
+    category = payload.get("category")
+    if prefs.categories is not None and category is not None and category not in prefs.categories:
+        return Decision(action="suppress", reason="category_filtered", to_email=to_email, lang=prefs.lang)
     if suppression.state == READ_UNAVAILABLE:
         return Decision(action="unevaluable", reason="address_suppression_unavailable")
     if suppression.state == READ_OK and suppression.rows:
         return Decision(action="suppress", reason="address_suppressed", to_email=to_email, lang=prefs.lang)
     if ent.state == READ_UNAVAILABLE:
         return Decision(action="unevaluable", reason="entitlement_unavailable")
-    ent_decision = entitlement_decision(ent, now_utc)
+    requires_tier = payload.get("requires_tier")
+    ent_decision = entitlement_decision(ent, now_utc, requires_tier=requires_tier)
     if ent_decision == "unavailable":
         return Decision(action="unevaluable", reason="entitlement_unavailable")
     if ent_decision == "suppress":
         return Decision(action="suppress", reason="entitlement_lapsed", to_email=to_email, lang=prefs.lang)
+    if prefs.quiet_note == "unparsed":
+        # An unrecognised quiet_hours shape must never fail OPEN to a silent send --
+        # surface it as unevaluable (typed, counted, visible in the run receipt).
+        return Decision(action="unevaluable", reason="quiet_hours_unparsed")
     action, deliver_after = quiet_decision(now_utc, prefs)
     if action == "defer":
         return Decision(action="defer", reason="quiet_hours", deliver_after=deliver_after,
@@ -356,19 +375,25 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
 
     outbox_read = typed_get(
         "alert_outbox?channel=eq.email"
-        f"&or=(status.eq.pending,and(status.eq.deferred,deliver_after.lte.{urllib.parse.quote(now_iso)}))"
+        "&or=(status.eq.pending,status.eq.failed,"
+        f"and(status.eq.deferred,deliver_after.lte.{urllib.parse.quote(now_iso)}))"
         "&select=id,user_id,alert_id,fire_event_id,status,payload,attempts,deliver_after"
         f"&order=created_at.asc&limit={int(limit)}")
 
+    run_uuid, run_id, wrote = (None, None, False) if dry_run else open_receipt(now_utc)
+
     if outbox_read.state == READ_UNAVAILABLE:
+        receipt_written = False
+        if not dry_run and run_uuid is not None:
+            receipt_written = close_receipt(
+                run_uuid, outcome="failure", evaluated_n=0, fired_n=0, unevaluable_n=0,
+                source_asof=None, error_class=outbox_read.error_class) and wrote
         return DrainResult(outcome="failure", evaluated_n=0, fired_n=0, unevaluable_n=0,
                            deferred_n=0, suppressed_n=0, failed_n=0, category_unfiltered_n=0,
                            read_state=READ_UNAVAILABLE, error_class=outbox_read.error_class,
-                           run_id=None, receipt_written=False)
+                           run_id=run_id, receipt_written=receipt_written)
 
     rows = outbox_read.rows or []
-
-    run_uuid, run_id, wrote = (None, None, False) if dry_run else open_receipt(now_utc)
 
     evaluated_n = fired_n = unevaluable_n = deferred_n = suppressed_n = failed_n = 0
     category_unfiltered_n = 0
@@ -477,6 +502,11 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
         receipt_written = close_receipt(run_uuid, outcome=outcome, evaluated_n=evaluated_n,
                                         fired_n=fired_n, unevaluable_n=unevaluable_n,
                                         source_asof=source_asof, error_class=None) and wrote
+        if not receipt_written and outcome == "success":
+            # The run's own provenance failed to persist -- freeze section 4's
+            # fallback => partial applies to the receipt path itself, not only to
+            # the rows evaluated (2(ii)): a run nobody can audit is never "success".
+            outcome = "partial"
 
     return DrainResult(outcome=outcome, evaluated_n=evaluated_n, fired_n=fired_n,
                        unevaluable_n=unevaluable_n, deferred_n=deferred_n,

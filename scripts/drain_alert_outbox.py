@@ -57,9 +57,10 @@ def main(argv=None) -> int:
               % result.error_class, flush=True)
 
     print("alert-drain: outcome=%s evaluated=%d fired=%d unevaluable=%d deferred=%d "
-          "suppressed=%d failed=%d run_id=%s"
+          "suppressed=%d failed=%d category_unfiltered=%d receipt_written=%s run_id=%s"
           % (result.outcome, result.evaluated_n, result.fired_n, result.unevaluable_n,
-             result.deferred_n, result.suppressed_n, result.failed_n, result.run_id),
+             result.deferred_n, result.suppressed_n, result.failed_n,
+             result.category_unfiltered_n, result.receipt_written, result.run_id),
           flush=True)
     return 0
 

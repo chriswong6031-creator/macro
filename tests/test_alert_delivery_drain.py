@@ -14,6 +14,24 @@ def _now(iso="2026-09-05T15:00:00+00:00"):
     return datetime.fromisoformat(iso)
 
 
+def _outbox_row_selected(row: dict, path: str) -> bool:
+    """Mirrors drain.drain's own or=(...) selection predicate against the fake
+    table, so a test that never varies path can no longer pass by construction --
+    this is what the review found missing (Acceptance 1(d))."""
+    status = row.get("status")
+    if status in ("pending", "failed"):
+        return True
+    if status == "deferred":
+        m = re.search(r"deliver_after\.lte\.([^&)]+)", path)
+        if not m:
+            return False
+        import urllib.parse as _up
+        cutoff = _up.unquote(m.group(1))
+        da = row.get("deliver_after")
+        return bool(da) and str(da) <= cutoff
+    return False
+
+
 class FakeTables:
     def __init__(self, *, outbox=None, users=None, suppression=None, entitlements=None):
         self.outbox = outbox if outbox is not None else []
@@ -25,7 +43,7 @@ class FakeTables:
 
     def pg(self, method, path, body=None, prefer=None, timeout=6):
         if path.startswith("alert_outbox") and method == "GET":
-            return list(self.outbox)
+            return [r for r in self.outbox if _outbox_row_selected(r, path)]
         if path.startswith("alert_outbox") and method == "PATCH":
             row_id = re.search(r"id=eq\.([^&]+)", path).group(1)
             self.patches.append((row_id, body))
@@ -176,9 +194,25 @@ def test_failed_row_is_retried_by_a_later_drain_and_never_reads_as_sent(monkeypa
     _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
     drain.drain(send_fn=lambda **kw: "failed", now_utc=_now(), limit=10)
     assert fake.outbox[0]["status"] == "failed"
-    fake.outbox[0]["status"] = "pending"  # a later drain still selects it (frozen contract has no 'sending')
+    # No manual status flip: the fake's GET now honours the drain's own selection
+    # predicate (status.eq.failed is part of the `or=`), so this exercises that
+    # predicate directly rather than assuming it.
     drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
     assert fake.outbox[0]["status"] == "sent"
+    assert fake.outbox[0]["attempts"] == 2
+
+
+def test_selection_predicate_never_selects_a_sent_or_suppressed_row(monkeypatch):
+    import uuid as _uuid
+    sent_row = _row(id=str(_uuid.uuid4()), status="sent")
+    suppressed_row = _row(id=str(_uuid.uuid4()), status="suppressed")
+    pending_row = _row(id=str(_uuid.uuid4()), status="pending")
+    fake = FakeTables(outbox=[sent_row, suppressed_row, pending_row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
+    assert result.evaluated_n == 1
+    assert sent_row["status"] == "sent"
+    assert suppressed_row["status"] == "suppressed"
 
 
 def test_missing_tables_yield_typed_read_unavailable_zero_sends_and_exit_zero(monkeypatch, capsys):
@@ -190,6 +224,98 @@ def test_missing_tables_yield_typed_read_unavailable_zero_sends_and_exit_zero(mo
     result = drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
     assert result.read_state == drain.READ_UNAVAILABLE
     assert result.fired_n == 0
+    assert result.receipt_written is False
+
+
+def test_main_reports_read_unavailable_with_a_line_start_warning_and_exits_zero(monkeypatch, capsys):
+    """Exercises scripts.drain_alert_outbox.main() directly -- the previous version of
+    this test asserted only on drain(), never imported or called main(), and never
+    used capsys (Acceptance 5 + 1(e))."""
+    import urllib.error
+    from scripts import drain_alert_outbox
+
+    def pg(method, path, body=None, prefer=None, timeout=6):
+        raise urllib.error.HTTPError(path, 404, "not found", None, None)
+
+    monkeypatch.setattr(drain, "_pg", pg)
+    monkeypatch.delenv("ALERT_DRAIN_ENABLE", raising=False)
+    rc = drain_alert_outbox.main(["--now", "2026-09-05T15:00:00+00:00"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "alert-drain: DORMANT" in out
+    warning_lines = [ln for ln in out.splitlines() if "alert-drain-read-unavailable" in ln]
+    assert warning_lines, "expected a ::warning line for READ_UNAVAILABLE, got: " + out
+    assert warning_lines[0].startswith("::warning")
+
+
+def test_main_forces_dry_run_and_zero_sends_when_alert_drain_enable_is_unset(monkeypatch, capsys):
+    """DORMANT default (freeze section 10 V4): main() must perform zero sends against
+    real fixture rows unless ALERT_DRAIN_ENABLE=1, even with a send_fn that would send."""
+    from scripts import drain_alert_outbox
+
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    monkeypatch.setattr(drain, "_pg", fake.pg)
+    monkeypatch.setattr(drain, "fetch_user_record",
+                        lambda uid: (drain.READ_OK, OPTED_IN_USER) if str(uid) == "u1"
+                        else (drain.READ_UNAVAILABLE, None))
+    monkeypatch.delenv("ALERT_DRAIN_ENABLE", raising=False)
+    sent = []
+    monkeypatch.setattr("app.mailer.send_alert", lambda **kw: sent.append(kw) or "sent")
+    rc = drain_alert_outbox.main(["--now", "2026-09-05T15:00:00+00:00"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert sent == []
+    assert fake.outbox[0]["status"] == "pending"
+    assert fake.runs == {}
+    assert "outcome=" in out
+    assert "category_unfiltered=" in out
+    assert "receipt_written=" in out
+
+
+def test_category_filter_suppresses_a_row_outside_the_users_categories(monkeypatch):
+    row = _row(payload={"subject": "AAPL moved", "ticker": "AAPL", "summary_plain": "x",
+                        "condition_plain": "RSI crossed 70", "evidence_url": "https://x/e",
+                        "fired_at": "2026-09-05T14:00:00Z", "category": "earnings"})
+    fake = FakeTables(outbox=[row])
+    user = {"email": "u@example.com",
+            "user_metadata": {"alert_email_optin": "true", "alert_categories": ["technical"]}}
+    _patch(monkeypatch, fake, users={"u1": user})
+    result = drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.suppressed_n == 1
+    assert fake.outbox[0]["status"] == "suppressed"
+    assert fake.outbox[0]["last_error"] == "category_filtered"
+
+
+def test_requires_tier_suppresses_below_gate_and_sends_at_or_above():
+    read_free = drain.TypedRead(drain.READ_OK, [{"tier": "free", "status": "none"}])
+    read_pro = drain.TypedRead(drain.READ_OK, [{"tier": "pro", "status": "active"}])
+    assert drain.entitlement_decision(read_free, _now(), requires_tier="pro") == "suppress"
+    assert drain.entitlement_decision(read_pro, _now(), requires_tier="pro") == "send"
+    zero = drain.TypedRead(drain.READ_OK_ZERO, [])
+    assert drain.entitlement_decision(zero, _now(), requires_tier="pro") == "suppress"
+    assert drain.entitlement_decision(zero, _now(), requires_tier=None) == "send"
+
+
+def test_entitlement_unrecognised_status_fails_closed_not_open():
+    read = drain.TypedRead(drain.READ_OK, [{"tier": "pro", "status": "some_new_enum_value"}])
+    assert drain.entitlement_decision(read, _now()) == "suppress"
+
+
+def test_quiet_hours_unparsed_shape_is_unevaluable_not_a_silent_send():
+    """Major finding: an unrecognised quiet_hours shape must never fail OPEN to 'send'."""
+    meta = {"alert_email_optin": "true", "quiet_hours": "not-a-window"}
+    parsed = drain.parse_alert_prefs(meta)
+    assert parsed.quiet_note == "unparsed"
+    row = _row()
+    decision = drain.decide_row(row, user_state=drain.READ_OK,
+                                record={"email": "u@example.com", "user_metadata": meta},
+                                ent=drain.TypedRead(drain.READ_OK_ZERO, []),
+                                suppression=drain.TypedRead(drain.READ_OK_ZERO, []),
+                                now_utc=_now())
+    assert decision.action == "unevaluable"
+    assert decision.reason == "quiet_hours_unparsed"
 
 
 def test_read_unavailable_is_not_read_ok_zero(monkeypatch):

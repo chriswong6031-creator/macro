@@ -5,7 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+DynamicUser=true
 WorkingDirectory=/opt/macro
+ReadOnlyPaths=/opt/macro
 EnvironmentFile=-/etc/macro-api.env
 ExecStart=/opt/macro-api/.venv/bin/python -m scripts.drain_alert_outbox
 TimeoutStartSec=240
@@ -15,8 +17,23 @@ CPUQuota=40%
 MemoryHigh=128M
 MemoryMax=256M
 IOWeight=20
+UMask=0077
 NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
 
 [Install]
 WantedBy=multi-user.target
