@@ -239,6 +239,7 @@ class TestStanceTakeProfits:
         legs = _full_buy_legs()
         # vwap_delta = 1.5 × 1.0 = exactly at threshold → trigger
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=1.5,
             dealer=dealer,
@@ -249,16 +250,20 @@ class TestStanceTakeProfits:
         assert result["zh"]  # non-empty ZH
 
     def test_pin_watch_triggers_take_profits(self):
-        """opex_days <= 5, regime=long, call_wall_dist_sigma <= 0.01 ⇒ pin_watch ⇒ take_profits."""
+        """Expiry within five days and a wall within 1% of current price ⇒ pin watch."""
         d = _full_summary()
         d["opex_days"] = 3
         d["regime"] = "long"
-        d["call_wall_dist_sigma"] = 0.005  # within ~1% pin zone
+        d["call_wall_hard"] = False  # isolate pin, not into-ceiling
+        d["call_wall_dist_sigma"] = 2.0
+        d["call_wall"] = 452.0  # within 1% of current_price=450
         dealer = dealer_context(d)
         legs = _full_buy_legs()
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=0.3,  # price above VWAP
+            current_price=450.0,
             dealer=dealer,
         )
         assert result["key"] == "take_profits"
@@ -276,6 +281,7 @@ class TestStanceTakeProfits:
             L7_leader_quality=True,
         )
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=-0.5,  # below VWAP
             dealer=dealer,
@@ -294,6 +300,7 @@ class TestStanceAct:
         dealer = dealer_context(d)
         legs = _full_buy_legs()
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=0.3,  # above VWAP but not stretched
             dealer=dealer,
@@ -316,6 +323,7 @@ class TestStanceAct:
             L7_leader_quality=True,
         )
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=0.3,
             dealer=dealer,
@@ -334,7 +342,7 @@ class TestStanceAct:
             L4_vol_durable=False,   # not durable
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=dealer)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=dealer)
         assert result["key"] != "act"
 
 
@@ -349,7 +357,7 @@ class TestStanceGetReady:
             L6_upturn_organ=True,
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K)
         assert result["key"] == "get_ready"
         assert result["lane"] == "get_ready"
         assert "almost ready" in result["en"].lower() or "waiting" in result["en"].lower()
@@ -362,7 +370,7 @@ class TestStanceGetReady:
             L6_upturn_organ=None,
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K, squeeze_coiled=True)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, squeeze_coiled=True)
         assert result["key"] == "get_ready"
 
     def test_reclaim_present_no_get_ready(self):
@@ -373,7 +381,7 @@ class TestStanceGetReady:
             L6_upturn_organ=True,
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K)
         assert result["key"] != "get_ready"
 
 
@@ -390,7 +398,7 @@ class TestStanceInFavour:
             L6_upturn_organ=True,
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K)
         assert result["key"] == "in_favour"
         assert result["lane"] == "in_favour"
         assert "in favour" in result["en"].lower()
@@ -405,7 +413,7 @@ class TestStanceInFavour:
             L6_upturn_organ=True,
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K)
         assert result["key"] == "in_favour"
 
 
@@ -419,7 +427,7 @@ class TestStanceWatch:
             L3_rvol_elevated=True,
             L7_leader_quality=True,
         )
-        result = stance(legs=legs, K=legs.K)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K)
         assert result["key"] == "watch"
         assert result["lane"] == "watch"
         assert "watch" in result["en"].lower()
@@ -431,6 +439,7 @@ class TestStanceWatch:
             L7_leader_quality=False,
         )
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             price_up_on_day=True,
         )
@@ -445,7 +454,7 @@ class TestStanceWatch:
             L4_vol_durable=True,
             L7_leader_quality=False,  # trap-prone overrides
         )
-        result = stance(legs=legs, K=legs.K, vwap_delta_pct=0.3)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, vwap_delta_pct=0.3)
         assert result["key"] == "watch"
 
 
@@ -455,7 +464,7 @@ class TestStanceStandAside:
     def test_all_none_legs(self):
         """No legs set → stand aside."""
         legs = _legs()
-        result = stance(legs=legs, K=0)
+        result = stance(entry_status="buy_soon", legs=legs, K=0)
         assert result["key"] == "stand_aside"
         assert result["lane"] == "stand_aside"
         assert "stand aside" in result["en"].lower()
@@ -471,7 +480,7 @@ class TestStanceStandAside:
             L6_upturn_organ=False,
             L7_leader_quality=False,
         )
-        result = stance(legs=legs, K=0)
+        result = stance(entry_status="buy_soon", legs=legs, K=0)
         assert result["key"] == "stand_aside"
 
     def test_no_volume_no_setup(self):
@@ -483,7 +492,7 @@ class TestStanceStandAside:
             L7_leader_quality=True,
             L6_upturn_organ=False,
         )
-        result = stance(legs=legs, K=legs.K, squeeze_coiled=False)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, squeeze_coiled=False)
         assert result["key"] == "stand_aside"
 
 
@@ -493,7 +502,7 @@ class TestStanceOffHours:
     def test_l1_l6_get_ready_offhours(self):
         """L1 + L6 ⇒ get_ready off-hours with 'Base in place' copy."""
         legs = _legs(L1_washout_recent=True, L6_upturn_organ=True)
-        result = stance(legs=legs, K=legs.K, live_present=False)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, live_present=False)
         assert result["key"] == "get_ready"
         assert "base in place" in result["en"].lower()
         assert "底部已形成" in result["zh"]
@@ -502,6 +511,7 @@ class TestStanceOffHours:
         """L1 + squeeze_coiled ⇒ get_ready off-hours."""
         legs = _legs(L1_washout_recent=True, L6_upturn_organ=False)
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             squeeze_coiled=True,
             live_present=False,
@@ -511,13 +521,13 @@ class TestStanceOffHours:
     def test_no_l1_stand_aside_offhours(self):
         """No L1 ⇒ stand aside off-hours regardless of L6."""
         legs = _legs(L1_washout_recent=False, L6_upturn_organ=True)
-        result = stance(legs=legs, K=legs.K, live_present=False)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, live_present=False)
         assert result["key"] == "stand_aside"
 
     def test_all_none_stand_aside_offhours(self):
         """No legs → stand aside off-hours."""
         legs = _legs()
-        result = stance(legs=legs, K=0, live_present=False)
+        result = stance(entry_status="buy_soon", legs=legs, K=0, live_present=False)
         assert result["key"] == "stand_aside"
 
 
@@ -539,6 +549,7 @@ class TestStanceIntoCeiling:
             L7_leader_quality=True,
         )
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=0.3,  # above VWAP but not stretched
             dealer=dealer,
@@ -557,6 +568,7 @@ class TestStanceIntoCeiling:
         dealer = dealer_context(d)
         legs = _full_buy_legs()
         result = stance(
+            entry_status="buy_soon",
             legs=legs, K=legs.K,
             vwap_delta_pct=0.3,
             dealer=dealer,
@@ -565,9 +577,9 @@ class TestStanceIntoCeiling:
 
 
 class TestStanceOutputShape:
-    """Every stance result has exactly the four required keys."""
+    """Every stance result preserves the four original keys plus timing metadata."""
 
-    _REQUIRED_KEYS = {"key", "en", "zh", "lane"}
+    _REQUIRED_KEYS = {"key", "en", "zh", "lane", "timing_state", "timing_reason", "already_started"}
 
     @pytest.mark.parametrize("legs_kw,extra", [
         # stand_aside
@@ -584,7 +596,7 @@ class TestStanceOutputShape:
           "L7_leader_quality": True}, {}),
     ])
     def test_output_has_required_keys(self, legs_kw, extra):
-        result = stance(legs=_legs(**legs_kw), K=0, **extra)
+        result = stance(entry_status="buy_soon", legs=_legs(**legs_kw), K=0, **extra)
         assert self._REQUIRED_KEYS == set(result.keys()), (
             f"Unexpected keys: {set(result.keys()) - self._REQUIRED_KEYS}"
         )
@@ -592,14 +604,14 @@ class TestStanceOutputShape:
     def test_key_equals_lane(self):
         """key and lane must always be the same string."""
         legs = _legs()
-        result = stance(legs=legs, K=0)
+        result = stance(entry_status="buy_soon", legs=legs, K=0)
         assert result["key"] == result["lane"]
 
     def test_en_zh_non_empty(self):
         """EN and ZH copy must always be non-empty strings."""
         for k in ("L1_washout_recent", "L2_reclaim", "L3_rvol_elevated"):
             legs = _legs(**{k: True})
-            result = stance(legs=legs, K=legs.K)
+            result = stance(entry_status="buy_soon", legs=legs, K=legs.K)
             assert isinstance(result["en"], str) and len(result["en"]) > 0
             assert isinstance(result["zh"], str) and len(result["zh"]) > 0
 
@@ -610,13 +622,13 @@ class TestStanceNoDealerFields:
     def test_full_buy_no_dealer(self):
         """Full buy setup with dealer=None ⇒ act (no ceiling to block)."""
         legs = _full_buy_legs()
-        result = stance(legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
+        result = stance(entry_status="buy_soon", legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
         # into_ceiling=False (no dealer), extended_up=False (no dealer) → act
         assert result["key"] == "act"
 
     def test_stand_aside_no_dealer(self):
         legs = _legs()
-        result = stance(legs=legs, K=0, dealer=None)
+        result = stance(entry_status="buy_soon", legs=legs, K=0, dealer=None)
         assert result["key"] == "stand_aside"
 
 
@@ -634,15 +646,15 @@ class TestStanceQualityNegativeFilter:
 
     def test_unknown_quality_reaches_act(self):
         legs = self._full_buy_with_quality(None)
-        r = stance(legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
+        r = stance(entry_status="buy_soon", legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
         assert r["key"] == "act"
 
     def test_confirmed_quality_reaches_act(self):
         legs = self._full_buy_with_quality(True)
-        r = stance(legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
+        r = stance(entry_status="buy_soon", legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
         assert r["key"] == "act"
 
     def test_known_trap_blocks_act_to_watch(self):
         legs = self._full_buy_with_quality(False)
-        r = stance(legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
+        r = stance(entry_status="buy_soon", legs=legs, K=legs.K, vwap_delta_pct=0.3, dealer=None)
         assert r["key"] == "watch"

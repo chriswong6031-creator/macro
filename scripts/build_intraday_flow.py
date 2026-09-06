@@ -546,12 +546,18 @@ def _extract_stockdata_context(sd: dict) -> dict:
 
     # entry_signal — top-level.
     es = sd.get("entry_signal") or {}
+    # Carry the existing owner's boundary; never derive one from buy-zone/ATR.
+    from engine.intraday_flow import _finite_number  # noqa: PLC0415
+    chase_above = _finite_number(es.get("chase_above"))
+    if chase_above is not None and chase_above <= 0:
+        chase_above = None
     ctx["entry_signal"] = {
         "status": es.get("status"),
         "stop": es.get("stop"),
         "buy_zone": es.get("buy_zone"),
         "atr_pct": es.get("atr_pct"),
         "spot": es.get("spot"),
+        "chase_above": chase_above,
     } if es else None
 
     # prevClose — from tech.price.
@@ -1099,7 +1105,16 @@ def _advance_ledger(
             if _stance_fn is not None:
                 try:
                     dealer = (rec.get("options_entry") or {}).get("dealer")
-                    _eod_stance = _stance_fn(legs=legs, dealer=dealer)
+                    entry = rec.get("entry_signal") or {}
+                    result = _stance_fn(
+                        legs=legs, K=legs.K, dealer=dealer,
+                        live_present=False,
+                        entry_status=entry.get("status"),
+                        current_price=rec.get("prev_close"),
+                        chase_above=entry.get("chase_above"),
+                        squeeze_coiled=(rec.get("vol_squeeze") or {}).get("coiled"),
+                    )
+                    _eod_stance = result["key"]
                 except Exception as _se:  # noqa: BLE001
                     log.debug(
                         "build_intraday_flow: stance() for %s failed: %s", ticker, _se
@@ -1231,7 +1246,7 @@ def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
             )
             # session_high / session_low: max/min of bar highs/lows
             _highs = [b.get("high") for b in bars if b.get("high") is not None]
-            _lows  = [b.get("low")  for b in bars if b.get("low")  is not None]
+            _lows  = [b.get("low")  for b in bars if b.get("low") is not None]
             _session_high = float(max(_highs)) if _highs else None
             _session_low  = float(min(_lows))  if _lows  else None
             # bars_above_vwap: count of bars whose close >= session vwap

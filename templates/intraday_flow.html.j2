@@ -143,8 +143,8 @@
   /* lane colors — stance/mood colors are fixed across languages (only in_favour flips, per ruling) */
   /* Buy-now and In-favour BOTH mean long, so both take --up and both flip together.
      The shipped code pinned buy-now to a HEALTH token (--ok, which by law never
-     flips) and hand-rolled the flip for in-favour alone, so under zh the buy lane
-     painted green and the in-favour lane red in the same row — the buy lane read as
+     flips) and hand-rolled the flip for in_favour alone, so under zh the buy lane
+     painted green and the in_favour lane red in the same row — the buy lane read as
      SELL to a Chinese reader, and contradicted us_stocks one click away. */
   .lane-act    { --lane:var(--up,#3da564); }
   .lane-ready  { --lane:var(--info,#5b9bf0); }
@@ -556,20 +556,28 @@ function _etMinutes() {
   parts.forEach(function(p){ if (p.type==='hour') h=parseInt(p.value,10); else if (p.type==='minute') m=parseInt(p.value,10); });
   return h*60 + m;
 }
-function isMarketHours() { var e=_etMinutes(); return e >= (9*60+25) && e <= (16*60+5); }
+function _etWeekday() {
+  return new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', weekday:'short'}).format(new Date());
+}
+function isMarketHours() {
+  var weekday = _etWeekday(), e = _etMinutes();
+  return weekday !== 'Sat' && weekday !== 'Sun' && e >= (9*60+30) && e < (16*60);
+}
 function flowMetaFresh(meta) {
   if (!isMarketHours()) return true;
   if (!meta || meta.schema !== 'live_flow.meta/v2' || !meta.asof) return false;
   var stamped = Date.parse(meta.asof);
   return Number.isFinite(stamped) && Date.now() - stamped <= 15*60*1000;
 }
-// session phase: pre | live | post | closed  (weekday check is intentionally omitted —
-// off-hours simply renders the nightly skeleton, which is correct on weekends too)
+// session phase: pre | live | post | closed. Weekends are closed.
+// Exchange holidays/early closes still require the canonical calendar integration.
 function sessionPhase() {
+  var weekday = _etWeekday();
+  if (weekday === 'Sat' || weekday === 'Sun') return 'closed';
   var e = _etMinutes();
-  if (e >= (9*60+25) && e <= (16*60+5)) return 'live';
-  if (e >= (4*60) && e < (9*60+25)) return 'pre';
-  if (e > (16*60+5) && e <= (20*60)) return 'post';
+  if (e >= (9*60+30) && e < (16*60)) return 'live';
+  if (e >= (4*60) && e < (9*60+30)) return 'pre';
+  if (e >= (16*60) && e <= (20*60)) return 'post';
   return 'closed';
 }
 
@@ -602,15 +610,7 @@ function computeLegs(leader, quote, pulse, flow) {
   var L1 = null;
   if (leader.bb_lower_reclaim_days != null) L1 = leader.bb_lower_reclaim_days <= WASHOUT_LB;
   else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
-  if (L1 === null) {
-    var proxy = false;
-    if (leader.entry_signal && leader.entry_signal.status) {
-      var st = (leader.entry_signal.status || '').toLowerCase();
-      proxy = st.indexOf('washout')>=0 || st.indexOf('reclaim')>=0 || st.indexOf('bounce')>=0 || st.indexOf('buy')>=0;
-    }
-    if (!proxy && leader.vol_squeeze && leader.vol_squeeze.coiled) proxy = true;
-    if (proxy) L1 = true;
-  }
+  // Missing washout evidence stays unknown; entry status and squeeze are not precursors.
   var L2 = false;
   if (quote && quote.price && pulse && pulse.vwap) L2 = quote.price > pulse.vwap && quote.price > (leader.prev_close || 0);
   var rvol = computeRvol(leader, quote, pulse);
@@ -632,7 +632,7 @@ function computeLegs(leader, quote, pulse, flow) {
     var mst = (leader.mtf_upturn_state || '').toUpperCase();
     L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
   } else if (leader.mtf_upturn_K != null) L6 = leader.mtf_upturn_K >= 2;
-  var L7 = leader.failed_breakout_trap === false ? true : null;
+  var L7 = leader.failed_breakout_trap === true ? false : (leader.failed_breakout_trap === false ? true : null);
   var legs = [L1, L2, L3, L4, L5, L6, L7];
   return { legs: legs, K: legs.filter(function(v){ return v === true; }).length };
 }
@@ -676,16 +676,70 @@ function feedWord(status, zh) {
 }
 
 // ── Stance (mirror engine/intraday_flow.stance — deterministic precedence) ─
+// Snapshot compatibility with engine/intraday_flow.classify_entry_timing.
+// This does not persist episodes or infer an observed historical trigger.
+function timingFiniteNumber(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !/^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/.test(value.trim())) return null;
+  var number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+function classifyEntryTiming(entryStatus, currentPrice, chaseAbove) {
+  function out(state, reason, started) {
+    return {state:state, reason:reason, get_ready_eligible:state==='forming', already_started:started};
+  }
+  if (entryStatus == null || (typeof entryStatus === 'string' && !entryStatus.trim())) {
+    return out('unknown','status_missing',null);
+  }
+  if (typeof entryStatus !== 'string') return out('unknown','status_unknown',null);
+  var status = entryStatus.trim().toLowerCase();
+  var forming = ['buy_soon','await_confluence','watch','bounce_wait'].indexOf(status) >= 0;
+  var active = ['buy_now','partial'].indexOf(status) >= 0;
+  var moving = ['hold','extended','wait_pullback','topping'].indexOf(status) >= 0;
+  var failed = ['exit','avoid','blocked'].indexOf(status) >= 0;
+  if (failed) return out('failed_or_blocked','status_failed_or_blocked',null);
+  var price = timingFiniteNumber(currentPrice), chase = timingFiniteNumber(chaseAbove);
+  if ((forming || active || moving) && price != null && chase != null && chase > 0 && price > chase) {
+    return out('already_moving','above_chase',true);
+  }
+  if (forming) return out('forming','status_forming',false);
+  if (active) return out('active_window','status_active_window',true);
+  if (moving) return out('already_moving','status_already_moving',true);
+  return out('unknown','status_unknown',null);
+}
+
 function computeStance(leader, quote, pulse, flow, conf) {
   var legs = conf.legs;
   var L1=legs[0], L2=legs[1], L3=legs[2], L4=legs[3], L5=legs[4], L6=legs[5], L7=legs[6];
   var squeeze = !!(leader.vol_squeeze && leader.vol_squeeze.coiled);
   var d = dealerOf(leader);
-  var livePresent = isMarketHours() || !!(pulse && pulse.bars_today > 0);
+  var marketOpen = isMarketHours();
+  var pxNow = timingFiniteNumber(quote && quote.price);
+  var pulseVwap = timingFiniteNumber(pulse && pulse.vwap);
+  var es = leader.entry_signal || {};
+  var timing = classifyEntryTiming(es.status, pxNow != null ? pxNow : es.spot, es.chase_above);
+  var livePresent = marketOpen && quotesStatus === 'live' && pulseStatus === 'live' &&
+    pxNow != null && pxNow > 0 && pulseVwap != null && pulseVwap > 0 && !!(pulse && pulse.bars_today > 0);
+  function finish(result) {
+    result.timing_state = timing.state;
+    result.timing_reason = timing.reason;
+    result.already_started = timing.already_started;
+    return result;
+  }
+  function timingGate(includeActive) {
+    if (timing.state === 'failed_or_blocked') return finish({key:'stand_aside', reason_en:'Setup is no longer actionable.', reason_zh:'该形态已不再可执行。', muted:true});
+    if (timing.state === 'already_moving') return finish({key:'watch', reason_en:'Already moving — wait for a reset; do not chase.', reason_zh:'行情已启动 — 等待重置，切勿追高。', muted:true});
+    if (timing.state === 'unknown') return finish({key:'stand_aside', reason_en:'Timing unavailable — no positive setup claim.', reason_zh:'时机数据不可用 — 不作正面形态判断。', muted:true});
+    if (includeActive && timing.state === 'active_window') return finish({key:'watch', reason_en:'Entry window already opened — wait for live confirmation.', reason_zh:'入场窗口已开启 — 等待盘中确认。', muted:true});
+    return null;
+  }
 
   if (!livePresent) {
-    if (L1 === true && (L6 === true || squeeze)) return { key:'get_ready', reason_en:'Base in place — waiting for the open.', reason_zh:'底部已成——等待开盘。', muted:true };
-    return { key:'stand_aside', reason_en:'Waiting for the open — live tape not flowing yet.', reason_zh:'等待开盘——实时资金带尚未流动。', muted:true };
+    var offGate = timingGate(true);
+    if (offGate) return finish(offGate);
+    if (marketOpen) return finish({key:'stand_aside', reason_en:'Live confirmation unavailable — no actionable setup claim.', reason_zh:'盘中确认数据不可用 — 不作可执行形态判断。', muted:true});
+    if (L1 === true && (L6 === true || squeeze) && L7 !== false) return finish({key:'get_ready', reason_en:'Base in place — waiting for the open.', reason_zh:'底部已形成 — 等待开盘。', muted:true});
+    return finish({key:'stand_aside', reason_en:'Market closed — no verified washout setup.', reason_zh:'市场已休市 — 暂无已证实的洗盘形态。', muted:true});
   }
 
   var vwapDelta = computeVwapDelta(quote, pulse);
@@ -715,21 +769,25 @@ function computeStance(leader, quote, pulse, flow, conf) {
                        : 'Stretched well above the average price into the dealer ceiling — expect a pullback.';
     var whyz = pinWatch ? '临近到期被钉在大行权价附近——预期区间震荡，勿追。'
                         : '大幅高于均价并冲向做市商天花板——预期回落。';
-    return { key:'take_profits', reason_en:why, reason_zh:whyz, muted:false };
+    return finish({ key:'take_profits', reason_en:why, reason_zh:whyz, muted:false });
   }
+  var liveGate = timingGate(false);
+  if (liveGate) return finish(liveGate);
   // 2 · Buy now — full continuation setup, not into a ceiling.
   // Quality is a negative filter: only a KNOWN trap (L7===false) blocks; unknown
   // quality (null) must not (trap flags are sparse). Mirrors engine l7 = "is not False".
   if (L1===true && L2===true && L4===true && L7!==false && (L3===true || L5===true) && !intoCeiling) {
-    return { key:'act', reason_en:'Reclaimed above the average price on durable volume; structure supports continuation.', reason_zh:'放量收复均价上方；结构支持延续。', muted:false };
+    return finish({ key:'act', reason_en:'Reclaimed above the average price on durable volume; structure supports continuation.', reason_zh:'放量收复均价上方；结构支持延续。', muted:false });
   }
+  var activeGate = timingGate(true);
+  if (activeGate) return finish(activeGate);
   // 3 · Almost ready — base built, trigger not yet fired
   if (L1===true && (L6===true || squeeze) && L7!==false && L2!==true) {
-    return { key:'get_ready', reason_en:'Washout base built; waiting for a reclaim above the average price on volume.', reason_zh:'洗盘底部已成；等待放量收复均价上方。', muted:false };
+    return finish({ key:'get_ready', reason_en:'Washout base built; waiting for a reclaim above the average price on volume.', reason_zh:'洗盘底部已成；等待放量收复均价上方。', muted:false });
   }
   // 4 · In favour — trending and holding, no fresh washout
   if (L2===true && L6===true && (L3===true || L4===true) && L7!==false && L1!==true) {
-    return { key:'in_favour', reason_en:'Trending and holding above the average price; ride it, no fresh entry here.', reason_zh:'趋势中并守住均价上方；持有为宜，此处非新入场点。', muted:false };
+    return finish({ key:'in_favour', reason_en:'Trending and holding above the average price; ride it, no fresh entry here.', reason_zh:'趋势中并守住均价上方；持有为宜，此处非新入场点。', muted:false });
   }
   // 5 · Watch — active without structure, or trap-prone
   if ((L3===true || priceUp) && (L1!==true || L7===false)) {
@@ -737,10 +795,10 @@ function computeStance(leader, quote, pulse, flow, conf) {
                         : 'Moving without a washout base — wait for structure before acting.';
     var wrz = L7===false ? '有异动，但该标的有假突破前科——等待干净底部。'
                          : '异动但无洗盘底部——等待结构再行动。';
-    return { key:'watch', reason_en:wr, reason_zh:wrz, muted:false };
+    return finish({ key:'watch', reason_en:wr, reason_zh:wrz, muted:false });
   }
   // 6 · Stand aside
-  return { key:'stand_aside', reason_en:'Quiet tape, no setup right now.', reason_zh:'盘口平静，当前无布局。', muted:true };
+  return finish({ key:'stand_aside', reason_en:'Quiet tape, no setup right now.', reason_zh:'盘口平静，当前无布局。', muted:true });
 }
 
 // ── Format helpers ─────────────────────────────────────────────────────────
@@ -1416,8 +1474,8 @@ function render() {
 
   // hero + spotlight from the shared compute
   buildHero(computed, counts);
-  buildSpotlight(computed, counts);
   updateStanceCounts(counts);
+  buildSpotlight(computed, counts);
 
   // board
   var html = '';

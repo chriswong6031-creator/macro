@@ -14,6 +14,8 @@ Sibling: engine/flow_velocity.py (kinetics primitive ported here for NCP velocit
 from __future__ import annotations
 
 import logging
+import math
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -488,12 +490,12 @@ def confluence_legs(
     elif price is not None and prev_close is not None:
         l2 = price > prev_close
 
-    # ── L3: rvol_elevated ─────────────────────────────────────────────────────
+    # ── L3: rvol_elevated ──────────────────────────────────────────────────────
     l3: bool | None = None
     if rvol_tod_val is not None:
         l3 = rvol_tod_val >= rvol_confirm
 
-    # ── L4: vol_durable ───────────────────────────────────────────────────────
+    # ── L4: vol_durable ────────────────────────────────────────────────────────
     l4: bool | None = None
     if vol_durability_val is not None:
         l4 = vol_durability_val >= durability_min
@@ -546,7 +548,6 @@ def _clean(v):
         f = float(v)
     except (TypeError, ValueError):
         return v
-    import math
     if math.isnan(f) or math.isinf(f):
         return None
     return v
@@ -664,6 +665,118 @@ _STANCE_COPY: dict[str, tuple[str, str, str]] = {
 _OFF_HOURS_GET_READY_EN = "Base in place — waiting for the open."
 _OFF_HOURS_GET_READY_ZH = "底部已形成 — 等待开盘。"
 
+_ENTRY_FORMING = frozenset({"buy_soon", "await_confluence", "watch", "bounce_wait"})
+_ENTRY_ACTIVE_WINDOW = frozenset({"buy_now", "partial"})
+_ENTRY_ALREADY_MOVING = frozenset({"hold", "extended", "wait_pullback", "topping"})
+_ENTRY_FAILED_OR_BLOCKED = frozenset({"exit", "avoid", "blocked"})
+
+_ACTIVE_WINDOW_EN = "Entry window already opened — wait for live confirmation."
+_ACTIVE_WINDOW_ZH = "入场窗口已开启 — 等待盘中确认。"
+_ALREADY_MOVING_EN = "Already moving — wait for a reset; do not chase."
+_ALREADY_MOVING_ZH = "行情已启动 — 等待重置，切勿追高。"
+_FAILED_OR_BLOCKED_EN = "Setup is no longer actionable."
+_FAILED_OR_BLOCKED_ZH = "该形态已不再可执行。"
+_TIMING_UNKNOWN_EN = "Timing unavailable — no positive setup claim."
+_TIMING_UNKNOWN_ZH = "时机数据不可用 — 不作正面形态判断。"
+
+
+def _finite_number(value: Any) -> float | None:
+    """Return a finite numeric value, rejecting booleans and malformed inputs."""
+    if value is None or isinstance(value, bool):
+        return None
+    # Use the same decimal grammar in Python and JavaScript. Neither hexadecimal
+    # strings nor Python-only digit separators are financial price evidence.
+    if isinstance(value, str) and not re.fullmatch(
+        r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", value.strip()
+    ):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def classify_entry_timing(
+    *,
+    entry_status: str | None,
+    current_price: float | None = None,
+    chase_above: float | None = None,
+) -> dict[str, object]:
+    """Classify the canonical entry gauge into a board timing state.
+
+    This is a snapshot compatibility guard, not a persistent lifecycle store.
+    Status identity is exact after trim/lowercase; substring and copy inference
+    are forbidden. A finite current price above a finite positive anti-chase
+    boundary forces a known non-failed setup into ``already_moving``.
+    """
+    if entry_status is None or (isinstance(entry_status, str) and not entry_status.strip()):
+        return {
+            "state": "unknown",
+            "reason": "status_missing",
+            "get_ready_eligible": False,
+            "already_started": None,
+        }
+    if not isinstance(entry_status, str):
+        return {
+            "state": "unknown",
+            "reason": "status_unknown",
+            "get_ready_eligible": False,
+            "already_started": None,
+        }
+
+    status = entry_status.strip().lower()
+    if status in _ENTRY_FAILED_OR_BLOCKED:
+        return {
+            "state": "failed_or_blocked",
+            "reason": "status_failed_or_blocked",
+            "get_ready_eligible": False,
+            "already_started": None,
+        }
+
+    known_non_failed = (
+        status in _ENTRY_FORMING
+        or status in _ENTRY_ACTIVE_WINDOW
+        or status in _ENTRY_ALREADY_MOVING
+    )
+    price = _finite_number(current_price)
+    chase = _finite_number(chase_above)
+    if known_non_failed and price is not None and chase is not None and chase > 0 and price > chase:
+        return {
+            "state": "already_moving",
+            "reason": "above_chase",
+            "get_ready_eligible": False,
+            "already_started": True,
+        }
+
+    if status in _ENTRY_FORMING:
+        return {
+            "state": "forming",
+            "reason": "status_forming",
+            "get_ready_eligible": True,
+            "already_started": False,
+        }
+    if status in _ENTRY_ACTIVE_WINDOW:
+        return {
+            "state": "active_window",
+            "reason": "status_active_window",
+            "get_ready_eligible": False,
+            "already_started": True,
+        }
+    if status in _ENTRY_ALREADY_MOVING:
+        return {
+            "state": "already_moving",
+            "reason": "status_already_moving",
+            "get_ready_eligible": False,
+            "already_started": True,
+        }
+    return {
+        "state": "unknown",
+        "reason": "status_unknown",
+        "get_ready_eligible": False,
+        "already_started": None,
+    }
+
 
 def stance(
     *,
@@ -674,41 +787,55 @@ def stance(
     squeeze_coiled: bool | None = None,
     dealer: dict | None = None,
     live_present: bool = True,
+    entry_status: str | None = None,
+    current_price: float | None = None,
+    chase_above: float | None = None,
 ) -> dict:
-    """Derive the stance lane from confluence legs + dealer context.
+    """Derive a lifecycle-safe stance from confluence legs and dealer context.
 
-    Implements the deterministic boolean precedence in v2 ruling §3.
-    No weighted scores.  First-match-wins over the 6 lanes.
+    Implements deterministic first-match precedence over the existing six
+    public lanes. The canonical entry gauge gates positive setup copy so a
+    setup cannot regress to ``get_ready`` after activation, extension,
+    failure, blocking, or an anti-chase breach.
 
-    Off-hours branch (``live_present=False``): only the nightly skeleton is
-    computed — L1 ∧ (L6 ∨ squeeze_coiled) ⇒ ``get_ready``; else ``stand_aside``.
-
-    Args:
-        legs: ConfluenceLegs dataclass (L1–L7, computed booleans/None).
-        K: Count of True legs (redundant from legs.K but kept for callers that
-           pass it explicitly).
-        vwap_delta_pct: Spot price % above VWAP (positive = above).  Used by
-            ``extended_up``.  None → helper is False.
-        price_up_on_day: True when spot > prevClose.  Used for rule 5 (Watch).
-            None treated as False for the Watch gate.
-        squeeze_coiled: True when the vol-squeeze is in a coiled state.  Used
-            in ``get_ready`` rule 3 and off-hours skeleton.
-        dealer: Flat dealer-context dict from ``dealer_context()``.  Fields
-            used: ``call_wall_hard``, ``call_wall_dist_sigma``,
-            ``expected_move_daily_pct``, ``opex_days``, ``regime``.
-            None or missing fields → relevant helpers are False.
-        live_present: False during off-hours / null tape; triggers the
-            nightly-skeleton branch.
-
-    Returns:
-        Dict with keys: ``key`` (stance slug), ``en`` (plain EN copy),
-        ``zh`` (plain ZH copy), ``lane`` (color/emoji key = stance slug).
+    The timing classifier is a compatibility guard only. Persistent setup
+    episodes remain a separately gated future capability.
     """
+    del K  # retained in the public contract for existing callers
+
+    timing = classify_entry_timing(
+        entry_status=entry_status,
+        current_price=current_price,
+        chase_above=chase_above,
+    )
+    timing_state = str(timing["state"])
 
     def _dealer(key: str):
         if dealer is None:
             return None
         return dealer.get(key)
+
+    def _with_timing(result: dict) -> dict:
+        decorated = dict(result)
+        decorated.update(
+            {
+                "timing_state": timing["state"],
+                "timing_reason": timing["reason"],
+                "already_started": timing["already_started"],
+            }
+        )
+        return decorated
+
+    def _make(key: str, *, en: str | None = None, zh: str | None = None) -> dict:
+        default_en, default_zh, lane = _STANCE_COPY[key]
+        return _with_timing(
+            {
+                "key": key,
+                "en": default_en if en is None else en,
+                "zh": default_zh if zh is None else zh,
+                "lane": lane,
+            }
+        )
 
     # ── derived helpers ───────────────────────────────────────────────────────
 
@@ -733,18 +860,19 @@ def stance(
                 pass
         return False
 
-    # pin_watch: OPEX close + long-gamma + near wall/magnet
+    # Pin distance is percentage of current spot, not volatility-sigma units.
+    # This mirrors the existing browser's four-level pin predicate.
     def _pin_watch() -> bool:
-        opex = _dealer("opex_days")
-        regime = _dealer("regime")
-        cw_sigma = _dealer("call_wall_dist_sigma")
-        if opex is None or regime is None:
+        opex = _finite_number(_dealer("opex_days"))
+        price = _finite_number(current_price)
+        if opex is None or opex > 5 or _dealer("regime") != "long":
             return False
-        try:
-            if int(opex) <= 5 and str(regime).lower() == "long" and cw_sigma is not None:
-                return float(cw_sigma) <= 0.01  # ~1% approx
-        except (TypeError, ValueError):
-            pass
+        if price is None or price <= 0:
+            return False
+        for key in ("call_wall", "put_wall", "magnet_up", "magnet_down"):
+            level = _finite_number(_dealer(key))
+            if level is not None and level > 0 and abs((level - price) / price) * 100 <= 1.0:
+                return True
         return False
 
     # into_ceiling: hard call wall is close
@@ -758,68 +886,80 @@ def stance(
         except (TypeError, ValueError):
             return False
 
-    # ── off-hours skeleton ────────────────────────────────────────────────────
-    if not live_present:
-        l1 = legs.L1_washout_recent is True
-        l6 = legs.L6_upturn_organ is True
-        sq = squeeze_coiled is True
-        if l1 and (l6 or sq):
-            return {
-                "key": "get_ready",
-                "en": _OFF_HOURS_GET_READY_EN,
-                "zh": _OFF_HOURS_GET_READY_ZH,
-                "lane": "get_ready",
-            }
-        en, zh, lane = _STANCE_COPY["stand_aside"]
-        return {"key": "stand_aside", "en": en, "zh": zh, "lane": lane}
-
-    # ── live-session precedence (first match wins) ────────────────────────────
     l1 = legs.L1_washout_recent is True
     l2 = legs.L2_reclaim is True
     l3 = legs.L3_rvol_elevated is True
     l4 = legs.L4_vol_durable is True
     l5 = legs.L5_flow_bid is True
     l6 = legs.L6_upturn_organ is True
-    # Quality gates the good lanes as a NEGATIVE filter: only a KNOWN trap
-    # (L7 is False) blocks act/get_ready/in_favour. Unknown quality (None) must
-    # NOT block — trap flags are sparse, so `is True` would make "Buy now"
-    # unreachable for most leaders. Ruling §3: L7 = "not a known trap".
+    # Quality is a negative filter: only a known trap blocks good lanes.
     l7 = legs.L7_leader_quality is not False
+    l7_false = legs.L7_leader_quality is False
     sq = squeeze_coiled is True
     pup = price_up_on_day is True
+
+    # ── off-hours skeleton ────────────────────────────────────────────────────
+    if not live_present:
+        if timing_state == "failed_or_blocked":
+            return _make(
+                "stand_aside",
+                en=_FAILED_OR_BLOCKED_EN,
+                zh=_FAILED_OR_BLOCKED_ZH,
+            )
+        if timing_state == "already_moving":
+            return _make("watch", en=_ALREADY_MOVING_EN, zh=_ALREADY_MOVING_ZH)
+        if timing_state == "active_window":
+            return _make("watch", en=_ACTIVE_WINDOW_EN, zh=_ACTIVE_WINDOW_ZH)
+        if timing_state == "unknown":
+            return _make("stand_aside", en=_TIMING_UNKNOWN_EN, zh=_TIMING_UNKNOWN_ZH)
+        if l1 and (l6 or sq) and l7:
+            return _make(
+                "get_ready",
+                en=_OFF_HOURS_GET_READY_EN,
+                zh=_OFF_HOURS_GET_READY_ZH,
+            )
+        return _make("stand_aside")
 
     extended_up = _extended_up()
     pin_watch = _pin_watch()
     into_ceiling = _into_ceiling()
 
-    def _make(key: str) -> dict:
-        en, zh, lane = _STANCE_COPY[key]
-        return {"key": key, "en": en, "zh": zh, "lane": lane}
-
-    # Rule 1 — Take profits: up-move stretched into resistance
-    # Price above VWAP AND (extended_up OR pin_watch)
+    # Rule 1 — Take profits remains the first conservative safety override.
     above_vwap = (vwap_delta_pct is not None and vwap_delta_pct > 0) or l2
     if above_vwap and (extended_up or pin_watch):
         return _make("take_profits")
 
-    # Rule 2 — Buy now (act): full continuation, not into a ceiling
-    # L1 ∧ L2 ∧ L4 ∧ L7 ∧ (L3 ∨ L5) ∧ NOT into_ceiling
-    if l1 and l2 and l4 and l7 and (l3 or l5) and not into_ceiling:
+    # Lifecycle gates precede all positive setup copy.
+    if timing_state == "failed_or_blocked":
+        return _make(
+            "stand_aside",
+            en=_FAILED_OR_BLOCKED_EN,
+            zh=_FAILED_OR_BLOCKED_ZH,
+        )
+    if timing_state == "already_moving":
+        return _make("watch", en=_ALREADY_MOVING_EN, zh=_ALREADY_MOVING_ZH)
+    if timing_state == "unknown":
+        return _make("stand_aside", en=_TIMING_UNKNOWN_EN, zh=_TIMING_UNKNOWN_ZH)
+
+    # Rule 2 — Buy now: full continuation, not into a ceiling.
+    action_gate = l1 and l2 and l4 and l7 and (l3 or l5) and not into_ceiling
+    if action_gate:
         return _make("act")
 
-    # Rule 3 — Almost ready (get_ready): base in place, trigger not fired
-    # L1 ∧ (L6 ∨ squeeze_coiled) ∧ L7 ∧ NOT L2
+    # An already-open entry window may not regress to pre-trigger language.
+    if timing_state == "active_window":
+        return _make("watch", en=_ACTIVE_WINDOW_EN, zh=_ACTIVE_WINDOW_ZH)
+
+    # Remaining positive lanes are reachable only for explicit forming timing.
+    # Rule 3 — Almost ready: base in place, trigger not fired.
     if l1 and (l6 or sq) and l7 and not l2:
         return _make("get_ready")
 
-    # Rule 4 — In favour: trending and holding, no fresh washout
-    # L2 ∧ L6 ∧ (L3 ∨ L4) ∧ L7 ∧ NOT L1
+    # Rule 4 — In favour: trending and holding, no fresh washout.
     if l2 and l6 and (l3 or l4) and l7 and not l1:
         return _make("in_favour")
 
-    # Rule 5 — Watch: active without structure, or trap-prone
-    # (L3 ∨ price_up_on_day) AND (NOT L1 OR L7 == false)
-    l7_false = legs.L7_leader_quality is False
+    # Rule 5 — Watch: active without structure, or trap-prone.
     if (l3 or pup) and (not l1 or l7_false):
         return _make("watch")
 
