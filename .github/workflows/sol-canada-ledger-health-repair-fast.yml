@@ -23,7 +23,7 @@ jobs:
           cd repo
           git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/mastermindx-market-intelligence/macro.git"
           git sparse-checkout init --cone
-          git sparse-checkout set .github admin app config engine lib scripts templates tests
+          git sparse-checkout set .github admin app collectors config engine lib scripts templates tests
           git -c protocol.version=2 fetch --depth=1 --filter=blob:none origin "refs/heads/${BRANCH}"
           git checkout -B "${BRANCH}" FETCH_HEAD
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
@@ -70,6 +70,8 @@ jobs:
 
           def _stub_canada_health_read_side(monkeypatch, tmp_path):
               """Keep every existing read projection live without repository writes."""
+              import engine
+              from engine import board_shadow as active_shadow
               from engine import track_ledger
 
               seen = {"scorecard": 0, "grade": 0, "track": 0, "shadow": 0}
@@ -93,7 +95,10 @@ jobs:
               monkeypatch.setattr(board_ledger, "grade", grade)
               monkeypatch.setattr(track_ledger, "from_board_ledger_grade", track_document)
               monkeypatch.setattr(track_ledger, "atomic_write", lambda *_a, **_k: None)
-              monkeypatch.setattr(bs, "write_shadow", shadow_write)
+              monkeypatch.setattr(active_shadow, "write_shadow", shadow_write)
+              monkeypatch.setattr(engine, "board_shadow", active_shadow, raising=False)
+              if active_shadow is not bs:
+                  monkeypatch.setattr(bs, "write_shadow", shadow_write)
               monkeypatch.setattr(
                   config,
                   "load",
@@ -176,7 +181,7 @@ jobs:
               assert len(errors) == 1
               assert "FAILED" in errors[0]["en"]
           '''
-          path.write_text(text.rstrip() + addition + "\n", encoding="utf-8")
+          path.write_text(text.rstrip() + addition.rstrip() + "\n", encoding="utf-8")
           PY
 
       - name: prove RED for the exact off-lane defect
@@ -260,7 +265,7 @@ jobs:
       - name: publish RED to GREEN receipts before the one non-force push
         uses: actions/upload-artifact@v4
         with:
-          name: canada-ledger-health-red-green-fast
+          name: canada-ledger-health-red-green-fast-v2
           path: |
             /tmp/canada-ledger-red.log
             /tmp/canada-ledger-green.log
