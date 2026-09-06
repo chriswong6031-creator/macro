@@ -90,3 +90,16 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_valuation_scenario.py: >-
+  B-F07-1 (MO-PAID-022) valuation-scenario V1 pure module + panel, landed 2026-09-06.
+  No existing legacy job owns engine/valuation_scenario.py's subject yet; wiring a new
+  run: step into .github/ci/legacy-jobs.yml is itself a global CI invalidator
+  (full-suite trigger + ci-authority hit) and was judged out of scope for a
+  single-issuer V1 slice. The suite is run directly as part of this PR's own build
+  verification (python -m pytest tests/test_valuation_scenario.py -q) and by any
+  future job that imports engine/valuation_scenario.py. Owner: F07 valuation/scenario
+  lane. Delete this row and add the file to the job that first imports
+  engine/valuation_scenario.py in a production path (the scripts/build_stock_library.py
+  callers already widened in flow-surface/biocatalyst-history/biocatalyst-serving/
+  unrun-picks-boards/unrun-government-revenue-grader).
