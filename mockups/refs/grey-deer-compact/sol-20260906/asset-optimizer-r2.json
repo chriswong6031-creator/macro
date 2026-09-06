@@ -1,0 +1,5 @@
+{
+  "before_sha256": "ac883b696bfe273d01135de37ea95e30fed8e84ec2795e8523aad1fa46fe4a06",
+  "after_sha256": "b63e24b134deaa97598ce80db0435f24b2e48d65db00e606dcbb16af6bd24bc7",
+  "method": "scripts.optimize_assets.make_optimizer + lib.pages.write_page"
+}

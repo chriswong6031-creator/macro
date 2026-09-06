@@ -1,0 +1,23 @@
+COMMAND: python3 -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py tests/test_risk_envelope.py tests/test_live_risk_envelope.py tests/test_risk_envelope_presentation.py tests/test_risk_state_live_session_floor.py -ra
+WORKSPACE: /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906
+============================= test session starts ==============================
+platform darwin -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906
+plugins: anyio-4.14.2
+collected 302 items
+
+tests/test_synapse_read_gate.py .................                        [  5%]
+tests/test_horizon_firewall.py ............................              [ 14%]
+tests/test_delivery_waterfall.py ....................................... [ 27%]
+                                                                         [ 27%]
+tests/test_pricing_power_monitor.py ..........................           [ 36%]
+tests/test_risk_envelope.py ............................................ [ 50%]
+..............                                                           [ 55%]
+tests/test_live_risk_envelope.py ....................................... [ 68%]
+......                                                                   [ 70%]
+tests/test_risk_envelope_presentation.py ............................... [ 80%]
+.............                                                            [ 85%]
+tests/test_risk_state_live_session_floor.py ............................ [ 94%]
+.................                                                        [100%]
+
+============================= 302 passed in 9.16s ==============================

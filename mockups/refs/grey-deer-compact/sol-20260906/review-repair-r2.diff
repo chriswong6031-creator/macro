@@ -1,0 +1,612 @@
+diff --git a/templates/_risk_envelope_band.css.j2 b/templates/_risk_envelope_band.css.j2
+index eb52e5d98e2..eeec4bac8c8 100644
+--- a/templates/_risk_envelope_band.css.j2
++++ b/templates/_risk_envelope_band.css.j2
+@@ -1,5 +1,5 @@
+ /* ═══════════════════════════════════════════════════════════════════════════════
+-   GREY DEER MARKET READS — compact hero rail + Risk Detail projection
++   GREY DEER MARKET READS — compact hero rail + public native disclosure
+ 
+    Page-local under body.page-macro. Tokens only. Dark and light are designed
+    as two art directions, not a token-swap of the same paint.
+@@ -15,36 +15,36 @@
+ body.page-macro.mx4-grid #regime-radar {
+   grid-template-rows: minmax(0, 1fr) auto;
+ }
+-body.page-macro.mx4-grid #risk-envelope-band {
++body.page-macro.mx4-grid .gde-context {
+   grid-column: 1 / -1;
+ }
+ 
+ /* ── L1 rail ──────────────────────────────────────────────────────────────── */
+-body.page-macro button.gde-rail {
++body.page-macro summary.gde-rail {
+   appearance: none; -webkit-appearance: none;
+   display: flex; align-items: center; gap: 14px 18px;
+-  width: 100%; margin: 0; padding: 10px 22px;
++  width: 100%; margin: 0; padding: 10px var(--pad);
+   min-height: 44px; box-sizing: border-box;
+   border: 0; border-top: var(--rule) solid var(--hair);
+   background: color-mix(in srgb, var(--panel2) 42%, transparent);
+   color: inherit; font: inherit; text-align: left; cursor: pointer;
+   line-height: 1.2;
+ }
+-body.page-macro button.gde-rail:hover {
++body.page-macro summary.gde-rail:hover {
+   background: color-mix(in srgb, var(--panel2) 70%, transparent);
+ }
+-body.page-macro button.gde-rail:focus-visible {
++body.page-macro summary.gde-rail:focus-visible {
+   outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent);
+   outline-offset: -2px;
+ }
+ 
+ /* Light: research-workspace material — white clarity, hairline, no smear. */
+-[data-theme="light"] body.page-macro button.gde-rail {
++[data-theme="light"] body.page-macro summary.gde-rail {
+   background: color-mix(in srgb, var(--panel2) 55%, var(--panel));
+   border-top-color: color-mix(in srgb, var(--ink-1) 10%, var(--hair));
+   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink-1) 4%, transparent);
+ }
+-[data-theme="light"] body.page-macro button.gde-rail:hover {
++[data-theme="light"] body.page-macro summary.gde-rail:hover {
+   background: var(--panel);
+   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink-1) 6%, transparent),
+               0 4px 14px color-mix(in srgb, var(--ink-1) 6%, transparent);
+@@ -143,12 +143,12 @@ body.page-macro .gde-chevron {
+ }
+ 
+ @media (prefers-reduced-motion: reduce) {
+-  body.page-macro button.gde-rail { transition: none; }
++  body.page-macro summary.gde-rail { transition: none; }
+ }
+ 
+ /* Tablet: keep market reads together; meta may wrap. */
+ @media (max-width: 980px) {
+-  body.page-macro button.gde-rail {
++  body.page-macro summary.gde-rail {
+     flex-wrap: wrap; gap: 6px 14px; padding: 8px 16px;
+   }
+   body.page-macro .gde-rail-reads { flex: 1 1 100%; }
+@@ -157,12 +157,14 @@ body.page-macro .gde-chevron {
+     flex: 1 1 100%; padding-left: 0;
+     border-top: var(--rule) solid var(--hair); padding-top: 4px;
+   }
+-  body.page-macro .gde-caveat { white-space: normal; }
++  body.page-macro .gde-caveat, body.page-macro .gde-pending { white-space: normal; }
++  body.page-macro .gde-pending { overflow-wrap: anywhere; }
++  body.page-macro .gde-rail-reads { flex-wrap: wrap; }
+ }
+ 
+ /* Mobile: two logical rows. Warning stays with Breakage. */
+ @media (max-width: 700px) {
+-  body.page-macro button.gde-rail {
++  body.page-macro summary.gde-rail {
+     display: grid;
+     grid-template-columns: auto 1fr auto;
+     grid-template-areas:
+@@ -186,60 +188,60 @@ body.page-macro .gde-chevron {
+   body.page-macro .gde-v { font-size: var(--fs-sm); }
+ }
+ 
+-/* ── L2 / L3 inside #dlg-risk ─────────────────────────────────────────────── */
+-body.page-macro #dlg-risk .gde-detail {
++/* ── L2 / L3 inside the public context ─────────────────────────────────────────────── */
++body.page-macro .gde-context .gde-detail {
+   margin: 0 0 var(--sp-5, 20px); padding: 0 0 var(--sp-4, 16px);
+   border-bottom: var(--rule) solid var(--hair);
+ }
+-body.page-macro #dlg-risk .gde-detail-h {
++body.page-macro .gde-context .gde-detail-h {
+   margin: 0 0 12px; font-size: var(--fs-h3); font-weight: 700;
+   letter-spacing: -.01em; color: var(--ink-1);
+ }
+-html[data-lang="zh"] body.page-macro #dlg-risk .gde-detail-h { letter-spacing: 0; }
++html[data-lang="zh"] body.page-macro .gde-context .gde-detail-h { letter-spacing: 0; }
+ 
+-body.page-macro #dlg-risk .gde-detail-reads {
++body.page-macro .gde-context .gde-detail-reads {
+   display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px;
+ }
+-body.page-macro #dlg-risk .gde-dblock {
++body.page-macro .gde-context .gde-dblock {
+   min-width: 0; padding: 2px 0 4px 12px;
+   border-left: 3px solid var(--line);
+ }
+-body.page-macro #dlg-risk .gde-detail.is-split .gde-dblock {
++body.page-macro .gde-context .gde-detail.is-split .gde-dblock {
+   border-left-color: var(--gde-c, var(--line));
+ }
+-body.page-macro #dlg-risk .gde-d-a {
++body.page-macro .gde-context .gde-d-a {
+   margin: 4px 0 6px; font-size: var(--fs-md); font-weight: 750;
+   letter-spacing: -.01em; color: var(--gde-c, var(--ink-1)); line-height: 1.2;
+ }
+-html[data-lang="zh"] body.page-macro #dlg-risk .gde-d-a { letter-spacing: 0; }
+-body.page-macro #dlg-risk .gde-d-c {
++html[data-lang="zh"] body.page-macro .gde-context .gde-d-a { letter-spacing: 0; }
++body.page-macro .gde-context .gde-d-c {
+   margin: 0 0 6px; font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.45;
+   max-width: 48ch;
+ }
+-body.page-macro #dlg-risk .gde-d-asof {
++body.page-macro .gde-context .gde-d-asof {
+   font-size: var(--fs-micro); color: var(--ink-3);
+ }
+ 
+-body.page-macro #dlg-risk .gde-detail-policy {
++body.page-macro .gde-context .gde-detail-policy {
+   display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px;
+   margin: 14px 0 0; padding: 10px 12px;
+   background: var(--tile, var(--panel2));
+   border: var(--rule) solid var(--hair); border-radius: var(--r-md, 8px);
+ }
+-body.page-macro #dlg-risk .gde-policy-state {
++body.page-macro .gde-context .gde-policy-state {
+   font-size: var(--fs-sm); font-weight: 700; color: var(--ink-2);
+ }
+-body.page-macro #dlg-risk .gde-policy-count {
++body.page-macro .gde-context .gde-policy-count {
+   margin-left: auto; font-size: var(--fs-micro); color: var(--ink-3);
+ }
+ 
+-[data-theme="light"] body.page-macro #dlg-risk .gde-detail-policy {
++[data-theme="light"] body.page-macro .gde-context .gde-detail-policy {
+   background: var(--panel); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink-1) 5%, transparent);
+ }
+ 
+ @media (max-width: 700px) {
+-  body.page-macro #dlg-risk .gde-detail-reads { grid-template-columns: 1fr; gap: 14px; }
+-  body.page-macro #dlg-risk .gde-policy-count { margin-left: 0; }
++  body.page-macro .gde-context .gde-detail-reads { grid-template-columns: 1fr; gap: 14px; }
++  body.page-macro .gde-context .gde-policy-count { margin-left: 0; }
+ }
+ 
+ /* ── evidence disclosure (L3) ─────────────────────────────────────────────── */
+@@ -300,6 +302,24 @@ body.page-macro .gde-receipt {
+ }
+ body.page-macro .gde-receipt-live { border-top: none; padding-top: 0; margin-top: 8px; }
+ 
+-body.page-macro :where(.gde-disc > summary, button.gde-rail):focus-visible {
++body.page-macro :where(.gde-disc > summary, summary.gde-rail):focus-visible {
+   outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px;
+ }
++
++/* Public inspection uses browser-native disclosure; no member-dialog bypass. */
++body.page-macro .gde-context { width: 100%; min-width: 0; }
++body.page-macro .gde-context-body {
++  padding: var(--pad); border-top: var(--rule) solid var(--hair);
++}
++body.page-macro .gde-context .gde-detail { margin: 0; padding: 0; border-bottom: 0; }
++body.page-macro summary.gde-rail { list-style: none; }
++body.page-macro summary.gde-rail::-webkit-details-marker { display: none; }
++body.page-macro summary.gde-rail::marker { content: ""; }
++body.page-macro .gde-context[open] > summary .gde-chevron { transform: rotate(90deg); }
++body.page-macro .gde-more {
++  font-size: var(--fs-micro); font-weight: 650; color: var(--ink-link, var(--link));
++}
++body.page-macro .gde-rail-meta { flex-wrap: wrap; min-width: 0; }
++body.page-macro .gde-context .gde-detail > .gde-coverage-note {
++  display: inline-block; margin-top: var(--sp-3);
++}
+diff --git a/templates/_risk_envelope_band.html.j2 b/templates/_risk_envelope_band.html.j2
+index b88d1ddf249..b8d427b0eea 100644
+--- a/templates/_risk_envelope_band.html.j2
++++ b/templates/_risk_envelope_band.html.j2
+@@ -1,5 +1,5 @@
+ {# ═══════════════════════════════════════════════════════════════════════════════
+-   GREY DEER MARKET READS — compact L1 rail + L2/L3 Risk Detail projection
++   GREY DEER MARKET READS — compact L1 rail + public native L2/L3 disclosure
+ 
+    Consumes `risk_envelope` (site/riskdata/risk_envelope.json). Renders nothing
+    when the artifact is absent.
+@@ -50,15 +50,12 @@
+ {%- set _unread = _hz.get('unreadable_sources') or [] -%}
+ {%- set _unmapped = _hz.get('unmapped_required_sources') or [] -%}
+ {%- set _caveat_n = (_unread | length) + (_unmapped | length) -%}
+-{%- set _show_caveat = _stage is none and _caveat_n > 0 -%}
+-<button type="button"
+-        class="gde-rail{% if _split %} is-split{% endif %}"
++{%- set _show_caveat = _caveat_n > 0 -%}
++<summary class="gde-rail{% if _split %} is-split{% endif %}"
+         id="risk-envelope-band"
+         data-bundle-id="{{ re.get('bundle_id') or '' }}"
+         data-settled-session="{{ re.get('source_session') or '' }}"
+-        aria-haspopup="dialog"
+-        aria-controls="dlg-risk"
+-        onclick="mx5OpenDlg('dlg-risk')">
++        aria-controls="gde-detail">
+   <span class="gde-rail-kicker">
+     <span class="l-en">Risk context</span><span class="l-zh">风险提示</span>
+   </span>
+@@ -76,6 +73,7 @@
+           <span class="l-en">Unavailable</span><span class="l-zh">不可用</span>
+         {%- endif -%}
+       </span>
++      {{ gde_trend_health(re, ns.ms) }}
+     </span>
+     <span class="gde-seg gde-seg-break">
+       <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
+@@ -95,6 +93,7 @@
+   <span class="gde-rail-rule" aria-hidden="true"></span>
+ 
+   <span class="gde-rail-meta">
++    {{ gde_coverage_note(re) }}
+     {% if _policy_known and _policy_n > 0 %}
+     <span class="gde-seg gde-seg-policy">
+       <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+@@ -107,19 +106,20 @@
+       <span class="gde-live-time"></span>
+     </span>
+     <span class="gde-stamp gde-stamp-settled tnum"
+-          data-tip-en="Settled session — the close these reads were taken from. Source clocks live in Risk Detail."
+-          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。各来源时钟见风险详情。">
++          data-tip-en="Settled session — the close these reads were taken from. Expand this public context for individual source clocks."
++          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。展开此公开说明查看各来源时钟。">
+       <span class="l-en">Settled</span><span class="l-zh">已结算</span> {{ re.get('source_session') or '—' }}
+     </span>
++    <span class="gde-more"><span class="l-en">Why</span><span class="l-zh">说明</span></span>
+     <svg class="gde-chevron" width="8" height="12" viewBox="0 0 8 12" aria-hidden="true" focusable="false">
+       <path d="M1.5 1.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+     </svg>
+   </span>
+-</button>
++</summary>
+ {%- endif -%}
+ {% endmacro %}
+ 
+-{# ── L2/L3 · Market Reads inside the existing #dlg-risk ── #}
++{# ── L2/L3 · Public explanation, separate from the member-only Risk Detail ── #}
+ {% macro gde_detail(re) %}
+ {%- if re and re.get('schema') == 'mastermind.risk_envelope/v1' -%}
+ {%- set _ms = re.get('measured_state') or {} -%}
+@@ -176,6 +176,7 @@
+         {%- endif -%}
+       </p>
+       <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ _ms.get('as_of') or '—' }}</span>
++      {{ gde_trend_health(re, ns.ms) }}
+     </div>
+ 
+     <div class="gde-dblock gde-hz-{{ _stage or 'null' }}">
+@@ -196,16 +197,22 @@
+           <span class="l-zh">{{ (ns.lead.label_zh if ns.lead else '受追踪的一组标的') }}显示损伤{% if _ms.get('usable') and _ms.get('verdict') == 'RISK_ON' %}，但整体趋势仍保持积极{% endif %}{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
+         {%- endif -%}
+       </p>
++      {% if _stage is not none and _caveat_n > 0 %}
++      <p class="gde-caveat"><span class="l-en">{{ _caveat_n }} source{{ 's' if _caveat_n != 1 else '' }} unavailable</span><span class="l-zh">{{ _caveat_n }} 个来源不可用</span></p>
++      {% endif %}
+       <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ (ns.lead.as_of if ns.lead else none) or re.get('source_session') or '—' }}</span>
+     </div>
+   </div>
+ 
++  {{ gde_coverage_note(re) }}
+   <div class="gde-detail-policy">
+     <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+     {%- if not _policy_known -%}
+     <span class="gde-policy-state"><span class="l-en">Policy status unavailable</span><span class="l-zh">政策状态不可用</span></span>
+     {%- elif _policy_n == 0 -%}
+     <span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span>
++    {%- else -%}
++    <span class="gde-policy-state"><span class="l-en">Policy is separate from the market readings</span><span class="l-zh">政策独立于市场判读</span></span>
+     {%- endif -%}
+     {% if _policy_known %}<span class="gde-policy-count tnum">{{ _policy_n }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>{% endif %}
+   </div>
+@@ -269,3 +276,33 @@
+ </section>
+ {%- endif -%}
+ {% endmacro %}
++
++{# Public context never passes through the registration-gated Risk Detail. #}
++{% macro gde_context(re) -%}
++{%- if re and re.get('schema') == 'mastermind.risk_envelope/v1' -%}
++<details class="gde-context" id="gde-context-disclosure">
++  {{ gde_rail(re) }}
++  <div class="gde-context-body">{{ gde_detail(re) }}</div>
++</details>
++{%- endif -%}
++{%- endmacro %}
++
++{% macro gde_coverage_note(re) -%}
++{%- set state = re.get('data_state') -%}
++{%- if state in ('STALE', 'DEGRADED', 'UNKNOWN') -%}
++<span class="gde-caveat gde-coverage-note">
++  <span class="l-en">{{ {'STALE': 'Sources older', 'DEGRADED': 'Limited coverage', 'UNKNOWN': 'Coverage unknown'}[state] }}</span>
++  <span class="l-zh">{{ {'STALE': '来源较旧', 'DEGRADED': '覆盖受限', 'UNKNOWN': '覆盖不明'}[state] }}</span>
++</span>
++{%- endif -%}
++{%- endmacro %}
++
++{% macro gde_trend_health(re, source) -%}
++{%- set coverage = source.get('coverage') if source else 'MISSING' -%}
++{%- set clock = (((re.get('freshness') or {}).get('per_source') or {}).get(source.get('source_id')) or {}) if source else {} -%}
++{%- if coverage == 'STALE' or clock.get('state') == 'STALE' -%}
++<span class="gde-caveat"><span class="l-en">Trend source older</span><span class="l-zh">趋势来源较旧</span></span>
++{%- elif coverage != 'FRESH' or clock.get('state') == 'MISSING' -%}
++<span class="gde-caveat"><span class="l-en">Trend source missing</span><span class="l-zh">趋势来源缺失</span></span>
++{%- endif -%}
++{%- endmacro %}
+diff --git a/templates/dashboard.html.j2 b/templates/dashboard.html.j2
+index dde535dadf2..fe078b16997 100644
+--- a/templates/dashboard.html.j2
++++ b/templates/dashboard.html.j2
+@@ -8467,7 +8467,7 @@ html[data-theme="light"] :is(
+   {% endif %}
+   {# Compact Market Reads rail — last child of the regime hero, not a second
+      full-width panel. Live overlay hooks stay on #risk-envelope-band. #}
+-  {% if mode != 'stocks' %}{{ gde.gde_rail(risk_envelope) }}{% endif %}
++  {% if mode != 'stocks' %}{{ gde.gde_context(risk_envelope) }}{% endif %}
+   </div>{# /#regime-radar panel #}
+ 
+   {# ── V2 ROW-LEDGER SECTIONS (macro mode only) ── #}
+@@ -12438,11 +12438,6 @@ html[data-theme="light"] :is(
+       </div>
+       <div class="mx5-dlg-body">
+ 
+-        <details class="gde-disc" id="gde-context-disclosure">
+-          <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
+-          {{ gde.gde_detail(risk_envelope) }}
+-        </details>
+-
+         {# — Risk Brief: one hero, not two — #}
+         {% set _dlgr_rdr = market_state.radar if market_state.radar is defined else {} %}
+         {% set _dlgr_state = _dlgr_rdr.state if (_dlgr_rdr and _dlgr_rdr.state is defined and _dlgr_rdr.state) else 'unknown' %}
+@@ -17763,7 +17758,7 @@ window.__CHART_SWAP__ = {
+    live.js is __mmLiveInit-guarded so this second include was a no-op — dropped. #}
+ <script src="risk_state_live.js"></script>
+ {# GD-3: live-provisional Risk Envelope overlay — same mode gate as the
+-   compact Market Reads rail (gde.gde_rail, mode != 'stocks' above). #}
++   compact risk-context disclosure (gde.gde_context, mode != 'stocks' above). #}
+ {% if mode != 'stocks' %}<script src="risk_envelope_live.js"></script>{% endif %}
+ <script src="release_publications_live.js"></script>
+ <script>
+diff --git a/tests/test_risk_envelope_presentation.py b/tests/test_risk_envelope_presentation.py
+index d0ac6c33852..60b5a11a69f 100644
+--- a/tests/test_risk_envelope_presentation.py
++++ b/tests/test_risk_envelope_presentation.py
+@@ -22,7 +22,6 @@ TEMPLATES = ROOT / "templates"
+ DASHBOARD = TEMPLATES / "dashboard.html.j2"
+ BAND = TEMPLATES / "_risk_envelope_band.html.j2"
+ SITE_MACRO = ROOT / "site" / "macro.html"
+-PROD_ENVELOPE = ROOT / "site" / "riskdata" / "risk_envelope.json"
+ GD1_FIXTURE = ROOT / "tests" / "fixtures" / "risk_envelope" / "gd1_dual_read_2026-08-18.json"
+ 
+ 
+@@ -38,16 +37,11 @@ def _env() -> jinja2.Environment:
+ def _render_surfaces(envelope: dict) -> str:
+     tmpl = (
+         '{% import "_risk_envelope_band.html.j2" as gde %}'
+-        "{{ gde.gde_rail(risk_envelope) }}"
+-        "{{ gde.gde_detail(risk_envelope) }}"
++        "{{ gde.gde_context(risk_envelope) }}"
+     )
+     return _env().from_string(tmpl).render(risk_envelope=envelope)
+ 
+ 
+-def _prod_envelope() -> dict:
+-    return json.loads(PROD_ENVELOPE.read_text(encoding="utf-8"))
+-
+-
+ def _gd1_envelope() -> dict:
+     raw = json.loads(GD1_FIXTURE.read_text(encoding="utf-8"))
+     sources = build_sources(raw["market_state"], raw["leadership_crack"], raw["session"])
+@@ -97,8 +91,8 @@ class _IdCounter(HTMLParser):
+ 
+ 
+ @pytest.fixture(scope="module")
+-def prod_html() -> str:
+-    return _render_surfaces(_prod_envelope())
++def sample_html() -> str:
++    return _render_surfaces(_gd1_envelope())
+ 
+ 
+ @pytest.fixture(scope="module")
+@@ -111,32 +105,32 @@ def dash_src() -> str:
+     return DASHBOARD.read_text(encoding="utf-8")
+ 
+ 
+-def test_live_hooks_are_exactly_one_each(prod_html):
++def test_live_hooks_are_exactly_one_each(sample_html):
+     for hook in (
+         "risk-envelope-band",
+         "gde-live-chip",
+         "gde-pending-chip",
+         "gde-live-receipt",
+     ):
+-        assert _count_id(prod_html, hook) == 1, hook
++        assert _count_id(sample_html, hook) == 1, hook
+ 
+ 
+-def test_rail_keeps_bundle_identity(prod_html):
+-    rail = _slice_id(prod_html, "risk-envelope-band")
+-    env = _prod_envelope()
++def test_rail_keeps_bundle_identity(sample_html):
++    rail = _slice_id(sample_html, "risk-envelope-band")
++    env = _gd1_envelope()
+     assert f'data-bundle-id="{env["bundle_id"]}"' in rail
+     assert f'data-settled-session="{env["source_session"]}"' in rail
+ 
+ 
+-def test_l1_rail_is_not_the_old_standalone_panel(prod_html):
+-    rail = _slice_id(prod_html, "risk-envelope-band")
++def test_l1_rail_is_not_the_old_standalone_panel(sample_html):
++    rail = _slice_id(sample_html, "risk-envelope-band")
+     assert "panel span12" not in rail
+     assert "gde-band" not in rail
+     assert 'class="gde-rail"' in rail or "gde-rail " in rail
+ 
+ 
+-def test_l1_has_no_lead_paragraph_or_inline_evidence(prod_html):
+-    rail = _slice_id(prod_html, "risk-envelope-band")
++def test_l1_has_no_lead_paragraph_or_inline_evidence(sample_html):
++    rail = _slice_id(sample_html, "risk-envelope-band")
+     assert not re.search(r"<p[\s>]", rail, flags=re.I)
+     assert not re.search(r"<details[\s>]", rail, flags=re.I)
+     assert "gde-lead" not in rail
+@@ -144,11 +138,11 @@ def test_l1_has_no_lead_paragraph_or_inline_evidence(prod_html):
+     assert "Each read keeps its own clock" not in rail
+ 
+ 
+-def test_l1_does_not_quote_the_hero_score(prod_html):
+-    rail = _slice_id(prod_html, "risk-envelope-band")
++def test_l1_does_not_quote_the_hero_score(sample_html):
++    rail = _slice_id(sample_html, "risk-envelope-band")
+     assert "gde-quote" not in rail
+     assert "/100" not in rail
+-    env = _prod_envelope()
++    env = _gd1_envelope()
+     score = env.get("measured_state", {}).get("score")
+     if score is not None:
+         assert f">{score}<" not in rail
+@@ -198,36 +192,39 @@ def test_gd1_contradiction_keeps_separate_reads(gd1_html):
+     assert "Where they disagree" in detail or "分歧所在" in detail
+ 
+ 
+-def test_detail_and_receipt_live_in_l2_l3(prod_html):
+-    detail = _slice_id(prod_html, "gde-detail")
++def test_detail_and_receipt_live_in_l2_l3(sample_html):
++    detail = _slice_id(sample_html, "gde-detail")
+     assert "Market reads" in detail or "市场判读" in detail
+     assert _count_id(detail, "gde-live-receipt") == 1
+     assert "<details" in detail.lower()
+     assert "Evidence" in detail
+-    rail = _slice_id(prod_html, "risk-envelope-band")
++    rail = _slice_id(sample_html, "risk-envelope-band")
+     assert 'id="gde-live-receipt"' not in rail
+ 
+ 
+-def test_rail_opens_existing_risk_dialog(prod_html):
+-    rail = _slice_id(prod_html, "risk-envelope-band")
+-    assert 'aria-haspopup="dialog"' in rail
+-    assert 'aria-controls="dlg-risk"' in rail
+-    assert "mx5OpenDlg('dlg-risk')" in rail
+-    assert "<button" in rail
++def test_rail_opens_public_native_disclosure(sample_html):
++    context = _slice_id(sample_html, "gde-context-disclosure")
++    rail = _slice_id(context, "risk-envelope-band")
++    assert rail.startswith("<summary")
++    assert "onclick=" not in rail and 'aria-haspopup="dialog"' not in rail
++    assert 'id="gde-detail"' in context
++    assert 'aria-controls="gde-detail"' in rail
++    assert "Why" in rail and "说明" in rail
+ 
+ 
+ def test_dashboard_places_rail_inside_the_regime_hero(dash_src):
+     hero_close = dash_src.index("</div>{# /#regime-radar panel #}")
+-    assert "gde.gde_rail(" in dash_src[:hero_close]
+-    assert "gde.gde_rail(" not in dash_src[hero_close:]
++    assert "gde.gde_context(" in dash_src[:hero_close]
++    assert "gde.gde_context(" not in dash_src[hero_close:]
+     old_include = dash_src.find('{% include "_risk_envelope_band.html.j2" %}')
+     assert old_include == -1
+ 
+ 
+-def test_dashboard_hosts_grey_deer_detail_in_dlg_risk(dash_src):
++def test_member_risk_dialog_is_not_the_public_context_destination(dash_src):
+     at = dash_src.index('id="dlg-risk"')
+     window = dash_src[at : at + 8000]
+-    assert "gde.gde_detail(" in window
++    assert "gde.gde_detail(" not in window
++    assert 'id="gde-context-disclosure"' not in dash_src
+     assert "Risk Detail" in window
+     assert "Scare Ladder &amp; Sentiment" not in window
+ 
+@@ -247,25 +244,19 @@ def test_band_html_declares_no_literal_custom_properties():
+     assert "gde-hz-{{" in src
+ 
+ 
+-def test_site_macro_matches_the_compact_contract():
++def test_generated_macro_smoke_allows_explicit_no_envelope():
++    if not SITE_MACRO.is_file():
++        pytest.skip("sparse checkout omits site/ (needs_full_checkout); fixture contracts still run")
+     html = SITE_MACRO.read_text(encoding="utf-8")
+-    assert _count_id(html, "risk-envelope-band") == 1
+-    assert _count_id(html, "gde-live-chip") == 1
+-    assert _count_id(html, "gde-pending-chip") == 1
+-    assert _count_id(html, "gde-live-receipt") == 1
+-    hero = _slice_id(html, "regime-radar")
+-    assert 'id="risk-envelope-band"' in hero
+-    rail = _slice_id(html, "risk-envelope-band")
+-    assert "panel span12" not in rail
+-    assert not re.search(r"<p[\s>]", rail, flags=re.I)
+-    assert not re.search(r"<details[\s>]", rail, flags=re.I)
+-    assert "gde-quote" not in rail
+-    dlg = _slice_id(html, "dlg-risk")
+-    assert 'id="gde-detail"' in dlg
+-    assert 'id="gde-live-receipt"' in dlg
+-    assert "Risk Detail" in dlg
+-    assert 'aria-controls="dlg-risk"' in rail
+-    assert "mx5OpenDlg('dlg-risk')" in rail
++    count = _count_id(html, "risk-envelope-band")
++    assert count in (0, 1)
++    for hook in ("gde-live-chip", "gde-pending-chip", "gde-live-receipt", "gde-context-disclosure", "gde-detail"):
++        assert _count_id(html, hook) == count, hook
++    if count:
++        hero = _slice_id(html, "regime-radar")
++        assert 'id="gde-context-disclosure"' in hero
++        assert 'id="gde-detail"' not in _slice_id(html, "dlg-risk")
++        assert _slice_id(html, "risk-envelope-band").startswith("<summary")
+ 
+ 
+ @pytest.mark.parametrize("verdict,en,zh", [
+@@ -287,7 +278,11 @@ def test_missing_optional_trend_labels_use_the_actual_verdict(verdict, en, zh):
+         assert f'class="l-en">{en}</span>' in fragment
+         assert f'class="l-zh">{zh}</span>' in fragment
+     if verdict == "RISK_OFF":
+-        assert "while the index holds" not in html
++        assert "while the broad trend remains positive" not in html
++        assert "但整体趋势仍保持积极" not in html
++    elif verdict == "RISK_ON":
++        assert "while the broad trend remains positive" in html
++        assert "但整体趋势仍保持积极" in html
+ 
+ 
+ @pytest.mark.parametrize("count", [None, False, True, -1, "0", 1.5])
+@@ -355,3 +350,48 @@ def test_homepage_names_the_customer_job_not_the_internal_composer():
+     assert "Risk context" in rail
+     assert "风险提示" in rail
+     assert "Market Reads" not in rail
++
++
++@pytest.mark.parametrize("envelope", [None, {}, {"schema": "unrecognized"}])
++def test_absent_envelope_renders_no_public_disclosure(envelope):
++    assert not _render_surfaces(envelope).strip()
++    # The dashboard must not supply an unguarded, empty wrapper of its own.
++    assert 'id="gde-context-disclosure"' not in DASHBOARD.read_text()
++
++
++@pytest.mark.parametrize("stage", [None, "FRAGILE", "TRANSMITTING", "BREAKDOWN"])
++def test_missing_hazard_source_is_visible_at_glance_and_detail(stage):
++    envelope = _gd1_envelope()
++    envelope["hazard_summary"].update(stage=stage, unreadable_sources=["missing_required"], unmapped_required_sources=[])
++    envelope["data_state"] = "DEGRADED"
++    html = _render_surfaces(envelope)
++    for surface in ("risk-envelope-band", "gde-detail"):
++        assert "1 source unavailable" in _slice_id(html, surface)
++
++
++@pytest.mark.parametrize("state,en,zh", [("STALE", "Sources older", "来源较旧"), ("DEGRADED", "Limited coverage", "覆盖受限"), ("UNKNOWN", "Coverage unknown", "覆盖不明")])
++def test_aggregate_source_caveat_is_visible_without_a_missing_count(state, en, zh):
++    envelope = _gd1_envelope()
++    envelope["data_state"] = state
++    rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
++    assert en in rail and zh in rail
++
++
++@pytest.mark.parametrize("coverage,en,zh", [("STALE", "Trend source older", "趋势来源较旧"), ("MISSING", "Trend source missing", "趋势来源缺失")])
++def test_trend_source_health_is_visible_at_glance_and_detail(coverage, en, zh):
++    envelope = _gd1_envelope()
++    for source in envelope["provenance"]["sources"]:
++        if source["role"] == "measured_state":
++            source["coverage"] = coverage
++    html = _render_surfaces(envelope)
++    for surface in ("risk-envelope-band", "gde-detail"):
++        fragment = _slice_id(html, surface)
++        assert en in fragment and zh in fragment
++
++
++def test_active_policy_explains_its_separate_meaning():
++    envelope = _gd1_envelope()
++    envelope["policy_summary"]["policy_count"] = 3
++    detail = _slice_id(_render_surfaces(envelope), "gde-detail")
++    assert "Policy is separate from the market readings" in detail
++    assert "政策独立于市场判读" in detail

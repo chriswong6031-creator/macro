@@ -1,0 +1,17 @@
+{
+  "operation": "macro-gd-6685-opus-review-20260906-001",
+  "reviewed_head": "fa26d5d1092832f9509b144aac80492317763a1c",
+  "session_id": "be5bc4ba-aaac-4d2b-a629-d0aa22cbf5fd",
+  "model": "claude-opus-5",
+  "tools": [
+    "Read",
+    "Grep",
+    "Glob"
+  ],
+  "native_exit": 0,
+  "status": "PARTIAL",
+  "report_sha256": "10fee2ee3d9542d8824dc6bef1339ef7d810d24c56b8adfc1d25c3914bdc4d05",
+  "permission_denials": [],
+  "sol_disposition_comment": 5561604621,
+  "child_terminal": true
+}

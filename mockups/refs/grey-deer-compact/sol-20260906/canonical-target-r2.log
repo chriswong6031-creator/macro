@@ -1,0 +1,148 @@
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:381: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f["curve_tp_adj"] = f["spread_2s10s"] + f["term_premium_10y"].fillna(0)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:432: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f["net_liquidity_bn"] = canon.net_liquidity_bn(f["walcl_bn"], f["rrp_bn"], f["tga_bn"])
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/engine/inputs.py:205: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  f[name] = s.reindex(idx)
+::warning title=equity_factors stale-tier column overridden::9 ticker(s) carried a FROZEN column in an earlier tier and a live one in a later tier — index migrants whose old tier's column stopped on index exit; the live column now wins: BTSG(smallcap_breadth->midcap_breadth), CAG(breadth->smallcap_breadth), CPB(breadth->smallcap_breadth), KRYS(smallcap_breadth->midcap_breadth), MOH(smallcap_breadth->midcap_breadth), POOL(breadth->smallcap_breadth), SANM(smallcap_breadth->midcap_breadth), SMTC(smallcap_breadth->midcap_breadth), VIAV(smallcap_breadth->midcap_breadth)
+INFO residual_alpha: admitted 147 curated extras (e.g. ACHR, AEM, AFRM, AG, AGI)
+INFO wrote alpha.json (1606 names, 11 sectors)
+INFO wrote insider_signals.json (3440 names with 6mo Form-4 activity)
+::warning title=manager_quality stale-tier column overridden::9 ticker(s) carried a FROZEN column in an earlier tier and a live one in a later tier — index migrants whose old tier's column stopped on index exit; the live column now wins: BTSG(smallcap_breadth->midcap_breadth), CAG(breadth->smallcap_breadth), CPB(breadth->smallcap_breadth), KRYS(smallcap_breadth->midcap_breadth), MOH(smallcap_breadth->midcap_breadth), POOL(breadth->smallcap_breadth), SANM(smallcap_breadth->midcap_breadth), SMTC(smallcap_breadth->midcap_breadth), VIAV(smallcap_breadth->midcap_breadth)
+INFO manager_quality: 51 funds, 50 graded (>=8 events), horizon 63d
+::warning title=manager_trades stale-tier column overridden::9 ticker(s) carried a FROZEN column in an earlier tier and a live one in a later tier — index migrants whose old tier's column stopped on index exit; the live column now wins: BTSG(smallcap_breadth->midcap_breadth), CAG(breadth->smallcap_breadth), CPB(breadth->smallcap_breadth), KRYS(smallcap_breadth->midcap_breadth), MOH(smallcap_breadth->midcap_breadth), POOL(breadth->smallcap_breadth), SANM(smallcap_breadth->midcap_breadth), SMTC(smallcap_breadth->midcap_breadth), VIAV(smallcap_breadth->midcap_breadth)
+INFO wrote smartmoney.json (49 funds, 1315 names)
+INFO cycles: loaded fitted bands from /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/data/regime/cycle_bands_fit.json
+INFO cycles: equity dc_band override (36, 42) → (23, 44) (fitted)
+INFO cycles: equity ic_band_w override (16, 26) → (13, 25) (fitted)
+INFO cycles: loaded ladder risk calibration from /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/data/regime/ladder_risk_calibration.json (validated=False, any_bound=False)
+INFO wrote 11 sector drill-down pages
+INFO etfs: premium payload /premiumdata/etfs.json (40 board rows, 40 adds, 12 trims)
+INFO wrote etfs.html (40 accumulation, 12 trims) + fund_flows.json (814 names)
+INFO edgar panel cache fresh (1.3d) — skip fetch
+INFO finra short-interest cache fresh (2.0d)
+INFO insider cache fresh (2.4d)
+INFO insider panel backfill: 83 quarters 2006q1..2026q3
+INFO insider panel: 2026q3 unavailable (skip)
+INFO insider panel: 2342663 transactions, 17105 tickers, 2006-01-03..2026-06-30
+INFO eps_quarterly cache fresh (2.4d) — skip fetch
+::warning title=equity_factors stale price feeds::27/1525 name(s) lag the panel tip 2026-09-04 by >7d and are dropped from price-derived factors (mktcap, value yields, leadership) — fundamentals-only legs still publish: MRSH(78d), BRBR(78d), CWEN-A(70d), ARI(64d), CLB(64d), GDYN(64d), MNRO(58d), PRAA(58d), VITL(58d), ETD(58d), OXM(58d), GOGO(58d) (+15 more)
+/opt/homebrew/lib/python3.14/site-packages/pandas/core/nanops.py:1716: RuntimeWarning: Degrees of freedom <= 0 for slice
+  return np.cov(a, b, ddof=ddof)[0, 1]
+/opt/homebrew/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py:2901: RuntimeWarning: divide by zero encountered in divide
+  c *= np.true_divide(1, fact)
+/opt/homebrew/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py:2901: RuntimeWarning: invalid value encountered in multiply
+  c *= np.true_divide(1, fact)
+INFO equity_factors: 52 share count(s) from Polygon reference (10 stale vs filing, 42 missing in EDGAR); largest gaps: {'BKNG': 23.72, 'CRWD': 4.06, 'VMRK': 2.05, 'APH': 2.01, 'MNST': 2.0, 'DVN': 1.77, 'WAT': 1.65, 'EG': 0.52}
+INFO wrote factors.html (1514 names, FY2025, ic=yes, nw_state=yes, seas=yes, momo=yes)
+INFO wrote signal_lab.html (65 signals, 1/11 factors survive FDR)
+INFO wrote quant_lab.html (5 models, study=yes, live n=2844)
+INFO wrote alerts.html (60 alerts: 2 critical / 1 major / 2 actionable, 2 with measured edge)
+INFO wrote plans.html (essential $99/$75 save 24% · pro $149/$109 save 27%)
+INFO wrote support.html (public support desk)
+INFO wrote help.html (7 source-validated links)
+INFO wrote unsubscribe.html (public opt-out)
+INFO wrote advanced.html (103 KB)
+INFO rr_banner.json written (alert=none)
+INFO wrote factor_betas.json (1537 names)
+INFO wrote transmission_chains.json (7 chains, asof=2026-09-04)
+INFO OEU M-PRO options context: 7/64 buy cards flagged (662 wall rows, 10 IV histories)
+INFO news_vector: dropped 1 low-value headlines (single_stock_advertorial=1)
+INFO news_vector: 118 raw -> 7 gated -> 7 new events (1250 total)
+INFO cycles: crypto dc_band override (56, 70) → (22, 45) (fitted)
+INFO cycles: crypto ic_band_w override (24, 40) → (11, 22) (fitted)
+INFO leadership_crack: wrote /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/data/leadership_crack/latest.json
+INFO deterioration_cascade: wrote /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/data/deterioration_cascade/latest.json
+INFO risk_envelope: session=2026-09-04 measured=RISK_ON hazard=FRAGILE coherence=CONTRADICTORY data=FRESH bundle=8ed1b5c2b113ba4c
+INFO MACRO_DUMP_VM: cached view-model -> /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/data/_dev_macro_vm.pkl
+{"status": "MACRO_TARGET_WRITTEN", "full_site_build": false, "utc": "2026-09-06T19:48:04.014699+00:00", "sha256": "ecdeec95a41c5dffe506ff84a288e7e22bcedb9e7f1bfa5313899195c84fb747"}

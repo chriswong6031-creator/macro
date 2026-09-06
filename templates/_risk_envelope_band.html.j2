@@ -1,5 +1,5 @@
 {# ═══════════════════════════════════════════════════════════════════════════════
-   GREY DEER MARKET READS — compact L1 rail + L2/L3 Risk Detail projection
+   GREY DEER MARKET READS — compact L1 rail + public native L2/L3 disclosure
 
    Consumes `risk_envelope` (site/riskdata/risk_envelope.json). Renders nothing
    when the artifact is absent.
@@ -50,15 +50,12 @@
 {%- set _unread = _hz.get('unreadable_sources') or [] -%}
 {%- set _unmapped = _hz.get('unmapped_required_sources') or [] -%}
 {%- set _caveat_n = (_unread | length) + (_unmapped | length) -%}
-{%- set _show_caveat = _stage is none and _caveat_n > 0 -%}
-<button type="button"
-        class="gde-rail{% if _split %} is-split{% endif %}"
+{%- set _show_caveat = _caveat_n > 0 -%}
+<summary class="gde-rail{% if _split %} is-split{% endif %}"
         id="risk-envelope-band"
         data-bundle-id="{{ re.get('bundle_id') or '' }}"
         data-settled-session="{{ re.get('source_session') or '' }}"
-        aria-haspopup="dialog"
-        aria-controls="dlg-risk"
-        onclick="mx5OpenDlg('dlg-risk')">
+        aria-controls="gde-detail">
   <span class="gde-rail-kicker">
     <span class="l-en">Risk context</span><span class="l-zh">风险提示</span>
   </span>
@@ -76,6 +73,7 @@
           <span class="l-en">Unavailable</span><span class="l-zh">不可用</span>
         {%- endif -%}
       </span>
+      {{ gde_trend_health(re, ns.ms) }}
     </span>
     <span class="gde-seg gde-seg-break">
       <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
@@ -95,6 +93,7 @@
   <span class="gde-rail-rule" aria-hidden="true"></span>
 
   <span class="gde-rail-meta">
+    {{ gde_coverage_note(re) }}
     {% if _policy_known and _policy_n > 0 %}
     <span class="gde-seg gde-seg-policy">
       <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
@@ -107,19 +106,20 @@
       <span class="gde-live-time"></span>
     </span>
     <span class="gde-stamp gde-stamp-settled tnum"
-          data-tip-en="Settled session — the close these reads were taken from. Source clocks live in Risk Detail."
-          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。各来源时钟见风险详情。">
+          data-tip-en="Settled session — the close these reads were taken from. Expand this public context for individual source clocks."
+          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。展开此公开说明查看各来源时钟。">
       <span class="l-en">Settled</span><span class="l-zh">已结算</span> {{ re.get('source_session') or '—' }}
     </span>
+    <span class="gde-more"><span class="l-en">Why</span><span class="l-zh">说明</span></span>
     <svg class="gde-chevron" width="8" height="12" viewBox="0 0 8 12" aria-hidden="true" focusable="false">
       <path d="M1.5 1.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </span>
-</button>
+</summary>
 {%- endif -%}
 {% endmacro %}
 
-{# ── L2/L3 · Market Reads inside the existing #dlg-risk ── #}
+{# ── L2/L3 · Public explanation, separate from the member-only Risk Detail ── #}
 {% macro gde_detail(re) %}
 {%- if re and re.get('schema') == 'mastermind.risk_envelope/v1' -%}
 {%- set _ms = re.get('measured_state') or {} -%}
@@ -176,6 +176,7 @@
         {%- endif -%}
       </p>
       <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ _ms.get('as_of') or '—' }}</span>
+      {{ gde_trend_health(re, ns.ms) }}
     </div>
 
     <div class="gde-dblock gde-hz-{{ _stage or 'null' }}">
@@ -196,16 +197,22 @@
           <span class="l-zh">{{ (ns.lead.label_zh if ns.lead else '受追踪的一组标的') }}显示损伤{% if _ms.get('usable') and _ms.get('verdict') == 'RISK_ON' %}，但整体趋势仍保持积极{% endif %}{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
         {%- endif -%}
       </p>
+      {% if _stage is not none and _caveat_n > 0 %}
+      <p class="gde-caveat"><span class="l-en">{{ _caveat_n }} source{{ 's' if _caveat_n != 1 else '' }} unavailable</span><span class="l-zh">{{ _caveat_n }} 个来源不可用</span></p>
+      {% endif %}
       <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ (ns.lead.as_of if ns.lead else none) or re.get('source_session') or '—' }}</span>
     </div>
   </div>
 
+  {{ gde_coverage_note(re) }}
   <div class="gde-detail-policy">
     <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
     {%- if not _policy_known -%}
     <span class="gde-policy-state"><span class="l-en">Policy status unavailable</span><span class="l-zh">政策状态不可用</span></span>
     {%- elif _policy_n == 0 -%}
     <span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span>
+    {%- else -%}
+    <span class="gde-policy-state"><span class="l-en">Policy is separate from the market readings</span><span class="l-zh">政策独立于市场判读</span></span>
     {%- endif -%}
     {% if _policy_known %}<span class="gde-policy-count tnum">{{ _policy_n }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>{% endif %}
   </div>
@@ -269,3 +276,33 @@
 </section>
 {%- endif -%}
 {% endmacro %}
+
+{# Public context never passes through the registration-gated Risk Detail. #}
+{% macro gde_context(re) -%}
+{%- if re and re.get('schema') == 'mastermind.risk_envelope/v1' -%}
+<details class="gde-context" id="gde-context-disclosure">
+  {{ gde_rail(re) }}
+  <div class="gde-context-body">{{ gde_detail(re) }}</div>
+</details>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro gde_coverage_note(re) -%}
+{%- set state = re.get('data_state') -%}
+{%- if state in ('STALE', 'DEGRADED', 'UNKNOWN') -%}
+<span class="gde-caveat gde-coverage-note">
+  <span class="l-en">{{ {'STALE': 'Sources older', 'DEGRADED': 'Limited coverage', 'UNKNOWN': 'Coverage unknown'}[state] }}</span>
+  <span class="l-zh">{{ {'STALE': '来源较旧', 'DEGRADED': '覆盖受限', 'UNKNOWN': '覆盖不明'}[state] }}</span>
+</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro gde_trend_health(re, source) -%}
+{%- set coverage = source.get('coverage') if source else 'MISSING' -%}
+{%- set clock = (((re.get('freshness') or {}).get('per_source') or {}).get(source.get('source_id')) or {}) if source else {} -%}
+{%- if coverage == 'STALE' or clock.get('state') == 'STALE' -%}
+<span class="gde-caveat"><span class="l-en">Trend source older</span><span class="l-zh">趋势来源较旧</span></span>
+{%- elif coverage != 'FRESH' or clock.get('state') == 'MISSING' -%}
+<span class="gde-caveat"><span class="l-en">Trend source missing</span><span class="l-zh">趋势来源缺失</span></span>
+{%- endif -%}
+{%- endmacro %}

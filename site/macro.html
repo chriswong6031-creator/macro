@@ -109,7 +109,7 @@
 <link rel="stylesheet" href="assets/css/3c682776.css?v=3c682776">
 
 <link rel="stylesheet" href="assets/css/7689f0db.css?v=7689f0db">
-<link rel="stylesheet" href="assets/css/dda66f92.css?v=dda66f92">
+<link rel="stylesheet" href="assets/css/033cfde9.css?v=033cfde9">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 <link rel="preload" as="style" href="assets/css/4e822d03.css?v=4e822d03">
@@ -1962,14 +1962,12 @@
   </script>
   
   
-  <button type="button"
-        class="gde-rail is-split"
+  <details class="gde-context" id="gde-context-disclosure">
+  <summary class="gde-rail is-split"
         id="risk-envelope-band"
         data-bundle-id="8ed1b5c2b113ba4c"
         data-settled-session="2026-09-04"
-        aria-haspopup="dialog"
-        aria-controls="dlg-risk"
-        onclick="mx5OpenDlg('dlg-risk')">
+        aria-controls="gde-detail">
   <span class="gde-rail-kicker">
     <span class="l-en">Risk context</span><span class="l-zh">风险提示</span>
   </span>
@@ -1978,6 +1976,7 @@
     <span class="gde-seg gde-seg-trend">
       <span class="gde-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
       <span class="gde-v" style="color: var(--gde-ms)"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span><span class="gde-arr" aria-hidden="true">▲</span></span>
+      
     </span>
     <span class="gde-seg gde-seg-break">
       <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
@@ -1991,21 +1990,135 @@
 
   <span class="gde-rail-meta">
     
+    
     <span class="gde-stamp gde-stamp-live" id="gde-live-chip" hidden>
       <i class="dtp-dot" aria-hidden="true"></i>
       <span class="l-en">Live · provisional</span><span class="l-zh">实时 · 临时</span>
       <span class="gde-live-time"></span>
     </span>
     <span class="gde-stamp gde-stamp-settled tnum"
-          data-tip-en="Settled session — the close these reads were taken from. Source clocks live in Risk Detail."
-          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。各来源时钟见风险详情。">
+          data-tip-en="Settled session — the close these reads were taken from. Expand this public context for individual source clocks."
+          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。展开此公开说明查看各来源时钟。">
       <span class="l-en">Settled</span><span class="l-zh">已结算</span> 2026-09-04
     </span>
+    <span class="gde-more"><span class="l-en">Why</span><span class="l-zh">说明</span></span>
     <svg class="gde-chevron" width="8" height="12" viewBox="0 0 8 12" aria-hidden="true" focusable="false">
       <path d="M1.5 1.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </span>
-</button>
+</summary>
+  <div class="gde-context-body"><section class="gde-detail is-split" id="gde-detail">
+  <h3 class="gde-detail-h">
+    <span class="l-en">Market reads</span><span class="l-zh">市场判读</span>
+  </h3>
+
+  <div class="gde-detail-reads">
+    <div class="gde-dblock gde-ms-RISK_ON">
+      <span class="gde-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+      <p class="gde-d-a"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span><span class="gde-arr" aria-hidden="true">▲</span></p>
+      <p class="gde-d-c"><span class="l-en">Slow measured trend, carried unchanged — source score 75.</span>
+          <span class="l-zh">慢速趋势判读，原样保留 — 来源评分 75。</span></p>
+      <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-09-04</span>
+      
+    </div>
+
+    <div class="gde-dblock gde-hz-FRAGILE">
+      <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
+      <p class="gde-d-a">
+        <span class="l-en">Fragile</span><span class="l-zh">脆弱</span>
+      </p>
+      <p class="gde-d-c"><span class="l-en">Leadership cohort shows damage while the broad trend remains positive — its own read has said so since 2026-07-07.</span>
+          <span class="l-zh">龙头股群体显示损伤，但整体趋势仍保持积极——该来源自 2026-07-07 起即如此判读。</span></p>
+      
+      <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-09-04</span>
+    </div>
+  </div>
+
+  
+  <div class="gde-detail-policy">
+    <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span><span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span><span class="gde-policy-count tnum">0 <span class="l-en">active</span><span class="l-zh">项生效</span></span>
+  </div>
+
+  <details class="gde-disc">
+    <summary>
+      <span class="l-en">Evidence &amp; source health — 3 sources, 2 disagreements</span>
+      <span class="l-zh">证据与来源健康 — 3 个来源，2 处分歧</span>
+    </summary>
+    <div class="gde-disc-body">
+      <div class="gde-tblwrap">
+        <table class="gde-tbl">
+          <thead><tr>
+            <th><span class="l-en">Source</span><span class="l-zh">来源</span></th>
+            <th><span class="l-en">Its own read</span><span class="l-zh">自身读数</span></th>
+            <th><span class="l-en">As of</span><span class="l-zh">数据日期</span></th>
+            <th><span class="l-en">Freshness</span><span class="l-zh">新鲜度</span></th>
+          </tr></thead>
+          <tbody>
+          
+            <tr>
+              <td class="l"><span class="l-en">Market state</span><span class="l-zh">市场状态</span></td>
+              <td class="tnum">RISK_ON · 75</td>
+              <td class="tnum">2026-09-04</td>
+              <td>
+                <span class="l-en">This session</span><span class="l-zh">本交易日</span>
+                 <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>
+              </td>
+            </tr>
+          
+            <tr>
+              <td class="l"><span class="l-en">Leadership cohort</span><span class="l-zh">龙头股群体</span></td>
+              <td class="tnum">BROKEN</td>
+              <td class="tnum">2026-09-04</td>
+              <td>
+                <span class="l-en">This session</span><span class="l-zh">本交易日</span>
+                 <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>
+              </td>
+            </tr>
+          
+            <tr>
+              <td class="l"><span class="l-en">Cross-asset scares</span><span class="l-zh">跨资产风险扫描</span></td>
+              <td class="tnum">watch · 64</td>
+              <td class="tnum">2026-09-04</td>
+              <td>
+                <span class="l-en">This session</span><span class="l-zh">本交易日</span>
+                
+              </td>
+            </tr>
+          
+          </tbody>
+        </table>
+      </div>
+
+      
+      <p class="gde-disc-h"><span class="l-en">Where they disagree</span><span class="l-zh">分歧所在</span></p>
+      <ul class="gde-conflicts">
+        
+        <li>
+          <span class="l-en">Market state reads <b>RISK_ON</b> while Leadership cohort reads <b>BROKEN</b>.</span>
+          <span class="l-zh">市场状态 读为 <b>RISK_ON</b>，而 龙头股群体 读为 <b>BROKEN</b>。</span>
+        </li>
+        
+        <li>
+          <span class="l-en">Leadership cohort reads <b>BROKEN</b> while Cross-asset scares reads <b>watch</b>.</span>
+          <span class="l-zh">龙头股群体 读为 <b>BROKEN</b>，而 跨资产风险扫描 读为 <b>watch</b>。</span>
+        </li>
+        
+      </ul>
+      
+
+      <p class="gde-receipt tnum">
+        grey-deer-v1-2026-08-19 · bundle 8ed1b5c2b113ba4c ·
+        coverage FRESH ·
+        coherence CONTRADICTORY (scope market_reads) ·
+        stage FRAGILE (observed_settled_evidence) ·
+        stage_since null (no_episode_lifecycle_in_v0) ·
+        engine/risk_envelope.py
+      </p>
+      <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>
+    </div>
+  </details>
+</section></div>
+</details>
   </div>
 
   
@@ -4705,13 +4818,13 @@
       
       <div class="mx5-ai-ticker-pills">
         
-        <span class="mx5-ai-ticker-pill">SPY</span>
+        <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">USO</span>
+        <span class="mx5-ai-ticker-pill">IEF</span>
         
-        <span class="mx5-ai-ticker-pill">XLE</span>
+        <span class="mx5-ai-ticker-pill">INTC</span>
         
-        <span class="mx5-ai-ticker-pill">QQQ</span>
+        <span class="mx5-ai-ticker-pill">NVDA</span>
         
       </div>
       
@@ -4719,14 +4832,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          4 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">fiscal &amp; trade</span><br>
+          5 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          4 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">财政与贸易</span><br>
+          5 条高影响信号
         </span>
         
       </div>
@@ -4802,11 +4915,11 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Zscaler beats earnings expectations, issues upbeat guidance but stock falls</span>
-              <span class="l-zh">Zscaler业绩超预期，发布乐观指引但股价下跌</span>
+              <span class="l-en">Utilities flash oversold signal as Treasury yields dim dividend appeal</span>
+              <span class="l-zh">Utilities flash oversold signal as Treasury yields dim divid…</span>
             </div>
             <div class="mx5-alert-detail">
-              <span>CNBC - Tech</span> · 
+              <span>Seeking Alpha - Market Currents</span> · 
               <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
             </div>
           </div>
@@ -5704,118 +5817,6 @@
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-
-        <details class="gde-disc" id="gde-context-disclosure">
-          <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
-          <section class="gde-detail is-split" id="gde-detail">
-  <h3 class="gde-detail-h">
-    <span class="l-en">Market reads</span><span class="l-zh">市场判读</span>
-  </h3>
-
-  <div class="gde-detail-reads">
-    <div class="gde-dblock gde-ms-RISK_ON">
-      <span class="gde-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
-      <p class="gde-d-a"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span><span class="gde-arr" aria-hidden="true">▲</span></p>
-      <p class="gde-d-c"><span class="l-en">Slow measured trend, carried unchanged — source score 75.</span>
-          <span class="l-zh">慢速趋势判读，原样保留 — 来源评分 75。</span></p>
-      <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-09-04</span>
-    </div>
-
-    <div class="gde-dblock gde-hz-FRAGILE">
-      <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
-      <p class="gde-d-a">
-        <span class="l-en">Fragile</span><span class="l-zh">脆弱</span>
-      </p>
-      <p class="gde-d-c"><span class="l-en">Leadership cohort shows damage while the broad trend remains positive — its own read has said so since 2026-07-07.</span>
-          <span class="l-zh">龙头股群体显示损伤，但整体趋势仍保持积极——该来源自 2026-07-07 起即如此判读。</span></p>
-      <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-09-04</span>
-    </div>
-  </div>
-
-  <div class="gde-detail-policy">
-    <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span><span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span><span class="gde-policy-count tnum">0 <span class="l-en">active</span><span class="l-zh">项生效</span></span>
-  </div>
-
-  <details class="gde-disc">
-    <summary>
-      <span class="l-en">Evidence &amp; source health — 3 sources, 2 disagreements</span>
-      <span class="l-zh">证据与来源健康 — 3 个来源，2 处分歧</span>
-    </summary>
-    <div class="gde-disc-body">
-      <div class="gde-tblwrap">
-        <table class="gde-tbl">
-          <thead><tr>
-            <th><span class="l-en">Source</span><span class="l-zh">来源</span></th>
-            <th><span class="l-en">Its own read</span><span class="l-zh">自身读数</span></th>
-            <th><span class="l-en">As of</span><span class="l-zh">数据日期</span></th>
-            <th><span class="l-en">Freshness</span><span class="l-zh">新鲜度</span></th>
-          </tr></thead>
-          <tbody>
-          
-            <tr>
-              <td class="l"><span class="l-en">Market state</span><span class="l-zh">市场状态</span></td>
-              <td class="tnum">RISK_ON · 75</td>
-              <td class="tnum">2026-09-04</td>
-              <td>
-                <span class="l-en">This session</span><span class="l-zh">本交易日</span>
-                 <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>
-              </td>
-            </tr>
-          
-            <tr>
-              <td class="l"><span class="l-en">Leadership cohort</span><span class="l-zh">龙头股群体</span></td>
-              <td class="tnum">BROKEN</td>
-              <td class="tnum">2026-09-04</td>
-              <td>
-                <span class="l-en">This session</span><span class="l-zh">本交易日</span>
-                 <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>
-              </td>
-            </tr>
-          
-            <tr>
-              <td class="l"><span class="l-en">Cross-asset scares</span><span class="l-zh">跨资产风险扫描</span></td>
-              <td class="tnum">watch · 64</td>
-              <td class="tnum">2026-09-04</td>
-              <td>
-                <span class="l-en">This session</span><span class="l-zh">本交易日</span>
-                
-              </td>
-            </tr>
-          
-          </tbody>
-        </table>
-      </div>
-
-      
-      <p class="gde-disc-h"><span class="l-en">Where they disagree</span><span class="l-zh">分歧所在</span></p>
-      <ul class="gde-conflicts">
-        
-        <li>
-          <span class="l-en">Market state reads <b>RISK_ON</b> while Leadership cohort reads <b>BROKEN</b>.</span>
-          <span class="l-zh">市场状态 读为 <b>RISK_ON</b>，而 龙头股群体 读为 <b>BROKEN</b>。</span>
-        </li>
-        
-        <li>
-          <span class="l-en">Leadership cohort reads <b>BROKEN</b> while Cross-asset scares reads <b>watch</b>.</span>
-          <span class="l-zh">龙头股群体 读为 <b>BROKEN</b>，而 跨资产风险扫描 读为 <b>watch</b>。</span>
-        </li>
-        
-      </ul>
-      
-
-      <p class="gde-receipt tnum">
-        grey-deer-v1-2026-08-19 · bundle 8ed1b5c2b113ba4c ·
-        coverage FRESH ·
-        coherence CONTRADICTORY (scope market_reads) ·
-        stage FRAGILE (observed_settled_evidence) ·
-        stage_since null (no_episode_lifecycle_in_v0) ·
-        engine/risk_envelope.py
-      </p>
-      <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>
-    </div>
-  </details>
-</section>
-        </details>
 
         
         
@@ -8185,10 +8186,10 @@ The dominant driver is an oil shock. Energy leads and inflation expectations are
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4640401-consumer-staples-flat-in-august-as-hormel-tyson-fall-estee-lauder-leads-gainers?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4640528-utilities-flash-oversold-signal-as-treasury-yields-dim-dividend-appeal?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Consumer staples flat in August as Hormel, Tyson fall; Estée Lauder leads gainers</span><span class="l-zh">Consumer staples flat in August as Hormel, Tyson fall; Estée Lauder leads gainers</span></span>
+              <span class="nbx-theme"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
+              <span class="nbx-title"><span class="l-en">Utilities flash oversold signal as Treasury yields dim dividend appeal</span><span class="l-zh">Utilities flash oversold signal as Treasury yields dim dividend appeal</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8203,46 +8204,10 @@ The dominant driver is an oil shock. Energy leads and inflation expectations are
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4640516-trump-targets-canadian-dollar-as-trade-fight-escalates?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4639499-finance-stocks-biggest-august-movers-robinhood-rallies-36-as-aon-paypal-sink?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Trump targets Canadian dollar as trade fight escalates</span><span class="l-zh">Trump targets Canadian dollar as trade fight escalates</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Sep 6</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4640517-societe-generale-sees-opportunity-in-selling-short-dated-s-and-p-500-tail-risk?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Société Générale sees opportunity in selling short-dated S&amp;P 500 tail risk</span><span class="l-zh">Société Générale sees opportunity in selling short-dated S&amp;P 500 tail risk</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Sep 6</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4640518-u-s-navy-escorts-keep-hormuz-oil-flowing-energy-chief-says?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">U.S. Navy escorts keep Hormuz oil flowing, energy chief says</span><span class="l-zh">U.S. Navy escorts keep Hormuz oil flowing, energy chief says</span></span>
+              <span class="nbx-title"><span class="l-en">Finance stocks&#39; biggest August movers: Robinhood rallies 36% as Aon, PayPal sink</span><span class="l-zh">Finance stocks&#39; biggest August movers: Robinhood rallies 36% as Aon, PayPal sink</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8266,6 +8231,60 @@ The dominant driver is an oil shock. Energy leads and inflation expectations are
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Sep 4</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/forget-high-yield-dividend-etfs-190500231.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nbx-title"><span class="l-en">Should You Forget High-Yield Dividend ETFs and Buy a Dividend Growth ETF Instead?</span><span class="l-zh">Should You Forget High-Yield Dividend ETFs and Buy a Dividend Growth ETF Instead?</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Sep 6</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4640530-brazil-court-suspends-operations-at-sigma-lithium-s-sole-producing-mine?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Brazil court suspends operations at Sigma Lithium’s sole producing mine</span><span class="l-zh">Brazil court suspends operations at Sigma Lithium’s sole producing mine</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Sep 6</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4640526-openai-pledges-greater-transparency-after-agents-misused-public-wiki?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">OpenAI pledges greater transparency after agents misused public wiki</span><span class="l-zh">OpenAI pledges greater transparency after agents misused public wiki</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Sep 6</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8329,33 +8348,15 @@ The dominant driver is an oil shock. Energy leads and inflation expectations are
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/broadcom-avgo-ai-revenue-soars-145838390.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/arista-networks-vs-ibm-comparing-193216269.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Broadcom (AVGO) AI Revenue Soars, But Wall Street Wants More</span><span class="l-zh">Broadcom (AVGO) AI Revenue Soars, But Wall Street Wants More</span></span>
+              <span class="nbx-title"><span class="l-en">Arista Networks vs. IBM: Comparing Quarterly Revenue Trends Between These Artificial Intelligence Giants</span><span class="l-zh">Arista Networks vs. IBM: Comparing Quarterly Revenue Trends Between These Artificial Intelligence Giants</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Sep 5</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/09/03/nvidia-agrees-to-buy-hugging-face-for-almost-13-billion-ai-expansion.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nbx-title"><span class="l-en">Hugging Face approached Nvidia’s Huang weeks ahead of $12.9B acquisition, CEO tells CNBC</span><span class="l-zh">Hugging Face approached Nvidia’s Huang weeks ahead of $12.9B acquisition, CEO tells CNBC</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Sep 3</span>
+              <span class="nbx-date">Sep 6</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -12235,9 +12236,9 @@ The dominant driver is an oil shock. Energy leads and inflation expectations are
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-09-06 17:03 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-09-06 19:38 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-09-06 17:03 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-09-06 19:38 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

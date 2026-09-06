@@ -1,0 +1,76 @@
+
+COMMAND: python3 scripts/check_title_i18n.py
+check_title_i18n: OK — no bilingual/CJK title attributes, no markup in <title> RCDATA (templates, site).
+
+COMMAND: python3 -m scripts.check_template_site_sync
+template↔site sync OK (98 pairs checked)
+
+COMMAND: python3 scripts/check_runtime_style_injection.py
+runtime style injection guard OK (195 .js files scanned, 45 injecting, 91 total hits — all within frozen allowances)
+
+COMMAND: python3 scripts/check_design_system.py --mode enforce-added --diff-file mockups/refs/grey-deer-compact/sol-20260906/source-review-r2.diff
+::notice title=design-system::R0 enforce-added: 0 blocking finding(s) (19009 further pre-existing, non-blocking finding(s) in the estate — run --mode report for the full census)
+design-system ratchet — mode=enforce-added blocking=0 (estate pre-existing, non-blocking: 19009)
+
+COMMAND: python3 scripts/check_ui_visual_evidence.py --diff-file mockups/refs/grey-deer-compact/sol-20260906/source-review-r2.diff
+
+COMMAND: git diff --check -- templates tests .github agentos research
+
+COMMAND: python3 scripts/agentos.py validate
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_ARCHITECTURE_AND_FABLE01_COMMISSION_2026-08-22.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_CURRENT_STATE_AMENDMENT_2026-08-22.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_A0_TOKEN_ISOLATION_FALSIFIER_2026-08-23.md' does not exist in repo 'mastermind'
+::warning title=agentos-active-but-complete::agentos/workstreams/WS-CYCLE-PATTERN-ISSUER-MECHANISM.md: [active-but-complete] status is 'active' but every wave is done/dropped
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0G_CONSOLIDATED_V1_CONTRACT_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0_ARCHITECTURE_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0A_CONCURRENT_DEMAND_AMENDMENT_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0B_PORTFOLIO_CANARY_AND_INPUT_GAPS_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0C_PARTIAL_ORDER_AND_EXPLANATION_LAW_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0D_COST_OF_DELAY_LAW_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0E_POINT_IN_TIME_LEARNING_AND_PROMOTION_LAW_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-artifact::agentos/workstreams/WS-EXECUTIVE-ATTENTION-ECONOMICS.md: [phantom-artifact] artifacts entry 'mastermind:research/MASTERMIND_EXECUTIVE_ATTENTION_ECONOMICS_F0F_AUTHORITY_TARGET_SERVICEABILITY_LAW_2026-08-30.md' does not exist in repo 'mastermind'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'site/live/risk_envelope.json' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'templates/risk_envelope/' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'tests/test_risk_envelope' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/handoffs/GREY-DEER-' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-LIVE-ENTRY-RADAR.md: [phantom-owns-path] owns_paths entry 'scripts/entry_radar_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-LIVE-ENTRY-RADAR.md: [phantom-owns-path] owns_paths entry 'research/LIVE_ENTRY_RADAR_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-LIVE-ENTRY-RADAR.md: [phantom-owns-path] owns_paths entry 'templates/entry_radar.html.j2' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-LIVE-ENTRY-RADAR.md: [phantom-owns-path] owns_paths entry 'site/entry_radar.html' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-STOCK-IDENTITY.md: [phantom-owns-path] owns_paths entry 'scripts/stock_identity_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-STOCK-IDENTITY.md: [phantom-owns-path] owns_paths entry 'research/STOCK_IDENTITY_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'research/technical_opportunity/' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/research/validate_toi_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/research/run_toi_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'tests/test_toi_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/decisions/DEC-TECHNICAL-OPPORTUNITY-INTELLIGENCE-' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/discoveries/DSC-TOI-' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/research/temporal_scale/' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/research/run_temporal_scale_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'tests/test_temporal_scale_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/decisions/DEC-TEMPORAL-GRAIN-' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TEMPORAL-GRAIN-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/handoffs/TEMPORAL-GRAIN-INTELLIGENCE-' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TOP-ANATOMY.md: [phantom-owns-path] owns_paths entry 'scripts/research_top_anatomy_' does not exist in repo 'macro'
+::warning title=agentos-phantom-owns-path::agentos/workstreams/WS-TOP-ANATOMY.md: [phantom-owns-path] owns_paths entry 'reports/top-anatomy-' does not exist in repo 'macro'
+::warning title=agentos-review-overdue::agentos/decisions/DEC-BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR.md: [review-overdue] review_by 2026-08-27 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-CLOSED-BUNDLE-ATOMIC-PERSISTENCE.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-EVIDENCE-IDENTITY-OCCURRENCE-BYTES.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-FIRST-KNOWN-AT-IS-CANONICAL-RETENTION-CLOCK.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-GIT-REMAINS-GENERATION-SELECTOR.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-IDENTITY-DUAL-READ.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-SIX-QUESTION-ONTOLOGY.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-W2A-CLASS-RESERVES-AND-HORIZON-FRESHNESS.md: [review-overdue] review_by 2026-08-28 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-W2B-500-LIVE-ENVELOPE.md: [review-overdue] review_by 2026-08-30 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-W2C-EXACT-DEPENDENCY-INCREMENTAL-DOCUMENT-TERMS.md: [review-overdue] review_by 2026-09-01 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-W2D-DUAL-DISCOVERY-CLOCK.md: [review-overdue] review_by 2026-09-01 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE.md: [review-overdue] review_by 2026-08-25 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-D0R-RED-TEAM-ADJUDICATION-2026-08-17.md: [review-overdue] review_by 2026-08-18 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER.md: [review-overdue] review_by 2026-08-23 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md: [review-overdue] review_by 2026-08-27 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md: [review-overdue] review_by 2026-08-21 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md: [review-overdue] review_by 2026-08-21 has passed
+::warning title=agentos-review-overdue::agentos/decisions/DEC-W2C-M0D0-0400Z-SOURCE-SEAL-GO.md: [review-overdue] review_by 2026-08-25 has passed
+agentos: 1067 records (69 workstreams, 305 decisions, 252 discoveries, 441 handoffs) — 0 error(s), 56 warning(s)

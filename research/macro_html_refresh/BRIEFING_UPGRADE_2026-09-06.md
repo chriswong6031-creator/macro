@@ -27,3 +27,17 @@ Each item needs its own current scope/collision check and independently useful r
 
 ## Resume checkpoint
 Protected procedure reloaded at `4fe4d6bc93d9543f77320f68342a10c5af4d4f49`. The compact slice remains BUILT_NOT_PROVEN pending independent review, current hosted checks and production publication. Current proof and exact continuation are in `agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-09-06-COMPACT.md`. No second workstream or implementation is created.
+
+## Next vertical: economic backdrop, not another indicator dashboard
+The next independently useful capability should let the unopened macro page answer three questions together: what growth is doing, what inflation is doing, and whether financial conditions support that environment. Reuse the accepted snapshots consumed by `scripts/build_macro_suite_pages.py::read_workspace` and the deterministic `lib/macro_suite_view.py::build_view`. Do not introduce an acquisition job, state store, narrator score, authentication layer or second suite hub.
+
+Each compact card needs a plain-language state, one meaningful change or tension, two supporting facts at most, the actual reference period and a clear route into the existing workspace. Publication time, calculation time, observation period and a model's forecast horizon are separate. “100% coverage” does not mean a fresh observation or successful source. A hypothesis remains labeled as such and must never become ranking, sizing, gating or trade instruction.
+
+Read-only recovery found that the existing growth snapshot already carries a leading-versus-coincident tension, while inflation can carry a July observation period beside a September calculation. These are useful explanations, not defects to hide. Monetary Policy and Rates & Curves deliberately have no fused headline: their `NOT_APPLICABLE` state must not be rendered as an empty product. Some rate-context clock fields require source-owner reconciliation before homepage promotion; no future-dated observation may be sold as a current fact merely because a snapshot passed its byte/schema manifest check.
+
+The consumer contract should preserve typed refusal for a missing pointer, wrong workspace, schema/hash mismatch, unreadable snapshot or unresolved observation clock. It must not copy old values into a success card. A recoverable unavailable card names why and the existing investigation destination. Fixture, sparse-checkout and actual generated-page evidence remain separate.
+
+Before implementing this next vertical, fresh-read the existing Macro & Monetary hub PR6873 and Release Radar A1 carriers. Their current scope and delivery state are independent, not assumed merged. The hub's navigation admission and A1's catalyst/forecast region must not be absorbed here. This is a continuation design boundary, not a commission, shipped capability or permission to expand PR6685.
+
+## Public inspection correction from independent review
+The compact risk context must use public native disclosure. Its predecessor's explanation and source evidence were publicly readable; moving them into a registration-gated dialog would remove an existing capability. Keep the separate member Risk Detail/Risk Brief and its authorization intact. This supersedes only the earlier placement instruction, not the compactness, truth, live-hook or no-new-controller boundaries.

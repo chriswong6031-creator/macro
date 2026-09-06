@@ -1,0 +1,43 @@
+Task exception was never retrieved
+future: <Task finished name='Task-144' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+Task exception was never retrieved
+future: <Task finished name='Task-309' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+Task exception was never retrieved
+future: <Task finished name='Task-475' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+Task exception was never retrieved
+future: <Task finished name='Task-639' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+Task exception was never retrieved
+future: <Task finished name='Task-806' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+Task exception was never retrieved
+future: <Task finished name='Task-973' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+Task exception was never retrieved
+future: <Task finished name='Task-1140' coro=<Response.finished.<locals>.on_finished() done, defined at /Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py:866> exception=Error('Target closed')>
+Traceback (most recent call last):
+  File "/Users/chriswong/Library/Python/3.14/lib/python/site-packages/playwright/_impl/_network.py", line 868, in on_finished
+    raise Error("Target closed")
+playwright._impl._errors.Error: Target closed
+{"classification": "LOCAL_FEED_FIXTURE_NOT_PRODUCTION", "cases": [{"scenario": "healthy", "theme": "dark", "language": "en", "clock_visible": true, "rail_height": 113.375, "overflow": false, "page_errors": []}, {"scenario": "degraded", "theme": "dark", "language": "en", "clock_visible": true, "rail_height": 113.375, "overflow": false, "page_errors": []}, {"scenario": "stale", "theme": "dark", "language": "en", "clock_visible": true, "rail_height": 89.375, "overflow": false, "page_errors": []}, {"scenario": "pending", "theme": "dark", "language": "en", "clock_visible": true, "rail_height": 130.375, "overflow": false, "page_errors": []}, {"scenario": "pending", "theme": "dark", "language": "zh", "clock_visible": true, "rail_height": 89.375, "overflow": false, "page_errors": []}, {"scenario": "pending", "theme": "light", "language": "en", "clock_visible": true, "rail_height": 130.375, "overflow": false, "page_errors": []}, {"scenario": "pending", "theme": "light", "language": "zh", "clock_visible": true, "rail_height": 89.375, "overflow": false, "page_errors": []}], "html_sha256": "b63e24b134deaa97598ce80db0435f24b2e48d65db00e606dcbb16af6bd24bc7", "status": "PASS"}

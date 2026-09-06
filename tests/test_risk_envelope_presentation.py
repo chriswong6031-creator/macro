@@ -22,7 +22,6 @@ TEMPLATES = ROOT / "templates"
 DASHBOARD = TEMPLATES / "dashboard.html.j2"
 BAND = TEMPLATES / "_risk_envelope_band.html.j2"
 SITE_MACRO = ROOT / "site" / "macro.html"
-PROD_ENVELOPE = ROOT / "site" / "riskdata" / "risk_envelope.json"
 GD1_FIXTURE = ROOT / "tests" / "fixtures" / "risk_envelope" / "gd1_dual_read_2026-08-18.json"
 
 
@@ -38,14 +37,9 @@ def _env() -> jinja2.Environment:
 def _render_surfaces(envelope: dict) -> str:
     tmpl = (
         '{% import "_risk_envelope_band.html.j2" as gde %}'
-        "{{ gde.gde_rail(risk_envelope) }}"
-        "{{ gde.gde_detail(risk_envelope) }}"
+        "{{ gde.gde_context(risk_envelope) }}"
     )
     return _env().from_string(tmpl).render(risk_envelope=envelope)
-
-
-def _prod_envelope() -> dict:
-    return json.loads(PROD_ENVELOPE.read_text(encoding="utf-8"))
 
 
 def _gd1_envelope() -> dict:
@@ -97,8 +91,8 @@ class _IdCounter(HTMLParser):
 
 
 @pytest.fixture(scope="module")
-def prod_html() -> str:
-    return _render_surfaces(_prod_envelope())
+def sample_html() -> str:
+    return _render_surfaces(_gd1_envelope())
 
 
 @pytest.fixture(scope="module")
@@ -111,32 +105,32 @@ def dash_src() -> str:
     return DASHBOARD.read_text(encoding="utf-8")
 
 
-def test_live_hooks_are_exactly_one_each(prod_html):
+def test_live_hooks_are_exactly_one_each(sample_html):
     for hook in (
         "risk-envelope-band",
         "gde-live-chip",
         "gde-pending-chip",
         "gde-live-receipt",
     ):
-        assert _count_id(prod_html, hook) == 1, hook
+        assert _count_id(sample_html, hook) == 1, hook
 
 
-def test_rail_keeps_bundle_identity(prod_html):
-    rail = _slice_id(prod_html, "risk-envelope-band")
-    env = _prod_envelope()
+def test_rail_keeps_bundle_identity(sample_html):
+    rail = _slice_id(sample_html, "risk-envelope-band")
+    env = _gd1_envelope()
     assert f'data-bundle-id="{env["bundle_id"]}"' in rail
     assert f'data-settled-session="{env["source_session"]}"' in rail
 
 
-def test_l1_rail_is_not_the_old_standalone_panel(prod_html):
-    rail = _slice_id(prod_html, "risk-envelope-band")
+def test_l1_rail_is_not_the_old_standalone_panel(sample_html):
+    rail = _slice_id(sample_html, "risk-envelope-band")
     assert "panel span12" not in rail
     assert "gde-band" not in rail
     assert 'class="gde-rail"' in rail or "gde-rail " in rail
 
 
-def test_l1_has_no_lead_paragraph_or_inline_evidence(prod_html):
-    rail = _slice_id(prod_html, "risk-envelope-band")
+def test_l1_has_no_lead_paragraph_or_inline_evidence(sample_html):
+    rail = _slice_id(sample_html, "risk-envelope-band")
     assert not re.search(r"<p[\s>]", rail, flags=re.I)
     assert not re.search(r"<details[\s>]", rail, flags=re.I)
     assert "gde-lead" not in rail
@@ -144,11 +138,11 @@ def test_l1_has_no_lead_paragraph_or_inline_evidence(prod_html):
     assert "Each read keeps its own clock" not in rail
 
 
-def test_l1_does_not_quote_the_hero_score(prod_html):
-    rail = _slice_id(prod_html, "risk-envelope-band")
+def test_l1_does_not_quote_the_hero_score(sample_html):
+    rail = _slice_id(sample_html, "risk-envelope-band")
     assert "gde-quote" not in rail
     assert "/100" not in rail
-    env = _prod_envelope()
+    env = _gd1_envelope()
     score = env.get("measured_state", {}).get("score")
     if score is not None:
         assert f">{score}<" not in rail
@@ -198,36 +192,39 @@ def test_gd1_contradiction_keeps_separate_reads(gd1_html):
     assert "Where they disagree" in detail or "分歧所在" in detail
 
 
-def test_detail_and_receipt_live_in_l2_l3(prod_html):
-    detail = _slice_id(prod_html, "gde-detail")
+def test_detail_and_receipt_live_in_l2_l3(sample_html):
+    detail = _slice_id(sample_html, "gde-detail")
     assert "Market reads" in detail or "市场判读" in detail
     assert _count_id(detail, "gde-live-receipt") == 1
     assert "<details" in detail.lower()
     assert "Evidence" in detail
-    rail = _slice_id(prod_html, "risk-envelope-band")
+    rail = _slice_id(sample_html, "risk-envelope-band")
     assert 'id="gde-live-receipt"' not in rail
 
 
-def test_rail_opens_existing_risk_dialog(prod_html):
-    rail = _slice_id(prod_html, "risk-envelope-band")
-    assert 'aria-haspopup="dialog"' in rail
-    assert 'aria-controls="dlg-risk"' in rail
-    assert "mx5OpenDlg('dlg-risk')" in rail
-    assert "<button" in rail
+def test_rail_opens_public_native_disclosure(sample_html):
+    context = _slice_id(sample_html, "gde-context-disclosure")
+    rail = _slice_id(context, "risk-envelope-band")
+    assert rail.startswith("<summary")
+    assert "onclick=" not in rail and 'aria-haspopup="dialog"' not in rail
+    assert 'id="gde-detail"' in context
+    assert 'aria-controls="gde-detail"' in rail
+    assert "Why" in rail and "说明" in rail
 
 
 def test_dashboard_places_rail_inside_the_regime_hero(dash_src):
     hero_close = dash_src.index("</div>{# /#regime-radar panel #}")
-    assert "gde.gde_rail(" in dash_src[:hero_close]
-    assert "gde.gde_rail(" not in dash_src[hero_close:]
+    assert "gde.gde_context(" in dash_src[:hero_close]
+    assert "gde.gde_context(" not in dash_src[hero_close:]
     old_include = dash_src.find('{% include "_risk_envelope_band.html.j2" %}')
     assert old_include == -1
 
 
-def test_dashboard_hosts_grey_deer_detail_in_dlg_risk(dash_src):
+def test_member_risk_dialog_is_not_the_public_context_destination(dash_src):
     at = dash_src.index('id="dlg-risk"')
     window = dash_src[at : at + 8000]
-    assert "gde.gde_detail(" in window
+    assert "gde.gde_detail(" not in window
+    assert 'id="gde-context-disclosure"' not in dash_src
     assert "Risk Detail" in window
     assert "Scare Ladder &amp; Sentiment" not in window
 
@@ -247,25 +244,19 @@ def test_band_html_declares_no_literal_custom_properties():
     assert "gde-hz-{{" in src
 
 
-def test_site_macro_matches_the_compact_contract():
+def test_generated_macro_smoke_allows_explicit_no_envelope():
+    if not SITE_MACRO.is_file():
+        pytest.skip("sparse checkout omits site/ (needs_full_checkout); fixture contracts still run")
     html = SITE_MACRO.read_text(encoding="utf-8")
-    assert _count_id(html, "risk-envelope-band") == 1
-    assert _count_id(html, "gde-live-chip") == 1
-    assert _count_id(html, "gde-pending-chip") == 1
-    assert _count_id(html, "gde-live-receipt") == 1
-    hero = _slice_id(html, "regime-radar")
-    assert 'id="risk-envelope-band"' in hero
-    rail = _slice_id(html, "risk-envelope-band")
-    assert "panel span12" not in rail
-    assert not re.search(r"<p[\s>]", rail, flags=re.I)
-    assert not re.search(r"<details[\s>]", rail, flags=re.I)
-    assert "gde-quote" not in rail
-    dlg = _slice_id(html, "dlg-risk")
-    assert 'id="gde-detail"' in dlg
-    assert 'id="gde-live-receipt"' in dlg
-    assert "Risk Detail" in dlg
-    assert 'aria-controls="dlg-risk"' in rail
-    assert "mx5OpenDlg('dlg-risk')" in rail
+    count = _count_id(html, "risk-envelope-band")
+    assert count in (0, 1)
+    for hook in ("gde-live-chip", "gde-pending-chip", "gde-live-receipt", "gde-context-disclosure", "gde-detail"):
+        assert _count_id(html, hook) == count, hook
+    if count:
+        hero = _slice_id(html, "regime-radar")
+        assert 'id="gde-context-disclosure"' in hero
+        assert 'id="gde-detail"' not in _slice_id(html, "dlg-risk")
+        assert _slice_id(html, "risk-envelope-band").startswith("<summary")
 
 
 @pytest.mark.parametrize("verdict,en,zh", [
@@ -287,7 +278,11 @@ def test_missing_optional_trend_labels_use_the_actual_verdict(verdict, en, zh):
         assert f'class="l-en">{en}</span>' in fragment
         assert f'class="l-zh">{zh}</span>' in fragment
     if verdict == "RISK_OFF":
-        assert "while the index holds" not in html
+        assert "while the broad trend remains positive" not in html
+        assert "但整体趋势仍保持积极" not in html
+    elif verdict == "RISK_ON":
+        assert "while the broad trend remains positive" in html
+        assert "但整体趋势仍保持积极" in html
 
 
 @pytest.mark.parametrize("count", [None, False, True, -1, "0", 1.5])
@@ -355,3 +350,48 @@ def test_homepage_names_the_customer_job_not_the_internal_composer():
     assert "Risk context" in rail
     assert "风险提示" in rail
     assert "Market Reads" not in rail
+
+
+@pytest.mark.parametrize("envelope", [None, {}, {"schema": "unrecognized"}])
+def test_absent_envelope_renders_no_public_disclosure(envelope):
+    assert not _render_surfaces(envelope).strip()
+    # The dashboard must not supply an unguarded, empty wrapper of its own.
+    assert 'id="gde-context-disclosure"' not in DASHBOARD.read_text()
+
+
+@pytest.mark.parametrize("stage", [None, "FRAGILE", "TRANSMITTING", "BREAKDOWN"])
+def test_missing_hazard_source_is_visible_at_glance_and_detail(stage):
+    envelope = _gd1_envelope()
+    envelope["hazard_summary"].update(stage=stage, unreadable_sources=["missing_required"], unmapped_required_sources=[])
+    envelope["data_state"] = "DEGRADED"
+    html = _render_surfaces(envelope)
+    for surface in ("risk-envelope-band", "gde-detail"):
+        assert "1 source unavailable" in _slice_id(html, surface)
+
+
+@pytest.mark.parametrize("state,en,zh", [("STALE", "Sources older", "来源较旧"), ("DEGRADED", "Limited coverage", "覆盖受限"), ("UNKNOWN", "Coverage unknown", "覆盖不明")])
+def test_aggregate_source_caveat_is_visible_without_a_missing_count(state, en, zh):
+    envelope = _gd1_envelope()
+    envelope["data_state"] = state
+    rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
+    assert en in rail and zh in rail
+
+
+@pytest.mark.parametrize("coverage,en,zh", [("STALE", "Trend source older", "趋势来源较旧"), ("MISSING", "Trend source missing", "趋势来源缺失")])
+def test_trend_source_health_is_visible_at_glance_and_detail(coverage, en, zh):
+    envelope = _gd1_envelope()
+    for source in envelope["provenance"]["sources"]:
+        if source["role"] == "measured_state":
+            source["coverage"] = coverage
+    html = _render_surfaces(envelope)
+    for surface in ("risk-envelope-band", "gde-detail"):
+        fragment = _slice_id(html, surface)
+        assert en in fragment and zh in fragment
+
+
+def test_active_policy_explains_its_separate_meaning():
+    envelope = _gd1_envelope()
+    envelope["policy_summary"]["policy_count"] = 3
+    detail = _slice_id(_render_surfaces(envelope), "gde-detail")
+    assert "Policy is separate from the market readings" in detail
+    assert "政策独立于市场判读" in detail

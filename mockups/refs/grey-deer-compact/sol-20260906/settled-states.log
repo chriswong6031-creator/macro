@@ -1,0 +1,83 @@
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 56905)
+Exception occurred during processing of request from ('127.0.0.1', 56906)
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 795, in send_head
+    f = open(path, 'rb')
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/site/api/brain/me'
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 795, in send_head
+    f = open(path, 'rb')
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/sol-macro-briefing-review-20260906/site/api/brain/me'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 736, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 500, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 488, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 740, in do_GET
+    f = self.send_head()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 797, in send_head
+    self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 555, in send_error
+    self.wfile.write(body)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 736, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 500, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 488, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 740, in do_GET
+    f = self.send_head()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 797, in send_head
+    self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 555, in send_error
+    self.wfile.write(body)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+{"classification": "EXPLICIT_SETTLED_FIXTURES_NOT_PRODUCTION", "cases": [{"scenario": "absent", "theme": "dark", "language": "en", "overflow": false}, {"scenario": "absent", "theme": "light", "language": "en", "overflow": false}, {"scenario": "absent", "theme": "dark", "language": "zh", "overflow": false}, {"scenario": "absent", "theme": "light", "language": "zh", "overflow": false}, {"scenario": "partial", "theme": "dark", "language": "en", "rail_height": 106.375, "rail_text": "RISK CONTEXT\nTREND\nRisk-on▲\nBREAKAGE\nFragile\n1 source unavailable\nLimited coverage\nSettled 2026-09-04\nWhy", "overflow": false}, {"scenario": "partial", "theme": "light", "language": "en", "rail_height": 106.375, "rail_text": "RISK CONTEXT\nTREND\nRisk-on▲\nBREAKAGE\nFragile\n1 source unavailable\nLimited coverage\nSettled 2026-09-04\nWhy", "overflow": false}, {"scenario": "partial", "theme": "dark", "language": "zh", "rail_height": 60.1875, "rail_text": "风险提示\n趋势\n风险偏好▲\n断裂\n脆弱\n1 个来源不可用\n覆盖受限\n已结算 2026-09-04\n说明", "overflow": false}, {"scenario": "partial", "theme": "light", "language": "zh", "rail_height": 60.1875, "rail_text": "风险提示\n趋势\n风险偏好▲\n断裂\n脆弱\n1 个来源不可用\n覆盖受限\n已结算 2026-09-04\n说明", "overflow": false}, {"scenario": "stale", "theme": "dark", "language": "en", "rail_height": 89.375, "rail_text": "RISK CONTEXT\nTREND\nRisk-on▲\nTrend source older\nBREAKAGE\nFragile\nSources older\nSettled 2026-09-04\nWhy", "overflow": false}, {"scenario": "stale", "theme": "light", "language": "en", "rail_height": 89.375, "rail_text": "RISK CONTEXT\nTREND\nRisk-on▲\nTrend source older\nBREAKAGE\nFragile\nSources older\nSettled 2026-09-04\nWhy", "overflow": false}, {"scenario": "stale", "theme": "dark", "language": "zh", "rail_height": 60.1875, "rail_text": "风险提示\n趋势\n风险偏好▲\n趋势来源较旧\n断裂\n脆弱\n来源较旧\n已结算 2026-09-04\n说明", "overflow": false}, {"scenario": "stale", "theme": "light", "language": "zh", "rail_height": 60.1875, "rail_text": "风险提示\n趋势\n风险偏好▲\n趋势来源较旧\n断裂\n脆弱\n来源较旧\n已结算 2026-09-04\n说明", "overflow": false}, {"scenario": "active_policy", "theme": "dark", "language": "en", "rail_height": 96.5625, "rail_text": "RISK CONTEXT\nTREND\nRisk-on▲\nBREAKAGE\nFragile\nPOLICY\n3 active\nSettled 2026-09-04\nWhy", "overflow": false}, {"scenario": "active_policy", "theme": "light", "language": "en", "rail_height": 96.5625, "rail_text": "RISK CONTEXT\nTREND\nRisk-on▲\nBREAKAGE\nFragile\nPOLICY\n3 active\nSettled 2026-09-04\nWhy", "overflow": false}, {"scenario": "active_policy", "theme": "dark", "language": "zh", "rail_height": 67.375, "rail_text": "风险提示\n趋势\n风险偏好▲\n断裂\n脆弱\n政策\n3 项生效\n已结算 2026-09-04\n说明", "overflow": false}, {"scenario": "active_policy", "theme": "light", "language": "zh", "rail_height": 67.375, "rail_text": "风险提示\n趋势\n风险偏好▲\n断裂\n脆弱\n政策\n3 项生效\n已结算 2026-09-04\n说明", "overflow": false}], "template_sha256": "57d49f347118b82651cdb57bae8bee141811795f69a61c39670f9d37136d69b0", "status": "PASS"}

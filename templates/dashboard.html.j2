@@ -8467,7 +8467,7 @@ html[data-theme="light"] :is(
   {% endif %}
   {# Compact Market Reads rail — last child of the regime hero, not a second
      full-width panel. Live overlay hooks stay on #risk-envelope-band. #}
-  {% if mode != 'stocks' %}{{ gde.gde_rail(risk_envelope) }}{% endif %}
+  {% if mode != 'stocks' %}{{ gde.gde_context(risk_envelope) }}{% endif %}
   </div>{# /#regime-radar panel #}
 
   {# ── V2 ROW-LEDGER SECTIONS (macro mode only) ── #}
@@ -12437,11 +12437,6 @@ html[data-theme="light"] :is(
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-
-        <details class="gde-disc" id="gde-context-disclosure">
-          <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
-          {{ gde.gde_detail(risk_envelope) }}
-        </details>
 
         {# — Risk Brief: one hero, not two — #}
         {% set _dlgr_rdr = market_state.radar if market_state.radar is defined else {} %}
@@ -17763,7 +17758,7 @@ window.__CHART_SWAP__ = {
    live.js is __mmLiveInit-guarded so this second include was a no-op — dropped. #}
 <script src="risk_state_live.js"></script>
 {# GD-3: live-provisional Risk Envelope overlay — same mode gate as the
-   compact Market Reads rail (gde.gde_rail, mode != 'stocks' above). #}
+   compact risk-context disclosure (gde.gde_context, mode != 'stocks' above). #}
 {% if mode != 'stocks' %}<script src="risk_envelope_live.js"></script>{% endif %}
 <script src="release_publications_live.js"></script>
 <script>

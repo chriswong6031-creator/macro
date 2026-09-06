@@ -1,0 +1,27 @@
+{
+  "utc": "2026-09-06T20:31:28.413174+00:00",
+  "command": [
+    "python3",
+    "-m",
+    "pytest",
+    "tests/test_synapse_read_gate.py",
+    "tests/test_horizon_firewall.py",
+    "tests/test_delivery_waterfall.py",
+    "tests/test_pricing_power_monitor.py",
+    "tests/test_risk_envelope.py",
+    "tests/test_live_risk_envelope.py",
+    "tests/test_risk_envelope_presentation.py",
+    "tests/test_risk_state_live_session_floor.py",
+    "-ra"
+  ],
+  "exit": 0,
+  "files_sha256": {
+    "templates/_risk_envelope_band.html.j2": "57d49f347118b82651cdb57bae8bee141811795f69a61c39670f9d37136d69b0",
+    "templates/_risk_envelope_band.css.j2": "3b677ae0ab102abd35a35bb10c16bbdf910665332f4e50a6635ecc2bf851988b",
+    "templates/dashboard.html.j2": "77579fe042bf950f901232b277899d64a62bbb0fc6c0211f3c70a8b602e8efde",
+    "tests/test_risk_envelope_presentation.py": "056a156783f6aabdca41cb93cc6fe113cf97c541dffd7919896f76f48391ab27",
+    ".github/ci/legacy-jobs.yml": "f9aa11eac1d8dfd622d2c92c41733699998d11bec1e02a67b7112e1160c23d1f",
+    "site/macro.html": "b63e24b134deaa97598ce80db0435f24b2e48d65db00e606dcbb16af6bd24bc7"
+  },
+  "source_unchanged_during_tests": true
+}

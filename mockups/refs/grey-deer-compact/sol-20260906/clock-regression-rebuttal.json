@@ -1,0 +1,7 @@
+{
+  "old_head": "6d7b0dfcb2d8d2a7e6a677b10e36ce517a494494",
+  "old_selector_matched": true,
+  "current_selector_matched": false,
+  "old_css_sha256": "c8cc3ef4a5e022311e896798dade0d8b2c39ba11b94cf1b1f618b5e9804aa458",
+  "finding_6": "Disproved: the exact tested selector existed in the original source."
+}
