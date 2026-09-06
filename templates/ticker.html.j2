@@ -870,6 +870,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% if earnings %}<a href="#earnings">{{ t('Earnings', '财报') }}</a>{% endif %}
     {% if valuation %}<a href="#valuation">{{ t('Valuation', '估值') }}</a>{% endif %}
     {% if financials %}<a href="#financials">{{ t('Financials', '财务') }}</a>{% endif %}
+    {% if debt_maturity and debt_maturity.status == 'reported' %}<a href="#debt-maturity">{{ t('Debt', '债务') }}</a>{% endif %}
     {% if options %}<a href="#options">{{ t('Options', '期权') }}</a>{% endif %}
     {% if ownership %}<a href="#ownership">{{ t('Holders', '持仓') }}</a>{% endif %}
     {% if news %}<a href="#news">{{ t('News', '新闻') }}</a>{% endif %}
@@ -1397,6 +1398,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% endif %}
   </section>
   {% endif %}
+  {% include "_debt_maturity.html.j2" %}
 
   {% if why_moving %}
   <section class="mod rv why" id="why">

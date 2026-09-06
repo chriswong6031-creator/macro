@@ -3317,6 +3317,8 @@ def sections_available(blob: dict | None, per: dict, agg: dict, ticker: str) -> 
     count = 0
     if blob:
         count += 1
+    if (blob or {}).get("debt_maturity", {}).get("status") == "reported":
+        count += 1
     if (blob or {}).get("valuation"):
         count += 1
     if (blob or {}).get("financials"):
@@ -4426,6 +4428,7 @@ def build_page_context(
         "gauges": gauges,
         "performance": performance,
         "financials": financials,
+        "debt_maturity": (blob or {}).get("debt_maturity"),
         "valuation": valuation,
         "earnings": earnings,
         "technicals": technicals,

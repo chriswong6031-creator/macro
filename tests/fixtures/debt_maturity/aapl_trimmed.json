@@ -1,0 +1,44 @@
+{
+  "cik": 320193,
+  "entityName": "Apple Inc.",
+  "facts": {
+    "us-gaap": {
+      "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths": {
+        "units": {
+          "USD": [
+            {"end": "2023-09-30", "val": 9822000000, "accn": "0000320193-23-000106", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2023-11-03"},
+            {"end": "2024-09-28", "val": 11128000000, "accn": "0000320193-24-000123", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01"}
+          ]
+        }
+      },
+      "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo": {
+        "units": {
+          "USD": [
+            {"end": "2024-09-28", "val": 10912000000, "accn": "0000320193-24-000123", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01"}
+          ]
+        }
+      },
+      "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearThree": {
+        "units": {
+          "USD-per-shares": [
+            {"end": "2024-09-28", "val": 9500000000, "accn": "0000320193-24-000123", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01"}
+          ]
+        }
+      },
+      "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearFour": {
+        "units": {
+          "USD": [
+            {"end": "2023-09-30", "val": 5000000000, "accn": "0000320193-23-000106", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2023-11-03"}
+          ]
+        }
+      },
+      "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearFive": {
+        "units": {
+          "USD": [
+            {"end": "2024-09-28", "val": 0, "accn": "0000320193-24-000123", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01"}
+          ]
+        }
+      }
+    }
+  }
+}

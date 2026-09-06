@@ -1,0 +1,102 @@
+<style>
+/* Debt maturity wall — bars achromatic on purpose (reserved-hue law); --prov is the
+   only hue and means exactly one thing: this bucket was not reported. */
+.dmw{display:grid;grid-template-columns:minmax(0,1fr) 236px;gap:22px;align-items:start;}
+.dmw-lede{margin:0 0 14px;font-size:13.5px;line-height:1.55;}
+.dmw-rows{display:flex;flex-direction:column;gap:9px;min-width:0;}
+.dmr{display:grid;grid-template-columns:12ch minmax(0,1fr) 11ch;align-items:center;gap:12px;min-width:0;}
+.dmr-lb{font-size:12px;font-weight:600;color:var(--muted);}
+.dmr-tr{position:relative;height:26px;border-radius:6px;overflow:hidden;
+  background:color-mix(in srgb,var(--text) 6%,transparent);}
+.dmr-bar{position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);border-radius:6px;
+  background:color-mix(in srgb,var(--text) 22%,transparent);
+  border-top:1px solid color-mix(in srgb,var(--text) 38%,transparent);}
+.dmr-val{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;text-align:right;}
+.dmr.na .dmr-tr{background:transparent;border:1px dashed color-mix(in srgb,var(--prov) 55%,transparent);}
+.dmr.na .dmr-val{font-family:var(--font-ui);font-size:11.5px;font-weight:600;color:var(--prov-ink);}
+.dmw-rail{border-left:1px solid var(--hair);padding-left:18px;}
+.dmw-tl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.dmw-total{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;}
+.dmw-note,.dmw-src{font-size:11.5px;color:var(--muted);line-height:1.55;margin:10px 0 0;}
+.dmw-null{margin:0;font-size:14px;font-weight:600;}
+.dmw-nullwhy{margin:6px 0 0;font-size:12.5px;color:var(--muted);line-height:1.55;}
+.dmw-detail{margin-top:12px;font-size:11.5px;color:var(--muted);}
+.dmw-detail summary{cursor:pointer;font-weight:600;}
+.dmw-detail code{font-family:var(--font-mono);font-size:10.5px;word-break:break-all;}
+html[data-lang="zh"] .dmw-tl{text-transform:none;letter-spacing:.02em;}
+html[data-lang="zh"] .dmr{grid-template-columns:10ch minmax(0,1fr) 11ch;}
+/* LIGHT — research workspace: ink on paper, hairline rules, hatched null. */
+[data-theme="light"] .dmr{border-bottom:1px solid var(--hair);padding-bottom:7px;}
+[data-theme="light"] .dmr-tr{background:var(--panel2);border:1px solid var(--hair);}
+[data-theme="light"] .dmr-bar{background:color-mix(in srgb,var(--text) 78%,transparent);border-top:0;}
+[data-theme="light"] .dmr.na .dmr-tr{border:1px dashed color-mix(in srgb,var(--prov) 60%,transparent);
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--text) 6%,transparent) 0 3px,transparent 3px 7px);}
+[data-theme="light"] .dmw-rail{border-left:0;border-top:2px solid var(--text);padding:12px 0 0;}
+/* motion — reuses the page .rv reveal, no new clock */
+html.has-js .rv .dmr-bar{transform:scaleX(0);transform-origin:left center;}
+html.has-js .rv.in .dmr-bar{transform:none;transition:transform .5s cubic-bezier(.22,.9,.26,1.02);transition-delay:calc(var(--i,0)*45ms);}
+@media(prefers-reduced-motion:reduce){html.has-js .rv .dmr-bar,html.has-js .rv.in .dmr-bar{transform:none;transition:none;}}
+@media(max-width:760px){
+  .dmw{grid-template-columns:1fr;gap:16px;}
+  .dmw-rail{order:-1;border-left:0;border-bottom:1px solid var(--hair);padding:0 0 12px;}
+  [data-theme="light"] .dmw-rail{border-top:2px solid var(--text);border-bottom:0;padding:12px 0 0;}
+  .dmr{grid-template-columns:1fr auto;grid-template-areas:"lb val" "tr tr";row-gap:6px;}
+  .dmr-lb{grid-area:lb;} .dmr-val{grid-area:val;} .dmr-tr{grid-area:tr;height:22px;}
+}
+</style>
+
+{% if debt_maturity and debt_maturity.status != 'not_applicable' %}
+<section class="mod rv" id="debt-maturity" data-panel="debt_maturity.v1">
+  <div class="mod-hd">
+    <h2>{{ t('Debt coming due', '到期债务') }}</h2>
+    <span class="hint">{% if debt_maturity.period %}{{ debt_maturity.period.label }} {{ debt_maturity.period.form }}{% else %}{{ t('SEC filings', 'SEC 文件') }}{% endif %}</span>
+  </div>
+
+  {% if debt_maturity.status == 'reported' %}
+    {% if debt_maturity.near_share_pct is not none %}
+    <p class="dmw-lede">{{ t('About ' ~ debt_maturity.near_share_pct ~ '% of the principal it has reported — ' ~ debt_maturity.buckets[0].display ~ ' — comes due in the next 12 months.',
+                            '在已披露的到期本金中，约 ' ~ debt_maturity.near_share_pct ~ '%（' ~ debt_maturity.buckets[0].display ~ '）将在未来12个月内到期。') }}</p>
+    {% else %}
+    <p class="dmw-lede">{{ t('The next 12 months are not reported in this filing. The years below are what it did report.',
+                            '本次文件未披露未来12个月的到期金额；下方为其确实披露的年度。') }}</p>
+    {% endif %}
+    <div class="dmw">
+      <div class="dmw-rows">
+        {% for b in debt_maturity.buckets %}
+        <div class="dmr{% if not b.reported %} na{% endif %}" style="--i:{{ loop.index0 }}">
+          <span class="dmr-lb">{{ t(b.label_en, b.label_zh) }}</span>
+          <span class="dmr-tr">{% if b.reported %}<i class="dmr-bar" style="--w:{{ b.share_pct }}%"></i>{% endif %}</span>
+          <span class="dmr-val">{% if b.reported %}{{ b.display }}{% else %}{{ t('not reported', '未披露') }}{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <aside class="dmw-rail">
+        <div class="dmw-tl">{{ t('Reported principal due', '已披露到期本金') }}</div>
+        <div class="dmw-total">{{ debt_maturity.total_display }}</div>
+        <p class="dmw-note">{{ t('What the company itself reported it must repay. Not the market value of its bonds, and not the face value any fund holds.',
+                                 '这是公司自身披露的应偿还本金，既非其债券的市场价值，也不是任何基金持有的面值。') }}</p>
+        <p class="dmw-src">{{ t('Source: SEC filings', '来源：SEC 文件') }} · {{ debt_maturity.period.form }} {{ debt_maturity.period.end }}{% if debt_maturity.period.stale %} · {{ t('most recent annual filing', '最近一期年度文件') }}{% endif %}</p>
+      </aside>
+    </div>
+    <details class="dmw-detail">
+      <summary>{{ t('How this is read', '数据来源说明') }}</summary>
+      <p>{{ t('Figures are XBRL facts from one filing — no two years are mixed. Filing', '数据取自同一份文件中的 XBRL 事实，不跨文件拼接。文件') }}
+         <code>{{ debt_maturity.period.accn }}</code>, {{ t('period ending', '报告期截至') }} {{ debt_maturity.period.end }}, {{ t('unit', '单位') }} {{ debt_maturity.unit }}.
+         {{ debt_maturity.buckets_reported }}/{{ debt_maturity.buckets_total }} {{ t('buckets reported.', '个区间有披露。') }}</p>
+      <ul>{% for b in debt_maturity.buckets %}<li><code>{{ b.tag }}</code>{% if not b.reported %} — {{ b.drop_reason }}{% endif %}</li>{% endfor %}</ul>
+    </details>
+
+  {% elif debt_maturity.status == 'no_filings' %}
+    <p class="dmw-null">{{ t('No SEC filings available for this listing.', '该证券暂无可用的 SEC 文件。') }}</p>
+    <p class="dmw-nullwhy">{{ t('This panel only reads filings an issuer makes with the SEC. None were found for this one, so there is nothing to show yet.',
+                               '本面板仅读取发行人向 SEC 提交的文件。此处暂未找到相关文件，因此暂无可展示的内容。') }}</p>
+
+  {% elif debt_maturity.status == 'no_maturity_facts' %}
+    <p class="dmw-null">{{ t('Its filings are available, but they do not break debt down by the year it comes due.', '已获取该公司的 SEC 文件，但文件中未按到期年度拆分债务。') }}</p>
+    <p class="dmw-nullwhy">{{ t('Not every company reports a year-by-year schedule. Nothing is being estimated in its place.', '并非所有公司都会披露逐年到期安排；此处不作任何估算替代。') }}</p>
+  {% endif %}
+
+  <div class="mod-ft">{{ t('Research context only — reported figures from SEC filings, not a rating, a signal or investment advice.',
+                           '仅供研究参考 — 数据摘自 SEC 文件披露口径，不构成评级、信号或投资建议。') }}</div>
+</section>
+{% endif %}
