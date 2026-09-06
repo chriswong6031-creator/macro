@@ -1,6 +1,6 @@
 {
   "schema": "seo_work_orders.v1",
-  "as_of": "2026-08-30T18:25:47Z",
+  "as_of": "2026-09-06T21:06:17Z",
   "orders": [
     {
       "id": "missing_description",
@@ -69,8 +69,21 @@
       "falsifiable_check": "Load page; canonical URL in <head> should match page URL"
     },
     {
-      "id": "missing_title",
+      "id": "duplicate_title",
       "priority": 4,
+      "title": "Make titles unique across pages",
+      "class": "duplicate_title",
+      "severity": "high",
+      "pages": [
+        "capital_structure.html"
+      ],
+      "pages_count": 1,
+      "suggested_fix": "Make titles unique across pages",
+      "falsifiable_check": "Run duplicate-title check: zero duplicates expected"
+    },
+    {
+      "id": "missing_title",
+      "priority": 5,
       "title": "Add <title> element to pages",
       "class": "missing_title",
       "severity": "high",
@@ -83,7 +96,7 @@
     },
     {
       "id": "missing_og",
-      "priority": 5,
+      "priority": 6,
       "title": "Add og:title, og:description, og:image to all pages",
       "class": "missing_og",
       "severity": "medium",
@@ -104,8 +117,23 @@
       "falsifiable_check": "Open Graph debugger or grep meta property=og: — all three present"
     },
     {
+      "id": "desc_length",
+      "priority": 7,
+      "title": "Adjust description length to 50-170 chars",
+      "class": "desc_length",
+      "severity": "medium",
+      "pages": [
+        "macro_capital_structure.html",
+        "macro_consumer_payments.html",
+        "stock_seasonality.html"
+      ],
+      "pages_count": 3,
+      "suggested_fix": "Adjust description length to 50-170 chars",
+      "falsifiable_check": "Measure len(desc) for each page; assert 50 <= len <= 170"
+    },
+    {
       "id": "title_length",
-      "priority": 6,
+      "priority": 8,
       "title": "Adjust title length to 15-70 chars",
       "class": "title_length",
       "severity": "medium",
@@ -118,21 +146,8 @@
       "falsifiable_check": "Measure len(title) for each page; assert 15 <= len <= 70"
     },
     {
-      "id": "desc_length",
-      "priority": 7,
-      "title": "Adjust description length to 50-170 chars",
-      "class": "desc_length",
-      "severity": "medium",
-      "pages": [
-        "stock_seasonality.html"
-      ],
-      "pages_count": 1,
-      "suggested_fix": "Adjust description length to 50-170 chars",
-      "falsifiable_check": "Measure len(desc) for each page; assert 50 <= len <= 170"
-    },
-    {
       "id": "duplicate_description",
-      "priority": 8,
+      "priority": 9,
       "title": "Make meta descriptions unique across pages",
       "class": "duplicate_description",
       "severity": "medium",
@@ -145,7 +160,7 @@
     },
     {
       "id": "missing_lang",
-      "priority": 9,
+      "priority": 10,
       "title": "Add lang attribute to <html> element",
       "class": "missing_lang",
       "severity": "medium",
@@ -155,6 +170,19 @@
       "pages_count": 1,
       "suggested_fix": "Add lang attribute to <html> element",
       "falsifiable_check": "grep '<html' in page — should include lang= attribute"
+    },
+    {
+      "id": "page_weight",
+      "priority": 11,
+      "title": "Reduce HTML page weight to <2.5 MB",
+      "class": "page_weight",
+      "severity": "low",
+      "pages": [
+        "winner_health.html"
+      ],
+      "pages_count": 1,
+      "suggested_fix": "Reduce HTML page weight to <2.5 MB",
+      "falsifiable_check": "wc -c site/<page>.html < 2621440 bytes"
     }
   ]
 }

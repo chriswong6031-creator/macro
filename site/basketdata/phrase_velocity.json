@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-09-05",
-  "generated_at": "2026-09-06T01:31:38.787370+00:00",
+  "as_of": "2026-09-06",
+  "generated_at": "2026-09-06T18:01:38.409701+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
