@@ -189,3 +189,13 @@ All owner blobs below were read at Macro `a68fdb5bee7648ba734c8562c6f98233c3a800
 | `templates/biocatalyst.js` | `565ab98b440f95895e5e4477df2c60a00f38d110` |
 | `templates/stock.html.j2` | `0a23d4e19f27a070bbdefb7dbf04fc50844d2870` |
 | `agentos/decisions/DEC-BPC-CATALYST-COMPOSES-WITH-COMPANY-EVENT-NOT-FISCAL-WORKSPACE.md` | `a833a2583ffb78ac80b59ba44c4e2abab2358012` |
+
+## 10. Explicit mappings from the independent interface review
+
+Review 5126573589 records the completed independent INTERFACE_PASS for a335729cc689adaad3a228511ba4967a4dece239. These two clarifications address its nonblocking implementation notes; they do not alter the accepted RP rule, select new owners, or constitute whole-R0 or runtime acceptance.
+
+**Ambiguous issuer is not a third RP input state.** The read-model output remains `issuer.state: ambiguous`, with null admitted issuer and no stock links. Map it to the existing RP input `identity_state: unresolved`; retain `AMBIGUOUS_CURRENT_CIK` in the read-model identity missingness and the existing `IDENTITY_UNRESOLVED` RP gap. Do not pass `ambiguous` to the RP classifier or add a new RP enum/reason. Earlier occurrence/source-health rules may still determine the primary lane/reason; the identity gap remains independently visible. The normative `ambiguous_current_cik` case names both layers explicitly.
+
+**One public required-input failure.** Section 5's `owner_projection_missing` is an internal diagnostic description only. The API uses section 6's HTTP 503 with the single public detail code `OWNER_INPUT_UNAVAILABLE`; it does not expose the internal token as an alternate detail or return a successful empty WMN response. The existing Trial Intelligence route remains usable when its own valid generation lacks the optional WMN artifact. The `old_generation_keeps_trial_workspace` case explicitly prohibits leaking the internal reason. No new error vocabulary, retry mechanism or public state is added.
+
+These mappings must be exercised through the real composer/router when R1B is implemented. The accompanying research examples remain synthetic specifications, not handler, hosted-CI, browser or production proof.
