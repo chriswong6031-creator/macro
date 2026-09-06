@@ -972,6 +972,31 @@ jobs:
         # must never drift. Skips cleanly when data/vector/*.json is absent.
         run: python -m pytest tests/test_signal_lab_vector_display.py -q
 
+  # MO-DELTA-015 / PR #6901: Local Projections (Jorda 2005) IRF estimator.
+  # Pure-numpy suite; registers with trial_ledger for specification-search pricing.
+  # MUST be gate: code — trial-budgets is gate: data, and ci.yml packs pass
+  # --gate code only (scripts/run_ci_pack.py filters data-gate jobs out). The only
+  # --gate data caller is data-health.yml (workflow_run/daily + cron + dispatch),
+  # which never runs on pull_request. Naming the suite only under trial-budgets
+  # therefore made contract-delta pass while the 26 acceptance tests executed on
+  # no PR check. Same pip line as the trial-budgets/outcome-spine family so the
+  # pack runner can share a venv; numpy+pandas cover the lazy
+  # engine.seasonality.event_study import in test_registered_family_reports_effective_n.
+  local-projections:
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: local projections IRF estimator (MO-DELTA-015 acceptance)
+        run: python -m pytest tests/test_local_projections.py -q
+
   breakdown-control-seed-determinism:
     if: ${{ false }}
     gate: code
