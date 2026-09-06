@@ -2,7 +2,7 @@
 workstream: "WS:BIOCATALYST-CORE-PRODUCT"
 session: sol/biocatalyst-fable-coo-end-to-end-commission-20260901
 model: sol
-ended_because: handoff
+ended_because: blocked
 mission: >
   Convert the approved BioCatalyst V3 recharter from an R0-only principal
   assignment into a complete delegated Fable COO program commission so the
@@ -135,3 +135,12 @@ without routine Sol intervention, while preserving fresh child operations,
 independent proof, owner/no-rebuild laws and explicit Chairman-only boundaries.
 The parent operation remains effect-free until a concrete Fable runtime ACKs and
 STARTs.
+
+## Historical session boundary
+
+This is the September 1, 2026 records-only commissioning handoff. Its
+`blocked` end reason records the outstanding delegated receiver/START
+dependency when the commissioning session ended; it does not assert that
+R0 or the BioCatalyst product was complete. Later ACK/START receipts and
+current execution state belong to the existing canonical parent and its
+current projection, not a rewritten historical snapshot.

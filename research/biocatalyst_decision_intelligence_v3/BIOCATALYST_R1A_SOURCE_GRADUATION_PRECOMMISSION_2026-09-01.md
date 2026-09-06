@@ -1,7 +1,8 @@
 # BioCatalyst V3 R1A — Source Graduation and Broad Event-Universe Precommission
 
 **Status:** PRE-SHAPED ONLY — not commissioned  
-**May become executable only after:** R0 exact-head Sol acceptance, current owner/source reconciliation, a fresh operation key/carrier, and current runtime/permission gates  
+**May become executable only after:** R0 independent exact-head review and acceptance by the delegated COO or Sol, current owner/source reconciliation, a fresh operation key/carrier, and current runtime/permission gates
+
 **Intended program:** existing `biocatalyst` / `WS:BIOCATALYST-CORE-PRODUCT` with source-governance coordination through the existing owner  
 **Primary dependency:** honest adjudication of the ended 2026-08-12→2026-08-26 ClinicalTrials.gov source-soak window  
 **Authority:** source truth and product availability only; no probability, materiality, research rank, Prophet or trade authority
@@ -38,7 +39,7 @@ R1A is therefore the exact source dependency before broad product work. It must 
 
 R1A may START only when all are true:
 
-1. R0 / Macro #6712 is Sol-accepted and merged or its current accepted successor explicitly commissions R1A.
+1. R0 / Macro #6712 has independent exact-head review and acceptance by the delegated COO or Sol and is merged, or its current accepted successor explicitly commissions R1A within the same governing authority.
 2. Current protected Skillpack and current Macro main are loaded.
 3. Exact source-governance owner and current workstream/decision records are identified.
 4. Current production timer/service/collector/pointer state is read from the accepted operational surface.
@@ -47,7 +48,9 @@ R1A may START only when all are true:
 7. One new R1A operation key and one GitHub carrier are established.
 8. Receiver ACK, watcher and separate START gates are satisfied.
 
-Missing predecessor evidence is a typed blocker, not authority to create a favorable retrospective result.
+Missing predecessor evidence is a typed blocker, not authority to create a favorable retrospective result. It does not prohibit a bounded read-only R0 evidence census. It does block source graduation or activation until the existing source owner adjudicates that precise boundary; this packet does not admit an alternative pass path.
+
+Progression follows `DEC:BIOCATALYST-FABLE-COO-END-TO-END-DELEGATED-AUTHORITY`: the delegated COO may accept in-scope work after independent review and objective gates without waiting for another available Sol session. This removes a superseded Sol-availability dependency, not review, runtime, rights, permission or source-writer gates. A repaired packet is not source-writer release. `EFFECT_UNKNOWN` remains with its existing operation/carrier until reconciled; this document cannot transfer it to a replacement worker.
 
 ---
 
@@ -82,7 +85,20 @@ R0 must replace this candidate list with exact current owners/paths. Expected su
 - Agent OS source-governance/workstream/decision/handoff records;
 - focused CI ownership.
 
-R1A must not touch product UI, prediction/model, options, capital structure, Prophet or #6389 historical-event paths unless a current exact dependency proves unavoidable and Sol explicitly amends scope.
+Existing source-owner anchors to extend, not rebuild:
+
+| Capability | Existing owner surface | Boundary |
+|---|---|---|
+| Bounded CT.gov transport and raw receipts | `collectors/biocatalyst/clinicaltrials_v2.py`; `collectors/biocatalyst/clinicaltrials_discovery.py` | The discovery harness is dark; its presence is not live HTTP or activation authority. |
+| Discovery scopes, run reconciliation and source-cut evidence | `engine/biocatalyst/discovery.py` | Source-native identities only; no implicit issuer/security admission. |
+| Denominator, budget and lifecycle attestation | `engine/biocatalyst/coverage_epoch.py`; `contracts/biocatalyst/discovery_coverage_epoch.v1.schema.json` | Extend the existing versioned owner; preserve historical v1 field meanings and hashes. |
+| Reviewed cohort admission | `engine/biocatalyst/fixed_cohort.py` | A broad successor requires accepted admission scope; do not silently enlarge the existing fixed-cohort allowlist. |
+| Source policy and predecessor identity | `config/biocatalyst_sources.yml`; `config/biocatalyst_launch_slo_manifest.yml` | Frozen predecessor is historical evidence, not a writable tuning surface. |
+| Offline SLO proof and operational deployment | `docs/BIOCATALYST_LAUNCH_SLO_OFFLINE_VERIFIER.md`; `docs/biocatalyst_operations_runbook.md`; existing `app/deploy/biocatalyst-*` entrypoints | Reuse the accepted verifier, service, timer and publication transaction; no new scheduler, retry or pointer plane. |
+
+These anchors identify the existing extension points, not an assertion that every R1A-owned path is frozen or implemented. Before source execution, the lawful owner resolves the current exact changed-path/dependency list and test ownership on the actual carrier. Path-disjoint main movement does not justify an ancestry-only commit.
+
+R1A must not touch product UI, prediction/model, options, capital structure, Prophet or #6389 historical-event paths unless a current exact dependency proves unavoidable and the delegated COO or Sol explicitly amends scope within the existing delegation. Company-wide owner changes remain outside that delegation.
 
 ---
 
@@ -110,7 +126,11 @@ frozen evidence + predecessor manifest
 → soak_complete_passed OR soak_complete_failed
 ```
 
-Unknown/unavailable evidence cannot become pass.
+Unknown/unavailable evidence cannot become pass. The committed predecessor is frozen to `[2026-08-12T02:00:00Z, 2026-08-26T02:00:00Z)`: 336 hourly openings, with each opportunity's accepted fifteen-minute completion window unchanged. Bind its manifest content digest `6424cdec9e0568bac6486b9106e98bb75a610529d8fbb203ea381baf8754a86c` and the recorded source-registry digest; do not infer a verdict from the initial `aggregate_passed: false` field.
+
+An unavailable, incomplete or unapproved evidence root returns `NOT_RECOMPUTED` with the exact missing artifact/access/clock boundary. That is neither a measured pass nor a measured source failure; it is no new public manifest-state enum and does not replace the retained scheduled predecessor with invented observations. Missing evidence rows invalidate a claimed complete proof. A recorded missed opportunity is different: retain its observation and let the frozen error budget determine the measured result.
+
+The existing offline verifier remains the only accepted completed-pass recomputation path. The exact approved root, sentinel, canonical digest-addressed predecessor and artifacts, correction/rollback input-readback proof, CI binding and complete raw-opportunity coverage must all be available. A source checkout, successful current poll, elapsed fourteen days or author-side document checks cannot substitute for this evidence. If evidence is irrecoverable, return that finite boundary for a prospective source-owner decision rather than repeatedly searching the same unavailable surface; no retrospective success or automatic successor activation follows.
 
 ### 6.3 Create successor source regime
 
@@ -140,6 +160,21 @@ The broad producer must:
 - disclose coverage, exclusions, quarantine and freshness;
 - support a bounded R1B read path.
 
+#### 6.4.1 Population, materialization and accounting acceptance
+
+The accepted successor must distinguish `FULL`, `INCREMENTAL` and `PERIODIC_REPAIR` collection purposes within the existing source/discovery owners. A recent-update query is not the population denominator. A complete initial population and bounded repair coverage must be justified against the declared product universe; a subsequent incremental run cannot silently drop unchanged records. Query limits, exclusions, reviewed admission and source rights remain explicit. There is no claim of the entire registry or of historical knowledge from a current backfill.
+
+Resolve the six already-recorded integration boundaries before promotion:
+
+1. **Overlap:** distinguish query occurrences, unique records, overlap multiplicity and missing evidence. Complete scopes `{A,B}` and `{B,C}` yield declared=4, unique=3, legacy unreconciled=1, missing=0. Do not require the legacy field to be zero or label it study loss. Any changed meaning belongs in an explicitly reviewed version of the existing owner, never an in-place reinterpretation of retained v1 artifacts.
+2. **Bytes:** bind page bodies, version response-body bytes and full-study hydration to their actual receipts. Account for failed attempts/retries where the accepted budget requires them. The collector's existing response-byte cap is not missing; the gap is aggregate attestation. Missing expenditure evidence is unavailable, not zero, and response-body bytes are not a claim about total TLS/wire bytes.
+3. **Rate:** freeze which policy clock is constrained. Request-start evidence is required for a dispatch-spacing claim across version probes, pages, shards, hydration and cross-run edges. Completion-receipt spacing alone is insufficient. Reuse the existing scheduling/transport limiter; do not create another limiter or silently rename clocks.
+4. **Time:** retain active duration separately from population elapsed time, waiting, backoff and hydration. Two three-minute runs beginning an hour apart have 360,000 ms active duration and 3,780,000 ms first-start-to-final-finish elapsed time. Do not relabel one as the other or retroactively change the ended soak's clock.
+5. **Cut:** establish an all-shard/materialization fence before publication. Stable individual runs or matching `/version` observations are not a snapshot-isolation guarantee. Record the consistency actually supported by the source, reject candidates below the accepted requirement and retain last-known-good; never advertise a stronger atomic source snapshot than the evidence establishes.
+6. **Evidence:** a minimal discovery hash is not a full-study evidence hash. Retain separate discovery identity receipts and exact materialized study/document payload receipts with their retrieval clocks and correction lineage. A board fact may use only the evidence fields actually observed and admitted.
+
+A complete immutable public generation is validated through the existing transaction before the one existing `current.json` pointer advances. All required shards/materializations are admitted together or none is promoted. Partial/error candidates do not overwrite the last-known-good generation. Public health may truthfully describe a limited declared universe, but must not represent an incomplete candidate as a completed population.
+
 ### 6.5 Publish health/coverage
 
 R1B must be able to read:
@@ -165,6 +200,7 @@ R1B must be able to read:
 - A corrected source record appends evidence/revision lineage; it does not rewrite earlier observed states.
 - A late-discovered historical record must not claim it was known earlier.
 - Coverage denominator changes are prospective successor-policy changes, never retrospective edits.
+- The predecessor manifest names raw `/version dataTimestamp` as its freshness origin; the operations runbook describes collection/commit latency after source refresh. Preserve this known contract disagreement: no favorable clock substitution. Keep source age, collection latency and publication latency distinct; when timezone is unavailable, do not infer it to manufacture elapsed freshness. The frozen policy and actual retained evidence determine what can be recomputed, and any prospective clarification is a new accepted policy version, not repair of the old result.
 
 ---
 
@@ -229,13 +265,13 @@ Every failure names whether last-known-good data remains served, whether publica
 2. Freeze predecessor policy and evidence identities.
 3. Build/repair the evidence assembler only if absent or broken.
 4. Run trusted offline adjudication; commit an evidence-bounded result.
-5. Sol/source-owner review of pass/fail and successor proposal if current law requires a hold.
+5. Delegated-COO/source-owner review of the measured verdict or precise NOT_RECOMPUTED boundary and the successor proposal; apply any genuine current-law hold without adding a routine Sol-availability gate.
 6. Implement successor registry/manifest and broad discovery/coverage producer as the smallest coherent slice.
 7. Focused deterministic tests and hostile mutations.
 8. Deploy without disrupting current production; preserve last-known-good and rollback.
 9. Run real source opportunities and publish a broad validated generation.
 10. Prove the bounded R1B consumer contract/health projection can read it.
-11. Update Agent OS/Linear and STOP for Sol/Fable acceptance.
+11. Update the owning Agent OS records and Linear projection; return for delegated-COO or Sol acceptance, then consume the explicit child STOP and remove only that child continuation source.
 
 Steps 4 and 6 must not be combined in a way that lets the proposed successor influence the predecessor pass/fail verdict.
 
@@ -246,7 +282,7 @@ Steps 4 and 6 must not be combined in a way that lets the proposed successor inf
 ### Repository/contract
 
 - predecessor result recomputes from immutable evidence;
-- one missing opportunity makes the expected verdict fail;
+- one missing evidence observation rejects a complete-pass claim; a recorded miss remains in the denominator and is evaluated under the frozen budget;
 - unchanged-source success does not advance pointer;
 - post-hoc denominator exclusion is rejected;
 - source timestamp and opportunity clocks remain separate;
@@ -254,7 +290,10 @@ Steps 4 and 6 must not be combined in a way that lets the proposed successor inf
 - successor registry and manifest are content-bound;
 - current source rights and authority booleans are preserved;
 - no model/rank/signal fields enter source artifacts;
-- tests are owned by current CI and actually run.
+- tests are owned by current CI and actually run;
+- the public discovery/coverage builders are exercised on the actual source/dependency tree, not only transcribed arithmetic excerpts;
+- all six section 6.4.1 witnesses and their negative controls discriminate the corresponding forbidden integration;
+- independent exact-head review covers the incorporated R0 contracts and current integration; author-side document checks are not that review, hosted CI or production proof.
 
 ### Production
 
@@ -299,7 +338,7 @@ If the predecessor soak fails and the remediation requires a new prospective win
 STATUS
 OPERATION_KEY / CARRIER / EXACT HEAD / DEPLOYED COMMIT
 PREDECESSOR POLICY + EVIDENCE IDENTITIES
-SOAK PASS/FAIL + PER-STAGE RESULTS
+SOAK MEASURED PASS/FAIL + PER-STAGE RESULTS, OR EXACT NOT_RECOMPUTED BOUNDARY
 SUCCESSOR REGISTRY/MANIFEST IDENTITY
 BROAD UNIVERSE DEFINITION + COUNTS + COVERAGE
 SOURCE/RIGHTS/FRESHNESS/CORRECTION/ROLLBACK PROOF
@@ -310,4 +349,4 @@ GAPS / DEVIATIONS / HELD SOURCES
 EXACT NEXT ACTION
 ```
 
-R1B begins only after explicit continuation under a new operation/carrier.
+R1B begins only after the delegated COO or Sol supplies the required fresh child assignment under a new operation/carrier and its entrance gates clear. A fresh routine Chairman approval is not required by this packet; source, rights, effect and production gates remain binding.

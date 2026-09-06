@@ -18,6 +18,10 @@ falsifier: >
   Product authority did not contain the blanket no-probability/materiality/rank
   rule or if a separately accepted live product already supplied the missing
   journey. Current archaeology found neither.
+  Reproduce the authority check with
+  `git show a0e95ded3a673a8274fd0af9b78557d32366ffc7:agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md`
+  and inspect the pre-V3 production receipts cited there. Evidence of the
+  complete entitled journey described above would falsify this claim.
 so_what: >
   Future BioCatalyst work must be accepted against the complete discovery and
   investigation journey, not the presence of a producer, schema, validator,
@@ -27,7 +31,7 @@ so_what: >
   product. Source facts remain immutable and separate; governed calibrated
   intelligence and research-priority objects are added above them rather than
   banned or collapsed into a generic Catalyst Score.
-kind: product
+kind: architecture
 verified_at: 2026-09-01
 verified_by: >
   Sol current-state archaeology against Macro main
