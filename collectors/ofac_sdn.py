@@ -47,13 +47,22 @@ def persist_snapshot(csv_text: str, list_published_date: str | None = None) -> d
 
 
 def extract_program_codes(csv_text: str) -> list[str]:
-    """Programme codes from the SDN CSV's 'program' column (field 8,
-    0-indexed 7, per OFAC's published SDN.CSV format; no header row)."""
+    """Programme codes from the SDN CSV's 'program' column (field 4,
+    0-indexed 3, per OFAC's published SDN.CSV format; no header row).
+    A single field may pack multiple codes as ``[A] [B]`` — each is
+    emitted separately. (Verified against a live fetch 2026-09-05 —
+    column 7 was wrong and produced garbage tokens.)"""
     codes: list[str] = []
     reader = csv.reader(io.StringIO(csv_text))
     for row in reader:
-        if len(row) > 7 and row[7].strip():
-            codes.append(row[7].strip())
+        if len(row) > 3 and row[3].strip():
+            raw = row[3].strip()
+            if raw == "-0-":
+                continue
+            for part in raw.split("] ["):
+                code = part.strip().strip("[]").strip()
+                if code:
+                    codes.append(code)
     return codes
 
 

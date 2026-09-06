@@ -16,7 +16,7 @@ def _sdn_csv(codes: list[str]) -> str:
     for i, code in enumerate(codes):
         row = [""] * 8
         row[0] = str(i)
-        row[7] = code
+        row[3] = code
         w.writerow(row)
     return buf.getvalue()
 

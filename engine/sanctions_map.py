@@ -8,6 +8,7 @@ Never raises. Nulls are ``None``, never ``0``.
 from __future__ import annotations
 
 import csv
+import re
 import io
 import json
 from pathlib import Path
@@ -40,9 +41,20 @@ def _load_programs_config(path: Path = PROGRAMS_CONFIG) -> list[dict]:
     return raw.get("programs") or []
 
 
+def _split_program_field(raw: str) -> list[str]:
+    """OFAC's 'program' field packs multiple codes as ``[A] [B]`` — split on
+    the ``] [`` join and strip stray brackets/whitespace from each token."""
+    raw = raw.strip()
+    if not raw or raw == "-0-":
+        return []
+    parts = re.split(r"\]\s*\[", raw)
+    return [p.strip().strip("[]").strip() for p in parts if p.strip().strip("[]").strip()]
+
+
 def _load_program_code_counts(sdn_file: Path = SDN_FILE) -> dict[str, int]:
     """Count SDN entries per OFAC programme code from the raw snapshot.
-    Column 7 (0-indexed) is OFAC's published 'program' field."""
+    Column 3 (0-indexed) is OFAC's published 'program' field (verified
+    against a live SDN.CSV fetch 2026-09-05 — column 7 was wrong)."""
     counts: dict[str, int] = {}
     if not sdn_file.exists():
         return counts
@@ -53,9 +65,9 @@ def _load_program_code_counts(sdn_file: Path = SDN_FILE) -> dict[str, int]:
     try:
         reader = csv.reader(io.StringIO(text))
         for row in reader:
-            if len(row) > 7 and row[7].strip():
-                code = row[7].strip()
-                counts[code] = counts.get(code, 0) + 1
+            if len(row) > 3 and row[3].strip():
+                for code in _split_program_field(row[3]):
+                    counts[code] = counts.get(code, 0) + 1
     except Exception:
         return {}
     return counts
