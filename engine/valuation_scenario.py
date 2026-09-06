@@ -149,8 +149,6 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
             missing.append("revenue")
         elif net_income is not None and net_margin_base is None:
             missing.append("net_margin_base")
-        if net_debt is None:
-            missing.append("net_debt")
         if shares is None or shares == 0:
             missing.append("share_count")
         if net_income is not None and net_income <= 0:

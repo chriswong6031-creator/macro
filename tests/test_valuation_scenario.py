@@ -52,12 +52,18 @@ def test_null_propagation():
     assert blob["base"]["net_income"]["value"] is None
     assert blob["base"]["net_income"]["reported"] is False
 
+    # BLOCKER B2 (review B-F07-1): net_debt is reported ONLY as an
+    # informational base fact -- the frozen per_share formula never consumes
+    # it (an earnings multiple already yields equity value), so a missing
+    # net_debt leg must NEVER gate scenario computability. The base row still
+    # correctly prints a null for net_debt itself.
     blob2 = vs.compute(_rows(cash=None))
     assert blob2["base"]["net_debt"]["value"] is None
     assert blob2["base"]["net_debt"]["reported"] is False
     for s in blob2["scenarios"]:
-        assert s["computable"] is False
-        assert "net_debt" in s["missing"]
+        assert s["computable"] is True
+        assert "net_debt" not in s["missing"]
+        assert s["per_share"] is not None
 
     # No zero substitution anywhere for the dropped inputs.
     assert blob["base"]["net_income"]["value"] != 0

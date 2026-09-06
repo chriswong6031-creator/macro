@@ -28,6 +28,7 @@
   box-shadow:none;border:1px solid color-mix(in srgb,var(--link) 55%,var(--panel));box-shadow:0 2px 6px -3px color-mix(in srgb,var(--text) 28%,transparent);}
 [data-theme="light"] .vs-ruler .vs-mark.m-upbeat{background:color-mix(in srgb,var(--link) 50%,var(--panel));border-color:var(--text);}
 [data-theme="light"] .vs-ruler .vs-mark.m-cautious{background:transparent;border-color:var(--muted);}
+[data-theme="light"] .vs-ruler .vs-mark.m-gap{background:transparent;border:1px dashed var(--hair);box-shadow:none;}
 [data-theme="light"] .vs-ruler .vs-price{width:1.5px;background:var(--text);box-shadow:0 0 0 3px var(--panel);}
 
 .vs-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
@@ -85,13 +86,20 @@
       static English-only string for the same reason). -#}
   <div class="vs-ruler" role="img" aria-label="Per-share value scale across three assumption scenarios and today's price">
     <div class="vs-track"></div>
+    {% set gap_positions = {'cautious': 20, 'base': 50, 'upbeat': 80} %}
     {% for s in vscn.scenarios %}
       {% set names = {'cautious': (t('Cautious','保守')), 'base': (t('Base','基准')), 'upbeat': (t('Upbeat','乐观'))} %}
       {% if s.computable %}
       <div class="vs-mark m-{{ s.key }}" style="left:{{ vs_pct(s.per_share) }}%" tabindex="0"></div>
       <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ vs_pct(s.per_share) }}%">{{ names[s.key] }}<b>${{ '%.0f'|format(s.per_share) }}</b></div>
       {% else %}
-      <div class="vs-mark m-gap" style="left:50%" tabindex="0" aria-label="Can't be computed without {{ s.missing_plain[0].en if s.missing_plain else 'a reported input' }}"></div>
+      {#- MAJOR-2 (review B-F07-1): each non-computable scenario gets its own
+          fixed, spaced position and a visible label -- stacking every gap
+          mark on one dead-centre pixel (and, when nothing is computable, atop
+          the price rule too) rendered as one unlabeled blob, not three
+          printed nulls. -#}
+      <div class="vs-mark m-gap" style="left:{{ gap_positions[s.key] }}%" tabindex="0" aria-label="Can't be computed without {{ s.missing_plain[0].en if s.missing_plain else 'a reported input' }}"></div>
+      <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ gap_positions[s.key] }}%">{{ names[s.key] }}<b>{{ t('N/A','—') }}</b></div>
       {% endif %}
     {% endfor %}
     {% if vs_price_val is not none %}
@@ -120,6 +128,18 @@
           {% elif key == 'base' %}{{ t('Sales grow 3% a year, margins hold, valued at 18× earnings.', '销售每年增长3%，利润率不变，按18倍市盈率估值。') }}
           {% else %}{{ t('Sales grow 7% a year, margins widen, valued at 22× earnings.', '销售每年增长7%，利润率扩大，按22倍市盈率估值。') }}{% endif %}
         </div>
+        {#- BLOCKER B1a (review B-F07-1): a compound sentence lets a reader
+            see the story but not which single input moved the number. Name
+            each changed assumption vs base explicitly and show the per-share
+            bridge from the base case to this case. -#}
+        {% if key != 'base' and s.computable and vs_by_key['base'].computable %}
+        {% set b0 = vs_by_key['base'] %}
+        {% set dg = s.assumptions.sales_growth_pct - b0.assumptions.sales_growth_pct %}
+        {% set dm = s.assumptions.margin_delta_pp - b0.assumptions.margin_delta_pp %}
+        {% set dx = s.assumptions.earnings_multiple - b0.assumptions.earnings_multiple %}
+        {% set dpct = (((s.per_share - b0.per_share) / b0.per_share) * 100) | round(1) %}
+        <div class="va vs-bridge">{{ t('Vs base: growth ' ~ ('%+d'|format(dg)) ~ 'pp, margin ' ~ ('%+.1f'|format(dm)) ~ 'pp, multiple ' ~ ('%+d'|format(dx)) ~ 'x -- $' ~ ('%.2f'|format(b0.per_share)) ~ ' to $' ~ ('%.2f'|format(s.per_share)) ~ ' (' ~ ('%+.1f'|format(dpct)) ~ '%).', '相对基准：增速' ~ ('%+d'|format(dg)) ~ '个百分点，利润率' ~ ('%+.1f'|format(dm)) ~ '个百分点，倍数' ~ ('%+d'|format(dx)) ~ '倍 -- $' ~ ('%.2f'|format(b0.per_share)) ~ ' 变为 $' ~ ('%.2f'|format(s.per_share)) ~ '（' ~ ('%+.1f'|format(dpct)) ~ '%）。') }}</div>
+        {% endif %}
       </div>
     {% endfor %}
   </div>
@@ -138,6 +158,7 @@
       {% if b.net_debt.reported %}<span class="v6 num">{% if b.net_debt.sign == 'net_cash' %}{{ t('Net cash','净现金') }} ${{ '%.1f'|format((-b.net_debt.value) / 1e9) }}B{% else %}{{ t('Net debt','净负债') }} ${{ '%.1f'|format(b.net_debt.value / 1e9) }}B{% endif %}</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
   </div>
 
+  <div class="vs-thirdparty-null" data-vs-thirdparty-null="1">{{ t("This app does not license Wall Street's outside stock-picking research, so that layer is left empty here -- shown honestly as missing, not filled in with a guess.", '本应用未购买华尔街第三方研究机构的选股研究授权，因此这一层留空——如实标注为缺失，而不是用猜测填补。') }}</div>
   <div class="mod-ft">{{ t('Research display only — not advice.', '仅供研究展示，非投资建议。') }}</div>
 </section>
 {% endif %}
