@@ -33,9 +33,19 @@ THE THREE GUARDS
     the identical 1/n-normalization-free sandwich and Bartlett weight
     `1 - j/(L+1)` as engine.validation.newey_west_tstat, so on an intercept-only
     design the two agree to 5 decimal places (measured: sandwich se=0.22333829 vs
-    helper se=0.22334, both lags=4 on an MA(4) series, n=300). On overlapping LP
-    targets that same measurement showed HAC/naive se ~= 1.83 - i.e. the naive OLS
-    t on overlapping horizon targets overstates significance by roughly 83%.
+    helper se=0.22334, both lags=4 on an MA(4) series, n=300). HAC/naive se
+    (`hac_inflation` on each row) measured through the ACTUAL estimate_horizon/
+    impulse_response path on this module's demo DGP varies by horizon and is
+    NOT a fixed inflation factor - measured at head: {0: 0.974, 1: 0.999,
+    5: 1.122, 10: 0.882, 20: 0.846}, median 0.998 across horizons, and 55% of
+    20-seed replications land BELOW 1.0 at h=20 (0.836 under a persistent AR(1)
+    shock). The intercept-only hand-built design in
+    test_overlapping_targets_inflate_the_naive_standard_error (se_hac/se_naive
+    > 1.3) demonstrates the sandwich mechanism in isolation; it is NOT a
+    measurement of the LP path's own inflation factor, which this module's own
+    controls (LAGS lags of y and shock) partially absorb, and which can push
+    HAC below naive as often as above it. Read `hac_inflation` per-row, never a
+    fixed multiplier, when deciding how much a naive t overstates significance.
 (c) MULTIPLE TESTING - two mechanisms, both reported. (1) The horizon PANEL:
     H+1 horizons are H+1 tests, corrected with
     engine.validation.benjamini_hochberg (its monotone walk-up is already
@@ -133,6 +143,11 @@ def design_matrix(y, shock, *, lags: int = LAGS, embargo: int = EMBARGO,
     y = np.asarray(y, dtype=float)
     shock = np.asarray(shock, dtype=float)
     T = len(y)
+    if shock.shape[0] != T:
+        raise ValueError(
+            f"y and shock must have equal length (misaligned_lengths): "
+            f"len(y)={T}, len(shock)={shock.shape[0]}"
+        )
 
     ctrl_arr = None
     n_ctrl = 0
@@ -217,6 +232,9 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
     if not np.isfinite(y).any() or not np.isfinite(shock).any():
         return _abstain("non_finite_input", h=h)
 
+    if shock.shape[0] != T:
+        return _abstain("misaligned_lengths", h=h, n_y=T, n_shock=int(shock.shape[0]))
+
     dm = design_matrix(y, shock, lags=lags, embargo=embargo, controls=controls)
     X_full, valid = dm["X"], dm["valid"]
 
@@ -241,6 +259,16 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
     rank = int(np.linalg.matrix_rank(X))
     if rank < n_columns:
         return _abstain("rank_deficient_design", h=h, n=n)
+
+    if n - n_columns < 1:
+        # A saturated or barely-identified regression has zero (or negative)
+        # residual degrees of freedom. Full column rank alone is not enough:
+        # n == n_columns fits every point exactly (residual ~ 0), which used to
+        # fall through to dof = max(n - n_columns, 1) and mint a fake se from a
+        # near-zero sigma2 - se=1e-16-scale, |t| in the 1e14 range, p=0.0, a
+        # zero-width CI, and a BH-rejecting horizon out of a regression with no
+        # honest inference left in it. Abstain instead of masking the missing dof.
+        return _abstain("insufficient_dof", h=h, n=n, n_columns=n_columns)
 
     yv = y[t_idx[mask] + h] - y[t_idx[mask] - 1]
     if not np.isfinite(yv).all():
@@ -320,7 +348,10 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
         str(row["h"]): row["hac_inflation"] for row in rows if not row.get("abstained")
     }
 
-    dm = design_matrix(y, shock, lags=lags, embargo=embargo, controls=controls)
+    try:
+        dm = design_matrix(y, shock, lags=lags, embargo=embargo, controls=controls)
+    except ValueError:
+        dm = {"X": np.zeros((0, 0)), "valid": np.zeros(0, dtype=bool)}
     n_by_horizon = {str(row["h"]): row.get("n", 0) for row in rows}
     abstained_horizons = [row["h"] for row in rows if row.get("abstained")]
 
