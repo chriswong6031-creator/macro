@@ -134,6 +134,63 @@ button.imd-face:focus-visible,.imd-close:focus-visible{outline:2px solid var(--l
 .imd-lens p{font-size:10.5px;color:var(--muted);margin:0;min-height:48px}
 .imd-lens-v{font:750 14px var(--imd-num);margin-top:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .imd-lens-src{font-size:9px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Policy dossier — who sets policy here. Dark = command-center panel with an emitted
+   stance rail; light = research-workspace paper with a cast shadow and a solid ink rail
+   (see the two theme blocks below: the mechanism changes, not just the token values). */
+.imd-dossier .imd-dos-null{padding:16px;font-size:11.5px}
+.imd-dos-stance{position:relative;padding:18px 20px 16px;overflow:hidden;--dos:var(--muted)}
+.imd-dos-stance.s-tightening_bias,.imd-dos-stance.s-mixed{--dos:var(--warn)}
+.imd-dos-stance.s-easing_bias{--dos:var(--up)}
+.imd-dos-stance.s-on_hold,.imd-dos-stance.s-not_stated{--dos:var(--muted)}
+.imd-dos-stance::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--dos)}
+.imd-dos-stance-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.imd-dos-word{font:700 22px/1.1 var(--imd-num);letter-spacing:-.03em;color:var(--dos-ink,var(--dos))}
+.imd-dos-chips{display:flex;gap:6px;flex-wrap:wrap}
+.imd-dos-mean{margin:8px 0 0;font-size:12px;color:var(--text)}
+.imd-dos-seats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.imd-dos-seat{padding:16px}
+.imd-dos-plate{padding-bottom:8px;border-bottom:1px solid var(--imd-hair);font:600 9.5px/1.5 var(--imd-num);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.imd-dos-plate b{display:block;color:var(--text);font-weight:700}
+.imd-dos-holder{margin-top:11px;font:700 15px/1.3 var(--imd-num);letter-spacing:-.02em}
+.imd-dos-holder.na{font:400 11px/1.5 var(--font-ui,inherit);color:var(--muted)}
+.imd-dos-since{margin-top:3px;font:10px var(--imd-num);color:var(--muted)}
+.imd-dos-note{margin:9px 0 0;font-size:10.5px;line-height:1.5;color:var(--muted);min-height:32px}
+.imd-dos-src{margin-top:11px;font-size:10px}
+.imd-dos-src summary{cursor:pointer;color:var(--ink-link,var(--link));list-style:none}
+.imd-dos-src summary::-webkit-details-marker{display:none}
+.imd-dos-src summary::before{content:"▸ ";display:inline-block;transition:transform .15s}
+.imd-dos-src[open] summary::before{content:"▾ "}
+.imd-dos-src dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--imd-hair)}
+.imd-dos-src dt{color:var(--muted)}
+.imd-dos-src dd{margin:0;overflow-wrap:anywhere}
+.imd-dos-src a{text-decoration:underline;text-underline-offset:2px}
+.imd-dos-src summary:focus-visible,.imd-dos-src a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
+
+/* DARK — command center: the panel is translucent glass over the aurora, and the stance
+   rail EMITS. The glow is on the 3px rail only, never on the type. */
+.imd-dos-stance{
+  box-shadow:var(--imd-shadow),inset 3px 0 12px -8px color-mix(in srgb,var(--dos) 60%,transparent);
+}
+.imd-dos-stance::before{box-shadow:0 0 14px -2px color-mix(in srgb,var(--dos) 62%,transparent)}
+.imd-dos-plate{background:linear-gradient(180deg,color-mix(in srgb,var(--text) 4%,transparent),transparent);margin:-16px -16px 0;padding:16px 16px 8px;border-radius:var(--imd-radius) var(--imd-radius) 0 0}
+
+/* LIGHT — research workspace: white material, hairline discipline, no emission anywhere.
+   The rail stops glowing and becomes a solid ink bar with a darker edge; depth comes from a
+   CAST SHADOW instead. The stance word is mixed toward ink because the same semantic hue
+   at full strength (an amber --warn, a mint --up) is unreadable on white — this is the
+   concrete reason a token swap alone would not have produced a light design here. */
+html[data-theme="light"] .imd-dos-stance{
+  --dos-ink:color-mix(in srgb,var(--dos) 74%,#0b1220);
+  box-shadow:0 1px 2px rgba(18,35,62,.06),0 10px 24px -14px rgba(18,35,62,.34);
+}
+html[data-theme="light"] .imd-dos-stance::before{
+  box-shadow:none;background:color-mix(in srgb,var(--dos) 82%,#0b1220);
+}
+html[data-theme="light"] .imd-dos-plate{
+  background:none;margin:0;padding:0 0 8px;border-radius:0;
+  border-bottom:1px solid var(--imd-border);color:color-mix(in srgb,var(--muted) 82%,#0b1220);
+}
+html[data-theme="light"] .imd-dos-seat{box-shadow:0 1px 2px rgba(18,35,62,.05),0 8px 18px -14px rgba(18,35,62,.30)}
 .imd-calendar{display:grid;gap:8px}
 .imd-event{display:grid;grid-template-columns:105px 1fr auto;gap:14px;align-items:center;padding:13px 15px}
 .imd-event-date{font:750 12px var(--imd-num)}
@@ -187,12 +244,14 @@ body.imd-lock{overflow:hidden}
   .imd-hero{grid-template-columns:1fr}.imd-transition-list{grid-template-columns:repeat(3,minmax(0,1fr))}
   .imd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .imd-lenses{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .imd-dos-seats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:760px){
   body.imd-page{padding:12px}.imd-shell{margin-top:12px}
   .imd-title-row{display:block}.imd-score-wrap{grid-template-columns:120px minmax(0,1fr);gap:14px}
   .imd-gauge{width:116px}.imd-gauge-value{font-size:37px}
-  .imd-transition-list,.imd-grid,.imd-lenses,.imd-cols{grid-template-columns:1fr}
+  .imd-transition-list,.imd-grid,.imd-lenses,.imd-cols,.imd-dos-seats{grid-template-columns:1fr}
+  .imd-dos-word{font-size:19px}.imd-dos-note{min-height:0}
   .imd-trust{grid-template-columns:repeat(2,minmax(0,1fr))}
   .imd-section-head{display:block}.imd-section-head p{text-align:left;margin-top:5px}
   .imd-event{grid-template-columns:88px 1fr}.imd-event .imd-chip{grid-column:2;justify-self:start}
@@ -357,6 +416,106 @@ body.imd-lock{overflow:hidden}
       </article>
       {% endfor %}
     </div>
+  </section>
+
+  {# Policy dossier — who sets policy here. Context tier only (authority_ceiling:
+     context_only): never feeds the decision score, the regime or any rank. Fed by
+     D.dossier (engine.country_dossier.build_dossier_block); every state below is a
+     typed null with its own plain-word sentence, so a missing or rights-blocked
+     dossier degrades this section and never empties or fakes it. #}
+  {% set dos = D.dossier %}
+  {% set STANCE_EN = {
+    'tightening_bias': 'Leaning toward tighter policy',
+    'easing_bias': 'Leaning toward easier policy',
+    'on_hold': 'Holding steady',
+    'mixed': 'Mixed signals',
+    'not_stated': 'No stance stated'
+  } %}
+  {% set STANCE_ZH = {
+    'tightening_bias': '倾向收紧政策',
+    'easing_bias': '倾向宽松政策',
+    'on_hold': '维持不变',
+    'mixed': '信号分化',
+    'not_stated': '未表明立场'
+  } %}
+  {% set STANCE_MEAN_EN = {
+    'tightening_bias': 'Officials have signalled they may tighten from here.',
+    'easing_bias': 'Officials have signalled they may ease from here.',
+    'on_hold': 'Officials have signalled no change for now.',
+    'mixed': 'Officials have signalled different things at once.',
+    'not_stated': 'Officials have not stated a direction.'
+  } %}
+  {% set STANCE_MEAN_ZH = {
+    'tightening_bias': '官员已释放可能进一步收紧的信号。',
+    'easing_bias': '官员已释放可能进一步宽松的信号。',
+    'on_hold': '官员表示目前不作调整。',
+    'mixed': '官员释放的信号并不一致。',
+    'not_stated': '官员未表明政策方向。'
+  } %}
+  <section class="imd-section imd-dossier" aria-label="Who sets policy">
+    <div class="imd-section-head">
+      <h2>{{ t('Who sets policy here','谁在制定这里的政策') }}</h2>
+      <p>{{ t("Context only — the people and institutions behind the policy calls, with the document each line comes from.",'仅作背景 — 政策决定背后的机构与人员，并附每一行的出处文件。') }}</p>
+    </div>
+
+    {% if dos.state == 'no_coverage' %}
+    <div class="imd-card imd-dos-null na">{{ t("Not tracked yet — we haven't published a policy dossier for this country.",'尚未收录 — 我们还没有发布该国的政策档案。') }}</div>
+
+    {% elif dos.state == 'rights_suppressed' %}
+    <div class="imd-card imd-dos-null na">{{ t("We can't republish this source's detail — read it at the publisher.",'我们无权转载该来源的细节 — 请前往发布方查看。') }}</div>
+
+    {% else %}
+    <article class="imd-card imd-dos-stance s-{{ dos.stance.key }}">
+      <div class="imd-dos-stance-top">
+        <div class="imd-dos-word">{{ t(STANCE_EN[dos.stance.key], STANCE_ZH[dos.stance.key]) }}</div>
+        <div class="imd-dos-chips">
+          <span class="imd-chip fresh">{{ t('Confirmed ' ~ dos.stance.known_at_human_en, '确认于 ' ~ dos.stance.known_at_human_zh) }}</span>
+          {% if dos.state == 'stale' %}<span class="imd-chip stale">{{ t('Last checked ' ~ dos.reviewed_at_human_en ~ ' — older than our ' ~ dos.review_interval_days ~ '-day review, so read it as background.','最近核对于 ' ~ dos.reviewed_at_human_zh ~ ' — 已超过我们的' ~ dos.review_interval_days ~ '天复核周期，请仅作背景参考。') }}</span>{% endif %}
+          <span class="imd-chip">{{ t('Watch — don’t chase','观察，不追涨') }}</span>
+        </div>
+      </div>
+      <p class="imd-dos-mean">{{ t(STANCE_MEAN_EN[dos.stance.key], STANCE_MEAN_ZH[dos.stance.key]) }}</p>
+      <details class="imd-dos-src">
+        <summary>{{ t('Where this comes from','资料来源') }}</summary>
+        <dl>
+          <dt>{{ t('Publisher','发布方') }}</dt><dd><a href="{{ dos.stance.evidence.source_url }}" target="_blank" rel="noopener">{{ t(dos.stance.evidence.publisher.en, dos.stance.evidence.publisher.zh) }}</a></dd>
+          <dt>{{ t('Document','文件') }}</dt><dd>{{ t(dos.stance.evidence.document.en, dos.stance.evidence.document.zh) }}</dd>
+          <dt>{{ t('Version','版本') }}</dt><dd>{{ dos.stance.evidence.version }}</dd>
+          <dt>{{ t('Basis','依据') }}</dt><dd>{% if dos.stance.claim == 'FACT' %}{{ t('Stated in the document','文件明确载明') }}{% else %}{{ t('Our reading of the document','我们对文件的解读') }}{% endif %}</dd>
+        </dl>
+      </details>
+    </article>
+
+    <div class="imd-dos-seats">
+      {% for seat in dos.seats %}
+      <article class="imd-card imd-dos-seat">
+        <div class="imd-dos-plate">
+          <b>{{ t(seat.institution.en, seat.institution.zh) }}</b>
+          <span>· {{ t(seat.role.en, seat.role.zh) }}</span>
+        </div>
+        {% if seat.state == 'ambiguous_jurisdiction' %}
+        <div class="imd-dos-holder na">{{ t("Who holds this seat is unsettled right now — we're not naming one office.",'目前该职位归属尚未明确 — 我们不指定单一机构。') }}</div>
+        {% elif seat.state == 'rights_suppressed' %}
+        <div class="imd-dos-holder na">{{ t("We can't republish this seat's detail — read it at the publisher.",'我们无权转载该职位的细节 — 请前往发布方查看。') }}</div>
+        {% else %}
+        <div class="imd-dos-holder">{{ t(seat.holder.en, seat.holder.zh) }}</div>
+        <div class="imd-dos-since">{% if seat.since_human_en %}{{ t('Since ' ~ seat.since_human_en, '任职自 ' ~ seat.since_human_zh) }}{% else %}{{ t('Start date not published','未公布任职起始日期') }}{% endif %}</div>
+        <p class="imd-dos-note">{{ t(seat.note.en, seat.note.zh) }}</p>
+        {% endif %}
+        <details class="imd-dos-src">
+          <summary>{{ t('Where this comes from','资料来源') }}</summary>
+          <dl>
+            <dt>{{ t('Publisher','发布方') }}</dt><dd><a href="{{ seat.evidence.source_url }}" target="_blank" rel="noopener">{{ t(seat.evidence.publisher.en, seat.evidence.publisher.zh) }}</a></dd>
+            {% if seat.evidence.document %}<dt>{{ t('Document','文件') }}</dt><dd>{{ t(seat.evidence.document.en, seat.evidence.document.zh) }}</dd>{% endif %}
+            {% if seat.evidence.version %}<dt>{{ t('Version','版本') }}</dt><dd>{{ seat.evidence.version }}</dd>{% endif %}
+            <dt>{{ t('Confirmed','确认于') }}</dt><dd>{{ t(seat.known_at_human_en, seat.known_at_human_zh) }}</dd>
+            <dt>{{ t('Basis','依据') }}</dt><dd>{% if seat.claim == 'FACT' %}{{ t('Stated in the document','文件明确载明') }}{% else %}{{ t('Our reading of the document','我们对文件的解读') }}{% endif %}</dd>
+          </dl>
+        </details>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
   </section>
 
   <section class="imd-section">
