@@ -104,6 +104,9 @@ def test_loader_retries_transient_entitled_fetch_failures():
         assert "!window.__mmCanadaStockV36" in block, (
             f"{path.name}: retry must not re-inject after a successful mount"
         )
+        assert '"canada-stock-v36.js?v=20260906"' in block, (
+            f"{path.name}: loader no longer injects the current Canada composer"
+        )
 
 
 def test_composer_still_hides_via_hidden_attribute():
@@ -427,35 +430,37 @@ def test_activation_affordance_requires_canonical_membership():
 
 
 def test_at_rest_lane_rows_capped_at_three_with_view_all():
-    """V3.8 §5.2 density law: ≤3 group rows per lane at rest; more only via
-    the explicit View-all expansion."""
+    """V3.8 §5.2 density law: ≤3 group rows per lane at rest; the remaining
+    owner rows stay reachable through native details without the composer."""
     template = _template_text()
     css = (ROOT / "templates" / "stock-dashboard.css").read_text(encoding="utf-8")
-    assert 'class="anv2-lst ca-v36-an-list is-collapsed"' in template
-    assert "{% if items|length > 3 %}" in template and "data-ca-an-view" in template
-    assert re.search(
-        r"\.ca-v36-an-list\.is-collapsed\s*>\s*:nth-child\(n\+4\)\s*\{\s*display:\s*none",
-        css,
-    )
+    assert 'class="anv2-lst ca-v36-an-list"' in template
+    assert "{% for it in items[:3] %}{{ _ca_anrow(it, lane) }}{% endfor %}" in template
+    assert '<details class="ca-v36-an-disclosure" data-ca-an-disclosure>' in template
+    assert '<summary class="ca-v36-an-more" data-ca-an-view="{{ _ca_tone }}">' in template
+    assert "{% for it in items[3:] %}{{ _ca_anrow(it, lane) }}{% endfor %}" in template
+    assert "ca-v36-an-list is-collapsed" not in template
+    assert ".ca-v36-an-list.is-collapsed" not in css
+    assert ".ca-v36-an-disclosure:not([open]) > :not(summary) { display: none; }" in css
+    assert ".ca-v36-an-disclosure[open] > .ca-v36-an-more .lm-show { display: none; }" in css
+    assert ".ca-v36-an-disclosure[open] > .ca-v36-an-more .lm-hide { display: inline; }" in css
 
 
 def test_act_now_presentation_controls_never_touch_population_or_filter():
-    """V3.8 §5.5: switching the visible mobile lane / expanding View all is
-    presentation-only. setAnLane()/toggleAnLane() must not call setSource/
-    activate/applyFilter or assign state.source/state.filter. The enhancer
-    adopts the server's deterministic election and never renders a second
-    action surface from client data."""
+    """V3.8 §5.5: the enhancer owns only mobile lane selection; native
+    details owns expansion without mirrored state or click interception."""
     text = _composer_text()
-    for fn in ("setAnLane", "toggleAnLane"):
-        m = re.search(r"function " + fn + r"\b.*?\n  \}", text, re.S)
-        assert m, f"could not locate {fn}() function body via regex"
-        body = m.group(0)
-        for forbidden in ("setSource(", "activate(", "applyFilter(",
-                          "state.source", "state.filter"):
-            assert forbidden not in body, (
-                f"{fn}() references {forbidden!r} — Act-Now presentation "
-                "controls must never mutate the Prophet population or filter"
-            )
+    m = re.search(r"function setAnLane\b.*?\n  \}", text, re.S)
+    assert m, "could not locate setAnLane() function body via regex"
+    for forbidden in ("setSource(", "activate(", "applyFilter(",
+                      "state.source", "state.filter"):
+        assert forbidden not in m.group(0), (
+            f"setAnLane() references {forbidden!r} — Act-Now presentation "
+            "controls must never mutate the Prophet population or filter"
+        )
+    assert "toggleAnLane" not in text
+    assert "anOpen" not in text
+    assert 'closest("[data-ca-an-view]")' not in text
     assert "renderActNow" not in text
     adopt = re.search(r"function adoptActNow\b.*?(?=\n  function )", text, re.S)
     assert adopt and 'getAttribute("data-ca-an-default") === "true"' in adopt.group(0)
@@ -515,7 +520,8 @@ def test_known_zero_group_keeps_research_route_and_lane_order_is_owner_order():
         "collectSectors() no longer stamps the action owner's row order"
     )
     assert "renderActNow" not in text
-    assert "{% for it in items %}{{ _ca_anrow(it, lane) }}{% endfor %}" in template
+    assert "{% for it in items[:3] %}{{ _ca_anrow(it, lane) }}{% endfor %}" in template
+    assert "{% for it in items[3:] %}{{ _ca_anrow(it, lane) }}{% endfor %}" in template
 
 
 def test_fresh_cue_lives_in_prophet_header_and_is_absent_when_zero():

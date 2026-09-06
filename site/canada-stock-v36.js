@@ -26,12 +26,13 @@
 
   var state = { source: "top", view: "grid", filter: null, themes: [], sectors: [], cards: [], rows: [],
     /* V3.8 Act-Now panel presentation state (same contract as the HK
-       composer): anLane = visible lane on the mobile segmented selector;
-       anOpen = per-lane View-all expansion. Neither ever touches
-       source/filter. hasThemeRank gates all theme-rank language (missing
-       owner -> no number, no basis chip). Membership knowledge is PER
-       GROUP (each item's members is a Set or null), never a global flag. */
-    anLane: null, anDefault: null, anOpen: {}, anMedia: null,
+       composer): anLane is the visible lane on the mobile segmented selector.
+       Native details owns disclosure state; the composer never mirrors it.
+       Lane selection never touches source/filter. hasThemeRank gates all
+       theme-rank language (missing owner -> no number, no basis chip).
+       Membership knowledge is PER GROUP (each item's members is a Set or
+       null), never a global flag. */
+    anLane: null, anDefault: null, anMedia: null,
     anHistoryBound: false, hasThemeRank: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
@@ -258,8 +259,9 @@
   }
 
   /* What to Act On Now is server-owned. The enhancer may change only the
-     selector state, lane visibility, focus, and the active lane's in-place
-     expansion. It never creates, moves, clones, filters, or reorders rows. */
+     selector state, lane visibility, focus, and action-local history. Native
+     details owns expansion. The composer never creates, moves, clones,
+     filters, or reorders rows. */
   function actionHost() { return qs("#ca-v36-an-body"); }
   function actionTabs() {
     var host = actionHost();
@@ -363,17 +365,6 @@
     syncActNow(focus ? tone : null);
     if (historyMode !== false) writeActionHash(tone, historyMode === "replace" ? "replace" : "push");
   }
-  function toggleAnLane(tone) {
-    var lane = actionLanes().find(function (node) { return node.getAttribute("data-ca-an-lane-body") === tone; });
-    if (!lane) return;
-    var list = qs(".ca-v36-an-list", lane), button = qs("[data-ca-an-view]", lane);
-    if (!list || !button) return;
-    var open = list.classList.contains("is-collapsed");
-    list.classList.toggle("is-collapsed", !open);
-    button.setAttribute("aria-expanded", open ? "true" : "false");
-    state.anOpen[tone] = open;
-  }
-
   function itemForFilter() {
     if (!state.filter) return null;
     return (state.filter.kind === "theme" ? state.themes : state.sectors).find(function (x) { return x.id === state.filter.id; }) || null;
@@ -551,10 +542,10 @@
     });
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-ca-source]"); if (b) return setSource(b.getAttribute("data-ca-source"));
-      /* Act-Now presentation controls: distinct targets, never carry the
-         lead-kind/-id pair, never touch source/filter. */
+      /* Act-Now lane controls are distinct from lead-kind/-id rows and never
+         touch source/filter. Native summary activation is intentionally left
+         to the browser. */
       b = e.target.closest("[data-ca-an-lane]"); if (b) { e.preventDefault(); return setAnLane(b.getAttribute("data-ca-an-lane")); }
-      b = e.target.closest("[data-ca-an-view]"); if (b) { e.preventDefault(); setAnLane(b.getAttribute("data-ca-an-view")); return toggleAnLane(b.getAttribute("data-ca-an-view")); }
       b = e.target.closest("[data-ca-lead-kind][data-ca-lead-id]"); if (b) return activate(b.getAttribute("data-ca-lead-kind"), b.getAttribute("data-ca-lead-id"));
       if (e.target.closest("#ca-v36-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#ca-v36-expand")) return openModal();

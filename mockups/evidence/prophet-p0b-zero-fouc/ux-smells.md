@@ -2,7 +2,7 @@
 
 _Heuristics identify review targets; they do not determine that a page is bad._
 
-Generated 2026-09-06T10:50:42Z · schema `mastermind.ux_smell_report.v1`
+Generated 2026-09-06T14:18:49Z · schema `mastermind.ux_smell_report.v1`
 
 | route | page_id | words | h1 | panels | height px | h-overflow | slug hits | TODO hits | as-of | source | shots |
 | --- | --- | ---: | ---: | ---: | ---: | :---: | ---: | ---: | :---: | :---: | ---: |

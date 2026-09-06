@@ -1344,13 +1344,58 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     assert fragment["node_identity"]["valid_page"]["pass"] is True
     assert fragment["node_identity"]["invalid_page"]["pass"] is True
 
+    expansion = browser["expansion_reachability"]
+    assert expansion["pass"] is True
+    assert expansion["expected_cases"] == 8
+    assert expansion["passed_cases"] == 8
+    assert len(expansion["cases"]) == 8
+    assert {
+        (case["viewport_width"], case["mode"])
+        for case in expansion["cases"]
+    } == {
+        (width, mode)
+        for width in (390, 1440)
+        for mode in ("js-disabled", "composer-failed", "composer-pending", "loaded")
+    }
+    for case in expansion["cases"]:
+        assert case["market"] == market
+        assert case["pass"] is True
+        assert case["console_exceptions"] == []
+        for phase, visible, opened in (
+            ("before", 3, False),
+            ("after_click", 4, True),
+            ("after_click_close", 3, False),
+            ("after_enter", 4, True),
+            ("after_enter_close", 3, False),
+            ("after_space", 4, True),
+        ):
+            observed = case[phase]
+            assert observed["total"] == 4
+            assert observed["visible"] == visible
+            assert observed["rich_rows"] == 4
+            assert observed["disclosure_count"] == 1
+            assert observed["disclosure_open"] is opened
+            assert observed["summary_tag"] == "SUMMARY"
+            assert observed["other_open_count"] == 0
+            assert observed["same_lane"] is True
+            assert observed["same_disclosure"] is True
+            assert observed["same_summary"] is True
+            assert observed["same_rows"] is True
+            assert observed["same_payload"] is True
+            assert observed["child_list_mutations"] == 0
+            assert observed["document_width"] <= observed["viewport_width"]
+            if phase != "before":
+                assert observed["focus_on_summary"] is True
+
     for name in ("en-dark", "en-light", "zh-dark", "zh-light"):
         ownership = states[name]["behavior"]["view_all"]["ownership"]
         assert ownership == {
-            "same_button": True,
+            "same_summary": True,
+            "same_disclosure": True,
             "same_list": True,
             "same_parent": True,
             "focus_retained": True,
+            "disclosure_stayed_in_lane": True,
             "list_stayed_in_lane": True,
             "global_overlay_count": 0,
         }

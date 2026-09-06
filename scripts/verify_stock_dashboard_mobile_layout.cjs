@@ -341,6 +341,166 @@ async function nodeIdentityProof(page, market) {
   return proof;
 }
 
+async function expansionReachabilityProof(browser, market, route, installRoutes) {
+  const prefix = market === "hk" ? "hk" : "ca";
+  const version = market === "hk" ? "hk-v37" : "ca-v36";
+  const modes = [
+    {name: "js-disabled", javascriptEnabled: false},
+    {name: "composer-failed", composerMode: "failed"},
+    {name: "composer-pending", composerMode: "pending"},
+    {name: "loaded", composerMode: "loaded"},
+  ];
+  const cases = [];
+
+  for (const width of [390, 1440]) {
+    for (const mode of modes) {
+      const context = await browser.newContext({
+        viewport: {width, height: 900},
+        deviceScaleFactor: 1,
+        javaScriptEnabled: mode.javascriptEnabled !== false,
+      });
+      if (mode.javascriptEnabled !== false) {
+        await installPageInit(context, market, "en", "dark");
+      }
+      await installRoutes(context, mode.composerMode || "loaded");
+      const page = await context.newPage();
+      const consoleExceptions = [];
+      page.on("pageerror", (error) => consoleExceptions.push(
+        String(error && (error.stack || error.message) || error)
+      ));
+
+      try {
+        await page.goto(new URL(route, "http://stock-dashboard.invalid").href, {
+          waitUntil: mode.composerMode === "pending" ? "commit" : "load",
+          timeout: 30000,
+        });
+        await page.locator(`[data-${prefix}-an-lane-body="buy"]`).waitFor();
+        await page.waitForTimeout(mode.composerMode === "pending" ? 500 : 750);
+
+        const snapshot = () => page.evaluate(({prefix, version}) => {
+          const visible = (el) => !!el && getComputedStyle(el).display !== "none" &&
+            getComputedStyle(el).visibility !== "hidden" && el.getClientRects().length > 0;
+          const lane = document.querySelector(`[data-${prefix}-an-lane-body="buy"]`);
+          const disclosure = lane && lane.querySelector(`details[data-${prefix}-an-disclosure]`);
+          const summary = lane && lane.querySelector(`[data-${prefix}-an-view]`);
+          const rows = lane ? Array.from(lane.querySelectorAll(`.${version}-an-row-w`)) : [];
+          const payload = rows.map((row) => ({
+            action_id: row.getAttribute("data-action-id"),
+            has_rpop: row.hasAttribute("data-rpop"),
+            decision_payload: !!row.querySelector(".rp-src"),
+            route: (row.querySelector(`.${version}-an-go`) || {}).getAttribute?.("href") || null,
+            html: row.innerHTML,
+          }));
+          if (!window.__wtaonExpansionProbe) {
+            const probe = {
+              lane,
+              disclosure,
+              summary,
+              rows,
+              payload,
+              childListMutations: 0,
+            };
+            if (lane) {
+              probe.observer = new MutationObserver((records) => {
+                probe.childListMutations += records.filter((record) => record.type === "childList").length;
+              });
+              probe.observer.observe(lane, {childList: true, subtree: true});
+            }
+            window.__wtaonExpansionProbe = probe;
+          }
+          const probe = window.__wtaonExpansionProbe;
+          const sameRows = probe.rows.length === rows.length &&
+            probe.rows.every((row, index) => row === rows[index]);
+          const labels = summary ? Array.from(summary.querySelectorAll(".lm-show, .lm-hide")) : [];
+          return {
+            total: rows.length,
+            visible: rows.filter(visible).length,
+            visible_ids: rows.filter(visible).map((row) => row.getAttribute("data-action-id")),
+            rich_rows: payload.filter((row) => row.has_rpop && row.decision_payload && row.route).length,
+            disclosure_count: lane ? lane.querySelectorAll(`details[data-${prefix}-an-disclosure]`).length : 0,
+            disclosure_open: !!(disclosure && disclosure.open),
+            summary_tag: summary ? summary.tagName : null,
+            summary_visible_text: labels.filter(visible).map((node) => node.textContent.trim()).join(" "),
+            focus_on_summary: document.activeElement === summary,
+            other_open_count: Array.from(document.querySelectorAll(`details[data-${prefix}-an-disclosure][open]`))
+              .filter((node) => node !== disclosure).length,
+            same_lane: probe.lane === lane,
+            same_disclosure: probe.disclosure === disclosure,
+            same_summary: probe.summary === summary,
+            same_rows: sameRows,
+            same_payload: JSON.stringify(probe.payload) === JSON.stringify(payload),
+            child_list_mutations: probe.childListMutations,
+            viewport_width: document.documentElement.clientWidth,
+            document_width: document.documentElement.scrollWidth,
+          };
+        }, {prefix, version});
+
+        const before = await snapshot();
+        const summary = page.locator(
+          `[data-${prefix}-an-lane-body="buy"] [data-${prefix}-an-view]`
+        );
+        if (await summary.count()) {
+          await summary.focus();
+          await summary.click();
+        }
+        await page.waitForTimeout(30);
+        const afterClick = await snapshot();
+        if (await summary.count()) await summary.click();
+        await page.waitForTimeout(30);
+        const afterClickClose = await snapshot();
+        if (await summary.count()) {
+          await summary.focus();
+          await page.keyboard.press("Enter");
+        }
+        await page.waitForTimeout(30);
+        const afterEnter = await snapshot();
+        if (await summary.count()) await page.keyboard.press("Enter");
+        await page.waitForTimeout(30);
+        const afterEnterClose = await snapshot();
+        if (await summary.count()) await page.keyboard.press("Space");
+        await page.waitForTimeout(30);
+        const afterSpace = await snapshot();
+
+        const closed = (state) => state.visible === 3 && !state.disclosure_open &&
+          /View all.*\d+/.test(state.summary_visible_text);
+        const open = (state) => state.visible === state.total && state.total > 3 &&
+          state.disclosure_open && /Show fewer/.test(state.summary_visible_text) &&
+          state.focus_on_summary && state.other_open_count === 0 &&
+          state.same_lane && state.same_disclosure && state.same_summary && state.same_rows &&
+          state.same_payload && state.child_list_mutations === 0 &&
+          state.document_width <= state.viewport_width;
+        const result = {
+          market,
+          viewport_width: width,
+          mode: mode.name,
+          before,
+          after_click: afterClick,
+          after_click_close: afterClickClose,
+          after_enter: afterEnter,
+          after_enter_close: afterEnterClose,
+          after_space: afterSpace,
+          console_exceptions: consoleExceptions,
+        };
+        result.pass = before.total > 3 && before.rich_rows === before.total &&
+          before.disclosure_count === 1 && before.summary_tag === "SUMMARY" &&
+          closed(before) && open(afterClick) && closed(afterClickClose) &&
+          open(afterEnter) && closed(afterEnterClose) && open(afterSpace) &&
+          consoleExceptions.length === 0;
+        cases.push(result);
+      } finally {
+        await context.close();
+      }
+    }
+  }
+
+  return {
+    expected_cases: 8,
+    passed_cases: cases.filter((row) => row.pass).length,
+    cases,
+    pass: cases.length === 8 && cases.every((row) => row.pass),
+  };
+}
+
 async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
   const prefix = market === "hk" ? "hk" : "ca";
   const version = market === "hk" ? "hk-v37" : "ca-v36";
@@ -460,8 +620,7 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
         per_lane_owner_count: ownerCounts,
         rendered_visible_row_count: activeRows.length,
         expanded: !!lanes.find((lane) => {
-          const button = lane.querySelector(`[data-${prefix}-an-view]`);
-          return button && button.getAttribute("aria-expanded") === "true";
+          return !!lane.querySelector(`details[data-${prefix}-an-disclosure][open]`);
         }),
         focus_keyboard: {exercised: false, sequence: [], focus_visible: [], enter: false, space: false, pass: true},
         aria_controls: {unique: new Set(controls.filter(Boolean)).size, valid: controlsValid},
@@ -579,9 +738,15 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
     if (await more.count()) {
       await more.focus();
       await page.evaluate(({prefix, version}) => {
-        const button = document.querySelector(`[data-${prefix}-an-lane-body="buy"] .${version}-an-more`);
+        const summary = document.querySelector(`[data-${prefix}-an-lane-body="buy"] .${version}-an-more`);
         const list = document.querySelector(`[data-${prefix}-an-lane-body="buy"] .${version}-an-list`);
-        window.__wtaonViewAllProbe = {button, list, parent: list && list.parentNode};
+        const disclosure = document.querySelector(`[data-${prefix}-an-lane-body="buy"] details[data-${prefix}-an-disclosure]`);
+        window.__wtaonViewAllProbe = {
+          summary,
+          disclosure,
+          list,
+          parent: disclosure && disclosure.parentNode,
+        };
       }, {prefix, version});
       await more.click();
     }
@@ -589,13 +754,16 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
     const viewAllOwnership = await page.evaluate(({prefix, version}) => {
       const probe = window.__wtaonViewAllProbe || {};
       const lane = document.querySelector(`[data-${prefix}-an-lane-body="buy"]`);
-      const button = lane && lane.querySelector(`.${version}-an-more`);
+      const summary = lane && lane.querySelector(`.${version}-an-more`);
       const list = lane && lane.querySelector(`.${version}-an-list`);
+      const disclosure = lane && lane.querySelector(`details[data-${prefix}-an-disclosure]`);
       return {
-        same_button: probe.button === button,
+        same_summary: probe.summary === summary,
+        same_disclosure: probe.disclosure === disclosure,
         same_list: probe.list === list,
-        same_parent: probe.parent === (list && list.parentNode),
-        focus_retained: document.activeElement === button,
+        same_parent: probe.parent === (disclosure && disclosure.parentNode),
+        focus_retained: document.activeElement === summary,
+        disclosure_stayed_in_lane: !!(lane && disclosure && lane.contains(disclosure)),
         list_stayed_in_lane: !!(lane && list && lane.contains(list)),
         global_overlay_count: document.querySelectorAll(".lst-ovl.is-open, .lst-ovl-body > .hk-v37-an-list, .lst-ovl-body > .ca-v36-an-list").length,
       };
@@ -604,7 +772,7 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
     const awayExpansion = await page.evaluate(({prefix}) => {
       const selected = document.querySelector(`[data-${prefix}-an-lane][aria-selected="true"]`);
       const expanded = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`))
-        .filter((lane) => lane.querySelector(`[data-${prefix}-an-view][aria-expanded="true"]`))
+        .filter((lane) => lane.querySelector(`details[data-${prefix}-an-disclosure][open]`))
         .map((lane) => lane.getAttribute(`data-${prefix}-an-lane-body`));
       return {
         selected: selected && selected.getAttribute(`data-${prefix}-an-lane`),
@@ -617,7 +785,7 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
       const visible = (el) => getComputedStyle(el).display !== "none" && el.getClientRects().length > 0;
       return {
         visible_lanes: lanes.filter(visible).map((el) => el.getAttribute(`data-${prefix}-an-lane-body`)),
-        expanded_lanes: lanes.filter((lane) => lane.querySelector(`[data-${prefix}-an-view][aria-expanded="true"]`))
+        expanded_lanes: lanes.filter((lane) => lane.querySelector(`details[data-${prefix}-an-disclosure][open]`))
           .map((lane) => lane.getAttribute(`data-${prefix}-an-lane-body`)),
       };
     }, {prefix});
@@ -637,8 +805,10 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
         JSON.stringify(expansion.expanded_lanes) === JSON.stringify(["buy"]) &&
         awayExpansion.selected === "near" &&
         JSON.stringify(awayExpansion.expanded_lanes) === JSON.stringify(["buy"]) &&
-        viewAllOwnership.same_button && viewAllOwnership.same_list && viewAllOwnership.same_parent &&
-        viewAllOwnership.focus_retained && viewAllOwnership.list_stayed_in_lane &&
+        viewAllOwnership.same_summary && viewAllOwnership.same_disclosure &&
+        viewAllOwnership.same_list && viewAllOwnership.same_parent &&
+        viewAllOwnership.focus_retained && viewAllOwnership.disclosure_stayed_in_lane &&
+        viewAllOwnership.list_stayed_in_lane &&
         viewAllOwnership.global_overlay_count === 0,
     };
     basic.wtaon.expanded = expansion.expanded_lanes.length === 1 && expansion.expanded_lanes[0] === "buy";
@@ -1226,6 +1396,13 @@ async function main() {
       await context.close();
     }
 
+    var expansionReachability = await expansionReachabilityProof(
+      browser,
+      fixtureBinding.market,
+      fixtureBinding.route,
+      installRoutes
+    );
+
     var fragmentNavigation = await fragmentNavigationProof(
       browser,
       fixtureBinding.market,
@@ -1277,10 +1454,12 @@ async function main() {
     loaded_assets: Object.fromEntries(Array.from(loadedAssets.entries()).sort()),
     viewport: {width: 390, height: 844, device_scale_factor: 1},
     desktop_viewport: {width: 1440, height: 900, device_scale_factor: 1},
-    acceptance: "390px layout; server-owned four-anchor degraded fallback without false tab semantics; composer upgrades the same nodes in place; one mobile action lane in loaded/disabled/failed/pending states; deterministic owner counts and controls; valid/invalid/direct/back/forward fragment reconciliation; in-place click/keyboard lane switching; node-identity-stable lane-local expansion outside the global list overlay; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; typed Canada quote states; zero duplicate ids and console exceptions",
+    acceptance: "390px layout; server-owned four-anchor degraded fallback without false tab semantics; composer upgrades the same nodes in place; one mobile action lane in loaded/disabled/failed/pending states; deterministic owner counts and controls; valid/invalid/direct/back/forward fragment reconciliation; 390/1440 x disabled/failed/pending/loaded native click+Enter+Space disclosure reachability with stable row nodes/payload and lane-local state; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; typed Canada quote states; zero duplicate ids and console exceptions",
+    expansion_reachability: expansionReachability,
     fragment_navigation: fragmentNavigation,
     desktop,
-    pass: rows.every((row) => row.pass) && fragmentNavigation.pass && desktop.pass,
+    pass: rows.every((row) => row.pass) && expansionReachability.pass &&
+      fragmentNavigation.pass && desktop.pass,
     states: rows,
   };
   const encoded = JSON.stringify(payload, null, 2) + "\n";

@@ -445,7 +445,7 @@ def test_loader_retries_transient_entitled_fetch_failures():
         assert "!window.__mmHKStockV36" in block, (
             f"{path.name}: retry must not re-inject after a successful mount"
         )
-        assert '"hk-stock-v36.js?v=20260825"' in block, (
+        assert '"hk-stock-v36.js?v=20260906"' in block, (
             f"{path.name}: loader no longer injects hk-stock-v36.js"
         )
         assert "hk_stocks\\.html" in block, (
@@ -551,18 +551,22 @@ def test_act_now_renders_at_rest_above_prophet_never_modal_only():
 
 def test_at_rest_lane_rows_capped_at_three_with_view_all():
     """V3.8 §5.2 density law: no more than 3 group rows per lane at rest;
-    additional content only through the explicit View all expansion. The
-    server renders every owner row once, while the shared stylesheet caps a
-    collapsed lane at three and the template emits View all only above that
-    threshold."""
+    additional content is reachable through one native disclosure even when
+    the optional composer never loads. The server renders every owner row
+    exactly once: the first three directly and only the remainder inside the
+    market-local details/summary owner."""
     template = HK_TEMPLATE.read_text(encoding="utf-8")
     css = STOCK_CSS.read_text(encoding="utf-8")
-    assert 'class="anv2-lst hk-v37-an-list is-collapsed"' in template
-    assert "{% if items|length > 3 %}" in template and "data-hk-an-view" in template
-    assert re.search(
-        r"\.hk-v37-an-list\.is-collapsed\s*>\s*:nth-child\(n\+4\)\s*\{\s*display:\s*none",
-        css,
-    )
+    assert 'class="anv2-lst hk-v37-an-list"' in template
+    assert "{% for it in items[:3] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert '<details class="hk-v37-an-disclosure" data-hk-an-disclosure>' in template
+    assert '<summary class="hk-v37-an-more" data-hk-an-view="{{ _hk_tone }}">' in template
+    assert "{% for it in items[3:] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "hk-v37-an-list is-collapsed" not in template
+    assert ".hk-v37-an-list.is-collapsed" not in css
+    assert ".hk-v37-an-disclosure:not([open]) > :not(summary) { display: none; }" in css
+    assert ".hk-v37-an-disclosure[open] > .hk-v37-an-more .lm-show { display: none; }" in css
+    assert ".hk-v37-an-disclosure[open] > .hk-v37-an-more .lm-hide { display: inline; }" in css
 
 
 # ---------------------------------------------------------------------------
@@ -855,25 +859,25 @@ def test_act_now_lane_order_is_the_action_owners_order():
         "collectLaneSectors() no longer stamps the action owner's row order"
     )
     template = HK_TEMPLATE.read_text(encoding="utf-8")
-    assert "{% for it in items %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "{% for it in items[:3] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "{% for it in items[3:] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
     assert "renderActNow" not in text
 
 
 def test_act_now_presentation_controls_never_touch_population_or_filter():
-    """V3.8 §5.5: switching the visible mobile lane (or expanding View all)
-    is presentation-only — it must not mutate the Prophet selection until a
-    group is actually chosen. setAnLane()/toggleAnLane() must not call
-    setSource()/activate()/applyFilter() or assign state.source /
-    state.filter."""
+    """V3.8 §5.5: the composer owns only mobile lane selection. Native
+    details owns expansion, with no mirrored state or click interception;
+    switching lanes must not mutate the Prophet selection until a group is
+    actually chosen."""
     text = _composer_text()
-    for fn in ("setAnLane", "toggleAnLane"):
-        m = re.search(r"function " + fn + r"\b.*?\n  \}", text, re.S)
-        assert m, f"could not locate {fn}() function body via regex"
-        body = m.group(0)
-        for forbidden in ("setSource(", "activate(", "applyFilter(",
-                          "state.source", "state.filter"):
-            assert forbidden not in body, (
-                f"{fn}() references {forbidden!r} — Act-Now lane "
-                "presentation controls must never mutate the Prophet "
-                "population or filter"
-            )
+    m = re.search(r"function setAnLane\b.*?\n  \}", text, re.S)
+    assert m, "could not locate setAnLane() function body via regex"
+    for forbidden in ("setSource(", "activate(", "applyFilter(",
+                      "state.source", "state.filter"):
+        assert forbidden not in m.group(0), (
+            f"setAnLane() references {forbidden!r} — Act-Now lane controls "
+            "must never mutate the Prophet population or filter"
+        )
+    assert "toggleAnLane" not in text
+    assert "anOpen" not in text
+    assert 'closest("[data-hk-an-view]")' not in text

@@ -1015,11 +1015,16 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
         <span><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span></span><b>{{ items|length }}</b>
       </div>
       <div class="anv2-lane-body ca-v36-an-lane-body">
-        <div class="anv2-lst ca-v36-an-list is-collapsed">
-          {% for it in items %}{{ _ca_anrow(it, lane) }}{% endfor %}
+        <div class="anv2-lst ca-v36-an-list">
+          {% for it in items[:3] %}{{ _ca_anrow(it, lane) }}{% endfor %}
+          {% if items|length > 3 %}
+          <details class="ca-v36-an-disclosure" data-ca-an-disclosure>
+            <summary class="ca-v36-an-more" data-ca-an-view="{{ _ca_tone }}"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></summary>
+            {% for it in items[3:] %}{{ _ca_anrow(it, lane) }}{% endfor %}
+          </details>
+          {% endif %}
           {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
         </div>
-        {% if items|length > 3 %}<button class="ca-v36-an-more" type="button" data-ca-an-view="{{ _ca_tone }}" aria-expanded="false"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></button>{% endif %}
       </div>
     </div>
     {%- endmacro -%}

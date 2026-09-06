@@ -209,7 +209,7 @@
   function inject() {
     attempt += 1;
     var script = document.createElement("script");
-    script.src = "canada-stock-v36.js?v=20260823";
+    script.src = "canada-stock-v36.js?v=20260906";
     script.async = false;
     script.onerror = function () {
       if (script.parentNode) script.parentNode.removeChild(script);
@@ -234,7 +234,7 @@
   function inject() {
     attempt += 1;
     var script = document.createElement("script");
-    script.src = "hk-stock-v36.js?v=20260825";
+    script.src = "hk-stock-v36.js?v=20260906";
     script.async = false;
     script.onerror = function () {
       if (script.parentNode) script.parentNode.removeChild(script);
