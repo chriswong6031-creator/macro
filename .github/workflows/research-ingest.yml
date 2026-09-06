@@ -24,6 +24,15 @@ name: research-ingest
 #
 # The pipeline is idempotent + never-raise-per-item: a re-run ingests 0, and one
 # bad PDF/sidecar never aborts the batch (engine/research_vault/ingest.py).
+#
+# Source-content freshness (check_research_vault_source_freshness) fails the
+# lane when the newest admitted report is outside its fixed weekday deadline.
+# While MarketDesk is a known outage, set repo variable
+# RESEARCH_VAULT_SOURCE_OUTAGE_ACK=true to let the typed guard soften only a
+# PRODUCER_STALE verdict to a warning (avoids ~24 red runs/day of alarm fatigue).
+# Integrity, configuration, clock, and transport failures remain red. Optionally set
+# RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS to temporarily widen the window instead.
+# Clear both when the producer resumes.
 on:
   workflow_dispatch:
     inputs:
@@ -70,9 +79,11 @@ jobs:
       R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
     steps:
       - uses: actions/checkout@v4
+        id: checkout
         with:
           fetch-depth: 1
       - name: python 3.12 (Homebrew venv — self-hosted runner)
+        id: python_setup
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
           [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
@@ -81,7 +92,9 @@ jobs:
       # boto3 (R2 client) + pyyaml are already in requirements; pdftotext is a
       # system binary (poppler), not a pip dep. No heavy pandas/scipy needed here.
       - run: pip install --quiet boto3 pyyaml requests
+        id: pip_install
       - name: preflight — poppler pdftotext (HOST dependency)
+        id: preflight
         run: |
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
           if [ ! -x /opt/homebrew/bin/pdftotext ] && ! command -v pdftotext >/dev/null 2>&1; then
@@ -186,6 +199,30 @@ jobs:
             echo "push attempt $i failed; retrying"; sleep $((i*3))
           done
           echo "::warning::could not push research_vault catalog after 5 attempts (non-fatal)"
+      # Source-content liveness is distinct from publication-plane liveness. The
+      # catalog above may publish cleanly every hour while the MarketDesk producer
+      # has stopped admitting reports. Capture this semantic rc after salvage so a
+      # stale-source failure never prevents preservation of the last valid catalog.
+      # Skip when checkout failed — a missing tree is runner breakage, not a
+      # producer verdict (MINOR 5).
+      - name: grade Research Vault source-content freshness
+        id: source_freshness
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        env:
+          RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS: ${{ vars.RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS }}
+          RESEARCH_VAULT_SOURCE_OUTAGE_ACK: ${{ vars.RESEARCH_VAULT_SOURCE_OUTAGE_ACK }}
+        run: |
+          set +e
+          args=(--catalog data/research_vault/catalog.json)
+          if [ -n "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS:-}" ]; then
+            args+=(--max-age-hours "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS}")
+          fi
+          if [ "${RESEARCH_VAULT_SOURCE_OUTAGE_ACK:-}" = "true" ]; then
+            args+=(--ack-producer-stale)
+          fi
+          python -m scripts.check_research_vault_source_freshness "${args[@]}"
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          exit 0
       # READ-ONLY correction audit (Wave 4). Manual only: it lists every object in
       # the vault, which is far too expensive for the hourly cadence. Runs BEFORE
       # the failure step so a census is still taken on an hour whose ingest failed
@@ -201,21 +238,39 @@ jobs:
           name: research-vault-census
           path: ${{ runner.temp }}/rv_census.json
           if-no-files-found: warn
-      # The rc the ingest step captured is only meaningful HERE, after salvage has
-      # had its chance to run. A publication-plane failure must conclude the lane
-      # RED: a green hourly run whose ingest published nothing is the state that
-      # made every other defect in this wave invisible for as long as it lasted.
-      # Per-document failures do not reach this point — the CLI exits 0 on those.
-      - name: fail the lane if ingestion failed
+      # Publication-plane and source-content failures are independent. Both are
+      # observed only after salvage and the optional census have had their chance.
+      # A green publisher with a stale newest report is now a red lane, not a
+      # healthy-looking timestamp-only commit. The typed guard has already applied
+      # any stale-only acknowledgement; every nonzero rc here remains fatal.
+      - name: fail the lane if ingest or source freshness failed
         if: always()
         run: |
-          rc="${{ steps.ingest.outputs.rc }}"
-          if [ -z "$rc" ]; then
+          ingest_rc="${{ steps.ingest.outputs.rc }}"
+          source_rc="${{ steps.source_freshness.outputs.rc }}"
+          failed=0
+
+          if [ -z "$ingest_rc" ]; then
             echo "::error title=research-ingest::the ingest step recorded no exit code — it did not run to completion"
+            failed=1
+          elif [ "$ingest_rc" != "0" ]; then
+            echo "::error title=research-ingest::research vault ingestion FAILED (rc=$ingest_rc); the salvage push above ran regardless. See the ingest step's annotations for the specific plane failure."
+            failed=1
+          fi
+
+          if [ -z "$source_rc" ]; then
+            if [ "${{ steps.checkout.outcome }}" != "success" ]; then
+              echo "::error title=research-vault-source::source-freshness skipped — checkout did not succeed (runner/setup failure, not a typed producer verdict)"
+            else
+              echo "::error title=research-vault-source::the source-freshness step recorded no exit code (step did not emit a typed verdict)"
+            fi
+            failed=1
+          elif [ "$source_rc" != "0" ]; then
+            echo "::error title=research-vault-source::Research Vault source freshness FAILED (rc=$source_rc); catalog salvage was preserved. The typed guard already applied any PRODUCER_STALE-only acknowledgement, so this rc is an integrity, configuration, clock, or transport failure and remains fatal."
+            failed=1
+          fi
+
+          if [ "$failed" != "0" ]; then
             exit 1
           fi
-          if [ "$rc" != "0" ]; then
-            echo "::error title=research-ingest::research vault ingestion FAILED (rc=$rc); the salvage push above ran regardless. See the ingest step's annotations for the specific plane failure."
-            exit 1
-          fi
-          echo "research vault ingestion completed (rc=0)"
+          echo "research vault ingestion and source-content freshness completed (rc=0)"

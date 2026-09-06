@@ -385,6 +385,49 @@ def coverage(catalog: dict) -> dict[str, dict]:
     return out
 
 
+# A raw aggregate only: publication health remains owned by health(), and the
+# source-freshness policy stays in the existing source guard. No clock is stored.
+SOURCE_CLOCK_SCHEMA = "research_vault.source_clock.v1"
+
+
+def source_clock_summary(catalog: dict) -> dict[str, Any]:
+    """Project complete-source clocks without exposing IDs, text or object keys.
+
+    Call on the full catalog before preview truncation. Missing/malformed rows
+    count as invalid, not as zero-aged research. Dates without offsets preserve
+    the existing UTC interpretation. This function does not mutate the catalog,
+    apply age policy, read a store, or change Wave-4 validation/publication rules.
+    """
+    rows = catalog.get("items")
+    complete = isinstance(rows, list) and catalog.get("preview") is not True
+    if not isinstance(rows, list):
+        rows = []
+    latest = None
+    valid = 0
+    for row in rows:
+        value = row.get("published_at") if isinstance(row, dict) else None
+        if not isinstance(value, str) or not value.strip():
+            continue
+        try:
+            stamp = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=timezone.utc)
+            stamp = stamp.astimezone(timezone.utc)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        valid += 1
+        if latest is None or stamp > latest:
+            latest = stamp
+    return {
+        "schema": SOURCE_CLOCK_SCHEMA,
+        "complete": complete,
+        "report_count": len(rows),
+        "valid_clock_count": valid,
+        "invalid_clock_count": len(rows) - valid,
+        "latest_report_published_at": latest.isoformat() if latest is not None else None,
+    }
+
+
 def public_summary(catalog: dict, now: datetime | None = None) -> dict[str, Any]:
     """Return public-safe whole-vault aggregates for preview and full clients.
 
@@ -437,6 +480,7 @@ def public_summary(catalog: dict, now: datetime | None = None) -> dict[str, Any]
         )
     ]
     return {
+        "source_clock": source_clock_summary(catalog),
         "total": len(items),
         "new_this_week": len(week),
         "desks_this_week": len(week_desks),

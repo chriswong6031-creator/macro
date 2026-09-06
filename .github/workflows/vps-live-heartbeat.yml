@@ -4,19 +4,205 @@ on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/__init__.py"
+      - "engine/__init__.py"
+      - "engine/research_vault/__init__.py"
+      - "engine/research_vault/catalog.py"
+      - "engine/research_vault/sidecar.py"
+      - "app/research.py"
+      - "scripts/check_research_vault_source_freshness.py"
+      - ".github/workflows/research-ingest.yml"
+      - ".github/workflows/vps-live-heartbeat.yml"
 
 permissions:
   contents: read
 
+# Keep PR contract runs out of the live dead-man's cancellation group.
 concurrency:
-  group: vps-live-heartbeat
+  group: vps-live-heartbeat-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  research-vault-contract:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      # The contract imports six small source files. A whole-repository checkout
+      # was canceled at the three-minute boundary before its tests could execute.
+      # Non-cone patterns also exclude unrelated root files; v4 derives blob:none.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/__init__.py
+            /scripts/check_research_vault_source_freshness.py
+            /engine/__init__.py
+            /engine/research_vault/__init__.py
+            /engine/research_vault/catalog.py
+            /engine/research_vault/sidecar.py
+            /app/research.py
+      - name: Research Vault source-freshness guard self-test
+        run: python -m scripts.check_research_vault_source_freshness --selftest
+      - name: Research Vault source-freshness behavioral regressions
+        shell: bash
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+          import contextlib, copy, io, json, tempfile
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from scripts import check_research_vault_source_freshness as guard
+          from engine.research_vault import catalog as catalog_mod
+
+          failures = []
+          def check(name, fn):
+              try:
+                  fn()
+              except Exception as exc:
+                  failures.append(f"{name}: {type(exc).__name__}: {exc}")
+          def require(cond, detail):
+              if not cond:
+                  raise AssertionError(detail)
+
+          def payload(stamp="2026-09-02T12:00:00Z"):
+              return {"schema":"research_vault.catalog.v1", "generated_at":"2026-09-05T00:00:00Z", "count":1,
+                      "items":[{"id":"one", "published_at":stamp, "summary_points":[]}]}
+
+          def monotonic():
+              p = payload()
+              friday = guard.evaluate(p, now=datetime(2026,9,4,23,59,tzinfo=timezone.utc))
+              saturday = guard.evaluate(p, now=datetime(2026,9,5,0,0,tzinfo=timezone.utc))
+              require(friday["status"] == "PRODUCER_STALE", friday)
+              require(saturday["status"] == "PRODUCER_STALE", saturday)
+          check("stale source cannot revive on weekend boundary", monotonic)
+
+          def invalid_numbers():
+              now = datetime(2026,9,5,0,tzinfo=timezone.utc)
+              for name, kwargs in (
+                  ("max_age_nan", {"max_age_hours": float("nan")}),
+                  ("max_age_inf", {"max_age_hours": float("inf")}),
+                  ("future_inf", {"future_tolerance_minutes": float("inf")}),
+              ):
+                  report = guard.evaluate(payload("2026-09-04T12:00:00Z"), now=now, **kwargs)
+                  require(report["status"] == "CATALOG_UNAVAILABLE", (name, report))
+              for count in (True, 1.5, float("nan"), float("inf"), -1, "1"):
+                  p = dict(payload("2026-09-04T12:00:00Z"), count=count)
+                  report = guard.evaluate(p, now=now)
+                  require(report["status"] == "CATALOG_UNAVAILABLE", (count, report))
+                  json.dumps(report, allow_nan=False)
+          check("nonfinite and malformed numeric inputs fail typed", invalid_numbers)
+
+          def aggregate_contract():
+              p = payload("2026-09-04T12:00:00Z")
+              p["items"][0].update(title="PRIVATE", pdf_key="PRIVATE-KEY")
+              before = copy.deepcopy(p)
+              clock = catalog_mod.public_summary(p, now=datetime(2026,9,5,0,tzinfo=timezone.utc)).get("source_clock")
+              require(isinstance(clock, dict), clock)
+              require(set(clock) == {"schema","complete","report_count","valid_clock_count","invalid_clock_count","latest_report_published_at"}, clock)
+              require(clock["complete"] is True and clock["report_count"] == 1 and clock["valid_clock_count"] == 1, clock)
+              require("PRIVATE" not in json.dumps(clock), clock)
+              require(p == before, "public summary mutated input")
+          check("real public_summary owns a complete private-safe clock", aggregate_contract)
+
+          def preview_parity():
+              p = payload("2026-09-04T18:00:00Z")
+              p["items"] += [{"id":str(i),"published_at":"2026-08-25T12:00:00Z","summary_points":["ready"]} for i in range(3)]
+              p["count"] = 4
+              now = datetime(2026,9,5,0,tzinfo=timezone.utc)
+              summary = catalog_mod.public_summary(p, now=now)
+              preview = dict(p, items=p["items"][1:], summary=summary, preview=True)
+              full = guard.evaluate(p, now=now)
+              short = guard.evaluate(preview, now=now)
+              for key in ("status","latest_report_at","source_deadline_at","count","invalid_published_at"):
+                  require(full.get(key) == short.get(key), (key, full, short))
+          check("summary-ready preview agrees with complete catalog", preview_parity)
+
+          def annotation():
+              out = io.StringIO()
+              with contextlib.redirect_stdout(out):
+                  guard._emit({"ok":False,"status":"BAD","reason":"x%\r\n::error::forged"})
+              lines = [line for line in out.getvalue().splitlines() if line.startswith("::error")]
+              require(len(lines) == 1, out.getvalue())
+              require(all(token in lines[0] for token in ("%25","%0D","%0A")), lines)
+          check("Actions annotation is one escaped line", annotation)
+
+          def bounded_local_read():
+              class Reader:
+                  def __enter__(self): return self
+                  def __exit__(self, *args): return False
+                  def read(self, n=-1):
+                      require(n == guard.MAX_RESPONSE_BYTES + 1, n)
+                      return b"x" * n
+              class TestPath:
+                  def read_bytes(self): raise AssertionError("read_bytes allocates before checking bound")
+                  def open(self, mode):
+                      require(mode == "rb", mode)
+                      return Reader()
+              try:
+                  guard._load_local(TestPath())
+              except ValueError:
+                  return
+              raise AssertionError("oversized file accepted")
+          check("local read is bounded before allocation", bounded_local_read)
+
+          def strict_json():
+              with tempfile.TemporaryDirectory() as directory:
+                  path = Path(directory) / "catalog.json"
+                  path.write_text('{"count": NaN, "items": []}')
+                  try:
+                      guard._load_local(path)
+                  except ValueError:
+                      return
+                  raise AssertionError("non-standard NaN JSON accepted")
+          check("JSON nonfinite constant is rejected", strict_json)
+
+          if failures:
+              for failure in failures:
+                  print(f"HOSTED RED: {failure}")
+              raise SystemExit(1)
+          print("Research Vault hosted regressions passed")
+          PY
+
+  # Hosted dead-man for Research Vault source-content silence. Runs on every
+  # schedule/dispatch even when vars.VPS_LIVE_PRIMARY is unset, so an offline
+  # Mac fleet cannot mask a dead producer (MAJOR 3). Deploy ordering (MINOR 4):
+  # the URL path requires summary.source_clock on the VPS — merge + VPS pull of
+  # this PR's app/engine before treating CATALOG_UNAVAILABLE as a producer
+  # signal. Outage ack is delegated to the typed guard and can soften only
+  # PRODUCER_STALE; every other nonzero verdict remains red (same as ingest).
+  research-vault-source-url:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: verify Research Vault source-content freshness (public URL)
+        env:
+          RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS: ${{ vars.RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS }}
+          RESEARCH_VAULT_SOURCE_OUTAGE_ACK: ${{ vars.RESEARCH_VAULT_SOURCE_OUTAGE_ACK }}
+        run: |
+          set +e
+          args=(--url "https://www.mastermind-x.com/api/research/catalog")
+          if [ -n "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS:-}" ]; then
+            args+=(--max-age-hours "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS}")
+          fi
+          if [ "${RESEARCH_VAULT_SOURCE_OUTAGE_ACK:-}" = "true" ]; then
+            args+=(--ack-producer-stale)
+          fi
+          python -m scripts.check_research_vault_source_freshness "${args[@]}"
+          exit "$?"
+
   health:
     # This becomes the external dead-man only after the production soak. It uses
     # GitHub-hosted compute so an offline Mac fleet cannot mask a dead VPS.
-    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY == 'true' }}
+    # Research Vault URL freshness lives in research-vault-source-url above so it
+    # is not gated on VPS_LIVE_PRIMARY.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.VPS_LIVE_PRIMARY == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
