@@ -438,6 +438,7 @@ def fetch_all(cfg: dict, asof: date) -> tuple[list[dict], dict[str, str]]:
     key in the state map, always (printed nulls, §7). A source whose
     rights_state is not VERIFIED_PUBLIC_REUSE is never fetched (§7:
     "the source is never fetched") and reports SOURCE_OUTAGE."""
+    cap = int(cfg.get("max_per_source", 60))
     coverage: dict[str, str] = {}
     items: list[dict] = []
     for s in sources(cfg):
@@ -449,6 +450,7 @@ def fetch_all(cfg: dict, asof: date) -> tuple[list[dict], dict[str, str]]:
         if raw is None:
             coverage[key] = "SOURCE_OUTAGE"
             continue
+        raw = raw[:cap]
         if not raw:
             coverage[key] = "NO_COVERAGE"
             continue

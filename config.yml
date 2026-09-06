@@ -4744,9 +4744,7 @@ china_news_intel:
 # and report coverage_state SOURCE_OUTAGE.
 europe_news_intel:
   enabled: true
-  max_per_source: 60
-  cache_dir: data/europe_news/intel_cache
-  cache_ttl_hours: 6
+  max_per_source: 60             # raw items kept per RSS source, applied in fetch_all
   sources:                      # every entry needs a verified rights_basis (spec §3.1)
     - key: ec_presscorner
       url: "https://ec.europa.eu/commission/presscorner/api/rss"
