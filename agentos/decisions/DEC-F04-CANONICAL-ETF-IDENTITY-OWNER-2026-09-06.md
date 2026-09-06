@@ -9,12 +9,21 @@ answer: >
   Yes, an owner exists and is named: engine/theme_graph/identity.py::etf_node_id
   (:234-237) is the sole minter of the `etf:<SYMBOL>` id in this repo, and the K1
   evidence foundation already validates ETF refs against it
-  (lib/evidence_foundation.py:309-310). Later ETF rows join on that id and on
-  nothing else. engine/etf_registry.py::fund_registry (:40-74) is named separately
-  as the ETF ROSTER/TYPING owner - a different role, not identity.
-  engine/stock_identity/ is recorded as NOT an ETF owner (zero ETF references),
-  which refutes the "Stock Identity/Data OS security identity" owner route printed
-  in the 2026-09-04 F04 closure map. No new identity store is proposed; ETF
+  (lib/evidence_foundation.py:309-310). Verified producer call sites are
+  graph-side only - engine/theme_graph/materialize.py:445 and
+  lib/evidence_foundation.py:310 - minting/validating for basket `etf_proxy`
+  symbols; no holdings-to-identity join contract exists yet (open row, memo
+  section 3), so "joins on this id" is scoped to the graph-side ETF minter,
+  not a claim that covers the flow-board/holdings estate. engine/etf_registry.py::
+  fund_registry (:40-74) is named separately as the ETF ROSTER/TYPING owner - a
+  different role, not identity. The composite owner route printed in the
+  2026-09-04 F04 closure map ("Stock Identity/Data OS security identity + GMI
+  ETF nodes/TRACKS + lawful holdings owner") is refuted on BOTH halves after
+  searching both: engine/stock_identity/ (zero ETF references, company/stock-
+  scoped) and lib/dataos/identity.py (zero ETF references; its Data OS §D2
+  doctrine issues Issuer/Security ids off an inception listing key and treats a
+  bare symbol as never an identity - reconciled against the named owner below).
+  No new identity store is proposed; ETF
   treatment is a row type over the existing baseline. MO-DELTA-005 resolves to
   ALIAS - already adjudicated 2026-09-04 as ALIAS_OR_PROJECTION onto the Ontology
   Explorer / Market OS composition - and the alias target inherits MO-DELTA-005's
@@ -30,8 +39,15 @@ rationale: >
   would silently absorb unknown funds. Naming Stock Identity would have been wrong
   on evidence: it contains no ETF code at all. Two disclosed nulls keep confidence
   at medium rather than high: ETF ids carry no epoch discipline (company ids do),
-  and the overlap between the id namespace and the 106-fund flow roster was not
-  counted because data/ is absent in the sparse worktree.
+  and the STORE-SIDE overlap between the id namespace and the 106-fund flow
+  roster was not counted because data/ is absent in the sparse worktree - the
+  SOURCE-SIDE figures (76 basket declarations, 25 distinct symbols) are printed
+  instead and are not a substitute for the store-side count. The bare-symbol
+  `etf:<SYMBOL>` id is reconciled against Data OS §D2 (`lib/dataos/identity.py:1`,
+  "a symbol is NEVER an identity") as a disclosed, unresolved gap rather than a
+  contradiction this record papers over: etf_node_id is named because it is the
+  only construction site that exists and is already load-bearing (K1 binds to
+  it), while the missing inception-key/epoch discipline stays an open null.
 alternatives:
   - option: Record ABSENT (no canonical ETF identity owner)
     why_not: >
@@ -49,6 +65,15 @@ alternatives:
       `grep -rni etf engine/stock_identity/ --include=*.py` returns zero hits; the
       plane is company/stock-scoped over three price planes
       (engine/stock_identity/plane.py:5-14).
+  - option: Name lib/dataos/identity.py (the Data OS security-identity half of
+      the composite "Stock Identity/Data OS security identity" route)
+    why_not: >
+      `grep -rniI "etf" lib/dataos/ --include="*.py"` returns zero hits; the
+      module's own §D2 doctrine (lib/dataos/identity.py:1) issues Issuer/Security
+      ids off an inception listing key and states a symbol is never an identity -
+      the opposite shape from etf_node_id's bare, unepoched `etf:<SYMBOL>`. Both
+      halves of the composite route were searched and both are absent of ETF
+      code; the mismatch in shape is disclosed, not silently reconciled.
   - option: Propose a new canonical ETF identity store spanning graph + flow board
     why_not: >
       MO-DELTA-009's bounded child says "no new store", and a competing identity
@@ -60,6 +85,8 @@ evidence:
   - "lib/evidence_foundation.py:309-310 - K1 EvidenceRef validates `etf:` refs by round-tripping through theme_identity.etf_node_id."
   - "engine/theme_graph/identity_resolution.py:13-14 - 'ONE ROW PER COMPANY-KIND NODE ... etf/other kinds carry no rows in v1'; :270-277,:430-441 ETF nodes are only a company-identity conflict source."
   - "engine/stock_identity/plane.py:5-14 and engine/stock_identity/authority.py:17-27; grep -rni etf engine/stock_identity/ = 0 hits (run 2026-09-06)."
+  - "lib/dataos/identity.py:1-32 - Data OS §D2 identity spine; grep -rniI \"etf\" lib/dataos/ --include=\"*.py\" = 0 hits (run 2026-09-06)."
+  - "engine/theme_graph/materialize.py:166-170 - `etf_proxy` is declared on 76 baskets (75 bare string, 1 two-item list on `defensives`); grep -rhoE \"etf_proxy['\"]?\\s*[:=]\\s*['\"][A-Z0-9.]+['\"]\" engine/ scripts/ resolves to 25 distinct symbols (run 2026-09-06)."
   - "engine/etf_registry.py:29-30,40-74 and config.yml:2033 - roster/typing owner; 106 universe funds, 108 registry rows, 2 holdings.watchlist funds."
   - "docs/site_semantics/etfs.md:1-22 - published ETF surface is display-only and keyed on the fund ticker."
   - "research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXACT_CAPABILITY_CLOSURE_MAP_2026-09-04.md:37 and section 2.2 - MO-DELTA-005 already adjudicated ALIAS_OR_PROJECTION."
@@ -109,12 +136,18 @@ owner. Part 2 stays open by design.
 - **The two owners cover different populations, and we did not count the
   overlap.** `etf_node_id` mints only for tickers reachable as a basket
   `etf_proxy`; the roster carries 106 universe funds plus 2 watchlist funds.
-  The count of `etf`-kind nodes in the store is a build artifact under
-  `data/`, absent in this sparse worktree, so the overlap is **NOT
-  MEASURED**. We do not know how many of the 106 funds on the flow board
-  also have a graph identity. We did not count it, and we are not guessing.
-  Defensible denominators that may be printed: 106 config `universe` funds,
-  108 `registry` rows, 2 `holdings.watchlist` funds - all read from
+  The count of `etf`-kind nodes in the *store* is a build artifact under
+  `data/`, absent in this sparse worktree, so the store-side overlap is
+  **NOT MEASURED**. We do not know how many of the 106 funds on the flow
+  board also have a graph identity. We did not count it, and we are not
+  guessing. What we DID count, source-side, without `data/`: `etf_proxy` is
+  declared on 76 baskets (75 as a bare string, 1 as the two-item list on
+  `defensives`), and a source grep resolves those declarations to 25
+  distinct symbols across `engine/` and `scripts/`. That source-side figure
+  is printed to be honest about scope; it is not a substitute for the
+  store-side overlap count, which stays NOT MEASURED. Defensible
+  denominators that may be printed: 106 config `universe` funds, 108
+  `registry` rows, 2 `holdings.watchlist` funds - all read from
   `config.yml`, not from `data/`.
 - **No holdings-to-identity join contract exists.** `docs/site_semantics/etfs.md`
   keys on the fund ticker; nothing maps `etf:<SYMBOL>` to

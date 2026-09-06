@@ -20,19 +20,48 @@ here; they are different capabilities, closed in the same pass.
 | 7 | Flow-board consumers: `engine/etf_board.py`, `engine/etf_consensus.py`, `engine/etf_flows.py`, `engine/etf_perfund.py`, `engine/etf_pulse.py`, `engine/etf_board_ledger.py`, `engine/holdings_signals.py:917,1080,1157` | as listed | All key on the bare fund ticker; none mints an identity. | Consumers only |
 | 8 | Published surface | `docs/site_semantics/etfs.md:1-22` | Display-only tier; snapshots at `data/etf_holdings/<FUND>/<date>.parquet`; keyed by fund ticker. | Consumer, display-only |
 | 9 | Every other `etf:`-literal site | `engine/theme_graph/identity_resolution.py:433,439`; `engine/theme_graph/materialize.py:1020`; `scripts/correct_gmi_identity_lineage.py:155`; `scripts/check_theme_graph_contracts.py:1510,1524` | Conflict receipts and test fixtures. | Not minters - confirms candidate 1 is the **sole** minter |
+| 10 | `lib/dataos/identity.py` (Data OS security-identity spine - the other half of the closure map's composite route) | `lib/dataos/identity.py:1-32` | Docstring: "a symbol is NEVER an identity (Data OS §D2)"; shapes `ISS:<inception listing key>`, `SEC:<inception listing key>`, bare `<CC>-<MIC>-<CODE>` listing, venue+time-scoped Symbol. `grep -rniI "etf" lib/dataos/ --include="*.py"` returns **0 hits** (run 2026-09-06). | **REFUTES** the Data OS half of the composite owner route; reconciled against candidate 1 in section 2 |
 
 ## 2. The naming
 
 **Canonical ETF identity owner = `engine/theme_graph/identity.py::etf_node_id`
 (`:234-237`), the sole minter of `etf:<SYMBOL>`, recognised as the id
 authority by the K1 evidence foundation at `lib/evidence_foundation.py:309-310`.**
-Any later ETF row joins on that id and on nothing else.
+Verified producer/consumer call sites are graph-side only -
+`engine/theme_graph/materialize.py:445` (TRACKS-edge minting) and
+`lib/evidence_foundation.py:310` (K1 validation) - both keyed on basket
+`etf_proxy` symbols. No holdings-to-identity join contract exists yet (open
+row, section 3), so this naming is scoped to the graph-side ETF minter: it
+does not claim coverage over the flow-board/holdings estate, which stays an
+explicit open gap rather than an implied "and nothing else."
 
 Two roles are named separately and must not be conflated: **identity**
 (candidate 1) and **roster/typing** (candidate 6, `engine/etf_registry.py::fund_registry`).
-`engine/stock_identity/` is recorded as **NOT** the ETF owner (`grep -rni etf
-engine/stock_identity/ --include=*.py` = 0 hits), refuting the owner route
-printed at `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXACT_CAPABILITY_CLOSURE_MAP_2026-09-04.md:40`.
+
+The 2026-09-04 F04 closure map printed a COMPOSITE owner route: "Stock
+Identity/Data OS security identity + GMI ETF nodes/TRACKS + lawful holdings
+owner" (line 40). Both named halves of that route were searched, not just
+one: `engine/stock_identity/` (`grep -rni etf engine/stock_identity/
+--include=*.py` = 0 hits - candidate 5) and `lib/dataos/identity.py` (`grep
+-rniI "etf" lib/dataos/ --include="*.py"` = 0 hits - candidate 10). Both
+are absent of ETF code, so the composite route is refuted on both halves.
+
+**Reconciling the shapes.** `lib/dataos/identity.py`'s §D2 doctrine issues
+`ISS:<inception listing key>` / `SEC:<inception listing key>` ids and states
+a symbol is *never* an identity, precisely so a rename (its own motivating
+case: MMC->MRSH) cannot silently drop history. `etf_node_id` mints the
+opposite shape - a bare, unepoched `etf:<SYMBOL>` - and would suffer the
+identical failure mode Data OS was built to prevent if a fund ticker were
+ever reused after a closure. This record does not paper over that mismatch:
+`etf_node_id` is named the canonical owner because it is the *only*
+construction site that exists in this codebase and is already load-bearing
+(K1 binds to it, section 1 candidate 3), not because its shape satisfies
+Data OS §D2. The missing inception-key/epoch discipline is carried forward
+as an explicit, disclosed null in section 3, and the standing gate
+("identity only via Stock Identity + Data OS + Supabase auth") is not met
+by this owner - a future hardening pass, not this archaeology pass, would
+have to either migrate `etf_node_id` onto a Data OS-shaped key or ratify the
+gap.
 
 ## 3. What we do not know
 
@@ -42,12 +71,19 @@ printed at `research/market_intelligence_productization/MARKET_ONTOLOGY_F04_EXAC
   the same ticker, our records would treat them as one fund. We have not
   fixed that and we are not pretending it is fixed.
 - **The two owners cover different populations, and we did not count the
-  overlap.** `etf_node_id` mints only for tickers reachable as a basket
-  `etf_proxy` (`materialize.py:441`); the roster carries 106 universe funds
-  plus 2 watchlist funds. The count of `etf`-kind nodes in the store is a
-  build artifact under `data/`, absent in this sparse worktree, so the
-  overlap is **NOT MEASURED**. We do not know how many of the 106 funds on
-  the flow board also have a graph identity. We did not count it, and we are not guessing.
+  store-side overlap.** `etf_node_id` mints only for tickers reachable as a
+  basket `etf_proxy` (`materialize.py:441`); the roster carries 106 universe
+  funds plus 2 watchlist funds. The count of `etf`-kind nodes in the *store*
+  is a build artifact under `data/`, absent in this sparse worktree, so the
+  store-side overlap is **NOT MEASURED**. We do not know how many of the 106
+  funds on the flow board also have a graph identity. We did not count it, and we are not guessing.
+  **What we DID count, source-side, without `data/`:** `engine/theme_graph/materialize.py:166`
+  documents `etf_proxy` declared on 76 baskets (75 as a bare string, 1 as the
+  two-item list on `defensives`); `grep -rhoE "etf_proxy['\"]?\s*[:=]\s*['\"][A-Z0-9.]+['\"]" engine/ scripts/`
+  resolves those declarations to **25 distinct symbols**. That source-side
+  figure is printed for honesty about coverage; it is NOT a substitute for
+  the store-side overlap count above, which stays NOT MEASURED - the two
+  numbers answer different questions (declared-in-source vs. built-in-store).
   Defensible denominators that MAY be printed: 106
   config `universe` funds, 108 `registry` rows, 2 `holdings.watchlist`
   funds - all read from `config.yml`, not from `data/`.

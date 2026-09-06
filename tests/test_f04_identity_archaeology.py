@@ -130,5 +130,25 @@ def test_memo_carries_the_binding_sentences():
         "MO-DELTA-005",
         "MO-DELTA-009",
         "We did not count it, and we are not guessing.",
+        "lib/dataos/identity.py",
+        "76 baskets",
+        "25 distinct symbols",
+        "does not claim coverage over the flow-board/holdings estate",
     ):
         assert needle in text, f"memo missing required sentence/anchor: {needle!r}"
+
+
+def test_dataos_identity_owns_no_etf():
+    """BLOCKER-2: the Data OS half of the composite closure-map route must be
+    verified absent, not merely asserted."""
+    dataos_identity = REPO_ROOT / "lib" / "dataos" / "identity.py"
+    assert dataos_identity.exists(), (
+        "the DEC's reconciled Data OS identity module is missing: "
+        f"{dataos_identity}"
+    )
+    text = dataos_identity.read_text(encoding="utf-8").lower()
+    assert "etf" not in text, (
+        "lib/dataos/identity.py now references ETFs; the refutation of the "
+        "Data OS half of the composite owner route in "
+        "DEC-F04-CANONICAL-ETF-IDENTITY-OWNER-2026-09-06 must be revisited."
+    )
