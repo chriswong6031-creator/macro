@@ -33,12 +33,11 @@ def test_math_matches_frozen_formula():
     by_key = {s["key"]: s for s in blob["scenarios"]}
     net_income = FIXTURE_ROW["net_income"]
     revenue = FIXTURE_ROW["revenue"]
-    net_debt = FIXTURE_ROW["debt_lt"] + FIXTURE_ROW["debt_cur"] - FIXTURE_ROW["cash"]
     shares = FIXTURE_ROW["shares"]
     net_margin_base = net_income / revenue
     for key, g, m_pp, mult in vs.SCENARIOS:
         adj = net_income * (1 + g / 100.0) * (1 + (m_pp / 100.0) / net_margin_base)
-        expected = round((adj * mult - net_debt) / shares, 2)
+        expected = round((adj * mult) / shares, 2)
         got = by_key[key]
         assert got["computable"] is True
         assert got["per_share"] == expected, (key, got["per_share"], expected)
@@ -141,8 +140,19 @@ def test_panel_renders_and_omits():
     assert 'data-valuation-scenario="v1"' in html
 
     null_blob = vs.compute(_rows(net_income=None), ticker="AAPL")
+    assert null_blob["any_computable"] is False
     html2 = tmpl.render(valuation_scenario=null_blob, deep_ids=[])
-    assert 'id="valuation-scenario"' not in html2
+    assert 'id="valuation-scenario"' in html2
+    assert "Can't be computed without reported net income" in html2
+    assert "not reported" in html2
+    # No raw internal field slug leaked into the null copy.
+    for raw_slug in ("net_income", "net_debt", "net_margin_base", "share_count"):
+        assert raw_slug not in html2
+
+    # A blob with nothing computed AND no base data at all still must not
+    # render an empty/broken section -- compute() only returns None when
+    # there is no dated row at all, which the template also guards.
+    assert vs.compute([]) is None
 
 
 def test_research_display_only_line_present():

@@ -2459,6 +2459,9 @@ def _valuation_scenario_view(blob: dict | None) -> dict | None:
     return (blob.get("valuation_scenario") or {}).get("v1")
 
 
+_VS_SCENARIO_TITLES_ZH = {"cautious": "保守", "base": "基准", "upbeat": "乐观"}
+
+
 def _deep_valuation_scenario(blob: dict | None) -> dict | None:
     vscn = (blob or {}).get("valuation_scenario", {}).get("v1") if blob else None
     if not vscn:
@@ -2467,21 +2470,37 @@ def _deep_valuation_scenario(blob: dict | None) -> dict | None:
     rows = [
         {"k_en": "Fiscal year", "k_zh": "财年", "v": str(vscn.get("fy")), "v_en": "", "v_zh": ""},
         {"k_en": "Period end", "k_zh": "期末日期", "v": str(vscn.get("period_end")), "v_en": "", "v_zh": ""},
-        {"k_en": "Source", "k_zh": "来源", "v": "SEC filings", "v_en": "", "v_zh": ""},
-        {"k_en": "Tier", "k_zh": "层级", "v": "research_display_only", "v_en": "", "v_zh": ""},
+        {"k_en": "Source", "k_zh": "来源", "v": "", "v_en": "SEC filings", "v_zh": "SEC申报文件"},
+        {"k_en": "Tier", "k_zh": "层级", "v": "", "v_en": "Research display only, not advice",
+         "v_zh": "仅供研究展示，非投资建议"},
+        {"k_en": "Formula", "k_zh": "计算公式",
+         "v": "", "v_en": "adj. net income x earnings multiple / diluted share count",
+         "v_zh": "调整后净利润 x 市盈率倍数 / 稀释股数"},
+        {"k_en": "Net debt / cash", "k_zh": "净负债／净现金",
+         "v": "", "v_en": "Shown as a reported fact only -- not applied to the per-share math "
+                          "(a P/E multiple already yields equity value)",
+         "v_zh": "仅作为披露事实展示，不参与每股计算（市盈率倍数本身已是股权价值）"},
     ]
     panels.append({"kind": "kv", "title_en": "Basis", "title_zh": "计算依据", "rows": rows})
     for s in vscn.get("scenarios", []):
         a = s.get("assumptions", {})
+        key = s.get("key", "")
         srows = [
             {"k_en": "Sales growth", "k_zh": "销售增长", "v": f"{a.get('sales_growth_pct')}%", "v_en": "", "v_zh": ""},
             {"k_en": "Margin change", "k_zh": "利润率变化", "v": f"{a.get('margin_delta_pp')}pp", "v_en": "", "v_zh": ""},
             {"k_en": "Earnings multiple", "k_zh": "市盈率倍数", "v": f"{a.get('earnings_multiple')}x", "v_en": "", "v_zh": ""},
             {"k_en": "Per-share (computed)", "k_zh": "每股价值（计算值）",
-             "v": (f"${s['per_share']:.2f}" if s.get("computable") else "not computable"),
-             "v_en": "", "v_zh": ""},
+             "v": (f"${s['per_share']:.2f}" if s.get("computable")
+                   else ""),
+             "v_en": ("" if s.get("computable") else "Not computable"),
+             "v_zh": ("" if s.get("computable") else "无法计算")},
         ]
-        panels.append({"kind": "kv", "title_en": s.get("key", "").title(), "title_zh": "", "rows": srows})
+        panels.append({
+            "kind": "kv",
+            "title_en": key.title(),
+            "title_zh": _VS_SCENARIO_TITLES_ZH.get(key, ""),
+            "rows": srows,
+        })
     return _mk_dialog(
         "valuation_scenario", "How this was worked out", "计算方式说明", panels)
 

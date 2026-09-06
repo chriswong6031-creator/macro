@@ -56,7 +56,7 @@
   .vs-base .v6{text-align:left;}
 }
 </style>
-{% if valuation_scenario and valuation_scenario.any_computable %}
+{% if valuation_scenario %}
 {% set vscn = valuation_scenario %}
 {% set vs_by_key = {} %}
 {% for s in vscn.scenarios %}{% set _ = vs_by_key.update({s.key: s}) %}{% endfor %}
@@ -85,7 +85,7 @@
       <div class="vs-mark m-{{ s.key }}" style="left:{{ vs_pct(s.per_share) }}%" tabindex="0"></div>
       <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ vs_pct(s.per_share) }}%">{{ names[s.key] }}<b>${{ '%.0f'|format(s.per_share) }}</b></div>
       {% else %}
-      <div class="vs-mark m-gap" style="left:50%" tabindex="0" aria-label="{{ t("Can't be computed without " ~ (s.missing[0] or 'a reported input'), '缺少' ~ (s.missing[0] or '一项披露数据') ~ '，无法计算') }}"></div>
+      <div class="vs-mark m-gap" style="left:50%" tabindex="0" aria-label="{{ t("Can't be computed without " ~ (s.missing_plain[0].en if s.missing_plain else 'a reported input'), '缺少' ~ (s.missing_plain[0].zh if s.missing_plain else '一项披露数据') ~ '，无法计算') }}"></div>
       {% endif %}
     {% endfor %}
     {% if vs_price_val is not none %}
@@ -107,7 +107,7 @@
         {% if s.computable %}
         <div class="vv num">${{ '%.2f'|format(s.per_share) }}</div>
         {% else %}
-        <div class="vv vv-null">{{ t("Can't be computed without " ~ (s.missing[0] or 'a reported input'), '缺少' ~ (s.missing[0] or '一项披露数据') ~ '，无法计算') }}</div>
+        <div class="vv vv-null">{{ t("Can't be computed without " ~ (s.missing_plain[0].en if s.missing_plain else 'a reported input'), '缺少' ~ (s.missing_plain[0].zh if s.missing_plain else '一项披露数据') ~ '，无法计算') }}</div>
         {% endif %}
         <div class="va">
           {% if key == 'cautious' %}{{ t('Sales fall 2% a year, margins narrow, valued at 14× earnings.', '销售每年下滑2%，利润率收窄，按14倍市盈率估值。') }}
@@ -127,7 +127,7 @@
     <div class="r6"><span class="k6">{{ t('Net income','净利润') }}<small>{{ b.net_income.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
       {% if b.net_income.reported %}<span class="v6 num">${{ '%.1f'|format(b.net_income.value / 1e9) }}B</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
     <div class="r6"><span class="k6">{{ t('Share count','股数') }}<small>{{ b.share_count.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
-      {% if b.share_count.reported %}<span class="v6 num">{{ '%.2f'|format(b.share_count.value / 1e9) }}B<em>{% if b.share_count.identity == 'diluted' %}{{ t('Diluted, as reported','披露的摊薄股数') }}{% else %}{{ t('Shares outstanding as reported (a diluted count is not reported)', '披露的流通股数（未披露摊薄股数）') }}{% endif %}</em></span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
+      {% if b.share_count.reported %}<span class="v6 num">{{ '%.2f'|format(b.share_count.value / 1e9) }}B<em>{% if b.share_count.identity == 'diluted' %}{{ t('Diluted, as reported','披露的摊薄股数') }}{% else %}{{ t('Shares outstanding, as reported','披露的流通股数') }}{% endif %}</em></span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
     <div class="r6"><span class="k6">{{ t('Net cash / debt','净现金／净负债') }}<small>{{ b.net_debt.period }} · {{ t('Source: SEC filings','来源：SEC申报文件') }}</small></span>
       {% if b.net_debt.reported %}<span class="v6 num">{% if b.net_debt.sign == 'net_cash' %}{{ t('Net cash','净现金') }} ${{ '%.1f'|format((-b.net_debt.value) / 1e9) }}B{% else %}{{ t('Net debt','净负债') }} ${{ '%.1f'|format(b.net_debt.value / 1e9) }}B{% endif %}</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
   </div>

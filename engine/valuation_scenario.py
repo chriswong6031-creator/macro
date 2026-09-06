@@ -4,10 +4,18 @@ No IO, no network, no clock. Consumes already-loaded per-fiscal-year
 statement rows (engine.stock_fundamentals._load_statements() shape) and
 emits the valuation_scenario.v1 blob for exactly one pinned issuer.
 
-Frozen formula (spec section 2):
-  per_share = ((net_income * (1 + sales_growth_pct/100)
-                * (1 + (margin_delta_pp/100) / net_margin_base))
-               * earnings_multiple - net_debt) / share_count
+Frozen formula (spec section 2, corrected 2026-09-06 -- review B-F07-1 MAJOR-1):
+  per_share = (net_income * (1 + sales_growth_pct/100)
+               * (1 + (margin_delta_pp/100) / net_margin_base)
+               * earnings_multiple) / share_count
+
+An earnings (P/E) multiple already yields equity value per share -- net
+debt/cash lives inside net income via interest expense, so subtracting or
+adding it on top of an earnings multiple double-counts the balance sheet.
+The bridge term was removed; net_debt/net_cash is reported ONLY as a base
+fact (informational), never applied inside the scenario math, matching the
+plain-language assumption text shown on every card ("valued at N x
+earnings" never mentions a debt bridge).
 
 net_margin_base = net_income / revenue for the SAME fiscal row.
 
@@ -23,6 +31,16 @@ probability/confidence wording, no LLM-authored numbers, no ranking/score.
 from __future__ import annotations
 
 # (key, sales_growth_pct, margin_delta_pp, earnings_multiple)
+MISSING_LABELS = {
+    "consistent period": ("a consistent reporting period", "同一个报告期的数据"),
+    "net_income": ("reported net income", "披露的净利润"),
+    "revenue": ("reported revenue", "披露的营业收入"),
+    "net_margin_base": ("a usable margin base", "可计算的利润率基数"),
+    "net_debt": ("reported net cash or debt", "披露的净现金或净负债"),
+    "share_count": ("a reported share count", "披露的股数"),
+    "positive reported earnings": ("positive reported earnings", "为正数的披露净利润"),
+}
+
 SCENARIOS = (
     ("cautious", -2, -1.5, 14),
     ("base", 3, 0, 18),
@@ -125,8 +143,13 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
         per_share = None
         if computable:
             adj_income = net_income * (1 + g / 100.0) * (1 + (m_pp / 100.0) / net_margin_base)
-            per_share = round((adj_income * mult - net_debt) / shares, 2)
+            per_share = round((adj_income * mult) / shares, 2)
             any_computable = True
+
+        missing_plain = [
+            {"en": MISSING_LABELS.get(m, (m, m))[0], "zh": MISSING_LABELS.get(m, (m, m))[1]}
+            for m in missing
+        ]
 
         scenarios.append({
             "key": key,
@@ -134,6 +157,7 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
             "per_share": per_share,
             "computable": computable,
             "missing": missing,
+            "missing_plain": missing_plain,
         })
 
     return {
