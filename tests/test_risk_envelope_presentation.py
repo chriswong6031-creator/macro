@@ -155,8 +155,10 @@ def test_l1_does_not_quote_the_hero_score(prod_html):
         assert f" {score} " not in rail
 
 
-def test_policy_is_outside_the_market_read_group(prod_html):
-    rail = _slice_id(prod_html, "risk-envelope-band")
+def test_policy_is_outside_the_market_read_group():
+    envelope = _gd1_envelope()
+    envelope["policy_summary"]["policy_count"] = 1
+    rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
     reads = _slice_id(rail, "gde-rail-reads") if 'id="gde-rail-reads"' in rail else None
     if reads is None:
         m = re.search(r'<span class="gde-rail-reads[^"]*"[^>]*>', rail)
@@ -171,15 +173,13 @@ def test_policy_is_outside_the_market_read_group(prod_html):
         reads = reads[:cut]
     assert "gde-seg-policy" not in reads
     assert "gde-seg-policy" in rail
-    assert "0" in rail
     assert "active" in rail.lower() or "项生效" in rail
 
 
-def test_hazard_null_is_unclear_with_source_caveat(prod_html):
-    env = _prod_envelope()
-    if env.get("hazard_summary", {}).get("stage") is not None:
-        pytest.skip("production envelope is not in the null-hazard shape this pins")
-    rail = _slice_id(prod_html, "risk-envelope-band")
+def test_hazard_null_is_unclear_with_source_caveat():
+    env = _gd1_envelope()
+    env["hazard_summary"].update(stage=None, unreadable_sources=["leadership_crack"])
+    rail = _slice_id(_render_surfaces(env), "risk-envelope-band")
     assert "Unclear" in rail
     assert "No breakage" not in rail
     assert "Nothing breaking" not in rail

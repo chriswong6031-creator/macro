@@ -34,6 +34,8 @@
 {%- set _hz = re.get('hazard_summary') or {} -%}
 {%- set _co = re.get('coherence') or {} -%}
 {%- set _ps = re.get('policy_summary') or {} -%}
+{%- set _policy_n = _ps.get('policy_count') -%}
+{%- set _policy_known = _policy_n is integer and _policy_n >= 0 -%}
 {%- set _prov = (re.get('provenance') or {}).get('sources') or [] -%}
 {%- set _stage = _hz.get('stage') -%}
 {%- set _split = _co.get('state') in ('MIXED', 'CONTRADICTORY') -%}
@@ -43,13 +45,12 @@
   {%- if s.role == 'measured_state' and ns.ms is none -%}{% set ns.ms = s %}{%- endif -%}
 {%- endfor -%}
 {%- set _ms_detail = (ns.ms.detail if ns.ms else {}) or {} -%}
-{%- set _ms_en = _ms_detail.get('state_label_en') or 'Risk-on' -%}
-{%- set _ms_zh = _ms_detail.get('state_label_zh') or '风险偏好' -%}
+{%- set _ms_en = _ms_detail.get('state_label_en') or {'RISK_ON': 'Risk-on', 'RISK_OFF': 'Risk-off', 'MIXED': 'Mixed'}.get(_ms.get('verdict'), 'Unavailable') -%}
+{%- set _ms_zh = _ms_detail.get('state_label_zh') or {'RISK_ON': '风险偏好', 'RISK_OFF': '风险规避', 'MIXED': '分歧'}.get(_ms.get('verdict'), '不可用') -%}
 {%- set _unread = _hz.get('unreadable_sources') or [] -%}
 {%- set _unmapped = _hz.get('unmapped_required_sources') or [] -%}
 {%- set _caveat_n = (_unread | length) + (_unmapped | length) -%}
 {%- set _show_caveat = _stage is none and _caveat_n > 0 -%}
-{%- set _policy_n = _ps.get('policy_count', 0) -%}
 <button type="button"
         class="gde-rail{% if _split %} is-split{% endif %}"
         id="risk-envelope-band"
@@ -94,10 +95,12 @@
   <span class="gde-rail-rule" aria-hidden="true"></span>
 
   <span class="gde-rail-meta">
+    {% if _policy_known and _policy_n > 0 %}
     <span class="gde-seg gde-seg-policy">
       <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
       <span class="gde-v gde-v-quiet tnum">{{ _policy_n }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>
     </span>
+    {% endif %}
     <span class="gde-stamp gde-stamp-live" id="gde-live-chip" hidden>
       <i class="dtp-dot" aria-hidden="true"></i>
       <span class="l-en">Live · provisional</span><span class="l-zh">实时 · 临时</span>
@@ -123,6 +126,8 @@
 {%- set _hz = re.get('hazard_summary') or {} -%}
 {%- set _co = re.get('coherence') or {} -%}
 {%- set _ps = re.get('policy_summary') or {} -%}
+{%- set _policy_n = _ps.get('policy_count') -%}
+{%- set _policy_known = _policy_n is integer and _policy_n >= 0 -%}
 {%- set _prov = (re.get('provenance') or {}).get('sources') or [] -%}
 {%- set _stage = _hz.get('stage') -%}
 {%- set _split = _co.get('state') in ('MIXED', 'CONTRADICTORY') -%}
@@ -132,8 +137,8 @@
   {%- if s.role == 'measured_state' and ns.ms is none -%}{% set ns.ms = s %}{%- endif -%}
 {%- endfor -%}
 {%- set _ms_detail = (ns.ms.detail if ns.ms else {}) or {} -%}
-{%- set _ms_en = _ms_detail.get('state_label_en') or 'Risk-on' -%}
-{%- set _ms_zh = _ms_detail.get('state_label_zh') or '风险偏好' -%}
+{%- set _ms_en = _ms_detail.get('state_label_en') or {'RISK_ON': 'Risk-on', 'RISK_OFF': 'Risk-off', 'MIXED': 'Mixed'}.get(_ms.get('verdict'), 'Unavailable') -%}
+{%- set _ms_zh = _ms_detail.get('state_label_zh') or {'RISK_ON': '风险偏好', 'RISK_OFF': '风险规避', 'MIXED': '分歧'}.get(_ms.get('verdict'), '不可用') -%}
 {%- set _unread = _hz.get('unreadable_sources') or [] -%}
 {%- set _unmapped = _hz.get('unmapped_required_sources') or [] -%}
 {%- set _caveat_n = (_unread | length) + (_unmapped | length) -%}
@@ -187,8 +192,8 @@
           <span class="l-zh">已核对全部必需来源，均未见损伤。</span>
         {%- else -%}
           {%- set _onset = (ns.lead.detail.get('state_since') if ns.lead and ns.lead.detail else none) -%}
-          <span class="l-en">{{ (ns.lead.label_en if ns.lead else 'A tracked group') }} is damaged while the index holds{% if _onset %} — its own read has said so since {{ _onset }}{% endif %}.</span>
-          <span class="l-zh">{{ (ns.lead.label_zh if ns.lead else '受追踪的一组标的') }}受损，而指数仍在支撑{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
+          <span class="l-en">{{ (ns.lead.label_en if ns.lead else 'A tracked group') }} shows damage{% if _ms.get('usable') and _ms.get('verdict') == 'RISK_ON' %} while the broad trend remains positive{% endif %}{% if _onset %} — its own read has said so since {{ _onset }}{% endif %}.</span>
+          <span class="l-zh">{{ (ns.lead.label_zh if ns.lead else '受追踪的一组标的') }}显示损伤{% if _ms.get('usable') and _ms.get('verdict') == 'RISK_ON' %}，但整体趋势仍保持积极{% endif %}{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
         {%- endif -%}
       </p>
       <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ (ns.lead.as_of if ns.lead else none) or re.get('source_session') or '—' }}</span>
@@ -197,10 +202,12 @@
 
   <div class="gde-detail-policy">
     <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-    {%- if _ps.get('policy_count', 0) == 0 -%}
+    {%- if not _policy_known -%}
+    <span class="gde-policy-state"><span class="l-en">Policy status unavailable</span><span class="l-zh">政策状态不可用</span></span>
+    {%- elif _policy_n == 0 -%}
     <span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span>
     {%- endif -%}
-    <span class="gde-policy-count tnum">{{ _ps.get('policy_count', 0) }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>
+    {% if _policy_known %}<span class="gde-policy-count tnum">{{ _policy_n }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>{% endif %}
   </div>
 
   <details class="gde-disc">
