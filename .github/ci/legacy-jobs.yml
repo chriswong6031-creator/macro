@@ -289,6 +289,25 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  am-edition-producer:
+    if: ${{ false }}
+    gate: code
+    # AM Edition premarket producer contract (A-MO-W2-3): per-source clocks,
+    # exactly five states, no generated_at laundering. Disabled from direct
+    # execution like every sibling job in this family — contract-delta's
+    # differential gate refuses a head that would let GitHub allocate a
+    # duplicate runner alongside the packed trusted-executor dispatch
+    # (run_ci_pack.py redistributes this job into ci-pack-N via `gate: code`).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: AM Edition producer contract (per-source clocks, five states, no laundering)
+        run: python -m pytest tests/test_am_edition_producer.py -q
+
   all-exports-resolve:
     if: ${{ false }}
     gate: code

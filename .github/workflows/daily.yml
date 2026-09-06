@@ -3957,6 +3957,10 @@ jobs:
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
         # resilient (returns 0). Replaces the retired deterministic daily_brief.
         run: python -m scripts.build_aibrief
+      - name: AM Edition producer (build_am_edition)
+        # Deterministic since-prior-close artifact (site/am_edition.json) with
+        # per-source clocks. Reads committed artifacts only; never breaks the run.
+        run: python -m scripts.build_am_edition
       - name: Mastermind snapshot page (build_mastermind)
         # static page (site/mastermind.html) that renders a daily snapshot of the LOCAL
         # Mastermind AI paper-trading desk. Pure chrome — the data (site/mastermind/
