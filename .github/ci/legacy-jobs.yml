@@ -13826,6 +13826,11 @@ jobs:
       - "templates/macro_monetary.html.j2"
       - "templates/_macro_suite_nav.html.j2"
       - "tests/test_macro_monetary_hub.py"
+      # Macro Command P1 2026-09-06: shell suite + FRONT-END CLARITY copy guard.
+      - "scripts/check_macro_command_copy.py"
+      - "tests/test_macro_command_shell.py"
+      - "tests/test_macro_command_copy_law.py"
+      - "site/macro_monetary.html"
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -13836,6 +13841,10 @@ jobs:
       - name: install suite-page test dependencies
         run: pip install pytest jinja2 pyyaml jsonschema==4.26.0
       - name: Market OS macro suite pages — shell, labels, view model, builder
-        run: python -m pytest tests/test_macro_suite_pages.py -q
+        run: python -m pytest tests/test_macro_suite_pages.py tests/test_macro_command_shell.py tests/test_macro_command_copy_law.py -q
       - name: Market OS macro suite hub — discoverability, ordering, honest absence
         run: python -m pytest tests/test_macro_monetary_hub.py -q
+      - name: Build macro suite pages for Macro Command copy guard
+        run: python3 scripts/build_macro_suite_pages.py
+      - name: Macro Command FRONT-END CLARITY copy guard
+        run: python3 scripts/check_macro_command_copy.py site/macro_monetary.html
