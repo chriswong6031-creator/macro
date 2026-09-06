@@ -44,24 +44,34 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if result.read_state == monitor.READ_UNAVAILABLE:
+        # result.enqueued_n reflects rows ACTUALLY written before the failure
+        # (a write-phase error can follow real POSTs); never assert "0 writes"
+        # when enqueued_n is nonzero.
         print(
             "::warning title=thesis-monitor-read-unavailable::"
-            "thesis/alert tables not readable (%s) — 0 enqueued, 0 writes"
-            % result.error_class,
+            "thesis/alert tables not readable (%s) — %d enqueued so far, run incomplete"
+            % (result.error_class, result.enqueued_n),
             flush=True,
         )
 
+    # Dry-run/dormant reports "planned" (nothing written); a live run reports
+    # "enqueued" (rows actually POSTed) -- the two must never share one label.
+    written_label = "planned" if dry_run else "enqueued"
+    written_n = result.planned_n if dry_run else result.enqueued_n
+
     print(
-        "thesis-monitor: outcome=%s evaluated=%d matched=%d enqueued=%d "
-        "duplicate=%d no_coverage=%d unmappable=%d run_id=%s"
+        "thesis-monitor: outcome=%s evaluated=%d matched=%d %s=%d "
+        "duplicate=%d no_coverage=%d unmappable=%d dry_run=%s run_id=%s"
         % (
             result.outcome,
             result.evaluated_n,
             result.matched_n,
-            result.enqueued_n,
+            written_label,
+            written_n,
             result.duplicate_n,
             result.no_coverage_n,
             result.unmappable_n,
+            dry_run,
             result.run_id,
         ),
         flush=True,

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 import pytest
 
@@ -106,7 +107,7 @@ def _patch_reads(monkeypatch, *, theses, versions_rows, existing_ids, posted):
 
 
 def _patch_tripwire_view(monkeypatch, entries, latch_state):
-    monkeypatch.setattr(monitor, "load_tripwire_view", lambda: (entries, latch_state))
+    monkeypatch.setattr(monitor, "load_tripwire_view", lambda: (entries, latch_state, None))
 
 
 def test_new_fire_enqueues_exactly_one_row(monkeypatch):
@@ -293,7 +294,120 @@ def test_no_data_or_site_writes():
     assert "write_text(" not in src
     assert "to_parquet(" not in src
     assert "to_csv(" not in src
-    assert "open(" not in src or "open(req" in src  # only urllib usage, no file writes
+    # No local file WRITE anywhere -- forbid any open()/Path call in write/append
+    # mode. (The prior assertion `"open(" not in src or "open(req" in src` was
+    # tautological: `urllib.request.urlopen(req, ...)` already contains the
+    # substring "open(req", so the guard could never fail regardless of what
+    # else the module did.) Reads of the committed JSON go through
+    # `f_path.read_text()` / `s_path.read_text()`, which take no mode arg.
+    write_mode_pattern = re.compile(r"""open\([^)]*['"][wax]""")
+    assert not write_mode_pattern.search(src), "found a write/append-mode open() call"
+    assert ".write_bytes(" not in src
+
+
+def test_corrupt_falsifiers_json_is_typed_read_unavailable(monkeypatch, tmp_path):
+    bad = tmp_path / "falsifiers.json"
+    bad.write_text("{not json")
+    monkeypatch.setattr(monitor.config, "ROOT", tmp_path)
+    monkeypatch.setattr(monitor.ft, "_FALSIFIERS_JSON", "falsifiers.json")
+    result = monitor.run(dry_run=False)
+    assert result.read_state == monitor.READ_UNAVAILABLE
+    assert result.error_class == "corrupt_falsifiers_json"
+    assert result.enqueued_n == 0
+
+
+def test_missing_falsifiers_file_is_ok_zero_not_an_error(monkeypatch, tmp_path):
+    # A file that has simply never been rendered yet is a normal empty state,
+    # not an error -- must not collapse identically with a CORRUPT file.
+    monkeypatch.setattr(monitor.config, "ROOT", tmp_path)
+    monkeypatch.setattr(monitor.ft, "_FALSIFIERS_JSON", "does_not_exist.json")
+    entries, state, error_class = monitor.load_tripwire_view()
+    assert error_class is None
+    assert entries == []
+
+
+def test_window_fired_before_thesis_creation_does_not_backfire(monkeypatch):
+    _patch_tripwire_view(monkeypatch, [_tripwire_entry()], _latch_state(fired_on="2026-01-01"))
+    posted = []
+    thesis = _thesis()
+    thesis["created_at"] = "2026-06-01T00:00:00Z"  # created AFTER the historical fire
+    _patch_reads(
+        monkeypatch, theses=[thesis], versions_rows=[_version_row()],
+        existing_ids=[], posted=posted,
+    )
+    result = monitor.run(dry_run=False)
+    assert result.enqueued_n == 0
+    assert posted == []
+
+
+def test_window_fired_after_thesis_creation_still_enqueues(monkeypatch):
+    _patch_tripwire_view(monkeypatch, [_tripwire_entry()], _latch_state(fired_on="2026-09-05"))
+    posted = []
+    thesis = _thesis()
+    thesis["created_at"] = "2026-01-01T00:00:00Z"  # created BEFORE the fire
+    _patch_reads(
+        monkeypatch, theses=[thesis], versions_rows=[_version_row()],
+        existing_ids=[], posted=posted,
+    )
+    result = monitor.run(dry_run=False)
+    assert result.enqueued_n == 1
+
+
+def test_display_never_uses_a_raw_cycle_slug():
+    window = _tripwire_entry(scope="cycle", cycle="long_bonds", tickers=())
+    payload = monitor.compose_payload(
+        thesis={"id": THESIS_ID, "version": 1, "title": "rates thesis"},
+        window=window, subject=("cycle", "long_bonds"), evidence_base=monitor.EVIDENCE_BASE,
+    )
+    assert "long_bonds" not in payload["subject"]
+    assert "long_bonds" not in payload["summary_plain"]
+    # A cycle subject's display label is not a tradable ticker symbol.
+    assert payload["ticker"] is None
+
+
+def test_dry_run_reports_planned_not_enqueued(monkeypatch):
+    _patch_tripwire_view(monkeypatch, [_tripwire_entry()], _latch_state())
+    _patch_reads(
+        monkeypatch, theses=[_thesis()], versions_rows=[_version_row()],
+        existing_ids=[], posted=[],
+    )
+    result = monitor.run(dry_run=True)
+    assert result.enqueued_n == 0
+    assert result.planned_n == 1
+
+
+def test_real_committed_falsifiers_join_and_stay_plain_language():
+    """Loads the ACTUAL committed data/cycle_ontology/falsifiers.json through
+    load_tripwire_view (not a synthetic fixture) and proves a real cycle-scoped
+    falsifier CAN join to a Thesis Object shaped per the reviewed migration
+    (owner='macro.theme_registry', kind='theme'), and that every real claim +
+    claim_zh in the corpus composes into plain language with no banned term."""
+    entries, _state, error_class = monitor.load_tripwire_view()
+    assert error_class is None
+    assert len(entries) > 0, "expected the committed falsifiers corpus to be non-empty"
+    zh_covered = 0
+    for e in entries:
+        cycle = e.get("cycle")
+        if not cycle:
+            continue
+        subject = ("cycle", str(cycle).lower())
+        fake_window = dict(e)
+        fake_window["fired_on"] = "2026-09-05"
+        payload = monitor.compose_payload(
+            thesis={"id": THESIS_ID, "version": 1, "title": "watch"},
+            window=fake_window, subject=subject, evidence_base=monitor.EVIDENCE_BASE,
+        )
+        haystack = " ".join(
+            str(payload.get(k, "")) for k in
+            ("subject", "summary_plain", "condition_plain", "summary_plain_zh", "condition_plain_zh")
+        ).lower()
+        for term in monitor._BANNED_TERMS:
+            assert term not in haystack, f"banned term {term!r} in real-data payload {haystack!r}"
+        assert str(cycle) not in payload["subject"]  # no raw slug
+        if e.get("claim_zh"):
+            zh_covered += 1
+            assert payload.get("summary_plain_zh"), "expected a zh variant when claim_zh is present"
+    assert zh_covered > 0, "expected at least one real falsifier to carry claim_zh"
 
 
 def test_no_coverage_subject_is_disclosed_not_fabricated(monkeypatch):

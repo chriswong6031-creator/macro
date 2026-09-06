@@ -9,12 +9,28 @@ public.alert_outbox row per not-yet-notified FIRED window. Delivery belongs to F
 (scripts/drain_alert_outbox.py). Notification latency is <= one nightly cycle after the
 render that latched the fire. human_research_only: informational; no trading authority,
 no sizing, no position advice.
+
+Schema note (verified against the actual reviewed migration, `gh pr diff 502 -R
+mastermindx-market-intelligence/mastermind-terminal -- supabase`, 2026-09-06): the
+merged/reviewed schema defines exactly two tables, `public.theses` (the head/subscription
+row -- an active thesis IS the user's standing "watch") and `public.thesis_versions`
+(the immutable revision ledger, `transition`/`previous_version`, no `amended_from`
+field). There is no separate `thesis_conditions` table anywhere in that migration or in
+mastermind-terminal's merged `supabase/migrations/` (`gh api .../contents/supabase/migrations`
+lists only 0001-0010; a code search for `thesis_conditions` in that repo returns zero
+hits). A subscription's "condition version" IS `theses.current_version` /
+`thesis_versions.version` -- there is no second, more-granular version to key off. This
+module therefore keys `fire_event_id` off the thesis's `current_version`, which is the
+only versioned entity this schema defines. If a later migration adds a genuine
+`thesis_conditions` table this module must be revisited; until then treating one as
+existing would be inventing schema, not implementing spec.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from dataclasses import dataclass, field
@@ -39,6 +55,10 @@ READ_OK, READ_OK_ZERO, READ_NO_COVERAGE, READ_UNAVAILABLE = (
     "READ_UNAVAILABLE",
 )
 
+# Words banned from every user-facing string this module emits (house law, CLAUDE.md
+# ruling #3821): falsifier/refutation language is never front-facing.
+_BANNED_TERMS = ("falsif", "refut", "证伪")
+
 
 @dataclass(frozen=True)
 class TypedRead:
@@ -55,6 +75,7 @@ class MonitorPlan:
     duplicate_n: int
     no_coverage_n: int
     unmappable_n: int
+    stale_n: int = 0
     notes: list[str] = field(default_factory=list)
 
 
@@ -70,6 +91,7 @@ class MonitorResult:
     no_coverage_n: int
     unmappable_n: int
     run_id: str
+    planned_n: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -77,13 +99,19 @@ class MonitorResult:
 # ---------------------------------------------------------------------------
 
 def subject_key(subject_ref: dict) -> tuple[str, str] | None:
-    """Resolve a thesis subject_ref to a ('ticker'|'cycle', normalized) tuple."""
+    """Resolve a thesis subject_ref to a ('ticker'|'cycle', normalized) tuple.
+
+    kind/owner vocabulary verified against the reviewed migration's
+    `theses_set_subject_ref` guard: kind in ('issuer','theme'); owner in
+    ('data_os.security_master','terminal.analysis_symbol','macro.theme_registry');
+    owner='macro.theme_registry' <=> kind='theme'; the other two owners <=> kind='issuer'.
+    """
     if not isinstance(subject_ref, dict):
         return None
     kind = subject_ref.get("kind")
     owner = subject_ref.get("owner")
     key = subject_ref.get("key")
-    if kind == "issuer":
+    if kind == "issuer" and owner in ("data_os.security_master", "terminal.analysis_symbol"):
         listing = subject_ref.get("listing") or {}
         symbol = listing.get("symbol") if isinstance(listing, dict) else None
         raw = symbol or key
@@ -97,8 +125,14 @@ def subject_key(subject_ref: dict) -> tuple[str, str] | None:
     return None
 
 
-def load_tripwire_view() -> tuple[list[dict], dict]:
-    """Read the committed falsifiers + latch state. NEVER recomputes them."""
+def load_tripwire_view() -> tuple[list[dict], dict, str | None]:
+    """Read the committed falsifiers + latch state. NEVER recomputes them.
+
+    Returns (entries, state, error_class). error_class is None for the normal
+    "file absent" state (nothing has rendered yet -- a legitimate READ_OK_ZERO,
+    not an error) and is a typed string when a file EXISTS but cannot be parsed
+    -- an unknown latch state must never render identically to an empty one.
+    """
     root = config.ROOT
     f_path = root / ft._FALSIFIERS_JSON
     s_path = root / ft._STATE_JSON
@@ -108,14 +142,14 @@ def load_tripwire_view() -> tuple[list[dict], dict]:
         try:
             data = json.loads(f_path.read_text())
             entries = data if isinstance(data, list) else data.get("falsifiers", [])
-        except (json.JSONDecodeError, OSError):
-            entries = []
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            return [], {}, "corrupt_falsifiers_json"
     if s_path.exists():
         try:
             state = json.loads(s_path.read_text())
-        except (json.JSONDecodeError, OSError):
-            state = {}
-    return entries, state
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            return [], {}, "corrupt_tripwire_state_json"
+    return entries, state, None
 
 
 def fired_windows(entries: list[dict], latch_state: dict) -> list[dict]:
@@ -139,6 +173,7 @@ def fired_windows(entries: list[dict], latch_state: dict) -> list[dict]:
                 "scope": e.get("scope", "cycle"),
                 "tickers": e.get("tickers") or [],
                 "claim": e.get("claim", ""),
+                "claim_zh": e.get("claim_zh", ""),
                 "direction": e.get("direction", "refutes"),
                 "coverage": e.get("coverage", "full"),
                 "fired_on": fired_on,
@@ -162,6 +197,23 @@ def match_windows(subject: tuple[str, str], windows: list[dict]) -> list[dict]:
     return out
 
 
+def _not_stale(window: dict, thesis_created_at: str | None) -> bool:
+    """A window fired before the thesis existed is not a transition 'since the
+    last run' for that subscription -- it is pre-existing history. Enabling this
+    monitor for the first time must not backfire every historically latched
+    window at every currently-active thesis. Comparison is lexical ISO-8601,
+    which sorts correctly for both date-only and full-timestamp strings. When
+    the thesis has no recorded creation time (should not happen for a real row
+    selected with `created_at` in the query, but defensive for callers that
+    omit it) the window is not filtered -- an unknown recency is disclosed via
+    the existing no_coverage/duplicate accounting, never silently dropped.
+    """
+    if not thesis_created_at:
+        return True
+    fired_on = window.get("fired_on") or ""
+    return fired_on >= thesis_created_at[:10]
+
+
 def fire_event_id(
     *,
     thesis_id: str,
@@ -177,22 +229,36 @@ def fire_event_id(
     return f"thesis:{digest}"
 
 
-def plain_condition(window: dict) -> str:
-    direction = window.get("direction", "refutes")
+def _plain(claim: str, direction: str) -> str:
     register = (
-        "this cuts against the read"
-        if direction == "refutes"
-        else "this supports the read"
+        "this cuts against the read" if direction == "refutes" else "this supports the read"
     )
-    claim = (window.get("claim") or "").rstrip(".")
+    claim = (claim or "").rstrip(".")
     return f"{claim} — {register}"
 
 
+def plain_condition(window: dict) -> str:
+    return _plain(window.get("claim", ""), window.get("direction", "refutes"))
+
+
+def plain_condition_zh(window: dict) -> str:
+    claim_zh = window.get("claim_zh") or ""
+    if not claim_zh:
+        return ""
+    direction = window.get("direction", "refutes")
+    register = "这与原判断相悖" if direction == "refutes" else "这支持原判断"
+    return f"{claim_zh.rstrip('。')} — {register}"
+
+
 def _display_for(window: dict, subject: tuple[str, str]) -> str:
+    """A human-readable label -- never the raw internal slug (house law: no raw
+    slugs in user-facing text). Ticker subjects display the ticker itself;
+    cycle subjects humanize the slug ('long-bonds' -> 'Long Bonds')."""
     kind, norm = subject
     if kind == "ticker":
         return norm
-    return window.get("cycle") or norm
+    slug = window.get("cycle") or norm
+    return re.sub(r"[_\-]+", " ", str(slug)).strip().title()
 
 
 def compose_payload(
@@ -200,15 +266,21 @@ def compose_payload(
 ) -> dict:
     title = (thesis.get("title") or "").strip() or "your thesis"
     condition = plain_condition(window)
+    condition_zh = plain_condition_zh(window)
     display = _display_for(window, subject)
+    kind, _norm = subject
     evidence_url = f"{evidence_base.rstrip('/')}/cycle.html"
-    return {
-        "subject": f"A window you were watching has closed — {display}",
-        "summary_plain": (
-            f"The window you were watching for “{title}” has closed: "
-            f"{condition}. What to look at: {evidence_url}"
-        ),
-        "ticker": display,
+    subject_line = f"A window you were watching has closed — {display}"
+    summary_plain = (
+        f"The window you were watching for “{title}” has closed: "
+        f"{condition}. What to look at: {evidence_url}"
+    )
+    payload = {
+        "subject": subject_line,
+        "summary_plain": summary_plain,
+        # Only a ticker subject is a real ticker; a cycle subject's display
+        # label is descriptive text, not a tradable symbol.
+        "ticker": display if kind == "ticker" else None,
         "condition_plain": condition,
         "evidence_url": evidence_url,
         "fired_at": window.get("fired_on"),
@@ -221,6 +293,12 @@ def compose_payload(
         "tripwire_version": window.get("version"),
         "coverage": window.get("coverage", "full"),
     }
+    if condition_zh:
+        payload["summary_plain_zh"] = (
+            f"你关注的“{title}”的窗口已关闭：{condition_zh}。可查看：{evidence_url}"
+        )
+        payload["condition_plain_zh"] = condition_zh
+    return payload
 
 
 def plan_enqueue(
@@ -237,6 +315,7 @@ def plan_enqueue(
     duplicate_n = 0
     no_coverage_n = 0
     unmappable_n = 0
+    stale_n = 0
     notes: list[str] = []
 
     for thesis in theses:
@@ -246,10 +325,18 @@ def plan_enqueue(
             unmappable_n += 1
             notes.append(f"unmappable subject_ref for thesis {thesis.get('id')}")
             continue
-        matches = match_windows(subject, windows)
-        if not matches:
+        all_matches = match_windows(subject, windows)
+        created_at = thesis.get("created_at")
+        matches = [w for w in all_matches if _not_stale(w, created_at)]
+        if not all_matches:
             no_coverage_n += 1
             notes.append(f"no tripwire coverage for thesis {thesis.get('id')}")
+            continue
+        if not matches:
+            stale_n += 1
+            notes.append(
+                f"tripwire fired before thesis {thesis.get('id')} was created — not a new transition"
+            )
             continue
         thesis_id = thesis.get("id")
         current_version = thesis.get("current_version")
@@ -302,6 +389,7 @@ def plan_enqueue(
         duplicate_n=duplicate_n,
         no_coverage_n=no_coverage_n,
         unmappable_n=unmappable_n,
+        stale_n=stale_n,
         notes=notes,
     )
 
@@ -351,7 +439,7 @@ def typed_get(path: str) -> TypedRead:
 
 def read_active_theses(limit: int) -> TypedRead:
     path = (
-        "theses?lifecycle_state=eq.active&select=id,user_id,current_version,subject_ref"
+        "theses?lifecycle_state=eq.active&select=id,user_id,current_version,subject_ref,created_at"
         f"&order=updated_at.desc&limit={limit}"
     )
     return typed_get(path)
@@ -420,7 +508,20 @@ def run(
 ) -> MonitorResult:
     run_id = hashlib.sha256(f"{now_utc}|{limit}".encode("utf-8")).hexdigest()[:12]
 
-    entries, latch_state = load_tripwire_view()
+    entries, latch_state, tripwire_error = load_tripwire_view()
+    if tripwire_error is not None:
+        return MonitorResult(
+            outcome="unavailable",
+            read_state=READ_UNAVAILABLE,
+            error_class=tripwire_error,
+            evaluated_n=0,
+            matched_n=0,
+            enqueued_n=0,
+            duplicate_n=0,
+            no_coverage_n=0,
+            unmappable_n=0,
+            run_id=run_id,
+        )
     windows = fired_windows(entries, latch_state)
 
     theses_read = read_active_theses(limit)
@@ -485,6 +586,24 @@ def run(
     to_send = [r for r in plan.rows if r["fire_event_id"] not in existing_ids]
     duplicate_n = plan.duplicate_n + (len(plan.rows) - len(to_send))
 
+    if dry_run:
+        # Dormant/preview path: no write is attempted. enqueued_n reports what
+        # ACTUALLY got written (always 0 here); planned_n reports what a live
+        # run would attempt, so callers can log the two without conflating them.
+        return MonitorResult(
+            outcome="ok",
+            read_state=READ_OK,
+            error_class=None,
+            evaluated_n=plan.evaluated_n,
+            matched_n=plan.matched_n,
+            enqueued_n=0,
+            duplicate_n=duplicate_n,
+            no_coverage_n=plan.no_coverage_n,
+            unmappable_n=plan.unmappable_n,
+            run_id=run_id,
+            planned_n=len(to_send),
+        )
+
     enqueued_n, more_dupes, error_class = enqueue(to_send, dry_run=dry_run)
     duplicate_n += more_dupes
 
@@ -509,9 +628,10 @@ def run(
         error_class=None,
         evaluated_n=plan.evaluated_n,
         matched_n=plan.matched_n,
-        enqueued_n=enqueued_n if not dry_run else len(to_send),
+        enqueued_n=enqueued_n,
         duplicate_n=duplicate_n,
         no_coverage_n=plan.no_coverage_n,
         unmappable_n=plan.unmappable_n,
         run_id=run_id,
+        planned_n=len(to_send),
     )
