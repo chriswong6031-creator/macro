@@ -1,6 +1,6 @@
 {
   "date": "2026-09-04",
-  "generated_utc": "2026-09-05 17:47",
+  "generated_utc": "2026-09-06 04:48",
   "business_cycle": {
     "available": true,
     "asof": "2026-09-30",
@@ -4207,7 +4207,7 @@
       "skew_pctile": 0.7123015873015873,
       "stock_bond_corr": 0.3919377602520311,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.7279930802975987,
+      "roro": 0.7275807368921594,
       "roro_state": "risk-on",
       "vol_target_scalar": 1.4639727326200302,
       "news_sentiment": -0.0050573768094182014,
@@ -4351,7 +4351,7 @@
   "fear_euphoria": {
     "fe_score": 95,
     "band": "Euphoria",
-    "roro": 0.7279930802975987,
+    "roro": 0.7275807368921594,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4406,7 +4406,7 @@
         "key": "dxy",
         "name_en": "Dollar (20d %\u0394)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09",
-        "value": 0.43,
+        "value": 0.428,
         "pct": 64,
         "lean": "risk-on"
       }
@@ -6238,47 +6238,47 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4477.2,
+      "price": 4429.8,
       "above50": true,
       "above200": false,
-      "pct_vs_50dma": 4.9,
-      "pct_vs_200dma": -1.1,
-      "rsi14": 54.0,
+      "pct_vs_50dma": 3.8,
+      "pct_vs_200dma": -2.2,
+      "rsi14": 51.0,
       "macd_pos": false,
-      "off_52w_high_pct": -15.8,
-      "season_this": "Sep: +0.8% avg, up 52% of years (n=27)",
-      "season_this_zh": "9\u6708\uff1a\u5e73\u5747 +0.8%\uff0c52% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09",
-      "mom_60d_pct": 6.2
+      "off_52w_high_pct": -16.7,
+      "season_this": "Sep: +0.7% avg, up 48% of years (n=27)",
+      "season_this_zh": "9\u6708\uff1a\u5e73\u5747 +0.7%\uff0c48% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09",
+      "mom_60d_pct": 5.1
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 91.22,
+      "price": 91.48,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 10.7,
-      "pct_vs_200dma": 14.4,
+      "pct_vs_50dma": 11.0,
+      "pct_vs_200dma": 14.7,
       "rsi14": 67.0,
       "macd_pos": true,
-      "off_52w_high_pct": -19.2,
+      "off_52w_high_pct": -19.0,
       "season_this": "Sep: -0.9% avg, up 41% of years (n=27)",
       "season_this_zh": "9\u6708\uff1a\u5e73\u5747 -0.9%\uff0c41% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09",
-      "mom_60d_pct": 20.6
+      "mom_60d_pct": 20.9
     },
     {
       "ticker": "HG=F",
       "name": "Copper",
-      "price": 6.67,
+      "price": 6.6,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 3.2,
-      "pct_vs_200dma": 10.3,
-      "rsi14": 58.0,
+      "pct_vs_50dma": 2.1,
+      "pct_vs_200dma": 9.1,
+      "rsi14": 54.0,
       "macd_pos": false,
-      "off_52w_high_pct": -0.6,
+      "off_52w_high_pct": -1.7,
       "season_this": "Sep: +0.3% avg, up 59% of years (n=27)",
       "season_this_zh": "9\u6708\uff1a\u5e73\u5747 +0.3%\uff0c59% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=27\uff09",
-      "mom_60d_pct": 5.0
+      "mom_60d_pct": 3.8
     },
     {
       "ticker": "DX-Y.NYB",

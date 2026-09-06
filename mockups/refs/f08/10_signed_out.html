@@ -1,0 +1,43 @@
+<!doctype html>
+<html data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F08 10 &middot; signed out &middot; not an empty book &mdash; reference composition</title>
+<link rel="stylesheet" href="../../../templates/theme.css">
+<link rel="stylesheet" href="f08_refs.css">
+<script src="f08_refs.js"></script>
+</head>
+<body>
+<div class="f8-meta">
+  <span>F08 REFERENCE COMPOSITION <b>10 / 10</b> &middot; signed out &middot; not an empty book &middot; FIXTURE DATA, NOT A LIVE BOOK</span>
+  <span class="f8-toggles"><button data-toggle="theme" type="button">theme</button><button data-toggle="lang" type="button">EN&nbsp;/&nbsp;中文</button></span>
+</div>
+<div class="f8">
+<div class="f8-slot"><span class="l-en">Terminal app shell (header, nav, account, sign-out) sits here and is owned elsewhere — these sheets fix the composition below it.</span><span class="l-zh">终端应用外壳（顶部导航、账户、退出）在此处，归其他模块所有——本参考稿只定下方的构图。</span></div>
+<div class="f8-solo">
+<header class="f8-hero is-quiet">
+  <div class="f8-hero-top">
+    <div class="f8-hero-say">
+      <div class="eyebrow"><span class="l-en">MONITOR</span><span class="l-zh">监控</span></div>
+      <h1 class="f8-verdict"><span class="l-en">Signed out</span><span class="l-zh">未登录</span></h1>
+      <p class="f8-clause"><span class="l-en">Sign in to see your holdings and what changed while you were away.</span><span class="l-zh">登录后即可查看你的持仓，以及你离开期间发生的变化。</span></p>
+      <div class="f8-do"><button type="button" class="f8-cta f8-cta--go"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button><button type="button" class="f8-cta"><span class="l-en">Create an account</span><span class="l-zh">注册账户</span></button></div>
+    </div>
+
+  </div>
+
+</header><section class="f8-panel ">
+  <div class="f8-sec"><div><div class="eyebrow"><span class="l-en">Why this page is blank</span><span class="l-zh">本页为什么是空的</span></div><h2><span class="l-en">This is not an empty portfolio</span><span class="l-zh">这不是“空持仓”</span></h2></div></div>
+<p class="f8-ev-say"><span class="l-en">We cannot tell who you are, so we are not showing a book, a total, or a count. An empty portfolio and a signed-out session look nothing alike here, and neither of them looks like an outage.</span><span class="l-zh">我们无法确认你的身份，所以不会显示任何持仓、合计或计数。在这里，“空持仓”和“未登录”看起来完全不同，而且两者都不会被显示成“数据中断”。</span></p>
+<p class="f8-still"><span class="l-en"><b>Still running:</b> your conditions keep being checked on your account while you are away, and anything that fires waits for you here and in your inbox.</span><span class="l-zh"><b>仍在运行：</b>你离开期间，账户上的监控条件仍会持续检查；任何触发的内容都会在这里和你的收件箱中等你。</span></p><details class="f8-disc"><summary><span class="l-en">How this state is decided</span><span class="l-zh">这个状态是如何判定的</span></summary><dl class="f8-kv"><div><dt><span class="l-en">signed out</span><span class="l-zh">未登录</span></dt><dd>HTTP 401 &mdash; this page</dd></div><div><dt><span class="l-en">empty book</span><span class="l-zh">空持仓</span></dt><dd>HTTP 200 with zero rows &mdash; the calm-empty composition, sheet 02</dd></div><div><dt><span class="l-en">source unreadable</span><span class="l-zh">数据源不可读</span></dt><dd>HTTP 503 &mdash; the outage composition, sheet 04</dd></div><div><dt><span class="l-en">never merged</span><span class="l-zh">绝不合并</span></dt><dd>these three are separate states with separate compositions; collapsing any two of them is the defect this sheet exists to prevent</dd></div></dl></details>
+
+</section>
+</div></div>
+<div class="f8-meta f8-meta--foot">
+  <span>governed by docs/DESIGN_DOCTRINE.md &middot; research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md &middot;
+  research/MARKET_ONTOLOGY_F08_ARCHITECTURE_FREEZE_2026-09-05.md &middot; archetype <b>monitor</b> (G)</span>
+  <span>401 &middot; distinct from 200-empty and from 503</span>
+</div>
+</body>
+</html>

@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-09-05T22:48:25.486974+00:00",
+  "produced_at": "2026-09-06T08:02:11.315390+00:00",
   "as_of": "2026-09-04",
   "status": "warn",
-  "phase": "final",
+  "phase": "engine",
   "did_the_brain_run": {
     "cortex_status": "fresh",
     "tool_call_batches": 3,
@@ -11,7 +11,78 @@
     "context_stale": false,
     "summary": "cortex ran (9 tool calls); memo as_of 2026-09-05T22:41:05+00:00"
   },
-  "what_changed": [],
+  "what_changed": [
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "spine-index",
+      "summary": "lobe spine-index row count changed: 434955 → 435547 (0%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "confluence-graph",
+      "summary": "lobe confluence-graph status: stale → fresh_partial",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "ops-push-basket-freeze",
+      "summary": "lobe ops-push-basket-freeze row count changed: 23 → 24 (4%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "nw-health-run-history",
+      "summary": "lobe nw-health-run-history row count changed: 50 → 51 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "governance-ledger",
+      "summary": "lobe governance-ledger row count changed: 118 → 121 (3%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "cortex-attention-firings",
+      "summary": "lobe cortex-attention-firings row count changed: 78 → 81 (4%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "mechanism-pathways-history",
+      "summary": "lobe mechanism-pathways-history row count changed: 49 → 50 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "theme-phase-history",
+      "summary": "lobe theme-phase-history row count changed: 290 → 294 (1%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "theme-thesis-ledger",
+      "summary": "lobe theme-thesis-ledger row count changed: 276 → 287 (4%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "covariance-spine-history",
+      "summary": "lobe covariance-spine-history row count changed: 44 → 45 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    }
+  ],
   "what_contradicted": [
     {
       "id": "",
@@ -25,7 +96,7 @@
     {
       "id": "causal-edges",
       "as_of": null,
-      "age_hours": 446.05,
+      "age_hours": 463.34,
       "freshness_sla_hours": 192,
       "severity": "warn",
       "kind": "stale"
@@ -33,7 +104,7 @@
     {
       "id": "causal-nulls",
       "as_of": null,
-      "age_hours": 446.05,
+      "age_hours": 463.34,
       "freshness_sla_hours": 192,
       "severity": "warn",
       "kind": "stale"
@@ -41,23 +112,15 @@
     {
       "id": "government-revenue-latest",
       "as_of": "2026-09-01",
-      "age_hours": 110.75,
+      "age_hours": 128.04,
       "freshness_sla_hours": 36,
-      "severity": "warn",
-      "kind": "stale"
-    },
-    {
-      "id": "confluence-graph",
-      "as_of": "2026-09-03",
-      "age_hours": 62.75,
-      "freshness_sla_hours": 30,
       "severity": "warn",
       "kind": "stale"
     },
     {
       "id": "treasury-watch",
       "as_of": "2026-09-03",
-      "age_hours": 62.75,
+      "age_hours": 80.04,
       "freshness_sla_hours": 48,
       "severity": "warn",
       "kind": "stale"
@@ -65,7 +128,7 @@
     {
       "id": "causal-llm-lane",
       "as_of": "2026-09-01T07:18:24+00:00",
-      "age_hours": 103.44,
+      "age_hours": 120.73,
       "freshness_sla_hours": 200,
       "severity": "watch",
       "kind": "degraded"
@@ -169,7 +232,7 @@
   ],
   "why_the_tape_moved": {
     "available": true,
-    "as_of": "2026-09-05",
+    "as_of": "2026-09-06",
     "primary": {
       "family": "inflation",
       "direction": "oil spiking — energy leads, breakevens up",
@@ -184,44 +247,38 @@
     },
     "alternates": [
       "crypto",
-      "liquidity"
+      "equity-leadership"
     ]
   },
   "operator_attention": [
     {
       "priority": 2,
       "area": "causal-edges",
-      "summary": "lobe causal-edges is warn — age 446.05h vs SLA 192h",
+      "summary": "lobe causal-edges is warn — age 463.34h vs SLA 192h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "causal-nulls",
-      "summary": "lobe causal-nulls is warn — age 446.05h vs SLA 192h",
+      "summary": "lobe causal-nulls is warn — age 463.34h vs SLA 192h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "government-revenue-latest",
-      "summary": "lobe government-revenue-latest is warn — age 110.75h vs SLA 36h",
-      "action_type": "inspect"
-    },
-    {
-      "priority": 2,
-      "area": "confluence-graph",
-      "summary": "lobe confluence-graph is warn — age 62.75h vs SLA 30h",
+      "summary": "lobe government-revenue-latest is warn — age 128.04h vs SLA 36h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "treasury-watch",
-      "summary": "lobe treasury-watch is warn — age 62.75h vs SLA 48h",
+      "summary": "lobe treasury-watch is warn — age 80.04h vs SLA 48h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "causal-llm-lane",
-      "summary": "lobe causal-llm-lane is watch — age 103.44h vs SLA 200h",
+      "summary": "lobe causal-llm-lane is watch — age 120.73h vs SLA 200h",
       "action_type": "inspect"
     },
     {
@@ -376,6 +433,12 @@
     },
     {
       "priority": 3,
+      "area": "confluence-graph",
+      "summary": "lobe confluence-graph has gaps: stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run, stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run, confirms edges: 4 pairs lift=null (unsigned outcome basis)",
+      "action_type": "follow_up"
+    },
+    {
+      "priority": 3,
       "area": "confluence-strength",
       "summary": "lobe confluence-strength has gaps: confluence_strength: no clusters in lobes block — no discount",
       "action_type": "follow_up"
@@ -395,13 +458,13 @@
     {
       "priority": 3,
       "area": "factor-intelligence-state",
-      "summary": "lobe factor-intelligence-state has gaps: latest_board_coordinates: 2 tickers missing from panel at 2026-09-04: ['RBLX', 'TAL'], fire_coordinates: 26 [redacted]-lane entries skipped (tier_cascade=null — held/topped, not fires), fire_coordinates: 2 tickers had no panel row at 2026-09-04: ['RBLX', 'TAL']",
+      "summary": "lobe factor-intelligence-state has gaps: latest_board_coordinates: 1 tickers missing from panel at 2026-09-04: ['RBLX'], fire_coordinates: 21 [redacted]-lane entries skipped (tier_cascade=null — held/topped, not fires), fire_coordinates: 1 tickers had no panel row at 2026-09-04: ['RBLX']",
       "action_type": "follow_up"
     },
     {
       "priority": 3,
       "area": "site-factor-intelligence-state",
-      "summary": "lobe site-factor-intelligence-state has gaps: latest_board_coordinates: 2 tickers missing from panel at 2026-09-04: ['RBLX', 'TAL'], fire_coordinates: 26 [redacted]-lane entries skipped (tier_cascade=null — held/topped, not fires), fire_coordinates: 2 tickers had no panel row at 2026-09-04: ['RBLX', 'TAL']",
+      "summary": "lobe site-factor-intelligence-state has gaps: latest_board_coordinates: 1 tickers missing from panel at 2026-09-04: ['RBLX'], fire_coordinates: 21 [redacted]-lane entries skipped (tier_cascade=null — held/topped, not fires), fire_coordinates: 1 tickers had no panel row at 2026-09-04: ['RBLX']",
       "action_type": "follow_up"
     },
     {
@@ -466,7 +529,7 @@
   },
   "thematic_line": {
     "available": true,
-    "as_of": "2026-09-05",
+    "as_of": "2026-09-06",
     "n_themes": 18,
     "stage_counts": {
       "WATCH": 13,

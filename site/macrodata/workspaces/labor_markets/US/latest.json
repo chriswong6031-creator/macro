@@ -312,10 +312,10 @@
     "deltas": [
       {
         "current_value": 66.52,
-        "delta": -1.4,
+        "delta": 0.0,
         "metric_id": "labor_demand",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 67.92
+        "prior_value": 66.52
       },
       {
         "current_value": 76.35,
@@ -327,17 +327,15 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "labor_markets-US-38039993aa85dd5e",
+    "prior_generation_id": "labor_markets-US-ab83f64038321c8a",
     "prior_method_version": "labor_markets.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [
-      "withheld_tax:income_growth_proxy:42d318d639cb18b7"
-    ],
-    "correction_state": "superseded",
-    "note": "Same reference period as the predecessor print, but one or more owner-native source components changed value: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "labor_markets-US-38039993aa85dd5e"
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
+    "predecessor_generation_id": "labor_markets-US-ab83f64038321c8a"
   },
   "drivers": {
     "balance_sheet": [
@@ -416,11 +414,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T12:05:54Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
-    "content_sha256": "ab83f64038321c8ab0feb0693f8f1a23bf5cb14537952af342741297fd442b34",
-    "generation_id": "labor_markets-US-ab83f64038321c8a",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "34d8bb8580e75fe56bd2acf0cf0eb1bc520de7c107adf3ce50879d12720eeac3",
+    "generation_id": "labor_markets-US-34d8bb8580e75fe5",
     "producer": "engine.market_os.macro_workspaces.labor",
     "rendered_at": null
   },
@@ -440,7 +438,7 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -1.4,
+      "dx": 0.0,
       "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
@@ -466,7 +464,7 @@
       "en": "Labor demand / supply-tightness regime",
       "zh": "劳动力需求 / 供给紧张度状态"
     },
-    "transition_distance": 1.4
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [

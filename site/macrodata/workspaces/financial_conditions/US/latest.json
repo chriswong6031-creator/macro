@@ -153,7 +153,7 @@
         },
         "null_reason": null,
         "required": true,
-        "source_asof": "2026-09-03",
+        "source_asof": "2026-09-04",
         "status": "PRESENT"
       }
     ],
@@ -219,7 +219,7 @@
           },
           {
             "component_id": "equities_vol_channel",
-            "contribution": -5.14,
+            "contribution": -5.96,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -229,9 +229,9 @@
             "null_reason": null,
             "owner_field": "channels.equities_vol_channel_score",
             "owner_ref": "engine.market_os.macro_workspaces.financial_conditions",
-            "raw_value": 24.32,
+            "raw_value": 20.18,
             "sign": 1,
-            "standardized_value": 24.32,
+            "standardized_value": 20.18,
             "weight": 0.2
           }
         ],
@@ -262,7 +262,7 @@
           }
         },
         "transformation": "weighted mean of 4 Mastermind channel scores (renormalized over available channels; the 'lending' channel is declared but always ABSENT/NOT_COVERED -- no owner source exists): rates 0.30 (real-10y-yield percentile only, min_components=1/coverage_floor=1.0), credit 0.30 (HY OAS z 0.45 + NFCI credit subindex 0.25 + IG OAS declared-not-sourced 0.30, min_components=2/coverage_floor=0.5), dollar_funding 0.20 (OFR FSI funding functional leg 0.50 + broad-dollar-index declared-not-sourced 0.50, min_components=1/coverage_floor=0.5), equities_vol 0.20 (vol-regime risk score 0.60 + MOVE percentile 0.40, min_components=1/coverage_floor=0.5). boundary=50.0, hysteresis_band=5.0. NONE of these channel inputs is the blended official nfci/ofr_fsi value itself (those are published separately, unmodified, as their own metrics) -- no hidden blend (architecture 7.9/10.8).",
-        "value": 57.76,
+        "value": 56.93,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of 4 channel-score components, weights renormalized over available channels; rates_channel 0.30, credit_channel 0.30, dollar_funding_channel 0.20, equities_vol_channel 0.20 (a 5th declared channel, lending, is always ABSENT/NOT_COVERED and carries no weight here -- see the lending_channel_score metric for its own disclosure)"
       },
@@ -359,35 +359,35 @@
     "comparability": "COMPARABLE",
     "deltas": [
       {
-        "current_value": 57.76,
-        "delta": -0.3,
+        "current_value": 56.93,
+        "delta": -0.83,
         "metric_id": "financial_conditions_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 58.06
+        "prior_value": 57.76
       },
       {
         "current_value": 49.67,
-        "delta": -0.9,
+        "delta": 0.0,
         "metric_id": "financial_conditions_impulse",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 50.57
+        "prior_value": 49.67
       }
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "financial_conditions-US-1c7b9a7d00b5ffaa",
+    "prior_generation_id": "financial_conditions-US-669f7127a24a9704",
     "prior_method_version": "financial_conditions.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [
-      "us10y:real_10y:7b1c8da14209f193",
-      "us10y:real_10y_chg_63d_bp:8b1115e4140b951b",
-      "us10y:real_10y_pctile:1353905afdb64d5d"
+      "vol_regime:move_pctile:419d488b3a286bec",
+      "vol_regime:vix:9c9d5fc881291371",
+      "vol_regime:vol_regime_risk_score:9ca20098b2704b13"
     ],
     "correction_state": "superseded",
     "note": "Same reference period as the predecessor print, but one or more owner-native source values changed: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "financial_conditions-US-1c7b9a7d00b5ffaa"
+    "predecessor_generation_id": "financial_conditions-US-669f7127a24a9704"
   },
   "drivers": {
     "balance_sheet": [
@@ -422,30 +422,30 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "vol_regime_risk_score",
-        "impact_magnitude": 18.24,
+        "impact_magnitude": 20.46,
         "impact_sign": -1,
         "label": {
           "en": "Vol-regime risk score",
           "zh": "波动率体制风险评分"
         },
-        "note": "signed push = (standardized-50)*weight toward tighter; standardized=19.6, weight=0.6",
+        "note": "signed push = (standardized-50)*weight toward tighter; standardized=15.9, weight=0.6",
         "owner_field": "vol_regime.risk_score",
         "unit": "ratio_0_1",
-        "value": 0.196
+        "value": 0.159
       },
       {
         "coverage_state": "PRESENT",
         "driver_id": "move_pctile",
-        "impact_magnitude": 7.44,
+        "impact_magnitude": 9.36,
         "impact_sign": -1,
         "label": {
           "en": "MOVE (bond vol) percentile",
           "zh": "MOVE（债券波动率）分位"
         },
-        "note": "signed push = (standardized-50)*weight toward tighter; standardized=31.4, weight=0.4",
+        "note": "signed push = (standardized-50)*weight toward tighter; standardized=26.6, weight=0.4",
         "owner_field": "vol_regime.move_pctile",
         "unit": "percentile",
-        "value": 0.314
+        "value": 0.266
       }
     ],
     "rate_side": [
@@ -508,11 +508,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T12:05:54Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
-    "content_sha256": "669f7127a24a970471bb3e3edff2b70d194743ddc3077a687e2bbd4848f841b7",
-    "generation_id": "financial_conditions-US-669f7127a24a9704",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "331e372f98b005f98f2e3567b0ab14231a94ea666b057b86ff957c2fb20d4425",
+    "generation_id": "financial_conditions-US-331e372f98b005f9",
     "producer": "engine.market_os.macro_workspaces.financial_conditions",
     "rendered_at": null
   },
@@ -522,7 +522,7 @@
       "applied": true,
       "band": 5.0,
       "held_prior": true,
-      "note": "prior quadrant held: conditions_impulse crossed the 50 boundary since the prior print but stayed within the 5.0-pt hysteresis band of ITS OWN boundary"
+      "note": "prior quadrant held: no axis crossed the 50 boundary since the prior print but stayed within the 5.0-pt hysteresis band of ITS OWN boundary"
     },
     "method_version": "financial_conditions.compose.v1",
     "nearest_boundary": {
@@ -532,8 +532,8 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -0.3,
-      "dy": -0.9,
+      "dx": -0.83,
+      "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
     },
@@ -543,7 +543,7 @@
       "state_id": "B"
     },
     "quadrant": {
-      "x": 57.76,
+      "x": 56.93,
       "x_status": "PRESENT",
       "y": 49.67,
       "y_status": "PRESENT"
@@ -558,7 +558,7 @@
       "en": "Financial conditions regime",
       "zh": "金融条件体制"
     },
-    "transition_distance": 0.95
+    "transition_distance": 0.83
   },
   "implications": {
     "items": [
@@ -582,8 +582,8 @@
         "horizon": "current",
         "implication_id": "state_descriptive",
         "text": {
-          "en": "US financial conditions read B - Tight conditions / Tightening impulse (level x=57.76, impulse y=49.67, boundary 50).",
-          "zh": "美国金融条件读数为 B - 紧张条件 / 边际收紧（水平 x=57.76，边际冲量 y=49.67，分界 50）。"
+          "en": "US financial conditions read B - Tight conditions / Tightening impulse (level x=56.93, impulse y=49.67, boundary 50).",
+          "zh": "美国金融条件读数为 B - 紧张条件 / 边际收紧（水平 x=56.93，边际冲量 y=49.67，分界 50）。"
         },
         "trace_ref": "data/regime/latest.json#conditions"
       },
@@ -1117,7 +1117,7 @@
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "vol_regime.vix",
@@ -1128,10 +1128,10 @@
         "metric_id": "vix",
         "model_version": "financial_conditions.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.vol_regime",
         "reference_id": "mastermind.market_reference/v1#vix",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1146,14 +1146,14 @@
           "value": null
         },
         "unit": "vol_pts",
-        "value": 14.32,
+        "value": 14.53,
         "value_type": "index"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "vol_regime.risk_score",
@@ -1164,10 +1164,10 @@
         "metric_id": "vol_regime_risk_score",
         "model_version": "financial_conditions.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.vol_regime",
         "reference_id": "mastermind.market_reference/v1#vol_regime_risk_score",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1182,14 +1182,14 @@
           "value": null
         },
         "unit": "ratio_0_1",
-        "value": 0.196,
+        "value": 0.159,
         "value_type": "ratio"
       },
       {
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "level",
-        "calculation_as_of": "2026-09-03",
+        "calculation_as_of": "2026-09-04",
         "collected_at": null,
         "coverage": null,
         "definition_id": "vol_regime.move_pctile",
@@ -1200,10 +1200,10 @@
         "metric_id": "move_pctile",
         "model_version": "financial_conditions.compose.v1",
         "null_reason": null,
-        "observed_at": "2026-09-03",
+        "observed_at": "2026-09-04",
         "owner_ref": "engine.vol_regime",
         "reference_id": "mastermind.market_reference/v1#move_pctile",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",
@@ -1218,7 +1218,7 @@
           "value": null
         },
         "unit": "pct",
-        "value": 0.314,
+        "value": 0.266,
         "value_type": "percent"
       },
       {
@@ -1506,7 +1506,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 24.32,
+        "value": 20.18,
         "value_type": "score_0_100"
       },
       {
@@ -1542,7 +1542,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 57.76,
+        "value": 56.93,
         "value_type": "score_0_100"
       },
       {
@@ -1765,7 +1765,7 @@
         },
         "owner_ref": "engine.vol_regime",
         "provider": "CBOE / ICE",
-        "reference_period": "2026-09-03",
+        "reference_period": "2026-09-04",
         "released_at": null,
         "revised_at": null,
         "rights_state": "OPEN",

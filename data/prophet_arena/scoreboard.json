@@ -71,18 +71,8 @@
   "standing_line_zh": "\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539",
   "headline_min_closed": 20,
   "harness_validity": {
-    "c0_plan_ids": [
-      "NX-BULL-20260903",
-      "TEL-BULL-20260903",
-      "VRT-BULL-20260903",
-      "VST-BULL-20260903"
-    ],
-    "live_plan_ids": [
-      "NX-BULL-20260903",
-      "TEL-BULL-20260903",
-      "VRT-BULL-20260903",
-      "VST-BULL-20260903"
-    ],
+    "c0_plan_ids": [],
+    "live_plan_ids": [],
     "c0_mismatch_count": 0,
     "missing_from_mirror": [],
     "extra_in_mirror": [],
@@ -344,7 +334,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 19.9
+        "runtime_s": 20.8
       }
     },
     "policies": {
@@ -387,13 +377,8 @@
           "NABL",
           "MIR"
         ],
-        "plan_ids": [
-          "NX-BULL-20260903",
-          "TEL-BULL-20260903",
-          "VRT-BULL-20260903",
-          "VST-BULL-20260903"
-        ],
-        "n_plans": 4,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
           "admitted": 36,
           "cap": null,
@@ -403,7 +388,7 @@
         },
         "origination": {
           "offered": 36,
-          "skipped_duplicate_id": 19,
+          "skipped_duplicate_id": 23,
           "skipped_open_plan": 7,
           "skipped_clock_provenance": 6,
           "skipped_no_spot": 0,
@@ -462,11 +447,11 @@
               ]
             }
           ],
-          "originated": 4,
+          "originated": 0,
           "validation_failed": 6
         },
-        "ledger_rows_appended": 4,
-        "ledger_closures_appended": 1
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C1_buy_soon_first": {
         "selected_tickers": [
@@ -483,10 +468,8 @@
           "PLMR",
           "PCRX"
         ],
-        "plan_ids": [
-          "NX-BULL-20260903"
-        ],
-        "n_plans": 1,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
           "admitted": 36,
           "cap": 12,
@@ -496,7 +479,7 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 2,
           "skipped_clock_provenance": 2,
           "skipped_no_spot": 0,
@@ -523,11 +506,11 @@
               ]
             }
           ],
-          "originated": 1,
+          "originated": 0,
           "validation_failed": 2
         },
-        "ledger_rows_appended": 1,
-        "ledger_closures_appended": 1
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C3_door_w_union": {
         "selected_tickers": [
@@ -584,7 +567,7 @@
           "validation_failed": 1
         },
         "ledger_rows_appended": 0,
-        "ledger_closures_appended": 1
+        "ledger_closures_appended": 0
       },
       "C4_dispersion_cap": {
         "selected_tickers": [
@@ -627,7 +610,7 @@
           "validation_failed": 1
         },
         "ledger_rows_appended": 0,
-        "ledger_closures_appended": 1
+        "ledger_closures_appended": 0
       },
       "C5_align2_gate": {
         "selected_tickers": [
@@ -643,10 +626,8 @@
           "TEL",
           "MIR"
         ],
-        "plan_ids": [
-          "TEL-BULL-20260903"
-        ],
-        "n_plans": 1,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
           "admitted": 36,
           "cap": 12,
@@ -663,7 +644,7 @@
         },
         "origination": {
           "offered": 11,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 1,
           "skipped_clock_provenance": 2,
           "skipped_no_spot": 0,
@@ -690,10 +671,10 @@
               ]
             }
           ],
-          "originated": 1,
+          "originated": 0,
           "validation_failed": 2
         },
-        "ledger_rows_appended": 1,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C6_time_stop_21": {
@@ -735,13 +716,8 @@
           "NABL",
           "MIR"
         ],
-        "plan_ids": [
-          "NX-BULL-20260903",
-          "TEL-BULL-20260903",
-          "VRT-BULL-20260903",
-          "VST-BULL-20260903"
-        ],
-        "n_plans": 4,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
           "admitted": 36,
           "cap": null,
@@ -751,7 +727,7 @@
         },
         "origination": {
           "offered": 36,
-          "skipped_duplicate_id": 19,
+          "skipped_duplicate_id": 23,
           "skipped_open_plan": 7,
           "skipped_clock_provenance": 6,
           "skipped_no_spot": 0,
@@ -810,11 +786,11 @@
               ]
             }
           ],
-          "originated": 4,
+          "originated": 0,
           "validation_failed": 6
         },
-        "ledger_rows_appended": 4,
-        "ledger_closures_appended": 1
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C7_buy_soon_admitted": {
         "selected_tickers": [
@@ -832,10 +808,9 @@
           "PLMR"
         ],
         "plan_ids": [
-          "AN-BULL-20260903",
-          "NX-BULL-20260903"
+          "AN-BULL-20260903"
         ],
-        "n_plans": 2,
+        "n_plans": 1,
         "selection": {
           "admitted": 36,
           "cap": 12,
@@ -848,7 +823,7 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 2,
           "skipped_clock_provenance": 1,
           "skipped_no_spot": 0,
@@ -867,11 +842,11 @@
               ]
             }
           ],
-          "originated": 2,
+          "originated": 1,
           "validation_failed": 1
         },
-        "ledger_rows_appended": 2,
-        "ledger_closures_appended": 1
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       }
     }
   },

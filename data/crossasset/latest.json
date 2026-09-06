@@ -17,14 +17,14 @@
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.76,
+      "absorption_pctile": 0.74,
       "n_markets": 6,
-      "absorption_ratio": 0.395,
-      "mean_abs_corr": 0.265,
+      "absorption_ratio": 0.392,
+      "mean_abs_corr": 0.257,
       "dominant_cluster": [
+        "US",
         "Commodities",
         "Crypto",
-        "US",
         "Dollar"
       ],
       "spark_w": [
@@ -131,7 +131,7 @@
         0.396,
         0.369,
         0.37,
-        0.395
+        0.392
       ],
       "spark_asof": "2026-09-04"
     },
@@ -182,21 +182,21 @@
       },
       {
         "pair": "gold_silver",
-        "ratio": 67.004,
+        "ratio": 67.07,
         "trend": "mid",
         "pctile": 28.0
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.02,
+        "ratio": 0.021,
         "trend": "mid",
-        "pctile": 59.0
+        "pctile": 62.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.172,
+        "ratio": 0.174,
         "trend": "mid",
-        "pctile": 41.0
+        "pctile": 43.0
       }
     ],
     "carry": {
@@ -235,33 +235,33 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.276,
-          "t": 4.455,
+          "r": 0.284,
+          "t": 4.611,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.314,
-          "t": 4.133,
+          "r": 0.316,
+          "t": 4.175,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.263,
-          "t": 3.903,
-          "q": 0.005
+          "r": 0.272,
+          "t": 4.102,
+          "q": 0.0
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.251,
-          "t": 3.626,
-          "q": 0.0112
+          "r": 0.248,
+          "t": 3.559,
+          "q": 0.015
         }
       ],
       "stable": false,
@@ -318,7 +318,7 @@
       }
     },
     "shadow": {
-      "pressure_pctile": 0.76,
+      "pressure_pctile": 0.74,
       "incumbent_state": "watch",
       "shadow_state": "watch",
       "escalated": false

@@ -1,16 +1,16 @@
 {
   "schema": "options.prophet_shadow/v1",
   "as_of": "2026-09-04",
-  "built_at": "2026-09-05T12:59:15.629102Z",
+  "built_at": "2026-09-06T05:38:33.292091Z",
   "decision_at": null,
-  "available_at": "2026-09-05T12:59:15.629102Z",
+  "available_at": "2026-09-06T05:38:33.292091Z",
   "pit_provenance": {
     "clock": "UTC",
     "decision_at_required_for_issued_portfolio": true,
     "decision_at_status": "not_available_in_current_pick_lab_contract",
     "available_at_status": "exact_projection_publication_time",
     "source_available_at": {
-      "flow_leaders": "2026-09-05T12:58:19.299566Z",
+      "flow_leaders": "2026-09-06T05:37:34.024086Z",
       "pick_lab": "2026-09-05T12:59:15.343426Z"
     },
     "promotion_ready": false,
@@ -74,7 +74,7 @@
           },
           "coverage": {
             "schema": "options_entry_coverage.v1",
-            "as_of": "2026-09-05",
+            "as_of": "2026-09-06",
             "n_rows": 419,
             "n_features": 31,
             "absent_stores": [],
@@ -512,14 +512,14 @@
     "options_entry_gate": {
       "path": "data/options_entry/gate.json",
       "schema": "options_entry.gate.v3",
-      "as_of": "2026-09-05 03:01 UTC",
+      "as_of": "2026-09-05 14:25 UTC",
       "available": true,
       "error": null
     },
     "options_entry_coverage": {
       "path": "data/options_entry/coverage.json",
       "schema": "options_entry_coverage.v1",
-      "as_of": "2026-09-05",
+      "as_of": "2026-09-06",
       "available": true,
       "error": null
     },

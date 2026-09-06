@@ -396,16 +396,16 @@
       }
     ],
     "null_reason": null,
-    "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "inflation_system-US-43cad161319afe30",
+    "prior_effective_date": "2026-09-05",
+    "prior_generation_id": "inflation_system-US-e692b72bd17d657c",
     "prior_method_version": "inflation_system.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
-    "predecessor_generation_id": "inflation_system-US-43cad161319afe30"
+    "note": "Same reference period as the predecessor print; no source value changed (no-change republication).",
+    "predecessor_generation_id": "inflation_system-US-e692b72bd17d657c"
   },
   "drivers": {
     "balance_sheet": [
@@ -526,11 +526,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T12:05:54Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-05",
-    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
-    "content_sha256": "e692b72bd17d657c7770953a4934d0d247e709ce3a0edf737365203d4e450c2f",
-    "generation_id": "inflation_system-US-e692b72bd17d657c",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "3d1157bbb738d4fbef8b70dadf753c341edabc55217f56ee03be45e7addee6de",
+    "generation_id": "inflation_system-US-3d1157bbb738d4fb",
     "producer": "engine.market_os.macro_workspaces.inflation",
     "rendered_at": null
   },
@@ -556,7 +556,7 @@
       "status": "PRESENT"
     },
     "prior_state": {
-      "effective_date": "2026-09-04",
+      "effective_date": "2026-09-05",
       "method_version": "inflation_system.compose.v1",
       "state_id": "A"
     },
@@ -997,7 +997,7 @@
         "authority_ceiling": "DESCRIPTIVE",
         "available_at": null,
         "basis": "release_radar_champion_projection",
-        "calculation_as_of": "2026-09-05T03:16:18Z",
+        "calculation_as_of": "2026-09-05T14:39:04Z",
         "collected_at": null,
         "coverage": null,
         "definition_id": "next_release_forecast.core.release_radar_projection.point",
