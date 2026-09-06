@@ -352,3 +352,19 @@ the next rung, so the shipped order is right before and after such a fix.
 - **Pre-launch exposure:** the site is `noindex` but still publicly reachable until you add
   the Cloudflare Access gate (Step 2.3) or the Supabase login (Slice 2). Add the gate before
   sharing the URL if you don't want the full product open.
+
+### Alert delivery drain (macro-alert-drain.service/.timer)
+
+Off-render fired-alert delivery lane (packet B-F08-1b). Drains `public.alert_outbox`
+every 5 minutes (`OnCalendar=*:0/5`) and writes two-phase `public.alert_runs` receipts.
+User-visible latency budget: 15 minutes p95 from fire to send (three ticks: one to
+pick it up, two of slack). Ships DORMANT behind `ALERT_DRAIN_ENABLE=1` in
+`/etc/macro-api.env` -- until set, `python -m scripts.drain_alert_outbox` forces
+`--dry-run` (decisions only, no sends, no writes). Enabling live sends requires a
+separate opus privacy/risk review (F08 architecture freeze section 10 V4) -- this packet
+is not that review.
+
+Reach it: `python -m scripts.drain_alert_outbox --dry-run` (any checkout, any host);
+`systemctl list-timers macro-alert-drain.timer`; `systemctl start
+macro-alert-drain.service`; `journalctl -u macro-alert-drain.service -n 50`. No public
+route -- this lane has no user-facing surface.

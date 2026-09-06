@@ -162,6 +162,7 @@ REVIEWED_UNIT_NAMES=(
   macro-market-memory-experience.service macro-market-memory-experience.timer
   macro-market-memory-production-records.service macro-market-memory-production-records.timer
   macro-market-memory-options.service macro-market-memory-options.timer
+  macro-alert-drain.service macro-alert-drain.timer
 )
 for reviewed_unit in "${REVIEWED_UNIT_NAMES[@]}"; do
   if ! mm_unit_repair_inputs_safe \
@@ -188,7 +189,9 @@ systemd-analyze verify \
   "$APP_DIR/app/deploy/macro-market-memory-production-records.service" \
   "$APP_DIR/app/deploy/macro-market-memory-production-records.timer" \
   "$APP_DIR/app/deploy/macro-market-memory-options.service" \
-  "$APP_DIR/app/deploy/macro-market-memory-options.timer"
+  "$APP_DIR/app/deploy/macro-market-memory-options.timer" \
+  "$APP_DIR/app/deploy/macro-alert-drain.service" \
+  "$APP_DIR/app/deploy/macro-alert-drain.timer"
 install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.service" /etc/systemd/system/macro-market-memory-source.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-source.timer" /etc/systemd/system/macro-market-memory-source.timer
@@ -206,6 +209,8 @@ install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-production-records.serv
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-production-records.timer" /etc/systemd/system/macro-market-memory-production-records.timer
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-options.service" /etc/systemd/system/macro-market-memory-options.service
 install -m 0644 "$APP_DIR/app/deploy/macro-market-memory-options.timer" /etc/systemd/system/macro-market-memory-options.timer
+install -m 0644 "$APP_DIR/app/deploy/macro-alert-drain.service" /etc/systemd/system/macro-alert-drain.service
+install -m 0644 "$APP_DIR/app/deploy/macro-alert-drain.timer" /etc/systemd/system/macro-alert-drain.timer
 # Migrate only after the exact canonical API fragment is installed. Unknown
 # files, symlinks, metadata drift, sibling drop-ins, or a noncanonical fragment
 # abort setup with both writer families already stopped; nothing broad is
@@ -257,6 +262,17 @@ if ! mm_loaded_unit_ready \
   /etc/systemd/system/macro-market-memory-options.timer \
   macro-market-memory-options.timer; then
   log "option-OI effective units are not reviewed/current"
+  exit 1
+fi
+if ! mm_loaded_unit_ready \
+  "$APP_DIR/app/deploy/macro-alert-drain.service" \
+  /etc/systemd/system/macro-alert-drain.service \
+  macro-alert-drain.service || \
+   ! mm_loaded_unit_ready \
+  "$APP_DIR/app/deploy/macro-alert-drain.timer" \
+  /etc/systemd/system/macro-alert-drain.timer \
+  macro-alert-drain.timer; then
+  log "alert-drain effective units are not reviewed/current"
   exit 1
 fi
 # Define W2C orchestration only after the units are installed, daemon-reloaded,

@@ -1,0 +1,22 @@
+[Unit]
+Description=Mastermind user-alert delivery drain (off-render, dormant until ALERT_DRAIN_ENABLE=1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-api.env
+ExecStart=/opt/macro-api/.venv/bin/python -m scripts.drain_alert_outbox
+TimeoutStartSec=240
+Nice=10
+CPUWeight=20
+CPUQuota=40%
+MemoryHigh=128M
+MemoryMax=256M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

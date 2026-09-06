@@ -996,3 +996,120 @@ def verify_unsub_token(t: str, action: str = "unsubscribe") -> str | None:
     if not hmac.compare_digest(expect, given):
         return None
     return ident
+
+
+# --------------------------------------------------------------------------- #
+# Alert message type (packet B-F08-1b -- additive; STATUSES/send/render_email unchanged)
+# --------------------------------------------------------------------------- #
+ALERT_TEMPLATE = "alert_fire"
+ALERT_CLS = "transactional"
+
+_ALERT_BANNED_TOKENS = (
+    "READ_OK", "READ_UNAVAILABLE", "READ_NO_COVERAGE", "fire_event_id", "idem_key",
+    "alert_outbox", "alert_runs", "::", "outcome=", "falsif", "refut", "证伪", "tripwire",
+)
+
+
+def alert_idem_key(fire_event_id: str) -> str:
+    """``alert_fire:<fire_event_id>`` -- THE idempotency key (F08 freeze section 6)."""
+    return f"{ALERT_TEMPLATE}:{fire_event_id}"
+
+
+def _alert_plain(value, fallback_en: str, fallback_zh: str, *, zh: bool = False) -> str:
+    v = str(value or "")
+    if not v or any(tok in v for tok in _ALERT_BANNED_TOKENS):
+        return fallback_zh if zh else fallback_en
+    return v
+
+
+def _alert_fired_at_display(fired_at) -> str:
+    if not fired_at:
+        return "time not recorded"
+    try:
+        import datetime as _dt
+        s = str(fired_at).replace("Z", "+00:00")
+        dt = _dt.datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_dt.timezone.utc)
+        dt = dt.astimezone(_dt.timezone.utc)
+        return dt.strftime("%Y-%m-%d %H:%M UTC")
+    except Exception:  # noqa: BLE001
+        return "time not recorded"
+
+
+def compose_alert(payload: dict, *, lang: str = "en") -> dict:
+    """Pure -- turn one ``alert_outbox.payload`` row into a plain-language email.
+
+    No IO. Refuses machine text / raw slugs (F08 freeze plain-language filter); an
+    offending source string is replaced by the neutral fallback rather than dropped
+    or sent verbatim.
+    """
+    payload = payload or {}
+    ticker = _alert_plain(payload.get("ticker"), "this name", "该标的")
+    condition_plain = _alert_plain(payload.get("condition_plain"),
+                                   "a condition you set was met", "你设置的条件已触发")
+    condition_plain_zh = _alert_plain(payload.get("condition_plain"),
+                                      "a condition you set was met", "你设置的条件已触发", zh=True)
+    evidence_url = payload.get("evidence_url") or ""
+    if any(tok in str(evidence_url) for tok in _ALERT_BANNED_TOKENS):
+        evidence_url = ""
+    fired_at_display = _alert_fired_at_display(payload.get("fired_at"))
+    one_liner = _alert_plain(payload.get("subject"), condition_plain, condition_plain_zh)
+
+    if lang == "zh":
+        subject = f"{ticker} 提醒 · {ticker} alert"
+    else:
+        subject = f"{ticker} alert · {ticker} 提醒"
+
+    blocks: list = [
+        {"en": f"{condition_plain} on {ticker}.",
+         "zh": f"{ticker}：{condition_plain_zh}。"},
+        {"en": f"This is one of the names you are watching: {ticker}.",
+         "zh": f"这是你正在关注的标的之一：{ticker}。"},
+    ]
+    if evidence_url:
+        blocks.append({"kind": "button", "en": "Open the evidence", "zh": "查看依据", "url": evidence_url})
+    else:
+        blocks.append({"kind": "fine",
+                       "en": "No evidence link was available for this alert.",
+                       "zh": "这条提醒没有可用的依据链接。"})
+    blocks.append({"kind": "kv",
+                   "en": [("Noticed at", fired_at_display)],
+                   "zh": [("发现时间", fired_at_display)]})
+    blocks.append({"kind": "fine",
+                   "en": "Research display only — not advice.",
+                   "zh": "仅供研究展示，不构成投资建议。"})
+
+    return {
+        "subject": subject,
+        "title_en": one_liner if lang != "zh" else condition_plain,
+        "title_zh": condition_plain_zh,
+        "eyebrow": "ALERT",
+        "preheader": one_liner,
+        "why_en": f"You set an alert on {ticker}.",
+        "why_zh": f"你为 {ticker} 设置了提醒。",
+        "blocks": blocks,
+    }
+
+
+def send_alert(*, fire_event_id: str, to_email: str, payload: dict,
+              lang: str = "en", user_id=None) -> str:
+    """Compose + send ONE fired-alert email. Returns a mailer status string.
+
+    Returns one of ``app.mailer.STATUSES`` plus ``'duplicate'``. No parallel enum
+    (F08 freeze section 8).
+    """
+    c = compose_alert(payload, lang=lang)
+    html, text = render_email(
+        c["title_en"], c["title_zh"], c["blocks"],
+        eyebrow=c["eyebrow"], preheader=c["preheader"],
+        why_en=c["why_en"], why_zh=c["why_zh"],
+        unsubscribe_url="",
+        follow=False,
+    )
+    try:
+        return send(template=ALERT_TEMPLATE, cls=ALERT_CLS, to_email=to_email,
+                    subject=c["subject"], html=html, text=text,
+                    idem_key=alert_idem_key(fire_event_id), user_id=user_id)
+    except DuplicateKey:
+        return "duplicate"
