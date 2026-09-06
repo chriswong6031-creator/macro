@@ -165,6 +165,24 @@
       "url": "https://x.com/RyanDetrick/status/2083247387942814164"
     },
     {
+      "added": "2026-09-06T23:21:44Z",
+      "author": "unusual_whales",
+      "created_at": "Wed Sep 02 18:06:31 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02400025,
+        "likes": 5399,
+        "replies": 179,
+        "retweets": 516,
+        "views": 253914
+      },
+      "post_id": "2095211787432210522",
+      "register": "wire",
+      "shape": "stack",
+      "text": "BREAKING: Elizabeth Warren has said:\n\nBelgium’s diamond industry gifted Trump a gold ring encrusted with 321 diamonds and 75 gemstones on June 28.   \n\nThen a month later, on July 24, their diamonds got an exemption from Trump's tariffs.",
+      "text_key": "61bc84e56efbc85c",
+      "url": "https://x.com/unusual_whales/status/2095211787432210522"
+    },
+    {
       "added": "2026-07-31T23:47:24Z",
       "author": "charliebilello",
       "created_at": "Thu Jul 30 14:55:33 +0000 2026",
@@ -703,27 +721,9 @@
       "text": "KOSPI up 17% today for the greatest single one day return ever.\n\nKOSPI down 2% for the week.\n\nAre you not entertained? https://t.co/HgG0jI8wo0",
       "text_key": "573fbb72f1192a65",
       "url": "https://x.com/RyanDetrick/status/2083174675295687123"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 20:58:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.0155766,
-        "likes": 1962,
-        "replies": 51,
-        "retweets": 129,
-        "views": 137514
-      },
-      "post_id": "2083296140183892104",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "\"EA’s CEO got an $8 million raise thanks to how well Battlefield 6 performed, four months after the devs responsible for making the game got laid off,\" per IGN",
-      "text_key": "b340889250d266c9",
-      "url": "https://x.com/unusual_whales/status/2083296140183892104"
     }
   ],
   "schema": "marketing.x_exemplar_store/v1",
-  "updated_at": "2026-08-31T00:03:02Z",
+  "updated_at": "2026-09-06T23:21:44Z",
   "versions": []
 }
