@@ -5,6 +5,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+# Unconditional: an already-present root further down sys.path still loses to a
+# foreign package ahead of it, so this must pin position 0 every time (see
+# scripts/__init__.py).
+_HERE = Path(__file__).resolve().parent
+_REPO_ROOT = _HERE.parent
+sys.path.insert(0, str(_REPO_ROOT))
+
+from engine.research_vault.catalog import source_clock_summary  # noqa: E402
+
 SCHEMA="research_vault.source_freshness.v1"
 CLOCK_SCHEMA="research_vault.source_clock.v1"
 DEFAULT_URL="https://www.mastermind-x.com/api/research/catalog?limit=3&offset=0"
@@ -51,13 +60,14 @@ def source_limit_hours(published_at,override=None):
 
 def _report(status,*,ok,now,source,reason,generated_at=None,latest_report_at=None,
             source_deadline_at=None,age_hours=None,limit_hours=None,count=None,
-            observed_items=None,invalid_published_at=0):
+            observed_items=None,invalid_published_at=0,served_stale=False):
     return {"schema":SCHEMA,"status":status,"ok":ok,"reason":reason,"source":source,
             "now":_iso(now),"generated_at":_iso(generated_at),"latest_report_at":_iso(latest_report_at),
             "source_deadline_at":_iso(source_deadline_at),
             "age_hours":round(age_hours,3) if age_hours is not None else None,
             "limit_hours":float(limit_hours) if limit_hours is not None else None,
-            "count":count,"observed_items":observed_items,"invalid_published_at":invalid_published_at}
+            "count":count,"observed_items":observed_items,"invalid_published_at":invalid_published_at,
+            "served_stale":bool(served_stale)}
 
 def evaluate(payload:Mapping[str,Any],*,now=None,source="catalog",max_age_hours=None,
              future_tolerance_minutes=DEFAULT_FUTURE_TOLERANCE_MINUTES):
@@ -79,14 +89,14 @@ def evaluate(payload:Mapping[str,Any],*,now=None,source="catalog",max_age_hours=
         generated=_parse_time(payload.get("generated_at")); health=payload.get("catalog_health")
         if generated is None and isinstance(health,Mapping): generated=_parse_time(health.get("generated_at"))
         common["generated_at"]=generated
-        if payload.get("stale") is True: return refuse("CATALOG_UNAVAILABLE","catalog API is serving a stale fallback")
+        served_stale=payload.get("stale") is True
+        common["served_stale"]=served_stale
         preview=payload.get("preview",False)
         if type(preview) is not bool: return refuse("CATALOG_UNAVAILABLE","catalog preview flag is invalid")
         if preview:
             summary=payload.get("summary"); clock=summary.get("source_clock") if isinstance(summary,Mapping) else None
         else:
             if count!=len(rows): return refuse("CATALOG_UNAVAILABLE","whole-catalog completeness cannot be established")
-            from engine.research_vault.catalog import source_clock_summary
             clock=source_clock_summary(dict(payload))
         if not isinstance(clock,Mapping): return refuse("CATALOG_UNAVAILABLE","whole-catalog source-clock aggregate is missing")
         if clock.get("schema")!=CLOCK_SCHEMA or clock.get("complete") is not True:
@@ -142,7 +152,7 @@ def _emit(report):
         print("::error title=research-vault-source::"+_annotation_text(f"{report.get('status')}: {report.get('reason')}"))
 
 def _selftest():
-    """Run 41 hermetic contract checks."""
+    """Run 42 hermetic contract checks."""
     import contextlib, copy, io, tempfile
     from unittest.mock import patch
     from engine.research_vault import catalog as catalog_mod
@@ -165,7 +175,9 @@ def _selftest():
       (cat("2026-09-04T17:00:00Z"),"PRODUCER_STALE",datetime(2026,9,9,12,tzinfo=timezone.utc),{}),
       (cat(count=0),"NO_REPORTS",now,{}),(cat("bad"),"LATEST_REPORT_INVALID",now,{}),
       (cat("2026-09-05T04:10:01Z"),"FUTURE_REPORT_CLOCK",now,{}),({"items":"bad"},"CATALOG_UNAVAILABLE",now,{}),
-      (dict(cat(),stale=True),"CATALOG_UNAVAILABLE",now,{}),(cat("2026-09-04T00:00:00Z"),"PRODUCER_STALE",now,{"max_age_hours":24})]
+      (dict(cat(),stale=True),"SOURCE_FRESH",now,{}),
+      (dict(cat("2026-08-25T16:47:24Z",1843),stale=True),"PRODUCER_STALE",now,{}),
+      (cat("2026-09-04T00:00:00Z"),"PRODUCER_STALE",now,{"max_age_hours":24})]
     for i,(p,w,t,k) in enumerate(basic): check(f"basic-{i}",lambda p=p,w=w,t=t,k=k: expect(p,w,t,**k))
     for v in (float("nan"),float("inf"),-float("inf"),0,-1): check(f"age-{v}",lambda v=v: expect(cat(),"CATALOG_UNAVAILABLE",max_age_hours=v))
     for v in (float("nan"),float("inf"),-1): check(f"tol-{v}",lambda v=v: expect(cat(),"CATALOG_UNAVAILABLE",future_tolerance_minutes=v))
@@ -226,11 +238,11 @@ def _selftest():
                 r=evaluate(cat(start.isoformat()),now=start+timedelta(minutes=30*step)); req(not(stale and r["ok"]),(start,step,r)); stale=stale or r["status"]=="PRODUCER_STALE"
             req(stale,start)
     check("monotonic",monotonic)
-    if passed!=41: failures.append(f"accounting {passed}/41")
+    if passed!=42: failures.append(f"accounting {passed}/42")
     if failures:
         for f in failures: print(f"SELFTEST FAILURE: {f}",file=sys.stderr)
         return 1
-    print("research-vault source-freshness selftest: 41 passed"); return 0
+    print("research-vault source-freshness selftest: 42 passed"); return 0
 
 def build_parser():
     p=argparse.ArgumentParser(description="Grade source-content freshness separately from publication freshness.")

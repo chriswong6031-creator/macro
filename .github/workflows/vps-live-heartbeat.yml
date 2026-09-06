@@ -11,6 +11,7 @@ on:
       - "engine/research_vault/__init__.py"
       - "engine/research_vault/catalog.py"
       - "engine/research_vault/sidecar.py"
+      - "app/research.py"
       - "scripts/check_research_vault_source_freshness.py"
       - ".github/workflows/research-ingest.yml"
       - ".github/workflows/vps-live-heartbeat.yml"
@@ -44,6 +45,7 @@ jobs:
             /engine/research_vault/__init__.py
             /engine/research_vault/catalog.py
             /engine/research_vault/sidecar.py
+            /app/research.py
       - name: Research Vault source-freshness guard self-test
         run: python -m scripts.check_research_vault_source_freshness --selftest
       - name: Research Vault source-freshness behavioral regressions
