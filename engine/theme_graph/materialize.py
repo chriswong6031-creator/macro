@@ -973,15 +973,20 @@ class _Builder:
                 basket_external["ths_code"] = code
                 basket_node["external_ids"] = json.dumps(
                     basket_external, ensure_ascii=False, sort_keys=True)
-                self._ths_basket_concept_dates[b_node] = published_at or asof
+                # B2: the association is only as fresh as the LATEST of the two
+                # owner receipts that produced it — a stale membership doc riding a
+                # freshly reloaded concept map (or vice versa) must not certify a
+                # canonical join dated earlier than either receipt actually landed.
+                assoc_date = max(d for d in (published_at, asof) if d)
+                self._ths_basket_concept_dates[b_node] = assoc_date
                 self._edge(
                     edge_type="EXPRESSES", src=b_node, dst=lt_node,
-                    valid_from=published_at or asof, valid_to=None,
-                    evidence_time=published_at or asof, source_class="scrape",
+                    valid_from=assoc_date, valid_to=None,
+                    evidence_time=assoc_date, source_class="scrape",
                     date_provenance="raw_snapshot",
                     evidence_refs=[doc_ev, cmap_ev],
                     confidence_basis=CONFIDENCE_BASIS,
-                    era=self._era_for(published_at or asof))
+                    era=self._era_for(assoc_date))
                 n_expresses += 1
 
         self.out.unknown_ths_concepts = sorted(set(unresolved))
@@ -1394,14 +1399,26 @@ def supersede_ths_membership_doc_edges(
     belief_time: str,
     era: str,
     computed_at: str,
+    pit_pairs: "set[tuple[str, str]] | None" = None,
 ) -> list[dict]:
-    """Close open THS MEMBER_OF edges from the superseded membership_doc generation.
+    """Retract superseded-generation THS MEMBER_OF edges the PIT plane re-observed.
 
     The PIT cutover re-keys every THS membership (``edge_id`` embeds ``valid_from``),
     and ``changed_edges`` deliberately never closes a vanished edge. Without an
-    explicit closing row for each stored ``membership_doc.v1`` / ``@seed_constant``
-    edge, both generations stay live. Closing reuses the SAME ``edge_id`` with
-    ``valid_to`` = the PIT birth date so the nightly diff appends the close.
+    explicit retracting row for each stored ``membership_doc.v1`` / ``@seed_constant``
+    edge, both generations stay live. Retraction reuses the SAME ``edge_id`` with
+    ``valid_from`` DEGENERATED to ``valid_to`` (the codebase's existing zero-width
+    annulment convention — see ``test_r_a1_i_annulled_edge_stays_closed...``) so the
+    latest-belief view asserts NO valid-time span for the un-observed 2021-onward
+    era; end-dating with the original 2021 seed date would instead assert that
+    backdated fiction as a TRUE membership up to the PIT birth date, which is
+    exactly the exposure this cutover exists to remove (review BLOCKER 1).
+
+    ``pit_pairs`` (MAJOR 1): only the (src, dst) pairs the PIT plane actually
+    RE-OBSERVED get retracted here. A pair the PIT history never covers is left
+    open (a disclosed coverage gap, not a fabricated exit) — closing every stored
+    row regardless of PIT coverage would assert an exit for pairs no source ever
+    observed ending, which ``changed_edges``'s own docstring forbids.
     """
     if stored is None or getattr(stored, "empty", True) or not _is_date(valid_to):
         return []
@@ -1415,13 +1432,17 @@ def supersede_ths_membership_doc_edges(
             continue
         if not _null(row.get("valid_to")):
             continue
+        src = str(row["src"])
+        dst = str(row["dst"])
+        if pit_pairs is not None and (src, dst) not in pit_pairs:
+            continue
         closed = {col: row.get(col) for col in RESERVED_EDGE_FIELDS}
         closed.update({
             "edge_id": str(row["edge_id"]),
             "type": "MEMBER_OF",
-            "src": str(row["src"]),
-            "dst": str(row["dst"]),
-            "valid_from": str(row["valid_from"]),
+            "src": src,
+            "dst": dst,
+            "valid_from": valid_to,
             "valid_to": valid_to,
             "evidence_time": str(row.get("evidence_time") or valid_to),
             "belief_time": belief_time,

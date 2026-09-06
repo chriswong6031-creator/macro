@@ -738,3 +738,95 @@ def test_ths_membership_doc_generation_closes_when_pit_edges_arrive(tree):
     # Without the waiver the wall refuses (sanity that we are not greening vacuously).
     refusals = materialize.source_shrink_refusals(closings, pd.DataFrame(prior), allow=())
     assert refusals and materialize.THS_FAMILY in refusals[0]
+
+
+def test_ths_membership_doc_generation_retracts_rather_than_backdates(tree):
+    """Review BLOCKER 1 (residual): the cutover must RETRACT the legacy interval, not
+    end-date it — a latest-belief reader must never see the 2021 seed date asserted as
+    a true membership up to the PIT birth date."""
+    root, _xwalk = tree
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+    row = {
+        "edge_id": f"member_of:co:cn:600001.SS->{basket}@{CN_SEED}",
+        "type": "MEMBER_OF", "src": "co:cn:600001.SS", "dst": basket,
+        "valid_from": CN_SEED, "valid_to": None,
+        "evidence_time": THS_DOC_DATE, "belief_time": "2026-06-01",
+        "era": "reconstruction", "source_class": "scrape",
+        "date_provenance": "seed_constant",
+        "evidence_refs": ["ev:deadbeefdeadbeef"],
+        "confidence_basis": "membership_doc.v1",
+        "computed_at": "2026-06-01T00:00:00Z",
+        "engine_version": store.ENGINE_VERSION,
+    }
+    for field in store.RESERVED_EDGE_FIELDS:
+        row[field] = None
+    stored = pd.DataFrame([row])
+
+    closings = materialize.supersede_ths_membership_doc_edges(
+        stored, valid_to=THS_DOC_DATE, belief_time="2026-08-12",
+        era="observed", computed_at="2026-08-12T00:00:00Z",
+        pit_pairs={("co:cn:600001.SS", basket)})
+    assert len(closings) == 1
+    closed = closings[0]
+    # Degenerate interval: no valid-time span is asserted for the un-observed era.
+    assert closed["valid_from"] == closed["valid_to"] == THS_DOC_DATE
+    # An as-of query anywhere in [2021-seed, PIT-birth) must find nothing active:
+    # a half-open [valid_from, valid_to) interval with valid_from == valid_to is
+    # empty by construction, so no pre-PIT effective date can ever match it.
+    for asof in (CN_SEED, "2023-01-01", "2026-06-29"):
+        assert not (closed["valid_from"] <= asof < closed["valid_to"]), (
+            f"retracted edge must not read as active at pre-PIT asof={asof}")
+
+
+def test_ths_membership_doc_generation_never_closes_a_pit_uncovered_pair(tree):
+    """Review MAJOR 1: a stored pair the PIT plane never re-observed must be left
+    open as a disclosed coverage gap, never fabricated into a closed exit."""
+    root, _xwalk = tree
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+
+    def _doc_edge(src: str) -> dict:
+        row = {
+            "edge_id": f"member_of:{src}->{basket}@{CN_SEED}",
+            "type": "MEMBER_OF", "src": src, "dst": basket,
+            "valid_from": CN_SEED, "valid_to": None,
+            "evidence_time": THS_DOC_DATE, "belief_time": "2026-06-01",
+            "era": "reconstruction", "source_class": "scrape",
+            "date_provenance": "seed_constant",
+            "evidence_refs": ["ev:deadbeefdeadbeef"],
+            "confidence_basis": "membership_doc.v1",
+            "computed_at": "2026-06-01T00:00:00Z",
+            "engine_version": store.ENGINE_VERSION,
+        }
+        for field in store.RESERVED_EDGE_FIELDS:
+            row[field] = None
+        return row
+
+    covered, uncovered = "co:cn:600001.SS", "co:cn:600099.SS"
+    stored = pd.DataFrame([_doc_edge(covered), _doc_edge(uncovered)])
+
+    closings = materialize.supersede_ths_membership_doc_edges(
+        stored, valid_to=THS_DOC_DATE, belief_time="2026-08-12",
+        era="observed", computed_at="2026-08-12T00:00:00Z",
+        pit_pairs={(covered, basket)})
+    closed_srcs = {c["src"] for c in closings}
+    assert closed_srcs == {covered}, (
+        "only the PIT-covered pair may be retracted; the uncovered pair is a "
+        "disclosed coverage gap, not a fabricated exit")
+
+
+def test_ths_canonical_join_declines_when_concept_map_asof_is_later_than_crosswalk(tree):
+    """Review BLOCKER 2: the concept-map clock must gate the canonical join too — a
+    membership doc dated BEFORE the crosswalk must still decline if the concept map
+    that resolved it was reloaded AFTER the crosswalk."""
+    root, _xwalk = tree
+    late_cmap_asof = "2026-08-29"  # after XWALK_DATE (2026-07-09)
+    _write(root / "baskets_china_ths" / "concept_map.json", {
+        "asof": late_cmap_asof,
+        "map": {"测试概念": KNOWN_CODE, "另一概念": "900002", "第三概念": "900003"},
+    })
+    view = _build(tree)  # membership doc stays at THS_DOC_DATE (2026-06-30, before xwalk)
+    assert not [edge for edge in _by_type(view, "EXPRESSES")
+                if edge["src"] == f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+                and edge["dst"] == "theme:solar"], (
+        "a concept map reloaded after the crosswalk must decline the canonical join "
+        "even though the membership doc itself predates the crosswalk")
