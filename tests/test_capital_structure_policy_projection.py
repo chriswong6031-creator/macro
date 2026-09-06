@@ -41,8 +41,8 @@ def test_2_empty_state_differs_from_unavailable(tmp_path, monkeypatch):
         "state": "empty",
         "headline_en": "No dated policy step ahead",
         "headline_zh": "前方没有已定日期的政策节点",
-        "detail_en": "We watch SEC, Treasury, Fed, CFTC and FinCEN rule dates. None is pending.",
-        "detail_zh": "我们关注 SEC、财政部、美联储、CFTC 与 FinCEN 的规则日期，目前没有待办节点。",
+        "detail_en": "We watch SEC, Treasury, FinCEN and bank-regulator rule dates. None is pending.",
+        "detail_zh": "我们关注 SEC、财政部、FinCEN 与银行监管机构的规则日期，目前没有待办节点。",
     })
     html = _render(tmp_path)
     assert "No dated policy step ahead" in html
@@ -56,7 +56,7 @@ def test_3_happy_path_uses_typed_chip_fields(tmp_path, monkeypatch):
            "prorule_inflow_60d": 1, "rule_finalization_60d": 0}
 
     def fake_calendar(df=None, today=None):
-        return {"themes": {"capital_markets": row}, "upcoming_events": []}
+        return {"themes": {"fintech_payments": row}, "upcoming_events": []}
 
     def fake_chip(policy_row, theme_key):
         calls["n"] += 1
@@ -85,7 +85,7 @@ def test_4_no_score_rank_or_direction(tmp_path, monkeypatch):
     row = {"days_to_next_comment_close": 5}
 
     def fake_calendar(df=None, today=None):
-        return {"themes": {"capital_markets": row}, "upcoming_events": []}
+        return {"themes": {"fintech_payments": row}, "upcoming_events": []}
 
     def fake_chip(policy_row, theme_key):
         return {
@@ -108,8 +108,8 @@ def test_5_en_zh_span_parity(tmp_path, monkeypatch):
     monkeypatch.setattr(page_builder, "_policy_watch", lambda today=None: {
         "state": "empty", "headline_en": "No dated policy step ahead",
         "headline_zh": "前方没有已定日期的政策节点",
-        "detail_en": "We watch SEC, Treasury, Fed, CFTC and FinCEN rule dates. None is pending.",
-        "detail_zh": "我们关注 SEC、财政部、美联储、CFTC 与 FinCEN 的规则日期，目前没有待办节点。",
+        "detail_en": "We watch SEC, Treasury, FinCEN and bank-regulator rule dates. None is pending.",
+        "detail_zh": "我们关注 SEC、财政部、FinCEN 与银行监管机构的规则日期，目前没有待办节点。",
     })
     html = _render(tmp_path)
     start = html.index('id="cs-policy"')
@@ -123,7 +123,7 @@ def test_6_chip_summary_never_rendered(tmp_path, monkeypatch):
     row = {"days_to_next_comment_close": 5}
 
     def fake_calendar(df=None, today=None):
-        return {"themes": {"capital_markets": row}, "upcoming_events": []}
+        return {"themes": {"fintech_payments": row}, "upcoming_events": []}
 
     def fake_chip(policy_row, theme_key):
         return {
@@ -150,6 +150,51 @@ def test_7_paired_asset_guard_unchanged(tmp_path):
         src = (tmp_path / "templates" / asset).read_bytes()
         dst = (tmp_path / "site" / asset).read_bytes()
         assert src == dst
+
+
+def test_8_real_theme_is_the_measured_basket_id():
+    """B3 round-2 BLOCKER 1/2: the filter must name a basket id that actually
+    exists in data/federal_register/documents.parquet's taxonomy. Measured
+    2026-09-06 (33,696 rows / 17 baskets): 'capital_markets'/'capital_formation'
+    never appear; 'fintech_payments' is the one basket carrying SEC/Treasury/
+    FinCEN/OCC/FDIC filings (349 rows)."""
+    assert page_builder.FINTECH_PAYMENTS_THEME == ("fintech_payments",)
+
+
+def test_9_present_state_renders_active_class_not_outage_component(tmp_path, monkeypatch):
+    """MAJOR-4: a live dated public-record step must get its own
+    `.cs-policy-active` treatment, never the shared `.cs-unavailable` outage
+    component."""
+    shutil_copy(tmp_path)
+    monkeypatch.setattr(page_builder, "_policy_watch", lambda today=None: {
+        "state": "present",
+        "headline_en": "Comment window closes in 5 days",
+        "headline_zh": "征询意见期 5 天后截止",
+        "detail_en": "Dated steps already on the public record. Not a rating and not a trade call.",
+        "detail_zh": "均为已进入公开记录的既定日期节点。不是评级，也不是交易建议。",
+    })
+    html = _render(tmp_path)
+    start = html.index('id="cs-policy"')
+    section_open_tag = html[html.rindex("<section", 0, start):start + 40]
+    assert "cs-policy-active" in section_open_tag
+    assert "cs-unavailable" not in section_open_tag
+    assert "Comment window closes in 5 days" in html
+
+
+def test_10_unavailable_and_empty_states_keep_the_outage_component(tmp_path, monkeypatch):
+    """The two genuinely-nothing-to-show states must keep reusing
+    `.cs-unavailable` — only `present` gets the new treatment."""
+    shutil_copy(tmp_path)
+    for state in ("unavailable", "empty"):
+        monkeypatch.setattr(page_builder, "_policy_watch", lambda today=None, state=state: {
+            "state": state,
+            "headline_en": "x", "headline_zh": "x", "detail_en": "x", "detail_zh": "x",
+        })
+        html = _render(tmp_path)
+        start = html.index('id="cs-policy"')
+        section_open_tag = html[html.rindex("<section", 0, start):start + 40]
+        assert "cs-unavailable" in section_open_tag
+        assert "cs-policy-active" not in section_open_tag
 
 
 def shutil_copy(tmp_path):

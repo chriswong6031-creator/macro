@@ -147,15 +147,26 @@ def _axis_cell(axis: dict | None, root: Path) -> dict:
     except Exception:  # noqa: BLE001 — a stat error must never crash the build
         producer_exists = False
 
+    # Round-2 review MAJOR-1: this must be an ALL-of check, not ANY-of. The
+    # cell copy (cell_en/cell_zh) names EVERY commodity in `artifacts` — e.g.
+    # "gold, silver, platinum and palladium" for 4 listed parquet files — so
+    # claiming `read: True` on any single artifact existing (measured: state
+    # stayed "partial" ... price_en still named all four with only GC_F.parquet
+    # on disk) is exactly the overclaim the ruling ordered fixed. A family is
+    # only "read" for this axis when every artifact the cell text names is
+    # actually on disk; anything less is reported as the same "waiting on
+    # data" UNKNOWN the axis already uses for zero artifacts, never a partial
+    # claim spliced from whichever names happen to exist.
     artifacts = axis.get("artifacts") or ()
-    artifact_exists = False
+    artifact_exists = bool(artifacts)
     for a in artifacts:
         try:
-            if (root / a).exists():
-                artifact_exists = True
+            if not (root / a).exists():
+                artifact_exists = False
                 break
         except Exception:  # noqa: BLE001
-            continue
+            artifact_exists = False
+            break
 
     if producer_exists and artifact_exists:
         return {

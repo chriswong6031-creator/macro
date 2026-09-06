@@ -24,12 +24,17 @@ def _fake_root(tmp_path, *, energy_producer=True, energy_price_artifact=True,
         (root / "engine" / "commodity_inputs.py").write_text("# fake\n")
         (root / "engine" / "commodity_supply_context.py").write_text("# fake\n")
     if energy_price_artifact:
-        (root / "data" / "yahoo" / "CL_F.parquet").write_bytes(b"x")
+        # ALL-of (MAJOR-1 fix): energy's price cell names oil/gas/fuels across
+        # 4 tickers, so a "covered" fixture must create every one of them, not
+        # a single stand-in.
+        for tk in ("CL_F", "NG_F", "HO_F", "RB_F"):
+            (root / "data" / "yahoo" / f"{tk}.parquet").write_bytes(b"x")
         (root / "data" / "yahoo" / "GC_F.parquet").write_bytes(b"x")
         (root / "data" / "yahoo" / "HG_F.parquet").write_bytes(b"x")
         (root / "data" / "yahoo" / "ZC_F.parquet").write_bytes(b"x")
     if energy_supply_artifacts:
-        (root / "data" / "eia" / "crude_stocks.parquet").write_bytes(b"x")
+        for f in ("crude_stocks", "crude_production", "crude_imports"):
+            (root / "data" / "eia" / f"{f}.parquet").write_bytes(b"x")
     return root
 
 
@@ -147,3 +152,34 @@ def test_9_multi_commodity_claims_are_backed_by_one_artifact_per_named_commodity
         assert len(set(artifacts)) == len(artifacts), "no duplicate tickers"
         for artifact in artifacts:
             assert artifact.startswith("data/yahoo/") and artifact.endswith(".parquet")
+
+
+def test_10_partial_artifact_set_never_claims_full_multi_commodity_coverage(tmp_path):
+    """B3 round-2 review MAJOR-1: `_axis_cell` was ANY-of over `artifacts`, so
+    with only `data/yahoo/GC_F.parquet` on disk the precious row still reported
+    state 'partial'/'covered'-shaped copy naming gold/silver/platinum/palladium
+    (measured live). The check must be ALL-of: every ticker the cell text names
+    has to actually exist before that text is shown as a 'read' claim."""
+    root = tmp_path
+    (root / "engine").mkdir(parents=True, exist_ok=True)
+    (root / "data" / "yahoo").mkdir(parents=True, exist_ok=True)
+    (root / "engine" / "commodity_inputs.py").write_text("# fake\n")
+    # Only ONE of the four precious-metal tickers on disk. precious has no
+    # supply axis (FAMILIES[1]["supply"] is None), so "covered" (price+supply)
+    # is never reachable for this family — the axis under test is the PRICE
+    # cell's own read/not-read claim, not the row's overall state.
+    (root / "data" / "yahoo" / "GC_F.parquet").write_bytes(b"x")
+
+    rows = compute_coverage_matrix(root=root)["rows"]
+    precious = next(r for r in rows if r["id"] == "precious")
+    assert precious["price_en"] != "Daily prices for gold, silver, platinum and palladium"
+    assert not precious["sources"], "a partial artifact set must not cite itself as a read source"
+
+    # Now complete the set: all four exist -> the full claim is finally honest.
+    for tk in ("SI_F", "PL_F", "PA_F"):
+        (root / "data" / "yahoo" / f"{tk}.parquet").write_bytes(b"x")
+    rows2 = compute_coverage_matrix(root=root)["rows"]
+    precious2 = next(r for r in rows2 if r["id"] == "precious")
+    assert precious2["state"] == "partial"  # "prices only" — precious has no supply axis
+    assert precious2["price_en"] == "Daily prices for gold, silver, platinum and palladium"
+    assert precious2["sources"], "a complete artifact set must now cite its source"

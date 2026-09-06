@@ -28,7 +28,27 @@ _ASSETS = ("capital_structure_boot.js", "capital_structure.css", "capital_struct
 
 
 # ── policy-watch:start (B-F09-6, MO-PAID-067) ──
-CAPITAL_MARKETS_THEMES = ("capital_markets", "capital_formation")  # first match wins
+# Round-2 review BLOCKER 1/2: the prior constant named two basket ids
+# ("capital_markets", "capital_formation") that DO NOT EXIST anywhere in this
+# pipeline's basket taxonomy — engine/federal_register* ingests documents into
+# a frozen set of 17 industry-sector baskets (ai_semiconductors, solar, ...),
+# none of them a capital-markets/financial-regulation theme, so the chip could
+# never reach `present` and its `empty` copy asserted active watching that was
+# never happening (an UNKNOWN shaped as an EMPTY).
+#
+# Measured against the live artifact this build reads
+# (data/federal_register/documents.parquet, 2026-09-06, 33,696 rows / 17
+# baskets / 74 agency_slug values): the one real basket that actually carries
+# SEC / Treasury / FinCEN / OCC / FDIC filings is `fintech_payments` (349 rows;
+# 246 treasury-department, 83 consumer-financial-protection-bureau, 3
+# securities-and-exchange-commission, 2 financial-crimes-enforcement-network,
+# 2 comptroller-of-the-currency, 1 federal-deposit-insurance-corporation).
+# `federal-reserve-system` and any `commodity-futures-trading-commission`-like
+# agency are NOT present under this basket (Fed appears once, under an
+# unrelated basket; CFTC does not appear anywhere in the 74-agency taxonomy at
+# all) — so "Fed" and "CFTC" were dropped from the chip's own copy below
+# rather than left as an unbacked claim.
+FINTECH_PAYMENTS_THEME = ("fintech_payments",)  # first (only) match wins
 
 
 def _policy_watch(today=None) -> dict:
@@ -38,7 +58,9 @@ def _policy_watch(today=None) -> dict:
     (the one existing formatter) — never a second formatter, never a new signal.
     Three states, all rendered (nulls printed, UNKNOWN != EMPTY):
       unavailable — documents.parquet absent for this build
-      empty       — calendar present, no capital-markets-scoped dated step
+      empty       — calendar present, no dated step under the fintech_payments
+                    basket (the real basket this pipeline files SEC/Treasury/
+                    FinCEN/OCC/FDIC actions under)
       present     — a dated step, expressed only through typed chip fields
     """
     unavailable = {
@@ -52,8 +74,8 @@ def _policy_watch(today=None) -> dict:
         "state": "empty",
         "headline_en": "No dated policy step ahead",
         "headline_zh": "前方没有已定日期的政策节点",
-        "detail_en": "We watch SEC, Treasury, Fed, CFTC and FinCEN rule dates. None is pending.",
-        "detail_zh": "我们关注 SEC、财政部、美联储、CFTC 与 FinCEN 的规则日期，目前没有待办节点。",
+        "detail_en": "We watch SEC, Treasury, FinCEN and bank-regulator rule dates. None is pending.",
+        "detail_zh": "我们关注 SEC、财政部、FinCEN 与银行监管机构的规则日期，目前没有待办节点。",
     }
     try:
         from engine.policy_calendar import compute_policy_calendar, format_policy_reg_chip
@@ -70,20 +92,21 @@ def _policy_watch(today=None) -> dict:
     themes = cal.get("themes") or {}
     theme_key = None
     row = None
-    for key in CAPITAL_MARKETS_THEMES:
+    for key in FINTECH_PAYMENTS_THEME:
         if key in themes:
             theme_key = key
             row = themes[key]
             break
 
     if row is None:
-        # No capital-markets theme row in this build's data. Note (DEVIATION from
+        # No fintech_payments row in this build's data (e.g. a stub/fixture
+        # parquet with no rows for that basket at all). Note (DEVIATION from
         # the frozen spec's agency_slug fallback): upcoming_events rows do not
         # carry agency_slug (only basket_id/reg_stage/title/date) — filtering by
         # agency there is not possible without fabricating a field, so the
-        # fallback checks the same CAPITAL_MARKETS_THEMES basket ids instead.
+        # fallback checks the same FINTECH_PAYMENTS_THEME basket id instead.
         upcoming = [e for e in (cal.get("upcoming_events") or [])
-                    if e.get("basket_id") in CAPITAL_MARKETS_THEMES]
+                    if e.get("basket_id") in FINTECH_PAYMENTS_THEME]
         if not upcoming:
             return empty
         theme_key = upcoming[0]["basket_id"]
