@@ -93,23 +93,22 @@ html[data-theme="light"] .sm-map{border:1px solid var(--line);
   border-radius:var(--r-card,12px);box-shadow:var(--card-shadow)}
 html[data-theme="light"] .sm-map[data-hi] .wm-c.is-hi{fill-opacity:.52;
   stroke:var(--ink-link);stroke-width:1.5;filter:none}
-html[data-theme="light"] .wm-lbl[data-rung="3"]{fill:var(--ink-act);fill-opacity:1;font-weight:700}
-
-.wm-lbl{font-size:var(--fs-micro);font-family:var(--num);letter-spacing:.04em;
-  fill:var(--muted);pointer-events:none}
-.wm-lbl:not([data-rung="3"]){display:none}
 
 .sm-legend{display:flex;flex-wrap:wrap;gap:14px;list-style:none;padding:0;
   margin:12px 0 0;font-size:var(--fs-sm);color:var(--muted)}
 .sm-legend i{display:inline-block;width:14px;height:10px;margin-right:6px;
   border:1px solid var(--line);border-radius:var(--r-ctl,8px);vertical-align:-1px;
   background:var(--panel2)}
+.sm-legend [data-rung="0"] i{background:var(--panel2)}
 .sm-legend [data-rung="1"] i{background:var(--ink-act);opacity:.22}
 .sm-legend [data-rung="2"] i{background:var(--ink-act);opacity:.46}
 .sm-legend [data-rung="3"] i{background:var(--ink-act);opacity:.78}
+.sm-legend [data-rung="x"] i{background:repeating-linear-gradient(45deg,transparent 0 2px,var(--muted) 2px 2.6px);opacity:.30}
+html[data-theme="light"] .sm-legend [data-rung="0"] i{background:var(--panel)}
 html[data-theme="light"] .sm-legend [data-rung="1"] i{opacity:.16}
 html[data-theme="light"] .sm-legend [data-rung="2"] i{opacity:.30}
 html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
+html[data-theme="light"] .sm-legend [data-rung="x"] i{opacity:.45}
 
 .sm-null{margin:10px 0 0;font-size:var(--fs-sm);color:var(--muted)}
 
@@ -652,8 +651,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <p class="sm-stance"><span class="l-en">Use this to read country risk, not to trade it.</span><span class="l-zh">用于判读国别风险，不用于交易。</span></p>
   <p class="sm-meta">
     <span class="dtp-asof"><span class="l-en">OFAC list as of</span><span class="l-zh">OFAC 名单截至</span> 2026-09-06</span>
+    
     <span class="sm-count tnum">73</span>
     <span><span class="l-en">sanctions programmes</span><span class="l-zh">项制裁计划</span></span>
+    
     <a href="https://www.treasury.gov/ofac/downloads/sdn.csv" rel="noopener"><span class="l-en">Source: US Treasury OFAC</span><span class="l-zh">来源：美国财政部 OFAC</span></a>
   </p>
 </header>
@@ -662,7 +663,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <div class="mx-sec"><h2><span class="l-en">Countries named by an active programme</span><span class="l-zh">被现行制裁计划点名的国家</span></h2></div>
 
   <figure class="sm-map" role="img"
-          aria-label="World map of countries named by active US OFAC sanctions programmes">
+          aria-label="World map of countries named by active US OFAC sanctions programmes / 现行美国 OFAC 制裁计划点名国家的世界地图">
     
 <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
 <defs><pattern id="sm-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>
@@ -943,9 +944,30 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 
 <tr data-iso3="BLR"><td><span class="l-en">Belarus</span><span class="l-zh">白俄罗斯</span></td><td class="tnum">2</td></tr>
 
+<tr data-iso3="SYR"><td><span class="l-en">Syria</span><span class="l-zh">叙利亚</span></td><td class="tnum">2</td></tr>
+
+<tr data-iso3="LBY"><td><span class="l-en">Libya</span><span class="l-zh">利比亚</span></td><td class="tnum">2</td></tr>
+
+<tr data-iso3="NIC"><td><span class="l-en">Nicaragua</span><span class="l-zh">尼加拉瓜</span></td><td class="tnum">2</td></tr>
+
+<tr data-iso3="SOM"><td><span class="l-en">Somalia</span><span class="l-zh">索马里</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="COD"><td><span class="l-en">DR Congo</span><span class="l-zh">刚果（金）</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="LBN"><td><span class="l-en">Lebanon</span><span class="l-zh">黎巴嫩</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="CAF"><td><span class="l-en">Central African Republic</span><span class="l-zh">中非共和国</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="YEM"><td><span class="l-en">Yemen</span><span class="l-zh">也门</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="MMR"><td><span class="l-en">Myanmar</span><span class="l-zh">缅甸</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="MLI"><td><span class="l-en">Mali</span><span class="l-zh">马里</span></td><td class="tnum">1</td></tr>
+
+<tr data-iso3="ETH"><td><span class="l-en">Ethiopia</span><span class="l-zh">埃塞俄比亚</span></td><td class="tnum">1</td></tr>
+
 </tbody>
 </table>
-<p class="sm-null"><span class="l-en">See all</span><span class="l-zh">查看全部</span> <span class="tnum">19</span> <span class="l-en">countries</span><span class="l-zh">个国家</span></p>
 </div>
 
 

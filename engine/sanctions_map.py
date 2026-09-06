@@ -16,13 +16,6 @@ from typing import Any
 
 import yaml
 
-from engine.intl_risk import _IMF_COUNTRIES
-
-# Shared ISO3 key convention with intl_risk (acceptance 3): this leaf must not
-# mint a parallel country master. Painted geometry comes from the existing
-# Natural Earth worldmap partial; attribution rows carry display names.
-SHARED_ISO3_KEYS = frozenset(_IMF_COUNTRIES)
-
 STORE_DIR = Path("data/sanctions_ofac")
 SDN_FILE = STORE_DIR / "sdn_snapshot.csv"
 META_FILE = STORE_DIR / "meta.json"

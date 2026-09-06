@@ -112,6 +112,13 @@ def test_coverage_none_renders_degraded_and_hides_cards():
     assert 'class="sm-cards"' not in html
     assert "<table" not in html
     assert "is-unknown" in html
+    # BLOCKER 2: degraded header must not print a fabricated zero programme count.
+    assert 'class="sm-count"' not in html
+    assert "Programme count not available yet" in html
+    assert "计划数暂无" in html
+    meta = html.split('class="sm-meta"')[1].split("</p>")[0]
+    assert ">0<" not in meta
+    assert "sanctions programmes" not in meta
 
 
 def test_no_banned_vocabulary():
@@ -138,11 +145,35 @@ def test_fully_resolved_coverage_marks_absent_as_not_named():
     assert 'data-iso3="CHN" data-rung="x"' not in html
 
 
-def test_see_all_footer_uses_country_count_not_code_count():
+def test_country_table_lists_all_rows_no_dangling_see_all():
+    """MAJOR 4: table shows every country; no dead 'See all' affordance."""
     html = _render(VM_MANY_COUNTRIES)
-    assert "See all" in html
-    assert '<span class="tnum">12</span>' in html
-    assert "countries" in html
+    assert "See all" not in html
+    assert "查看全部" not in html
+    for i in range(12):
+        assert f'data-iso3="C{i:02d}"' in html
+
+
+def test_legend_distinguishes_not_named_from_unknown():
+    """MAJOR 3: hatch swatch for rung x; explicit panel fill for rung 0."""
+    html = _render(VM_OK)
+    assert '.sm-legend [data-rung="x"] i{background:repeating-linear-gradient' in html
+    assert '.sm-legend [data-rung="0"] i{background:var(--panel2)}' in html
+    assert 'html[data-theme="light"] .sm-legend [data-rung="0"] i{background:var(--panel)}' in html
+
+
+def test_degraded_null_uses_date_not_iso_timestamp():
+    """MINOR 6: glance-tier null copy prints YYYY-MM-DD, not a full ISO stamp."""
+    vm = dict(VM_UNREADABLE, fetched_at="2026-09-06T05:53:36Z")
+    html = _render(vm)
+    assert "2026-09-06T05:53:36Z" not in html.split("<details")[0]
+    assert "2026-09-06" in html.split("<details")[0]
+
+
+def test_map_aria_label_has_zh():
+    """MINOR 10: screen-reader label carries both EN and ZH."""
+    html = _render(VM_OK)
+    assert "现行美国 OFAC 制裁计划点名国家的世界地图" in html
 
 
 def test_hover_row_has_leave_focus_blur_and_click_handlers():

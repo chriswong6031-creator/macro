@@ -5,6 +5,7 @@ import csv
 import io
 import json
 import re
+from pathlib import Path
 
 import yaml
 
@@ -175,11 +176,20 @@ def test_split_program_field_whitespace_variants():
     assert split_program_field("-0-") == []
 
 
-def test_reuses_intl_risk_iso3_vocab_no_second_country_master():
-    """B5: pin the shared ISO3 import from intl_risk so this leaf cannot drift
-    into a parallel country master."""
-    from engine.intl_risk import _IMF_COUNTRIES
+def test_config_iso3_subset_of_worldmap_no_parallel_country_master():
+    """MINOR 7 / acceptance 3: geometry identity lives on the Natural Earth
+    worldmap partial — not a decorative SHARED_ISO3_KEYS alias of intl_risk.
+    Every config country must have a map path (same guard as
+    tests/test_worldmap_base.py::test_iso3_superset_of_config_countries)."""
+    assert not hasattr(sanctions_map, "SHARED_ISO3_KEYS")
 
-    assert sanctions_map.SHARED_ISO3_KEYS == frozenset(_IMF_COUNTRIES)
-    assert "USA" in sanctions_map.SHARED_ISO3_KEYS
-    assert all(re.fullmatch(r"[A-Z]{3}", c) for c in sanctions_map.SHARED_ISO3_KEYS)
+    map_html = (Path("templates/_worldmap_base.html.j2").read_text(encoding="utf-8"))
+    map_iso3 = set(re.findall(r'data-iso3="([A-Z]{3})"', map_html))
+    cfg = yaml.safe_load(Path("config/sanctions_ofac_programs.yml").read_text(encoding="utf-8"))
+    cfg_iso3 = {
+        str(row["iso3"]).upper()
+        for row in (cfg.get("programs") or [])
+        if row.get("iso3")
+    }
+    missing = sorted(cfg_iso3 - map_iso3)
+    assert missing == [], f"config iso3 missing from worldmap: {missing}"

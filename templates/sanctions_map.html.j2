@@ -47,23 +47,22 @@ html[data-theme="light"] .sm-map{border:1px solid var(--line);
   border-radius:var(--r-card,12px);box-shadow:var(--card-shadow)}
 html[data-theme="light"] .sm-map[data-hi] .wm-c.is-hi{fill-opacity:.52;
   stroke:var(--ink-link);stroke-width:1.5;filter:none}
-html[data-theme="light"] .wm-lbl[data-rung="3"]{fill:var(--ink-act);fill-opacity:1;font-weight:700}
-
-.wm-lbl{font-size:var(--fs-micro);font-family:var(--num);letter-spacing:.04em;
-  fill:var(--muted);pointer-events:none}
-.wm-lbl:not([data-rung="3"]){display:none}
 
 .sm-legend{display:flex;flex-wrap:wrap;gap:14px;list-style:none;padding:0;
   margin:12px 0 0;font-size:var(--fs-sm);color:var(--muted)}
 .sm-legend i{display:inline-block;width:14px;height:10px;margin-right:6px;
   border:1px solid var(--line);border-radius:var(--r-ctl,8px);vertical-align:-1px;
   background:var(--panel2)}
+.sm-legend [data-rung="0"] i{background:var(--panel2)}
 .sm-legend [data-rung="1"] i{background:var(--ink-act);opacity:.22}
 .sm-legend [data-rung="2"] i{background:var(--ink-act);opacity:.46}
 .sm-legend [data-rung="3"] i{background:var(--ink-act);opacity:.78}
+.sm-legend [data-rung="x"] i{background:repeating-linear-gradient(45deg,transparent 0 2px,var(--muted) 2px 2.6px);opacity:.30}
+html[data-theme="light"] .sm-legend [data-rung="0"] i{background:var(--panel)}
 html[data-theme="light"] .sm-legend [data-rung="1"] i{opacity:.16}
 html[data-theme="light"] .sm-legend [data-rung="2"] i{opacity:.30}
 html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
+html[data-theme="light"] .sm-legend [data-rung="x"] i{opacity:.45}
 
 .sm-null{margin:10px 0 0;font-size:var(--fs-sm);color:var(--muted)}
 
@@ -98,8 +97,12 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
                             '用于判读国别风险，不用于交易。') }}</p>
   <p class="sm-meta">
     <span class="dtp-asof">{{ t('OFAC list as of','OFAC 名单截至') }} {{ vm.as_of or t('unknown','未知') }}</span>
+    {% if vm.coverage is not none %}
     <span class="sm-count tnum">{{ vm.n_programs_total }}</span>
     <span>{{ t('sanctions programmes','项制裁计划') }}</span>
+    {% else %}
+    <span>{{ t('Programme count not available yet','计划数暂无') }}</span>
+    {% endif %}
     {% if vm.source_url %}<a href="{{ vm.source_url }}" rel="noopener">{{ t('Source: US Treasury OFAC','来源：美国财政部 OFAC') }}</a>{% endif %}
   </p>
 </header>
@@ -108,7 +111,7 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
   <div class="mx-sec"><h2>{{ t('Countries named by an active programme','被现行制裁计划点名的国家') }}</h2></div>
 
   <figure class="sm-map{% if vm.coverage is none %} is-unknown{% endif %}" role="img"
-          aria-label="World map of countries named by active US OFAC sanctions programmes">
+          aria-label="World map of countries named by active US OFAC sanctions programmes / 现行美国 OFAC 制裁计划点名国家的世界地图">
     {% include "_worldmap_base.html.j2" %}
   </figure>
 
@@ -121,9 +124,10 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
   </ul>
 
   {% if vm.coverage is none %}
+  {% set fetched_day = (vm.fetched_at or '')[:10] %}
   <p class="mx-empty-why sm-null">
-    {{ t('We could not read the OFAC list today. The last good read was ' ~ (vm.fetched_at or 'unknown') ~ '.',
-         '今日无法读取 OFAC 名单。上次成功读取为 ' ~ (vm.fetched_at or '未知') ~ '。') }}
+    {{ t('We could not read the OFAC list today. The last good read was ' ~ (fetched_day or 'unknown') ~ '.',
+         '今日无法读取 OFAC 名单。上次成功读取为 ' ~ (fetched_day or '未知') ~ '。') }}
   </p>
   {% elif vm.coverage.unresolved %}
   <p class="mx-empty-why sm-null">
@@ -155,12 +159,11 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
 <table class="sm-tbl">
 <thead><tr><th>{{ t('Country','国家') }}</th><th>{{ t('Programmes','计划数') }}</th></tr></thead>
 <tbody>
-{% for c in vm.countries[:8] %}
+{% for c in vm.countries %}
 <tr data-iso3="{{ c.iso3 }}"><td>{{ t(c.name_en, c.name_zh) }}</td><td class="tnum">{{ c.n_programs }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
-{% if (vm.n_countries or 0) > 8 %}<p class="sm-null">{{ t('See all','查看全部') }} <span class="tnum">{{ vm.n_countries }}</span> {{ t('countries','个国家') }}</p>{% endif %}
 </div>
 {% endif %}
 
