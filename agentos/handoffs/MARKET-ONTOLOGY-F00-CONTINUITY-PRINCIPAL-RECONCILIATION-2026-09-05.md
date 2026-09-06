@@ -44,6 +44,12 @@ changed:
       New discovery: user-scoped watchlists already live in Terminal
       lib/watchlists.ts + Supabase RLS tables, bound by Macro watchstore.js; S4 is
       owned, not empty.
+  - path: agentos/discoveries/DSC-MACRO-SERVED-ORIGIN-IS-MASTERMIND-X-COM.md
+    what: >
+      New discovery (Boundary 2, corrected under Sol ruling 1788654063.022769):
+      on 2026-09-05 the VPS Caddy served only mastermind-x.com/www and dated
+      readbacks gave .com 200 / .ai 525; the .ai result is a separate mapping on
+      that evidence, uptime and .ai→.com binding not established.
 prs: [6792, 6819, 6828, 6864, 6872, 6873, 6876, 6890]
 verified:
   - claim: >
@@ -182,9 +188,13 @@ verified:
       after 1788639616.516889; CI 33988162571 success; 0 reviews.
 unverified:
   - claim: >
-      The VPS has a working pull scheduler at all: macro-update.service/.timer
-      answered LoadState=not-found and no cron.d entry matched, so the "3-minute
-      VPS pull" this repo's law assumes is unevidenced on the diagnosed host.
+      The effective scheduler/activation path for /opt/macro. Dated evidence
+      (2026-09-05 host diagnosis): /opt/macro available_bytes=0; checkout
+      761a4df8, 108 commits behind then-current main; macro-update.service and
+      macro-update.timer answered LoadState=not-found; no match in the bounded
+      cron.d search. That narrows the search; it does not establish what last
+      updated the checkout, so the "3-minute VPS pull" this repo's law assumes is
+      unverified on this host.
     what_would_verify: >
       The storage-recovery lane's host report naming the unit, cron or manual
       procedure that last updated /opt/macro, with its last-run timestamp; until
@@ -239,7 +249,7 @@ do_not_redo:
   - "Do not order the shared CI contender list by PR number or age; only intersecting hunks serialize."
   - "Do not serialize #6872 and #6873 over their shared Caddyfile lines; keep-both was ruled, the second to land re-applies its tokens."
   - "Do not re-ACK, re-START, review from the Claude8 identity, arm, Ready or merge macro#6890 (F01 repair child, exact receiver dd51ef8f); do not open a second main-red-repair for pack 5; do not fold lib/macro_suite_view.py into that child."
-  - "Do not relay a mastermindx.ai 525 as a site outage or re-scope any child on it (DSC:MACRO-SERVED-ORIGIN-IS-MASTERMIND-X-COM)."
+  - "Do not relay a mastermindx.ai 525 on its own as a .com outage or widen a child's scope on it; positive new .ai-to-same-deployment evidence is reconciled under this operation's authority, not assumed (DSC:MACRO-SERVED-ORIGIN-IS-MASTERMIND-X-COM)."
   - "Do not commission a Terminal OAuth rewrite or a second navigation/session store; the auth-return boundary is an adjacent follow-up reconciled with #445/#508 owners."
 danger_areas:
   - "Sparse worktrees omit site/, data/ and mockups/; a write into an omitted tree truncates the committed artifact. Materialize with scripts/worktree_sparse.py before comparing site/ blobs."
@@ -366,11 +376,17 @@ the bounded amendment at its next existing record boundary"). Additive; nothing
 above is withdrawn except where a row says so.
 
 **Production correction.** F00's relay 1788633512.480849 ("origin unreachable,
-525 on every path") was wrong at the altitude it claimed. The host child proved
-the served hosts are `.com` (200 via TencentEdgeOne) and that `.ai` is an
-unqualified edge mapping; F00 corrected itself at 1788637058.742439. The real
-publication blocker is disk (`/opt/macro available_bytes=0`), a checkout 108
-commits behind, and no loaded pull scheduler. Storage recovery is Sol's lane.
+525 on every path") was wrong at the altitude it claimed. The host child's dated
+loaded configuration listed only the `.com` hosts, and the dated readbacks gave
+`.com` 200 (via TencentEdgeOne) while `.ai` gave 525; on that evidence `.ai` is a
+separate unqualified edge mapping, with uninterrupted uptime and any `.ai`→same-
+deployment binding not established. F00 corrected itself at 1788637058.742439
+and both posts stay as dated history. The real
+publication blocker, as dated 2026-09-05 evidence, is `/opt/macro
+available_bytes=0`, checkout `761a4df8` 108 commits behind then-current main,
+`macro-update.service`/`.timer` at `LoadState=not-found`, and no match in the
+bounded cron.d search; the effective scheduler/activation path remains
+unverified. Storage recovery is Sol's lane.
 
 **F04 ruling (1788633496.506309).** Path 25 admitted; B-1 body corrected (the
 returned caller would have TypeError'd inside the additive guard and skipped the
