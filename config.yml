@@ -4733,6 +4733,75 @@ china_news_intel:
   base_url: https://api.deepseek.com/anthropic
   api_key_env: DEEPSEEK_API_KEY
 
+# Europe policy/geo PIT event bus — official EU/UK press feeds accrued first-print,
+# keep-FIRST, and joined to the ONE event system (engine/qbus.py). CONTEXT-ONLY,
+# NO LLM, never scored. Resolves F02 owner-map UNRESOLVED-2 (PR #6913 :73).
+# Preflight 2026-09-06: exactly two tier-1 sources passed BOTH the reachability
+# check and the rights-quote requirement (ec_presscorner, boe_news). The other
+# three candidates are printed nulls per spec §3.3/§7, never silently dropped and
+# never replaced with an unlisted feed — all carry rights_state UNVERIFIED_EXCLUDED
+# so they are never fetched over the network (§7: "the source is never fetched"),
+# and report coverage_state SOURCE_OUTAGE.
+europe_news_intel:
+  enabled: true
+  max_per_source: 60
+  cache_dir: data/europe_news/intel_cache
+  cache_ttl_hours: 6
+  sources:                      # every entry needs a verified rights_basis (spec §3.1)
+    - key: ec_presscorner
+      url: "https://ec.europa.eu/commission/presscorner/api/rss"
+      publisher: European Commission
+      tier: 1
+      jurisdiction: EU
+      lang: en
+      expected_cadence_hours: 24
+      rights_basis: "CC BY 4.0 (Commission Decision 2011/833/EU) — https://commission.europa.eu/legal-notice_en — 'reuse is allowed, provided appropriate credit is given'"
+      rights_state: VERIFIED_PUBLIC_REUSE
+    - key: boe_news
+      url: "https://www.bankofengland.co.uk/rss/news"
+      publisher: Bank of England
+      tier: 1
+      jurisdiction: UK
+      lang: en
+      # Preflight 2026-09-06 observed this feed's newest item ~8 days stale at
+      # fetch time (mixed cadence: statistical notices + FX surveys, not daily
+      # press); 168h (weekly) avoids a perpetually-flagged DELAYED_SOURCE.
+      expected_cadence_hours: 168
+      rights_basis: "Open Government Licence v3.0 — https://www.bankofengland.co.uk/legal — 'commercial re-use of the Resources' explicitly named"
+      rights_state: VERIFIED_PUBLIC_REUSE
+    # printed nulls (spec §3.3/§7) — excluded candidates, never silently dropped
+    # and never replaced with an unlisted feed.
+    - key: ecb_press
+      url: "https://www.ecb.europa.eu/rss/press.html"
+      publisher: European Central Bank
+      tier: 1
+      jurisdiction: EA
+      lang: en
+      expected_cadence_hours: 24
+      rights_basis: "UNVERIFIED — https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html grants 'free use ... subject to conditions' but never uses the word commercial; the one content-specific carve-out is a restriction (prior written authorisation), not a grant"
+      rights_state: UNVERIFIED_EXCLUDED
+      detail: "no quotable commercial-reuse clause"
+    - key: council_eu
+      url: "https://www.consilium.europa.eu/en/rss/latest-press-releases/"
+      publisher: Council of the EU
+      tier: 1
+      jurisdiction: EU
+      lang: en
+      expected_cadence_hours: 24
+      rights_basis: "UNVERIFIED — the RSS candidate AND the legal-notice page both returned HTTP 403 (Imperva/Akamai bot wall) at the 2026-09-06 preflight; rights could not even be checked"
+      rights_state: UNVERIFIED_EXCLUDED
+      detail: "HTTP 403 bot wall on both the feed and the legal-notice page"
+    - key: eurlex_oj_l
+      url: "https://eur-lex.europa.eu/EN/display-feed.rss?rssId=165"
+      publisher: EU Publications Office
+      tier: 2
+      jurisdiction: EU
+      lang: en
+      expected_cadence_hours: 24
+      rights_basis: "UNVERIFIED — the candidate feed endpoint itself is dead/reconfigured (302 redirects to an HTML page, not RSS/XML) at the 2026-09-06 preflight"
+      rights_state: UNVERIFIED_EXCLUDED
+      detail: "feed endpoint dead/reconfigured — redirects to HTML, not RSS"
+
 # Native CN flash-wire JSON fetchers (engine/cn_newswires.py) — 华尔街见闻 · 金十数据 ·
 # 格隆汇, each vendor's public keyless JSON endpoint (no akshare, no scraping). ONE
 # cached fetch serves both the china_news page panel and the china_news_intel PIT bus.

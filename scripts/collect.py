@@ -1079,6 +1079,25 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("news_vector ingest step failed: %s", e)
 
+    # europe_news_intel daily ingest — EU/UK official-press PIT accrual (keep-FIRST,
+    # additive, context-only). Non-fatal: a dead wire degrades the desk, never the build.
+    try:
+        from datetime import date as _date
+        from engine import europe_news_intel as _eu
+        _eu_result = _eu.ingest(asof=_date.today())      # asof is passed IN at the caller
+        if _eu_result is not None:
+            _eu_cov = _eu_result.get("coverage", {})
+            _eu_bad = {k: v for k, v in _eu_cov.items() if v != "COVERED"}
+            if _eu_bad:
+                log.warning("europe_news_intel degraded coverage: %s (+%d new, %d total)",
+                            _eu_bad, _eu_result.get("n_new", 0), _eu_result.get("n_total", 0))
+            else:
+                log.info("europe_news_intel: +%d events (%d total, %d->qbus)",
+                         _eu_result.get("n_new", 0), _eu_result.get("n_total", 0),
+                         _eu_result.get("n_qbus", 0))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("europe_news_intel ingest step failed: %s", e)
+
     # qledger adapters — register today's claims from each desk so the nightly
     # grader can grade them at maturity. Idempotent; non-fatal.
     try:
