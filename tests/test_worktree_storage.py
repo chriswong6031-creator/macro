@@ -123,6 +123,14 @@ class StorageTests(unittest.TestCase):
         r=self.repository()
         self.assertFalse(s.protect_worktree(self.policy,r))
         self.assertTrue((r/'data/heavy.txt').exists())
+    def test_audit_checkout_is_not_a_client_session(self):
+        from scripts import worktree_sparse as sparse, worktree_storage as storage
+        r=self.repository(); root=s.prepare_root(self.policy); d=root/'audit'/'native'; d.parent.mkdir()
+        self.git(r,'worktree','add','--detach',str(d),'HEAD')
+        with patch.object(storage,'load_policy',return_value=self.policy), patch.object(storage,'volume_info',return_value=self.info):
+            self.assertFalse(sparse.is_session_worktree(d))
+        self.assertFalse(s.protect_worktree(self.policy,d))
+        self.assertTrue((d/'data/heavy.txt').exists())
     def test_codex_auto_entry_point_protects_external_checkout(self):
         from scripts import worktree_sparse as sparse, worktree_storage as storage
         r=self.repository(); root=s.prepare_root(self.policy); d=root/'codex'/'native'; d.parent.mkdir()

@@ -59,6 +59,15 @@ def _contained(path: Path, root: Path) -> bool:
     return path == root or root in path.parents
 
 
+def client_roots(policy: dict) -> tuple[Path, ...]:
+    return tuple(Path(policy['root']) / client for client in ('claude', 'codex', 'manual'))
+
+
+def is_managed_worktree_path(policy: dict, path: Path) -> bool:
+    """Audit, backup and other directories are not client session roots."""
+    return any(root in Path(path).parents for root in client_roots(policy))
+
+
 def check_storage(policy: dict, target: Path | None = None, *, check_space: bool = True) -> Path:
     mount, root = Path(policy['mount_point']), Path(policy['root'])
     target = Path(target or root)
@@ -220,9 +229,8 @@ def create_worktree(policy: dict, repo: Path, name: str, session: str, *, base: 
 
 def protect_worktree(policy: dict, cwd: Path, *, sparsify: bool = True) -> bool:
     """Protect a newly opened external linked checkout; grandfather internal ones."""
-    root = Path(policy['root'])
     cwd = Path(cwd).resolve()
-    if root not in cwd.parents:
+    if not is_managed_worktree_path(policy, cwd):
         return False
     check_storage(policy, cwd)
     common = git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir')

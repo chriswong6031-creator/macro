@@ -500,7 +500,7 @@ def classify(
         wt.verdict = "SELF"
         return
     policy = cfg.get("_storage_policy")
-    external = policy is not None and Path(policy["root"]) in wt.path.parents
+    external = policy is not None and worktree_storage.is_managed_worktree_path(policy, wt.path)
     if external:
         try:
             worktree_storage.check_storage(policy, wt.path, check_space=False)
@@ -717,7 +717,7 @@ def apply_deletions(
             summary["deleted"].append(str(wt.path))
             continue
 
-        external = policy is not None and Path(policy["root"]) in wt.path.parents
+        external = policy is not None and worktree_storage.is_managed_worktree_path(policy, wt.path)
         storage_unlocked = False
         if external:
             try:
@@ -900,7 +900,7 @@ def load_config(primary: Path, override: str | None) -> dict:
     policy = worktree_storage.load_policy()
     if policy is not None:
         cfg["_storage_policy"] = policy
-        cfg["roots"] = list(cfg["roots"]) + [str(Path(policy["root"]) / client) for client in ("claude", "codex", "manual")]
+        cfg["roots"] = list(cfg["roots"]) + [str(root) for root in worktree_storage.client_roots(policy)]
     return cfg
 
 
@@ -956,7 +956,8 @@ def main(argv: list[str] | None = None) -> int:
     # External roots contain app/repository grouping directories; the Git
     # registry is authoritative there, not a depth-one orphan directory scan.
     policy = cfg.get("_storage_policy")
-    orphan_roots = [r for r in roots if policy is None or not _under(r, Path(policy["root"]))]
+    orphan_roots = [r for r in roots if policy is None or not (
+        r in worktree_storage.client_roots(policy) or worktree_storage.is_managed_worktree_path(policy, r))]
     orphans = scan_orphans(hosts, orphan_roots, registered)
 
     fetch_ok = False if args.no_fetch else fetch_origin(primary)

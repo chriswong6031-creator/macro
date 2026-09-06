@@ -455,8 +455,7 @@ def path_under_session_root(root: Path) -> bool:
         import worktree_storage
     policy = worktree_storage.load_policy()
     if policy is not None:
-        approved = Path(policy["root"])
-        if approved in Path(root).parents:
+        if worktree_storage.is_managed_worktree_path(policy, Path(root)):
             worktree_storage.check_storage(policy, Path(root), check_space=False)
             return True
     for marker in SESSION_WORKTREE_MARKERS:
@@ -602,7 +601,7 @@ def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
     except ModuleNotFoundError:
         import worktree_storage
     policy = worktree_storage.load_policy()
-    if policy is not None and Path(policy["root"]) in Path(root).parents:
+    if policy is not None and worktree_storage.is_managed_worktree_path(policy, Path(root)):
         worktree_storage.protect_worktree(policy, root, sparsify=False)
 
     profile_path = config_path or root / "config" / "sparse_worktree.json"
