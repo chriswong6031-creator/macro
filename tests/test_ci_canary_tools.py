@@ -4,9 +4,11 @@ import ast
 import importlib.util
 import json
 import os
+import shutil
 import stat
 import subprocess
 import sys
+import time
 from itertools import count
 from pathlib import Path
 
@@ -31,6 +33,9 @@ def load(name: str, path: Path):
 SELECT = load("select_ci_canary_packs", ROOT / "scripts" / "select_ci_canary_packs.py")
 RESOLVE = load("resolve_ci_canary_ref", ROOT / "scripts" / "resolve_ci_canary_ref.py")
 PREWARM = ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_prewarm.py"
+CACHE_UPDATE = (
+    ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_cache_update.sh"
+)
 ADMISSION = load(
     "runner_admission", ROOT / "ops" / "runner-host" / "common" / "runner_admission.py"
 )
@@ -100,6 +105,176 @@ def run_prewarm(cache: Path, workspace: Path, sha: str) -> subprocess.CompletedP
         capture_output=True,
         check=False,
     )
+
+
+def cache_update_fixture(tmp_path: Path) -> tuple[Path, Path, Path, str]:
+    source = tmp_path / "source"
+    source.mkdir()
+    git(source, "init", "-b", "main")
+    git(source, "config", "user.name", "Cache Update Test")
+    git(source, "config", "user.email", "cache-update@example.invalid")
+    (source / "tracked.txt").write_text("cache-backed\n", encoding="utf-8")
+    git(source, "add", "tracked.txt")
+    git(source, "commit", "-m", "seed")
+    sha = git(source, "rev-parse", "HEAD")
+
+    origin = tmp_path / "origin.git"
+    subprocess.run(
+        ["git", "clone", "--bare", "--no-hardlinks", str(source), str(origin)],
+        check=True,
+        capture_output=True,
+    )
+    cache = tmp_path / "cache.git"
+    subprocess.run(
+        ["git", "clone", "--bare", "--no-hardlinks", str(origin), str(cache)],
+        check=True,
+        capture_output=True,
+    )
+    (cache / ".mastermind-cache-identity.json").write_text(
+        json.dumps(
+            {
+                "schema": "mastermind.ci_git_cache.v1",
+                "repository": "mastermindx-market-intelligence/macro",
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return source, origin, cache, sha
+
+
+def make_flock_shim(bin_dir: Path) -> None:
+    """Provide Linux flock(1) semantics to this macOS test host."""
+
+    bin_dir.mkdir()
+    shim = bin_dir / "flock"
+    shim.write_text(
+        """#!/usr/bin/python3
+import fcntl
+import sys
+import time
+
+timeout = float(sys.argv[sys.argv.index("-w") + 1])
+fd = int(sys.argv[-1])
+deadline = time.monotonic() + timeout
+while True:
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        raise SystemExit(0)
+    except BlockingIOError:
+        if time.monotonic() >= deadline:
+            raise SystemExit(1)
+        time.sleep(0.01)
+""",
+        encoding="utf-8",
+    )
+    shim.chmod(0o755)
+
+
+def make_git_fault_shim(bin_dir: Path) -> str:
+    real_git = shutil.which("git")
+    assert real_git
+    shim = bin_dir / "git"
+    shim.write_text(
+        """#!/usr/bin/python3
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+args = sys.argv[1:]
+if os.environ.get("CACHE_UPDATE_GIT_ENTRY_MARKER"):
+    Path(os.environ["CACHE_UPDATE_GIT_ENTRY_MARKER"]).write_text("entered\\n")
+fault = os.environ.get("CACHE_UPDATE_GIT_FAULT")
+is_validation_rev_list = (
+    "rev-list" in args
+    and "--no-object-names" in args
+    and "refs/heads/main" in args
+)
+is_validation_cat_file = "cat-file" in args and "--batch-check" in args
+if fault == "rev-list" and is_validation_rev_list:
+    raise SystemExit(91)
+if fault == "cat-file" and is_validation_cat_file:
+    raise SystemExit(92)
+if is_validation_rev_list and os.environ.get("CACHE_UPDATE_REV_LIST_MARKER"):
+    Path(os.environ["CACHE_UPDATE_REV_LIST_MARKER"]).write_text("entered\\n")
+    time.sleep(float(os.environ.get("CACHE_UPDATE_REV_LIST_DELAY", "0")))
+if is_validation_cat_file and os.environ.get("CACHE_UPDATE_CHMOD_AFTER_CAT_FILE"):
+    result = subprocess.run([os.environ["REAL_GIT"], *args])
+    Path(os.environ["CACHE_UPDATE_CHMOD_AFTER_CAT_FILE"]).chmod(0o500)
+    raise SystemExit(result.returncode)
+if is_validation_cat_file and os.environ.get("CACHE_UPDATE_MUTATE_AFTER_CAT_FILE"):
+    result = subprocess.run([os.environ["REAL_GIT"], *args])
+    objects = Path(os.environ["CACHE_UPDATE_MUTATE_AFTER_CAT_FILE"]) / "objects"
+    for number in range(256):
+        candidate = objects / f"{number:02x}"
+        if not candidate.exists():
+            candidate.mkdir()
+            break
+    raise SystemExit(result.returncode)
+os.execv(os.environ["REAL_GIT"], [os.environ["REAL_GIT"], *args])
+""",
+        encoding="utf-8",
+    )
+    shim.chmod(0o755)
+    return real_git
+
+
+def run_cache_update(
+    cache: Path,
+    lock: Path,
+    *,
+    bin_dir: Path,
+    trace: Path | None = None,
+    env_overrides: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = cache_update_environment(
+        bin_dir=bin_dir, trace=trace, env_overrides=env_overrides
+    )
+    return subprocess.run(
+        [str(CACHE_UPDATE), str(cache), str(lock)],
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+
+
+def cache_update_environment(
+    *,
+    bin_dir: Path,
+    trace: Path | None = None,
+    env_overrides: dict[str, str] | None = None,
+) -> dict[str, str]:
+    env = os.environ.copy()
+    env["PATH"] = str(bin_dir) + os.pathsep + env["PATH"]
+    if trace is not None:
+        env["GIT_TRACE2_EVENT"] = str(trace)
+    if env_overrides:
+        env.update(env_overrides)
+    return env
+
+
+def cache_validation_receipt(result: subprocess.CompletedProcess[str]) -> dict[str, object]:
+    prefix = "CI_CACHE_VALIDATION="
+    line = next(line for line in result.stdout.splitlines() if line.startswith(prefix))
+    return json.loads(line.removeprefix(prefix))
+
+
+def trace_argvs(trace: Path) -> list[list[str]]:
+    records = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines()]
+    return [record["argv"] for record in records if isinstance(record.get("argv"), list)]
+
+
+def cache_seal_namespace() -> dict[str, object]:
+    script = CACHE_UPDATE.read_text(encoding="utf-8")
+    embedded = script.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+    definitions = embedded.split("\ntry:\n    action = sys.argv[1]", 1)[0]
+    namespace: dict[str, object] = {"__name__": "cache_seal_test"}
+    exec(compile(definitions, str(CACHE_UPDATE), "exec"), namespace)
+    return namespace
 
 
 def test_shared_cache_prewarm_materializes_without_origin(tmp_path: Path) -> None:
@@ -1122,6 +1297,642 @@ def test_cache_update_disables_automatic_maintenance() -> None:
     assert "fetch --no-auto-maintenance" in script
     assert "config gc.auto 0" in script
     assert "config maintenance.auto false" in script
+
+
+def test_cache_update_reuses_safe_unchanged_validation_after_a_successful_fetch(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+
+    first_trace = tmp_path / "first-trace.jsonl"
+    first = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        trace=first_trace,
+    )
+    assert first.returncode == 0, first.stdout + first.stderr
+    first_receipt = cache_validation_receipt(first)
+    assert first_receipt == {
+        "full_validated_at": first_receipt["full_validated_at"],
+        "main_oid": sha,
+        "mode": "FULL_VALIDATION",
+        "reused_at": None,
+        "schema": "mastermind.ci_git_cache_validation_receipt.v1",
+    }
+    stored_seal = json.loads(
+        (cache / ".last-update-ok").read_text(encoding="utf-8")
+    )
+    assert set(stored_seal) == {
+        "schema",
+        "validator_revision",
+        "cache_instance",
+        "main_oid",
+        "identity_sha256",
+        "shallow_boundary",
+        "lookup_context_sha256",
+        "object_context_sha256",
+        "full_validated_at",
+    }
+    assert stored_seal["schema"] == "mastermind.ci_git_cache_validation_seal.v1"
+    assert stored_seal["main_oid"] == sha
+    assert stored_seal["cache_instance"]["path"] == str(cache)
+    assert stored_seal["shallow_boundary"] == {"present": False, "sha256": None}
+    assert "origin" not in stored_seal
+    seal_stat = (cache / ".last-update-ok").stat()
+    assert seal_stat.st_uid == os.geteuid()
+    assert seal_stat.st_nlink == 1
+    first_commands = trace_argvs(first_trace)
+    assert any(
+        "rev-list" in argv
+        and "--no-object-names" in argv
+        and "refs/heads/main" in argv
+        for argv in first_commands
+    )
+    assert any("cat-file" in argv and "--batch-check" in argv for argv in first_commands)
+
+    # FETCH_HEAD is recreated only by the second invocation's real fetch. A
+    # matching seal is therefore not allowed to skip network reconciliation.
+    (cache / "FETCH_HEAD").unlink()
+    second_trace = tmp_path / "second-trace.jsonl"
+    second = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        trace=second_trace,
+    )
+    assert second.returncode == 0, second.stdout + second.stderr
+    assert (cache / "FETCH_HEAD").is_file()
+    second_receipt = cache_validation_receipt(second)
+    assert second_receipt["schema"] == "mastermind.ci_git_cache_validation_receipt.v1"
+    assert second_receipt["mode"] == "PRIOR_VALIDATION_REUSED"
+    assert second_receipt["main_oid"] == sha
+    assert second_receipt["full_validated_at"] == first_receipt["full_validated_at"]
+    assert isinstance(second_receipt["reused_at"], str)
+    second_commands = trace_argvs(second_trace)
+    assert any("fetch" in argv for argv in second_commands)
+    # fetch has its own narrow negotiation rev-list; only the updater's
+    # all-reachable validation form must be absent on a reuse hit.
+    assert not any(
+        "rev-list" in argv
+        and "--no-object-names" in argv
+        and "refs/heads/main" in argv
+        for argv in second_commands
+    )
+    assert not any(
+        "cat-file" in argv and "--batch-check" in argv for argv in second_commands
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    ["main", "identity", "config", "object-context", "shallow-boundary"],
+)
+def test_cache_update_revalidates_each_independent_seal_key_change(
+    tmp_path: Path, mutation: str
+) -> None:
+    source, origin, cache, sha = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert cache_validation_receipt(first)["mode"] == "FULL_VALIDATION"
+
+    expected_sha = sha
+    if mutation == "main":
+        (source / "tracked.txt").write_text("new main\n", encoding="utf-8")
+        git(source, "add", "tracked.txt")
+        git(source, "commit", "-m", "advance main")
+        expected_sha = git(source, "rev-parse", "HEAD")
+        git(source, "push", str(origin), "main")
+    elif mutation == "identity":
+        marker = cache / ".mastermind-cache-identity.json"
+        payload = json.loads(marker.read_text(encoding="utf-8"))
+        payload["bootstrap"] = "changed"
+        marker.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
+    elif mutation == "config":
+        git(cache, "config", "mastermind.lookup-context", "changed")
+    elif mutation == "object-context":
+        unused_fanout = next(
+            cache / "objects" / f"{number:02x}"
+            for number in range(256)
+            if not (cache / "objects" / f"{number:02x}").exists()
+        )
+        unused_fanout.mkdir()
+    else:
+        (cache / "shallow").write_text(sha + "\n", encoding="ascii")
+
+    second = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert second.returncode == 0, second.stdout + second.stderr
+    receipt = cache_validation_receipt(second)
+    assert receipt["mode"] == "FULL_VALIDATION"
+    assert receipt["main_oid"] == expected_sha
+
+
+def test_cache_update_revalidates_a_copied_seal_on_the_new_cache_instance(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    first = run_cache_update(cache, tmp_path / "first.lock", bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+
+    copied = tmp_path / "copied-cache.git"
+    shutil.copytree(cache, copied)
+    second = run_cache_update(copied, tmp_path / "copied.lock", bin_dir=bin_dir)
+    assert second.returncode == 0, second.stdout + second.stderr
+    assert cache_validation_receipt(second)["mode"] == "FULL_VALIDATION"
+
+
+@pytest.mark.parametrize(
+    "legacy_payload",
+    ["", "2026-09-06T00:00:00Z\n", "{}\n", '{"schema":"unknown"}\n'],
+)
+def test_cache_update_treats_safe_legacy_or_malformed_seals_as_a_full_miss(
+    tmp_path: Path, legacy_payload: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    seal = cache / ".last-update-ok"
+    seal.write_text(legacy_payload, encoding="utf-8")
+    result = run_cache_update(cache, tmp_path / "cache.lock", bin_dir=bin_dir)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert cache_validation_receipt(result)["mode"] == "FULL_VALIDATION"
+    stored = json.loads(seal.read_text(encoding="utf-8"))
+    assert stored["schema"] == "mastermind.ci_git_cache_validation_seal.v1"
+    assert seal.stat().st_mode & 0o777 == 0o640
+
+
+@pytest.mark.parametrize("link_kind", ["symlink", "hardlink"])
+def test_cache_update_refuses_an_unsafe_seal_without_following_it(
+    tmp_path: Path, link_kind: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    victim = tmp_path / "victim"
+    victim.write_text("must remain untouched\n", encoding="utf-8")
+    seal = cache / ".last-update-ok"
+    if link_kind == "symlink":
+        seal.symlink_to(victim)
+    else:
+        os.link(victim, seal)
+
+    result = run_cache_update(cache, tmp_path / "cache.lock", bin_dir=bin_dir)
+    assert result.returncode == 78
+    assert "unsafe cache validation seal state" in result.stderr
+    assert victim.read_text(encoding="utf-8") == "must remain untouched\n"
+
+
+def test_cache_update_refuses_a_symlinked_lookup_file_before_following_it(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    git_entry = tmp_path / "git-entered"
+    victim = tmp_path / "unreadable-alternate"
+    victim.write_text("must not be read\n", encoding="utf-8")
+    victim.chmod(0o000)
+    alternates = cache / "objects" / "info" / "alternates"
+    alternates.symlink_to(victim)
+    try:
+        result = run_cache_update(
+            cache,
+            tmp_path / "cache.lock",
+            bin_dir=bin_dir,
+            env_overrides={
+                "REAL_GIT": real_git,
+                "CACHE_UPDATE_GIT_ENTRY_MARKER": str(git_entry),
+            },
+        )
+    finally:
+        victim.chmod(0o600)
+    assert result.returncode == 78
+    assert "symlink refused" in result.stderr
+    assert not git_entry.exists(), "unsafe lookup state reached Git before refusal"
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    ["config", "objects/info", "info", "objects/info/alternates", "shallow"],
+)
+def test_cache_update_qualifies_config_lookup_and_ancestors_before_git(
+    tmp_path: Path, unsafe_path: str
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    git_entry = tmp_path / "git-entered"
+    target = cache / unsafe_path
+    if unsafe_path.endswith("alternates"):
+        target.write_text("", encoding="utf-8")
+    elif unsafe_path == "shallow":
+        target.write_text(sha + "\n", encoding="ascii")
+    target.chmod(target.stat().st_mode | stat.S_IWGRP)
+
+    result = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        env_overrides={
+            "REAL_GIT": real_git,
+            "CACHE_UPDATE_GIT_ENTRY_MARKER": str(git_entry),
+        },
+    )
+
+    assert result.returncode == 78
+    assert "group/world-writable" in result.stderr
+    assert not git_entry.exists(), "unsafe config/lookup path reached Git"
+
+
+@pytest.mark.parametrize(
+    ("lookup_name", "value"),
+    [
+        ("alternates", "../../../../external-objects\n"),
+        ("http-alternates", "https://example.invalid/git/objects\n"),
+    ],
+)
+def test_cache_update_refuses_nonempty_external_alternates_before_git(
+    tmp_path: Path, lookup_name: str, value: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    git_entry = tmp_path / "git-entered"
+    (cache / "objects" / "info" / lookup_name).write_text(value, encoding="utf-8")
+
+    result = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        env_overrides={
+            "REAL_GIT": real_git,
+            "CACHE_UPDATE_GIT_ENTRY_MARKER": str(git_entry),
+        },
+    )
+
+    assert result.returncode == 78
+    assert "external alternate" in result.stderr
+    assert not git_entry.exists(), "external alternate reached Git before refusal"
+    assert not (cache / ".last-update-ok").exists()
+
+
+@pytest.mark.parametrize("target", ["cache", "identity", "seal"])
+def test_cache_update_refuses_group_writable_validation_state(
+    tmp_path: Path, target: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    if target == "seal":
+        first = run_cache_update(cache, lock, bin_dir=bin_dir)
+        assert first.returncode == 0, first.stdout + first.stderr
+        unsafe = cache / ".last-update-ok"
+    elif target == "identity":
+        unsafe = cache / ".mastermind-cache-identity.json"
+    else:
+        unsafe = cache
+    unsafe.chmod(unsafe.stat().st_mode | stat.S_IWGRP)
+
+    result = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert result.returncode == 78
+    assert "group/world-writable" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "variable", ["GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_SHALLOW_FILE"]
+)
+def test_cache_update_refuses_inherited_object_lookup_overrides(
+    tmp_path: Path, variable: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    result = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        env_overrides={variable: str(tmp_path / "foreign")},
+    )
+    assert result.returncode == 78
+    assert "unsafe inherited Git object lookup context" in result.stderr
+
+
+def test_cache_update_failed_fetch_invalidates_prior_success(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+    seal = cache / ".last-update-ok"
+    assert seal.is_file()
+    git(cache, "remote", "set-url", "origin", str(tmp_path / "missing.git"))
+
+    failed = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert failed.returncode != 0
+    assert not seal.exists()
+
+
+@pytest.mark.parametrize("stage", ["rev-list", "cat-file"])
+def test_cache_update_scan_stage_failure_cannot_publish_success(
+    tmp_path: Path, stage: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert (cache / ".last-update-ok").is_file()
+    git(cache, "config", "mastermind.lookup-context", "force-full-validation")
+    real_git = make_git_fault_shim(bin_dir)
+    result = run_cache_update(
+        cache,
+        lock,
+        bin_dir=bin_dir,
+        env_overrides={"REAL_GIT": real_git, "CACHE_UPDATE_GIT_FAULT": stage},
+    )
+    assert result.returncode in {91, 92}
+    assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+
+
+def test_cache_update_publication_failure_leaves_no_usable_or_partial_seal(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert (cache / ".last-update-ok").is_file()
+    git(cache, "config", "mastermind.lookup-context", "force-full-validation")
+    real_git = make_git_fault_shim(bin_dir)
+    try:
+        result = run_cache_update(
+            cache,
+            lock,
+            bin_dir=bin_dir,
+            env_overrides={
+                "REAL_GIT": real_git,
+                "CACHE_UPDATE_CHMOD_AFTER_CAT_FILE": str(cache),
+            },
+        )
+    finally:
+        cache.chmod(0o755)
+    assert result.returncode != 0
+    assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+
+
+def test_cache_update_short_payload_write_cannot_publish_or_be_reused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    seal_tool = cache_seal_namespace()
+    lookup_digest = "a" * 64
+    state = seal_tool["expected_state"](str(cache), sha, lookup_digest)
+    fingerprint = seal_tool["state_fingerprint"](state)
+    real_write = os.write
+
+    def short_write(descriptor: int, payload: bytes) -> int:
+        short_count = max(1, len(payload) // 2)
+        return real_write(descriptor, payload[:short_count])
+
+    monkeypatch.setattr(os, "write", short_write)
+    with pytest.raises(seal_tool["UnsafeState"], match="short.*write"):
+        seal_tool["publish"](str(cache), sha, lookup_digest, fingerprint)
+
+    assert "FULL_VALIDATION" not in capsys.readouterr().out
+    assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+    with pytest.raises(SystemExit) as missed:
+        seal_tool["probe"](str(cache), sha, lookup_digest)
+    assert missed.value.code == 10
+
+
+def test_cache_update_post_rename_fsync_failure_removes_only_this_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    seal_tool = cache_seal_namespace()
+    lookup_digest = "b" * 64
+    state = seal_tool["expected_state"](str(cache), sha, lookup_digest)
+    fingerprint = seal_tool["state_fingerprint"](state)
+    real_fsync = os.fsync
+
+    def fail_directory_fsync(descriptor: int) -> None:
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+            raise OSError(5, "injected directory fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(os, "fsync", fail_directory_fsync)
+    with pytest.raises(seal_tool["UnsafeState"], match="durability"):
+        seal_tool["publish"](str(cache), sha, lookup_digest, fingerprint)
+
+    assert "FULL_VALIDATION" not in capsys.readouterr().out
+    assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+    with pytest.raises(SystemExit) as missed:
+        seal_tool["probe"](str(cache), sha, lookup_digest)
+    assert missed.value.code == 10
+
+
+def test_cache_update_publication_settlement_refuses_a_foreign_seal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    seal_tool = cache_seal_namespace()
+    lookup_digest = "c" * 64
+    state = seal_tool["expected_state"](str(cache), sha, lookup_digest)
+    fingerprint = seal_tool["state_fingerprint"](state)
+    seal = cache / ".last-update-ok"
+    real_fsync = os.fsync
+    substituted = False
+
+    def substitute_before_directory_fsync(descriptor: int) -> None:
+        nonlocal substituted
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode) and not substituted:
+            substituted = True
+            seal.unlink()
+            seal.write_text("foreign-state\n", encoding="utf-8")
+            raise OSError(5, "injected directory fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(os, "fsync", substitute_before_directory_fsync)
+    with pytest.raises(seal_tool["UnsafeState"], match="foreign"):
+        seal_tool["publish"](str(cache), sha, lookup_digest, fingerprint)
+
+    assert seal.read_text(encoding="utf-8") == "foreign-state\n"
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+
+
+def test_cache_update_refuses_to_seal_object_context_that_changed_during_scan(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+    git(cache, "config", "mastermind.lookup-context", "force-full-validation")
+    real_git = make_git_fault_shim(bin_dir)
+
+    changed = run_cache_update(
+        cache,
+        lock,
+        bin_dir=bin_dir,
+        env_overrides={
+            "REAL_GIT": real_git,
+            "CACHE_UPDATE_MUTATE_AFTER_CAT_FILE": str(cache),
+        },
+    )
+    assert changed.returncode != 0
+    assert "changed during full validation" in changed.stderr
+    assert not (cache / ".last-update-ok").exists()
+
+
+def test_cache_update_missing_reachable_object_fails_without_a_success_seal(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    blob = git(cache, "rev-parse", f"{sha}:tracked.txt")
+    loose_object = cache / "objects" / blob[:2] / blob[2:]
+    assert loose_object.is_file(), "fixture must exercise a real missing loose object"
+    loose_object.unlink()
+
+    result = run_cache_update(
+        cache, tmp_path / "cache.lock", bin_dir=bin_dir
+    )
+    assert result.returncode != 0
+    assert not (cache / ".last-update-ok").exists()
+
+
+def test_cache_update_serializes_overlapping_users_and_only_one_scans(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    marker = tmp_path / "rev-list-entered"
+    lock = tmp_path / "cache.lock"
+    first_env = cache_update_environment(
+        bin_dir=bin_dir,
+        env_overrides={
+            "REAL_GIT": real_git,
+            "CACHE_UPDATE_REV_LIST_MARKER": str(marker),
+            "CACHE_UPDATE_REV_LIST_DELAY": "1.0",
+        },
+    )
+    first = subprocess.Popen(
+        [str(CACHE_UPDATE), str(cache), str(lock)],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=first_env,
+    )
+    deadline = time.monotonic() + 5
+    while not marker.exists() and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert marker.exists(), "first updater never entered full validation"
+    second = subprocess.Popen(
+        [str(CACHE_UPDATE), str(cache), str(lock)],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=cache_update_environment(
+            bin_dir=bin_dir, env_overrides={"REAL_GIT": real_git}
+        ),
+    )
+    first_stdout, first_stderr = first.communicate(timeout=15)
+    second_stdout, second_stderr = second.communicate(timeout=15)
+    assert first.returncode == 0, first_stdout + first_stderr
+    assert second.returncode == 0, second_stdout + second_stderr
+    modes = {
+        cache_validation_receipt(
+            subprocess.CompletedProcess([], 0, stdout=first_stdout, stderr=first_stderr)
+        )["mode"],
+        cache_validation_receipt(
+            subprocess.CompletedProcess([], 0, stdout=second_stdout, stderr=second_stderr)
+        )["mode"],
+    }
+    assert modes == {"FULL_VALIDATION", "PRIOR_VALIDATION_REUSED"}
+
+
+def test_identical_key_silent_object_damage_is_not_misreported_as_fresh_validation(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+
+    blob = git(cache, "rev-parse", f"{sha}:tracked.txt")
+    loose_object = cache / "objects" / blob[:2] / blob[2:]
+    before = loose_object.stat()
+    damaged = bytearray(loose_object.read_bytes())
+    assert damaged
+    damaged[-1] ^= 0x01
+    with loose_object.open("r+b") as handle:
+        handle.write(damaged)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.utime(loose_object, ns=(before.st_atime_ns, before.st_mtime_ns))
+
+    reused = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert reused.returncode == 0, reused.stdout + reused.stderr
+    assert cache_validation_receipt(reused)["mode"] == "PRIOR_VALIDATION_REUSED"
+
+    # Reuse is acceleration evidence, not a fresh object audit. The mandatory
+    # exact-tree, no-lazy-fetch job boundary still catches the damaged blob and
+    # never falls back to origin.
+    git(
+        cache,
+        "remote",
+        "set-url",
+        "origin",
+        "https://github.com/mastermindx-market-intelligence/macro.git",
+    )
+    workspace = tmp_path / "workspace"
+    materialized = run_prewarm(cache, workspace, sha)
+    assert materialized.returncode == 66
+    assert not (workspace / ".git" / "FETCH_HEAD").exists()
+
+
+def test_known_object_repair_invalidates_reuse_when_the_seal_is_removed(
+    tmp_path: Path,
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    lock = tmp_path / "cache.lock"
+    first = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert first.returncode == 0, first.stdout + first.stderr
+    (cache / ".last-update-ok").unlink()
+
+    second = run_cache_update(cache, lock, bin_dir=bin_dir)
+    assert second.returncode == 0, second.stdout + second.stderr
+    assert cache_validation_receipt(second)["mode"] == "FULL_VALIDATION"
 
 
 def test_runner_service_seals_runtime_and_binds_host_admission() -> None:

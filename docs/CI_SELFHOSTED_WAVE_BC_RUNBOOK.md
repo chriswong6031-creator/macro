@@ -48,6 +48,68 @@ from that maintained shallow `main`; they do not claim that unreachable historic
 promisor fragments form complete history. Full current-tree checkout with lazy fetch
 disabled is the materialization acceptance boundary.
 
+### Unchanged-main validation seal
+
+Capability state: **`BUILT_NOT_PROVEN / NOT_INSTALLED`** until this source carrier is
+accepted and a separate host carrier deploys it. This PR changes no service, timer,
+cache, listener, route, resource limit, render lane, credential, or repository
+visibility.
+
+The updater still takes the existing `flock` and successfully fetches exact
+`refs/heads/main` on every cycle. After that fetch, it may avoid repeating the costly
+all-reachable `rev-list | cat-file --batch-check` only when the root-owned
+`.last-update-ok` is a safe, complete `mastermind.ci_git_cache_validation_seal.v1`
+whose entire validation key still matches:
+
+- validator revision and exact post-fetch `main` object ID;
+- cache and object-directory path/device/inode identity;
+- identity-marker digest;
+- shallow-boundary absence or digest;
+- Git version, object format, complete repository config, and safe
+  alternates/http-alternates/grafts state; and
+- cheap object-estate mutation context: the object root and loose fanout-directory
+  identities/timestamps plus pack-file identities, sizes, and timestamps.
+
+Missing, legacy, malformed, copied, or mismatched safe seals are misses and run the
+original full validation. Validator revision v2 also makes every earlier v1 seal a
+miss. Before the first Git invocation, the updater qualifies `config`, the default
+`shallow` boundary, every permitted lookup file, and the `objects/info` / `info`
+ancestors Git would traverse. A safe absent or regular `shallow` file remains accepted,
+and its pre-Git digest binds the seal. A symlink, hard link, wrong owner,
+group/world-writable cache/marker/config/seal/lookup path, symlink-traversing cache
+path, or inherited Git object lookup override refuses before Git can consume it. Empty
+alternates metadata is harmless and remains bound; a nonempty `alternates` or
+`http-alternates` file refuses under the sole-cache contract rather than silently
+admitting an unqualified external object estate.
+
+The updater removes a prior safe seal before a required full scan and publishes the
+replacement as a complete `0640` regular temporary file. It requires `write(2)` to
+report the entire payload, `fsync`s the file, opens and identity-binds the cache
+directory before rename, atomically installs the exact temporary inode, and `fsync`s
+that directory. If final directory durability fails, settlement removes only that
+attempt's positively identified seal; a missing seal is already settled, while a
+substituted/foreign inode is preserved and refused. A short write, fetch failure,
+either scan-pipeline failure, missing objects, publication/settlement failure, or
+validation-input movement during the scan cannot emit `FULL_VALIDATION` or leave this
+attempt's result reusable.
+
+Receipts distinguish `FULL_VALIDATION` from `PRIOR_VALIDATION_REUSED`. A reuse receipt
+preserves the original full-validation time and reports a separate current reuse time;
+it does not rewrite the immutable full-validation seal. The reuse result means only
+that the successful fetch found an identical bounded validation key. It is **not** a
+fresh all-reachable availability check, a byte-integrity audit, or a corruption scan.
+The existing `cat-file --batch-check` full path itself validates object availability
+metadata, not every object hash.
+
+Known cache reseed, repair, replacement, manual object mutation, or lookup-context
+change must take the same cache lock and remove `.last-update-ok` before mutation; no
+such operation may carry the seal forward. An out-of-contract in-place loose-object
+change that preserves the bounded key can remain silent until an affected job asks for
+that object. That accepted residual is why every job must retain exact-tree
+materialization with `GIT_NO_LAZY_FETCH=1` and no direct-origin fallback: the affected
+checkout fails closed rather than silently healing from GitHub. Reuse is an
+acceleration decision, never CI semantic proof.
+
 Before candidate materialization, the root-owned prewarm program:
 
 1. validates the cache owner, modes, identity marker, bare-repository state, origin,
