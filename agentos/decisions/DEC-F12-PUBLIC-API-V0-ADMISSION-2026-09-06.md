@@ -49,6 +49,16 @@ alternatives:
       D1-D9 owns product scenario computation, never public exposure; a bare
       absorption note would let a D-wave session ship publicly under an F12
       refusal.
+  - option: Infer public redistribution rights from the estate's existing
+      internal display/compute rights over the same sources
+    why_not: >
+      This is the authority hop the redistribution clause exists to forbid.
+      R-1..R-4 (`MARKET_ONTOLOGY_F01_R5R6_SOURCE_CENSUS_AND_RIGHTS_RULINGS_2026-09-04.md`)
+      and `docs/QUAL_DATA_COMPLIANCE.md` scope each licence to display/derived
+      use inside this product; none grants bulk or verbatim re-publication.
+      Treating display rights as redistribution rights would breach those
+      terms the moment any public payload carried the source, so every
+      excluded source stays excluded absent separate affirmative evidence.
 evidence:
   - "app/main.py:952 require_user (Supabase token; 'no second auth cache' — MMX-004)"
   - "app/main.py:1044 GET /api/account; app/billing.py:643 read_entitlement (called main.py:1021, main.py:1052)"
