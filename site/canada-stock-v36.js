@@ -34,6 +34,7 @@
     anLane: null, anOpen: {}, hasThemeRank: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
+  var quoteObserver = null;
 
   /* Owner-native Act-Now lane vocabulary (templates/canada.html.j2:854-996,
      `_ca_anlane(...)` title_en/title_zh). This is the single source for both
@@ -67,9 +68,54 @@
     var p = raw.split("-").map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2], 12));
     return { en: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(d), zh: p[0] + "年" + p[1] + "月" + p[2] + "日" };
   }
-  function liveDate() {
-    var d = new Date();
-    return { en: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d), zh: d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" };
+  function quotePlaneState(nodes) {
+    var list = Array.prototype.slice.call(nodes || []);
+    if (!list.length) return { state: "unavailable", detail: "" };
+    var accepted = { "1": "live", delayed: "delayed", stale: "stale", closed: "closed" };
+    var prefix = {
+      live: /^live · /,
+      delayed: /^≥\d+-min delayed · /,
+      stale: /^stale · /,
+      closed: /^market closed · /
+    };
+    var first = null;
+    for (var i = 0; i < list.length; i++) {
+      var raw = list[i] && list[i].getAttribute ? list[i].getAttribute("data-live") : null;
+      var stateName = accepted[raw];
+      var detail = list[i] && list[i].getAttribute ? String(list[i].getAttribute("title") || "").trim() : "";
+      if (!stateName || !prefix[stateName].test(detail)) return { state: "unavailable", detail: "" };
+      if (first && first.state !== stateName) return { state: "unavailable", detail: "" };
+      if (!first) first = { state: stateName, detail: detail };
+    }
+    return first || { state: "unavailable", detail: "" };
+  }
+  function quoteStatusCopy(receipt) {
+    if (!receipt || receipt.state === "unavailable") {
+      return { en: "Quotes unavailable · awaiting confirmation", zh: "报价暂不可用 · 等待确认" };
+    }
+    var bits = receipt.detail.split(" · "), basis = bits.slice(1).join(" · ");
+    var lead = receipt.state === "live" ? { en: "LIVE", zh: "实时" }
+      : receipt.state === "delayed" ? { en: bits[0].toUpperCase(), zh: bits[0] + " · 延迟" }
+      : receipt.state === "stale" ? { en: "STALE", zh: "陈旧" }
+      : { en: "MARKET CLOSED", zh: "市场已收盘" };
+    return { en: lead.en + (basis ? " · " + basis : ""), zh: lead.zh + (basis ? " · " + basis : "") };
+  }
+  function renderQuoteStatus() {
+    var host = qs("#ca-v36-quote-status");
+    if (!host) return;
+    var receipt = quotePlaneState(qsa('#ca-v36-card-grid .nb-px[data-sym][data-mkt="ca"]'));
+    var copy = quoteStatusCopy(receipt);
+    host.setAttribute("data-quote-state", receipt.state);
+    host.innerHTML = '<span class="ca-v36-quote-dot" aria-hidden="true"></span><b>' + bi(copy.en, copy.zh) + '</b>';
+  }
+  function observeQuoteStatus() {
+    var owner = qs("#ca-v36-card-grid");
+    renderQuoteStatus();
+    if (!owner || quoteObserver || !window.MutationObserver) return;
+    quoteObserver = new MutationObserver(function (mutations) {
+      if (mutations.some(function (mutation) { return mutation.type === "attributes"; })) renderQuoteStatus();
+    });
+    quoteObserver.observe(owner, { subtree: true, attributes: true, attributeFilter: ["data-live", "title"] });
   }
 
   function parseRows() {
@@ -229,7 +275,7 @@
        unknown-membership row is a research destination, not a filter that
        would no-op and paint the whole board as matching. */
     var act = x.members != null ? ' data-ca-lead-kind="sector" data-ca-lead-id="' + esc(x.id) + '"' : ' disabled';
-    return '<div class="ca-v36-an-row-w"><button class="ca-v36-an-row" type="button"' + act + '><span class="ca-v36-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+    return '<div class="ca-v36-an-row-w" data-action-id="' + esc(x.id) + '"><button class="ca-v36-an-row" type="button"' + act + '><span class="ca-v36-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
   }
   function anLaneHtml(lane) {
     var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
@@ -240,7 +286,7 @@
         (open ? bi("Show fewer", "收起") : bi("View all " + items.length, "查看全部 " + items.length)) + '</button>'
       : '';
     var current = state.anLane === lane.tone ? " is-current" : "";
-    return '<div class="ca-v36-an-lane' + current + '" data-ca-an-lane-body="' + esc(lane.tone) + '"><div class="ca-v36-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
+    return '<div class="ca-v36-an-lane' + current + '" id="' + esc(lane.sel.slice(1)) + '" data-action-lane-body="' + esc(lane.tone) + '" data-ca-an-lane-body="' + esc(lane.tone) + '"><div class="ca-v36-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
   }
   function renderActNow() {
     var host = qs("#ca-v36-an-body"); if (!host) return;
@@ -329,17 +375,23 @@
   function populationCopy(shown, board, watch, unique) {
     if (board === null) {
       return watch === null
-        ? bi(shown + " cards shown · board unavailable · watch unavailable", "显示 " + shown + " 张卡片 · 榜单暂不可用 · 观察名单暂不可用")
-        : bi(shown + " cards shown · board unavailable · " + watch + " watch names", "显示 " + shown + " 张卡片 · 榜单暂不可用 · 观察 " + watch + " 只");
+        ? bi(shown + " actionable cards shown · stage board unavailable · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单暂不可用 · 观察名单暂不可用")
+        : bi(shown + " actionable cards shown · stage board unavailable · " + watch + " watch names", "显示 " + shown + " 张可操作卡片 · 阶段榜单暂不可用 · 观察 " + watch + " 只");
     }
-    if (watch === null) return bi(shown + " cards shown · " + board + " board names · watch unavailable", "显示 " + shown + " 张卡片 · 榜单 " + board + " 只 · 观察名单暂不可用");
+    if (watch === null) return bi(shown + " actionable cards shown · " + board + " stage-board names · watch unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + board + " 只 · 观察名单暂不可用");
     return unique === null
-      ? bi(shown + " cards shown · " + board + " board names · " + watch + " watch names · unique total unavailable", "显示 " + shown + " 张卡片 · 榜单 " + board + " 只 · 观察 " + watch + " 只 · 去重总数暂不可用")
-      : bi(shown + " cards shown · " + unique + " current names (" + board + " board + " + watch + " watch)", "显示 " + shown + " 张卡片 · 当前共 " + unique + " 只（榜单 " + board + " + 观察 " + watch + "）");
+      ? bi(shown + " actionable cards shown · " + board + " stage-board names · " + watch + " watch names · unique total unavailable", "显示 " + shown + " 张可操作卡片 · 阶段榜单 " + board + " 只 · 观察 " + watch + " 只 · 去重总数暂不可用")
+      : bi(shown + " actionable cards shown · " + unique + " current names (" + board + " stage board + " + watch + " watch)", "显示 " + shown + " 张可操作卡片 · 当前共 " + unique + " 只（阶段榜单 " + board + " + 观察 " + watch + "）");
   }
   function applyFilter() {
     var shown = 0;
-    state.cards.forEach(function (card) { var show = allowed(ticker(card.getAttribute("data-ticker"))); card.hidden = !show; if (show) shown++; });
+    state.cards.forEach(function (card) {
+      var show = allowed(ticker(card.getAttribute("data-ticker")));
+      card.classList.remove("sm-hidden", "sm-reveal");
+      card.style.animationDelay = "";
+      card.hidden = !show;
+      if (show) shown++;
+    });
     var empty = qs("#ca-v36-grid-empty");
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var board = boardPopulation(), result = qs("#ca-v36-result"), watch = watchPopulation(), unique = uniquePopulation();
@@ -385,17 +437,23 @@
 
   function setSource(value) {
     state.source = value === "all" ? "all" : "top";
+    var prophet = qs("#ca-v36-prophet");
+    if (prophet) prophet.setAttribute("data-active-source", state.source);
     qsa("[data-ca-source]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-ca-source") === state.source)); });
     applyFilter();
   }
-  function setView(value) {
+  function adoptView(value) {
     state.view = value === "table" ? "table" : "grid";
+    if (state.view === "table") { enhanceTableQuotes(); applyTableFilter(); }
+  }
+  function setView(value) {
+    value = value === "table" ? "table" : "grid";
+    if (window.StockTable && typeof window.StockTable._setView === "function") return window.StockTable._setView(value);
+    adoptView(value);
     try { localStorage.setItem("mdx_stocktable_ca_view", state.view); } catch (e) {}
     qsa("[data-ca-view]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-ca-view") === state.view)); });
     var board = qs("#standouts");
-    if (window.StockTable && typeof window.StockTable._setView === "function") window.StockTable._setView(state.view);
-    else if (board) board.classList.toggle("st-table-mode", state.view === "table");
-    if (state.view === "table") { enhanceTableQuotes(); applyTableFilter(); }
+    if (board) board.classList.toggle("st-table-mode", state.view === "table");
   }
   /* Sol adversarial gate: leadership activation sets the filter only — it
      must never force-switch the Top Picks / All Candidates population.
@@ -427,12 +485,14 @@
   function closeModal() { var modal = qs("#ca-v36-modal"); if (!modal) return; modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); document.documentElement.style.overflow = ""; }
 
   function bind(root) {
+    root.addEventListener("stocktable:ca-view", function (e) {
+      adoptView(e.detail && e.detail.view);
+    });
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-ca-source]"); if (b) return setSource(b.getAttribute("data-ca-source"));
-      b = e.target.closest("[data-ca-view]"); if (b) return setView(b.getAttribute("data-ca-view"));
       /* Act-Now presentation controls: distinct targets, never carry the
          lead-kind/-id pair, never touch source/filter. */
-      b = e.target.closest("[data-ca-an-lane]"); if (b) return setAnLane(b.getAttribute("data-ca-an-lane"));
+      b = e.target.closest("[data-ca-an-lane]"); if (b) { e.preventDefault(); return setAnLane(b.getAttribute("data-ca-an-lane")); }
       b = e.target.closest("[data-ca-an-view]"); if (b) return toggleAnLane(b.getAttribute("data-ca-an-view"));
       b = e.target.closest("[data-ca-lead-kind][data-ca-lead-id]"); if (b) return activate(b.getAttribute("data-ca-lead-kind"), b.getAttribute("data-ca-lead-id"));
       if (e.target.closest("#ca-v36-filter")) { state.filter = null; return applyFilter(); }
@@ -453,9 +513,10 @@
       }
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
     }
-    renderLeadership(); renderFresh(); applyFilter();
-    try { state.view = localStorage.getItem("mdx_stocktable_ca_view") === "table" ? "table" : "grid"; } catch (e) { state.view = "grid"; }
-    setView(state.view); observeTable(); return true;
+    renderActNow(); renderLeadership(); renderFresh(); applyFilter(); observeQuoteStatus();
+    var selectedView = qs("[data-ca-view][aria-selected='true']", main);
+    adoptView(selectedView && selectedView.getAttribute("data-ca-view"));
+    observeTable(); return true;
   }
 
   function getJson(url) {
@@ -465,6 +526,9 @@
     if (!document.body.classList.contains("page-canada")) return;
     var payload = parseRows() || { rows: [], as_of: "" };
     state.cards = collectCards();
+    var prophet = qs("#ca-v36-prophet");
+    var initialSource = prophet && prophet.getAttribute("data-initial-source");
+    state.source = initialSource === "all" ? "all" : "top";
     state.sectors = collectSectors();
     buildShell(payload);
 

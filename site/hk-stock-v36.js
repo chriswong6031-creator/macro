@@ -161,9 +161,9 @@
      into a rank number.
 
      Membership law: Prophet-name counts/filters are canonical only when the
-     board rows actually publish a sector field. When no row carries one,
-     members stays null (unknown), the count is omitted everywhere, and
-     unknown must never render as zero. */
+     board rows publish this exact sector in their own vocabulary. A different
+     sector elsewhere on the page does not prove this group's membership;
+     unknown stays null and must never render as zero. */
   function collectSectors() {
     var lanes = collectLaneSectors(), ranks = collectRotationRanks();
     var ranked = [], unranked = [], seenIds = Object.create(null);
@@ -191,10 +191,11 @@
        must disappear too — a basis label over a traversal-ordered list would
        be rank language without a rank owner. */
     state.hasRankOwner = merged.some(function (x) { return x.rank != null; });
-    state.membershipKnown = state.rows.some(function (r) { return !!(r && r.sector); });
+    var sectorVocab = new Set(state.rows.map(function (r) { return r && r.sector; }).filter(Boolean));
+    state.membershipKnown = sectorVocab.size > 0;
     merged.forEach(function (x) {
       x.kind = "sector";
-      if (state.membershipKnown) {
+      if (sectorVocab.has(x.name.en)) {
         var members = sectorMembers(x.name.en);
         x.members = members; x.leaders = firstN(Array.from(members), 3); x.count = members.size;
       } else {
@@ -281,7 +282,8 @@
   function anRowHtml(x) {
     var countHtml = x.count != null ? '<span class="hk-v37-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
     var go = x.href ? '<a class="hk-v37-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
-    return '<div class="hk-v37-an-row-w"><button class="hk-v37-an-row" type="button" data-hk-lead-id="' + esc(x.id) + '"><span class="hk-v37-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+    var act = x.members != null ? ' data-hk-lead-id="' + esc(x.id) + '"' : ' disabled';
+    return '<div class="hk-v37-an-row-w" data-action-id="' + esc(x.id) + '"><button class="hk-v37-an-row" type="button"' + act + '><span class="hk-v37-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
   }
   function anLaneHtml(lane) {
     var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
@@ -292,7 +294,7 @@
         (open ? bi("Show fewer", "收起") : bi("View all " + items.length, "查看全部 " + items.length)) + '</button>'
       : '';
     var current = state.anLane === lane.tone ? " is-current" : "";
-    return '<div class="hk-v37-an-lane' + current + '" data-hk-an-lane-body="' + esc(lane.tone) + '"><div class="hk-v37-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
+    return '<div class="hk-v37-an-lane' + current + '" id="' + esc(lane.sel.slice(1)) + '" data-action-lane-body="' + esc(lane.tone) + '" data-hk-an-lane-body="' + esc(lane.tone) + '"><div class="hk-v37-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
   }
   function renderActNow() {
     var host = qs("#hk-v37-an-body"); if (!host) return;
@@ -410,7 +412,16 @@
   }
   function applyFilter() {
     var shown = 0;
-    state.cards.forEach(function (card) { var show = allowed(ticker(card.getAttribute("data-ticker"))); card.hidden = !show; if (show) shown++; });
+    state.cards.forEach(function (card) {
+      /* The canonical owner grid has one visibility controller. Heal stale
+         generic-showmore classes before assigning the selected manifest so a
+         resize or legacy init cannot conceal an otherwise-selected card. */
+      card.classList.remove("sm-hidden", "sm-reveal");
+      card.style.removeProperty("animation-delay");
+      var show = allowed(ticker(card.getAttribute("data-ticker")));
+      card.hidden = !show;
+      if (show) shown++;
+    });
     var empty = qs("#hk-v37-grid-empty");
     if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var total = ownerPopulation();
@@ -442,17 +453,23 @@
 
   function setSource(value) {
     state.source = value === "all" ? "all" : "top";
+    var prophet = qs("#hk-v37-prophet");
+    if (prophet) prophet.setAttribute("data-active-source", state.source);
     qsa("[data-hk-source]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-hk-source") === state.source)); });
     applyFilter();
   }
-  function setView(value) {
+  function adoptView(value) {
     state.view = value === "table" ? "table" : "grid";
+    if (state.view === "table") applyTableFilter();
+  }
+  function setView(value) {
+    value = value === "table" ? "table" : "grid";
+    if (window.StockTable && typeof window.StockTable._setView === "function") return window.StockTable._setView(value);
+    adoptView(value);
     try { localStorage.setItem("mdx_stocktable_hk_view", state.view); } catch (e) {}
     qsa("[data-hk-view]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-hk-view") === state.view)); });
     var board = qs("#standouts");
-    if (window.StockTable && typeof window.StockTable._setView === "function") window.StockTable._setView(state.view);
-    else if (board) board.classList.toggle("st-table-mode", state.view === "table");
-    if (state.view === "table") applyTableFilter();
+    if (board) board.classList.toggle("st-table-mode", state.view === "table");
   }
   /* Sol adversarial gate: leadership activation sets the filter only — it must
      never force-switch the Top Picks / All Candidates population. applyFilter()
@@ -509,15 +526,17 @@
   }
 
   function bind(root) {
+    root.addEventListener("stocktable:hk-view", function (e) {
+      adoptView(e.detail && e.detail.view);
+    });
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-hk-source]"); if (b) return setSource(b.getAttribute("data-hk-source"));
-      b = e.target.closest("[data-hk-view]"); if (b) return setView(b.getAttribute("data-hk-view"));
       /* Act-Now presentation controls come BEFORE the data-hk-lead-id row
          handler only in the sense that they are distinct targets — the
          segment/View-all buttons never carry data-hk-lead-id, and neither
          handler touches source/filter. */
-      b = e.target.closest("[data-hk-an-lane]"); if (b) return setAnLane(b.getAttribute("data-hk-an-lane"));
-      b = e.target.closest("[data-hk-an-view]"); if (b) return toggleAnLane(b.getAttribute("data-hk-an-view"));
+      b = e.target.closest("[data-hk-an-lane]"); if (b) { e.preventDefault(); return setAnLane(b.getAttribute("data-hk-an-lane")); }
+      b = e.target.closest("[data-hk-an-view]"); if (b) { e.preventDefault(); return toggleAnLane(b.getAttribute("data-hk-an-view")); }
       b = e.target.closest("[data-hk-lead-id]"); if (b) return activate(b.getAttribute("data-hk-lead-id"));
       if (e.target.closest("#hk-v37-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#hk-v37-expand")) return openModal();
@@ -537,10 +556,11 @@
       }
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
     }
-    renderLeadership(); renderFlowCue();
+    renderActNow(); renderLeadership(); renderFlowCue();
     setSource(state.source);
-    try { state.view = localStorage.getItem("mdx_stocktable_hk_view") === "table" ? "table" : "grid"; } catch (e) { state.view = "grid"; }
-    setView(state.view); observeTable(); return true;
+    var selectedView = qs("[data-hk-view][aria-selected='true']", main);
+    adoptView(selectedView && selectedView.getAttribute("data-hk-view"));
+    observeTable(); return true;
   }
 
   /* Bind the server-owned shell even when rows/cards are empty or malformed.
@@ -550,7 +570,9 @@
     var payload = parseRows() || { rows: [], as_of: "" };
     state.cards = collectCards();
     state.featuredCount = state.cards.filter(function (c) { return c.classList.contains("pv-featured"); }).length;
-    state.source = state.featuredCount > 0 ? "top" : "all";
+    var prophet = qs("#hk-v37-prophet");
+    var initialSource = prophet && prophet.getAttribute("data-initial-source");
+    state.source = initialSource === "top" ? "top" : "all";
     state.sectors = collectSectors();
     buildShell(payload);
   }

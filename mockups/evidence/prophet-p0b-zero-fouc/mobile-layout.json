@@ -2,14 +2,14 @@
   "schema": "mastermind.stock_dashboard_mobile_layout.v1",
   "proof_class": "browser_fixture_proof_reproducible",
   "claims": {
-    "source_contract": "not_assessed_by_this_receipt",
+    "source_contract": "browser_fixture",
     "browser_fixture": "reproducible",
     "canonical_build": "unavailable",
     "production": "none"
   },
   "verifier": {
     "path": "scripts/verify_stock_dashboard_mobile_layout.cjs",
-    "sha256": "71f05897ae8615b2a491a8f95c76d8e1094efa27ee3a99da96ed7cec573e4826"
+    "sha256": "4e1bf9ea22e1f44fe581bf6ddb34c44bb8ce76699f15e5c7a951af8a110f2f6b"
   },
   "browser": {
     "engine": "chromium",
@@ -17,19 +17,20 @@
   },
   "fixture_receipt": {
     "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-    "sha256": "3172d9f0b3bb7d50ee1c06e742bbc585b75d1389f07230ba85891bfe8e529576"
+    "sha256": "66f8f21fe8a7e5968f6d1c08a858b835d983c68e4f02a6c0f0ce12d804864089"
   },
   "fixture_assets_root": "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data",
   "fixture_market": "hk",
   "input_html": {
     "path": "hk_stocks.html",
     "route": "/hk_stocks.html",
-    "sha256": "5ba9170a6c84b44b474123ce152f22b9e8d3ce2d55e8586e182a3fdc98379685"
+    "sha256": "94b5e06171e7fe988e11a9064853ce50f88e3fb6d9314fbf607ae08aaf6688ea"
   },
   "construction_inputs": {
     "engine/i18n.py": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44",
+    "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-action-fixture.json": "b668fa56fbb03786562784e1e66a7cf058732dbe9ff9055294d7cf65fad462c9",
     "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json": "f0df976899677d3ff14ac0874b5b82e96ba77d52b9f1c0b7638927329e94ee95",
-    "scripts/render_stock_dashboard_fixture.py": "4b4e1dee9c994018e66e672ab8a12bd797396f2ca18572cf6a0a5c98fc2d3a6b",
+    "scripts/render_stock_dashboard_fixture.py": "317db6c9dd4832f20057ae9f22ee58ecfd969b72be41fa0f11f1c46bddfcf3f6",
     "templates/_aibrief_body.html.j2": "f758be7fc256a9dad50ea07542ef6d75b1aa6694be58eabd5627a351b74bd7c5",
     "templates/_aibrief_css.j2": "1c341bc8204ba2203cd6f1953419a58ace9ccc8c3048767658d276072cde5d81",
     "templates/_cmd_hero.css.j2": "86d3c260212c477d990b82dd424078dcb2227e252dcc83a2ba92f3e629b5170e",
@@ -45,7 +46,7 @@
     "templates/_risk_radar_dlg.html.j2": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43",
     "templates/_seo_head.html.j2": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee",
     "templates/_site_nav.html.j2": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482",
-    "templates/hk.html.j2": "cb03e7bf4b94f06fedc1de5d1031060ef34b1ff414128b30baccf49343e7bf96"
+    "templates/hk.html.j2": "861ac90aa06968a5ae43dcc3101919b8826a68fb142dc39b71dbb4dc0b1086f8"
   },
   "loaded_assets": {
     "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
@@ -60,7 +61,7 @@
     "site/fonts/Inter-600.woff2": "f9a06e79cd3a2a20951c0f0e28f66dd0e6d3fda73911d640a2125c8fcb78f21a",
     "site/fonts/Inter-700.woff2": "6f56409fd3d64bb85f7d070bce20749db2d66b6d63cec586cc22d1c761be2491",
     "site/fonts/Inter-800.woff2": "a7d0a50f15d389cad679238466bdb5fc9787aa0715719064ce25abaff042820d",
-    "site/hk-stock-v36.js": "95f4c1f2b236f78c6f34185a5372c6dcc48cbc8ebe234281f7080e9884ac0efc",
+    "site/hk-stock-v36.js": "d14f4d0669db702bd71f74b6ba36211e7cd5f391ca52fc1245f26b878c64cde3",
     "site/illus.css": "cbe6a0b4f83095ed300ee49a5d9f4d03e88005170a4792a7a9f41805a67e5f07",
     "site/illus.js": "8e0a3779784525f15bb4a1b20e50f39ef4d0ddf243827f5ab609cfb08a69c620",
     "site/live.js": "f7bdf7cce1606c07d806408b7feb8b134c99e838acc3ee887bf5e1a15a9f4478",
@@ -70,7 +71,7 @@
     "site/nav_market.js": "24985e3240b509bfa197a5203b7bd28bb039b82b77a624481393203c74463497",
     "site/navigation-refresh.css": "c299c32498d25c412608eca40e53686b891076dd11a0c452b7dfe048c3d25584",
     "site/product-nav-icons.css": "093ad1ea5ed74b16894c3939d971db3e957aba3476a7bf8aab2ccd7b3d044d93",
-    "site/stock-dashboard.css": "b88d625f9908c8d26d23447b7eedc6ce9fa2c43d405faab31f083bd6dcf6575c",
+    "site/stock-dashboard.css": "15542c18a9a13e06a0c4b1fa73ae8c2e19ff170857b31887f75fcda03c95ad93",
     "site/stock-logos.js": "cc29be531bc08e655464b6c0d384e1a46041aeb31caf7d982e926681fda7cb49",
     "site/stocktable.js": "56f6f93366f2e21024b4cd5c971766a7c9506aea49c21b37b428674b8f086819",
     "site/tablesort.js": "484d93337c0288b95b920d82d893600c97d7e4313c715d6bd9263222c9e4cc78",
@@ -82,7 +83,354 @@
     "height": 844,
     "device_scale_factor": 1
   },
-  "acceptance": "scroll_width <= client_width; elements_wider_than_viewport == 0; screenshot_width == 390",
+  "desktop_viewport": {
+    "width": 1440,
+    "height": 900,
+    "device_scale_factor": 1
+  },
+  "acceptance": "390px layout; one mobile action lane; typed action membership; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; no generic showmore owner; typed Canada quote states",
+  "desktop": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "initial": {
+      "action_panel_height": 239.45,
+      "prophet_top": 625.55,
+      "lane_rows": {
+        "buy": 3,
+        "near": 2,
+        "wait": 1,
+        "avoid": 2
+      },
+      "visible_lane_count": 4,
+      "generic_showmore_attribute": false,
+      "generic_showmore_bar_count": 0,
+      "initial_source": "all",
+      "selected_source": "all",
+      "title_count": 1,
+      "result_count": 1,
+      "owner_context_count": 1,
+      "vintage_count": 1,
+      "help_count": 1,
+      "view_control_count": 1,
+      "legacy_view_count": 0,
+      "source_manifest": {
+        "label": "initial-grid",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      "pass": true
+    },
+    "sequence": [
+      {
+        "label": "initial-table",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "table",
+        "visible_table": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "owner_active_source": "all",
+        "owner_active_view": "table",
+        "view_control_count": 1,
+        "table_mode": true,
+        "table_visible": true,
+        "grid_visible": false,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "persisted-table-startup",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "table",
+        "visible_table": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "owner_active_source": "all",
+        "owner_active_view": "table",
+        "view_control_count": 1,
+        "table_mode": true,
+        "table_visible": true,
+        "grid_visible": false,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true,
+        "persisted_view": "table"
+      },
+      {
+        "label": "top-grid",
+        "source": "top",
+        "filter": false,
+        "expected": [],
+        "visible": [],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "top",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "0 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 0 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "top-table",
+        "source": "top",
+        "filter": false,
+        "expected": [],
+        "visible": [],
+        "view": "table",
+        "visible_table": [],
+        "owner_active_source": "top",
+        "owner_active_view": "table",
+        "view_control_count": 1,
+        "table_mode": true,
+        "table_visible": true,
+        "grid_visible": false,
+        "result_copy": "0 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 0 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "all-grid",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "all-table",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "table",
+        "visible_table": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "owner_active_source": "all",
+        "owner_active_view": "table",
+        "view_control_count": 1,
+        "table_mode": true,
+        "table_visible": true,
+        "grid_visible": false,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "group",
+        "source": "all",
+        "filter": true,
+        "expected": [
+          "0966.HK",
+          "9926.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "2 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 2 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true,
+        "source_unchanged": true
+      },
+      {
+        "label": "clear",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "resized-390",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "resized-1440",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true
+      },
+      {
+        "label": "legacy-class-healed",
+        "source": "all",
+        "filter": false,
+        "expected": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "visible": [
+          "0966.HK",
+          "9926.HK",
+          "2057.HK"
+        ],
+        "view": "grid",
+        "visible_table": [],
+        "owner_active_source": "all",
+        "owner_active_view": "grid",
+        "view_control_count": 1,
+        "table_mode": false,
+        "table_visible": false,
+        "grid_visible": true,
+        "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+        "selected_sm_hidden": [],
+        "pass": true,
+        "animation_delay_residue": false
+      }
+    ],
+    "quote_cases": [],
+    "pass": true
+  },
   "pass": true,
   "states": [
     {
@@ -91,6 +439,144 @@
       "theme": "dark",
       "javascript_enabled": true,
       "composer": "loaded",
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": false,
+          "stocktable_ready": true,
+          "pass": true
+        },
+        "pass": true,
+        "view_all": {
+          "before": 3,
+          "after": 4,
+          "active_only": true,
+          "pass": true
+        },
+        "view_transition": {
+          "source": "all",
+          "expected": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_table": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "selected_view": "table",
+          "owner_active_view": "table",
+          "table_mode": true,
+          "control_count": 1,
+          "pass": true,
+          "grid_restored": true
+        },
+        "exercised_lanes": [
+          {
+            "lane": "near",
+            "visible_lanes": [
+              "near"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "wait",
+            "visible_lanes": [
+              "wait"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "avoid",
+            "visible_lanes": [
+              "avoid"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "buy",
+            "visible_lanes": [
+              "buy"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          }
+        ]
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,
@@ -105,6 +591,144 @@
       "theme": "light",
       "javascript_enabled": true,
       "composer": "loaded",
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": false,
+          "stocktable_ready": true,
+          "pass": true
+        },
+        "pass": true,
+        "view_all": {
+          "before": 3,
+          "after": 4,
+          "active_only": true,
+          "pass": true
+        },
+        "view_transition": {
+          "source": "all",
+          "expected": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_table": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "selected_view": "table",
+          "owner_active_view": "table",
+          "table_mode": true,
+          "control_count": 1,
+          "pass": true,
+          "grid_restored": true
+        },
+        "exercised_lanes": [
+          {
+            "lane": "near",
+            "visible_lanes": [
+              "near"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "wait",
+            "visible_lanes": [
+              "wait"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "avoid",
+            "visible_lanes": [
+              "avoid"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "buy",
+            "visible_lanes": [
+              "buy"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          }
+        ]
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,
@@ -119,6 +743,144 @@
       "theme": "dark",
       "javascript_enabled": true,
       "composer": "loaded",
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": false,
+          "stocktable_ready": true,
+          "pass": true
+        },
+        "pass": true,
+        "view_all": {
+          "before": 3,
+          "after": 4,
+          "active_only": true,
+          "pass": true
+        },
+        "view_transition": {
+          "source": "all",
+          "expected": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_table": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "selected_view": "table",
+          "owner_active_view": "table",
+          "table_mode": true,
+          "control_count": 1,
+          "pass": true,
+          "grid_restored": true
+        },
+        "exercised_lanes": [
+          {
+            "lane": "near",
+            "visible_lanes": [
+              "near"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "wait",
+            "visible_lanes": [
+              "wait"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "avoid",
+            "visible_lanes": [
+              "avoid"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "buy",
+            "visible_lanes": [
+              "buy"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          }
+        ]
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,
@@ -133,6 +895,144 @@
       "theme": "light",
       "javascript_enabled": true,
       "composer": "loaded",
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": false,
+          "stocktable_ready": true,
+          "pass": true
+        },
+        "pass": true,
+        "view_all": {
+          "before": 3,
+          "after": 4,
+          "active_only": true,
+          "pass": true
+        },
+        "view_transition": {
+          "source": "all",
+          "expected": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_table": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "selected_view": "table",
+          "owner_active_view": "table",
+          "table_mode": true,
+          "control_count": 1,
+          "pass": true,
+          "grid_restored": true
+        },
+        "exercised_lanes": [
+          {
+            "lane": "near",
+            "visible_lanes": [
+              "near"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "wait",
+            "visible_lanes": [
+              "wait"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "avoid",
+            "visible_lanes": [
+              "avoid"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          },
+          {
+            "lane": "buy",
+            "visible_lanes": [
+              "buy"
+            ],
+            "source_unchanged": true,
+            "pass": true
+          }
+        ]
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,
@@ -149,7 +1049,93 @@
       "composer": "loaded",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-js-disabled-dark-390.png",
-        "sha256": "501eecb5ace12fd824a94b768b506e29136206a9b0999ae554154240d6af7c00"
+        "sha256": "0bca40ddf56d66be0ef57261c2ffd8c70e8da5e6e1405f0a9f57d428d45eee26"
+      },
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": true,
+          "stocktable_ready": false,
+          "pass": true
+        },
+        "pass": true,
+        "static_anchor_fallback": {
+          "visible_lanes": [
+            "near"
+          ],
+          "pass": true
+        },
+        "exercised_lanes": []
       },
       "client_width": 390,
       "scroll_width": 390,
@@ -167,7 +1153,112 @@
       "composer": "failed",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-composer-failed-light-390.png",
-        "sha256": "eb4a09b9b43230be6f95db3eaf5531cf0c7e34d019d69e4b41472bfc8f3c38d4"
+        "sha256": "236c1e7ed949d4c996ea534a383b74d5a99c2f05545b6bc4d5980d70f5589560"
+      },
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": false,
+          "stocktable_ready": true,
+          "pass": true
+        },
+        "pass": true,
+        "static_anchor_fallback": {
+          "visible_lanes": [
+            "near"
+          ],
+          "pass": true
+        },
+        "view_transition": {
+          "source": "all",
+          "expected": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_table": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "selected_view": "table",
+          "owner_active_view": "table",
+          "table_mode": true,
+          "control_count": 1,
+          "pass": true,
+          "grid_restored": true
+        },
+        "exercised_lanes": []
       },
       "client_width": 390,
       "scroll_width": 390,
@@ -183,6 +1274,86 @@
       "theme": "dark",
       "javascript_enabled": true,
       "composer": "pending",
+      "behavior": {
+        "tabs": [
+          {
+            "lane": "buy",
+            "title": "Buy Now立即买入",
+            "count": "4",
+            "selected": true,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "near",
+            "title": "In Favour看好",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "wait",
+            "title": "Bottoming Watch洗盘观察",
+            "count": "1",
+            "selected": false,
+            "title_fully_visible": true
+          },
+          {
+            "lane": "avoid",
+            "title": "Reduce / Avoid减仓 / 回避",
+            "count": "2",
+            "selected": false,
+            "title_fully_visible": true
+          }
+        ],
+        "visible_lanes": [
+          "buy"
+        ],
+        "active_row_count": 3,
+        "known_membership_hook": true,
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
+        "unknown_membership_hook": false,
+        "unknown_route": true,
+        "generic_showmore_attribute": false,
+        "generic_showmore_bar_count": 0,
+        "quote_state": null,
+        "quote_copy": null,
+        "source_contract": {
+          "initial_source": "all",
+          "active_source": "all",
+          "selected_source": "all",
+          "expected_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "visible_grid": [
+            "0966.HK",
+            "9926.HK",
+            "2057.HK"
+          ],
+          "result_copy": "3 actionable cards shown · 47 current names (39 stage board + 8 watch)显示 3 张可操作卡片 · 当前共 47 只（阶段榜单 39 + 观察 8）",
+          "pass": true
+        },
+        "prophet_chrome": {
+          "title_count": 1,
+          "result_count": 1,
+          "owner_context_count": 1,
+          "vintage_count": 1,
+          "help_count": 1,
+          "legacy_view_count": 0,
+          "pass": true
+        },
+        "view_owner": {
+          "control_count": 1,
+          "button_count": 2,
+          "selected": "grid",
+          "table_disabled": false,
+          "stocktable_ready": true,
+          "pass": true
+        },
+        "pass": true,
+        "exercised_lanes": []
+      },
       "client_width": 390,
       "scroll_width": 390,
       "horizontal_overflow": false,

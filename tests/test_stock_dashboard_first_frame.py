@@ -318,7 +318,9 @@ console.log(JSON.stringify(cases.map(function (ownerCount) {
 _MISSING = object()
 
 
-def _render_canada_owner_fixture(setups: object = _MISSING) -> BeautifulSoup:
+def _render_canada_owner_fixture(
+    setups: object = _MISSING, actions: object = _MISSING
+) -> BeautifulSoup:
     """Render Canada from the bounded frozen-fixture context used by P0B."""
     from engine import i18n
     from scripts.render_stock_dashboard_fixture import (
@@ -334,6 +336,8 @@ def _render_canada_owner_fixture(setups: object = _MISSING) -> BeautifulSoup:
         vm.pop("setups")
     else:
         vm["setups"] = setups
+    if actions is not _MISSING:
+        vm["actions"] = actions
     env = Environment(loader=TrackingLoader(TEMPLATES), autoescape=False)
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
     html = env.get_template("canada.html.j2").render(**vm)
@@ -341,7 +345,7 @@ def _render_canada_owner_fixture(setups: object = _MISSING) -> BeautifulSoup:
 
 
 def test_canada_static_first_frame_counts_both_proven_owner_lists() -> None:
-    """The JS-free first frame names the complete 9-board + 8-watch estate."""
+    """The JS-free first frame names Top and the complete 9+8 estate."""
     from scripts.render_stock_dashboard_fixture import load_owner_fixture
 
     setups, _owner_path = load_owner_fixture("ca")
@@ -350,8 +354,8 @@ def test_canada_static_first_frame_counts_both_proven_owner_lists() -> None:
     grid = soup.find(id="ca-v36-card-grid")
     assert result is not None and grid is not None
     copy = result.get_text(" ", strip=True)
-    assert "9 board + 8 watch = 17 current names" in copy
-    assert "cards shown" not in copy
+    assert "5 actionable cards shown" in copy
+    assert "17 current names (9 stage board + 8 watch)" in copy
     assert grid.get("data-owner-population") == "9"
     assert grid.get("data-owner-watch-population") == "8"
     assert grid.get("data-owner-unique-population") == "17"
@@ -369,8 +373,8 @@ def test_canada_static_first_frame_preserves_explicit_empty_owner_lists() -> Non
     grid = soup.find(id="ca-v36-card-grid")
     assert result is not None and grid is not None
     copy = result.get_text(" ", strip=True)
-    assert "0 board + 0 watch = 0 current names" in copy
-    assert "cards shown" not in copy
+    assert "0 actionable cards shown" in copy
+    assert "0 current names (0 stage board + 0 watch)" in copy
     assert grid.get("data-owner-population") == "0"
     assert grid.get("data-owner-watch-population") == "0"
     assert grid.get("data-owner-unique-population") == "0"
@@ -387,7 +391,7 @@ def test_canada_static_first_frame_refuses_an_overlapping_owner_union() -> None:
     grid = soup.find(id="ca-v36-card-grid")
     assert result is not None and grid is not None
     copy = result.get_text(" ", strip=True)
-    assert "9 board names · 8 watch names · unique total unavailable" in copy
+    assert "9 stage-board names · 8 watch names · unique total unavailable" in copy
     assert "current names" not in copy
     assert grid.get("data-owner-population") == "9"
     assert grid.get("data-owner-watch-population") == "8"
@@ -420,7 +424,9 @@ def test_canada_static_first_frame_rejects_duplicate_owner_identities(
     assert grid.get("data-owner-unique-population") is None
 
 
-def _render_hk_owner_fixture(setups: object) -> BeautifulSoup:
+def _render_hk_owner_fixture(
+    setups: object, actions: object = _MISSING
+) -> BeautifulSoup:
     """Render HK from the bounded frozen-fixture context used by P0B."""
     from engine import i18n
     from scripts.render_stock_dashboard_fixture import (
@@ -431,8 +437,400 @@ def _render_hk_owner_fixture(setups: object) -> BeautifulSoup:
 
     env = Environment(loader=TrackingLoader(TEMPLATES), autoescape=False)
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("hk.html.j2").render(**hk_context(setups))
+    vm = hk_context(setups)
+    if actions is not _MISSING:
+        vm["actions"] = actions
+    html = env.get_template("hk.html.j2").render(**vm)
     return BeautifulSoup(html, "html.parser")
+
+
+@pytest.mark.parametrize(
+    ("market", "prophet_id", "view_attr", "expected_source", "expected_shown"),
+    (
+        ("ca", "ca-v36-prophet", "data-ca-view", "top", 5),
+        ("hk", "hk-v37-prophet", "data-hk-view", "all", 3),
+    ),
+)
+def test_static_prophet_source_and_chrome_are_truthful_before_composer(
+    market: str,
+    prophet_id: str,
+    view_attr: str,
+    expected_source: str,
+    expected_shown: int,
+) -> None:
+    """One header owns source/view/help/vintage before deferred JS can run."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture(market)
+    soup = (
+        _render_canada_owner_fixture(setups, _actions())
+        if market == "ca"
+        else _render_hk_owner_fixture(setups, _actions())
+    )
+    prophet = soup.find(id=prophet_id)
+    assert prophet is not None
+    assert prophet.get("data-initial-source") == expected_source
+    assert prophet.get("data-source-owner-state") == "available"
+    selected = prophet.select_one(
+        f"[data-{market}-source][aria-selected='true']"
+    )
+    assert selected is not None
+    assert selected.get(f"data-{market}-source") == expected_source
+    assert f"{expected_shown} actionable cards shown" in prophet.select_one(
+        f"#{market}-v36-result" if market == "ca" else "#hk-v37-result"
+    ).get_text(" ", strip=True)
+
+    assert len(prophet.select(":scope > .ca-v36-sec-hd h2, :scope > .hk-v37-sec-hd h2")) == 1
+    assert not prophet.select("#standouts > h2")
+    assert len(prophet.select("[data-prophet-owner-context]")) == 1
+    assert len(prophet.select("[data-prophet-vintage]")) == 1
+    assert len(prophet.select("[data-prophet-help]")) == 1
+
+    view_controls = prophet.select("[data-prophet-view-control]")
+    assert len(view_controls) == 1
+    assert not prophet.select("#st-view-toggle, #st-btn-grid, #st-btn-table")
+    view_buttons = view_controls[0].select(f"button[{view_attr}]")
+    assert len(view_buttons) == 2
+    assert view_buttons[0].get("aria-selected") == "true"
+    assert view_buttons[1].get("aria-selected") == "false"
+    assert view_buttons[1].has_attr("disabled")
+    assert "StockTable._setView" in view_buttons[0].get("onclick", "")
+    assert "StockTable._setView" in view_buttons[1].get("onclick", "")
+
+
+def test_hk_static_source_uses_owner_featured_identity_when_present() -> None:
+    """HK Top is the owner pv-featured cohort; zero featured falls back to All."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    setups["buy"][0]["featured"] = True
+    setups["buy"][1]["featured"] = True
+    soup = _render_hk_owner_fixture(setups, _actions())
+    prophet = soup.find(id="hk-v37-prophet")
+    assert prophet is not None
+    assert prophet.get("data-initial-source") == "top"
+    assert prophet.get("data-initial-top-count") == "2"
+    assert prophet.select_one("[data-hk-source='top']").get("aria-selected") == "true"
+    assert "2 actionable cards shown" in prophet.select_one(
+        "#hk-v37-result"
+    ).get_text(" ", strip=True)
+    assert len(prophet.select("#standouts .pvcard.pv-featured")) == 2
+
+
+@pytest.mark.parametrize("market", ("ca", "hk"))
+def test_static_grid_and_table_share_one_ordered_source_identity(market: str) -> None:
+    """The server serializes the exact card cohort StockTable must project."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture(market)
+    soup = (
+        _render_canada_owner_fixture(setups, _actions())
+        if market == "ca"
+        else _render_hk_owner_fixture(setups, _actions())
+    )
+    prophet = soup.find(id="ca-v36-prophet" if market == "ca" else "hk-v37-prophet")
+    cards = prophet.select("#standouts .pvcard")
+    card_ids = [card.get("data-ticker") for card in cards]
+    payload = json.loads(prophet.select_one("#stocktable-data").get_text())
+    row_ids = [row["ticker"] for row in payload["rows"]]
+    top_row_ids = [row["ticker"] for row in payload["rows"] if row["_top"]]
+    top_card_ids = (
+        card_ids[:5]
+        if market == "ca"
+        else [card.get("data-ticker") for card in cards if "pv-featured" in card.get("class", [])]
+    )
+    assert row_ids == card_ids
+    assert top_row_ids == top_card_ids
+    expected_visible = top_card_ids if prophet.get("data-initial-source") == "top" else card_ids
+    assert int(prophet.get("data-initial-top-count")) == len(top_card_ids)
+    assert f"{len(expected_visible)} actionable cards shown" in prophet.select_one(
+        "#ca-v36-result" if market == "ca" else "#hk-v37-result"
+    ).get_text(" ", strip=True)
+
+
+@pytest.mark.parametrize("market", ("ca", "hk"))
+def test_malformed_source_owner_fails_to_typed_full_view(market: str) -> None:
+    """Duplicate owner identities cannot leave a synthetic Top selection active."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture(market)
+    setups["buy"][1]["ticker"] = setups["buy"][0]["ticker"]
+    soup = (
+        _render_canada_owner_fixture(setups, _actions())
+        if market == "ca"
+        else _render_hk_owner_fixture(setups, _actions())
+    )
+    prophet = soup.find(id="ca-v36-prophet" if market == "ca" else "hk-v37-prophet")
+    assert prophet.get("data-source-owner-state") == "unavailable"
+    assert prophet.get("data-initial-source") == "all"
+    assert prophet.select_one(f"[data-{market}-source='all']").get("aria-selected") == "true"
+    top = prophet.select_one(f"[data-{market}-source='top']")
+    assert top.has_attr("disabled")
+    assert top.get("aria-disabled") == "true"
+    result = prophet.select_one("#ca-v36-result" if market == "ca" else "#hk-v37-result")
+    assert "stage board unavailable" in result.get_text(" ", strip=True)
+
+
+@pytest.mark.parametrize(
+    ("market", "enhanced_attr", "prophet_id", "static_selector"),
+    (
+        (
+            "ca",
+            "data-ca-enhanced",
+            "ca-v36-prophet",
+            ".pvcard:nth-of-type(n+6)",
+        ),
+        (
+            "hk",
+            "data-hk-enhanced",
+            "hk-v37-prophet",
+            ".pvcard:not(.pv-featured)",
+        ),
+    ),
+)
+def test_static_top_projection_is_css_owned_until_composer_adopts_it(
+    market: str, enhanced_attr: str, prophet_id: str, static_selector: str
+) -> None:
+    css = _read(ROOT / "templates" / "stock-dashboard.css")
+    assert f':not([{enhanced_attr}="true"])' in css
+    assert f'#{prophet_id}[data-initial-source="top"]' in css
+    assert static_selector in css
+
+
+@pytest.mark.parametrize(
+    ("market", "composer", "view_attr", "event_name"),
+    (
+        ("ca", "canada-stock-v36.js", "data-ca-view", "stocktable:ca-view"),
+        ("hk", "hk-stock-v36.js", "data-hk-view", "stocktable:hk-view"),
+    ),
+)
+def test_composer_adopts_server_source_and_single_stocktable_view_transition(
+    market: str, composer: str, view_attr: str, event_name: str
+) -> None:
+    text = _read(ROOT / "site" / composer)
+    start = _function_source(text, "start")
+    set_view = _function_source(text, "setView")
+    assert "data-initial-source" in start
+    assert "state.source" in start
+    assert event_name in text
+    assert "StockTable._setView" in set_view
+    assert f'closest("[{view_attr}]")' not in _function_source(text, "bind")
+
+
+_ACTION_LANES = (
+    "buy_now",
+    "buy_soon",
+    "on_the_run",
+    "take_profits",
+    "hold",
+    "avoid",
+)
+
+
+def _actions(**overrides: object) -> dict[str, object]:
+    payload: dict[str, object] = {lane: [] for lane in _ACTION_LANES}
+    payload.update(overrides)
+    return payload
+
+
+def _action_row(ticker: str, name: str = "Fixture sector") -> dict[str, object]:
+    return {
+        "ticker": ticker,
+        "name": name,
+        "label": "Fixture action",
+        "days": 2,
+        "dir": "up",
+    }
+
+
+def _render_action_fixture(market: str, actions: object) -> BeautifulSoup:
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture(market)
+    if market == "ca":
+        return _render_canada_owner_fixture(setups, actions)
+    return _render_hk_owner_fixture(setups, actions)
+
+
+@pytest.mark.parametrize("market", MARKETS)
+@pytest.mark.parametrize(
+    "actions",
+    (
+        _MISSING,
+        None,
+        [],
+        {},
+        _actions(buy_now=None),
+        _actions(avoid="not-a-list"),
+        _actions(buy_soon={"ticker": "not-a-list"}),
+    ),
+)
+def test_action_owner_unavailable_never_masquerades_as_healthy_empty(
+    market: str, actions: object
+) -> None:
+    """Missing/non-mapping/mixed-invalid owner state is unavailable, never zero."""
+    if actions is _MISSING:
+        from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+        setups, _owner_path = load_owner_fixture(market)
+        vm_actions = None
+        if market == "ca":
+            from engine import i18n
+            from scripts.render_stock_dashboard_fixture import (
+                TEMPLATES,
+                TrackingLoader,
+                canada_context,
+            )
+
+            vm = canada_context(setups)
+            vm.pop("actions")
+            env = Environment(loader=TrackingLoader(TEMPLATES), autoescape=False)
+            env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+            soup = BeautifulSoup(
+                env.get_template("canada.html.j2").render(**vm), "html.parser"
+            )
+        else:
+            from engine import i18n
+            from scripts.render_stock_dashboard_fixture import (
+                TEMPLATES,
+                TrackingLoader,
+                hk_context,
+            )
+
+            vm = hk_context(setups)
+            vm.pop("actions")
+            env = Environment(loader=TrackingLoader(TEMPLATES), autoescape=False)
+            env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+            soup = BeautifulSoup(
+                env.get_template("hk.html.j2").render(**vm), "html.parser"
+            )
+        assert vm_actions is None
+    else:
+        soup = _render_action_fixture(market, actions)
+
+    panel = soup.find(id="act-now")
+    assert panel is not None
+    assert panel.get("data-action-owner-state") == "unavailable"
+    copy = panel.get_text(" ", strip=True)
+    assert "Action owner unavailable" in copy
+    assert "No sector actions are open" not in copy
+    assert not panel.select("[data-hk-lead-id], [data-ca-lead-id]")
+
+
+@pytest.mark.parametrize("market", MARKETS)
+def test_explicit_empty_action_owner_is_the_only_healthy_empty_state(
+    market: str,
+) -> None:
+    soup = _render_action_fixture(market, _actions())
+    panel = soup.find(id="act-now")
+    assert panel is not None
+    assert panel.get("data-action-owner-state") == "empty"
+    copy = panel.get_text(" ", strip=True)
+    assert "No sector actions are open" in copy
+    assert "Action owner unavailable" not in copy
+
+
+@pytest.mark.parametrize(
+    ("market", "body_id", "row_class", "hook", "count"),
+    (
+        ("hk", "hk-v37-an-body", "hk-v37-an-row", "data-hk-lead-id", "2"),
+        ("ca", "ca-v36-an-body", "ca-v36-an-row", "data-ca-lead-id", "2"),
+    ),
+)
+def test_static_action_rows_bind_only_identity_proven_membership(
+    market: str, body_id: str, row_class: str, hook: str, count: str
+) -> None:
+    actions = _actions(
+        buy_now=[
+            _action_row("fixture-sector"),
+            _action_row("unknown-sector", "Unknown sector"),
+        ]
+    )
+    soup = _render_action_fixture(market, actions)
+    panel = soup.find(id="act-now")
+    body = soup.find(id=body_id)
+    assert panel is not None and body is not None
+    assert panel.get("data-action-owner-state") == "available"
+    assert len(body.select("[role='tab']")) == 4
+    assert len(body.select("[data-action-lane-body]")) == 4
+
+    known = body.select_one(f".{row_class}-w[data-action-id='FIXTURE-SECTOR']")
+    unknown = body.select_one(f".{row_class}-w[data-action-id='UNKNOWN-SECTOR']")
+    assert known is not None and unknown is not None
+    assert known.select_one(f"[{hook}='FIXTURE-SECTOR']") is not None
+    assert f"{count} · Prophet" in known.get_text(" ", strip=True)
+    assert unknown.select_one(f"[{hook}]") is None
+    assert "Prophet" not in unknown.get_text(" ", strip=True)
+    route = unknown.find("a", href="sectors/unknown-sector.html")
+    assert route is not None
+
+
+@pytest.mark.parametrize(
+    ("market", "selector"),
+    (("hk", "#standouts .nbgrid"), ("ca", "#standouts .cards")),
+)
+def test_canonical_prophet_host_has_one_visibility_owner(
+    market: str, selector: str
+) -> None:
+    """Generic show-more must never hide a card selected by dashboard filters."""
+    soup = _render_action_fixture(market, _actions())
+    host = soup.select_one(selector)
+    assert host is not None
+    assert host.get("data-showmore") is None
+    assert host.get("data-showmore-rows") is None
+
+
+def test_canada_static_quote_header_is_neutral_until_quote_plane_confirms() -> None:
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("ca")
+    soup = _render_canada_owner_fixture(setups, _actions())
+    status = soup.find(id="ca-v36-quote-status")
+    assert status is not None
+    assert status.get("data-quote-state") == "unavailable"
+    copy = status.get_text(" ", strip=True)
+    assert "Quotes unavailable" in copy
+    assert "LIVE QUOTES" not in copy
+    assert status.select_one(".ca-v36-live-dot") is None
+
+
+def test_canada_quote_plane_requires_complete_typed_dom_receipts() -> None:
+    """A header claim is admitted only when every owner card has one valid receipt."""
+    text = _read(MARKETS["ca"]["composer"])
+    observed = _run_node_function(
+        text,
+        "quotePlaneState",
+        """
+function node(stateValue, titleValue) {
+  return {getAttribute: function (name) {
+    return name === "data-live" ? stateValue : (name === "title" ? titleValue : null);
+  }};
+}
+const cases = [
+  [],
+  [node(null, null)],
+  [node("1", "not a quote receipt")],
+  [node("1", "live · FixtureFeed · Sep 5, 10:30 ET")],
+  [node("delayed", "≥15-min delayed · Yahoo · 15m ago")],
+  [node("stale", "stale · Yahoo · 41m ago")],
+  [node("closed", "market closed · Yahoo · 481m ago")],
+  [node("1", "live · FixtureFeed · 0m ago"), node(null, null)],
+  [node("1", "live · FixtureFeed · 0m ago"), node("stale", "stale · FixtureFeed · 41m ago")]
+];
+console.log(JSON.stringify(cases.map(quotePlaneState)));
+""",
+    )
+    assert observed == [
+        {"state": "unavailable", "detail": ""},
+        {"state": "unavailable", "detail": ""},
+        {"state": "unavailable", "detail": ""},
+        {"state": "live", "detail": "live · FixtureFeed · Sep 5, 10:30 ET"},
+        {"state": "delayed", "detail": "≥15-min delayed · Yahoo · 15m ago"},
+        {"state": "stale", "detail": "stale · Yahoo · 41m ago"},
+        {"state": "closed", "detail": "market closed · Yahoo · 481m ago"},
+        {"state": "unavailable", "detail": ""},
+        {"state": "unavailable", "detail": ""},
+    ]
 
 
 def test_hk_owner_marker_binds_disjoint_identity_proven_populations() -> None:
@@ -594,7 +992,7 @@ def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
     assert receipt["schema"] == "mastermind.stock_dashboard_rendered_fixture.v1"
     assert receipt["proof_class"] == "rendered_fixture"
     assert receipt["transform"] == (
-        "jinja2_candidate_template_render_from_frozen_owner_identity"
+        "jinja2_candidate_template_render_from_frozen_owner_and_action_fixtures"
     )
     assert receipt["ambient_inputs"] == []
     for market, expected in (("hk", (39, 8, 47)), ("ca", (9, 8, 17))):
@@ -638,6 +1036,15 @@ def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
             f"mockups/evidence/prophet-p0b-zero-fouc/inputs/{owner_name}"
             in input_paths
         )
+        action_name = (
+            "hk-action-fixture.json"
+            if market == "hk"
+            else "canada-action-fixture.json"
+        )
+        assert (
+            f"mockups/evidence/prophet-p0b-zero-fouc/inputs/{action_name}"
+            in input_paths
+        )
         assert not any(path.startswith("site/factordata/") for path in input_paths)
         for item in receipt["markets"][market]["inputs"]:
             assert _sha256(ROOT / item["path"]) == item["sha256"]
@@ -660,7 +1067,7 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     browser = json.loads(_read(EVIDENCE_DIR / receipt_name))
     assert browser["proof_class"] == "browser_fixture_proof_reproducible"
     assert browser["claims"] == {
-        "source_contract": "not_assessed_by_this_receipt",
+        "source_contract": "browser_fixture",
         "browser_fixture": "reproducible",
         "canonical_build": "unavailable",
         "production": "none",
@@ -688,6 +1095,17 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     )
     assert browser["loaded_assets"][f"site/{composer}"] == _sha256(
         ROOT / "site" / composer
+    )
+    action_fixture = (
+        "hk-action-fixture.json"
+        if market == "hk"
+        else "canada-action-fixture.json"
+    )
+    action_path = (
+        "mockups/evidence/prophet-p0b-zero-fouc/inputs/" + action_fixture
+    )
+    assert browser["construction_inputs"][action_path] == _sha256(
+        ROOT / action_path
     )
     frozen_requests = {
         "canadabasketdata/baskets.json",
@@ -727,6 +1145,113 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
         "composer-failed",
         "composer-pending",
     }
+    assert browser["pass"] is True
+    assert all(row["pass"] and row["behavior"]["pass"] for row in browser["states"])
+    expected_initial_source = "all" if market == "hk" else "top"
+    states = {row["state"]: row for row in browser["states"]}
+    for row in states.values():
+        behavior = row["behavior"]
+        source = behavior["source_contract"]
+        assert source["pass"] is True
+        assert source["initial_source"] == expected_initial_source
+        assert source["active_source"] == expected_initial_source
+        assert source["selected_source"] == expected_initial_source
+        assert source["visible_grid"] == source["expected_grid"]
+        assert "actionable cards shown" in source["result_copy"]
+        assert "current names" in source["result_copy"]
+        assert behavior["prophet_chrome"] == {
+            "title_count": 1,
+            "result_count": 1,
+            "owner_context_count": 1,
+            "vintage_count": 1,
+            "help_count": 1,
+            "legacy_view_count": 0,
+            "pass": True,
+        }
+        view_owner = behavior["view_owner"]
+        assert view_owner["control_count"] == 1
+        assert view_owner["button_count"] == 2
+        assert view_owner["selected"] == "grid"
+        assert view_owner["pass"] is True
+
+    disabled_view = states["js-disabled"]["behavior"]["view_owner"]
+    assert disabled_view["stocktable_ready"] is False
+    assert disabled_view["table_disabled"] is True
+    failed_transition = states["composer-failed"]["behavior"]["view_transition"]
+    assert failed_transition["pass"] is True
+    assert failed_transition["visible_table"] == failed_transition["expected"]
+    assert failed_transition["selected_view"] == "table"
+    assert failed_transition["owner_active_view"] == "table"
+    assert failed_transition["grid_restored"] is True
+
+    desktop = browser["desktop"]
+    assert desktop["pass"] is True
+    assert desktop["initial"]["action_panel_height"] <= 240
+    assert desktop["initial"]["prophet_top"] < 900
+    assert desktop["initial"]["visible_lane_count"] == 4
+    assert max(desktop["initial"]["lane_rows"].values()) <= 3
+    assert desktop["initial"]["generic_showmore_attribute"] is False
+    assert desktop["initial"]["generic_showmore_bar_count"] == 0
+    assert desktop["initial"]["initial_source"] == expected_initial_source
+    assert desktop["initial"]["selected_source"] == expected_initial_source
+    assert desktop["initial"]["source_manifest"]["pass"] is True
+    assert desktop["initial"]["source_manifest"]["visible"] == (
+        desktop["initial"]["source_manifest"]["expected"]
+    )
+    assert desktop["initial"]["title_count"] == 1
+    assert desktop["initial"]["result_count"] == 1
+    assert desktop["initial"]["owner_context_count"] == 1
+    assert desktop["initial"]["vintage_count"] == 1
+    assert desktop["initial"]["help_count"] == 1
+    assert desktop["initial"]["view_control_count"] == 1
+    assert desktop["initial"]["legacy_view_count"] == 0
+    sequence = {row["label"]: row for row in desktop["sequence"]}
+    assert set(sequence) == {
+        "initial-table",
+        "persisted-table-startup",
+        "top-grid",
+        "top-table",
+        "all-grid",
+        "all-table",
+        "group",
+        "clear",
+        "resized-390",
+        "resized-1440",
+        "legacy-class-healed",
+    }
+    assert all(row["pass"] for row in sequence.values())
+    assert sequence["persisted-table-startup"]["persisted_view"] == "table"
+    for source_name in ("top", "all"):
+        grid = sequence[f"{source_name}-grid"]
+        table = sequence[f"{source_name}-table"]
+        assert grid["source"] == source_name
+        assert table["source"] == source_name
+        assert grid["visible"] == grid["expected"]
+        assert table["visible"] == table["expected"]
+        assert table["visible_table"] == table["expected"]
+        assert grid["owner_active_view"] == "grid"
+        assert table["owner_active_view"] == "table"
+        assert grid["view_control_count"] == 1
+        assert table["view_control_count"] == 1
+    assert sequence["group"]["source_unchanged"] is True
+    assert len(sequence["group"]["visible"]) == 2
+    assert sequence["legacy-class-healed"]["selected_sm_hidden"] == []
+    assert sequence["legacy-class-healed"]["animation_delay_residue"] is False
+    if market == "ca":
+        quote_cases = {row["name"]: row for row in desktop["quote_cases"]}
+        expected_quote_states = {
+            "missing": "unavailable",
+            "malformed": "unavailable",
+            "live": "live",
+            "delayed": "delayed",
+            "stale": "stale",
+            "closed": "closed",
+        }
+        assert {
+            name: quote_cases[name].get("state")
+            for name in expected_quote_states
+        } == expected_quote_states
+        assert all(row["pass"] for row in quote_cases.values())
     degraded = {
         row["state"]: row["screenshot"]
         for row in browser["states"]
@@ -802,11 +1327,11 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
                 [0, 0, 8, 8],
             ],
             [
-                "3 cards shown · 17 current names (9 board + 8 watch)",
-                "3 cards shown · 9 board names · 8 watch names · unique total unavailable",
-                "3 cards shown · board unavailable · 8 watch names",
-                "3 cards shown · board unavailable · watch unavailable",
-                "0 cards shown · 8 current names (0 board + 8 watch)",
+                "3 actionable cards shown · 17 current names (9 stage board + 8 watch)",
+                "3 actionable cards shown · 9 stage-board names · 8 watch names · unique total unavailable",
+                "3 actionable cards shown · stage board unavailable · 8 watch names",
+                "3 actionable cards shown · stage board unavailable · watch unavailable",
+                "0 actionable cards shown · 8 current names (0 stage board + 8 watch)",
             ],
         ),
     ),

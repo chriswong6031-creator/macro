@@ -1,0 +1,28 @@
+{
+  "schema": "mastermind.stock_dashboard_action_fixture.v1",
+  "market": "ca",
+  "classification": "frozen_browser_contract_fixture_only",
+  "actions": {
+    "buy_now": [
+      {"ticker": "fixture-sector", "name": "Fixture sector", "dir": "up", "label": "FIXTURE ENTRY", "days": 2},
+      {"ticker": "fixture-growth", "name": "Fixture growth", "dir": "up", "label": "FIXTURE ENTRY", "days": 3},
+      {"ticker": "fixture-finance", "name": "Fixture finance", "dir": "up", "label": "FIXTURE ENTRY", "days": 4},
+      {"ticker": "fixture-industry", "name": "Fixture industry", "dir": "up", "label": "FIXTURE ENTRY", "days": 5}
+    ],
+    "buy_soon": [
+      {"ticker": "fixture-consumer", "name": "Fixture consumer", "dir": "flat", "label": "FIXTURE WATCH", "days": 6}
+    ],
+    "on_the_run": [
+      {"ticker": "fixture-tech", "name": "Fixture technology", "dir": "up", "label": "FIXTURE FAVOUR", "days": 7}
+    ],
+    "take_profits": [
+      {"ticker": "fixture-property", "name": "Fixture property", "dir": "dn", "label": "FIXTURE REDUCE", "days": 8}
+    ],
+    "hold": [
+      {"ticker": "fixture-utilities", "name": "Fixture utilities", "dir": "flat", "label": "FIXTURE HOLD", "days": 9}
+    ],
+    "avoid": [
+      {"ticker": "fixture-energy", "name": "Fixture energy", "dir": "dn", "label": "FIXTURE AVOID", "days": 10}
+    ]
+  }
+}

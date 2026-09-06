@@ -846,17 +846,27 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   <span class="ca-v36-head-spacer"></span>
   <span class="ca-v36-chip">{{ t('Screen · evidence accruing', '筛选 · 证据积累中') }}</span>
   <span class="ca-v36-chip">{{ t('Board', '榜单') }} {{ latest.date }}</span>
-  <span class="ca-v36-live"><span class="ca-v36-live-dot" aria-hidden="true"></span><b>{{ t('LIVE QUOTES', '实时报价') }}</b></span>
+  <span class="ca-v36-live ca-v36-quote-status" id="ca-v36-quote-status" data-quote-state="unavailable" aria-live="polite"><span class="ca-v36-quote-dot" aria-hidden="true"></span><b>{{ t('Quotes unavailable · awaiting confirmation', '报价暂不可用 · 等待确认') }}</b></span>
 </header>
 <section class="ca-v36-panel ca-v36-owner-panel" id="ca-v36-actnow">
 {% endif %}
 
-{% if mode == 'stocks' and actions and (actions.get('buy_now') or actions.get('buy_soon') or actions.get('on_the_run') or actions.get('take_profits') or actions.get('hold') or actions.get('avoid')) %}
+{% set _ca_actions = actions if (actions is defined and actions is mapping) else {} %}
+{% set _ca_action_owner_valid = actions is defined and actions is mapping
+  and _ca_actions.get('buy_now') is sequence and _ca_actions.get('buy_now') is not string and _ca_actions.get('buy_now') is not mapping
+  and _ca_actions.get('buy_soon') is sequence and _ca_actions.get('buy_soon') is not string and _ca_actions.get('buy_soon') is not mapping
+  and _ca_actions.get('on_the_run') is sequence and _ca_actions.get('on_the_run') is not string and _ca_actions.get('on_the_run') is not mapping
+  and _ca_actions.get('take_profits') is sequence and _ca_actions.get('take_profits') is not string and _ca_actions.get('take_profits') is not mapping
+  and _ca_actions.get('hold') is sequence and _ca_actions.get('hold') is not string and _ca_actions.get('hold') is not mapping
+  and _ca_actions.get('avoid') is sequence and _ca_actions.get('avoid') is not string and _ca_actions.get('avoid') is not mapping %}
+{% set _ca_buy = _ca_actions.get('buy_now', []) if _ca_action_owner_valid else [] %}
+{% set _ca_pull = (_ca_actions.get('on_the_run', []) + _ca_actions.get('hold', [])) if _ca_action_owner_valid else [] %}
+{% set _ca_bot = _ca_actions.get('buy_soon', []) if _ca_action_owner_valid else [] %}
+{% set _ca_red = (_ca_actions.get('take_profits', []) + _ca_actions.get('avoid', [])) if _ca_action_owner_valid else [] %}
+{% set _ca_action_has_rows = _ca_action_owner_valid and (_ca_buy or _ca_pull or _ca_bot or _ca_red) %}
+{% set _ca_action_default = 'buy' if _ca_buy else ('near' if _ca_pull else ('wait' if _ca_bot else 'avoid')) %}
+{% if mode == 'stocks' and _ca_action_has_rows %}
 <!-- ===== Act-Now v2 — four-lane board, matching china_stocks.html ===== -->
-{% set _ca_buy = actions.get('buy_now', []) %}
-{% set _ca_pull = actions.get('on_the_run', []) + actions.get('hold', []) %}
-{% set _ca_bot = actions.get('buy_soon', []) %}
-{% set _ca_red = actions.get('take_profits', []) + actions.get('avoid', []) %}
 <style>
 .anv2-board .anv2-name-link{color:inherit;text-decoration:none}
 .anv2-board .anv2-name-link:hover .l-en,.anv2-board .anv2-name-link:hover .l-zh{text-decoration:underline}
@@ -876,7 +886,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 .row-pop-mark .ic-svg{width:17px;height:17px;display:block}
 </style>
 {{ lens.lens_css() }}
-<div class="panel anv2-board" id="act-now">
+<div class="panel anv2-board" id="act-now" data-action-owner-state="available">
     {{ dc.dc_css() }}
   <div class="anv2-hd">
     <h2>{{ t('What to Act On Now', '现在行动') }}
@@ -898,10 +908,28 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       <span class="muted" style="font-size:11px">{{ t('sectors as of', '板块截至') }} {{ latest.date }}</span>
     </div>
   </div>
-  <div class="anv2-grid">
+  <div class="ca-v36-an-body" id="ca-v36-an-body">
+  <div class="ca-v36-an-seg" role="tablist">
+    <a role="tab" href="#anv2-buy" data-ca-an-lane="buy" aria-selected="{{ 'true' if _ca_action_default == 'buy' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('Buy Now', '立即买入') }}</span><b>{{ _ca_buy|length }}</b></a>
+    <a role="tab" href="#anv2-pull" data-ca-an-lane="near" aria-selected="{{ 'true' if _ca_action_default == 'near' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('In Favour', '看好') }}</span><b>{{ _ca_pull|length }}</b></a>
+    <a role="tab" href="#anv2-bot" data-ca-an-lane="wait" aria-selected="{{ 'true' if _ca_action_default == 'wait' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('Bottoming Watch', '洗盘观察') }}</span><b>{{ _ca_bot|length }}</b></a>
+    <a role="tab" href="#anv2-red" data-ca-an-lane="avoid" aria-selected="{{ 'true' if _ca_action_default == 'avoid' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('Reduce / Avoid', '减仓 / 回避') }}</span><b>{{ _ca_red|length }}</b></a>
+  </div>
+  <div class="anv2-grid ca-v36-an-lanes">
     {%- macro _ca_anrow(it, lane) -%}
     {%- set _ca_sc = (sectors_by_ticker.get(it.ticker) if sectors_by_ticker is defined else none) -%}
-    <div class="anv2-row" data-rpop>
+    {%- set _ca_member_rows = setups.get('buy') if setups is defined and setups is mapping else none -%}
+    {%- set _ca_member_rows_known = _ca_member_rows is sequence and _ca_member_rows is not string and _ca_member_rows is not mapping -%}
+    {%- set _ca_members = namespace(known=false, count=0) -%}
+    {%- if _ca_member_rows_known -%}
+      {%- for _ca_candidate in _ca_member_rows if _ca_candidate is mapping -%}
+        {%- if _ca_candidate.get('sector') == it.name -%}
+          {%- set _ca_members.known = true -%}
+          {%- set _ca_members.count = _ca_members.count + 1 -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+    <div class="anv2-row ca-v36-an-row-w" data-action-id="{{ it.ticker|trim|upper }}" data-rpop>
       {#- Hover decision card — the SAME component the US board uses
           (templates/_decision_card.html.j2). Canada shipped with NO hover at all;
           this is the sector variant: setup read, cycle metrics, one stance. -#}
@@ -958,7 +986,8 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
         'foot_b': (it.ticker ~ ' ↗',),
       }) }}
       <div class="anv2-row-top">
-        <a class="anv2-name anv2-name-link" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}<span class="anv2-go" aria-hidden="true">↗</span></a>
+        <button class="anv2-name ca-v36-an-row" type="button"{% if _ca_members.known %} data-ca-lead-kind="sector" data-ca-lead-id="{{ it.ticker|trim|upper }}"{% else %} disabled{% endif %}>{{ td(it.name) }}{% if _ca_members.known %}<span class="ca-v36-an-n">{{ _ca_members.count }} · {{ t('Prophet', '候选') }}</span>{% endif %}</button>
+        <a class="anv2-name-link ca-v36-an-go" href="sectors/{{ it.ticker }}.html" aria-label="{{ it.name }} sector research">↗</a>
       </div>
       <div class="anv2-chips">
         {% if lane == 'buy' %}
@@ -979,17 +1008,17 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     </div>
     {%- endmacro -%}
     {%- macro _ca_anlane(lane, cls, title_en, title_zh, sub_en, sub_zh, items, lane_id) -%}
-    <div class="anv2-lane anv2-lane--{{ cls }}" id="{{ lane_id }}">
-      <div class="anv2-lane-hd">
-        <div class="anv2-lane-title"><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span><span class="anv2-lane-count">({{ items|length }})</span></div>
-        <div class="anv2-lane-sub"><span class="l-en">{{ sub_en }}</span><span class="l-zh">{{ sub_zh }}</span></div>
+    {% set _ca_tone = 'near' if lane == 'pull' else ('wait' if lane == 'bot' else ('avoid' if lane == 'red' else 'buy')) %}
+    <div class="anv2-lane anv2-lane--{{ cls }} ca-v36-an-lane{{ ' is-current' if _ca_action_default == _ca_tone else '' }}" id="{{ lane_id }}" data-action-lane-body="{{ _ca_tone }}" data-ca-an-lane-body="{{ _ca_tone }}">
+      <div class="anv2-lane-hd ca-v36-an-hd {{ _ca_tone }}">
+        <span><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span></span><b>{{ items|length }}</b>
       </div>
       <div class="anv2-lane-body lst-wrap">
-        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+        <div class="anv2-lst lst-collapse lst-cap3 is-collapsed">
           {% for it in items %}{{ _ca_anrow(it, lane) }}{% endfor %}
           {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
         </div>
-        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+        {% if items|length > 3 %}<button class="lst-more ca-v36-an-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></button>{% endif %}
       </div>
     </div>
     {%- endmacro -%}
@@ -998,12 +1027,15 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     {{ _ca_anlane('bot', 'bot', 'Bottoming Watch', '洗盘观察', 'Setting up near a cycle low — watch only', '接近周期低点 — 仅观察', _ca_bot, 'anv2-bot') }}
     {{ _ca_anlane('red', 'red', 'Reduce / Avoid', '减仓 / 回避', 'Trend weakening — take profits or stay away', '趋势转弱 — 止盈或回避', _ca_red, 'anv2-red') }}
   </div>
+  </div>
 </div>
 {% endif %}
 
 {% if mode == 'stocks' %}
-{% if not actions or not (actions.get('buy_now') or actions.get('buy_soon') or actions.get('on_the_run') or actions.get('take_profits') or actions.get('hold') or actions.get('avoid')) %}
-<div class="panel anv2-board ca-v36-empty ca-v36-static-state" id="act-now">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</div>
+{% if _ca_action_owner_valid and not _ca_action_has_rows %}
+<div class="panel anv2-board ca-v36-empty ca-v36-static-state" id="act-now" data-action-owner-state="empty">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</div>
+{% elif not _ca_action_owner_valid %}
+<div class="panel anv2-board ca-v36-empty ca-v36-static-state" id="act-now" data-action-owner-state="unavailable">{{ t('Action owner unavailable.', '行动数据暂不可用。') }}</div>
 {% endif %}
 </section>
 {% endif %}
@@ -2267,34 +2299,41 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% set _ca_watch_n = _ca_owner.watch_ids|length %}
 {% set _ca_union_known = _ca_owner.board_valid and _ca_owner.watch_valid and not _ca_owner.intersection %}
 {% set _ca_unique_n = (_ca_owner.board_ids + _ca_owner.watch_ids)|length if _ca_union_known else none %}
-<section class="ca-v36-panel" id="ca-v36-prophet">
+{# The first five rows of the validated owner board are Canada's canonical Top
+   projection.  If that owner cannot prove stable identities, fail to a typed
+   full view instead of painting a selected Top control over an invented cohort. #}
+{% set _ca_source_owner_valid = _ca_owner.board_valid %}
+{% set _ca_initial_source = 'top' if _ca_source_owner_valid else 'all' %}
+{% set _ca_initial_top_n = (_ca_board_n if _ca_board_n < 5 else 5) if _ca_source_owner_valid else 0 %}
+{% set _ca_initial_shown_n = _ca_initial_top_n if _ca_initial_source == 'top' else _ca_board|length %}
+<section class="ca-v36-panel" id="ca-v36-prophet" data-initial-source="{{ _ca_initial_source }}" data-active-source="{{ _ca_initial_source }}" data-initial-top-count="{{ _ca_initial_top_n }}" data-source-owner-state="{{ 'available' if _ca_source_owner_valid else 'unavailable' }}">
   <div class="ca-v36-sec-hd">
     <h2>Prophet</h2>
     <span class="ca-v36-result" id="ca-v36-result">
       {% if _ca_union_known %}
       {{ t(
-        _ca_board_n ~ ' board + ' ~ _ca_watch_n ~ ' watch = ' ~ _ca_unique_n ~ ' current names',
-        '榜单 ' ~ _ca_board_n ~ ' 只 + 观察 ' ~ _ca_watch_n ~ ' 只 = 当前共 ' ~ _ca_unique_n ~ ' 只'
+        _ca_initial_shown_n ~ ' actionable cards shown · ' ~ _ca_unique_n ~ ' current names (' ~ _ca_board_n ~ ' stage board + ' ~ _ca_watch_n ~ ' watch)',
+        '显示 ' ~ _ca_initial_shown_n ~ ' 张可操作卡片 · 当前共 ' ~ _ca_unique_n ~ ' 只（阶段榜单 ' ~ _ca_board_n ~ ' + 观察 ' ~ _ca_watch_n ~ '）'
       ) }}
       {% elif _ca_owner.board_valid and _ca_owner.watch_valid %}
       {{ t(
-        _ca_board_n ~ ' board names · ' ~ _ca_watch_n ~ ' watch names · unique total unavailable',
-        '榜单 ' ~ _ca_board_n ~ ' 只 · 观察 ' ~ _ca_watch_n ~ ' 只 · 去重总数暂不可用'
+        _ca_initial_shown_n ~ ' actionable cards shown · ' ~ _ca_board_n ~ ' stage-board names · ' ~ _ca_watch_n ~ ' watch names · unique total unavailable',
+        '显示 ' ~ _ca_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单 ' ~ _ca_board_n ~ ' 只 · 观察 ' ~ _ca_watch_n ~ ' 只 · 去重总数暂不可用'
       ) }}
       {% elif _ca_owner.board_valid %}
       {{ t(
-        _ca_board_n ~ ' board names · watch unavailable',
-        '榜单 ' ~ _ca_board_n ~ ' 只 · 观察名单暂不可用'
+        _ca_initial_shown_n ~ ' actionable cards shown · ' ~ _ca_board_n ~ ' stage-board names · watch unavailable',
+        '显示 ' ~ _ca_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单 ' ~ _ca_board_n ~ ' 只 · 观察名单暂不可用'
       ) }}
       {% elif _ca_owner.watch_valid %}
       {{ t(
-        'board unavailable · ' ~ _ca_watch_n ~ ' watch names',
-        '榜单暂不可用 · 观察 ' ~ _ca_watch_n ~ ' 只'
+        _ca_initial_shown_n ~ ' actionable cards shown · stage board unavailable · ' ~ _ca_watch_n ~ ' watch names',
+        '显示 ' ~ _ca_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单暂不可用 · 观察 ' ~ _ca_watch_n ~ ' 只'
       ) }}
       {% else %}
       {{ t(
-        'board unavailable · watch unavailable',
-        '榜单暂不可用 · 观察名单暂不可用'
+        _ca_initial_shown_n ~ ' actionable cards shown · stage board unavailable · watch unavailable',
+        '显示 ' ~ _ca_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单暂不可用 · 观察名单暂不可用'
       ) }}
       {% endif %}
     </span>
@@ -2303,12 +2342,12 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     <div class="ca-v36-controls">
       <button class="ca-v36-filter" id="ca-v36-filter" type="button" hidden></button>
       <span class="ca-v36-seg" role="group" aria-label="Candidate population">
-        <button type="button" data-ca-source="top" aria-selected="true">{{ t('Top Picks', '首选') }}</button>
-        <button type="button" data-ca-source="all" aria-selected="false">{{ t('All Candidates', '全部候选') }}</button>
+        <button type="button" data-ca-source="top" aria-selected="{{ 'true' if _ca_initial_source == 'top' else 'false' }}"{% if not _ca_source_owner_valid %} disabled aria-disabled="true"{% endif %}>{{ t('Top Picks', '首选') }}</button>
+        <button type="button" data-ca-source="all" aria-selected="{{ 'true' if _ca_initial_source == 'all' else 'false' }}">{{ t('All Candidates', '全部候选') }}</button>
       </span>
-      <span class="ca-v36-seg" role="group" aria-label="View">
-        <button type="button" data-ca-view="grid" aria-selected="true">{{ t('Grid', '卡片') }}</button>
-        <button type="button" data-ca-view="table" aria-selected="false">{{ t('Table', '表格') }}</button>
+      <span class="ca-v36-seg" role="group" aria-label="View" data-prophet-view-control>
+        <button type="button" data-ca-view="grid" aria-selected="true" onclick="if(window.StockTable&amp;&amp;StockTable._setView)StockTable._setView('grid')">{{ t('Grid', '卡片') }}</button>
+        <button type="button" data-ca-view="table" aria-selected="false" aria-disabled="true" disabled onclick="if(window.StockTable&amp;&amp;StockTable._setView)StockTable._setView('table')">{{ t('Table', '表格') }}</button>
       </span>
     </div>
   </div>
@@ -2338,6 +2377,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     'alpha':             _r.get('alpha'),
     'entry_status':      _es.get('status') or '',
     'group':             _r.get('group') or '',
+    '_top':              loop.index <= 5,
   } %}
   {% set _ = _ca_st_rows.append(_ca_row) %}
 {% endfor %}
@@ -2363,24 +2403,17 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 </div>
 {% endif %}
 <div class="panel" id="standouts">
-  <h2>{{ t('Prophet Stock Signals — TSX ripe list', 'Prophet 选股 — TSX 成熟清单') }}
-    {% if _ca_setups.get('eligible') is not none %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ _ca_board_n }} {{ t('shown ·', '已显示 ·') }} {{ _ca_setups.get('eligible') }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
-    {{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}
-    {# W8-G: grid/table view toggle #}
-    <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
-      <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">&#x229E; <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
-      <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">&#x2630; <span class="l-en">Table</span><span class="l-zh">表格</span></button>
-    </span>
-  </h2>
+  <div class="prophet-owner-context" data-prophet-owner-context>
+    <span>{{ t('TSX ripe list · bottoming names nearest to ready', 'TSX 成熟清单 · 最接近就绪的筑底个股') }}</span>
+    <span data-prophet-help>{{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}</span>
+  </div>
   {#- ── THE BOARD'S ONE VINTAGE STAMP (CA twin of the US/CN/HK #stocks-header fix,
       2026-09-01). Removing the per-card `date` chip above (a board-wide constant
       masquerading as a per-name vintage) left this board with no board-level
       freshness disclosure of its own (the page-hero "data through" stamp is the
       whole page's macro-data vintage, not this board's). Stated once, in plain
       words (DESIGN_DOCTRINE Law 4). -#}
-  {% if _ca_setups.get('as_of') %}
-  <p class="muted small" style="margin:0 0 8px"><span class="l-en">Data through</span><span class="l-zh">数据截至</span> <strong>{{ _ca_setups.get('as_of') }}</strong></p>
-  {% endif %}
+  <p class="muted small" data-prophet-vintage style="margin:0 0 8px"><span class="l-en">{{ 'Data through' if _ca_setups.get('as_of') else 'Board vintage unavailable' }}</span><span class="l-zh">{{ '数据截至' if _ca_setups.get('as_of') else '榜单日期暂不可用' }}</span>{% if _ca_setups.get('as_of') %} <strong>{{ _ca_setups.get('as_of') }}</strong>{% endif %}</p>
   {# ===== ONE desk-header "what this desk is / isn't" block (§7.2 / §7.3) — consolidates
      the caveat museum (the old per-page repetitions are DELETED; the tier badge lives on
      each card). Bilingual. ===== #}
@@ -2468,7 +2501,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {# W8-G: grid section (hidden in table mode by CSS .nb-grid-section) #}
   {{ pv.pv_css() }}
   <div class="nb-grid-section">
-  <div class="cards" data-showmore-rows="3">
+  <div class="cards">
     {% for s in _ca_board %}
     {# ---- BRANCH-B group divider: entry-open before setting-up ---- #}
     {% if loop.first or s.group != _ca_board[loop.index0 - 1].group %}
@@ -2758,24 +2791,22 @@ function initStockTableView(){
   var currentView = localStorage.getItem(LS_VIEW) || 'grid';
 
   function applyView(v) {
+    v = v === 'table' ? 'table' : 'grid';
     currentView = v;
     localStorage.setItem(LS_VIEW, v);
     var standouts = document.getElementById('standouts');
     var chipsEl   = document.getElementById('st-count-chips');
-    var gbtn = document.getElementById('st-btn-grid');
-    var tbtn = document.getElementById('st-btn-table');
+    var prophet = document.getElementById('ca-v36-prophet');
     if (!standouts) return;
-    if (v === 'table') {
-      standouts.classList.add('st-table-mode');
-      if (chipsEl) chipsEl.style.display = '';
-      if (gbtn) gbtn.setAttribute('aria-selected','false');
-      if (tbtn) tbtn.setAttribute('aria-selected','true');
-    } else {
-      standouts.classList.remove('st-table-mode');
-      if (chipsEl) chipsEl.style.display = 'none';
-      if (gbtn) gbtn.setAttribute('aria-selected','true');
-      if (tbtn) tbtn.setAttribute('aria-selected','false');
-    }
+    standouts.classList.toggle('st-table-mode', v === 'table');
+    if (chipsEl) chipsEl.style.display = v === 'table' ? '' : 'none';
+    if (prophet) prophet.setAttribute('data-active-view', v);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ca-view]'), function (button) {
+      button.setAttribute('aria-selected', String(button.getAttribute('data-ca-view') === v));
+    });
+    standouts.dispatchEvent(new CustomEvent('stocktable:ca-view', {
+      bubbles: true, detail: { view: v }
+    }));
   }
 
   StockTable._setView = applyView;
@@ -2787,6 +2818,37 @@ function initStockTableView(){
     market:      'ca',
     linkPattern: 'canada_stock.html#{ticker}',
     columns:     cols,
+  });
+
+  /* Source identity exists before the entitled composer arrives. Tag every
+     StockTable row from the same serialized owner record, then let CSS project
+     the section's active source. The child-list observer preserves those tags
+     when StockTable re-renders after a sort/filter while the composer is absent. */
+  var sourceRows = [];
+  try {
+    sourceRows = JSON.parse(document.getElementById('stocktable-data').textContent || '{}').rows || [];
+  } catch (e) {}
+  var topByTicker = Object.create(null);
+  sourceRows.forEach(function (row) {
+    if (row && row.ticker) topByTicker[String(row.ticker).trim().toUpperCase()] = row._top === true;
+  });
+  function tagSourceRows() {
+    Array.prototype.forEach.call(document.querySelectorAll('#stocktable-wrap tbody tr'), function (tr) {
+      var link = tr.querySelector('a.stf-tkr');
+      var ticker = link ? String(link.textContent || '').trim().toUpperCase() : '';
+      if (!ticker || !Object.prototype.hasOwnProperty.call(topByTicker, ticker)) return;
+      tr.setAttribute('data-ticker', ticker);
+      tr.setAttribute('data-prophet-top', String(topByTicker[ticker]));
+    });
+  }
+  tagSourceRows();
+  var tableWrap = document.getElementById('stocktable-wrap');
+  if (tableWrap && window.MutationObserver) {
+    new MutationObserver(tagSourceRows).observe(tableWrap, { childList: true, subtree: true });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ca-view="table"]'), function (button) {
+    button.disabled = false;
+    button.removeAttribute('aria-disabled');
   });
 
   /* restore persisted view */

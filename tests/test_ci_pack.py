@@ -1043,6 +1043,8 @@ def test_stock_dashboard_first_frame_contract_is_executed_by_pr_code_gate() -> N
         "mockups/evidence/prophet-p0b-zero-fouc/manifest.json",
         "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-owner-fixture.json",
         "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json",
+        "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-action-fixture.json",
+        "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-action-fixture.json",
         "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/baskets.json",
         "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/sector_pulse_canada.json",
         "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json",
@@ -1075,6 +1077,7 @@ def test_stock_dashboard_first_frame_contract_is_executed_by_pr_code_gate() -> N
         ["site/canada-stock-v36.js"],
         ["scripts/render_stock_dashboard_fixture.py"],
         ["mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json"],
+        ["mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-action-fixture.json"],
         ["mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/quotes.json"],
         ["mockups/evidence/prophet-p0b-zero-fouc/mobile-layout-canada.json"],
     ):

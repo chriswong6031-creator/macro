@@ -34,6 +34,9 @@ MARKETS = {
         "owner_fixture": (
             "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json"
         ),
+        "action_fixture": (
+            "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-action-fixture.json"
+        ),
         "output": "hk_stocks.html",
     },
     "ca": {
@@ -41,6 +44,10 @@ MARKETS = {
         "owner_fixture": (
             "mockups/evidence/prophet-p0b-zero-fouc/inputs/"
             "canada-owner-fixture.json"
+        ),
+        "action_fixture": (
+            "mockups/evidence/prophet-p0b-zero-fouc/inputs/"
+            "canada-action-fixture.json"
         ),
         "output": "canada_stocks.html",
     },
@@ -50,6 +57,15 @@ OWNER_LANES = {
     "hk": ("buy", "ripening", "ran", "vetoed", "watch"),
     "ca": ("buy", "watch"),
 }
+
+ACTION_LANES = (
+    "buy_now",
+    "buy_soon",
+    "on_the_run",
+    "take_profits",
+    "hold",
+    "avoid",
+)
 
 OWNER_SOURCES = {
     "hk": "site/factordata/hk_standouts.json",
@@ -169,6 +185,11 @@ class FixtureRow(dict[str, Any]):
 def _fixture_row(identity: dict[str, Any], lane: str, ordinal: int) -> FixtureRow:
     """Expand one immutable owner identity into a neutral presentation row."""
     row = FixtureRow(identity)
+    fixture_sector = (
+        "Fixture sector"
+        if lane != "buy" or ordinal <= 2
+        else "Fixture growth"
+    )
     stage = identity.get("stage") or {
         "ripening": "setting_up",
         "ran": "ran",
@@ -192,7 +213,7 @@ def _fixture_row(identity: dict[str, Any], lane: str, ordinal: int) -> FixtureRo
             "lane": lane,
             "price": 100.0 + ordinal,
             "score_rank": ordinal,
-            "sector": "Fixture sector",
+            "sector": fixture_sector,
             "sector_zh": "固定板块",
             "stage": stage,
             "stance": "Fixture",
@@ -305,17 +326,67 @@ class TrackingLoader(FileSystemLoader):
 
 
 def common_actions() -> dict[str, list[Any]]:
-    return {
-        "buy_now": [],
-        "buy_soon": [],
-        "on_the_run": [],
-        "take_profits": [],
-        "hold": [],
-        "avoid": [],
-    }
+    return {lane: [] for lane in ACTION_LANES}
 
 
-def hk_context(setups: dict[str, Any]) -> dict[str, Any]:
+def load_action_fixture(market: str) -> tuple[dict[str, list[FixtureRow]], Path]:
+    """Load a typed, explicitly synthetic action classification for browser QA."""
+    path = ROOT / MARKETS[market]["action_fixture"]
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"{market}: action fixture root must be an object")
+    if payload.get("schema") != "mastermind.stock_dashboard_action_fixture.v1":
+        raise ValueError(f"{market}: unknown action fixture schema")
+    if payload.get("market") != market:
+        raise ValueError(f"{market}: action fixture market mismatch")
+    if payload.get("classification") != "frozen_browser_contract_fixture_only":
+        raise ValueError(f"{market}: action fixture classification mismatch")
+    raw_actions = payload.get("actions")
+    if not isinstance(raw_actions, dict) or set(raw_actions) != set(ACTION_LANES):
+        raise ValueError(f"{market}: action fixture lanes mismatch")
+    actions: dict[str, list[FixtureRow]] = {}
+    seen: set[str] = set()
+    for lane in ACTION_LANES:
+        raw_rows = raw_actions[lane]
+        if not isinstance(raw_rows, list):
+            raise ValueError(f"{market}.{lane}: action lane must be a list")
+        rows: list[FixtureRow] = []
+        for raw in raw_rows:
+            if not isinstance(raw, dict):
+                raise ValueError(f"{market}.{lane}: action row must be an object")
+            ticker = raw.get("ticker")
+            name = raw.get("name")
+            direction = raw.get("dir")
+            label = raw.get("label")
+            days = raw.get("days")
+            if (
+                not isinstance(ticker, str)
+                or not ticker.strip()
+                or not isinstance(name, str)
+                or not name.strip()
+                or direction not in {"up", "dn", "flat"}
+                or not isinstance(label, str)
+                or isinstance(days, bool)
+                or not isinstance(days, int)
+                or days < 0
+            ):
+                raise ValueError(f"{market}.{lane}: malformed action row")
+            normalized_ticker = ticker.strip().upper()
+            if normalized_ticker in seen:
+                raise ValueError(f"{market}: duplicate action id {normalized_ticker}")
+            seen.add(normalized_ticker)
+            row = FixtureRow(raw)
+            row["ticker"] = normalized_ticker
+            rows.append(row)
+        actions[lane] = rows
+    if not actions["buy_now"]:
+        raise ValueError(f"{market}: browser fixture must exercise Buy Now")
+    return actions, path
+
+
+def hk_context(
+    setups: dict[str, Any], actions: dict[str, list[Any]] | None = None
+) -> dict[str, Any]:
     """Fixed non-owner context matching the production Jinja environment."""
     return {
         "mode": "stocks",
@@ -326,7 +397,7 @@ def hk_context(setups: dict[str, Any]) -> dict[str, Any]:
             "liquidity_overlay": "neutral",
             "pending_quad": None,
         },
-        "actions": common_actions(),
+        "actions": common_actions() if actions is None else actions,
         "setups": setups,
         "gv": None,
         "market_state": None,
@@ -365,7 +436,9 @@ def hk_context(setups: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def canada_context(setups: dict[str, Any]) -> dict[str, Any]:
+def canada_context(
+    setups: dict[str, Any], actions: dict[str, list[Any]] | None = None
+) -> dict[str, Any]:
     """Fixed non-owner context; owner rows come only from the checked-in JSON."""
     mtf = "{}"
     return {
@@ -398,7 +471,7 @@ def canada_context(setups: dict[str, Any]) -> dict[str, Any]:
         "curve_chart": "",
         "axes_chart": "",
         "sectors": [],
-        "actions": common_actions(),
+        "actions": common_actions() if actions is None else actions,
         "setups": setups,
         "top_setups": [],
         "stocks_health": [],
@@ -470,11 +543,16 @@ def render_market(market: str, out_dir: Path) -> dict[str, Any]:
 
     spec = MARKETS[market]
     setups, owner_path = load_owner_fixture(market)
+    actions, action_path = load_action_fixture(market)
 
     loader = TrackingLoader(TEMPLATES)
     env = Environment(loader=loader, autoescape=False)
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    context = hk_context(setups) if market == "hk" else canada_context(setups)
+    context = (
+        hk_context(setups, actions)
+        if market == "hk"
+        else canada_context(setups, actions)
+    )
     html = env.get_template(spec["template"]).render(**context)
 
     output = out_dir / spec["output"]
@@ -483,6 +561,7 @@ def render_market(market: str, out_dir: Path) -> dict[str, Any]:
         input_row(Path(__file__), "recipe"),
         input_row(ROOT / "engine" / "i18n.py", "jinja_globals"),
         input_row(owner_path, "frozen_owner_fixture"),
+        input_row(action_path, "frozen_action_fixture"),
     ]
     inputs.extend(input_row(path, "jinja_template") for path in sorted(loader.loaded))
     inputs = sorted({row["path"]: row for row in inputs}.values(), key=lambda row: row["path"])
@@ -515,7 +594,7 @@ def main() -> int:
     receipt = {
         "schema": "mastermind.stock_dashboard_rendered_fixture.v1",
         "proof_class": "rendered_fixture",
-        "transform": "jinja2_candidate_template_render_from_frozen_owner_identity",
+        "transform": "jinja2_candidate_template_render_from_frozen_owner_and_action_fixtures",
         "ambient_inputs": [],
         "effects": {"publish": False, "ledger_advance": False, "collectors": False},
         "runtime": {

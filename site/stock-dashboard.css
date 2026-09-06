@@ -125,11 +125,21 @@
   border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
   background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap;
 }
-.mx-stockdash--ca .ca-v36-live-dot {
+.mx-stockdash--ca .ca-v36-quote-dot {
   width: 7px; height: 7px; border-radius: var(--r-pill, 999px);
+  background: var(--muted); box-shadow: none;
+}
+.mx-stockdash--ca .ca-v36-quote-status b { color: var(--muted); }
+.mx-stockdash--ca .ca-v36-quote-status[data-quote-state="live"] .ca-v36-quote-dot {
   background: var(--ok); box-shadow: 0 0 9px color-mix(in srgb, var(--ok) 55%, transparent);
 }
-.mx-stockdash--ca .ca-v36-live b { color: var(--ok); }
+.mx-stockdash--ca .ca-v36-quote-status[data-quote-state="live"] b { color: var(--ok); }
+.mx-stockdash--ca .ca-v36-quote-status:is([data-quote-state="delayed"], [data-quote-state="stale"]) .ca-v36-quote-dot {
+  background: var(--warn);
+}
+.mx-stockdash--ca .ca-v36-quote-status:is([data-quote-state="delayed"], [data-quote-state="stale"]) b {
+  color: var(--ink-warn, var(--warn));
+}
 
 /* Fresh-signals cue (owner .pv-mk-new markers) in the Prophet header. */
 .mx-stockdash--ca .ca-v36-fresh { color: var(--muted); font-size: 12.2px; white-space: nowrap; }
@@ -160,22 +170,30 @@
 
 /* ---- What to Act On Now: segmented control / lanes / rows / counts / routes / empty / View-all --- */
 
-.mx-stockdash--ca .ca-v36-an-body { padding: 10px 12px 11px; }
+.mx-stockdash--ca .ca-v36-an-body { padding: 4px 12px 5px; }
 
 .mx-stockdash--ca .ca-v36-an-seg { display: none; gap: 6px; margin-bottom: 10px; }
-.mx-stockdash--ca .ca-v36-an-seg button {
+.mx-stockdash--ca .ca-v36-an-seg :is(button, a) {
   flex: 1; min-width: 0; height: 34px; display: inline-flex; align-items: center; justify-content: center;
   gap: 5px; padding: 0 7px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
-  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer;
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer; text-decoration: none;
 }
 .mx-stockdash--ca .ca-v36-an-seg-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-stockdash--ca .ca-v36-an-seg b { flex: none; font-variant-numeric: tabular-nums; font-weight: 700; }
-.mx-stockdash--ca .ca-v36-an-seg button[aria-selected=true] {
+.mx-stockdash--ca .ca-v36-an-seg :is(button, a)[aria-selected=true] {
   color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); background: var(--panel);
 }
 
 .mx-stockdash--ca .ca-v36-an-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .mx-stockdash--ca .ca-v36-an-lane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--panel2); overflow: hidden; }
+.mx-stockdash--ca .ca-v36-an-body .anv2-lane-body { padding: 0; }
+.mx-stockdash--ca .ca-v36-an-body .anv2-lst .anv2-row {
+  min-width: 0; padding: 0; overflow: visible; border-bottom: 0;
+}
+.mx-stockdash--ca .ca-v36-an-body .anv2-row-top {
+  flex: 1; min-width: 0; align-items: stretch; gap: 0; margin: 0;
+}
+.mx-stockdash--ca .ca-v36-an-body :is(.anv2-chips, .anv2-stat) { display: none; }
 
 .mx-stockdash--ca .ca-v36-an-hd {
   display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px;
@@ -290,6 +308,9 @@
   background: var(--panel); border-color: var(--line); color: var(--text);
   box-shadow: 0 1px 4px color-mix(in srgb, var(--bg) 12%, transparent);
 }
+.mx-stockdash--ca .ca-v36-seg button:disabled {
+  cursor: default; opacity: .52; box-shadow: none;
+}
 .mx-stockdash--ca .ca-v36-result { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .mx-stockdash--ca .ca-v36-filter {
   display: none; height: 32px; align-items: center; padding: 0 10px;
@@ -301,6 +322,25 @@
 /* ---- Hidden overrides (card.hidden = !show defeats author display rules) --- */
 
 .mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden] { display: none !important; }
+
+/* Server-owned source projection. Before the entitled composer arrives, the
+   validated first five owner cards are Top; after adoption, card.hidden is the
+   sole grid controller. Table rows retain the same serialized owner identity. */
+#ca-v36:not([data-ca-enhanced="true"]) #ca-v36-prophet[data-initial-source="top"] #standouts .cards > .pvcard:nth-of-type(n+6) {
+  display: none !important;
+}
+#ca-v36:not([data-ca-enhanced="true"]) #ca-v36-prophet[data-initial-source="top"] #standouts .cards > .pvcard:nth-of-type(-n+5) {
+  border-color: color-mix(in srgb, var(--link) 20%, var(--line));
+}
+#ca-v36-prophet[data-active-source="top"] #stocktable-wrap tbody tr[data-prophet-top="false"] {
+  display: none !important;
+}
+
+.mx-stockdash--ca .prophet-owner-context {
+  display: flex; align-items: center; gap: 7px; padding: 10px 0 7px;
+  color: var(--muted); font-size: 12.4px; font-weight: 600;
+}
+.mx-stockdash--ca .prophet-owner-context [data-prophet-help] { display: inline-flex; flex: none; }
 
 .mx-stockdash--ca .ca-v36-card-grid {
   display: block; padding: 14px;
@@ -584,11 +624,11 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-empty-switch {
    card shadow, i.e. a raised control, not merely a differently-bordered one. */
 
 html[data-theme=light] .mx-stockdash--ca .ca-v36-seg,
-html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg button {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg :is(button, a) {
   background: color-mix(in srgb, var(--text) 6%, var(--panel2));
 }
 html[data-theme=light] .mx-stockdash--ca .ca-v36-seg button[aria-selected=true],
-html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg button[aria-selected=true] {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg :is(button, a)[aria-selected=true] {
   background: var(--panel);
   border-color: var(--line);
   color: var(--text);
@@ -679,10 +719,18 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   .mx-stockdash--ca .ca-v36-controls { width: 100%; }
   /* Mobile Act-Now grammar: one segmented lane selector, one lane body at a
      time, no stacked giant lane cards, no horizontal overflow. */
-  .mx-stockdash--ca .ca-v36-an-seg { display: flex; }
+  .mx-stockdash--ca .ca-v36-an-seg {
+    display: grid; grid-template-columns: .82fr 1fr 1.35fr 1.25fr;
+  }
+  .mx-stockdash--ca .ca-v36-an-seg :is(button, a) { height: 42px; gap: 2px; padding: 3px 2px; font-size: 10.2px; }
+  .mx-stockdash--ca .ca-v36-an-seg-t {
+    overflow: visible; text-overflow: clip; white-space: normal; line-height: 1.05; text-align: center;
+  }
   .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: 1fr; }
   .mx-stockdash--ca .ca-v36-an-lane { display: none; }
   .mx-stockdash--ca .ca-v36-an-lane.is-current { display: block; }
+  .mx-stockdash--ca .ca-v36-an-lanes:has(.ca-v36-an-lane:target) .ca-v36-an-lane.is-current { display: none; }
+  .mx-stockdash--ca .ca-v36-an-lane:target { display: block; }
   /* One lane at a time: a column/row divider would be a rule against nothing.
      A plain `.ca-v36-an-lane` reset is specificity-dead here — the desktop
      divider rules it needs to beat (`+ .ca-v36-an-lane` above, `:nth-child`
@@ -768,6 +816,9 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   background: var(--panel); border-color: var(--line); color: var(--text);
   box-shadow: 0 1px 4px color-mix(in srgb, var(--bg) 12%, transparent);
 }
+.mx-stockdash--hk .hk-v37-seg button:disabled {
+  cursor: default; opacity: .52; box-shadow: none;
+}
 .mx-stockdash--hk .hk-v37-result { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .mx-stockdash--hk .hk-v37-filter {
   display: none; height: 32px; align-items: center; padding: 0 10px;
@@ -778,6 +829,17 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
 .mx-stockdash--hk .hk-v37-filter.is-on { display: inline-flex; }
 .mx-stockdash--hk .hk-v37-card-grid { display: block; padding: 14px; }
 .mx-stockdash--hk .hk-v37-card-grid .pvcard[hidden] { display: none !important; }
+#hk-v37:not([data-hk-enhanced="true"]) #hk-v37-prophet[data-initial-source="top"] #standouts .pvcard:not(.pv-featured) {
+  display: none !important;
+}
+#hk-v37-prophet[data-active-source="top"] #stocktable-wrap tbody tr[data-prophet-top="false"] {
+  display: none !important;
+}
+.mx-stockdash--hk .prophet-owner-context {
+  display: flex; align-items: center; gap: 7px; padding: 10px 0 7px;
+  color: var(--muted); font-size: 12.4px; font-weight: 600;
+}
+.mx-stockdash--hk .prophet-owner-context [data-prophet-help] { display: inline-flex; flex: none; }
 .mx-stockdash--hk .hk-v37-empty {
   padding: 24px 16px; color: var(--muted); font-size: 13px; text-align: center;
 }
@@ -787,6 +849,75 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   background: var(--panel2); color: var(--text); font-size: 11.8px; font-weight: 650; cursor: pointer;
 }
 .mx-stockdash--hk #stocktable-wrap tr.hk-v37-hidden { display: none !important; }
+
+/* What to Act On Now: the owner-rendered rows are the first frame; the
+   composer may replace only this body with equivalent compact controls. */
+.mx-stockdash--hk .hk-v37-an-body { padding: 4px 12px 5px; }
+.mx-stockdash--hk .hk-v37-an-seg { display: none; gap: 6px; margin-bottom: 10px; }
+.mx-stockdash--hk .hk-v37-an-seg :is(button, a) {
+  flex: 1; min-width: 0; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 0 7px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 700;
+  cursor: pointer; text-decoration: none;
+}
+.mx-stockdash--hk .hk-v37-an-seg-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--hk .hk-v37-an-seg b { flex: none; font-variant-numeric: tabular-nums; font-weight: 700; }
+.mx-stockdash--hk .hk-v37-an-seg :is(button, a)[aria-selected=true] {
+  color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); background: var(--panel);
+}
+.mx-stockdash--hk .hk-v37-an-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.mx-stockdash--hk .hk-v37-an-lane {
+  min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--panel2);
+}
+.mx-stockdash--hk .hk-v37-an-body .anv2-lane-body { padding: 0; }
+.mx-stockdash--hk .hk-v37-an-body .anv2-lst .anv2-row {
+  min-width: 0; padding: 0; overflow: visible; border-bottom: 0;
+}
+.mx-stockdash--hk .hk-v37-an-body .anv2-row-top {
+  flex: 1; min-width: 0; align-items: stretch; gap: 0; margin: 0;
+}
+.mx-stockdash--hk .hk-v37-an-body :is(.anv2-chips, .anv2-stat) { display: none; }
+.mx-stockdash--hk .hk-v37-an-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px;
+  border-bottom: 1px solid var(--line); border-top: 2px solid currentColor;
+  font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .02em;
+}
+.mx-stockdash--hk .hk-v37-an-hd.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+.mx-stockdash--hk .hk-v37-an-hd.near { color: var(--ink-link, var(--link)); }
+.mx-stockdash--hk .hk-v37-an-hd.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--hk .hk-v37-an-hd.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+.mx-stockdash--hk .hk-v37-an-hd b { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.mx-stockdash--hk .hk-v37-an-row-w {
+  display: flex; min-width: 0; align-items: stretch; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.mx-stockdash--hk .hk-v37-an-lane > .hk-v37-an-row-w:first-of-type,
+.mx-stockdash--hk .hk-v37-an-body .anv2-lst .anv2-row:first-child { border-top: 0; }
+.mx-stockdash--hk .hk-v37-an-row {
+  flex: 1; min-width: 0; min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 5px 10px; border: 0; background: transparent; color: inherit;
+  font-size: 12.6px; font-weight: 650; text-align: left; cursor: pointer;
+}
+.mx-stockdash--hk .hk-v37-an-row:hover:not(:disabled),
+.mx-stockdash--hk .hk-v37-an-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--hk .hk-v37-an-row:disabled { cursor: default; }
+.mx-stockdash--hk .hk-v37-an-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--hk .hk-v37-an-n {
+  flex: none; color: var(--muted); font-size: 10.6px; font-weight: 600;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.mx-stockdash--hk .hk-v37-an-go {
+  flex: none; display: inline-flex; align-items: center; padding: 0 9px;
+  border-left: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+  color: var(--muted); font-size: 12px; text-decoration: none;
+}
+.mx-stockdash--hk .hk-v37-an-go:hover { color: var(--text); background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--hk .hk-v37-an-empty { padding: 12px 10px; color: var(--muted); font-size: 12px; text-align: center; }
+.mx-stockdash--hk .hk-v37-an-more {
+  display: block; width: 100%; padding: 7px 10px; border: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+  background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--hk .hk-v37-an-more:hover { color: var(--text); }
 
 .mx-stockdash--hk .hk-v37-lead-list { padding: 2px 0; }
 .mx-stockdash--hk .hk-v37-lead-list-h {
@@ -893,6 +1024,21 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
 html[data-theme=light] .mx-stockdash--hk .hk-v37-panel {
   background: var(--panel); border-color: var(--line); box-shadow: var(--card-shadow);
 }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-lanes { gap: 0; }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-lane { background: transparent; border: 0; border-radius: 0; }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-lane + .hk-v37-an-lane { border-left: 1px solid var(--line); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-hd.buy { background: color-mix(in srgb, var(--ink-pv-buy, var(--pv-buy)) 4%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-hd.near { background: color-mix(in srgb, var(--ink-link, var(--link)) 4%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-hd.wait { background: color-mix(in srgb, var(--ink-pv-wait, var(--pv-wait)) 4%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-hd.avoid { background: color-mix(in srgb, var(--ink-pv-avoid, var(--pv-avoid)) 4%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-row.is-active { box-shadow: inset 2px 0 0 var(--link); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-go { border-left-style: solid; border-left-color: color-mix(in srgb, var(--line) 60%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-more { border-top-style: solid; border-top-color: color-mix(in srgb, var(--line) 70%, transparent); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-more:hover { color: var(--ink-link, var(--link)); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-seg :is(button, a) { background: color-mix(in srgb, var(--text) 6%, var(--panel2)); }
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-seg :is(button, a)[aria-selected=true] {
+  background: var(--panel); border-color: var(--line); color: var(--text); box-shadow: var(--card-shadow);
+}
 html[data-theme=light] .mx-stockdash--hk .hk-v37-card-grid { background: var(--bg); }
 html[data-theme=light] .mx-stockdash--hk .hk-v37-seg { background: color-mix(in srgb, var(--text) 6%, var(--panel2)); }
 html[data-theme=light] .mx-stockdash--hk .hk-v37-seg button[aria-selected=true] {
@@ -956,6 +1102,19 @@ html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-sb { background: var(--pa
   .mx-stockdash--hk .hk-v37-result { width: 100%; white-space: normal; }
   .mx-stockdash--hk .hk-v37-flow { width: 100%; max-width: none; white-space: normal; }
   .mx-stockdash--hk .hk-v37-controls { width: 100%; }
+  .mx-stockdash--hk .hk-v37-an-seg {
+    display: grid; grid-template-columns: .82fr 1fr 1.35fr 1.25fr;
+  }
+  .mx-stockdash--hk .hk-v37-an-seg :is(button, a) { height: 42px; gap: 2px; padding: 3px 2px; font-size: 10.2px; }
+  .mx-stockdash--hk .hk-v37-an-seg-t {
+    overflow: visible; text-overflow: clip; white-space: normal; line-height: 1.05; text-align: center;
+  }
+  .mx-stockdash--hk .hk-v37-an-lanes { grid-template-columns: 1fr; }
+  .mx-stockdash--hk .hk-v37-an-lane { display: none; }
+  .mx-stockdash--hk .hk-v37-an-lane.is-current { display: block; }
+  .mx-stockdash--hk .hk-v37-an-lanes:has(.hk-v37-an-lane:target) .hk-v37-an-lane.is-current { display: none; }
+  .mx-stockdash--hk .hk-v37-an-lane:target { display: block; }
+  html[data-theme=light] .mx-stockdash--hk .hk-v37-an-lane + .hk-v37-an-lane { border-left: 0; }
   .mx-stockdash--hk .hk-v37-card-grid { padding: 10px; }
   .mx-stockdash--hk .hk-v37-lead-row { grid-template-columns: 48px minmax(0, 1fr) auto; }
   .mx-stockdash--hk .hk-v37-count { display: none; }

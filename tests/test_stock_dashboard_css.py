@@ -220,10 +220,11 @@ def test_mobile_segment_grammar_one_lane_at_a_time():
     )
     block = _extract_balanced_media_block(text, r"@media\s*\(\s*max-width:\s*680px\s*\)")
     for pattern in [
-        r"\.ca-v36-an-seg\s*\{[^}]*display:\s*flex",
+        r"\.ca-v36-an-seg\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:",
         r"\.ca-v36-an-lanes\s*\{[^}]*grid-template-columns:\s*1fr",
         r"\.ca-v36-an-lane\s*\{[^}]*display:\s*none",
         r"\.ca-v36-an-lane\.is-current\s*\{[^}]*display:\s*block",
+        r"\.ca-v36-an-lane:target\s*\{[^}]*display:\s*block",
     ]:
         assert re.search(pattern, block), (
             f"680px media query lost {pattern!r} — the mobile one-lane "

@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-09-05T19:55:32Z",
+  "generated_at": "2026-09-06T08:16:07Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -19,18 +19,18 @@
         "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 3553,
+            "document_height_px": 3979,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 5401,
+            "document_height_px": 6072,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 3553,
+        "document_height_px": 3979,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -50,39 +50,39 @@
           "viewport": "desktop"
         },
         "panel_count": 9,
-        "payload_bytes_total": 503432,
+        "payload_bytes_total": 146582,
         "raw_slug_hit_count": 1,
         "raw_slug_hits": [
           "hk_prophet_v2"
         ],
-        "request_count": 28,
+        "request_count": 29,
         "screenshot_completion": 1.0,
         "section_count": 1,
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 901
+        "visible_word_count": 980
       },
       "page_id": "macro:hk_stocks",
       "route": "/hk_stocks.html"
     },
     {
       "metrics": {
-        "asof_present": false,
+        "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 2851,
+            "document_height_px": 3148,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 3169,
+            "document_height_px": 4108,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 2851,
+        "document_height_px": 3148,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -102,16 +102,16 @@
           "viewport": "desktop"
         },
         "panel_count": 9,
-        "payload_bytes_total": 152641,
+        "payload_bytes_total": 674266,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
-        "request_count": 29,
+        "request_count": 30,
         "screenshot_completion": 1.0,
         "section_count": 7,
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 415
+        "visible_word_count": 472
       },
       "page_id": "macro:canada_stocks",
       "route": "/canada_stocks.html"
@@ -123,7 +123,7 @@
     "canonical_build_proof": "unavailable",
     "fixture_receipt": {
       "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-      "sha256": "3172d9f0b3bb7d50ee1c06e742bbc585b75d1389f07230ba85891bfe8e529576"
+      "sha256": "66f8f21fe8a7e5968f6d1c08a858b835d983c68e4f02a6c0f0ce12d804864089"
     },
     "kind": "rendered_fixture",
     "production_proof": "none",
@@ -131,11 +131,11 @@
     "rendered_pages": {
       "/canada_stocks.html": {
         "output": "canada_stocks.html",
-        "sha256": "81b33c28c0913b07ec8799db16569a6ab6476cf893a46c01cce4fb8e23aeb127"
+        "sha256": "bf0ebdd3973393425247157be2781f7ea615b4135de61ced87855cef971f4798"
       },
       "/hk_stocks.html": {
         "output": "hk_stocks.html",
-        "sha256": "5ba9170a6c84b44b474123ce152f22b9e8d3ce2d55e8586e182a3fdc98379685"
+        "sha256": "94b5e06171e7fe988e11a9064853ce50f88e3fb6d9314fbf607ae08aaf6688ea"
       }
     },
     "resolved_gitdir_or_none": null,

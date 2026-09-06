@@ -727,10 +727,16 @@ def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
 def test_static_owner_action_board_has_mobile_single_column_grammar():
     """The first-frame owner lanes collapse to one bounded column on phones."""
     template = HK_TEMPLATE.read_text(encoding="utf-8")
-    theme_css = (ROOT / "templates" / "theme.css").read_text(encoding="utf-8")
+    stock_css = STOCK_CSS.read_text(encoding="utf-8")
     shell = _build_shell_markup()
-    assert 'class="anv2-grid"' in shell
-    assert '@media (max-width:560px)  { .anv2-grid { grid-template-columns:1fr; } }' in theme_css
+    assert re.search(r'class="anv2-grid\s+hk-v37-an-lanes"', shell)
+    assert re.search(
+        r"@media\s*\(max-width:\s*680px\).*?"
+        r"\.hk-v37-an-lanes\s*\{[^}]*grid-template-columns:\s*1fr",
+        stock_css,
+        re.S,
+    )
+    assert re.search(r"\.hk-v37-an-lane:target\s*\{[^}]*display:\s*block", stock_css)
     assert 'id="act-now"' in template
 
 

@@ -2462,6 +2462,8 @@ jobs:
       - "mockups/evidence/prophet-p0b-zero-fouc/manifest.json"
       - "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-owner-fixture.json"
       - "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-action-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-action-fixture.json"
       - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/baskets.json"
       - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/sector_pulse_canada.json"
       - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json"
