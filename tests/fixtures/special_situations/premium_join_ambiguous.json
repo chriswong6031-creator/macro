@@ -1,0 +1,22 @@
+{
+  "event": {
+    "cik": "999999",
+    "company": "Dual Class Co",
+    "category": "Tender Offers",
+    "form_type": "SC TO-T",
+    "date_filed": "2026-07-01",
+    "accession": "0001213900-26-000222",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/999999/0001213900-26-000222-index.htm",
+    "llm_terms": "{\"price_per_share\": 12.0, \"currency\": \"USD\"}"
+  },
+  "lifecycle_row": {
+    "first_date": "2026-06-15",
+    "last_date": "2026-07-01",
+    "n_amendments": 0,
+    "n_filings": 2,
+    "terminal": null
+  },
+  "closes": {"2026-06-10": 9.00, "2026-06-15": 9.50},
+  "ledger": {"DUALA": 999999, "DUALB": 999999},
+  "expected": {"status": "refused", "refusal": "issuer_join_ambiguous"}
+}

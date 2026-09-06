@@ -1,0 +1,22 @@
+{
+  "event": {
+    "cik": "714256",
+    "company": "Sample Target Inc",
+    "category": "Going-Private",
+    "form_type": "SC 13E3",
+    "date_filed": "2026-06-05",
+    "accession": "0001213900-26-000333",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/714256/0001213900-26-000333-index.htm",
+    "llm_terms": "{\"price_per_share\": 40.0, \"currency\": \"USD\"}"
+  },
+  "lifecycle_row": {
+    "first_date": "2026-06-02",
+    "last_date": "2026-06-05",
+    "n_amendments": 0,
+    "n_filings": 1,
+    "terminal": null
+  },
+  "closes": {"2026-06-03": 30.00, "2026-06-04": 30.50},
+  "ledger": {"SMTI": 714256},
+  "expected": {"status": "refused", "refusal": "unaffected_price_unavailable"}
+}
