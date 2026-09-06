@@ -1643,3 +1643,29 @@ def test_disclosures_never_retire_the_open_limitations() -> None:
     joined = "\n".join(ss.DISCLOSURES)
     assert "ISSUERMASTER_CURRENT_IDENTITY_ONLY" in joined
     assert "ALIAS_EPOCH_VALID_FROM" in joined
+
+
+def test_disclosures_only_retire_cik_and_namespace_limits_where_the_fix_lands() -> None:
+    """MAJOR fix (B-F06-1 review): the packet's own retirement gate names
+    CIK_LEG_UNOWNED_ACCESS and NO_GENERAL_NAMESPACE_RENDERER as the two
+    disclosures this packet may retire -- and only where the code that
+    actually closes them is live. The success-path DISCLOSURES tuple may
+    retire them (issuer_cik is now read through IssuerMaster.cik_of_issuer,
+    and MSFT resolves through the same owner-routed renderer as AAPL), but a
+    failure shell composed WITHOUT a completed owner read must never claim
+    the same closure -- it never ran this cycle."""
+    joined = "\n".join(ss.DISCLOSURES)
+    assert "CIK_LEG_UNOWNED_ACCESS" not in joined
+    assert "NO_GENERAL_NAMESPACE_RENDERER" not in joined
+
+    unresolved = ss.compile_security_state_failure(
+        subject=ss.MSFT_SUBJECT, validator=_validator(), now="2026-01-01T00:00:00Z",
+        prior_state=None, owner_read_completed=False,
+    )
+    unresolved_joined = "\n".join(unresolved["identity_proof"]["disclosures"])
+    assert "CIK_LEG_UNOWNED_ACCESS" not in unresolved_joined
+    assert "NO_GENERAL_NAMESPACE_RENDERER" not in unresolved_joined
+    assert "OWNER_COMPOSED_SUBJECT_CURRENT_ONLY" not in unresolved_joined
+    assert "PINNED_IDENTITY_NOT_OWNER_READ_THIS_CYCLE" in unresolved_joined
+    assert unresolved["identity_proof"]["refusals"] == ["IDENTITY_UNRESOLVED"]
+    assert unresolved["identity_proof"]["equalities"] == []

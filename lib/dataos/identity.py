@@ -850,7 +850,11 @@ class IssuerMaster:
         }
         listing_keys_by_security: dict[str, set[str]] = {}
         for row in rows:
-            if row.listing_key:
+            # V4-D2B1-R1 §3.6: a security-axis-superseded row (a tombstone) is
+            # excluded from listing-key aggregation, same as `by_issuer` above --
+            # a stale key on a corrected duplicate must never be handed back as
+            # if it were the security's current listing key.
+            if row.listing_key and not row.security_state:
                 listing_keys_by_security.setdefault(row.security_id, set()).add(row.listing_key)
         self._listing_keys_by_security: dict[str, tuple[str, ...]] = {
             k: tuple(sorted(v)) for k, v in listing_keys_by_security.items()

@@ -706,5 +706,10 @@ def test_view_model_renders_the_msft_state_with_plain_words() -> None:
     ):
         assert code not in html, f"raw enum code {code!r} leaked into MSFT panel markup"
 
-    assert '<span class="l-en">' in html
-    assert '<span class="l-zh">' in html
+    import re
+    section_match = re.search(r'id="security-state".*?(?=<section )', html, re.DOTALL)
+    assert section_match is not None, "could not isolate the #security-state panel markup"
+    section_html = section_match.group(0)
+    assert '<span class="l-en">' in section_html
+    assert '<span class="l-zh">' in section_html
+

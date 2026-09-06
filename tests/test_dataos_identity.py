@@ -708,3 +708,32 @@ def test_issuer_master_listing_key_round_trips_to_the_security_id() -> None:
     ])
     listing_key = im.listing_key_of_security("SEC:US-XNAS-MSFT")
     assert security_id(parse_listing_key(listing_key)) == "SEC:US-XNAS-MSFT"
+
+
+def test_issuer_master_listing_key_of_security_excludes_a_tombstoned_duplicate() -> None:
+    """MAJOR fix (B-F06-1 review): a security-axis-superseded row (a
+    tombstone) sharing a security_id with the live row must never
+    contribute its stale listing_key to `listing_key_of_security` --
+    mirroring the exclusion `securities_of_issuer` already enforces."""
+    im = IssuerMaster([
+        SecurityIssuerRow(security_id="SEC:US-XNAS-DUP", issuer_id="ISS:US-XNAS-DUP",
+                          issuer_state="RESOLVED", listing_key="US-XNAS-DUP",
+                          security_state=None, superseded_by=None),
+        SecurityIssuerRow(security_id="SEC:US-XNAS-DUP", issuer_id="ISS:US-XNAS-DUP",
+                          issuer_state="RESOLVED", listing_key="US-XNAS-DUPSTALE",
+                          security_state="superseded", superseded_by="SEC:US-XNAS-DUP"),
+    ])
+
+    assert im.listing_key_of_security("SEC:US-XNAS-DUP") == "US-XNAS-DUP"
+
+
+def test_issuer_master_listing_key_of_security_is_none_for_a_tombstone_only_security() -> None:
+    """A security whose only row is superseded must never return the stale
+    key as if it were current."""
+    im = IssuerMaster([
+        SecurityIssuerRow(security_id="SEC:US-XNAS-OLD", issuer_id="ISS:US-XNAS-OLD",
+                          issuer_state="RESOLVED", listing_key="US-XNAS-OLD",
+                          security_state="superseded", superseded_by="SEC:US-XNAS-NEW"),
+    ])
+
+    assert im.listing_key_of_security("SEC:US-XNAS-OLD") is None

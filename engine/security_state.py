@@ -1642,6 +1642,7 @@ def compile_security_state_failure(
     *, subject: SecurityStateSubject, validator: Draft202012Validator,
     now: str,
     prior_state: Mapping[str, Any] | None = None,
+    owner_read_completed: bool = True,
 ) -> dict[str, Any]:
     """Pure fallback shell for the PRODUCER's own exception-containment boundary.
 
@@ -1658,30 +1659,65 @@ def compile_security_state_failure(
     reason is accepted at this public-output boundary.
     """
     subject = _require_subject(subject)
-    public_reason = "security_state compiler failed after owner identity was composed"
+    if owner_read_completed:
+        public_reason = "security_state compiler failed after owner identity was composed"
+        identity_proof = {
+            "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+            "legs": [_leg_receipt(
+                "R8", "failure shell retains the owner-composed current CIK without claiming a full identity-chain pass",
+                "SecurityStateSubject (producer-composed owner receipt)",
+                "scripts/build_stock_library.py::_read_security_state_identity_rows",
+                [
+                    ("subject_issuer_cik", subject.issuer_cik),
+                    *[(f"owner_{key}", value) for key, value in sorted(subject.owner_evidence)],
+                ],
+                "pass", None,
+            )],
+            "equalities": [_equality(
+                "R8", "failure_shell.subject.issuer_cik", subject.issuer_cik,
+                "owner_subject.issuer_cik", subject.issuer_cik,
+            )],
+            "refusals": ["COMPILER_FAILURE"],
+            "disclosures": list(DISCLOSURES),
+        }
+    else:
+        # M1: the owner-identity BATCH read itself never ran this cycle (a
+        # shared-artifact failure upstream of any per-ticker read). `subject`
+        # here is the frozen pinned allowlist mapping for this ticker, not a
+        # live owner composition — the failure shell must say so plainly
+        # rather than claiming readers ran that never executed (this is the
+        # exact fabrication a prior review blocked: a false "owner composed"
+        # claim plus a self-equality that was true by construction).
+        public_reason = "security_state compiler failed before this cycle's owner identity read completed"
+        identity_proof = {
+            "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+            "legs": [_leg_receipt(
+                "R8", "owner-identity batch was unavailable this cycle; subject is the frozen "
+                "pinned allowlist mapping for this ticker, never a live owner read",
+                "SecurityStateSubject (frozen pinned allowlist config, not a producer owner receipt)",
+                "scripts/build_stock_library.py::_read_security_state_identity_rows",
+                [("subject_ticker_display", subject.ticker_display)],
+                "fail", "IDENTITY_UNRESOLVED",
+            )],
+            "equalities": [],
+            "refusals": ["IDENTITY_UNRESOLVED"],
+            "disclosures": [
+                "PINNED_IDENTITY_NOT_OWNER_READ_THIS_CYCLE: security_id, issuer_id, listing_key "
+                "and issuer_cik are the frozen allowlist mapping for this ticker; no "
+                "VendorAliasTable or IssuerMaster read ran this cycle",
+                "IDENTITY_BRIDGE_UNRESOLVED_THIS_CYCLE: the owner-backed identity chain could "
+                "not be re-proven this cycle; treat this shell as an unresolved identity, not "
+                "a confirmed one",
+                "ISSUERMASTER_CURRENT_IDENTITY_ONLY: no asof-scoped issuer lineage; proof is "
+                "current-identity",
+                "ALIAS_EPOCH_VALID_FROM: corroboration alias window start is a placeholder "
+                "floor, not evidence",
+            ],
+        }
     blocked_summary = _bilingual(
         "This security's state could not be compiled this cycle (a compiler failure, not an absence).",
         "本次未能编译该证券的状态（属于编译失败，并非事件不存在）。",
     )
-    identity_proof = {
-        "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
-        "legs": [_leg_receipt(
-            "R8", "failure shell retains the owner-composed current CIK without claiming a full identity-chain pass",
-            "SecurityStateSubject (producer-composed owner receipt)",
-            "scripts/build_stock_library.py::_read_security_state_identity_rows",
-            [
-                ("subject_issuer_cik", subject.issuer_cik),
-                *[(f"owner_{key}", value) for key, value in sorted(subject.owner_evidence)],
-            ],
-            "pass", None,
-        )],
-        "equalities": [_equality(
-            "R8", "failure_shell.subject.issuer_cik", subject.issuer_cik,
-            "owner_subject.issuer_cik", subject.issuer_cik,
-        )],
-        "refusals": ["COMPILER_FAILURE"],
-        "disclosures": list(DISCLOSURES),
-    }
     state_leg = {
         "deterministic_state_refs": list(_STATE_LEG_REFS),
         "ladder_state": None, "ladder_direction": None, "values_read": [],

@@ -4480,10 +4480,13 @@ def main() -> int:
                     "security_state.v1 identity unavailable for %s: %s",
                     _ss_ticker, _ss_reason,
                 )
-                _ss_pinned_subject = (
-                    _security_state.AAPL_SUBJECT
-                    if _ss_ticker == _security_state.PINNED_TICKER
-                    else _security_state_producer._fallback_subject_for_ticker(_ss_ticker)
+                # The owner-identity BATCH read itself failed (M1) for every
+                # allowlisted ticker at once, so no live owner read exists for
+                # any of them here -- the failure shell must say so, never
+                # borrow a live-read subject's language. `_fallback_subject_for_ticker`
+                # is a frozen-allowlist lookup, not a per-ticker branch.
+                _ss_pinned_subject = _security_state_producer._fallback_subject_for_ticker(
+                    _ss_ticker
                 )
                 _ss_prior = _security_state_producer._read_prior_security_state(
                     outdir, _ss_ticker
@@ -4494,6 +4497,7 @@ def main() -> int:
                         diagnostic=RuntimeError(_ss_reason),
                         prior_state=_ss_prior,
                         validator=_ss_validator,
+                        owner_read_completed=False,
                     )
                 )
                 _ss_rec["security_state"] = _ss_state
