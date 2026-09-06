@@ -7,6 +7,10 @@
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 
+{% macro tp(en, zh='') -%}
+{{- en }}{% if zh and zh != en %} / {{ zh }}{% endif -%}
+{%- endmacro %}
+
 {% set THREAD = {
   'fed':['Rates','利率'], 'treasury':['Treasury','财政部'], 'policy':['Policy','政策'],
   'rotation':['Markets','市场'], 'china':['China','中国'], 'iran':['Iran','伊朗'],
@@ -203,6 +207,10 @@
   'P44':['Under review after the ceasefire collapsed; this is not an active forecast.','停火破裂后正在复核；这不是一条有效预测。']
 } %}
 
+{% set STAGE_EN = {'proposed':'Proposed','passed':'Passed, not yet in force','in_force':'In force','enforced':'Being enforced','withdrawn':'Withdrawn','struck_down':'Struck down in court','superseded':'Replaced by a newer rule'} %}
+{% set STAGE_ZH = {'proposed':'已提出','passed':'已通过，尚未生效','in_force':'已生效','enforced':'执行中','withdrawn':'已撤回','struck_down':'已被法院推翻','superseded':'已被新规取代'} %}
+{% set STOP_EN = {'proposed':'Proposed','passed':'Passed','in_force':'In force','enforced':'Enforced'} %}
+{% set STOP_ZH = {'proposed':'提出','passed':'通过','in_force':'生效','enforced':'执行'} %}
 {% macro basis_tags(value) -%}
   {% set s = value or '' %}
   {% if 'FACT' in s %}<span class="pw-badge fact">{{ t('Confirmed','已确认') }}</span>{% endif %}
@@ -309,8 +317,38 @@
   .pw-ledger{display:grid;gap:8px}.pw-call{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px 14px;align-items:start;padding:12px 14px;border:1px solid var(--pw-hair);border-radius:11px;background:var(--panel)}.pw-call-topic{color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}.pw-call-text{grid-column:1;margin:2px 0 0;color:var(--text);font-size:12.5px;line-height:1.45}.pw-call-date{font-family:var(--font-data);font-size:11.5px;white-space:nowrap}.pw-call-status{grid-column:3;grid-row:1/3}.pw-call-id{color:var(--muted);font-family:var(--font-data);font-size:10.5px}
   .pw-monitor{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pw-monitor-row{padding:11px 12px;border:1px solid var(--pw-hair);border-radius:10px;background:var(--pw-tile)}.pw-monitor-row strong{display:block;font-size:12.5px}.pw-monitor-row span{display:block;margin-top:3px;color:var(--pw-ink-2);font-size:11.5px}.pw-sources{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.pw-sources a{max-width:100%;overflow-wrap:anywhere}.pw-build-note{margin:13px 0 0;color:var(--muted);font-size:11px}
   .pw-extra[hidden]{display:none!important}.pw-reveal{margin-top:12px}.pw-shell .gbtn{max-width:100%;font-family:var(--font-ui);white-space:normal;text-align:left}
-  @media(max-width:1000px){.pw-hero{grid-template-columns:1fr}.pw-hero-side{border-left:0;border-top:1px solid var(--pw-hair);padding:18px 0 0}.pw-card-grid{grid-template-columns:1fr}.pw-monitor{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:680px){.pw-shell{margin-top:14px}.pw-hero{padding:22px 18px}.pw-hero h1{font-size:28px}.pw-hero-side,.pw-glance-grid{grid-template-columns:1fr}.pw-event{grid-template-columns:58px minmax(0,1fr) auto}.pw-section{margin-top:28px}.pw-card{padding:15px 16px}.pw-monitor{grid-template-columns:1fr}.pw-call{grid-template-columns:minmax(0,1fr) auto}.pw-call-date{grid-column:1}.pw-call-status{grid-column:2;grid-row:1/4}.pw-toc{gap:6px}.pw-toc .gbtn{padding:6px 10px}}
+  /* -- policy lifecycle: deterministic stage ledger -------------------- */
+  .pw-stage-glance{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+  .pw-stages{display:grid;gap:8px}
+  .pw-stage{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(190px,.72fr) auto;gap:10px 18px;align-items:start;padding:12px 14px;border:1px solid var(--pw-hair);border-radius:11px;background:var(--panel)}
+  .pw-stage:hover{background:var(--pw-tile)}
+  .pw-stage-name{margin:0;color:var(--text);font-family:var(--font-display);font-size:13px;font-weight:600;line-height:1.35;letter-spacing:-.01em}
+  html[data-lang="zh"] .pw-stage-name{letter-spacing:0}
+  .pw-stage-jur{margin:3px 0 0;color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  html[data-lang="zh"] .pw-stage-jur{letter-spacing:0;text-transform:none}
+  .pw-stage-why,.pw-stage-next{margin:6px 0 0;color:var(--pw-ink-2);font-size:11.5px;line-height:1.45}
+  .pw-stage-detail{margin:6px 0 0;color:var(--pw-ink-2);font-size:12px;line-height:1.45}
+  .pw-stage-meter{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;align-items:end;min-height:8px}
+  .pw-stage-seg{height:6px;border-radius:3px;background:var(--pw-tile);border:1px solid var(--pw-hair)}
+  .pw-stage-seg.is-reached{background:linear-gradient(90deg,var(--pw-purple),var(--pw-blue));border-color:transparent}
+  .pw-stage-seg.is-current{box-shadow:0 0 0 1px color-mix(in srgb,var(--pw-blue) 55%,transparent),0 0 12px -4px color-mix(in srgb,var(--pw-blue) 70%,transparent)}
+  .pw-stage.is-stalled .pw-stage-seg.is-current{box-shadow:none;border:1px dashed var(--pw-amber)}
+  .pw-stage.is-unknown .pw-stage-seg{background:transparent}
+  .pw-stage-labels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px;color:var(--muted);font-family:var(--font-display);font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;overflow-wrap:anywhere}
+  html[data-lang="zh"] .pw-stage-labels{letter-spacing:0;text-transform:none;font-size:10.5px}
+  .pw-stage-labels .is-current{color:var(--text)}
+  .pw-stage-side{display:grid;justify-items:end;gap:5px;text-align:right}
+  .pw-stage-asof{color:var(--pw-ink-2);font-family:var(--font-data);font-size:11.5px;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .pw-stage-src{max-width:210px;overflow-wrap:anywhere;font-size:11px}
+  html[data-theme="light"] .pw-stage-seg{background:var(--panel);border-color:color-mix(in srgb,var(--text) 16%,transparent)}
+  html[data-theme="light"] .pw-stage-seg.is-reached{background:linear-gradient(90deg,color-mix(in srgb,var(--pw-purple) 82%,transparent),color-mix(in srgb,var(--pw-blue) 82%,transparent));border-color:transparent}
+  html[data-theme="light"] .pw-stage-seg.is-current{box-shadow:none;outline:1.5px solid var(--pw-blue);outline-offset:1px;height:8px}
+  html[data-theme="light"] .pw-stage-labels .is-current{font-weight:700}
+  html[data-theme="light"] .pw-stage.is-stalled{border-left:3px solid var(--pw-amber);background:color-mix(in srgb,var(--pw-amber) 6%,var(--panel))}
+  html[data-theme="light"] .pw-stage.is-stalled .pw-stage-seg.is-current{border-style:solid;outline-color:var(--pw-amber)}
+  html[data-theme="light"] .pw-stage.is-unknown .pw-stage-seg{background:var(--panel)}
+  @media(max-width:1000px){.pw-hero{grid-template-columns:1fr}.pw-hero-side{border-left:0;border-top:1px solid var(--pw-hair);padding:18px 0 0}.pw-card-grid{grid-template-columns:1fr}.pw-monitor{grid-template-columns:repeat(2,minmax(0,1fr))}.pw-stage{grid-template-columns:minmax(0,1fr) minmax(160px,.6fr)}.pw-stage-side{grid-column:1/-1;justify-items:start;text-align:left;grid-auto-flow:column;justify-content:start;align-items:center}}
+  @media(max-width:680px){.pw-shell{margin-top:14px}.pw-hero{padding:22px 18px}.pw-hero h1{font-size:28px}.pw-hero-side,.pw-glance-grid{grid-template-columns:1fr}.pw-event{grid-template-columns:58px minmax(0,1fr) auto}.pw-section{margin-top:28px}.pw-card{padding:15px 16px}.pw-monitor{grid-template-columns:1fr}.pw-call{grid-template-columns:minmax(0,1fr) auto}.pw-call-date{grid-column:1}.pw-call-status{grid-column:2;grid-row:1/4}.pw-toc{gap:6px}.pw-toc .gbtn{padding:6px 10px}.pw-stage{grid-template-columns:1fr;gap:8px}.pw-stage-side{justify-items:start;text-align:left}.pw-stage-src{max-width:100%}.pw-stage-labels{font-size:9px}}
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 {% endblock %}
 
@@ -383,7 +421,7 @@
     <a class="gbtn gbtn-sm gbtn-pill" href="#overview">{{ t('Quick take','快速了解') }}</a>
     {% if desk %}<a class="gbtn gbtn-sm gbtn-pill" href="#views">{{ t('Market views','市场观点') }}</a>{% endif %}
     <a class="gbtn gbtn-sm gbtn-pill" href="#fed">{{ t('The Fed','美联储') }}</a>
-    <a class="gbtn gbtn-sm gbtn-pill" href="#policy">{{ t('Policy moves','政策行动') }}</a>
+    <a class="gbtn gbtn-sm gbtn-pill" href="#policy">{{ t('Policy stages','政策进程') }}</a>
     <a class="gbtn gbtn-sm gbtn-pill" href="#impact">{{ t('Market impact','市场影响') }}</a>
     <a class="gbtn gbtn-sm gbtn-pill" href="#ledger">{{ t('Calls & results','判断与结果') }}</a>
     <a class="gbtn gbtn-sm gbtn-pill" href="#sources">{{ t('Sources','来源') }}</a>
@@ -458,18 +496,99 @@
   </section>
 
   <section class="pw-section" id="policy">
-    {{ section_head('Policy moves','政策行动','White House & Treasury','白宫与财政部','Keeping borrowing costs manageable while steering money toward strategic industries.','在控制融资成本的同时，把资金引向战略产业。') }}
-    <h3 class="pw-mini-title">{{ t('Moves in force','已落地的行动') }}</h3>
+    {% if lifecycle and not lifecycle.null_reason %}
+    {{ section_head('Policy stages','政策进程','Stages, dated and sourced','分阶段，标注日期与来源','Each item shows the stage it has actually reached, when, and the document that says so.','每项显示实际到达的阶段、时间，以及依据的公开文件。') }}
+    {% else %}
+    {{ section_head('Policy stages','政策进程','Not available yet','暂不可用','Stage dates and source documents are not available yet for this update.','本次更新的阶段日期与来源文件尚不可用。') }}
+    {% endif %}
+    {# ── deterministic lifecycle ledger (engine.policy_intent_desk.lifecycle_view) ── #}
+    {% if lifecycle %}
+    <div class="pw-stage-glance">
+      {% if lifecycle.as_of %}<span class="pw-chip">{{ t('Stages as of','进程更新于') }} <strong>{{ lifecycle.as_of }}</strong></span>{% endif %}
+      {% for key, en, zh in [('in_force','in force','已生效'),('passed','passed, not yet in force','已通过尚未生效'),('proposed','proposed','已提出'),('enforced','being enforced','正在执行'),('withdrawn','withdrawn','已撤回'),('struck_down','struck down','已被法院推翻'),('superseded','replaced','已被取代'),('unknown','not tracked yet','尚未跟踪')] %}
+        {% if lifecycle.counts.get(key) %}<span class="pw-chip"><strong>{{ lifecycle.counts[key] }}</strong> {{ t(en, zh) }}</span>{% endif %}
+      {% endfor %}
+    </div>
+    {% if lifecycle.null_reason == 'no_coverage' %}
+      <p class="pw-build-note">{{ t('Not available yet — no dated public document has been logged for these items in this update.','暂不可用——本次更新尚未为这些项目登记带日期的公开文件。') }}</p>
+    {% elif lifecycle.null_reason == 'rights_suppressed' %}
+      <p class="pw-build-note">{{ t('Not available yet — stage tracking for this jurisdiction is withheld in this update.','暂不可用——本次更新未提供该管辖范围的进程跟踪。') }}</p>
+    {% endif %}
+    {% if lifecycle.orphan_event_items %}
+      <p class="pw-build-note">{{ t('Some logged stage rows do not match a tracked policy item and were skipped.','部分已登记的进程记录无法匹配跟踪中的政策项目，已跳过。') }}</p>
+    {% endif %}
+    {% if lifecycle['items'] and not lifecycle.null_reason %}
+    <div class="pw-stages">
+      {% for it in lifecycle['items'] %}
+      {% set copy = LEVER_COPY.get(it.id) %}
+      {% set idx = it.stage_rank %}
+      <article class="pw-stage{% if it.stalled %} is-stalled{% endif %}{% if it.state == 'unknown' %} is-unknown{% endif %}" data-policy-id="{{ it.id }}" data-state="{{ it.state }}">
+        <div class="pw-stage-main">
+          <h4 class="pw-stage-name">{{ bl(copy.title_en if copy else it.title_en, copy.title_zh if copy else it.title_zh) }}</h4>
+          {% if it.jurisdiction_en %}<p class="pw-stage-jur">{{ bl(it.jurisdiction_en, it.jurisdiction_zh) }}</p>
+          {% else %}<p class="pw-stage-jur">{{ t('Jurisdiction not available yet','管辖范围暂不可用') }}</p>{% endif %}
+          {% if it.detail_en %}<p class="pw-stage-detail">{{ bl(brief(it.detail_en, 220), brief(it.detail_zh, 110)) }}</p>{% endif %}
+          {% if it.basis or it.confidence %}<div class="pw-meta-row">{{ basis_tags(it.basis) }}{% if it.confidence %}{{ confidence_tag(it.confidence) }}{% endif %}</div>{% endif %}
+          {% if it.why == 'no_document' %}
+            <p class="pw-stage-why">{{ t('No public document we can cite yet.','暂无可引用的公开文件。') }}</p>
+          {% elif it.conflict %}
+            <p class="pw-stage-why">{{ t('Records conflict — under review.','记录冲突，正在核实。') }}</p>
+          {% elif it.next_step %}
+            <p class="pw-stage-next">{{ t('Next step to watch','下一步观察') }}: {{ bl(STAGE_EN[it.next_step.stage], STAGE_ZH[it.next_step.stage]) }} · {% if it.next_step.date %}<span class="pw-date">{{ it.next_step.date }}</span>{% else %}{{ t('No date published','未公布日期') }}{% endif %}</p>
+          {% endif %}
+          {% if it.gaps %}<p class="pw-stage-why">{{ t('No published date for','未公布日期：') }} {% for gap in it.gaps %}{{ bl(STAGE_EN[gap], STAGE_ZH[gap]) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+        </div>
+        <div class="pw-stage-track">
+          <div class="pw-stage-meter" role="img"
+               aria-label="Stage: {{ STAGE_EN[it.state] if it.state in STAGE_EN else 'Not tracked yet' }}{% if it.state_asof %} · {{ it.state_asof }}{% endif %}">
+            {% for stop in ['proposed','passed','in_force','enforced'] %}
+            <span class="pw-stage-seg{% if stop in it.reached %} is-reached{% endif %}{% if idx is not none and loop.index0 == idx %} is-current{% endif %}" aria-hidden="true"></span>
+            {% endfor %}
+          </div>
+          <div class="pw-stage-labels" aria-hidden="true">
+            {% for stop in ['proposed','passed','in_force','enforced'] %}
+            <span class="{% if idx is not none and loop.index0 == idx %}is-current{% endif %}">{{ t(STOP_EN[stop], STOP_ZH[stop]) }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="pw-stage-side">
+          {% if it.state == 'unknown' %}<span class="pw-badge neutral">{{ t('Not tracked yet','尚未跟踪') }}</span>
+          {% else %}<span class="pw-badge {{ 'warn' if it.stalled or it.conflict else ('fact' if it.basis and 'FACT' in it.basis else ('read' if it.basis and 'INFERENCE' in it.basis else 'neutral')) }}">{{ bl(STAGE_EN[it.state], STAGE_ZH[it.state]) }}</span>{% endif %}
+          {% if it.corrected %}<span class="pw-badge updated">{{ t('Updated','已更正') }}</span>{% endif %}
+          {% if it.state_asof %}<span class="pw-stage-asof">{{ it.state_asof }}</span>{% endif %}
+          {% if it.source and it.source.url %}<a class="pw-stage-src" href="{{ it.source.url }}" rel="nofollow noopener" target="_blank">{{ it.source.label }}</a>{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if lifecycle.null_reason %}
+    <h3 class="pw-mini-title" style="margin-top:12px">{{ t('Moves in force','已落地的行动') }}</h3>
     <div class="pw-card-grid">
       {% for lever in intel.administration.verified_levers %}
       {% set copy = LEVER_COPY.get(lever.id) %}
       <article class="pw-card blue" data-policy-id="{{ lever.id }}">
         <h3 class="pw-card-title">{{ bl(copy.title_en if copy else lever.title_en, copy.title_zh if copy else lever.title_zh) }}</h3>
         <p class="pw-primary">{{ bl(copy.en if copy else brief(lever.detail_en), copy.zh if copy else brief(lever.detail_zh, 72)) }}</p>
-        <div class="pw-meta-row">{{ basis_tags(lever.basis) }}{% if 'INFERENCE' in lever.basis %}{{ confidence_tag(lever.confidence) }}{% endif %}</div>
+        <div class="pw-meta-row">{{ basis_tags(lever.basis) }}{% if lever.basis and 'INFERENCE' in lever.basis %}{{ confidence_tag(lever.confidence) }}{% endif %}</div>
       </article>
       {% endfor %}
     </div>
+    {% endif %}
+    {% else %}
+    <p class="pw-build-note">{{ t('Not available yet — the stage ledger is not available in this build.','暂不可用——本次构建未提供进程台账。') }}</p>
+    <h3 class="pw-mini-title" style="margin-top:12px">{{ t('Moves in force','已落地的行动') }}</h3>
+    <div class="pw-card-grid">
+      {% for lever in intel.administration.verified_levers %}
+      {% set copy = LEVER_COPY.get(lever.id) %}
+      <article class="pw-card blue" data-policy-id="{{ lever.id }}">
+        <h3 class="pw-card-title">{{ bl(copy.title_en if copy else lever.title_en, copy.title_zh if copy else lever.title_zh) }}</h3>
+        <p class="pw-primary">{{ bl(copy.en if copy else brief(lever.detail_en), copy.zh if copy else brief(lever.detail_zh, 72)) }}</p>
+        <div class="pw-meta-row">{{ basis_tags(lever.basis) }}{% if lever.basis and 'INFERENCE' in lever.basis %}{{ confidence_tag(lever.confidence) }}{% endif %}</div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
     <h3 class="pw-mini-title" style="margin-top:20px">{{ t('World events that matter','重要的全球事件') }}</h3>
     <div class="pw-card-grid">
       {% for theater in intel.administration.theaters %}

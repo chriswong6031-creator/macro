@@ -504,6 +504,427 @@ def score(root=None, today=None) -> dict:
                 "overall": {"n": 0}, "calibration_note": "scorer error"}
 
 
+
+# --------------------------------------------------------------------------- #
+# deterministic policy lifecycle state machine (NO LLM) — MO-DELTA-032          #
+# Per-item state projection ledger over the operator-signed substrate. Never    #
+# imports synthesize/_SYSTEM/call/master_brain. Nightly-gated ingest; pure fold.#
+# --------------------------------------------------------------------------- #
+import hashlib
+from pathlib import Path as _Path
+
+LIFECYCLE_SCHEMA = "policy_lifecycle.v1"
+LIFECYCLE_STAGES = ("proposed", "passed", "in_force", "enforced")
+LIFECYCLE_TERMINAL = ("withdrawn", "struck_down", "superseded")
+LIFECYCLE_NULLS = ("unknown", "no_coverage", "rights_suppressed")
+LIFECYCLE_EVENT_TYPES = LIFECYCLE_STAGES + LIFECYCLE_TERMINAL + ("correction", "reinstated")
+
+_STAGE_RANK = {s: i for i, s in enumerate(LIFECYCLE_STAGES)}
+_TERMINAL_RANK = {t: len(LIFECYCLE_STAGES) + i for i, t in enumerate(LIFECYCLE_TERMINAL)}
+_REINSTATED_RANK = len(LIFECYCLE_STAGES) + len(LIFECYCLE_TERMINAL)
+_CORRECTION_RANK = -1  # order-independent: only ever sets the `corrected` flag/replay
+
+STALL_DAYS = 45  # deterministic "no forward motion" threshold; never LLM-derived
+_SEED_REL = _Path("config") / "policy_lifecycle_seed.json"
+
+
+def _stage_sort_rank(typ: str) -> int:
+    if typ in _STAGE_RANK:
+        return _STAGE_RANK[typ]
+    if typ in _TERMINAL_RANK:
+        return _TERMINAL_RANK[typ]
+    if typ == "reinstated":
+        return _REINSTATED_RANK
+    return _CORRECTION_RANK
+
+
+def _lifecycle_source_label(url):
+    from urllib.parse import urlparse
+    host = urlparse(str(url or "")).netloc.lower().split(":", 1)[0]
+    host = host.removeprefix("www.")
+    known = {
+        "federalreserve.gov": "Federal Reserve",
+        "home.treasury.gov": "U.S. Treasury",
+        "treasury.gov": "U.S. Treasury",
+        "whitehouse.gov": "White House",
+        "energy.gov": "Energy Department",
+        "sec.gov": "SEC",
+        "nato.int": "NATO",
+        "congress.gov": "Congress",
+        "supremecourt.gov": "Supreme Court",
+        "cmegroup.com": "CME Group",
+        "federalregister.gov": "Federal Register",
+        "cnbc.com": "CNBC",
+        "ustr.gov": "USTR",
+    }
+    return known.get(host, host or "source")
+
+
+def _lifecycle_seed_events(root=None) -> list[dict]:
+    """Operator-signed seed substrate (config/, never data/). Missing -> []."""
+    try:
+        root_path = _Path(root) if root else _Path(".")
+        seed_path = root_path / _SEED_REL
+        if not seed_path.exists():
+            return []
+        payload = json.loads(seed_path.read_text())
+        rows = payload.get("events") if isinstance(payload, dict) else payload
+        return [r for r in (rows or []) if isinstance(r, dict)]
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy_lifecycle: seed read failed: %s", e)
+        return []
+
+
+def _substrate_lifecycle_events(intel: dict, root=None) -> list[dict]:
+    """Prefer intel.policy_lifecycle; else the committed seed. Never fabricates."""
+    raw = (intel or {}).get("policy_lifecycle")
+    if isinstance(raw, list) and raw:
+        return [r for r in raw if isinstance(r, dict)]
+    return _lifecycle_seed_events(root)
+
+
+def lifecycle_events(root=None) -> list[dict]:
+    """Read the append-only lifecycle event store. Missing file -> []. Never raises."""
+    try:
+        p = _Path(root) / "data" / "policy_lifecycle" / "events.jsonl" if root else _Path("data/policy_lifecycle/events.jsonl")
+        if not p.exists():
+            return []
+        rows = []
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception as e:  # noqa: BLE001
+                log.warning("policy_lifecycle: skipping malformed event line: %s", e)
+        return rows
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy_lifecycle: read failed: %s", e)
+        return []
+
+
+def ingest_lifecycle(root=None) -> int:
+    """Deterministic, idempotent ingest from the operator-signed substrate into the
+    append-only event store. Nightly-gated. NEVER raises. Never LLM-derived."""
+    if not _ledger_advance_enabled():
+        return 0
+    try:
+        root_path = _Path(root) if root else _Path(".")
+        intel_path = root_path / "data" / "policy" / "intel.json"
+        intel = {}
+        if intel_path.exists():
+            intel = json.loads(intel_path.read_text())
+        raw_events = _substrate_lifecycle_events(intel, root_path)
+        if not raw_events:
+            return 0
+        rejects = 0
+        candidates = []
+        for ev in raw_events:
+            if not isinstance(ev, dict):
+                rejects += 1
+                continue
+            typ = ev.get("type")
+            item_id = ev.get("item_id")
+            event_date = ev.get("event_date")
+            source = ev.get("source") or {}
+            if typ not in LIFECYCLE_EVENT_TYPES or not item_id or not event_date or not source.get("url"):
+                rejects += 1
+                continue
+            candidates.append(ev)
+        if rejects:
+            log.warning("policy_lifecycle: rejected %d malformed substrate rows", rejects)
+        if not candidates:
+            return 0
+        store_dir = root_path / "data" / "policy_lifecycle"
+        store_dir.mkdir(parents=True, exist_ok=True)
+        store_path = store_dir / "events.jsonl"
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        rows = []
+        for ev in candidates:
+            key = "|".join([
+                str(ev.get("item_id")), str(ev.get("type")),
+                str(ev.get("event_date")), str((ev.get("source") or {}).get("url")),
+            ])
+            event_id = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+            row = dict(ev)
+            row["event_id"] = event_id
+            row["id"] = event_id  # desk_ledger.reject_existing_ids keys on "id"
+            row["logged_at"] = now
+            row["schema"] = LIFECYCLE_SCHEMA
+            row.setdefault("corrects", None)
+            row.setdefault("reason", None)
+            row["known_at"] = row.get("known_at") or row.get("event_date")
+            rows.append(row)
+        rows = _ledger_law.reject_existing_ids(store_path, rows, "policy_lifecycle")
+        with open(store_path, "a") as fh:
+            for row in rows:
+                fh.write(json.dumps(row, default=str) + "\n")
+        return len(rows)
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy_lifecycle: ingest failed: %s", e)
+        return 0
+
+
+def _apply_ladder_state(state_pack: dict, typ: str, ev: dict, observed_ladder: set[str]) -> None:
+    """Mutate state_pack for a ladder stage. reached = observed only (never conflated)."""
+    rank = _STAGE_RANK[typ]
+    observed_ladder.add(typ)
+    # A typed correction to a lower stage drops higher observations from the meter.
+    drop = {s for s in observed_ladder if _STAGE_RANK[s] > rank}
+    observed_ladder.difference_update(drop)
+    state_pack["stage_rank"] = rank
+    state_pack["state"] = typ
+    state_pack["reached"] = [s for s in LIFECYCLE_STAGES[: rank + 1] if s in observed_ladder]
+    state_pack["gaps"] = [s for s in LIFECYCLE_STAGES[: rank + 1] if s not in observed_ladder]
+    state_pack["state_asof"] = ev.get("event_date")
+    state_pack["known_at"] = ev.get("known_at")
+    src = ev.get("source") or {}
+    state_pack["source"] = {
+        "url": src.get("url"), "label": _lifecycle_source_label(src.get("url")),
+        "title": src.get("title"), "doc_id": src.get("doc_id"),
+    }
+    state_pack["conflict"] = False
+
+
+def fold_lifecycle(events: list[dict], registry: list[dict], as_of_date: str | None = None) -> list[dict]:
+    """Pure, no IO, no clock. Folds a per-item event list against a registry of
+    tracked items into the frozen per-item state projection."""
+    by_item: dict[str, list[dict]] = {}
+    registry_ids = {r.get("id") for r in (registry or []) if r.get("id")}
+    for ev in events or []:
+        iid = ev.get("item_id")
+        if iid not in registry_ids:
+            continue
+        by_item.setdefault(iid, []).append(ev)
+
+    out = []
+    for reg in registry or []:
+        item_id = reg.get("id")
+        item_events = sorted(
+            by_item.get(item_id, []),
+            key=lambda e: (
+                e.get("known_at") or "",
+                _stage_sort_rank(e.get("type")),
+                e.get("event_id") or "",
+            ),
+        )
+        # Jurisdiction: only what the registry carries — never invent a default.
+        jur = reg.get("jurisdiction")
+        jur_en = reg.get("jurisdiction_en")
+        jur_zh = reg.get("jurisdiction_zh")
+        if not item_events:
+            out.append({
+                "id": item_id,
+                "title_en": reg.get("title_en"), "title_zh": reg.get("title_zh"),
+                "jurisdiction": jur,
+                "jurisdiction_en": jur_en, "jurisdiction_zh": jur_zh,
+                "detail_en": reg.get("detail_en"), "detail_zh": reg.get("detail_zh"),
+                "basis": reg.get("basis"), "confidence": reg.get("confidence"),
+                "state": "unknown", "stage_rank": None, "reached": [], "gaps": [],
+                "state_asof": None, "known_at": None, "source": None,
+                "next_step": None, "stalled": False, "corrected": False,
+                "conflict": False, "why": "no_document",
+            })
+            continue
+
+        state_pack = {
+            "state": "unknown", "stage_rank": None, "reached": [], "gaps": [],
+            "state_asof": None, "known_at": None, "source": None, "conflict": False,
+        }
+        corrected = False
+        terminal_frozen = False
+        pre_terminal = None
+        observed_ladder: set[str] = set()
+
+        for ev in item_events:
+            typ = ev.get("type")
+            if typ == "correction":
+                corrected = True
+                replay_type = ev.get("corrected_type")
+                if replay_type not in LIFECYCLE_STAGES and replay_type not in LIFECYCLE_TERMINAL:
+                    continue
+                # Corrections are authoritative repairs: they may undo a terminal
+                # mis-record and may move the ladder DOWN without flagging conflict.
+                ev = dict(ev)
+                ev["type"] = replay_type
+                if ev.get("corrected_event_date"):
+                    ev["event_date"] = ev["corrected_event_date"]
+                if ev.get("corrected_source"):
+                    ev["source"] = ev["corrected_source"]
+                typ = replay_type
+                terminal_frozen = False
+                if typ in LIFECYCLE_TERMINAL:
+                    pre_terminal = {
+                        "state": state_pack["state"], "stage_rank": state_pack["stage_rank"],
+                        "reached": list(state_pack["reached"]),
+                        "state_asof": state_pack["state_asof"], "known_at": state_pack["known_at"],
+                        "source": state_pack["source"],
+                    }
+                    state_pack["state"] = typ
+                    terminal_frozen = True
+                    state_pack["state_asof"] = ev.get("event_date")
+                    state_pack["known_at"] = ev.get("known_at")
+                    src = ev.get("source") or {}
+                    state_pack["source"] = {
+                        "url": src.get("url"), "label": _lifecycle_source_label(src.get("url")),
+                        "title": src.get("title"), "doc_id": src.get("doc_id"),
+                    }
+                    continue
+                _apply_ladder_state(state_pack, typ, ev, observed_ladder)
+                continue
+            if typ == "reinstated":
+                if terminal_frozen and pre_terminal is not None:
+                    state_pack["state"] = pre_terminal["state"]
+                    state_pack["stage_rank"] = pre_terminal["stage_rank"]
+                    state_pack["reached"] = list(pre_terminal["reached"])
+                    state_pack["state_asof"] = pre_terminal["state_asof"]
+                    state_pack["known_at"] = pre_terminal["known_at"]
+                    state_pack["source"] = pre_terminal["source"]
+                terminal_frozen = False
+                continue
+            if terminal_frozen:
+                continue
+            if typ in LIFECYCLE_TERMINAL:
+                pre_terminal = {
+                    "state": state_pack["state"], "stage_rank": state_pack["stage_rank"],
+                    "reached": list(state_pack["reached"]),
+                    "state_asof": state_pack["state_asof"], "known_at": state_pack["known_at"],
+                    "source": state_pack["source"],
+                }
+                state_pack["state"] = typ
+                terminal_frozen = True
+                state_pack["state_asof"] = ev.get("event_date")
+                state_pack["known_at"] = ev.get("known_at")
+                src = ev.get("source") or {}
+                state_pack["source"] = {
+                    "url": src.get("url"), "label": _lifecycle_source_label(src.get("url")),
+                    "title": src.get("title"), "doc_id": src.get("doc_id"),
+                }
+                continue
+            rank = _STAGE_RANK.get(typ)
+            if rank is None:
+                continue
+            cur = state_pack["stage_rank"]
+            if cur is None or rank > cur:
+                _apply_ladder_state(state_pack, typ, ev, observed_ladder)
+            else:
+                state_pack["conflict"] = True
+
+        next_step = None
+        stage_rank = state_pack["stage_rank"]
+        if stage_rank is not None and not terminal_frozen and stage_rank + 1 < len(LIFECYCLE_STAGES):
+            next_step = {"stage": LIFECYCLE_STAGES[stage_rank + 1], "date": None}
+
+        why = "no_document" if state_pack["state"] == "unknown" else None
+
+        stalled = False
+        if as_of_date and stage_rank is not None and not terminal_frozen and stage_rank + 1 < len(LIFECYCLE_STAGES):
+            ref_date = state_pack["state_asof"] or (state_pack["known_at"] or "")[:10]
+            if ref_date:
+                try:
+                    from datetime import date as _date
+                    d0 = _date.fromisoformat(ref_date[:10])
+                    d1 = _date.fromisoformat(as_of_date[:10])
+                    stalled = (d1 - d0).days >= STALL_DAYS
+                except Exception:  # noqa: BLE001
+                    stalled = False
+
+        out.append({
+            "id": item_id,
+            "title_en": reg.get("title_en"), "title_zh": reg.get("title_zh"),
+            "jurisdiction": jur,
+            "jurisdiction_en": jur_en, "jurisdiction_zh": jur_zh,
+            "detail_en": reg.get("detail_en"), "detail_zh": reg.get("detail_zh"),
+            "basis": reg.get("basis"), "confidence": reg.get("confidence"),
+            "state": state_pack["state"], "stage_rank": stage_rank,
+            "reached": state_pack["reached"], "gaps": state_pack["gaps"],
+            "state_asof": state_pack["state_asof"], "known_at": state_pack["known_at"],
+            "source": state_pack["source"],
+            "next_step": next_step, "stalled": stalled, "corrected": corrected,
+            "conflict": state_pack["conflict"], "why": why,
+        })
+    return out
+
+
+def lifecycle_view(root=None) -> dict:
+    """Reads the substrate + store, folds, returns the frozen view model. Never raises."""
+    try:
+        root_path = _Path(root) if root else _Path(".")
+        intel_path = root_path / "data" / "policy" / "intel.json"
+        intel = {}
+        if intel_path.exists():
+            try:
+                intel = json.loads(intel_path.read_text())
+            except Exception as e:  # noqa: BLE001
+                log.warning("policy_lifecycle: intel parse failed: %s", e)
+
+        # rights_suppressed outranks empty-store no_coverage (MAJOR-5).
+        if intel.get("policy_lifecycle_suppressed"):
+            return {
+                "schema": LIFECYCLE_SCHEMA, "as_of": intel.get("as_of"),
+                "null_reason": "rights_suppressed",
+                "counts": {"proposed": 0, "passed": 0, "in_force": 0, "enforced": 0,
+                           "other": 0, "unknown": 0, "withdrawn": 0, "struck_down": 0, "superseded": 0},
+                "items": [], "orphan_event_items": [],
+            }
+
+        registry = []
+        for lever in ((intel.get("administration") or {}).get("verified_levers") or []):
+            registry.append({
+                "id": lever.get("id"), "title_en": lever.get("title_en"), "title_zh": lever.get("title_zh"),
+                "jurisdiction": lever.get("jurisdiction"),
+                "jurisdiction_en": lever.get("jurisdiction_en"),
+                "jurisdiction_zh": lever.get("jurisdiction_zh"),
+                "detail_en": lever.get("detail_en"), "detail_zh": lever.get("detail_zh"),
+                "basis": lever.get("basis"), "confidence": lever.get("confidence"),
+            })
+
+        store_events = lifecycle_events(root_path)
+        substrate = _substrate_lifecycle_events(intel, root_path)
+        # Prefer the append-only store when present; otherwise fold the substrate
+        # directly so the page advances without waiting on a nightly write.
+        events = store_events if store_events else substrate
+        items = fold_lifecycle(events, registry, as_of_date=intel.get("as_of"))
+        registry_ids = {r.get("id") for r in registry if r.get("id")}
+        orphan_event_items = sorted({
+            e.get("item_id") for e in events
+            if e.get("item_id") and e.get("item_id") not in registry_ids
+        })
+
+        counts = {
+            "proposed": 0, "passed": 0, "in_force": 0, "enforced": 0,
+            "withdrawn": 0, "struck_down": 0, "superseded": 0,
+            "other": 0, "unknown": 0,
+        }
+        for it in items:
+            st = it.get("state")
+            if st in counts:
+                counts[st] += 1
+            else:
+                counts["other"] += 1
+
+        known_ats = [it["known_at"] for it in items if it.get("known_at")]
+        as_of = max(known_ats).split("T")[0] if known_ats else intel.get("as_of")
+
+        null_reason = None
+        if registry and not events:
+            null_reason = "no_coverage"
+
+        return {
+            "schema": LIFECYCLE_SCHEMA, "as_of": as_of, "null_reason": null_reason,
+            "counts": counts, "items": items, "orphan_event_items": orphan_event_items,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.error("policy_lifecycle: view failed: %s", e)
+        return {"schema": LIFECYCLE_SCHEMA, "as_of": None, "null_reason": "no_coverage",
+                "counts": {"proposed": 0, "passed": 0, "in_force": 0, "enforced": 0,
+                           "withdrawn": 0, "struck_down": 0, "superseded": 0,
+                           "other": 0, "unknown": 0},
+                "items": [], "orphan_event_items": []}
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     run(force="--force" in __import__("sys").argv)
