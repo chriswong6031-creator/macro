@@ -1,0 +1,527 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_covenant_term_observation.schema.json",
+  "title": "Capital Structure filing-text covenant clause observation",
+  "description": "An immutable, clause-scoped observation of a covenant term stated in filing text (credit agreement exhibits). Unit-preserving transcription only; no headroom or capacity computation. Not an instrument, issuer state, capacity, risk, or probability record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "observation_id",
+    "logical_observation_id",
+    "issuer_id",
+    "filing",
+    "document",
+    "clause",
+    "term",
+    "state",
+    "reported",
+    "normalized",
+    "evidence",
+    "extraction",
+    "relationships",
+    "version",
+    "point_in_time"
+  ],
+  "properties": {
+    "schema": {
+      "const": "capital_structure.covenant_term_observation.v1"
+    },
+    "observation_id": {
+      "type": "string",
+      "pattern": "^covenant-term:cs:[a-f0-9]{64}$"
+    },
+    "logical_observation_id": {
+      "type": "string",
+      "pattern": "^covenant-term-logical:cs:[a-f0-9]{64}$"
+    },
+    "issuer_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "filing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accession",
+        "form",
+        "filing_date",
+        "accepted_at"
+      ],
+      "properties": {
+        "accession": {
+          "type": "string",
+          "minLength": 1
+        },
+        "form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "filing_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "accepted_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_id",
+        "source_id",
+        "document_role",
+        "document_type",
+        "canonical_url",
+        "content_sha256",
+        "child_document_type",
+        "child_sequence",
+        "child_filename",
+        "child_text_start",
+        "child_text_end"
+      ],
+      "properties": {
+        "source_manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "document_role": {
+          "type": "string",
+          "enum": [
+            "exhibit"
+          ]
+        },
+        "canonical_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "child_document_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "child_sequence": {
+          "type": [
+            "string",
+            "integer",
+            "null"
+          ]
+        },
+        "child_filename": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "child_text_start": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "child_text_end": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "document_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clause_id",
+        "section_label_raw",
+        "section_label_normalized",
+        "agreement_role"
+      ],
+      "properties": {
+        "clause_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section_label_raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "section_label_normalized": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "agreement_role": {
+          "type": "string",
+          "enum": [
+            "credit_agreement"
+          ]
+        }
+      }
+    },
+    "term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "term_type",
+        "scope"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "maximum_total_net_leverage_ratio",
+            "maximum_secured_net_leverage_ratio",
+            "minimum_interest_coverage_ratio",
+            "minimum_fixed_charge_coverage_ratio",
+            "minimum_liquidity_amount",
+            "restricted_payments_basket_amount"
+          ]
+        },
+        "term_type": {
+          "type": "string",
+          "enum": [
+            "ratio",
+            "monetary_amount"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "credit_agreement_financial_covenant_clause",
+            "credit_agreement_negative_covenant_basket_clause"
+          ]
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disposition",
+        "reason"
+      ],
+      "properties": {
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "direct",
+            "ambiguous",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "clause_absent_in_source",
+            "ambiguous_extraction"
+          ]
+        }
+      }
+    },
+    "reported": {
+      "$ref": "#/$defs/value"
+    },
+    "normalized": {
+      "$ref": "#/$defs/value"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_id",
+        "source_document_sha256",
+        "rights_class",
+        "privacy_classification",
+        "contains_personal_data",
+        "publication",
+        "spans"
+      ],
+      "properties": {
+        "source_manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_document_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "rights_class": {
+          "type": "string",
+          "enum": [
+            "public_filing",
+            "internal_only",
+            "unknown"
+          ]
+        },
+        "privacy_classification": {
+          "type": "string",
+          "enum": [
+            "public",
+            "restricted",
+            "internal",
+            "unknown"
+          ]
+        },
+        "contains_personal_data": {
+          "type": "boolean"
+        },
+        "publication": {
+          "type": "string",
+          "enum": [
+            "sec_edgar_public",
+            "internal"
+          ]
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "locator",
+              "locator_type"
+            ],
+            "properties": {
+              "locator": {
+                "type": "string",
+                "minLength": 1
+              },
+              "locator_type": {
+                "type": "string",
+                "enum": [
+                  "text_range"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "parser_version",
+        "review_status"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "deferred"
+          ]
+        },
+        "parser_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "review_status": {
+          "type": "string",
+          "enum": [
+            "final",
+            "deferred",
+            "unavailable"
+          ]
+        }
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amends",
+        "supersedes",
+        "contradiction_ids"
+      ],
+      "properties": {
+        "amends": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "supersedes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^document-term:cs:[a-f0-9]{24}$"
+          },
+          "uniqueItems": true,
+          "maxItems": 1
+        },
+        "contradiction_ids": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "immutable_record",
+        "correction_version",
+        "correction_of"
+      ],
+      "properties": {
+        "immutable_record": {
+          "const": true
+        },
+        "correction_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "correction_of": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^document-term:cs:[a-f0-9]{24}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_available_at",
+        "available_at"
+      ],
+      "properties": {
+        "source_available_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "available_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "decimal": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+    },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw",
+        "unit",
+        "value"
+      ],
+      "properties": {
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "ratio",
+            "USD",
+            null
+          ]
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id",
+        "span_id",
+        "locator_type",
+        "locator",
+        "text_sha256"
+      ],
+      "properties": {
+        "manifest_id": {
+          "type": "string",
+          "pattern": "^manifest:cs:[a-f0-9]{64}$"
+        },
+        "span_id": {
+          "type": "string",
+          "pattern": "^(?:span:cs:[a-f0-9]{24}|root:[a-f0-9]{64})$"
+        },
+        "locator_type": {
+          "type": "string",
+          "enum": [
+            "document",
+            "table",
+            "text_range"
+          ]
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}
