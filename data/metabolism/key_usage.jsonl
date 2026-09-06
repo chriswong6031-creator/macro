@@ -1394,3 +1394,17 @@
 {"schema":"metabolism.key_usage.v1","ts":"2026-09-05T14:15:24+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
 {"schema":"metabolism.key_usage.v1","ts":"2026-09-05T14:15:25+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
 {"schema":"metabolism.key_usage.v1","ts":"2026-09-05T14:15:26+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:53+00:00","key_id":"claude_code_oauth_2","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:53+00:00","key_id":"claude_code_oauth_2","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:55+00:00","key_id":"claude_code_oauth_2","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:55+00:00","key_id":"claude_code_oauth_3","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:56+00:00","key_id":"claude_code_oauth_3","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:57+00:00","key_id":"claude_code_oauth_3","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:57+00:00","key_id":"claude_code_oauth_4","status":403,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:58+00:00","key_id":"claude_code_oauth_5","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:28:59+00:00","key_id":"claude_code_oauth_5","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:29:00+00:00","key_id":"claude_code_oauth_5","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:29:00+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:29:01+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:29:02+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-09-06T07:29:03+00:00","key_id":"claude_code_oauth_7","status":403,"headers":{}}

@@ -202,17 +202,17 @@
     "deltas": [
       {
         "current_value": 903928.0,
-        "delta": -40436.0,
+        "delta": 0.0,
         "metric_id": "tga_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 944364.0
+        "prior_value": 903928.0
       },
       {
         "current_value": 827047.0,
-        "delta": -8184.0,
+        "delta": 0.0,
         "metric_id": "net_issuance_sum_13w",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 835231.0
+        "prior_value": 827047.0
       },
       {
         "current_value": 2.92,
@@ -238,25 +238,15 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "national_debt_liabilities-US-8bfbadf03a5d1dec",
+    "prior_generation_id": "national_debt_liabilities-US-4c1af1a4bb616175",
     "prior_method_version": "national_debt_liabilities.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [
-      "net_issuance_pace_delta_4w_vs_13w_avg_daily:net_issuance_pace_delta_4w_vs_13w_avg_daily:9b2350abe03e22c9",
-      "net_issuance_sum_13w:net_issuance_sum_13w:af963b3d948df7b3",
-      "net_issuance_sum_4w:net_issuance_sum_4w:9c4e8a27a6b284e1",
-      "tga_impulse_13w:tga_impulse_13w:395a2ee92fb8fa4f",
-      "tga_impulse_4w:tga_impulse_4w:37505e91c04a4253",
-      "tga_level:tga_level:073da56211952d6e",
-      "withheld_taxes_level:withheld_taxes_level:2cbb7e59b4abd8b6",
-      "withheld_taxes_sum_4w:withheld_taxes_sum_4w:1679415917ababa6",
-      "withheld_taxes_yoy_4w:withheld_taxes_yoy_4w:e6fd79c520dbec12"
-    ],
-    "correction_state": "superseded",
-    "note": "Same reference period as the predecessor print, but one or more owner-native metrics changed value: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "national_debt_liabilities-US-8bfbadf03a5d1dec"
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "national_debt_liabilities-US-4c1af1a4bb616175"
   },
   "drivers": {
     "balance_sheet": [
@@ -377,11 +367,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T12:05:54Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-03",
-    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
-    "content_sha256": "4c1af1a4bb6161751aa7a4689a34e9b69368a809b0c4a8402a6923461a5442cf",
-    "generation_id": "national_debt_liabilities-US-4c1af1a4bb616175",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "bc1f6fd5b327caebaa84413c819b9f0aa6bd64ee20a8fc7fffe85c320742993c",
+    "generation_id": "national_debt_liabilities-US-bc1f6fd5b327caeb",
     "producer": "engine.market_os.macro_workspaces.national_debt",
     "rendered_at": null
   },

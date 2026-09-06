@@ -13174,3 +13174,4 @@
 {"date":"2026-09-04","kind":"ticker","subject":"AGI","ticker":"AGI","edge_score":6,"state":"POSITIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
 {"date":"2026-09-04","kind":"ticker","subject":"WFC","ticker":"WFC","edge_score":5,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
 {"date":"2026-09-04","kind":"ticker","subject":"GM","ticker":"GM","edge_score":2,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-09-04","kind":"ticker","subject":"NOW","ticker":"NOW","edge_score":53,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}

@@ -15,7 +15,7 @@
       "row_63d": 0.096457,
       "usd_20d": -0.002662,
       "usd_63d": -0.011119,
-      "emfx_63d": 0.003139,
+      "emfx_63d": 0.003241,
       "vix": 14.53
     },
     "hysteresis_pending": true
@@ -48,11 +48,11 @@
     "commodity_dm": {
       "direction": "inflow",
       "strength": "mild",
-      "mean_z": 0.646,
+      "mean_z": 0.64,
       "n_legs": 2,
       "legs": {
         "rel_equity": 0.233,
-        "fx": 1.059,
+        "fx": 1.047,
         "oas": null
       },
       "notes": []
@@ -60,11 +60,11 @@
     "latam": {
       "direction": "neutral",
       "strength": null,
-      "mean_z": 0.055,
+      "mean_z": 0.0597,
       "n_legs": 3,
       "legs": {
         "rel_equity": 0.428,
-        "fx": -0.012,
+        "fx": 0.002,
         "oas": -0.251
       },
       "notes": []
@@ -96,11 +96,11 @@
     "em_broad": {
       "direction": "inflow",
       "strength": "mild",
-      "mean_z": 0.694,
+      "mean_z": 0.6983,
       "n_legs": 3,
       "legs": {
         "rel_equity": 1.209,
-        "fx": 0.967,
+        "fx": 0.98,
         "oas": -0.094
       },
       "notes": []
@@ -230,11 +230,11 @@
     {
       "country": "AU",
       "etf": "EWA",
-      "composite": -0.625,
+      "composite": -0.621,
       "legs": {
-        "fx_dep_z": -0.975,
+        "fx_dep_z": -0.95,
         "equity_under_z": -0.535,
-        "fxvol_z": -0.365
+        "fxvol_z": -0.378
       },
       "flag": null,
       "missing": []
@@ -363,7 +363,7 @@
     },
     "fx/ZAR": {
       "first": "2003-12-01",
-      "last": "2026-09-05"
+      "last": "2026-09-06"
     },
     "fx/TRY": {
       "first": "2005-01-03",
@@ -375,7 +375,7 @@
     },
     "fx/CLP": {
       "first": "2003-12-01",
-      "last": "2026-09-04"
+      "last": "2026-09-05"
     },
     "fx/PLN": {
       "first": "2003-12-01",
@@ -411,11 +411,11 @@
     },
     "fx/CAD": {
       "first": "2003-09-17",
-      "last": "2026-09-05"
+      "last": "2026-09-06"
     },
     "fx/AUD": {
       "first": "2006-05-16",
-      "last": "2026-09-04"
+      "last": "2026-09-05"
     },
     "fred/BAMLEMRLCRPILAOAS": {
       "first": "2023-07-11",

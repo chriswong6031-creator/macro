@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-06",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "inflation",
       "driver": "oil_shock",
       "pathway_role": "primary",
-      "as_of": "2026-09-05",
+      "as_of": "2026-09-06",
       "direction_en": "oil spiking — energy leads, breakevens up",
       "direction_zh": "油价飙升 — 能源领涨、盈亏平衡上行",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_oil_shock",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "oil_shock",
@@ -47,8 +47,8 @@
             "zh": "油价飙升 — 能源领涨、盈亏平衡上行"
           },
           "direction": 1,
-          "value": 0.83,
-          "z_or_percentile": 1.33,
+          "value": 0.85,
+          "z_or_percentile": 2.33,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -58,17 +58,17 @@
         },
         {
           "node_id": "leg_oil_shock_0",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "oil (WTI)",
           "observation": {
-            "en": "oil (WTI) (+1.1σ)",
-            "zh": "原油(WTI) (+1.1σ)"
+            "en": "oil (WTI) (+1.2σ)",
+            "zh": "原油(WTI) (+1.2σ)"
           },
           "direction": "positive",
-          "value": 1.1,
-          "z_or_percentile": 1.1,
+          "value": 1.2,
+          "z_or_percentile": 1.2,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -78,7 +78,7 @@
         },
         {
           "node_id": "leg_oil_shock_1",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "10y breakeven",
@@ -98,7 +98,7 @@
         },
         {
           "node_id": "leg_oil_shock_2",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "energy sector RS",
@@ -118,7 +118,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order1",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -138,7 +138,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order2",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -158,7 +158,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order3",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -256,7 +256,7 @@
       "family": "crypto",
       "driver": "crypto_liquidity",
       "pathway_role": "alternate",
-      "as_of": "2026-09-05",
+      "as_of": "2026-09-06",
       "direction_en": "crypto liquidity surging — BTC/ETH lead up",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -266,7 +266,7 @@
       "nodes": [
         {
           "node_id": "driver_crypto_liquidity",
-          "as_of": "2026-09-05",
+          "as_of": "2026-09-06",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "crypto_liquidity",
@@ -275,7 +275,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.63,
+          "value": 0.36,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -289,11 +289,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "liquidity",
-      "driver": "liquidity_impulse",
+      "family": "equity-leadership",
+      "driver": "ai_semis",
       "pathway_role": "alternate",
-      "as_of": "2026-09-05",
-      "direction_en": "net liquidity expanding — broad risk-on tailwind",
+      "as_of": "2026-09-06",
+      "direction_en": "AI/semis leadership — narrow tech-led tape",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -301,17 +301,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_liquidity_impulse",
-          "as_of": "2026-09-05",
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-09-06",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "liquidity_impulse",
+          "entity": "ai_semis",
           "observation": {
-            "en": "net liquidity expanding — broad risk-on tailwind",
+            "en": "AI/semis leadership — narrow tech-led tape",
             "zh": ""
           },
           "direction": "",
-          "value": 0.38,
+          "value": 0.34,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

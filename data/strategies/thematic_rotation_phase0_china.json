@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "china",
-  "generated_at": "2026-09-05T13:31:34.080441+00:00",
+  "generated_at": "2026-09-06T06:15:04.834934+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -96,12 +96,12 @@
           "normal": {
             "mean_fwd_maxdd": -0.0957,
             "p05_fwd_maxdd": -0.2458,
-            "n": 19153
+            "n": 19166
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.0975,
+            "mean_fwd_maxdd": -0.0976,
             "p05_fwd_maxdd": -0.2211,
-            "n": 3644
+            "n": 3647
           },
           "parabolic": {
             "mean_fwd_maxdd": -0.108,

@@ -1,7 +1,7 @@
 {
   "gold": {
     "cycle_ref": "gold",
-    "pos": 24.8,
+    "pos": 24.7,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
@@ -25,7 +25,7 @@
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 66.9,
+    "pos": 66.7,
     "phase": "Downturn",
     "phase_v2": "Downturn",
     "overdue": true,
