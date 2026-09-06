@@ -56,10 +56,9 @@
 <script src="macro_suite_boot.js"></script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="macro_suite.css">
+<link rel="stylesheet" href="macro_command.css">
 </head>
-<body class="mq-page mq-hub-page">
-
-
+<body class="mq-page mc-page">
 
 
 <nav class="site-nav">
@@ -304,374 +303,483 @@
   </div>
 </nav>
 
-<main class="mq-shell mq-hub" id="mq-shell">
+<main class="mc-shell" id="mc-shell">
 
-  <header class="mq-hub-head">
-    <p class="mq-kicker"><span class="l-en">Macro &amp; Monetary</span><span class="l-zh">宏观与货币</span></p>
-    <h1><span class="l-en">Macro &amp; Monetary</span><span class="l-zh">宏观与货币</span></h1>
-    <p class="mq-deck"><span class="l-en">Fourteen research workspaces, one current read.</span><span class="l-zh">十四个研究工作区，一个当前读数。</span></p>
-    <p class="mq-hub-asof" data-mq-hub-asof>
-      <span class="mq-hub-asof-item">
-        <span class="mq-hub-asof-key"><span class="l-en">Suite effective date</span><span class="l-zh">套件生效日期</span></span>
-        <time>2026-07-01</time>
-      </span>
-      <span class="mq-hub-asof-item">
-        <span class="mq-hub-asof-key"><span class="l-en">Workspaces readable</span><span class="l-zh">可读取工作区</span></span>
-        <strong class="mq-tone-ok">14 / 14</strong>
-      </span>
-    </p>
-    <p class="mq-hub-asof-note"><span class="l-en">The suite is dated by its oldest accepted workspace print, never its newest.</span><span class="l-zh">套件日期取自最旧的已接受工作区读数，而非最新读数。</span></p>
-  </header>
+  <a class="mc-skip" href="#mc-content"><span class="l-en">Skip to today&#39;s read</span><span class="l-zh">跳到今日读数</span></a>
 
-
-  <section class="mq-hub-changes" aria-labelledby="mq-hub-changes-title" data-mq-hub-changes>
-    <div class="mq-section-head">
-      <h2 id="mq-hub-changes-title"><span class="l-en">Recent changes</span><span class="l-zh">近期变化</span></h2>
-      <span class="mq-section-note"><span class="l-en">The first few changes in suite order — not a ranking. Open a workspace for its full list.</span><span class="l-zh">按套件既定顺序列出的前几项变化 — 并非重要性排序。完整列表请进入相应工作区。</span></span>
-    </div>
-    <ul class="mq-hub-changelist">
-      <li class="mq-hub-change">
-        <a class="mq-hub-change-link" href="macro_liquidity_regime.html"><span class="l-en">Liquidity Regime Monitor</span><span class="l-zh">流动性体制监测</span></a>
-        <span class="mq-hub-change-metric"><span class="l-en">Funding pressure</span><span class="l-zh">融资压力</span></span>
-        <span class="mq-hub-change-move">
-          <span class="mq-hub-change-prior">19.89</span>
-          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
-          <span class="mq-hub-change-current">18.83</span>
-          <span class="mq-delta mq-delta-down">-1.06</span>
-        </span>
+  <nav class="mc-rail" id="mc-rail" aria-labelledby="mc-rail-label">
+    <p class="mc-rail-label" id="mc-rail-label"><span class="l-en">Sections</span><span class="l-zh">板块</span></p>
+    <ul class="mc-rail-list">
+      <li class="mc-rail-item">
+        <a class="mc-rail-link is-current"
+           href="#overview" data-mc-section="overview" aria-current="page">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Overview</span><span class="l-zh">总览</span></span>
+        </a>
       </li>
-      <li class="mq-hub-change">
-        <a class="mq-hub-change-link" href="macro_liquidity_regime.html"><span class="l-en">Liquidity Regime Monitor</span><span class="l-zh">流动性体制监测</span></a>
-        <span class="mq-hub-change-metric"><span class="l-en">Balance-sheet support</span><span class="l-zh">资产负债表支持</span></span>
-        <span class="mq-hub-change-move">
-          <span class="mq-hub-change-prior">45.39</span>
-          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
-          <span class="mq-hub-change-current">45.39</span>
-          <span class="mq-delta mq-delta-flat">0</span>
-        </span>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#money" data-mc-section="money">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Money &amp; liquidity</span><span class="l-zh">资金与流动性</span></span>
+        </a>
       </li>
-      <li class="mq-hub-change">
-        <a class="mq-hub-change-link" href="macro_growth_real_economy.html"><span class="l-en">Growth &amp; Real Economy</span><span class="l-zh">增长与实体经济</span></a>
-        <span class="mq-hub-change-metric"><span class="l-en">Growth momentum</span><span class="l-zh">Growth momentum</span></span>
-        <span class="mq-hub-change-move">
-          <span class="mq-hub-change-prior">70.61</span>
-          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
-          <span class="mq-hub-change-current">70.61</span>
-          <span class="mq-delta mq-delta-flat">0</span>
-        </span>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#policy" data-mc-section="policy">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Policy rates</span><span class="l-zh">政策利率</span></span>
+        </a>
       </li>
-      <li class="mq-hub-change">
-        <a class="mq-hub-change-link" href="macro_growth_real_economy.html"><span class="l-en">Growth &amp; Real Economy</span><span class="l-zh">增长与实体经济</span></a>
-        <span class="mq-hub-change-metric"><span class="l-en">Growth level breadth</span><span class="l-zh">Growth level breadth</span></span>
-        <span class="mq-hub-change-move">
-          <span class="mq-hub-change-prior">65.42</span>
-          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
-          <span class="mq-hub-change-current">65.42</span>
-          <span class="mq-delta mq-delta-flat">0</span>
-        </span>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#rates" data-mc-section="rates">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Rates &amp; the curve</span><span class="l-zh">利率与收益率曲线</span></span>
+        </a>
       </li>
-      <li class="mq-hub-change">
-        <a class="mq-hub-change-link" href="macro_business_activity.html"><span class="l-en">Business Activity</span><span class="l-zh">商业活动</span></a>
-        <span class="mq-hub-change-metric"><span class="l-en">Coincident tier momentum 6m</span><span class="l-zh">Coincident tier momentum 6m</span></span>
-        <span class="mq-hub-change-move">
-          <span class="mq-hub-change-prior">-0.216</span>
-          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
-          <span class="mq-hub-change-current">-0.216</span>
-          <span class="mq-delta mq-delta-flat">0</span>
-        </span>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#inflation" data-mc-section="inflation">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#growth" data-mc-section="growth">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Growth</span><span class="l-zh">经济增长</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#jobs" data-mc-section="jobs">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Jobs</span><span class="l-zh">就业</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#housing" data-mc-section="housing">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Housing</span><span class="l-zh">房地产</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#consumer" data-mc-section="consumer">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Consumers</span><span class="l-zh">消费者</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#credit" data-mc-section="credit">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Borrowing costs</span><span class="l-zh">融资环境</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#debt" data-mc-section="debt">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Government debt</span><span class="l-zh">政府债务</span></span>
+        </a>
+      </li>
+      <li class="mc-rail-item">
+        <a class="mc-rail-link"
+           href="#trade" data-mc-section="trade">
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text"><span class="l-en">Trade</span><span class="l-zh">贸易往来</span></span>
+        </a>
       </li>
     </ul>
-    <p class="mq-hub-remaining" data-mq-changes-remaining="38">
-      <span class="l-en">Showing</span><span class="l-zh">显示</span> 5 <span class="l-en">of</span><span class="l-zh">/</span> 43.
-      <span class="l-en">The other</span><span class="l-zh">其余</span> 38 <span class="l-en">are on the workspace pages below.</span><span class="l-zh">项请见下方各工作区页面。</span>
-    </p>
-  </section>
 
 
-  <section class="mq-hub-attention" aria-labelledby="mq-hub-attention-title"
-           data-mq-hub-attention>
-    <div class="mq-section-head">
-      <h2 id="mq-hub-attention-title"><span class="l-en">Needs data attention</span><span class="l-zh">数据需要关注</span></h2>
-      <span class="mq-section-note"><span class="l-en">Source or revision trouble. This is an operational note, not a judgement about what matters.</span><span class="l-zh">数据源或修订问题。这是运行状态提示，不代表重要性判断。</span></span>
-    </div>
-    <ul class="mq-hub-attentionlist">
-      <li class="mq-hub-attention-row"
-          data-mq-workspace="growth_real_economy">
-        <a class="mq-hub-attention-link" href="macro_growth_real_economy.html"><span class="l-en">Growth &amp; Real Economy</span><span class="l-zh">增长与实体经济</span></a>
-        <span class="mq-chip mq-tone-warn"><span class="l-en">Sources disagree</span><span class="l-zh">数据源存在分歧</span></span>
-      </li>
-      <li class="mq-hub-attention-row"
-          data-mq-workspace="inflation_system">
-        <a class="mq-hub-attention-link" href="macro_inflation_system.html"><span class="l-en">Inflation System</span><span class="l-zh">通胀体系</span></a>
-        <span class="mq-chip mq-tone-warn"><span class="l-en">Sources disagree</span><span class="l-zh">数据源存在分歧</span></span>
-      </li>
-      <li class="mq-hub-attention-row mq-hub-absent"
-          data-mq-workspace="rates_curves">
-        <a class="mq-hub-attention-link" href="macro_rates_curves.html"><span class="l-en">Rates &amp; Curves</span><span class="l-zh">利率与曲线</span></a>
-        <span class="mq-chip mq-tone-bad"><span class="l-en">Source failed</span><span class="l-zh">数据源获取失败</span></span>
-      </li>
-      <li class="mq-hub-attention-row mq-hub-absent"
-          data-mq-workspace="trade_flows">
-        <a class="mq-hub-attention-link" href="macro_trade_flows.html"><span class="l-en">Trade Flows</span><span class="l-zh">贸易流动</span></a>
-        <span class="mq-chip mq-tone-bad"><span class="l-en">Source failed</span><span class="l-zh">数据源获取失败</span></span>
-      </li>
-    </ul>
-  </section>
+    <button type="button" class="mc-analyst" data-mc-analyst
+            data-mc-analyst-label-en="Macro Command" data-mc-analyst-label-zh="宏观指挥台">
+      <span class="mc-analyst-mark" aria-hidden="true">◈</span>
+      <span class="mc-analyst-text"><span class="l-en">Ask the analyst</span><span class="l-zh">向分析师提问</span></span>
+    </button>
+  </nav>
+
+  <div class="mc-content" id="mc-content">
+
+    <header class="mc-command">
+      <p class="mc-eyebrow">
+        <span class="mc-eyebrow-suite"><span class="l-en">Macro &amp; Monetary</span><span class="l-zh">宏观与货币</span></span>
+        <span class="mc-eyebrow-sep" aria-hidden="true">·</span>
+        <span class="mc-eyebrow-asof mc-absent"><span class="l-en">No dated reading yet</span><span class="l-zh">暂无带日期的读数</span></span>
+      </p>
+      <h1 class="mc-title"><span class="l-en">Macro Command</span><span class="l-zh">宏观指挥台</span></h1>
 
 
-  <section class="mq-hub-suite" aria-labelledby="mq-hub-suite-title">
-    <div class="mq-section-head">
-      <h2 id="mq-hub-suite-title"><span class="l-en">The fourteen workspaces</span><span class="l-zh">十四个工作区</span></h2>
-      <span class="mq-section-note"><span class="l-en">Listed in the research suite’s own fixed order — not by size of move and not by importance.</span><span class="l-zh">按研究套件既定的固定顺序排列 — 既非按变动幅度，也非按重要性。</span></span>
-    </div>
-    <ul class="mq-hub-grid" data-mq-hub-grid>
-      <li class="mq-hub-card"
-          data-mq-workspace="liquidity_regime">
-        <a class="mq-hub-card-link" href="macro_liquidity_regime.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Liquidity Regime Monitor</span><span class="l-zh">流动性体制监测</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Funding pressure x balance-sheet support</span><span class="l-zh">融资压力 × 资产负债表支持</span></p>
-        <p class="mq-hub-card-state"><strong><span class="l-en">Easy funding / Weak support</span><span class="l-zh">宽松融资 / 弱支持</span></strong>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-04</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="growth_real_economy">
-        <a class="mq-hub-card-link" href="macro_growth_real_economy.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Growth &amp; Real Economy</span><span class="l-zh">增长与实体经济</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Growth momentum x level/breadth</span><span class="l-zh">增长动能 × 水平/广度</span></p>
-        <p class="mq-hub-card-state"><strong><span class="l-en">Accelerating momentum, broad strength</span><span class="l-zh">动能加速，广度强劲</span></strong>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-04</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="business_activity">
-        <a class="mq-hub-card-link" href="macro_business_activity.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Business Activity</span><span class="l-zh">商业活动</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Cycle tiers: leading x coincident x lagging</span><span class="l-zh">周期分层：领先 × 同步 × 滞后</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-30</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="labor_markets">
-        <a class="mq-hub-card-link" href="macro_labor_markets.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Labor Markets</span><span class="l-zh">劳动力市场</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Labor demand x labor supply/tightness</span><span class="l-zh">劳动力需求 × 劳动力供给/紧张度</span></p>
-        <p class="mq-hub-card-state"><strong><span class="l-en">Strong hiring / Tight market</span><span class="l-zh">招聘强劲 / 市场偏紧</span></strong>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-04</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="inflation_system">
-        <a class="mq-hub-card-link" href="macro_inflation_system.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Inflation System</span><span class="l-zh">通胀体系</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Inflation impulse x persistence &amp; breadth</span><span class="l-zh">通胀冲量 × 持续性与广度</span></p>
-        <p class="mq-hub-card-state"><strong><span class="l-en">Disinflating headline, broad/sticky underlying</span><span class="l-zh">总体降温，但内部广泛/顽固</span></strong>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-05</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-warn"><span class="l-en">Late, within tolerance</span><span class="l-zh">延迟但在容忍范围内</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="monetary_policy">
-        <a class="mq-hub-card-link" href="macro_monetary_policy.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Monetary Policy</span><span class="l-zh">货币政策</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Policy stance x market-implied path</span><span class="l-zh">政策立场 × 市场隐含路径</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-04</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="financial_conditions">
-        <a class="mq-hub-card-link" href="macro_financial_conditions.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Financial Conditions</span><span class="l-zh">金融条件</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Conditions level x impulse</span><span class="l-zh">条件水平 × 边际冲量</span></p>
-        <p class="mq-hub-card-state"><strong><span class="l-en">Tight conditions / Tightening impulse</span><span class="l-zh">紧张条件 / 边际收紧</span></strong>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-04</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="liquidity_central_banks">
-        <a class="mq-hub-card-link" href="macro_liquidity_central_banks.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Liquidity &amp; Central Banks</span><span class="l-zh">流动性与央行</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Global monetary impulse x Fed/ECB/BoJ balance-sheet stance</span><span class="l-zh">全球货币脉冲 × 美联储/欧央行/日央行资产负债表姿态</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-08-28</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-warn"><span class="l-en">Late, within tolerance</span><span class="l-zh">延迟但在容忍范围内</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="capital_structure">
-        <a class="mq-hub-card-link" href="macro_capital_structure.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Capital Structure</span><span class="l-zh">资本结构</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Refinancing pressure x balance-sheet resilience/market access</span><span class="l-zh">再融资压力 × 资产负债表韧性/市场准入</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-05T08:32:24.683977Z</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="housing_real_estate">
-        <a class="mq-hub-card-link" href="macro_housing_real_estate.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Housing &amp; Real Estate</span><span class="l-zh">住房与房地产</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Demand/transaction momentum x affordability/financing pressure</span><span class="l-zh">需求/成交动能 × 可负担性/融资压力</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-03</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="consumer_payments">
-        <a class="mq-hub-card-link" href="macro_consumer_payments.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Consumer &amp; Payments</span><span class="l-zh">消费与支付</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Cash-flow/spending momentum x consumer credit stress</span><span class="l-zh">现金流/支出动能 × 消费信贷压力</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-07-01</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-warn"><span class="l-en">Late, within tolerance</span><span class="l-zh">延迟但在容忍范围内</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="national_debt_liabilities">
-        <a class="mq-hub-card-link" href="macro_national_debt_liabilities.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">National Debt &amp; Liabilities</span><span class="l-zh">国债与负债</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Refinancing/issuance pressure x fiscal capacity/interest-burden resilience</span><span class="l-zh">再融资/发行压力 × 财政能力/利息负担韧性</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-03</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-ok"><span class="l-en">Current</span><span class="l-zh">当前有效</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="rates_curves">
-        <a class="mq-hub-card-link" href="macro_rates_curves.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Rates &amp; Curves</span><span class="l-zh">利率与曲线</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">The Treasury curve node by node</span><span class="l-zh">逐点解读美债收益率曲线</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><time>2026-09-08</time></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-bad"><span class="l-en">Source failed</span><span class="l-zh">数据源获取失败</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>100%</dd></div>
-        </dl>
-      </li>
-      <li class="mq-hub-card"
-          data-mq-workspace="trade_flows">
-        <a class="mq-hub-card-link" href="macro_trade_flows.html">
-          <h3 class="mq-hub-card-title"><span class="l-en">Trade Flows</span><span class="l-zh">贸易流动</span></h3>
-        </a>
-        <p class="mq-hub-card-deck"><span class="l-en">Goods &amp; services dollar flows x import/export price indexes</span><span class="l-zh">货物与服务美元贸易流量 × 进出口价格指数</span></p>
-        <p class="mq-hub-card-state"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">no state published</span><span class="l-zh">未发布状态</span></span>
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt><span class="l-en">Effective</span><span class="l-zh">生效</span></dt>
-               <dd><span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr"><span class="l-en">not available yet</span><span class="l-zh">暂无数据</span></span></dd></div>
-          <div><dt><span class="l-en">Sources</span><span class="l-zh">数据源</span></dt>
-               <dd class="mq-tone-bad"><span class="l-en">Source failed</span><span class="l-zh">数据源获取失败</span></dd></div>
-          <div><dt><span class="l-en">Coverage</span><span class="l-zh">覆盖率</span></dt>
-               <dd>0%</dd></div>
-        </dl>
-      </li>
-    </ul>
-  </section>
+      <p class="mc-read-fallback"><span class="l-en">Today&#39;s reading is incomplete. Here is what we do have.</span><span class="l-zh">今日读数不完整。以下是我们已有的部分。</span></p>
 
-  <p class="mq-hub-foot">
-    <span class="l-en">This page composes what each workspace owner published. It produces no score and no ordering of its own, and it never tells you what to do.</span><span class="l-zh">本页仅汇总各工作区所有者已发布的内容，不产生任何自有评分或排序，也不提供任何操作指示。</span>
-    <span class="mq-hub-foot-built"><span class="l-en">Page built</span><span class="l-zh">页面生成</span> <time>2026-09-06T06:10:53Z</time></span>
-  </p>
+      <ul class="mc-strip" data-mc-strip>
+      </ul>
+    </header>
+    <section class="mc-panel" id="overview" data-mc-panel="overview"
+             aria-labelledby="overview-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="overview-h"><span class="l-en">Overview</span><span class="l-zh">总览</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+        <p class="mc-figure-building"><span class="l-en">This overview is being built. Each section on the left opens its full workspace.</span><span class="l-zh">总览正在建设中。左侧每个板块均可打开其完整工作区。</span></p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_liquidity_regime.html"><span class="l-en">Liquidity Regime Monitor</span><span class="l-zh">流动性体制监测</span></a></li>
+            <li><a href="macro_growth_real_economy.html"><span class="l-en">Growth &amp; Real Economy</span><span class="l-zh">增长与实体经济</span></a></li>
+            <li><a href="macro_business_activity.html"><span class="l-en">Business Activity</span><span class="l-zh">商业活动</span></a></li>
+            <li><a href="macro_labor_markets.html"><span class="l-en">Labor Markets</span><span class="l-zh">劳动力市场</span></a></li>
+            <li><a href="macro_inflation_system.html"><span class="l-en">Inflation System</span><span class="l-zh">通胀体系</span></a></li>
+            <li><a href="macro_monetary_policy.html"><span class="l-en">Monetary Policy</span><span class="l-zh">货币政策</span></a></li>
+            <li><a href="macro_financial_conditions.html"><span class="l-en">Financial Conditions</span><span class="l-zh">金融条件</span></a></li>
+            <li><a href="macro_liquidity_central_banks.html"><span class="l-en">Liquidity &amp; Central Banks</span><span class="l-zh">流动性与央行</span></a></li>
+            <li><a href="macro_capital_structure.html"><span class="l-en">Capital Structure</span><span class="l-zh">资本结构</span></a></li>
+            <li><a href="macro_housing_real_estate.html"><span class="l-en">Housing &amp; Real Estate</span><span class="l-zh">住房与房地产</span></a></li>
+            <li><a href="macro_consumer_payments.html"><span class="l-en">Consumer &amp; Payments</span><span class="l-zh">消费与支付</span></a></li>
+            <li><a href="macro_national_debt_liabilities.html"><span class="l-en">National Debt &amp; Liabilities</span><span class="l-zh">国债与负债</span></a></li>
+            <li><a href="macro_rates_curves.html"><span class="l-en">Rates &amp; Curves</span><span class="l-zh">利率与曲线</span></a></li>
+            <li><a href="macro_trade_flows.html"><span class="l-en">Trade Flows</span><span class="l-zh">贸易流动</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="money" data-mc-panel="money"
+             aria-labelledby="money-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="money-h"><span class="l-en">Money &amp; liquidity</span><span class="l-zh">资金与流动性</span></h2>
+      </div>
+      <div class="mc-subtabs" role="tablist" aria-label="Money &amp; liquidity">
+        <button type="button" class="mc-subtab" role="tab" id="liquidity-t"
+                data-mc-subtab="liquidity" aria-controls="liquidity"
+                aria-selected="true"
+                tabindex="0"><span class="l-en">How much money is around</span><span class="l-zh">市场资金</span></button>
+        <button type="button" class="mc-subtab" role="tab" id="central_banks-t"
+                data-mc-subtab="central_banks" aria-controls="central_banks"
+                aria-selected="false"
+                tabindex="-1"><span class="l-en">What central banks are holding</span><span class="l-zh">央行资产负债表</span></button>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <div class="mc-figure-tabbody" data-mc-tabbody="liquidity" id="liquidity"
+             role="tabpanel" aria-labelledby="liquidity-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="macro_liquidity_regime.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+          </p>
+        </div>
+        <div class="mc-figure-tabbody" data-mc-tabbody="central_banks" id="central_banks"
+             role="tabpanel" aria-labelledby="central_banks-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="macro_liquidity_central_banks.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+          </p>
+        </div>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_liquidity_regime.html"><span class="l-en">Liquidity Regime Monitor</span><span class="l-zh">流动性体制监测</span></a></li>
+            <li><a href="macro_liquidity_central_banks.html"><span class="l-en">Liquidity &amp; Central Banks</span><span class="l-zh">流动性与央行</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="policy" data-mc-panel="policy"
+             aria-labelledby="policy-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="policy-h"><span class="l-en">Policy rates</span><span class="l-zh">政策利率</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_monetary_policy.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_monetary_policy.html"><span class="l-en">Monetary Policy</span><span class="l-zh">货币政策</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="rates" data-mc-panel="rates"
+             aria-labelledby="rates-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="rates-h"><span class="l-en">Rates &amp; the curve</span><span class="l-zh">利率与收益率曲线</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_rates_curves.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_rates_curves.html"><span class="l-en">Rates &amp; Curves</span><span class="l-zh">利率与曲线</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="inflation" data-mc-panel="inflation"
+             aria-labelledby="inflation-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="inflation-h"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_inflation_system.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_inflation_system.html"><span class="l-en">Inflation System</span><span class="l-zh">通胀体系</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="growth" data-mc-panel="growth"
+             aria-labelledby="growth-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="growth-h"><span class="l-en">Growth</span><span class="l-zh">经济增长</span></h2>
+      </div>
+      <div class="mc-subtabs" role="tablist" aria-label="Growth">
+        <button type="button" class="mc-subtab" role="tab" id="economy-t"
+                data-mc-subtab="economy" aria-controls="economy"
+                aria-selected="true"
+                tabindex="0"><span class="l-en">The whole economy</span><span class="l-zh">整体经济</span></button>
+        <button type="button" class="mc-subtab" role="tab" id="business-t"
+                data-mc-subtab="business" aria-controls="business"
+                aria-selected="false"
+                tabindex="-1"><span class="l-en">What companies are doing</span><span class="l-zh">企业活动</span></button>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <div class="mc-figure-tabbody" data-mc-tabbody="economy" id="economy"
+             role="tabpanel" aria-labelledby="economy-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="macro_growth_real_economy.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+          </p>
+        </div>
+        <div class="mc-figure-tabbody" data-mc-tabbody="business" id="business"
+             role="tabpanel" aria-labelledby="business-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="macro_business_activity.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+          </p>
+        </div>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_growth_real_economy.html"><span class="l-en">Growth &amp; Real Economy</span><span class="l-zh">增长与实体经济</span></a></li>
+            <li><a href="macro_business_activity.html"><span class="l-en">Business Activity</span><span class="l-zh">商业活动</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="jobs" data-mc-panel="jobs"
+             aria-labelledby="jobs-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="jobs-h"><span class="l-en">Jobs</span><span class="l-zh">就业</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_labor_markets.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_labor_markets.html"><span class="l-en">Labor Markets</span><span class="l-zh">劳动力市场</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="housing" data-mc-panel="housing"
+             aria-labelledby="housing-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="housing-h"><span class="l-en">Housing</span><span class="l-zh">房地产</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_housing_real_estate.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_housing_real_estate.html"><span class="l-en">Housing &amp; Real Estate</span><span class="l-zh">住房与房地产</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="consumer" data-mc-panel="consumer"
+             aria-labelledby="consumer-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="consumer-h"><span class="l-en">Consumers</span><span class="l-zh">消费者</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_consumer_payments.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_consumer_payments.html"><span class="l-en">Consumer &amp; Payments</span><span class="l-zh">消费与支付</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="credit" data-mc-panel="credit"
+             aria-labelledby="credit-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="credit-h"><span class="l-en">Borrowing costs</span><span class="l-zh">融资环境</span></h2>
+      </div>
+      <div class="mc-subtabs" role="tablist" aria-label="Borrowing costs">
+        <button type="button" class="mc-subtab" role="tab" id="borrowing-t"
+                data-mc-subtab="borrowing" aria-controls="borrowing"
+                aria-selected="true"
+                tabindex="0"><span class="l-en">How hard it is to borrow</span><span class="l-zh">融资难易</span></button>
+        <button type="button" class="mc-subtab" role="tab" id="funding-t"
+                data-mc-subtab="funding" aria-controls="funding"
+                aria-selected="false"
+                tabindex="-1"><span class="l-en">How companies fund themselves</span><span class="l-zh">企业融资结构</span></button>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <div class="mc-figure-tabbody" data-mc-tabbody="borrowing" id="borrowing"
+             role="tabpanel" aria-labelledby="borrowing-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="macro_financial_conditions.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+          </p>
+        </div>
+        <div class="mc-figure-tabbody" data-mc-tabbody="funding" id="funding"
+             role="tabpanel" aria-labelledby="funding-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="macro_capital_structure.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+          </p>
+        </div>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_financial_conditions.html"><span class="l-en">Financial Conditions</span><span class="l-zh">金融条件</span></a></li>
+            <li><a href="macro_capital_structure.html"><span class="l-en">Capital Structure</span><span class="l-zh">资本结构</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="debt" data-mc-panel="debt"
+             aria-labelledby="debt-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="debt-h"><span class="l-en">Government debt</span><span class="l-zh">政府债务</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_national_debt_liabilities.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_national_debt_liabilities.html"><span class="l-en">National Debt &amp; Liabilities</span><span class="l-zh">国债与负债</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+    <section class="mc-panel" id="trade" data-mc-panel="trade"
+             aria-labelledby="trade-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="trade-h"><span class="l-en">Trade</span><span class="l-zh">贸易往来</span></h2>
+      </div>
+
+      <div class="mc-figure" data-mc-figure>
+
+        <p class="mc-figure-pending" hidden data-mc-pending><span class="l-en">Loading this section…</span><span class="l-zh">正在载入本板块…</span></p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="macro_trade_flows.html"><span class="l-en">The full chart for this section lives on its workspace page →</span><span class="l-zh">本板块的完整图表位于其工作区页面 →</span></a>
+        </p>
+      </div>
+
+      <details class="mc-details">
+        <summary><span class="l-en">Details, methods and sources</span><span class="l-zh">细节、方法与来源</span></summary>
+        <div class="mc-details-body">
+
+          <ul class="mc-details-links">
+            <li><a href="macro_trade_flows.html"><span class="l-en">Trade Flows</span><span class="l-zh">贸易流动</span></a></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+  </div>
 </main>
-
+<script src="macro_command.js" defer></script>
 <script src="theme.js" defer></script>
 </body>
 </html>

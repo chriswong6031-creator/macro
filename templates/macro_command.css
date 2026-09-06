@@ -1,0 +1,288 @@
+/* macro_command.css — Macro Command. Extends theme.css and macro_suite.css.
+   No palette literal below this token block. Two art directions, one system.
+
+   DS header (§12 items 2-3, orchestrator rulings R1/R2, F01 Macro Command P1):
+   - Archetype: `command_center` ("Command Center"),
+     research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §10 row A, copied verbatim.
+   - `.mc-panel` SUPERSEDES `.mq-card` on this page: no `.mq-card` is rendered
+     inside site/macro_monetary.html (the 14 deep-link pages, which keep their
+     own `.mq-card` system, are untouched).
+   - Tone ink is inherited from `macro_suite.css:88-91` (`.mq-tone-*`); no
+     `.mc-tone-*` class is minted here (G10, D5). */
+
+:root {
+  /* geometry (theme-invariant) */
+  --mc-rail-w: 232px;
+  --mc-content-max: 1008px;
+  --mc-gap: 28px;
+  --mc-panel-pad: 24px;
+  --mc-radius: var(--mq-radius);
+  --mc-radius-sm: 10px;
+  --mc-read-size: clamp(23px, 1.05rem + 1vw, 34px);
+  --mc-read-lh: 1.42;
+  --mc-dur: 160ms;
+
+  /* DARK art direction: light, not lines */
+  --mc-panel-bg: var(--mq-surface);
+  --mc-panel-border: 1px solid transparent;
+  --mc-panel-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+  --mc-plot-bg: color-mix(in srgb, var(--mq-ink) 6%, transparent);
+  --mc-grid: color-mix(in srgb, var(--mq-ink) 8%, transparent);
+  --mc-chip-bg: transparent;
+  --mc-chip-border: color-mix(in srgb, var(--mq-ink) 18%, transparent);
+  --mc-rail-active-bg: color-mix(in srgb, var(--mq-ink) 7%, transparent);
+  --mc-rail-active-shadow: none;
+  --mc-stance-wash: 0%;     /* D3: a PERCENTAGE, never `transparent` — see the note below */
+  --mc-halo: 0.12;          /* radial wash behind a Read topic word — dark only */
+  --mc-underline: 0px;      /* Read underline rule — light only */
+  --mc-focus-inner: 0 0 0 0 transparent;
+}
+
+html[data-theme="light"] {
+  /* LIGHT art direction: edge and elevation, never glow */
+  --mc-panel-bg: var(--panel);
+  --mc-panel-border: 1px solid var(--mq-line);
+  --mc-panel-shadow: 0 1px 2px color-mix(in srgb, #1c2430 10%, transparent),
+                     0 8px 24px -18px color-mix(in srgb, #1c2430 22%, transparent);
+  --mc-plot-bg: var(--panel);
+  --mc-grid: color-mix(in srgb, var(--mq-ink) 10%, transparent);
+  --mc-chip-bg: var(--panel);
+  --mc-chip-border: color-mix(in srgb, var(--mq-ink) 14%, transparent);
+  --mc-rail-active-bg: var(--panel);
+  --mc-rail-active-shadow: 0 1px 2px color-mix(in srgb, #1c2430 9%, transparent);
+  --mc-stance-wash: 6%;
+  --mc-halo: 0;
+  --mc-underline: 2px;
+  --mc-focus-inner: 0 0 0 1px var(--panel);
+}
+
+/* ── shell ───────────────────────────────────────────────────────────────── */
+.mc-shell {
+  display: grid;
+  grid-template-columns: var(--mc-rail-w) minmax(0, 1fr);
+  gap: var(--mc-gap);
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 32px 96px;
+  align-items: start;
+}
+.mc-content { max-width: var(--mc-content-max); min-width: 0; }
+.mc-skip { position: absolute; left: -9999px; }
+.mc-skip:focus { position: static; display: inline-block; margin: 8px 0; }
+
+/* ── left rail ───────────────────────────────────────────────────────────── */
+.mc-rail { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mc-rail-label {
+  margin: 0 0 8px 10px; font-size: var(--fs-micro, 11px);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--mq-muted);
+}
+.mc-rail-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.mc-rail-link {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px 9px 14px; border-radius: var(--mc-radius-sm);
+  color: var(--mq-muted); text-decoration: none; font-size: 13.5px; line-height: 1.3;
+  transition: background var(--mc-dur) ease, color var(--mc-dur) ease;
+}
+.mc-rail-link:hover { color: var(--mq-ink); background: color-mix(in srgb, var(--mq-ink) 5%, transparent); }
+.mc-rail-link.is-current {
+  color: var(--mq-ink); font-weight: 600;
+  background: var(--mc-rail-active-bg);
+  border: var(--mc-panel-border);
+  box-shadow: var(--mc-rail-active-shadow);
+}
+.mc-rail-bar {
+  position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: transparent;
+}
+.mc-rail-link.is-current .mc-rail-bar { background: var(--mq-accent); }
+.mc-rail-dot { width: 6px; height: 6px; border-radius: 50%; margin-left: auto; background: currentColor; }
+
+.mc-analyst {
+  font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+  margin-top: 18px; display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: var(--mc-radius-sm);
+  border: 1px solid var(--mq-line-strong); color: var(--mq-ink);
+  text-decoration: none; background: var(--mc-chip-bg);
+}
+.mc-analyst:hover { border-color: var(--mq-accent); color: var(--mq-accent); }
+
+/* ── command header + THE READ ───────────────────────────────────────────── */
+.mc-eyebrow {
+  margin: 0 0 6px; font-size: var(--fs-micro, 11px);
+  letter-spacing: .08em; color: var(--mq-muted);
+}
+.mc-eyebrow time { font-family: var(--font-mono); }
+.mc-asof-word { letter-spacing: 0; }
+.mc-title {
+  margin: 0 0 18px; font-size: var(--fs-h2, 22px); font-weight: 600;
+  letter-spacing: -.01em; color: var(--mq-ink);
+}
+.mc-read {
+  margin: 0 0 22px; max-width: 62ch;
+  font-size: var(--mc-read-size); line-height: var(--mc-read-lh);
+  font-weight: 450; letter-spacing: -.012em; color: var(--mq-ink);
+  text-wrap: pretty;
+}
+.mc-read-clause { white-space: normal; }
+.mc-read-topic {
+  color: inherit; text-decoration: none; font-weight: 600;
+  padding: 0 .08em 1px;
+  border-bottom: var(--mc-underline) solid currentColor;
+  /* D4: the halo is painted ON the element. A z-index:-1 pseudo would paint behind the page canvas. */
+  background-image: radial-gradient(closest-side,
+    color-mix(in srgb, currentColor calc(var(--mc-halo) * 100%), transparent), transparent);
+  background-size: 100% 160%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.mc-read-state { color: var(--mq-ink); }
+.mc-read-omitted, .mc-read-fallback {
+  margin: 0 0 22px; font-size: var(--fs-sm, 13px); line-height: 1.5; color: var(--mq-muted); max-width: 62ch;
+}
+.mc-read-fallback { font-size: 16px; color: var(--mq-ink); }
+
+/* ── state strip ─────────────────────────────────────────────────────────── */
+.mc-strip {
+  list-style: none; margin: 0 0 32px; padding: 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+}
+.mc-chip {
+  position: relative; border: 1px solid var(--mc-chip-border);
+  background: var(--mc-chip-bg); border-radius: var(--mc-radius-sm);
+  padding: 10px 12px; min-width: 0;
+}
+.mc-chip-link { display: grid; gap: 2px; text-decoration: none; color: inherit; }
+.mc-chip-label { font-size: var(--fs-micro, 11px); letter-spacing: .06em; text-transform: uppercase; color: var(--mq-muted); }
+.mc-chip-value { font-size: 14px; font-weight: 600; color: var(--mq-ink); overflow-wrap: anywhere; }
+.mc-chip-asof { font-size: 10.5px; color: var(--mq-muted); }
+.mc-chip-asof time { font-family: var(--font-mono); }
+/* freshness is a plain word in muted ink — it never colours the chip (§3.4) */
+.mc-chip-fresh { color: var(--mq-muted); font-style: normal; }
+.mc-chip.is-null .mc-chip-value { color: var(--mq-muted); font-weight: 500; }
+.mc-chip-help {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 5;
+  width: max(220px, 100%); padding: 8px 10px; border-radius: 8px;
+  border: var(--mc-panel-border); background: var(--mc-panel-bg);
+  box-shadow: var(--mc-panel-shadow);
+  font-size: 12px; line-height: 1.45; color: var(--mq-muted);
+  opacity: 0; visibility: hidden; transition: opacity var(--mc-dur) ease;
+}
+.mc-chip:hover .mc-chip-help,
+.mc-chip:focus-within .mc-chip-help { opacity: 1; visibility: visible; }
+
+/* ── panel ───────────────────────────────────────────────────────────────── */
+.mc-panel {
+  background: var(--mc-panel-bg);
+  border: var(--mc-panel-border);
+  border-radius: var(--mc-radius);
+  box-shadow: var(--mc-panel-shadow);
+  padding: var(--mc-panel-pad);
+  margin: 0 0 20px;
+  scroll-margin-top: 88px;
+  min-width: 0;
+}
+.mc-panel:focus-visible { outline: 2px solid var(--mq-accent); outline-offset: 3px; }
+.mc-panel-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.mc-panel-title { margin: 0; font-size: var(--fs-h3, 18px); font-weight: 600; color: var(--mq-ink); }
+.mc-panel-question { margin: 0; font-size: var(--fs-sm, 13px); color: var(--mq-muted); }
+
+.mc-stance {
+  position: relative; margin: 0 0 14px; padding: 12px 14px 12px 18px;
+  border-radius: var(--mc-radius-sm);
+  background: color-mix(in srgb, currentColor var(--mc-stance-wash), transparent);
+  font-size: 15px; line-height: 1.5;
+}
+.mc-stance-bar { position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: currentColor; }
+.mc-stance-text { color: var(--mq-ink); }
+
+.mc-primer { margin: 0 0 16px; }
+.mc-primer > summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--mq-accent);
+  border-bottom: 1px dotted currentColor; padding-bottom: 1px;
+}
+.mc-primer > summary::-webkit-details-marker { display: none; }
+.mc-primer-body { margin-top: 10px; max-width: 58ch; font-size: 14px; line-height: 1.6; color: var(--mq-muted); }
+
+.mc-subtabs { display: flex; gap: 6px; margin: 0 0 14px; flex-wrap: wrap; }
+.mc-subtab {
+  font: inherit; font-size: 12.5px; cursor: pointer;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--mc-chip-border); background: var(--mc-chip-bg); color: var(--mq-muted);
+}
+.mc-subtab[aria-selected="true"] { color: var(--mq-ink); border-color: var(--mq-accent); font-weight: 600; }
+
+.mc-figure { background: var(--mc-plot-bg); border-radius: var(--mc-radius-sm); padding: 14px; overflow-x: auto; }
+.mc-figure table { width: 100%; }
+.mc-figure .mq-grid line,
+.mc-figure svg .mc-gridline { stroke: var(--mc-grid); stroke-width: 1; }
+.mc-figure-pending { margin: 0; color: var(--mq-muted); font-size: 13px; }
+.mc-figure-offer { margin: 0; font-size: 13.5px; line-height: 1.5; }
+.mc-figure-offer a { color: var(--mq-accent); }
+.mc-figure-tabbody + .mc-figure-tabbody { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--mq-line); }
+.mc-caption { margin: 10px 0 18px; font-size: 13px; line-height: 1.55; color: var(--mq-muted); max-width: 62ch; }
+
+.mc-watch { margin: 0 0 14px; }
+.mc-watch-title { margin: 0 0 6px; font-size: var(--fs-micro, 11px); letter-spacing: .1em; text-transform: uppercase; color: var(--mq-muted); }
+.mc-watch-list { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 14px; line-height: 1.5; color: var(--mq-ink); max-width: 62ch; }
+
+.mc-details > summary { cursor: pointer; font-size: 12.5px; color: var(--mq-muted); }
+.mc-details[open] > summary { color: var(--mq-ink); margin-bottom: 10px; }
+.mc-details-body { border-top: 1px solid var(--mq-line); padding-top: 12px; overflow-x: auto; }
+
+/* honest empty state */
+.mc-empty { display: grid; gap: 8px; padding: 22px; border: 1px dashed var(--mq-line-strong); border-radius: var(--mc-radius-sm); }
+.mc-empty-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--mq-ink); }
+.mc-empty-why, .mc-empty-unlock, .mc-empty-next { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--mq-muted); max-width: 58ch; }
+.mc-empty-cta { justify-self: start; margin-top: 4px; }
+
+/* focus floor — light needs the inner ring against white material */
+.mc-shell :focus-visible { outline: 2px solid var(--mq-accent); outline-offset: 2px; box-shadow: var(--mc-focus-inner); }
+
+/* ── responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1439px) {
+  .mc-shell { max-width: 1120px; padding: 24px 24px 80px; --mc-rail-w: 208px; }
+}
+@media (max-width: 1023px) {
+  .mc-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) {
+  .mc-shell { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 18px 18px 72px; }
+  .mc-rail {
+    position: sticky; top: 60px; z-index: 4;
+    flex-direction: row; align-items: center; gap: 8px;
+    margin: 0 -18px; padding: 8px 18px;
+    background: var(--bg); border-bottom: 1px solid var(--mq-line);
+  }
+  .mc-rail-label { display: none; }
+  .mc-rail-list { flex-direction: row; overflow-x: auto; scrollbar-width: none; gap: 6px; }
+  .mc-rail-list::-webkit-scrollbar { display: none; }
+  .mc-rail-link { white-space: nowrap; padding: 7px 12px; border-radius: 999px; }
+  .mc-rail-bar { display: none; }
+  .mc-rail-link.is-current { border: 1px solid var(--mq-accent); }
+  .mc-analyst { position: fixed; right: 16px; bottom: 16px; margin: 0; z-index: 6;
+    background: var(--mc-panel-bg); box-shadow: var(--mc-panel-shadow); }
+}
+@media (max-width: 480px) {
+  .mc-read { font-size: var(--fs-h2, 21px); line-height: 1.4; }
+  .mc-title { font-size: var(--fs-h3, 18px); }
+  .mc-panel { padding: 16px; border-radius: 12px; }
+  .mc-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .mc-chip-help { position: static; opacity: 1; visibility: visible; margin-top: 6px; width: auto;
+    border: 0; box-shadow: none; padding: 0; background: none; }
+  .mc-figure { padding: 8px; margin: 0 -8px; }
+}
+html[data-lang="zh"] .mc-read { letter-spacing: 0; line-height: 1.55; font-size: calc(var(--mc-read-size) * .92); }
+@media (prefers-reduced-motion: reduce) { .mc-rail-link, .mc-chip-help { transition: none; } }
+
+/* Notes the builder must not "clean up":
+   - `--mc-stance-wash` is a percentage in both themes (`0%` dark, `6%` light).
+     Writing `transparent` there makes the `color-mix(...)` declaration invalid
+     at computed-value time and drops the whole rule (D3).
+   - The Read's halo is a `background-image` on the anchor itself, not a
+     `z-index:-1` pseudo-element (D4).
+   - `--mc-halo` / `--mc-underline` are the two theme-differing mechanisms
+     expressed as tokens so one rule carries both art directions with no
+     duplicated light/dark branch in JS (G9).
+   - `.mc-figure`, `.mc-details-body` and `.mc-content` keep `overflow-x:auto`
+     / `min-width:0` at every width: the workspace tables are wide and the
+     page body must never scroll horizontally (G12). */
