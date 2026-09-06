@@ -37,7 +37,15 @@ MIN_HISTORY = 60            # fewer observations than this -> percentile is not 
 STALE_DAYS = 10              # an input whose latest observation is this many calendar
                              # days behind "now" is too old to back a confident read — MAJOR 6
 FRED_HY, FRED_IG = "BAMLH0A0HYM2", "BAMLC0A0CM"
-MOVE_TICKER = "MOVE"
+# BLOCKER 1 (review repair round 2): the repo's actively-maintained MOVE series
+# is `_MOVE.parquet` (daily-updated; see engine/anticipation.py's `Y / "_MOVE.parquet"`
+# and engine/contagion.py's `store.read("yahoo", "_MOVE")`) — NOT the unprefixed
+# `MOVE.parquet`, which is a stale raw-ticker snapshot (last touched 2026-08-20,
+# >10 calendar days old, i.e. already past STALE_DAYS by the time this reads it).
+# Reading the wrong file silently made `rates_vol` unreadable in production on
+# every real run: `test_move_path_is_tracked_in_repo` below pins the real,
+# tracked path so this cannot silently regress again.
+MOVE_TICKER = "_MOVE"
 RANGE_OPEN_PCT, RANGE_SHUT_PCT = 33.0, 66.0   # percentile of today's OAS in its 1y range
 DRIFT_OPEN_BP, DRIFT_SHUT_BP = -15.0, 25.0    # 21-obs change in OAS, basis points
 MOVE_OPEN_PCT, MOVE_SHUT_PCT = 40.0, 75.0     # percentile of MOVE in its own 1y range

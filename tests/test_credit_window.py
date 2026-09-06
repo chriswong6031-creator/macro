@@ -322,3 +322,29 @@ def test_is_stale_threshold():
     assert cw._is_stale(fresh) is False
     assert cw._is_stale(old) is True
     assert cw._is_stale(None) is False
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER 1 — the MOVE path must be the file the repo actually tracks and
+# actively maintains (data/yahoo/_MOVE.parquet), not a hand-built guess that
+# happens to also exist as a stale, unmaintained file (data/yahoo/MOVE.parquet,
+# no underscore). A hand-built path that resolves to SOME file on disk is a
+# silent wrong-file bug, not a crash — this test pins the real tracked path so
+# it cannot regress back to the stale file without a red test.
+# --------------------------------------------------------------------------- #
+def test_move_path_is_tracked_in_repo():
+    import subprocess
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    tracked = subprocess.check_output(
+        ["git", "ls-files", "--", "data/yahoo", "data/fred", "data/archive"],
+        cwd=root,
+    ).decode().splitlines()
+    assert f"data/yahoo/{cw.MOVE_TICKER}.parquet" in tracked
+    assert f"data/fred/{cw.FRED_HY}.parquet" in tracked or f"data/archive/{cw.FRED_HY}.parquet" in tracked
+    assert f"data/fred/{cw.FRED_IG}.parquet" in tracked or f"data/archive/{cw.FRED_IG}.parquet" in tracked
+    # the pre-fix bug: an unprefixed "MOVE.parquet" also exists on disk (a
+    # stale, unmaintained snapshot) — reading it instead of "_MOVE.parquet"
+    # would not crash, it would silently read the wrong series.
+    assert cw.MOVE_TICKER != "MOVE"

@@ -711,3 +711,76 @@ def test_ipo_zero_survives_as_real_value_not_null(monkeypatch, tmp_path):
         r'<span class="k">[^<]*<span class="l-en">Range</span>.*?<span class="v">(.*?)</span>',
         card_html, re.DOTALL)
     assert rng and rng.group(1) == "$0–5"
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER 2 (B-F09-2 review repair round 2) — the "what would change this
+# read" copy must never print the inputs-are-MISSING sentence
+# (bi.CW_CHANGE_NONE) for a fully evaluable open/neutral/shut segment whose
+# `change` just happens to be None (no single-input flip moves the segment
+# majority). Each evaluable state gets its own plain, non-"missing data"
+# sentence (bi.CW_CHANGE_STABLE); only a genuinely not_evaluable segment gets
+# the missing-inputs copy.
+# --------------------------------------------------------------------------- #
+def _seg(state, *, change=None, inputs=None):
+    return {
+        "key": "hy", "state": state, "n_inputs": 3, "n_expected": 3,
+        "low_confidence": False,
+        "inputs": inputs if inputs is not None else [
+            {"key": "spread_range", "value": 10.0, "unit": "pct_rank", "state": "open", "as_of": "2026-09-01"},
+            {"key": "spread_drift", "value": -20.0, "unit": "bp_21", "state": "open", "as_of": "2026-09-01"},
+            {"key": "rates_vol", "value": 20.0, "unit": "pct_rank", "state": "open", "as_of": "2026-09-01"},
+        ],
+        "rail": {"pos_pct": 10.0, "easy_pct": 33.0},
+        "change": change,
+    }
+
+
+def test_credit_window_vm_not_evaluable_with_no_change_gets_missing_copy():
+    raw = {"segments": [_seg("not_evaluable", change=None)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE_NONE
+
+
+def test_credit_window_vm_open_with_no_change_gets_open_stable_copy_not_missing():
+    # e.g. three inputs all deep in "open" — no single flip reaches the
+    # two-of-three majority needed to move the segment, but the read is
+    # fully evaluable: it must NOT print the "inputs missing" sentence.
+    raw = {"segments": [_seg("open", change=None)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE_STABLE["open"]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+
+
+def test_credit_window_vm_neutral_with_no_change_gets_neutral_stable_copy_not_missing():
+    raw = {"segments": [_seg("neutral", change=None)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE_STABLE["neutral"]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+
+
+def test_credit_window_vm_shut_with_no_change_gets_shut_stable_copy_not_missing():
+    raw = {"segments": [_seg("shut", change=None)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE_STABLE["shut"]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+
+
+def test_credit_window_vm_real_change_candidate_uses_cw_change_mapping():
+    change = {"input": "spread_range", "to_state": "shut", "threshold": 66.0,
+              "current": 60.0, "direction": "up", "segment_to": "shut"}
+    raw = {"segments": [_seg("neutral", change=change)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE[("spread_range", "shut")]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_STABLE["neutral"]

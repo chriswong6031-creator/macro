@@ -115,6 +115,23 @@ CW_CHANGE = {
 }
 CW_CHANGE_NONE = ("Any one of the three inputs coming back would let us read this again.",
                   "三项输入中任何一项恢复，即可重新读取。")
+# BLOCKER 2 (review repair round 2): CW_CHANGE_NONE is an "inputs are MISSING"
+# sentence and must only be shown for a genuinely not_evaluable segment. A
+# fully evaluable open/neutral/shut read can still have no single-input flip
+# that would move the segment majority (e.g. three inputs all reading exactly
+# "neutral" — flipping any ONE of them alone never reaches the two-of-three
+# majority needed to flip the segment; see engine.credit_window.segment_state).
+# Showing the "inputs missing" line there would misreport working data as a
+# data outage, so each evaluable state gets its own honest "this read is not
+# close to flipping" sentence instead.
+CW_CHANGE_STABLE = {
+    "open": ("This read is solidly open right now — none of the three inputs is close to flipping it.",
+             "当前读数明显偏开 —— 三项输入均未接近翻转的临界点。"),
+    "neutral": ("This read is holding in the middle right now — none of the three inputs is close to flipping it.",
+                "当前读数处于中段 —— 三项输入均未接近翻转的临界点。"),
+    "shut": ("This read is solidly shut right now — none of the three inputs is close to flipping it.",
+             "当前读数明显偏关 —— 三项输入均未接近翻转的临界点。"),
+}
 
 
 def _credit_window_vm(raw: dict) -> dict:
@@ -145,8 +162,13 @@ def _credit_window_vm(raw: dict) -> dict:
         if change:
             change_en, change_zh = CW_CHANGE.get(
                 (change["input"], change["to_state"]), CW_CHANGE_NONE)
-        else:
+        elif state == "not_evaluable":
+            # genuinely missing inputs — the "come back" framing is honest here.
             change_en, change_zh = CW_CHANGE_NONE
+        else:
+            # evaluable (open/neutral/shut) but no single-input flip moves the
+            # segment majority — a stable read, not a data gap (BLOCKER 2).
+            change_en, change_zh = CW_CHANGE_STABLE.get(state, CW_CHANGE_NONE)
 
         # Tier-2 receipt: technicals banned from Tier 1 live only here.
         tip_en = (
