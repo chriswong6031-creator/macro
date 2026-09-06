@@ -13,59 +13,7 @@ Usage: python -m scripts.build_stock_library
 """
 from __future__ import annotations
 
-_DEBT_MATURITY_SOURCES = None  # memoised (issuer_master_df_or_None, companyfacts_root_or_None)
-
-
-def _debt_maturity_sources():
-    """Load the issuer_master identity chain and the companyfacts root once
-    per run. Returns (None, None) on any failure -- the per-ticker caller
-    then degrades every ticker to not_applicable; the stockdata build never
-    breaks."""
-    global _DEBT_MATURITY_SOURCES
-    if _DEBT_MATURITY_SOURCES is not None:
-        return _DEBT_MATURITY_SOURCES
-    try:
-        from lib import config as _cfg  # noqa: PLC0415
-        root = _cfg.data_dir() / "capital_structure" / "companyfacts"
-        if not root.exists():
-            _DEBT_MATURITY_SOURCES = (None, None)
-            return _DEBT_MATURITY_SOURCES
-        import pandas as _pd  # noqa: PLC0415
-        im_path = _cfg.data_dir() / "reference" / "issuer_master.parquet"
-        issuer_master = _pd.read_parquet(im_path) if im_path.exists() else None
-        _DEBT_MATURITY_SOURCES = (issuer_master, root)
-    except Exception:  # noqa: BLE001 -- degrade, never break the build
-        _DEBT_MATURITY_SOURCES = (None, None)
-    return _DEBT_MATURITY_SOURCES
-
-
-def _debt_maturity_resolve(ticker: str):
-    """Resolve `ticker` to (cik, companyfacts_dict) via the issuer_master
-    identity chain only. Returns (None, None) when no ticker column is
-    available on issuer_master (GATE 0 finding) or the ticker does not
-    resolve -- never falls back to a name/theme matcher."""
-    issuer_master, root = _debt_maturity_sources()
-    if issuer_master is None or root is None:
-        return None, None
-    ticker_col = next((c for c in ("ticker", "symbol") if c in issuer_master.columns), None)
-    if ticker_col is None:
-        return None, None
-    rows = issuer_master[issuer_master[ticker_col].astype(str).str.upper() == ticker.upper()]
-    if rows.empty:
-        return None, None
-    cik = str(rows.iloc[0].get("cik") or "").strip()
-    if not cik:
-        return None, None
-    cik = cik.zfill(10)
-    facts_path = root / f"CIK{cik}.json"
-    if not facts_path.exists():
-        return cik, None
-    import json as _json  # noqa: PLC0415
-    try:
-        return cik, _json.loads(facts_path.read_text())
-    except Exception:  # noqa: BLE001
-        return cik, None
-
+from scripts.build_debt_maturity import load_debt_maturity_facts as _dm_load
 
 
 import json
@@ -4105,22 +4053,24 @@ def main() -> int:
             pass
         # ---- debt maturity ladder (packet B-F09-3, bounded pure producer) ----------
         # Top-level block in each stockdata JSON: engine.debt_maturity.v1.
-        # Identity is CIK-only via the issuer_master chain -- GATE 0 finding
-        # (2026-09-06): engine/fundamental_forensics/statement_service.py does
-        # not expose a securities_of_issuer() ticker->CIK resolver in this
-        # checkout, and its IssuerMaster is documented "No ticker. No latest."
-        # -- a real ticker->CIK path is not available yet. Per the frozen
-        # spec's own identity gate ("escalate; never name-match"), this loader
-        # degrades every ticker to not_applicable rather than inventing a
-        # name/theme matcher. Wiring the real resolver in is the remaining
-        # GATE 0 follow-up (see PR body / GAPS).
+        # Identity is CIK-only via scripts/build_debt_maturity.py's committed
+        # ticker->CIK ledger + issuer_master fallback (GATE 0, fixed 2026-09-06).
+        # A ticker that never resolves to a CIK is a distinct null state
+        # ("no_filings") from a resolved issuer whose cache has no facts yet
+        # ("no_filings" too -- the engine itself already gives this the
+        # correct, honest label) -- neither is hidden as not_applicable.
         try:
-            _dm_cik, _dm_facts = _debt_maturity_resolve(ticker)
+            _dm_cik, _dm_facts = _dm_load(ticker)
+            from engine.debt_maturity import extract_maturity_ladder as _dm_extract  # noqa: PLC0415
             if _dm_cik is None:
-                rec["debt_maturity"] = {"schema": "debt_maturity.v1", "status": "not_applicable"}
+                rec["debt_maturity"] = {
+                    "schema": "debt_maturity.v1", "status": "no_filings", "cik": None,
+                    "buckets": [], "total_reported_usd": None, "total_display": None,
+                    "near_share_pct": None, "buckets_reported": 0, "buckets_total": 6,
+                    "as_of": _dt.date.today().isoformat(),
+                }
             else:
-                from engine.debt_maturity import extract_maturity_ladder as _dm_extract  # noqa: PLC0415
-                rec["debt_maturity"] = _dm_extract(_dm_facts, cik=_dm_cik)
+                rec["debt_maturity"] = _dm_extract(_dm_facts, cik=_dm_cik, as_of=_dt.date.today())
         except Exception:  # noqa: BLE001 -- additive; must not break the stockdata build
             rec["debt_maturity"] = {"schema": "debt_maturity.v1", "status": "not_applicable"}
         # ---- confluence block (frozen Terminal contract, 2026-07-06) ---------------

@@ -91,22 +91,67 @@ def test_facts_without_maturity_tags_is_no_maturity_facts():
 
 def test_identity_is_cik_only():
     facts = _load("aapl_trimmed.json")
-    # a fixture whose entityName does not match the passed CIK still resolves
-    # purely off the CIK we pass — the module never reads entityName.
+    # the fixture carries its own "cik": 320193 (the real SEC companyfacts
+    # shape always does) -- a caller-supplied CIK that does NOT canonicalize
+    # to the same value must fail closed, never silently trust whichever
+    # value happened to be passed in.
     result = extract_maturity_ladder(facts, cik="0000999999", as_of=date(2025, 1, 1))
     assert result["cik"] == "0000999999"
-    assert result["status"] == "reported"
+    assert result["status"] == "identity_mismatch"
+    assert result["buckets"] == []
+    # the matching CIK (any zero-padding) resolves normally.
+    result_ok = extract_maturity_ladder(facts, cik=AAPL_CIK, as_of=date(2025, 1, 1))
+    assert result_ok["status"] == "reported"
     with pytest.raises(ValueError):
         extract_maturity_ladder(facts, cik="AAPL")  # a ticker/name is not a CIK
     with pytest.raises(ValueError):
         extract_maturity_ladder(facts, cik="")
 
 
+def test_unit_thousands_and_millions_scaled_to_dollars():
+    tag = "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths"
+    facts = {
+        "cik": 999999,
+        "facts": {"us-gaap": {tag: {"units": {"USDthousands": [
+            {"end": "2024-12-31", "val": 1234, "accn": "0000999999-25-000001",
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"},
+        ]}}}},
+    }
+    result = extract_maturity_ladder(facts, cik="0000999999", as_of=date(2025, 3, 1))
+    y1 = next(b for b in result["buckets"] if b["key"] == "y1")
+    assert y1["reported"] is True
+    assert y1["usd"] == 1234 * 1000
+
+    tag2 = "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo"
+    facts_m = {
+        "cik": 999999,
+        "facts": {"us-gaap": {tag2: {"units": {"USDmillions": [
+            {"end": "2024-12-31", "val": 5, "accn": "0000999999-25-000001",
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"},
+        ]}}}},
+    }
+    result_m = extract_maturity_ladder(facts_m, cik="0000999999", as_of=date(2025, 3, 1))
+    y2 = next(b for b in result_m["buckets"] if b["key"] == "y2")
+    assert y2["reported"] is True
+    assert y2["usd"] == 5 * 1_000_000
+
+
+def test_as_of_is_never_defaulted_from_the_clock():
+    # no as_of supplied at all -- purity means this must not consult a clock;
+    # the field is simply omitted (None) rather than silently stamped "today".
+    result = extract_maturity_ladder(None, cik=AAPL_CIK)
+    assert result["as_of"] is None
+    facts = _load("aapl_trimmed.json")
+    result2 = extract_maturity_ladder(facts, cik=AAPL_CIK)
+    assert result2["as_of"] is None
+    assert result2["period"]["stale"] is False  # no as_of -> never asserts staleness
+
+
 def test_module_is_pure():
     src = Path("engine/debt_maturity.py").read_text()
     tree = ast.parse(src)
     banned_calls = {"open", "urlopen"}
-    banned_attrs = {"now", "read_csv", "read_parquet"}
+    banned_attrs = {"now", "today", "read_csv", "read_parquet"}
     banned_modules = {"requests", "urllib", "pandas"}
 
     for node in ast.walk(tree):
@@ -164,6 +209,49 @@ def test_no_translated_title_attribute():
     assert "title=" not in src
 
 
+def test_resolve_cik_handles_float64_parquet_column(monkeypatch, tmp_path):
+    import types
+    import sys as _sys
+    import scripts.build_debt_maturity as bdm
+
+    monkeypatch.setattr(bdm, "_cik_ledger_path", lambda: tmp_path / "absent.json")
+
+    class _FakeRow(dict):
+        def get(self, key, default=None):
+            return dict.get(self, key, default)
+
+    class _FakeFrame:
+        columns = ["ticker", "cik"]
+        empty = False
+
+        def __getitem__(self, _expr):
+            return self
+
+        def astype(self, _t):
+            return self
+
+        @property
+        def str(self):
+            return self
+
+        def upper(self):
+            return self
+
+        def __eq__(self, _other):
+            return self
+
+        @property
+        def iloc(self):
+            return [_FakeRow(cik=320193.0)]
+
+    fake_pd = types.SimpleNamespace(read_parquet=lambda _p: _FakeFrame())
+    monkeypatch.setitem(_sys.modules, "pandas", fake_pd)
+    monkeypatch.setattr(bdm, "_issuer_master_path", lambda: Path(__file__))
+
+    cik = bdm.resolve_cik("AAPL")
+    assert cik == "0000320193"
+
+
 def test_stock_page_wiring():
     ticker_tmpl = Path("templates/ticker.html.j2").read_text()
     assert '{% include "_debt_maturity.html.j2" %}' in ticker_tmpl
@@ -182,7 +270,7 @@ def test_sections_gate_ignores_null_panel():
     base_blob = {"_marker": True}
     base = btp.sections_available(base_blob, {}, agg, "TEST")
 
-    for status in ("no_filings", "no_maturity_facts", "not_applicable"):
+    for status in ("no_filings", "no_maturity_facts", "not_applicable", "identity_mismatch"):
         blob = dict(base_blob, debt_maturity={"status": status})
         with_null = btp.sections_available(blob, {}, agg, "TEST")
         assert with_null == base, f"status={status} unexpectedly added to the gate"
