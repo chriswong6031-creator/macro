@@ -89,7 +89,7 @@ verified:
   command: git push origin HEAD:refs/heads/codex/connected-office-lane-observation-20260906-websol; gh pr create
     --draft; fresh PR508 metadata and files readback.
   result: Mastermind PR508 OPEN/DRAFT at d5301d65df5f2ed6565a0635aa8f51d668f53000, tree ad944ba570ffbe63a224ea792e840700fbdcf9e4.
-    Exactly four new paths, one commit; no production source or installed service changed.
+    Exactly four new paths, one commit; no existing production source file or installed service was changed.
 - claim: The actual implementation was delivered to the original coordination parent.
   command: Fresh Slack thread read followed by slack_send_message to D0BTAKPHX8S/1788689346.571769.
   result: Delivery 1788705440.125369 names PR508 and requests existing-owner review/adoption. No native consumption,
