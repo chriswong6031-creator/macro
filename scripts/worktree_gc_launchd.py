@@ -16,7 +16,7 @@ Two facts broke that quietly:
     CONFIG simply makes conservative decisions with no signal that policy and
     practice have diverged.
 
-So this wrapper re-extracts BOTH the tool and the config from ``origin/main``
+So this wrapper re-extracts the tool, its storage helper and the config from ``origin/main``
 on every run. The primary checkout serves only as the GIT VANTAGE POINT — the
 place worktrees are registered and refs are fetched — which is the one role it
 cannot be stale at. All drift directions in the extracted pair are conservative
@@ -72,12 +72,19 @@ def main() -> int:
     if fetched.returncode != 0:
         print("(fetch failed — proceeding on last-known origin/main)", flush=True)
 
+    resolved = _git("rev-parse", "--verify", "origin/main^{commit}")
+    if resolved.returncode != 0 or not resolved.stdout.strip():
+        print("cannot resolve origin/main — refusing mixed or missing source", flush=True)
+        return 1
+    source = resolved.stdout.decode().strip()
+
     with tempfile.TemporaryDirectory(prefix="worktree-gc-") as work:
         tool = Path(work) / "worktree_gc.py"
         cfg = Path(work) / "config.json"
         for target, path in ((tool, "scripts/worktree_gc.py"),
+                             (Path(work) / "worktree_storage.py", "scripts/worktree_storage.py"),
                              (cfg, "config/worktree_gc.json")):
-            shown = _git("show", f"origin/main:{path}")
+            shown = _git("show", f"{source}:{path}")
             if shown.returncode != 0 or not shown.stdout:
                 print(f"cannot read {path} from origin/main — refusing "
                       "(fail-closed: policy truth unavailable)", flush=True)

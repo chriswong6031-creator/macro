@@ -46,6 +46,8 @@ jobs:
     # retained because the selftest reads fixtures through the same traversal.
     scope: exclusive
     paths:
+      - "scripts/__init__.py"
+      - "scripts/worktree_storage.py"
       - "config/**"
       - "data/**"
       - "scripts/check_inline_js.py"
@@ -1099,6 +1101,8 @@ jobs:
     # suites read can still start this job.
     scope: exclusive
     paths:
+      - "scripts/__init__.py"
+      - "scripts/worktree_storage.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/earnings_release/receipts.py"
@@ -3375,6 +3379,7 @@ jobs:
     # narrow those.
     scope: exclusive
     paths:
+      - "scripts/worktree_storage.py"
       - "contracts/evidence_foundation/vocabulary.v1.json"
       - "contracts/evidence_foundation/reference.v1.schema.json"
       - "contracts/evidence_foundation/recipe.v1.schema.json"
@@ -3938,7 +3943,7 @@ jobs:
       # vacuous-refusal suite below already owns the R8 honesty rule. stdlib +
       # pytest; synthetic git repos under tmp_path, no data/ or site/ reads.
       - name: sparse session-worktree profile + Warp conversation-carrier lifecycle
-        run: python -m pytest tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py -q
+        run: python -m pytest tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py tests/test_worktree_storage.py tests/test_install_worktree_storage.py tests/test_worktree_gc_launchd.py -q
       # Same subject (scripts/worktree_sparse.py), same job, for the same reason
       # the step above exists: #5531 landed its suite named by no run: step and
       # pack-1 went red on every PR the moment it merged. This suite owns the
@@ -12239,6 +12244,8 @@ jobs:
     # exact uncovered file — add it here.
     scope: exclusive
     paths:
+      - "scripts/__init__.py"
+      - "scripts/worktree_storage.py"
       - "collectors/base.py"
       - "collectors/fda_shortages.py"
       - "config/**"
