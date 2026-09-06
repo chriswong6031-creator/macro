@@ -13217,6 +13217,10 @@ jobs:
       # as a Python import edge.
       - name: Winner Health inert surface design freeze
         run: python -m pytest tests/test_winner_health_design_freeze.py -q
+      # Market Ontology F06 scope freeze (records only, B-F06-2): the no-ranker
+      # ceiling and the B1B display-only panel map must not drift out of the doc.
+      - name: Market Ontology F06 screener/cockpit scope freeze
+        run: python -m pytest tests/test_market_ontology_f06_scope.py -q
 
   options-nbbo-cohort:
     # Frozen same-basis MomoEdge comparison infrastructure. The suite is fully
