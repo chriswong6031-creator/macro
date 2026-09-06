@@ -13,12 +13,12 @@
     "evidence_sources": {
       "cn": {
         "dataset": "data/china_filings/filings.parquet",
-        "newest_observation": "2026-09-01",
+        "newest_observation": "2026-09-04",
         "provenance": "CNInfo (\u5de8\u6f6e\u8d44\u8baf\u7f51) SSE+SZSE disclosure metadata (collectors/china_filings.py)"
       },
       "hk": {
         "dataset": "data/hk_shorts/positions.parquet + data/hk_shorts/turnover.parquet",
-        "newest_observation": "2026-09-01",
+        "newest_observation": "2026-09-03",
         "provenance": "SFC official Short Position Reports + HKEX official turnover statistics (collectors/hk_shorts.py)"
       }
     },
@@ -35,12 +35,6 @@
           "node_id": "co:cn:300229.SZ",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "300229.SZ"
-        },
-        {
-          "listing_key": "CN-XSHE-301293",
-          "node_id": "co:cn:301293.SZ",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "301293.SZ"
         },
         {
           "listing_key": "CN-XSHE-301556",
@@ -67,28 +61,16 @@
           "symbol": "600559.SS"
         },
         {
-          "listing_key": "CN-XSHG-601126",
-          "node_id": "co:cn:601126.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "601126.SS"
-        },
-        {
           "listing_key": "CN-XSHG-603915",
           "node_id": "co:cn:603915.SS",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "603915.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-688586",
-          "node_id": "co:cn:688586.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "688586.SS"
         }
       ],
       "hk": []
     },
     "refused_this_run": {
-      "cn": 10,
+      "cn": 7,
       "hk": 0
     },
     "resolved_this_run": {
@@ -96,7 +78,7 @@
       "hk": 0
     },
     "resolved_total": {
-      "cn": 1011,
+      "cn": 1014,
       "hk": 147
     },
     "target_n": {
@@ -106,7 +88,7 @@
     "target_population_source": "data/theme_graph/nodes.parquet (kind=company, market_scope in cn/hk)"
   },
   "cik_map_snapshot": "2026-08-31",
-  "code_version": "507219e21e8360fe068745cf57037465139a6036",
+  "code_version": "f14e05e1de03f018c196aa216d5297bd3d56820c",
   "coverage": {
     "resolved": 705,
     "total": 715,
@@ -131,7 +113,7 @@
     "reference.issuer_migrations",
     "reference.security_migrations"
   ],
-  "generated_at": "2026-09-04T00:35:59",
+  "generated_at": "2026-09-06T16:56:03",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -147,16 +129,16 @@
     }
   ],
   "inputs": {
-    "config.yml": "ec8a760ad92d8a0079303fdbf34d52b3eca5f4e2c630d0bd734acda4f49a664d",
+    "config.yml": "57da871abb2cffc75dd534578ad81e78f19ce8f683af3c7c93308c1c06457246",
     "config/delisted_symbols.yml": "6cefebced6f19f7d612078f369e47ae4cd4d23ac35f6ecfbd732f4dd4a6e661a",
     "data/baskets/membership.json": "b968e9812f60494bd02bbc0d5ad4b8dc67dcb90a939426728e9db6befba9678a",
     "data/breadth/constituents.parquet": "58bbb0268564fe8069fc940f5dc481b9598062366e496d82441c99658e45265e",
-    "data/china_filings/filings.parquet": "a4b8c967fec07baff6c7199872896fc31bf0f6ccdeef4c8444b1f365a75b246e",
-    "data/hk_shorts/positions.parquet": "bbd7aaf3e420fe3137d8beb7009fa95660700d93ade6de83af86c3f6241acb1f",
-    "data/hk_shorts/turnover.parquet": "89c66202e2b080f0cde7bf234273d9c5882a8eabe4d5dd0395cfcc4841acd461",
+    "data/china_filings/filings.parquet": "c70ffcdd1e83be57ba7a9f2d32b733ff9b082dd9e0e33a8327e2cde5cb53a105",
+    "data/hk_shorts/positions.parquet": "64199df048feee073c9710e728c48e8526e001a21237022223ea0aa897f2a2c5",
+    "data/hk_shorts/turnover.parquet": "1bcd89ad3d13a74c5da8b34db95fca477f259ace0b312e783312c45ad9e1258e",
     "data/symbol_directory/cik_map": "b61f78452c3b0bcea05416c4ff131d034c86c113f58d131d21224ac7f0ca09e3",
-    "data/symbol_directory/snapshots": "f6d878907e4fb87dd95d6f8da25d271050094726dbf36db4822bc04e2bfc3580",
-    "data/theme_graph/nodes.parquet": "145d1994bbf25360afb4ca69cc0d1b6dd7fce25686eac2f5cb1aa483a4559c7e",
+    "data/symbol_directory/snapshots": "839269a602db10856d0bacec16a4e1d69e63787d170ae6f08cea0ef08c36d842",
+    "data/theme_graph/nodes.parquet": "aec75eba73a401fe360c3332a6bdc67ab170368a57dae0c159612138d95bf4e1",
     "lib/ticker_aliases.py": "6a6da16e40de28e9ac3eb9f319ca6b1a137a479656101b590b9264211e3e70fd"
   },
   "issuer": {
@@ -189,7 +171,7 @@
     ],
     "state_counts": {
       "DEFERRED_IDENTITY_EXCEPTION": 1,
-      "NO_ISSUER_EVIDENCE": 1161,
+      "NO_ISSUER_EVIDENCE": 1164,
       "RESOLVED": 1211
     }
   },
@@ -241,29 +223,29 @@
   "row_counts": {
     "issuer_master": 1212,
     "issuer_migrations": 3,
-    "security_master": 2374,
+    "security_master": 2377,
     "security_migrations": 1,
-    "vendor_alias_rows_readable": 6026,
-    "vendor_aliases": 6026
+    "vendor_alias_rows_readable": 6029,
+    "vendor_aliases": 6029
   },
   "security": {
     "era": "security_supersession_duplicate_mint_v1",
     "era_migrations_total": 1,
     "migrations_this_run": 0,
     "state_counts": {
-      "ACTIVE": 2373,
+      "ACTIVE": 2376,
       "SUPERSEDED_DUPLICATE_MINT": 1
     }
   },
   "seed_counts": {
     "delisted_keys": 6,
-    "directory_symbols": 13187,
-    "gmi_seed_keys": 1238,
+    "directory_symbols": 13188,
+    "gmi_seed_keys": 1239,
     "ticker_fixups": 2,
     "ticker_key_migrations": 1,
     "universe_keys": 710
   },
-  "symbol_directory_snapshot": "2026-09-03",
+  "symbol_directory_snapshot": "2026-09-06",
   "undated_renames": [
     {
       "evidence": "lib/ticker_aliases.py YAHOO_FETCH_ALIASES FI->FISV (vendor LAGS the rename); config.yml breadth.ticker_fixups FISV->FI; no in-repo date for the 2023 change",
@@ -441,20 +423,10 @@
       }
     ],
     "resolved_this_run": 0,
-    "resolved_total": 1210,
+    "resolved_total": 1211,
     "structural_check_exempt_exit_ledger": [],
-    "target_n": 1236,
+    "target_n": 1237,
     "target_population_source": "data/theme_graph/nodes.parquet (kind=company, market_scope=us)"
   },
-  "vendor_alias_prunes": [
-    {
-      "ingested_at": "2026-08-13T13:08:12",
-      "prune_class": "same_id_refinement",
-      "security_id": "SEC:US-XNYS-EQR",
-      "valid_from": null,
-      "valid_to": null,
-      "vendor": "store",
-      "vendor_symbol": "EQR"
-    }
-  ]
+  "vendor_alias_prunes": []
 }

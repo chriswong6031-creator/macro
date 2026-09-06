@@ -1,6 +1,6 @@
 {
 "filter":"idx_rut",
-"as_of":"2026-09-05 22:59 UTC",
+"as_of":"2026-09-06 14:34 UTC",
 "n":1944,
 "total_reported":1944,
 "unmapped_industries":[],
@@ -958,34 +958,10 @@
 "market_cap_b":5.74
 },
 {
-"ticker":"FTDR",
-"company":"Frontdoor Inc",
-"industry":"Personal Services",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":5.69
-},
-{
-"ticker":"LGND",
-"company":"Ligand Pharmaceuticals Inc",
-"industry":"Biotechnology",
-"sector":"Healthcare",
-"country":"USA",
-"market_cap_b":5.69
-},
-{
-"ticker":"MXL",
-"company":"MaxLinear Inc",
-"industry":"Semiconductors",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":5.69
-},
-{
-"ticker":"ERAS",
-"company":"Erasca Inc",
-"industry":"Biotechnology",
-"sector":"Healthcare",
+"ticker":"AROC",
+"company":"Archrock Inc",
+"industry":"Oil & Gas Equipment & Services",
+"sector":"Energy",
 "country":"USA",
 "market_cap_b":5.73
 },
@@ -1022,10 +998,10 @@
 "market_cap_b":5.71
 },
 {
-"ticker":"CVLT",
-"company":"Commvault Systems Inc",
-"industry":"Software - Application",
-"sector":"Technology",
+"ticker":"FTDR",
+"company":"Frontdoor Inc",
+"industry":"Personal Services",
+"sector":"Consumer Cyclical",
 "country":"USA",
 "market_cap_b":5.69
 },
@@ -1446,10 +1422,10 @@
 "market_cap_b":5.03
 },
 {
-"ticker":"MRCY",
-"company":"Mercury Systems Inc",
-"industry":"Aerospace & Defense",
-"sector":"Industrials",
+"ticker":"OGS",
+"company":"ONE Gas Inc",
+"industry":"Utilities - Regulated Gas",
+"sector":"Utilities",
 "country":"USA",
 "market_cap_b":5.02
 },
@@ -1970,14 +1946,6 @@
 "company":"Ondas Inc",
 "industry":"Communication Equipment",
 "sector":"Technology",
-"country":"Uruguay",
-"market_cap_b":4.35
-},
-{
-"ticker":"OPLN",
-"company":"Openlane Inc",
-"industry":"Auto & Truck Dealerships",
-"sector":"Consumer Cyclical",
 "country":"USA",
 "market_cap_b":4.35
 },
@@ -2686,22 +2654,6 @@
 "market_cap_b":3.58
 },
 {
-"ticker":"PLMR",
-"company":"Palomar Holdings Inc",
-"industry":"Insurance - Property & Casualty",
-"sector":"Financial",
-"country":"USA",
-"market_cap_b":3.59
-},
-{
-"ticker":"HNI",
-"company":"HNI Corp",
-"industry":"Furnishings, Fixtures & Appliances",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":3.58
-},
-{
 "ticker":"LXP",
 "company":"LXP Industrial Trust",
 "industry":"REIT - Industrial",
@@ -2886,14 +2838,6 @@
 "market_cap_b":3.45
 },
 {
-"ticker":"BELFB",
-"company":"Bel Fuse Inc",
-"industry":"Electronic Components",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":3.44
-},
-{
 "ticker":"HIW",
 "company":"Highwoods Properties Inc",
 "industry":"REIT - Office",
@@ -2972,22 +2916,6 @@
 "sector":"Industrials",
 "country":"USA",
 "market_cap_b":3.41
-},
-{
-"ticker":"RXO",
-"company":"RXO Inc",
-"industry":"Trucking",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":3.41
-},
-{
-"ticker":"BELFA",
-"company":"Bel Fuse Inc",
-"industry":"Electronic Components",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":3.4
 },
 {
 "ticker":"CURB",
@@ -3859,15 +3787,7 @@
 "industry":"Banks - Regional",
 "sector":"Financial",
 "country":"USA",
-"market_cap_b":2.76
-},
-{
-"ticker":"AMBA",
-"company":"Ambarella Inc",
-"industry":"Semiconductor Equipment & Materials",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":2.76
+"market_cap_b":2.77
 },
 {
 "ticker":"ABM",
@@ -4334,10 +4254,10 @@
 "market_cap_b":2.54
 },
 {
-"ticker":"NEOG",
-"company":"Neogen Corp",
-"industry":"Medical Devices",
-"sector":"Healthcare",
+"ticker":"IVT",
+"company":"InvenTrust Properties Corp",
+"industry":"REIT - Retail",
+"sector":"Real Estate",
 "country":"USA",
 "market_cap_b":2.54
 },
@@ -4366,10 +4286,10 @@
 "market_cap_b":2.53
 },
 {
-"ticker":"DRH",
-"company":"Diamondrock Hospitality Co",
-"industry":"REIT - Hotel & Motel",
-"sector":"Real Estate",
+"ticker":"PHIN",
+"company":"PHINIA Inc",
+"industry":"Auto Parts",
+"sector":"Consumer Cyclical",
 "country":"USA",
 "market_cap_b":2.53
 },
@@ -5414,6 +5334,14 @@
 "market_cap_b":2.03
 },
 {
+"ticker":"ASAN",
+"company":"Asana Inc",
+"industry":"Software - Application",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":2.02
+},
+{
 "ticker":"BLBD",
 "company":"Blue Bird Corp",
 "industry":"Farm & Heavy Construction Machinery",
@@ -6451,14 +6379,6 @@
 "industry":"Packaged Foods",
 "sector":"Consumer Defensive",
 "country":"USA",
-"market_cap_b":1.58
-},
-{
-"ticker":"JJSF",
-"company":"J&J Snack Foods Corp",
-"industry":"Packaged Foods",
-"sector":"Consumer Defensive",
-"country":"USA",
 "market_cap_b":1.57
 },
 {
@@ -7114,22 +7034,6 @@
 "company":"Sprinklr Inc",
 "industry":"Software - Application",
 "sector":"Technology",
-"country":"USA",
-"market_cap_b":1.37
-},
-{
-"ticker":"FMBH",
-"company":"First Mid Bancshares Inc",
-"industry":"Banks - Regional",
-"sector":"Financial",
-"country":"USA",
-"market_cap_b":1.37
-},
-{
-"ticker":"AZTA",
-"company":"Azenta Inc",
-"industry":"Medical Instruments & Supplies",
-"sector":"Healthcare",
 "country":"USA",
 "market_cap_b":1.37
 },
@@ -8298,6 +8202,14 @@
 "company":"Equity Bancshares Inc",
 "industry":"Banks - Regional",
 "sector":"Financial",
+"country":"USA",
+"market_cap_b":1.05
+},
+{
+"ticker":"GLIBA",
+"company":"Liberty Capital Corp",
+"industry":"Telecom Services",
+"sector":"Communication Services",
 "country":"USA",
 "market_cap_b":1.05
 },
@@ -9790,9 +9702,9 @@
 "market_cap_b":0.7566
 },
 {
-"ticker":"WYFI",
-"company":"Whitefiber Inc",
-"industry":"Information Technology Services",
+"ticker":"LYTS",
+"company":"LSI Industries Inc",
+"industry":"Electronic Components",
 "sector":"Technology",
 "country":"USA",
 "market_cap_b":0.7538
@@ -12502,10 +12414,10 @@
 "market_cap_b":0.3868
 },
 {
-"ticker":"WSBF",
-"company":"Waterstone Financial Inc",
-"industry":"Banks - Regional",
-"sector":"Financial",
+"ticker":"CRNC",
+"company":"Cerence Inc",
+"industry":"Software - Application",
+"sector":"Technology",
 "country":"USA",
 "market_cap_b":0.3858
 },
@@ -12982,42 +12894,10 @@
 "market_cap_b":0.3357
 },
 {
-"ticker":"BCML",
-"company":"BayCom Corp",
-"industry":"Banks - Regional",
-"sector":"Financial",
-"country":"USA",
-"market_cap_b":0.3363
-},
-{
-"ticker":"LE",
-"company":"Lands' End Inc",
-"industry":"Apparel Retail",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":0.3363
-},
-{
-"ticker":"FLXS",
-"company":"Flexsteel Industries Inc",
-"industry":"Furnishings, Fixtures & Appliances",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":0.3362
-},
-{
-"ticker":"PTLO",
-"company":"Portillos Inc",
-"industry":"Restaurants",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":0.3357
-},
-{
-"ticker":"BBW",
-"company":"Build A Bear Workshop Inc",
-"industry":"Specialty Retail",
-"sector":"Consumer Cyclical",
+"ticker":"NREF",
+"company":"NexPoint Real Estate Finance Inc",
+"industry":"REIT - Mortgage",
+"sector":"Real Estate",
 "country":"USA",
 "market_cap_b":0.3353
 },

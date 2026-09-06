@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-09-05 05:40 UTC",
+"as_of":"2026-09-06 16:19 UTC",
 "n":102,
 "total_reported":102,
 "unmapped_industries":[],
@@ -27,7 +27,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4123.38
+"market_cap_b":4121.96
 },
 {
 "ticker":"GOOGL",
@@ -35,7 +35,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4120.79
+"market_cap_b":4121.96
 },
 {
 "ticker":"MSFT",
@@ -730,7 +730,7 @@
 "company":"Ferrovial N. V",
 "industry":"Engineering & Construction",
 "sector":"Industrials",
-"country":"Netherlands",
+"country":"Spain",
 "market_cap_b":42.11
 },
 {

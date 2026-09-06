@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-05",
+ "asof": "2026-09-06",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -659,7 +659,7 @@
     {
      "name": "SSTK",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9991) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "STRS",
@@ -674,7 +674,7 @@
     {
      "name": "SXC",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9984) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "TBI",
@@ -704,7 +704,7 @@
     {
      "name": "TTEC",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9994) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "TTGT",
@@ -729,7 +729,7 @@
     {
      "name": "UVE",
      "kind": "registry_mismatch",
-     "detail": "same instrument as its dead-registry rows (corr 0.9981) \u2014 the registry, not the store, carries foreign/live tape"
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
      "name": "VNDA",
@@ -776,7 +776,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59872
+  "ledger_rows": 59878
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
@@ -2210,11 +2210,11 @@
     },
     {
      "ticker": "RYAM",
-     "registry_last": "2023-06-16",
+     "registry_last": "2023-08-17",
      "store_tip": "2026-09-04",
-     "days_past_death": 1176,
+     "days_past_death": 1114,
      "overlap": {
-      "n_overlap": 492,
+      "n_overlap": 2310,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2223,11 +2223,11 @@
     },
     {
      "ticker": "SENEA",
-     "registry_last": "2023-07-03",
+     "registry_last": "2023-08-31",
      "store_tip": "2026-09-04",
-     "days_past_death": 1159,
+     "days_past_death": 1100,
      "overlap": {
-      "n_overlap": 502,
+      "n_overlap": 1208,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2301,14 +2301,14 @@
     },
     {
      "ticker": "SSTK",
-     "registry_last": "2026-06-02",
+     "registry_last": "2026-07-31",
      "store_tip": "2026-09-04",
-     "days_past_death": 94,
+     "days_past_death": 35,
      "overlap": {
-      "n_overlap": 1233,
-      "ret_corr_full": 0.9991,
+      "n_overlap": 1938,
+      "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
-      "min_ret_corr": 0.9991
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -2327,14 +2327,14 @@
     },
     {
      "ticker": "SXC",
-     "registry_last": "2026-03-23",
+     "registry_last": "2026-05-21",
      "store_tip": "2026-09-04",
-     "days_past_death": 165,
+     "days_past_death": 106,
      "overlap": {
-      "n_overlap": 1184,
-      "ret_corr_full": 0.9984,
-      "ret_corr_recent": 0.999,
-      "min_ret_corr": 0.9984
+      "n_overlap": 1890,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -2353,11 +2353,11 @@
     },
     {
      "ticker": "TCMD",
-     "registry_last": "2022-06-21",
+     "registry_last": "2022-08-19",
      "store_tip": "2026-09-04",
-     "days_past_death": 1536,
+     "days_past_death": 1477,
      "overlap": {
-      "n_overlap": 243,
+      "n_overlap": 949,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2379,11 +2379,11 @@
     },
     {
      "ticker": "THRY",
-     "registry_last": "2025-12-22",
+     "registry_last": "2026-02-19",
      "store_tip": "2026-09-04",
-     "days_past_death": 256,
+     "days_past_death": 197,
      "overlap": {
-      "n_overlap": 1123,
+      "n_overlap": 1339,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2405,14 +2405,14 @@
     },
     {
      "ticker": "TTEC",
-     "registry_last": "2024-06-24",
+     "registry_last": "2024-08-22",
      "store_tip": "2026-09-04",
-     "days_past_death": 802,
+     "days_past_death": 743,
      "overlap": {
-      "n_overlap": 747,
-      "ret_corr_full": 0.9994,
-      "ret_corr_recent": 0.9998,
-      "min_ret_corr": 0.9994
+      "n_overlap": 1453,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
@@ -2457,11 +2457,11 @@
     },
     {
      "ticker": "USNA",
-     "registry_last": "2025-10-31",
+     "registry_last": "2025-12-29",
      "store_tip": "2026-09-04",
-     "days_past_death": 308,
+     "days_past_death": 249,
      "overlap": {
-      "n_overlap": 1088,
+      "n_overlap": 1791,
       "ret_corr_full": 1.0,
       "ret_corr_recent": 1.0,
       "min_ret_corr": 1.0
@@ -2470,14 +2470,14 @@
     },
     {
      "ticker": "UVE",
-     "registry_last": "2023-09-18",
+     "registry_last": "2023-11-16",
      "store_tip": "2026-09-04",
-     "days_past_death": 1082,
+     "days_past_death": 1023,
      "overlap": {
-      "n_overlap": 555,
-      "ret_corr_full": 0.9981,
-      "ret_corr_recent": 0.9981,
-      "min_ret_corr": 0.9981
+      "n_overlap": 1262,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
      },
      "listed_now": true
     },
