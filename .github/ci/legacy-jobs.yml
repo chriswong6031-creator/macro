@@ -13116,6 +13116,12 @@ jobs:
       - tests/test_winner_health_design_freeze.py
       - tests/test_winner_health_page.py
       - templates/winner_health.html.j2
+      # The F06 scope-freeze doc is declared here (not just the test) because the
+      # guard's own subject is the markdown, not a Python import: a future PR that
+      # edits or deletes the no-ranker ceiling line must select this job. Same
+      # precedent as templates/winner_health.html.j2 above.
+      - research/market_intelligence_productization/MARKET_ONTOLOGY_F06_SCREENER_AND_COCKPIT_SCOPE_2026-09-06.md
+      - tests/test_market_ontology_f06_scope.py
     timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:

@@ -79,6 +79,35 @@ the site has exactly two nav families and this packet adds no third.
 `can_execute: false` from the object's `authority` block. A panel may not add authority
 the object does not carry.
 
+## 3b. Disposition: chart-first Terminal/Desk projection is NOT in this map (and why)
+
+`agentos/workstreams/WS-MARKET-OS.md` defines wave **B1B-B6** as "Terminal/Desk
+projection and chart-first security cockpit over frozen `security_state.v1`", and
+`MARKET_ONTOLOGY_F00B_CURRENT_CAPABILITY_CROSSWALK_2026-08-28.csv:25` records
+"Chart-first security cockpit (B1B-B6) unbuilt". The eight-panel map in §3 above is
+deliberately **not** that surface, and this section is the disposition the crosswalk
+row is missing:
+
+- **What §3 freezes:** the *first* B1B slice only — a plain-word, tabular reading of
+  `security_state.v1` (Overview through Owner/model receipts). No chart renders
+  anywhere in that map; every row is text/table, by design of this scope freeze.
+- **What is deferred, not dropped:** the chart-first Terminal/Desk projection
+  (candlestick/series view, cross-linked to the Terminal per the funnel-follows-the-
+  experience law) is **wave B1B-B6's own later slice**, gated the same way every
+  other build slice in this doc is gated — behind `#6920` (second issuer) plus a
+  dedicated design pass, because a chart panel is a taste-as-deliverable surface
+  under the Design lane, not a mechanical table row.
+  - **Disposition recorded:** the B1B-B6 chart/Terminal-Desk panel is
+    `SCOPE_DEFERRED` — no ceiling change, no ranker, no authority; it inherits the
+    same `can_rank: false` / `can_gate: false` / `can_size: false` block as every
+    panel in §3 once it ships. It is out of scope for *this* records-only packet,
+    which ships zero code, zero template, and zero pixel (§0.6, §7).
+  - **Why it is not a ninth row in the §3 table:** §3 enumerates the panels this
+    scope freeze is dispositioning *now*; a chart panel with no design spec pinned
+    would be exactly the "component assembly on unpinned design" failure this
+    program's spawn-handoff law forbids. Freezing its scope here, without inventing
+    its markup, keeps the ceiling honest.
+
 ## 4. Nulls are printed, in plain words
 
 All nine `coverage_state` values and their reader-facing wording:
