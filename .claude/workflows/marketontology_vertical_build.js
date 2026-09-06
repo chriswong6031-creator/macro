@@ -178,7 +178,7 @@ PROCEDURE (fleet law, CLAUDE.md):
 3. Run the touched tests: python -m pytest <files> -q (macro) — never the full suite in a sparse tree.
 4. Commit (message ends with "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"), push -u origin ${branchOf(p)}, then: gh pr create -R ${repoOf(p)} --base ${defaultBranchOf(p)} --title "[MO-${CEO}${WAVE}] ${p.id}: ${p.title}" --body-file <file> (body: what/why, ledger rows, acceptance evidence per gate, crops, tests, live URL, and the line "Generated with Claude Code"), then gh pr edit <n> --add-label merge-on-green.
 5. Preflight gh quota before any watch (gh api rate_limit --jq .resources.core.remaining); never gh run watch under --interval 60; never --paginate check-runs.
-NOT DONE UNLESS: PR exists, is not Draft, is armed with merge-on-green, tests pass locally, the PR body carries the acceptance evidence, and every acceptance line is addressed or listed in GAPS.
+NOT DONE UNLESS: PR exists as Draft, tests pass locally, the PR body carries the acceptance evidence, and every acceptance line is addressed or listed in GAPS. It must NOT be armed with merge-on-green yet.
 ${RETURN_LINE}`
 
 const reviewPrompt = (p, build) => `ROUTE: review
@@ -210,15 +210,15 @@ ${RETURN_LINE}`
 
 const shipPrompt = (p, build) => `ROUTE: build
 MISSION: Take PR #${build.pr_number} (${build.pr_url}) to MERGED and LIVE-VERIFIED, returning proof.
-${BUDGET(20, 'The single watch call counts as one call.')}
+${BUDGET(20, 'Checking checks is a bounded poll loop (see step 2), not a single long watch call.')}
 WHY: DONE for a packet is merged + live (fleet law); an open PR is abandoned work.
 SCOPE: waiting on checks, merging, live verification, proof.
 OUT OF SCOPE: code changes (if a check is genuinely red on this head, return BLOCKED with the failing job name and log excerpt so the Meta-CEO can commission a fix).
 FROZEN SPEC: n/a. OWNED FILES: none. TESTS: none to write.
 ${PACKET_BLOCK(p)}
 PROCEDURE:
-1. Preflight: gh api rate_limit --jq .resources.core.remaining (stop and return BLOCKED if < 300).
-2. Wait for CONCLUDED checks with exactly ONE watcher: gh pr checks ${build.pr_number} -R ${repoOf(p)} --watch --interval 150 (in the foreground; a macro ci.yml run takes 30-45 min). "Workers Builds: macro" red is known-spurious and ignorable. A pending check is not a pass.
+1. Preflight: gh api rate_limit --jq .resources.core.remaining (stop and return BLOCKED if < 300). This stage runs only after review verdict PASS: mark the PR Ready (gh pr ready ${build.pr_number} -R ${repoOf(p)} if it is still Draft) and arm the sweeper now: gh pr edit ${build.pr_number} -R ${repoOf(p)} --add-label merge-on-green.
+2. A Bash call is capped at 10 minutes, so \`gh pr checks --watch\` on a 30-45 min macro ci.yml run will be killed before it concludes: do NOT use a single foreground watch. Instead poll in bounded rounds, each its own Bash call (each \`sleep\` >=90s to satisfy quota law): \`for i in $(seq 1 3); do gh pr checks ${build.pr_number} -R ${repoOf(p)} --json name,state,conclusion --jq '.[] | [.name,.state,.conclusion] | @tsv'; sleep 170; done\`. Repeat across multiple such calls until every check has CONCLUDED ("Workers Builds: macro" red is known-spurious and ignorable; PENDING/QUEUED is not a pass). If checks are still pending when this stage's budget wall is reached, return PARTIAL naming the armed merge-on-green sweeper as the eventual merge performer and live verification as still owed.
 3. Fresh-read state: gh pr view ${build.pr_number} -R ${repoOf(p)} --json state,mergedAt,mergeCommit,headRefOid,labels,isDraft,reviewDecision. If the merge-on-green sweeper already merged it, record the sha. Otherwise, on all-concluded-green: gh pr merge ${build.pr_number} -R ${repoOf(p)} --squash --delete-branch. If merge-blocked by a conflict: return BLOCKED naming the conflicting paths.
 4. Live verification (${p.repo}): ${p.repo === 'terminal'
     ? 'merge to master triggers /opt/terminal/terminal-build.sh; poll https://app.mastermind-x.com (curl -sI, then curl -s the packet route) every 120s up to 20 min until the new build serves the change (a markup/text marker from the diff); record HTTP status and the matched marker.'
@@ -248,9 +248,14 @@ const results = await pipeline(
       label: `build:${p.id}`, phase: 'Build', schema: BUILD_SCHEMA, agentType: 'builder', effort: 'medium', isolation: 'worktree',
     })
     // Continuation: a builder cut by the 30-call cap returns PARTIAL with remaining_steps; resume on the same branch (max 3 times).
-    for (let k = 1; k <= 3 && build && build.status === 'PARTIAL' && build.evidence && build.evidence.remaining_steps && build.evidence.remaining_steps.length; k++) {
+    for (let k = 1; k <= 3 && (!build || !build.evidence || !build.evidence.pr_number || (build.status === 'PARTIAL' && build.evidence.remaining_steps && build.evidence.remaining_steps.length)); k++) {
       log(`${p.id}: build continuation ${k} (${build.evidence.remaining_steps.length} steps left)`)
-      const cont = `CONTINUATION ${k}: a previous builder already pushed WIP to branch ${branchOf(pp)} (head ${build.evidence.head_sha}, PR ${build.evidence.pr_url || 'not yet opened'}). First: git fetch origin ${branchOf(pp)} && git checkout -B ${branchOf(pp)} origin/${branchOf(pp)}. Then do ONLY these remaining steps, in order:${build.evidence.remaining_steps.map((st, i) => `\n  ${i + 1}. ${st}`).join('')}\n\n`
+      const hadEvidence = build && build.evidence
+      const salvage = hadEvidence
+        ? `a previous builder already pushed WIP to branch ${branchOf(pp)} (head ${build.evidence.head_sha}, PR ${build.evidence.pr_url || 'not yet opened'})`
+        : `the previous builder returned no result (likely cut off at the 30-call cap with NO StructuredOutput). Before doing anything else, probe for salvage: git ls-remote --heads origin ${branchOf(pp)} (does the branch exist on origin?) and gh pr list -R ${repoOf(pp)} --head ${branchOf(pp)} --json number,url,state (was a PR already opened?). If the branch exists, check it out and continue from its actual state; if it does not, start the packet from scratch`
+      const steps = (hadEvidence && build.evidence.remaining_steps) || []
+      const cont = `CONTINUATION ${k}: ${salvage}. First: git fetch origin ${branchOf(pp)} 2>/dev/null; if the branch exists: git checkout -B ${branchOf(pp)} origin/${branchOf(pp)}. Then do ONLY these remaining steps, in order (if none are known, redo the full buildPrompt below from the current branch state):${steps.map((st, i) => `\n  ${i + 1}. ${st}`).join('')}\n\n`
       build = await agent(cont + buildPrompt(pp, specText), {
         label: `build${k + 1}:${p.id}`, phase: 'Build', schema: BUILD_SCHEMA, agentType: 'builder', effort: 'medium', isolation: 'worktree',
       })

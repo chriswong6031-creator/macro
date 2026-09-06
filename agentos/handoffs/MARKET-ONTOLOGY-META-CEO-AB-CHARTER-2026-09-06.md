@@ -2,7 +2,7 @@
 workstream: WS:MARKET-OS
 session: claude/marketontology-meta-ceo-charter-20260906
 model: fable
-ended_because: ci_handoff
+ended_because: complete
 mission: >
   Record, for a cold successor in either Claude account, the Chairman's
   2026-09-05 PDT override placing two co-equal Claude "Meta-CEO" seats
@@ -51,8 +51,8 @@ changed:
 unresolved:
   - >
     research/MARKET_ONTOLOGY_META_CEO_CHARTER_2026_09_06.md (the prose charter
-    §0-§9 that both the DEC's `affects` list and the Meta-CEO B pickup prompt
-    point to) does NOT exist in this worktree as of this handoff — confirmed
+    §0-§9 that the Meta-CEO B pickup prompt
+    points to) does NOT exist in this worktree as of this handoff — confirmed
     absent, not merely unread. Any reader following that path before it is
     authored will find nothing; treat this handoff + the DEC as the interim
     source of truth until it lands.
@@ -69,11 +69,16 @@ unresolved:
     routing target no longer exists for this program and the request has not
     yet been re-ruled by either Meta-CEO.
   - >
-    11 of the 13 tight-match open Market Ontology PR bodies (#6873, #6872,
+    11 of the 13 tight-match Market Ontology PRs (#6873, #6872,
     #6865, #6861, #6834, #6831, #6830, #6826, #6810, #6793, #6595) still carry
-    literal "HOLD-FOR-SOL"/"HOLD-FOR-F13" text; none has been edited to
-    reflect the override, so a non-Meta-CEO reader or a different program's
-    sweeper could still misread them as an active Sol gate.
+    literal "HOLD-FOR-SOL"/"HOLD-FOR-F13" text IN THEIR TITLES (not only their
+    bodies), and all 11 are Draft; scripts/ship_loop_hold_wrapper.py:20/51 keys
+    on "title starts HOLD-FOR-SOL" and scripts/merge_on_green.py:5136-5138
+    keys on title/body text via HOLD_MARKER_RE. This is ACTIVE MECHANICAL
+    ENFORCEMENT, not a possible misreading: the sweeper and the Stop adapter
+    will refuse/park these PRs' merges until each is released per-PR (title
+    edited, release comment posted naming this DEC) -- neither has been
+    amended by this commission.
   - >
     Terminal (mastermind-terminal) PR #507 (supabase/migrations/0011_analytics_eid.sql)
     and PR #502 (supabase/migrations/0011_thesis_objects.sql) both claim
@@ -86,10 +91,11 @@ unresolved:
     files were not edited by this commission (out of its owned-files scope).
 verified:
   - claim: >
-      86 pull requests are open in the macro repo as of this census; a tight
-      Market-Ontology regex matched 13 of them for deep-dive, of which 11
-      carry an explicit HOLD-FOR-SOL/HOLD-FOR-F13 phrase in the body and 2
-      (#6892, #6526) do not.
+      86 pull requests were open in the macro repo AT CENSUS TIME (86 count and
+      the 13-row tight-match table are a snapshot, not live at handoff time);
+      of the 13 tight matches, 11 carried an explicit HOLD-FOR-SOL/HOLD-FOR-F13
+      phrase and 2 (#6892, #6526) did not. #6892 has since MERGED (verified
+      below) and is no longer open; #6526 was OPEN/DRAFT as of re-check.
     command: >
       gh pr list -R mastermindx-market-intelligence/macro --state open
       --limit 100 --json number,title,isDraft,labels,headRefName,headRefOid,
@@ -129,9 +135,10 @@ verified:
   - claim: agentos validates clean (0 malformed records) on this branch.
     command: python3 scripts/agentos.py validate
     result: >
-      "agentos: 1064 records (69 workstreams, 305 decisions, 252 discoveries,
-      438 handoffs) — 0 error(s), 78 warning(s)"; exit 0 (warnings only,
-      e.g. review-overdue on unrelated stale DEC records).
+      "agentos: 1066 records (69 workstreams, 306 decisions, 252 discoveries,
+      439 handoffs) — 0 error(s), 78 warning(s)"; exit 0 (re-run on this branch,
+      post-artifact; warnings only, e.g. review-overdue on unrelated stale DEC
+      records).
   - claim: >
       The in-repo workflow script the charter's execution recipe names
       already exists in this worktree.
@@ -164,9 +171,17 @@ next_actions:
     fresh-read macro#6819 for the "META-CEO B ACK" comment before treating
     half B as staffed.
   - >
-    [Half A] Run Wave 0 in lane order: review+merge #6890 (F01 pack-5 main-red
-    repair, already Ready) first so main is green; then #6873 (F01 hub R1,
-    rebasing #6872 after, since they collide on
+    [Half A] BEFORE any Ready/arm/merge on a held PR: for every held PR this
+    half owns (#6873, #6872, #6865, #6810, #6604), post a release comment
+    naming DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06 as the
+    releasing authority and edit the title to drop the leading
+    "HOLD-FOR-SOL"/"HOLD-FOR-F13" text -- scripts/merge_on_green.py's sweeper
+    guard and scripts/ship_loop_hold_wrapper.py key on that literal text in
+    the TITLE and will otherwise refuse/park the merge regardless of label
+    state. Confirm #6890 is MERGED (verified MERGED, merge sha
+    7db17edb53d1141abeff2f9ef8846b6a4771873c, via `gh pr view 6890 --json
+    state,mergeCommit`) and main is green, then run Wave 0 in lane order:
+    #6873 (F01 hub R1, rebasing #6872 after, since they collide on
     .github/ci/legacy-jobs.yml, app/deploy/Caddyfile, config/site_access.yml,
     tests/test_site_access_boundary.py); then #6872 (F04 X1, owes a corrected
     B-1 body + RED-first nightly-hook test); then dispose #6865/#6809/#6604.
@@ -179,8 +194,14 @@ next_actions:
     naming native session id, account, and half-B lanes (F06 F07 F08 F09
     F11 F12 F13 + platform).
   - >
-    [Half B] Run Wave 0: #6793 (F09-1), #6831 (F06 child), then #6830/#6834/
-    #6826/#6810 by lane, then Terminal #490/#502/#507 disposition.
+    [Half B] BEFORE any Ready/arm/merge on a held PR: for every held PR this
+    half owns (#6793, #6831, #6830, #6834, #6861, #6826, #6810), post a
+    release comment naming DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06
+    and edit the title to drop the leading "HOLD-FOR-SOL"/"HOLD-FOR-F13" text
+    -- the sweeper and Stop-adapter enforcers key on that literal title text
+    (see the same note in the Half A action above). Then run Wave 0: #6793
+    (F09-1), #6831 (F06 child), then #6830/#6834/#6861/#6826/#6810 by lane,
+    then Terminal #490/#502/#507 disposition.
   - >
     [Half B] Settle the Supabase migration-namespace collision (#507 vs
     #502, both claim 0011) before either merges — grep every open
@@ -232,10 +253,14 @@ danger_areas:
     state immediately before every merge, the same discipline as any other
     fleet collision.
   - >
-    HOLD-FOR-SOL/HOLD-FOR-F13 text embedded in 11 of the 13 open program PR
-    bodies is now stale-for-this-program but has not been edited; a
-    non-Meta-CEO session, a different program's sweeper, or a future audit
-    could still read it as a live gate.
+    HOLD-FOR-SOL/HOLD-FOR-F13 text embedded in 11 of the 13 open program PRs'
+    TITLES AND BODIES is now stale-for-this-program but has not been edited;
+    this is not merely a misreading risk -- scripts/merge_on_green.py and
+    scripts/ship_loop_hold_wrapper.py actively key on that literal title/body
+    text and will refuse or park a merge on any of these 11 PRs until each
+    one's title/body is edited and a release comment is posted naming this
+    DEC, per PR (see the amended next_actions above). Neither script is
+    amended by this commission.
   - >
     Relieving Sol relieves ceremony (HOLD-FOR-SOL, DECISION_REQUEST-to-Sol,
     READ_ONLY_ARCHAEOLOGY-as-a-lane-state, exact-root Slack re-reads) — it
@@ -252,7 +277,7 @@ danger_areas:
     agentos/discoveries/DSC-TERMINAL-HAS-NO-MIGRATION-LEDGER.md) — a merged
     0011 file does not self-apply; an operator/API step is still required
     and is easy to assume happened when it did not.
-prs: [490, 6335, 6508, 6514, 6595, 6769, 6778, 6793, 6809, 6810, 6819, 6820, 6826, 6827, 6828, 6829, 6830, 6831, 6833, 6834, 6836, 6841, 6843, 6844, 6845, 6846, 6847, 6848, 6849, 6861, 6864, 6865, 6872, 6873, 6876, 6890, 6892]
+prs: [490, 6335, 6508, 6514, 6526, 6595, 6769, 6778, 6793, 6809, 6810, 6819, 6820, 6826, 6827, 6828, 6829, 6830, 6831, 6833, 6834, 6836, 6841, 6843, 6844, 6845, 6846, 6847, 6848, 6849, 6861, 6864, 6865, 6872, 6873, 6876, 6890, 6892, 6894]
 decisions:
   - "DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06"
   - "DEC:SOL-HOLD-IS-A-MERGE-BARRIER"

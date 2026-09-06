@@ -84,6 +84,8 @@ affects:
   - "agentos/handoffs/MARKET-ONTOLOGY-META-CEO-AB-CHARTER-2026-09-06.md"
   - "agentos/handoffs/MARKET-ONTOLOGY-META-CEO-PROGRAM-CEO-HIERARCHY-AMENDMENT-2026-08-29.md"
   - "agentos/decisions/DEC-SOL-HOLD-IS-A-MERGE-BARRIER.md"
+  - "scripts/merge_on_green.py (unamended: HOLD_MARKER_RE at :5136-5138 still refuses to merge any PR whose title/body carries HOLD-FOR-SOL/HOLD-FOR-F13 text; release remains per-PR via title edit + release comment, not automatic under this DEC)"
+  - "scripts/ship_loop_hold_wrapper.py (unamended: HOLD_TOKEN at :51 / title-starts-HOLD-FOR-SOL check at :20 still parks the Stop loop on any PR whose title carries that text)"
   - "F00 F01 F02 F03 F04 F05 F06 F07 F08 F09 F10 F11 F12 F13 (Market Ontology lane program keys)"
 confidence: high
 reversibility: easy
