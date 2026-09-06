@@ -1,28 +1,28 @@
 {
   "schema": "seo_scorecard.v1",
-  "as_of": "2026-08-30T18:25:47Z",
-  "health_score": 90,
+  "as_of": "2026-09-06T21:06:17Z",
+  "health_score": 89,
   "issue_counts_by_severity": {
     "critical": 0,
-    "high": 48,
-    "medium": 49,
-    "low": 0
+    "high": 49,
+    "medium": 51,
+    "low": 1
   },
   "deltas_vs_prior": {
-    "health_score": 0,
+    "health_score": -1,
     "critical": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0
+    "high": 1,
+    "medium": 2,
+    "low": 1
   },
   "families_summary": {
     "core": {
-      "pages": 152,
-      "with_canonical": 139,
-      "with_desc": 138,
-      "with_og": 138,
+      "pages": 168,
+      "with_canonical": 155,
+      "with_desc": 154,
+      "with_og": 154,
       "with_jsonld": 7,
-      "in_sitemap": 18
+      "in_sitemap": 19
     },
     "products": {
       "pages": 5,
@@ -65,7 +65,7 @@
       "in_sitemap": 0
     },
     "stocks": {
-      "pages": 2124,
+      "pages": 2198,
       "sampled": 25,
       "with_canonical": 25,
       "with_title": 25,
