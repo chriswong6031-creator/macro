@@ -266,3 +266,76 @@ def test_site_macro_matches_the_compact_contract():
     assert "Risk Detail" in dlg
     assert 'aria-controls="dlg-risk"' in rail
     assert "mx5OpenDlg('dlg-risk')" in rail
+
+
+@pytest.mark.parametrize("verdict,en,zh", [
+    ("RISK_OFF", "Risk-off", "风险规避"),
+    ("MIXED", "Mixed", "分歧"),
+    ("RISK_ON", "Risk-on", "风险偏好"),
+])
+def test_missing_optional_trend_labels_use_the_actual_verdict(verdict, en, zh):
+    envelope = _gd1_envelope()
+    envelope["measured_state"]["verdict"] = verdict
+    for source in envelope["provenance"]["sources"]:
+        if source["role"] == "measured_state":
+            source["state"] = verdict
+            source["detail"].pop("state_label_en", None)
+            source["detail"].pop("state_label_zh", None)
+    html = _render_surfaces(envelope)
+    for surface in ("risk-envelope-band", "gde-detail"):
+        fragment = _slice_id(html, surface)
+        assert f'class="l-en">{en}</span>' in fragment
+        assert f'class="l-zh">{zh}</span>' in fragment
+    if verdict == "RISK_OFF":
+        assert "while the index holds" not in html
+
+
+@pytest.mark.parametrize("count", [None, False, True, -1, "0", 1.5])
+def test_unknown_or_invalid_policy_count_is_not_zero(count):
+    envelope = _gd1_envelope()
+    envelope["policy_summary"]["policy_count"] = count
+    html = _render_surfaces(envelope)
+    detail = _slice_id(html, "gde-detail")
+    assert "No Grey Deer policy active" not in detail
+    assert "Policy status unavailable" in detail
+    assert "政策状态不可用" in detail
+    assert "gde-seg-policy" not in _slice_id(html, "risk-envelope-band")
+
+
+def test_missing_policy_count_is_explicitly_unavailable():
+    envelope = _gd1_envelope()
+    envelope["policy_summary"].pop("policy_count", None)
+    detail = _slice_id(_render_surfaces(envelope), "gde-detail")
+    assert "Policy status unavailable" in detail
+    assert "No Grey Deer policy active" not in detail
+
+
+def test_zero_active_policy_does_not_take_homepage_space():
+    envelope = _gd1_envelope()
+    envelope["policy_summary"]["policy_count"] = 0
+    html = _render_surfaces(envelope)
+    assert "gde-seg-policy" not in _slice_id(html, "risk-envelope-band")
+    assert "No Grey Deer policy active" in _slice_id(html, "gde-detail")
+
+
+@pytest.mark.parametrize("count", [1, 3])
+def test_active_policy_count_remains_visible_but_orthogonal(count):
+    envelope = _gd1_envelope()
+    envelope["policy_summary"]["policy_count"] = count
+    html = _render_surfaces(envelope)
+    rail = _slice_id(html, "risk-envelope-band")
+    assert "gde-seg-policy" in rail
+    assert "gde-seg-policy" not in _slice_id(rail, "gde-rail-reads")
+    assert f'>{count} <span class="l-en">active</span>' in rail
+
+
+def test_required_source_loss_is_unclear_without_daily_shape_skip():
+    envelope = _gd1_envelope()
+    envelope["hazard_summary"].update(
+        stage=None, unreadable_sources=["leadership_crack"],
+        unmapped_required_sources=[],
+    )
+    rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
+    assert "Unclear" in rail
+    assert "1 source unavailable" in rail
+    assert "No breakage" not in rail
