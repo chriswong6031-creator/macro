@@ -713,3 +713,50 @@ def test_view_model_renders_the_msft_state_with_plain_words() -> None:
     assert '<span class="l-en">' in section_html
     assert '<span class="l-zh">' in section_html
 
+
+def test_compiler_failure_gate_renders_a_plain_bilingual_sentence() -> None:
+    """A ``COMPILER_FAILURE`` failed-gate must render a real, DISTINCT EN/ZH
+    sentence — never the raw enum code duplicated into both language slots
+    (Chairman plain-language law, 2026-09-06, macro#6920 round-2 ruling).
+
+    Before the fix, ``COMPILER_FAILURE`` had no ``_SS_GATES`` house-copy
+    entry, so both ``en`` and ``zh`` fell back to ``_ss_prettify(code)`` —
+    the SAME English words in the field the page treats as Chinese. The raw
+    machine code may still appear, but only inside the receipt's own
+    ``ss-id`` chip, never as the sentence itself.
+    """
+    contract = _contract(dominant_degradation="COMPILER_FAILURE")
+    contract["legs"]["risk"]["failed_gates"] = [
+        {"code": "COMPILER_FAILURE",
+         "reason": "security_state compiler failed after owner identity was composed"},
+    ]
+    view = build_security_state({"security_state": contract})
+    assert view is not None
+
+    gate = next(g for a in view["axes"] for g in a["gates"] if g["code"] == "COMPILER_FAILURE")
+    assert gate["en"] != gate["zh"], (
+        f"ZH slot must be real Chinese, not the English fallback duplicated: {gate!r}"
+    )
+    assert gate["en"] not in ("COMPILER_FAILURE", "Compiler failure"), (
+        "must be a house plain sentence, not the raw code or its bare prettification"
+    )
+    # A real Chinese sentence contains CJK characters — a prettified English
+    # fallback never does.
+    assert re.search(r"[一-鿿]", gate["zh"]), f"zh is not Chinese: {gate['zh']!r}"
+
+    import jinja2
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(REPO / "templates")),
+        undefined=jinja2.ChainableUndefined,
+    )
+    html = env.get_template("ticker.html.j2").render(
+        security_state=view, ticker="AAPL", name="Apple Inc.",
+    )
+    # The plain sentence must appear as visible prose …
+    assert gate["en"] in html
+    assert gate["zh"] in html
+    # … and wherever the raw code still appears, it must be inside the
+    # receipt's machine-id chip, never as a bare bilingual prose span.
+    assert '<span class="l-en">COMPILER_FAILURE</span>' not in html
+    assert '<span class="l-zh">COMPILER_FAILURE</span>' not in html
+

@@ -3489,6 +3489,16 @@ _SS_GATES: dict[str, dict[str, str]] = {
         "clear_en": "Publication rights cover this surface, or an open source replaces it.",
         "clear_zh": "取得该页面的发布授权，或改用可公开的来源。",
     },
+    # Chairman plain-language law (2026-09-06): this code has no owning
+    # "source" to answer, so it needs its own copy rather than the generic
+    # fallback clear_en/clear_zh above — and it needs a ZH entry at all,
+    # because the un-mapped path (`_ss_prettify`) puts the SAME English words
+    # in both slots, which is not a translation.
+    "COMPILER_FAILURE": {
+        "en": "Read could not be built", "zh": "读数无法生成",
+        "clear_en": "This read compiles again on the next scheduled cycle.",
+        "clear_zh": "该读数将在下一次计划周期重新生成。",
+    },
 }
 
 
