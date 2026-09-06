@@ -14,7 +14,8 @@
 # `status: live`. Unknown types are still dropped silently at /api/collect, so the way
 # an event ships is by flipping its entry live IN THE SAME CARRIER as its producer —
 # never by editing a whitelist. Entries additionally marked `envelope: v1` require the
-# CA1A envelope (stable UUID `eid` mapped onto analytics_events.id for one-row replay,
+# CA1A envelope (stable UUID `eid` seated in the analytics_events.eid unique column
+# for one-row replay — the live id is a bigint identity, per the §16 canary correction —
 # the frozen `schema` tag, and closed typed `meta` validated against `properties`
 # below). `tests/test_growth_events_registry.py` asserts both directions plus an AST
 # guard against a hardcoded whitelist creeping back.
@@ -160,7 +161,8 @@ events:
     wire: intelligence.viewed
     marketing_alias: first_value_reached
     # CA1A (WS:COMMERCIAL-ACTIVATION): live + envelope v1 — the collector requires a
-    # stable UUID eid (mapped onto analytics_events.id, so replay is one row), the
+    # stable UUID eid (seated in the analytics_events.eid unique column, so replay is
+    # one row), the
     # frozen schema tag, and this closed typed property set. First producer:
     # templates/flow_velocity.html.j2 (server-baked rows make the genuine-read
     # discriminator exact: empty/none states bake rows_visible=0 and never emit).

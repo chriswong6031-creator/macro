@@ -1,9 +1,9 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-09-04",
-  "n_events_logged": 611,
-  "n_events_graded": 294,
+  "asof": "2026-09-05",
+  "n_events_logged": 621,
+  "n_events_graded": 295,
   "classes": [
     {
       "event_type": "activist_campaign",
@@ -25,8 +25,8 @@
       "n_graded": 6,
       "hit_5d": 0.3333333333333333,
       "hit_21d": 0.6666666666666666,
-      "avg_rel_5d": -0.0004966666666666661,
-      "avg_rel_21d": -0.006977666666666667,
+      "avg_rel_5d": 0.00024369696969697027,
+      "avg_rel_21d": -0.0019957047619047655,
       "wilson_low_5d": 0.096769,
       "wilson_high_5d": 0.700012,
       "verdict": "insufficient"
@@ -73,7 +73,7 @@
     {
       "event_type": "dividend_change",
       "direction": "mixed",
-      "n": 7,
+      "n": 8,
       "n_graded": 1,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -86,11 +86,11 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 189,
+      "n": 193,
       "n_graded": 63,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": 0.009062209523809523,
+      "avg_rel_5d": 0.00906221111111111,
       "avg_rel_21d": 0.0019076265306122442,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
@@ -103,8 +103,8 @@
       "n_graded": 9,
       "hit_5d": 0.3333333333333333,
       "hit_21d": 0.5555555555555556,
-      "avg_rel_5d": 0.0293330037037037,
-      "avg_rel_21d": 0.08422353333333334,
+      "avg_rel_5d": 0.02438378148148148,
+      "avg_rel_21d": 0.0756782,
       "wilson_low_5d": 0.120582,
       "wilson_high_5d": 0.645803,
       "verdict": "insufficient"
@@ -112,12 +112,12 @@
     {
       "event_type": "guidance_cut",
       "direction": "bearish",
-      "n": 18,
+      "n": 19,
       "n_graded": 9,
       "hit_5d": 0.3333333333333333,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.0013525000000000004,
-      "avg_rel_21d": 0.066092875,
+      "avg_rel_21d": 0.06586475,
       "wilson_low_5d": 0.120582,
       "wilson_high_5d": 0.645803,
       "verdict": "insufficient"
@@ -138,20 +138,20 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 156,
+      "n": 157,
       "n_graded": 127,
-      "hit_5d": 0.4881889763779528,
-      "hit_21d": 0.34782608695652173,
-      "avg_rel_5d": 0.0036566614173228346,
-      "avg_rel_21d": 0.030497136231884058,
-      "wilson_low_5d": 0.402884,
-      "wilson_high_5d": 0.574187,
+      "hit_5d": 0.48031496062992124,
+      "hit_21d": 0.3391304347826087,
+      "avg_rel_5d": 0.003876991469816273,
+      "avg_rel_21d": 0.03035742028985507,
+      "wilson_low_5d": 0.395283,
+      "wilson_high_5d": 0.566503,
       "verdict": "context_only"
     },
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 45,
+      "n": 48,
       "n_graded": 5,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -165,10 +165,10 @@
       "event_type": "management_change",
       "direction": "mixed",
       "n": 15,
-      "n_graded": 10,
+      "n_graded": 11,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": -0.0147183,
+      "avg_rel_5d": -0.013957818181818182,
       "avg_rel_21d": 0.005207142857142856,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
@@ -234,7 +234,7 @@
       "hit_5d": 0.75,
       "hit_21d": 0.5,
       "avg_rel_5d": -0.025298499999999998,
-      "avg_rel_21d": 0.0030685,
+      "avg_rel_21d": 0.0027420000000000014,
       "wilson_low_5d": 0.300636,
       "wilson_high_5d": 0.954414,
       "verdict": "insufficient"
@@ -260,7 +260,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.0014954999999999997,
-      "avg_rel_21d": 0.0342934,
+      "avg_rel_21d": 0.0330434,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -273,14 +273,14 @@
       "hit_5d": 0.75,
       "hit_21d": 0.75,
       "avg_rel_5d": -0.0090145,
-      "avg_rel_21d": -0.03799229166666667,
+      "avg_rel_21d": -0.03814929166666667,
       "wilson_low_5d": 0.300636,
       "wilson_high_5d": 0.954414,
       "verdict": "insufficient"
     }
   ],
   "reject_audit": {
-    "n_sampled": 1017,
+    "n_sampled": 1048,
     "n_graded": 0,
     "classes": []
   }

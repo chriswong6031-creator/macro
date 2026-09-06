@@ -1,23 +1,23 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-09-05",
-  "scored_total": 183,
-  "open": 81,
+  "as_of": "2026-09-06",
+  "scored_total": 185,
+  "open": 89,
   "unscored_soft": 43,
   "overall": {
-    "n": 183,
-    "hits": 110,
+    "n": 185,
+    "hits": 112,
     "misses": 73,
-    "hit_rate": 0.601,
-    "dir_accuracy": 0.399
+    "hit_rate": 0.605,
+    "dir_accuracy": 0.405
   },
   "by_market": {
     "us": {
-      "n": 51,
-      "hits": 33,
+      "n": 53,
+      "hits": 35,
       "misses": 18,
-      "hit_rate": 0.647,
-      "dir_accuracy": 0.451
+      "hit_rate": 0.66,
+      "dir_accuracy": 0.472
     },
     "china": {
       "n": 62,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 182,
-      "hits": 110,
+      "n": 184,
+      "hits": 112,
       "misses": 72,
-      "hit_rate": 0.604,
-      "dir_accuracy": 0.401
+      "hit_rate": 0.609,
+      "dir_accuracy": 0.408
     },
     "medium": {
       "n": 1,
@@ -64,7 +64,7 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "183 scored, hit-rate 0.601 (directional accuracy 0.399). Chance alone would land a hit-rate near 0.8537 (directional accuracy near 0.5114) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "185 scored, hit-rate 0.605 (directional accuracy 0.405). Chance alone would land a hit-rate near 0.8525 (directional accuracy near 0.5105) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
     {
       "id": "canada-2026-07-24-3",
@@ -177,13 +177,13 @@
       "check_by": "2026-09-04"
     },
     {
-      "id": "china-2026-08-07-20260810023933-1",
-      "market": "china",
-      "subject": "Industrial Metals",
+      "id": "us-2026-08-07-20260810023749-1",
+      "market": "us",
+      "subject": "Silver Miners",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "hit",
-      "realized": -0.0208,
+      "realized": 0.1892,
       "check_by": "2026-09-04"
     }
   ]

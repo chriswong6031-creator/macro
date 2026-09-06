@@ -1,29 +1,14 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-09-04T17:05:52+00:00",
-  "summary": "Context-only shadow deliberation: the measured tape remains risk-on (75) with normalizing volatility, healthy credit, and broad 200-day participation, but the confirmed US Q2 Reflation label is internally unsupported by current axes (growth -0.47, inflation +0.52): raw Q3 has persisted 4 of the required 7 sessions. Liquidity is contracting in an orderly, non-stressed drain, while real yields are restrictive and near a five-year extreme. The risk radar is WATCH, but its measured 21-session >=5% pullback rate is 13.0% versus a 17.8% base rate (0.73x), so it is an early context flag, not an edge. Factor evidence is immature: only 10 panel dates, no Pair G records, no surviving scorecard legs, and the named low-beta leader has negative IC. The spine/kernel do not justify origination: no reviewed engine is armed; radar has negative signed excess across horizons, alt-data loses out of sample, and several desk families show negative 63-day signed excess. No hypothesis was staked because the available patterns were either already represented by current contradictions or lacked sufficient mature, independent evidence for a useful pre-committed test.",
-  "what_fired": [
-    "Shadow attention: US confirmed Q2 label versus raw Q3 axes, pending 4/7 sessions.",
-    "Shadow attention: open China-equities overweight thesis conflicts with current China/HK Q4 growth-scare context, contracting liquidity, and weak-side HK peg; detailed China market state is stale.",
-    "Shadow attention: 19 briefing-versus-ticker-demand directional oppositions, including VSAT, FTNT, NET, and TENB."
-  ],
-  "contradictions_review": "The confluence graph reports a briefing-divergences contradiction: 19 ticker-level demand-versus-supply directional oppositions. The options contradiction edge currently has n=0 and therefore supplies no name-level conflict. Pair G is dormant because the factor panel has only 10 dates and requires at least 60; absence is lack of coverage, not agreement. The master-brain China overweight thesis mb-2026-07-09-1 conflicts with current China Q4, HK Q4, contracting liquidity, and weak-side/outflow peg context. Several other master-brain theses are overdue and still marked open beyond their check-by dates, which weakens their present interpretability; this is a ledger-hygiene concern rather than a market claim.",
-  "decaying_families": [
-    "radar: negative signed excess in Q2 at 5 and 21 days and negative pooled results across 5/21/63 days; nevertheless unarmed because the allocation test is vacuous.",
-    "altdata: pooled out-of-sample result is negative; unarmed despite high estimated reliability.",
-    "desk:stock_desk and desk:thematic_desk: negative 63-day signed excess in Q2 and pooled samples; weighting tests are vacuous.",
-    "policy and desk:policy_intent: negative signed excess with small or incomplete samples.",
-    "factor composite: non-tradeable, with no surviving legs and only 10 panel dates."
-  ],
-  "deserves_operator": [
-    "US regime-label transition: review if Q3 reaches 7/7 while liquidity remains contracting; clear if axes support Q2 for three consecutive sessions first. Attention claim 34526163d831bd4f.",
-    "China overweight thesis mb-2026-07-09-1: review while China and HK remain Q4 and the HK peg remains weak-side/outflow; clear only after Q1/Q2 plus three sessions without weak-side peg pressure. Attention claim 9cc64f0b6ba96ffb.",
-    "Briefing reconciliation: investigate the 19 directional oppositions; clear when the next committed briefing and ticker-demand artifact contain zero unexplained oppositions, or retain if a cited name remains opposed for three consecutive committed sessions. Attention claim d5049b076d64c00a.",
-    "Ledger hygiene: score or retire open master-brain theses whose check-by dates have passed, especially the duplicate thesis IDs, before treating the open ledger as current context."
-  ],
+  "as_of": "2026-09-06T10:36:05+00:00",
+  "summary": "Budget exhausted after 3 tool-call batches (7 individual calls). Partial deliberation only.",
+  "what_fired": [],
+  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
+  "decaying_families": [],
+  "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -35,8 +20,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 45,
-      "total_rows": 53
+      "ungradeable": 48,
+      "total_rows": 56
     },
     "is_context_only": true
   },
@@ -47,9 +32,7 @@
     "read_contradictions": 1,
     "list_factor_contradictions": 1,
     "read_kernel": 1,
-    "read_master_brain_theses": 1,
-    "flag_attention": 1,
-    "write_memo": 1
+    "read_master_brain_theses": 1
   },
   "is_context_only": true,
   "run_status": {
@@ -89,28 +72,12 @@
         "ok": true,
         "error_type": null,
         "error_message": null
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
       }
     ],
-    "tool_call_batches": 5,
-    "individual_tool_calls": 9,
+    "tool_call_batches": 3,
+    "individual_tool_calls": 7,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-09-04T12:55:25Z"
+    "context_as_of": "2026-09-06T07:58:49Z"
   }
 }

@@ -2,6 +2,59 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-09-06",
+      "tickers": [
+        "ADBE",
+        "AEO",
+        "ATRA",
+        "CE",
+        "DIS",
+        "EIX",
+        "EQPT",
+        "F",
+        "FDXF",
+        "GEN",
+        "GLXY",
+        "HD",
+        "HST",
+        "HWKN",
+        "HWM",
+        "ICLR",
+        "KVYO",
+        "LAUR",
+        "MSCI",
+        "NBIX",
+        "NOVT",
+        "PFLEX",
+        "TXN",
+        "UGI",
+        "UTHR",
+        "WMB",
+        "XLE",
+        "XME"
+      ]
+    },
+    {
+      "as_of": "2026-09-05",
+      "tickers": [
+        "ALGM",
+        "ATRA",
+        "BJ",
+        "GPI",
+        "HWM",
+        "ICLR",
+        "LAUR",
+        "LEA",
+        "LILA",
+        "PFLEX",
+        "PRDO",
+        "RHP",
+        "SEDG",
+        "SMP",
+        "UTHR"
+      ]
+    },
+    {
       "as_of": "2026-09-04",
       "tickers": [
         "ACLOX",
@@ -151,27 +204,6 @@
         "STZ",
         "VSEC",
         "XEL"
-      ]
-    },
-    {
-      "as_of": "2026-08-19",
-      "tickers": [
-        "BWA",
-        "GILD",
-        "QUBT",
-        "UEC",
-        "WS"
-      ]
-    },
-    {
-      "as_of": "2026-08-18",
-      "tickers": [
-        "BGC",
-        "CDNL",
-        "CVX",
-        "HD",
-        "MLAB",
-        "TMUS"
       ]
     }
   ]

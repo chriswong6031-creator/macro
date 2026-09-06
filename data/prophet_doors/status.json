@@ -1,15 +1,15 @@
 {
-  "appended": 2,
+  "appended": 0,
   "asof": "2026-09-04",
   "candidates": {
     "R": 1,
-    "T": 1,
+    "T": 4,
     "W": 4
   },
   "deduped": {
-    "R": 0,
-    "T": 1,
-    "W": 3
+    "R": 1,
+    "T": 4,
+    "W": 4
   },
   "dry_run": false,
   "feature_source": {
@@ -19,15 +19,15 @@
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
+      "consulted": false,
       "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
       "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 1,
-      "tickers_read": 1
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -48,25 +48,14 @@
       "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-09-04",
-      "n_tickers": 1544,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
     "atlas": {
-      "consulted": true,
-      "direction": "bull",
-      "grid": "W",
-      "horizon": "13w",
-      "n_asked": 1,
-      "n_covered": 1,
-      "reason": null,
-      "source": "engine.event_atlas.receipt"
+      "consulted": false,
+      "n_asked": 0,
+      "n_covered": 0
     },
     "enabled": true,
     "keys": [
@@ -87,13 +76,9 @@
     ]
   },
   "flag_tickers": {
-    "R": [
-      "VYX"
-    ],
+    "R": [],
     "T": [],
-    "W": [
-      "IREN"
-    ]
+    "W": []
   },
   "n_universe": 1496,
   "overflow": {
@@ -101,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-09-04 20:19:38",
-  "runtime_s": 110.9,
+  "run_utc": "2026-09-06 11:14:50",
+  "runtime_s": 127.5,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 1,
-    "asof": "2026-09-03",
-    "n_members": 115,
+    "age_days": 0,
+    "asof": "2026-09-04",
+    "n_members": 166,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.602,
+        "emerging_score": 2.969,
         "rank": 1,
-        "theme": "Commodities Agriculture"
-      },
-      {
-        "emerging_score": 3.455,
-        "rank": 2,
         "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 2.234,
+        "emerging_score": 2.712,
+        "rank": 2,
+        "theme": "Electric Vehicles"
+      },
+      {
+        "emerging_score": 2.458,
         "rank": 3,
-        "theme": "Mega-Cap"
+        "theme": "Commodities Agriculture"
       },
       {
-        "emerging_score": 1.727,
+        "emerging_score": 2.183,
         "rank": 4,
-        "theme": "Commodities Energy"
+        "theme": "Crypto & Blockchain"
       },
       {
-        "emerging_score": 1.724,
+        "emerging_score": 2.101,
         "rank": 5,
-        "theme": "Energy Traditional"
+        "theme": "Energy Renewable"
       }
     ]
   },
@@ -153,10 +138,10 @@
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 19.3,
+    "runtime_s": 24.1,
     "skipped": 4,
     "source": "baskets/membership.json",
-    "state_turn": 88,
+    "state_turn": 89,
     "universe_n": 717
   }
 }

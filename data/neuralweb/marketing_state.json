@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-09-04",
+  "as_of": "2026-09-06",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,12 +82,12 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 195,
+    "opportunity_queue_depth": 225,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
       "last_review": null,
-      "next_review": "2026-09-11"
+      "next_review": "2026-09-13"
     },
     "guardrails": {
       "self_deception_checks": [
@@ -206,7 +206,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire if a simpler governance mechanism achieves equivalent attribution accuracy with lower inference cost over 90 days.",
       "scorecard": {
@@ -301,7 +301,7 @@
       "clock": {
         "cadence": "daily",
         "last_review": null,
-        "next_review": "2026-09-05"
+        "next_review": "2026-09-07"
       },
       "retirement_test": "Retire if a managed external execution platform provides equivalent reliability, auditability, and cost transparency.",
       "scorecard": {
@@ -397,7 +397,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire if opportunity detection recall falls below 60% on major events for two consecutive quarters.",
       "scorecard": {
@@ -503,7 +503,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire a specific product when it generates fewer than 10 qualified acquisition events per month for 60 days.",
       "scorecard": {
@@ -609,7 +609,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire if creative output fails distinctness checks or produces zero qualified-reach events for 30 consecutive days.",
       "scorecard": {
@@ -730,7 +730,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire a channel adapter if it produces warnings, policy flags, or zero qualified-reach events for 60 days.",
       "scorecard": {
@@ -831,7 +831,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Redesign if day-30 retained-contribution forecast is negative for two consecutive cohort reviews.",
       "scorecard": {
@@ -931,7 +931,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire a partner if they produce zero incremental retained contributions after two payout cycles.",
       "scorecard": {
@@ -1047,7 +1047,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Redesign if attribution methodology fails holdout validation on two consecutive quarter reviews.",
       "scorecard": {
@@ -1153,7 +1153,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "The auditor is never retired; it may be redesigned if it generates more than 5% false-positive quarantines per month.",
       "scorecard": {
@@ -1250,7 +1250,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-09-11"
+        "next_review": "2026-09-13"
       },
       "retirement_test": "Retire if indexed dossier pages produce fewer than 10 qualified organic acquisition events per month for 60 consecutive days.",
       "scorecard": {
@@ -1690,30 +1690,30 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 195,
-      "scored": 393,
+      "open": 225,
+      "scored": 401,
       "newest": [
         {
-          "id": "radar-stage-AAMI-2026-09-04",
-          "problem_or_desire": "$AAMI: stage 2D_extended_run, SATA 9, 70w in stage",
+          "id": "radar-stage-AAMI-2026-09-06",
+          "problem_or_desire": "$AAMI: stage 2D_extended_run, SATA 9, 71w in stage",
           "expected_value": 0.4,
-          "score": 0.377624,
+          "score": 0.385906,
           "half_life_class": "weekly_signal",
           "status": "open"
         },
         {
-          "id": "radar-stage-ABNB-2026-09-04",
-          "problem_or_desire": "$ABNB: stage 2D_extended_run, SATA 9, 19w in stage",
-          "expected_value": 0.4,
-          "score": 0.377624,
-          "half_life_class": "weekly_signal",
+          "id": "radar-earnings-ABM-2026-09-06",
+          "problem_or_desire": "$ABM: earnings 2026-09-08 pre-market",
+          "expected_value": 0.5,
+          "score": 0.388973,
+          "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-stage-ACA-2026-09-04",
-          "problem_or_desire": "$ACA: stage 2D_extended_run, SATA 9, 47w in stage",
+          "id": "radar-stage-ABNB-2026-09-06",
+          "problem_or_desire": "$ABNB: stage 2D_extended_run, SATA 9, 20w in stage",
           "expected_value": 0.4,
-          "score": 0.377624,
+          "score": 0.385906,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1738,30 +1738,30 @@
       ]
     },
     "publications": {
-      "total": 706,
-      "receipts": 706,
+      "total": 771,
+      "receipts": 771,
       "corrections": 0,
       "newest": [
         {
-          "id": "pub-ob-2026-09-04-6d76138b48",
+          "id": "pub-ob-2026-09-05-1edea50830",
           "channel": "x",
-          "account": "mastermind_news",
+          "account": "founder",
           "status": "clean",
-          "published_at": "2026-09-04T09:07:29Z"
+          "published_at": "2026-09-06T06:28:39Z"
         },
         {
-          "id": "pub-ob-2026-09-04-eab8d4c659",
+          "id": "pub-ob-2026-09-06-78ddd25119",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-09-04T04:47:19Z"
+          "published_at": "2026-09-06T05:53:54Z"
         },
         {
-          "id": "pub-ob-2026-09-04-7f9eb67416",
+          "id": "pub-ob-2026-09-05-be45d7c1fa",
           "channel": "x",
-          "account": "mastermind_news",
+          "account": "founder",
           "status": "clean",
-          "published_at": "2026-09-04T00:21:59Z"
+          "published_at": "2026-09-06T01:18:51Z"
         }
       ]
     },
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 37,
-    "signal_posts": 8,
+    "total_posts": 30,
+    "signal_posts": 6,
     "charts": 170,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-09-04"
+    "as_of": "2026-09-06"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-09-04T13:57:08Z",
-  "inputs_hash": "sha256:42ee48d8720bedb6a9026d691628e0a87cc33063046149fdcceeea8ab3a1bdda",
+  "produced_at": "2026-09-06T08:41:39Z",
+  "inputs_hash": "sha256:069a30627fd2000e42161537395e01cbbad20ee13accde76ccd4e4a6233fdac5",
   "tier": "display"
 }

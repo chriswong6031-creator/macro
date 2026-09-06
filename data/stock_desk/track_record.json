@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-09-04",
-  "scored_total": 168,
-  "open": 40,
-  "unscored_neutral": 205,
+  "as_of": "2026-09-06",
+  "scored_total": 169,
+  "open": 47,
+  "unscored_neutral": 216,
   "overall": {
-    "n": 168,
+    "n": 169,
     "hits": 112,
-    "misses": 56,
-    "hit_rate": 0.667,
-    "dir_accuracy": 0.429
+    "misses": 57,
+    "hit_rate": 0.663,
+    "dir_accuracy": 0.426
   },
   "by_lean": {
     "constructive": {
-      "n": 102,
+      "n": 103,
       "hits": 61,
-      "misses": 41,
-      "hit_rate": 0.598,
-      "dir_accuracy": 0.324
+      "misses": 42,
+      "hit_rate": 0.592,
+      "dir_accuracy": 0.32
     },
     "neutral": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 140,
+      "n": 141,
       "hits": 91,
-      "misses": 49,
-      "hit_rate": 0.65,
-      "dir_accuracy": 0.393
+      "misses": 50,
+      "hit_rate": 0.645,
+      "dir_accuracy": 0.39
     },
     "medium": {
       "n": 26,
@@ -64,8 +64,17 @@
       "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "168 leans scored, hit-rate 0.667 (directional accuracy 0.429). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
+  "calibration_note": "169 leans scored, hit-rate 0.663 (directional accuracy 0.426). Chance alone would land a hit-rate near 0.7578 (directional accuracy near 0.5067) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
+    {
+      "id": "2026-08-07-VSEC-20260810035336-2",
+      "ticker": "VSEC",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0614,
+      "check_by": "2026-09-04"
+    },
     {
       "id": "2026-07-22-GM-4",
       "ticker": "GM",
@@ -163,15 +172,6 @@
       "conviction": "medium",
       "outcome": "miss",
       "realized": -0.0698,
-      "check_by": "2026-08-28"
-    },
-    {
-      "id": "2026-07-31-NUE-20260805094020-1",
-      "ticker": "NUE",
-      "lean": "cautious",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0563,
       "check_by": "2026-08-28"
     }
   ]

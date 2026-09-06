@@ -139,54 +139,48 @@
       },
       {
         "current_value": -0.21603351448561625,
-        "delta": 0.0016,
+        "delta": 0.0,
         "metric_id": "coincident_tier_momentum_6m",
         "note": "same method version; numeric comparison permitted when both values are present",
-        "prior_value": -0.21765857550346368
+        "prior_value": -0.21603351448561625
       },
       {
         "current_value": null,
         "delta": null,
         "metric_id": "lagging_tier_momentum_6m",
         "note": "same method version; numeric comparison permitted when both values are present",
-        "prior_value": 0.585355949054545
+        "prior_value": null
       },
       {
-        "current_value": -0.5721691179154789,
-        "delta": 0.1095,
+        "current_value": -0.5721511625563167,
+        "delta": 0.0,
         "metric_id": "coincident_lagging_ratio_momentum_6m",
         "note": "same method version; numeric comparison permitted when both values are present",
-        "prior_value": -0.6816793530719565
+        "prior_value": -0.5721511625563167
       }
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-30",
-    "prior_generation_id": "business_activity-US-efb253dce41f6771",
+    "prior_generation_id": "business_activity-US-d3adeed80af8f142",
     "prior_method_version": "business_activity.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [
-      "business_cycle:coincident_tier_index:20f9d561b3d00975",
-      "business_cycle:coincident_tier_momentum_6m:36c731906966a3a0",
-      "business_cycle:lagging_tier_diffusion:398189de017e65e7",
-      "business_cycle:lagging_tier_index:804eb82fefa2bce7",
-      "business_cycle:lagging_tier_momentum_6m:a5ba15aae07e6926"
-    ],
-    "correction_state": "superseded",
-    "note": "Same reference period as the predecessor print, but one or more owner-native tier fields changed value: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "business_activity-US-efb253dce41f6771"
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked tier field changed value (no-change republication).",
+    "predecessor_generation_id": "business_activity-US-d3adeed80af8f142"
   },
   "drivers": {
     "balance_sheet": [],
     "rate_side": []
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-30",
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "3726ed67e1cd1c4024e1a5033f4106a333f3a857473d55ba32dadcde84b3901e",
-    "generation_id": "business_activity-US-3726ed67e1cd1c40",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "7c6ff9ba52c010a5c8e7d405c35c7500d700bed53ea99b9ba5819a1ae2733fa1",
+    "generation_id": "business_activity-US-7c6ff9ba52c010a5",
     "producer": "engine.market_os.macro_workspaces.business_activity",
     "rendered_at": null
   },
@@ -279,8 +273,8 @@
         "horizon": "current",
         "implication_id": "leading_tier_read",
         "text": {
-          "en": "Leading tier: 6-month momentum 0.7097366800869338, direction rising, breadth 100.0 (share of legs rising over the diffusion window, 0-100).",
-          "zh": "领先层：6个月动量 0.7097366800869338，方向 rising，广度 100.0（扩散窗口内上升分项占比，0-100）。"
+          "en": "Leading tier: 6-month momentum 0.7084035025522297, direction rising, breadth 100.0 (share of legs rising over the diffusion window, 0-100).",
+          "zh": "领先层：6个月动量 0.7084035025522297，方向 rising，广度 100.0（扩散窗口内上升分项占比，0-100）。"
         },
         "trace_ref": "data/regime/latest.json#business_cycle.tiers.leading"
       },
@@ -326,8 +320,8 @@
         "horizon": "current",
         "implication_id": "lagging_tier_read",
         "text": {
-          "en": "Lagging tier: 6-month momentum 0.36731840730412557, direction rising, breadth 0.0 (share of legs rising over the diffusion window, 0-100).",
-          "zh": "滞后层：6个月动量 0.36731840730412557，方向 rising，广度 0.0（扩散窗口内上升分项占比，0-100）。"
+          "en": "Lagging tier: 6-month momentum 0.36728774888189264, direction rising, breadth 0.0 (share of legs rising over the diffusion window, 0-100).",
+          "zh": "滞后层：6个月动量 0.36728774888189264，方向 rising，广度 0.0（扩散窗口内上升分项占比，0-100）。"
         },
         "trace_ref": "data/regime/latest.json#business_cycle.tiers.lagging"
       },
@@ -1098,7 +1092,7 @@
           "value": null
         },
         "unit": "ratio_pt",
-        "value": -0.5721691179154789,
+        "value": -0.5721511625563167,
         "value_type": "number"
       },
       {

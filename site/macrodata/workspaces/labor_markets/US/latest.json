@@ -188,7 +188,7 @@
           },
           {
             "component_id": "income_growth_proxy",
-            "contribution": 4.54,
+            "contribution": 3.15,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -198,9 +198,9 @@
             "null_reason": null,
             "owner_field": "labor_nowcast.withheld_tax_yoy_pct",
             "owner_ref": "engine.regime.labor_nowcast",
-            "raw_value": 2.9080052937736633,
+            "raw_value": 2.0134277640574627,
             "sign": 1,
-            "standardized_value": 68.18,
+            "standardized_value": 62.58,
             "weight": 0.25
           }
         ],
@@ -231,7 +231,7 @@
           }
         },
         "transformation": "claims z-score inverted and mapped 50-clamp(z/2.5,-1,1)*50 (elevated claims = weaker demand); Indeed 3m change and withheld-tax YoY mapped 50+clamp(pct/scale,-1,1)*50; prior-only owner reads, no in-composer estimation",
-        "value": 67.92,
+        "value": 66.52,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of standardized components, weights renormalized over present components; initial-claims momentum 0.40, Indeed job-postings momentum 0.35, withheld-tax income-growth proxy 0.25"
       },
@@ -311,31 +311,31 @@
     "comparability": "COMPARABLE",
     "deltas": [
       {
-        "current_value": 67.92,
-        "delta": -0.12,
+        "current_value": 66.52,
+        "delta": 0.0,
         "metric_id": "labor_demand",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 68.04
+        "prior_value": 66.52
       },
       {
         "current_value": 76.35,
-        "delta": 2.2,
+        "delta": 0.0,
         "metric_id": "labor_supply_tightness",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 74.15
+        "prior_value": 76.35
       }
     ],
     "null_reason": null,
-    "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "labor_markets-US-40d068d21164022b",
+    "prior_effective_date": "2026-09-04",
+    "prior_generation_id": "labor_markets-US-ab83f64038321c8a",
     "prior_method_version": "labor_markets.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
-    "predecessor_generation_id": "labor_markets-US-40d068d21164022b"
+    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
+    "predecessor_generation_id": "labor_markets-US-ab83f64038321c8a"
   },
   "drivers": {
     "balance_sheet": [
@@ -400,25 +400,25 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "income_growth_proxy",
-        "impact_magnitude": 4.54,
+        "impact_magnitude": 3.15,
         "impact_sign": 1,
         "label": {
           "en": "Withheld-tax income growth (proxy)",
           "zh": "预扣税收入增长（代理指标）"
         },
-        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=68.18, weight=0.25",
+        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=62.58, weight=0.25",
         "owner_field": "labor_nowcast.withheld_tax_yoy_pct",
         "unit": "percent",
-        "value": 2.9080052937736633
+        "value": 2.0134277640574627
       }
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "38039993aa85dd5ed31a2573799fad5876c7d14ae1f50480b3251db449a44de2",
-    "generation_id": "labor_markets-US-38039993aa85dd5e",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "34d8bb8580e75fe56bd2acf0cf0eb1bc520de7c107adf3ce50879d12720eeac3",
+    "generation_id": "labor_markets-US-34d8bb8580e75fe5",
     "producer": "engine.market_os.macro_workspaces.labor",
     "rendered_at": null
   },
@@ -433,23 +433,23 @@
     "method_version": "labor_markets.compose.v1",
     "nearest_boundary": {
       "axis": "labor_demand",
-      "distance": 17.92,
+      "distance": 16.52,
       "null_reason": null
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -0.12,
-      "dy": 2.2,
+      "dx": 0.0,
+      "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
     },
     "prior_state": {
-      "effective_date": "2026-09-03",
+      "effective_date": "2026-09-04",
       "method_version": "labor_markets.compose.v1",
       "state_id": "B"
     },
     "quadrant": {
-      "x": 67.92,
+      "x": 66.52,
       "x_status": "PRESENT",
       "y": 76.35,
       "y_status": "PRESENT"
@@ -464,7 +464,7 @@
       "en": "Labor demand / supply-tightness regime",
       "zh": "劳动力需求 / 供给紧张度状态"
     },
-    "transition_distance": 2.2
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [
@@ -487,8 +487,8 @@
         "horizon": "current",
         "implication_id": "state_descriptive",
         "text": {
-          "en": "US labor market reads B - Strong hiring / Tight market (labor demand x=67.92, labor supply/tightness y=76.35, boundary 50).",
-          "zh": "美国劳动力市场读数为 B - 招聘强劲 / 市场偏紧（劳动力需求 x=67.92，劳动力供给/紧张度 y=76.35，分界 50）。"
+          "en": "US labor market reads B - Strong hiring / Tight market (labor demand x=66.52, labor supply/tightness y=76.35, boundary 50).",
+          "zh": "美国劳动力市场读数为 B - 招聘强劲 / 市场偏紧（劳动力需求 x=66.52，劳动力供给/紧张度 y=76.35，分界 50）。"
         },
         "trace_ref": "data/regime/latest.json#labor_nowcast"
       }
@@ -541,7 +541,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 67.92,
+        "value": 66.52,
         "value_type": "score_0_100"
       },
       {
@@ -829,7 +829,7 @@
           "value": null
         },
         "unit": "pct",
-        "value": 2.9080052937736633,
+        "value": 2.0134277640574627,
         "value_type": "percent"
       },
       {

@@ -4824,3 +4824,16 @@
 {"date": "2026-09-04", "ticker": "CPRT", "score": 4.0, "percentile": 0.184, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
 {"date": "2026-09-04", "ticker": "ZTS", "score": 30.0, "percentile": 0.736, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
 {"date": "2026-09-04", "ticker": "OTIS", "score": 23.0, "percentile": 0.68, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "AN", "score": 49.0, "percentile": 0.8870967741935484, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "AEO", "score": 78.0, "percentile": 0.9758064516129032, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "LUMN", "score": 81.0, "percentile": 0.9919354838709677, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "OSK", "score": 42.0, "percentile": 0.8145161290322581, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "LEA", "score": 7.0, "percentile": 0.24596774193548387, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "VRT", "score": 11.0, "percentile": 0.4596774193548387, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "VST", "score": 7.0, "percentile": 0.24596774193548387, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "CNM", "score": 12.0, "percentile": 0.5, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "GM", "score": 25.0, "percentile": 0.657258064516129, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "NVDA", "score": 58.0, "percentile": 0.9193548387096774, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "KLIC", "score": 14.0, "percentile": 0.5685483870967742, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "PWR", "score": 10.0, "percentile": 0.4112903225806452, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "FICO", "score": 0.0, "percentile": 0.06854838709677419, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}

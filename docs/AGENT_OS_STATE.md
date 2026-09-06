@@ -2,21 +2,21 @@
 
 # Agent OS state
 
-Generated: 2026-09-04T20:25:11Z  |  69 workstreams (49 active · 1 awaiting_ci · 2 awaiting_review · 4 blocked · 8 done · 5 parked)
+Generated: 2026-09-06T04:36:16Z  |  69 workstreams (49 active · 1 awaiting_ci · 2 awaiting_review · 4 blocked · 8 done · 5 parked)
 
 | Input | Value |
 |---|---|
 | active_builds | data/governance/active_builds.json@2026-08-29T10:10:47.291791+00:00 |
-| active_builds age | 154.2h |
+| active_builds age | 186.4h |
 | worktrees | 1 |
-| records | 69 WS · 305 DEC · 248 DSC · 431 handoffs |
+| records | 69 WS · 305 DEC · 252 DSC · 438 handoffs |
 
 ## Degraded inputs
 
 - active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'
 - Mastermind checkout not found — p0 ids unvalidated, p0_active unknown
 - uncommitted-work scan skipped over 1 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work
-- active_builds.v1 is 154h old — PR state predates the last nightly sweep
+- active_builds.v1 is 186h old — PR state predates the last nightly sweep
 
 ## Workstreams
 

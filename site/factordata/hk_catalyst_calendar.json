@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-09-04",
+  "as_of": "2026-09-06",
   "horizon_days": 45,
   "display_only": true,
   "upcoming": [
@@ -14,7 +14,7 @@
       "provisional": true,
       "display_only": true,
       "date": "2026-09-14",
-      "days_until": 10,
+      "days_until": 8,
       "imminent": false,
       "dow": "Mon",
       "dow_zh": "\u5468\u4e00",
@@ -32,7 +32,7 @@
       "provisional": true,
       "display_only": true,
       "date": "2026-09-21",
-      "days_until": 17,
+      "days_until": 15,
       "imminent": false,
       "dow": "Mon",
       "dow_zh": "\u5468\u4e00",
@@ -41,11 +41,11 @@
     }
   ],
   "imminent": {
-    "en": "Next catalyst: HSI / HS-TECH Index Review (2026-Q3) in 10 days (Sep 14) [provisional].",
-    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1a\u6052\u6307 / \u6052\u79d1\u6307\u6570\u5b63\u5ea6\u68c0\u8ba8\uff082026\u5e74\u7b2c3\u5b63\u5ea6\uff0910\u5929\u540e\uff089\u670814\u65e5\uff09 [provisional]\u3002",
+    "en": "Next catalyst: HSI / HS-TECH Index Review (2026-Q3) in 8 days (Sep 14) [provisional].",
+    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1a\u6052\u6307 / \u6052\u79d1\u6307\u6570\u5b63\u5ea6\u68c0\u8ba8\uff082026\u5e74\u7b2c3\u5b63\u5ea6\uff098\u5929\u540e\uff089\u670814\u65e5\uff09 [provisional]\u3002",
     "type": "HSI_REVIEW",
     "date": "2026-09-14",
-    "days_until": 10,
+    "days_until": 8,
     "imminent": false,
     "provisional": true,
     "display_only": true

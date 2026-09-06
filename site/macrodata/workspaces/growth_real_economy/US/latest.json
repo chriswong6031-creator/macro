@@ -195,7 +195,7 @@
           },
           {
             "component_id": "leading_tier_momentum",
-            "contribution": 3.55,
+            "contribution": 3.54,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -205,9 +205,9 @@
             "null_reason": null,
             "owner_field": "business_cycle.tiers.leading.mom6",
             "owner_ref": "engine.business_cycle",
-            "raw_value": 0.7097366800869338,
+            "raw_value": 0.7084035025522297,
             "sign": 1,
-            "standardized_value": 67.74,
+            "standardized_value": 67.71,
             "weight": 0.2
           },
           {
@@ -370,30 +370,30 @@
     "deltas": [
       {
         "current_value": 70.61,
-        "delta": -0.16,
+        "delta": 0.0,
         "metric_id": "growth_momentum",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 70.77
+        "prior_value": 70.61
       },
       {
         "current_value": 65.42,
-        "delta": 1.0,
+        "delta": 0.0,
         "metric_id": "growth_level_breadth",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 64.42
+        "prior_value": 65.42
       }
     ],
     "null_reason": null,
-    "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "growth_real_economy-US-f491be52ff105a42",
+    "prior_effective_date": "2026-09-04",
+    "prior_generation_id": "growth_real_economy-US-59bc6a0580e31f26",
     "prior_method_version": "growth_real_economy.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
-    "predecessor_generation_id": "growth_real_economy-US-f491be52ff105a42"
+    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
+    "predecessor_generation_id": "growth_real_economy-US-59bc6a0580e31f26"
   },
   "drivers": {
     "balance_sheet": [
@@ -486,16 +486,16 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "leading_tier_momentum",
-        "impact_magnitude": 3.55,
+        "impact_magnitude": 3.54,
         "impact_sign": 1,
         "label": {
           "en": "Leading tier 6M momentum",
           "zh": "领先层六个月动能"
         },
-        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=67.74, weight=0.2. [schema key law] published under drivers.rate_side because the shared macro_workspace_snapshot.v1 schema names this array 'rate_side' (inherited from the liquidity_regime workspace); it carries a growth-momentum driver here, not a rate-side reading.",
+        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=67.71, weight=0.2. [schema key law] published under drivers.rate_side because the shared macro_workspace_snapshot.v1 schema names this array 'rate_side' (inherited from the liquidity_regime workspace); it carries a growth-momentum driver here, not a rate-side reading.",
         "owner_field": "business_cycle.tiers.leading.mom6",
         "unit": "index_pts",
-        "value": 0.7097366800869338
+        "value": 0.7084035025522297
       },
       {
         "coverage_state": "DISAGREEMENT",
@@ -514,11 +514,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "df2ab56ae87d1ea365540ed2c838037863d1def665927a95332faa2102d854ce",
-    "generation_id": "growth_real_economy-US-df2ab56ae87d1ea3",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "fc1b8edaf92521291e5f27453bd833607f9b201bcd3bee9c0e2d03b8cf54da86",
+    "generation_id": "growth_real_economy-US-fc1b8edaf9252129",
     "producer": "engine.market_os.macro_workspaces.growth",
     "rendered_at": null
   },
@@ -538,13 +538,13 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -0.16,
-      "dy": 1.0,
+      "dx": 0.0,
+      "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
     },
     "prior_state": {
-      "effective_date": "2026-09-03",
+      "effective_date": "2026-09-04",
       "method_version": "growth_real_economy.compose.v1",
       "state_id": "B"
     },
@@ -564,7 +564,7 @@
       "en": "Growth / real economy regime",
       "zh": "增长/实体经济体制"
     },
-    "transition_distance": 1.01
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [
@@ -814,7 +814,7 @@
           "value": null
         },
         "unit": "index_pts_mom6",
-        "value": 0.7097366800869338,
+        "value": 0.7084035025522297,
         "value_type": "number"
       },
       {
@@ -1030,7 +1030,7 @@
           "value": null
         },
         "unit": "index_0_100",
-        "value": 95.2115724055533,
+        "value": 95.2102392280186,
         "value_type": "index"
       },
       {
@@ -1066,7 +1066,7 @@
           "value": null
         },
         "unit": "index_0_100",
-        "value": 92.89962325771066,
+        "value": 92.89959259928843,
         "value_type": "index"
       },
       {
@@ -1138,7 +1138,7 @@
           "value": null
         },
         "unit": "index_pts_mom6",
-        "value": 0.36731840730412557,
+        "value": 0.36728774888189264,
         "value_type": "number"
       },
       {
@@ -1246,7 +1246,7 @@
           "value": null
         },
         "unit": "pct_yoy",
-        "value": 2.9080052937736633,
+        "value": 2.0134277640574627,
         "value_type": "percent"
       }
     ]

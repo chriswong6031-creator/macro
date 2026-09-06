@@ -196,7 +196,7 @@
           },
           {
             "component_id": "rates_scare_score",
-            "contribution": -1.34,
+            "contribution": -2.4,
             "coverage_state": "PRESENT",
             "freshness": "CURRENT",
             "label": {
@@ -206,9 +206,9 @@
             "null_reason": null,
             "owner_field": "regime_vector.rate_pressure_rates_scare_score",
             "owner_ref": "engine.regime.regime_vector",
-            "raw_value": 43.3,
+            "raw_value": 38.0,
             "sign": 1,
-            "standardized_value": 43.3,
+            "standardized_value": 38.0,
             "weight": 0.2
           }
         ],
@@ -239,7 +239,7 @@
           }
         },
         "transformation": "percentiles x100; z-score mapped 50+clamp(z/2.5,-1,1)*50; scare score passthrough (already 0-100); prior-only owner reads, no in-composer estimation",
-        "value": 19.89,
+        "value": 18.83,
         "value_status": "PRESENT",
         "weights_law": "weighted mean of standardized components, weights renormalized over present components; NFCI pctile 0.30, OFR FSI pctile 0.30, HY OAS z 0.20, rates scare 0.20"
       },
@@ -336,31 +336,31 @@
     "comparability": "COMPARABLE",
     "deltas": [
       {
-        "current_value": 19.89,
-        "delta": -0.16,
+        "current_value": 18.83,
+        "delta": 0.0,
         "metric_id": "funding_pressure",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 20.05
+        "prior_value": 18.83
       },
       {
         "current_value": 45.39,
-        "delta": 20.27,
+        "delta": 0.0,
         "metric_id": "balance_sheet_support",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 25.12
+        "prior_value": 45.39
       }
     ],
     "null_reason": null,
-    "prior_effective_date": "2026-09-03",
-    "prior_generation_id": "liquidity_regime-US-726741e9ef510e37",
+    "prior_effective_date": "2026-09-04",
+    "prior_generation_id": "liquidity_regime-US-974a839949a33e44",
     "prior_method_version": "liquidity_regime.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
-    "predecessor_generation_id": "liquidity_regime-US-726741e9ef510e37"
+    "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
+    "predecessor_generation_id": "liquidity_regime-US-974a839949a33e44"
   },
   "drivers": {
     "balance_sheet": [
@@ -453,25 +453,25 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "rates_scare_score",
-        "impact_magnitude": 1.34,
+        "impact_magnitude": 2.4,
         "impact_sign": -1,
         "label": {
           "en": "Rates scare score",
           "zh": "利率恐慌评分"
         },
-        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=43.3, weight=0.2",
+        "note": "signed push = (standardized-50)*weight toward the axis high side; standardized=38.0, weight=0.2",
         "owner_field": "regime_vector.rate_pressure_rates_scare_score",
         "unit": "score",
-        "value": 43.3
+        "value": 38.0
       }
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T00:51:12Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "42e9bb9308978d033f9e4bf986d7eb21e486feac",
-    "content_sha256": "6534c2cb83976c81fbc090f47a2e51c0c4f6391b961516e887a937f1325012ea",
-    "generation_id": "liquidity_regime-US-6534c2cb83976c81",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "bf79bf4e0d001082f8edc227698a1eeb4c69c126e1edc41e0ed07e413fc12420",
+    "generation_id": "liquidity_regime-US-bf79bf4e0d001082",
     "producer": "engine.market_os.macro_workspaces.liquidity_regime",
     "rendered_at": null
   },
@@ -491,18 +491,18 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -0.16,
-      "dy": 20.27,
+      "dx": 0.0,
+      "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
     },
     "prior_state": {
-      "effective_date": "2026-09-03",
+      "effective_date": "2026-09-04",
       "method_version": "liquidity_regime.compose.v1",
       "state_id": "C"
     },
     "quadrant": {
-      "x": 19.89,
+      "x": 18.83,
       "x_status": "PRESENT",
       "y": 45.39,
       "y_status": "PRESENT"
@@ -517,7 +517,7 @@
       "en": "Rate / liquidity regime",
       "zh": "利率 / 流动性体制"
     },
-    "transition_distance": 20.27
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [
@@ -540,8 +540,8 @@
         "horizon": "current",
         "implication_id": "state_descriptive",
         "text": {
-          "en": "US liquidity regime reads C - Easy funding / Weak support (funding pressure x=19.89, balance-sheet support y=45.39, boundary 50).",
-          "zh": "美国流动性体制读数为 C - 宽松融资 / 弱支持（融资压力 x=19.89，资产负债表支持 y=45.39，分界 50）。"
+          "en": "US liquidity regime reads C - Easy funding / Weak support (funding pressure x=18.83, balance-sheet support y=45.39, boundary 50).",
+          "zh": "美国流动性体制读数为 C - 宽松融资 / 弱支持（融资压力 x=18.83，资产负债表支持 y=45.39，分界 50）。"
         },
         "trace_ref": "data/regime/latest.json#liquidity_quality"
       },
@@ -640,7 +640,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 19.89,
+        "value": 18.83,
         "value_type": "score_0_100"
       },
       {
@@ -892,7 +892,7 @@
           "value": null
         },
         "unit": "score",
-        "value": 43.3,
+        "value": 38.0,
         "value_type": "score_0_100"
       }
     ]
