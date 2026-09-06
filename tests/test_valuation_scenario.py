@@ -13,7 +13,7 @@ FIXTURE_ROW = {
     "period_end": "2025-09-27",
     "revenue": 4.16e11,
     "op_income": 1.28e11,
-    "net_income": 1.05e11,
+    "ni": 1.05e11,  # loader column name (collectors/edgar_facts.py FLOW["ni"]) -- not "net_income"
     "cash": 3.2e10 + 1.0e10,  # arbitrary; net_debt derived below
     "debt_lt": 8.0e10,
     "debt_cur": 1.0e10,
@@ -31,7 +31,7 @@ def test_math_matches_frozen_formula():
     blob = vs.compute(_rows(), price=319.97, asof="2026-09-05", ticker="AAPL")
     assert blob is not None
     by_key = {s["key"]: s for s in blob["scenarios"]}
-    net_income = FIXTURE_ROW["net_income"]
+    net_income = FIXTURE_ROW["ni"]
     revenue = FIXTURE_ROW["revenue"]
     shares = FIXTURE_ROW["shares"]
     net_margin_base = net_income / revenue
@@ -44,7 +44,7 @@ def test_math_matches_frozen_formula():
 
 
 def test_null_propagation():
-    blob = vs.compute(_rows(net_income=None))
+    blob = vs.compute(_rows(ni=None))
     for s in blob["scenarios"]:
         assert s["computable"] is False
         assert s["per_share"] is None
@@ -80,16 +80,37 @@ def test_period_and_unit_consistency():
 
 
 def test_negative_or_zero_earnings_is_not_a_value():
-    blob = vs.compute(_rows(net_income=0))
+    blob = vs.compute(_rows(ni=0))
     for s in blob["scenarios"]:
         assert s["computable"] is False
         assert s["per_share"] is None
         assert "positive reported earnings" in s["missing"]
 
-    blob2 = vs.compute(_rows(net_income=-5.0))
+    blob2 = vs.compute(_rows(ni=-5.0))
     for s in blob2["scenarios"]:
         assert s["computable"] is False
         assert s["per_share"] is None
+
+
+def test_fixture_keys_are_real_statement_columns():
+    """Review B-F07-1 BLOCKER B1: engine/valuation_scenario.py previously read
+    latest.get("net_income"), a key that does not exist anywhere in the real
+    engine.stock_fundamentals._load_statements() schema -- every AAPL row
+    silently produced net_income=None against live data, and no test caught
+    it because the fixture used the same wrong key the module read. Ground
+    the fixture in the loader's own declared column set (collectors/
+    edgar_facts.py FLOW/BALANCE/BALANCE_SHARES -- the concept tables
+    _load_statements()'s parquet is built from) so a fixture key that doesn't
+    exist in the real schema fails here instead of passing silently."""
+    from collectors.edgar_facts import BALANCE, BALANCE_SHARES, FLOW
+
+    declared = set(FLOW) | set(BALANCE) | set(BALANCE_SHARES) | {"fy", "period_end"}
+    fixture_keys = set(FIXTURE_ROW)
+    assert fixture_keys <= declared, fixture_keys - declared
+    # And the specific field this bug hinged on: real net income lives at "ni",
+    # never "net_income" (which is only ever an OUTPUT/display key in this module).
+    assert "ni" in fixture_keys
+    assert "net_income" not in fixture_keys
 
 
 def test_module_is_pure():
@@ -139,7 +160,7 @@ def test_panel_renders_and_omits():
     assert 'id="valuation-scenario"' in html
     assert 'data-valuation-scenario="v1"' in html
 
-    null_blob = vs.compute(_rows(net_income=None), ticker="AAPL")
+    null_blob = vs.compute(_rows(ni=None), ticker="AAPL")
     assert null_blob["any_computable"] is False
     html2 = tmpl.render(valuation_scenario=null_blob, deep_ids=[])
     assert 'id="valuation-scenario"' in html2

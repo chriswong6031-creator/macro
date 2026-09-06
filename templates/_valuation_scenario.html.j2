@@ -77,7 +77,13 @@
   </div>
   <p class="vs-lede">{{ t("Three sets of assumptions applied to " ~ vscn.ticker ~ "'s last reported year. Change the assumption, change the answer.", '把三组假设套在' ~ vscn.ticker ~ '最近一个披露财年上。假设变，答案就变。') }}</p>
 
-  <div class="vs-ruler" role="img" aria-label="{{ t('Per-share value scale across three assumption scenarios and today\'s price', '三种假设情景与当前股价的每股价值刻度') }}">
+  {#- aria-label is plain English text, never the t() macro: t() emits <span
+      class="l-en">/<span class="l-zh"> markup for element CONTENT, and that
+      markup's own embedded double quotes terminate an HTML attribute value
+      early, leaking the rest of the string as visible page text (every other
+      aria-label in this page family, e.g. the dialog close button, is a
+      static English-only string for the same reason). -#}
+  <div class="vs-ruler" role="img" aria-label="Per-share value scale across three assumption scenarios and today's price">
     <div class="vs-track"></div>
     {% for s in vscn.scenarios %}
       {% set names = {'cautious': (t('Cautious','保守')), 'base': (t('Base','基准')), 'upbeat': (t('Upbeat','乐观'))} %}
@@ -85,7 +91,7 @@
       <div class="vs-mark m-{{ s.key }}" style="left:{{ vs_pct(s.per_share) }}%" tabindex="0"></div>
       <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ vs_pct(s.per_share) }}%">{{ names[s.key] }}<b>${{ '%.0f'|format(s.per_share) }}</b></div>
       {% else %}
-      <div class="vs-mark m-gap" style="left:50%" tabindex="0" aria-label="{{ t("Can't be computed without " ~ (s.missing_plain[0].en if s.missing_plain else 'a reported input'), '缺少' ~ (s.missing_plain[0].zh if s.missing_plain else '一项披露数据') ~ '，无法计算') }}"></div>
+      <div class="vs-mark m-gap" style="left:50%" tabindex="0" aria-label="Can't be computed without {{ s.missing_plain[0].en if s.missing_plain else 'a reported input' }}"></div>
       {% endif %}
     {% endfor %}
     {% if vs_price_val is not none %}

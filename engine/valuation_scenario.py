@@ -25,6 +25,26 @@ identity in engine/stock_fundamentals._net_debt (which defaults a missing
 leg to 0) -- this module is re-implemented rather than imported, and the
 contract here is "null means not reported, never imputed" with no exception.
 
+Input column names (fixed 2026-09-06 -- review B-F07-1 BLOCKER B1): the rows
+passed in are engine.stock_fundamentals._load_statements() records, sourced
+from collectors/edgar_facts.py's FLOW/BALANCE/BALANCE_SHARES concept tables.
+Net income is read as "ni" (FLOW["ni"] = NetIncomeLoss/ProfitLoss) -- the same
+column engine.stock_fundamentals._piotroski/_altman/_valuation_ratios all
+read (see e.g. "pe = mktcap / ni" there). A prior revision read "net_income",
+a key that does not exist anywhere in the real schema, so every AAPL row
+silently produced net_income=None and every scenario read "can't be computed
+without reported net income" against live data despite the field being fully
+reported -- caught only because no test built its fixture from the real
+column names. Every other input this module reads (revenue, op_income, cash,
+debt_lt, debt_cur, shares, fy, period_end) already matches the loader's real
+column name 1:1; "shares" is CommonStockSharesOutstanding (share count
+identity "outstanding", not "diluted" -- the loader has no diluted share
+count column, only a diluted EPS column ("eps_diluted"), which is a
+per-share ratio, not a share count, and is deliberately not used here).
+tests/test_valuation_scenario.py asserts the fixture's field set is a subset
+of the loader's declared columns so this class of bug cannot pass silently
+again.
+
 Forbidden by construction: no consensus, no estimates, no price targets, no
 probability/confidence wording, no LLM-authored numbers, no ranking/score.
 """
@@ -79,7 +99,7 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
 
     revenue = _num(latest.get("revenue"))
     op_income = _num(latest.get("op_income"))
-    net_income = _num(latest.get("net_income"))
+    net_income = _num(latest.get("ni"))  # loader column is "ni", not "net_income" -- BLOCKER B1
     cash = _num(latest.get("cash"))
     debt_lt = _num(latest.get("debt_lt"))
     debt_cur = _num(latest.get("debt_cur"))
@@ -91,7 +111,7 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
     # to simulate a mixed-period assembly; a mismatch there fails the whole
     # section rather than silently mixing fiscal years.
     consistent = True
-    for k in ("revenue_fy", "op_income_fy", "net_income_fy", "cash_fy",
+    for k in ("revenue_fy", "op_income_fy", "ni_fy", "cash_fy",
               "debt_lt_fy", "debt_cur_fy", "shares_fy"):
         v = latest.get(k)
         if v is not None and v != fy:

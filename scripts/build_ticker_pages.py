@@ -2473,9 +2473,16 @@ def _deep_valuation_scenario(blob: dict | None) -> dict | None:
         {"k_en": "Source", "k_zh": "来源", "v": "", "v_en": "SEC filings", "v_zh": "SEC申报文件"},
         {"k_en": "Tier", "k_zh": "层级", "v": "", "v_en": "Research display only, not advice",
          "v_zh": "仅供研究展示，非投资建议"},
+        # Review B-F07-1 MAJOR-2: was "diluted share count" -- the loader has no
+        # diluted share count column (only "eps_diluted", a per-share ratio, not
+        # a share count; see engine/valuation_scenario.py's module docstring), so
+        # the module deliberately divides by shares OUTSTANDING and labels that
+        # honestly (base kv row's "identity" field). This formula description
+        # must match what the panel actually does, not what a future producer
+        # change might someday supply.
         {"k_en": "Formula", "k_zh": "计算公式",
-         "v": "", "v_en": "adj. net income x earnings multiple / diluted share count",
-         "v_zh": "调整后净利润 x 市盈率倍数 / 稀释股数"},
+         "v": "", "v_en": "adj. net income x earnings multiple / share count (as reported)",
+         "v_zh": "调整后净利润 x 市盈率倍数 / 披露股数"},
         {"k_en": "Net debt / cash", "k_zh": "净负债／净现金",
          "v": "", "v_en": "Shown as a reported fact only -- not applied to the per-share math "
                           "(a P/E multiple already yields equity value)",
