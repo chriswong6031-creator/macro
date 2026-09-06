@@ -58,6 +58,17 @@
     </div>
   </section>
 
+  {# ── policy-watch:start — B-F09-6 (MO-PAID-067). Keep contiguous. ── #}
+  <section class="cs-unavailable cs-policy" id="cs-policy" aria-label="Policy watch">
+    <span class="cs-unavailable-mark" aria-hidden="true">◷</span>
+    <div>
+      <p class="cs-kicker">{{ t('Policy watch', '政策关注') }}</p>
+      <strong>{{ t(policy_watch.headline_en, policy_watch.headline_zh) }}</strong>
+      <span>{{ t(policy_watch.detail_en, policy_watch.detail_zh) }}</span>
+    </div>
+  </section>
+  {# ── policy-watch:end ── #}
+
   <div class="cs-workspace">
     <aside class="cs-rail" aria-labelledby="cs-rail-title">
       <div class="cs-rail-head">

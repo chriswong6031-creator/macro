@@ -1387,6 +1387,15 @@ def main() -> int:
                                      if len(_oc) > 23 else None)
     except Exception as _oe:  # noqa: BLE001 — a context chip must never crash the build
         log.warning("oil_episode read failed (%s); chip hidden", _oe)
+    # Coverage ledger (B-F09-6, MO-DELTA-029): a read-only inventory of what this
+    # build actually reads for prices/supply per commodity family. Must never
+    # crash the page build.
+    coverage = None
+    try:
+        from engine.commodity_coverage_matrix import compute_coverage_matrix
+        coverage = compute_coverage_matrix()
+    except Exception as _cve:  # noqa: BLE001 — coverage panel must never crash the build
+        log.warning("coverage matrix read failed (%s); panel hidden", _cve)
     try:
         html = env.get_template("commodities.html.j2").render(
             C=C, as_of=as_of, built=built, cal_span=cal_span, complex=cx,
@@ -1394,7 +1403,7 @@ def main() -> int:
             timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
             catalysts=catalysts_resolved, news_disclaimer=news_disclaimer,
             vm=vm, idx_ew_spark=idx_ew_spark, oil_episode=oil_episode,
-            conviction_labels=CONVICTION_LABELS)
+            conviction_labels=CONVICTION_LABELS, coverage=coverage)
     except Exception as _re:  # noqa: BLE001 — never crash the whole site build
         log.error("commodities template render failed (%s); skipping page write", _re)
         return 0
