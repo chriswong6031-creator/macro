@@ -1808,14 +1808,7 @@
 
     // mode-switch counts are what the user ACTUALLY has — an anonymous visitor has no
     // saved lists, so the count is ABSENT rather than borrowed
-    var pfN = el('ws_modes') && el('ws_modes').querySelector('[data-count="pf"]');
-    var wlN = el('ws_modes') && el('ws_modes').querySelector('[data-count="wl"]');
-    if (pfN) {
-      var pfC = pfCount();
-      // `null` = genuinely unknown (A1A §10) — an em dash, never a borrowed/fake number
-      pfN.textContent = (pfC == null) ? '—' : String(pfC);
-    }
-    if (wlN) wlN.textContent = (state.indexOf('anon') === 0) ? '' : String(listsCount());
+    refreshModeCounts();
 
     if (mode === 'watchlists') {
       // Watchlist names feed FX ONLY in this mode. Doing it on every render —
@@ -1884,6 +1877,20 @@
      file's OWN Watchlist blob — used to be the answer whenever window.PF was
      unavailable). Returns `null`, never a borrowed or fabricated number, when the
      canonical count is genuinely unknown; the caller shows that as unavailable. */
+  /* A1B same-page badge refresh: repaints the `#ws_modes` pf/wl counts in place
+     without a full render() pass, so a post-save Portfolio count updates on the
+     page the user is already on. Reuses the exact null/em-dash and anon rules
+     render() applies inline (A1A §10) — this just makes them callable standalone. */
+  function refreshModeCounts() {
+    var pfN = el('ws_modes') && el('ws_modes').querySelector('[data-count="pf"]');
+    var wlN = el('ws_modes') && el('ws_modes').querySelector('[data-count="wl"]');
+    if (pfN) {
+      var pfC = pfCount();
+      // `null` = genuinely unknown (A1A §10) — an em dash, never a borrowed/fake number
+      pfN.textContent = (pfC == null) ? '—' : String(pfC);
+    }
+    if (wlN) wlN.textContent = (wsState().indexOf('anon') === 0) ? '' : String(listsCount());
+  }
   function pfCount() {
     if (window.PF && window.PF.count) return window.PF.count();
     return null;
@@ -2174,6 +2181,7 @@
     // A1A test seam (§10, §13): the canonical Portfolio count — never Watchlist-
     // derived, never the temporary basket. tests/test_portfolio_truth_a1a_js.py pins it.
     pfCount: pfCount,
+    refreshModeCounts: refreshModeCounts,
     toast: toast,
     render: render,
     hydrate: hydrate,

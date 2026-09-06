@@ -1730,6 +1730,10 @@
          law, and `rows || []` was exactly that coercion. */
       if (newRows === null) { render(); return; }
       rows = newRows;
+      // A1B: repaint the `#ws_modes` Portfolio/Watchlist badge counts on THIS page
+      // right after the authoritative reread lands — same-page, no navigation
+      // required — before the (async) full render() pass below.
+      if (window.WS && window.WS.refreshModeCounts) window.WS.refreshModeCounts();
       ensureIndex().then(render);
     }).catch(function () {
       if (gen !== loadGen) return;
