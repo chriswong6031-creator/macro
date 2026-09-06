@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UBER-BULL-20260623",
-  "asof": "2026-08-31",
+  "asof": "2026-09-05",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 42.5,
@@ -11,26 +11,26 @@
   "human_state": "Window Elapsed \u2014 Awaiting Close",
   "components": {
     "validity": 100.0,
-    "progress": 12.4,
-    "pace": 16.7,
-    "retention": 20.6,
-    "overlay": 61.0
+    "progress": 13.2,
+    "pace": 10.0,
+    "retention": 22.5,
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.155,
-    "dist_to_t1_r": 1.345,
-    "dist_to_t2_r": 2.845,
-    "horizon_pct_used": 122.2,
-    "p1": 0.1032,
-    "p2": 0.0516,
+    "dist_to_stop_r": 1.169,
+    "dist_to_t1_r": 1.331,
+    "dist_to_t2_r": 2.831,
+    "horizon_pct_used": 133.3,
+    "p1": 0.1125,
+    "p2": 0.0563,
     "p3": null,
-    "move_r": 0.155,
+    "move_r": 0.169,
     "mfe_r": 0.751,
     "mae_r": -1.077
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 55,
-  "tau": 1.2222
+  "days_elapsed": 60,
+  "tau": 1.3333
 }

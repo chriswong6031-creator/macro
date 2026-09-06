@@ -149,8 +149,71 @@ does not describe china.html's own internals section above, which is a different
 - **Computed by:** `engine/flow_observatory/contract.py` `quadrant` / `enrich_group` /
   `market_read`, from `abs.value` = `rate_4wk` (themes) or `flow_1m_b` (Southbound
   aggregate) and `rel.value` = `vel`/`vel_primary`. De-minimis neutral bands: |abs| < 0.1pp
-  (themes) / < ¥0.5B (Southbound); |rel| < 0.5σ. Thresholds are provisional pending W5
-  calibration.
+  (themes) / < ¥0.5B (Southbound). |rel|: < 0.75σ (themes) / < 0.5σ (names) / < 0.5σ
+  (southbound) — themes W5-calibrated, names/southbound at the incumbent default,
+  `research/flow_observatory/W5_PREREG.md`,
+  `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2` (supersedes
+  `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`).
 - **So what:** Read BOTH figures on a chip before reacting to either one alone — a large σ
   reading with a negative raw flow is not the same market condition as a large σ reading
   with a positive one, even though the old page painted both the same color.
+
+**Descriptive method (W5, 2026-09; revised R2):** the incumbent `slope_z` normalization
+(M0) stays for ALL THREE lenses — no evaluated challenger (winsorized / median-MAD /
+percentile-probit) cleared the frozen improve-without-worsening bar
+(`research/flow_observatory/W5_PREREG.md` §5). Themes' state threshold recalibrates to
+0.75σ (tilt band 30pp, was 25pp) — verified sound on its applied surface and reconfirmed
+by an independent statistical review. Names and southbound both stay at the incumbent
+0.5σ: the first adjudication's names τ=0.3 pick was computed on the harness's
+breadth-tilt-style grid and misapplied to the per-name surface, where it breaches the
+frozen 25% neutral floor (measured 18.8%) and worsens flip rate (+7.1% relative) — reverted.
+The first adjudication's southbound switch to the winsorized variant (M1) rested on a
+single unreplicated seeded draw of the frozen §5(a) outlier/quiet metric; independent
+30-seed replication found P(pass)≈0.75 under seed variation (median improvement ratio
+≈0.57) — seed noise, not a lens property — so the method reverts to M0 as well (its
+threshold sweep was already regime-inconclusive: every candidate cutoff's held-out reach
+for "above norm" was 0% across the last 60 sessions). Net W5 change: themes thresholds
+only. Full arithmetic: `reports/flow_observatory_w5_methods.md` §6 (original) and §7
+(revised adjudication); decision records `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2`
+(supersedes `DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION`).
+
+### Product-Learning Telemetry (W7)
+
+- **Shown as:** No visible UI — nine typed, fire-and-forget analytics events ride the
+  page's existing first-party `/api/collect` beacon (the same one `templates/theme.js`
+  already uses for pageview/click/scroll) when a reader hovers, keyboard-focuses, or taps
+  a trust-strip chip's LENS tip open, expands the "all changes" overflow, clicks a
+  quadrant-cell chip, drills into a group row, opens a 60-session history drawer, runs a
+  same-lens compare, scrolls an episodes panel or the watch-limitation note into view, or
+  follows a member's Terminal link.
+- **Means:** Whether the six live Flow Observatory waves actually change how a reader
+  investigates a read — drilldown depth, evidence inspection, and Terminal handoffs —
+  rather than a single glanced-at verdict number. `research/flow_observatory/W7_SPEC.md`
+  is the frozen event schema: `ev` (one of `trust_open`, `changed_expand`,
+  `quadrant_select`, `group_drill`, `history_open`, `compare_run`, `episode_view`,
+  `terminal_out`, `watch_note_view`), `lens` (`theme`/`sector`/`aggregate`/null), `id`
+  (the group/entity id or null), `sess` (the page's market session string) — nothing
+  else. Privacy: group ids, lens names, and — for Terminal handoffs only — the
+  instrument symbol the existing `click` event already carries; no holdings, no research
+  text, no PII. Deduplicated per `(ev, lens, id)` per pageview (a client-side `Set`);
+  `compare_run` in particular dedupes to first-use per pageview — a boolean signal ("did
+  this reader ever run a compare"), not a running count of how many compares they ran.
+- **Computed by:** A single page-scoped `<script>` block in `templates/flow_velocity.html.j2`
+  (event delegation on `data-ev`/`data-ev-lens`/`data-ev-id` attributes already present
+  on the relevant DOM nodes, plus the page's own accordion/compare/IntersectionObserver
+  hooks). Calls the SAME `window.mmTrack('flowobs', {meta: {...}})` envelope
+  `templates/theme.js` already exposes — never a second transport or a new endpoint.
+  `app/main.py`'s `/api/collect` whitelist (`_MM_EVENT_TYPES`) accepts the `flowobs`
+  wire type; the beacon already passes an arbitrary `meta` object through to
+  `analytics_events` (the same idiom `click` events use for `{tag, text, href}`), so no
+  new server-side row schema was needed. Registered in `config/growth_events.yml` as
+  `flow_observatory.interacted` (funnel stage `intelligence_experienced`).
+- **So what:** A near-zero drilldown/evidence-inspection rate on a wave that shipped a
+  drilldown means the feature isn't being found or used — not that it doesn't matter.
+  Success-metric definitions (time-to-first-drill proxy = pageview → first
+  `group_drill`; evidence-inspection share = `trust_open`/`history_open` per pageview;
+  Terminal handoff rate = `terminal_out` per pageview; degraded-day engagement = events
+  per pageview on `publication_state != HEALTHY` days) are computed server-side later
+  from `sess` plus the existing state ledger — nothing new is stored to support them.
+  Telemetry never changes flow state, verdicts, or page rendering: the page renders and
+  behaves identically whether the beacon loads, is blocked, or throws.

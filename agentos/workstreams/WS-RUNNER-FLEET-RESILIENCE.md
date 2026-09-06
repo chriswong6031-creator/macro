@@ -308,8 +308,9 @@ DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER.
 
 Operation `ci-pc-fourth-slot-recovery-20260901-sol-001` (issue #6714, C3R-A) completed
 frozen plan `docs/superpowers/plans/2026-08-26-pc-ci-fourth-slot-resource-isolation.md`
-Tasks 1-5 as a source-only carrier. Capability state is
-`FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.
+Tasks 1-5 as a source-only carrier. The merged-substrate review has since made
+the current capability state
+`FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_PROVEN / RELEASE_BLOCKED`.
 
 Read that state literally. There is no `pc-ci-4` registration, no
 `/opt/mastermind-ci/runner-4`, no `mastermind-ci.slice` unit on any host, and no
@@ -326,7 +327,8 @@ slot, an invented carrier name, a pending block on another pool, `ci-linux` in
 `pc-ci-4` to `label_registry.ci-linux.carried_by` passed the policy guard clean.
 
 The second durable property is that aggregate slice evidence refuses rather than
-substitutes: a candidate outside `/mastermind-ci.slice/<unit>.service` produces
+substitutes: a candidate outside the exact direct-service hierarchy
+`/mastermind.slice/mastermind-ci.slice/<unit>.service` produces
 `refused` with no metric values, and the receipt reducer reports aggregates only when
 every sample in the window carried status exactly `bound` and named one cgroup.
 
@@ -349,3 +351,54 @@ every accepted byte here was re-derived from current main.
 Continuation detail, including the `do_not_redo` list and the bootstrap hazard of
 shipping the slice-joined unit to a host without the slice unit installed, is in
 `agentos/handoffs/WS-RUNNER-FLEET-RESILIENCE-2026-09-01.md`.
+
+## C3R-A merged-substrate false-proof repair — 2026-09-01
+
+PR #6718 merged as `b260d28a6efbfb4593dfcc453731f71703252ac0`
+while review `5084468618` remained `CHANGES_REQUESTED`. A staged real-host attempt
+then proved the actual systemd hierarchy and parent aggregation node. Only
+`pc-ci-1` was attempted; its new unit refused for about 96 seconds and was restored
+to exact prior bytes. `pc-ci-2` and `pc-ci-3` were never touched. The remaining
+helper and inert slice bytes on the host are not acceptance evidence.
+
+Exact-head review `5085372259` on PR #6728 preserves those two valid discoveries
+but identifies six release blockers: non-direct membership, incomplete parent-limit
+proof, fail-open strict PSI, a disconnected strict preflight, unsafe deltas across
+invalid windows, and cleanup escape through a symlinked allowlisted root. The same
+carrier now repairs all six plus malformed R14 pending-label inputs under
+discriminating RED-first tests. Candidate and parent cgroup identities are distinct
+and frozen; exact limits are carried into the existing receipt; every invalid window
+clears all numeric acceptance fields; and slots=4 has one blocking no-checkout
+root-owned preflight before fanout while slots 1/3 remain unchanged.
+
+The release boundary remains literal: PR #6728 stays DRAFT / HOLD-FOR-SOL and the
+binding change-request review is not dismissed by the worker. Live production stays
+exactly `pc-ci-1..3`, trusted execution stays `max-parallel: 3`, and no registration,
+label/group, service, cgroup, cache, credential, dispatch, render, or production
+effect is authorized. Current-head CI and an independent exact-head source approval
+still cannot substitute for the separately authorized C3R-B real-host proof.
+
+## C3R-A fourth-candidate route repair — 2026-09-03
+
+Current-head release adjudication found one remaining end-to-end contradiction:
+pending `pc-ci-4` must remain free of production label `ci-linux`, but the four-slot
+preflight and every pack previously required that label. Operation
+`ci-c3ra-fourth-canary-route-repair-20260903-sol-001` keeps the same PR #6728,
+branch, label inventory, and 12-path footprint while binding the existing
+diagnostic-only `ci-linux-canary` route to the fourth-candidate journey.
+
+For `slots=4`, the no-checkout parent-envelope preflight and exactly the selected
+primary pack use `ci-linux-canary`; the other three selected packs use `ci-linux`.
+The primary output is parsed as a canonical numeric value and bound to the first
+selected-pack identity, so missing, malformed, or inconsistent identity fails
+closed. Slots 1 and 3, all four hosted/compare/failure legs, the independent
+`render-linux` reservation, and production trusted execution at `max-parallel: 3`
+remain unchanged.
+
+This is source capability only. C3R-B still owns every host and GitHub label effect:
+after drain and exact identity proof it temporarily transfers `ci-linux-canary`
+from exact `pc-ci-1` to exact `pc-ci-4`, proves `pc-ci-4` still lacks `ci-linux`,
+runs one diagnostic, and restores the label on every exit. An ambiguous response is
+`EFFECT_UNKNOWN` and blocks dispatch, retry, and promotion. This source operation
+performs none of those acts; PR #6728 remains DRAFT / HOLD-FOR-SOL and the maximum
+claim remains `FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.

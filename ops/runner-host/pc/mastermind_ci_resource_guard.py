@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import time
 from pathlib import Path
@@ -15,6 +16,13 @@ GIB = 1024**3
 MIB = 1024**2
 
 EXPECTED_SLICE = "mastermind-ci.slice"
+EXPECTED_AGGREGATE_CGROUP = "/mastermind.slice/mastermind-ci.slice"
+EXPECTED_LIMITS = {
+    "cpu.max": "800000 100000",
+    "memory.high": "10737418240",
+    "memory.max": "12884901888",
+    "memory.swap.max": "2147483648",
+}
 
 # Guard thresholds are versioned SEPARATELY from the slice ceilings in
 # mastermind-ci.slice.template. Retuning when a listener refuses to start is an
@@ -106,23 +114,63 @@ def candidate_cgroup(proc_self_cgroup: Path = Path("/proc/self/cgroup")) -> str 
     return None
 
 
-def is_bound_to_ci_slice(cgroup: str | None) -> bool:
-    """Exact ANCHORED match: the candidate sits directly under the slice root.
+def expected_slice_chain(slice_name: str = EXPECTED_SLICE) -> list[str]:
+    """The cgroup component chain systemd creates for a slice unit name.
 
-    Component-anywhere matching accepted a nested look-alike such as
-    /user.slice/user-1000.slice/mastermind-ci.slice/evil.service, and an
-    unnormalised `..` let a forged cgroup assemble fully "bound" evidence from a
-    directory outside the slice entirely. A systemd top-level slice always
-    produces /mastermind-ci.slice/<unit>.service, so anchoring costs nothing.
+    systemd treats `-` in a slice name as a PATH SEPARATOR, so
+    `mastermind-ci.slice` is a child of an implicit `mastermind.slice` and lives
+    at /mastermind.slice/mastermind-ci.slice/. Discovered on the real host
+    2026-09-02 when a correctly configured pc-ci-1 was refused exit 78 and could
+    not start: the previous matcher required the slice at component 0.
     """
-    if not cgroup:
+
+    stem = slice_name[: -len(".slice")] if slice_name.endswith(".slice") else slice_name
+    parts = stem.split("-")
+    return ["-".join(parts[: i + 1]) + ".slice" for i in range(len(parts))]
+
+
+def is_bound_to_ci_slice(cgroup: str | None) -> bool:
+    """Accept exactly one direct service under the real systemd slice chain."""
+    if not cgroup or not cgroup.startswith("/") or cgroup.endswith("/") or "//" in cgroup:
         return False
     components = [item for item in cgroup.split("/") if item]
     if any(item in {"..", "."} for item in components):
         return False
-    if len(components) < 2 or components[0] != EXPECTED_SLICE:
+    chain = expected_slice_chain(EXPECTED_SLICE)
+    # Anchored on the FULL systemd-derived parent chain: this accepts the real
+    # /mastermind.slice/mastermind-ci.slice/<unit>.service while still refusing
+    # /user.slice/user-1000.slice/mastermind-ci.slice/... and every other nested
+    # look-alike, which is what anchoring was introduced to stop.
+    if components[: len(chain)] != chain or len(components) != len(chain) + 1:
         return False
-    return any(item.endswith(".service") for item in components[1:])
+    service = components[-1]
+    return len(service) > len(".service") and service.endswith(".service")
+
+
+def _identity(path: Path) -> dict[str, int] | None:
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return {"device": stat.st_dev, "inode": stat.st_ino}
+
+
+def _canonical_cgroup_nodes(cgroup_root: Path, cgroup: str) -> tuple[Path, Path] | None:
+    """Refuse proof paths that redirect outside the declared cgroup hierarchy."""
+    root = Path(cgroup_root)
+    candidate = root / cgroup.lstrip("/")
+    aggregate = root / EXPECTED_AGGREGATE_CGROUP.lstrip("/")
+    if root.is_symlink() or candidate.is_symlink() or aggregate.is_symlink():
+        return None
+    try:
+        canonical_root = root.resolve(strict=True)
+        if candidate.resolve(strict=True) != canonical_root / cgroup.lstrip("/"):
+            return None
+        if aggregate.resolve(strict=True) != canonical_root / EXPECTED_AGGREGATE_CGROUP.lstrip("/"):
+            return None
+    except OSError:
+        return None
+    return candidate, aggregate
 
 
 def slice_reasons(
@@ -151,11 +199,18 @@ def slice_reasons(
         "profile": profile,
         "expected_slice": EXPECTED_SLICE,
         "cgroup": cgroup,
+        "candidate_cgroup": cgroup,
+        "aggregate_cgroup": EXPECTED_AGGREGATE_CGROUP,
+        "candidate_identity": None,
+        "aggregate_identity": None,
+        "aggregate_metric_source": "parent_slice",
         "bound": bound,
         "memory_floor_is_guest_wide": True,
         "memory_events": None,
         "pressure_full_avg10": None,
         "cpu_max": None,
+        "effective_limits": None,
+        "slice_cgroup": None,
     }
     reasons: list[str] = []
 
@@ -178,19 +233,44 @@ def slice_reasons(
         )
 
     if bound:
-        node = Path(cgroup_root) / str(cgroup).lstrip("/")
+        # Envelope and aggregate counters live on the SLICE node; a candidate's
+        # leaf `.service` cgroup has neither.
+        slice_cgroup = EXPECTED_AGGREGATE_CGROUP
+        evidence["slice_cgroup"] = slice_cgroup
+        nodes = _canonical_cgroup_nodes(cgroup_root, str(cgroup))
+        if nodes is None:
+            evidence["bound"] = False
+            reasons.append(
+                "candidate or aggregate cgroup node is symlinked, noncanonical, missing, or outside the fixed parent slice"
+            )
+            return reasons, evidence
+        candidate_node, node = nodes
+        evidence["candidate_identity"] = _identity(candidate_node)
+        evidence["aggregate_identity"] = _identity(node)
+        if evidence["candidate_identity"] is None or evidence["aggregate_identity"] is None:
+            reasons.append("missing stable candidate or aggregate cgroup identity")
 
         # BINDING IS NOT ENFORCEMENT. systemd auto-creates an UNDEFINED slice, so
         # a unit carrying `Slice=mastermind-ci.slice` binds cleanly even when no
         # slice file was ever installed -- it simply inherits no limits. A
         # capacity diagnostic run against an unenforced envelope measures nothing
         # while looking bound and green, which is the exact shape of false proof
-        # this guard exists to refuse. Only the stricter profile gates on it:
-        # pc-ci-1..3 run today with no slice installed at all, and refusing them
-        # here would strand every live slot.
-        raw_cpu_max = _read(node / "cpu.max")
-        cpu_max = raw_cpu_max.strip() if raw_cpu_max is not None else None
+        # this guard exists to refuse. Every --require-slice invocation gates on
+        # the complete parent tuple. pc-ci-1..3 do not currently opt into that
+        # flag, so this proof boundary does not strand today's live slots.
+        limits = {
+            name: (_read(node / name) or "").strip() or None
+            for name in EXPECTED_LIMITS
+        }
+        evidence["effective_limits"] = limits
+        cpu_max = limits["cpu.max"]
         evidence["cpu_max"] = cpu_max
+        if require_slice:
+            for name, expected in EXPECTED_LIMITS.items():
+                if limits[name] != expected:
+                    reasons.append(
+                        f"aggregate slice {name} is {limits[name]!r}; expected {expected!r}"
+                    )
         if thresholds["psi_full_avg10_max"] is not None:
             if cpu_max is None or cpu_max.split()[:1] == ["max"]:
                 reasons.append(
@@ -222,7 +302,11 @@ def slice_reasons(
         pressure: dict[str, float] = {}
         for name, key in (("memory.pressure", "memory"), ("io.pressure", "io")):
             value = _read_full_avg10(node / name)
-            if value is not None:
+            if value is None and ceiling is not None:
+                reasons.append(f"aggregate slice {name} is missing or unparseable")
+            elif value is not None and (not math.isfinite(value) or value < 0):
+                reasons.append(f"aggregate slice {name} full avg10 is invalid")
+            elif value is not None:
                 pressure[key] = value
         evidence["pressure_full_avg10"] = pressure or None
         if ceiling is not None:

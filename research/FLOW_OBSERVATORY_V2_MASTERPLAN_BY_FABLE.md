@@ -347,8 +347,10 @@ conflation and does not survive.
 **Worked fixture copy** (frozen semantics, exact strings tunable within them at W1 design
 review): Southbound hero: "Southbound still bought +¥7.1B over the last month — but the
 pace is 1.5σ below its own norm and fading." (南向近一月仍净买入 71亿, 但节奏低于常态
-1.5σ且转弱。) Autos row: quadrant label "still selling, pressure easing" with abs −0.9%
-and rel +1.9σ shown as separate figures at rest, not tooltip-only.
+1.5σ且转弱。) Autos row: quadrant label "still selling, pressure easing" with the raw abs rate
+(e.g. −0.9%) and the σ velocity (e.g. +2.6σ) shown as separate figures at rest, not
+tooltip-only. (Corrected 2026-09-04: the original text wrote "+1.9σ", conflating the
+demeaned percent rate_rel with the σ velocity — the shipped page is the correct form.)
 
 Falsifier/refutation language never appears front-facing (house law, #3821); degraded
 states use plain words ("source behind — showing last good data from Sep 1" / 数据滞后 ·
@@ -446,7 +448,10 @@ promotion — separate program required).
   ticker/l1_code/start_date/end_date), seeded current-snapshot, accruing forward. The lens
   ships labeled "official sectors (申万一级) — current membership; history accrues from
   first collection"; historical official-sector replay is refused (honest unavailable)
-  until real accrued history covers the window. If no lawful keyless endpoint exists, the
+  until real accrued history covers the window. (Superseded 2026-09-04 for the W6
+  history drawers: disclosed replay under the pinned current-membership caption is the
+  ratified form — DEC:FLOW-OBSERVATORY-V2-OFFICIAL-LENS-REPLAY-DISCLOSED; the
+  published-record tier stays accrual-gated.) If no lawful keyless endpoint exists, the
   lens ships as designed-unavailable with the exact gap recorded — curated baskets are
   NEVER relabeled as the official lens, and no paid dataset is purchased in this program.
 - Coverage law (both lenses): every group statistic declares n_members/n_covered/

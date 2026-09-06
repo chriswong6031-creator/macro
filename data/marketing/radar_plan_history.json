@@ -2,6 +2,64 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-09-05",
+      "tickers": [
+        "ALGM",
+        "ATRA",
+        "BJ",
+        "GPI",
+        "HWM",
+        "ICLR",
+        "LAUR",
+        "LEA",
+        "LILA",
+        "PFLEX",
+        "PRDO",
+        "RHP",
+        "SEDG",
+        "SMP",
+        "UTHR"
+      ]
+    },
+    {
+      "as_of": "2026-09-04",
+      "tickers": [
+        "ACLOX",
+        "AESI",
+        "AGYS",
+        "AIN",
+        "AMR",
+        "BA",
+        "BGC",
+        "BLDR",
+        "BNY",
+        "DFIN",
+        "DUOL",
+        "EQIX",
+        "EZPW",
+        "HD",
+        "HLT",
+        "IART",
+        "LABD",
+        "LAUR",
+        "LNN",
+        "LUMN",
+        "NBIX",
+        "NYT",
+        "PECO",
+        "PG",
+        "POST",
+        "RHI",
+        "RNR",
+        "SGI",
+        "TGTX",
+        "UGI",
+        "VYX",
+        "WWW",
+        "XRAY"
+      ]
+    },
+    {
       "as_of": "2026-09-01",
       "tickers": [
         "AEO",
@@ -123,46 +181,6 @@
         "QUBT",
         "UEC",
         "WS"
-      ]
-    },
-    {
-      "as_of": "2026-08-18",
-      "tickers": [
-        "BGC",
-        "CDNL",
-        "CVX",
-        "HD",
-        "MLAB",
-        "TMUS"
-      ]
-    },
-    {
-      "as_of": "2026-08-14",
-      "tickers": [
-        "ADAM",
-        "AGNT",
-        "AMRC",
-        "BKSY",
-        "BWA",
-        "CAVA",
-        "CB",
-        "DFH",
-        "ESS",
-        "FSLR",
-        "FTI",
-        "GTES",
-        "IREN",
-        "MBC",
-        "META",
-        "NVR",
-        "OZK",
-        "PTEN",
-        "QBTS",
-        "QUBT",
-        "RKLB",
-        "TMUS",
-        "TTC",
-        "XRN"
       ]
     }
   ]

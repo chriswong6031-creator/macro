@@ -415,3 +415,89 @@ def test_the_t2_event_latch_records_only_on_the_asia_lane():
         "the T2 event-latch lane must come from the fail-closed resolver")
     assert 'record=(_latch_lane == "asia")' in src, (
         "the EventLatch record flag must still be the asia-lane comparison")
+
+
+# ===========================================================================
+# 6. DEEP-OHLC FRESHNESS — enrichment may never regress the settled board clock
+# ===========================================================================
+
+def _freshness_close(end: str, n: int = 320) -> pd.Series:
+    idx = pd.bdate_range(end=end, periods=n)
+    return pd.Series(range(n), index=idx, dtype=float)
+
+
+def _freshness_deep(end: str, n: int = 320) -> pd.DataFrame:
+    close = _freshness_close(end, n)
+    return pd.DataFrame({"close": close, "high": close * 1.01}, index=close.index)
+
+
+def test_deep_ohlc_never_regresses_a_fresher_cache_close(monkeypatch):
+    """The deep store enriches high/low; it cannot move the Prophet price clock backward."""
+    cache_close = _freshness_close("2026-08-27")
+    deep = _freshness_deep("2026-08-26")
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: deep)
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 0
+    assert universe[0][1].index.max() == cache_close.index.max()
+    assert universe[0][2] is None
+
+
+@pytest.mark.parametrize(
+    "invalid_index",
+    [
+        pd.Index([f"not-a-session-{i:03d}" for i in range(320)]),
+        pd.DatetimeIndex([pd.NaT] * 320),
+        pd.RangeIndex(320),
+    ],
+    ids=["unparseable", "all-nat", "numeric"],
+)
+@pytest.mark.parametrize(
+    "cache_close",
+    [pd.Series(dtype=float), _freshness_close("2026-08-27")],
+    ids=["cache-absent", "cache-valid"],
+)
+def test_deep_ohlc_requires_its_valid_session_but_not_a_cache_session(
+    monkeypatch, invalid_index, cache_close,
+):
+    """Invalid deep index maxima cannot replace an absent or valid cache session."""
+    deep_close = pd.Series(range(320), index=invalid_index, dtype=float)
+    invalid_deep = pd.DataFrame(
+        {"close": deep_close, "high": deep_close * 1.01},
+        index=invalid_index,
+    )
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: invalid_deep)
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 0
+    assert universe[0][1] is cache_close
+    assert universe[0][2] is None
+
+    if cache_close.empty:
+        valid_deep = _freshness_deep("2026-08-27")
+        monkeypatch.setattr(bcl.store, "read", lambda group, ticker: valid_deep)
+        universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+
+        upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+        assert upgraded == 1
+        pd.testing.assert_series_equal(universe[0][1], valid_deep["close"])
+        pd.testing.assert_series_equal(universe[0][2], valid_deep["high"])
+
+
+def test_deep_ohlc_still_upgrades_when_it_is_equally_fresh(monkeypatch):
+    """Same-session deep OHLC keeps its real high/low enrichment authority."""
+    cache_close = _freshness_close("2026-08-27")
+    deep = _freshness_deep("2026-08-27")
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: deep)
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 1
+    assert universe[0][1].index.max() == deep.index.max()
+    pd.testing.assert_series_equal(universe[0][2], deep["high"])

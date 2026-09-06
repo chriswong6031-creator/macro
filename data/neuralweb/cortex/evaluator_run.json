@@ -1,26 +1,34 @@
 {
-  "as_of": "2026-08-18",
-  "evaluator_version": "W7b-PR2",
+  "as_of": "2026-09-05",
+  "evaluator_version": "W7b-PR3",
   "dry_run": false,
   "n_due": 1,
   "results": [
     {
-      "id": "cortex-2026-07-30-within-q1-labeled-periods-simultaneous-11690f",
+      "id": "cortex-2026-08-08-when-an-equity-q2-regime-is-simultaneous-197757",
       "claim_shape": "conditional_regime",
-      "verdict": "insufficient-n",
+      "verdict": "uncomputable-metric",
       "n": 0,
       "metric_value": null,
       "detail": {
-        "total_spine_rows": 2,
-        "pre_reg_dropped": 2,
-        "post_reg_n": 0,
-        "note": "No post-registration graded rows found. All data predates registration \u2014 anti-mining law enforced."
+        "gate_error": "metric 'q2_persistence_rate_difference' is not computable by this evaluator",
+        "supported_metrics": [
+          "excess_mean",
+          "excess_mean_difference",
+          "hit_rate",
+          "hit_rate_difference",
+          "hit_rate_ratio",
+          "stop_out_rate",
+          "stop_out_rate_difference"
+        ],
+        "remediation": "re-register with a supported metric name; the evaluator will not substitute a different metric for the one that was pre-committed",
+        "evaluator_version": "W7b-PR3"
       },
       "gate": {
-        "metric": "mean_10d_excess_difference_vs_q1_no_conjunction",
-        "threshold": -0.01,
-        "min_n": 25,
-        "horizon_d": 10,
+        "metric": "q2_persistence_rate_difference",
+        "threshold": -0.1,
+        "min_n": 30,
+        "horizon_d": 21,
         "direction_expected": -1
       },
       "note": null
@@ -28,5 +36,5 @@
   ],
   "n_passed": 0,
   "n_failed": 0,
-  "n_insufficient": 1
+  "n_insufficient": 0
 }

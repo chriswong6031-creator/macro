@@ -69,7 +69,7 @@ def test_snapshot_structure_and_invariants():
     f = _synthetic_frame()
     s = rit.snapshot(f)
     assert s is not None
-    for key in ("asof", "state", "inflation_decomposition", "transmission",
+    for key in ("asof", "state", "yield_momentum", "inflation_decomposition", "transmission",
                 "headwinds", "tailwinds", "chains", "scenarios", "scored_status",
                 "caveats", "calibrated"):
         assert key in s, key
@@ -83,6 +83,8 @@ def test_snapshot_structure_and_invariants():
     # caveats + scored status bilingual
     assert s["scored_status"]["en"] and s["scored_status"]["zh"]
     assert all(c.get("en") and c.get("zh") for c in s["caveats"])
+    assert s["yield_momentum"]["display_only"] is True
+    assert s["yield_momentum"]["authority"] is False
     # chains carry the live annotation
     assert len(s["chains"]) == len(rit.CHAINS)
     for ch in s["chains"]:

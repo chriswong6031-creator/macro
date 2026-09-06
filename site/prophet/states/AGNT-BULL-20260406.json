@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AGNT-BULL-20260406",
-  "asof": "2026-08-31",
+  "asof": "2026-09-05",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 8.0,
@@ -14,19 +14,19 @@
     "progress": 0.0,
     "pace": 0.0,
     "retention": 0.0,
-    "overlay": 61.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": -1.132,
+    "dist_to_stop_r": -1.207,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 46.7,
-    "p1": -0.0882,
-    "p2": -0.0441,
+    "horizon_pct_used": 57.8,
+    "p1": -0.1377,
+    "p2": -0.0689,
     "p3": null,
-    "move_r": -0.132,
+    "move_r": -0.207,
     "mfe_r": 0.38,
-    "mae_r": -0.132
+    "mae_r": -0.24
   },
   "rr_ratio": null,
   "rr_grade": null,
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.4599997711181638,
-  "_mae": -0.16000011444091822,
+  "_mae": -0.2899999904632571,
   "_max_p1": 0.2534434000651041,
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 21,
-  "tau": 0.4667
+  "days_elapsed": 26,
+  "tau": 0.5778
 }
