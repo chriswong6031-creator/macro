@@ -182,8 +182,13 @@ router.add_api_route("/v1", read_snapshot, methods=["HEAD"], include_in_schema=F
 
 @router.api_route("/v1", methods=["POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
                   include_in_schema=False)
-def _method_not_allowed() -> Response:
-    """A read-only route says so with the same privacy guarantees as a read."""
+def _method_not_allowed(_user: dict = Depends(require_site_full_user)) -> Response:
+    """A read-only route says so with the same privacy guarantees as a read.
+
+    Carries the same auth dependency as GET/HEAD so an unauthenticated caller
+    learns they are unauthorized, not that the route exists for anonymous
+    callers via a disallowed verb.
+    """
     raise HTTPException(
         405,
         detail={"schema": ERROR_SCHEMA_ID, "code": "method_not_allowed",

@@ -235,3 +235,10 @@ html[data-theme="light"] .ox-card[data-tone="watch"]{
   .ox-meta-item + .ox-meta-item::before{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Modifier classes for the "What this page is" explainer block -- these
+   replace inline style="" attributes that were invisible to the design-
+   system checker (governed CSS owns material decisions, not page markup). */
+.ox-detail--flush{border-top:0;padding-top:26px}
+.ox-detail-h2{font-size:var(--fs-h2);margin:0 0 8px}
+.ox-note--prose{max-width:66ch}
