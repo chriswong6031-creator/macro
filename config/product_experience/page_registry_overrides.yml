@@ -682,7 +682,7 @@ pages:
 
   # ── intelligence_desk · named research desks ──────────────────────────────────
 
-  sanctions_map:
+  macro:sanctions_map:
     priority: "P0"
     archetype: "intelligence_desk"
     primary_user_question: "Where do US sanctions point today, and which countries is our coverage silent about?"
