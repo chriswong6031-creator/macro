@@ -1,0 +1,191 @@
+{
+  "schema": "am_edition.v1",
+  "display_only": true,
+  "authority": "display_only",
+  "generated_at": "2026-09-06T06:27:26.464823+00:00",
+  "session_date": "2026-09-06",
+  "session_state": "NOT_YET_OPEN",
+  "prior_close_date": "2026-09-05",
+  "morning_source_feasibility": "DEGRADED",
+  "morning_source_feasibility_cause": "site/live/quotes.json is gitignored (.gitignore:60) and only force-added by intraday-fastpath.yml:224; newest committed as_of=2026-07-27T22:32:09.883727+00:00 is older than the prior-close cut 2026-09-05T20:00:00+00:00",
+  "null_count": 0,
+  "blocks": [
+    {
+      "key": "session_clock",
+      "title_en": "Session clock",
+      "title_zh": "交易时段",
+      "state": "NOT_YET_OPEN",
+      "source_ref": "computed",
+      "source_owner": "build_am_edition",
+      "source_as_of": null,
+      "source_as_of_precision": null,
+      "age_minutes": null,
+      "max_age_minutes": null,
+      "classification": "deterministic_calendar",
+      "state_reason_en": "Markets are closed for the weekend.",
+      "state_reason_zh": "周末休市。"
+    },
+    {
+      "key": "tape_since_prior_close",
+      "title_en": "Since yesterday's close",
+      "title_zh": "自昨日收盘以来",
+      "state": "STALE_WITH_LAST_KNOWN",
+      "source_ref": "site/live/quotes.json",
+      "source_owner": "intraday-fastpath",
+      "source_as_of": "2026-07-27T22:32:09.883727+00:00",
+      "source_as_of_precision": "second",
+      "age_minutes": 58075,
+      "max_age_minutes": 240,
+      "classification": "deterministic_derived_comparison",
+      "state_reason_en": "Last reading is not from this morning; showing the last known values, not a fresh move.",
+      "state_reason_zh": "最新读数并非来自今早，展示的是最新已知数值，而非最新行情。",
+      "rows": [
+        {
+          "label_en": "S&P 500 ETF",
+          "label_zh": "标普500 ETF",
+          "symbol": "SPY",
+          "prior_close": 738.93,
+          "last": 739.09,
+          "change_pct": 0.02,
+          "basis": "regular",
+          "quote_as_of": "2026-07-27T22:32:09.883727+00:00"
+        },
+        {
+          "label_en": "Nasdaq 100 ETF",
+          "label_zh": "纳斯达克100 ETF",
+          "symbol": "QQQ",
+          "prior_close": 684.23,
+          "last": 682.12,
+          "change_pct": -0.31,
+          "basis": "regular",
+          "quote_as_of": "2026-07-27T22:32:09.883727+00:00"
+        },
+        {
+          "label_en": "Russell 2000",
+          "label_zh": "罗素2000指数",
+          "symbol": "^RUT",
+          "prior_close": 2929.9988,
+          "last": 2948.035,
+          "change_pct": 0.62,
+          "basis": "regular",
+          "quote_as_of": "2026-07-27T22:32:09.883727+00:00"
+        }
+      ]
+    },
+    {
+      "key": "market_state",
+      "title_en": "Market state",
+      "title_zh": "市场状态",
+      "state": "STALE_WITH_LAST_KNOWN",
+      "source_ref": "data/market_state/latest.json",
+      "source_owner": "nightly",
+      "source_as_of": "2026-09-04T00:00:00+00:00",
+      "source_as_of_precision": "minute",
+      "age_minutes": 3267,
+      "max_age_minutes": 1440,
+      "classification": "owner_fact",
+      "state_reason_en": null,
+      "state_reason_zh": null,
+      "rows": [
+        {
+          "label_en": "Risk-on",
+          "label_zh": "风险偏好",
+          "posture_en": "Risk-on",
+          "posture_zh": "风险偏好",
+          "headline_en": "Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.",
+          "headline_zh": "风险偏好 — 价格、广度与跨资产信号一致。顺势交易与逢强加仓得到支持。"
+        }
+      ]
+    },
+    {
+      "key": "regime",
+      "title_en": "Regime",
+      "title_zh": "宏观周期",
+      "state": "STALE_WITH_LAST_KNOWN",
+      "source_ref": "data/regime/latest.json",
+      "source_owner": "nightly",
+      "source_as_of": "2026-09-04T00:00:00+00:00",
+      "source_as_of_precision": "minute",
+      "age_minutes": 3267,
+      "max_age_minutes": 1440,
+      "classification": "owner_fact",
+      "state_reason_en": null,
+      "state_reason_zh": null,
+      "rows": [
+        {
+          "quad_name": "Reflation",
+          "label": "Q2"
+        }
+      ]
+    },
+    {
+      "key": "cross_asset_plane",
+      "title_en": "Cross-asset plane",
+      "title_zh": "跨资产全景",
+      "state": "STALE_WITH_LAST_KNOWN",
+      "source_ref": "data/neuralweb/market_plane.json",
+      "source_owner": "nightly",
+      "source_as_of": "2026-09-05T00:00:00+00:00",
+      "source_as_of_precision": "minute",
+      "age_minutes": 1827,
+      "max_age_minutes": 1440,
+      "classification": "owner_fact",
+      "state_reason_en": null,
+      "state_reason_zh": null,
+      "rows": [
+        {
+          "verdict": {
+            "verdict": "RISK_ON",
+            "score": 75,
+            "label_en": "Risk-on",
+            "label_zh": "风险偏好"
+          },
+          "contradiction_count": 1,
+          "stale": false,
+          "gaps": [
+            "options_structure: no usable options_hub/gex payload for SPX/SPY/QQQ"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "todays_calendar",
+      "title_en": "Today's calendar",
+      "title_zh": "今日日程",
+      "state": "CURRENT",
+      "source_ref": "data/release_forecast/latest.json",
+      "source_owner": "nightly",
+      "source_as_of": "2026-09-05T14:39:04+00:00",
+      "source_as_of_precision": "second",
+      "age_minutes": 948,
+      "max_age_minutes": 1440,
+      "classification": "deterministic_calendar",
+      "state_reason_en": null,
+      "state_reason_zh": null,
+      "rows": []
+    },
+    {
+      "key": "prior_close_brief_ref",
+      "title_en": "Yesterday's brief",
+      "title_zh": "昨日简报",
+      "state": "CURRENT",
+      "source_ref": "site/master_brief.json",
+      "source_owner": "master_brain",
+      "source_as_of": "2026-09-05T14:13:21.440962+00:00",
+      "source_as_of_precision": "second",
+      "age_minutes": 974,
+      "max_age_minutes": 1440,
+      "classification": "existing_model_generated_prior_close_brief",
+      "state_reason_en": null,
+      "state_reason_zh": null,
+      "rows": [
+        {
+          "generated_at": "2026-09-05T14:13:21.440962+00:00",
+          "state_asof": "2026-09-04",
+          "lens": "macro",
+          "link": "/aibrief.html"
+        }
+      ]
+    }
+  ]
+}

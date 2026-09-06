@@ -86,6 +86,7 @@ on:
       - "scripts/build_ai_adjacency_tag.py"
       - "scripts/build_ai_desk_page.py"
       - "scripts/build_aibrief.py"
+      - "scripts/build_am_edition.py"
       - "scripts/build_allocation.py"
       - "scripts/build_alt_data.py"
       - "scripts/build_anticipation.py"
@@ -821,6 +822,7 @@ jobs:
             run_py "demand desk page (build_demand)"    scripts.build_demand
             run_py "calibration hub (build_calibration)" scripts.build_calibration
             run_py "AI daily brief page (build_aibrief)" scripts.build_aibrief
+            run_py "AM edition producer (build_am_edition)" scripts.build_am_edition
             run_py "mastermind snapshot page (build_mastermind)" scripts.build_mastermind
             run_py "AI desk page (build_ai_desk_page)"  scripts.build_ai_desk_page
           }
