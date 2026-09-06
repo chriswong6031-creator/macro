@@ -22,6 +22,8 @@
 
 **Governing copy law:** `agentos/decisions/DEC-CHAIRMAN-FRONTEND-PLAIN-LANGUAGE-LAW-2026-09-06.md` and the measured empty-state grammar in `research/MARKET_OS_UNIFIED_DASHBOARD_PATTERN_STUDY_2026-09-06.md` §1.12: **[what is absent, as a fact] → [the rule that explains why] → [the one action that would change it]**, three sentences max, one action only, three-way null vocabulary (em dash = no number yet; a plain two-word state = cannot be produced, with the reason; a real zero = a digit).
 
+**Provenance, printed not hidden (same rule as §0):** measured 2026-09-06 via `git ls-tree origin/main -- agentos/decisions/DEC-CHAIRMAN-FRONTEND-PLAIN-LANGUAGE-LAW-2026-09-06.md research/MARKET_OS_UNIFIED_DASHBOARD_PATTERN_STUDY_2026-09-06.md` → empty against `origin/main` at `8addc55cbd509a053abbd65e7f823e8ae479c98a`; both files exist only on `claude/marketontology-meta-ceo-b-20260906`. PR #6919 (this packet) does not carry them. **Merge-order note:** the DEC and the pattern-study §1.12 grammar must land on `main` no later than this packet, or a builder picking up Spec A/B post-merge cannot resolve the citation. **Self-contained restatement** (so the grammar does not depend on that merge landing first): the full rule is the three-arrow grammar already spelled out above, plus the three-way null vocabulary already spelled out above — nothing else from either source document is load-bearing for A6/B6/B2 below.
+
 ---
 
 # SPEC A — MO-PAID-057 · "Refresh & release truth, disclosed not sold"
@@ -30,7 +32,7 @@
 "Is what I'm reading current, and did anything change since I last looked? If it's stale, say so in words I understand and tell me the one thing that would fix it."
 
 ## A2. The decision (what is NOT built)
-**The tier-differentiated refresh in the ledger row is REFUSED.** A priority queue over `.github/workflows/daily.yml` is a source scheduler, banned by the F13 `do_not_redo`. Selling a faster refresh also manufactures the false-green `danger_areas` failure — a paying user believing their data is fresher than it is. Also not built: a changelog generator, release ledger, version manifest, in-app notification centre, web-push, or second delivery path. The product is **disclosure of the refresh truth that already exists**, plus an opt-in email of the same truth.
+**The tier-differentiated refresh in the ledger row is REFUSED.** A priority queue over `.github/workflows/daily.yml` is a source scheduler, banned by the F13 `do_not_redo`. Selling a faster refresh also manufactures the false-green `danger_areas` failure — a paying user believing their data is fresher than it is. Also not built: a changelog generator, release ledger, version manifest, in-app notification centre, web-push, or second delivery path. The product is **disclosure of the refresh truth that already exists**, plus an email of the same truth gated by the existing marketing opt-out preference (see A7 — this is the standing `cls="marketing"` opt-OUT model every other marketing mail already uses, not a new opt-in list).
 
 ## A3. Existing owner extended
 1. The nightly build stamp already threaded through every public page: `scripts/build_public_pages.py:121` passes `generated_utc=generated` into `help.html.j2`; `scripts/build_site.py:3741-3742` does the same.
@@ -45,7 +47,9 @@
 | `templates/_public_chrome_css.html.j2` | `.help-refresh` rule only (A8) |
 | `scripts/build_public_pages.py` | at `:121`, add `refresh=refresh_disclosure(config.ROOT, generated)` to the render kwargs |
 | `scripts/build_site.py` | same one-line addition at `:3742` |
-| `app/mailer.py` | no change — `render_email` (`:701`) and `send` (`:342`) as they stand |
+| `scripts/build_public_pages.py` | **also** the new call site for the refresh-digest send (A7): after computing `refresh` (row above), iterate `email_segments.get("marketing_eligible")` members and call `mailer.send(template="refresh_digest", ...)` once per recipient — this is the file's existing nightly invocation via `.github/workflows/daily.yml`'s site-build step, not a new lane |
+| `app/mailer.py` | no change — `render_email` (`:701`) and `send` (`:342`) as they stand; called with new args from the new site above |
+| `app/email_segments.py` | no change — `get("marketing_eligible")` (`:253-258` membership rule) is the recipient source read by the new call site |
 | `tests/test_help_directory.py` | extend (A9) |
 | `tests/test_refresh_disclosure.py` | new (A9) |
 
@@ -83,14 +87,16 @@ def refresh_disclosure(root: Path, generated_utc: str | None,
 Banned words above the fold: `generated_utc`, `stale`, `state`, `SLO`, `tier`, `pipeline`, `render`, `artifact`, any slug, any raw ISO timestamp. The raw `stamp_utc` may appear only in a `title`-free hover/detail line in English only — `title=` must never carry translated text.
 
 ## A7. The notification (opt-in, mailer only)
-One template, `refresh_digest`, sent by an existing nightly step — not a new lane:
+One template, `refresh_digest`. **No existing per-user nightly digest lane exists** — measured: the marketing-class senders are `app/marketing_emails.py:562` (welcome) and `:876` (campaign), both request/campaign-driven, not a nightly step; `scripts/freshness_sentinel.py:2156` is an operator sentinel, not a user mailer. The one new call site is inside `scripts/build_public_pages.py` (A4) — that file already runs every night as part of `.github/workflows/daily.yml`'s site-build step, so this extends an EXISTING nightly step rather than standing up a new lane, scheduler, or workflow file. **Audience source:** `app/email_segments.py:253-258` `marketing_eligible` (`s.email is null and coalesce(p.marketing_opt_out, false) = false`) — the existing opt-OUT membership rule every `cls="marketing"` send already reads; no new consent surface is built.
 ```python
 mailer.send(template="refresh_digest", cls="marketing",
             to_email=addr, subject=subj, html=html, text=text,
             idem_key=f"refresh_digest:{user_id}:{stamp_utc}", user_id=user_id)
 ```
 - **`cls="marketing"` is mandatory.** A "what changed" email is not transactional: `app/mailer.py:20-22`'s class law says `marketing` consults `email_suppression`/`email_prefs.marketing_opt_out` and refuses to send when either says no; `transactional` never does. Mislabelling this transactional would mail people who opted out — the privacy `danger_areas` failure. `send()` also coerces an unknown class to `marketing` (`:352`), so the strict path is the default.
-- Idempotency is the stamp: `_ledger_insert` (`:181`) writes `email_log` before SMTP, and a unique `idem_key` violation raises `DuplicateKey` (`:139`) — a re-run of the nightly cannot double-send.
+- Idempotency is the stamp on the NORMAL path only: `_ledger_insert` (`:181`) writes `email_log` before SMTP, and a unique `idem_key` violation raises `DuplicateKey` (`:139`) — a re-run of the nightly cannot double-send **while the ledger is reachable**.
+- **Degraded path, printed not hidden:** `app/mailer.py:373-381` — when `_ledger_insert` raises anything other than `DuplicateKey` (no service-role key, network, table absent), `send()` sets `ledgered=False` and proceeds WITHOUT the idempotency guarantee, by the function's own comment, for "a support reply, an operator alert" — single, low-volume, human-facing sends where a rare duplicate is an annoyance. A nightly bulk `cls="marketing"` digest to every eligible user is NOT that traffic: an unreachable ledger there means every recipient can be re-mailed on the next nightly retry — the unsolicited-repeat-mail failure the F13 `danger_areas` names.
+- **Constraint this spec adds (binds the builder; no code ships in this packet):** the new call site in `scripts/build_public_pages.py` must treat any `send()` result other than `"duplicate"`, `"suppressed"`, or `"skipped_no_smtp"` as inconclusive for THIS template and stop sending to further recipients in the same run the moment it is observed, retrying the remaining segment on the next nightly build rather than continuing the batch against a known-degraded ledger. One degraded send is the risk the mailer already accepts for its normal traffic; a full-batch continuation on top of it is not.
 - Suppression-lookup failure parks the row at `queued`, fail-closed; the drain completes it. Never re-call `send()` with the same key.
 - **The body may contain ONLY the six A5 keys.** No "what changed" list — no release-truth producer exists (§0). If every digest would say only "updated", the correct build is **not to send at all**.
 
@@ -109,7 +115,8 @@ mailer.send(template="refresh_digest", cls="marketing",
 5. `…::test_missing_stamp_still_renders_the_page` — `generated_utc=None` still renders with the `unknown` sentence, never a blank/crash/false "just now".
 6. `tests/test_mailer.py::test_refresh_digest_is_marketing_class` — the digest call uses `cls="marketing"`; a suppressed address yields no SMTP attempt.
 7. `…::test_refresh_digest_is_idempotent_per_stamp` — a second `send` with the same `idem_key` returns `duplicate` and sends nothing.
-8. Reviewer confirms **no** file under `.github/workflows/` gains a tier, priority, or queue concept — the refusal in A2 is itself an acceptance line.
+8. `…::test_refresh_digest_aborts_batch_on_ledger_failure` — with `_ledger_insert` forced to raise a non-`DuplicateKey` exception, the build-step loop sends at most one digest for the run and does not continue to further recipients in the same segment.
+9. Reviewer confirms **no** file under `.github/workflows/` gains a tier, priority, or queue concept — the refusal in A2 is itself an acceptance line.
 
 ---
 
