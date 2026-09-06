@@ -11,6 +11,7 @@ from jsonschema.exceptions import ValidationError
 
 from engine.estimator_implication import (
     AUTHORITY_KEYS,
+    ES_FAMILY,
     FORBIDDEN_KEYS,
     REPO_ROOT,
     SC_MODULE_PATH,
@@ -27,13 +28,17 @@ from engine.seasonality.event_study import UnregisteredSearchFamily
 
 
 class _StubLedger:
-    """A duck-typed ledger with no registered families, for the refusal test."""
+    """A duck-typed ledger. Empty by default (refusal test); pass ``registered``
+    to make it register specific families (positive-path test)."""
+
+    def __init__(self, registered=()):
+        self._registered = set(registered)
 
     def families(self):
-        return []
+        return list(self._registered)
 
     def effective_n(self, family):
-        return 0
+        return 32 if family in self._registered else 0
 
 
 def test_contract_file_is_a_valid_draft_2020_12_schema():
@@ -88,14 +93,50 @@ def test_registered_family_block_is_required_and_cannot_be_null():
 
 
 def test_null_values_carry_a_plain_word_null_reason_in_both_languages():
-    payload = compose_synthetic_control_implication()
-    assert payload["honest_n"]["episode_n"] is None
+    # The SC payload's honest_n is fully populated (see
+    # test_synthetic_control_honest_n_is_populated_from_the_artifact below); the
+    # event-study positive path is where a real null (its t-statistic) shows up,
+    # so that is what exercises the plain-word bilingual null_reasons contract.
+    stub = _StubLedger(registered=[ES_FAMILY])
+    payload = compose_event_study_implication(ledger=stub)
+    assert payload["uncertainty"][0]["value"] is None
     assert payload["null_reasons"], "expected at least one null_reasons entry"
     for nr in payload["null_reasons"]:
         assert nr["reason"]["en"].strip()
         assert nr["reason"]["zh"].strip()
         assert nr["detail"]["en"].strip()
         assert nr["detail"]["zh"].strip()
+
+
+def test_synthetic_control_honest_n_is_populated_from_the_artifact():
+    # Regression for the false null_reason this replaced: the SC artifact DOES
+    # carry a distinct episode count (n_events) separate from the fitted count
+    # (n_fitted), so episode_n must not be left null under an untrue reason.
+    payload = compose_synthetic_control_implication()
+    assert payload["honest_n"]["sample_n"] is not None
+    assert payload["honest_n"]["episode_n"] is not None
+    assert payload["honest_n"]["episode_n"] >= payload["honest_n"]["sample_n"]
+
+
+def test_diagnostics_zh_detail_is_a_genuine_translation_not_a_pointer():
+    payload = compose_synthetic_control_implication()
+    for d in payload["diagnostics"]:
+        zh = d["detail"]["zh"]
+        assert zh != "见 gate_eval.reasons", "zh detail must not be a raw pointer"
+        assert len(zh) > 10
+        assert zh != d["detail"]["en"]
+
+
+def test_registered_event_study_family_composes_a_valid_payload():
+    stub = _StubLedger(registered=[ES_FAMILY])
+    payload = compose_event_study_implication(ledger=stub)
+    validate_payload(payload)
+    assert payload["estimator_id"] == "engine.seasonality.event_study"
+    assert payload["registered_family"]["family_id"] == ES_FAMILY
+    assert payload["registered_family"]["registered"] is True
+    assert payload["selection"]["selection_id"]
+    assert payload["uncertainty"] and "value" in payload["uncertainty"][0]
+    assert payload["provenance"]["producing_module"] == "engine/seasonality/event_study.py"
 
 
 def test_payload_id_is_deterministic_and_content_bound():

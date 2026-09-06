@@ -81,7 +81,11 @@ ES_MODULE_PATH = "engine/seasonality/event_study.py"
 ES_RESULT_PATH = "data/experiments/hincl2_event_study_results.json"
 ES_RESULT_SHA256 = "f415b2c4cf9b12fbc8e4dd9e3a30a51c736c93f4ffbc3f818392b4796ea81139"
 ES_SELECTION = "announce/h20"
-ES_FAMILY = None  # the artifact names no search family; see the refusal path below
+ES_FAMILY = "hincl2_announce_dsr32"  # the h=20 pick out of a 32-config
+# (n_trials_dsr) DSR search over event_curve_announce horizons — a real search
+# family that has never been written to engine.trial_ledger (see the refusal
+# path below); a test-supplied ledger that DOES register it exercises the
+# positive compose path.
 
 
 class ImplicationContractError(ValueError):
@@ -182,20 +186,31 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
     }]
 
     null_reasons = []
-    episode_n = None
-    null_reasons.append({
-        "code": "episode_n_not_recorded",
-        "reason": {"en": "No distinct-episode count for this arm",
-                   "zh": "该组无独立事件计数"},
-        "detail": {"en": "The synthetic-control artifact records n_fitted (fitted "
-                         "event-window observations) but no distinct-episode count "
-                         "separate from that, so episode_n is left null rather than "
-                         "reusing sample_n under a different label.",
-                   "zh": "合成对照产物记录了 n_fitted（已拟合事件窗口观测数），"
-                         "但没有独立于此的独立事件计数，因此 episode_n 保留为空，"
-                         "而不是用另一个标签重复使用 sample_n。"},
-    })
 
+    # Genuine EN/ZH parity: each detail is a real translation of that code's
+    # gate_eval reason (pinned to the SC_RESULT_SHA256 artifact), never a
+    # pointer to an internal artifact key.
+    zh_detail = {
+        "PC1_positive_control_survives": (
+            "sc_nnls 标普纯增组 CAAR[0,5]=3.015%（事件加权）／4.907%（月度加权），"
+            "月度聚类 NW t=8.291（要求均值大于零且 t 大于 2）"
+        ),
+        "PC2_estimators_unbiased": (
+            "sp_pure_adds/matched_k 均值=0.190% t=4.316 未通过；"
+            "sp_pure_adds/sc_nnls 均值=0.197% t=4.535 未通过；"
+            "phase3_start/matched_k 均值=0.143% t=15.429 未通过；"
+            "phase3_start/sc_nnls 均值=0.137% t=15.431 未通过"
+            "（要求两族的 |均值| 均小于 0.3% 且 |t| 均小于 2）"
+        ),
+        "PC3_sc_not_noisier": (
+            "sc_nnls 安慰剂标准差=0.614%，SPY-CAR 安慰剂标准差=0.650%"
+            "（要求合成对照标准差不高于基准）"
+        ),
+        "F1_falsifier_holds": (
+            "phase3 sc_nnls CAAR[0,20]=0.496%，月度聚类 NW t=1.662，"
+            "经验 p 值=0.731（要求 |t| 小于 2 且 p 大于 0.05）"
+        ),
+    }
     diagnostics = []
     for code, label_en, label_zh in [
         ("PC1_positive_control_survives", "Positive control survives", "正向对照通过"),
@@ -208,7 +223,7 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
             "label": {"en": label_en, "zh": label_zh},
             "passed": gates.get(code),
             "detail": {"en": data["gate_eval"]["reasons"].get(code.split("_")[0], pc2_reason),
-                       "zh": "见 gate_eval.reasons"},
+                       "zh": zh_detail[code]},
             "source": f"#/gate_eval/gates/{code}",
         })
 
@@ -253,11 +268,18 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
         "uncertainty": uncertainty,
         "honest_n": {
             "sample_n": int(fam["n_fitted"]),
-            "episode_n": episode_n,
-            "basis": {"en": "sample_n counts fitted event-window observations "
-                            "(n_fitted); episode_n is null (see null_reasons)",
-                      "zh": "sample_n 为已拟合事件窗口观测数（n_fitted）；"
-                            "episode_n 为空（见 null_reasons）"},
+            "episode_n": int(fam["n_events"]),
+            "basis": {"en": f"sample_n counts fitted event-window observations "
+                            f"(n_fitted={fam['n_fitted']}, after dropping "
+                            f"{fam['n_dropped_unfitted']} unfitted); episode_n counts "
+                            f"all proposed episodes before that drop "
+                            f"(n_events={fam['n_events']}, matching n_tickers="
+                            f"{fam['n_tickers']})",
+                      "zh": f"sample_n 为已拟合事件窗口观测数（n_fitted="
+                            f"{fam['n_fitted']}，已剔除 {fam['n_dropped_unfitted']} "
+                            f"个未能拟合的事件）；episode_n 为剔除前提出的全部事件数"
+                            f"（n_events={fam['n_events']}，与 n_tickers="
+                            f"{fam['n_tickers']} 相同）"},
         },
         "diagnostics": diagnostics,
         "quality": "DIAGNOSTIC_FAILED",
@@ -278,26 +300,144 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
     return payload
 
 
-def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None) -> dict:
-    """Attempt to compose the event-study implication payload.
+def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
+                                     family_id: "str | None" = ES_FAMILY) -> dict:
+    """Compose the event-study implication payload, honoring family registration.
 
-    Raises ``UnregisteredSearchFamily`` because the hincl2 event-study artifact
-    names no search family recorded in ``engine.trial_ledger`` — see
-    ``build_estimator_implications`` for the typed refusal this produces.
+    ``family_id`` names the h=20 pick out of a 32-config (``n_trials_dsr``)
+    search over ``event_curve_announce`` — reading that winner without a
+    registered family would spend an unrecorded multiple-testing budget, so
+    this raises ``UnregisteredSearchFamily`` (event_study.py:144) whenever
+    ``family_id`` is unregistered in ``ledger`` — true today against the real
+    ``engine.trial_ledger`` (nobody has registered it there), and true for any
+    stub ledger with no matching family. A test-supplied ``ledger`` that DOES
+    register ``family_id`` exercises the positive compose path below, proving
+    the schema against a real ``engine.seasonality.event_study`` payload.
     """
     root = Path(root)
     _verify_digest(root, ES_RESULT_PATH, ES_RESULT_SHA256)
     ledger = _default_ledger(ledger)
-    family_id = ES_FAMILY
 
     if not family_is_registered(ledger, family_id):
         raise UnregisteredSearchFamily(
-            f"search family {family_id!r} was never registered: the hincl2 event "
-            "study artifact names no search family in engine.trial_ledger, so the "
-            "multiple-testing budget it spent is unrecorded and no implication can "
-            "be published for it"
+            f"search family {family_id!r} was never registered: reading the h=20 "
+            "winner of a 32-config event-study search spends a multiple-testing "
+            "budget that engine.trial_ledger has no record of, so no implication "
+            "can be published for it"
         )
-    raise AssertionError("unreachable: no registered hincl2 family exists on disk")
+    effective_n = int(ledger.effective_n(family_id))
+
+    data = _load_json(root, ES_RESULT_PATH)
+    point_value, curve_n = data["event_curve_announce"][str(data["primary_horizon"])]
+
+    point_estimate = {
+        "code": "hincl2_announce_caar_h20_mean",
+        "label": {"en": "HINCL2 announcement-window CAAR at h=20, DSR-selected arm",
+                   "zh": "HINCL2 公告窗口 h=20 处的 CAAR，DSR 选定组"},
+        "value": point_value,
+        "unit": "return_fraction",
+        "source": "#/event_curve_announce/20/0",
+    }
+
+    null_reasons = [{
+        "code": "event_study_t_stat_not_recorded",
+        "reason": {"en": "No t-statistic recorded for this horizon",
+                   "zh": "该窗口未记录 t 统计量"},
+        "detail": {"en": "The hincl2 event-study artifact records the DSR-selected "
+                         "mean and its supporting count at h=20 but no accompanying "
+                         "t-statistic, so uncertainty is left null rather than "
+                         "fabricated.",
+                   "zh": "hincl2 事件研究产物记录了 h=20 处 DSR 选定的均值及其支持"
+                         "样本数，但未记录相应的 t 统计量，因此不确定性字段保留为"
+                         "空，而非伪造。"},
+    }]
+    uncertainty = [{
+        "code": "hincl2_announce_caar_h20_t",
+        "kind": "student_t_p",
+        "label": {"en": "t-statistic on the h=20 CAAR (not recorded)",
+                  "zh": "h=20 处 CAAR 的 t 统计量（未记录）"},
+        "value": None,
+        "unit": "t_stat",
+        "source": "#/event_curve_announce/20",
+    }]
+
+    diagnostics = [{
+        "code": "DSR_search_registered",
+        "label": {"en": "DSR search family registered before this read",
+                  "zh": "DSR 搜索族在本次读取前已登记"},
+        "passed": True,
+        "detail": {"en": f"family {family_id!r} carries effective_n={effective_n} "
+                         "in engine.trial_ledger, so the 32-config search this "
+                         "h=20 pick came from is deflated for multiple testing.",
+                   "zh": f"族 {family_id!r} 在 engine.trial_ledger 中的 "
+                         f"effective_n={effective_n}，因此该 h=20 结果所来自的 "
+                         "32 组搜索已针对多重检验进行了折算。"},
+        "source": "#/n_trials_dsr",
+    }]
+
+    limitations = [{
+        "en": "This payload composes only once family_id is registered; the real "
+              "engine.trial_ledger has no such registration today, so in "
+              "production this path raises UnregisteredSearchFamily instead.",
+        "zh": "本载荷仅在 family_id 已登记时才会生成；当前真实的 "
+              "engine.trial_ledger 尚无该登记，因此在生产环境中此路径会抛出 "
+              "UnregisteredSearchFamily。",
+    }]
+
+    payload_id = compute_payload_id(
+        composer_version=COMPOSER_VERSION,
+        estimator_id="engine.seasonality.event_study",
+        result_artifact_path=ES_RESULT_PATH,
+        result_artifact_sha256=ES_RESULT_SHA256,
+        selection_id=ES_SELECTION,
+        family_id=family_id,
+    )
+
+    return {
+        "schema": SCHEMA_ID,
+        "payload_id": payload_id,
+        "composer_version": COMPOSER_VERSION,
+        "estimator_id": "engine.seasonality.event_study",
+        "registered_family": {
+            "family_id": family_id,
+            "registry": "engine.trial_ledger",
+            "registered": True,
+            "effective_n": effective_n,
+        },
+        "selection": {
+            "selection_id": ES_SELECTION,
+            "window": "0_20",
+            "anchor": "announce",
+        },
+        "point_estimate": point_estimate,
+        "uncertainty": uncertainty,
+        "honest_n": {
+            "sample_n": int(curve_n),
+            "episode_n": int(data["roster_add_events"]),
+            "basis": {"en": "sample_n counts the h=20 curve's supporting "
+                            "observations; episode_n counts roster_add_events "
+                            "(the distinct corporate-action episodes proposed "
+                            "before any coverage/fit filtering)",
+                      "zh": "sample_n 为 h=20 曲线的支持观测数；episode_n 为 "
+                            "roster_add_events（在覆盖率/拟合筛选之前提出的独立"
+                            "公司行为事件数）"},
+        },
+        "diagnostics": diagnostics,
+        "quality": "DIAGNOSTIC_ONLY",
+        "null_reasons": null_reasons,
+        "limitations": limitations,
+        "provenance": {
+            "producing_module": ES_MODULE_PATH,
+            "producing_module_sha256": sha256_file(root / ES_MODULE_PATH),
+            "result_artifact_path": ES_RESULT_PATH,
+            "result_artifact_sha256": ES_RESULT_SHA256,
+            "generator_path": None,
+            "generator_sha256": None,
+            "report_path": None,
+            "report_sha256": None,
+        },
+        "authority": {k: False for k in AUTHORITY_KEYS},
+    }
 
 
 def validate_payload(payload: Mapping[str, Any]) -> dict:
