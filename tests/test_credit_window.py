@@ -1,6 +1,11 @@
 """RED-first tests for engine/credit_window.py — the HY/IG bond issuance
 window gate (packet B-F09-2). Fixtures build tiny parquet files under
-tmp_path/{fred,archive,yahoo}/; every test passes root=tmp_path."""
+tmp_path/{fred,archive,yahoo}/; every test passes root=tmp_path.
+
+Fixture series end TODAY (not a fixed historical date) so their `as_of` is
+fresh under the module's staleness gate (MAJOR 6) — a hardcoded 2024 anchor
+would silently trip staleness in 2026+ and mask the behaviour under test.
+"""
 from __future__ import annotations
 
 import pandas as pd
@@ -9,16 +14,21 @@ import pytest
 from engine import credit_window as cw
 
 
-def _write_series(path, values, start="2024-01-01"):
+def _end_bdate_range(periods, end=None):
+    end = end or pd.Timestamp.now().normalize()
+    return pd.bdate_range(end=end, periods=periods)
+
+
+def _write_series(path, values, end=None):
     path.parent.mkdir(parents=True, exist_ok=True)
-    idx = pd.bdate_range(start=start, periods=len(values))
+    idx = _end_bdate_range(len(values), end=end)
     df = pd.DataFrame({"value": values}, index=idx)
     df.to_parquet(path)
 
 
-def _write_close(path, values, start="2024-01-01"):
+def _write_close(path, values, end=None):
     path.parent.mkdir(parents=True, exist_ok=True)
-    idx = pd.bdate_range(start=start, periods=len(values))
+    idx = _end_bdate_range(len(values), end=end)
     df = pd.DataFrame({"close": values}, index=idx)
     df.to_parquet(path)
 
@@ -65,6 +75,30 @@ def test_segment_open_requires_two_open_inputs():
     assert state != "open"
 
 
+def test_segment_two_open_inputs_flips_open():
+    # MAJOR 7 — the primary "open" behaviour was never exercised.
+    state, n, low = cw.segment_state(["open", "open", "neutral"])
+    assert state == "open"
+    assert n == 3
+    assert low is False
+
+
+def test_segment_two_shut_inputs_flips_shut():
+    state, n, low = cw.segment_state(["shut", "shut", "neutral"])
+    assert state == "shut"
+
+
+def test_segment_two_open_one_unknown_is_still_open_but_low_confidence():
+    # Precisely the "never open by default" guard acceptance line 3 names:
+    # two open inputs with the third genuinely missing must not silently
+    # become a full, undisclosed "open" verdict — it renders open, but with
+    # low_confidence True so the gap is visible.
+    state, n, low = cw.segment_state(["open", "open", "unknown"])
+    assert state == "open"
+    assert n == 2
+    assert low is True
+
+
 def test_segment_not_evaluable_below_min_inputs():
     assert cw.segment_state(["open", "unknown", "unknown"]) == ("not_evaluable", 1, True)
     state, n, low = cw.segment_state(["unknown", "unknown", "unknown"])
@@ -90,12 +124,15 @@ def test_window_state_null_path_when_move_missing(tmp_path):
     out = cw.window_state(root=tmp_path)
     for seg in out["segments"]:
         assert seg["low_confidence"] is True
+        # MOVE missing entirely must never silently degrade into "open by
+        # default" — this exercises the exact fixture acceptance line 3 guards.
+        assert seg["state"] != "open" or seg["low_confidence"] is True
 
 
 def test_as_of_propagates_per_input_and_to_top_level(tmp_path):
-    _write_series(tmp_path / "fred" / f"{cw.FRED_HY}.parquet", [3.0] * 260, start="2024-01-01")
-    _write_series(tmp_path / "fred" / f"{cw.FRED_IG}.parquet", [1.0] * 260, start="2024-01-01")
-    _write_close(tmp_path / "yahoo" / f"{cw.MOVE_TICKER}.parquet", [80.0] * 260, start="2024-01-01")
+    _write_series(tmp_path / "fred" / f"{cw.FRED_HY}.parquet", [3.0] * 260)
+    _write_series(tmp_path / "fred" / f"{cw.FRED_IG}.parquet", [1.0] * 260)
+    _write_close(tmp_path / "yahoo" / f"{cw.MOVE_TICKER}.parquet", [80.0] * 260)
     out = cw.window_state(root=tmp_path)
     for seg in out["segments"]:
         for inp in seg["inputs"]:
@@ -171,3 +208,117 @@ def test_rail_absent_when_spread_range_unknown(tmp_path):
     out = cw.window_state(root=tmp_path)
     for seg in out["segments"]:
         assert seg["rail"] is None
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR 4 — _band_width must read `state` and use the right constants per key
+# --------------------------------------------------------------------------- #
+def test_band_width_reads_state_not_just_key():
+    # A neutral rates_vol band is 35.0 wide (MOVE_SHUT_PCT - MOVE_OPEN_PCT),
+    # not 33.0 (spread_range's neutral band) — the pre-fix bug returned the
+    # RANGE_* constant for both keys regardless of state.
+    assert cw._band_width("rates_vol", "neutral") == pytest.approx(35.0)
+    assert cw._band_width("spread_range", "neutral") == pytest.approx(33.0)
+    assert cw._band_width("spread_drift", "neutral") == pytest.approx(40.0)
+    # open/shut bands are the unbounded sentinel, and must differ from the
+    # neutral band width — the pre-fix bug made them identical.
+    assert cw._band_width("spread_range", "open") != cw._band_width("spread_range", "neutral")
+    assert cw._band_width("rates_vol", "shut") == cw._band_width("rates_vol", "open")
+
+
+def test_next_threshold_open_and_shut_directions():
+    assert cw._next_threshold("spread_range", "open") == (cw.RANGE_OPEN_PCT, "neutral", "up")
+    assert cw._next_threshold("rates_vol", "shut") == (cw.MOVE_SHUT_PCT, "neutral", "down")
+    assert cw._next_threshold("spread_drift", "neutral") == (cw.DRIFT_SHUT_BP, "shut", "up")
+    assert cw._next_threshold("unknown_key", "open") is None
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER 3 — the "what would change this read" line must only name an input
+# whose flip would actually flip the SEGMENT, never just the input.
+# --------------------------------------------------------------------------- #
+def test_choose_change_never_names_a_flip_that_does_not_move_the_segment():
+    # Exact counterexample from the review: spread_range=10 (open),
+    # spread_drift=-30 (open), rates_vol=74 (neutral, 1pt from shut at 75).
+    # segment_state(['open','open','neutral']) is 'open' with n_open=2, and
+    # flipping rates_vol alone to 'shut' gives ['open','open','shut'] which
+    # is STILL 'open' (n_open=2 > n_shut=1) — so rates_vol must never be
+    # offered as "what would change this read".
+    inputs = [
+        {"key": "spread_range", "value": 10.0, "state": "open"},
+        {"key": "spread_drift", "value": -30.0, "state": "open"},
+        {"key": "rates_vol", "value": 74.0, "state": "neutral"},
+    ]
+    change = cw._choose_change(inputs, "open")
+    assert change is None or change["input"] != "rates_vol"
+
+
+def test_choose_change_names_an_input_whose_flip_moves_the_segment():
+    # One open, one neutral-near-shut, one shut: flipping the neutral input
+    # to shut DOES flip the segment (neutral -> shut), so it is a legitimate
+    # candidate.
+    inputs = [
+        {"key": "spread_range", "value": 10.0, "state": "open"},
+        {"key": "spread_drift", "value": 24.0, "state": "neutral"},
+        {"key": "rates_vol", "value": 76.0, "state": "shut"},
+    ]
+    change = cw._choose_change(inputs, "neutral")
+    assert change is not None
+    assert change["input"] == "spread_drift"
+    assert change["to_state"] == "shut"
+    assert change["segment_to"] == "shut"
+
+
+def test_choose_change_returns_none_when_no_flip_moves_the_segment():
+    inputs = [
+        {"key": "spread_range", "value": None, "state": "unknown"},
+        {"key": "spread_drift", "value": None, "state": "unknown"},
+        {"key": "rates_vol", "value": None, "state": "unknown"},
+    ]
+    assert cw._choose_change(inputs, "not_evaluable") is None
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR 5 — a handful of observations must not render a full "past year" read
+# --------------------------------------------------------------------------- #
+def test_pct_rank_last_requires_minimum_history():
+    short = pd.Series([1.0, 2.0, 3.0, 4.0])
+    assert cw._pct_rank_last(short, cw.RANGE_WINDOW) is None
+    long = pd.Series(range(cw.MIN_HISTORY + 5), dtype=float)
+    assert cw._pct_rank_last(long, cw.RANGE_WINDOW) is not None
+
+
+def test_window_state_four_observations_is_not_evaluable(tmp_path):
+    _write_series(tmp_path / "fred" / f"{cw.FRED_HY}.parquet", [3.0, 3.1, 3.0, 2.9])
+    out = cw.window_state(root=tmp_path)
+    hy = [s for s in out["segments"] if s["key"] == "hy"][0]
+    # spread_range needs MIN_HISTORY obs; spread_drift needs DRIFT_WINDOW+1 (22);
+    # with only 4 rows neither is readable, so the segment must not render a
+    # confident state off 4 observations.
+    assert hy["state"] == "not_evaluable"
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR 6 — a stale underlying series must not back a confident verdict
+# --------------------------------------------------------------------------- #
+def test_stale_series_is_unreadable_not_confident(tmp_path):
+    stale_end = pd.Timestamp.now().normalize() - pd.Timedelta(days=400)
+    _write_series(tmp_path / "fred" / f"{cw.FRED_HY}.parquet", [3.0] * 260, end=stale_end)
+    _write_series(tmp_path / "fred" / f"{cw.FRED_IG}.parquet", [1.0] * 260)  # fresh
+    _write_close(tmp_path / "yahoo" / f"{cw.MOVE_TICKER}.parquet", [80.0] * 260)  # fresh
+    out = cw.window_state(root=tmp_path)
+    hy = [s for s in out["segments"] if s["key"] == "hy"][0]
+    hy_spread_inputs = [i for i in hy["inputs"] if i["key"] in ("spread_range", "spread_drift")]
+    for inp in hy_spread_inputs:
+        assert inp["state"] == "unknown"
+    # the stale as_of is still surfaced (never hidden), just not trusted for a verdict
+    assert hy["inputs"][0]["as_of"] is not None
+    assert cw._is_stale(hy["inputs"][0]["as_of"])
+
+
+def test_is_stale_threshold():
+    fresh = pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d")
+    old = (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
+    assert cw._is_stale(fresh) is False
+    assert cw._is_stale(old) is True
+    assert cw._is_stale(None) is False

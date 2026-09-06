@@ -17,6 +17,7 @@ reads only market-wide index series and performs no join of any kind.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -30,11 +31,17 @@ N_EXPECTED = 3
 MIN_INPUTS = 2              # fewer than 2 readable inputs -> "not_evaluable"
 RANGE_WINDOW = 252          # ~1 year of observations
 DRIFT_WINDOW = 21
+MIN_HISTORY = 60            # fewer observations than this -> percentile is not readable
+                             # (a "past year" percentile off a handful of rows is not a
+                             # past-year claim; the input renders "unknown" instead — MAJOR 5)
+STALE_DAYS = 10              # an input whose latest observation is this many calendar
+                             # days behind "now" is too old to back a confident read — MAJOR 6
 FRED_HY, FRED_IG = "BAMLH0A0HYM2", "BAMLC0A0CM"
 MOVE_TICKER = "MOVE"
 RANGE_OPEN_PCT, RANGE_SHUT_PCT = 33.0, 66.0   # percentile of today's OAS in its 1y range
 DRIFT_OPEN_BP, DRIFT_SHUT_BP = -15.0, 25.0    # 21-obs change in OAS, basis points
 MOVE_OPEN_PCT, MOVE_SHUT_PCT = 40.0, 75.0     # percentile of MOVE in its own 1y range
+_BAND_WIDTH_UNBOUNDED = 1.0e6                 # sentinel "wide" width for open/shut bands
 
 
 # --------------------------------------------------------------------------- #
@@ -84,7 +91,7 @@ def _load_move(root: Path) -> pd.Series | None:
 
 def _pct_rank_last(s: pd.Series, window: int) -> float | None:
     tail = s.tail(window)
-    if len(tail) < 2:
+    if len(tail) < MIN_INPUTS or len(tail) < MIN_HISTORY:
         return None
     last = float(tail.iloc[-1])
     return float((tail <= last).mean() * 100.0)
@@ -106,6 +113,20 @@ def _as_of(s: pd.Series | None) -> str | None:
         return pd.Timestamp(ts).strftime("%Y-%m-%d")
     except Exception:  # noqa: BLE001
         return None
+
+
+def _is_stale(as_of_str: str | None, now: datetime | None = None) -> bool:
+    """True when the input's most recent observation is more than STALE_DAYS
+    calendar days behind "now" — a year-stale series must not back a confident
+    open/shut read (MAJOR 6)."""
+    if as_of_str is None:
+        return False
+    try:
+        as_of_ts = datetime.strptime(as_of_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except Exception:  # noqa: BLE001
+        return False
+    ref = now or datetime.now(timezone.utc)
+    return (ref - as_of_ts) > timedelta(days=STALE_DAYS)
 
 
 # --------------------------------------------------------------------------- #
@@ -153,11 +174,17 @@ def segment_state(states: list[str]) -> tuple[str, int, bool]:
 
 def _band_width(key: str, state: str) -> float:
     """Width of the current band, in the input's own units, for change-line
-    normalisation. Returns a positive width; the open/shut bands are treated
-    as unbounded-but-wide so a value deep inside them is never chosen as the
-    "closest to flipping" input."""
-    if key == "spread_range" or key == "rates_vol":
-        return RANGE_SHUT_PCT - RANGE_OPEN_PCT  # 33.0 (the neutral band)
+    normalisation. Only the neutral band has a genuine, bounded width; the
+    open/shut bands are unbounded on their outward side, so a value deep
+    inside either is given a sentinel-wide width and is never chosen as the
+    input "closest to flipping" (MAJOR 4 — this must read `state`, and the
+    rates_vol band must use its own MOVE_* constants, not spread_range's)."""
+    if state != "neutral":
+        return _BAND_WIDTH_UNBOUNDED
+    if key == "spread_range":
+        return RANGE_SHUT_PCT - RANGE_OPEN_PCT  # 33.0
+    if key == "rates_vol":
+        return MOVE_SHUT_PCT - MOVE_OPEN_PCT  # 35.0
     if key == "spread_drift":
         return DRIFT_SHUT_BP - DRIFT_OPEN_BP  # 40.0
     return 1.0
@@ -187,25 +214,37 @@ def _next_threshold(key: str, state: str) -> tuple[float, str, str] | None:
     return None
 
 
-def _choose_change(inputs: list[dict]) -> dict | None:
-    best = None
-    best_dist = None
-    for inp in inputs:
+def _choose_change(inputs: list[dict], segment: str) -> dict | None:
+    """Pick the input closest to a boundary crossing whose crossing would
+    ACTUALLY flip the reported segment state (BLOCKER 3) — a per-input
+    threshold that does not move the segment majority is not "what would
+    change this read", it is noise, so it must never be surfaced."""
+    states = [i["state"] for i in inputs]
+    candidates = []
+    for idx, inp in enumerate(inputs):
         if inp["state"] == "unknown" or inp["value"] is None:
             continue
         nxt = _next_threshold(inp["key"], inp["state"])
         if nxt is None:
             continue
         threshold, to_state, direction = nxt
+        trial_states = list(states)
+        trial_states[idx] = to_state
+        trial_segment, _, _ = segment_state(trial_states)
+        if trial_segment == segment:
+            continue  # flipping this input alone would not flip the segment
         width = _band_width(inp["key"], inp["state"]) or 1.0
         dist = abs(float(inp["value"]) - threshold) / width
-        if best_dist is None or dist < best_dist:
-            best_dist = dist
-            best = {
-                "input": inp["key"], "to_state": to_state,
-                "threshold": threshold, "current": inp["value"],
-                "direction": direction,
-            }
+        candidates.append({
+            "dist": dist,
+            "input": inp["key"], "to_state": to_state,
+            "threshold": threshold, "current": inp["value"],
+            "direction": direction, "segment_to": trial_segment,
+        })
+    if not candidates:
+        return None
+    best = min(candidates, key=lambda c: c["dist"])
+    best.pop("dist")
     return best
 
 
@@ -214,13 +253,25 @@ def _segment(key: str, hy_or_ig_series: pd.Series | None, move_series: pd.Series
     spread_drift = _drift_bp(hy_or_ig_series, DRIFT_WINDOW) if hy_or_ig_series is not None else None
     rates_vol = _pct_rank_last(move_series, RANGE_WINDOW) if move_series is not None else None
 
+    spread_as_of = _as_of(hy_or_ig_series)
+    move_as_of = _as_of(move_series)
+
+    # A stale underlying series cannot back a confident read (MAJOR 6): treat
+    # its inputs as unreadable rather than silently rendering a fresh-looking
+    # verdict off year-old data.
+    if _is_stale(spread_as_of):
+        spread_range = None
+        spread_drift = None
+    if _is_stale(move_as_of):
+        rates_vol = None
+
     inputs = [
         {"key": "spread_range", "value": spread_range, "unit": "pct_rank",
-         "state": input_state("spread_range", spread_range), "as_of": _as_of(hy_or_ig_series)},
+         "state": input_state("spread_range", spread_range), "as_of": spread_as_of},
         {"key": "spread_drift", "value": spread_drift, "unit": "bp_21",
-         "state": input_state("spread_drift", spread_drift), "as_of": _as_of(hy_or_ig_series)},
+         "state": input_state("spread_drift", spread_drift), "as_of": spread_as_of},
         {"key": "rates_vol", "value": rates_vol, "unit": "pct_rank",
-         "state": input_state("rates_vol", rates_vol), "as_of": _as_of(move_series)},
+         "state": input_state("rates_vol", rates_vol), "as_of": move_as_of},
     ]
     states = [i["state"] for i in inputs]
     state, n_inputs, low_confidence = segment_state(states)
@@ -232,7 +283,7 @@ def _segment(key: str, hy_or_ig_series: pd.Series | None, move_series: pd.Series
     return {
         "key": key, "state": state, "n_inputs": n_inputs, "n_expected": N_EXPECTED,
         "low_confidence": low_confidence, "inputs": inputs, "rail": rail,
-        "change": _choose_change(inputs),
+        "change": _choose_change(inputs, state),
     }
 
 
