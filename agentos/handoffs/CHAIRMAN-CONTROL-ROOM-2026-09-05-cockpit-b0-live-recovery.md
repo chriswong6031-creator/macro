@@ -22,13 +22,12 @@ state_before: >
 changed:
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-05-cockpit-b0-live-recovery.md
     what: >
-      Updated this existing bounded recovery handoff at the closed B5 source-wave
-      boundary with the exact carrier, final nine-path Draft candidate, owning,
-      hosted-CI and browser evidence, independent artifact review, accepted
-      source RESULT/STOP, continuation suppression and writer release. The
-      update preserves all earlier historical checkpoints and changes no
-      workstream, portfolio projection, Business cockpit, Executive lifecycle,
-      account, provider, installed service, release or production authority.
+      Updated this existing bounded recovery handoff with the current protected
+      B5 source integration, held Steward F1 candidate, independently verified
+      U1 package bytes and U1R acquisition hold. The update preserves all earlier
+      historical checkpoints and changes no workstream, portfolio projection,
+      Business cockpit, Executive lifecycle, account, provider, installed
+      service, runtime or production authority.
 verified:
   - claim: Initial archaeology used protected SHA 46a24a1a4083b74bbde8876100a8ca1f720589a9; current protected #481 release is squash 15d2693e5ff319f5f09e4c555fb007328237cee4 with the relevant Skillpack bytes unchanged.
     command: >
@@ -596,6 +595,115 @@ verified:
       phase is accepted BUILT_NOT_PROVEN and closed. No protected release,
       Ready, merge, installation, provider, Business/account, Runtime/admission
       or production effect is claimed.
+  - claim: Protected Mastermind now includes PR 498, while installation, runtime and Business proof remain separate.
+    command: >
+      gh api repos/mastermindx-market-intelligence/Mastermind/branches/master;
+      gh api repos/mastermindx-market-intelligence/Mastermind/git/commits/ffbb2eb138cb3c3cb0d211973e0cf30a314b7520;
+      gh pr view 498 --repo mastermindx-market-intelligence/Mastermind
+      --json number,url,state,isDraft,headRefOid,baseRefOid,mergeCommit,mergedAt,closedAt
+      at 2026-09-06T07:47:05Z; parent exact protected-source same-SHA
+      Skillpack file read.
+    result: >
+      Protected master is ffbb2eb138cb3c3cb0d211973e0cf30a314b7520,
+      tree efd1765598d20d018e9fee239aa7698a4065efa9. PR 498 is MERGED at
+      that commit, from final head faa2d7b7efd32536dfff4378ae5f3baf9eb8f7a7,
+      merged 2026-09-05T23:40:57Z. The same-SHA Skillpack 1.0.1/bootstrap 1
+      was independently reverified. This proves protected source integration
+      only; it does not prove installation, current runtime, Business workspace,
+      provider or production effect.
+  - claim: Steward PR 463 has a newer accepted corrective candidate, but current-base integration remains unestablished.
+    command: >
+      gh pr view 463 --repo mastermindx-market-intelligence/Mastermind
+      --json 'number,url,state,isDraft,headRefOid,baseRefOid,mergeCommit,mergedAt,closedAt,autoMergeRequest,labels,reviewDecision'
+      at 2026-09-06T07:47:05Z; Root carrier reads of
+      C0BSBM78V1N/1788668621.335269 through 1788680556.770719.
+    result: >
+      PR 463 is OPEN/DRAFT at 111634655c9d4e5be7ca00681104cfea9e3a1b58,
+      mergeCommit=null, autoMergeRequest=null, labels=[], reviewDecision=
+      CHANGES_REQUESTED. Root accepted the F1/F3 source and independent review
+      at C0BSBM78V1N/1788668621.335269 reply 1788673704.837849, then limited the same owner to
+      PREPARATION_ONLY r4 at
+      1788680556.770719: no join, test, Ready or merge. F2 remains reserved and
+      unverified. Current-base integration is UNESTABLISHED; U1R is a separate
+      evidence lane.
+  - claim: U1 byte transport and immutable package integrity are verified, while source adoption and effect state remain unproven.
+    command: >
+      Full read of original Slack root C0BSBM78V1N/1788508195.214199 through
+      ChatGPT2 artifact return 1788679431.965589; exact native task
+      6a976a00-3e70-83ea-a4ba-375d18d67a78 response a497dee3 readback;
+      Secretary verification receipt 1788680898.789289; parent Python stdlib
+      ZIP read with no extraction or execution; full read of the current edited
+      original return; full read of Integration acceptance 1788681161.485309,
+      issuer ruling 1788681744.155099 and package-owner declaration
+      1788681845.169829 on the same original root.
+    result: >
+      Secretary reports that
+      /Users/chriswong/Downloads/Mastermind_U1_Completion_Candidate_20260905.zip
+      is 141823 bytes with SHA-256
+      e95e49fbf3e8c11fb7b548cc0047d7b8408e77b9d3acec99b93cfa7c7cad365b;
+      its sibling 884-byte verification JSON has SHA-256
+      165b182518c6de7751f49abae485c703174008649b101b40847eedcb128a2b82.
+      Parent independently verified the outer bytes plus 8323-byte manifest
+      SHA-256 7d249a80be3319dfa027e2b70fa7c494b72fa15dae6dd3e9433eac9b03a00676,
+      52 safe unique entries, all 51 ledger digests and
+      all eight manifest file bytes, SHA-256 values and Git blob SHA-1 values,
+      with CRC/path checks passing and no extraction or execution. Embedded
+      SHA256SUMS is 5653 bytes with SHA-256
+      2cec6108f890a1cbf1335387898dc544d6aa9523b0a4b4e56e1dfe00abf798b7,
+      while the 5652-byte README has SHA-256 prefix 80c28bd. The original author
+      corrected return 1788679431.965589 to record that exact distinction;
+      the metadata discrepancy is resolved with no artifact change. The earlier
+      allocated Slack slot F0BV42D8935 was never finalized
+      or shared after its DNS upload failure and was not the completed transport
+      path. Ruling 1788677218.803659 remains reconciliation-only pending exact effect
+      state; transport does not admit source adoption. Publication, current CI,
+      app, runtime and production remain UNPROVEN.
+      The original return reported 133 tests, seven mutations and ten witnesses;
+      none was rerun here. Its reserved branch
+      sol/business-sol-plugin-app-integration-u1-20260901 remained without a PR
+      at that return. The earlier CUA file-transport refusal was not bypassed.
+      Declaration 1788681845.169829 reports ADOPTION_EXECUTOR=NONE_RETAINED
+      and CURRENT_SOURCE_PUBLICATION_ATTEMPT=NONE_RETAINED only at the
+      package-owner conversation's retained-record boundary. It retains no
+      evidence mapping historical logical source ACK 1788508382.277759 to
+      that conversation or a native/worktree executor. The original logical
+      source owner remains unresolved and not released. Current persistent
+      publication is NOT_OBSERVED; historical local/object/write attempts
+      behind execution-return 1788641301.094939 are NOT_RECORDED, not all-time
+      NONE. No source adoption or preparation authority follows.
+  - claim: U1R ended its single allowed acquisition attempt in a nonterminal identity-qualification hold without visiting Drafts.
+    command: >
+      Full reads of U1R root C0BSBM78V1N/1788642265.551319, issuer rulings
+      1788677149.526949, 1788679935.519929 and 1788680759.392799,
+      Secretary CONTINUATION
+      1788680252.998309, ACQUISITION 1788680312.067399, RESULT
+      1788680334.172139, Web adjudication 1788680630.275479, and Secretary
+      retained-evidence reduction 1788681063.012999 and issuer disposition
+      1788681616.180729.
+    result: >
+      The sole allowed getTab attempt returned literal `Debugger unattached` in
+      1.4500 seconds with no usable page state or numeric error code. Outcome is
+      ACQUISITION_FAILED / IDENTITY_QUALIFICATION_INCOMPLETE and
+      NONTERMINAL_HOLD. Drafts was NOT_VISITED; account, workspace and role are
+      NOT_OBSERVED. Budgets ended at 1/10 observations, 0/4 navigations, 0/2
+      images, zero settling, and the acquisition allowance spent. This does not
+      prove login failure, permission refusal, account mismatch, Steward absence
+      or a credits cause. Secretary remains sole UI actor, Web remains reviewer,
+      and the existing issuer task owns the scoped attachment disposition. Web's
+      adjudication is provenance-only and performed no UI action. No
+      retry, alternate API or new lane is authorized or inferred. The current
+      issuer ruling permitted Secretary only to reduce already-retained documents
+      and tool responses. Result 1788681063.012999 returned API/build generation
+      NOT_RECORDED, getTab attachment/reset error contract
+      NOT_DOCUMENTED_IN_RETAINED_REFERENCE, and no separate attach/detach receipt.
+      It made no new diagnostic, status, browser or transcript-search call and
+      left all evidence counts unchanged. Issuer disposition 1788681616.180729
+      accepted and finished that evidence obligation; U1R remains
+      NONTERMINAL_HOLD / CONTROL_ATTACHMENT_PREREQUISITE_UNRESOLVED.
+      No further investigation or access is assigned. The issuer/continuity
+      owner retains the unresolved platform-contract prerequisite; any later
+      action requires concrete same-carrier disposition after effect and
+      ownership reconciliation. Unused evidence budget remains inactive.
 unverified:
   - claim: One real Business cockpit can safely be selected for MAS-242 Stage 0 of the B2 workspace canary.
     what_would_verify: >
@@ -620,19 +728,25 @@ unresolved:
   - "Integration accepted and STOPped the finite existing-service child in comment 5553186139; cleanup return 5553203800 and receipt 4970a9a1 reverified its closed preview/browser processes and PID 49435 as the sole intended 8787 listener. The installed persistent service must remain running. This closes only the service child and grants no further service effect or portfolio graduation."
   - "The intended Business workspace/admin and selected cockpit identity have not been positively proven; account labels, chat titles, recent tabs, app connectors and catalog rows remain insufficient."
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement. The original writer effect remains UNKNOWN; Secretary receipt 1788587467.719949 is read-only/provider=none/source=none and does not classify that effect. Do not replace or parallelize the carrier."
-  - "The B5 source child is SOURCE_ACCEPTED / BUILT_NOT_PROVEN and terminally closed at exact PR 498 head 9fdc6174/tree 4f5a868. STOP was consumed, its Secretary continuation suppressed and BRANCH_WRITER_RELEASED. The retained branch/worktree are evidence for a separate Root-owned strict-platform maintenance/release operation; no source work may resume on the closed child. Protected release, Ready, merge, installation and production remain absent."
-  - "Root sequencing amendment 1788643440.248779 remains: #492 DONE -> B5 own gates -> repaired PF -> CAP17 -> HF392. B5 source gates are now closed; strict-platform maintenance/release remains a separate Root operation. PF remains platform-blocked, and CAP follows PF after B5. Preserve the old PR 496/492 chronology below as historical evidence and do not replay those writers."
+  - "The B5 source child was SOURCE_ACCEPTED / BUILT_NOT_PROVEN and terminally closed at exact PR 498 head 9fdc6174/tree 4f5a868. STOP was consumed, its Secretary continuation suppressed and BRANCH_WRITER_RELEASED. Subsequent strict-platform maintenance merged PR 498 into protected ffbb2eb from final head faa2d7b7. That proves source integration only; installation, current runtime, provider, Business/account and production remain unproven. No source work may resume on the closed child."
+  - "Root sequencing amendment 1788643440.248779 remains: #492 DONE -> B5 own gates -> repaired PF -> CAP17 -> HF392. B5 source gates and strict-platform source integration are now closed; PF remains platform-blocked, and CAP follows PF after B5. Preserve the old PR 496/492 chronology below as historical evidence and do not replay those writers."
   - "The desktop header source/status cluster still overlaps and crowds Theme. Today still lacks its heading ID/aria-labelledby relationship. The nine accepted framings are representative dark-mode section proof, not light-mode, every-row, full keyboard/screen-reader or exhaustive accessibility acceptance."
-  - "Steward S1, header 1bf, HC0 #247 and Executive metadata #469 remain separately held or unproven lanes at their last recorded states; this service wave did not revalidate or release them."
+  - "Steward PR 463 is now OPEN/DRAFT at exact 11163465 with F1/F3 accepted but current-base integration UNESTABLISHED and only PREPARATION_ONLY r4 permitted to its same owner. F2 remains reserved/unverified. Header 1bf, HC0 #247 and Executive metadata #469 remain separately held or unproven lanes."
+  - "U1 byte transport is CLOSED and parent independently verified immutable package integrity without extraction or execution: 52 safe unique entries, all 51 ledger digests and all eight manifest file identities pass. The original author corrected the old report: embedded SHA256SUMS is 5653-byte/2cec6108 while 5652-byte/80c28bd is the README; the discrepancy is resolved with no artifact change. Ruling 1788677218.803659 remains reconciliation-only pending exact effect state. Source adoption, publication, current CI, app, runtime and production remain unproven."
+  - "U1 source-executor binding remains unresolved and not released. Package-owner declaration 1788681845.169829 retains no mapping of historical logical source ACK 1788508382.277759 to its conversation or a native/worktree executor. Its NONE_RETAINED executor/publication fields are limited to that retained-record boundary; historical local/object/write attempts behind 1788641301.094939 are NOT_RECORDED, not all-time NONE."
+  - "U1R is an accepted nonterminal ACQUISITION_FAILED / IDENTITY_QUALIFICATION_INCOMPLETE hold. Drafts was not visited and current account/workspace/role were not observed; no retry or alternate lane is authorized. Retained-only result 1788681063.012999 found API/build generation NOT_RECORDED, getTab attachment/reset error contract NOT_DOCUMENTED_IN_RETAINED_REFERENCE and no separate attach/detach receipt, with no new calls and unchanged counts. Issuer 1788681616.180729 accepted and finished that evidence step, preserving CONTROL_ATTACHMENT_PREREQUISITE_UNRESOLVED and assigning no further investigation or access."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Preserve Integration's accepted/STOPped service operation autonomy-integrator-ccr486-existing-service-20260905-001 at comment 5553186139 and its cleanup return 5553203800. Keep the exact installed 767 service and sole intended PID 49435 running; do not replay the closed preview/browser/service child or infer broader product graduation."
   - "Treat exact 767 installation, the eight-GET natural transition, nine corrected framings and final physical cleanup as complete only for the bounded local Control Room service/source/UI plane. Preserve absent Executive DB, stale Macro inputs, B3/B5/B6, Business cockpit, account/provider, Runtime and admission gates as unproven."
-  - "Do not resume the terminally closed B5 source child, rerun its generic source/CI/browser work, or issue another source START. Root alone may classify and open the distinct strict-platform maintenance/release operation against the retained clean 9fdc branch/worktree; re-read current protected source, exact carrier, ownership and collision gates first."
+  - "Do not resume the terminally closed B5 source child, rerun its generic source/CI/browser work, or issue another source START. Protected PR 498 proves source integration only; retain installation, current runtime, provider, Business/account and production as separate unproven gates."
   - "Follow sequencing amendment 1788643440.248779 after the separate B5 maintenance ruling: repaired PF remains platform-blocked, then CAP17 follows PF, then HF392. Integration subsequently reported delivery of the accepted B5 RESULT, closure, actual #492-integrated green CI and retained limits through existing Production task 01a06f74-0213-7613-a4cc-2134242a35c0. The native receipt observed by 22:37:45Z is integration-cutover-relay-native-receipt.json, SHA-256 704e6ec5b0fb1b9c3881b8bf8449d2fc789844531625d25f975c5bfb9ccc7d78, under the B5 evidence root below. Preserve that existing route and await its separate adjudication; owner-reported delivery is not downstream consumption, ACK, START, release or effect."
   - "Before any MAS-242 Stage 0 effect, obtain real-host account/workspace proof and run the three-cockpit continuity/effect/watcher census. If no clean cockpit exists, return NO_ELIGIBLE_CANARY_COCKPIT with effect=NONE."
   - "If and only if Stage 0 selects one clean cockpit, perform only the authorized reversible MAS-242 workspace join and Personal to Business to Personal proof; retain both controls and do not import, authenticate, install or admit anything in that stage."
   - "Keep P1 import, authenticated Steward reads, Executive admission, H1 receipt validation and rollback as separately evidenced gates after the workspace proof."
+  - "For PR 463, preserve the same owner and PREPARATION_ONLY r4 ceiling. Current-base integration remains UNESTABLISHED; no join, test, Ready or merge follows without a fresh governing edge."
+  - "For U1, preserve the independently verified package identities and corrected ledger-versus-README hash distinction. Do not treat transported bytes as source-adoption or execution authority; preserve rulings 1788677218.803659 and 1788681744.155099 reconciliation and current-owner gates. Original package-owner conversation 6a976a00 is distinct from U1R issuer 6a9ce68d; declaration 1788681845.169829 leaves the logical source-writer/executor binding unresolved. Consume that completed declaration through Integration before any separately scoped forward preflight; do not reissue it or infer a writer transfer."
+  - "For U1R, preserve issuer disposition 1788681616.180729: retained-only result 1788681063.012999 is accepted and finished, no further investigation or access is assigned, and the spent single-attempt allowance remains spent. The issuer/continuity owner retains the platform-contract prerequisite. Do not repeat the reduction, make a new diagnostic, status, browser or transcript-search call, retry acquisition, use an alternate API, select another target or infer a login/permission cause."
 do_not_redo:
   - "Do not create another workstream, portfolio matrix, lifecycle store, cockpit registry, Business workspace, canary account, HC0 writer, Steward lane or Executive admission lane."
   - "Do not call a source merge, fixture connector, UI clear count, workspace-agent catalog entry, chat title, Slack sender, recency or app connector a live Business cockpit, authenticated app or Executive proof."
@@ -640,7 +754,7 @@ do_not_redo:
   - "Do not fail over an ambiguous cockpit, workspace, OAuth or admission action to a second cockpit; preserve the same carrier as EFFECT_UNKNOWN and reconcile it."
   - "Do not treat synthetic fixture-browser validation as operational/runtime/host proof, or mark the product, MAS-242 or U1 complete from this handoff."
 danger_areas:
-  - "B5 source closure is not protected release or installation. Q remains unproven, production browser_qualification is null, sibling-tab visibility was not observed, and inherited desktop/mobile overflow means the 15 old-head screenshots are not a visual PASS. The 598-test and browser runs occurred at 834e; reuse is narrowed to unchanged product/assertion/fixture bytes."
+  - "Protected PR 498 source integration is not installation or current runtime proof. Q remains unproven, production browser_qualification is null, sibling-tab visibility was not observed, and inherited desktop/mobile overflow means the 15 old-head screenshots are not a visual PASS. The 598-test and browser runs occurred at 834e; reuse is narrowed to unchanged product/assertion/fixture bytes."
   - "The installed 767 Control Room qualifies missing attention inputs and passed nine representative dark-mode framings, but degraded UI remains non-operational evidence. At 1440px the source/status cluster still overlaps and crowds Theme even though document width does not overflow; Today also lacks its heading ID/aria-labelledby relationship. These remain inherited unresolved product/accessibility limits, not comprehensive visual acceptance."
   - "Actual Business account/workspace confirmation is sensitive: record opaque references and state outcomes only; never put account secrets, cookies, tokens, private account locators or browser targets in Agent OS."
   - "HC0 is a sticky existing child with a session-loss reconciliation hold. A second writer or blind transport retry would violate the one-carrier rule."
@@ -1008,3 +1122,122 @@ Verification: read the actual native Integration message and run
 `shasum -a 256` on that receipt. This establishes Integration-reported evidence
 delivery only; downstream consumption, ACK, START, release, installation and
 production effect are not inferred.
+
+## Current Chairman product boundary — observed through 2026-09-06T07:53:45Z
+
+This section supersedes only current-state conclusions that moved after the
+dated checkpoints above. It does not rewrite their historical evidence.
+
+### Protected B5 source integration
+
+Protected Mastermind is
+`ffbb2eb138cb3c3cb0d211973e0cf30a314b7520`, tree
+`efd1765598d20d018e9fee239aa7698a4065efa9`. PR #498 is MERGED at that exact
+protected commit from final head
+`faa2d7b7efd32536dfff4378ae5f3baf9eb8f7a7`, with `mergedAt`
+`2026-09-05T23:40:57Z`. The compatible Skillpack remains version `1.0.1`,
+bootstrap `1`, on the same protected SHA. This closes protected source
+integration only. It is not evidence of a current installation, runtime,
+Business workspace, provider or production effect.
+
+### Steward F1 remains held before current-base integration
+
+PR #463 is OPEN/DRAFT at
+`111634655c9d4e5be7ca00681104cfea9e3a1b58`, with `mergeCommit=null`,
+`autoMergeRequest=null`, no labels and `reviewDecision=CHANGES_REQUESTED`.
+Root accepted the F1/F3 source and independent review at
+`C0BSBM78V1N/1788668621.335269` reply `1788673704.837849`, then limited the same
+owner to `PREPARATION_ONLY` r4 at `1788680556.770719`: no join, test, Ready or
+merge. F2 is reserved and unverified. Current-base integration remains
+`UNESTABLISHED`. This is separate from U1R.
+
+### U1 byte transport and immutable package integrity are verified
+
+Original ChatGPT2 return `1788679431.965589` identifies
+`Mastermind_U1_Completion_Candidate_20260905.zip` as 141,823 bytes with SHA-256
+`e95e49fbf3e8c11fb7b548cc0047d7b8408e77b9d3acec99b93cfa7c7cad365b`.
+Its 884-byte verification JSON has SHA-256
+`165b182518c6de7751f49abae485c703174008649b101b40847eedcb128a2b82`.
+Secretary receipt `1788680898.789289` reports the two files present under
+`/Users/chriswong/Downloads/`, with matching outer hashes and manifest, 51
+ledger entries, eight source files, and all CRC/path checks passing without
+extraction or execution. Byte transport is therefore closed at the
+Secretary-reported evidence level. Parent independently verified the same outer
+bytes, 8,323-byte manifest SHA-256
+`7d249a80be3319dfa027e2b70fa7c494b72fa15dae6dd3e9433eac9b03a00676`,
+52 safe unique entries, all
+51 ledger digests and all eight manifest file bytes, SHA-256 values and Git blob
+SHA-1 values, without extraction or execution. The earlier allocated Slack slot
+`F0BV42D8935` was never finalized or
+shared after its DNS upload failure and was not the completed transport path.
+The earlier CUA file-transport refusal was not bypassed.
+
+The actual embedded `SHA256SUMS` is 5,653 bytes with SHA-256
+`2cec6108f890a1cbf1335387898dc544d6aa9523b0a4b4e56e1dfe00abf798b7`,
+while the 5,652-byte README has SHA-256 prefix `80c28bd`. The original author corrected
+return `1788679431.965589` to record that exact distinction. The metadata
+discrepancy is resolved with no artifact change.
+
+The original return reports 133 tests, seven mutations and ten witnesses; this
+records reported local evidence, not a rerun. Source adoption, publication,
+current CI, app, runtime and production remain unproven. Reserved branch
+`sol/business-sol-plugin-app-integration-u1-20260901` had no PR at that return.
+Ruling `1788677218.803659` remains reconciliation-only pending exact effect state;
+verified transport does not admit source adoption. Original U1 package-owner conversation
+`6a976a00-3e70-83ea-a4ba-375d18d67a78` and U1R issuer
+`6a9ce68d-b4a4-83ea-bc48-208e93ca7e5f` remain distinct.
+
+Subsequent issuer ruling `1788681744.155099` requested one finite owner/effect
+return. Actual package-owner declaration `1788681845.169829` reports
+`ADOPTION_EXECUTOR=NONE_RETAINED` and
+`CURRENT_SOURCE_PUBLICATION_ATTEMPT=NONE_RETAINED` only at that conversation's
+retained-record boundary. It retains no evidence mapping historical logical
+source ACK `1788508382.277759` to itself or a native/worktree executor. The
+original logical source owner remains unresolved and not released; possession
+of the verified Mac-local package does not transfer that role. Current
+persistent source publication is `NOT_OBSERVED`. Historical local/object/write
+attempts behind unsupported execution-return `1788641301.094939` are
+`NOT_RECORDED`, not all-time `NONE`. This declaration grants no source adoption
+or preparation authority and does not establish a blanket writer clearance.
+
+### U1R acquisition is an accepted nonterminal hold
+
+The exact U1R issuer authorized one same-carrier acquisition attempt. Secretary
+returned `ACQUISITION_FAILED / IDENTITY_QUALIFICATION_INCOMPLETE` after the
+single allowed acquisition produced literal `Debugger unattached` in 1.4500
+seconds, without usable page state or a numeric error code. The evidence budget
+ended at 1/10 observations, 0/4 navigations, 0/2 images, zero settling and the
+acquisition allowance spent. Drafts was `NOT_VISITED`; current account,
+workspace and role are `NOT_OBSERVED`.
+
+Web adjudication `1788680630.275479` accepted that evidence as a
+`NONTERMINAL_HOLD`. This does not prove login failure, permission refusal,
+account mismatch, Steward absence, credits exhaustion or another cause.
+Secretary remains the sole UI actor and Web the reviewer; Web's adjudication is
+provenance-only and performed no UI action. The existing issuer
+task owns the scoped attachment disposition. Secretary-reported aggregate
+`ACTIVE` and retained callback are provenance for that carrier only, not
+independent runtime proof. No retry, alternate API, target substitution or new
+lane is authorized or inferred. Issuer ruling `1788680759.392799` permitted
+Secretary only to reduce already-retained documents and tool responses. Result
+`1788681063.012999` returned API/build generation `NOT_RECORDED`, getTab
+attachment/reset error contract `NOT_DOCUMENTED_IN_RETAINED_REFERENCE`, and no
+separate attach/detach receipt. It made no new diagnostic, status, browser or
+transcript-search call; evidence counts stayed unchanged. Issuer disposition
+`1788681616.180729` accepted and finished that evidence obligation. U1R remains
+`NONTERMINAL_HOLD / CONTROL_ATTACHMENT_PREREQUISITE_UNRESOLVED`; no further
+investigation or access is assigned. The issuer/continuity owner retains the
+platform-contract prerequisite. A later concrete same-carrier ruling must
+reconcile effects and ownership before further access. Unused budget is
+inactive, and a future document or apparent spontaneous recovery does not
+resume access. Do not repeat the reduction or review the same failure again.
+
+### Remaining gates
+
+Operational Business app connection remains `UNPROVEN`; failed `getTab` does
+not prove absence of a live workspace connection. The HC0 source carrier
+retains `BUILT_NOT_PROVEN / NOT_CONNECTED` at its last qualified source
+boundary. Authenticated Steward and Executive reads, a registered HC0 host
+context, CEO admission and zero-Slack acceptance remain unproven. No `QUEUED`,
+execution, provider, Runtime, installation or production state follows from
+the source, artifact-location or acquisition evidence above.
