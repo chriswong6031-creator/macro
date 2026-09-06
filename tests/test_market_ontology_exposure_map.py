@@ -371,10 +371,27 @@ def test_module_is_a_pure_leaf():
             if isinstance(fn, ast.Name) and fn.id == "open":
                 pytest.fail("no filesystem write allowed")
 
+    # B1 fix: the five package-shaped paths named in the original spec prose do not
+    # exist in this checkout (engine/axes.py and engine/alerts.py are files, not
+    # packages; engine/prophet, engine/regime, engine/conditions do not exist at
+    # all) -- grep exits rc=2 (no such file/dir) with empty stdout on those, which
+    # made the old `out.stdout.strip() == ""` assertion vacuously true even for an
+    # actual import. Resolve to the scoring-path targets that really exist, assert
+    # grep's own returncode (1 == "ran clean, matched nothing"; 0 == a real hit;
+    # 2 == a path resolution error we must not silently swallow), never just stdout.
+    candidate_paths = [
+        "engine/prophet", "engine/regime", "engine/axes.py", "engine/axes",
+        "engine/conditions", "engine/alerts.py", "engine/alerts", "engine/run.py",
+    ]
+    scoring_paths = [pth for pth in candidate_paths if (REPO_ROOT / pth).exists()]
+    assert scoring_paths, "no scoring-path targets resolved to real files/dirs"
     out = subprocess.run(
-        ["grep", "-rl", "engine.market_ontology", "engine/prophet", "engine/regime",
-         "engine/axes", "engine/conditions", "engine/alerts", "engine/run.py"],
+        ["grep", "-rl", "engine.market_ontology", *scoring_paths],
         cwd=REPO_ROOT, capture_output=True, text=True,
+    )
+    assert out.returncode == 1, (
+        f"scoring-path guard did not run clean: rc={out.returncode} "
+        f"stdout={out.stdout!r} stderr={out.stderr!r}"
     )
     assert out.stdout.strip() == ""
 

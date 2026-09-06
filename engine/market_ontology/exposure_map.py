@@ -104,7 +104,13 @@ def _date(value: Any) -> datetime.date | None:
         return value.date()
     if isinstance(value, datetime.date):
         return value
-    return datetime.date.fromisoformat(str(value).strip())
+    try:
+        return datetime.date.fromisoformat(str(value).strip())
+    except (ValueError, TypeError):
+        # A malformed date is a data-availability problem, never a reason to raise
+        # (module docstring: "never raises for a data-availability reason"). Treated
+        # as absent, same as a genuinely null value.
+        return None
 
 
 def _date_str(value: Any) -> str | None:
@@ -236,7 +242,7 @@ class StoreView(typing.Protocol):
 
     def read_meta(self) -> Mapping[str, Any]: ...
 
-    def read_nodes(self) -> Any: ...  # OPTIONAL: for name_en/name_zh only
+    def read_nodes(self) -> Any: ...  # theme name_en/name_zh (M3)
 
 
 class _DefaultStoreView:
@@ -245,7 +251,12 @@ class _DefaultStoreView:
     def read_edges(self) -> Any:
         from engine.theme_graph.store import read_edges
 
-        return read_edges(latest_belief=True)
+        # Full belief history, NOT latest_belief=True: this module performs its own
+        # as-of-aware collapse in _collapse_and_filter_edges (max belief_time <= asof
+        # per edge_id). The store's own latest_belief=True view is a single
+        # asof-independent row per edge_id (max belief_time overall) and can never
+        # supply an earlier belief for a historical as-of.
+        return read_edges(latest_belief=False)
 
     def read_identity_resolution(self) -> Any:
         from engine.theme_graph.store import read_identity_resolution
@@ -406,11 +417,12 @@ def _walk_theme(
     expresses_by_dst: dict[str, list[dict[str, Any]]],
     family_resolver: Callable[[object], str | None],
     assert_allowed: Callable[[str], None],
-) -> tuple[list[_PathHit], list[dict[str, Any]], set[str]]:
-    """Returns (hits, abstentions, baskets_used_on_allowed_bridges)."""
+) -> tuple[list[_PathHit], list[dict[str, Any]], set[str], set[str]]:
+    """Returns (hits, abstentions, baskets_used_on_allowed_bridges, lthemes_used)."""
     hits: list[_PathHit] = []
     abstentions: list[dict[str, Any]] = []
     baskets_used: set[str] = set()
+    lthemes_used: set[str] = set()
 
     # Path A — direct_membership (1 hop).
     for edge in member_of_by_dst.get(theme_id, []):
@@ -450,6 +462,7 @@ def _walk_theme(
                 except Exception:
                     abstentions.append(_unavailable("RIGHTS_SUPPRESSED", subject_id=ltheme, detail=family))
                     continue
+            lthemes_used.add(ltheme)
             for member_edge in member_of_by_dst.get(ltheme, []):
                 if _is_company_id(member_edge["src"]):
                     hits.append(_PathHit(
@@ -457,7 +470,7 @@ def _walk_theme(
                         (edge["edge_id"], member_edge["edge_id"]),
                     ))
 
-    return hits, abstentions, baskets_used
+    return hits, abstentions, baskets_used, lthemes_used
 
 
 # --- identity (§3.6) -----------------------------------------------------------------
@@ -501,7 +514,25 @@ def _compose_theme(
     identity_rows: dict[str, Mapping[str, Any]],
     family_resolver: Callable[[object], str | None],
     assert_allowed: Callable[[str], None],
+    clock_abstentions: list[dict[str, Any]],
+    node_names: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
+
+    def _with_clock(entry: dict[str, Any], relevant: set[str]) -> dict[str, Any]:
+        # Attach BELIEF_AFTER_ASOF (and any other clock) abstentions whose excluded
+        # edge terminated at this theme OR at a bridge node (basket / local theme)
+        # this theme actually walked through — so a dropped bridge edge is never a
+        # silent discard (B2): the surface can always say why a path is missing.
+        own = [
+            {k: v for k, v in a.items() if k != "_dst"}
+            for a in clock_abstentions if a.get("_dst") in relevant
+        ]
+        if own:
+            entry["abstentions"] = sorted(
+                list(entry["abstentions"]) + own,
+                key=lambda a: (a["code"], a["subject_id"] or ""),
+            )
+        return entry
     if not _is_known_theme_grammar(theme_id):
         return {
             "theme_node_id": theme_id, "theme_plane": None, "rights_family": None,
@@ -514,9 +545,14 @@ def _compose_theme(
     theme_plane = "local_theme" if _is_local_theme_id(theme_id) else "canonical_theme"
     theme_family = family_resolver(theme_id)
 
+    theme_node_row = node_names.get(theme_id)
+    theme_name = {
+        "en": _str_or_none(theme_node_row.get("name_en")) if theme_node_row else None,
+        "zh": _str_or_none(theme_node_row.get("name_zh")) if theme_node_row else None,
+    }
     base = {
         "theme_node_id": theme_id, "theme_plane": theme_plane,
-        "rights_family": theme_family, "name": {"en": None, "zh": None},
+        "rights_family": theme_family, "name": theme_name,
     }
 
     if theme_family is not None:
@@ -534,26 +570,27 @@ def _compose_theme(
         e["src"] == theme_id or e["dst"] == theme_id for e in edges_by_id.values()
     )
     if not has_any_edge:
-        return {
+        return _with_clock({
             **base, "state": "NO_THEME_EDGES",
             "unavailable": _unavailable("NO_THEME_EDGES", subject_id=theme_id),
             "companies": None, "company_count": None, "distinct_security_count": None,
             "etf_proxies": None, "abstentions": [],
-        }
+        }, {theme_id})
 
-    hits, path_abstentions, baskets_used = _walk_theme(
+    hits, path_abstentions, baskets_used, lthemes_used = _walk_theme(
         theme_id, member_of_by_dst=member_of_by_dst, expresses_by_dst=expresses_by_dst,
         family_resolver=family_resolver, assert_allowed=assert_allowed,
     )
+    bridge_dsts = {theme_id} | baskets_used | lthemes_used
 
     if not hits:
         abstentions = sorted(path_abstentions, key=lambda a: (a["code"], a["subject_id"] or ""))
-        return {
+        return _with_clock({
             **base, "state": "NO_MEMBERSHIP_YET",
             "unavailable": _unavailable("NO_MEMBERSHIP_YET", subject_id=theme_id),
             "companies": None, "company_count": None, "distinct_security_count": None,
             "etf_proxies": None, "abstentions": abstentions,
-        }
+        }, bridge_dsts)
 
     # Group hits by company -> paths (double-count law: one row per company, N paths).
     by_company: dict[str, list[_PathHit]] = {}
@@ -561,7 +598,20 @@ def _compose_theme(
         by_company.setdefault(hit.company_node_id, []).append(hit)
 
     company_rows: list[dict[str, Any]] = []
+    company_rights_abstentions: list[dict[str, Any]] = []
     for company_id in sorted(by_company):
+        # M2: the rights gate is node-id-based (owner-side, engine.theme_graph.rights)
+        # and applies to EVERY emitted node id, company ids included — never assumed
+        # safe merely because today's registry maps no co: prefix to a family.
+        company_family = family_resolver(company_id)
+        if company_family is not None:
+            try:
+                assert_allowed(company_family)
+            except Exception:
+                company_rights_abstentions.append(
+                    _unavailable("RIGHTS_SUPPRESSED", subject_id=company_id, detail=company_family)
+                )
+                continue
         company_hits = by_company[company_id]
         paths: list[dict[str, Any]] = []
         for hit in company_hits:
@@ -578,7 +628,7 @@ def _compose_theme(
         company_rows.append({
             "company_node_id": company_id,
             "market_scope": _market_scope_of_company(company_id),
-            "rights_family": family_resolver(company_id),
+            "rights_family": company_family,
             "identity": identity,
             "paths": paths,
         })
@@ -613,27 +663,44 @@ def _compose_theme(
             for tedge in tracks_by_dst.get(basket, []):
                 etf_id = tedge["src"]
                 any_tracks = True
+                etf_family = family_resolver(etf_id)
+                if etf_family is not None:
+                    try:
+                        assert_allowed(etf_family)
+                    except Exception:
+                        etf_abstentions.append(
+                            _unavailable("RIGHTS_SUPPRESSED", subject_id=etf_id, detail=etf_family)
+                        )
+                        continue
                 found.append({
                     "etf_node_id": etf_id, "via_basket_node_id": basket,
-                    "rights_family": family_resolver(etf_id), "edges": [tedge],
+                    "rights_family": etf_family, "edges": [tedge],
                 })
         if not any_tracks:
             etf_abstentions.append(_unavailable("NO_ETF_EDGES", subject_id=theme_id))
         else:
             found.sort(key=lambda p: p["etf_node_id"])
-            etf_proxies = found
+            etf_proxies = found if found else None
+    else:
+        # M5: a theme reached only via direct_membership / local_theme_bridge never
+        # walks a basket, so etf_proxies would otherwise be a silent, unexplained
+        # None here — indistinguishable from "we checked, there are none". Print the
+        # typed reason instead.
+        etf_abstentions.append(
+            _unavailable("NO_ETF_EDGES", subject_id=theme_id, detail="no_basket_path")
+        )
 
     all_abstentions = sorted(
-        path_abstentions + collision_abstentions + etf_abstentions,
+        path_abstentions + collision_abstentions + etf_abstentions + company_rights_abstentions,
         key=lambda a: (a["code"], a["subject_id"] or ""),
     )
 
-    return {
+    return _with_clock({
         **base, "state": "OK", "unavailable": None,
         "companies": company_rows, "company_count": company_count,
         "distinct_security_count": distinct_security_count,
         "etf_proxies": etf_proxies, "abstentions": all_abstentions,
-    }
+    }, bridge_dsts)
 
 
 # --- top-level composition -------------------------------------------------------------
@@ -719,6 +786,16 @@ def compose_exposure_map(
     expresses_by_dst = _index_by_dst(edges_by_id, "EXPRESSES")
     tracks_by_dst = _index_by_dst(edges_by_id, "TRACKS")
 
+    try:
+        raw_nodes = _records(store.read_nodes())
+    except Exception:
+        raw_nodes = []
+    node_names: dict[str, Mapping[str, Any]] = {}
+    for row in raw_nodes:
+        node_id = row.get("node_id")
+        if node_id is not None:
+            node_names[str(node_id)] = row
+
     identity_rows: dict[str, Mapping[str, Any]] = {}
     for row in raw_identity:
         node_id = row.get("node_id")
@@ -731,19 +808,9 @@ def compose_exposure_map(
             theme_id, edges_by_id=edges_by_id, member_of_by_dst=member_of_by_dst,
             expresses_by_dst=expresses_by_dst, tracks_by_dst=tracks_by_dst,
             identity_rows=identity_rows, family_resolver=family_resolver,
-            assert_allowed=assert_allowed,
+            assert_allowed=assert_allowed, clock_abstentions=clock_abstentions,
+            node_names=node_names,
         )
-        # Attach clock-mismatch abstentions whose excluded edge terminated directly
-        # at this theme node — the surface can then show why that edge is absent.
-        own_clock = [
-            {k: v for k, v in a.items() if k != "_dst"}
-            for a in clock_abstentions if a.get("_dst") == theme_id
-        ]
-        if own_clock:
-            row["abstentions"] = sorted(
-                list(row["abstentions"]) + own_clock,
-                key=lambda a: (a["code"], a["subject_id"] or ""),
-            )
         theme_rows.append(row)
 
     themes = tuple(
