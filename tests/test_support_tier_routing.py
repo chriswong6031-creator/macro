@@ -17,7 +17,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import support  # noqa: E402
 from app.main import _PLAN_LABELS  # noqa: E402
-from lib.help_directory import SUPPORT_PLANS, _TIER_TO_PLAN, route_for_tier  # noqa: E402
+from lib.help_directory import (  # noqa: E402
+    SUPPORT_PLANS,
+    _check_banned_vocabulary,
+    _TIER_TO_PLAN,
+    route_for_tier,
+)
 
 UID = "22222222-2222-2222-2222-222222222222"
 
@@ -63,17 +68,17 @@ def test_every_known_tier_label_maps_to_a_plan() -> None:
 
 
 def test_promises_are_bilingual_plain_and_budgeted() -> None:
-    # "queue"/"priority" are plain English words allowed in user copy (§1.7): the
-    # promise text legitimately says "priority queue". Only true internal/machine
-    # vocabulary is banned here.
-    banned = ("falsifier", "refuted", "证伪", "Supabase", "PostgREST", "entitlement")
+    # One shared vocabulary law (lib.help_directory._check_banned_vocabulary),
+    # not a second local exception list (review finding M3: "queue" used to be
+    # banned for help answers while a separate, shorter list here carved out an
+    # exception so the promise text could say "priority queue" — two
+    # incompatible laws on one page). "queue" is ordinary English and is not on
+    # the production banned list at all, so no per-test carve-out is needed.
     for p in SUPPORT_PLANS:
         assert len(p.promise_en.split()) <= 26, p.promise_en
         assert len(p.promise_zh) <= 54, p.promise_zh
         assert p.promise_zh != p.promise_en
-        for word in banned:
-            assert word.lower() not in p.promise_en.lower()
-            assert word.lower() not in p.promise_zh.lower()
+        _check_banned_vocabulary(f"support plan {p.id!r} promise", p.promise_en, p.promise_zh)
 
 
 # ===========================================================================

@@ -258,19 +258,40 @@ def help_directory_view_model(
 # Answers (packet B-F13-3 / MO-PAID-088) — authored sentences, source-bound href
 # --------------------------------------------------------------------------- #
 
+# One shared plain-language vocabulary law: applies to every user-facing
+# sentence produced by this module (help answers, changelog entries, support
+# plan copy) — never a per-section list (review finding M3). "queue" is
+# ordinary English (used in the support-plan promise text: "priority queue")
+# and is intentionally NOT on this list; the banned set is internal
+# state/module/vendor names, not everyday words.
 _BANNED_WORDS = (
     "falsifier", "refuted", "\u8bc1\u4f2a", "generated_utc", "slo", "tier",
     "pipeline", "artifact", "render", "slug", "entitlement", "view_model",
-    "queue", "supabase", "postgrest", "idem_key", "backfill", "null", "nan",
+    "supabase", "postgrest", "idem_key", "backfill", "null", "nan",
 )
 _FILENAME_RE = re.compile(r"[A-Za-z_]+\.(py|j2|yml|css|js)")
 _SHOUTY_RE = re.compile(r"\b[A-Z][A-Z0-9_]{3,}\b")
 
 
+def _banned_word_pattern(word: str) -> re.Pattern[str]:
+    """Whole-word match for ASCII words (review finding M2: plain containment
+    false-positived on ordinary English — 'nan' inside 'financial', 'tier'
+    inside 'frontier', 'render' inside 'surrender', 'null' inside 'annulled').
+    Non-ASCII terms (the Chinese banned phrase) keep plain containment since
+    CJK text carries no word-boundary characters for \b to anchor on."""
+    if word.isascii():
+        return re.compile(r"(?<![A-Za-z0-9])" + re.escape(word) + r"(?![A-Za-z0-9])")
+    return re.compile(re.escape(word))
+
+
+_BANNED_PATTERNS = tuple((w, _banned_word_pattern(w)) for w in _BANNED_WORDS)
+
+
 def _check_banned_vocabulary(label: str, en: str, zh: str) -> None:
     lowered = en.lower()
-    for word in _BANNED_WORDS:
-        if word in lowered or word in zh.lower():
+    zh_lowered = zh.lower()
+    for word, pattern in _BANNED_PATTERNS:
+        if pattern.search(lowered) or pattern.search(zh_lowered):
             raise ValueError(f"{label}: banned vocabulary {word!r}")
     for text in (en, zh):
         if _FILENAME_RE.search(text):
@@ -442,6 +463,7 @@ def product_changelog(root: Path, *, limit: int = 20) -> dict[str, Any]:
     note_zh = doc.get("note_zh")
     if not _is_nonempty_text(note_en) or not _is_nonempty_text(note_zh):
         raise ValueError("changelog: note_en/note_zh must be non-empty")
+    _check_banned_vocabulary("changelog note", note_en, note_zh)
     raw_entries = doc.get("entries") or []
     seen_ids: set[str] = set()
     entries: list[dict[str, Any]] = []
@@ -465,6 +487,7 @@ def product_changelog(root: Path, *, limit: int = 20) -> dict[str, Any]:
             raise ValueError(f"changelog entry {eid!r}: en/zh must be non-empty")
         if zh == en:
             raise ValueError(f"changelog entry {eid!r}: zh must differ from en")
+        _check_banned_vocabulary(f"changelog entry {eid!r}", en, zh)
         entries.append({"id": eid, "date": date, "pr": pr, "en": en, "zh": zh})
 
     entries.sort(key=lambda e: (e["date"], e["pr"]), reverse=True)
@@ -497,6 +520,11 @@ SUPPORT_PLANS: tuple[SupportPlan, ...] = (
         "Your message goes to the priority queue and is looked at first. We aim to reply by email the same working day.",
         "\u4f60\u7684\u4fe1\u606f\u4f1a\u8fdb\u5165\u4f18\u5148\u961f\u5217\u5e76\u4f18\u5148\u67e5\u770b\u3002\u6211\u4eec\u7684\u76ee\u6807\u662f\u5728\u5f53\u4e2a\u5de5\u4f5c\u65e5\u5185\u56de\u590d\u3002"),
 )
+for _p in SUPPORT_PLANS:
+    _check_banned_vocabulary(f"support plan {_p.id!r} name", _p.name_en, _p.name_zh)
+    _check_banned_vocabulary(f"support plan {_p.id!r} promise", _p.promise_en, _p.promise_zh)
+del _p
+
 _PLANS_BY_ID = {p.id: p for p in SUPPORT_PLANS}
 
 _TIER_TO_PLAN = {"free": "free", "essential": "essential", "insider": "essential",

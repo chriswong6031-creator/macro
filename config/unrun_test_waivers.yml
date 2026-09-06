@@ -14,19 +14,6 @@
 # wire it into the job that owns its subject (see the signal-contract
 # research-resident steps in .github/ci/legacy-jobs.yml for the pattern).
 
-tests/test_support_tier_routing.py: >-
-  B-F13-3 support-plan routing suite (lib.help_directory.route_for_tier +
-  app/support.py wiring). Following the test_entry_radar_w8_rig.py
-  precedent above: naming this file in a legacy-jobs.yml step is a global
-  CI invalidator (full pack re-selection) and a ci-authority hit, which is
-  disproportionate for one new unit suite with no live/render dependency —
-  it is pure-python, no fixtures, no network. Run locally via
-  `python -m pytest tests/test_support_tier_routing.py -q` (packet B-F13-3
-  PR verification) until it is wired into an existing code-gate job's step
-  list in a follow-up that is not itself a curated-scope contract-delta
-  edit. Owner: MO-PAID-058 / packet B-F13-3. Delete this row and add the
-  file to a code-gate job step once wired.
-
 tests/test_entry_radar_w8_rig.py: >-
   W8 Live Entry Radar reference RIG (PR #5737). Listing this file in
   signal-contract edits .github/ci/legacy-jobs.yml, which is a global CI

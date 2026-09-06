@@ -270,7 +270,7 @@ html[data-theme="light"] .help-support-cta{background:var(--panel);box-shadow:0 
   var count=document.getElementById('help-result-count');
   var empty=root.querySelector('[data-empty-state]');
   var cards=Array.prototype.slice.call(root.querySelectorAll('[data-help-card],[data-answer]'));
-  var buttons=Array.prototype.slice.call(root.querySelectorAll('[data-category]'));
+  var buttons=Array.prototype.slice.call(root.querySelectorAll('.help-filter[data-category]'));
   var category='all';
   function normal(value){return (value||'').toLocaleLowerCase().trim();}
   function paint(){

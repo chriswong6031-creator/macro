@@ -13,6 +13,7 @@ from lib.help_directory import (
     HELP_LINKS,
     HELP_ANSWERS,
     _CATEGORIES_BY_ID,
+    _check_banned_vocabulary,
     _is_approved_href,
     help_directory_view_model,
     help_answers_view_model,
@@ -153,20 +154,20 @@ def test_help_is_discoverable_in_shared_public_nav() -> None:
 # ===========================================================================
 # Packet B-F13-3 — answers, changelog
 # ===========================================================================
-_BANNED_WORDS = ("falsifier", "refuted", "证伪", "generated_utc", "SLO", "tier",
-                 "pipeline", "artifact", "render", "slug", "entitlement", "view_model",
-                 "queue", "Supabase", "PostgREST", "idem_key", "backfill", "null", "NaN")
 _FILE_RE = re.compile(r"[A-Za-z_]+\.(py|j2|yml|css|js)")
 _CAPS_RE = re.compile(r"\b[A-Z][A-Z0-9_]{3,}\b")
 
 
 def _check_no_banned(en: str, zh: str) -> None:
-    for text in (en, zh):
-        low = text.lower()
-        for word in _BANNED_WORDS:
-            assert word.lower() not in low, f"banned word {word!r} in {text!r}"
-        assert not _FILE_RE.search(text), f"raw filename leaked in {text!r}"
-        assert not _CAPS_RE.search(text), f"ALL_CAPS token leaked in {text!r}"
+    # Delegates to the production checker (lib.help_directory._check_banned_vocabulary)
+    # instead of maintaining a second, drift-prone word list here (review finding M2:
+    # the old local copy re-implemented the same defective substring match, so it could
+    # never catch a bug in the real checker). Raises AssertionError with the same
+    # message shape the rest of this module already expects.
+    try:
+        _check_banned_vocabulary("test fixture", en, zh)
+    except ValueError as exc:
+        raise AssertionError(str(exc)) from exc
 
 
 def test_answers_are_question_shaped_and_bilingual() -> None:
