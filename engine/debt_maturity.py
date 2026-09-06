@@ -100,12 +100,29 @@ def _usd_dollars(amount: float) -> str:
     return f"{sign}${a:.0f}"
 
 
-def _empty_result(status: str, canon_cik: str, as_of: date | None) -> dict[str, Any]:
+def _stub_buckets() -> list[dict[str, Any]]:
+    """All six buckets, each explicitly not-reported. Used only for
+    ``no_maturity_facts`` (a real filing exists but none of the six tags are in
+    it) so the panel can print every bucket as "not reported" instead of a
+    single blanket sentence — printing the null per-bucket, never hiding it."""
+    return [
+        {
+            "key": key, "label_en": en, "label_zh": zh,
+            "usd": None, "display": None, "share_pct": None,
+            "reported": False, "tag": tag, "drop_reason": "absent",
+        }
+        for key, tag, en, zh in BUCKETS
+    ]
+
+
+def _empty_result(
+    status: str, canon_cik: str, as_of: date | None, *, buckets: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     return {
         "schema": "debt_maturity.v1",
         "status": status,
         "cik": canon_cik,
-        "buckets": [],
+        "buckets": buckets if buckets is not None else [],
         "total_reported_usd": None,
         "total_display": None,
         "near_share_pct": None,
@@ -167,7 +184,7 @@ def extract_maturity_ladder(
 
     periods = _candidate_periods(companyfacts)
     if not periods:
-        return _empty_result("no_maturity_facts", canon_cik, as_of)
+        return _empty_result("no_maturity_facts", canon_cik, as_of, buckets=_stub_buckets())
 
     winner = periods[0]
     win_accn, win_end = winner["accn"], winner["end"]

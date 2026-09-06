@@ -24,19 +24,53 @@ Responsibilities, and only these:
      existing companyfacts store.
 
 No network call is required for the pure engine or for tests: a missing or
-unreadable cache degrades to ``facts=None`` (the caller renders "no SEC
-filings available"), it never raises out of this module, and it never
-invents a name/theme-matched identity.
+unreadable cache degrades to ``facts=None`` and a distinct "not loaded yet"
+caller-facing status (never "no SEC filings available" -- that is a positive
+claim this producer must have actually earned), it never raises out of this
+module, and it never invents a name/theme-matched identity.
+
+Three distinct null states (META-CEO ruling round 2, packet B-F09-3 B2)
+------------------------------------------------------------------------
+A cache MISS (this producer has never reached this CIK, or its last attempt
+was a transient network failure) is not the same claim as a cache HIT that
+positively confirms the issuer has no SEC filings at all -- conflating the two
+would render "No SEC filings available" for a listing this producer simply
+has not gotten to yet, which is a fabricated negative. ``refresh_cache_for_cik``
+therefore always WRITES a cache file once it has genuinely completed a fetch
+cycle (even when that cycle found nothing), and marks a confirmed-empty result
+with ``confirmed_no_filings: true`` so a caller can tell the two apart:
+
+  * no cache file on disk               -> caller renders "not loaded yet"
+  * cache file, ``confirmed_no_filings`` -> caller passes ``companyfacts=None``
+    to ``extract_maturity_ladder`` -> engine's own ``no_filings`` status
+  * cache file, real (possibly empty per-tag) facts -> caller passes the
+    facts through -> engine's own ``no_maturity_facts`` / ``reported`` status
+
+``refresh_cache_for_cik`` has two call modes. Standalone (``full_companyfacts``
+omitted) fetches the six bounded tags itself from SEC's companyconcept API --
+used by backfill/ad-hoc tooling. Wired (``full_companyfacts`` supplied by a
+caller that already fetched the filer's full companyfacts document in the SAME
+nightly step -- ``collectors/edgar_facts.py``'s per-issuer companyfacts fetch,
+which this producer is wired into) reuses that payload instead of six more
+network round trips; passing ``full_companyfacts=None`` there means the
+caller's own fetch positively confirmed (an HTTP 404 on the full companyfacts
+document, not a timeout) that this CIK carries no SEC filings at all.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 log = logging.getLogger(__name__)
+
+# Sentinel distinguishing "full_companyfacts not supplied at all" (standalone
+# mode: fetch it myself) from "supplied and is None" (wired mode: the caller's
+# own fetch already ran and positively found nothing for this CIK).
+_UNSET: Any = object()
 
 # Only these six tags are ever requested -- the "bounded" half of "bounded
 # ingestion producer": this module has no path to any other XBRL concept.
@@ -130,11 +164,18 @@ def _canon(value: Any) -> str:
     return raw.zfill(10)
 
 
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 def load_cached_facts(cik: str) -> dict[str, Any] | None:
     """Read the bounded per-issuer cache produced by `refresh_cache_for_cik`.
 
-    Returns None on any absence/parse failure -- the caller renders the
-    distinct "no SEC filings available" null state, never a fabricated one.
+    Returns None on any absence/parse failure -- the caller must NOT treat
+    this as "confirmed no SEC filings" (that positive claim is only earned by
+    a cache file that carries ``confirmed_no_filings: true`` -- see
+    `load_debt_maturity_facts`); an absent/unreadable cache is "not loaded
+    yet", never a fabricated negative.
     """
     path = _cache_dir() / f"CIK{cik}.json"
     if not path.exists():
@@ -146,16 +187,65 @@ def load_cached_facts(cik: str) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
-def refresh_cache_for_cik(cik: str, *, session: Any = None, timeout: float = 10.0) -> bool:
-    """Fetch the six bounded debt-maturity tags from SEC's public
-    companyconcept API (one small per-tag document each -- the "bounded"
-    half of this producer's network footprint) and write the merged cache.
+def _write_cache_from_full_companyfacts(cik: str, full_companyfacts: Mapping[str, Any] | None) -> bool:
+    """Wired-mode cache write: slim the six bounded tags out of an
+    already-fetched full companyfacts document (no network call here at all).
 
-    Best-effort: any network/parse failure leaves the existing cache (if any)
-    untouched and returns False. Never raises. Off the render path by design
-    -- this is meant to run from a standalone refresh job, not from the
-    nightly stock-library build itself.
+    ``full_companyfacts=None`` means the caller's own fetch positively
+    confirmed (an HTTP 404 on the full companyfacts document -- not a timeout
+    or a transient failure, which the caller must never pass through here)
+    that this CIK has no SEC filings; that is recorded as
+    ``confirmed_no_filings`` so ``load_debt_maturity_facts`` can render the
+    genuine "no SEC filings available" state instead of a blanket "not
+    reported" or a fabricated "not loaded yet".
     """
+    try:
+        cache_dir = _cache_dir()
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        now = _utc_now_iso()
+        if not full_companyfacts:
+            merged: dict[str, Any] = {
+                "cik": int(cik), "facts": {"us-gaap": {}},
+                "fetched_at": now, "confirmed_no_filings": True,
+            }
+        else:
+            usgaap = ((full_companyfacts or {}).get("facts") or {}).get("us-gaap") or {}
+            slim: dict[str, Any] = {}
+            for tag in _TAGS:
+                node = usgaap.get(tag)
+                if node and node.get("units"):
+                    slim[tag] = {"units": node["units"]}
+            merged = {"cik": int(cik), "facts": {"us-gaap": slim}, "fetched_at": now}
+        tmp = cache_dir / f".CIK{cik}.json.tmp"
+        tmp.write_text(json.dumps(merged))
+        tmp.replace(cache_dir / f"CIK{cik}.json")
+        return True
+    except Exception:  # noqa: BLE001 -- never fatal to the caller's own build/collector
+        return False
+
+
+def refresh_cache_for_cik(
+    cik: str, *, session: Any = None, timeout: float = 10.0, full_companyfacts: Any = _UNSET,
+) -> bool:
+    """Warm the bounded per-issuer debt-maturity cache for `cik`.
+
+    Two modes (see module docstring):
+
+    * Wired (``full_companyfacts`` explicitly supplied, even as ``None``):
+      reuses a companyfacts document a caller already fetched in the SAME
+      nightly step -- no network call happens here. This is the mode
+      ``collectors/edgar_facts.py`` calls for every issuer its own build
+      already companyfacts-fetches (packet B-F09-3 B1 wiring).
+    * Standalone (``full_companyfacts`` omitted): fetches the six bounded
+      debt-maturity tags itself from SEC's public companyconcept API (one
+      small per-tag document each) -- used by ad-hoc/backfill tooling, never
+      by the render path. Best-effort: a total network failure across every
+      tag leaves the existing cache (if any) untouched and returns False; a
+      completed round trip (even one that found nothing) always writes,
+      distinguishing "asked and got nothing" from "never asked".
+    """
+    if full_companyfacts is not _UNSET:
+        return _write_cache_from_full_companyfacts(cik, full_companyfacts)
     try:
         import requests  # noqa: PLC0415
     except Exception:  # noqa: BLE001
@@ -163,12 +253,22 @@ def refresh_cache_for_cik(cik: str, *, session: Any = None, timeout: float = 10.
     sess = session or requests
     merged: dict[str, Any] = {"cik": int(cik), "facts": {"us-gaap": {}}}
     got_any = False
+    any_clean_response = False
     for tag in _TAGS:
         url = _SEC_COMPANYCONCEPT_URL.format(cik=cik, tag=tag)
         try:
             resp = sess.get(url, timeout=timeout, headers={"User-Agent": "mastermind-x debt-maturity/1.0"})
-            if resp.status_code != 200:
-                continue
+        except Exception:  # noqa: BLE001 -- a transient failure never overwrites the existing cache
+            continue
+        # Any HTTP response at all (200, 404, ...) means the round trip to SEC
+        # completed -- this is what lets "asked every tag and found nothing"
+        # be told apart from "every single tag request failed" (network down),
+        # which must leave the existing cache untouched, not confirm a false
+        # negative.
+        any_clean_response = True
+        if resp.status_code != 200:
+            continue
+        try:
             payload = resp.json()
         except Exception:  # noqa: BLE001
             continue
@@ -177,8 +277,11 @@ def refresh_cache_for_cik(cik: str, *, session: Any = None, timeout: float = 10.
             continue
         merged["facts"]["us-gaap"][tag] = {"units": units}
         got_any = True
-    if not got_any:
+    if not any_clean_response:
         return False
+    merged["fetched_at"] = _utc_now_iso()
+    if not got_any:
+        merged["confirmed_no_filings"] = True
     cache_dir = _cache_dir()
     cache_dir.mkdir(parents=True, exist_ok=True)
     tmp = cache_dir / f".CIK{cik}.json.tmp"
@@ -187,13 +290,30 @@ def refresh_cache_for_cik(cik: str, *, session: Any = None, timeout: float = 10.
     return True
 
 
-def load_debt_maturity_facts(ticker: str) -> tuple[str | None, dict[str, Any] | None]:
-    """Resolve `ticker` and return (cik, facts_or_None).
+def load_debt_maturity_facts(ticker: str) -> tuple[str | None, dict[str, Any] | None, str]:
+    """Resolve `ticker` and return (cik, facts_or_None, cache_state).
 
-    ``cik`` is None only when the ticker has no CIK resolution at all (an
-    identity gap, distinct from "resolved issuer, no filings cached" --
-    callers must render the two differently per acceptance #2)."""
+    ``cache_state`` is one of:
+
+      * ``"unresolved"`` -- the ticker has no CIK resolution at all yet (an
+        identity gap, not a positive claim about SEC filings).
+      * ``"not_loaded"`` -- the CIK resolved, but this producer has never
+        completed a fetch cycle for it (cache file absent). Renders "Debt
+        schedule not loaded yet.", never "no SEC filings available".
+      * ``"confirmed_no_filings"`` -- a completed fetch cycle positively found
+        no SEC filings for this CIK at all.
+      * ``"loaded"`` -- a completed fetch cycle produced real (possibly
+        empty-per-tag) companyfacts; pass `facts` to
+        ``engine.debt_maturity.extract_maturity_ladder``, whose own
+        ``no_maturity_facts``/``reported``/``identity_mismatch`` statuses
+        already distinguish "has filings, no maturity breakdown" from
+        "reported"."""
     cik = resolve_cik(ticker)
     if cik is None:
-        return None, None
-    return cik, load_cached_facts(cik)
+        return None, None, "unresolved"
+    cached = load_cached_facts(cik)
+    if cached is None:
+        return cik, None, "not_loaded"
+    if cached.get("confirmed_no_filings"):
+        return cik, None, "confirmed_no_filings"
+    return cik, cached, "loaded"

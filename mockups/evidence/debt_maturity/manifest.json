@@ -1,0 +1,1104 @@
+{
+  "axes": {
+    "access": [
+      "anonymous"
+    ],
+    "force_states": [],
+    "locales": [
+      "en",
+      "zh"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "viewports": {
+      "desktop": [
+        1440,
+        900
+      ],
+      "mobile": [
+        390,
+        844
+      ]
+    }
+  },
+  "excluded": [],
+  "generated_at": "2026-09-06T00:00:00Z",
+  "honesty": {
+    "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
+    "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
+    "gaps": "states that were not captured are recorded with a reason; nothing is inferred for them"
+  },
+  "outcome": "captured",
+  "pages": [
+    {
+      "console_errors": [
+        {
+          "source_url": "http://127.0.0.1:61681/api/event-workspace/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": "http://127.0.0.1:61681/api/dossier-quote/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": null,
+          "text": "Framing 'https://app.mastermind-x.com/' violates the following Content Security Policy directive: \"frame-ancestors 'self' https://mastermind-x.com https://www.mastermind-x.com\". The request has been blocked.\n"
+        }
+      ],
+      "failed_responses": [
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/event-workspace/AAPL"
+        },
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/dossier-quote/AAPL"
+        }
+      ],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": true,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 5299,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 8350,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 2,
+        "document_height_px": 5299,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 18,
+          "h3": 2,
+          "h4": 2,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "light",
+          "viewport": "desktop"
+        },
+        "panel_count": 5,
+        "payload_bytes_total": 159709,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 21,
+        "screenshot_completion": 1.0,
+        "section_count": 4,
+        "source_present": true,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 819
+      },
+      "page_id": "stocks__dmev_reported.html",
+      "registry_route": "/stocks/_dmev_reported.html",
+      "route": "/stocks/_dmev_reported.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 1103955,
+          "captured": true,
+          "file": "fd4d0edfe5c1f0aa.png",
+          "force_state": null,
+          "height": 5299,
+          "locale": "en",
+          "sha256": "fd4d0edfe5c1f0aaa21f1e7a1b4bad0cba0206452bc05bec9bb7e5f1356d8353",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 1051339,
+          "captured": true,
+          "file": "a621d7a4b7affbca.png",
+          "force_state": null,
+          "height": 5251,
+          "locale": "en",
+          "sha256": "a621d7a4b7affbca4c37fc0b5a8324db239335c968d0d3c2b0949dc1864e1ba9",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 1079109,
+          "captured": true,
+          "file": "d7bf972cdc8d15f6.png",
+          "force_state": null,
+          "height": 5309,
+          "locale": "zh",
+          "sha256": "d7bf972cdc8d15f6862dee197c40f90db16bc48293f83be7bc212d5d5ec63944",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 1011431,
+          "captured": true,
+          "file": "58801fb0243e64bf.png",
+          "force_state": null,
+          "height": 5261,
+          "locale": "zh",
+          "sha256": "58801fb0243e64bf1def895ca8b401023900b92388f4483a09c9d7fddbc7ab92",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 851936,
+          "captured": true,
+          "file": "5f1ed02fe17f29ca.png",
+          "force_state": null,
+          "height": 8350,
+          "locale": "en",
+          "sha256": "5f1ed02fe17f29caf92e3132f8a9cc1360f60b6a0325c6200cd981329dfaf781",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 814242,
+          "captured": true,
+          "file": "4129c1fdb55156ef.png",
+          "force_state": null,
+          "height": 8301,
+          "locale": "en",
+          "sha256": "4129c1fdb55156ef8e873e34fd10a1aada8f2a42110635f84da07c6dd04b2313",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 848736,
+          "captured": true,
+          "file": "a9df255358ce8391.png",
+          "force_state": null,
+          "height": 8002,
+          "locale": "zh",
+          "sha256": "a9df255358ce8391fe19337f0deba6f7b6d79f1ecf46ffbaaa28597ae185ddb8",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 812100,
+          "captured": true,
+          "file": "43fa688c484a66dc.png",
+          "force_state": null,
+          "height": 7953,
+          "locale": "zh",
+          "sha256": "43fa688c484a66dc3b340a4107655fa62de5922abfcd72ff0083af221c372b84",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        }
+      ]
+    },
+    {
+      "console_errors": [
+        {
+          "source_url": "http://127.0.0.1:61681/api/event-workspace/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": "http://127.0.0.1:61681/api/dossier-quote/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": null,
+          "text": "Framing 'https://app.mastermind-x.com/' violates the following Content Security Policy directive: \"frame-ancestors 'self' https://mastermind-x.com https://www.mastermind-x.com\". The request has been blocked.\n"
+        }
+      ],
+      "failed_responses": [
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/event-workspace/AAPL"
+        },
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/dossier-quote/AAPL"
+        }
+      ],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": true,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 5032,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 7793,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 2,
+        "document_height_px": 5032,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 18,
+          "h3": 2,
+          "h4": 2,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "light",
+          "viewport": "desktop"
+        },
+        "panel_count": 5,
+        "payload_bytes_total": 661776,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 21,
+        "screenshot_completion": 1.0,
+        "section_count": 4,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 769
+      },
+      "page_id": "stocks__dmev_not_loaded.html",
+      "registry_route": "/stocks/_dmev_not_loaded.html",
+      "route": "/stocks/_dmev_not_loaded.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 1057114,
+          "captured": true,
+          "file": "bb6f61f0aaa9ebd1.png",
+          "force_state": null,
+          "height": 5032,
+          "locale": "en",
+          "sha256": "bb6f61f0aaa9ebd14c9d2257a1815b4618278be5f532424dd59b8e2cfeb72162",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 1013092,
+          "captured": true,
+          "file": "638ab46de9a24f71.png",
+          "force_state": null,
+          "height": 5032,
+          "locale": "en",
+          "sha256": "638ab46de9a24f711b8672d02cac514dfd203225ff29e0a32ff22408da091b6c",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 1059125,
+          "captured": true,
+          "file": "3b838a5218b60b80.png",
+          "force_state": null,
+          "height": 5042,
+          "locale": "zh",
+          "sha256": "3b838a5218b60b80b6b28cb744e4314afe0c6957c522dedf16876db3227b78e0",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 1012813,
+          "captured": true,
+          "file": "d124c26f2ab13e43.png",
+          "force_state": null,
+          "height": 5042,
+          "locale": "zh",
+          "sha256": "d124c26f2ab13e43c6827069ec74ad4b85852dabc0aff4f0d907eb6a18b5033d",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 815943,
+          "captured": true,
+          "file": "7d5da5c202d51423.png",
+          "force_state": null,
+          "height": 7793,
+          "locale": "en",
+          "sha256": "7d5da5c202d51423ef02342fed0fc4a41c5fc2dead2517c728feaabe64ea29d7",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 782970,
+          "captured": true,
+          "file": "c8b32a4881eb9760.png",
+          "force_state": null,
+          "height": 7793,
+          "locale": "en",
+          "sha256": "c8b32a4881eb9760d8fe6cf1d5b007c3c2781fae1eca2fe14356f1d81a7fe182",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 812362,
+          "captured": true,
+          "file": "6cbe689a480c1e04.png",
+          "force_state": null,
+          "height": 7443,
+          "locale": "zh",
+          "sha256": "6cbe689a480c1e0464c1d0c0a579e725fdb214b2127ec7067c91b687df208811",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 778349,
+          "captured": true,
+          "file": "9c53dc517bfc70b6.png",
+          "force_state": null,
+          "height": 7443,
+          "locale": "zh",
+          "sha256": "9c53dc517bfc70b652129b8579f5feb70d52e65cfc56da9c491dc299d5e43c7f",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        }
+      ]
+    },
+    {
+      "console_errors": [
+        {
+          "source_url": "http://127.0.0.1:61681/api/event-workspace/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": "http://127.0.0.1:61681/api/dossier-quote/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": null,
+          "text": "Framing 'https://app.mastermind-x.com/' violates the following Content Security Policy directive: \"frame-ancestors 'self' https://mastermind-x.com https://www.mastermind-x.com\". The request has been blocked.\n"
+        }
+      ],
+      "failed_responses": [
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/event-workspace/AAPL"
+        },
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/dossier-quote/AAPL"
+        }
+      ],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": true,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 5032,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 7793,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 2,
+        "document_height_px": 5032,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 18,
+          "h3": 2,
+          "h4": 2,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "light",
+          "viewport": "desktop"
+        },
+        "panel_count": 5,
+        "payload_bytes_total": 11104,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 21,
+        "screenshot_completion": 1.0,
+        "section_count": 4,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 771
+      },
+      "page_id": "stocks__dmev_no_filings.html",
+      "registry_route": "/stocks/_dmev_no_filings.html",
+      "route": "/stocks/_dmev_no_filings.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 1061105,
+          "captured": true,
+          "file": "c5a6954b5440f4f8.png",
+          "force_state": null,
+          "height": 5032,
+          "locale": "en",
+          "sha256": "c5a6954b5440f4f8468e292f3c42b13adefdea7aa43b3c4934094e0f51877bf8",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 962368,
+          "captured": true,
+          "file": "1aa4adb58ef9c637.png",
+          "force_state": null,
+          "height": 5032,
+          "locale": "en",
+          "sha256": "1aa4adb58ef9c637ad67e17635a32933f5126bed0a68fceffa651d26ad6a1f41",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 1037030,
+          "captured": true,
+          "file": "dd88a4c39f1a6a68.png",
+          "force_state": null,
+          "height": 5042,
+          "locale": "zh",
+          "sha256": "dd88a4c39f1a6a689607f09d1b8a7d7eb98141962efdc211b3132ad2ebc7613a",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 997022,
+          "captured": true,
+          "file": "55041b9ee46227b2.png",
+          "force_state": null,
+          "height": 5042,
+          "locale": "zh",
+          "sha256": "55041b9ee46227b26c0ba4e3f60ebf4754fa4b91295973d7e5bf8d2aa0e4ab40",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 817054,
+          "captured": true,
+          "file": "e4bdc33cbf7156d8.png",
+          "force_state": null,
+          "height": 7793,
+          "locale": "en",
+          "sha256": "e4bdc33cbf7156d8f62ec2eae9d80894d461117e4722507a6b93eafe02337fe6",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 782398,
+          "captured": true,
+          "file": "6bfcfbc342ec950e.png",
+          "force_state": null,
+          "height": 7793,
+          "locale": "en",
+          "sha256": "6bfcfbc342ec950e92e3c8edf312258c8c680d61ecbd58aa79870185ce20ba72",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 814433,
+          "captured": true,
+          "file": "88333e2b2adb0aa2.png",
+          "force_state": null,
+          "height": 7443,
+          "locale": "zh",
+          "sha256": "88333e2b2adb0aa2df1f1239e333ded057cfce66ad92910334f283b9daf94dcd",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 780301,
+          "captured": true,
+          "file": "cfc5edbb9f004c8e.png",
+          "force_state": null,
+          "height": 7443,
+          "locale": "zh",
+          "sha256": "cfc5edbb9f004c8e439bb56b42f01d48f2d9d3b1833e9d9e30f054d73b50ea43",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        }
+      ]
+    },
+    {
+      "console_errors": [
+        {
+          "source_url": "http://127.0.0.1:61681/api/event-workspace/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": "http://127.0.0.1:61681/api/dossier-quote/AAPL",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": null,
+          "text": "Framing 'https://app.mastermind-x.com/' violates the following Content Security Policy directive: \"frame-ancestors 'self' https://mastermind-x.com https://www.mastermind-x.com\". The request has been blocked.\n"
+        }
+      ],
+      "failed_responses": [
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/event-workspace/AAPL"
+        },
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:61681/api/dossier-quote/AAPL"
+        }
+      ],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": true,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 5032,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 7796,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 2,
+        "document_height_px": 5032,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 18,
+          "h3": 2,
+          "h4": 2,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "light",
+          "viewport": "desktop"
+        },
+        "panel_count": 5,
+        "payload_bytes_total": 143514,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 21,
+        "screenshot_completion": 1.0,
+        "section_count": 4,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 777
+      },
+      "page_id": "stocks__dmev_identity_mismatch.html",
+      "registry_route": "/stocks/_dmev_identity_mismatch.html",
+      "route": "/stocks/_dmev_identity_mismatch.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 1064122,
+          "captured": true,
+          "file": "f1e020eb54c4815d.png",
+          "force_state": null,
+          "height": 5032,
+          "locale": "en",
+          "sha256": "f1e020eb54c4815d308326ca13bae775b8b2407763f6507ccf42d613fa7c4ccf",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 1017602,
+          "captured": true,
+          "file": "cb8ff0afba59470e.png",
+          "force_state": null,
+          "height": 5032,
+          "locale": "en",
+          "sha256": "cb8ff0afba59470e07526599402cd00ef52ef6fb2c10cdf84bb46398139b3f5e",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 1017756,
+          "captured": true,
+          "file": "b7f5799c4816d69a.png",
+          "force_state": null,
+          "height": 5042,
+          "locale": "zh",
+          "sha256": "b7f5799c4816d69a1efb0c5ad111a79bcfcd032148831b48d66f60347724ff4b",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 978781,
+          "captured": true,
+          "file": "e3e055fb2464d2c1.png",
+          "force_state": null,
+          "height": 5042,
+          "locale": "zh",
+          "sha256": "e3e055fb2464d2c1a5b031c7d1449a112b80e5485c98045a5ebc7cf569d9deae",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 820120,
+          "captured": true,
+          "file": "07923aed678d0df6.png",
+          "force_state": null,
+          "height": 7796,
+          "locale": "en",
+          "sha256": "07923aed678d0df6ccc28356c4b553000a31878427ad347e036e385553b31f49",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 784566,
+          "captured": true,
+          "file": "63d8aab49ceebbc4.png",
+          "force_state": null,
+          "height": 7796,
+          "locale": "en",
+          "sha256": "63d8aab49ceebbc4f11d5cdc8d41e3426117cb29007bb2a346ea6df84c7e01b7",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 820354,
+          "captured": true,
+          "file": "69f8e13f8dbef055.png",
+          "force_state": null,
+          "height": 7465,
+          "locale": "zh",
+          "sha256": "69f8e13f8dbef055b9fcb84f5365ac5165e614629bf0e5d76c725b6b43f7f378",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 787155,
+          "captured": true,
+          "file": "0c42135e67df1bd4.png",
+          "force_state": null,
+          "height": 7465,
+          "locale": "zh",
+          "sha256": "0c42135e67df1bd490fda0fedc4ed42aa0a9705fd9d118b40468bbe05f154096",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        }
+      ]
+    }
+  ],
+  "schema": "mastermind.p0_evidence.v2",
+  "selection": {
+    "explicit_routes": [
+      "/stocks/_dmev_reported.html",
+      "/stocks/_dmev_not_loaded.html",
+      "/stocks/_dmev_no_filings.html",
+      "/stocks/_dmev_identity_mismatch.html"
+    ],
+    "max_pages": 10,
+    "mode": "explicit_routes",
+    "note": "--routes overrode registry selection; the --priority and --repo filters were not applied",
+    "priority": null,
+    "registry": "data/product_experience/page_registry.json",
+    "registry_rows": 0,
+    "repo": null,
+    "selected": 4
+  },
+  "target": {
+    "base_url": null,
+    "kind": "site_dir",
+    "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mo-fix-6921",
+    "resolved_sha_or_none": "b0fcb6425b9449d7a5e052385b17161630725fad",
+    "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mo-fix-6921 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
+    "site_dir": "/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/mo-fix-6921/site"
+  },
+  "tool": {
+    "module_ref": "scripts/capture_page_evidence.py",
+    "module_sha256": "97b4435815440fde008cd35b73c551cf704ba01ea71f18f04a2b23ebc7a0a6b7",
+    "user_agent": "mastermind-page-census/1.0 (internal product observability)",
+    "version": "1.2.0"
+  },
+  "totals": {
+    "pages": 4,
+    "states_attempted": 32,
+    "states_captured": 32
+  }
+}

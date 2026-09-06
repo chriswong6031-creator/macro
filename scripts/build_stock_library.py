@@ -4055,22 +4055,29 @@ def main() -> int:
         # Top-level block in each stockdata JSON: engine.debt_maturity.v1.
         # Identity is CIK-only via scripts/build_debt_maturity.py's committed
         # ticker->CIK ledger + issuer_master fallback (GATE 0, fixed 2026-09-06).
-        # A ticker that never resolves to a CIK is a distinct null state
-        # ("no_filings") from a resolved issuer whose cache has no facts yet
-        # ("no_filings" too -- the engine itself already gives this the
-        # correct, honest label) -- neither is hidden as not_applicable.
+        # Three distinct null states (META-CEO ruling round 2, B2) -- an
+        # unresolved ticker and a resolved-but-never-fetched CIK are BOTH
+        # "not_loaded" (we simply do not know yet, never a positive claim);
+        # only a completed fetch cycle that positively found nothing earns
+        # "no_filings" (passed through as companyfacts=None so the engine's
+        # own status derivation is the single source of truth for that
+        # string). Never a network call here -- the cache is warmed off the
+        # render path by collectors/edgar_facts.py (B1 wiring).
         try:
-            _dm_cik, _dm_facts = _dm_load(ticker)
+            _dm_cik, _dm_facts, _dm_state = _dm_load(ticker)
             from engine.debt_maturity import extract_maturity_ladder as _dm_extract  # noqa: PLC0415
-            if _dm_cik is None:
+            _dm_asof = _dt.date.today()
+            if _dm_state in ("unresolved", "not_loaded"):
                 rec["debt_maturity"] = {
-                    "schema": "debt_maturity.v1", "status": "no_filings", "cik": None,
+                    "schema": "debt_maturity.v1", "status": "not_loaded", "cik": _dm_cik,
                     "buckets": [], "total_reported_usd": None, "total_display": None,
                     "near_share_pct": None, "buckets_reported": 0, "buckets_total": 6,
-                    "as_of": _dt.date.today().isoformat(),
+                    "as_of": _dm_asof.isoformat(),
                 }
+            elif _dm_state == "confirmed_no_filings":
+                rec["debt_maturity"] = _dm_extract(None, cik=_dm_cik, as_of=_dm_asof)
             else:
-                rec["debt_maturity"] = _dm_extract(_dm_facts, cik=_dm_cik, as_of=_dt.date.today())
+                rec["debt_maturity"] = _dm_extract(_dm_facts, cik=_dm_cik, as_of=_dm_asof)
         except Exception:  # noqa: BLE001 -- additive; must not break the stockdata build
             rec["debt_maturity"] = {"schema": "debt_maturity.v1", "status": "not_applicable"}
         # ---- confluence block (frozen Terminal contract, 2026-07-06) ---------------
