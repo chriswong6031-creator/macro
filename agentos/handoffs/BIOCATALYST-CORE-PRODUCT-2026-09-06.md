@@ -22,6 +22,15 @@ changed:
   - path: research/biocatalyst_decision_intelligence_v3/BIOCATALYST_R1B_WHAT_MATTERS_NEXT_PRECOMMISSION_2026-09-01.md
     what: Clarified clocks, occurrence, identity, pagination and unbuilt owner-port requirements.
 verified:
+  - claim: The Research Priority V1 semantics were accepted independently.
+    command: "gh api repos/mastermindx-market-intelligence/macro/pulls/6712/reviews/5126025473"
+    result: "Policy semantics accepted at 75a994307998dd8d25ff45dc53193d5c4dc5267c; finding 1 closed, finite reviewer stopped. No runtime classifier or handler proof."
+  - claim: The owner and bounded asset interface review completed and was adjudicated.
+    command: "Read owner-interface-review.md and the original event stream; gh api repos/mastermindx-market-intelligence/macro/pulls/6712/reviews/5126573589"
+    result: "Original reviewer 01a07819-8e7a-72b1-9a71-23a2c16e3e5d returned INTERFACE_PASS on a335729cc689adaad3a228511ba4967a4dece239, supervisor exit 0 at 19:15:16Z. Findings 2/3 accepted at architecture level; reviewer terminally stopped. Final repeated reviewer status exited 130, so fresh Sol status separately established the same clean head. No automated report-hash proof is claimed."
+  - claim: The two nonblocking interface mappings were repaired and pushed.
+    command: "git show --stat 1774fde6a9d06067406bdc9c0f9c0bdcc0ec9648; gh api repos/mastermindx-market-intelligence/macro/pulls/6712"
+    result: "Exact remote 1774fde6a9d06067406bdc9c0f9c0bdcc0ec9648; two files, 13 insertions and 3 deletions. Three normative assertions failed before and pass after; diff check clean. Draft/unmerged preserved. Lost process-output handle was reconciled by GitHub, not a repeated push."
   - claim: The four-file repair was committed and pushed on the existing PR.
     command: "git show --stat 3b4cc1508ff7727845f175a8f895c2c8c5e81b1d; gh api repos/mastermindx-market-intelligence/macro/pulls/6712"
     result: "Head 3b4cc1508ff7727845f175a8f895c2c8c5e81b1d; parent 02cca90f127e23b184da25a2290b0da63f8c8f19; four files, 109 additions, 22 deletions; Draft retained."
@@ -45,13 +54,13 @@ unverified:
   - claim: The old native principal consumed STOP and removed its historical Cron source.
     what_would_verify: A permitted exact-native terminal-consumption and child-source-removal receipt; none is claimed here.
 unresolved:
-  - "Whole-R0 owner bindings, final research-priority rule, experience/proof freeze and residual source-document contradictions are not accepted by the scoped four-file PASS."
+  - "R0 findings 1/2/3 are architecturally resolved by reviews 5126025473 and 5126573589. Actual experience references, remaining research review, canonical workstream reconciliation and current integration remain open; the product is not built by these decisions."
   - "The prior 44-amendment write batch was blocked before application and remained unapplied; do not infer its completion or route around the refusal."
   - "At the 15:46Z observation, both trusted executor packs were queued. Other green checks are not an all-green CI result."
   - "The inactive ci-authority/codex/merge-queue-pilot context reports inactive_base_context; active ci-authority/main passed. Do not manufacture a Bio authority-code repair or bypass required checks."
 next_actions:
   - Continue biocatalyst-v3-r0-source-repair-20260906-sol-001 on PR 6712; reconcile fresh head and current integration before any further source effect.
-  - Obtain one independent review of the complete actual R0 source, distinguishing executable-architecture requirements from later R1 implementation and production obligations.
+  - Preserve the completed whole-R0 REQUEST_CHANGES review 5125937773 and closed policy/interface findings; review only residual or changed requirements rather than commissioning the same full audit again.
   - Resolve only the review's concrete R0 blockers within current permissions; keep Draft/HOLD and preserve any withheld write boundary.
   - After objective R0 acceptance, use fresh bounded assignments for R1A source graduation and R1B What Matters Next. No routine new Chairman approval is added.
 do_not_redo:
@@ -97,3 +106,13 @@ R0 must deliver an independently reviewed executable architecture. R1A/R1B
 must then deliver real broad source truth and the What Matters Next journey.
 Keeping those completion laws separate prevents both false completion and a
 circular requirement that R1 already be built before R1 may start.
+
+## Later September 6 continuation: use the accepted decisions
+
+The current source chain now includes the external refresh at 16f7372, accepted RP policy at 75a9943, accepted interface specification at a335729, and the two explicit mapping clarifications at 1774fde6a9d06067406bdc9c0f9c0bdcc0ec9648. The historical 3b4cc150/828141 statements above bind their own observations; they are not the latest-head assertion. Read the current PR before every source effect. The external benchmark brief's section 13 links the accepted answers to its earlier open questions without rewriting the historical external evidence.
+
+Whole-R0 review 5125937773 is complete and terminal. Its findings 1/2/3 now have the accepted policy/interface decisions recorded in reviews 5126025473 and 5126573589. Do not commission another worker to rediscover those same choices. The original interface review had 180 recorded events and a terminal result; the differently named proposed evidence review was blocked before execution and has no supervisor/result. They are not interchangeable.
+
+The proposed six-state experience-document command was blocked before execution; no successful experience artifact or review is claimed. The separate earlier authority/workstream amendment batch and detailed production inventory also remain withheld. This handoff records new actual source/review facts; it does not retry those operations, supersede the canonical workstream or authorize a proxy. The outstanding experience and organizational reconciliation gates are explicit, not removed by documentation.
+
+Current protected procedure for the later adjudication is Mastermind f9e46a72d6102b0e94c897590fc58bac89eb4ea6, Skillpack 1.0.1/bootstrap 1. Old local schema/merge-tree results remain exact historical proof only. Current required integration and any changed semantic delta must still be checked; no hosted green, R0 release or product completion is inferred from those earlier results.
