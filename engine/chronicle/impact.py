@@ -252,7 +252,9 @@ def _eligible_themes(events: list[dict]) -> set[str]:
     return eligible
 
 
-def project_events_impact(events: list[dict]) -> list[dict]:
+def project_events_impact(
+    events: list[dict], *, eligible_themes: set[str] | None = None,
+) -> list[dict]:
     """Project a full event list, resolving second-order (co-theme) exposures.
 
     Point-in-time: a ticker only propagates to an event via themes from OTHER
@@ -274,8 +276,15 @@ def project_events_impact(events: list[dict]) -> list[dict]:
     yields byte-identical output, matching spine.py's byte-stable regeneration
     contract. No field outside the event's own schema-allowed data is
     consulted -- no external ranking, no LLM call.
+
+    ``eligible_themes``, when given, overrides the eligibility computed from
+    ``events`` alone (MAJOR 1). A windowed caller (e.g.
+    :func:`glance_consequence_surface`) must compute eligibility over the
+    FULL corpus and pass it here -- a small window can never contain the
+    ``SECOND_ORDER_THEME_BROAD_MIN_COUNT`` occurrences needed to refuse a
+    corpus-dominant theme like "earnings" on its own.
     """
-    eligible = _eligible_themes(events)
+    eligible = _eligible_themes(events) if eligible_themes is None else eligible_themes
     by_theme = {
         theme: rows for theme, rows in _co_theme_index(events).items()
         if theme in eligible
@@ -427,6 +436,30 @@ _RISK_BAND_RE = re.compile(
     re.IGNORECASE,
 )
 
+_EARNINGS_RE = re.compile(r"^Earnings:\s*(\S+)\s+actual vs est\s*$", re.IGNORECASE)
+_EARNINGS_CALL_RE = re.compile(
+    r"^Earnings call:\s*(\S+)\s+(Q\d\s+FY\d+)\s*\u2014\s*(.+?)\s*$", re.IGNORECASE
+)
+_MACRO_PRINT_RE = re.compile(
+    r"^Macro print:\s*([A-Za-z0-9_.]+)\s*=\s*([+-]?[\d.]+)\s*\(([\d-]+)\)\s*$",
+    re.IGNORECASE,
+)
+_EARNINGS_TONE_ZH = {
+    "cautious": "谨慎", "mixed": "中性", "positive": "积极",
+    "negative": "偏弱", "upbeat": "乐观", "bearish": "看空",
+    "bullish": "看多", "weak": "疲软", "strong": "强劲",
+    "neutral": "中性",
+}
+_ENUM_LEAK_RE = re.compile(r"\b(T[123]_HIT|INVALIDATED|EXPIRED|BULL|BEAR)\b")
+
+
+def _sanitize(en: str, zh: str, *, fallback_en: str, fallback_zh: str) -> tuple[str, str]:
+    """Single exit-point guard: no raw ledger enum reaches the glance surface,
+    regardless of which family branch produced the strings (MAJOR 2)."""
+    if _ENUM_LEAK_RE.search(en or "") or _ENUM_LEAK_RE.search(zh or ""):
+        return fallback_en, fallback_zh
+    return en, zh
+
 
 def _strip_quarter_prefix(token: str) -> str:
     return _QUARTER_PREFIX_RE.sub("", (token or "").strip()) or (token or "").strip()
@@ -447,6 +480,8 @@ def plain_glance_titles(proj: dict) -> tuple[str, str]:
         if e.get("materiality") == MATERIALITY_DIRECT and e.get("ticker")
     ]
 
+    fallback = ("Chronicle event", "大事记事件")
+
     m = _PROPHET_CLOSE_RE.match(raw)
     if m or source == "prophet_ledger":
         if m:
@@ -461,10 +496,9 @@ def plain_glance_titles(proj: dict) -> tuple[str, str]:
         who = ticker or "Named name"
         detail_en = f" ({detail})" if detail else ""
         detail_zh = _zh_detail(detail)
-        return (
-            f"{who} {side_en} closed · {out_en}{detail_en}",
-            f"{who} {side_zh}已结 · {out_zh}{detail_zh}",
-        )
+        en = f"{who} {side_en} closed · {out_en}{detail_en}"
+        zh = f"{who} {side_zh}已结 · {out_zh}{detail_zh}"
+        return _sanitize(en, zh, fallback_en=fallback[0], fallback_zh=fallback[1])
 
     m = _REGIME_FLIP_RE.match(raw)
     if m or source == "regime_flip":
@@ -473,10 +507,9 @@ def plain_glance_titles(proj: dict) -> tuple[str, str]:
         else:
             region, frm, to = "Market", "prior state", "new state"
         frm_p, to_p = _strip_quarter_prefix(frm), _strip_quarter_prefix(to)
-        return (
-            f"{region} regime shifted: {frm_p} → {to_p}",
-            f"{_zh_region(region)}体制切换：{_zh_state(frm_p)} → {_zh_state(to_p)}",
-        )
+        en = f"{region} regime shifted: {frm_p} → {to_p}"
+        zh = f"{_zh_region(region)}体制切换：{_zh_state(frm_p)} → {_zh_state(to_p)}"
+        return _sanitize(en, zh, fallback_en=fallback[0], fallback_zh=fallback[1])
 
     m = _RISK_BAND_RE.match(raw)
     if m or source == "risk_band":
@@ -484,28 +517,74 @@ def plain_glance_titles(proj: dict) -> tuple[str, str]:
             frm, to = m.group(1).strip(), m.group(2).strip()
         else:
             frm, to = "prior", "new"
-        return (
-            f"Risk radar moved: {frm} → {to}",
-            f"风险雷达切换：{_zh_state(frm)} → {_zh_state(to)}",
-        )
+        en = f"Risk radar moved: {frm} → {to}"
+        zh = f"风险雷达切换：{_zh_state(frm)} → {_zh_state(to)}"
+        return _sanitize(en, zh, fallback_en=fallback[0], fallback_zh=fallback[1])
 
     if source == "macro_release":
-        return (
-            raw or "Macro data release",
-            (raw and f"宏观数据发布：{raw}") or "宏观数据发布",
+        # BLOCKER 1(b): parse "Macro print: <series> = <value> (<date>)" into
+        # a plain-word dual-locale sentence instead of gluing a ZH prefix
+        # onto the untranslated stat slug (or doubling it in EN).
+        mp = _MACRO_PRINT_RE.match(raw)
+        if mp:
+            series, value = mp.group(1), mp.group(2)
+            series_label = series.replace("_", " ")
+            en = f"{series_label} came in at {value}"
+            zh = f"{series_label} 公布为 {value}"
+        else:
+            en, zh = "Macro data release", "宏观数据发布"
+        return _sanitize(
+            en, zh,
+            fallback_en="Macro data release", fallback_zh="宏观数据发布",
         )
 
     if source == "earnings":
+        # BLOCKER 1(a): never echo `raw` as title_zh — real corpus rows
+        # always carry `raw`, so this branch used to render untranslated
+        # English on the ZH glance panel for 5,548 of 11,025 events (98.8%
+        # combined with earnings_call/research_vault).
         who = direct[0] if direct else "Named name"
-        return (
-            f"{who} earnings event" if not raw else raw,
-            f"{who} 业绩事件" if not raw else raw,
+        en = f"{who} reported earnings"
+        zh = f"{who} 公布业绩"
+        return _sanitize(
+            en, zh,
+            fallback_en="Earnings event", fallback_zh="业绩事件",
+        )
+
+    if source == "earnings_call":
+        # BLOCKER 1(c): previously fell to the unknown-family fallback and
+        # returned the raw "Earnings call: FINV Q2 FY2026 — mixed" string as
+        # BOTH locales.
+        mc = _EARNINGS_CALL_RE.match(raw)
+        ticker = mc.group(1) if mc else (direct[0] if direct else "Named name")
+        tone_raw = (mc.group(3) if mc else "").strip().lower()
+        tone_en = tone_raw or "neutral"
+        tone_zh = _EARNINGS_TONE_ZH.get(tone_raw, "中性")
+        en = f"{ticker} earnings call — {tone_en} tone"
+        zh = f"{ticker} 业绩电话会——基调{tone_zh}"
+        return _sanitize(
+            en, zh,
+            fallback_en="Earnings call", fallback_zh="业绩电话会",
+        )
+
+    if source == "research_vault":
+        # BLOCKER 1(c): previously fell to the unknown-family fallback and
+        # returned the raw analyst-note headline (e.g. "S&T: GS Duttenhoefer
+        # ...") as BOTH locales.
+        who = direct[0] if direct else None
+        if who:
+            en, zh = f"Research note on {who}", f"关于 {who} 的研究纪要"
+        else:
+            en, zh = "Market research note", "市场研究纪要"
+        return _sanitize(
+            en, zh,
+            fallback_en="Research note", fallback_zh="研究纪要",
         )
 
     # Unknown family: prefer a short non-slug fallback over leaking raw ledger text.
-    if raw and not re.search(r"\b(T[123]_HIT|INVALIDATED|EXPIRED|BULL|BEAR)\b", raw):
-        return raw, raw
-    return ("Chronicle event", "大事记事件")
+    if raw:
+        return _sanitize(raw, raw, fallback_en=fallback[0], fallback_zh=fallback[1])
+    return fallback
 
 
 def glance_consequence_surface(
@@ -550,8 +629,13 @@ def glance_consequence_surface(
         key=lambda e: (e.get("date") or "", e.get("id") or ""),
     )
     families = project_family_impact(window)
+    # MAJOR 1: eligibility must be computed over the FULL corpus, not the
+    # bounded glance window -- a 24-event window can never reach the
+    # SECOND_ORDER_THEME_BROAD_MIN_COUNT (40) needed to refuse a
+    # corpus-dominant theme like "earnings".
+    eligible_themes = _eligible_themes(events)
     rows = []
-    for proj in project_events_impact(window):
+    for proj in project_events_impact(window, eligible_themes=eligible_themes):
         direct = [e["ticker"] for e in proj["exposures"] if e.get("materiality") == MATERIALITY_DIRECT]
         second = [e["ticker"] for e in proj["exposures"] if e.get("materiality") == MATERIALITY_SECOND_ORDER]
         title_en, title_zh = plain_glance_titles(proj)
@@ -577,8 +661,8 @@ def glance_consequence_surface(
     return {
         "served_as_market_feed": False,
         "market_feed_disposition": "explicitly_does_not_serve_market_feed",
-        "stance_en": "Named tickers on recent chronicle events",
-        "stance_zh": "近期大事记事件中点名的标的",
+        "stance_en": "Recent market events and the names they touch — watch, don\u2019t chase.",
+        "stance_zh": "近期市场事件及其涉及的标的——观察为主，不必追高。",
         "reason_en": None,
         "reason_zh": None,
         "families": {k: len(v) for k, v in families.items()},

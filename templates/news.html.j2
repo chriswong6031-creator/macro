@@ -815,6 +815,12 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
     <p class="nx-sub">{{ t(CI.stance_en, CI.stance_zh or CI.stance_en) }}</p>
     {% endif %}
     {% if CI and CI.rows %}
+    {#- MAJOR 4: one section-level disclaimer instead of repeating the same
+        two-clause sentence on every card (was 16 of ~32 text lines, plus a
+        dangling middot where the card wrapped). -#}
+    <p class="nx-sub">{{ t('We don\u2019t size these yet — association only, not a forecast.', '尚未量化影响幅度——仅为关联提示，非预测。') }}</p>
+    {% endif %}
+    {% if CI and CI.rows %}
     <div class="nx-rel-grid">
       {% for row in CI.rows[:8] %}
       <div class="nx-rel">
@@ -846,11 +852,6 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
             <span class="num">({{ row.second_order_dropped_count or 0 }})</span></span>
         </div>
         {% endif %}
-        <div class="nx-meta">
-          <span>{{ t('Impact size not available yet', '影响幅度暂不可用') }}</span>
-          <span class="sep">·</span>
-          <span>{{ t('association only — not a measured forecast', '仅关联提示，非量化预测') }}</span>
-        </div>
       </div>
       {% endfor %}
     </div>

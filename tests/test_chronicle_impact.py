@@ -163,6 +163,26 @@ def test_broad_theme_second_order_fails_closed_not_ranked():
         impact.SECOND_ORDER_THEME_TOO_BROAD_REASON)
 
 
+def test_broad_theme_fails_closed_through_glance_surface_window():
+    # MAJOR 1: eligibility must be computed over the FULL corpus, not the
+    # bounded glance window -- 24 events can never reach the broad-theme
+    # min count (40) on their own, so the corpus-dominant "earnings" theme
+    # must still be refused when routed through glance_consequence_surface.
+    corpus = []
+    for i in range(45):
+        corpus.append(_ev(f"earn-g-{i}", "2026-08-01", source="earnings",
+                           tickers=[f"G{i % 5}"], themes=["earnings"]))
+    report = _ev("rv-glance-broad", "2026-09-01", source="research_vault",
+                  tickers=[], themes=["earnings"])
+    corpus.append(report)
+    surface = impact.glance_consequence_surface(corpus, limit=24)
+    row = next(r for r in surface["rows"] if r["event_id"] == report["id"])
+    projections = {p["event_id"]: p for p in impact.project_events_impact(
+        corpus, eligible_themes=impact._eligible_themes(corpus))}
+    assert "earnings" in projections[report["id"]]["second_order_theme_refused"]
+    assert row["second_order_tickers"] == []
+
+
 def test_second_order_ambiguous_cap_refuses_all_and_prints_dropped_count():
     # MAJOR 7 + no opaque ranker: when > MAX candidates remain on a narrow
     # theme, refuse ALL second-order and print candidate/dropped counts.
