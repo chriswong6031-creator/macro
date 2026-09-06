@@ -3411,41 +3411,187 @@ def test_cli_advances_the_repo_mirror_on_success(tmp_path, monkeypatch):
 
 
 # ===========================================================================
-# the workflow re-emits the rc it captured
+# source-content freshness acknowledgement + workflow wiring
 # ===========================================================================
 
-def test_workflow_fails_the_lane_on_a_nonzero_ingest_rc():
-    """Exercised as CONTROL FLOW, not as a grep for `exit 1`.
+def _w4_source_guard_payload(stamp: str = "2026-09-04T17:00:00Z") -> dict:
+    return {
+        "schema": "research_vault.catalog.v1",
+        "generated_at": "2026-09-05T04:00:00Z",
+        "count": 1,
+        "items": [{"id": "one", "published_at": stamp}],
+    }
 
-    The pre-Wave-4 workflow already captured the rc into a step output and then
-    never read it, which is exactly the shape a naive grep would have called
-    healthy. So this test runs the guard step's real shell body under both rcs.
+
+def _w4_run_source_guard(tmp_path, capsys, payload, *extra_args):
+    import scripts.check_research_vault_source_freshness as guard
+
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    catalog = tmp_path / "catalog.json"
+    if payload is not None:
+        catalog.write_text(json.dumps(payload), encoding="utf-8")
+    rc = guard.main([
+        "--catalog", str(catalog),
+        "--now", "2026-09-09T12:00:00Z",
+        "--ack-producer-stale",
+        *extra_args,
+    ])
+    lines = capsys.readouterr().out.splitlines()
+    assert lines, "the guard must always emit its typed JSON receipt"
+    return rc, json.loads(lines[0]), lines[1:]
+
+
+def test_source_outage_ack_softens_only_typed_producer_stale(tmp_path, capsys):
+    rc, report, annotations = _w4_run_source_guard(
+        tmp_path, capsys, _w4_source_guard_payload())
+
+    assert rc == 0
+    assert report["status"] == "PRODUCER_STALE"
+    assert report["ok"] is False, "acknowledgement must not rewrite the typed verdict"
+    assert any(line.startswith("::warning title=research-vault-source::")
+               and "acknowledged" in line.lower() for line in annotations)
+    assert not any(line.startswith("::error title=research-vault-source::")
+                   for line in annotations)
+
+
+@pytest.mark.parametrize(
+    ("case", "payload", "extra_args", "expected_status", "reason_fragment"),
+    [
+        ("empty", {"count": 0, "items": []}, (), "NO_REPORTS", "no report"),
+        ("invalid-clock", _w4_source_guard_payload("bad"), (),
+         "LATEST_REPORT_INVALID", "unusable published_at"),
+        ("future-clock", _w4_source_guard_payload("2026-09-09T12:10:01Z"), (),
+         "FUTURE_REPORT_CLOCK", "future-clock tolerance"),
+        ("invalid-catalog", {"count": 1, "items": "bad"}, (),
+         "CATALOG_UNAVAILABLE", "items is missing"),
+        ("invalid-configuration", _w4_source_guard_payload(),
+         ("--max-age-hours", "nan"), "CATALOG_UNAVAILABLE", "configuration"),
+        ("transport", None, (), "CATALOG_UNAVAILABLE", "catalog read failed"),
+    ],
+)
+def test_source_outage_ack_keeps_every_non_stale_failure_red(
+        tmp_path, capsys, case, payload, extra_args, expected_status, reason_fragment):
+    rc, report, annotations = _w4_run_source_guard(
+        tmp_path / case, capsys, payload, *extra_args)
+
+    assert rc == 1
+    assert report["status"] == expected_status
+    assert reason_fragment in report["reason"]
+    assert any(line.startswith("::error title=research-vault-source::")
+               for line in annotations)
+    assert not any("acknowledged" in line.lower() for line in annotations)
+
+
+def _w4_workflow_run(filename: str, job_name: str, *, step_id: str | None = None,
+                     step_name: str | None = None) -> str:
+    import yaml
+
+    payload = yaml.safe_load(
+        (_W4_ROOT / ".github" / "workflows" / filename).read_text(encoding="utf-8"))
+    steps = payload["jobs"][job_name]["steps"]
+    for step in steps:
+        if step_id is not None and step.get("id") == step_id:
+            return step["run"]
+        if step_name is not None and step.get("name") == step_name:
+            return step["run"]
+    raise AssertionError(f"workflow step not found: {filename} {step_id or step_name}")
+
+
+def _w4_fake_python_env(tmp_path, *, rc: int, ack: str = "true"):
+    import os
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir(parents=True)
+    capture = tmp_path / "python-args.txt"
+    fake = fake_bin / "python"
+    fake.write_text(
+        "#!/usr/bin/env bash\n"
+        "printf '%s\\n' \"$@\" > \"$FAKE_PYTHON_ARGS\"\n"
+        "exit \"$FAKE_PYTHON_RC\"\n",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    env = os.environ.copy()
+    env.update({
+        "PATH": f"{fake_bin}:{env['PATH']}",
+        "FAKE_PYTHON_ARGS": str(capture),
+        "FAKE_PYTHON_RC": str(rc),
+        "RESEARCH_VAULT_SOURCE_OUTAGE_ACK": ack,
+        "RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS": "",
+    })
+    return env, capture
+
+
+def test_research_ingest_passes_stale_only_ack_to_typed_guard(tmp_path):
+    script = _w4_workflow_run(
+        "research-ingest.yml", "ingest", step_id="source_freshness")
+    env, capture = _w4_fake_python_env(tmp_path, rc=1)
+    env["GITHUB_OUTPUT"] = str(tmp_path / "github-output")
+
+    proc = subprocess.run(
+        ["bash", "-c", script], cwd=_W4_ROOT, env=env,
+        capture_output=True, text=True, timeout=60)
+
+    assert proc.returncode == 0, proc.stderr
+    assert "--ack-producer-stale" in capture.read_text().splitlines()
+    assert Path(env["GITHUB_OUTPUT"]).read_text().strip() == "rc=1"
+
+
+def test_workflow_fails_the_lane_on_ingest_or_unacknowledged_guard_failure():
+    """Execute the actual final shell step, including the acknowledged-outage env.
+
+    A nonzero source rc represents a non-stale typed failure after acknowledgement
+    has already been applied inside the guard. The workflow must never green it.
     """
-    import re
+    import os
+
     wf = (_W4_ROOT / ".github" / "workflows" / "research-ingest.yml").read_text(
         encoding="utf-8")
+    failure_name = "fail the lane if ingest or source freshness failed"
+    assert wf.index("commit catalog snapshot (salvage-push)") < wf.index(failure_name)
+    script = _w4_workflow_run(
+        "research-ingest.yml", "ingest", step_name=failure_name)
+    env = os.environ.copy()
+    env["RESEARCH_VAULT_SOURCE_OUTAGE_ACK"] = "true"
 
-    # The salvage step must still run regardless of the ingest outcome...
-    assert re.search(r"name: commit catalog snapshot \(salvage-push\)\s*\n\s*if: always\(\)",
-                     wf), "salvage must remain if: always()"
-    # ...and the failure step must come AFTER it, also always().
-    assert wf.index("commit catalog snapshot (salvage-push)") < \
-        wf.index("fail the lane if ingestion failed"), (
-        "the lane may only fail AFTER salvage has had its chance to push"
-    )
-
-    body = wf.split("fail the lane if ingestion failed", 1)[1]
-    body = body.split("run: |", 1)[1]
-    script = "\n".join(line[10:] for line in body.splitlines() if line.strip())
-
-    for rc, expected in (("0", 0), ("1", 1), ("", 1)):
+    cases = [
+        ("0", "0", "success", 0),
+        ("1", "0", "success", 1),
+        ("", "0", "success", 1),
+        ("0", "1", "success", 1),
+        ("0", "", "success", 1),
+        ("0", "", "failure", 1),
+    ]
+    for ingest_rc, source_rc, checkout, expected in cases:
+        rendered = (script
+                    .replace("${{ steps.ingest.outputs.rc }}", ingest_rc)
+                    .replace("${{ steps.source_freshness.outputs.rc }}", source_rc)
+                    .replace("${{ steps.checkout.outcome }}", checkout))
         proc = subprocess.run(
-            ["bash", "-c", script.replace("${{ steps.ingest.outputs.rc }}", rc)],
-            capture_output=True, text=True, timeout=60,
-        )
+            ["bash", "-c", rendered], cwd=_W4_ROOT, env=env,
+            capture_output=True, text=True, timeout=60)
         assert proc.returncode == expected, (
-            f"rc={rc!r} should exit {expected}; got {proc.returncode}\n{proc.stdout}"
+            f"ingest={ingest_rc!r}, source={source_rc!r}, checkout={checkout!r} "
+            f"should exit {expected}; got {proc.returncode}\n"
+            f"stdout={proc.stdout}\nstderr={proc.stderr}"
         )
+
+
+def test_hosted_source_deadman_delegates_ack_and_preserves_non_stale_red(tmp_path):
+    script = _w4_workflow_run(
+        "vps-live-heartbeat.yml", "research-vault-source-url",
+        step_name="verify Research Vault source-content freshness (public URL)")
+    env, capture = _w4_fake_python_env(tmp_path, rc=1)
+
+    proc = subprocess.run(
+        ["bash", "-c", script], cwd=_W4_ROOT, env=env,
+        capture_output=True, text=True, timeout=60)
+
+    assert proc.returncode == 1, (
+        "the hosted workflow may not turn an arbitrary guard failure green merely "
+        f"because outage acknowledgement is set\n{proc.stdout}\n{proc.stderr}"
+    )
+    assert "--ack-producer-stale" in capture.read_text().splitlines()
 
 
 def test_workflow_passes_require_store_on_the_scheduled_run():

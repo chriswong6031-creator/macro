@@ -173,7 +173,8 @@ jobs:
   # Mac fleet cannot mask a dead producer (MAJOR 3). Deploy ordering (MINOR 4):
   # the URL path requires summary.source_clock on the VPS — merge + VPS pull of
   # this PR's app/engine before treating CATALOG_UNAVAILABLE as a producer
-  # signal. Outage ack: RESEARCH_VAULT_SOURCE_OUTAGE_ACK=true (same as ingest).
+  # signal. Outage ack is delegated to the typed guard and can soften only
+  # PRODUCER_STALE; every other nonzero verdict remains red (same as ingest).
   research-vault-source-url:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
@@ -190,13 +191,11 @@ jobs:
           if [ -n "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS:-}" ]; then
             args+=(--max-age-hours "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS}")
           fi
-          python -m scripts.check_research_vault_source_freshness "${args[@]}"
-          rc=$?
-          if [ "$rc" != "0" ] && [ "${RESEARCH_VAULT_SOURCE_OUTAGE_ACK:-}" = "true" ]; then
-            echo "::warning title=research-vault-source::URL freshness FAILED (rc=$rc) but RESEARCH_VAULT_SOURCE_OUTAGE_ACK=true — acknowledged outage; clear the variable when the producer resumes"
-            exit 0
+          if [ "${RESEARCH_VAULT_SOURCE_OUTAGE_ACK:-}" = "true" ]; then
+            args+=(--ack-producer-stale)
           fi
-          exit "$rc"
+          python -m scripts.check_research_vault_source_freshness "${args[@]}"
+          exit "$?"
 
   health:
     # This becomes the external dead-man only after the production soak. It uses

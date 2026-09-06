@@ -160,17 +160,26 @@ def _load_url(url,timeout_seconds):
     return _decode(raw,"catalog response")
 
 def _annotation_text(v): return str(v).replace("%","%25").replace("\r","%0D").replace("\n","%0A")
-def _emit(report):
-    print(json.dumps(dict(report),sort_keys=True,allow_nan=False))
+
+def _acknowledges_producer_stale(report,requested):
+    """True only for an explicit acknowledgement of the typed stale verdict."""
+    return requested is True and report.get("ok") is not True and report.get("status")=="PRODUCER_STALE"
+
+def _emit(report,*,acknowledged=False):
+    acknowledged=_acknowledges_producer_stale(report,acknowledged)
+    print(json.dumps(dict(report),sort_keys=True,allow_nan=False),flush=True)
     invalid=report.get("invalid_published_at") or 0
     if type(invalid) is int and invalid>0:
         print("::warning title=research-vault-source::"+_annotation_text(
-            f"{invalid} admitted report(s) have an unusable published_at; graded newest valid clock"))
+            f"{invalid} admitted report(s) have an unusable published_at; graded newest valid clock"),flush=True)
     if report.get("ok") is not True:
-        print("::error title=research-vault-source::"+_annotation_text(f"{report.get('status')}: {report.get('reason')}"))
+        level="warning" if acknowledged else "error"
+        suffix="; acknowledged producer outage (typed verdict preserved)" if acknowledged else ""
+        print(f"::{level} title=research-vault-source::"+_annotation_text(
+            f"{report.get('status')}: {report.get('reason')}{suffix}"),flush=True)
 
 def _selftest():
-    """Run 44 hermetic contract checks."""
+    """Run 45 hermetic contract checks."""
     import contextlib, copy, io, tempfile
     from unittest.mock import patch
     from engine.research_vault import catalog as catalog_mod
@@ -237,6 +246,19 @@ def _selftest():
         req(len(lines)==1 and all(x in lines[0] for x in ("%25","%0D","%0A")),lines)
         req(len(warn)==1 and "2 admitted" in warn[0],warn)
     check("annotation",annotation)
+    def acknowledgement():
+        statuses=("PRODUCER_STALE","FUTURE_REPORT_CLOCK","LATEST_REPORT_INVALID",
+                  "NO_REPORTS","CATALOG_UNAVAILABLE")
+        for status in statuses:
+            report={"ok":False,"status":status,"reason":"test","invalid_published_at":0}
+            ack=_acknowledges_producer_stale(report,True)
+            req(ack is (status=="PRODUCER_STALE"),(status,ack))
+            out=io.StringIO()
+            with contextlib.redirect_stdout(out): _emit(report,acknowledged=ack)
+            annotations=[line for line in out.getvalue().splitlines() if line.startswith("::")]
+            prefix="::warning" if status=="PRODUCER_STALE" else "::error"
+            req(len(annotations)==1 and annotations[0].startswith(prefix),(status,annotations))
+    check("acknowledgement",acknowledgement)
     def bounded():
         class R:
             def __enter__(s): return s
@@ -270,18 +292,21 @@ def _selftest():
                 r=evaluate(cat(start.isoformat()),now=start+timedelta(minutes=30*step)); req(not(stale and r["ok"]),(start,step,r)); stale=stale or r["status"]=="PRODUCER_STALE"
             req(stale,start)
     check("monotonic",monotonic)
-    if passed!=44: failures.append(f"accounting {passed}/44")
+    if passed!=45: failures.append(f"accounting {passed}/45")
     if failures:
         for f in failures: print(f"SELFTEST FAILURE: {f}",file=sys.stderr)
         return 1
-    print("research-vault source-freshness selftest: 44 passed"); return 0
+    print("research-vault source-freshness selftest: 45 passed"); return 0
 
 def build_parser():
     p=argparse.ArgumentParser(description="Grade source-content freshness separately from publication freshness.")
     g=p.add_mutually_exclusive_group(); g.add_argument("--catalog",type=Path); g.add_argument("--url")
     p.add_argument("--now"); p.add_argument("--max-age-hours",type=float)
     p.add_argument("--future-tolerance-minutes",type=float,default=DEFAULT_FUTURE_TOLERANCE_MINUTES)
-    p.add_argument("--timeout-seconds",type=float,default=DEFAULT_TIMEOUT_SECONDS); p.add_argument("--selftest",action="store_true")
+    p.add_argument("--timeout-seconds",type=float,default=DEFAULT_TIMEOUT_SECONDS)
+    p.add_argument("--ack-producer-stale",action="store_true",
+                   help="return zero only for the typed PRODUCER_STALE verdict; all other failures remain red")
+    p.add_argument("--selftest",action="store_true")
     return p
 
 def main(argv:Sequence[str]|None=None):
@@ -299,6 +324,8 @@ def main(argv:Sequence[str]|None=None):
         report=evaluate(payload,now=current,source=source,max_age_hours=a.max_age_hours,future_tolerance_minutes=a.future_tolerance_minutes)
     except (OSError,ValueError,TypeError,json.JSONDecodeError,urllib.error.URLError,OverflowError,RecursionError) as e:
         report=_report("CATALOG_UNAVAILABLE",ok=False,now=current,source=source,reason=f"catalog read failed ({type(e).__name__})")
-    _emit(report); return 0 if report.get("ok") is True else 1
+    acknowledged=_acknowledges_producer_stale(report,a.ack_producer_stale)
+    _emit(report,acknowledged=acknowledged)
+    return 0 if report.get("ok") is True or acknowledged else 1
 
 if __name__=="__main__": raise SystemExit(main())
