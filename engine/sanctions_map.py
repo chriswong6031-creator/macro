@@ -8,6 +8,7 @@ Never raises. Nulls are ``None``, never ``0``.
 from __future__ import annotations
 
 import csv
+import gzip
 import io
 import json
 import re
@@ -17,7 +18,7 @@ from typing import Any
 import yaml
 
 STORE_DIR = Path("data/sanctions_ofac")
-SDN_FILE = STORE_DIR / "sdn_snapshot.csv"
+SDN_FILE = STORE_DIR / "sdn_snapshot.csv.gz"
 META_FILE = STORE_DIR / "meta.json"
 PROGRAMS_CONFIG = Path("config/sanctions_ofac_programs.yml")
 
@@ -90,7 +91,12 @@ def _load_programs_config(path: Path = PROGRAMS_CONFIG) -> tuple[list[dict], set
         for row in (raw.get("thematic") or [])
         if isinstance(row, dict) and row.get("code")
     }
-    return list(raw.get("programs") or []), thematic
+    programs = [
+        row
+        for row in (raw.get("programs") or [])
+        if isinstance(row, dict) and row.get("code")
+    ]
+    return programs, thematic
 
 
 def _load_program_code_counts(sdn_file: Path = SDN_FILE) -> dict[str, int]:
@@ -101,7 +107,10 @@ def _load_program_code_counts(sdn_file: Path = SDN_FILE) -> dict[str, int]:
     if not sdn_file.exists():
         return counts
     try:
-        text = sdn_file.read_text(encoding="utf-8", errors="replace")
+        raw_bytes = sdn_file.read_bytes()
+        if sdn_file.suffix == ".gz":
+            raw_bytes = gzip.decompress(raw_bytes)
+        text = raw_bytes.decode("utf-8", errors="replace")
     except Exception:
         return counts
     try:

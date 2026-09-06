@@ -8,6 +8,7 @@ scripts/build_sanctions_map.py, which only reads the store.
 from __future__ import annotations
 
 import csv
+import gzip
 import io
 import json
 import logging
@@ -21,7 +22,7 @@ log = logging.getLogger(__name__)
 
 OFAC_SDN_CSV_URL = "https://www.treasury.gov/ofac/downloads/sdn.csv"
 STORE_DIR = Path("data/sanctions_ofac")
-STORE_FILE = STORE_DIR / "sdn_snapshot.csv"
+STORE_FILE = STORE_DIR / "sdn_snapshot.csv.gz"
 META_FILE = STORE_DIR / "meta.json"
 
 
@@ -44,10 +45,12 @@ def fetch_sdn_csv(timeout: int = 30) -> tuple[str, str | None]:
 
 
 def persist_snapshot(csv_text: str, list_published_date: str | None = None) -> dict:
-    """Write the raw CSV plus source_url / list_published_date / fetched_at
+    """Write the raw CSV (gzip-compressed — the OFAC SDN list is ~5.5 MB of
+    plaintext and this is a nightly-rewritten tracked artifact; gzip cuts it
+    by roughly 85-90%) plus source_url / list_published_date / fetched_at
     metadata."""
     STORE_DIR.mkdir(parents=True, exist_ok=True)
-    STORE_FILE.write_text(csv_text, encoding="utf-8")
+    STORE_FILE.write_bytes(gzip.compress(csv_text.encode("utf-8")))
     meta = {
         "source_url": OFAC_SDN_CSV_URL,
         "list_published_date": list_published_date,
