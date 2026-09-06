@@ -152,8 +152,14 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .dotbar i.on{background:var(--green)}.dotbar i.warn{background:var(--amber)}
 
 /* ---------- credit issuance window (the bond side of the triad) ---------- */
-.tcard.cw{--tcc:var(--acc)}
+.tcard.cw{--tcc:var(--acc);display:flex;flex-direction:column}
 .tcard.cw.good{--tcc:var(--green)}.tcard.cw.warn{--tcc:var(--amber)}.tcard.cw.red{--tcc:var(--red)}
+/* MINOR-5 (review repair round 3): the two lanes sit in the same `.grid.cols-2`
+   row and already stretch to equal overall height, but the footer's POSITION
+   inside that shared height still tracked how tall .cw-change rendered above
+   it — a two-line change sentence on one lane pushed its stance chip below
+   the other lane's. Pin the footer row to the card bottom regardless. */
+.tcard.cw .tc-foot{margin-top:auto}
 
 /* DARK — an inset trough milled into the card; the marker carries a restrained bloom */
 .cw-rail{position:relative;height:10px;margin:14px 0 5px;background:var(--bg);

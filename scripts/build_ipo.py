@@ -104,14 +104,24 @@ CW_CHANGE = {
                                "利差升入近一年较宽的三分之二区间，读数会翻为关着。"),
     ("spread_range", "neutral"): ("Spreads moving back toward the middle of the past year's range would flip this to half open.",
                                   "利差回到近一年区间的中段，读数会翻为半开。"),
+    # round 3: an open-side entry — a NEUTRAL input can also flip toward "open"
+    # (engine.credit_window._next_threshold now emits that candidate too), and
+    # without an entry here the render fell back to CW_CHANGE_NONE ("inputs are
+    # missing") for a fully evaluable read the moment the engine fix landed.
+    ("spread_range", "open"): ("Spreads tightening further into the tight end of the past year's range would flip this to open.",
+                               "利差进一步收窄至近一年区间的偏窄端，读数会翻为开着。"),
     ("spread_drift", "shut"): ("Spreads widening further over the next month would flip this to shut.",
                                "未来一个月利差进一步走阔，读数会翻为关着。"),
     ("spread_drift", "neutral"): ("Spreads flattening out over the next month would flip this to half open.",
                                   "未来一个月利差走势趋平，读数会翻为半开。"),
+    ("spread_drift", "open"): ("Spreads tightening further over the next month would flip this to open.",
+                               "未来一个月利差进一步收窄，读数会翻为开着。"),
     ("rates_vol", "shut"): ("Rates volatility rising further would flip this to shut.",
                             "利率波动进一步上升，读数会翻为关着。"),
     ("rates_vol", "neutral"): ("Rates volatility easing would flip this to half open.",
                                "利率波动回落，读数会翻为半开。"),
+    ("rates_vol", "open"): ("Rates volatility easing further would flip this to open.",
+                            "利率波动进一步回落，读数会翻为开着。"),
 }
 CW_CHANGE_NONE = ("Any one of the three inputs coming back would let us read this again.",
                   "三项输入中任何一项恢复，即可重新读取。")

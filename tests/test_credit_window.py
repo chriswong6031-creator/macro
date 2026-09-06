@@ -227,10 +227,33 @@ def test_band_width_reads_state_not_just_key():
 
 
 def test_next_threshold_open_and_shut_directions():
-    assert cw._next_threshold("spread_range", "open") == (cw.RANGE_OPEN_PCT, "neutral", "up")
-    assert cw._next_threshold("rates_vol", "shut") == (cw.MOVE_SHUT_PCT, "neutral", "down")
-    assert cw._next_threshold("spread_drift", "neutral") == (cw.DRIFT_SHUT_BP, "shut", "up")
-    assert cw._next_threshold("unknown_key", "open") is None
+    # open/shut states have exactly ONE adjacent boundary (back into neutral) —
+    # there is nothing beyond the extreme, so these are unchanged by the
+    # round-3 fix below; the return type is now a list, never a bare tuple.
+    assert cw._next_threshold("spread_range", "open") == [(cw.RANGE_OPEN_PCT, "neutral", "up")]
+    assert cw._next_threshold("rates_vol", "shut") == [(cw.MOVE_SHUT_PCT, "neutral", "down")]
+    assert cw._next_threshold("unknown_key", "open") == []
+    assert cw._next_threshold("spread_range", "unknown") == []
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER (review repair round 3) — a "neutral" input has TWO adjacent
+# boundaries (up into "shut", down into "open"), not one. The pre-fix
+# `_next_threshold` returned only the shut-side crossing for a neutral input,
+# so `_choose_change` could never name an open-side flip even when it would
+# actually move the segment majority — see test_choose_change_finds_open_side_
+# candidate_for_live_hy_shape below for the exact live counterexample.
+# --------------------------------------------------------------------------- #
+def test_next_threshold_neutral_returns_both_the_shut_side_and_open_side_boundary():
+    assert cw._next_threshold("spread_range", "neutral") == [
+        (cw.RANGE_SHUT_PCT, "shut", "up"), (cw.RANGE_OPEN_PCT, "open", "down"),
+    ]
+    assert cw._next_threshold("rates_vol", "neutral") == [
+        (cw.MOVE_SHUT_PCT, "shut", "up"), (cw.MOVE_OPEN_PCT, "open", "down"),
+    ]
+    assert cw._next_threshold("spread_drift", "neutral") == [
+        (cw.DRIFT_SHUT_BP, "shut", "up"), (cw.DRIFT_OPEN_BP, "open", "down"),
+    ]
 
 
 # --------------------------------------------------------------------------- #
@@ -276,6 +299,29 @@ def test_choose_change_returns_none_when_no_flip_moves_the_segment():
         {"key": "rates_vol", "value": None, "state": "unknown"},
     ]
     assert cw._choose_change(inputs, "not_evaluable") is None
+
+
+def test_choose_change_finds_open_side_candidate_for_live_hy_shape():
+    # BLOCKER (round 3): exact live shape read off the committed dark/en/desktop
+    # PNG. HY today = [spread_range=open, spread_drift=neutral, rates_vol=neutral].
+    # segment_state(['open','neutral','neutral']) is 'neutral' (n_open=1, not >=2).
+    # Flipping EITHER spread_drift OR rates_vol from neutral to open gives
+    # ['open','open','neutral'] -> n_open=2 > n_shut=0 -> segment 'open': two of
+    # the three inputs are one threshold-crossing from flipping the headline in
+    # the open direction. The pre-fix _next_threshold only ever returned the
+    # shut-side boundary for a neutral input, so this candidate could never be
+    # found and change=None rendered the false "nothing is close to flipping"
+    # copy on a read where two-thirds of the inputs were, in fact, close.
+    inputs = [
+        {"key": "spread_range", "value": 10.0, "state": "open"},
+        {"key": "spread_drift", "value": 10.0, "state": "neutral"},
+        {"key": "rates_vol", "value": 70.0, "state": "neutral"},
+    ]
+    change = cw._choose_change(inputs, "neutral")
+    assert change is not None
+    assert change["to_state"] == "open"
+    assert change["segment_to"] == "open"
+    assert change["input"] == "spread_drift"  # nearer of the two valid open-side candidates
 
 
 # --------------------------------------------------------------------------- #

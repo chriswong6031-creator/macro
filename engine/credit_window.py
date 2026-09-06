@@ -198,57 +198,78 @@ def _band_width(key: str, state: str) -> float:
     return 1.0
 
 
-def _next_threshold(key: str, state: str) -> tuple[float, str, str] | None:
-    """-> (threshold, to_state, direction) for the nearest boundary this input
-    could cross, or None if the input is unknown."""
+def _next_threshold(key: str, state: str) -> list[tuple[float, str, str]]:
+    """-> every boundary this input could cross from its current state, as
+    (threshold, to_state, direction) tuples — never just the nearest one.
+
+    BLOCKER (review repair round 3): a "neutral" input has TWO adjacent
+    boundaries, not one — it can cross UP into "shut" or DOWN into "open".
+    The pre-fix version returned only the shut-side crossing for a neutral
+    input, so `_choose_change` could never name an open-side flip even when
+    flipping toward "open" would move the segment majority. Confirmed live:
+    HY reads [spread_range=open, spread_drift=neutral, rates_vol=neutral] ->
+    segment_state is "neutral", but flipping EITHER spread_drift OR rates_vol
+    from neutral to open gives [open, open, neutral] -> n_open=2 > n_shut=0
+    -> segment "open". Two of three inputs are one threshold-crossing away
+    from flipping the headline in the open direction, and the pre-fix code
+    could never surface that candidate.
+
+    An "open" or "shut" input has only ONE adjacent boundary (back toward
+    "neutral") — there is no boundary beyond the extreme, so those branches
+    are unchanged. Returns [] for an unreadable ("unknown") input or key.
+    """
     if key in ("spread_range", "rates_vol"):
         open_pct = RANGE_OPEN_PCT if key == "spread_range" else MOVE_OPEN_PCT
         shut_pct = RANGE_SHUT_PCT if key == "spread_range" else MOVE_SHUT_PCT
         if state == "open":
-            return open_pct, "neutral", "up"
+            return [(open_pct, "neutral", "up")]
         if state == "shut":
-            return shut_pct, "neutral", "down"
+            return [(shut_pct, "neutral", "down")]
         if state == "neutral":
-            return shut_pct, "shut", "up"
-        return None
+            return [(shut_pct, "shut", "up"), (open_pct, "open", "down")]
+        return []
     if key == "spread_drift":
         if state == "open":
-            return DRIFT_OPEN_BP, "neutral", "up"
+            return [(DRIFT_OPEN_BP, "neutral", "up")]
         if state == "shut":
-            return DRIFT_SHUT_BP, "neutral", "down"
+            return [(DRIFT_SHUT_BP, "neutral", "down")]
         if state == "neutral":
-            return DRIFT_SHUT_BP, "shut", "up"
-        return None
-    return None
+            return [(DRIFT_SHUT_BP, "shut", "up"), (DRIFT_OPEN_BP, "open", "down")]
+        return []
+    return []
 
 
 def _choose_change(inputs: list[dict], segment: str) -> dict | None:
     """Pick the input closest to a boundary crossing whose crossing would
-    ACTUALLY flip the reported segment state (BLOCKER 3) — a per-input
-    threshold that does not move the segment majority is not "what would
-    change this read", it is noise, so it must never be surfaced."""
+    ACTUALLY flip the reported segment state (BLOCKER 3, round 2) — a
+    per-input threshold that does not move the segment majority is not "what
+    would change this read", it is noise, so it must never be surfaced.
+
+    Each input can offer MULTIPLE candidate crossings (round 3 — see
+    _next_threshold): a neutral input can flip toward "shut" OR toward
+    "open", and each candidate is evaluated independently against the
+    segment majority; only crossings that actually flip the segment stay
+    in the running.
+    """
     states = [i["state"] for i in inputs]
     candidates = []
     for idx, inp in enumerate(inputs):
         if inp["state"] == "unknown" or inp["value"] is None:
             continue
-        nxt = _next_threshold(inp["key"], inp["state"])
-        if nxt is None:
-            continue
-        threshold, to_state, direction = nxt
-        trial_states = list(states)
-        trial_states[idx] = to_state
-        trial_segment, _, _ = segment_state(trial_states)
-        if trial_segment == segment:
-            continue  # flipping this input alone would not flip the segment
-        width = _band_width(inp["key"], inp["state"]) or 1.0
-        dist = abs(float(inp["value"]) - threshold) / width
-        candidates.append({
-            "dist": dist,
-            "input": inp["key"], "to_state": to_state,
-            "threshold": threshold, "current": inp["value"],
-            "direction": direction, "segment_to": trial_segment,
-        })
+        for threshold, to_state, direction in _next_threshold(inp["key"], inp["state"]):
+            trial_states = list(states)
+            trial_states[idx] = to_state
+            trial_segment, _, _ = segment_state(trial_states)
+            if trial_segment == segment:
+                continue  # flipping this input alone would not flip the segment
+            width = _band_width(inp["key"], inp["state"]) or 1.0
+            dist = abs(float(inp["value"]) - threshold) / width
+            candidates.append({
+                "dist": dist,
+                "input": inp["key"], "to_state": to_state,
+                "threshold": threshold, "current": inp["value"],
+                "direction": direction, "segment_to": trial_segment,
+            })
     if not candidates:
         return None
     best = min(candidates, key=lambda c: c["dist"])

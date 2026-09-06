@@ -784,3 +784,47 @@ def test_credit_window_vm_real_change_candidate_uses_cw_change_mapping():
     assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE[("spread_range", "shut")]
     assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
     assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_STABLE["neutral"]
+
+
+# --------------------------------------------------------------------------- #
+# BLOCKER + MAJOR (review repair round 3) — an open-side `change` candidate
+# (engine.credit_window._next_threshold now emits one for a neutral input,
+# see tests/test_credit_window.py's live-HY-shape test) must render a real,
+# plain-word sentence through CW_CHANGE, never fall back to CW_CHANGE_NONE
+# (the "inputs are missing" copy) — that fallback re-entering for an
+# evaluable read is exactly the MAJOR the round-3 review found the instant
+# the BLOCKER's engine fix landed without a matching lexicon entry.
+# --------------------------------------------------------------------------- #
+def test_credit_window_vm_open_side_change_renders_real_sentence_not_missing_copy():
+    change = {"input": "spread_drift", "to_state": "open", "threshold": -15.0,
+              "current": 10.0, "direction": "down", "segment_to": "open"}
+    raw = {"segments": [_seg("neutral", change=change)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE[("spread_drift", "open")]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+    assert seg["change_en"] and seg["change_zh"]          # real sentence, both languages
+    assert "flip this to open" in seg["change_en"].lower()
+
+
+def test_cw_change_lexicon_covers_every_pair_next_threshold_can_emit():
+    # Exhaustive coverage (round 3): CW_CHANGE must have an entry for every
+    # (input, to_state) pair engine.credit_window._next_threshold can ever
+    # emit, across every reachable state — otherwise the render silently
+    # falls back to CW_CHANGE_NONE the moment a new to_state becomes
+    # reachable. This is precisely how the MAJOR re-entered through the
+    # fallback the instant the BLOCKER's open-side candidates were added.
+    import engine.credit_window as cw
+
+    emitted_pairs = set()
+    for key in ("spread_range", "spread_drift", "rates_vol"):
+        for state in ("open", "neutral", "shut"):
+            for _threshold, to_state, _direction in cw._next_threshold(key, state):
+                emitted_pairs.add((key, to_state))
+    missing = emitted_pairs - set(bi.CW_CHANGE.keys())
+    assert missing == set()
+    # and the three open-side entries this round added are actually present —
+    # a passing "missing == set()" alone wouldn't catch a lexicon that never
+    # grew (both sides could be trivially empty in some future refactor).
+    assert {("spread_range", "open"), ("spread_drift", "open"), ("rates_vol", "open")} <= set(bi.CW_CHANGE.keys())
