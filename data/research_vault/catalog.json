@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-09-06T12:21:19.156351+00:00",
-  "count": 1855,
+  "generated_at": "2026-09-06T13:15:35.516703+00:00",
+  "count": 1858,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -131,6 +131,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-tx4ts02gmm0-9cb5f7",
+      "title": "Weekly - Regional View Italian",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:25:46Z",
+      "summary_points": [
+        "**US Expansion Duration & Yield Thresholds**: Current 76-month US expansion (vs historical avg 42 months) with 10-yr yield at 4.8%—historical precedents (1966, 1988, 1997) show expansions surviving similar yields, but structural risks differ from 2007 crisis.",
+        "**Geopolitical Inflation Catalysts & Fed Policy Shift**: Iran conflict driving oil prices + strong earnings → inflationary pressure; Fed Chair Warsh’s Jackson Hole speech elevates September rate hike probability.",
+        "**Tech Debt Stress Test**: Tech conglomerates’ $700bn AI investments squeezing cash flows, increasing debt reliance; 5% yield acts as critical stress test (US market passing on earnings but persistent inflation/fiscal risks more concerning).",
+        "**Fiscal Deficit & Central Bank Shifts**: Advanced economies face widening fiscal deficits (US >6% GDP, Germany/Japan post-increase) from demographics/defense/energy transition; central banks (ECB included) reducing balance sheets, no longer buying bonds at prior pace."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hjsxd3atajn-a35b6f",
+      "title": "InvestorsOutlook",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T01:21:33Z",
+      "summary_points": [
+        "**Economic Divergence & Data Revisions**: Dr.",
+        "Copper signals AI/data center boom vs.",
+        "University of Michigan sentiment indicating recession; substantial jobs data revisions risk mispricing policy impacts on rate-sensitive assets.",
+        "**Portfolio Shift to Defensive Assets**: Vontobel upgrades gold to overweight (weaker USD, geopolitical risk) and reduces government bonds to underweight amid fiscal sustainability concerns, elevated debt issuance, and inflation uncertainty.",
+        "**Fed Credibility Erosion**: Warsh’s critique of Fed’s data reliance, \"central bank fast food\" comment, and reduced forward guidance (dot plot 18→19) threaten mispricing of rate expectations and policy credibility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-awftkrboxj5-459694",
       "title": "Wm weekly market view rising risk of a fed rate hike 04 september 2026",
       "institution": "Other",
@@ -253,6 +294,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 34,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hsgkdgy9knl-186eff",
+      "title": "The Flow Show Let them eat data",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T21:20:02Z",
+      "summary_points": [
+        "Policy Hike Expectations**: 99% ECB hike Sept 10th, 53% Fed hike 16th, 98% BoJ hike 18th (Bloomberg futures); US admin may use FX/bond buybacks to pressure BoJ, risking JPY surge.",
+        "BofA Bull & Bear Indicator**: Current reading 9.6 (Sell signal), duration 1-3 months—contrarian bearish sentiment.",
+        "Crypto Inflows vs Equity Outflows**: $10bn crypto inflows (5-week cumulative) offset $5.9bn US equity net outflows, driving capital rotation.",
+        "Commodities Overbought Risk**: Oil (15.1% deviation), WTI (13.1%), Brent (9.2%) severely overbought despite 72.1% YTD gains, signaling near-term correction risk.",
+        "Fixed Income Flow Shift**: $53bn T-notes inflows vs $30bn T-bills (Chart 19), indicating policy-driven short-term Treasury preference critical for positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
