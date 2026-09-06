@@ -196,6 +196,30 @@ def test_no_headroom_or_derived_capacity_field_exists_in_the_contract():
     assert "def capacity" not in source
 
 
+def _flat_rows(observations):
+    """Mirror scripts/compile_capital_structure_covenant_terms.py's
+    COVENANT_OBSERVATION_COLUMNS parquet flattening (Major 4): evaluate_health()
+    feeds covenant_extraction_coverage() flat rows read back off disk, never
+    the nested library shape compile_observations() returns in-process."""
+    rows = []
+    for o in observations:
+        rows.append({
+            "observation_id": o["observation_id"],
+            "logical_observation_id": o["logical_observation_id"],
+            "issuer_id": o["issuer_id"],
+            "accession": o["filing"]["accession"],
+            "form": o["filing"]["form"],
+            "source_manifest_id": o["document"]["source_manifest_id"],
+            "term_name": o["term"]["name"],
+            "clause_id": o["clause"]["clause_id"],
+            "state": o["state"]["disposition"],
+            "available_at": o["point_in_time"]["available_at"],
+            "correction_version": o["version"]["correction_version"],
+            "observation_json": json.dumps(o, sort_keys=True),
+        })
+    return rows
+
+
 def test_ingestion_health_reports_covenant_coverage_state_including_uncovered():
     manifest = _manifest()
     uncovered = covenant_extraction_coverage([], [manifest])
@@ -205,8 +229,15 @@ def test_ingestion_health_reports_covenant_coverage_state_including_uncovered():
 
     text = _text()
     observations = ct.compile_observations(manifest, text, generated_at="2026-09-06T00:00:00Z")
-    covered = covenant_extraction_coverage(observations, [manifest])
+    flat = _flat_rows(observations)
+    covered = covenant_extraction_coverage(flat, [manifest])
     assert covered["state"] == "covered"
     assert covered["observations"] == len(observations)
     assert covered["issuers_covered"] == 1
-    assert covered["unavailable_terms"] >= 1
+    assert covered["unavailable_terms"] + sum(
+        1 for o in observations if o["state"]["disposition"] == "ambiguous"
+    ) >= 1
+    # the flat rows are what evaluate_health() actually passes -- assert the
+    # coverage census reads the FLAT keys, not the nested library shape
+    # (Blocker 1: the nested-shape read crashed on a real parquet row).
+    assert covered["covered_manifests"] == 1

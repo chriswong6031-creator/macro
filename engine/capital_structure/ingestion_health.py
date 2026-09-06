@@ -974,15 +974,18 @@ def covenant_extraction_coverage(
         if (m.get("document") or {}).get("document_role") == "exhibit"
         and (m.get("document") or {}).get("document_type") in _COVENANT_EXHIBIT_TYPES
     ]
+    # Observations arrive here as FLAT parquet rows (see
+    # scripts/compile_capital_structure_covenant_terms.py's
+    # COVENANT_OBSERVATION_COLUMNS): "source_manifest_id" and "issuer_id" are
+    # top-level string columns and "state" is the disposition STRING itself —
+    # never the nested library-shaped {"document": {...}, "state": {...}}
+    # object. Reading nested keys here crashed on the first real row
+    # (Blocker 1) and silently hid a zero even when it did not crash.
     covered_manifest_ids = {
-        o["document"]["source_manifest_id"]
-        for o in observations
-        if o.get("document") and o["document"].get("source_manifest_id")
+        o.get("source_manifest_id") for o in observations if o.get("source_manifest_id")
     }
     issuers_covered = {o.get("issuer_id") for o in observations if o.get("issuer_id")}
-    unavailable_terms = sum(
-        1 for o in observations if (o.get("state") or {}).get("disposition") == "unavailable"
-    )
+    unavailable_terms = sum(1 for o in observations if o.get("state") == "unavailable")
     return {
         "eligible_exhibits": len(eligible),
         "covered_manifests": len(covered_manifest_ids),

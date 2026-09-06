@@ -8,11 +8,14 @@ semantics. Mirrors the closed-enum, zero-authority, "absence is not zero"
 posture of ``engine.capital_structure.document_terms`` (the registration
 fee-table precedent) without touching that module.
 
-Deviation D1 (see PR body): the sibling contract file
-``contracts/capital_structure_covenant_term_observation.schema.json`` and the
-compile-script/workflow wiring are UNOWNED files for this packet and were not
-created — enum/shape closure is therefore enforced in Python here rather than
-via an external JSON Schema, and this module has no CLI entry point.
+Review-fix note (packet B-F09-5, see PR "Review fixes" section):
+the sibling contract file
+``contracts/capital_structure_covenant_term_observation.schema.json``,
+``scripts/compile_capital_structure_covenant_terms.py``, and the
+daily.yml/ci.yml wiring DO exist in this PR (they are not owned by this
+packet's OWNED FILES list and are flagged for explicit owner adjudication),
+so enum/shape closure here is enforced defensively in Python in addition to,
+not instead of, that external JSON Schema.
 
 This slice performs NO headroom/capacity computation and renders nothing
 user-facing (acceptance 4). Any key resembling headroom/capacity/cushion is
@@ -77,6 +80,28 @@ _TERM_PATTERNS: dict[str, re.Pattern] = {
     "minimum_interest_coverage_ratio": re.compile(
         r"Minimum Consolidated Interest Coverage Ratio.{0,600}?(\d\.\d{2} to 1\.00)", re.DOTALL),
 }
+
+# Header phrase used to detect a STEPPED SCHEDULE (multiple grid rows) for the
+# same term name. A schedule has no single "the" value — the filing states a
+# measurement-period grid, not one ratio — so it is never picked (Blocker 3):
+# it is refused as "ambiguous" (an absent value, never an inferred/expired one).
+_TERM_HEADERS: dict[str, str] = {
+    "maximum_total_net_leverage_ratio": "Maximum Consolidated Total Net Leverage Ratio",
+    "minimum_interest_coverage_ratio": "Minimum Consolidated Interest Coverage Ratio",
+}
+_SCHEDULE_WINDOW = 900
+_GRID_VALUE_RE = re.compile(r"\d\.\d{2} to 1\.00")
+
+
+def _is_stepped_schedule(text: str, name: str) -> bool:
+    header = _TERM_HEADERS.get(name)
+    if header is None:
+        return False
+    idx = text.find(header)
+    if idx == -1:
+        return False
+    window = text[idx: idx + _SCHEDULE_WINDOW]
+    return len(_GRID_VALUE_RE.findall(window)) > 1
 
 
 class CovenantSpanUnbound(ValueError):
@@ -234,12 +259,26 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
             spans: list[dict[str, Any]] = []
             extraction_method = "deferred"
             review_status = "unavailable"
+        elif _is_stepped_schedule(text, name):
+            # A measurement-period grid, not a single stated value: the
+            # filing states a schedule, so no one ratio is "the" value.
+            state = {"disposition": "ambiguous", "reason": "stepped_schedule_no_measurement_period"}
+            reported = _empty_value()
+            normalized = _empty_value()
+            spans = []
+            extraction_method = "deferred"
+            review_status = "unavailable"
         else:
             value_text = match.group(1)
             char_start, char_end = match.start(1), match.end(1)
             byte_start = len(text[:char_start].encode("utf-8"))
             byte_end = byte_start + len(value_text.encode("utf-8"))
-            locator = build_locator(document["child_document_type"], document.get("child_sequence", 1),
+            _seq_raw = document.get("sequence")
+            try:
+                _seq = int(_seq_raw) if _seq_raw is not None else 1
+            except (TypeError, ValueError):
+                _seq = 1
+            locator = build_locator(document.get("document_type"), _seq,
                                      section_label_normalized, name, byte_start, byte_end)
             validate_locator(locator, len(encoded))
             state = {"disposition": "direct", "reason": None}
@@ -251,9 +290,20 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
         candidates.append({
             "schema": COVENANT_TERM_SCHEMA,
             "logical_observation_id": logical_observation_id_for(manifest_id, clause_id, name),
-            "issuer_id": manifest.get("issuer_id"),
+            "issuer_id": (manifest.get("issuer") or {}).get("issuer_id"),
             "filing": manifest["filing"],
-            "document": document,
+            "document": {
+                "source_manifest_id": manifest_id,
+                "source_id": manifest.get("source_id"),
+                "document_role": document.get("document_role"),
+                "canonical_url": document.get("canonical_url"),
+                "content_sha256": document.get("content_sha256"),
+                "child_document_type": document.get("document_type"),
+                "child_sequence": _seq if match is not None else (int(document["sequence"]) if str(document.get("sequence") or "").isdigit() else 1),
+                "child_filename": document.get("document_name"),
+                "child_text_start": None,
+                "child_text_end": None,
+            },
             "clause": clause,
             "term": term,
             "state": state,
@@ -262,10 +312,14 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
             "evidence": {
                 "source_manifest_id": manifest_id,
                 "source_document_sha256": document.get("content_sha256"),
-                "rights_class": manifest.get("rights_class", "public_filing"),
-                "privacy_classification": manifest.get("privacy_classification", "public"),
-                "contains_personal_data": False,
-                "publication": manifest.get("publication", "sec_edgar_public"),
+                "rights_class": str((manifest.get("rights") or {}).get("redistribution_class") or "unknown"),
+                "privacy_classification": str((manifest.get("privacy") or {}).get("classification") or "unknown"),
+                "contains_personal_data": bool((manifest.get("privacy") or {}).get("contains_personal_data")),
+                "publication": {
+                    "disposition": "public_fact_only",
+                    "excerpt_char_count": 0,
+                    "personal_data_redacted": False,
+                },
                 "spans": spans,
             },
             "extraction": {
@@ -276,7 +330,8 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
             "relationships": {"amends": [], "supersedes": [], "contradiction_ids": []},
             "version": {"correction_version": 1, "correction_of": None, "immutable_record": True},
             "point_in_time": {
-                "source_available_at": manifest["filing"]["accepted_at"],
+                "source_available_at": (manifest.get("retrieval") or {}).get("first_seen_at")
+                or manifest["filing"]["accepted_at"],
                 "available_at": None,
             },
         })
