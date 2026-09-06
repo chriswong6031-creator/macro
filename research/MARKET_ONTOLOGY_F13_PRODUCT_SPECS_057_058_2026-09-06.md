@@ -33,9 +33,18 @@ the amendment record the ruling asked for.
      `push(branches:[main], paths:[...])`; that file has no `schedule:` block at all.
    - The one real invoker of `build_public_pages` is `scripts/ci/public_render.sh:13`
      (`python -m scripts.build_public_pages`), itself only reached by that push-triggered workflow.
-   - `.github/workflows/daily.yml` does carry its own `schedule:` (`:7`), but
+   - `.github/workflows/daily.yml` does carry its own `schedule:` (`:7`). **Round-4 correction:** the
+     round-3 evidence for "the nightly pipeline never calls this builder" used
      `grep -n "build_public_pages\|build_site\|public_pages\|public-render" .github/workflows/daily.yml`
-     returns **zero hits** — the nightly pipeline never calls this builder.
+     and reported "zero hits" — that report was **false as measured**: the pattern's `build_site`
+     alternative collides with dozens of unrelated *comment*-only occurrences of that substring
+     describing the main engine pipeline's own step-timing history, not an invocation. Re-checked at
+     this head with an invocation-only search — `grep -n "python -m scripts\.build_public_pages\|
+     python -m scripts\.build_site\|scripts/build_public_pages\.py\|scripts/build_site\.py"
+     .github/workflows/daily.yml` — **zero hits**, confirming neither builder script is invoked as a
+     step in this file. The DROP conclusion was never resting on this file alone regardless: the
+     governing check is the repo-wide one below, run against every `schedule:`-bearing workflow, not
+     just this one.
    - Repo-wide: no `.github/workflows/*.yml` combines a `schedule:` block with `mailer`,
      `marketing_emails`, `drain_campaigns`, `drain_parked`, or `refresh_digest` (checked every file).
    The chosen call site is push-triggered, not nightly, and not scheduled at all. Making the digest
@@ -87,7 +96,11 @@ the amendment record the ruling asked for.
    sub-hour copy rule to A5/A6 so a build under an hour old never renders "Updated 0 hours ago";
    corrected A3's `scripts/build_site.py:3741-3742` claim so it matches A4's exact `:3742` citation
    (`:3741` only computes the view-model; `:3742` alone threads the stamp); tightened B3's hedged
-   `templates/help.html.j2:113`-ish citation to the exact `:112-114` span.
+   `templates/help.html.j2:113`-ish citation to the exact `:112-114` span; and — found while
+   re-verifying every citation for the PR body's proof appendix, not itself a review finding —
+   corrected item 1's "zero hits" grep claim about `.github/workflows/daily.yml`, which was false as
+   measured (an overbroad OR-pattern matched unrelated comment text); the corrected invocation-only
+   check still returns zero hits, so the DROP conclusion is unchanged.
 
 **Title reconciliation.** The ledger rows read narrower than the packet's framing: `MO-PAID-057` asks for a priority-tier SLO / differentiated refresh (`acceptance_test`: "a PRO-tier refresh measurably completes first, logged"; `real_producer`: `.github/workflows/daily.yml` — no priority tiers); `MO-PAID-058` asks for tier-differentiated support routing/queue/SLA (`acceptance_test`: "a PRO ticket provably routes to a different queue/alert"). This spec answers the ledger rows because they are the closure target: 057's honest product is a **refresh/release disclosure**, not a sold-faster refresh; 058's honest product is **one channel, labelled**, not a second queue.
 
