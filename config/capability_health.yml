@@ -63,13 +63,21 @@ capabilities:
     owner: "data ingestion"
     artifacts:
       - data/run_status.json
+    # ROUND-3 repair (2026-09-06 independent review, item 1): fred/yahoo are
+    # `nightly_lane` sources — they never truthfully bind `data_as_of`. Their
+    # `last_date` is collectors/base.py's group-MAX OBSERVATION date across the
+    # source's own stored series, not an as-of instant (fred's FEDTARMD FOMC
+    # projection series legitimately carries a far-future last_date on a completely
+    # healthy lane). scripts/build_capability_health.py's `nightly_lane_facts` no
+    # longer maps `last_date` onto `data_as_of` at all, so declaring that clock here
+    # would only ever describe a clock this source can never actually supply.
     receipt_sources:
       - type: nightly_lane
         ref: fred
-        clocks: [last_attempted, last_successful, data_as_of]
+        clocks: [last_attempted, last_successful]
       - type: nightly_lane
         ref: yahoo
-        clocks: [last_attempted, last_successful, data_as_of]
+        clocks: [last_attempted, last_successful]
     stale_after_hours: 30
     next_action_hint: >-
       Check daily.yml's collect/engine job logs for the fred/yahoo sources in

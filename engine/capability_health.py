@@ -49,13 +49,29 @@ THE JOIN PATTERN, EXTENDED FROM output_health.py
   ``sentinel_probe``) carry only raw clocks, and THIS module derives their verdict from
   ``stale_after_hours``.
 * A clock value that is present but UNPARSEABLE, or that resolves to an instant more than
-  one hour in the future, is a CORRUPT receipt on that source's axis — never silently
-  treated as absent, and never able to read as fresh/healthy (repair findings I2/I4).
-  This applies to ALL FOUR clock kinds (last_attempted, last_successful, data_as_of,
-  render_release), not just the two that feed the ta/ts adjudication path (repair
-  IMPORTANT-1, 2026-09-05 independent review): a corrupt data_as_of/render_release can
-  never enter the published ``clocks`` display block either, and forces the SAME
-  could_not_look verdict on that source as a corrupt ta/ts would.
+  one hour (26 hours for a BARE calendar-date value — repair round-3, 2026-09-06
+  independent review, item 3: a date-grain source can legitimately report a calendar
+  date up to a UTC+14 timezone lead ahead of ``now``) in the future, is a CORRUPT receipt
+  on that source's axis — never silently treated as absent, and never able to read as
+  fresh/healthy (repair findings I2/I4). This applies to ALL FOUR clock kinds
+  (last_attempted, last_successful, data_as_of, render_release), not just the two that
+  feed the ta/ts adjudication path (repair IMPORTANT-1, 2026-09-05 independent review):
+  a corrupt data_as_of/render_release can never enter the published ``clocks`` display
+  block either, and forces the SAME could_not_look verdict on that source as a corrupt
+  ta/ts would.
+* A ``nightly_lane`` receipt NEVER truthfully binds ``data_as_of`` (repair round-3,
+  2026-09-06 independent review): ``collectors/base.py``'s ``last_date`` is the group-MAX
+  OBSERVATION date across a source's own stored series, not an as-of instant — a lane
+  entry with a fresh, healthy attempt/success clock and a legitimately far-future
+  ``last_date`` (fred's FEDTARMD FOMC-projection series, real production shape) is a
+  HEALTHY lane, not a corrupt one. ``scripts/build_capability_health.py``'s
+  ``nightly_lane_facts`` no longer maps ``last_date`` onto ``data_as_of`` at all, and
+  ``config/capability_health.yml``'s ``nightly_lane`` declarations no longer claim that
+  clock. This engine module's corruption law is unchanged and still applies in FULL to
+  any source that genuinely binds ``data_as_of``/``render_release`` (an
+  ``output_health_artifact``'s already-judged ``source_asof``) — the fix is entirely in
+  what the ADAPTER and REGISTRY claim a lane receipt carries, never a type-based carve-out
+  inside this pure resolver.
 * Dependency propagation is an UPPER BOUND, never an exact re-derivation and never a
   failover: a capability whose declared ``depends_on`` entry is not healthy is capped at
   ``degraded`` (never silently healed back to ``healthy`` by a fallback receipt, and
@@ -167,6 +183,27 @@ DEFAULT_STALE_AFTER_HOURS = 48
 #: (repair finding I4). One hour of slack absorbs ordinary clock skew between the runner
 #: that wrote the receipt and the host that resolves this build.
 FUTURE_CLOCK_TOLERANCE = timedelta(hours=1)
+
+#: The SAME future-corruption check, widened for a BARE calendar-date value only (repair
+#: round-3, item 3): a date has no time-of-day, so a source reporting "today's date" from
+#: as far ahead as UTC+14 can legitimately name a calendar date that is, in absolute UTC
+#: instant terms, up to ~14h + ordinary skew ahead of a UTC-based ``now`` — e.g. a
+#: `2026-09-06` date value at now=2026-09-05T22:30Z is a real calendar-date lead, not
+#: corruption. An INSTANT-grain value (anything carrying a real time-of-day) keeps the
+#: tight :data:`FUTURE_CLOCK_TOLERANCE` — this wider window applies ONLY when the raw
+#: value itself parsed as a bare date (see :func:`_parse_instant_or_date`).
+DATE_GRAIN_FUTURE_TOLERANCE = timedelta(hours=26)
+
+#: Length cap + join-safety scrub applied to ANY third-party-derived free text — an
+#: adapter's ``blind_reason`` (which embeds a raw, unbounded collector status string) or
+#: ``rights_detail`` — before it is allowed into ``reason_codes``/``evidence``/the joined
+#: ``reason`` string (repair round-3, item 4). This module is the PUBLISHER of the single
+#: joined ``"; ".join(reason_codes)`` reason string, so it is the one place that can
+#: guarantee an embedded "; " in foreign text can never be misread as extra, fabricated
+#: reason codes — independent of whatever cap an individual adapter applies on its own
+#: (``scripts/build_capability_health.py``'s ``_RIGHTS_DETAIL_MAX_CHARS`` stays: defense
+#: for ONE adapter; this is defense for every adapter, including ones that forget to cap).
+FOREIGN_TEXT_MAX_CHARS = 300
 
 # --- reason codes ------------------------------------------------------------
 # A code may carry a ``:<label>`` suffix naming the receipt source or dependency it is
@@ -308,10 +345,21 @@ def _detect_depends_on_cycles(
 ) -> list[str]:
     """MINOR-2 repair: the pairwise checks above (self-loop, unresolvable ref) cannot
     see a LONGER cycle — ``a depends_on b`` and ``b depends_on a`` each look locally
-    valid; only walking the whole graph reveals the loop. ``_cap_by_dependency`` never
-    terminates on a cyclic ``depends_on`` graph (each side caps the other, forever), so
-    this must fail closed at validation time rather than let the resolver spin or
-    silently under/over-cap.
+    valid; only walking the whole graph reveals the loop.
+
+    CORRECTED RATIONALE (repair round-3, item 5, 2026-09-06 independent review): this is
+    registry-hygiene fail-closedness, NOT a non-termination guard. The original comment
+    here claimed ``_cap_by_dependency`` "never terminates on a cyclic depends_on graph
+    (each side caps the other, forever)" — that was FALSE. ``_cap_by_dependency`` is a
+    single non-recursive pass over one capability's already-resolved ``base_by_id``
+    records (built once, up front, in :func:`resolve_capability_health`); it walks each
+    capability's own ``depends_on`` list exactly once and returns, so it terminates on
+    ANY graph, cyclic or not — it would simply produce a MEANINGLESS answer on a cycle
+    (each side capping the other from a snapshot neither can see reflected in the
+    other's own resolution, since both were already resolved independently before either
+    cap was applied). A cyclic dependency declaration is refused here because it can
+    never express a coherent "this depends on that" ordering, not because resolving one
+    would hang.
 
     Only edges between two DECLARED, non-self ids are walked — a self-loop or an
     unresolvable reference is already reported by the caller and would otherwise be
@@ -370,6 +418,49 @@ def _as_utc(value: Any) -> datetime | None:
         return None
 
 
+def _parse_instant_or_date(raw: Any) -> tuple[datetime | None, bool]:
+    """Read *raw* as a tz-aware instant. Returns ``(instant_or_None, is_date_grain)``.
+
+    A BARE calendar date reads as midnight UTC on that date and is flagged
+    ``is_date_grain=True`` so a caller can apply the wider future-tolerance window
+    (repair round-3, item 3) — accepted in EITHER of the two shapes a receipt fact can
+    carry (repair round-3, item 6): an ISO date string (``"2026-09-04"``) or a real
+    ``datetime.date`` object, which is exactly what PyYAML hands back for an unquoted
+    date scalar in ``config/capability_health.yml``.
+
+    Used by BOTH :func:`_clock_reading`'s corruption check and the capability-level
+    display-clock merge in :func:`_resolve_one` (repair round-3, item 7) — the merge
+    previously routed through :func:`_as_utc` alone, which cannot read a bare date at
+    all, silently degenerating "most recent wins" into "first non-None wins" whenever
+    two date-grain values were being compared. Routing both through this one function
+    keeps the merge order-independent.
+    """
+    if raw is None or raw == "":
+        return None, False
+    dt = _as_utc(raw)
+    if dt is not None:
+        return dt, False
+    d: date | None = None
+    if isinstance(raw, str):
+        try:
+            d = date.fromisoformat(raw.strip())
+        except ValueError:
+            d = None
+    elif isinstance(raw, date) and not isinstance(raw, datetime):
+        d = raw
+    if d is not None:
+        return datetime(d.year, d.month, d.day, tzinfo=timezone.utc), True
+    return None, False
+
+
+def _cap_foreign_text(value: Any) -> str:
+    """Cap length and scrub the ``"; "`` reason-join separator out of third-party text
+    before it is allowed into reason_codes/evidence/the joined reason string (repair
+    round-3, item 4). See :data:`FOREIGN_TEXT_MAX_CHARS`."""
+    text = str(value).replace("; ", " - ")
+    return text[:FOREIGN_TEXT_MAX_CHARS]
+
+
 def _hours_between(now: datetime, then: datetime) -> float:
     return round((now - then).total_seconds() / 3600.0, 3)
 
@@ -417,28 +508,26 @@ def _clock_reading(raw: Any, *, now: datetime) -> tuple[datetime | None, str | N
 
     IMPORTANT-1 repair: ``data_as_of``/``render_release`` are frequently DATE-grain, not
     instant-grain (a collector's ``last_date: "2026-09-04"`` is the real, common shape —
-    see ``scripts/build_capability_health.py::nightly_lane_facts``).
-    ``lib.dataos.temporal.utc()`` correctly REFUSES to promote a bare date to an instant
-    for point-in-time reads (§D3: a date has no timezone, doing so is a guess) — but a
-    corruption check only needs "is this a real calendar date, and is it implausibly far
-    in the future", never a real instant used anywhere else. A bare ISO date is read as
-    midnight UTC on that date SOLELY for that comparison; the ORIGINAL raw string is
-    still what gets published in the record's ``clocks`` block (see the caller) — this
-    function never invents a timestamp that overwrites what was actually received.
+    though a ``nightly_lane`` receipt never actually binds ``data_as_of`` as of repair
+    round-3; see the module docstring). ``lib.dataos.temporal.utc()`` correctly REFUSES
+    to promote a bare date to an instant for point-in-time reads (§D3: a date has no
+    timezone, doing so is a guess) — but a corruption check only needs "is this a real
+    calendar date, and is it implausibly far in the future", never a real instant used
+    anywhere else. A bare date (an ISO string OR a real ``datetime.date`` object —
+    repair round-3, item 6) is read as midnight UTC on that date SOLELY for that
+    comparison, via :func:`_parse_instant_or_date`; the ORIGINAL raw value is still what
+    gets published in the record's ``clocks`` block (see the caller) — this function
+    never invents a timestamp that overwrites what was actually received. A date-grain
+    reading gets the wider :data:`DATE_GRAIN_FUTURE_TOLERANCE` window rather than
+    :data:`FUTURE_CLOCK_TOLERANCE` (repair round-3, item 3).
     """
     if raw is None or raw == "":
         return None, None
-    dt = _as_utc(raw)
-    if dt is None and isinstance(raw, str):
-        try:
-            d = date.fromisoformat(raw.strip())
-        except ValueError:
-            d = None
-        if d is not None:
-            dt = datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+    dt, is_date_grain = _parse_instant_or_date(raw)
     if dt is None:
         return None, REASON_CLOCK_UNPARSEABLE
-    if dt > now + FUTURE_CLOCK_TOLERANCE:
+    tolerance = DATE_GRAIN_FUTURE_TOLERANCE if is_date_grain else FUTURE_CLOCK_TOLERANCE
+    if dt > now + tolerance:
         return None, REASON_CLOCK_FUTURE_DATED
     return dt, None
 
@@ -508,8 +597,13 @@ def _source_verdict(
     # downgraded, never able to read healthy.
     blind_reason = fact.get("blind_reason")
     if isinstance(blind_reason, str) and blind_reason:
-        evidence.append(_evidence("receipt", label, blind_reason))
-        reasons.append(blind_reason)
+        # round-3, item 4: blind_reason embeds a raw, adapter-supplied collector status
+        # string (see REASON_UNKNOWN_COLLECTOR_STATUS) that this engine never controls
+        # the length or contents of — cap and reason-join-scrub it at THIS boundary,
+        # the one place that can guarantee it before it enters reason_codes/reason.
+        safe_blind_reason = _cap_foreign_text(blind_reason)
+        evidence.append(_evidence("receipt", label, safe_blind_reason))
+        reasons.append(safe_blind_reason)
         return None, reasons, evidence, display_clocks
 
     # Clocks this source is DECLARED to bind, honoring a per-fact override (a source that
@@ -521,7 +615,10 @@ def _source_verdict(
     )
 
     if fact.get("rights_blocked"):
-        detail = str(fact.get("rights_detail") or "rights-restricted")
+        # round-3, item 4: rights_detail is likewise adapter-supplied third-party text
+        # (a raw collector error string) — cap/scrub it here too, independent of
+        # whatever cap the adapter already applied on its own.
+        detail = _cap_foreign_text(fact.get("rights_detail") or "rights-restricted")
         evidence.append(_evidence("receipt", label, detail))
         return STATE_UNAVAILABLE, [f"{REASON_RIGHTS_BLOCKED}:{label}"], evidence, display_clocks
 
@@ -663,7 +760,12 @@ def _resolve_one(
         evidence.extend(src_evidence)
         for key, val in src_clocks.items():
             cur = clocks[key]
-            cur_dt, val_dt = _as_utc(cur), _as_utc(val)
+            # round-3, item 7: read through the SAME bare-date-aware parser the
+            # corruption check uses, not `_as_utc` alone — otherwise a date-grain
+            # value's merge silently degenerates to "first non-None wins" instead of
+            # "most recent wins" (a date-grain reading is invisible to `_as_utc`).
+            cur_dt, _ = _parse_instant_or_date(cur)
+            val_dt, _ = _parse_instant_or_date(val)
             if cur is None or (val_dt is not None and (cur_dt is None or val_dt > cur_dt)):
                 clocks[key] = val
 

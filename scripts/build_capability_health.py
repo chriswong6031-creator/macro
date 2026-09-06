@@ -43,6 +43,20 @@ RECEIPT SOURCES, PER TYPE
     more — see ``config/capability_health.yml``'s comment on why one was removed from
     ``prophet_us`` in this same repair: a source that can NEVER contribute anything but
     could_not_look would permanently poison its capability under the worst-fold law.)
+
+    ROUND-3 REPAIR (2026-09-06 independent review): ``last_date`` is NEVER mapped onto
+    ``data_as_of`` here, in ANY status branch. ``last_date`` is
+    ``collectors/base.py``'s group-MAX OBSERVATION date across a source's own stored
+    series — not an as-of instant — and a healthy, live shape (fred's FEDTARMD FOMC
+    projection series legitimately carries a `last_date` years in the future) was being
+    branded corrupt (``clock_value_future_dated``) by the round-2 repair for exactly this
+    reason: it published a real, honest lane's receipt as ``could_not_look`` forever. A
+    ``nightly_lane`` receipt truthfully carries only last_attempted/last_successful (+ an
+    explicit stale ``state``, ``rights_blocked``, or ``blind_reason``) — it never had
+    as-of semantics, and ``config/capability_health.yml``'s ``nightly_lane`` declarations
+    no longer claim ``data_as_of`` either. A capability that needs a real as-of instant
+    declares an ``output_health_artifact`` source instead (``resolve_output_health``'s
+    already-judged ``source_asof`` genuinely IS bound to a point-in-time read).
 ``provider_rung`` / ``sentinel_probe``
     Declared in the closed receipt-source vocabulary and accepted by registry
     validation, but NOT wired to a live fetch in this V1 build: none of the seed cohort's
@@ -246,6 +260,15 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
     for. It is now a typed ``blind_reason`` disclosure the engine surfaces verbatim
     (never silently downgraded to a generic no-clock-evidence/no-prior-success read, and
     never healthy).
+
+    ROUND-3 repair (2026-09-06 independent review, item 1): ``entry.get("last_date")`` is
+    read NOWHERE in this function any more, in ANY branch. It is
+    ``collectors/base.py``'s group-MAX OBSERVATION date across a source's own stored
+    series, never an as-of instant, and mapping it onto ``data_as_of`` branded a healthy
+    lane (fred's real, legitimately-future FEDTARMD FOMC-projection ``last_date``)
+    ``could_not_look`` forever. A ``nightly_lane`` fact now carries ONLY
+    last_attempted/last_successful (+ an explicit stale ``state``, ``rights_blocked``, or
+    ``blind_reason``) — never a ``data_as_of`` key.
     """
     doc = _load_json(receipts_root / RUN_STATUS_REL)
     out: dict[str, dict[str, Any]] = {}
@@ -271,7 +294,6 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
 
         status = str(entry.get("status") or "")
         checked_at = entry.get("checked_at")
-        last_date = entry.get("last_date")
         fact: dict[str, Any] = {"readable": True, "corrupt": False}
 
         if status == _STATUS_SKIPPED:
@@ -287,8 +309,6 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
             fact["rights_detail"] = raw_detail[:_RIGHTS_DETAIL_MAX_CHARS]
             if checked_at:
                 fact["last_attempted"] = checked_at
-            if last_date:
-                fact["data_as_of"] = last_date
             out[ref] = fact
             continue
 
@@ -303,8 +323,6 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
             )
             if checked_at:
                 fact["last_attempted"] = checked_at
-            if last_date:
-                fact["data_as_of"] = last_date
             out[ref] = fact
             continue
 
@@ -323,8 +341,6 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
                 # only the LATEST row per source (no history), so there is no prior
                 # last_successful to compare against here — never invent one.
                 pass
-        if last_date:
-            fact["data_as_of"] = last_date
         out[ref] = fact
     return out
 

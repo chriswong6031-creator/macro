@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -346,24 +346,65 @@ def test_future_dated_clock_within_tolerance_is_not_corrupt():
 # routed through the SAME corruption check as last_attempted/last_successful — a corrupt
 # value on EITHER of these two kinds must never enter the published `clocks` block and
 # must never sit beside state=healthy/reason="ok".
+#
+# ROUND-3 REBASE (2026-09-06 independent review): the test immediately below used to
+# assert the WRONG verdict for this exact shape. `last_date` is
+# collectors/base.py's group-MAX OBSERVATION date across a source's own stored series —
+# never an as-of instant — so a nightly_lane receipt never truthfully binds data_as_of
+# at all (see engine/capability_health.py's module docstring and
+# scripts/build_capability_health.py::nightly_lane_facts, round-3 item 1). The REAL
+# fred/yahoo shape is a fact carrying ONLY last_attempted/last_successful; this must
+# read HEALTHY, never the false-red the round-2 IMPORTANT-1 repair produced. The
+# corruption law itself is UNCHANGED and still applies in full to a source that
+# genuinely binds data_as_of (test_important1_round3_output_health_artifact_can_still_
+# bind_data_as_of_and_corrupt, immediately after).
 # ---------------------------------------------------------------------------
 
 def test_important1_live_repro_fred_shape_future_dated_data_as_of_never_reads_healthy():
-    """THE LIVE REPRO: a lane entry with a valid, FRESH checked_at (so last_attempted
-    and last_successful both read clean) but a `last_date` far in the future — the real
-    fred/yahoo shape, where `last_date` rides straight into `data_as_of`. Before this
-    repair this published state=healthy, reason="ok", clocks.data_as_of=2028-01-01 —
-    exactly the false-green the review found."""
+    """THE LIVE REPRO, CORRECTED: a lane entry with a valid, FRESH checked_at (so
+    last_attempted and last_successful both read clean) and NO data_as_of key at all —
+    the REAL fred/yahoo shape after round-3 (a nightly_lane fact never carries
+    data_as_of; its `last_date` is an observation date, not an as-of instant). This
+    must read state=healthy, reason="ok", with no data_as_of published and no
+    corruption reason — never the could_not_look/clock_value_future_dated the round-2
+    repair produced for this exact healthy lane."""
     cap = _cap("fred_repro", [{"type": "nightly_lane", "ref": "fred",
-                                "clocks": ["last_attempted", "last_successful", "data_as_of"]}])
+                                "clocks": ["last_attempted", "last_successful"]}])
     fact = {
         "readable": True,
         "last_attempted": FRESH,
         "last_successful": FRESH,
-        "data_as_of": "2028-01-01",   # far beyond NOW (2026-09-04) — corrupt, not fresh
+        # no data_as_of key — a nightly_lane receipt never binds one (round-3)
     }
     rec = _resolve_single(cap, fact)
-    assert rec["state"] is None, "a future-dated data_as_of must never read healthy"
+    assert rec["state"] == CH.STATE_HEALTHY, (
+        "an honest attempt/success clock pair with no as-of binding must read healthy"
+    )
+    assert rec["assessment_status"] == CH.ASSESSMENT_COMPLETE
+    assert not any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+    assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
+    assert rec["reason"] == "ok"
+    assert not rec["reason_codes"]
+
+
+def test_important1_round3_output_health_artifact_can_still_bind_data_as_of_and_corrupt():
+    """ROUND-3 companion to the rebased fred repro above (item 2: 'ADD a genuine-
+    corruption data_as_of fixture through the output_health/artifact fact path'):
+    an `output_health_artifact` source GENUINELY binds data_as_of (resolve_output_health's
+    already-judged source_asof — a real as-of instant), so the corruption law must still
+    fire there in full. Losing data_as_of semantics for `nightly_lane` (round-3) must
+    never be read as 'the corruption law was weakened' — it is untouched for the source
+    type that actually has as-of semantics."""
+    cap = _cap("oh_asof_corrupt", [{"type": "output_health_artifact", "ref": "a",
+                                     "clocks": ["data_as_of"]}])
+    far_future = "2028-01-01T00:00:00+00:00"
+    fact = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_HEALTHY, "assessment_status": "complete",
+        "data_as_of": far_future,
+    }
+    rec = _resolve_single(cap, fact)
+    assert rec["state"] is None, "a genuinely-bound as-of instant corruption must still block healthy"
     assert rec["assessment_status"] == CH.ASSESSMENT_COULD_NOT_LOOK
     assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
     assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
@@ -483,6 +524,202 @@ def test_minor5_upstream_partial_with_no_state_is_named_truthfully():
     # the OLD misleading name must never appear for this specific cause
     assert not any(c.startswith(CH.REASON_NO_CLOCK_EVIDENCE) for c in rec["reason_codes"])
     assert rec["reason"] != "ok"
+
+
+# ---------------------------------------------------------------------------
+# ROUND-3 item 3: date-grain FUTURE tolerance is widened to 26h (a bare calendar-date
+# value can legitimately lead a UTC `now` by as much as a UTC+14 timezone offset plus
+# ordinary skew); an INSTANT-grain value keeps the tight 1h tolerance pinned above by
+# test_future_dated_clock_within_tolerance_is_not_corrupt /
+# test_important1_data_as_of_boundary_just_inside_and_outside_future_tolerance.
+# ---------------------------------------------------------------------------
+
+def test_round3_date_grain_future_tolerance_boundary_just_inside_and_outside():
+    """Pin the exact 26h date-grain boundary the same way the 1h instant-grain boundary
+    is pinned elsewhere. A bare date resolves to midnight UTC on that date, so `now` is
+    chosen per-case to land the delta just inside/outside 26h."""
+    date_value = "2026-09-06"  # reads as midnight UTC 2026-09-06T00:00:00+00:00
+    now_inside = datetime(2026, 9, 4, 22, 0, 1, tzinfo=timezone.utc)     # 25h59m59s ahead
+    now_outside = datetime(2026, 9, 4, 21, 59, 59, tzinfo=timezone.utc)  # 26h00m01s ahead
+
+    cap_inside = _cap("date_grain_inside", [{"type": "output_health_artifact", "ref": "a",
+                                              "clocks": ["data_as_of"]}])
+    view_inside = CH.resolve_capability_health(
+        capabilities=[cap_inside],
+        receipts={"date_grain_inside": [{
+            "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+            "assessment_status": "complete", "data_as_of": date_value,
+        }]},
+        now=now_inside,
+    )
+    rec_inside = view_inside["capabilities"][0]
+    assert rec_inside["state"] == CH.STATE_HEALTHY
+    assert rec_inside["clocks"]["data_as_of"] == date_value
+
+    cap_outside = _cap("date_grain_outside", [{"type": "output_health_artifact", "ref": "a",
+                                                "clocks": ["data_as_of"]}])
+    view_outside = CH.resolve_capability_health(
+        capabilities=[cap_outside],
+        receipts={"date_grain_outside": [{
+            "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+            "assessment_status": "complete", "data_as_of": date_value,
+        }]},
+        now=now_outside,
+    )
+    rec_outside = view_outside["capabilities"][0]
+    assert rec_outside["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec_outside["reason_codes"])
+
+
+def test_round3_date_grain_lead_within_utc14_window_is_not_corrupt():
+    """The concrete example from the commission: a `2026-09-06` date value at
+    now=2026-09-05T22:30Z (a 1.5h absolute lead) is a legitimate UTC+14 calendar-date
+    lead, never corruption."""
+    now = datetime(2026, 9, 5, 22, 30, 0, tzinfo=timezone.utc)
+    cap = _cap("utc14_lead", [{"type": "output_health_artifact", "ref": "a",
+                                "clocks": ["data_as_of"]}])
+    view = CH.resolve_capability_health(
+        capabilities=[cap],
+        receipts={"utc14_lead": [{
+            "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+            "assessment_status": "complete", "data_as_of": "2026-09-06",
+        }]},
+        now=now,
+    )
+    rec = view["capabilities"][0]
+    assert rec["state"] == CH.STATE_HEALTHY
+    assert rec["reason"] == "ok"
+
+
+# ---------------------------------------------------------------------------
+# ROUND-3 item 6: the bare-date fallback must accept a real `datetime.date` object
+# (PyYAML's unquoted-date shape) equivalently to an ISO date STRING.
+# ---------------------------------------------------------------------------
+
+def test_round3_bare_date_object_accepted_equivalently_to_iso_string():
+    cap_str = _cap("date_obj_str", [{"type": "output_health_artifact", "ref": "a",
+                                      "clocks": ["data_as_of"]}])
+    rec_str = _resolve_single(cap_str, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": "2026-09-04",
+    })
+    assert rec_str["state"] == CH.STATE_HEALTHY
+
+    cap_obj = _cap("date_obj_real", [{"type": "output_health_artifact", "ref": "a",
+                                       "clocks": ["data_as_of"]}])
+    rec_obj = _resolve_single(cap_obj, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": date(2026, 9, 4),
+    })
+    assert rec_obj["state"] == CH.STATE_HEALTHY
+    assert rec_obj["clocks"]["data_as_of"] == date(2026, 9, 4)
+
+
+def test_round3_bare_date_object_far_future_is_still_corrupt():
+    """A real `datetime.date` object must be routed through the SAME future-dated
+    corruption check as an ISO date string — never silently accepted as unparseable-
+    and-therefore-ignored, and never accepted as fresh."""
+    cap = _cap("date_obj_future", [{"type": "output_health_artifact", "ref": "a",
+                                     "clocks": ["data_as_of"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": date(2028, 1, 1),
+    })
+    assert rec["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+
+
+# ---------------------------------------------------------------------------
+# ROUND-3 item 7: the capability-level display `clocks` merge ("most recent across
+# sources wins") must be order-independent for DATE-GRAIN values too — it used to route
+# through `_as_utc` alone, which cannot read a bare date at all, degenerating to "first
+# non-None wins".
+# ---------------------------------------------------------------------------
+
+def test_round3_display_clock_merge_is_order_independent_for_date_grain_values():
+    older, newer = "2026-09-01", "2026-09-04"
+
+    cap_a = _cap("merge_order_a", [
+        {"type": "output_health_artifact", "ref": "older", "clocks": ["data_as_of"]},
+        {"type": "output_health_artifact", "ref": "newer", "clocks": ["data_as_of"]},
+    ])
+    view_a = CH.resolve_capability_health(
+        capabilities=[cap_a],
+        receipts={"merge_order_a": [
+            {"readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+             "assessment_status": "complete", "data_as_of": older},
+            {"readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+             "assessment_status": "complete", "data_as_of": newer},
+        ]},
+        now=NOW,
+    )
+    assert view_a["capabilities"][0]["clocks"]["data_as_of"] == newer
+
+    cap_b = _cap("merge_order_b", [
+        {"type": "output_health_artifact", "ref": "newer", "clocks": ["data_as_of"]},
+        {"type": "output_health_artifact", "ref": "older", "clocks": ["data_as_of"]},
+    ])
+    view_b = CH.resolve_capability_health(
+        capabilities=[cap_b],
+        receipts={"merge_order_b": [
+            {"readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+             "assessment_status": "complete", "data_as_of": newer},
+            {"readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+             "assessment_status": "complete", "data_as_of": older},
+        ]},
+        now=NOW,
+    )
+    assert view_b["capabilities"][0]["clocks"]["data_as_of"] == newer, (
+        "the fold must not depend on receipt_sources declaration order"
+    )
+
+
+# ---------------------------------------------------------------------------
+# ROUND-3 item 4: any third-party-derived text (blind_reason, rights_detail) entering
+# reason_codes/evidence/reason must be length-capped and reason-join-safe AT THE ENGINE
+# BOUNDARY — independent of whatever an individual adapter already does.
+# ---------------------------------------------------------------------------
+
+def test_round3_foreign_text_blind_reason_is_capped_and_join_safe():
+    huge = ("x" * 50) + "; " + ("y" * 500)   # oversized AND contains the join separator
+    assert len(huge) > CH.FOREIGN_TEXT_MAX_CHARS
+    cap = _cap("blind_cap", [{"type": "nightly_lane", "ref": "x", "clocks": []}])
+    rec = _resolve_single(cap, {"readable": True, "blind_reason": huge})
+    assert rec["state"] is None
+    assert all(len(c) <= CH.FOREIGN_TEXT_MAX_CHARS for c in rec["reason_codes"])
+    # reason-join-safe: splitting the published `reason` on "; " must yield exactly as
+    # many pieces as reason_codes — an embedded "; " inside a code would inflate this,
+    # reading as extra, fabricated reason codes.
+    assert len(rec["reason"].split("; ")) == len(rec["reason_codes"])
+    for row in rec["evidence"]:
+        assert len(row["detail"]) <= CH.FOREIGN_TEXT_MAX_CHARS
+        assert "; " not in row["detail"]
+
+
+def test_round3_foreign_text_rights_detail_is_capped_and_join_safe():
+    huge_detail = ("bot-block-detail-" * 30) + "; fabricated-extra-code"
+    assert len(huge_detail) > CH.FOREIGN_TEXT_MAX_CHARS
+    cap = _cap("rights_cap", [{"type": "nightly_lane", "ref": "x",
+                                "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "rights_blocked": True, "rights_detail": huge_detail,
+    })
+    assert rec["state"] == CH.STATE_UNAVAILABLE
+    for row in rec["evidence"]:
+        assert len(row["detail"]) <= CH.FOREIGN_TEXT_MAX_CHARS
+        assert "; " not in row["detail"]
+
+
+def test_round3_foreign_text_short_clean_text_is_untouched():
+    """Regression guard: ordinary short text must survive byte-for-byte."""
+    cap = _cap("rights_clean", [{"type": "nightly_lane", "ref": "x",
+                                  "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "rights_blocked": True, "rights_detail": "known bot-block",
+    })
+    assert any(row["detail"] == "known bot-block" for row in rec["evidence"])
 
 
 # ---------------------------------------------------------------------------

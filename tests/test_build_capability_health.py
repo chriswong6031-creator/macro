@@ -53,6 +53,10 @@ def _write_run_status(root: Path, sources: dict, *, last_run: str | None = None)
 
 
 def _lane_cap(cap_id: str, ref: str, **overrides) -> dict:
+    # ROUND-3 repair (2026-09-06 independent review, item 1): a nightly_lane source
+    # never truthfully binds data_as_of (see engine/capability_health.py's module
+    # docstring and scripts/build_capability_health.py::nightly_lane_facts) — the
+    # default fixture here matches the corrected production registry shape.
     base = {
         "id": cap_id,
         "label_en": cap_id,
@@ -60,7 +64,7 @@ def _lane_cap(cap_id: str, ref: str, **overrides) -> dict:
         "artifacts": [],
         "receipt_sources": [
             {"type": "nightly_lane", "ref": ref,
-             "clocks": ["last_attempted", "last_successful", "data_as_of"]}
+             "clocks": ["last_attempted", "last_successful"]}
         ],
         "stale_after_hours": 30,
         "next_action_hint": "n/a",
@@ -223,7 +227,9 @@ def test_i5_status_ok_supplies_success_and_attempt(tmp_path):
     fact = BUILD.nightly_lane_facts(tmp_path, ["x"])["x"]
     assert fact["last_attempted"] == FRESH
     assert fact["last_successful"] == FRESH
-    assert fact["data_as_of"] == "2026-09-04"
+    # ROUND-3 repair (item 1): `last_date` is an observation date, never an as-of
+    # instant — nightly_lane_facts must never map it onto data_as_of, in any branch.
+    assert "data_as_of" not in fact
 
 
 def test_i5_status_stale_sets_explicit_stale_state(tmp_path):
@@ -476,13 +482,17 @@ def test_minor4_rights_detail_short_text_is_untouched(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# IMPORTANT-1 live repro, at the BUILDER level (2026-09-05 independent review): the
-# REAL fred/yahoo shape is a healthy, fresh checked_at paired with a `last_date` that
-# can drift arbitrarily far into the future on a bad upstream feed. Before this repair
-# the builder's nightly_lane_facts copied `last_date` into `data_as_of` with zero
-# validation, and the engine copied it straight into the published `clocks` block with
-# zero validation either — so this exact shape published state=healthy, reason="ok",
-# clocks.data_as_of="2028-01-01".
+# ROUND-3 REBASE (2026-09-06 independent review): the round-2 IMPORTANT-1 repair
+# fixed a real false-GREEN (a corrupt clock reading as healthy) by introducing a false-
+# RED — `last_date` is collectors/base.py's group-MAX OBSERVATION date across a
+# source's own stored series (fred's real FEDTARMD FOMC-projection shape can legitimately
+# carry a `last_date` years in the future on a completely healthy lane), NOT an as-of
+# instant, yet the round-2 builder mapped it straight onto `data_as_of` — so this exact
+# HEALTHY shape published `could_not_look` / `clock_value_future_dated` forever. The fix
+# (round-3, item 1) removes the `last_date` -> `data_as_of` mapping from
+# nightly_lane_facts ENTIRELY: a nightly_lane fact now carries only
+# last_attempted/last_successful, so the fred-2028 shape must resolve HEALTHY, with no
+# data_as_of key published anywhere and no corruption reason at all.
 # ---------------------------------------------------------------------------
 
 def test_important1_live_repro_fred_2028_shape_never_reads_healthy_end_to_end(tmp_path):
@@ -491,22 +501,30 @@ def test_important1_live_repro_fred_2028_shape_never_reads_healthy_end_to_end(tm
     fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
     assert fact["last_attempted"] == FRESH
     assert fact["last_successful"] == FRESH
-    assert fact["data_as_of"] == "2028-01-01"   # the raw value IS still read off the fact
+    # round-3: `last_date` is READ off run_status.json (the ok/checked_at path still
+    # consults it for nothing else) but is NEVER surfaced as data_as_of any more.
+    assert "data_as_of" not in fact
 
     cap = _lane_cap("market_reference_repro", "fred")
     view = CH.resolve_capability_health(capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW)
     rec = view["capabilities"][0]
-    assert rec["state"] != CH.STATE_HEALTHY
-    assert rec["state"] is None, "a future-dated data_as_of is could_not_look, never healthy"
-    assert rec["reason"] != "ok"
-    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
-    # the corrupt value must never be published in the display clocks block either
+    assert rec["state"] == CH.STATE_HEALTHY, (
+        "a fresh attempt/success clock pair with no genuine as-of binding must read "
+        "healthy — a legitimately far-future OBSERVATION date on a nightly_lane source "
+        "must never brand the lane corrupt"
+    )
+    assert rec["reason"] == "ok"
+    assert not rec["reason_codes"]
+    assert not any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+    # data_as_of was never a clock this source binds any more — never published.
     assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
 
 
-def test_important1_live_repro_via_main_writes_could_not_look_not_healthy(tmp_path):
+def test_important1_live_repro_via_main_writes_healthy_not_could_not_look(tmp_path):
     """Same repro end-to-end through main(), asserting on the WRITTEN artifact — this is
-    the scratchpad evidence-run shape the commission asks for."""
+    the scratchpad evidence-run shape the commission asks for. ROUND-3 REBASE: this used
+    to assert could_not_look — the WRONG verdict for a healthy lane (see block comment
+    above)."""
     _write_registry(tmp_path, [_lane_cap("market_reference_repro", "fred")])
     _write_run_status(tmp_path, {"fred": {"status": "ok", "checked_at": FRESH,
                                            "last_date": "2028-01-01"}})
@@ -518,10 +536,11 @@ def test_important1_live_repro_via_main_writes_could_not_look_not_healthy(tmp_pa
     assert rc == 0
     doc = json.loads(out.read_text())
     rec = doc["capabilities"][0]
-    assert rec["state"] is None
-    assert rec["reason"] != "ok"
-    assert doc["summary"]["by_state"] == {"null": 1}
-    assert doc["summary"]["by_assessment_status"] == {"could_not_look": 1}
+    assert rec["state"] == CH.STATE_HEALTHY
+    assert rec["reason"] == "ok"
+    assert doc["summary"]["by_state"] == {CH.STATE_HEALTHY: 1}
+    assert doc["summary"]["by_assessment_status"] == {CH.ASSESSMENT_COMPLETE: 1}
+    assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
 
 
 # ---------------------------------------------------------------------------
