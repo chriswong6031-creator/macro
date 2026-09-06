@@ -706,6 +706,26 @@ def test_view_model_renders_the_msft_state_with_plain_words() -> None:
     ):
         assert code not in html, f"raw enum code {code!r} leaked into MSFT panel markup"
 
+    # macro#6920 round-3 MINOR #1: the allowlist above excludes every code
+    # the MSFT panel actually renders — the golden fixture's own
+    # `identity_proof.disclosures` carry these four (the
+    # `owner_read_completed=True` shared `DISCLOSURES` tuple). Those codes
+    # ARE expected to appear, but only inside their own `ss-id` receipt chip
+    # — never as the bare sentence itself (the actual MAJOR #2 failure mode).
+    for code in (
+        "CIK_LEG_OWNER_BACKED_CURRENT_ONLY", "OWNER_COMPOSED_SUBJECT_CURRENT_ONLY",
+        "ISSUERMASTER_CURRENT_IDENTITY_ONLY", "ALIAS_EPOCH_VALID_FROM",
+    ):
+        assert f'<span class="c ss-id">{code}</span>' in html, (
+            f"{code}: expected inside its ss-id receipt chip, not found"
+        )
+        assert f'<span class="l-en">{code}</span>' not in html, (
+            f"{code}: raw code leaked as the bare EN sentence"
+        )
+        assert f'<span class="l-zh">{code}</span>' not in html, (
+            f"{code}: raw code leaked as the bare ZH sentence"
+        )
+
     import re
     section_match = re.search(r'id="security-state".*?(?=<section )', html, re.DOTALL)
     assert section_match is not None, "could not isolate the #security-state panel markup"
@@ -822,6 +842,67 @@ def test_identity_refusal_renders_a_plain_bilingual_sentence_not_the_raw_code() 
         # bilingual-label span (the exact failure the round-2 PR body missed).
         assert f'<span class="l-en">{code}</span>' not in html
         assert f'<span class="l-zh">{code}</span>' not in html
+
+
+def test_identity_disclosure_renders_a_plain_bilingual_sentence_not_the_raw_code() -> None:
+    """``identity_proof.disclosures`` is stored engine-side as "CODE:
+    technical description" (see ``engine.security_state.DISCLOSURES`` and the
+    M1 failure shell's own local list). Before this fix
+    ``templates/ticker.html.j2`` rendered each raw string verbatim —
+    machine-code prefix and all — identically in the EN and ZH views (macro
+    #6920 round-3 MAJOR #2). The code must render only inside the receipt's
+    ``ss-id`` chip, and the sentence must be real, distinct EN/ZH prose.
+    """
+    for code in (
+        "PINNED_IDENTITY_NOT_OWNER_READ_THIS_CYCLE",
+        "IDENTITY_BRIDGE_UNRESOLVED_THIS_CYCLE",
+        "CIK_LEG_OWNER_BACKED_CURRENT_ONLY",
+    ):
+        contract = _contract(identity_proof={
+            "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+            "legs": [], "equalities": [], "refusals": [],
+            "disclosures": [f"{code}: some technical description that must never reach the page"],
+        })
+        view = build_security_state({"security_state": contract})
+        assert view is not None
+
+        disclosure = next(d for d in view["identity"]["disclosures"] if d["code"] == code)
+        assert disclosure["en"] != disclosure["zh"], (
+            f"{code}: ZH slot must be real Chinese, not the English fallback duplicated: {disclosure!r}"
+        )
+        assert re.search(r"[一-鿿]", disclosure["zh"]), f"{code}: zh is not Chinese: {disclosure['zh']!r}"
+        assert "some technical description" not in disclosure["en"], (
+            f"{code}: the raw engine description must be replaced by house copy, not passed through"
+        )
+
+        import jinja2
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(str(REPO / "templates")),
+            undefined=jinja2.ChainableUndefined,
+        )
+        html = env.get_template("ticker.html.j2").render(
+            security_state=view, ticker="MSFT", name="Microsoft Corp.",
+        )
+        assert disclosure["en"] in html, f"{code}: EN plain sentence missing from render"
+        assert disclosure["zh"] in html, f"{code}: ZH plain sentence missing from render"
+        assert "some technical description" not in html, (
+            f"{code}: raw engine disclosure text leaked into rendered markup"
+        )
+
+        # The raw machine code, wherever it appears, must be inside the
+        # receipt's own ss-id chip — never as bare text sitting directly in
+        # the disclosures line, and never duplicated into the ZH view.
+        m = re.search(
+            r'<div class="dfoot">((?:(?!</div>).)*?' + re.escape(code) + r'(?:(?!</div>).)*?)</div>',
+            html, re.S,
+        )
+        assert m is not None, f"{code}: disclosure line containing the code not found in render"
+        line_html = m.group(1)
+        assert f'<span class="c ss-id">{code}</span>' in line_html, (
+            f"{code}: raw code must be inside the ss-id chip: {line_html!r}"
+        )
+        stripped = re.sub(r'<span class="c ss-id">.*?</span>', "", line_html)
+        assert code not in stripped, f"{code}: raw code leaked outside the ss-id chip: {stripped!r}"
 
 
 def _prettify_words(code: str) -> str:

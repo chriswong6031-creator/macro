@@ -783,6 +783,10 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 .dpanel:last-child{margin-bottom:0;}
 .dpanel h3{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
 .dpanel .dfoot{margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+/* macro PR 6920 round-3 MAJOR 1: a receipt chip inside .dfoot (identity
+   refusals/disclosures) inherited no spacing rule from `.ss-gate .c` or
+   `.ss-chk-h .c` — same scoping family, explicit rule for this parent. */
+.dfoot .c{margin-left:6px;color:var(--muted);}
 .dcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
 .dcard{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:12px;padding:11px 13px;}
 .dcard .dk{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
@@ -1926,7 +1930,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
         {% endfor %}
         {% if ss.identity.equalities %}<ul class="dnotes">{% for e in ss.identity.equalities %}<li class="ss-id">{{ e }}</li>{% endfor %}</ul>{% endif %}
         {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}{{ t(r.en, r.zh) }}<span class="c ss-id">{{ r.code }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-        {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}{{ d }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+        {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}{{ t(d.en, d.zh) }}{% if d.code %}<span class="c ss-id">{{ d.code }}</span>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
       </section>
       {% endif %}
 

@@ -3510,6 +3510,39 @@ _SS_GATES: dict[str, dict[str, str]] = {
     },
 }
 
+# Chairman plain-language law (2026-09-06), macro#6920 round-3 MAJOR #2:
+# `identity_proof.disclosures` is stored engine-side as "CODE: technical
+# description" — a machine-code prefix on free text, not a code alone. House
+# copy leads in both languages; an unmapped code (defensive — every code the
+# engine emits today is listed here) falls back through `_ss_prettify`, same
+# convention as `_SS_GATES` above, rather than dropping the disclosure.
+_SS_DISCLOSURES: dict[str, dict[str, str]] = {
+    "CIK_LEG_OWNER_BACKED_CURRENT_ONLY": {
+        "en": "The issuer's registration number reflects only its current owner of record, not its full history.",
+        "zh": "发行人的注册编号仅反映当前登记的所有者，不含完整历史沿革。",
+    },
+    "OWNER_COMPOSED_SUBJECT_CURRENT_ONLY": {
+        "en": "This security's identity was built from the current reference data, read at one point in time.",
+        "zh": "该证券的身份信息基于某一时点读取的当前参考数据构建。",
+    },
+    "ISSUERMASTER_CURRENT_IDENTITY_ONLY": {
+        "en": "No dated ownership history was checked; this proof covers current identity only.",
+        "zh": "未核对带日期的历史所有权记录；本证明仅覆盖当前身份。",
+    },
+    "ALIAS_EPOCH_VALID_FROM": {
+        "en": "The starting date used to cross-check this identity is a placeholder floor, not confirmed evidence.",
+        "zh": "用于交叉核对该身份的起始日期为占位下限，并非已确认的证据。",
+    },
+    "PINNED_IDENTITY_NOT_OWNER_READ_THIS_CYCLE": {
+        "en": "This cycle used a frozen reference mapping for this ticker; the identity sources were not re-read.",
+        "zh": "本周期使用该证券的冻结参考映射；未重新读取身份来源。",
+    },
+    "IDENTITY_BRIDGE_UNRESOLVED_THIS_CYCLE": {
+        "en": "This identity could not be re-confirmed this cycle; treat it as unresolved, not confirmed.",
+        "zh": "本周期未能重新确认该身份；请视为未解析，而非已确认。",
+    },
+}
+
 
 # ── Plain words for the sub-reads the contract nests inside a leg ───────────
 # `legs.opportunity_context` is four separate owner reads in one leg. Printing
@@ -3654,6 +3687,38 @@ def _ss_prettify(code: str) -> str:
     """`EVENT_FRESHNESS_WINDOW` -> `Event freshness window`. Never blank."""
     words = re.sub(r"[^0-9A-Za-z]+", " ", str(code or "")).strip().lower()
     return (words[:1].upper() + words[1:]) if words else "Check not cleared"
+
+
+def _ss_split_disclosure(raw: str) -> tuple[str, str]:
+    """Split an engine disclosure string "CODE: description" into (code, description).
+
+    A disclosure with no machine-code prefix (defensive — every disclosure the
+    engine emits today carries one) returns `("", raw)` so the raw text still
+    renders as the sentence rather than being silently dropped.
+    """
+    m = re.match(r"^([A-Z][A-Z0-9_]*):\s*(.*)$", raw, re.DOTALL)
+    return (m.group(1), m.group(2)) if m else ("", raw)
+
+
+def _ss_disclosure_rows(raw_list: Any) -> list[dict[str, str]]:
+    """Normalise `identity_proof.disclosures` into printable `{code, en, zh}` rows.
+
+    See `_ss_split_disclosure` and `_SS_DISCLOSURES` (macro#6920 round-3
+    MAJOR #2) — never returns the raw "CODE: description" string as-is.
+    """
+    rows: list[dict[str, str]] = []
+    for raw_d in (_clean_str(e) for e in (raw_list or [])):
+        if not raw_d:
+            continue
+        d_code, d_text = _ss_split_disclosure(raw_d)
+        house = _SS_DISCLOSURES.get(d_code) if d_code else None
+        if house:
+            d_en, d_zh = house["en"], house["zh"]
+        else:
+            pretty = _ss_prettify(d_code or d_text)
+            d_en, d_zh = pretty, pretty
+        rows.append({"code": d_code, "en": d_en, "zh": d_zh})
+    return rows
 
 
 def _ss_value(v: Any) -> str:
@@ -4219,7 +4284,14 @@ def build_security_state(blob: dict | None) -> dict | None:
                     for code in (_clean_str(e) for e in (ident_raw.get("refusals") or []))
                     if code
                 ],
-                "disclosures": [_clean_str(e) for e in (ident_raw.get("disclosures") or []) if _clean_str(e)],
+                # Chairman plain-language law (2026-09-06), macro#6920
+                # round-3 MAJOR #2: a disclosure is stored engine-side as
+                # "CODE: technical description" — the code must never render
+                # as bare prose, and the raw English description must never
+                # render into the ZH slot untranslated. House copy
+                # (`_SS_DISCLOSURES`) leads in both languages; the raw code
+                # stays only in the receipt chip (`code`), never the sentence.
+                "disclosures": _ss_disclosure_rows(ident_raw.get("disclosures")),
             },
             "coverage_state": _clean_str(cov_block.get("overall_state") or ""),
             # Availability and non-blocking are two different questions and the
