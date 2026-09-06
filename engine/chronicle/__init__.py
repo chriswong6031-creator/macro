@@ -26,6 +26,7 @@ for the full spec. Modules:
   rollups.py         daily/weekly "streaming consciousness" tiers
   context_pack.py   pack() — the one symbol every consumer binds
   manifest.py        manifest.json payload assembly (stamped by governor.py)
+  market_feed_alias.py  MO-DELTA-001 alias resolver (deterministic, no LLM)
   governor.py         build_and_write(root=None, rebuild=False) entry point
 """
 from __future__ import annotations
