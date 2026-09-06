@@ -1584,6 +1584,9 @@ jobs:
     # 846 tracked / 127 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      # F07 B-F07-1 closure widening 2026-09-06 (contract-delta): valuation
+      # scenario V1 pure module now sits in the shared engine/* import closure.
+      - "engine/valuation_scenario.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -6626,6 +6629,9 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      # F07 B-F07-1 closure widening 2026-09-06 (contract-delta): valuation
+      # scenario V1 pure module now sits in the shared engine/* import closure.
+      - "engine/valuation_scenario.py"
       # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
       # guarded macro-suite hook imports the page builder, which carries the
       # workspace contract/registry pair. Enumerated, not globbed — the checker
@@ -7217,6 +7223,9 @@ jobs:
     # 846 tracked / 74 concrete.
     scope: exclusive
     paths:
+      # F07 B-F07-1 closure widening 2026-09-06 (contract-delta): valuation
+      # scenario V1 pure module now sits in the shared engine/* import closure.
+      - "engine/valuation_scenario.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -10434,6 +10443,9 @@ jobs:
     # the declared-scope coverage audit re-checks them on every load.
     scope: exclusive
     paths:
+      # F07 B-F07-1 closure widening 2026-09-06 (contract-delta): valuation
+      # scenario V1 pure module now sits in the shared engine/* import closure.
+      - "engine/valuation_scenario.py"
       # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
       # guarded macro-suite hook imports the page builder, which carries the
       # workspace contract/registry pair. Checker-named files only; the
@@ -12377,6 +12389,9 @@ jobs:
     # 846 tracked / 74 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      # F07 B-F07-1 closure widening 2026-09-06 (contract-delta): valuation
+      # scenario V1 pure module now sits in the shared engine/* import closure.
+      - "engine/valuation_scenario.py"
       # B1A closure widening 2026-08-24 (contract-delta): build_stock_library's security_state stage extends this job's walked closure.
       - "engine/security_state.py"
       - "engine/theme_graph/__init__.py"
