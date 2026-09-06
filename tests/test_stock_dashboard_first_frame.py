@@ -387,6 +387,76 @@ def test_canada_static_first_frame_preserves_explicit_empty_owner_lists() -> Non
     assert grid.get("data-owner-unique-population") == "0"
 
 
+@pytest.mark.parametrize(
+    ("buy_owner", "board_state"),
+    (
+        pytest.param([], "available", id="explicit-empty"),
+        pytest.param(_MISSING, "unavailable", id="missing"),
+        pytest.param(None, "unavailable", id="null"),
+        pytest.param("not-a-list", "unavailable", id="string"),
+        pytest.param({"ticker": "not-a-list"}, "unavailable", id="mapping"),
+        pytest.param([None], "unavailable", id="null-row"),
+        pytest.param([42], "unavailable", id="numeric-row"),
+        pytest.param(["invalid-row"], "unavailable", id="string-row"),
+        pytest.param([{}], "unavailable", id="empty-mapping-row"),
+    ),
+)
+def test_canada_watch_only_first_frame_preserves_owner_rows_when_buy_is_empty_or_unavailable(
+    buy_owner: object, board_state: str
+) -> None:
+    """Watch is an independent owner lane; missing buy is not an empty board."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("ca")
+    setups = dict(setups)
+    expected_watch = list(setups["watch"])
+    if buy_owner is _MISSING:
+        setups.pop("buy")
+    else:
+        setups["buy"] = buy_owner
+
+    soup = _render_canada_owner_fixture(setups)
+    assert len(soup.find_all("main")) == 1
+    prophet = soup.find(id="ca-v36-prophet")
+    result = soup.find(id="ca-v36-result")
+    grid = soup.find(id="ca-v36-card-grid")
+    assert prophet is not None and result is not None and grid is not None
+    assert prophet.get("data-source-owner-state") == board_state
+    assert grid.get("data-owner-watch-population") == str(len(expected_watch))
+    assert grid.get("data-owner-population") == (
+        "0" if board_state == "available" else None
+    )
+    assert grid.get("data-owner-unique-population") == (
+        str(len(expected_watch)) if board_state == "available" else None
+    )
+
+    copy = result.get_text(" ", strip=True)
+    expected_count = len(expected_watch)
+    if board_state == "available":
+        assert f"{expected_count} current names (0 stage board + {expected_count} watch)" in copy
+    else:
+        assert f"stage board unavailable · {expected_count} watch names" in copy
+    assert "No Prophet candidates are published for this board" not in prophet.get_text(
+        " ", strip=True
+    )
+    assert prophet.select_one("#stocktable-data") is None
+
+    links = prophet.select("#standouts .watch-strip .watch-grid a[href]")
+    assert [link.get("href") for link in links] == [
+        f"canada_stock.html#{row['ticker']}" for row in expected_watch
+    ]
+    assert [
+        link.select_one(".wg-tk").get_text(" ", strip=True).split()[0]
+        for link in links
+    ] == [row["ticker"] for row in expected_watch]
+    for link, row in zip(links, expected_watch, strict=True):
+        assert ("wg-knife" in link.get("class", [])) == (
+            row.get("watch_reason") == "knife"
+        )
+        if row.get("block_reason"):
+            assert str(row["block_reason"]) in link.get("title", "")
+
+
 def test_canada_static_first_frame_refuses_an_overlapping_owner_union() -> None:
     """The same ticker on board and watch can never be counted twice as current."""
     from scripts.render_stock_dashboard_fixture import load_owner_fixture
@@ -992,6 +1062,80 @@ def test_hk_owner_marker_requires_every_priority_lane_to_be_explicit() -> None:
 
 
 @pytest.mark.parametrize(
+    "buy_owner",
+    (
+        pytest.param(_MISSING, id="missing"),
+        pytest.param(None, id="null"),
+        pytest.param("not-a-list", id="string"),
+        pytest.param({"ticker": "not-a-list"}, id="mapping"),
+        pytest.param([None], id="null-row"),
+        pytest.param([42], id="numeric-row"),
+        pytest.param(["invalid-row"], id="string-row"),
+        pytest.param([{}], id="empty-mapping-row"),
+    ),
+)
+def test_hk_unavailable_buy_preserves_independent_priority_and_watch_lanes(
+    buy_owner: object,
+) -> None:
+    """The normalized buy owner must cross every raw render seam fail-soft."""
+    from scripts.render_stock_dashboard_fixture import load_owner_fixture
+
+    setups, _owner_path = load_owner_fixture("hk")
+    setups = dict(setups)
+    expected_ripening = {row["ticker"] for row in setups["ripening"]}
+    expected_ran = [row["ticker"] for row in setups["ran"]]
+    expected_vetoed = {row["ticker"] for row in setups["vetoed"]}
+    expected_watch = [row["ticker"] for row in setups["watch"]]
+    if buy_owner is _MISSING:
+        setups.pop("buy")
+    else:
+        setups["buy"] = buy_owner
+
+    soup = _render_hk_owner_fixture(setups)
+    assert len(soup.find_all("main")) == 1
+    prophet = soup.find(id="hk-v37-prophet")
+    proof = soup.find(id="hk-owner-population-proof")
+    result = soup.find(id="hk-v37-result")
+    assert prophet is not None and proof is not None and result is not None
+    assert prophet.get("data-source-owner-state") == "unavailable"
+    assert prophet.get("data-initial-source") == "all"
+    assert proof.get("data-owner-board-population") is None
+    assert proof.get("data-owner-watch-population") == str(len(expected_watch))
+    assert proof.get("data-owner-unique-population") is None
+    copy = result.get_text(" ", strip=True)
+    assert f"stage board unavailable · {len(expected_watch)} watch names" in copy
+    assert "No Prophet candidates are published for this board" not in prophet.get_text(
+        " ", strip=True
+    )
+    assert prophet.select_one("#stocktable-data") is None
+
+    all_count = prophet.select_one(
+        '#hk-stage-filter [data-stagepick="all"] .pbf-n'
+    )
+    assert all_count is not None
+    assert all_count.get_text(strip=True) == str(
+        len(expected_ripening) + len(expected_ran) + len(expected_vetoed)
+    )
+    setting_up_count = prophet.select_one(
+        '#hk-stage-filter [data-stagepick="setting_up"] .pbf-n'
+    )
+    assert setting_up_count is not None
+    assert setting_up_count.get_text(strip=True) == str(len(expected_ripening))
+    assert [
+        link.get("href", "").removeprefix("hk_lookup.html#")
+        for link in prophet.select('#standouts .pbr[data-stage="ran"] a.pbr-r[href]')
+    ] == expected_ran
+    assert {
+        link.get("href", "").removeprefix("hk_lookup.html#")
+        for link in prophet.select('#standouts .pbv[data-stage="blocked"] a.pbr-r[href]')
+    } == expected_vetoed
+    assert [
+        link.get("href", "").removeprefix("hk_lookup.html#")
+        for link in prophet.select("#standouts .watch-strip .watch-grid a[href]")
+    ] == expected_watch
+
+
+@pytest.mark.parametrize(
     ("owner", "value"),
     (
         ("buy", _MISSING),
@@ -1044,6 +1188,36 @@ def test_canada_static_first_frame_missing_setups_is_unavailable(
     assert grid.get("data-owner-population") is None
     assert grid.get("data-owner-watch-population") is None
     assert grid.get("data-owner-unique-population") is None
+
+
+def test_action_lane_split_contract_keeps_distinct_code_and_data_owners() -> None:
+    """Fourteen hermetic cases run in code; the generated-page case stays in data."""
+    manifest = _read(ROOT / ".github" / "ci" / "legacy-jobs.yml")
+    suite = "tests/test_action_board_lane_split.py"
+
+    first_frame_start = manifest.index("  stock-dashboard-first-frame:")
+    first_frame_end = manifest.index("\n  prophet-lab:", first_frame_start)
+    first_frame_job = manifest[first_frame_start:first_frame_end]
+    assert suite not in first_frame_job
+    assert (
+        "python -m pytest tests/test_stock_dashboard_first_frame.py -q"
+        in first_frame_job
+    )
+
+    code_start = manifest.index("  unrun-template-chips:")
+    code_end = manifest.index("\n  unrun-pit-probes:", code_start)
+    code_job = manifest[code_start:code_end]
+    assert (
+        f"python -m pytest {suite} -q "
+        "-k 'not test_hk_static_legacy_grid_cannot_override_hidden'"
+    ) in code_job
+
+    data_start = manifest.index("  unrun-intl-collectors:")
+    data_end = manifest.index("\n  unrun-russell-breadth:", data_start)
+    data_job = manifest[data_start:data_end]
+    data_lines = [line for line in data_job.splitlines() if suite in line]
+    assert len(data_lines) == 1
+    assert "-k" not in data_lines[0]
 
 
 def _sha256(path: Path) -> str:

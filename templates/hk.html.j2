@@ -3547,7 +3547,22 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {%- set _hk_veto = _hk_veto_source if _hk_veto_known else [] -%}
   {%- set _hk_watch_owner = _hk_setups.get('watch') -%}
   {%- set _hk_watch_known = _hk_watch_owner is sequence and _hk_watch_owner is not string and _hk_watch_owner is not mapping -%}
-  {%- set _hk_owner = namespace(board_ids=[], watch_ids=[], board_valid=(_hk_buy_known and _hk_ran_known and _hk_rip_known and _hk_veto_known), watch_valid=_hk_watch_known, intersection=[]) -%}
+  {# A sequence is only the outer type. Validate every buy row before that raw
+     owner crosses selection, JSON, or card-rendering seams. #}
+  {%- set _hk_buy_owner = namespace(valid=_hk_buy_known, ids=[]) -%}
+  {%- if _hk_buy_known -%}
+    {%- for _hk_row in _hkb -%}
+      {%- set _hk_raw_ticker = _hk_row.get('ticker') if _hk_row is mapping else none -%}
+      {%- set _hk_ticker = (_hk_raw_ticker|trim|upper) if _hk_raw_ticker is string else '' -%}
+      {%- if not _hk_ticker or _hk_ticker in _hk_buy_owner.ids -%}
+        {%- set _hk_buy_owner.valid = false -%}
+      {%- else -%}
+        {%- set _ = _hk_buy_owner.ids.append(_hk_ticker) -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+  {%- set _hkb = _hkb if _hk_buy_owner.valid else [] -%}
+  {%- set _hk_owner = namespace(board_ids=[], watch_ids=[], board_valid=(_hk_buy_owner.valid and _hk_ran_known and _hk_rip_known and _hk_veto_known), watch_valid=_hk_watch_known, intersection=[]) -%}
   {%- for _hk_lane in [_hkb, _hk_rip, _hk_ran, _hk_veto] -%}
     {%- if _hk_lane is not sequence or _hk_lane is string or _hk_lane is mapping -%}
       {%- set _hk_owner.board_valid = false -%}
@@ -3633,12 +3648,13 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
      stamp moved, this test stopped matching, and the whole layer went dark on a board
      that was emitting every field it needed. Match the family prefix so future era
      bumps are ledger events, not render outages. #}
-  {% if mode == 'stocks' and setups and (setups.buy
-        or (setups.get('board_definition') or '').startswith('hk_prophet_v')
-        or (setups.get('rank_by') or '').startswith('hk_prophet_v')) %}
+  {% if mode == 'stocks' and _hk_setups and (_hkb or _hsg.any) %}
+  {% if _hk_buy_owner.valid %}
   {# ── W8-G: JSON data block — feeds StockTable.init(); one row per buy name in system order ── #}
   {% set _hk_st_rows = [] %}
-  {% for _hn in setups.buy %}
+  {# Cross this legacy serialization seam through the validated owner.  Raw
+     setups.buy used to throw on null and iterate malformed strings/mappings. #}
+  {% for _hn in _hkb %}
     {% set _hk_conv = _hn.get('conviction') or {} %}
     {% set _hk_sb = _hn.get('southbound') or {} %}
     {% set _hk_ah = _hn.get('ah_value') or {} %}
@@ -3670,9 +3686,10 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   <script type="application/json" id="stocktable-data">
   {
     "rows": {{ _hk_st_rows | tojson }},
-    "as_of": {{ (setups.as_of or '') | tojson }}
+    "as_of": {{ (_hk_setups.get('as_of') or '') | tojson }}
   }
   </script>
+  {% endif %}
   {# ═══ HK BOARD RESURRECTION — priority display layer (hk_prophet_v1, 2026-08-02) ═══
      research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 G1/G4/G9.
 

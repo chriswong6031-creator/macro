@@ -17,14 +17,14 @@
   },
   "fixture_receipt": {
     "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-    "sha256": "d1a233eb760cc63903e1c414704708b3d65454dd3344664f29887373d09388ec"
+    "sha256": "c57f03741fb89e5abd9cc5e458a491e5a464b3d0028c5fb7f39301715874f741"
   },
   "fixture_assets_root": "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data",
   "fixture_market": "hk",
   "input_html": {
     "path": "hk_stocks.html",
     "route": "/hk_stocks.html",
-    "sha256": "4dbbcd0c43121489f64442a65e9d89e83c9b37d9e5827c3be88f203bea3fc6ce"
+    "sha256": "689a64cd29e4e08c3d60f63b59fb1097bb900a0fe1167cfe82e62e6e3c5c26ea"
   },
   "construction_inputs": {
     "engine/i18n.py": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44",
@@ -46,7 +46,7 @@
     "templates/_risk_radar_dlg.html.j2": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43",
     "templates/_seo_head.html.j2": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee",
     "templates/_site_nav.html.j2": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482",
-    "templates/hk.html.j2": "819c77ec9186dec97e50dc5459bb97947ed6dcbdce60a84d6ce27c075fb10b7b"
+    "templates/hk.html.j2": "947b24a38f46ad53b22fc168cd84f45e8eb630b0d09cee8d5f8ad94e8f82fbdc"
   },
   "loaded_assets": {
     "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
@@ -2878,7 +2878,7 @@
       "composer": "loaded",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-js-disabled-dark-390.png",
-        "sha256": "0fed9d8e780890ca80c81ac9090a74df20774b11ce9ffa285f75bfa23b69f763"
+        "sha256": "0c5c56d9783b8d4b4358b117124120a732bf5c7770ead9d9c1b7c370715440bb"
       },
       "behavior": {
         "tabs": [
@@ -3203,7 +3203,7 @@
       "composer": "failed",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-composer-failed-light-390.png",
-        "sha256": "c6330aef1eb0c8e68d15354cbebf7bd0b15370a33206084635b916bc77863d0d"
+        "sha256": "17f9d95a4765f569cc01c074a8a9cd60facdcadbb4fbcf223d345d8e47fdbee4"
       },
       "behavior": {
         "tabs": [

@@ -2299,6 +2299,9 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     {% endif %}
   {% endfor %}
 {% endif %}
+{# Validation owns the consumer boundary: an invalid buy sequence contributes no
+   renderable/serializable row.  The independently valid watch owner survives. #}
+{% set _ca_board = _ca_board if _ca_owner.board_valid else [] %}
 {% set _ca_board_n = _ca_owner.board_ids|length %}
 {% set _ca_watch_n = _ca_owner.watch_ids|length %}
 {% set _ca_union_known = _ca_owner.board_valid and _ca_owner.watch_valid and not _ca_owner.intersection %}
@@ -2391,6 +2394,11 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   "as_of": {{ (_ca_setups.get('as_of') or '') | tojson }}
 }
 </script>
+{% endif %}
+{# Watch is an independent owner lane.  A valid watch-only publication must not
+   disappear merely because buy is explicitly empty or unavailable; only the
+   buy-card/table payload above is buy-gated. #}
+{% if _ca_board or _ca_watch %}
 {# ---- stocks-mode health banner (deliverable 5): breadth cache (HKCA-13), board-ledger
       failures, tailwind suppression — only degraded rows appear. ---- #}
 {% if stocks_health %}
@@ -2665,8 +2673,10 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
   {% endif %}
   </div>{# /.nb-grid-section #}
 </div>
-{% else %}
+{% elif _ca_owner.board_valid and _ca_owner.watch_valid %}
   <div class="ca-v36-empty ca-v36-static-state">{{ t('No Prophet candidates are published for this board.', '本期榜单暂无 Prophet 候选。') }}</div>
+{% else %}
+  <div class="ca-v36-empty ca-v36-static-state" data-prophet-owner-state="unavailable">{{ t('Prophet owner data is unavailable.', 'Prophet 归属数据暂不可用。') }}</div>
 {% endif %}
   </div>{# /#ca-v36-card-grid — owner-rendered board stays in place #}
   <div class="ca-v36-empty" id="ca-v36-grid-empty" hidden>{{ t('No names match this leadership filter.', '当前领先筛选下暂无匹配个股。') }}</div>

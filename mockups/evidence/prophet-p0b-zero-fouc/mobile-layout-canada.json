@@ -17,14 +17,14 @@
   },
   "fixture_receipt": {
     "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-    "sha256": "d1a233eb760cc63903e1c414704708b3d65454dd3344664f29887373d09388ec"
+    "sha256": "c57f03741fb89e5abd9cc5e458a491e5a464b3d0028c5fb7f39301715874f741"
   },
   "fixture_assets_root": "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data",
   "fixture_market": "ca",
   "input_html": {
     "path": "canada_stocks.html",
     "route": "/canada_stocks.html",
-    "sha256": "fd12fed2f474246cb5b6bf00edc47742c96454e1e72cac79bbc161bc95303ee6"
+    "sha256": "ca486595e978da3315ea32a0f03a578a28a54e199aa1a8b7d18e06f50c9c420f"
   },
   "construction_inputs": {
     "engine/i18n.py": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44",
@@ -44,7 +44,7 @@
     "templates/_risk_radar_dlg.html.j2": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43",
     "templates/_seo_head.html.j2": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee",
     "templates/_site_nav.html.j2": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482",
-    "templates/canada.html.j2": "5a5f1e1926e4d4739686351aa84a928456c33ddba3a42d889ac05dbd64cd19c5"
+    "templates/canada.html.j2": "878237e4c3d0bef90c2fce108b64cf859d8f67783dede4f77881392c2d1eb7e5"
   },
   "loaded_assets": {
     "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/baskets.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
@@ -3154,7 +3154,7 @@
       "composer": "loaded",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-js-disabled-dark-390.png",
-        "sha256": "032cb2e1824598fb0a9ccc8b7a90004fdae42eca39408deddfafb0a814c2c3cd"
+        "sha256": "17b369e5f17c29d558acc2306d754ea5a9eb33543c6fd47897eb048e7da0a9e2"
       },
       "behavior": {
         "tabs": [
@@ -3483,7 +3483,7 @@
       "composer": "failed",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-composer-failed-light-390.png",
-        "sha256": "037ed8e63034482b4bfea013aa9d584bd07d85628cf1d783b95050c01a17f70b"
+        "sha256": "ed067c82a490126c908eb9f53202e90e36c15dd27c57c4d464760db3861afe33"
       },
       "behavior": {
         "tabs": [

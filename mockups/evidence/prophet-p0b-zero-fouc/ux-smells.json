@@ -123,7 +123,7 @@
     "canonical_build_proof": "unavailable",
     "fixture_receipt": {
       "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-      "sha256": "d1a233eb760cc63903e1c414704708b3d65454dd3344664f29887373d09388ec"
+      "sha256": "c57f03741fb89e5abd9cc5e458a491e5a464b3d0028c5fb7f39301715874f741"
     },
     "kind": "rendered_fixture",
     "production_proof": "none",
@@ -131,11 +131,11 @@
     "rendered_pages": {
       "/canada_stocks.html": {
         "output": "canada_stocks.html",
-        "sha256": "fd12fed2f474246cb5b6bf00edc47742c96454e1e72cac79bbc161bc95303ee6"
+        "sha256": "ca486595e978da3315ea32a0f03a578a28a54e199aa1a8b7d18e06f50c9c420f"
       },
       "/hk_stocks.html": {
         "output": "hk_stocks.html",
-        "sha256": "4dbbcd0c43121489f64442a65e9d89e83c9b37d9e5827c3be88f203bea3fc6ce"
+        "sha256": "689a64cd29e4e08c3d60f63b59fb1097bb900a0fe1167cfe82e62e6e3c5c26ea"
       }
     },
     "resolved_gitdir_or_none": null,

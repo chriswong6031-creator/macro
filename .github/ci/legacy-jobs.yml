@@ -12011,6 +12011,11 @@ jobs:
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
         run: python -m pytest tests/test_w5b_edge_chips.py -q
+      # P0B exact-source correction (2026-09-06): 14 builder/template cases are
+      # hermetic and belong in the PR code gate.  The one generated-page case
+      # remains in unrun-intl-collectors, which continues to run all 15 in data.
+      - name: HK/Canada action-board source and template contract
+        run: python -m pytest tests/test_action_board_lane_split.py -q -k 'not test_hk_static_legacy_grid_cannot_override_hidden'
       # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): the China
       # Special Situations desk's four truth contracts, shipped by #5975 and
       # extended by #5996, were named by no run: step in any workflow. Engine and
