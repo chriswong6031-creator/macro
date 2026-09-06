@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-06",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5931,
-      "effective_factor_bets_pr": 2.5256,
+      "dominant_factor_pc_share": 0.5929,
+      "effective_factor_bets_pr": 2.5271,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -55,11 +55,11 @@
         ],
         "unmeasurable": {
           "altdata": 12,
-          "altdata_conv": 1,
+          "altdata_conv": 2,
           "basket_turn.v1": 4,
           "ca_board": 10,
           "china_news": 3,
-          "china_special_sits": 9,
+          "china_special_sits": 10,
           "cn_board": 3,
           "cn_importance_v0": 12,
           "cn_importance_v0_pit": 12,
@@ -101,11 +101,11 @@
     ],
     "unmeasurable": {
       "altdata": 12,
-      "altdata_conv": 1,
+      "altdata_conv": 2,
       "basket_turn.v1": 4,
       "ca_board": 10,
       "china_news": 3,
-      "china_special_sits": 9,
+      "china_special_sits": 10,
       "cn_board": 3,
       "cn_importance_v0": 12,
       "cn_importance_v0_pit": 12,

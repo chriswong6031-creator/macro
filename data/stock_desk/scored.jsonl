@@ -380,3 +380,6 @@
 {"id": "2026-09-04-F-20260905224737-2", "ticker": "F", "subject": "F", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-10-02", "outcome": "unscored", "scored_at": "2026-09-05T22:47:38.881140+00:00"}
 {"id": "2026-09-04-WFC-20260905224737-3", "ticker": "WFC", "subject": "WFC", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-10-02", "outcome": "unscored", "scored_at": "2026-09-05T22:47:38.881148+00:00"}
 {"id": "2026-09-04-SMP-20260905224737-4", "ticker": "SMP", "subject": "SMP", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-10-02", "outcome": "unscored", "scored_at": "2026-09-05T22:47:38.881151+00:00"}
+{"id": "2026-09-04-F-20260906103210-2", "ticker": "F", "subject": "F", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-10-02", "outcome": "unscored", "scored_at": "2026-09-06T10:32:16.267086+00:00"}
+{"id": "2026-09-04-WFC-20260906103210-3", "ticker": "WFC", "subject": "WFC", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-10-02", "outcome": "unscored", "scored_at": "2026-09-06T10:32:16.267098+00:00"}
+{"id": "2026-09-04-SMP-20260906103210-4", "ticker": "SMP", "subject": "SMP", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-10-02", "outcome": "unscored", "scored_at": "2026-09-06T10:32:16.267101+00:00"}

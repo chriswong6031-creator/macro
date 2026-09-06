@@ -1,6 +1,6 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "oldest_component_asof": "2026-09-04",
   "macro_context_id": "fe32993f8426a656",
   "labels": {
@@ -101,7 +101,7 @@
     "data/regime/latest.json": "2026-09-04",
     "data/market_state/latest.json": "2026-09-04",
     "data/transmission/latest.json": "2026-09-04",
-    "data/forex/latest.json": "2026-09-05",
+    "data/forex/latest.json": "2026-09-06",
     "data/bonds/bond_health.json": "2026-09-04",
     "data/commodity/latest.json": "2026-09-04",
     "data/china_regime/latest.json": "2026-09-04",

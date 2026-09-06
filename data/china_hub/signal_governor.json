@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-09-05",
-  "generated_at": "2026-09-05T21:08:40.354703+00:00",
+  "as_of": "2026-09-06",
+  "generated_at": "2026-09-06T12:51:00.411645+00:00",
   "region": "cn",
   "gate": {
     "min_n": 150,
@@ -26,7 +26,7 @@
       "reason": "measuring: no VALID-HAC horizon yet \u2014 best is 5d with 0 daily ICs (need \u22656 for a non-degenerate lag-5 HAC) \u2014 trust 1.0 (shadow)",
       "input": {
         "source": "data/china_hub/radar_ic.json",
-        "as_of": "2026-09-05",
+        "as_of": "2026-09-06",
         "age_days": 0,
         "stale": false
       }
@@ -47,7 +47,7 @@
   "inputs": {
     "radar": {
       "source": "data/china_hub/radar_ic.json",
-      "as_of": "2026-09-05",
+      "as_of": "2026-09-06",
       "age_days": 0,
       "stale": false
     }

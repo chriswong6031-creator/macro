@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-09-05",
-  "generated_at": "2026-09-05T21:08:40.164971+00:00",
+  "as_of": "2026-09-06",
+  "generated_at": "2026-09-06T12:51:00.122299+00:00",
   "is_context_only": true,
-  "n_snapshots": 5055,
+  "n_snapshots": 5146,
   "horizons": {
     "5": {
       "n_matured": 786,
@@ -57,9 +57,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 4684,
+        "n_eligible": 4780,
         "n_matured": 786,
-        "coverage_pct": 16.78,
+        "coverage_pct": 16.44,
         "below_floor": true
       }
     },
@@ -115,9 +115,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 4195,
+        "n_eligible": 4293,
         "n_matured": 686,
-        "coverage_pct": 16.35,
+        "coverage_pct": 15.98,
         "below_floor": true
       }
     },
@@ -212,8 +212,8 @@
   "accrual_gaps": {
     "approximate": true,
     "window_days": 30,
-    "n_expected": 22,
-    "n_present": 20,
+    "n_expected": 21,
+    "n_present": 19,
     "missing_dates": [
       "2026-08-17",
       "2026-09-02"
@@ -221,19 +221,19 @@
     "n_missing": 2,
     "note": "Expected dates are pandas business days \u2014 NYSE market holidays inside the window are counted as gaps, so this over-reports rather than under-reports.",
     "first_snapshot": "2026-07-07",
-    "last_snapshot": "2026-09-05"
+    "last_snapshot": "2026-09-06"
   },
   "coverage_pct": {
     "5": {
-      "n_eligible": 4684,
+      "n_eligible": 4780,
       "n_matured": 786,
-      "coverage_pct": 16.78,
+      "coverage_pct": 16.44,
       "below_floor": true
     },
     "10": {
-      "n_eligible": 4195,
+      "n_eligible": 4293,
       "n_matured": 686,
-      "coverage_pct": 16.35,
+      "coverage_pct": 15.98,
       "below_floor": true
     },
     "21": {

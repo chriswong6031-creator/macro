@@ -785,15 +785,12 @@
  "summary": {
   "n_running": 74,
   "n_stopped": 79,
-  "n_flat": 304,
-  "n_total": 457,
+  "n_flat": 307,
+  "n_total": 460,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 22,
+  "n_skipped_no_price": 19,
   "skipped_no_price": [
-   "ALV",
-   "AM",
-   "BRX",
    "CAR",
    "CE",
    "DAR",
@@ -805,9 +802,12 @@
    "IDA",
    "MAT",
    "MPT",
-   "NYT"
+   "NYT",
+   "OHI",
+   "POST",
+   "REXR"
   ],
-  "win_rate": 0.162,
+  "win_rate": 0.161,
   "avg_pct": 0.3,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",

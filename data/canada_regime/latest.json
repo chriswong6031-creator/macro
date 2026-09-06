@@ -2,11 +2,11 @@
   "date": "2026-09-04",
   "quad": "Q2",
   "quad_name": "Reflation",
-  "growth_score": 0.533,
+  "growth_score": 0.4,
   "inflation_score": 1.0,
-  "growth_confidence": 0.533,
+  "growth_confidence": 0.267,
   "inflation_confidence": 1.0,
-  "confidence": 0.767,
+  "confidence": 0.633,
   "liquidity_overlay": "neutral",
   "cycle_tag": "late",
   "pending_quad": NaN,
@@ -17,7 +17,9 @@
     "inflation_breakeven_direction",
     "inflation_inflation_beta_basket"
   ],
-  "contradicting": [],
+  "contradicting": [
+    "growth_breadth_direction"
+  ],
   "sector_rs": [
     {
       "ticker": "XGD.TO",
@@ -56,7 +58,7 @@
       "mom_20d_pct": 9.21,
       "mom_60d_pct": 0.94,
       "above_200d_trend": true,
-      "pctile_252d": 84.1,
+      "pctile_252d": 84.5,
       "rank": 4
     },
     {
@@ -86,7 +88,7 @@
       "mom_20d_pct": -0.63,
       "mom_60d_pct": -1.0,
       "above_200d_trend": true,
-      "pctile_252d": 61.9,
+      "pctile_252d": 62.7,
       "rank": 7
     },
     {
@@ -160,11 +162,11 @@
   },
   "pair_ratios": {
     "cyc_def": {
-      "level": 2.4546,
+      "level": 2.3674,
       "chg_20d_pct": 8.77
     },
     "infl_basket": {
-      "level": 2.7024,
+      "level": 2.6642,
       "chg_20d_pct": 11.98
     },
     "tsx_spx": {
@@ -177,7 +179,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": -1.61
+      "chg_20d_pct": -1.62
     }
   },
   "overlay": {
@@ -187,18 +189,18 @@
       {
         "key": "oil",
         "label": "WTI crude oil",
-        "z": 0.78,
+        "z": 0.8,
         "sign": 1.0,
         "risk": "on",
-        "level": 91.22
+        "level": 91.48
       },
       {
         "key": "gold",
         "label": "Gold",
-        "z": 0.32,
+        "z": 0.16,
         "sign": 1.0,
         "risk": "neutral",
-        "level": 4477.2002
+        "level": 4429.7998
       },
       {
         "key": "copper_gold",
@@ -235,10 +237,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": -0.55,
+        "z": -0.54,
         "sign": -1,
         "risk": "on",
-        "level": 99.157
+        "level": 99.16
       }
     ],
     "terms_of_trade": "improving",

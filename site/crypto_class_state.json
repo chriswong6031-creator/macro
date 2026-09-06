@@ -19,7 +19,7 @@
     "funding": "Balanced",
     "open_interest": "Leverage light",
     "volatility": "Volatility compressed",
-    "altseason": "Alt participation broad"
+    "altseason": "Mixed participation"
   },
   "assets": {
     "ETH": {

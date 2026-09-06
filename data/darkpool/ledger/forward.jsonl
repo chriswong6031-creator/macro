@@ -268,7 +268,6 @@
 {"asof":"2026-09-04","ticker":"HSY","pattern":"heavy_into_weakness","participation":0.5811,"participation_z":3.96,"streak":3,"price_change_pct":-3.3,"ats_frac":0.7226,"short_trend_pp":-10.52}
 {"asof":"2026-09-04","ticker":"HL","pattern":"heavy_into_strength","participation":0.8054,"participation_z":3.79,"streak":35,"price_change_pct":7.24,"ats_frac":0.1317,"short_trend_pp":-9.32}
 {"asof":"2026-09-04","ticker":"UCTT","pattern":"heavy_into_strength","participation":0.5928,"participation_z":2.96,"streak":3,"price_change_pct":4.25,"ats_frac":0.678,"short_trend_pp":16.39}
-{"asof":"2026-09-04","ticker":"BURL","pattern":"heavy_into_weakness","participation":0.5379,"participation_z":3.38,"streak":13,"price_change_pct":-4.25,"ats_frac":0.8161,"short_trend_pp":1.96}
 {"asof":"2026-09-04","ticker":"KBH","pattern":"heavy_into_strength","participation":0.5692,"participation_z":3.86,"streak":1,"price_change_pct":1.08,"ats_frac":0.7588,"short_trend_pp":-10.95}
 {"asof":"2026-09-04","ticker":"MKC","pattern":"heavy_into_strength","participation":0.5502,"participation_z":3.5,"streak":6,"price_change_pct":6.63,"ats_frac":0.6631,"short_trend_pp":-0.36}
 {"asof":"2026-09-04","ticker":"DELL","pattern":"heavy_into_strength","participation":0.5351,"participation_z":2.65,"streak":3,"price_change_pct":14.88,"ats_frac":0.488,"short_trend_pp":9.46}
@@ -279,3 +278,4 @@
 {"asof":"2026-09-04","ticker":"FBIN","pattern":"heavy_into_weakness","participation":0.4998,"participation_z":1.98,"streak":2,"price_change_pct":-5.25,"ats_frac":0.7956,"short_trend_pp":8.8}
 {"asof":"2026-09-04","ticker":"LOW","pattern":"heavy_into_weakness","participation":0.4538,"participation_z":1.62,"streak":4,"price_change_pct":-1.73,"ats_frac":0.4819,"short_trend_pp":-15.01}
 {"asof":"2026-09-04","ticker":"DVA","pattern":"heavy_price_flat","participation":0.4782,"participation_z":2.57,"streak":1,"price_change_pct":-0.83,"ats_frac":0.7312,"short_trend_pp":0.66}
+{"asof":"2026-09-04","ticker":"CHD","pattern":"heavy_into_weakness","participation":0.4985,"participation_z":2.51,"streak":2,"price_change_pct":-2.32,"ats_frac":0.7383,"short_trend_pp":5.85}

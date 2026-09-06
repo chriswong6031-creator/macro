@@ -1,9 +1,9 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-06",
   "scored_total": 169,
-  "open": 44,
-  "unscored_neutral": 213,
+  "open": 47,
+  "unscored_neutral": 216,
   "overall": {
     "n": 169,
     "hits": 112,
@@ -64,7 +64,7 @@
       "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "169 leans scored, hit-rate 0.663 (directional accuracy 0.426). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
+  "calibration_note": "169 leans scored, hit-rate 0.663 (directional accuracy 0.426). Chance alone would land a hit-rate near 0.7578 (directional accuracy near 0.5067) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
     {
       "id": "2026-08-07-VSEC-20260810035336-2",

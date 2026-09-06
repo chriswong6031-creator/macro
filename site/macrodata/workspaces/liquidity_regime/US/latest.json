@@ -337,10 +337,10 @@
     "deltas": [
       {
         "current_value": 18.83,
-        "delta": -1.06,
+        "delta": 0.0,
         "metric_id": "funding_pressure",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 19.89
+        "prior_value": 18.83
       },
       {
         "current_value": 45.39,
@@ -352,7 +352,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "liquidity_regime-US-6534c2cb83976c81",
+    "prior_generation_id": "liquidity_regime-US-974a839949a33e44",
     "prior_method_version": "liquidity_regime.compose.v1",
     "status": "PRESENT"
   },
@@ -360,7 +360,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
-    "predecessor_generation_id": "liquidity_regime-US-6534c2cb83976c81"
+    "predecessor_generation_id": "liquidity_regime-US-974a839949a33e44"
   },
   "drivers": {
     "balance_sheet": [
@@ -467,11 +467,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-05T12:05:54Z",
+    "built_at": "2026-09-06T04:48:12Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "cf2d84392d55d3894cea08b10c4acc0d4d347266",
-    "content_sha256": "974a839949a33e44704e656fddb104ca7ec7a3da6bbee0d95dc3cf07baa63f7d",
-    "generation_id": "liquidity_regime-US-974a839949a33e44",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "bf79bf4e0d001082f8edc227698a1eeb4c69c126e1edc41e0ed07e413fc12420",
+    "generation_id": "liquidity_regime-US-bf79bf4e0d001082",
     "producer": "engine.market_os.macro_workspaces.liquidity_regime",
     "rendered_at": null
   },
@@ -491,7 +491,7 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -1.06,
+      "dx": 0.0,
       "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
@@ -517,7 +517,7 @@
       "en": "Rate / liquidity regime",
       "zh": "利率 / 流动性体制"
     },
-    "transition_distance": 1.06
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [
