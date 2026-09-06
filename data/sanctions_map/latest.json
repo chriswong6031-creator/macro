@@ -1,9 +1,372 @@
 {
   "as_of": null,
-  "source_url": null,
-  "fetched_at": null,
-  "n_programs_total": 0,
-  "countries": [],
-  "unresolved": [],
-  "coverage": null
+  "source_url": "https://www.treasury.gov/ofac/downloads/sdn.csv",
+  "fetched_at": "2026-09-06T05:53:36Z",
+  "n_programs_total": 73,
+  "countries": [
+    {
+      "iso3": "CUB",
+      "name_en": "Cuba Sanctions",
+      "name_zh": "\u53e4\u5df4\u5236\u88c1",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "CUBA",
+          "name_en": "Cuba Sanctions",
+          "name_zh": "\u53e4\u5df4\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "IRN",
+      "name_en": "Iran Sanctions",
+      "name_zh": "\u4f0a\u6717\u5236\u88c1",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "IRAN",
+          "name_en": "Iran Sanctions",
+          "name_zh": "\u4f0a\u6717\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "BLR",
+      "name_en": "Belarus Sanctions",
+      "name_zh": "\u767d\u4fc4\u7f57\u65af\u5236\u88c1",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "BELARUS",
+          "name_en": "Belarus Sanctions",
+          "name_zh": "\u767d\u4fc4\u7f57\u65af\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "RUS",
+      "name_en": "Russia \u2014 Executive Order 14024",
+      "name_zh": "\u4fc4\u7f57\u65af \u2014 \u7b2c14024\u53f7\u884c\u653f\u547d\u4ee4",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "RUSSIA-EO14024",
+          "name_en": "Russia \u2014 Executive Order 14024",
+          "name_zh": "\u4fc4\u7f57\u65af \u2014 \u7b2c14024\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "VEN",
+      "name_en": "Venezuela-Related Sanctions",
+      "name_zh": "\u59d4\u5185\u745e\u62c9\u76f8\u5173\u5236\u88c1",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "VENEZUELA",
+          "name_en": "Venezuela-Related Sanctions",
+          "name_zh": "\u59d4\u5185\u745e\u62c9\u76f8\u5173\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "PRK",
+      "name_en": "North Korea Sanctions",
+      "name_zh": "\u671d\u9c9c\u5236\u88c1",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "DPRK",
+          "name_en": "North Korea Sanctions",
+          "name_zh": "\u671d\u9c9c\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions"
+        }
+      ],
+      "rung": 1
+    }
+  ],
+  "unresolved": [
+    {
+      "code": "SDGT",
+      "n_entries": 3259
+    },
+    {
+      "code": "CUBA-EO14404",
+      "n_entries": 86
+    },
+    {
+      "code": "SDNT",
+      "n_entries": 133
+    },
+    {
+      "code": "IRGC",
+      "n_entries": 289
+    },
+    {
+      "code": "IFSR",
+      "n_entries": 1574
+    },
+    {
+      "code": "IRAN-EO13902",
+      "n_entries": 944
+    },
+    {
+      "code": "FTO",
+      "n_entries": 103
+    },
+    {
+      "code": "SDNTK",
+      "n_entries": 1365
+    },
+    {
+      "code": "SOMALIA",
+      "n_entries": 30
+    },
+    {
+      "code": "ILLICIT-DRUGS-EO14059",
+      "n_entries": 729
+    },
+    {
+      "code": "GLOMAG",
+      "n_entries": 739
+    },
+    {
+      "code": "BALKANS",
+      "n_entries": 164
+    },
+    {
+      "code": "IRAQ2",
+      "n_entries": 155
+    },
+    {
+      "code": "DRCONGO",
+      "n_entries": 100
+    },
+    {
+      "code": "NPWMD",
+      "n_entries": 1195
+    },
+    {
+      "code": "DPRK2",
+      "n_entries": 124
+    },
+    {
+      "code": "IRAN-CON-ARMS-EO",
+      "n_entries": 46
+    },
+    {
+      "code": "DARFUR",
+      "n_entries": 6
+    },
+    {
+      "code": "NS-PLC",
+      "n_entries": 3
+    },
+    {
+      "code": "IRAN-HR",
+      "n_entries": 222
+    },
+    {
+      "code": "HRIT-IR",
+      "n_entries": 16
+    },
+    {
+      "code": "ELECTION-EO13848",
+      "n_entries": 111
+    },
+    {
+      "code": "IRAQ3",
+      "n_entries": 13
+    },
+    {
+      "code": "LEBANON",
+      "n_entries": 16
+    },
+    {
+      "code": "PAARSSR-EO13894",
+      "n_entries": 174
+    },
+    {
+      "code": "CAR",
+      "n_entries": 29
+    },
+    {
+      "code": "IRAN-TRA",
+      "n_entries": 31
+    },
+    {
+      "code": "IFCA",
+      "n_entries": 26
+    },
+    {
+      "code": "TCO",
+      "n_entries": 415
+    },
+    {
+      "code": "IRAN-EO13876",
+      "n_entries": 115
+    },
+    {
+      "code": "CYBER2",
+      "n_entries": 260
+    },
+    {
+      "code": "HOSTAGES-EO14078",
+      "n_entries": 18
+    },
+    {
+      "code": "LIBYA2",
+      "n_entries": 18
+    },
+    {
+      "code": "HRIT-SY",
+      "n_entries": 1
+    },
+    {
+      "code": "DPRK3",
+      "n_entries": 160
+    },
+    {
+      "code": "MAGNIT",
+      "n_entries": 64
+    },
+    {
+      "code": "UKRAINE-EO13660",
+      "n_entries": 154
+    },
+    {
+      "code": "UKRAINE-EO13661",
+      "n_entries": 196
+    },
+    {
+      "code": "SOUTH SUDAN",
+      "n_entries": 24
+    },
+    {
+      "code": "UKRAINE-EO13662",
+      "n_entries": 536
+    },
+    {
+      "code": "RUSSIA-EO14065",
+      "n_entries": 8
+    },
+    {
+      "code": "YEMEN",
+      "n_entries": 10
+    },
+    {
+      "code": "UKRAINE-EO13685",
+      "n_entries": 101
+    },
+    {
+      "code": "VENEZUELA-EO13850",
+      "n_entries": 176
+    },
+    {
+      "code": "LIBYA3",
+      "n_entries": 51
+    },
+    {
+      "code": "PEESA-EO14039",
+      "n_entries": 27
+    },
+    {
+      "code": "CAATSA - RUSSIA",
+      "n_entries": 81
+    },
+    {
+      "code": "DPRK4",
+      "n_entries": 196
+    },
+    {
+      "code": "BURMA-EO14014",
+      "n_entries": 153
+    },
+    {
+      "code": "IRAN-EO13871",
+      "n_entries": 51
+    },
+    {
+      "code": "SSIDES",
+      "n_entries": 2
+    },
+    {
+      "code": "NICARAGUA",
+      "n_entries": 80
+    },
+    {
+      "code": "VENEZUELA-EO13884",
+      "n_entries": 67
+    },
+    {
+      "code": "NICARAGUA-NHRAA",
+      "n_entries": 8
+    },
+    {
+      "code": "IRAN-EO13846",
+      "n_entries": 488
+    },
+    {
+      "code": "MALI-EO13882",
+      "n_entries": 4
+    },
+    {
+      "code": "DPRK-NKSPEA",
+      "n_entries": 2
+    },
+    {
+      "code": "CAATSA - IRAN",
+      "n_entries": 20
+    },
+    {
+      "code": "BELARUS-EO14038",
+      "n_entries": 186
+    },
+    {
+      "code": "ETHIOPIA-EO14046",
+      "n_entries": 6
+    },
+    {
+      "code": "BALKANS-EO14033",
+      "n_entries": 24
+    },
+    {
+      "code": "CYBER4",
+      "n_entries": 96
+    },
+    {
+      "code": "UHRPA",
+      "n_entries": 1
+    },
+    {
+      "code": "SUDAN-EO14098",
+      "n_entries": 57
+    },
+    {
+      "code": "CYBER3",
+      "n_entries": 9
+    },
+    {
+      "code": "ICC-EO14203",
+      "n_entries": 17
+    },
+    {
+      "code": "PAIPA",
+      "n_entries": 3
+    }
+  ],
+  "coverage": {
+    "resolved": 6,
+    "unresolved": 67
+  }
 }

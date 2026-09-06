@@ -8,6 +8,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from engine.i18n import t, td, tr
+from engine.sanctions_map import rungs_for
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -35,10 +36,13 @@ VM_UNREADABLE = {
 BANNED = ["falsifier", "refuted", "证伪", "z-score", "percentile rank"]
 
 
-def _render(vm):
+ALL_ISO3 = {"RUS", "CHN", "USA"}  # CHN stands in for an unmapped-code country
+
+
+def _render(vm, all_iso3=None):
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td, t=t)
-    rungs = {c["iso3"]: c["rung"] for c in vm.get("countries") or []}
+    rungs = rungs_for(vm, all_iso3 if all_iso3 is not None else ALL_ISO3)
     return env.get_template("sanctions_map.html.j2").render(vm=vm, rungs=rungs)
 
 
@@ -84,3 +88,30 @@ def test_no_banned_vocabulary():
     low = html.lower()
     for word in BANNED:
         assert word.lower() not in low
+
+
+def test_unresolved_coverage_marks_unmapped_countries_unknown():
+    """MAJOR M1: a country with real programmes under an unmapped code
+    must never paint identically to an unsanctioned country -- it must
+    render as coverage-unknown (rung 'x'), not as a false rung-0 clean
+    read, whenever vm['coverage']['unresolved'] > 0."""
+    html = _render(VM_OK)
+    assert 'data-iso3="CHN" data-rung="x"' in html
+    assert 'data-iso3="RUS" data-rung="3"' in html
+
+
+def test_fully_resolved_coverage_does_not_mark_unknown():
+    vm = dict(VM_OK, coverage={"resolved": 4, "unresolved": 0})
+    html = _render(vm)
+    assert 'data-iso3="CHN" data-rung="x"' not in html
+
+
+def test_hover_row_has_leave_focus_blur_and_click_handlers():
+    """MAJOR M5: the highlight must not latch -- there must be a way to
+    clear it (mouseleave/blur) and a keyboard/touch path (focus/click)."""
+    html = _render(VM_OK)
+    assert "mouseleave" in html
+    assert "'focus'" in html
+    assert "'blur'" in html
+    assert "'click'" in html
+    assert "tabindex" in html

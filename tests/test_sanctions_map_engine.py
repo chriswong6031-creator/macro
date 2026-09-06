@@ -8,6 +8,7 @@ import json
 import yaml
 
 from engine import sanctions_map
+from engine.sanctions_map import rungs_for
 
 
 def _sdn_csv(codes: list[str]) -> str:
@@ -80,3 +81,23 @@ def test_rung_boundaries_exact():
     assert sanctions_map._rung(2) == 2
     assert sanctions_map._rung(3) == 2
     assert sanctions_map._rung(4) == 3
+
+
+def test_rungs_for_marks_unknown_when_coverage_incomplete():
+    vm = {
+        "countries": [{"iso3": "RUS", "rung": 3}],
+        "coverage": {"resolved": 1, "unresolved": 2},
+    }
+    rungs = rungs_for(vm, {"RUS", "CHN", "IRN"})
+    assert rungs["RUS"] == 3
+    assert rungs["CHN"] == "x"
+    assert rungs["IRN"] == "x"
+
+
+def test_rungs_for_no_unknown_when_coverage_complete():
+    vm = {
+        "countries": [{"iso3": "RUS", "rung": 3}],
+        "coverage": {"resolved": 1, "unresolved": 0},
+    }
+    rungs = rungs_for(vm, {"RUS", "CHN"})
+    assert rungs == {"RUS": 3}

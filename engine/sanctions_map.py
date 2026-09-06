@@ -31,6 +31,30 @@ def _rung(n: int) -> int:
     return 1
 
 
+UNKNOWN_RUNG = "x"
+
+
+def rungs_for(vm: dict, all_iso3=None) -> dict:
+    """Per-country rung map for the world map SVG, honest about unknown
+    coverage (acceptance 3: missing coverage prints as unknown, never as
+    zero). A country absent from vm['countries'] is NOT provably
+    unsanctioned -- when any OFAC programme code failed to resolve to a
+    country (vm['coverage']['unresolved'] > 0), we cannot tell which
+    countries those unmapped programmes point at, so every country we
+    know about (all_iso3) that is not positively resolved must be
+    painted unknown (hatch) rather than defaulting to a false 'not
+    named' clean read. Only when coverage is fully resolved does an
+    absent country mean an honest, uncontested 'not named'."""
+    rungs: dict = {}
+    coverage = vm.get("coverage")
+    if coverage and coverage.get("unresolved"):
+        for iso3 in (all_iso3 or ()):
+            rungs[iso3] = UNKNOWN_RUNG
+    for c in vm.get("countries") or []:
+        rungs[c["iso3"]] = c["rung"]
+    return rungs
+
+
 def _load_programs_config(path: Path = PROGRAMS_CONFIG) -> list[dict]:
     if not path.exists():
         return []

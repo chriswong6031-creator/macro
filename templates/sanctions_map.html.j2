@@ -175,14 +175,26 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
 </main>
 <script>
 document.querySelectorAll('.sm-tbl tr[data-iso3]').forEach(function(row){
-  row.addEventListener('mouseenter', function(){
-    var iso3 = row.getAttribute('data-iso3');
-    var map = document.querySelector('.sm-map');
-    if(!map) return;
+  row.setAttribute('tabindex', '0');
+  var iso3 = row.getAttribute('data-iso3');
+  var map = document.querySelector('.sm-map');
+  if(!map) return;
+  function activate(){
     map.setAttribute('data-hi', iso3);
     map.querySelectorAll('.wm-c.is-hi').forEach(function(p){p.classList.remove('is-hi');});
     var p = map.querySelector('.wm-c[data-iso3="'+iso3+'"]');
     if(p) p.classList.add('is-hi');
+  }
+  function clear(){
+    map.removeAttribute('data-hi');
+    map.querySelectorAll('.wm-c.is-hi').forEach(function(p){p.classList.remove('is-hi');});
+  }
+  row.addEventListener('mouseenter', activate);
+  row.addEventListener('mouseleave', clear);
+  row.addEventListener('focus', activate);
+  row.addEventListener('blur', clear);
+  row.addEventListener('click', function(){
+    if(map.getAttribute('data-hi') === iso3){ clear(); } else { activate(); }
   });
 });
 </script>

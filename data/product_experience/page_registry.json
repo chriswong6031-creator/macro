@@ -1,15 +1,15 @@
 {
   "schema": "mastermind.page_registry.v1",
-  "generated_at": "2026-09-06T00:00:00Z",
+  "generated_at": "2026-09-04T22:43:01Z",
   "sources": {
     "macro": {
       "available": true,
-      "root": "/Users/chriswong/Documents/Cluade/macro-main",
+      "root": "/private/tmp/f01-r1b-wt",
       "ref": "HEAD",
-      "sha": "aa2a3a6330fcfd8dc3505908704249236656bd1b",
+      "sha": "93e4faa768119a100d390ef84a3d345cc8db8149",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 8945,
-      "write_page_sites": 154,
+      "tracked_html_pages": 8932,
+      "write_page_sites": 151,
       "write_page_unresolved": 35,
       "unresolved_write_sites": [
         "scripts/build_biocatalyst.py: page_temp",
@@ -49,7 +49,7 @@
       "root": "/Users/chriswong/Documents/Cluade/charting-app",
       "ref": "origin/master",
       "available": true,
-      "sha": "e89ebda4064715371a56b1fc02b9ec9c9821d433",
+      "sha": "fadd8b82f03ecaabe8a86d693da89f27be096d9f",
       "page_modules": 15
     },
     "mastermind": {
@@ -287,7 +287,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:4322",
+        "scripts/build_site.py:4309",
         "site/advanced.html",
         "templates/advanced.html.j2"
       ],
@@ -418,7 +418,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3565",
+        "scripts/build_site.py:3564",
         "site/alerts.html",
         "templates/_navlinks.html.j2",
         "templates/alerts.html.j2"
@@ -1409,7 +1409,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7166",
+        "scripts/build_site.py:7148",
         "site/canada_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -1808,7 +1808,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7166",
+        "scripts/build_site.py:7148",
         "site/china_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -2461,7 +2461,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7643",
+        "scripts/build_site.py:7625",
         "site/committee.html",
         "templates/committee.html.j2"
       ],
@@ -3019,7 +3019,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3294",
+        "scripts/build_site.py:3293",
         "site/etfs.html",
         "templates/_navlinks.html.j2",
         "templates/etfs.html.j2"
@@ -3101,7 +3101,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3498",
+        "scripts/build_site.py:3497",
         "site/factors.html",
         "templates/factors.html.j2"
       ],
@@ -5441,50 +5441,6 @@
       ]
     },
     {
-      "page_id": "macro:help",
-      "repo": "macro",
-      "route": "/help.html",
-      "route_kind": "page",
-      "source_template": "templates/help.html.j2",
-      "builder": [
-        "scripts/build_public_pages.py",
-        "scripts/build_site.py"
-      ],
-      "data_sources": [],
-      "access_shell": "anonymous",
-      "payload_tier": "public",
-      "nav_family": "public_nav.public",
-      "archetype": "unclassified",
-      "design_system": {
-        "compliant": false
-      },
-      "primary_user_question": "",
-      "owner": "unowned",
-      "lifecycle": "live",
-      "priority": "unclassified",
-      "generated": true,
-      "bilingual": true,
-      "themes": [
-        "light",
-        "dark"
-      ],
-      "locales": [
-        "en",
-        "zh"
-      ],
-      "known_contracts": [],
-      "open_prs": [],
-      "source_evidence": [
-        "config/site_access.yml:1",
-        "scripts/build_public_pages.py:119",
-        "scripts/build_site.py:3743",
-        "site/help.html",
-        "templates/_public_nav.html.j2",
-        "templates/help.html.j2"
-      ],
-      "notes": []
-    },
-    {
       "page_id": "macro:history",
       "repo": "macro",
       "route": "/history.html",
@@ -5521,7 +5477,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7314",
+        "scripts/build_site.py:7296",
         "site/history.html",
         "templates/history.html.j2"
       ],
@@ -5610,7 +5566,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7166",
+        "scripts/build_site.py:7148",
         "site/hk_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -6367,7 +6323,7 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_site.py:7450",
+        "scripts/build_site.py:7432",
         "site/macro.html",
         "templates/_navlinks.html.j2",
         "templates/dashboard.html.j2"
@@ -7014,7 +6970,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7028",
+        "scripts/build_site.py:7010",
         "site/macro_signals.html",
         "templates/macro_signals.html.j2"
       ],
@@ -7100,7 +7056,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_market_memory_page.py:39",
-        "scripts/build_site.py:7740",
+        "scripts/build_site.py:7722",
         "site/market_memory.html",
         "templates/_navlinks.html.j2",
         "templates/market_memory.html.j2"
@@ -7148,7 +7104,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_market_structure_page.py:121",
-        "scripts/build_site.py:7729",
+        "scripts/build_site.py:7711",
         "site/market_structure.html",
         "templates/_navlinks.html.j2",
         "templates/market_structure.html.j2"
@@ -7492,7 +7448,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7656",
+        "scripts/build_site.py:7638",
         "site/neural_web.html",
         "templates/_navlinks.html.j2",
         "templates/neural_web.html.j2"
@@ -7536,7 +7492,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6967",
+        "scripts/build_site.py:6949",
         "site/news.html",
         "templates/_navlinks.html.j2",
         "templates/news.html.j2"
@@ -7715,8 +7671,8 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_public_pages.py:145",
-        "scripts/build_site.py:3707",
+        "scripts/build_public_pages.py:122",
+        "scripts/build_site.py:3706",
         "site/plans.html",
         "templates/_public_nav.html.j2",
         "templates/plans.html.j2"
@@ -8059,7 +8015,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "lib/seo.py:99",
-        "scripts/build_site.py:3541",
+        "scripts/build_site.py:3540",
         "site/quant_lab.html",
         "templates/quant_lab.html.j2"
       ],
@@ -8714,54 +8670,6 @@
       ]
     },
     {
-      "page_id": "macro:sanctions_map",
-      "repo": "macro",
-      "route": "/sanctions_map.html",
-      "route_kind": "page",
-      "source_template": "templates/sanctions_map.html.j2",
-      "builder": [
-        "scripts/build_sanctions_map.py"
-      ],
-      "data_sources": [],
-      "access_shell": "anonymous",
-      "payload_tier": "public_shell_premium_payload",
-      "nav_family": "product_nav.international",
-      "archetype": "intelligence_desk",
-      "design_system": {
-        "compliant": false
-      },
-      "primary_user_question": "Where do US sanctions point today, and which countries is our coverage silent about?",
-      "owner": "unowned",
-      "lifecycle": "live",
-      "priority": "P0",
-      "generated": true,
-      "bilingual": true,
-      "themes": [
-        "light",
-        "dark"
-      ],
-      "locales": [
-        "en",
-        "zh"
-      ],
-      "known_contracts": [
-        "site_access.v1:default_insider"
-      ],
-      "open_prs": [],
-      "source_evidence": [
-        "config/sanctions_ofac_programs.yml",
-        "config/site_access.yml:1",
-        "engine/sanctions_map.py",
-        "scripts/build_sanctions_map.py:35",
-        "site/sanctions_map.html",
-        "templates/_navlinks.html.j2",
-        "templates/sanctions_map.html.j2"
-      ],
-      "notes": [
-        "base map + OFAC sanctions overlay, display-only leaf (packet A-F02-1)"
-      ]
-    },
-    {
       "page_id": "macro:seasonality",
       "repo": "macro",
       "route": "/seasonality.html",
@@ -9017,7 +8925,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7127",
+        "scripts/build_site.py:7109",
         "site/sector_heatmap.html",
         "templates/sector_heatmap.html.j2"
       ],
@@ -9108,7 +9016,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "lib/seo.py:99",
-        "scripts/build_site.py:3519",
+        "scripts/build_site.py:3518",
         "site/signal_lab.html",
         "templates/signal_lab.html.j2"
       ],
@@ -9451,7 +9359,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7718",
+        "scripts/build_site.py:7700",
         "scripts/build_state_of_themes.py:1519",
         "site/state_of_themes.html",
         "templates/_navlinks.html.j2",
@@ -9533,7 +9441,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7324",
+        "scripts/build_site.py:7306",
         "site/stock.html",
         "templates/stock.html.j2"
       ],
@@ -9615,7 +9523,7 @@
         "site/stocks/"
       ],
       "notes": [
-        "5616 committed pages under site/stocks/",
+        "5605 committed pages under site/stocks/",
         "no write_page() call site resolves to this directory; builder unknown"
       ]
     },
@@ -12150,7 +12058,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7183",
+        "scripts/build_site.py:7165",
         "site/subsector_rotation.html",
         "templates/subsector_rotation.html.j2"
       ],
@@ -12192,8 +12100,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7208",
-        "scripts/build_site.py:7222",
+        "scripts/build_site.py:7190",
+        "scripts/build_site.py:7204",
         "site/subsector_rotation_china.html",
         "templates/subsector_rotation_china.html.j2"
       ],
@@ -12354,8 +12262,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_public_pages.py:153",
-        "scripts/build_site.py:3731",
+        "scripts/build_public_pages.py:130",
+        "scripts/build_site.py:3730",
         "site/support.html",
         "templates/_public_nav.html.j2",
         "templates/support.html.j2"
@@ -12624,8 +12532,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_public_pages.py:157",
-        "scripts/build_site.py:3766",
+        "scripts/build_public_pages.py:134",
+        "scripts/build_site.py:3753",
         "site/unsubscribe.html",
         "templates/unsubscribe.html.j2"
       ],
@@ -12675,8 +12583,8 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_site.py:7012",
-        "scripts/build_site.py:7451",
+        "scripts/build_site.py:6994",
+        "scripts/build_site.py:7433",
         "site/us_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/dashboard.html.j2"
@@ -12982,7 +12890,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:7513",
+        "scripts/build_site.py:7495",
         "site/watchlist.html",
         "templates/_navlinks.html.j2",
         "templates/watchlist.html.j2"
