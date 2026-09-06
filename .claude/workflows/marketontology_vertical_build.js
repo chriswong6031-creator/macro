@@ -145,6 +145,14 @@ const RETURN_LINE = 'RETURN: call StructuredOutput with STATUS, RESULT, EVIDENCE
 // ---------------------------------------------------------------------------
 // Stage prompts
 // ---------------------------------------------------------------------------
+// A packet may carry a pre-frozen spec on disk (written by a sub-orchestrator); the
+// spec stage then only copies it verbatim instead of re-designing (extractor, low effort).
+const frozenSpecPrompt = (p) => `ROUTE: extract
+MISSION: Return the pre-frozen spec for packet ${p.id} verbatim as the StructuredOutput.
+SCOPE: Read the file ${p.spec_path} in full (use the Read tool with offset/limit until the whole file is covered; it may be 400-1400 lines). Put its complete, unmodified markdown into evidence.spec_markdown. Fill evidence.owned_paths with every repository path the spec names as a file the builder touches (its "files the builder touches" / OWNED FILES / files-to-touch section), evidence.sources_read with [${JSON.stringify(p.spec_path)}], status "COMPLETE", result with the spec's own one-line summary, gaps and deviations as empty arrays. Do not summarize, reorder, or edit the spec.
+NOT DONE UNLESS: evidence.spec_markdown is the byte-for-byte file content and owned_paths is non-empty.
+RETURN: the StructuredOutput call only.`
+
 const specPrompt = (p) => {
   const ui = p.kind === 'ui'
   return `ROUTE: ${ui ? 'design' : 'analysis'}
@@ -235,10 +243,13 @@ log(`Meta-CEO ${CEO} wave ${WAVE}: ${PACKETS.length} packet(s) -> ${PACKETS.map(
 const results = await pipeline(
   PACKETS,
   // 1. Spec
-  (p) => agent(specPrompt(p), {
-    label: `spec:${p.id}`, phase: 'Spec', schema: SPEC_SCHEMA, effort: 'high',
-    agentType: p.kind === 'ui' ? 'designer' : 'analyst',
-  }).then(s => ({ p, spec: s })),
+  (p) => (p.spec_path
+    ? agent(frozenSpecPrompt(p), { label: `spec(frozen):${p.id}`, phase: 'Spec', schema: SPEC_SCHEMA, effort: 'low', agentType: 'extractor' })
+    : agent(specPrompt(p), {
+        label: `spec:${p.id}`, phase: 'Spec', schema: SPEC_SCHEMA, effort: 'high',
+        agentType: p.kind === 'ui' ? 'designer' : 'analyst',
+      })
+  ).then(s => ({ p, spec: s })),
   // 2. Build
   async ({ p, spec }) => {
     if (!spec || spec.status === 'BLOCKED') { log(`${p.id}: spec BLOCKED — ${spec ? spec.result : 'null'}`); return { p, spec, build: null } }
