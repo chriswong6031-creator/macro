@@ -3068,6 +3068,11 @@ jobs:
       # no job named it either.
       - name: china native wires + forward calendar tests (W3 CNH)
         run: python -m pytest tests/test_cn_newswires.py tests/test_china_calendar.py tests/test_china_news_intel_w2.py -q
+      # Europe policy/geo PIT bus (MO-PAID-034). Same WIRING LAW as the China wires
+      # above: the only suite pinning the non-China producer that joins the ONE event
+      # system (keep-FIRST, typed nulls, deterministic event_key, scoring isolation).
+      - name: europe policy/geo PIT event-bus tests (F02 MO-PAID-034)
+        run: python -m pytest tests/test_europe_news_intel.py -q
       # The fail-closed full-A TuShare spine (#5116). Same WIRING LAW as every step
       # above, and the same shape of hole: the suite was named by NO run: step when
       # it merged, so the spine's fail-closed contract — the manifest schema, the
