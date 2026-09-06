@@ -149,13 +149,24 @@ def _mismatched_security_state_targets(to_write: list[tuple[str, dict]]) -> list
     companion selector, never called in the ordinary case (a producer-side
     bug, not an expected condition): the caller emits a typed failure shell
     for every ticker this returns instead of dropping it silently.
+
+    MINOR 2 (round-3 review, 2026-09-06): a row is "relevant" if EITHER the
+    write-loop key or the record's own ``ticker`` field is allow-listed —
+    the original pre-PR selection basis was ``rec.get("ticker") in
+    SECURITY_STATE_TICKERS`` alone. The prior version of this function
+    required the write-loop key itself to be allow-listed, so a row whose
+    write-loop key was NOT allow-listed but whose ``rec["ticker"]`` WAS
+    fell into neither this selector nor ``_select_security_state_targets``
+    and was still silently dropped. Every relevant-but-unmatched row is now
+    caught here.
     """
     from engine.security_state import SECURITY_STATE_TICKERS
 
     return [
         (ticker, rec)
         for ticker, rec in to_write
-        if ticker in SECURITY_STATE_TICKERS and ticker != rec.get("ticker")
+        if (ticker in SECURITY_STATE_TICKERS or rec.get("ticker") in SECURITY_STATE_TICKERS)
+        and ticker != rec.get("ticker")
     ]
 
 

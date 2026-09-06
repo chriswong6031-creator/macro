@@ -189,6 +189,30 @@ DISCLOSURES: tuple[str, ...] = (
     "floor, not evidence",
 )
 
+# MAJOR-1 (round-3 review, 2026-09-06): the four ``DISCLOSURES`` strings above
+# all assert that a CIK/alias/issuer reader ran this cycle at one injected
+# decision date. That is true of a genuine owner-composed subject, but never
+# true of the UNREAD fallback shell (``AAPL_SUBJECT`` / ``MSFT_SUBJECT``,
+# selected only when the owner-identity batch itself could not be read) --
+# no reader ran and no decision date was used, so none of ``DISCLOSURES``
+# applies. ``compile_security_state_failure`` must publish this tuple
+# instead of ``DISCLOSURES`` whenever :func:`_owner_identity_unread` is true.
+# The schema pins ``identity_proof.disclosures`` to exactly 4 items
+# ("contracts/market_os/security_state.v1.schema.json", out of scope for
+# this diff), so this is a 1:1 UNREAD counterpart to each ``DISCLOSURES``
+# entry rather than a single collapsed string.
+UNREAD_DISCLOSURES: tuple[str, ...] = (
+    "CIK_LEG_OWNER_UNREAD: issuer CIK was not read this cycle; the frozen "
+    "pinned CIK is retained as-is and is not corroborated by any reader",
+    "OWNER_COMPOSED_SUBJECT_UNREAD: security_id, issuer_id, listing_key and "
+    "ticker_display are the frozen pinned fallback values; no reader ran "
+    "this cycle and no decision date was used",
+    "ISSUER_LINEAGE_UNREAD: no issuer lineage or current-identity check was "
+    "performed this cycle",
+    "ALIAS_EPOCH_UNREAD: no alias corroboration window was evaluated this "
+    "cycle; the alias reader did not run",
+)
+
 # strongest_unresolved_fact rule v1, step 4 — fixed frozen order + plain-language
 # {en, zh} text. Hand-authored, deterministic templates; never an LLM call.
 _WARNING_ORDER: tuple[str, ...] = (
@@ -1715,7 +1739,27 @@ def compile_security_state_failure(
     reason is accepted at this public-output boundary.
     """
     subject = _require_subject(subject)
-    public_reason = "security_state compiler failed after owner identity was composed"
+    # MAJOR-2 (round-3 review, 2026-09-06): this reason string is public and
+    # feeds both the opportunity-context null_reason and the risk failed_gate
+    # below, so it must never claim owner identity was composed on the
+    # UNREAD fallback path (no reader ran for that subject at all). Bound
+    # after ``owner_unread`` is known, in plain consumer-facing language --
+    # not the internal artifact name, "compiler", or "composed" jargon the
+    # prior single string used. The schema types both destination fields as
+    # a plain string ("contracts/market_os/security_state.v1.schema.json"),
+    # so this stays EN-only; it is out of scope for this diff to add a
+    # bilingual pair for those two fields.
+    owner_unread = _owner_identity_unread(subject.owner_evidence)
+    if owner_unread:
+        public_reason = (
+            "This security's information could not be updated this cycle "
+            "because ownership data was unavailable."
+        )
+    else:
+        public_reason = (
+            "This security's information could not be finished this cycle "
+            "after its ownership was confirmed."
+        )
     blocked_summary = _bilingual(
         "This security's state could not be compiled this cycle (a compiler failure, not an absence).",
         "本次未能编译该证券的状态（属于编译失败，并非事件不存在）。",
@@ -1728,7 +1772,7 @@ def compile_security_state_failure(
     # VendorAliasTable/IssuerMaster were consulted and agreed. A genuine
     # owner-composed subject (compile_security_state raised for some OTHER
     # reason after identity was proven) still gets the honest PASS leg.
-    owner_unread = _owner_identity_unread(subject.owner_evidence)
+    # (``owner_unread`` was already computed above for ``public_reason``.)
     if owner_unread:
         r8_leg = _leg_receipt(
             "R8",
@@ -1763,7 +1807,7 @@ def compile_security_state_failure(
             equality_right_label, subject.issuer_cik,
         )],
         "refusals": refusals,
-        "disclosures": list(DISCLOSURES),
+        "disclosures": list(UNREAD_DISCLOSURES) if owner_unread else list(DISCLOSURES),
     }
     state_leg = {
         "deterministic_state_refs": list(_STATE_LEG_REFS),

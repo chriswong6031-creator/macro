@@ -716,6 +716,54 @@ def test_failure_shell_for_real_owner_subject_keeps_owner_pass_leg() -> None:
     [r8_leg] = [leg for leg in identity_proof["legs"] if leg["check"] == "R8"]
     assert r8_leg["result"] == "pass"
     assert r8_leg["code"] is None
+    # regression guard for MAJOR-1/2 below: the real-owner-subject path must
+    # keep asserting owner composition -- only the UNREAD fallback path may
+    # not.
+    assert any(
+        d.startswith("OWNER_COMPOSED_SUBJECT_CURRENT_ONLY:")
+        for d in identity_proof["disclosures"]
+    )
+    assert "confirmed" in state["legs"]["risk"]["failed_gates"][0]["reason"]
+
+
+# ---------------------------------------------------------------------------
+# MAJOR-1/MAJOR-2 (round-3 review, 2026-09-06): the UNREAD fallback shell's
+# ``identity_proof.disclosures`` and its public ``null_reason``/failed-gate
+# ``reason`` strings must never assert that an owner reader executed or that
+# owner identity was composed -- that was true of the R8 leg fix (B2) but
+# NOT of these two other surfaces, which kept asserting it verbatim two keys
+# away from the leg that was fixed.
+# ---------------------------------------------------------------------------
+
+def test_failure_shell_for_unread_fallback_subject_disclosures_do_not_claim_owner_reads() -> None:
+    state = ss.compile_security_state_failure(
+        subject=ss.MSFT_SUBJECT, now="2026-09-06T12:00:00Z",
+        prior_state=None, validator=_validator(),
+    )
+    disclosures = state["identity_proof"]["disclosures"]
+    assert len(disclosures) == 4
+    for text in disclosures:
+        assert "VendorAliasTable" not in text
+        assert "IssuerMaster" not in text
+        assert "composed through current" not in text
+        assert "read through canonical" not in text
+    assert disclosures == list(ss.UNREAD_DISCLOSURES)
+    assert list(_validator().iter_errors(state)) == []
+
+
+def test_failure_shell_for_unread_fallback_subject_reason_does_not_claim_owner_composed() -> None:
+    state = ss.compile_security_state_failure(
+        subject=ss.AAPL_SUBJECT, now="2026-09-06T12:00:00Z",
+        prior_state=None, validator=_validator(),
+    )
+    null_reason = state["legs"]["opportunity_context"]["entry"]["null_reason"]
+    gate_reason = state["legs"]["risk"]["failed_gates"][0]["reason"]
+    assert null_reason == gate_reason
+    for text in (null_reason, gate_reason):
+        assert "composed" not in text
+        assert "security_state" not in text
+        assert "compiler" not in text
+    assert list(_validator().iter_errors(state)) == []
 
 
 # ---------------------------------------------------------------------------
@@ -1445,7 +1493,15 @@ def test_mismatched_security_state_targets_are_not_silently_dropped() -> None:
     key fully absent (reads downstream as "nothing built" rather than
     "build failed"). ``_mismatched_security_state_targets`` is the companion
     selector the caller uses to emit a typed failure shell for exactly these
-    instead of dropping them."""
+    instead of dropping them.
+
+    MINOR 2 (round-3 review, 2026-09-06): a row is "relevant" if EITHER the
+    write-loop key OR the record's own ``ticker`` field is allow-listed --
+    the pre-PR selection basis was ``rec.get("ticker") in
+    SECURITY_STATE_TICKERS`` alone. This test previously asserted the
+    OPPOSITE of that (a row whose write-loop key was not allow-listed but
+    whose ``rec["ticker"]`` was got silently dropped by both selectors) --
+    it is rewritten here to assert the corrected, complementary behavior."""
     import scripts.security_state_producer as producer
 
     aapl, msft, goog = ({"ticker": ticker} for ticker in ("AAPL", "MSFT", "GOOG"))
@@ -1454,9 +1510,16 @@ def test_mismatched_security_state_targets_are_not_silently_dropped() -> None:
     assert producer._select_security_state_targets(to_write) == [("AAPL", aapl)]
     assert producer._mismatched_security_state_targets(to_write) == [("MSFT", mismatched_msft)]
 
-    # an unrelated (never-allow-listed) ticker's mismatch is not surfaced --
-    # only the frozen AAPL/MSFT allowlist is this stage's concern.
-    assert producer._mismatched_security_state_targets([("GOOG", msft)]) == []
+    # a write-loop key that is NOT allow-listed, whose record's OWN ticker
+    # IS allow-listed, must still be caught -- it was silently dropped by
+    # both selectors before this fix.
+    assert producer._mismatched_security_state_targets([("GOOG", msft)]) == [("GOOG", msft)]
+
+    # a row where NEITHER the write-loop key nor the record's own ticker is
+    # allow-listed is genuinely irrelevant and stays uncaught by either
+    # selector.
+    assert producer._mismatched_security_state_targets([("ZZZZ", goog)]) == []
+    assert producer._select_security_state_targets([("ZZZZ", goog)]) == []
 
 
 # ---------------------------------------------------------------------------
