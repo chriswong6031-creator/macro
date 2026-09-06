@@ -1701,6 +1701,7 @@ on:
       - "scripts/build_chronicle.py"
       - "data/chronicle/**"
       - "tests/test_chronicle.py"
+      - "tests/test_chronicle_impact.py"
       - "admin/chronicle.py"
       # RIC W4 EVW: event-window engine + forward ledger + ex-ante read (P3 RIC program).
       # engine/** already covers engine/event_window.py; test file + research doc +

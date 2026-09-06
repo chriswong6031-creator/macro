@@ -129,7 +129,7 @@ jobs:
         # green in any full env (diagnosed 2026-07-26).
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: chronicle engine tests
-        run: python -m pytest tests/test_chronicle.py -q
+        run: python -m pytest tests/test_chronicle.py tests/test_chronicle_impact.py -q
 
   # ── template↔site + interfonts + data-base shim (mirror ci.yml: template-site-sync) ──
   # The shim steps are the reason this job matters most here: tests/test_site_shim.py

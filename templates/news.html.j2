@@ -804,6 +804,67 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
   </div>
 </section>
 
+{# F05/MO-PAID-017 consequence glance — News Feed entry point, not Market-Feed.
+   Reuses existing nx-* classes (dark command-center / light research-workspace
+   tokens already on this page). No new <style> block. #}
+{% set CI = chronicle_impact if chronicle_impact is mapping else none %}
+<section class="nx-cols" id="nxConsequence" aria-label="Event consequences">
+  <main>
+    <h2 class="nx-sec-hd">{{ t('Event consequences','事件影响') }}</h2>
+    {% if CI and CI.stance_en %}
+    <p class="nx-sub">{{ t(CI.stance_en, CI.stance_zh or CI.stance_en) }}</p>
+    {% endif %}
+    {% if CI and CI.rows %}
+    {#- MAJOR 4: one section-level disclaimer instead of repeating the same
+        two-clause sentence on every card (was 16 of ~32 text lines, plus a
+        dangling middot where the card wrapped). -#}
+    <p class="nx-sub">{{ t('We don\u2019t size these yet — association only, not a forecast.', '尚未量化影响幅度——仅为关联提示，非预测。') }}</p>
+    {% endif %}
+    {% if CI and CI.rows %}
+    <div class="nx-rel-grid">
+      {% for row in CI.rows[:8] %}
+      <div class="nx-rel">
+        <div class="nx-rel-top">
+          {#- Glance titles are plain-word EN/ZH from the impact projector; raw
+              spine titles (T1_HIT / Prophet close / Q3 Stagflation) stay off
+              this surface (front-end clarity law). -#}
+          <span class="nx-rel-name">{{ t((row.title_en or 'Chronicle event')|e, (row.title_zh or '大事记事件')|e) }}</span>
+        </div>
+        <div class="nx-meta">
+          {% if row.event_time %}<span class="num">{{ row.event_time }}</span><span class="sep">·</span>{% endif %}
+          {% if row.direct_tickers %}
+            <span>{{ t('Named','点名') }}</span>
+            {% for tk in row.direct_tickers[:4] %}<a class="nx-tk" href="stock.html#{{ tk|e }}">{{ tk }}</a>{% endfor %}
+          {% else %}
+            <span>{{ t('No named ticker','未点名标的') }}</span>
+          {% endif %}
+        </div>
+        {% if row.second_order_tickers %}
+        <div class="nx-meta">
+          <span>{{ t('Also watching','同时关注') }}</span>
+          {% for tk in row.second_order_tickers[:4] %}<a class="nx-tk" href="stock.html#{{ tk|e }}">{{ tk }}</a>{% endfor %}
+        </div>
+        {% elif row.second_order_truncated %}
+        <div class="nx-meta">
+          <span>{{ t('Also-watching list not available yet', '同时关注列表暂不可用') }}</span>
+          <span class="sep">·</span>
+          <span>{{ t('too many weak matches were dropped', '弱关联过多已全部剔除') }}
+            <span class="num">({{ row.second_order_dropped_count or 0 }})</span></span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nx-empty">
+      {{ t('Not available yet', '暂不可用') }}
+      {% if CI and CI.reason_en %} — {{ t(CI.reason_en, CI.reason_zh or CI.reason_en) }}{% else %}
+      — {{ t('No chronicle events in this window yet.', '此窗口尚无大事记事件。') }}{% endif %}
+    </div>
+    {% endif %}
+  </main>
+</section>
+
 {% if FEED %}
 <section class="nx-feed" id="nxFeed">
   {% for h in FEED %}
