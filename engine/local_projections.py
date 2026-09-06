@@ -24,22 +24,26 @@ THE THREE GUARDS
     routes through it. A horizon whose target runs past the end of the sample
     DROPS that row - never padded, never partial-summed.
 (b) NON-INDEPENDENT SAMPLES - targets at horizon h overlap across t (y[t+h] and
-    y[t+h+1] share (h-1) periods), so the residual is MA(h) by construction and a
-    plain OLS se understates the true one. The coefficient se is a Newey-West
-    Bartlett sandwich at truncation lag h+1 (HAC_LAG_RULE), with the effective lag
-    clamped to min(lags, n-1) and BOTH `hac_lags` and `hac_lags_requested`
-    reported - engine/validation.py:691-694's rule: printing the un-clamped ask is
-    how an under-corrected t reads as a fully-corrected one. `_hac_sandwich` uses
-    the identical 1/n-normalization-free sandwich and Bartlett weight
-    `1 - j/(L+1)` as engine.validation.newey_west_tstat, so on an intercept-only
-    design the two agree to 5 decimal places (measured: sandwich se=0.22333829 vs
-    helper se=0.22334, both lags=4 on an MA(4) series, n=300). HAC/naive se
+    y[t+h+1] share (h-1) periods), so the residual is MA(h) by construction.
+    The coefficient se is a Newey-West Bartlett sandwich at truncation lag h+1
+    (HAC_LAG_RULE), with the effective lag clamped to min(lags, n-1) and BOTH
+    `hac_lags` and `hac_lags_requested` reported - engine/validation.py:691-694's
+    rule: printing the un-clamped ask is how an under-corrected t reads as a
+    fully-corrected one. `_hac_sandwich` uses the identical 1/n-normalization-free
+    sandwich and Bartlett weight `1 - j/(L+1)` as engine.validation.newey_west_tstat,
+    so on an intercept-only design the two agree to 5 decimal places (measured:
+    sandwich se=0.22333829 vs helper se=0.22334, both lags=4 on an MA(4) series,
+    n=300). HAC/naive se
     (`hac_inflation` on each row) measured through the ACTUAL estimate_horizon/
     impulse_response path on this module's demo DGP varies by horizon and is
-    NOT a fixed inflation factor - measured at head: {0: 0.974, 1: 0.999,
-    5: 1.122, 10: 0.882, 20: 0.846}, median 0.998 across horizons, and 55% of
-    20-seed replications land BELOW 1.0 at h=20 (0.836 under a persistent AR(1)
-    shock). The intercept-only hand-built design in
+    NOT a fixed inflation factor - one-off table measured at head
+    66f414ac2b3 BEFORE the finite_sample=n/dof HC0 correction landed in the
+    same fix series: {0: 0.974, 1: 0.999, 5: 1.122, 10: 0.882, 20: 0.846},
+    median 0.998 across horizons, and 55% of 20-seed replications land BELOW
+    1.0 at h=20 (0.836 under a persistent AR(1) shock). After the
+    finite_sample factor every published number moves by ~sqrt(n/dof)
+    (~+0.6% at n≈780, k=10); re-measure before treating the table as current.
+    The intercept-only hand-built design in
     test_overlapping_targets_inflate_the_naive_standard_error (se_hac/se_naive
     > 1.3) demonstrates the sandwich mechanism in isolation; it is NOT a
     measurement of the LP path's own inflation factor, which this module's own
@@ -97,9 +101,12 @@ EMBARGO = 1            # bars between the last admissible control bar and the sh
 MIN_OBS_PER_H = 60     # usable rows required before a horizon is estimated
 FDR_ALPHA = 0.10       # BY level across the horizon panel (dependence-robust; see docstring (c))
 FDR_METHOD = "benjamini_yekutieli"  # not plain BH — horizons are dependent
-# Measured under global null (y indep shock, n=800, H=20, alpha=0.10, 300 seeds):
-# plain BH any-reject rate ~= 0.153; BY any-reject rate ~= 0.06. Reported so a
-# caller can see the guard actually delivers its level.
+# One-off measurements under global null (y indep shock, n=800, H=20,
+# alpha=0.10, 300 seeds) taken at head 66f414ac2b3; the regenerating simulation
+# is NOT in-repo. Reported so a caller can see the guard's advertised level
+# against the measured BH overshoot. Treat as historical calibration labels,
+# not live-recomputed facts — BY's rate is corroborated by the 80-seed pin in
+# tests/test_local_projections.py; BH's 0.153 is not re-pinned in CI.
 GLOBAL_NULL_FWER_BH = 0.153
 GLOBAL_NULL_FWER_BY = 0.06
 CI_LEVEL = 0.95
@@ -387,7 +394,10 @@ def _empty_irf_result(rows, *, horizons, fdr_alpha, family, effective_n,
         "irf": rows,
         "fdr": {},
         "multiple_testing": {
-            "n_horizons_tested": horizons + 1,
+            # Panel size vs correction size: declared = horizons+1; tested = 0
+            # here because every horizon abstained before BY ran.
+            "n_horizons_declared": horizons + 1,
+            "n_horizons_tested": 0,
             "alpha": fdr_alpha,
             "method": FDR_METHOD,
             "family": family,
@@ -405,7 +415,9 @@ def _empty_irf_result(rows, *, horizons, fdr_alpha, family, effective_n,
             "lag_rule": HAC_LAG_RULE,
             "why": (
                 "targets at horizon h overlap across t, so the residual is MA(h) "
-                "by construction and a plain OLS se understates the true one"
+                "by construction; Newey-West Bartlett HAC at lag h+1 is the se. "
+                "Read per-row hac_inflation (HAC/naive) for the measured "
+                "direction — it is often near 1.0 and can land below 1.0"
             ),
             "measured_inflation_by_h": {},
         },
@@ -521,7 +533,11 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
         "irf": rows,
         "fdr": fdr,
         "multiple_testing": {
-            "n_horizons_tested": horizons + 1,
+            # n_horizons_declared = panel size (horizons+1). n_horizons_tested =
+            # count of non-abstained horizons that enter the BY correction
+            # (len(pvals)); abstentions are not tested.
+            "n_horizons_declared": horizons + 1,
+            "n_horizons_tested": len(pvals),
             "alpha": fdr_alpha,
             "method": FDR_METHOD,
             "family": family,
@@ -544,7 +560,9 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
             "lag_rule": HAC_LAG_RULE,
             "why": (
                 "targets at horizon h overlap across t, so the residual is MA(h) "
-                "by construction and a plain OLS se understates the true one"
+                "by construction; Newey-West Bartlett HAC at lag h+1 is the se. "
+                "Read per-row hac_inflation (HAC/naive) for the measured "
+                "direction — it is often near 1.0 and can land below 1.0"
             ),
             "measured_inflation_by_h": inflation_by_h,
         },

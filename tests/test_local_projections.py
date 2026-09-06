@@ -100,9 +100,12 @@ def test_no_shock_gives_a_null_at_every_horizon():
 def test_global_null_family_wise_rate_stays_at_or_below_fdr_alpha():
     """Calibration pin for acceptance line 2 / MAJOR 1.
 
-    Under a complete null, BY's FDR equals P(any rejection). Plain BH measured
-    15.3% here (overshoot); BY must stay at or under FDR_ALPHA plus sampling
-    noise. 80 seeds keeps the suite fast while still catching a return to BH.
+    Under a complete null, BY's FDR equals P(any rejection). 80 fixed seeds keep
+    the suite fast. This is a BY rate ceiling, not a high-power BH discriminator:
+    at the one-off 300-seed BH rate 0.153, P(≤10 of 80) ≈ 0.29, so a return to
+    plain BH fails this bound only ~70% of the time on these seeds. The method
+    string assert below is the hard BH-regression guard; the rate bound catches
+    gross overshoot.
     """
     n_sims = 80
     rejects = 0
@@ -115,8 +118,9 @@ def test_global_null_family_wise_rate_stays_at_or_below_fdr_alpha():
         if result["null"]["any_horizon_rejects"]:
             rejects += 1
     rate = rejects / n_sims
-    # FDR_ALPHA=0.10; allow binomial sampling slack (80 trials, mean~0.06).
-    # A return to plain BH (~0.15) fails this bound; a calibrated BY (~0.06) passes.
+    # FDR_ALPHA=0.10; allow binomial sampling slack (80 trials, calibrated BY ~0.06).
+    # Bound is a BY ceiling, not a proof that BH (~0.153 on 300 seeds) always fails
+    # on these exact 80 seeds (~0.71 discrimination power at that rate).
     assert rate <= 0.125, (
         f"global-null any-reject rate {rate:.3f} ({rejects}/{n_sims}) exceeds "
         f"FDR_ALPHA={lp.FDR_ALPHA} + sampling slack; dependence-robust BY may "
@@ -307,12 +311,16 @@ def test_rank_deficient_design_abstains():
 
 
 # --------------------------------------------------------------------------- #
-# 13: BH correction
+# 13: BY correction (dependence-robust; not plain BH)
 # --------------------------------------------------------------------------- #
-def test_bh_correction_is_applied_and_reject_reads_q():
+def test_by_correction_is_applied_and_reject_reads_q():
     y, shock, _ = lp.demo_series(seed=11)
     result = lp.impulse_response(y, shock)
     assert result["multiple_testing"]["method"] == "benjamini_yekutieli"
+    assert result["multiple_testing"]["n_horizons_declared"] == lp.HORIZONS + 1
+    assert result["multiple_testing"]["n_horizons_tested"] == len(result["fdr"])
+    assert "understates" not in result["inference"]["why"].lower()
+    assert "hac_inflation" in result["inference"]["why"]
     for h_str, row in result["fdr"].items():
         assert row["q"] >= row["p"] - 1e-9
         # reject reads q against FDR_ALPHA (0.10), never a hard-coded 0.05.
@@ -324,6 +332,19 @@ def test_bh_correction_is_applied_and_reject_reads_q():
     sorted_by_p = sorted(result["fdr"].items(), key=lambda kv: kv[1]["p"])
     q_seq = [v["q"] for _, v in sorted_by_p]
     assert all(q_seq[i] <= q_seq[i + 1] + 1e-9 for i in range(len(q_seq) - 1))
+
+
+def test_n_horizons_tested_counts_only_non_abstained():
+    # Force every horizon to abstain via min_obs > sample so tested=0 while
+    # declared stays at horizons+1.
+    rng = np.random.default_rng(0)
+    n = 40
+    y = rng.standard_normal(n)
+    shock = rng.standard_normal(n)
+    result = lp.impulse_response(y, shock, horizons=5, min_obs=100)
+    assert result["multiple_testing"]["n_horizons_declared"] == 6
+    assert result["multiple_testing"]["n_horizons_tested"] == 0
+    assert result["fdr"] == {}
 
 
 # --------------------------------------------------------------------------- #
