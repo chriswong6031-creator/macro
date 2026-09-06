@@ -27,7 +27,7 @@ a{color:inherit;text-decoration:none}
 .help-kicker{display:block;margin:0 0 14px;color:var(--muted);font:650 11px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase}
 .help-hero h1{margin:0;font:760 clamp(34px,6vw,64px)/1 var(--font-ui);letter-spacing:-.045em}
 .help-owners{margin:16px 0 0;color:var(--muted);font-size:clamp(14px,2vw,16px)}
-.help-controls{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:14px;align-items:center;padding:16px 0 24px;border-top:1px solid var(--line)}
+.help-controls{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:14px;align-items:center;padding:16px 0 24px;border-top:1px solid var(--line)}
 .help-search{position:relative;max-width:520px}
 .help-search input{width:100%;min-height:44px;padding:10px 42px 10px 14px;border:1px solid var(--line);border-radius:var(--r-ctl,8px);background:var(--panel2);color:var(--text);font:inherit;outline:none}
 .help-search input:focus{border-color:var(--link);box-shadow:0 0 16px -5px color-mix(in srgb,var(--link) 55%,transparent)}
@@ -74,6 +74,79 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
   html[data-theme="light"] .help-grid{gap:10px}
 }
 @media (prefers-reduced-motion:reduce){.help-card,.help-arrow{transition:none}.help-card:hover{transform:none}}
+/* ==== BEGIN packet B-F13-3 — answers · changelog · support by plan ==== */
+/* DARK TREATMENT (command center): no containers. Sections separate by luminance,
+   and the hero's cyan instrument rail is extended into the changelog spine. */
+.help-count{color:var(--muted);font:600 var(--fs-label)/1 var(--font-mono);letter-spacing:.09em;font-variant-numeric:tabular-nums;padding-left:4px;white-space:nowrap}
+.help-sec{padding:34px 0 0}
+.help-sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:0 0 16px;padding:0 0 12px;border-bottom:1px solid var(--line)}
+.help-sec-head h2{margin:0;font:680 clamp(19px,2.4vw,26px)/1.15 var(--font-ui);letter-spacing:-.025em}
+.help-sec-note{color:var(--muted);font:600 var(--fs-label)/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;text-align:right}
+
+.help-answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:44px;row-gap:0;margin:0}
+.help-a{min-width:0;padding:18px 0;border-top:1px solid color-mix(in srgb,var(--line) 62%,transparent)}
+.help-a:nth-child(-n+2){border-top:0}
+.help-a[hidden]{display:none}
+.help-a dt{margin:0 0 6px;font:660 15.5px/1.35 var(--font-ui);letter-spacing:-.01em;color:var(--text)}
+.help-a dd{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+.help-a dd a{color:var(--link);border-bottom:1px solid color-mix(in srgb,var(--link) 38%,transparent)}
+.help-a dd a:hover,.help-a dd a:focus-visible{border-bottom-color:var(--link)}
+
+.help-log{position:relative;margin:0;padding:4px 0 0 26px;list-style:none}
+.help-log::before{content:"";position:absolute;left:3px;top:12px;bottom:8px;width:1px;background:var(--line)}
+.help-log::after{content:"";position:absolute;left:3px;top:12px;height:64px;width:1px;background:linear-gradient(180deg,var(--link),transparent)}
+.help-log li{position:relative;padding:0 0 20px}
+.help-log li::before{content:"";position:absolute;left:-26px;top:6px;width:7px;height:7px;background:var(--panel2);box-shadow:0 0 0 1px var(--line)}
+.help-log li:first-child::before{background:var(--link);box-shadow:0 0 0 1px var(--link)}
+.help-log time{display:block;margin:0 0 4px;color:var(--muted);font:600 var(--fs-label)/1 var(--font-mono);letter-spacing:.09em;font-variant-numeric:tabular-nums}
+.help-log .help-pr{margin-left:8px;color:var(--muted);font:600 var(--fs-micro)/1 var(--font-mono);letter-spacing:.06em}
+.help-log p{margin:0;font-size:14.5px;line-height:1.5}
+
+.help-plans{display:grid;gap:0;margin:0 0 22px;padding:0;list-style:none}
+.help-plan{display:grid;grid-template-columns:132px minmax(0,1fr);gap:18px;align-items:start;padding:16px 0 16px 14px;border-top:1px solid color-mix(in srgb,var(--line) 62%,transparent);border-left:2px solid var(--ok)}
+.help-plan:first-child{border-top:0}
+.help-plan[data-plan-state="unknown"]{border-left-color:var(--muted)}
+.help-plan-name{font:660 14px/1.4 var(--font-ui);color:var(--text)}
+.help-plan-promise{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+.help-support-cta{display:inline-block;min-height:44px;padding:12px 20px;border:1px solid var(--line);border-radius:var(--r-ctl,8px);background:var(--panel2);color:var(--text);font:650 13px/1.3 var(--font-ui)}
+.help-support-cta:hover,.help-support-cta:focus-visible{border-color:color-mix(in srgb,var(--link) 60%,var(--line))}
+
+.help-empty{margin:0;padding:20px 0 2px;color:var(--muted);font-size:13.5px;line-height:1.55}
+
+/* LIGHT TREATMENT (research workspace): the separation mechanism changes from
+   luminance to material — hairlines alone on white read as unloaded, so the answer
+   list becomes one white sheet with internal hairlines. The rail loses its fade (a
+   fade to transparent on white reads as an artifact) and its head becomes a solid
+   segment. The log node inverts figure/ground: white fill, ink ring. Depth arrives
+   as a short shadow, which dark cannot use at all on its near-black canvas. */
+html[data-theme="light"] .help-answers{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card,12px);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 7%,transparent);padding:6px 26px 10px;column-gap:38px}
+html[data-theme="light"] .help-a{border-top-color:var(--line)}
+html[data-theme="light"] .help-a dd{color:color-mix(in srgb,var(--text) 78%,var(--muted))}
+html[data-theme="light"] .help-log::before{background:var(--line)}
+html[data-theme="light"] .help-log::after{height:24px;background:var(--link)}
+html[data-theme="light"] .help-log li::before{background:var(--panel);box-shadow:0 0 0 1px var(--line)}
+html[data-theme="light"] .help-log li:first-child::before{background:var(--link);box-shadow:0 0 0 1px var(--link)}
+html[data-theme="light"] .help-log p{color:color-mix(in srgb,var(--text) 82%,var(--muted))}
+html[data-theme="light"] .help-plan{border-left-width:3px}
+html[data-theme="light"] .help-plan-promise{color:color-mix(in srgb,var(--text) 78%,var(--muted))}
+html[data-theme="light"] .help-support-cta{background:var(--panel);box-shadow:0 1px 2px color-mix(in srgb,var(--text) 8%,transparent)}
+
+@media (max-width:900px){
+  .help-answers{grid-template-columns:1fr;column-gap:0}
+  .help-a:nth-child(2){border-top:1px solid color-mix(in srgb,var(--line) 62%,transparent)}
+}
+@media (max-width:760px){
+  .help-controls{grid-template-columns:1fr}
+  .help-count{padding-left:0}
+}
+@media (max-width:600px){
+  .help-sec{padding-top:26px}
+  .help-plan{grid-template-columns:1fr;gap:6px;padding-left:12px}
+  .help-log{padding-left:22px}
+  .help-log li::before{left:-22px}
+  html[data-theme="light"] .help-answers{padding:4px 16px 8px}
+}
+/* ==== END packet B-F13-3 ==== */
 </style>
 {% set rel = '' %}
 {% include "_public_chrome_css.html.j2" %}
@@ -102,12 +175,31 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
       <button class="help-filter" type="button" data-category="{{ category.id }}" aria-pressed="false">{{ t(category.label_en, category.label_zh) }}</button>
 {% endfor %}
     </div>
+    <span class="help-count" id="help-result-count" role="status" aria-live="polite">{{ (entries|length) + (answers|length) }}</span>
   </section>
 
-  <div class="help-meta">
-    <span>{{ t('Resources', '资源') }}</span>
-    <span id="help-result-count" role="status" aria-live="polite">{{ entries|length }}</span>
-  </div>
+  <section class="help-sec" aria-labelledby="help-answers-h" data-answers-state="{{ answers_state }}">
+    <div class="help-sec-head">
+      <h2 id="help-answers-h">{{ t('Answers', '解答') }}</h2>
+      <span class="help-sec-note">{{ t('Plain answers, both languages', '大白话解答，中英双语') }}</span>
+    </div>
+{% if answers %}
+    <dl class="help-answers">
+{% for a in answers %}
+      <div class="help-a" id="answer-{{ a.id }}" data-answer data-entry-state="complete"
+           data-category="{{ a.category }}"
+           data-search="{{ a.question_en|lower }} {{ a.question_zh }} {{ a.answer_en|lower }} {{ a.answer_zh }}">
+        <dt>{{ t(a.question_en, a.question_zh) }}</dt>
+        <dd>{{ t(a.answer_en, a.answer_zh) }}{% if a.href %} <a href="{{ a.href }}">{{ t(a.link_en, a.link_zh) }}</a>{% endif %}</dd>
+      </div>
+{% endfor %}
+    </dl>
+{% else %}
+    <p class="help-empty" role="status">{{ t('No answers are published yet. Answers appear here once they are written and reviewed. Write to support instead — the form is linked below.', '目前还没有已发布的解答。解答经撰写与审核后才会显示在这里。可以先联系下方的客服表单。') }}</p>
+{% endif %}
+  </section>
+
+  <div class="help-meta"><span>{{ t('Go to', '前往') }}</span></div>
   <section class="help-grid" aria-label="{{ t_text('Help', '帮助') }}">
 {% for entry in entries %}
 {% if entry.state == 'complete' %}
@@ -129,6 +221,40 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
 {% else %}
   <div class="help-state-panel" data-empty-state="empty" role="status" aria-live="polite">{{ t('No links available', '暂无可用链接') }} · 0</div>
 {% endif %}
+
+  <section class="help-sec" aria-labelledby="help-log-h" data-changelog-state="{{ changelog.state }}">
+    <div class="help-sec-head">
+      <h2 id="help-log-h">{{ t('What changed', '更新记录') }}</h2>
+      <span class="help-sec-note">{{ t('Newest first', '最新在前') }}</span>
+    </div>
+{% if changelog.state == 'published' %}
+    <ul class="help-log">
+{% for e in changelog.entries %}
+      <li id="change-{{ e.id }}">
+        <time datetime="{{ e.date }}">{{ e.date }}<span class="help-pr">#{{ e.pr }}</span></time>
+        <p>{{ t(e.en, e.zh) }}</p>
+      </li>
+{% endfor %}
+    </ul>
+{% endif %}
+    <p class="help-empty"{% if changelog.state != 'published' %} role="status"{% endif %}>{{ t(changelog.note_en, changelog.note_zh) }}</p>
+  </section>
+
+  <section class="help-sec" aria-labelledby="help-plans-h">
+    <div class="help-sec-head">
+      <h2 id="help-plans-h">{{ t('Still stuck? Write to us', '仍未解决？写信给我们') }}</h2>
+      <span class="help-sec-note">{{ t('By plan', '按方案') }}</span>
+    </div>
+    <ul class="help-plans">
+{% for p in support_plans %}
+      <li class="help-plan" data-plan="{{ p.id }}" data-plan-state="{{ p.state }}">
+        <span class="help-plan-name">{{ t(p.name_en, p.name_zh) }}</span>
+        <p class="help-plan-promise">{{ t(p.promise_en, p.promise_zh) }}</p>
+      </li>
+{% endfor %}
+    </ul>
+    <a class="help-support-cta" href="support.html">{{ t('Write to support', '联系客服') }}</a>
+  </section>
 </main>
 
 {% include "_public_footer.html.j2" %}
@@ -143,7 +269,7 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
   if(!query)return;
   var count=document.getElementById('help-result-count');
   var empty=root.querySelector('[data-empty-state]');
-  var cards=Array.prototype.slice.call(root.querySelectorAll('[data-help-card]'));
+  var cards=Array.prototype.slice.call(root.querySelectorAll('[data-help-card],[data-answer]'));
   var buttons=Array.prototype.slice.call(root.querySelectorAll('[data-category]'));
   var category='all';
   function normal(value){return (value||'').toLocaleLowerCase().trim();}

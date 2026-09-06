@@ -21,7 +21,12 @@ sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
-from lib.help_directory import help_directory_view_model  # noqa: E402
+from lib.help_directory import (  # noqa: E402
+    help_directory_view_model,
+    help_answers_view_model,
+    product_changelog,
+    support_routing_view_model,
+)
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -116,6 +121,9 @@ def build(site=None) -> None:
     help_vm: dict | None = None
     try:
         help_vm = help_directory_view_model(config.ROOT)
+        help_vm.update(help_answers_view_model(config.ROOT))
+        help_vm["changelog"] = product_changelog(config.ROOT)
+        help_vm.update(support_routing_view_model())
         write_page(
             site / "help.html",
             env.get_template("help.html.j2").render(
