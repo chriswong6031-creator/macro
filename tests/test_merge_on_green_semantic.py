@@ -11,6 +11,11 @@ import pytest
 import scripts.merge_on_green as MOG
 
 
+def test_prooffreshness_live_fixture_intentionally_red() -> None:
+    """Disposable draft-canary failure; this branch is never eligible to merge."""
+    pytest.fail("intentional stale-semantic controller canary")
+
+
 HEAD = "a" * 40
 BASE = "b" * 40
 TREE = "c" * 40
