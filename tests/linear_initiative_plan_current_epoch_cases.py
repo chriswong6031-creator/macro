@@ -1,7 +1,8 @@
 """Current-epoch Linear Initiative contract tests.
 
 Imported by ``tests/test_agentos_compile.py`` so the existing Agent OS/self-mod
-CI lane executes the 7/62/2 contract without adding another workflow or job.
+CI lane executes the protected 7/63/2 contract without adding another workflow
+or job.
 """
 from __future__ import annotations
 
@@ -17,20 +18,22 @@ from scripts import linear_portfolio_plan as lpp
 
 REPO = Path(__file__).resolve().parents[1]
 STRATEGY = REPO / "config" / "linear_initiative_portfolio.v1.json"
+TEMPORAL_GRAIN = "WS:TEMPORAL-GRAIN-INTELLIGENCE"
+TEMPORAL_GRAIN_INITIATIVE = "legendary-alpha-discovery-timing"
 EXPECTED_SOURCE = {
     "repository": "mastermindx-market-intelligence/Mastermind",
     "path": (
         "docs/superpowers/specs/"
-        "2026-09-02-linear-initiative-portfolio-v1-current-epoch-source-consolidation.md"
+        "2026-09-03-linear-initiative-portfolio-v1-temporal-grain-current-epoch-amendment.md"
     ),
-    "protected_revision": "84d74cf9c7b81ba70169ab7df1f71835da2d297b",
+    "protected_revision": "6c5c2a6225a3fa2c2ec3e3398dcc8b8629b3a988",
 }
 EXPECTED_GROUP_COUNTS = {
     "autonomous-ai-organization": 7,
     "canonical-intelligence-substrate-learning": 10,
     "global-markets-regimes-risk-command": 6,
     "institutional-company-event-intelligence": 11,
-    "legendary-alpha-discovery-timing": 16,
+    "legendary-alpha-discovery-timing": 17,
     "personal-institutional-desk": 4,
     "trusted-production-customer-platform": 8,
 }
@@ -46,6 +49,7 @@ REQUIRED_CURRENT = {
     "WS:REACTIVE-PROJECTION": "personal-institutional-desk",
     "WS:REPRODUCIBLE-WORKER-ENVIRONMENTS": "trusted-production-customer-platform",
     "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE": "legendary-alpha-discovery-timing",
+    "WS:TEMPORAL-GRAIN-INTELLIGENCE": "legendary-alpha-discovery-timing",
     "WS:TERMINAL-GITHUB-CANONICALIZATION": "trusted-production-customer-platform",
 }
 PARKED_ALIAS = "WS:TERMINAL-GITHUB-CANONICAL-DEPLOYMENT"
@@ -81,12 +85,16 @@ def _codes(error: lip.InitiativePlanError) -> set[str]:
     return {row["code"] for row in error.failures}
 
 
-def test_linear_initiative_strategy_is_exact_workspace_level_7_62_2() -> None:
+def _failure(error: lip.InitiativePlanError, code: str) -> dict:
+    return next(row for row in error.failures if row["code"] == code)
+
+
+def test_linear_initiative_strategy_is_exact_workspace_level_7_63_2() -> None:
     strategy = _strategy()
     assert strategy["schema"] == lip.STRATEGY_SCHEMA
     assert strategy["source_design"] == EXPECTED_SOURCE
     assert len(strategy["initiatives"]) == 7
-    assert len(strategy["memberships"]) == 62
+    assert len(strategy["memberships"]) == 63
     assert len(strategy["unassigned_exceptions"]) == 2
     assert dict(sorted(Counter(strategy["memberships"].values()).items())) == (
         EXPECTED_GROUP_COUNTS
@@ -111,6 +119,7 @@ def test_linear_initiative_strategy_is_exact_workspace_level_7_62_2() -> None:
     [
         "d004f5bf7953e943281dff7efd8fe17a54b0cf6c",
         "043d0c52ccd82edc11521c90c85dfd8d1b678a3e",
+        "84d74cf9c7b81ba70169ab7df1f71835da2d297b",
         "0000000000000000000000000000000000000000",
     ],
 )
@@ -122,7 +131,56 @@ def test_superseded_source_epoch_is_rejected(revision: str) -> None:
     assert "strategy_source_design_invalid" in _codes(caught.value)
 
 
-def test_missing_current_membership_and_group_drift_fail_closed() -> None:
+def test_temporal_grain_membership_is_required() -> None:
+    strategy = _strategy()
+    strategy["memberships"].pop(TEMPORAL_GRAIN, None)
+    with pytest.raises(lip.InitiativePlanError) as caught:
+        lip.validate_strategy(strategy, _project_plan(strategy))
+    assert {
+        "strategy_membership_count_mismatch",
+        "strategy_current_membership_mismatch",
+        "strategy_group_counts_mismatch",
+    } <= _codes(caught.value)
+    mismatch = _failure(caught.value, "strategy_current_membership_mismatch")
+    assert mismatch["missing"] == [TEMPORAL_GRAIN]
+    assert mismatch["unexpected"] == []
+
+
+def test_temporal_grain_alternate_mapping_fails_closed() -> None:
+    strategy = _strategy()
+    strategy["memberships"][TEMPORAL_GRAIN] = (
+        "canonical-intelligence-substrate-learning"
+    )
+    with pytest.raises(lip.InitiativePlanError) as caught:
+        lip.validate_strategy(strategy, _project_plan(strategy))
+    assert {
+        "strategy_current_membership_mismatch",
+        "strategy_group_counts_mismatch",
+    } <= _codes(caught.value)
+    mismatch = _failure(caught.value, "strategy_current_membership_mismatch")
+    assert mismatch["missing"] == [TEMPORAL_GRAIN]
+    assert mismatch["unexpected"] == []
+
+
+def test_duplicate_temporal_grain_membership_row_fails_closed() -> None:
+    strategy = _strategy()
+    rows = [
+        {"workstream_key": key, "initiative_key": initiative}
+        for key, initiative in strategy["memberships"].items()
+    ]
+    rows.append(
+        {
+            "workstream_key": TEMPORAL_GRAIN,
+            "initiative_key": TEMPORAL_GRAIN_INITIATIVE,
+        }
+    )
+    strategy["memberships"] = rows
+    with pytest.raises(lip.InitiativePlanError) as caught:
+        lip.validate_strategy(strategy, _project_plan())
+    assert "strategy_duplicate_membership" in _codes(caught.value)
+
+
+def test_missing_other_current_membership_and_group_drift_fail_closed() -> None:
     strategy = _strategy()
     strategy["memberships"].pop("WS:CODE-INTELLIGENCE-FABRIC")
     with pytest.raises(lip.InitiativePlanError) as caught:
@@ -169,7 +227,7 @@ def test_current_plan_and_receipt_are_deterministic_and_hash_bound() -> None:
     assert lpp.semantic_json(first) == lpp.semantic_json(second)
     assert first_receipt == second_receipt
     assert first["summary"]["desired_initiatives"] == 7
-    assert first["summary"]["desired_memberships"] == 62
+    assert first["summary"]["desired_memberships"] == 63
     assert first["summary"]["unassigned_exceptions"] == 2
     assert first["summary"]["group_counts"] == EXPECTED_GROUP_COUNTS
     assert first_receipt["strategy_content_sha256"]
