@@ -288,9 +288,28 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
         return _abstain("horizon_exceeds_sample", h=h)
 
     mask = valid & target_ok
+    mask_idx = t_idx[mask]
+    yv_candidate = y[mask_idx + h] - y[mask_idx - 1]
+    finite_yv = np.isfinite(yv_candidate)
+    n_dropped_non_finite = int((~finite_yv).sum())
+    if n_dropped_non_finite:
+        # A gapped target series (a NaN somewhere in y) must not abstain the
+        # whole horizon panel - drop only the rows whose target is unusable
+        # and re-test min_obs against the surviving rows. Previously a single
+        # NaN in y failed np.isfinite(yv).all() AFTER every other check ran,
+        # abstaining all n rows for the whole horizon with reason
+        # non_finite_input even when hundreds of other rows were fine.
+        mask_idx = mask_idx[finite_yv]
+        yv_candidate = yv_candidate[finite_yv]
+        mask = np.zeros(T, dtype=bool)
+        mask[mask_idx] = True
+
     n = int(mask.sum())
     if n < min_obs:
-        return _abstain("insufficient_observations", h=h, n=n)
+        return _abstain(
+            "insufficient_observations", h=h, n=n,
+            n_dropped_non_finite=n_dropped_non_finite,
+        )
 
     shock_used = shock[mask]
     if not np.isfinite(shock_used).all() or float(np.var(shock_used)) <= 1e-18:
@@ -312,9 +331,7 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
         # honest inference left in it. Abstain instead of masking the missing dof.
         return _abstain("insufficient_dof", h=h, n=n, n_columns=n_columns)
 
-    yv = y[t_idx[mask] + h] - y[t_idx[mask] - 1]
-    if not np.isfinite(yv).all():
-        return _abstain("non_finite_input", h=h, n=n)
+    yv = yv_candidate
 
     beta, resid, xtx_pinv = _ols(X, yv)
 
@@ -351,6 +368,7 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
         "ci_low": float(beta_shock - z * se),
         "ci_high": float(beta_shock + z * se),
         "n": n,
+        "n_dropped_non_finite": n_dropped_non_finite,
         "hac_lags": hac_lags_effective,
         "hac_lags_requested": hac_lags_requested,
         "se_naive": se_naive,
@@ -591,13 +609,39 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
 
 
 def plain_words(result: dict) -> str:
-    """One sentence, <= 30 words, no jargon."""
+    """One sentence, <= 30 words, no jargon.
+
+    MUST distinguish an honest null (every horizon was tested and none
+    survived correction) from an abstention (nothing could be tested at
+    all, or only some horizons could be) - collapsing both into the same
+    sentence publishes "no effect" for a case where no measurement was
+    ever taken."""
     null = result.get("null", {})
     rejecting = null.get("rejecting_horizons") or []
     if rejecting:
         return (
             f"A measurable effect showed up at {len(rejecting)} time-step(s) after "
             "the shock, and it survived correction for testing many time-steps at once."
+        )
+    mt = result.get("multiple_testing", {})
+    tested = int(mt.get("n_horizons_tested") or 0)
+    declared = int(mt.get("n_horizons_declared") or 0)
+    if tested == 0:
+        rows = result.get("irf", [])
+        reasons = sorted({
+            row.get("reason") for row in rows
+            if row.get("abstained") and row.get("reason")
+        })
+        reason_txt = reasons[0].replace("_", " ") if reasons else "a data problem"
+        return (
+            "Not available yet - we could not measure any time-step after the "
+            f"shock ({reason_txt})."
+        )
+    if tested < declared:
+        missing = declared - tested
+        return (
+            f"No effect survived correction in the {tested} time-step(s) we could "
+            f"measure; {missing} could not be measured yet."
         )
     return (
         "No time-step after the shock showed an effect that survived correction "

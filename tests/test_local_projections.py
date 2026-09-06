@@ -546,3 +546,38 @@ def test_module_does_no_io():
     assert "from engine.store" not in src
     assert "from data" not in src
     assert "import engine.store" not in src
+
+
+def test_plain_words_distinguishes_abstention_from_tested_null():
+    # MAJOR 1 regression: a fully-abstained impulse_response (nothing could be
+    # measured) must not publish the same sentence as an honest tested null
+    # (every horizon measured, none survived correction). Drive the real
+    # all-abstained path (misaligned shock), not a hand-built fake dict, since
+    # the hand-built fake in test_plain_words_has_no_jargon_and_fits_the_budget
+    # cannot exercise the multiple_testing/irf fields this branches on.
+    y, shock, _ = lp.demo_series(seed=11)
+    result = lp.impulse_response(y, shock[:10], horizons=5, min_obs=100)
+    assert result["multiple_testing"]["n_horizons_tested"] == 0
+    words = result["null"]["plain_words"]
+    assert "not available" in words.lower()
+    assert "no time-step after the shock showed an effect" not in words.lower()
+
+
+def test_single_nan_target_does_not_abstain_the_whole_horizon():
+    # MAJOR 2 regression: one non-finite value in y used to abstain every
+    # horizon with reason non_finite_input even when hundreds of other rows
+    # were perfectly usable. A gapped macro series must still yield an
+    # estimate from its finite rows, with the drop counted, not hidden.
+    y, shock, _ = lp.demo_series(seed=11, n=800)
+    y = y.copy()
+    y[400] = np.nan
+    result = lp.impulse_response(y, shock, horizons=5, min_obs=100)
+    assert result["multiple_testing"]["n_horizons_tested"] > 0
+    non_finite_abstentions = [
+        row for row in result["irf"]
+        if row.get("abstained") and row.get("reason") == "non_finite_input"
+    ]
+    assert non_finite_abstentions == []
+    measured = [row for row in result["irf"] if not row.get("abstained")]
+    assert measured
+    assert any(row.get("n_dropped_non_finite", 0) > 0 for row in measured)
