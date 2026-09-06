@@ -19,7 +19,7 @@ export const meta = {
 // ---------------------------------------------------------------------------
 
 const CEO = (args && args.ceo) || 'A'
-const WAVE = (args && args.wave) || 'W?'
+const WAVE = String((args && args.wave) || '1')
 const PACKETS = (args && Array.isArray(args.packets)) ? args.packets : null
 if (!PACKETS || PACKETS.length === 0) {
   throw new Error('marketontology-vertical-build: args.packets (non-empty array) is required; see charter §6 for the packet shape')
