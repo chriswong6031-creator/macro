@@ -1456,3 +1456,94 @@ def test_compile_security_state_rejects_malformed_blob_without_expected_typed_st
     inp3["now"] = "not-a-datetime"
     with pytest.raises(ss.SecurityStateCompilationError):
         ss.compile_security_state(**inp3)
+
+
+# ---------------------------------------------------------------------------
+# B-F06-1 · second issuer end to end (golden MSFT byte compare) + producer
+# owner-routing (injected records, still zero I/O)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "input_name,expected_name",
+    [
+        ("golden_aapl_input.json", "golden_aapl_expected_output.json"),
+        ("golden_msft_input.json", "golden_msft_expected_output.json"),
+    ],
+)
+def test_golden_expected_output_is_byte_exact(input_name: str, expected_name: str) -> None:
+    state = ss.compile_security_state(**_load(input_name))
+    expected = _load(expected_name) if False else json.loads(
+        (FIXTURE_DIR / expected_name).read_text(encoding="utf-8")
+    )
+    assert state == expected
+    assert state["content_sha256"] == expected["content_sha256"]
+
+
+def test_producer_composes_listing_key_through_the_issuer_reader() -> None:
+    from datetime import date as _date
+
+    from lib.dataos.identity import IssuerMaster, VendorAliasTable
+    from scripts.security_state_producer import _read_security_state_identity_rows
+
+    class _FakeDataDir:
+        """Stands in for a real ``data/reference`` directory: same ``/`` API,
+        but ``pandas.read_parquet`` reads an in-memory frame instead of a file.
+        Zero real I/O — pure injected records, per the module's own contract.
+        """
+
+        def __init__(self, frames: dict) -> None:
+            self._frames = frames
+
+        def __truediv__(self, name: str) -> "_FakePath":
+            return _FakePath(self._frames, name)
+
+    class _FakePath:
+        def __init__(self, frames: dict, name: str) -> None:
+            self._frames = frames
+            self._name = name
+
+        def __truediv__(self, name: str) -> "_FakePath":
+            return _FakePath(self._frames, name)
+
+    import pandas as pd
+
+    real_read_parquet = pd.read_parquet
+
+    def _fake_read_parquet(path, *a, **kw):
+        if isinstance(path, _FakePath):
+            return path._frames[path._name]
+        return real_read_parquet(path, *a, **kw)
+
+    security_master_row = {
+        "security_id": "SEC:US-XNAS-MSFT", "issuer_id": "ISS:US-XNAS-MSFT",
+        "issuer_state": "RESOLVED", "issuer_cik": "789019", "listing_key": "US-XNAS-MSFT",
+    }
+    frames = {
+        "security_master.parquet": pd.DataFrame([security_master_row]),
+        "vendor_aliases.parquet": pd.DataFrame([{
+            "vendor": "store", "vendor_symbol": "MSFT", "security_id": "SEC:US-XNAS-MSFT",
+            "valid_from": None, "valid_to": None,
+        }]),
+        "issuer_master.parquet": pd.DataFrame([{
+            "issuer_id": "ISS:US-XNAS-MSFT", "cik": "0000789019",
+            "legal_name": "MICROSOFT CORP", "status": "active",
+        }]),
+        "issuer_migrations.parquet": pd.DataFrame([], columns=["security_id"]),
+        "security_migrations.parquet": pd.DataFrame([], columns=["security_id"]),
+    }
+
+    monkey_target = pd.read_parquet
+    pd.read_parquet = _fake_read_parquet
+    try:
+        inputs, failures = _read_security_state_identity_rows(
+            _FakeDataDir(frames), ("MSFT",), decision_date=_date(2026, 9, 4),
+        )
+    finally:
+        pd.read_parquet = monkey_target
+
+    assert failures == {}
+    subject = inputs["MSFT"]["subject"]
+    assert subject.listing_key == "US-XNAS-MSFT"
+    assert subject.issuer_cik == "0000789019"
+    assert ("listing_reader", "IssuerMaster.listing_key_of_security") in subject.owner_evidence
+    assert ("cik_reader", "IssuerMaster.cik_of_issuer") in subject.owner_evidence

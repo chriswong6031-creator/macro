@@ -668,3 +668,43 @@ def test_issuer_id_and_parse_id_are_unchanged_by_the_issuer_axis() -> None:
     changed, not the function itself."""
     assert issuer_id(MMC) == "ISS:US-XNYS-MMC"
     assert parse_id("ISS:US-XNAS-GOOG") == ("issuer", ListingKey("US", XNAS, "GOOG"))
+
+
+# ── current security -> listing key seam — B-F06-1 prerequisite ─────────────
+def test_issuer_master_listing_key_of_security_returns_the_master_value() -> None:
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-MSFT", "issuer_id": "ISS:US-XNAS-MSFT",
+         "issuer_state": "RESOLVED", "issuer_cik": "789019", "listing_key": "US-XNAS-MSFT"},
+    ])
+
+    assert im.listing_key_of_security("SEC:US-XNAS-MSFT") == "US-XNAS-MSFT"
+
+
+def test_issuer_master_listing_key_of_security_returns_none_for_absent_security() -> None:
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-MSFT", "issuer_id": "ISS:US-XNAS-MSFT",
+         "issuer_state": "RESOLVED", "issuer_cik": "789019", "listing_key": "US-XNAS-MSFT"},
+    ])
+
+    assert im.listing_key_of_security("SEC:UNKNOWN") is None
+
+
+def test_issuer_master_listing_key_of_security_refuses_conflicting_rows() -> None:
+    im = IssuerMaster([
+        SecurityIssuerRow(security_id="SEC:US-XNAS-DUP", issuer_id="ISS:US-XNAS-DUP",
+                          issuer_state="RESOLVED", listing_key="US-XNAS-DUP"),
+        SecurityIssuerRow(security_id="SEC:US-XNAS-DUP", issuer_id="ISS:US-XNAS-DUP",
+                          issuer_state="RESOLVED", listing_key="US-XNAS-DUPTWO"),
+    ])
+
+    with pytest.raises(IdentityError, match="conflicting.*listing key"):
+        im.listing_key_of_security("SEC:US-XNAS-DUP")
+
+
+def test_issuer_master_listing_key_round_trips_to_the_security_id() -> None:
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-MSFT", "issuer_id": "ISS:US-XNAS-MSFT",
+         "issuer_state": "RESOLVED", "issuer_cik": "789019", "listing_key": "US-XNAS-MSFT"},
+    ])
+    listing_key = im.listing_key_of_security("SEC:US-XNAS-MSFT")
+    assert security_id(parse_listing_key(listing_key)) == "SEC:US-XNAS-MSFT"

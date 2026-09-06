@@ -675,3 +675,36 @@ def test_absent_block_still_costs_only_the_section() -> None:
     assert build_security_state(None) is None
     assert build_security_state({}) is None
     assert build_security_state({"security_state": {}}) is None
+
+
+# ---------------------------------------------------------------------------
+# B-F06-1 · second issuer end to end — the golden MSFT compiled object renders
+# with plain words, no raw enum codes, and both languages present
+# ---------------------------------------------------------------------------
+
+def test_view_model_renders_the_msft_state_with_plain_words() -> None:
+    import jinja2
+
+    fixture = REPO / "tests" / "fixtures" / "security_state" / "golden_msft_expected_output.json"
+    state = json.loads(fixture.read_text(encoding="utf-8"))
+    view = build_security_state({"security_state": state})
+    assert view is not None
+    assert view["ticker_display"] == "MSFT"
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(REPO / "templates")),
+        undefined=jinja2.ChainableUndefined,
+    )
+    html = env.get_template("ticker.html.j2").render(
+        security_state=view, ticker="MSFT", name="Microsoft Corp.",
+    )
+    assert 'id="security-state"' in html
+
+    for code in (
+        "COMPILER_FAILURE", "IDENTITY_UNRESOLVED", "BLOCKED_IDENTITY_BRIDGE",
+        "NOT_COVERED", "UNAVAILABLE",
+    ):
+        assert code not in html, f"raw enum code {code!r} leaked into MSFT panel markup"
+
+    assert '<span class="l-en">' in html
+    assert '<span class="l-zh">' in html

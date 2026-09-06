@@ -821,7 +821,7 @@ class IssuerMaster:
     prevent, one layer up.)
     """
 
-    __slots__ = ("_by_security", "_by_issuer", "_ciks_by_issuer")
+    __slots__ = ("_by_security", "_by_issuer", "_ciks_by_issuer", "_listing_keys_by_security")
 
     def __init__(self, rows: list[SecurityIssuerRow] | tuple[SecurityIssuerRow, ...] = ()) -> None:
         by_security: dict[str, SecurityIssuerRow] = {}
@@ -847,6 +847,13 @@ class IssuerMaster:
         }
         self._ciks_by_issuer: dict[str, tuple[str, ...]] = {
             k: tuple(sorted(v)) for k, v in ciks_by_issuer.items()
+        }
+        listing_keys_by_security: dict[str, set[str]] = {}
+        for row in rows:
+            if row.listing_key:
+                listing_keys_by_security.setdefault(row.security_id, set()).add(row.listing_key)
+        self._listing_keys_by_security: dict[str, tuple[str, ...]] = {
+            k: tuple(sorted(v)) for k, v in listing_keys_by_security.items()
         }
 
     @classmethod
@@ -933,6 +940,22 @@ class IssuerMaster:
                 f"{', '.join(ciks)}"
             )
         return ciks[0]
+
+    def listing_key_of_security(self, security_id: str) -> str | None:
+        """This security's CURRENT listing key as evidenced by the master, or None.
+
+        Current-identity only (same limitation the class docstring already states
+        for issuer/CIK evidence): no asof-scoped listing lineage.
+        """
+        keys = self._listing_keys_by_security.get(security_id, ())
+        if not keys:
+            return None
+        if len(keys) != 1:
+            raise IdentityError(
+                f"conflicting current listing key observations for {security_id!r}: "
+                f"{', '.join(keys)}"
+            )
+        return keys[0]
 
     def security_state_of(self, security_id: str) -> str | None:
         """This security's ``security_state`` (V4-D2B1-R1 §3.6) — ``None`` for an
