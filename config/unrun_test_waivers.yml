@@ -97,6 +97,5 @@ tests/test_market_ontology_half_a_k_chain_docket.py: >-
   wired into .github/ci/legacy-jobs.yml because that file is a global CI invalidator
   (full 194-job suite, a ci-authority hit) and this suite only reads two static
   research/agentos markdown files plus one CSV — no engine or signal-contract path.
-  Owner: Meta-CEO B, lane F04 (+F05 spillover). Delete this row and add the file to
-  a research/records-only CI step if one is ever commissioned for
-  research/market_intelligence_productization docket pins.
+  Owner: Meta-CEO B, lane F04 (+F05 spillover). Adopted by a market-ontology-records
+  CI job when one is commissioned (Meta-CEO B, B-PLAT-5); delete this row then.
