@@ -1,25 +1,38 @@
 {#
-  Macro & Monetary — the suite hub (F01 / R1).
+  Macro Command — the suite hub (F01 / Macro Command P1).
 
-  ONE discoverable entry point to fourteen research workspaces. The hub owns no
-  producer and publishes no state of its own: every row is the snapshot the
-  workspace page beside it was built from, so the two cannot disagree.
+  ONE dashboard page for the fourteen `macro_*` research workspaces, guided
+  reading rather than a KPI grid: the page opens on one plain-word sentence
+  ("The Read"), not a wall of numbers. Frozen spec:
+  research/... (see the F01 Macro Command masterplan) §2.7/§2.8/§6.2.
+
+  DS header (§12 items 2-3, orchestrator rulings R1/R2):
+  - Archetype: `command_center` ("Command Center"),
+    research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §10 row A, copied verbatim.
+  - `.mc-panel` SUPERSEDES `.mq-card` on this page: no `.mq-card` is rendered
+    inside site/macro_monetary.html. The 14 deep-link `macro_<slug>.html`
+    pages keep their own `.mq-card` system unchanged (§6.3).
 
   Three things it deliberately does NOT do, because each is a closed
   construction rather than a missing feature:
 
     * It does not score, rank or fuse the fourteen workspaces into one reading
-      (DNR:KILL-FUSED-COMPOSITE, DNR:KILL-REGIME-SCORECARD). The order is the
-      closed producer registry's order and never changes with the data.
-    * It does not promote operational trouble into investment importance. A
-      failed, stale or conflicted input goes in its own attention notice; it
-      never reorders the suite, because "this source broke" is not "this
-      matters most".
-    * It does not present its change list as a curated set of what matters. It
-      shows the first few in suite order, says how many it did not show, and
-      sends the reader to the workspace for the rest.
+      (DNR:KILL-FUSED-COMPOSITE, DNR:KILL-REGIME-SCORECARD). The sidebar order
+      is a fixed reading order (SECTIONS in scripts/build_macro_suite_pages.py)
+      and never changes with the data.
+    * The Read is a verbatim pass-through of each workspace's own reviewed
+      state label, joined by fixed connectives — never a judgment, never fused.
+    * It does not present machine text: no raw slug, no internal state id, no
+      untranslated stat name is on screen outside a `<details>` subtree.
 
-  No JavaScript beyond the shared theme/boot scripts: the hub is HTML and CSS.
+  P1 (this packet) ships the shell, rail, hash routing, tokens and panel
+  stubs only — no content computation. Every non-Overview panel's default
+  content is the honest offer line to its own workspace page (deviation from
+  the frozen spec's literal "twelve E1 states" for P1, ruled by the
+  orchestrator under G4: the literal E1 "why" sentence would be false for a
+  section whose source HAS published). Panels carry no stance / primer /
+  caption / watching copy in P1 — placeholder copy there would be machine
+  text; a later packet ships the reviewed copy.
 #}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
@@ -27,7 +40,7 @@
 {% macro bl(node) -%}
 {%- if node %}{{ t(node.en, node.zh) }}{% endif -%}
 {%- endmacro %}
-{% import "_macro_suite_shell.html.j2" as shell %}
+{% import "_macro_command_macros.html.j2" as m %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,136 +54,200 @@
 <script src="macro_suite_boot.js"></script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="macro_suite.css">
+<link rel="stylesheet" href="macro_command.css">
 </head>
-<body class="mq-page mq-hub-page">
-{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
-{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+<body class="mq-page mc-page">
 {% include "_site_nav.html.j2" %}
 
-<main class="mq-shell mq-hub" id="mq-shell">
+<main class="mc-shell" id="mc-shell">
 
-  <header class="mq-hub-head">
-    <p class="mq-kicker">{{ bl(view.kicker) }}</p>
-    <h1>{{ bl(view.title) }}</h1>
-    <p class="mq-deck">{{ bl(view.deck) }}</p>
-    <p class="mq-hub-asof" data-mq-hub-asof>
-      <span class="mq-hub-asof-item">
-        <span class="mq-hub-asof-key">{{ bl(view.as_of.label) }}</span>
-        {% if view.as_of.effective_date %}<time>{{ view.as_of.effective_date }}</time>{% else %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('no workspace published a dated print', '没有工作区发布带日期的读数') }}</span>{% endif %}
-      </span>
-      <span class="mq-hub-asof-item">
-        <span class="mq-hub-asof-key">{{ bl(view.coverage.label) }}</span>
-        <strong class="mq-tone-{{ 'ok' if view.coverage.complete else 'warn' }}">{{ view.coverage.available }} / {{ view.coverage.total }}</strong>
-      </span>
-    </p>
-    <p class="mq-hub-asof-note">{{ bl(view.as_of.note) }}</p>
-  </header>
+  <a class="mc-skip" href="#mc-content">{{ t("Skip to today's read", '跳到今日读数') }}</a>
 
-  {# ── what changed ─────────────────────────────────────────────────────────
-     Bounded, in suite order, and honest about its own boundary. #}
-  <section class="mq-hub-changes" aria-labelledby="mq-hub-changes-title" data-mq-hub-changes>
-    <div class="mq-section-head">
-      <h2 id="mq-hub-changes-title">{{ bl(view.changes.heading) }}</h2>
-      <span class="mq-section-note">{{ bl(view.changes.note) }}</span>
-    </div>
-    {%- if view.changes.entries %}
-    <ul class="mq-hub-changelist">
-      {%- for change in view.changes.entries %}
-      <li class="mq-hub-change">
-        <a class="mq-hub-change-link" href="{{ change.href }}">{{ bl(change.workspace_title) }}</a>
-        <span class="mq-hub-change-metric">{{ bl(change.label) }}</span>
-        <span class="mq-hub-change-move">
-          <span class="mq-hub-change-prior">{{ change.prior }}</span>
-          <span class="mq-hub-change-arrow" aria-hidden="true">→</span>
-          <span class="mq-hub-change-current">{{ change.current }}</span>
-          <span class="mq-delta mq-delta-{{ change.sign }}">{{ change.delta }}</span>
-        </span>
-      </li>
-      {%- endfor %}
-    </ul>
-    <p class="mq-hub-remaining" data-mq-changes-remaining="{{ view.changes.remaining }}">
-      {%- if view.changes.remaining %}
-      {{ t('Showing', '显示') }} {{ view.changes.shown }} {{ t('of', '/') }} {{ view.changes.total }}.
-      {{ t('The other', '其余') }} {{ view.changes.remaining }} {{ t('are on the workspace pages below.', '项请见下方各工作区页面。') }}
-      {%- else %}
-      {{ t('That is every method-comparable change in this build.', '这是本次构建中全部方法可比的变化。') }}
-      {%- endif %}
-    </p>
-    {%- else %}
-    <p class="mq-hub-empty" data-mq-changes-remaining="0">{{ bl(view.changes.empty_text) }}</p>
-    {%- endif %}
-  </section>
-
-  {# ── data attention ───────────────────────────────────────────────────────
-     A separate operational notice. Never an ordering, never a severity ranking
-     across workspaces. #}
-  <section class="mq-hub-attention" aria-labelledby="mq-hub-attention-title"
-           data-mq-hub-attention{% if view.unavailable %} data-mq-hub-unavailable{% endif %}>
-    <div class="mq-section-head">
-      <h2 id="mq-hub-attention-title">{{ bl(view.attention.heading) }}</h2>
-      <span class="mq-section-note">{{ bl(view.attention.note) }}</span>
-    </div>
-    {%- if view.attention.entries %}
-    <ul class="mq-hub-attentionlist">
-      {%- for item in view.attention.entries %}
-      <li class="mq-hub-attention-row{{ ' mq-hub-absent' if item.tone == 'bad' else '' }}"
-          data-mq-workspace="{{ item.workspace_id }}">
-        <a class="mq-hub-attention-link" href="{{ item.href }}">{{ bl(item.title) }}</a>
-        <span class="mq-chip mq-tone-{{ item.tone }}">{{ bl(item.reason.label) }}</span>
-      </li>
-      {%- endfor %}
-    </ul>
-    {%- else %}
-    <p class="mq-hub-empty">{{ bl(view.attention.clear_text) }}</p>
-    {%- endif %}
-  </section>
-
-  {# ── the fourteen ─────────────────────────────────────────────────────────
-     Closed registry order. Not sorted, not ranked, not grouped by magnitude. #}
-  <section class="mq-hub-suite" aria-labelledby="mq-hub-suite-title">
-    <div class="mq-section-head">
-      <h2 id="mq-hub-suite-title">{{ t('The fourteen workspaces', '十四个工作区') }}</h2>
-      <span class="mq-section-note">{{ t('Listed in the research suite’s own fixed order — not by size of move and not by importance.', '按研究套件既定的固定顺序排列 — 既非按变动幅度，也非按重要性。') }}</span>
-    </div>
-    <ul class="mq-hub-grid" data-mq-hub-grid>
-      {%- for row in view.workspaces %}
-      <li class="mq-hub-card{{ '' if row.available else ' mq-hub-absent' }}"
-          data-mq-workspace="{{ row.workspace_id }}">
-        <a class="mq-hub-card-link" href="{{ row.href }}">
-          <h3 class="mq-hub-card-title">{{ bl(row.title) }}</h3>
+  <nav class="mc-rail" id="mc-rail" aria-labelledby="mc-rail-label">
+    <p class="mc-rail-label" id="mc-rail-label">{{ t('Sections', '板块') }}</p>
+    <ul class="mc-rail-list">
+      {%- for s in sections %}
+      <li class="mc-rail-item">
+        <a class="mc-rail-link{{ ' is-current' if s.first else '' }}"
+           href="#{{ s.id }}" data-mc-section="{{ s.id }}"
+           {%- if s.first %} aria-current="page"{% endif %}>
+          <span class="mc-rail-bar" aria-hidden="true"></span>
+          <span class="mc-rail-text">{{ bl(s.label) }}</span>
+          {%- if s.tone %}<span class="mc-rail-dot mq-tone-{{ s.tone }}" aria-hidden="true"></span>{% endif %}
         </a>
-        <p class="mq-hub-card-deck">{{ bl(row.subtitle) }}</p>
-        {%- if row.available %}
-        <p class="mq-hub-card-state">
-          {%- if row.state_label %}<strong>{{ bl(row.state_label) }}</strong>
-          {%- else %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('no state published', '未发布状态') }}</span>{% endif %}
-        </p>
-        <dl class="mq-hub-card-meta">
-          <div><dt>{{ t('Effective', '生效') }}</dt>
-               <dd>{% if row.effective_date %}<time>{{ row.effective_date }}</time>{% else %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('not available yet', '暂无数据') }}</span>{% endif %}</dd></div>
-          <div><dt>{{ t('Sources', '数据源') }}</dt>
-               <dd class="mq-tone-{{ row.freshness_tone }}">{{ bl(row.freshness) }}</dd></div>
-          <div><dt>{{ t('Coverage', '覆盖率') }}</dt>
-               <dd>{% if row.coverage_present %}{{ row.coverage }}{% else %}{{ shell.absent(row.coverage_absence, True) }}{% endif %}</dd></div>
-        </dl>
-        {%- else %}
-        <p class="mq-hub-card-absence">
-          <span class="mq-chip mq-tone-bad">{{ bl(row.absence.label) }}</span>
-        </p>
-        <p class="mq-hub-card-absence-text">{{ bl(row.absence_text) }}</p>
-        <p class="mq-hub-card-recovery">{{ bl(row.recovery_text) }}</p>
-        {%- endif %}
       </li>
       {%- endfor %}
     </ul>
-  </section>
 
-  <p class="mq-hub-foot">
-    {{ t('This page composes what each workspace owner published. It produces no score and no ordering of its own, and it never tells you what to do.', '本页仅汇总各工作区所有者已发布的内容，不产生任何自有评分或排序，也不提供任何操作指示。') }}
-    <span class="mq-hub-foot-built">{{ t('Page built', '页面生成') }} <time>{{ view.page_built_at }}</time></span>
-  </p>
+    {# ANALYST — mount the sitewide widget; the bare link is the degraded fallback only (§8) #}
+    {%- if analyst.mountable %}
+    <button type="button" class="mc-analyst" data-mc-analyst
+            data-mc-analyst-label-en="Macro Command" data-mc-analyst-label-zh="宏观指挥台">
+      <span class="mc-analyst-mark" aria-hidden="true">◈</span>
+      <span class="mc-analyst-text">{{ t('Ask the analyst', '向分析师提问') }}</span>
+    </button>
+    {%- else %}
+    <a class="mc-analyst" href="chat.html">
+      <span class="mc-analyst-mark" aria-hidden="true">◈</span>
+      <span class="mc-analyst-text">{{ t('Ask the analyst', '向分析师提问') }}</span>
+    </a>
+    {%- endif %}
+  </nav>
+
+  <div class="mc-content" id="mc-content">
+
+    <header class="mc-command">
+      <p class="mc-eyebrow">
+        <span class="mc-eyebrow-suite">{{ t('Macro & Monetary', '宏观与货币') }}</span>
+        <span class="mc-eyebrow-sep" aria-hidden="true">·</span>
+        {%- if read.as_of %}
+        <span class="mc-eyebrow-asof">
+          {# G2b: the plain word is INSIDE the visible text; the machine value is only in datetime= #}
+          <span class="mc-asof-word">{{ t('Data to', '数据截至') }}</span>
+          <time datetime="{{ read.as_of }}">{{ bl(read.as_of_display) }}</time>
+        </span>
+        {%- else %}
+        <span class="mc-eyebrow-asof mc-absent">{{ t('No dated reading yet', '暂无带日期的读数') }}</span>
+        {%- endif %}
+      </p>
+      <h1 class="mc-title">{{ t('Macro Command', '宏观指挥台') }}</h1>
+
+      {# THE READ — one sentence, deterministic, single-workspace pass-through only (G3) #}
+      {%- if read.clauses|length >= 3 %}
+      <p class="mc-read" data-mc-read>
+        {%- for clause in read.clauses %}
+        <span class="mc-read-clause">
+          <a class="mc-read-topic mq-tone-{{ clause.tone }}" href="#{{ clause.section }}">{{ bl(clause.topic) }}</a>
+          <span class="mc-read-state">{{ bl(clause.predicate) }}</span>{{ clause.punct }}
+        </span>
+        {%- endfor %}
+      </p>
+      {%- if read.omitted %}
+      <p class="mc-read-omitted">{{ t('Some readings are not available today — see the states below.',
+                                       '部分读数今日不可用 — 见下方状态条。') }}</p>
+      {%- endif %}
+      {%- else %}
+      <p class="mc-read-fallback">{{ t("See each workspace below for its own dated read.",
+                                       '各工作区下方各自展示其带日期的读数。') }}</p>
+      {%- endif %}
+
+      <ul class="mc-strip" data-mc-strip>
+        {%- for chip in strip %}
+        <li class="mc-chip mq-tone-{{ chip.tone }}{{ ' is-null' if chip.null else '' }}">
+          <a class="mc-chip-link" href="#{{ chip.section }}" aria-describedby="{{ chip.id }}-help">
+            <span class="mc-chip-label">{{ bl(chip.label) }}</span>
+            <strong class="mc-chip-value">
+              {%- if chip.null %}{{ t('Not available yet', '暂不可用') }}
+              {%- else %}{{ bl(chip.value) }}{% endif -%}
+            </strong>
+            <span class="mc-chip-asof">
+              {%- if chip.as_of %}
+              <span class="mc-asof-word">{{ t('Data to', '数据截至') }}</span>
+              <time datetime="{{ chip.as_of }}">{{ bl(chip.as_of_display) }}</time>
+              {%- else %}{{ m.nulled('no dated reading for this topic', '该主题没有带日期的读数') }}{% endif -%}
+              {%- if chip.freshness_note %}
+              <span class="mc-chip-fresh">· {{ bl(chip.freshness_note) }}</span>
+              {%- endif %}
+            </span>
+          </a>
+          {# D13: always in the accessibility tree via aria-describedby, visually revealed on hover/focus #}
+          <span class="mc-chip-help" id="{{ chip.id }}-help" role="note">{{ bl(chip.meaning) }}</span>
+        </li>
+        {%- endfor %}
+      </ul>
+    </header>
+
+    {%- for s in sections %}
+    <section class="mc-panel" id="{{ s.id }}" data-mc-panel="{{ s.id }}"
+             aria-labelledby="{{ s.id }}-h" tabindex="-1">
+      <div class="mc-panel-head">
+        <h2 class="mc-panel-title" id="{{ s.id }}-h">{{ bl(s.label) }}</h2>
+        {%- if s.question %}<p class="mc-panel-question">{{ bl(s.question) }}</p>{% endif %}
+      </div>
+
+      {%- if s.stance %}
+      <p class="mc-stance mq-tone-{{ s.stance.tone }}">
+        <span class="mc-stance-bar" aria-hidden="true"></span>
+        <span class="mq-sr">{{ t('What this means for you', '这对你意味着什么') }}: </span>
+        <span class="mc-stance-text">{{ bl(s.stance.text) }}</span>
+      </p>
+      {%- endif %}
+
+      {%- if s.primer %}
+      <details class="mc-primer"{{ ' open' if s.primer_open else '' }}>
+        <summary>{{ t('New to this? 30 seconds', '第一次看？30 秒读懂') }}</summary>
+        <div class="mc-primer-body">{{ bl(s.primer) }}</div>
+      </details>
+      {%- endif %}
+
+      {%- if s.subtabs %}
+      <div class="mc-subtabs" role="tablist" aria-label="{{ s.subtab_group_en }}">
+        {%- for tab in s.subtabs %}
+        <button type="button" class="mc-subtab" role="tab" id="{{ tab.id }}-t"
+                data-mc-subtab="{{ tab.id }}" aria-controls="{{ tab.id }}"
+                aria-selected="{{ 'true' if tab.first else 'false' }}"
+                tabindex="{{ '0' if tab.first else '-1' }}">{{ bl(tab.label) }}</button>
+        {%- endfor %}
+      </div>
+      {%- endif %}
+
+      <div class="mc-figure" data-mc-figure>
+        {%- if s.first %}
+        <p class="mc-figure-building">{{ t('This overview is being built. Each section on the left opens its full workspace.',
+                                             '总览正在建设中。左侧每个板块均可打开其完整工作区。') }}</p>
+        {%- elif s.subtabs %}
+        {# D8: the DEFAULT (no-JS) content is an honest null with a real destination, for EACH tab body.
+           The pending line is hidden in the document and unhidden by JS at boot; both tab bodies ship
+           unhidden in the served document (R3) — JS applies the roving hide/show once it runs (§6.2). #}
+        <p class="mc-figure-pending" hidden data-mc-pending>{{ t('Loading this section…', '正在载入本板块…') }}</p>
+        {%- for tab in s.subtabs %}
+        <div class="mc-figure-tabbody" data-mc-tabbody="{{ tab.id }}" id="{{ tab.id }}"
+             role="tabpanel" aria-labelledby="{{ tab.id }}-t">
+          <p class="mc-figure-offer" data-mc-offer>
+            <a class="mc-deep" href="{{ tab.deep_href }}">{{ t('The full chart for this section lives on its workspace page →',
+                                                                 '本板块的完整图表位于其工作区页面 →') }}</a>
+          </p>
+        </div>
+        {%- endfor %}
+        {%- else %}
+        {# D8: the DEFAULT (no-JS) content is an honest null with a real destination.
+           The pending line is hidden in the document and unhidden by JS at boot. #}
+        <p class="mc-figure-pending" hidden data-mc-pending>{{ t('Loading this section…', '正在载入本板块…') }}</p>
+        <p class="mc-figure-offer" data-mc-offer>
+          <a class="mc-deep" href="{{ s.deep_href }}">{{ t('The full chart for this section lives on its workspace page →',
+                                                             '本板块的完整图表位于其工作区页面 →') }}</a>
+        </p>
+        {%- endif %}
+      </div>
+      {%- if s.caption %}<p class="mc-caption">{{ bl(s.caption) }}</p>{% endif %}
+
+      {%- if s.watching %}
+      <div class="mc-watch">
+        <h3 class="mc-watch-title">{{ t("What we're watching", '我们在观察什么') }}</h3>
+        <ul class="mc-watch-list">
+          {%- for w in s.watching %}<li>{{ bl(w) }}</li>{% endfor %}
+        </ul>
+      </div>
+      {%- endif %}
+
+      <details class="mc-details">
+        <summary>{{ t('Details, methods and sources', '细节、方法与来源') }}</summary>
+        <div class="mc-details-body">
+          {# §1.3: the workspace's own title, once, as the deep link. Overview has
+             no single workspace of its own, so it lists all fourteen (real
+             registry titles/hrefs, closed suite order — never invented copy). #}
+          <ul class="mc-details-links">
+            {%- for link in s.detail_links %}
+            <li><a href="{{ link.href }}">{{ bl(link.title) }}</a></li>
+            {%- endfor %}
+          </ul>
+        </div>
+      </details>
+    </section>
+    {%- endfor %}
+  </div>
 </main>
-
+<script src="macro_command.js" defer></script>
 <script src="theme.js" defer></script>
 </body>
 </html>

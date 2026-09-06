@@ -39,6 +39,7 @@ BUILT_AT = "2026-09-04T12:00:00Z"
 
 _TEMPLATE_NAMES = (
     "macro_monetary.html.j2",
+    "_macro_command_macros.html.j2",
     "_macro_suite_nav.html.j2",
     "macro_liquidity_regime.html.j2",
     "macro_growth_real_economy.html.j2",
@@ -61,6 +62,13 @@ _TEMPLATE_NAMES = (
     "macro_suite_boot.js",
     "macro_suite.css",
     "macro_suite.js",
+    # F01 Macro Command P1: SHARED_ASSETS now also carries the page-level
+    # macro_command.css/.js (scripts/build_macro_suite_pages.py:52) — the
+    # isolated fixture root must carry both or `builder.render()`'s
+    # end-of-run `_atomic_copy` over every SHARED_ASSETS entry raises
+    # FileNotFoundError.
+    "macro_command.css",
+    "macro_command.js",
 )
 
 

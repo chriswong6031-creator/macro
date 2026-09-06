@@ -1,0 +1,21 @@
+{#
+  Macro Command — shared null macro (F01 / Macro Command P1).
+
+  `nulled(en, zh)` is the ONE place this page emits a bare em dash. Every
+  invocation carries an `.mq-sr` sentence explaining the absence, so no dash
+  on this page is ever the only content of a cell, chip or panel (G4).
+  Grafted verbatim from the COMMAND draft §2.2 / frozen spec §2.7.
+
+  `t`/`bl` are defined locally here (never imported cross-file) because Jinja
+  macros are not visible across an `{% import %}` boundary without `with
+  context`, and this repo's established idiom — see
+  `_macro_suite_shell.html.j2:35-40` — is a local copy per macro-library file,
+  not a shared-context import.
+#}
+{%- macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% macro nulled(en, zh) -%}
+<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t(en, zh) }}</span>
+{%- endmacro %}

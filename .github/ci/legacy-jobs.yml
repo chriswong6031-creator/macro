@@ -13819,6 +13819,27 @@ jobs:
       - "scripts/build_macro_suite_pages.py"
       - "site/macrodata/workspaces/**"
       - "tests/test_macro_suite_pages.py"
+      # F01 Macro Command P1 (2026-09-06): the hub's new shell/rail/routing —
+      # same job as the pages above, since scripts/build_macro_suite_pages.py
+      # (already in scope) imports/copies these and macro_monetary.html.j2
+      # (already in scope) imports the new macros file. Widening per this
+      # job's own header note: a new import gets added here, not inferred.
+      - "templates/_macro_command_macros.html.j2"
+      - "templates/macro_command.css"
+      - "templates/macro_command.js"
+      - "scripts/check_macro_command_copy.py"
+      - "tests/test_macro_command_shell.py"
+      - "tests/test_macro_command_copy_law.py"
+      # scripts/check_contract_delta.py's import-closure audit: Macro Command
+      # is the first page in this job to render the built artifact itself
+      # (test_macro_command_shell.py reads `site/macro_monetary.html` for
+      # G7's byte-unchanged proof) and to link `theme.css` directly
+      # (`templates/macro_monetary.html.j2`'s `<link rel="stylesheet"
+      # href="theme.css">`) rather than only inheriting it transitively
+      # through `_site_nav.html.j2`.
+      - "site/macro_monetary.html"
+      - "templates/_site_nav.html.j2"
+      - "templates/theme.css"
       # F01 R1 2026-09-05: the suite hub + shared in-suite navigation. Same job as
       # the workspace pages because it is the same subject: one builder, one shell,
       # one view model. A hub that disagreed with the pages it links to would be a
@@ -13836,6 +13857,6 @@ jobs:
       - name: install suite-page test dependencies
         run: pip install pytest jinja2 pyyaml jsonschema==4.26.0
       - name: Market OS macro suite pages — shell, labels, view model, builder
-        run: python -m pytest tests/test_macro_suite_pages.py -q
+        run: python -m pytest tests/test_macro_suite_pages.py tests/test_macro_command_shell.py tests/test_macro_command_copy_law.py -q
       - name: Market OS macro suite hub — discoverability, ordering, honest absence
         run: python -m pytest tests/test_macro_monetary_hub.py -q
