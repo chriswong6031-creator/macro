@@ -758,6 +758,7 @@ def build_health_record(
     compiler_generated_at: str | None,
     queue_receipt: Mapping[str, Any] | None = None,
     horizon: Mapping[str, Any] | None = None,
+    covenant_coverage: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     after = dict(ingestion_run.get("source_high_watermark_after") or {})
     counters = dict(ingestion_run.get("counters") or {})
@@ -806,6 +807,8 @@ def build_health_record(
     }
     if horizon is not None:
         record["horizon"] = dict(horizon)
+    if covenant_coverage is not None:
+        record["covenant_extraction"] = dict(covenant_coverage)
     return record
 
 
@@ -892,6 +895,8 @@ def evaluate_health(root: Path, *, generated_at: str | None = None) -> dict[str,
     compiled_events = (telemetry.get("counts") or {}).get("event_versions")
     if compiled_events is not None:
         compiled_events = int(compiled_events)
+    covenant_path = root / COVENANT_OBSERVATION_FILENAME
+    covenant_coverage = covenant_extraction_coverage(rows(covenant_path), manifests)
     record = build_health_record(
         generated_at=now,
         ingestion_run=ingestion_run,
@@ -900,6 +905,7 @@ def evaluate_health(root: Path, *, generated_at: str | None = None) -> dict[str,
         compiler_generated_at=telemetry.get("as_of"),
         queue_receipt=queue_receipt,
         horizon=horizon,
+        covenant_coverage=covenant_coverage,
     )
     _validate_health(record)
     return record
@@ -943,13 +949,11 @@ def health_exit_code(record: Mapping[str, Any]) -> int:
 
 # --- Packet B-F09-5: covenant-extraction coverage (context only) ---------
 #
-# Pure, disk-free census of the covenant producer's coverage. NOT wired into
-# evaluate_health/build_health_record: contracts/capital_structure_ingestion_health.schema.json
-# is additionalProperties:false at the root and in `counters`, and is an
-# unowned file for this packet (deviation D2) — wiring a "covenant_extraction"
-# block into the emitted health record would fail schema validation. Per the
-# packet's own §6.4 fallback, this ships as a tested pure function only and
-# emits nothing into health.json until that contract is extended.
+# Pure, disk-free census of the covenant producer's coverage. D2 extension
+# landed: contracts/capital_structure_ingestion_health.schema.json now carries
+# an optional (not required), additionalProperties:false "covenant_extraction"
+# block, and evaluate_health() wires this census into the emitted health
+# record as that top-level block (never inside `counters`).
 
 COVENANT_OBSERVATION_FILENAME = "covenant_term_observations.parquet"
 
@@ -961,9 +965,10 @@ def covenant_extraction_coverage(
     manifests,
 ):
     """Covered/eligible census for the covenant producer. Context only —
-    never a gate, never wired into the emitted health record (see note
-    above). `state` is "uncovered" when there are zero observations: a
-    printed null, never a hidden zero."""
+    never a gate. Wired into evaluate_health()'s emitted health record as
+    the top-level "covenant_extraction" block (see note above). `state` is
+    "uncovered" when there are zero observations: a printed null, never a
+    hidden zero."""
     eligible = [
         m for m in manifests
         if (m.get("document") or {}).get("document_role") == "exhibit"
