@@ -90,3 +90,13 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_market_ontology_half_b_rights_docket.py: >-
+  Records-only regression for packet B-F09-7 (Half-B rights/upstream-gate docket):
+  asserts shape of a new research/ doc + a new agentos/decisions/ DEC record + 20
+  cell edits in the F00C ledger CSV. No engine/scripts subject owns this file, and
+  listing it in .github/ci/legacy-jobs.yml is a global CI invalidator (full-suite,
+  ci-authority hit) for a records-only, no-render packet. Run directly via
+  `python -m pytest tests/test_market_ontology_half_b_rights_docket.py -q` in CI
+  triage / local verification. Owner: Meta-CEO B wave, lane F09. Delete this row
+  if a market-ontology-records CI step is ever commissioned.
