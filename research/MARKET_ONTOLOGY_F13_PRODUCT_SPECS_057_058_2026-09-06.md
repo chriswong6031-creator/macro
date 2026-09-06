@@ -41,8 +41,14 @@ the amendment record the ruling asked for.
    The chosen call site is push-triggered, not nightly, and not scheduled at all. Making the digest
    nightly needs a NEW `schedule:` block — a second scheduler, banned by the F13 handoff's
    `do_not_redo` (`:32`, cited above). **The ONLY lawful send host would be an EXISTING scheduled
-   invocation of the mailer; none exists**, so A7's send is dropped rather than hosted on an
-   invented lane. See the rewritten A7 below for the DEFERRED child this becomes.
+   GitHub Actions invocation of the mailer; none exists in `.github/workflows/`.** (Scoped claim,
+   round-4 fix: a scheduled *non-Actions* mailer caller does exist —
+   `scripts/freshness_sentinel.py:2156` calls `mailer.send(...)`, VPS-cron'd per
+   `.github/workflows/nightly-liveness.yml:8`'s "The VPS freshness_sentinel" comment — but it sends
+   an *operator* dead-man alert, not a user-facing digest, and piggybacking a user digest onto an
+   ops watchdog is not this packet's call to make. The DROP holds either way.) So A7's send is
+   dropped rather than hosted on an invented lane. See the rewritten A7 below for the DEFERRED
+   child this becomes.
 2. **Independent second DROP reason (MAJOR-2).** A7 also named `app/email_segments.py:273 get()`
    as something a builder could "iterate ... members" from. Measured: `get()` (`:273`) returns a
    `Segment` **definition**, not a recipient iterable; the membership predicate (`:258`) is a SQL
@@ -73,6 +79,15 @@ the amendment record the ruling asked for.
    (`:121` is the `.render(` call opener, `:124` is the closing `),`); B3's `add_task` citation
    corrected to `app/support.py:619`; B2's mailer citation split into `:342` (`send()` def) and
    `:343` (`headers` param, not `:342`); §0's tracked-path denominator re-measured to `87157`.
+7. **Round-4 review fixes (this head, precision-only, no spec-content redesign):** scoped item 1's
+   negative claim to GitHub Actions and named the VPS-cron'd `scripts/freshness_sentinel.py`
+   non-Actions mailer caller as an out-of-scope operator watchdog (DROP outcome unchanged); fixed
+   A5's key count from six to seven and documented the previously-unspecified `root` parameter
+   (reserved, unread in V1, parity with `help_directory_view_model`); added the `age_hours == 0`
+   sub-hour copy rule to A5/A6 so a build under an hour old never renders "Updated 0 hours ago";
+   corrected A3's `scripts/build_site.py:3741-3742` claim so it matches A4's exact `:3742` citation
+   (`:3741` only computes the view-model; `:3742` alone threads the stamp); tightened B3's hedged
+   `templates/help.html.j2:113`-ish citation to the exact `:112-114` span.
 
 **Title reconciliation.** The ledger rows read narrower than the packet's framing: `MO-PAID-057` asks for a priority-tier SLO / differentiated refresh (`acceptance_test`: "a PRO-tier refresh measurably completes first, logged"; `real_producer`: `.github/workflows/daily.yml` — no priority tiers); `MO-PAID-058` asks for tier-differentiated support routing/queue/SLA (`acceptance_test`: "a PRO ticket provably routes to a different queue/alert"). This spec answers the ledger rows because they are the closure target: 057's honest product is a **refresh/release disclosure**, not a sold-faster refresh; 058's honest product is **one channel, labelled**, not a second queue.
 
@@ -91,7 +106,7 @@ the amendment record the ruling asked for.
 **The tier-differentiated refresh in the ledger row is REFUSED.** A priority queue over `.github/workflows/daily.yml` is a source scheduler, banned by the F13 `do_not_redo`. Selling a faster refresh also manufactures the false-green `danger_areas` failure — a paying user believing their data is fresher than it is. Also not built in V1: a changelog generator, release ledger, version manifest, in-app notification centre, web-push, second delivery path, **or an email digest** — see A7, DROPPED from V1 (no lawful scheduled mailer host exists in this repo; see Ruling amendments §0.5). **V1 ships PULL-only**: disclosure of the refresh truth that already exists, read on `/help.html` — the user sees it by visiting the page; V1 pushes nothing to anyone by email.
 
 ## A3. Existing owner extended
-1. The nightly build stamp already threaded through every public page: `scripts/build_public_pages.py:121-124` (the `.render(` call opens at :121; `generated_utc=generated` and `**help_vm` are the two kwargs, spanning :122-123; the call closes at :124) passes it into `help.html.j2`; `scripts/build_site.py:3741-3742` does the same.
+1. The nightly build stamp already threaded through every public page: `scripts/build_public_pages.py:121-124` (the `.render(` call opens at :121; `generated_utc=generated` and `**help_vm` are the two kwargs, spanning :122-123; the call closes at :124) passes it into `help.html.j2`. `scripts/build_site.py` does the analogous work in two steps, not one line: `:3741` computes the view-model consumed by the render call (`vm = help_directory_view_model(config.ROOT)`), and `:3742` is the line that actually threads the stamp (`generated_utc=generated`) — matching A4's citation of `:3742` alone as the one-line addition site.
 2. The frozen, source-validated help directory: `lib/help_directory.py:64` `HELP_LINKS`, validated at `:177`, projected at `:214`.
 3. `app/mailer.py:342` `send(...)` remains the one mail path in the repo, used by Spec B (support ticket mail) — V1 of Spec A does not call it (A7).
 
@@ -119,7 +134,11 @@ def refresh_disclosure(root: Path, generated_utc: str | None,
     """Project the one stamp the builder already has into a plain-word disclosure.
 
     Pure: no network, no Supabase, no git. `now` is injected for a deterministic test.
-    Always returns all six keys, never a partial dict:
+    `root` is accepted for signature parity with `help_directory_view_model(root, ...)`
+    (`lib/help_directory.py:214`) and is reserved for a future on-disk release-truth read;
+    V1 does not read anything under it — passing any `Path`, including one that does not
+    exist, must not change the return (see A9's acceptance test for this).
+    Always returns all seven keys, never a partial dict:
       state: "fresh" | "stale" | "unknown"
       stamp_utc: str | None       # raw stamp, echoed unmodified; None when unparseable
       age_hours: int | None       # None when state == "unknown" — NEVER 0
@@ -129,6 +148,7 @@ def refresh_disclosure(root: Path, generated_utc: str | None,
     """
 ```
 - `generated_utc` absent/empty/unparseable → `state="unknown"`, `age_hours=None`. **`age_hours` is never `0` for an unknown stamp** — an unreadable stamp must not land on the same value as a stamp read one minute ago.
+- When the real elapsed time is under one hour, `age_hours` legitimately reports a true integer `0` (not a null) for `state="fresh"`; `line_en`/`line_zh` then read **"Updated less than an hour ago."** / **"不到一小时前更新。"** rather than interpolating `{n}=0` — the `{n}` form in A6 applies only once `age_hours >= 1`. A real `0` stays a digit (permitted by the three-way null vocabulary), it is just not spoken as "0 hours ago".
 - Nothing is ever branched on a formatted string; the template reads `refresh.state`, never `refresh.line_en`.
 - No tier is read here — one refresh truth, same for every user.
 
@@ -138,6 +158,8 @@ def refresh_disclosure(root: Path, generated_utc: str | None,
 | `fresh` | "Updated {n} hours ago. Pages refresh once a day, overnight." | "{n} 小时前更新。页面每天夜间刷新一次。" | none |
 | `stale` | "Last updated {n} hours ago. The overnight refresh has not completed since then, so figures may be behind." | "上次更新在 {n} 小时前。此后夜间刷新尚未完成，数据可能滞后。" | "Check back after tomorrow's refresh." / "请在下次夜间刷新后再查看。" |
 | `unknown` | "Update time not recorded for this page. Pages carry a stamp only after a completed overnight build." | "本页未记录更新时间。页面仅在夜间构建完成后才带有时间戳。" | "Check back after tomorrow's refresh." / "请在下次夜间刷新后再查看。" |
+
+**Sub-hour edge case (A5):** when `age_hours == 0`, the `fresh` row above is not spoken with `{n}=0` — `line_en` reads "Updated less than an hour ago. Pages refresh once a day, overnight." (ZH: "不到一小时前更新。页面每天夜间刷新一次。"); the `{n}` interpolation shown in the table applies only once `age_hours >= 1`.
 
 Banned words above the fold: `generated_utc`, `stale`, `state`, `SLO`, `tier`, `pipeline`, `render`, `artifact`, any slug, any raw ISO timestamp. The raw `stamp_utc` may appear only in a `title`-free hover/detail line in English only — `title=` must never carry translated text.
 
@@ -182,7 +204,7 @@ about the one mail path, kept so the next builder does not re-derive them):**
 - No caller in `app/mailer.py` or `app/marketing_emails.py` (`:779 drain_campaigns`,
   `:918 drain_parked`) inspects one recipient's result before calling `send()` for the next — no
   batch-abort semantics exist to inherit or invent.
-- **The body may contain ONLY the six A5 keys.** No "what changed" list — no release-truth producer
+- **The body may contain ONLY the seven A5 keys.** No "what changed" list — no release-truth producer
   exists (§0). If every digest would say only "updated", the correct build is not to send at all —
   this is the terminating clause the deferred child inherits unchanged from the round-2 draft.
 
@@ -199,7 +221,9 @@ about the one mail path, kept so the next builder does not re-derive them):**
 3. `…::test_copy_carries_no_machine_words` — none of `{"generated_utc","stale","SLO","tier","pipeline","artifact","refresh_disclosure"}` appears in any EN/ZH line.
 4. `tests/test_help_directory.py::test_help_page_prints_refresh_state` — builds the page via the real builder, asserts `data-refresh-state=` present with one of the three literals, and the raw ISO stamp does NOT appear in the hero text.
 5. `…::test_missing_stamp_still_renders_the_page` — `generated_utc=None` still renders with the `unknown` sentence, never a blank/crash/false "just now".
-6. Reviewer confirms **no** file under `.github/workflows/` gains a `schedule:` block, tier, priority, or queue concept; that `app/mailer.py` and `app/email_segments.py` are byte-unchanged by this packet; and that `scripts/build_public_pages.py` / `scripts/build_site.py` gain only the `refresh=` kwarg — no new mailer call site, no new consent surface. The A2/A7 refusal (email dropped from V1) is itself the acceptance line.
+6. `…::test_root_parameter_is_unread` — calling `refresh_disclosure(root=<nonexistent Path>, generated_utc=<same fixed stamp>)` and `refresh_disclosure(root=<real repo root>, generated_utc=<same fixed stamp>)` return byte-identical dicts — `root` is accepted but never read in V1.
+7. `…::test_sub_hour_age_reads_as_less_than_an_hour` — `age_hours == 0` with `state == "fresh"` renders the literal "Updated less than an hour ago." / "不到一小时前更新。" sentence, never "Updated 0 hours ago."
+8. Reviewer confirms **no** file under `.github/workflows/` gains a `schedule:` block, tier, priority, or queue concept; that `app/mailer.py` and `app/email_segments.py` are byte-unchanged by this packet; and that `scripts/build_public_pages.py` / `scripts/build_site.py` gain only the `refresh=` kwarg — no new mailer call site, no new consent surface. The A2/A7 refusal (email dropped from V1) is itself the acceptance line.
 
 ---
 
@@ -252,7 +276,7 @@ reversibility: easy
 - `:349` `_notify_operator` (operator mail), `:391` `_ack_submitter` (user ack), `:469` `_send_ticket_mail` (the background pair), `:619` `background_tasks.add_task` scheduling that pair.
 - `:301` `ticket_ref` — the `MX-` + 8 hex reference already printed on the success slip, the ack subject, and the admin thread.
 - `app/mailer.py:121` `support_to()`, `:342` `send(...)` def / `:343` `headers: dict | None`, `:701` `render_email`.
-- `lib/help_directory.py:64` `HELP_LINKS` and `templates/help.html.j2:113`-ish the card grid.
+- `lib/help_directory.py:64` `HELP_LINKS` and `templates/help.html.j2:112-114` the card grid (`:112` the entry loop, `:113` the `entry.state == 'complete'` branch, `:114` the card anchor).
 
 ## B4. Files a builder touches
 | File | Change |
