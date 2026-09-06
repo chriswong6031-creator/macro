@@ -568,6 +568,29 @@ settled namespace.
 - The 2026-08-29 hierarchy amendment's "flatten the hierarchy" and "Computer Use typing is not
   pickup" do-not-redo lines are superseded for this program (§0).
 
+### 7.x Chairman product law (2026-09-06): front-end clarity
+
+Chairman Chris, same day: "the previously built 14 page market feature was great on the backend but
+its front end was not integrated well ... we want to keep it user friendly and we need these features
+to be useful on the front end. So we should retain this for the other sections as well as fix up the
+14 pages we made already and combine them into one interface dashboard page. see marketontology's
+dashboard, theirs is super nice."
+
+Binding for both halves, every surface: plain words; one-line stance per module ("so what do I do",
+even when the honest answer is "watch, do not chase"); technicals and internal names demoted to
+hover/details; no machine text (raw slugs, internal state names, untranslated stat names, bare
+timestamps); no walls of text; honest nulls in plain words ("Not available yet" + why); bilingual
+EN/ZH; dark = command center, light = research workspace. Reviewers reject any surface a non-quant
+customer could not read in ten seconds. The Sol-era candidate law in macro#6865 ("product admission
+and complexity-containment") is adopted in substance by this clause; its PR is disposed as records.
+
+Flagship consequence for half A: the fourteen `macro_*` workspaces (merged via #6836-#6849) and the
+#6873 hub become ONE command-style dashboard page (persistent section sidebar, the existing product
+top nav untouched, a plain-word state strip with as-of and freshness, module panels with one stance
+line each, honest-null panels, EN/ZH), tracked as packets A-F01-CMD-1..n in the A handoff.
+Reference pattern only, never copied: sidebar of sections, top product tabs, state strip, module chips,
+"no data yet" panel with the reason, an analyst entry point.
+
 ## §8 Pickup prompt for Meta-CEO B
 
 Verbatim block (from the frozen seed; file paths adjusted only for accuracy against what this
