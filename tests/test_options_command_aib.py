@@ -29,13 +29,19 @@ from scripts.build_options_command import build_aib, render  # noqa: E402
 
 from tests.test_build_options_command import EMPTY_STORES  # noqa: E402
 
-# Fixed render clock — America/New_York 2026-09-06 08:00 -> 2026-09-06 date.
-# No wall-clock read anywhere in this file.
-NOW = datetime(2026, 9, 6, 12, 0, tzinfo=timezone.utc)
+# Fixed render clock — Friday 2026-09-04, 22:00 UTC (18:00 ET, after the
+# close+settle cutoff) -> nyse_calendar.expected_last_session(NOW) ==
+# 2026-09-04, so an as_of of that same Friday close is genuinely CURRENT
+# (0 sessions behind). A brief carrying the PRIOR session (Thursday
+# 2026-09-03) is then correctly "1 day behind" — trading-session math, not
+# calendar-day math (Major finding, review of PR #6932: calendar-day math
+# mislabelled the freshest possible close as "behind"). No wall-clock read
+# anywhere in this file.
+NOW = datetime(2026, 9, 4, 22, 0, tzinfo=timezone.utc)
 
 
 def _brief(*, board_state="OK", board_reason=None, opportunities=None,
-           eligible=10, present=20, as_of="2026-09-05", oi_counted="2026-09-05",
+           eligible=10, present=20, as_of="2026-09-03", oi_counted="2026-09-03",
            receipt_id="e5bd3f474eabff7904574b8c8abccd1d45f1bb57210eac2d4073e61915ad51",
            built_at_utc="2026-09-06T05:12:44Z") -> dict:
     return {
@@ -107,7 +113,7 @@ def _strip_attrs(html: str) -> str:
 
 # ─────────────────────────────────────────────────────────────────────────────
 def test_populated_lede_renders_headline_stance_and_freshness():
-    brief = _brief(board_state="OK", as_of="2026-09-05",
+    brief = _brief(board_state="OK", as_of="2026-09-03",
                     opportunities=[_card("AAA", r=1), _card("BBB", r=2), _card("CCC", r=3)])
     page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief, now=NOW)
     panel = _aib_panel(page)
@@ -122,12 +128,12 @@ def test_populated_lede_renders_headline_stance_and_freshness():
 
 
 def test_populated_carries_readback_markers():
-    brief = _brief(board_state="OK", as_of="2026-09-05",
+    brief = _brief(board_state="OK", as_of="2026-09-03",
                     opportunities=[_card("AAA", r=1)])
     page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief, now=NOW)
     panel = _aib_panel(page)
     assert 'data-aib-state="OK"' in panel
-    assert 'data-aib-asof="2026-09-05"' in panel
+    assert 'data-aib-asof="2026-09-03"' in panel
     m = re.search(r'data-aib-receipt="([0-9a-f]{12})"', panel)
     assert m is not None, panel
     assert 'data-aib-fresh="lagging"' in panel
@@ -154,12 +160,80 @@ def test_degraded_prints_plain_null_and_hides_eligibility():
     assert "0/" not in panel[stamps_start:stamps_end]
 
 
+def test_degraded_why_is_true_for_each_board_reason_not_one_hardcoded_line():
+    """Major finding, review of PR #6932: templates/options.html.j2 used to
+    render ONE hardcoded 'not counted yet' why-sentence under every degraded
+    state, contradicting the state-specific headline directly above it on
+    ELIGIBILITY_COLLAPSE / MIXED_VINTAGE / NO_SETTLED_OI_PAIR. The why line
+    must vary with board_state/board_reason exactly like the headline does,
+    and must never assert a counting delay when the true cause differs."""
+    cases = [
+        ("STALE_SOURCE", None, "holding the last good session"),
+        ("DEGRADED", "ELIGIBILITY_COLLAPSE", "too few names cleared today's coverage bar"),
+        ("DEGRADED", "MIXED_VINTAGE", "evidence dates on file disagree"),
+        ("DEGRADED", "NO_SETTLED_OI_PAIR", "next position count has not settled"),
+    ]
+    seen = set()
+    for board_state, board_reason, must_contain in cases:
+        brief = _brief(board_state=board_state, board_reason=board_reason, opportunities=[])
+        page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief, now=NOW)
+        panel = _aib_panel(page)
+        assert _esc(must_contain) in panel, (board_state, board_reason, panel)
+        assert "This is a data gap, not a quiet market" in panel
+        why_start = panel.index('class="oew-aib-degraded-why"')
+        why_end = panel.index("</p>", why_start)
+        seen.add(panel[why_start:why_end])
+    assert len(seen) == len(cases), "each board_reason must render a DISTINCT why sentence"
+
+
+def test_missing_artifact_why_never_claims_a_counting_delay():
+    """The None-artifact path cannot have counted anything — its why must
+    not assert 'not counted yet' the way the old hardcoded line did."""
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=None, now=NOW)
+    panel = _aib_panel(page)
+    assert "This is a data gap, not a quiet market" in panel
+    assert "not been counted yet" not in panel
+    assert "hasn&#39;t arrived yet" in panel or "hasn't arrived yet" in panel
+
+
 def test_missing_artifact_renders_unavailable_not_empty():
     page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=None, now=NOW)
     panel = _aib_panel(page)
     assert _esc("Today's brief isn't ready yet.") in panel
     assert 'data-aib-state="unavailable"' in panel
     assert "oew-aib-grid" not in panel
+
+
+def test_friday_close_read_on_sunday_is_current_not_behind():
+    """Major finding, review of PR #6932: calendar-day math labelled the
+    freshest possible board 'behind'. Friday 2026-09-04's close, read on
+    Sunday 2026-09-06, must be CURRENT — 0 completed sessions are missing."""
+    brief = _brief(board_state="OK", as_of="2026-09-04", opportunities=[_card("AAA")])
+    sunday = datetime(2026, 9, 6, 12, 0, tzinfo=timezone.utc)
+    out = build_aib(brief, now=sunday)
+    assert out["freshness"]["days_behind"] == 0
+    assert out["freshness"]["level"] == "current"
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief, now=sunday)
+    panel = _aib_panel(page)
+    assert "Current" in panel
+    assert "最新" in panel
+    assert "behind" not in panel
+
+
+def test_post_labor_day_tuesday_reads_the_newest_close_as_lagging_not_stale():
+    """Major finding, review of PR #6932: after Labor Day (Mon 2026-09-07),
+    reading Friday 2026-09-04's close on Tuesday 2026-09-08 evening is 4
+    CALENDAR days but only 1 completed SESSION behind — 'lagging', never the
+    warn-tinted 'stale' level calendar-day math produced on a holiday week."""
+    brief = _brief(board_state="OK", as_of="2026-09-04", opportunities=[_card("AAA")])
+    tuesday_eve = datetime(2026, 9, 8, 22, 0, tzinfo=timezone.utc)
+    out = build_aib(brief, now=tuesday_eve)
+    assert out["freshness"]["days_behind"] == 1
+    assert out["freshness"]["level"] == "lagging"
+    page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief, now=tuesday_eve)
+    panel = _aib_panel(page)
+    assert "1 day behind" in panel
+    assert "lvl-stale" not in panel
 
 
 def test_unknown_asof_is_not_zero_days():
@@ -192,7 +266,7 @@ def test_no_forbidden_vocabulary_in_brief_section():
 
 
 def test_every_new_string_is_bilingual_and_no_title_attribute():
-    brief = _brief(board_state="OK", as_of="2026-09-05",
+    brief = _brief(board_state="OK", as_of="2026-09-03",
                     opportunities=[_card("AAA", r=1), _card("BBB", r=2)])
     page = render(REPO, stores=dict(EMPTY_STORES), intel_brief=brief, now=NOW)
     panel = _aib_panel(page)

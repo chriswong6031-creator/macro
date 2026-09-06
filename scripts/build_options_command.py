@@ -245,6 +245,34 @@ _AIB_DEGRADED_ZH = {
 _AIB_DEGRADED_FALLBACK_EN = "This board is unavailable for this close."
 _AIB_DEGRADED_FALLBACK_ZH = "本次收盘该板块暂不可用。"
 
+# Truthful "why" sentence per degraded cause — MUST stay keyed off the same
+# board_state/board_reason the headline (_AIB_DEGRADED_EN/ZH) uses. This used
+# to be one hardcoded "not counted yet" sentence rendered under EVERY
+# degraded state, contradicting ELIGIBILITY_COLLAPSE / MIXED_VINTAGE /
+# NO_SETTLED_OI_PAIR headlines directly above it, and asserting a counting
+# delay even when no artifact could be read at all (Major finding, review of
+# PR #6932). The honest-null law requires the why to be TRUE for the state
+# actually shown, not merely present.
+_AIB_DEGRADED_WHY_EN = {
+    "STALE_SOURCE": "This is a data gap, not a quiet market — we are holding the last good session while the source catches up.",
+    "ELIGIBILITY_COLLAPSE": "This is a data gap, not a quiet market — too few names cleared today's coverage bar to show cards.",
+    "MIXED_VINTAGE": "This is a data gap, not a quiet market — the evidence dates on file disagree, so cards are withheld until they settle.",
+    "NO_SETTLED_OI_PAIR": "This is a data gap, not a quiet market — the next position count has not settled yet.",
+}
+_AIB_DEGRADED_WHY_ZH = {
+    "STALE_SOURCE": "这是数据缺口，并非市场平静——数据源补齐前，暂时保留最近一个有效交易日。",
+    "ELIGIBILITY_COLLAPSE": "这是数据缺口，并非市场平静——今日达到完整数据标准的名称过少，暂不展示卡片。",
+    "MIXED_VINTAGE": "这是数据缺口，并非市场平静——现有证据日期不一致，待结算后再展示。",
+    "NO_SETTLED_OI_PAIR": "这是数据缺口，并非市场平静——下一次持仓统计尚未结算。",
+}
+# Fallback why for a cause the table above does not name, AND for the
+# missing-artifact path (no intel_brief at all) — a counting delay is not
+# true when nothing could be read in the first place.
+_AIB_DEGRADED_WHY_FALLBACK_EN = "This is a data gap, not a quiet market — this board is unavailable for this close."
+_AIB_DEGRADED_WHY_FALLBACK_ZH = "这是数据缺口，并非市场平静——本次收盘该板块暂不可用。"
+_AIB_DEGRADED_WHY_NO_ARTIFACT_EN = "This is a data gap, not a quiet market — today's file hasn't arrived yet. This fills in after the next close."
+_AIB_DEGRADED_WHY_NO_ARTIFACT_ZH = "这是数据缺口，并非市场平静——今日文件尚未送达，将在下一次收盘后补齐。"
+
 # A-F03-W2-2 · Glance-tier lede.  Closed vocabulary keyed on the payload's own
 # board_state and card count — the same pass-through discipline as
 # _AIB_BAND_EN above.  Nothing here originates a signal: the count is
@@ -339,7 +367,13 @@ def _aib_freshness(as_of_session: str | None, built_at_utc: str | None,
         out["asof_en"] = f"{wd} {asof_date.day} {mon} close"
         out["asof_zh"] = f"{asof_date.month}月{asof_date.day}日收盘"
 
-        days_behind = (today_et - asof_date).days
+        # Measure staleness in COMPLETED TRADING SESSIONS, not calendar days —
+        # calendar-day math mislabels the freshest possible board (Friday's
+        # close read on Sunday/Monday, or the newest close after a holiday)
+        # as "behind" or even "stale". sessions_behind() counts sessions
+        # strictly after asof_date up to nyse_calendar.expected_last_session,
+        # so 0 means "this IS the latest completed close".
+        days_behind = nyse_calendar.sessions_behind(asof_date, clock)
         if days_behind < 0:
             days_behind = 0  # clock skew (as-of in the future) is not an error state
         out["days_behind"] = days_behind
@@ -645,6 +679,8 @@ def build_aib(intel_brief: dict | None, *, now: datetime | None = None) -> dict:
             "empty_kind": "degraded",
             "degraded_en": "No options intelligence brief is available for this close.",
             "degraded_zh": "本次收盘暂无期权情报简报。",
+            "degraded_why_en": _AIB_DEGRADED_WHY_NO_ARTIFACT_EN,
+            "degraded_why_zh": _AIB_DEGRADED_WHY_NO_ARTIFACT_ZH,
             "watch": [], "watch_overflow": 0, "no_directional": False,
             "events": [], "events_overflow": 0,
             "events_empty_en": _AIB_EVENT_EMPTY_EN["NONE"], "events_empty_zh": _AIB_EVENT_EMPTY_ZH["NONE"],
@@ -670,7 +706,7 @@ def build_aib(intel_brief: dict | None, *, now: datetime | None = None) -> dict:
     # state is the healthy-quiet scene, never the degraded one.  Everything
     # else (STALE_SOURCE / DEGRADED / INSUFFICIENT_COVERAGE) is degraded.
     healthy = board_state in ("OK", "NO_SIGNAL")
-    empty_kind = degraded_en = degraded_zh = None
+    empty_kind = degraded_en = degraded_zh = degraded_why_en = degraded_why_zh = None
     if not cards:
         if healthy:
             empty_kind = "quiet"
@@ -678,10 +714,13 @@ def build_aib(intel_brief: dict | None, *, now: datetime | None = None) -> dict:
             empty_kind = "degraded"
             if board_state == "STALE_SOURCE":
                 degraded_en, degraded_zh = _AIB_DEGRADED_EN["STALE_SOURCE"], _AIB_DEGRADED_ZH["STALE_SOURCE"]
+                degraded_why_en, degraded_why_zh = _AIB_DEGRADED_WHY_EN["STALE_SOURCE"], _AIB_DEGRADED_WHY_ZH["STALE_SOURCE"]
             elif board_reason in _AIB_DEGRADED_EN:
                 degraded_en, degraded_zh = _AIB_DEGRADED_EN[board_reason], _AIB_DEGRADED_ZH[board_reason]
+                degraded_why_en, degraded_why_zh = _AIB_DEGRADED_WHY_EN[board_reason], _AIB_DEGRADED_WHY_ZH[board_reason]
             else:
                 degraded_en, degraded_zh = _AIB_DEGRADED_FALLBACK_EN, _AIB_DEGRADED_FALLBACK_ZH
+                degraded_why_en, degraded_why_zh = _AIB_DEGRADED_WHY_FALLBACK_EN, _AIB_DEGRADED_WHY_FALLBACK_ZH
 
     # A-F03-W2-2 · glance-tier lede key.  Closed vocabulary keyed on the
     # payload's own board_state (via `healthy`) and card count — no scoring.
@@ -749,6 +788,7 @@ def build_aib(intel_brief: dict | None, *, now: datetime | None = None) -> dict:
         "cards": cards,
         "empty_kind": empty_kind,
         "degraded_en": degraded_en, "degraded_zh": degraded_zh,
+        "degraded_why_en": degraded_why_en, "degraded_why_zh": degraded_why_zh,
         "watch": watch, "watch_overflow": intel_brief.get("directional_watch_overflow") or 0,
         "no_directional": no_directional,
         "events": events, "events_overflow": intel_brief.get("event_board_overflow") or 0,

@@ -1308,8 +1308,8 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
       {% else %}
       <div class="oew-aib-degraded">
         <p class="oew-aib-degraded-lead">{{ t(aib.degraded_en, aib.degraded_zh) }}</p>
-        <p class="oew-aib-degraded-why">{{ t('The options positions for this close have not been counted yet. Nothing on this card is missing because the market was quiet.',
-                                              '本次收盘的期权持仓尚未完成统计。此卡片的空缺并非因为市场平静。') }}</p>
+        <p class="oew-aib-degraded-why">{{ t(aib.degraded_why_en or 'This is a data gap, not a quiet market.',
+                                              aib.degraded_why_zh or '这是数据缺口，并非市场平静。') }}</p>
         <details class="oew-aib-degraded-rcp">
           <summary>{{ t('What we checked', '我们检查了什么') }}</summary>
           <div class="oew-aib-detailbody">
