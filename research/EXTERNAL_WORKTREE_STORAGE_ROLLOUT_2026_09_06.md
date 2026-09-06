@@ -134,7 +134,11 @@ GC rechecks the volume and registration immediately before removal, uses
 non-forced removal, and restores the storage lock from the surviving registration
 on failure—even when the worktree directory has disappeared. It stops before
 prune after that failure. An unverified SSD blocks deletion and pruning.
-Existing arming and retention settings are not changed by this rollout.
+Existing arming and retention settings are not changed by this rollout. The existing
+launchd wrapper must also be updated from accepted source: it extracts the GC
+script, storage helper and config together from one resolved `origin/main` commit.
+Missing bundle members refuse the sweep. Preserve its schedule and repo binding;
+verify the installed preimage and keep a backup before replacing only this wrapper.
 
 To roll back, use the installation receipt to restore only the specific native
 preference and hook fields changed by this task, checking they still match the
