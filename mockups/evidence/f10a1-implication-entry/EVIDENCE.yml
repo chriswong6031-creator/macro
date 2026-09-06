@@ -1,0 +1,5 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/measurement.html.j2
+  - templates/intelligence_hub.html.j2
+manifest: mockups/evidence/f10a1-implication-entry/manifest.json

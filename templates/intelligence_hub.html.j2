@@ -554,6 +554,31 @@
     .rl, .rl .ic-svg{ transition:none; }
     .live::after{ animation:none; }
   }
+  /* research-implications entry — the only outbound link in this band */
+  .rid{ display:grid; grid-template-columns:3px minmax(0,1fr) auto; gap:0 14px;
+    align-items:center; margin-top:12px; padding:0; overflow:hidden;
+    text-decoration:none; color:inherit; border:1px solid var(--hair);
+    border-radius:var(--r-card,12px); background:var(--card);
+    transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+  .rid-rail{ align-self:stretch; background:color-mix(in srgb,var(--info) 55%,transparent); }
+  .rid-b{ display:block; min-width:0; padding:14px 0; }
+  .rid-k{ display:block; margin-bottom:5px; font-family:var(--fig); font-size:10.5px;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+  .rid-t{ display:block; font-size:14px; font-weight:650; line-height:1.4; color:var(--text); }
+  .rid-d{ display:block; margin-top:5px; max-width:68ch; font-size:12px; line-height:1.55; color:var(--dim); }
+  .rid-a{ padding-right:16px; font-size:15px; color:var(--muted); }
+  .rid:hover{ border-color:color-mix(in srgb,var(--info) 45%,transparent); }
+  .rid:hover .rid-a{ color:var(--info); }
+  .rid:focus-visible{ outline:2px solid var(--info); outline-offset:2px; }
+  html[data-theme="dark"] .rid:hover{ box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 22%,transparent),
+    0 0 18px -6px color-mix(in srgb,var(--info) 45%,transparent); }
+  html[data-theme="light"] .rid{ background:var(--panel); box-shadow:var(--card-shadow); }
+  html[data-theme="light"] .rid:hover{ transform:translateY(-1px);
+    box-shadow:0 6px 18px -10px color-mix(in srgb,var(--text) 45%,transparent); }
+  @media(max-width:640px){ .rid{ grid-template-columns:3px minmax(0,1fr); }
+    .rid-a{ display:none; } .rid-b{ padding:13px 14px 13px 0; } }
+  @media(prefers-reduced-motion:reduce){ .rid{ transition:none; }
+    html[data-theme="light"] .rid:hover{ transform:none; } }
 </style>
 </head>
 <body class="page-hub">
@@ -778,6 +803,17 @@
   </div>
   {% endif %}
   {% endif %}
+
+  {# ── ENTRY: the study plane behind this band lives on the Calibration Lab ── #}
+  <a class="card rid" href="measurement.html#ric-section">
+    <span class="rid-rail" aria-hidden="true"></span>
+    <span class="rid-b">
+      <span class="rid-k"><span class="l-en">Calibration Lab</span><span class="l-zh">校准实验室</span></span>
+      <span class="rid-t"><span class="l-en">Research implications — what two frozen studies actually produced</span><span class="l-zh">研究含义 —— 两项冻结研究的实际产出</span></span>
+      <span class="rid-d"><span class="l-en">Research context, not a trading signal. Real sample counts, the gaps the study itself reports, and whether its plan was written first.</span><span class="l-zh">仅为研究背景，非交易信号。真实样本数、研究自述的缺口，以及计划是否先行写定。</span></span>
+    </span>
+    <span class="rid-a" aria-hidden="true">→</span>
+  </a>
 
   {# UNIFIED FORWARD DESK GRADER — Tier-3 mechanics, shipped folded #}
   {{ dg.styles() }}

@@ -685,6 +685,27 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 @media (prefers-reduced-motion:reduce){
   .ric-fbtn,.ric-more>summary::before{transition:none}
 }
+.ric-prereg{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  font-size:.72rem;line-height:1;padding:4px 9px;border-radius:var(--r-pill,999px);
+  border:1px solid var(--border);color:var(--muted)}
+.ric-prereg-d{flex:none;width:5px;height:5px;border-radius:var(--r-pill,999px);background:var(--blue-ink)}
+.ric-prereg.is-absent .ric-prereg-d{background:transparent;border:1px solid var(--muted)}
+html[data-theme="dark"] .ric-prereg{background:color-mix(in srgb,var(--text) 6%,transparent)}
+html[data-theme="dark"] .ric-prereg:not(.is-absent) .ric-prereg-d{
+  box-shadow:0 0 6px 0 color-mix(in srgb,var(--blue) 70%,transparent)}
+html[data-theme="light"] .ric-prereg{background:var(--panel);
+  border-color:color-mix(in srgb,var(--text) 22%,transparent);box-shadow:var(--card-shadow)}
+html[data-theme="light"] .ric-prereg:not(.is-absent) .ric-prereg-d{box-shadow:none}
+.ric-prereg-why{margin:-8px 0 16px;max-width:70ch;font-size:.74rem;line-height:1.6;color:var(--muted)}
+.ric-nulls{margin:0 0 16px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-card,12px);
+  background:color-mix(in srgb,var(--text) 4%,transparent)}
+.ric-nulls-t{margin:0 0 8px;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.ric-nulls ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.ric-nulls li{font-size:.78rem;line-height:1.55;color:var(--text)}
+.ric-nulls .ric-null-code{display:inline-block;margin-right:6px;font-family:var(--fig);font-size:.68rem;
+  padding:1px 6px;border-radius:var(--r-ctl,8px);background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--muted)}
+html[data-theme="light"] .ric-nulls{background:var(--panel);box-shadow:var(--card-shadow)}
+.ric-filter-count{margin:-12px 0 18px;font-size:.74rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -2102,6 +2123,20 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
     {%- endif -%}
   {%- endmacro -%}
 
+  {%- macro ric_tier_label(t) -%}
+    {%- if t == 'DIAGNOSTIC' -%}<span class="l-en">Evidence: diagnostic run</span><span class="l-zh">证据：诊断性运行</span>
+    {%- elif t == 'EXPLORATORY_NON_GATED' -%}<span class="l-en">Exploratory — not gated</span><span class="l-zh">探索性 —— 未设门槛</span>
+    {%- else -%}<span class="l-en">{{ t }}</span><span class="l-zh">{{ t }}</span>
+    {%- endif -%}
+  {%- endmacro -%}
+
+  {%- macro ric_family_label(f) -%}
+    {%- if f == 'synthetic_control' -%}<span class="l-en">Synthetic control</span><span class="l-zh">合成控制</span>
+    {%- elif f == 'event_study' -%}<span class="l-en">Event study</span><span class="l-zh">事件研究</span>
+    {%- else -%}<span class="l-en">{{ f }}</span><span class="l-zh">{{ f }}</span>
+    {%- endif -%}
+  {%- endmacro -%}
+
   {%- macro ric_value(item) -%}
     {%- set v = item.get('value') -%}
     {%- set u = item.get('unit') -%}
@@ -2111,6 +2146,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       {{ '%.2f'|format(v[0] * 100) }}% … {{ '%.2f'|format(v[2] * 100) }}%
       <span class="ric-fig-sub"><span class="l-en">bootstrap median</span><span class="l-zh">自助法中位数</span> {{ '%.2f'|format(v[1] * 100) }}%</span>
     {%- elif u == 'return_fraction' or u == 'fraction' -%}{{ '%.3f'|format(v * 100) }}%
+    {%- elif u == 'probability' and v is number and v is not sameas true and v is not sameas false and v == 0 -%}&lt; 0.001{{ ric_unit(u) }}
     {%- elif u in ('months', 'events', 'episodes', 'draws', 'tickers') -%}{{ v }}{{ ric_unit(u) }}
     {%- elif v is number -%}{{ '%.4f'|format(v) }}{{ ric_unit(u) }}
     {%- else -%}{{ v|e }}
@@ -2161,6 +2197,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
         <span class="l-en">Tier: {{ tier }}</span><span class="l-zh">证据层级：{{ tier }}</span></button>
       {% endfor %}
     </fieldset>
+    <p class="ric-filter-count" id="ric-filter-count" hidden></p>
 
     <div class="ric-cards" id="ric-cards">
       {% for card in ric_cards %}
@@ -2180,9 +2217,22 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               <span class="l-en">{{ 'Diagnostic failed' if q == 'DIAGNOSTIC_FAILED' else ('Receipts incomplete' if q == 'ARTIFACT_INCOMPLETE' else 'State reported by the owner') }}</span>
               <span class="l-zh">{{ '诊断未通过' if q == 'DIAGNOSTIC_FAILED' else ('凭证不完整' if q == 'ARTIFACT_INCOMPLETE' else '所有者报告的状态') }}</span>
             </span>
-            <code class="ric-state-code">{{ q }}</code>
-            <span class="ric-tier">tier: {{ card.evidence_tier }}</span>
-            <span class="ric-fam">{{ card.method_family }}</span>
+            <details class="ric-state-detail">
+              <summary><span class="l-en">code</span><span class="l-zh">代码</span></summary>
+              <code class="ric-state-code">{{ q }}</code>
+            </details>
+            {%- set ric_prereg = card.source_artifacts|selectattr('role', 'equalto', 'preregistration')|list -%}
+            <span class="ric-prereg{{ '' if ric_prereg else ' is-absent' }}"
+                  data-ric-prereg="{{ 'on-file' if ric_prereg else 'absent' }}">
+              <span class="ric-prereg-d" aria-hidden="true"></span>
+              {%- if ric_prereg %}
+              <span class="l-en">Plan written first</span><span class="l-zh">计划先行写定</span>
+              {%- else %}
+              <span class="l-en">No plan on file</span><span class="l-zh">无计划存档</span>
+              {%- endif %}
+            </span>
+            <span class="ric-tier" title="{{ card.evidence_tier }}">{{ ric_tier_label(card.evidence_tier) }}</span>
+            <span class="ric-fam" title="{{ card.method_family }}">{{ ric_family_label(card.method_family) }}</span>
           </div>
 
           <h3 class="ric-q">
@@ -2192,6 +2242,15 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <p class="ric-estimand">
             <span class="l-en">{{ card.estimand.en|e }}</span>
             <span class="l-zh">{{ (card.estimand.zh or card.estimand.en)|e }}</span>
+          </p>
+          <p class="ric-prereg-why">
+            {%- if ric_prereg %}
+            <span class="l-en">The questions and cut-offs were written down before this run. The plan file and its digest are under Receipts.</span>
+            <span class="l-zh">本次运行之前已写定问题与截止条件。计划文件及其摘要见"凭证"。</span>
+            {%- else %}
+            <span class="l-en">Nothing was written down before this run, so read the result as exploratory — the questions could have been chosen after the data was seen.</span>
+            <span class="l-zh">本次运行之前没有写定任何内容，因此该结果应按探索性阅读 —— 问题可能是在看到数据之后才选定的。</span>
+            {%- endif %}
           </p>
 
           <div class="ric-figs">
@@ -2214,11 +2273,48 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
               {% endfor %}
               {% endif %}
             </div>
+            {# Missing CI is glance-tier — never only buried under diagnostics. #}
+            {%- set ci_nulls = card.null_reasons|selectattr('code', 'equalto', 'uncertainty_interval')|list -%}
+            {% if (not card.uncertainty) and ci_nulls %}
+            <div class="ric-fig" data-ric-code="uncertainty_interval">
+              <span class="ric-fig-l"><span class="l-en">Confidence interval</span><span class="l-zh">置信区间</span></span>
+              <span class="ric-fig-v"><span class="ric-null">—</span></span>
+              {% for nr in ci_nulls %}
+              <span class="ric-why"><span class="l-en">Not available yet — {{ nr.detail.en|e }}</span><span class="l-zh">暂不可用 — {{ (nr.detail.zh or nr.detail.en)|e }}</span></span>
+              {% endfor %}
+            </div>
+            {% endif %}
             <div class="ric-fig" data-ric-code="cutoff">
               <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
               <span class="ric-fig-v">{{ card.cutoff }}</span>
             </div>
           </div>
+
+          {# Every typed null is printed — not only effective_n. #}
+          {% if card.null_reasons %}
+          <div class="ric-nulls" data-ric-nulls>
+            <div class="ric-nulls-t"><span class="l-en">Not available yet</span><span class="l-zh">暂不可用</span></div>
+            <ul>
+              {% for nr in card.null_reasons %}
+              <li data-ric-null-code="{{ nr.code }}">
+                {%- if nr.code == 'uncertainty_interval' -%}
+                <span class="l-en">Confidence interval — {{ nr.detail.en|e }}</span>
+                <span class="l-zh">置信区间 — {{ (nr.detail.zh or nr.detail.en)|e }}</span>
+                {%- elif nr.code == 'effective_n' -%}
+                <span class="l-en">Effective sample size — {{ nr.detail.en|e }}</span>
+                <span class="l-zh">有效样本量 — {{ (nr.detail.zh or nr.detail.en)|e }}</span>
+                {%- elif nr.code == 'ticker_cluster_t' -%}
+                <span class="l-en">Ticker-clustered t statistic — {{ nr.detail.en|e }}</span>
+                <span class="l-zh">按标的聚类的 t 统计量 — {{ (nr.detail.zh or nr.detail.en)|e }}</span>
+                {%- else -%}
+                <span class="l-en">{{ nr.detail.en|e }}</span>
+                <span class="l-zh">{{ (nr.detail.zh or nr.detail.en)|e }}</span>
+                {%- endif -%}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
 
           {# Ordered effect path — drawn ONLY when the owner marked the horizons
              ordered. Drawing one for a card without `owner_supplied` would be an
@@ -2287,15 +2383,23 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           </div>
           {% endif %}
 
-          {% if card.uncertainty or metrics %}
+          {% if card.uncertainty or metrics or (card.null_reasons|selectattr('code', 'ne', 'effective_n')|list) %}
           <details class="ric-more">
             <summary><span class="l-en">Uncertainty and diagnostics</span><span class="l-zh">不确定性与诊断</span></summary>
             <div class="ric-more-b"><ul class="ric-list">
               {% for it in card.uncertainty %}
               <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
               {% endfor %}
+              {% if not card.uncertainty %}
+              {% for nr in card.null_reasons if nr.code == 'uncertainty_interval' %}
+              <li data-ric-code="uncertainty_interval"><span class="l-en">Confidence interval</span><span class="l-zh">置信区间</span> — <span class="ric-null">—</span> <span class="l-en">Not available yet — {{ nr.detail.en|e }}</span><span class="l-zh">暂不可用 — {{ (nr.detail.zh or nr.detail.en)|e }}</span></li>
+              {% endfor %}
+              {% endif %}
               {% for it in metrics %}
               <li data-ric-code="{{ it.code }}"><span class="l-en">{{ it.label.en|e }}</span><span class="l-zh">{{ (it.label.zh or it.label.en)|e }}</span> — <span class="ric-count">{{ ric_value(it) }}</span></li>
+              {% endfor %}
+              {% for nr in card.null_reasons if nr.code not in ('effective_n', 'uncertainty_interval') %}
+              <li data-ric-null-code="{{ nr.code }}"><span class="l-en">Not available yet — {{ nr.detail.en|e }}</span><span class="l-zh">暂不可用 — {{ (nr.detail.zh or nr.detail.en)|e }}</span></li>
               {% endfor %}
             </ul></div>
           </details>
@@ -2364,7 +2468,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
             <span class="l-en">This card carries no authority. It cannot forecast, rank, gate, size or trade, and nothing downstream reads it as permission.</span>
             <span class="l-zh">本卡片不具备任何授权：不可用于预测、排序、门控、仓位或交易，下游系统亦不会将其视为许可。</span>
             <span class="ric-auth-f">
-              {% for k, v in card.authority|dictsort %}<code>{{ k }}={{ 'true' if v else 'false' }}</code>{% endfor %}
+              {% for k, v in card.authority|dictsort %}{% if not loop.first %} · {% endif %}<code>{{ k }}={{ 'true' if v else 'false' }}</code>{% endfor %}
             </span>
           </div>
 
@@ -2486,24 +2590,42 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
   // contract's order is fixed and non-ranking, so a sort would be a claim.
   var bar = document.getElementById('ric-filter');
   var wrap = document.getElementById('ric-cards');
+  var countEl = document.getElementById('ric-filter-count');
   if(!bar || !wrap) return;
   var btns = bar.querySelectorAll('.ric-fbtn');
   var cards = wrap.querySelectorAll('.ric-card');
+  var total = cards.length;
   function apply(sel){
-    cards.forEach(function(card){
+    var shown = 0;
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
       var show = sel === 'all'
         || (sel.indexOf('fam:') === 0 && card.getAttribute('data-ric-family') === sel.slice(4))
         || (sel.indexOf('q:') === 0 && card.getAttribute('data-ric-quality') === sel.slice(2))
         || (sel.indexOf('tier:') === 0 && card.getAttribute('data-ric-tier') === sel.slice(5));
       card.hidden = !show;
-    });
-    btns.forEach(function(b){
-      b.setAttribute('aria-pressed', String(b.getAttribute('data-ric-f') === sel));
-    });
+      if (show) shown += 1;
+    }
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].setAttribute('aria-pressed', String(btns[j].getAttribute('data-ric-f') === sel));
+    }
+    if (countEl) {
+      if (sel === 'all' || shown === total) {
+        countEl.hidden = true;
+        countEl.textContent = '';
+      } else {
+        countEl.hidden = false;
+        countEl.innerHTML =
+          '<span class="l-en">Showing ' + shown + ' of ' + total + ' cards</span>' +
+          '<span class="l-zh">显示 ' + shown + ' / ' + total + ' 张卡片</span>';
+      }
+    }
   }
-  btns.forEach(function(b){
-    b.addEventListener('click', function(){ apply(b.getAttribute('data-ric-f')); });
-  });
+  for (var k = 0; k < btns.length; k++) {
+    (function(b){
+      b.addEventListener('click', function(){ apply(b.getAttribute('data-ric-f')); });
+    })(btns[k]);
+  }
 })();
 </script>
 <script src="theme.js"></script>
