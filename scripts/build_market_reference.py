@@ -121,7 +121,7 @@ PAGE_LABELS: dict[str, tuple[str, str]] = {
     "us_stocks.html": ("US Stocks", "美股"),
 }
 
-# A-MO-W2-1: the fourth legal `coverage_exceptions[].state` value.
+# A-MO-W2-1: the three legal `coverage_exceptions[].state` values.
 COVERAGE_STATES = {"not_an_indicator", "not_covered", "covered_by"}
 
 # Public primary-source allowlist (MOR1_CONTRACT.md "Registry taxonomy").
