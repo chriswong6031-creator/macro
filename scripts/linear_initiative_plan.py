@@ -3,7 +3,7 @@
 
 The implementation remains in ``scripts.linear_initiative_plan_legacy`` so the
 existing public API and drift semantics stay intact. This facade freezes the
-protected workspace-level 7/62/2 source contract and keeps the canonical import
+protected workspace-level 7/63/2 source contract and keeps the canonical import
 path stable.
 """
 from __future__ import annotations
@@ -36,9 +36,9 @@ _EXPECTED_SOURCE_IDENTITY = {
     "repository": "mastermindx-market-intelligence/Mastermind",
     "path": (
         "docs/superpowers/specs/"
-        "2026-09-02-linear-initiative-portfolio-v1-current-epoch-source-consolidation.md"
+        "2026-09-03-linear-initiative-portfolio-v1-temporal-grain-current-epoch-amendment.md"
     ),
-    "protected_revision": "84d74cf9c7b81ba70169ab7df1f71835da2d297b",
+    "protected_revision": "6c5c2a6225a3fa2c2ec3e3398dcc8b8629b3a988",
 }
 _EXPECTED_CURRENT_MEMBERSHIPS = {
     "WS:ALPHA-INTELLIGENCE-INTEGRATION": "canonical-intelligence-substrate-learning",
@@ -67,6 +67,7 @@ _EXPECTED_CURRENT_MEMBERSHIPS = {
     "WS:TOP-ANATOMY": "legendary-alpha-discovery-timing",
     "WS:PROPHET-CANDIDATE-ADDED-DATE": "legendary-alpha-discovery-timing",
     "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE": "legendary-alpha-discovery-timing",
+    "WS:TEMPORAL-GRAIN-INTELLIGENCE": "legendary-alpha-discovery-timing",
     "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER": "institutional-company-event-intelligence",
     "WS:FINANCIAL-INTELLIGENCE-FABRIC": "institutional-company-event-intelligence",
     "WS:CALCBENCH-FILING-FORENSICS-PARITY": "institutional-company-event-intelligence",
@@ -109,7 +110,7 @@ _EXPECTED_GROUP_COUNTS = {
     "canonical-intelligence-substrate-learning": 10,
     "global-markets-regimes-risk-command": 6,
     "institutional-company-event-intelligence": 11,
-    "legendary-alpha-discovery-timing": 16,
+    "legendary-alpha-discovery-timing": 17,
     "personal-institutional-desk": 4,
     "trusted-production-customer-platform": 8,
 }
@@ -125,7 +126,7 @@ def validate_strategy(
     strategy: Mapping[str, Any],
     project_plan: Mapping[str, Any],
 ) -> None:
-    """Fail closed unless the exact protected workspace-level 7/62/2 contract holds."""
+    """Fail closed unless the exact protected workspace-level 7/63/2 contract holds."""
     failures: list[dict[str, Any]] = []
     if strategy.get("schema") != STRATEGY_SCHEMA:
         failures.append({"code": "strategy_wrong_schema"})
