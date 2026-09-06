@@ -139,6 +139,36 @@ def test_spec_does_not_claim_a_live_user_claim_store():
         assert phrase not in TEXT
 
 
+def test_brier_is_scored_per_episode_not_per_claim():
+    assert "Per-episode Brier contribution" in TEXT
+    assert "one pair per **episode**" in TEXT
+    assert "never per claim" in TEXT
+    assert "outcome AND the episode's `stated_probability`" in TEXT
+    assert "always come from the same member, never from different claims" in TEXT
+
+
+def test_claim_id_digest_includes_resolves_at():
+    assert (
+        "`sha256` of `(user_id, subject, condition, stated_at, resolves_at)` "
+        "first 16 hex" in TEXT
+    )
+    assert "millisecond precision" in TEXT
+
+
+def test_team_rollup_is_deferred_not_killed():
+    assert "DEFERRED, NOT KILLED" in TEXT
+    assert "team-accuracy rollup" in TEXT
+    assert (
+        "permanently kills the cross-user ranking/leaderboard capability"
+        in TEXT
+    )
+    assert (
+        "non-ranking team-accuracy rollup capability is explicitly DEFERRED, "
+        "not killed here"
+        in TEXT
+    )
+
+
 def test_dnr_key_cited_in_colon_form():
     dnr_mentions = re.findall(r"DNR[:\w-]*", TEXT)
     assert dnr_mentions, "expected at least one DNR: citation"
