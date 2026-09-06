@@ -92,6 +92,36 @@ class PrefsRequest(BaseModel):
     # Analyst OS W3: how many WORDS the chat answers with. Same evidence bar at every
     # setting — 'concise' buys a shorter answer, never a thinner-sourced one.
     brain_depth: str | None = Field(None, description="'concise' | 'standard' | 'deep'")
+    # B-F08-1a: alert delivery preferences (MO-PAID-085, preferences half only).
+    alert_email_optin: bool | str | None = Field(None, description="email alerts on/off")
+    alert_categories: list[str] | None = Field(
+        None, description="subset of user_prefs.ALERT_CATEGORIES")
+    tz: str | None = Field(None, description="IANA zone, e.g. 'Asia/Hong_Kong'")
+    quiet_hours: dict | str | None = Field(
+        None,
+        description="{'start':'HH:MM','end':'HH:MM'} or the literal string 'off' to clear "
+                    "(quiet_hours is skipped-as-unchanged on a bare None like every other "
+                    "field, so clearing needs its own sentinel — never {} )")
+
+
+#: Plain-word 400 detail per rejected field (EN/ZH). Chairman plain-language law
+#: 2026-09-06: never a machine string like "unknown tz 'Mars/Olympus'".
+_FIELD_ERR: dict[str, tuple[str, str]] = {
+    "tz": ("That time zone isn't one we know. Pick one from the list.",
+           "无法识别该时区，请从列表中选择。"),
+    "alert_categories": ("That isn't an alert type we send. Pick from the list.",
+                          "这不是我们发送的提醒类型，请从列表中选择。"),
+    "quiet_hours": ("Quiet hours need a start and an end time, like 22:00 and 07:00.",
+                     "免打扰时段需要开始和结束时间，例如 22:00 与 07:00。"),
+    "alert_email_optin": ("That setting is on or off — nothing else.",
+                           "该设置只有开或关两种状态。"),
+}
+_DEFAULT_ERR = ("We don't recognise that choice.", "无法识别该选项。")
+
+
+def _field_error(key: str) -> dict:
+    en, zh = _FIELD_ERR.get(key, _DEFAULT_ERR)
+    return {"field": key, "en": en, "zh": zh}
 
 
 @router.post("/api/account/prefs")
@@ -106,22 +136,58 @@ def save_prefs(body: PrefsRequest, user: dict = Depends(_current_user)) -> dict:
     if not user_id:
         raise HTTPException(401, "no user id")
 
-    # One validation loop over the lib's enum table — a value the lib would refuse is
-    # rejected HERE, by name, so the client learns which field was wrong.
+    # One validation loop over the lib's kind table — a value the lib would refuse is
+    # rejected HERE, by name, so the client learns which field was wrong. quiet_hours'
+    # wire sentinel for "clear" is the literal string "off" (see PrefsRequest docstring);
+    # everything else skips a bare None as "don't change".
     patch: dict[str, Any] = {}
+    response_prefs: dict[str, Any] = {}
     for key, raw in (("lang", body.lang), ("theme", body.theme),
-                     ("brain_depth", body.brain_depth)):
+                     ("brain_depth", body.brain_depth),
+                     ("alert_email_optin", body.alert_email_optin),
+                     ("alert_categories", body.alert_categories),
+                     ("tz", body.tz),
+                     ("quiet_hours", body.quiet_hours)):
         if raw is None:
             continue
-        val = user_prefs.normalize_pref(key, raw)
+        if key == "quiet_hours":
+            if raw == "off":
+                # Wire sentinel for "clear". Kept as the literal string through to the lib
+                # writer (never bare None here) — the lib's own None-means-"don't touch"
+                # convention would otherwise silently no-op this clear.
+                patch[key] = "off"
+                response_prefs[key] = None
+                continue
+            if not user_prefs.quiet_hours_shape_ok(raw):
+                raise HTTPException(400, detail=_field_error(key))
+            # Shape is valid; normalize_value may still legally collapse start==end to None
+            # (a real clear, not a rejection) — route it through the same "off" sentinel.
+            val = user_prefs.normalize_value(key, raw)
+            patch[key] = val if val is not None else "off"
+            response_prefs[key] = val
+            continue
+        val = user_prefs.normalize_value(key, raw)
         if val is None:
-            raise HTTPException(400, f"unknown {key} '{raw}'")
+            raise HTTPException(400, detail=_field_error(key))
         patch[key] = val
+        response_prefs[key] = val
     if not patch:
         raise HTTPException(400, "nothing to save (send lang, theme and/or brain_depth)")
 
-    stored = _write_user_metadata(str(user_id), patch,
-                                  dict(user.get("user_metadata") or {}))
+    existing_meta = dict(user.get("user_metadata") or {})
+
+    # B-F08-1a freeze §8: alerts turned on with no IANA zone known -- neither sent on
+    # this call nor already stored -- get an explicit default rather than shipping with
+    # an unset zone (quiet hours and any future delivery-window math need a real tz to
+    # mean anything). Never overwrites a tz the caller/account already has.
+    if patch.get("alert_email_optin") is True and "tz" not in patch \
+            and not existing_meta.get("tz"):
+        lang = patch.get("lang") or existing_meta.get("lang")
+        default_tz = user_prefs.default_tz_for_lang(lang)
+        patch["tz"] = default_tz
+        response_prefs["tz"] = default_tz
+
+    stored = _write_user_metadata(str(user_id), patch, existing_meta)
 
     mirrored = False
     if "lang" in patch:
@@ -129,4 +195,22 @@ def save_prefs(body: PrefsRequest, user: dict = Depends(_current_user)) -> dict:
 
     if not stored and not mirrored:
         raise HTTPException(502, "could not save preferences, please try again")
-    return {"ok": True, "prefs": patch, "metadata": stored, "email_prefs": mirrored}
+    return {"ok": True, "prefs": response_prefs, "metadata": stored, "email_prefs": mirrored}
+
+
+@router.get("/api/account/prefs")
+def read_prefs(user: dict = Depends(_current_user)) -> dict:
+    """Readback for the alert-preferences surface (B-F08-1a). Zero network — rides the
+    already-verified record, same as ``lib.user_prefs.read_user_prefs`` everywhere else.
+
+    ``unset`` names every stored-preference key that has never been written, so the client
+    can render an honest default (browser tz, "nothing chosen yet") instead of a fabricated
+    saved value — null disclosure, not a hidden empty state.
+    """
+    stored = user_prefs.read_user_prefs(user)
+    return {
+        "ok": True,
+        "prefs": stored,
+        "unset": [k for k in user_prefs.PREF_KEYS if k not in stored],
+        "categories_available": list(user_prefs.ALERT_CATEGORIES),
+    }

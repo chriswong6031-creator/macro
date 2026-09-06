@@ -91,8 +91,28 @@
     new_pw: ['New password', '新密码'], confirm_pw: ['Confirm password', '确认密码'],
     prefs_synced: ['Theme & language are saved to your account — they follow you wherever you sign in.',
       '主题与语言已保存到账户，登录任意设备都会自动同步。'],
-    notifications: ['Notifications', '通知'],
-    notif_email: ['Email alerts', '邮件提醒'], notif_product: ['Product updates', '产品更新'],
+    al_group: ['Alert emails', '提醒邮件'],
+    al_master: ['Email me when something I hold changes materially',
+      '我持有的资产出现重要变化时，发邮件通知我'],
+    al_off: ['Alert emails are off. Nothing will be sent.', '提醒邮件已关闭，不会发送任何邮件。'],
+    al_unknown: ["We can't reach your settings right now, so we can't show what's saved. Nothing has changed.",
+      '暂时无法读取你的设置，因此无法显示已保存的内容。当前没有任何改动。'],
+    al_what: ['What to send', '发送哪些提醒'],
+    al_cat_hold: ['A position I hold moves on real news', '我持有的仓位因真实消息出现变动'],
+    al_cat_thes: ['A thesis window I’m watching opens or closes', '我关注的观点窗口打开或关闭'],
+    al_none: ["No alert types chosen yet — you won't get any alert emails.",
+      '尚未选择提醒类型 — 你不会收到提醒邮件。'],
+    al_tz: ['Your time zone', '你的时区'],
+    al_tz_placeholder: ['Not set yet', '尚未设置'],
+    al_tz_unset: ['Not saved yet — we’re using your browser’s time zone, ',
+      '尚未保存 — 暂时使用你浏览器的时区：'],
+    al_qh: ['Quiet hours', '免打扰时段'],
+    al_qh_hint: ['Nothing arrives between these times. Anything that fires waits and is sent when the window ends.',
+      '此时段内不发送。期间触发的提醒会等待，时段结束后补发。'],
+    al_qh_s: ['Quiet hours start', '免打扰开始时间'],
+    al_qh_e: ['Quiet hours end', '免打扰结束时间'],
+    al_clear: ['Clear', '清除'],
+    al_saved: ['Saved', '已保存'],
     security: ['Security', '安全'], login_method: ['Login method', '登录方式'],
     member_since: ['Member since', '注册于'], last_signin: ['Last sign-in', '上次登录'],
     user_id: ['User ID', '用户 ID'], copy: ['Copy', '复制'], copied: ['Copied', '已复制'],
@@ -217,6 +237,19 @@
   function finishLoad(a) {
     state.acct = a; state.loaded = true;
     applyPrefs(a);
+    if (a && a.authenticated) {
+      api('/api/account/prefs').then(function (res) {
+        if (res && res.ok && res.data) {
+          a.alert_prefs = res.data.prefs || {};
+          a.alert_prefs_unset = res.data.unset || [];
+        } else {
+          a.alert_prefs = {}; a.alert_prefs_unset = ['alert_email_optin'];
+        }
+        if (_mode === 'standalone') paintTrigger();
+        render();
+      });
+      return;
+    }
     if (_mode === 'standalone') paintTrigger();
     render();
   }
@@ -240,6 +273,18 @@
     _prefTimer = setTimeout(function () {
       var body = {}; body[key] = val;
       api('/api/account/prefs', { method: 'POST', body: body });
+    }, 500);
+  }
+  var _alertPrefTimers = {};
+  function persistAlertPref(key, val, onOk, onErr) {
+    if (_hydrating || !state.acct || !state.acct.authenticated) return;
+    clearTimeout(_alertPrefTimers[key]);
+    _alertPrefTimers[key] = setTimeout(function () {
+      var body = {}; body[key] = val;
+      api('/api/account/prefs', { method: 'POST', body: body }).then(function (res) {
+        if (res && res.ok) { if (onOk) onOk(res); return; }
+        if (onErr) onErr(res);
+      }).catch(function (err) { if (onErr) onErr(err); });
     }, 500);
   }
 
@@ -312,15 +357,88 @@
         '<div class="mmacc-hint">' + esc(T('prefs_synced')) + '</div>' +
       '</div>';
   }
-  function notifRow(label) {
-    return '<div class="mmacc-row mmacc-row-toggle"><span class="mmacc-k">' + esc(label) + '</span>' +
-      '<span class="mmacc-switch" aria-disabled="true"></span></div>';
+  var TZ_SHORTLIST = [
+    'Asia/Hong_Kong',
+    'Asia/Shanghai',
+    'Asia/Singapore',
+    'Asia/Tokyo',
+    'Asia/Seoul',
+    'Asia/Kolkata',
+    'Asia/Dubai',
+    'Europe/London',
+    'Europe/Paris',
+    'Europe/Berlin',
+    'Europe/Zurich',
+    'Europe/Moscow',
+    'America/New_York',
+    'America/Chicago',
+    'America/Denver',
+    'America/Los_Angeles',
+    'America/Sao_Paulo',
+    'America/Toronto',
+    'Australia/Sydney',
+    'Australia/Perth',
+    'Pacific/Auckland',
+    'Africa/Johannesburg',
+    'Asia/Taipei',
+    'UTC'
+  ];
+  function _tzOptions(current) {
+    var zones = (window.Intl && Intl.supportedValuesOf) ? Intl.supportedValuesOf('timeZone') : TZ_SHORTLIST.slice();
+    var browserTz = 'UTC';
+    try { browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) {}
+    if (zones.indexOf(browserTz) === -1) zones = [browserTz].concat(zones);
+    var sel = current || browserTz;
+    return zones.map(function (z) {
+      return '<option value="' + esc(z) + '"' + (z === sel ? ' selected' : '') + '>' + esc(z) + '</option>';
+    }).join('');
   }
-  function notifGroupHTML() {
-    return '<div class="mmacc-group">' +
-        '<div class="mmacc-glabel">' + esc(T('notifications')) +
-          ' <span class="mmacc-soon mmacc-soon-sm">' + esc(T('soon')) + '</span></div>' +
-        notifRow(T('notif_email')) + notifRow(T('notif_product')) +
+  function alertCatRow(cat, label, checked) {
+    return '<div class="mmacc-row mmacc-row-toggle"><span class="mmacc-k">' + esc(label) + '</span>' +
+      '<button type="button" class="mmacc-switch mmacc-switch-sm" role="switch" ' +
+        'aria-checked="' + (checked ? 'true' : 'false') + '" data-act="alert-cat" data-cat="' + cat + '"></button></div>';
+  }
+  function alertPrefsGroupHTML(p, unset) {
+    p = p || {}; unset = unset || [];
+    var known = unset.indexOf('alert_email_optin') === -1;
+    var on = !!p.alert_email_optin;
+    var cats = p.alert_categories || [];
+    var qh = p.quiet_hours || null;
+    var tzKnown = unset.indexOf('tz') === -1;
+    var tz = tzKnown ? p.tz : null;
+    var state = known ? 'known' : 'unknown';
+    return '<div class="mmacc-group mmacc-alerts" data-on="' + (on ? 'true' : 'false') + '" ' +
+        'data-state="' + state + '" data-quiet="' + (qh ? 'true' : 'false') + '">' +
+        '<div class="mmacc-glabel">' + esc(T('al_group')) + '</div>' +
+        '<div class="mmacc-row mmacc-row-toggle">' +
+          '<span class="mmacc-k mmacc-k-lead">' + esc(T('al_master')) + '</span>' +
+          '<button type="button" class="mmacc-switch" role="switch" aria-checked="' + (on ? 'true' : 'false') + '" ' +
+            'data-act="alert-optin"></button>' +
+        '</div>' +
+        (!known ? '<div class="mmacc-hint mmacc-hint-unknown">' + esc(T('al_unknown')) + '</div>' :
+          (!on ? '<div class="mmacc-hint mmacc-hint-off">' + esc(T('al_off')) + '</div>' : '')) +
+        '<div class="mmacc-field mmacc-alert-detail' + (on ? ' open' : '') + '" id="mmacc-alert-detail">' +
+          '<div class="mmacc-sublabel">' + esc(T('al_what')) + '</div>' +
+          alertCatRow('holdings_material_change', T('al_cat_hold'), cats.indexOf('holdings_material_change') !== -1) +
+          alertCatRow('thesis_window', T('al_cat_thes'), cats.indexOf('thesis_window') !== -1) +
+          (cats.length === 0 ? '<div class="mmacc-hint mmacc-hint-none">' + esc(T('al_none')) + '</div>' : '') +
+          '<div class="mmacc-sublabel">' + esc(T('al_tz')) + '</div>' +
+          '<select class="mmacc-input mmacc-select" id="mmacc-tz" data-act="alert-tz">' + _tzOptions(tz) + '</select>' +
+          (!tzKnown ? '<div class="mmacc-hint mmacc-hint-tz">' + esc(T('al_tz_unset')) +
+            esc((function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return 'UTC'; } })()) +
+            '</div>' : '') +
+          '<div class="mmacc-sublabel">' + esc(T('al_qh')) + '</div>' +
+          '<div class="mmacc-timepair">' +
+            '<input type="time" class="mmacc-input mmacc-time" id="mmacc-qh-start" aria-label="' + esc(T('al_qh_s')) + '" ' +
+              'data-act="alert-qh" value="' + esc((qh && qh.start) || '') + '">' +
+            '<span class="mmacc-timesep">\u2192</span>' +
+            '<input type="time" class="mmacc-input mmacc-time" id="mmacc-qh-end" aria-label="' + esc(T('al_qh_e')) + '" ' +
+              'data-act="alert-qh" value="' + esc((qh && qh.end) || '') + '">' +
+            '<button type="button" class="mmacc-mini" data-act="alert-qh-clear">' + esc(T('al_clear')) + '</button>' +
+          '</div>' +
+          '<div class="mmacc-hint">' + esc(T('al_qh_hint')) + '</div>' +
+          '<div class="mmacc-msg" id="mmacc-alert-msg"></div>' +
+        '</div>' +
       '</div>';
   }
   function infoRow(k, v) {
@@ -377,7 +495,8 @@
       '</div>';
   }
   function bodySignedIn(a) {
-    return planCardHTML(a) + emailGroupHTML(a) + pwGroupHTML() + notifGroupHTML() +
+    var ap = (a && a.alert_prefs) || {}; var unset = (a && a.alert_prefs_unset) || [];
+    return planCardHTML(a) + emailGroupHTML(a) + pwGroupHTML() + alertPrefsGroupHTML(ap, unset) +
       securityGroupHTML(a) + dangerGroupHTML();
   }
   function bodySignedOut(a) {
@@ -518,10 +637,90 @@
   function doSignOutAll() {
     api('/api/account/signout-everywhere', { method: 'POST' }).then(doSignOut, doSignOut);
   }
+  function _alertErr(res) {
+    if (res && res.status === 0) { _alertGroupState(false); setMsg('mmacc-alert-msg', T('al_unknown'), 'bad'); return; }
+    var detail = res && res.data && res.data.detail;
+    if (detail && typeof detail === 'object') {
+      setMsg('mmacc-alert-msg', (lang() === 'zh' ? detail.zh : detail.en) || T('err'), 'bad');
+    } else {
+      setMsg('mmacc-alert-msg', T('err'), 'bad');
+    }
+  }
+  function _alertGroupState(known) {
+    var g = document.querySelector('.mmacc-alerts'); if (!g) return;
+    g.setAttribute('data-state', known ? 'known' : 'unknown');
+  }
+  function onAlertOptin(btn) {
+    var was = btn.getAttribute('aria-checked') === 'true';
+    var next = !was;
+    btn.setAttribute('aria-checked', next ? 'true' : 'false');
+    var g = btn.closest('.mmacc-alerts');
+    if (g) g.setAttribute('data-on', next ? 'true' : 'false');
+    var detail = E('mmacc-alert-detail');
+    if (detail) detail.classList.toggle('open', next);
+    persistAlertPref('alert_email_optin', next, function () {
+      setMsg('mmacc-alert-msg', T('al_saved'), 'ok');
+    }, function (res) {
+      btn.setAttribute('aria-checked', was ? 'true' : 'false');
+      if (g) g.setAttribute('data-on', was ? 'true' : 'false');
+      if (detail) detail.classList.toggle('open', was);
+      _alertErr(res);
+    });
+  }
+  function onAlertCat(btn) {
+    var was = btn.getAttribute('aria-checked') === 'true';
+    var next = !was;
+    btn.setAttribute('aria-checked', next ? 'true' : 'false');
+    var cats = [];
+    document.querySelectorAll('[data-act="alert-cat"]').forEach(function (b) {
+      if (b.getAttribute('aria-checked') === 'true') cats.push(b.getAttribute('data-cat'));
+    });
+    persistAlertPref('alert_categories', cats, function () {
+      setMsg('mmacc-alert-msg', T('al_saved'), 'ok');
+    }, function (res) {
+      btn.setAttribute('aria-checked', was ? 'true' : 'false');
+      _alertErr(res);
+    });
+  }
+  function onAlertTz(sel) {
+    var prev = sel.getAttribute('data-prev') || sel.value;
+    persistAlertPref('tz', sel.value, function () {
+      sel.setAttribute('data-prev', sel.value);
+      setMsg('mmacc-alert-msg', T('al_saved'), 'ok');
+    }, function (res) {
+      sel.value = prev; _alertErr(res);
+    });
+  }
+  function _sendQuietHours() {
+    var s = E('mmacc-qh-start'), e2 = E('mmacc-qh-end');
+    var sv = (s && s.value) || '', ev = (e2 && e2.value) || '';
+    var prevS = sv, prevE = ev;
+    var payload = (!sv || !ev || sv === ev) ? 'off' : { start: sv, end: ev };
+    persistAlertPref('quiet_hours', payload, function () {
+      var g = document.querySelector('.mmacc-alerts');
+      if (g) g.setAttribute('data-quiet', (payload !== 'off') ? 'true' : 'false');
+      setMsg('mmacc-alert-msg', T('al_saved'), 'ok');
+    }, function (res) {
+      if (s) s.value = prevS; if (e2) e2.value = prevE; _alertErr(res);
+    });
+  }
+  function onAlertQhClear() {
+    var s = E('mmacc-qh-start'), e2 = E('mmacc-qh-end');
+    if (s) s.value = ''; if (e2) e2.value = '';
+    _sendQuietHours();
+  }
+  function onChange(e) {
+    var t = e.target; var act = t.getAttribute && t.getAttribute('data-act'); if (!act) return;
+    if (act === 'alert-tz') return onAlertTz(t);
+    if (act === 'alert-qh') return _sendQuietHours();
+  }
   function onClick(e) {
     var b = e.target.closest('[data-act]'); if (!b) return;
     switch (b.getAttribute('data-act')) {
       case 'close': return close();
+      case 'alert-optin': return onAlertOptin(b);
+      case 'alert-cat': return onAlertCat(b);
+      case 'alert-qh-clear': return onAlertQhClear();
       case 'edit-email': showField('mmacc-email-field'); var ei = E('mmacc-email-in'); if (ei) ei.focus(); return;
       case 'cancel-email': showField('mmacc-email-field', false); setMsg('mmacc-email-msg', ''); return;
       case 'save-email': return onSaveEmail(b);
@@ -595,6 +794,7 @@
     panel = document.createElement('div'); panel.className = 'mmacc';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', T('account'));
     panel.addEventListener('click', onClick);
+    panel.addEventListener('change', onChange, true);
     document.body.appendChild(scrim); document.body.appendChild(panel);
     _root = panel;
     wirePrefSync();
@@ -608,6 +808,7 @@
     el.className = (el.className || '') + ' mmacc-embed-host';
     el.removeAttribute('style');
     el.addEventListener('click', onClick);
+    el.addEventListener('change', onChange, true);
     // this section is live now — drop the "coming soon" badge theme.js rendered
     var soon = document.querySelector('#settings-modal .settings-sec-t .settings-soon');
     if (soon) soon.style.display = 'none';
@@ -638,6 +839,7 @@
     panel = document.createElement('div'); panel.className = 'mmacc';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', T('account'));
     panel.addEventListener('click', onClick);
+    panel.addEventListener('change', onChange, true);
     document.body.appendChild(scrim); document.body.appendChild(panel);
     _root = panel;
     wirePrefSync();
