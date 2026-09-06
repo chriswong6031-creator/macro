@@ -20,8 +20,13 @@ whole suite offline. stdlib + pytest only.
 from __future__ import annotations
 
 import json
+import os
+import plistlib
 import shutil
 import sqlite3
+import stat
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -3545,12 +3550,6 @@ def test_census_refuses_rather_than_auditing_an_unreadable_catalog(tmp_path,
 # ---------------------------------------------------------------------------
 # Research Vault fast-trigger / LaunchAgent contract
 # ---------------------------------------------------------------------------
-import json
-import os
-import subprocess
-import sys
-
-import pytest
 
 RESEARCH_FEED_ROOT = Path(__file__).resolve().parents[1]
 RESEARCH_FEED_RUNNER = RESEARCH_FEED_ROOT / "ops" / "launchd" / "run_research_feed.sh"
