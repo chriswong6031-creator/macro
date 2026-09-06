@@ -524,6 +524,23 @@ LIFECYCLE_NULLS = ("unknown", "no_coverage", "rights_suppressed")
 LIFECYCLE_EVENT_TYPES = LIFECYCLE_STAGES + LIFECYCLE_TERMINAL + ("correction", "reinstated")
 
 _STAGE_RANK = {s: i for i, s in enumerate(LIFECYCLE_STAGES)}
+_TERMINAL_RANK = {t: len(LIFECYCLE_STAGES) + i for i, t in enumerate(LIFECYCLE_TERMINAL)}
+_REINSTATED_RANK = len(LIFECYCLE_STAGES) + len(LIFECYCLE_TERMINAL)
+_CORRECTION_RANK = -1  # order-independent: only ever sets the `corrected` flag/replay
+
+STALL_DAYS = 45  # deterministic "no forward motion" threshold; never LLM-derived
+DEFAULT_JURISDICTION_EN = "Federal (US)"
+DEFAULT_JURISDICTION_ZH = "美国联邦"
+
+
+def _stage_sort_rank(typ: str) -> int:
+    if typ in _STAGE_RANK:
+        return _STAGE_RANK[typ]
+    if typ in _TERMINAL_RANK:
+        return _TERMINAL_RANK[typ]
+    if typ == "reinstated":
+        return _REINSTATED_RANK
+    return _CORRECTION_RANK
 
 
 def _lifecycle_source_label(url):
@@ -618,6 +635,7 @@ def ingest_lifecycle(root=None) -> int:
             row["schema"] = LIFECYCLE_SCHEMA
             row.setdefault("corrects", None)
             row.setdefault("reason", None)
+            row["known_at"] = row.get("known_at") or row.get("event_date")
             rows.append(row)
         rows = _ledger_law.reject_existing_ids(store_path, rows, "policy_lifecycle")
         with open(store_path, "a") as fh:
@@ -629,7 +647,7 @@ def ingest_lifecycle(root=None) -> int:
         return 0
 
 
-def fold_lifecycle(events: list[dict], registry: list[dict]) -> list[dict]:
+def fold_lifecycle(events: list[dict], registry: list[dict], as_of_date: str | None = None) -> list[dict]:
     """Pure, no IO, no clock. Folds a per-item event list against a registry of
     tracked items into the frozen per-item state projection."""
     by_item: dict[str, list[dict]] = {}
@@ -643,7 +661,7 @@ def fold_lifecycle(events: list[dict], registry: list[dict]) -> list[dict]:
             by_item.get(item_id, []),
             key=lambda e: (
                 e.get("known_at") or "",
-                _STAGE_RANK.get(e.get("type"), -1),
+                _stage_sort_rank(e.get("type")),
                 e.get("event_id") or "",
             ),
         )
@@ -652,7 +670,10 @@ def fold_lifecycle(events: list[dict], registry: list[dict]) -> list[dict]:
                 "id": item_id,
                 "title_en": reg.get("title_en"), "title_zh": reg.get("title_zh"),
                 "jurisdiction": reg.get("jurisdiction"),
-                "jurisdiction_en": reg.get("jurisdiction_en"), "jurisdiction_zh": reg.get("jurisdiction_zh"),
+                "jurisdiction_en": reg.get("jurisdiction_en") or DEFAULT_JURISDICTION_EN,
+                "jurisdiction_zh": reg.get("jurisdiction_zh") or DEFAULT_JURISDICTION_ZH,
+                "detail_en": reg.get("detail_en"), "detail_zh": reg.get("detail_zh"),
+                "basis": reg.get("basis"), "confidence": reg.get("confidence"),
                 "state": "unknown", "stage_rank": None, "reached": [], "gaps": [],
                 "state_asof": None, "known_at": None, "source": None,
                 "next_step": None, "stalled": False, "corrected": False,
@@ -676,10 +697,21 @@ def fold_lifecycle(events: list[dict], registry: list[dict]) -> list[dict]:
             typ = ev.get("type")
             if typ == "correction":
                 corrected = True
-                # re-derive nothing special here beyond marking corrected; the
-                # corrected event's own effect (if any ladder/terminal payload
-                # is embedded) is handled by its own type below when present.
-                continue
+                # MAJOR M4: a correction used to be a dead end (mark corrected, continue)
+                # so it could never repair a wrong date/stage/source. A correction now
+                # optionally carries corrected_type/corrected_event_date/corrected_source
+                # and replays as that typed event so the repair actually lands, while
+                # still being distinguishable via `corrected=True`.
+                replay_type = ev.get("corrected_type")
+                if replay_type not in LIFECYCLE_STAGES and replay_type not in LIFECYCLE_TERMINAL:
+                    continue
+                ev = dict(ev)
+                ev["type"] = replay_type
+                if ev.get("corrected_event_date"):
+                    ev["event_date"] = ev["corrected_event_date"]
+                if ev.get("corrected_source"):
+                    ev["source"] = ev["corrected_source"]
+                typ = replay_type
             if typ == "reinstated":
                 if terminal_frozen and pre_terminal is not None:
                     state = pre_terminal["state"]
@@ -738,14 +770,33 @@ def fold_lifecycle(events: list[dict], registry: list[dict]) -> list[dict]:
         if state == "unknown":
             why = "no_document"
 
+        # MAJOR M1: "stalled" was hardcoded False everywhere. Deterministic, pure (no
+        # wall clock inside this function -- as_of_date is an explicit argument from
+        # the caller): a ladder item that has not reached the final stage and whose
+        # last dated event is >= STALL_DAYS behind as_of_date has stalled.
+        stalled = False
+        if as_of_date and stage_rank is not None and not terminal_frozen and stage_rank + 1 < len(LIFECYCLE_STAGES):
+            ref_date = state_asof or (known_at or "")[:10]
+            if ref_date:
+                try:
+                    from datetime import date as _date
+                    d0 = _date.fromisoformat(ref_date[:10])
+                    d1 = _date.fromisoformat(as_of_date[:10])
+                    stalled = (d1 - d0).days >= STALL_DAYS
+                except Exception:  # noqa: BLE001
+                    stalled = False
+
         out.append({
             "id": item_id,
             "title_en": reg.get("title_en"), "title_zh": reg.get("title_zh"),
             "jurisdiction": reg.get("jurisdiction"),
-            "jurisdiction_en": reg.get("jurisdiction_en"), "jurisdiction_zh": reg.get("jurisdiction_zh"),
+            "jurisdiction_en": reg.get("jurisdiction_en") or DEFAULT_JURISDICTION_EN,
+            "jurisdiction_zh": reg.get("jurisdiction_zh") or DEFAULT_JURISDICTION_ZH,
+            "detail_en": reg.get("detail_en"), "detail_zh": reg.get("detail_zh"),
+            "basis": reg.get("basis"), "confidence": reg.get("confidence"),
             "state": state, "stage_rank": stage_rank, "reached": reached, "gaps": gaps,
             "state_asof": state_asof, "known_at": known_at, "source": source,
-            "next_step": next_step, "stalled": False, "corrected": corrected,
+            "next_step": next_step, "stalled": stalled, "corrected": corrected,
             "conflict": conflict, "why": why,
         })
     return out
@@ -767,10 +818,17 @@ def lifecycle_view(root=None) -> dict:
             registry.append({
                 "id": lever.get("id"), "title_en": lever.get("title_en"), "title_zh": lever.get("title_zh"),
                 "jurisdiction": lever.get("jurisdiction"),
+                # BLOCKER B3: real verified_levers never carry jurisdiction_en/zh —
+                # fold_lifecycle applies DEFAULT_JURISDICTION_EN/ZH when these are
+                # absent, so an item is always jurisdiction-scoped and never hidden.
                 "jurisdiction_en": lever.get("jurisdiction_en"), "jurisdiction_zh": lever.get("jurisdiction_zh"),
+                # MAJOR M5: carry FACT/INFERENCE basis + confidence + detail through so
+                # the template can restore the epistemic disclosure main used to render.
+                "detail_en": lever.get("detail_en"), "detail_zh": lever.get("detail_zh"),
+                "basis": lever.get("basis"), "confidence": lever.get("confidence"),
             })
         events = lifecycle_events(root_path)
-        items = fold_lifecycle(events, registry)
+        items = fold_lifecycle(events, registry, as_of_date=intel.get("as_of"))
 
         counts = {"proposed": 0, "passed": 0, "in_force": 0, "enforced": 0, "other": 0, "unknown": 0}
         for it in items:

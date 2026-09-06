@@ -7,6 +7,10 @@
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 
+{% macro tp(en, zh='') -%}
+{{- en }}{% if zh and zh != en %} / {{ zh }}{% endif -%}
+{%- endmacro %}
+
 {% set THREAD = {
   'fed':['Rates','利率'], 'treasury':['Treasury','财政部'], 'policy':['Policy','政策'],
   'rotation':['Markets','市场'], 'china':['China','中国'], 'iran':['Iran','伊朗'],
@@ -511,6 +515,8 @@
         <div class="pw-stage-main">
           <h4 class="pw-stage-name">{{ bl(copy.title_en if copy else it.title_en, copy.title_zh if copy else it.title_zh) }}</h4>
           {% if it.jurisdiction_en %}<p class="pw-stage-jur">{{ bl(it.jurisdiction_en, it.jurisdiction_zh) }}</p>{% endif %}
+          {% if it.detail_en %}<p class="pw-stage-detail">{{ bl(brief(it.detail_en, 220), brief(it.detail_zh, 110)) }}</p>{% endif %}
+          {% if it.basis or it.confidence %}<div class="pw-meta-row">{{ basis_tags(it.basis) }}{% if it.confidence %}{{ confidence_tag(it.confidence) }}{% endif %}</div>{% endif %}
           {% if it.why == 'no_document' %}
             <p class="pw-stage-why">{{ t('No public document we can cite yet.','暂无可引用的公开文件。') }}</p>
           {% elif it.conflict %}
@@ -518,11 +524,11 @@
           {% elif it.next_step %}
             <p class="pw-stage-next">{{ t('Next step to watch','下一步观察') }}: {{ bl(STAGE_EN[it.next_step.stage], STAGE_ZH[it.next_step.stage]) }} · {% if it.next_step.date %}<span class="pw-date">{{ it.next_step.date }}</span>{% else %}{{ t('No date published','未公布日期') }}{% endif %}</p>
           {% endif %}
-          {% if it.gaps %}<p class="pw-stage-why">{{ t('Passage date not published','未公布通过日期') }}</p>{% endif %}
+          {% if it.gaps %}<p class="pw-stage-why">{{ t('No published date for','未公布日期：') }} {% for gap in it.gaps %}{{ bl(STAGE_EN[gap], STAGE_ZH[gap]) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
         </div>
         <div class="pw-stage-track">
           <div class="pw-stage-meter" role="img"
-               aria-label="{{ t('Stage','阶段') }}: {{ bl(STAGE_EN[it.state], STAGE_ZH[it.state]) if it.state in STAGE_EN else t('Not tracked yet','尚未跟踪') }}{% if it.state_asof %} · {{ it.state_asof }}{% endif %}">
+               aria-label="{{ tp('Stage','阶段') }}: {{ tp(STAGE_EN[it.state], STAGE_ZH[it.state]) if it.state in STAGE_EN else tp('Not tracked yet','尚未跟踪') }}{% if it.state_asof %} · {{ it.state_asof }}{% endif %}">
             {% for stop in ['proposed','passed','in_force','enforced'] %}
             <span class="pw-stage-seg{% if stop in it.reached %} is-reached{% endif %}{% if idx is not none and loop.index0 == idx %} is-current{% endif %}" aria-hidden="true"></span>
             {% endfor %}
@@ -535,7 +541,7 @@
         </div>
         <div class="pw-stage-side">
           {% if it.state == 'unknown' %}<span class="pw-badge neutral">{{ t('Not tracked yet','尚未跟踪') }}</span>
-          {% else %}<span class="pw-badge {{ 'warn' if it.stalled or it.conflict else 'fact' }}">{{ bl(STAGE_EN[it.state], STAGE_ZH[it.state]) }}</span>{% endif %}
+          {% else %}<span class="pw-badge {{ 'warn' if it.stalled or it.conflict else ('fact' if it.basis and 'FACT' in it.basis else ('read' if it.basis and 'INFERENCE' in it.basis else 'fact')) }}">{{ bl(STAGE_EN[it.state], STAGE_ZH[it.state]) }}</span>{% endif %}
           {% if it.corrected %}<span class="pw-badge updated">{{ t('Updated','已更正') }}</span>{% endif %}
           {% if it.state_asof %}<span class="pw-stage-asof">{{ it.state_asof }}</span>{% endif %}
           {% if it.source and it.source.url %}<a class="pw-stage-src" href="{{ it.source.url }}" rel="nofollow noopener" target="_blank">{{ it.source.label }}</a>{% endif %}
