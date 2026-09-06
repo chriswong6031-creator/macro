@@ -1,0 +1,412 @@
+.........................s.FFFFFFFFFFFFFFFFFFFFFFF.                      [100%]
+=================================== FAILURES ===================================
+________ test_tier_reference_period_follows_its_own_source[coincident] _________
+
+tier = 'coincident'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    def test_tier_reference_period_follows_its_own_source(tier: str) -> None:
+        snapshot = _compose(_individually_dated_regime())
+        for metric_id in _TIER_METRIC_IDS[tier]:
+>           assert _metric(snapshot, metric_id)["reference_period"] == _TIER_PERIODS[tier]
+E           AssertionError: assert '2026-09-30' == '2026-07-31'
+E
+E             - 2026-07-31
+E             ?       ^  ^
+E             + 2026-09-30
+E             ?       ^  ^
+
+tests/test_macro_workspace_growth.py:589: AssertionError
+__________ test_tier_reference_period_follows_its_own_source[lagging] __________
+
+tier = 'lagging'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    def test_tier_reference_period_follows_its_own_source(tier: str) -> None:
+        snapshot = _compose(_individually_dated_regime())
+        for metric_id in _TIER_METRIC_IDS[tier]:
+>           assert _metric(snapshot, metric_id)["reference_period"] == _TIER_PERIODS[tier]
+E           AssertionError: assert '2026-09-30' == '2026-08-31'
+E
+E             - 2026-08-31
+E             ?       ^  ^
+E             + 2026-09-30
+E             ?       ^  ^
+
+tests/test_macro_workspace_growth.py:589: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[None-leading] _
+
+tier = 'leading', bad_period = None
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[None-coincident] _
+
+tier = 'coincident', bad_period = None
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[None-lagging] _
+
+tier = 'lagging', bad_period = None
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[-leading] _
+
+tier = 'leading', bad_period = ''
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[-coincident] _
+
+tier = 'coincident', bad_period = ''
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[-lagging] _
+
+tier = 'lagging', bad_period = ''
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[not-a-date-leading] _
+
+tier = 'leading', bad_period = 'not-a-date'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[not-a-date-coincident] _
+
+tier = 'coincident', bad_period = 'not-a-date'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[not-a-date-lagging] _
+
+tier = 'lagging', bad_period = 'not-a-date'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[2026-02-30-leading] _
+
+tier = 'leading', bad_period = '2026-02-30'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[2026-02-30-coincident] _
+
+tier = 'coincident', bad_period = '2026-02-30'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[2026-02-30-lagging] _
+
+tier = 'lagging', bad_period = '2026-02-30'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[20260930-leading] _
+
+tier = 'leading', bad_period = '20260930'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[20260930-coincident] _
+
+tier = 'coincident', bad_period = '20260930'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[20260930-lagging] _
+
+tier = 'lagging', bad_period = '20260930'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[True-leading] _
+
+tier = 'leading', bad_period = True
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[True-coincident] _
+
+tier = 'coincident', bad_period = True
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+_ test_missing_or_invalid_tier_period_never_borrows_the_leading_period[True-lagging] _
+
+tier = 'lagging', bad_period = True
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    @pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+    def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+        regime = _individually_dated_regime()
+        regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+        snapshot = _compose(regime)
+        contract.validate(contract.finalize(snapshot))
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["reference_period"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:606: AssertionError
+__ test_month_bucket_is_not_an_observation_or_calculation_timestamp[leading] ___
+
+tier = 'leading'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    def test_month_bucket_is_not_an_observation_or_calculation_timestamp(tier) -> None:
+        regime = _individually_dated_regime()
+        snapshot = _compose(regime)
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["observed_at"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:623: AssertionError
+_ test_month_bucket_is_not_an_observation_or_calculation_timestamp[coincident] _
+
+tier = 'coincident'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    def test_month_bucket_is_not_an_observation_or_calculation_timestamp(tier) -> None:
+        regime = _individually_dated_regime()
+        snapshot = _compose(regime)
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["observed_at"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:623: AssertionError
+__ test_month_bucket_is_not_an_observation_or_calculation_timestamp[lagging] ___
+
+tier = 'lagging'
+
+    @pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+    def test_month_bucket_is_not_an_observation_or_calculation_timestamp(tier) -> None:
+        regime = _individually_dated_regime()
+        snapshot = _compose(regime)
+        for metric_id in _TIER_METRIC_IDS[tier]:
+            metric = _metric(snapshot, metric_id)
+>           assert metric["observed_at"] is None
+E           AssertionError: assert '2026-09-30' is None
+
+tests/test_macro_workspace_growth.py:623: AssertionError
+
+NOTE: sparse worktree — data, mockups, site, verify_shots not checked out; opt into a full checkout with: python3 scripts/worktree_sparse.py full
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_macro_workspace_growth.py:558: owner artifact data/regime/latest.json absent
+FAILED tests/test_macro_workspace_growth.py::test_tier_reference_period_follows_its_own_source[coincident]
+FAILED tests/test_macro_workspace_growth.py::test_tier_reference_period_follows_its_own_source[lagging]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[None-leading]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[None-coincident]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[None-lagging]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[-leading]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[-coincident]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[-lagging]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[not-a-date-leading]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[not-a-date-coincident]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[not-a-date-lagging]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[2026-02-30-leading]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[2026-02-30-coincident]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[2026-02-30-lagging]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[20260930-leading]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[20260930-coincident]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[20260930-lagging]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[True-leading]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[True-coincident]
+FAILED tests/test_macro_workspace_growth.py::test_missing_or_invalid_tier_period_never_borrows_the_leading_period[True-lagging]
+FAILED tests/test_macro_workspace_growth.py::test_month_bucket_is_not_an_observation_or_calculation_timestamp[leading]
+FAILED tests/test_macro_workspace_growth.py::test_month_bucket_is_not_an_observation_or_calculation_timestamp[coincident]
+FAILED tests/test_macro_workspace_growth.py::test_month_bucket_is_not_an_observation_or_calculation_timestamp[lagging]
+23 failed, 27 passed, 1 skipped in 23.85s

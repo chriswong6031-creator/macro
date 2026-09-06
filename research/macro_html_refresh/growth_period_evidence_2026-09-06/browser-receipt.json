@@ -1,0 +1,161 @@
+{
+  "classification": "LOCAL_REAL_GROWTH_OWNER_NOT_PRODUCTION",
+  "built_at": "2026-09-06T22:02:57.722240+00:00",
+  "parent_head": "5812a58468b92c71dc5f5f92abd838059d7d3d1c",
+  "owner_sha256": "90f96ae792abdbde2555ad1eef5d258d6772c1450dc116b8ddf23ea3f5555916",
+  "composer_sha256": "50415f983810365b121943f1649a68be420ca88659e663ea283bfcbc61963cdc",
+  "snapshot_digest": "906a12549110e2fca52665e97e135eac716b9dc56743822e5ebf0bfc4958e772",
+  "html_sha256": "c659635a4da4404aa84d76a9954390ac60538d41df62667d08d4bc77b0d3d592",
+  "source_periods": {
+    "leading": "2026-09-30",
+    "coincident": "2026-07-31",
+    "lagging": "2026-08-31"
+  },
+  "cases": [
+    {
+      "width": 1440,
+      "theme": "dark",
+      "language": "en",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "language": "en",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "language": "zh",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "language": "zh",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "language": "en",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "language": "en",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "language": "zh",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "language": "zh",
+      "verified_periods": {
+        "business_cycle.tiers.leading.mom6": "2026-09-30",
+        "business_cycle.tiers.coincident.mom6": "2026-07-31",
+        "business_cycle.tiers.leading.diffusion": "2026-09-30",
+        "business_cycle.tiers.coincident.diffusion": "2026-07-31",
+        "business_cycle.tiers.coincident.index": "2026-07-31",
+        "business_cycle.tiers.leading.index": "2026-09-30",
+        "business_cycle.tiers.lagging.index": "2026-08-31",
+        "business_cycle.tiers.lagging.diffusion": "2026-08-31",
+        "business_cycle.tiers.lagging.mom6": "2026-08-31"
+      },
+      "overflow": false,
+      "page_errors": []
+    }
+  ],
+  "status": "PASS"
+}

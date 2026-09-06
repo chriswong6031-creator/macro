@@ -563,3 +563,83 @@ def test_builds_and_validates_from_real_owner_artifact() -> None:
     assert snap["headline"]["state_id"] in ("A", "B", "C", "D", None)
     assert snap["generation"]["calculation_as_of"] == regime.get("asof")
     assert snap["authority"]["can_size"] is False
+
+
+# The business-cycle owner clocks each tier independently. Its top-level asof
+# is the leading tier's month bucket, not a timestamp shared by every tier.
+_TIER_METRIC_IDS = {
+    "leading": ("leading_tier_momentum", "leading_diffusion", "leading_tier_index"),
+    "coincident": ("coincident_tier_momentum", "coincident_diffusion", "coincident_index_level"),
+    "lagging": ("lagging_tier_index", "lagging_tier_diffusion", "lagging_tier_momentum"),
+}
+_TIER_PERIODS = {"leading": "2026-09-30", "coincident": "2026-07-31", "lagging": "2026-08-31"}
+
+
+def _individually_dated_regime() -> dict:
+    regime = _base_regime()
+    for tier, period in _TIER_PERIODS.items():
+        regime["business_cycle"]["tiers"][tier]["asof"] = period
+    return regime
+
+
+@pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+def test_tier_reference_period_follows_its_own_source(tier: str) -> None:
+    snapshot = _compose(_individually_dated_regime())
+    for metric_id in _TIER_METRIC_IDS[tier]:
+        assert _metric(snapshot, metric_id)["reference_period"] == _TIER_PERIODS[tier]
+    source = next(s for s in snapshot["sources"]["items"]
+                  if s["source_id"] == f"business_cycle_{tier}")
+    assert source["reference_period"] == _TIER_PERIODS[tier]
+    if tier != "lagging":
+        assert _required(snapshot, f"{tier}_diffusion")["source_asof"] == _TIER_PERIODS[tier]
+
+
+@pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+@pytest.mark.parametrize("bad_period", [None, "", "not-a-date", "2026-02-30", "20260930", True])
+def test_missing_or_invalid_tier_period_never_borrows_the_leading_period(tier, bad_period) -> None:
+    regime = _individually_dated_regime()
+    regime["business_cycle"]["tiers"][tier]["asof"] = bad_period
+    snapshot = _compose(regime)
+    contract.validate(contract.finalize(snapshot))
+    for metric_id in _TIER_METRIC_IDS[tier]:
+        metric = _metric(snapshot, metric_id)
+        assert metric["reference_period"] is None
+        assert metric["value"] is not None  # unknown period is not a missing numeric read
+    source = next(s for s in snapshot["sources"]["items"]
+                  if s["source_id"] == f"business_cycle_{tier}")
+    assert source["reference_period"] is None
+    if tier != "lagging":
+        assert _required(snapshot, f"{tier}_diffusion")["source_asof"] is None
+    for other in set(_TIER_METRIC_IDS) - {tier}:
+        assert _metric(snapshot, _TIER_METRIC_IDS[other][0])["reference_period"] == _TIER_PERIODS[other]
+
+
+@pytest.mark.parametrize("tier", tuple(_TIER_METRIC_IDS))
+def test_month_bucket_is_not_an_observation_or_calculation_timestamp(tier) -> None:
+    regime = _individually_dated_regime()
+    snapshot = _compose(regime)
+    for metric_id in _TIER_METRIC_IDS[tier]:
+        metric = _metric(snapshot, metric_id)
+        assert metric["observed_at"] is None
+        assert metric["calculation_as_of"] == regime["asof"]
+        assert metric["released_at"] is None
+        assert metric["available_at"] is None
+
+
+def test_period_fidelity_preserves_numeric_method_and_does_not_mutate_owner() -> None:
+    regime = _individually_dated_regime()
+    original = copy.deepcopy(regime)
+    dated = _compose(regime)
+    undated = _compose(_base_regime())
+    assert regime == original
+    for field in ("headline", "axes", "drivers", "changes", "corrections", "authority"):
+        assert dated[field] == undated[field]
+    assert dated["headline"]["method_version"] == "growth_real_economy.compose.v1"
+    for item in dated["metrics"]["items"]:
+        before = _metric(undated, item["metric_id"])
+        for field in ("value", "status", "freshness", "model_version", "authority_ceiling"):
+            assert item[field] == before[field]
+    # A monthly bucket may end after this build day; it is a reference period,
+    # not fabricated knowledge of a release at that future instant.
+    assert _metric(dated, "leading_diffusion")["reference_period"] == "2026-09-30"
+    assert dated["generation"]["calculation_as_of"] == regime["asof"]

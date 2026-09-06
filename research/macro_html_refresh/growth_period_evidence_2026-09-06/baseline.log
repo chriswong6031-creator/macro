@@ -1,0 +1,4 @@
+.........................s                                               [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_macro_workspace_growth.py:558: owner artifact data/regime/latest.json absent
+25 passed, 1 skipped in 2.15s

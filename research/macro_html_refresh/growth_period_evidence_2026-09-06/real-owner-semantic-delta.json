@@ -1,0 +1,146 @@
+{
+  "baseline": "5812a58468b92c71dc5f5f92abd838059d7d3d1c",
+  "owner_sha256": "90f96ae792abdbde2555ad1eef5d258d6772c1450dc116b8ddf23ea3f5555916",
+  "before_source_sha256": "54d1a2b1184c308c72f59a3a69cac9574c268afeb90d097e6a99d3a3ccddd0e1",
+  "after_source_sha256": "50415f983810365b121943f1649a68be420ca88659e663ea283bfcbc61963cdc",
+  "actual_prior_generation": "growth_real_economy-US-fc1b8edaf9252129",
+  "only_period_and_clock_fields_changed": true,
+  "numeric_method_hysteresis_corrections_authority_unchanged": true,
+  "changes": [
+    {
+      "path": "/availability/required/3/source_asof",
+      "before": "2026-09-30",
+      "after": "2026-07-31"
+    },
+    {
+      "path": "/metrics/items/4/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/4/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/5/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-07-31"
+    },
+    {
+      "path": "/metrics/items/5/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/5/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/6/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/6/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/7/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-07-31"
+    },
+    {
+      "path": "/metrics/items/7/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/7/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/8/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-07-31"
+    },
+    {
+      "path": "/metrics/items/8/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/8/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/10/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/10/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/11/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-08-31"
+    },
+    {
+      "path": "/metrics/items/11/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/11/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/12/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-08-31"
+    },
+    {
+      "path": "/metrics/items/12/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/12/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/metrics/items/13/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-08-31"
+    },
+    {
+      "path": "/metrics/items/13/observed_at",
+      "before": "2026-09-30",
+      "after": null
+    },
+    {
+      "path": "/metrics/items/13/calculation_as_of",
+      "before": "2026-09-30",
+      "after": "2026-09-04"
+    },
+    {
+      "path": "/sources/items/3/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-07-31"
+    },
+    {
+      "path": "/sources/items/4/reference_period",
+      "before": "2026-09-30",
+      "after": "2026-08-31"
+    }
+  ]
+}

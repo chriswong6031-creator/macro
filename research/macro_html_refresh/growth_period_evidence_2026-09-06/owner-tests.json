@@ -1,0 +1,30 @@
+{
+  "utc": "2026-09-06T21:59:41.186940+00:00",
+  "job": "market-os-macro-workspaces",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-m",
+    "pytest",
+    "tests/test_macro_workspace_build.py",
+    "tests/test_macro_workspace_business_activity.py",
+    "tests/test_macro_workspace_capital_structure.py",
+    "tests/test_macro_workspace_consumer.py",
+    "tests/test_macro_workspace_consumer_payments.py",
+    "tests/test_macro_workspace_contract.py",
+    "tests/test_macro_workspace_financial_conditions.py",
+    "tests/test_macro_workspace_growth.py",
+    "tests/test_macro_workspace_housing.py",
+    "tests/test_macro_workspace_inflation.py",
+    "tests/test_macro_workspace_labor.py",
+    "tests/test_macro_workspace_liquidity_central_banks.py",
+    "tests/test_macro_workspace_liquidity_regime.py",
+    "tests/test_macro_workspace_monetary_policy.py",
+    "tests/test_macro_workspace_national_debt.py",
+    "tests/test_macro_workspace_rates_curves.py",
+    "tests/test_macro_workspace_trade_flows.py",
+    "-q"
+  ],
+  "exit": 0,
+  "source_hash": "50415f983810365b121943f1649a68be420ca88659e663ea283bfcbc61963cdc",
+  "test_hash": "0381a81116d747c551e222c7f3f0702e8f0d042a1f35a1c8de76ef5272f058fa"
+}
