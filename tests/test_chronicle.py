@@ -2687,3 +2687,141 @@ def test_regen_on_committed_tree_is_deterministic():
         "two independent regens of the REAL committed tree disagree byte-for-byte "
         "— real-data nondeterminism the synthetic fixture cannot see"
     )
+
+
+# ---------------------------------------------------------------------------
+# MO-DELTA-001 — Market-Feed alias confirmation (A-F05-2)
+# ---------------------------------------------------------------------------
+
+def test_market_feed_alias_real_store_is_not_served():
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+
+    receipt = resolve_market_feed_alias(root=ROOT)
+    assert receipt["state"] != "SERVED"
+    if receipt["coverage"]["readable"]:
+        assert receipt["state"] == "NOT_SERVED"
+        assert "impact_direction" in receipt["missing_fields"]
+        assert receipt["coverage"]["events_with_direction_field"] == 0
+        assert receipt["coverage"]["events_with_tickers"] > 0
+    else:
+        # sparse-worktree path — data/ may be omitted from this checkout
+        assert receipt["state"] == "UNKNOWN"
+
+
+def test_market_feed_alias_unknown_when_store_unreadable(tmp_path):
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+
+    receipt = resolve_market_feed_alias(root=tmp_path)
+    assert receipt["state"] == "UNKNOWN"
+    assert "store_unreadable" in receipt["flags"]
+    assert receipt["coverage"]["events_total"] is None
+    assert receipt["coverage"]["events_with_tickers"] is None
+
+
+def test_market_feed_alias_no_projection_is_not_served(tmp_path):
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    receipt = resolve_market_feed_alias(root=root, projection=None)
+    assert receipt["state"] == "NOT_SERVED"
+    assert receipt["served_fields"] == ["event_id", "event_time", "tickers"]
+    assert receipt["missing_fields"] == ["impact_direction", "impact_magnitude"]
+
+
+def test_market_feed_alias_declaration_never_outranks_the_store(tmp_path):
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    projection = {"name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS)}
+    receipt = resolve_market_feed_alias(root=root, projection=projection)
+    assert receipt["state"] == "PARTIALLY_SERVED"
+    assert "claim_unsupported_by_store" in receipt["flags"]
+    assert receipt["state"] != "SERVED"
+
+
+def test_market_feed_alias_served_requires_supported_direction(tmp_path):
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    projection = {
+        "name": "x",
+        "route": "/x",
+        "fields": list(MARKET_FEED_REQUIRED_FIELDS),
+        "support": {
+            "impact_direction": {"produced_by": "engine.chronicle.market_feed_alias_test_stub", "sample_n": 3},
+            "impact_magnitude": {"produced_by": "engine.chronicle.market_feed_alias_test_stub", "sample_n": 3},
+        },
+    }
+    receipt = resolve_market_feed_alias(root=root, projection=projection)
+    assert receipt["state"] == "SERVED"
+    assert receipt["missing_fields"] == []
+
+
+def test_market_feed_alias_disclosure_is_plain_words_both_languages(tmp_path):
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, alias_disclosure, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    forbidden = [
+        "falsif", "证伪", "refut", "mo-delta", "mo-paid", "impact_direction",
+        "events.jsonl", "chronicle", "not_served",
+    ]
+
+    receipts = [
+        resolve_market_feed_alias(root=tmp_path / "does-not-exist"),  # UNKNOWN
+        resolve_market_feed_alias(root=root, projection=None),  # NOT_SERVED
+        resolve_market_feed_alias(root=root, projection={  # PARTIALLY_SERVED
+            "name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS),
+        }),
+        resolve_market_feed_alias(root=root, projection={  # SERVED
+            "name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS),
+            "support": {
+                "impact_direction": {"produced_by": "stub", "sample_n": 1},
+                "impact_magnitude": {"produced_by": "stub", "sample_n": 1},
+            },
+        }),
+    ]
+    for receipt in receipts:
+        for lang, key in (("en", "disclosure_en"), ("zh", "disclosure_zh")):
+            text = receipt[key]
+            assert text
+            also = alias_disclosure(receipt, lang=lang)
+            assert also == text
+            if lang == "en":
+                assert len(text) <= 240
+            low = text.lower()
+            for token in forbidden:
+                assert token not in low, f"forbidden token {token!r} in {key}: {text}"
+
+
+def test_market_feed_alias_receipt_is_deterministic_and_json_serializable(tmp_path):
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    r1 = resolve_market_feed_alias(root=root, as_of="2026-09-05")
+    r2 = resolve_market_feed_alias(root=root, as_of="2026-09-05")
+    assert json.dumps(r1, sort_keys=True) == json.dumps(r2, sort_keys=True)
+
+    proxy_fields = {p["field"] for p in r1["rejected_proxies"]}
+    assert "weight_hint" in proxy_fields
+    assert "impact_magnitude" not in r1["served_fields"]
