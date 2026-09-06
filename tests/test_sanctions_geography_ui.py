@@ -809,10 +809,25 @@ def test_state_evidence_covers_the_paths_a_rest_capture_cannot_reach():
                      "unresolved-register", "stale-derived", "unavailable",
                      "parser-shape-changed"):
         assert required in captured, f"no browser evidence for {required}"
+    axis = {(c["state"], c["theme"], c["locale"]) for c in payload["captures"]}
+    for state in ("selected-boundary", "no-results", "filtered-map-sync",
+                  "unresolved-register", "stale-derived", "unavailable",
+                  "parser-shape-changed"):
+        for theme in ("dark", "light"):
+            for locale in ("en", "zh"):
+                assert (state, theme, locale) in axis, (
+                    f"missing evidence cell {state}/{theme}/{locale}")
     for cap in payload["captures"]:
         assert (EVIDENCE_DIR / "states" / cap["file"]).is_file(), cap["file"]
-    by_state = {c["state"]: c["observations"] for c in payload["captures"]}
-    assert by_state["no-results"]["state_code"] == "NO_RESULTS"
+    # Prefer an EN cell for mechanical DOM assertions so locale-specific copy
+    # cannot vacate a structural check; every state still has a full axis above.
+    by_state = {}
+    for cap in payload["captures"]:
+        if cap["theme"] == "dark" and cap["locale"] == "en":
+            by_state[cap["state"]] = cap["observations"]
+    assert by_state["no-results"]["empty_shown"] >= 1
+    assert by_state["no-results"]["cause_stated"] >= 1
+    assert by_state["no-results"]["primary_surface_state_slug_count"] == 0
     assert by_state["selected-boundary"]["row_focusable"] is True
     assert by_state["selected-boundary"]["map_path_selected"] == 1
     assert by_state["selected-boundary"]["initial_shard_requests"] == 0

@@ -305,6 +305,38 @@ body {
 .sg-disc > summary:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; border-radius: var(--r-card, 12px); }
 .sg-disc-body { padding: 0 15px 15px; font-size: var(--fs-sm); color: var(--muted); line-height: 1.65; }
 .sg-disc-body dl { margin: 0 0 12px; }
+/* Glance-tier stance + demoted caveat: keep the disclosure quiet inside a
+   paragraph so it does not read as a second provenance panel. */
+.sg-caveat-more,
+.sg-map-more,
+.sg-cov-more {
+  display: block;
+  margin: 8px 0 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.sg-caveat-more > summary,
+.sg-map-more > summary,
+.sg-cov-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  cursor: pointer;
+}
+.sg-caveat-more > summary::after,
+.sg-map-more > summary::after,
+.sg-cov-more > summary::after { content: none; }
+.sg-caveat-more p,
+.sg-map-more p,
+.sg-cov-more p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
 .sg-src-row { border-top: 1px solid var(--line); padding: 9px 0 0; margin: 9px 0 0; }
 .sg-src-row a { color: var(--ink-link, var(--link)); overflow-wrap: anywhere; }
 

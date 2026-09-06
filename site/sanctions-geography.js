@@ -173,8 +173,8 @@
     ui.banner.appendChild(box);
   }
 
-  /* A state code is a receipt, not copy: mono, muted, adjacent to the plain
-     sentence it evidences. This is the compliant form of "states printed". */
+  /* Tier-2 / off-map receipts may still print a short mono token. Glance-tier
+     empty and error copy must stay plain words only (FRONT-END CLARITY LAW). */
   function code(target, value) {
     var c = el("code", "sg-mono sg-unres", value);
     target.appendChild(document.createTextNode(" "));
@@ -625,7 +625,6 @@
         "没有符合当前筛选的记录",
         "Nothing in the current register matches every filter you have set. Widen one of them to see rows again.",
         "当前登记册中没有同时满足所有筛选条件的记录。放宽其中一项即可重新看到内容。");
-      code(host, "NO_RESULTS");
       return;
     }
 
@@ -721,7 +720,11 @@
     box.appendChild(displayName(entry, el("div", "sg-entry-n")));
 
     var uid = el("div", "sg-entry-uid");
-    uid.textContent = "OFAC UID " + entry.uid + " · " + (entry.entity_type || "—");
+    bi(uid, "OFAC UID " + entry.uid, "OFAC 编号 " + entry.uid);
+    if (entry.entity_type) {
+      uid.appendChild(document.createTextNode(" · "));
+      uid.appendChild(el("span", "sg-mono", String(entry.entity_type)));
+    }
     box.appendChild(uid);
 
     var states = entry.states || (entry.state ? [entry.state] : []);
@@ -751,10 +754,9 @@
         bi(mark, "Could not be placed", "无法定位边界");
         dd.appendChild(document.createTextNode(" "));
         dd.appendChild(mark);
-        code(dd, "GEOGRAPHY_UNRESOLVED");
       } else if (geoId && String(a.geo_id) === String(geoId)) {
-        var here = el("span", "sg-unres sg-mono");
-        here.textContent = " ← this boundary";
+        var here = el("span", "sg-unres");
+        bi(here, " ← this boundary", " ← 此边界");
         dd.appendChild(here);
       }
       dl.appendChild(dd);
@@ -808,7 +810,6 @@
         "无法验证条目明细",
         "The boundary count remains readable, but its detail shard was missing, malformed, stale, or failed its SHA-256 check.",
         "边界计数仍可读取，但其明细分片缺失、格式错误、已过期或未通过 SHA-256 校验。");
-      code(ui.entries, "PARSER_SHAPE_CHANGED / ENTRY_SHARD");
       return;
     }
     var list = model.entriesByGeo[model.selected] || [];
@@ -848,7 +849,10 @@
       var box = el("div", "sg-crow");
       box.appendChild(displayName(c, el("div", "sg-crow-n")));
       var meta = el("div", "sg-crow-m");
-      meta.textContent = (c.published_at || "").slice(0, 10) + " · UID " + c.uid;
+      var when = (c.published_at || "").slice(0, 10) || "—";
+      bi(meta,
+        "Published by OFAC on " + when,
+        "官方发布日 " + when);
       box.appendChild(meta);
       var chips = el("div", "sg-crow-s");
       /* The state comes from the official delta's own action field. Nothing
@@ -897,8 +901,8 @@
       "Published addresses matched to a boundary.",
       "已匹配到边界的公开地址。");
     item(num(s.geo_unresolved_addresses),
-      "Published addresses we could not place — kept as GEOGRAPHY_UNRESOLVED, never folded into a neighbour.",
-      "无法定位的公开地址 — 保留为 GEOGRAPHY_UNRESOLVED，绝不并入邻国。");
+      "Published addresses we could not place — kept unresolved, never folded into a neighbour.",
+      "无法定位的公开地址 — 保持未解析，绝不并入邻国。");
     item(num(s.published_addresses),
       "Published address records read from the official file.",
       "自官方文件读取的公开地址记录总数。");
@@ -996,7 +1000,14 @@
       kv("Schema", "模式", rec.schema_revision || "—");
       kv("Rights", "权利声明", rec.rights || "—");
       if (rec.catalog_size_match === false) {
-        kv("Catalog byte verification", "目录字节校验", "SIZE_MISMATCH / SHA-256 unavailable", true);
+        var dtMismatch = el("dt");
+        bi(dtMismatch, "Catalog byte verification", "目录字节校验");
+        dl.appendChild(dtMismatch);
+        var ddMismatch = el("dd");
+        bi(ddMismatch,
+          "Size did not match the catalog; no hash published",
+          "字节数与目录不符，未发布哈希");
+        dl.appendChild(ddMismatch);
       }
       if (rec.delta_relation) { kv("Delta relation", "增量关系", rec.delta_relation, true); }
       box.appendChild(dl);

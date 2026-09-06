@@ -138,145 +138,151 @@ def capture(*, repo: Path, output: Path) -> None:
             server, port = serve(real_root)
             try:
                 for theme in ("dark", "light"):
-                    context, page = open_page(browser, port, theme, "en")
-                    shard_requests: list[str] = []
-                    page.on(
-                        "request",
-                        lambda request: shard_requests.append(request.url)
-                        if SHARD_PATH_TOKEN in request.url
-                        else None,
-                    )
-                    # The listener is intentionally installed after network-idle:
-                    # the initial page load must not have fetched a shard, which is
-                    # also checked through Resource Timing below.
-                    initial_resources = page.evaluate(
-                        "performance.getEntriesByType('resource')"
-                        ".filter(e => e.name.includes('/sanctions-geography-entries/')).length"
-                    )
-
-                    row = page.locator("[data-sg-tbody] tr[data-geo-id]").first
-                    boundary = row.locator("td").first.inner_text()
-                    row.focus()
-                    page.keyboard.press("Enter")
-                    page.wait_for_function(
-                        "document.querySelectorAll('[data-sg-entries] .sg-entry').length > 0 || "
-                        "document.querySelector('[data-sg-entries] code')"
-                    )
-                    page.wait_for_timeout(150)
-                    selected_before = page.locator(".sg-geo.is-on").count()
-                    selected_path = page.locator(".sg-geo.is-on").first
-                    page.evaluate(
-                        "document.documentElement.setAttribute('data-lang','zh');"
-                        "document.dispatchEvent(new Event('langchange'))"
-                    )
-                    zh_name = selected_path.get_attribute("aria-label") or ""
-                    page.evaluate(
-                        "document.documentElement.setAttribute('data-lang','en');"
-                        "document.dispatchEvent(new Event('langchange'))"
-                    )
-                    shot(
-                        page,
-                        "selected-boundary",
-                        theme,
-                        "en",
-                        {
-                            "boundary": boundary,
-                            "row_focusable": row.get_attribute("tabindex") == "0",
-                            "row_selected": "is-on" in (row.get_attribute("class") or ""),
-                            "map_path_selected": selected_before,
-                            "entry_cards": page.locator("[data-sg-entries] .sg-entry").count(),
-                            "initial_shard_requests": int(initial_resources),
-                            "selection_shard_requests": len(shard_requests),
-                            "selected_shard_path": shard_requests[0].split("/")[-1]
-                            if shard_requests
+                    for locale in ("en", "zh"):
+                        context, page = open_page(browser, port, theme, locale)
+                        shard_requests: list[str] = []
+                        page.on(
+                            "request",
+                            lambda request: shard_requests.append(request.url)
+                            if SHARD_PATH_TOKEN in request.url
                             else None,
-                            "zh_map_name_applied": "条名单记录" in zh_name,
-                            "identityless_paths": page.locator(".sg-geo.is-identityless").count(),
-                            "identityless_paths_with_zero_count": page.locator(
-                                ".sg-geo.is-identityless[data-count='0']"
-                            ).count(),
-                        },
-                    )
+                        )
+                        # The listener is intentionally installed after network-idle:
+                        # the initial page load must not have fetched a shard, which is
+                        # also checked through Resource Timing below.
+                        initial_resources = page.evaluate(
+                            "performance.getEntriesByType('resource')"
+                            ".filter(e => e.name.includes('/sanctions-geography-entries/')).length"
+                        )
 
-                    # Pick the first program that excludes the active boundary.
-                    # The observed value is the transition count (1 -> 0), not
-                    # merely the final count, so the receipt proves the clear path.
-                    program = page.locator("[data-sg-program]")
-                    selected_after = selected_before
-                    chosen_program = ""
-                    for candidate in program.locator("option").evaluate_all(
-                        "opts => opts.map(o => o.value).filter(Boolean)"
-                    ):
-                        page.select_option("[data-sg-program]", candidate)
-                        page.wait_for_timeout(80)
-                        selected_after = page.locator(".sg-geo.is-on").count()
-                        if selected_after == 0:
-                            chosen_program = candidate
-                            break
-                    dimmed = page.locator(".sg-geo.is-off")
-                    keyboard_reachable = page.eval_on_selector_all(
-                        ".sg-geo.is-off",
-                        "els => els.filter(e => e.getAttribute('tabindex') !== '-1').length",
-                    )
-                    aria_wrong = page.eval_on_selector_all(
-                        ".sg-geo.is-off",
-                        "els => els.filter(e => e.getAttribute('aria-disabled') !== 'true').length",
-                    )
-                    eligible_focusable = page.eval_on_selector_all(
-                        ".sg-geo.is-pick:not(.is-off)",
-                        "els => els.filter(e => e.getAttribute('tabindex') === '0').length",
-                    )
-                    shot(
-                        page,
-                        "filtered-map-sync",
-                        theme,
-                        "en",
-                        {
-                            "program": chosen_program,
-                            "rows": page.locator("[data-sg-tbody] tr[data-geo-id]").count(),
-                            "boundaries_dimmed": dimmed.count(),
-                            "boundaries_lit": page.locator(".sg-geo:not(.is-off)").count(),
-                            "selection_cleared": selected_before - selected_after,
-                            "dimmed_still_keyboard_reachable": keyboard_reachable,
-                            "dimmed_missing_aria_disabled": aria_wrong,
-                            "eligible_still_focusable": eligible_focusable,
-                            "shard_requests_after_filter": len(shard_requests),
-                        },
-                    )
-                    page.select_option("[data-sg-program]", "")
+                        row = page.locator("[data-sg-tbody] tr[data-geo-id]").first
+                        boundary = row.locator("td").first.inner_text()
+                        row.focus()
+                        page.keyboard.press("Enter")
+                        page.wait_for_function(
+                            "document.querySelectorAll('[data-sg-entries] .sg-entry').length > 0 || "
+                            "document.querySelector('[data-sg-entries] .sg-empty')"
+                        )
+                        page.wait_for_timeout(150)
+                        selected_before = page.locator(".sg-geo.is-on").count()
+                        selected_path = page.locator(".sg-geo.is-on").first
+                        # Prove the map accessible name flips with language even when
+                        # the capture itself is already in that locale.
+                        page.evaluate(
+                            "document.documentElement.setAttribute('data-lang','zh');"
+                            "document.dispatchEvent(new Event('langchange'))"
+                        )
+                        zh_name = selected_path.get_attribute("aria-label") or ""
+                        page.evaluate(
+                            "document.documentElement.setAttribute('data-lang', %s);"
+                            "document.dispatchEvent(new Event('langchange'))"
+                            % json.dumps(locale)
+                        )
+                        shot(
+                            page,
+                            "selected-boundary",
+                            theme,
+                            locale,
+                            {
+                                "boundary": boundary,
+                                "row_focusable": row.get_attribute("tabindex") == "0",
+                                "row_selected": "is-on" in (row.get_attribute("class") or ""),
+                                "map_path_selected": selected_before,
+                                "entry_cards": page.locator("[data-sg-entries] .sg-entry").count(),
+                                "initial_shard_requests": int(initial_resources),
+                                "selection_shard_requests": len(shard_requests),
+                                "selected_shard_path": shard_requests[0].split("/")[-1]
+                                if shard_requests
+                                else None,
+                                "zh_map_name_applied": "条名单记录" in zh_name,
+                                "identityless_paths": page.locator(".sg-geo.is-identityless").count(),
+                                "identityless_paths_with_zero_count": page.locator(
+                                    ".sg-geo.is-identityless[data-count='0']"
+                                ).count(),
+                            },
+                        )
 
-                    page.fill("[data-sg-search]", "zzzz-no-such-boundary")
-                    page.wait_for_timeout(100)
-                    shot(
-                        page,
-                        "no-results",
-                        theme,
-                        "en",
-                        {
-                            "rows": page.locator("[data-sg-tbody] tr[data-geo-id]").count(),
-                            "empty_shown": page.locator("[data-sg-tbody] .sg-empty").count(),
-                            "cause_stated": page.locator("[data-sg-tbody] .sg-empty-why").count(),
-                            "state_code": page.locator("[data-sg-tbody] code").first.inner_text(),
-                        },
-                    )
-                    page.fill("[data-sg-search]", "")
-                    page.select_option("[data-sg-view]", "unresolved")
-                    page.wait_for_timeout(100)
-                    shot(
-                        page,
-                        "unresolved-register",
-                        theme,
-                        "en",
-                        {
-                            "rows": page.locator("[data-sg-tbody] tr").count(),
-                            "program_filter_disabled": page.locator(
-                                "[data-sg-program]"
-                            ).is_disabled(),
-                            "type_filter_disabled": page.locator("[data-sg-type]").is_disabled(),
-                            "header": page.locator("[data-sg-thead] th").first.inner_text(),
-                        },
-                    )
-                    context.close()
+                        # Pick the first program that excludes the active boundary.
+                        # The observed value is the transition count (1 -> 0), not
+                        # merely the final count, so the receipt proves the clear path.
+                        program = page.locator("[data-sg-program]")
+                        selected_after = selected_before
+                        chosen_program = ""
+                        for candidate in program.locator("option").evaluate_all(
+                            "opts => opts.map(o => o.value).filter(Boolean)"
+                        ):
+                            page.select_option("[data-sg-program]", candidate)
+                            page.wait_for_timeout(80)
+                            selected_after = page.locator(".sg-geo.is-on").count()
+                            if selected_after == 0:
+                                chosen_program = candidate
+                                break
+                        dimmed = page.locator(".sg-geo.is-off")
+                        keyboard_reachable = page.eval_on_selector_all(
+                            ".sg-geo.is-off",
+                            "els => els.filter(e => e.getAttribute('tabindex') !== '-1').length",
+                        )
+                        aria_wrong = page.eval_on_selector_all(
+                            ".sg-geo.is-off",
+                            "els => els.filter(e => e.getAttribute('aria-disabled') !== 'true').length",
+                        )
+                        eligible_focusable = page.eval_on_selector_all(
+                            ".sg-geo.is-pick:not(.is-off)",
+                            "els => els.filter(e => e.getAttribute('tabindex') === '0').length",
+                        )
+                        shot(
+                            page,
+                            "filtered-map-sync",
+                            theme,
+                            locale,
+                            {
+                                "program": chosen_program,
+                                "rows": page.locator("[data-sg-tbody] tr[data-geo-id]").count(),
+                                "boundaries_dimmed": dimmed.count(),
+                                "boundaries_lit": page.locator(".sg-geo:not(.is-off)").count(),
+                                "selection_cleared": selected_before - selected_after,
+                                "dimmed_still_keyboard_reachable": keyboard_reachable,
+                                "dimmed_missing_aria_disabled": aria_wrong,
+                                "eligible_still_focusable": eligible_focusable,
+                                "shard_requests_after_filter": len(shard_requests),
+                            },
+                        )
+                        page.select_option("[data-sg-program]", "")
+
+                        page.fill("[data-sg-search]", "zzzz-no-such-boundary")
+                        page.wait_for_timeout(100)
+                        shot(
+                            page,
+                            "no-results",
+                            theme,
+                            locale,
+                            {
+                                "rows": page.locator("[data-sg-tbody] tr[data-geo-id]").count(),
+                                "empty_shown": page.locator("[data-sg-tbody] .sg-empty").count(),
+                                "cause_stated": page.locator("[data-sg-tbody] .sg-empty-why").count(),
+                                "primary_surface_state_slug_count": page.locator(
+                                    "[data-sg-tbody] code"
+                                ).count(),
+                            },
+                        )
+                        page.fill("[data-sg-search]", "")
+                        page.select_option("[data-sg-view]", "unresolved")
+                        page.wait_for_timeout(100)
+                        shot(
+                            page,
+                            "unresolved-register",
+                            theme,
+                            locale,
+                            {
+                                "rows": page.locator("[data-sg-tbody] tr").count(),
+                                "program_filter_disabled": page.locator(
+                                    "[data-sg-program]"
+                                ).is_disabled(),
+                                "type_filter_disabled": page.locator("[data-sg-type]").is_disabled(),
+                                "header": page.locator("[data-sg-thead] th").first.inner_text(),
+                            },
+                        )
+                        context.close()
             finally:
                 server.shutdown()
                 server.server_close()
@@ -303,7 +309,12 @@ def capture(*, repo: Path, output: Path) -> None:
                 scratch_roots.append(fixture_root)
                 server, port = serve(fixture_root)
                 try:
-                    for theme, locale in (("dark", "en"), ("light", "en"), ("dark", "zh")):
+                    for theme, locale in (
+                        ("dark", "en"),
+                        ("light", "en"),
+                        ("dark", "zh"),
+                        ("light", "zh"),
+                    ):
                         context, page = open_page(browser, port, theme, locale)
                         banner = page.locator("[data-sg-banner] .sg-degraded")
                         text = banner.inner_text() if banner.count() else ""
