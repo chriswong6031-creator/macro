@@ -149,7 +149,9 @@ def test_client_sent_user_id_is_ignored(auth, store):
 def test_unknown_values_are_400(auth, store, payload, bad):
     with pytest.raises(HTTPException) as ei:
         account_prefs.save_prefs(account_prefs.PrefsRequest(**payload), user=USER)
-    assert ei.value.status_code == 400 and bad in ei.value.detail
+    assert ei.value.status_code == 400
+    assert ei.value.detail["field"] == bad
+    assert ei.value.detail["en"] and ei.value.detail["zh"]
     assert auth.calls == [] and store.rows == []
 
 
@@ -160,10 +162,138 @@ def test_empty_body_is_400(auth, store):
     assert auth.calls == [] and store.rows == []
 
 
+# --------------------------------------------------------------------------- #
+# B-F08-1a: alert delivery preferences (email opt-in, category, tz, quiet hours)
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("value, expected", [
+    (True, True), (False, False), ("true", True), ("off", False), ("1", True), ("0", False),
+])
+def test_alert_email_optin_accepts_bool_and_strings(auth, store, value, expected):
+    out = account_prefs.save_prefs(account_prefs.PrefsRequest(alert_email_optin=value), user=USER)
+    assert out["prefs"] == {"alert_email_optin": expected}
+
+
+def test_alert_email_optin_bad_value_is_400(auth, store):
+    with pytest.raises(HTTPException) as ei:
+        account_prefs.save_prefs(account_prefs.PrefsRequest(alert_email_optin="maybe"), user=USER)
+    assert ei.value.status_code == 400
+    assert ei.value.detail["field"] == "alert_email_optin"
+    assert auth.calls == [] and store.rows == []
+
+
+def test_alert_categories_legal_subset_stored_sorted_deduped(auth, store):
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(alert_categories=["thesis_window", "Holdings_Material_Change",
+                                                       "thesis_window"]),
+        user=USER)
+    assert out["prefs"]["alert_categories"] == ["holdings_material_change", "thesis_window"]
+
+
+def test_alert_categories_empty_list_is_legal(auth, store):
+    out = account_prefs.save_prefs(account_prefs.PrefsRequest(alert_categories=[]), user=USER)
+    assert out["prefs"]["alert_categories"] == []
+
+
+def test_alert_categories_unknown_member_rejects_whole_value(auth, store):
+    with pytest.raises(HTTPException) as ei:
+        account_prefs.save_prefs(
+            account_prefs.PrefsRequest(alert_categories=["holdings_material_change", "wat"]),
+            user=USER)
+    assert ei.value.status_code == 400
+    assert ei.value.detail["field"] == "alert_categories"
+    assert auth.calls == [] and store.rows == []
+
+
+def test_tz_stored_verbatim(auth, store):
+    out = account_prefs.save_prefs(account_prefs.PrefsRequest(tz="Asia/Hong_Kong"), user=USER)
+    assert out["prefs"]["tz"] == "Asia/Hong_Kong"
+
+
+@pytest.mark.parametrize("bad_tz", ["Mars/Olympus", "asia/hong_kong", ""])
+def test_tz_bad_values_are_400(auth, store, bad_tz):
+    with pytest.raises(HTTPException) as ei:
+        account_prefs.save_prefs(account_prefs.PrefsRequest(tz=bad_tz), user=USER)
+    assert ei.value.status_code == 400
+    assert ei.value.detail["field"] == "tz"
+    assert auth.calls == [] and store.rows == []
+
+
+def test_quiet_hours_stored_as_pair(auth, store):
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(quiet_hours={"start": "22:00", "end": "07:00"}), user=USER)
+    assert out["prefs"]["quiet_hours"] == {"start": "22:00", "end": "07:00"}
+
+
+def test_quiet_hours_off_sentinel_clears(auth, store):
+    out = account_prefs.save_prefs(account_prefs.PrefsRequest(quiet_hours="off"), user=USER)
+    assert out["prefs"]["quiet_hours"] is None
+
+
+def test_quiet_hours_equal_start_end_normalizes_to_none(auth, store):
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(quiet_hours={"start": "09:00", "end": "09:00"}), user=USER)
+    assert out["prefs"]["quiet_hours"] is None
+
+
+@pytest.mark.parametrize("bad_qh", [
+    {"start": "22:00"},
+    {"start": "25:00", "end": "07:00"},
+    {"start": "22:00", "end": "07:00", "x": 1},
+])
+def test_quiet_hours_bad_shapes_are_400(auth, store, bad_qh):
+    with pytest.raises(HTTPException) as ei:
+        account_prefs.save_prefs(account_prefs.PrefsRequest(quiet_hours=bad_qh), user=USER)
+    assert ei.value.status_code == 400
+    assert ei.value.detail["field"] == "quiet_hours"
+    assert auth.calls == [] and store.rows == []
+
+
+def test_alert_prefs_never_touch_email_prefs(auth, store):
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(alert_email_optin=True, tz="UTC"), user=USER)
+    assert out["email_prefs"] is False
+    assert store.rows == []
+
+
+def test_all_four_alert_fields_in_one_call(auth, store):
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(alert_email_optin=True,
+                                    alert_categories=["thesis_window"],
+                                    tz="Asia/Hong_Kong",
+                                    quiet_hours={"start": "22:00", "end": "07:00"}),
+        user=USER)
+    assert out["prefs"] == {
+        "alert_email_optin": True, "alert_categories": ["thesis_window"],
+        "tz": "Asia/Hong_Kong", "quiet_hours": {"start": "22:00", "end": "07:00"},
+    }
+    assert [c[0] for c in auth.calls] == ["PUT"]
+
+
+def test_get_prefs_readback(auth, store):
+    account_prefs.save_prefs(account_prefs.PrefsRequest(tz="Asia/Hong_Kong"), user=USER)
+    user_with_tz = dict(USER, user_metadata=dict(USER["user_metadata"], tz="Asia/Hong_Kong"))
+    out = account_prefs.read_prefs(user=user_with_tz)
+    assert out["ok"] is True
+    assert out["prefs"]["tz"] == "Asia/Hong_Kong"
+    assert "alert_email_optin" in out["unset"]
+    assert out["categories_available"] == ["holdings_material_change", "thesis_window"]
+
+
+def test_get_prefs_route_is_registered():
+    paths_methods = {(r.path, m) for r in account_prefs.router.routes for m in r.methods}
+    assert ("/api/account/prefs", "GET") in paths_methods
+
+
 @pytest.mark.parametrize("value, expected", [("ZH", "zh"), (" en ", "en")])
 def test_values_are_normalised(auth, store, value, expected):
     out = account_prefs.save_prefs(account_prefs.PrefsRequest(lang=value), user=USER)
     assert out["prefs"]["lang"] == expected
+
+
+def test_lang_theme_brain_depth_bad_value_uses_default_error(auth, store):
+    with pytest.raises(HTTPException) as ei:
+        account_prefs.save_prefs(account_prefs.PrefsRequest(lang="fr"), user=USER)
+    assert ei.value.detail["en"] == "We don't recognise that choice."
 
 
 # --------------------------------------------------------------------------- #
