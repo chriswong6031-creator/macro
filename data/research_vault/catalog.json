@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-09-06T16:32:40.062039+00:00",
-  "count": 1867,
+  "generated_at": "2026-09-06T18:43:20.571062+00:00",
+  "count": 1874,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -90,6 +90,27 @@
   ],
   "items": [
     {
+      "id": "marketdesk-flowmvfdj5y-dc93ef",
+      "title": "GS Coppersmith US Equities AI back in focus Astra Communacopia 6 Sep 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-06T17:09:52Z",
+      "summary_points": [
+        "**AI Catalysts & Market Setup**: OpenAI’s Astra model release and Sept 2024 conference drive near-term AI positioning, overriding inflation data concerns and shifting equity focus.",
+        "**US Leverage Structural Risk**: Gross leverage at 208.5% (2026 YTD decline -10.1pt) signals deteriorating fundamentals, with compute demand outpacing supply beyond 2028 creating margin risks.",
+        "**Descending Triangle Breakdown**: MU, SNDK, and EYW breaking support on identical descending triangle patterns signals synchronized bearish momentum across tech sector.",
+        "**Semiconductor Volatility Reset**: VXSMMH halved from 65 to 36 (July–Sept 2023), indicating severe pain for long-vol positions and sector-wide volatility compression.",
+        "**Korea Equity Flow Dynamics**: Samsung/SK Hynix buybacks drive Korean equity inflows amid net outflows from other investors, highlighting sector-specific flow dominance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3y6xorzrrtz-163e2a",
       "title": "MS Savone Global Reflections 5 Sep 2026",
       "institution": "Morgan Stanley",
@@ -170,6 +191,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h5gimkbfwkb-c1a7a5",
+      "title": "Americas Business & Information Services What's Powering Your Services Recap 9 4 26",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T03:10:20Z",
+      "summary_points": [
+        "**Structural AI Risk: 55% White-Collar Temp Exposure**: 55% of US temp roles exposed to AI disruption; August temp headcount growth at six-year low, prompting cautious outlook on white-collar staffing firms (MAN, RHI).",
+        "**Sector Valuation Gap**: Business Services (9.9x EV/EBITDA) trades significantly below S&P 500 (13.7x), indicating potential undervaluation; Information Services (13.5x) slightly below S&P.",
+        "**Negative EPS Revisions Signal Mispricing**: Significant negative CY2026 EPS revisions (RHI -25.0%, BV -34.3%, KLC -82.5%) highlight potential valuation mispricing requiring active portfolio adjustments.",
+        "**Mortgage Policy Shift**: Fannie/Freddie mandated VantageScore availability; FHF considering tri-merge to bi-merge replacement, impacting credit data sector positioning.",
+        "**Credit Card Origination Recovery**: Bankcard originations +5.1% y/y (May), prime +2.3%, subprime +16.2%; 60+ day delinquency declined to 2.70% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
@@ -255,6 +297,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-vp6npbd61l8-75d3a1",
+      "title": "TDAGeneric NAM",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T01:17:42Z",
+      "summary_points": [
+        "**US Jobs Data Shock**: August nonfarm payrolls surged 162k (vs.",
+        "56k est), unemployment steady at 4.1%, raising Fed rate hike probability and triggering market selloffs (Dow -0.51%, S&P -0.38%); critical for policy trajectory and Treasury yields.",
+        "**Geopolitical Oil/Dollar Surge**: US-Iran tensions drive Brent oil +0.52% to $96.02 and dollar strength (USD/JPY +0.28% to 156.22), with supply chain risks amplifying volatility amid Middle East conflict.",
+        "**Latin American Inflation Data**: Brazil’s IPCA (August), Argentina’s industrial output (July) and interest rate decision (4.5%), Chile’s rate move—key for EM portfolio positioning and regional risk assessment.",
+        "**Norway Sovereign Fund Shift**: $2.3T fund proposes deep cuts to US Treasury holdings, signaling major foreign portfolio reallocation that could pressure Treasury yields and global debt demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rffxmbchjzy-7152da",
+      "title": "weekly headings",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:13:30Z",
+      "summary_points": [
+        "**AI-Driven Debt Issuance Fuels Yield Pressures**: Hyperscalers' debt financing surged to $93B annually (from $22B), with AI spending exceeding $1T by 2027-2030, directly pressuring bond yields and representing a critical fixed income flow factor.",
+        "**2026 Earnings Growth Peak Misalignment**: Consensus forecasts 33% 2026 earnings growth, but actual peak (51% YoY) may normalize in 2027; non-cash investments (tariffs) distorted results, signaling potential earnings overestimation risk.",
+        "**Geopolitical Inflation & Yield Nexus**: Middle East tensions drove oil to 6-week highs, combined with core CPI (4.6% YoY) and Michigan Sentiment, pressuring 10-yr yields (4.82%) and forcing Fed policy focus amid global inflation risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-awftkrboxj5-459694",
       "title": "Wm weekly market view rising risk of a fed rate hike 04 september 2026",
       "institution": "Other",
@@ -276,6 +358,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-c8hlnsq1vav-645c16",
+      "title": "The macro calendar brings a two sided catalyst set to markets",
+      "institution": "Natixis",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:02:57Z",
+      "summary_points": [
+        "**JPY Intervention Risk**: Japan's FX intervention risk (BOJ rate hike expectations, JPY tailspin) creates two-sided market pressure amid U.S.-Iran conflict digestion.",
+        "**Fed Policy Dependency**: Fed's C Waller signals FOMC vote heavily influenced by September 11 inflation data, making U.S.",
+        "jobs/inflation releases critical for rate trajectory.",
+        "**France Housing Credit Stress**: France's housing market faces creditworthiness collapse (49.3% loans >25y) with loan production plunging 16.8% QoQ, signaling systemic risk.",
+        "**Moonshot AI IPO Test**: $3bn Hong Kong AI IPO tests public investor appetite for AI startups amid speculative valuations, critical for growth-stage tech funding sentiment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ofdgxn8actc-3aa4c8",
       "title": "Asia FX Weekly Focus on China data and US CPI",
       "institution": "MUFG",
@@ -293,6 +396,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u7kwqfbulta-16c339",
+      "title": "Emea fp checkpoints",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T00:59:42Z",
+      "summary_points": [
+        "**Fed Policy & Core PCE Threshold**: Core PCE >4% mandates 5% Fed rate hike (stagnation), while <4% supports Fed hold/ease (expansion), dictating equity/credit allocation.",
+        "**China Demand Pivot**: Property drag and trade frictions require government support; AI-driven manufacturing lead offsets higher savings/housing downturn, weighing on growth.",
+        "**Iran Conflict Geopolitical Risk**: Oil market disruption risk from Hormuz tensions and G7 market pressures, threatening refined product supply and elevating real asset volatility.",
+        "**S&P 500 Scenario Divergence**: Base case (8,000, +15% earnings) vs.",
+        "stagnation (6,500, -15% return) highlights material downside risk vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 149,
       "language": "en",
       "needs_metadata": false
     },
@@ -377,6 +501,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-btfdjzhmjy5-f2e92d",
+      "title": "Global Economics Wrap Up September 4, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T21:31:50Z",
+      "summary_points": [
+        "**Central Bank Policy Shifts & Rate Sensitivity**: ECB expected 25bp hike to 2.5% (Sept), RBNZ raised to 2.75%, BoC held at 2.25%; Fed officials signal caution (Waller, Barr, Williams) amid disinflation signs and tariff effects—critical for rate-sensitive portfolios.",
+        "**Structural Labor Market Shifts**: Unemployment rose to 4.14% (569k labor force increase), participation rate fell to 61.6% (down 0.5pp) driven by retirements—not cyclical concern—offset by rebound in leisure/hospitality (+62k) and education (+42k).",
+        "**AI Adoption as Fundamental Driver**: US AI adoption at 22.4% (up 0.9pp), info sector leads at 50%; expected to reach 25.9% in 6 months—key structural trend for tech/sector allocation.",
+        "**ECB Inflation & Growth Revisions**: Staff projects 2027 core inflation at 2.4% (down from 2.5%), peak at 2.6% in 2027Q1; September hike likely last but low hurdle for December—impacts eurozone bond positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
