@@ -69,7 +69,7 @@ a{color:inherit;text-decoration:none}
 .gl-rail{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:2px;padding:10px 12px;background:var(--panel2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .gl-letter{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:26px;min-height:44px;padding:6px 4px;border-radius:var(--r-ctl,8px);color:var(--muted);font:650 11px/1 var(--font-mono);letter-spacing:.06em}
 .gl-letter:hover,.gl-letter:focus-visible{outline:none;color:var(--text);box-shadow:inset 0 -1px 0 var(--link)}
-.gl-tick{display:block;width:2px;height:calc(3px + var(--n) * 2px);max-height:16px;border-radius:1px;background:var(--link);opacity:.75}
+.gl-tick{display:block;width:2px;height:calc(3px + var(--n) * 2px);max-height:16px;border-radius:0;background:var(--link);opacity:.75}
 .gl-letter.is-empty{color:color-mix(in srgb,var(--muted) 45%,transparent);cursor:default}
 .gl-letter.is-empty .gl-tick{height:3px;background:var(--line);opacity:1}
 .gl-rail-note{margin:8px 0 22px;color:var(--muted);font:600 11px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
@@ -433,57 +433,57 @@ body.public-page{padding-top:0}
 
   <nav class="gl-rail" id="gl-rail" aria-label="Jump to letter / 按字母跳转">
 
-    <span class="gl-letter is-empty" data-letter="A" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>A</span>
+    <span class="gl-letter is-empty" data-letter="A" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>A</span>
 
-    <a class="gl-letter" data-letter="B" href="#gl-letter-B"><span class="gl-tick" style="--n:2"></span>B</a>
+    <a class="gl-letter" data-letter="B" href="#gl-letter-B"><span class="gl-tick" style="--n:2;"></span>B</a>
 
-    <a class="gl-letter" data-letter="C" href="#gl-letter-C"><span class="gl-tick" style="--n:8"></span>C</a>
+    <a class="gl-letter" data-letter="C" href="#gl-letter-C"><span class="gl-tick" style="--n:8;"></span>C</a>
 
-    <a class="gl-letter" data-letter="D" href="#gl-letter-D"><span class="gl-tick" style="--n:2"></span>D</a>
+    <a class="gl-letter" data-letter="D" href="#gl-letter-D"><span class="gl-tick" style="--n:2;"></span>D</a>
 
-    <a class="gl-letter" data-letter="E" href="#gl-letter-E"><span class="gl-tick" style="--n:5"></span>E</a>
+    <a class="gl-letter" data-letter="E" href="#gl-letter-E"><span class="gl-tick" style="--n:5;"></span>E</a>
 
-    <a class="gl-letter" data-letter="F" href="#gl-letter-F"><span class="gl-tick" style="--n:5"></span>F</a>
+    <a class="gl-letter" data-letter="F" href="#gl-letter-F"><span class="gl-tick" style="--n:5;"></span>F</a>
 
-    <span class="gl-letter is-empty" data-letter="G" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>G</span>
+    <span class="gl-letter is-empty" data-letter="G" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>G</span>
 
-    <a class="gl-letter" data-letter="H" href="#gl-letter-H"><span class="gl-tick" style="--n:1"></span>H</a>
+    <a class="gl-letter" data-letter="H" href="#gl-letter-H"><span class="gl-tick" style="--n:1;"></span>H</a>
 
-    <a class="gl-letter" data-letter="I" href="#gl-letter-I"><span class="gl-tick" style="--n:1"></span>I</a>
+    <a class="gl-letter" data-letter="I" href="#gl-letter-I"><span class="gl-tick" style="--n:1;"></span>I</a>
 
-    <span class="gl-letter is-empty" data-letter="J" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>J</span>
+    <span class="gl-letter is-empty" data-letter="J" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>J</span>
 
-    <span class="gl-letter is-empty" data-letter="K" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>K</span>
+    <span class="gl-letter is-empty" data-letter="K" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>K</span>
 
-    <a class="gl-letter" data-letter="L" href="#gl-letter-L"><span class="gl-tick" style="--n:1"></span>L</a>
+    <a class="gl-letter" data-letter="L" href="#gl-letter-L"><span class="gl-tick" style="--n:1;"></span>L</a>
 
-    <a class="gl-letter" data-letter="M" href="#gl-letter-M"><span class="gl-tick" style="--n:6"></span>M</a>
+    <a class="gl-letter" data-letter="M" href="#gl-letter-M"><span class="gl-tick" style="--n:6;"></span>M</a>
 
-    <a class="gl-letter" data-letter="N" href="#gl-letter-N"><span class="gl-tick" style="--n:1"></span>N</a>
+    <a class="gl-letter" data-letter="N" href="#gl-letter-N"><span class="gl-tick" style="--n:1;"></span>N</a>
 
-    <a class="gl-letter" data-letter="O" href="#gl-letter-O"><span class="gl-tick" style="--n:1"></span>O</a>
+    <a class="gl-letter" data-letter="O" href="#gl-letter-O"><span class="gl-tick" style="--n:1;"></span>O</a>
 
-    <a class="gl-letter" data-letter="P" href="#gl-letter-P"><span class="gl-tick" style="--n:5"></span>P</a>
+    <a class="gl-letter" data-letter="P" href="#gl-letter-P"><span class="gl-tick" style="--n:5;"></span>P</a>
 
-    <span class="gl-letter is-empty" data-letter="Q" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>Q</span>
+    <span class="gl-letter is-empty" data-letter="Q" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>Q</span>
 
-    <a class="gl-letter" data-letter="R" href="#gl-letter-R"><span class="gl-tick" style="--n:5"></span>R</a>
+    <a class="gl-letter" data-letter="R" href="#gl-letter-R"><span class="gl-tick" style="--n:5;"></span>R</a>
 
-    <a class="gl-letter" data-letter="S" href="#gl-letter-S"><span class="gl-tick" style="--n:8"></span>S</a>
+    <a class="gl-letter" data-letter="S" href="#gl-letter-S"><span class="gl-tick" style="--n:8;"></span>S</a>
 
-    <span class="gl-letter is-empty" data-letter="T" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>T</span>
+    <span class="gl-letter is-empty" data-letter="T" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>T</span>
 
-    <span class="gl-letter is-empty" data-letter="U" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>U</span>
+    <span class="gl-letter is-empty" data-letter="U" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>U</span>
 
-    <span class="gl-letter is-empty" data-letter="V" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>V</span>
+    <span class="gl-letter is-empty" data-letter="V" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>V</span>
 
-    <a class="gl-letter" data-letter="W" href="#gl-letter-W"><span class="gl-tick" style="--n:3"></span>W</a>
+    <a class="gl-letter" data-letter="W" href="#gl-letter-W"><span class="gl-tick" style="--n:3;"></span>W</a>
 
-    <span class="gl-letter is-empty" data-letter="X" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>X</span>
+    <span class="gl-letter is-empty" data-letter="X" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>X</span>
 
-    <span class="gl-letter is-empty" data-letter="Y" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>Y</span>
+    <span class="gl-letter is-empty" data-letter="Y" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>Y</span>
 
-    <span class="gl-letter is-empty" data-letter="Z" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>Z</span>
+    <span class="gl-letter is-empty" data-letter="Z" aria-disabled="true"><span class="gl-tick" style="--n:0;"></span>Z</span>
 
   </nav>
   <p class="gl-rail-note"><span class="l-en">Dimmed letters have no terms yet.</span><span class="l-zh">灰色字母下暂无词条。</span></p>
