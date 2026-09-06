@@ -27,6 +27,7 @@
 {% macro bl(node) -%}
 {%- if node %}{{ t(node.en, node.zh) }}{% endif -%}
 {%- endmacro %}
+{% import "_macro_suite_shell.html.j2" as shell %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -146,11 +147,11 @@
         </p>
         <dl class="mq-hub-card-meta">
           <div><dt>{{ t('Effective', '生效') }}</dt>
-               <dd>{% if row.effective_date %}<time>{{ row.effective_date }}</time>{% else %}<span class="mq-dash" aria-hidden="true">—</span>{% endif %}</dd></div>
+               <dd>{% if row.effective_date %}<time>{{ row.effective_date }}</time>{% else %}<span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t('not available yet', '暂无数据') }}</span>{% endif %}</dd></div>
           <div><dt>{{ t('Sources', '数据源') }}</dt>
                <dd class="mq-tone-{{ row.freshness_tone }}">{{ bl(row.freshness) }}</dd></div>
           <div><dt>{{ t('Coverage', '覆盖率') }}</dt>
-               <dd>{% if row.coverage %}{{ row.coverage }}{% else %}<span class="mq-dash" aria-hidden="true">—</span>{% endif %}</dd></div>
+               <dd>{% if row.coverage_present %}{{ row.coverage }}{% else %}{{ shell.absent(row.coverage_absence, True) }}{% endif %}</dd></div>
         </dl>
         {%- else %}
         <p class="mq-hub-card-absence">

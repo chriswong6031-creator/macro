@@ -251,6 +251,54 @@ def test_an_unreadable_workspace_never_renders_as_calm_or_zero(tmp_path: Path) -
     assert "0%" not in block
 
 
+def test_a_non_finite_coverage_ratio_renders_a_typed_absence_not_a_bare_dash(tmp_path: Path) -> None:
+    """The hub coverage cell must branch on the typed presence flag, never on
+    the formatted string — a formatted em dash is truthy and a formatted "0%"
+    is not, so branching on the string either hides a real absence behind an
+    unlabelled dash or mislabels a real zero as absent.
+
+    The producer contract requires ``coverage_ratio`` to be a finite number
+    (`contracts/market_os/macro_workspace_snapshot.v1.schema.json`), so a real
+    absence can never reach the hub through the validated read path today —
+    this exercises the same `build_hub_view`/template render the pipeline uses,
+    with the one field a not-yet-existing producer failure mode would leave
+    non-finite, so the row-rendering contract stays proven independent of
+    whether current data happens to exercise it.
+    """
+    root = _isolated_root(tmp_path)
+    data_root = _data_copy(tmp_path)
+    page = next(p for p in builder.SUITE_PAGES if p.workspace_id == "trade_flows")
+    snapshot, _artifact = builder.read_workspace(data_root, page)
+    snapshot["availability"]["coverage_ratio"] = float("nan")
+
+    env = builder._environment(root)
+    entries = [{
+        "workspace_id": page.workspace_id,
+        "region": page.region,
+        "output": page.output,
+        "title": {"en": "Trade Flows", "zh": "\u8d38\u6613\u6d41\u52a8"},
+        "subtitle": {"en": "", "zh": ""},
+        "snapshot": snapshot,
+        "failure": None,
+    }]
+    out_dir = tmp_path / "hub_out"
+    builder.build_hub(entries, out_dir=out_dir, env=env, page_built_at=BUILT_AT)
+    hub = (out_dir / builder.HUB_PAGE.output).read_text(encoding="utf-8")
+
+    # The workspace also appears once in the attention notice ahead of its
+    # card in the fixed-order grid — find the card, not the notice.
+    grid_start = hub.index('mq-hub-grid')
+    card_start = hub.index('data-mq-workspace="trade_flows"', grid_start)
+    block = hub[card_start:][:1600]
+    coverage_dd = block[block.index('Coverage'):]
+    coverage_dd = coverage_dd[:coverage_dd.index('</dd>') + len('</dd>')]
+    assert '<span class="mq-dash" aria-hidden="true">—</span>' in coverage_dd
+    # never a bare, unlabelled dash — either the sr-only companion or the
+    # visible typed-absence label must be present alongside it.
+    assert 'mq-sr' in coverage_dd or 'mq-absent-why' in coverage_dd
+    assert '0%' not in coverage_dd
+
+
 def test_a_manifest_that_omits_a_workspace_degrades_that_row_only(tmp_path: Path) -> None:
     data_root = _data_copy(tmp_path)
     manifest_path = data_root / "workspaces" / "manifest.json"
