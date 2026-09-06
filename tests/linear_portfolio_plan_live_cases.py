@@ -97,3 +97,7 @@ def test_current_repository_plan_is_deterministic_and_emits_ci_receipt(pytestcon
             handle.write("\n## MAS-65 real-checkout projector receipt\n\n```json\n")
             handle.write(json.dumps(proof, ensure_ascii=False, sort_keys=True, indent=2))
             handle.write("\n```\n")
+
+
+# Current-epoch Initiative contract stays in the existing canonical Agent OS lane.
+from tests.linear_initiative_plan_current_epoch_cases import *  # noqa: E402,F401,F403

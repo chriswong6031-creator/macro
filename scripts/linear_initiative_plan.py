@@ -1,145 +1,156 @@
 #!/usr/bin/env python3
-"""Deterministic validation for the Chairman-approved Linear Initiative strategy.
+"""Current-epoch facade for the deterministic Linear Initiative compiler.
 
-This Task-1 module is deliberately zero-network and write-free. Project lifecycle
-selection remains owned by ``scripts.linear_portfolio_plan``; this module only
-validates the static strategic classification layered above its emitted plan.
+The implementation remains in ``scripts.linear_initiative_plan_legacy`` so the
+existing public API and drift semantics stay intact. This facade freezes the
+protected workspace-level 7/63/2 source contract and keeps the canonical import
+path stable.
 """
 from __future__ import annotations
 
-import json
-import sys
+import hashlib
+from collections import Counter
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
-_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_ROOT))
+from scripts import linear_initiative_plan_legacy as _legacy
 
-from scripts import linear_portfolio_plan as lpp  # noqa: E402
+# Preserve the complete established API, including helper names used by tests
+# and downstream tooling, before overriding the current-epoch seams below.
+globals().update({
+    name: value
+    for name, value in vars(_legacy).items()
+    if not name.startswith("__")
+})
 
-STRATEGY_SCHEMA = "linear_initiative_portfolio_strategy.v1"
-PLAN_SCHEMA = "linear_initiative_plan.v1"
-RECEIPT_SCHEMA = "linear_initiative_plan_receipt.v1"
-SNAPSHOT_SCHEMA = "linear_initiative_snapshot.v1"
-
-_EXPECTED_INITIATIVES = {
-    "canonical-intelligence-substrate-learning": ("Canonical Intelligence Substrate & Learning", 2),
-    "legendary-alpha-discovery-timing": ("Legendary Alpha Discovery & Timing", 1),
-    "institutional-company-event-intelligence": ("Institutional Company & Event Intelligence", 2),
-    "global-markets-regimes-risk-command": ("Global Markets, Regimes & Risk Command", 2),
-    "personal-institutional-desk": ("Personal Institutional Desk", 1),
-    "trusted-production-customer-platform": ("Trusted Production & Customer Platform", 2),
-    "autonomous-ai-organization": ("Autonomous AI Organization", 1),
-}
 _EXPECTED_INITIATIVE_FIELDS = {
     "status": "Active",
-    "lead_team": "MastermindX",
+    "lead_team": None,
     "owner": None,
     "target_date": None,
     "health": None,
     "labels": [],
     "parent_initiatives": [],
 }
-_REQUIRED_PROSE_FIELDS = ("summary", "outcome", "moat", "completion_ruler", "scope_law")
-_EXPECTED_EXCEPTIONS = {
-    ("workstream_key", "WS:WATCHLIST-PORTFOLIO-CEO", "compatibility_redirect"),
-    ("linear_project_id", "9aef6461-306a-4a3c-911b-c6a4b6635a78", "canonical_parent_unresolved"),
+_EXPECTED_SOURCE_IDENTITY = {
+    "repository": "mastermindx-market-intelligence/Mastermind",
+    "path": (
+        "docs/superpowers/specs/"
+        "2026-09-03-linear-initiative-portfolio-v1-temporal-grain-current-epoch-amendment.md"
+    ),
+    "protected_revision": "6c5c2a6225a3fa2c2ec3e3398dcc8b8629b3a988",
 }
-_WATCHLIST_EXCEPTION = "WS:WATCHLIST-PORTFOLIO-CEO"
+_EXPECTED_CURRENT_MEMBERSHIPS = {
+    "WS:ALPHA-INTELLIGENCE-INTEGRATION": "canonical-intelligence-substrate-learning",
+    "WS:GMI-THEME-GRAPH": "canonical-intelligence-substrate-learning",
+    "WS:STOCK-IDENTITY": "canonical-intelligence-substrate-learning",
+    "WS:MARKET-MEMORY-W2C": "canonical-intelligence-substrate-learning",
+    "WS:MASSIVE-STOCK-DAY-R2-COHERENCE": "canonical-intelligence-substrate-learning",
+    "WS:EVAL-OS-MEASUREMENT-LAW": "canonical-intelligence-substrate-learning",
+    "WS:EVAL-OS-EVIDENCE-VIEW": "canonical-intelligence-substrate-learning",
+    "WS:EVAL-OS-T1-ENGINE-REGISTRY": "canonical-intelligence-substrate-learning",
+    "WS:EVAL-OS-OUTPUT-HEALTH": "canonical-intelligence-substrate-learning",
+    "WS:CROSS-REPO-CONTRACT-GOVERNANCE": "canonical-intelligence-substrate-learning",
+    "WS:ADVANCED-DATA-OPTIONS": "legendary-alpha-discovery-timing",
+    "WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY": "legendary-alpha-discovery-timing",
+    "WS:INTRADAY-FLOW-P0-RECOVERY": "legendary-alpha-discovery-timing",
+    "WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2": "legendary-alpha-discovery-timing",
+    "WS:CHINA-ALPHA-INTELLIGENCE": "legendary-alpha-discovery-timing",
+    "WS:CN-LIMIT-ALPHA": "legendary-alpha-discovery-timing",
+    "WS:PROPHET-CONDITIONAL-FUSION": "legendary-alpha-discovery-timing",
+    "WS:PROPHET-HK-CA-REVAMP": "legendary-alpha-discovery-timing",
+    "WS:PROPHET-US-AVAILABILITY": "legendary-alpha-discovery-timing",
+    "WS:PROPHET-US-ENTRY-TIMING": "legendary-alpha-discovery-timing",
+    "WS:PROPHET-US-V4-RECOVERY": "legendary-alpha-discovery-timing",
+    "WS:LIVE-ENTRY-RADAR": "legendary-alpha-discovery-timing",
+    "WS:BREATHING-PLATFORM": "legendary-alpha-discovery-timing",
+    "WS:TOP-ANATOMY": "legendary-alpha-discovery-timing",
+    "WS:PROPHET-CANDIDATE-ADDED-DATE": "legendary-alpha-discovery-timing",
+    "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE": "legendary-alpha-discovery-timing",
+    "WS:TEMPORAL-GRAIN-INTELLIGENCE": "legendary-alpha-discovery-timing",
+    "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER": "institutional-company-event-intelligence",
+    "WS:FINANCIAL-INTELLIGENCE-FABRIC": "institutional-company-event-intelligence",
+    "WS:CALCBENCH-FILING-FORENSICS-PARITY": "institutional-company-event-intelligence",
+    "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2": "institutional-company-event-intelligence",
+    "WS:DEFENSE-PROCUREMENT-V3": "institutional-company-event-intelligence",
+    "WS:BPC-JV-RECON": "institutional-company-event-intelligence",
+    "WS:CN-SOE-DEMAND": "institutional-company-event-intelligence",
+    "WS:BIOCATALYST-CORE-PRODUCT": "institutional-company-event-intelligence",
+    "WS:BIOCATALYST-RECOVERY-V2": "institutional-company-event-intelligence",
+    "WS:EARNINGS-INTELLIGENCE-OS": "institutional-company-event-intelligence",
+    "WS:FUNDAMENTAL-FORENSICS": "institutional-company-event-intelligence",
+    "WS:RATES-INFLATION-COMMAND": "global-markets-regimes-risk-command",
+    "WS:MACRO-CONTEXT-INDEX": "global-markets-regimes-risk-command",
+    "WS:GREY-DEER-RISK-INTELLIGENCE": "global-markets-regimes-risk-command",
+    "WS:CRYPTO-INTELLIGENCE": "global-markets-regimes-risk-command",
+    "WS:CYCLE-PATTERN-ISSUER-MECHANISM": "global-markets-regimes-risk-command",
+    "WS:FLOW-OBSERVATORY-V2": "global-markets-regimes-risk-command",
+    "WS:MARKET-OS": "personal-institutional-desk",
+    "WS:STOCK-DOSSIER-LIVE-QUOTE": "personal-institutional-desk",
+    "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2": "personal-institutional-desk",
+    "WS:REACTIVE-PROJECTION": "personal-institutional-desk",
+    "WS:ACCOUNT-IDENTITY-HARDENING": "trusted-production-customer-platform",
+    "WS:CUSTOMER-DATA-BACKUP": "trusted-production-customer-platform",
+    "WS:COMMERCIAL-PATH-ALERTING": "trusted-production-customer-platform",
+    "WS:CI-MERGE-CONTROL-PLANE": "trusted-production-customer-platform",
+    "WS:RUNNER-FLEET-RESILIENCE": "trusted-production-customer-platform",
+    "WS:EXECUTIVE-OS-DISASTER-RECOVERY": "trusted-production-customer-platform",
+    "WS:REPRODUCIBLE-WORKER-ENVIRONMENTS": "trusted-production-customer-platform",
+    "WS:TERMINAL-GITHUB-CANONICALIZATION": "trusted-production-customer-platform",
+    "WS:AGENT-OS": "autonomous-ai-organization",
+    "WS:CHAIRMAN-CONTROL-ROOM": "autonomous-ai-organization",
+    "WS:EXECUTIVE-CAPACITY-FABRIC": "autonomous-ai-organization",
+    "WS:AGENT-EVAL-FABRIC": "autonomous-ai-organization",
+    "WS:CODE-INTELLIGENCE-FABRIC": "autonomous-ai-organization",
+    "WS:EXECUTIVE-ATTENTION-ECONOMICS": "autonomous-ai-organization",
+    "WS:OPERATION-ASSURANCE": "autonomous-ai-organization",
+}
+_EXPECTED_GROUP_COUNTS = {
+    "autonomous-ai-organization": 7,
+    "canonical-intelligence-substrate-learning": 10,
+    "global-markets-regimes-risk-command": 6,
+    "institutional-company-event-intelligence": 11,
+    "legendary-alpha-discovery-timing": 17,
+    "personal-institutional-desk": 4,
+    "trusted-production-customer-platform": 8,
+}
+_PARKED_WORKSTREAM = "WS:TERMINAL-GITHUB-CANONICAL-DEPLOYMENT"
+
+# The established helpers read these module globals, so pin the legacy
+# implementation to the same protected current epoch.
+_legacy._EXPECTED_INITIATIVE_FIELDS = _EXPECTED_INITIATIVE_FIELDS
+_legacy._EXPECTED_SOURCE_IDENTITY = _EXPECTED_SOURCE_IDENTITY
 
 
-class InitiativePlanError(RuntimeError):
-    """Deterministic machine-readable refusal for a strategic-plan defect."""
-
-    def __init__(self, failures: Sequence[Mapping[str, Any]]) -> None:
-        self.failures = tuple(dict(row) for row in failures)
-        super().__init__(f"linear initiative plan refused: {len(self.failures)} hard defect(s)")
-
-
-def load_strategy(path: Path) -> dict[str, Any]:
-    doc = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(doc, dict) or doc.get("schema") != STRATEGY_SCHEMA:
-        raise InitiativePlanError([{"code": "strategy_wrong_schema"}])
-    return doc
-
-
-def _project_keys(project_plan: Mapping[str, Any]) -> tuple[set[str], set[str]]:
-    if project_plan.get("schema") != lpp.PLAN_SCHEMA:
-        raise InitiativePlanError([{"code": "project_plan_wrong_schema"}])
-    universe: set[str] = set()
-    active: set[str] = set()
-    for field in ("active_projects", "review_candidates", "excluded_projects"):
-        rows = project_plan.get(field, [])
-        if not isinstance(rows, list):
-            continue
-        for row in rows:
-            if not isinstance(row, Mapping):
-                continue
-            key = row.get("workstream_key")
-            if isinstance(key, str) and key.startswith("WS:"):
-                universe.add(key)
-                if field in {"active_projects", "review_candidates"}:
-                    active.add(key)
-    return universe, active
-
-
-def _membership_mapping(raw: Any, failures: list[dict[str, Any]]) -> dict[str, str]:
-    if isinstance(raw, Mapping):
-        return {
-            str(key): str(value)
-            for key, value in raw.items()
-            if isinstance(key, str) and isinstance(value, str)
-        }
-    if isinstance(raw, list):
-        out: dict[str, str] = {}
-        seen: set[str] = set()
-        for row in raw:
-            if not isinstance(row, Mapping):
-                continue
-            key = row.get("workstream_key")
-            initiative = row.get("initiative_key")
-            if not isinstance(key, str) or not isinstance(initiative, str):
-                continue
-            if key in seen:
-                failures.append({"code": "strategy_duplicate_membership", "workstream_key": key})
-            seen.add(key)
-            out[key] = initiative
-        return out
-    return {}
-
-
-def _initiative_mapping(raw: Any, failures: list[dict[str, Any]]) -> dict[str, Mapping[str, Any]]:
-    if isinstance(raw, Mapping):
-        return {
-            str(key): value
-            for key, value in raw.items()
-            if isinstance(key, str) and isinstance(value, Mapping)
-        }
-    if isinstance(raw, list):
-        out: dict[str, Mapping[str, Any]] = {}
-        seen: set[str] = set()
-        for row in raw:
-            if not isinstance(row, Mapping) or not isinstance(row.get("key"), str):
-                continue
-            key = row["key"]
-            if key in seen:
-                failures.append({"code": "strategy_duplicate_initiative_key", "initiative_key": key})
-            seen.add(key)
-            out[key] = row
-        return out
-    return {}
-
-
-def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, Any]) -> None:
+def validate_strategy(
+    strategy: Mapping[str, Any],
+    project_plan: Mapping[str, Any],
+) -> None:
+    """Fail closed unless the exact protected workspace-level 7/63/2 contract holds."""
     failures: list[dict[str, Any]] = []
     if strategy.get("schema") != STRATEGY_SCHEMA:
         failures.append({"code": "strategy_wrong_schema"})
 
-    initiatives = _initiative_mapping(strategy.get("initiatives"), failures)
-    if len(initiatives) != len(_EXPECTED_INITIATIVES):
+    source_design = strategy.get("source_design")
+    if not isinstance(source_design, Mapping):
+        source_fields = sorted(_EXPECTED_SOURCE_IDENTITY)
+    else:
+        source_fields = sorted(
+            field
+            for field, expected in _EXPECTED_SOURCE_IDENTITY.items()
+            if source_design.get(field) != expected
+        )
+    if source_fields:
+        failures.append({
+            "code": "strategy_source_design_invalid",
+            "fields": source_fields,
+        })
+
+    initiatives = _legacy._initiative_mapping(strategy.get("initiatives"), failures)
+    if len(initiatives) != len(_legacy._EXPECTED_INITIATIVES):
         failures.append({
             "code": "strategy_initiative_count_mismatch",
-            "expected": len(_EXPECTED_INITIATIVES),
+            "expected": len(_legacy._EXPECTED_INITIATIVES),
             "actual": len(initiatives),
         })
 
@@ -156,7 +167,7 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
             else:
                 names[name] = key
 
-        expected = _EXPECTED_INITIATIVES.get(key)
+        expected = _legacy._EXPECTED_INITIATIVES.get(key)
         mismatched: list[str] = []
         if expected is None:
             mismatched.append("key")
@@ -169,7 +180,7 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
         for field, value in _EXPECTED_INITIATIVE_FIELDS.items():
             if row.get(field) != value:
                 mismatched.append(field)
-        for field in _REQUIRED_PROSE_FIELDS:
+        for field in _legacy._REQUIRED_PROSE_FIELDS:
             if not isinstance(row.get(field), str) or not row[field].strip():
                 mismatched.append(field)
         if mismatched:
@@ -179,11 +190,42 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
                 "fields": sorted(set(mismatched)),
             })
 
-    memberships = _membership_mapping(strategy.get("memberships"), failures)
-    if len(memberships) != 50:
-        failures.append({"code": "strategy_membership_count_mismatch", "expected": 50, "actual": len(memberships)})
+    memberships = _legacy._membership_mapping(strategy.get("memberships"), failures)
+    if len(memberships) != len(_EXPECTED_CURRENT_MEMBERSHIPS):
+        failures.append({
+            "code": "strategy_membership_count_mismatch",
+            "expected": len(_EXPECTED_CURRENT_MEMBERSHIPS),
+            "actual": len(memberships),
+        })
+    if memberships != _EXPECTED_CURRENT_MEMBERSHIPS:
+        failures.append({
+            "code": "strategy_current_membership_mismatch",
+            "missing": sorted(
+                key
+                for key, value in _EXPECTED_CURRENT_MEMBERSHIPS.items()
+                if memberships.get(key) != value
+            ),
+            "unexpected": sorted(
+                key
+                for key in memberships
+                if key not in _EXPECTED_CURRENT_MEMBERSHIPS
+            ),
+        })
 
-    initiative_keys = set(_EXPECTED_INITIATIVES)
+    group_counts = dict(sorted(Counter(memberships.values()).items()))
+    if group_counts != _EXPECTED_GROUP_COUNTS:
+        failures.append({
+            "code": "strategy_group_counts_mismatch",
+            "expected": _EXPECTED_GROUP_COUNTS,
+            "actual": group_counts,
+        })
+    if _PARKED_WORKSTREAM in memberships:
+        failures.append({
+            "code": "strategy_parked_workstream_mapped",
+            "workstream_key": _PARKED_WORKSTREAM,
+        })
+
+    initiative_keys = set(_legacy._EXPECTED_INITIATIVES)
     for workstream_key, initiative_key in memberships.items():
         if initiative_key not in initiative_keys:
             failures.append({
@@ -199,25 +241,67 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
         for row in exception_rows
         if isinstance(row, Mapping)
     }
-    if exception_set != _EXPECTED_EXCEPTIONS:
+    if exception_set != _legacy._EXPECTED_EXCEPTIONS:
         failures.append({
             "code": "strategy_exception_mismatch",
-            "expected": sorted(_EXPECTED_EXCEPTIONS),
-            "actual": sorted(exception_set, key=lambda row: tuple(str(item) for item in row)),
+            "expected": sorted(_legacy._EXPECTED_EXCEPTIONS),
+            "actual": sorted(
+                exception_set,
+                key=lambda row: tuple(str(item) for item in row),
+            ),
         })
 
     for identity_kind, identity, _reason in exception_set:
-        if identity_kind == "workstream_key" and isinstance(identity, str) and identity in memberships:
-            failures.append({"code": "strategy_exception_also_mapped", "workstream_key": identity})
+        if (
+            identity_kind == "workstream_key"
+            and isinstance(identity, str)
+            and identity in memberships
+        ):
+            failures.append({
+                "code": "strategy_exception_also_mapped",
+                "workstream_key": identity,
+            })
 
-    universe, active = _project_keys(project_plan)
+    universe, active = _legacy._project_keys(project_plan)
     for workstream_key in sorted(memberships):
         if workstream_key not in universe:
-            failures.append({"code": "strategy_membership_unknown_workstream", "workstream_key": workstream_key})
+            failures.append({
+                "code": "strategy_membership_unknown_workstream",
+                "workstream_key": workstream_key,
+            })
 
     for workstream_key in sorted(active):
-        if workstream_key not in memberships and workstream_key != _WATCHLIST_EXCEPTION:
-            failures.append({"code": "strategy_unmapped_active_workstream", "workstream_key": workstream_key})
+        if (
+            workstream_key not in memberships
+            and workstream_key != _legacy._WATCHLIST_EXCEPTION
+        ):
+            failures.append({
+                "code": "strategy_unmapped_active_workstream",
+                "workstream_key": workstream_key,
+            })
 
     if failures:
         raise InitiativePlanError(failures)
+
+
+# The established compiler resolves ``validate_strategy`` through its own
+# module globals. Bind that seam once so every canonical call uses this epoch.
+_legacy.validate_strategy = validate_strategy
+
+
+def compile_initiative_plan(
+    *,
+    project_plan: Mapping[str, Any],
+    strategy_path: Path,
+    snapshot_path: Path | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Compile through the established implementation and expose top-level hash receipts."""
+    plan, receipt = _legacy.compile_initiative_plan(
+        project_plan=project_plan,
+        strategy_path=strategy_path,
+        snapshot_path=snapshot_path,
+    )
+    provenance = receipt["strategy_provenance"]
+    receipt["strategy_content_sha256"] = provenance["strategy_content_sha256"]
+    receipt["desired_memberships_sha256"] = provenance["desired_memberships_sha256"]
+    return plan, receipt
