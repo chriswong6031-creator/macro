@@ -1,24 +1,18 @@
 {
-  "ts": "2026-09-05T22:23:14+00:00",
-  "main_sha": "83be5d6a1aedfd3e3dd1a3f5548bde1a77b297c9",
+  "ts": "2026-09-06T00:15:04+00:00",
+  "main_sha": "f14e05e1de03f018c196aa216d5297bd3d56820c",
   "red_required": [
     {
       "name": "health",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33995482684/job/101385181343"
-    },
-    {
-      "name": "liveness",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33994091391/job/101381350188"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/34000140841/job/101397407617"
     },
     {
       "name": "publish",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33993766847/job/101380482972"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33990126622/job/101370771141"
     },
     {
       "name": "engine-render-guards",
@@ -52,9 +46,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 102,
+  "consecutive_failures": 103,
   "sensed_shas": [
-    "83be5d6a1aedfd3e3dd1a3f5548bde1a77b297c9",
+    "f14e05e1de03f018c196aa216d5297bd3d56820c",
     "1397014ef7815a61197c29d2b0715ca11e2f6443"
   ],
   "heartbeat_degraded": false
