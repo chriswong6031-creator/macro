@@ -763,6 +763,58 @@ def test_m6_shipped_registry_nightly_lane_refs_exist_in_collect_py():
     assert checked > 0, "expected at least one non-__global__ nightly_lane ref in the shipped registry"
 
 
+def test_minor2_shipped_registry_declares_bilingual_label_and_next_action():
+    """MINOR-2 repair: the repo's UI law is bilingual EN/ZH (CLAUDE.md §Ops) and
+    `label_en`/`next_action_hint` foreshadowed a ZH slot that was left empty. Every
+    capability in the SHIPPED registry must now carry a non-empty `label_zh` and
+    `next_action_hint_zh` plain-sentence translation alongside the EN text, so a future
+    UI consumer never discovers an EN-only registry by surprise."""
+    doc = yaml.safe_load(
+        (REPO / "config" / "capability_health.yml").read_text(encoding="utf-8")
+    )
+    caps = doc["capabilities"]
+    assert caps, "expected at least one capability in the shipped registry"
+    for cap in caps:
+        label_zh = cap.get("label_zh")
+        hint_zh = cap.get("next_action_hint_zh")
+        assert isinstance(label_zh, str) and label_zh.strip(), (
+            f"{cap['id']}: missing non-empty label_zh"
+        )
+        assert isinstance(hint_zh, str) and hint_zh.strip(), (
+            f"{cap['id']}: missing non-empty next_action_hint_zh"
+        )
+
+
+def test_minor2_resolved_record_publishes_label_zh_and_next_action_zh():
+    """engine.capability_health._record must carry the registry's ZH fields through to
+    the resolved record unchanged, alongside (never instead of) the EN fields."""
+    cap = {
+        "id": "bilingual_cap",
+        "label_en": "English Label",
+        "label_zh": "中文标签",
+        "owner": "test-owner",
+        "artifacts": ["data/bilingual_cap.json"],
+        "receipt_sources": [
+            {"type": "output_health_artifact", "ref": "a", "clocks": ["data_as_of"]}
+        ],
+        "stale_after_hours": 48,
+        "next_action_hint": "check the fixture",
+        "next_action_hint_zh": "检查该样例",
+    }
+    fact = {
+        "readable": True, "corrupt": False,
+        "last_attempted": FRESH, "last_successful": FRESH,
+    }
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"bilingual_cap": [fact]}, now=NOW
+    )
+    rec = view["capabilities"][0]
+    assert rec["label_en"] == "English Label"
+    assert rec["label_zh"] == "中文标签"
+    assert rec["next_action"] == "check the fixture"
+    assert rec["next_action_zh"] == "检查该样例"
+
+
 def test_naive_now_from_temporal_utc_still_raises_through_build():
     with pytest.raises(TemporalError):
         CH.resolve_capability_health(

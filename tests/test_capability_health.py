@@ -507,6 +507,28 @@ def test_important1_corrupt_clock_outranks_an_otherwise_healthy_explicit_state()
     assert rec["reason"] != "ok"
 
 
+def test_minor1_corrupt_clock_discloses_a_discarded_upstream_stale_verdict():
+    """A corrupt/unparseable watermark must still fail CLOSED to could_not_look — but when
+    output_health had already reached an explicit non-healthy verdict (state=stale) on
+    this same fact, that discarded judgment must be disclosed in the evidence, not
+    silently dropped so the record reads identically to "no one ever looked"."""
+    cap = _cap("discarded_stale_cap", [{"type": "output_health_artifact", "ref": "a",
+                                        "clocks": ["data_as_of"]}])
+    fact = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_STALE, "assessment_status": "complete",
+        "data_as_of": "not-a-real-timestamp",
+    }
+    rec = _resolve_single(cap, fact)
+    # Fail-closed is unchanged: an unreadable clock still outranks the upstream verdict.
+    assert rec["state"] is None
+    assert rec["assessment_status"] == CH.ASSESSMENT_COULD_NOT_LOOK
+    # But the discarded upstream verdict must now be visible in the evidence trail.
+    evidence_details = [row.get("detail", "") for row in rec["evidence"]]
+    assert any("upstream state=stale" in d and "watermark unreadable" in d
+               for d in evidence_details), rec["evidence"]
+
+
 # ---------------------------------------------------------------------------
 # MINOR-5 repair: an upstream `assessment_status: partial` with no explicit state and no
 # clock evidence must be named truthfully, not folded into the generic

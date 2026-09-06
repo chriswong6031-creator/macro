@@ -36,6 +36,7 @@
 capabilities:
   - id: prophet_us
     label_en: "Prophet — US Board"
+    label_zh: "Prophet — 美股看板"
     owner: "prophet program"
     artifacts:
       - site/prophet/index.json
@@ -57,9 +58,13 @@ capabilities:
     next_action_hint: >-
       Check the nightly-liveness.yml watchdog and site/prophet/index.json's own
       source_asof; scripts/prophet_rescue.py is the sole auto-redispatcher.
+    next_action_hint_zh: >-
+      检查 nightly-liveness.yml 看门狗任务，以及 site/prophet/index.json 自身的
+      source_asof 字段；scripts/prophet_rescue.py 是唯一的自动重新调度器。
 
   - id: market_reference
     label_en: "Market Reference Data Build"
+    label_zh: "市场参考数据构建"
     owner: "data ingestion"
     artifacts:
       - data/run_status.json
@@ -82,9 +87,13 @@ capabilities:
     next_action_hint: >-
       Check daily.yml's collect/engine job logs for the fred/yahoo sources in
       data/run_status.json.
+    next_action_hint_zh: >-
+      检查 daily.yml 中 collect/engine 任务的日志，核实 data/run_status.json 里
+      fred、yahoo 这两个数据源的状态。
 
   - id: stock_dossiers
     label_en: "Stock Dossiers (R2 stockdata)"
+    label_zh: "个股档案（R2 stockdata）"
     owner: "long-hold / stockdata"
     artifacts:
       - site/stockdata/mag7_regime.json
@@ -101,9 +110,14 @@ capabilities:
       A could_not_look here on a checkout is expected — mag7-regime-site is
       gitignored-local and stock-personality-block is an R2 per-ticker family path;
       neither is probeable from a repo checkout. Verify on the live host or via publish_r2.
+    next_action_hint_zh: >-
+      在仓库检出环境中读到 could_not_look 是预期情况——mag7-regime-site 属于本地
+      gitignore 文件，stock-personality-block 是 R2 上按股票代码存放的路径，两者都
+      无法在仓库检出中探测；请到生产主机上核实，或通过 publish_r2 核实。
 
   - id: foresight_desk
     label_en: "Thematic Foresight Desk"
+    label_zh: "主题前瞻台"
     owner: "qualitative-intelligence"
     artifacts:
       - site/basketdata/foresight_cascade.json
@@ -116,9 +130,13 @@ capabilities:
     next_action_hint: >-
       Check scripts/build_foresight.py and data/foresight/health_log.jsonl's most
       recent row for which legs are DARK/PARTIAL.
+    next_action_hint_zh: >-
+      检查 scripts/build_foresight.py，并查看 data/foresight/health_log.jsonl
+      最新一行，确认哪些环节处于 DARK/PARTIAL 状态。
 
   - id: chronicle
     label_en: "Market Context Chronicle"
+    label_zh: "市场脉络编年志"
     owner: "chronicle / event spine"
     artifacts:
       - data/chronicle/manifest.json
@@ -134,3 +152,6 @@ capabilities:
     next_action_hint: >-
       Check daily.yml's "Chronicle — market context timeline spine" step and
       scripts/build_chronicle.py's own stdout for rc != 0.
+    next_action_hint_zh: >-
+      检查 daily.yml 中 "Chronicle — market context timeline spine" 步骤，
+      以及 scripts/build_chronicle.py 自身标准输出中 rc != 0 的情况。

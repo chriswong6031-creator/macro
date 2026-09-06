@@ -633,6 +633,23 @@ def _source_verdict(
         elif raw:
             display_clocks[key] = raw
     if clock_bad_reasons:
+        # round review MINOR-1: this early return still fails CLOSED (could_not_look) —
+        # a corrupt clock must keep outranking even a HEALTHY upstream verdict
+        # (test_important1_corrupt_clock_outranks_an_otherwise_healthy_explicit_state),
+        # so the resolved state here is deliberately left None, unchanged. But when
+        # output_health already reached an explicit judgment on this same fact
+        # (fact["state"] in STATES — including a non-healthy one like stale), that
+        # judgment used to vanish with no trace: the record read identically to "no one
+        # could look" whether or not anyone upstream ever looked. Disclose it instead —
+        # a reader can now tell "upstream judged it, we could not read its clock" apart
+        # from "no one could look" — without changing the fail-closed resolved state.
+        explicit_upstream_state = fact.get("state")
+        if explicit_upstream_state in STATES:
+            evidence.append(_evidence(
+                "receipt", label,
+                f"upstream state={explicit_upstream_state}, watermark unreadable — "
+                "clock corruption outranks the upstream verdict",
+            ))
         return None, clock_bad_reasons, evidence, display_clocks
 
     # MINOR-1 repair: an adapter (nightly_lane_facts) that recognizes a receipt shape it
@@ -856,6 +873,13 @@ def _record(
     return {
         "id": cap.get("id"),
         "label_en": cap.get("label_en"),
+        # MINOR-2 repair: the repo's UI law is bilingual EN/ZH (CLAUDE.md §Ops); publish
+        # the ZH label/next-action alongside the EN ones the same way `label_en` already
+        # foreshadowed the slot. Both are None (not "", not a placeholder) when a
+        # registry entry has not yet been translated — a reader can tell "no ZH text
+        # written yet" from "translated to an empty string" — so this stays a additive,
+        # non-breaking key for any registry entry not yet carrying `label_zh`.
+        "label_zh": cap.get("label_zh"),
         "owner": cap.get("owner"),
         "artifacts": list(cap.get("artifacts") or []),
         "state": state,
@@ -863,6 +887,7 @@ def _record(
         "reason_codes": list(reasons),
         "clocks": dict(clocks),
         "next_action": cap.get("next_action_hint"),
+        "next_action_zh": cap.get("next_action_hint_zh"),
         "evidence": _sorted_evidence(evidence),
     }
 
