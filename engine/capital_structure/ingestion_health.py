@@ -939,3 +939,50 @@ def write_health(record: Mapping[str, Any], path: Path) -> None:
 
 def health_exit_code(record: Mapping[str, Any]) -> int:
     return 1 if record.get("verdict") == "fail" else 0
+
+
+# --- Packet B-F09-5: covenant-extraction coverage (context only) ---------
+#
+# Pure, disk-free census of the covenant producer's coverage. NOT wired into
+# evaluate_health/build_health_record: contracts/capital_structure_ingestion_health.schema.json
+# is additionalProperties:false at the root and in `counters`, and is an
+# unowned file for this packet (deviation D2) — wiring a "covenant_extraction"
+# block into the emitted health record would fail schema validation. Per the
+# packet's own §6.4 fallback, this ships as a tested pure function only and
+# emits nothing into health.json until that contract is extended.
+
+COVENANT_OBSERVATION_FILENAME = "covenant_term_observations.parquet"
+
+_COVENANT_EXHIBIT_TYPES = frozenset({"EX-10.1", "EX-10.2", "EX-10.3", "EX-10.4", "EX-10.5"})
+
+
+def covenant_extraction_coverage(
+    observations,
+    manifests,
+):
+    """Covered/eligible census for the covenant producer. Context only —
+    never a gate, never wired into the emitted health record (see note
+    above). `state` is "uncovered" when there are zero observations: a
+    printed null, never a hidden zero."""
+    eligible = [
+        m for m in manifests
+        if (m.get("document") or {}).get("document_role") == "exhibit"
+        and (m.get("document") or {}).get("document_type") in _COVENANT_EXHIBIT_TYPES
+    ]
+    covered_manifest_ids = {
+        o["document"]["source_manifest_id"]
+        for o in observations
+        if o.get("document") and o["document"].get("source_manifest_id")
+    }
+    issuers_covered = {o.get("issuer_id") for o in observations if o.get("issuer_id")}
+    unavailable_terms = sum(
+        1 for o in observations if (o.get("state") or {}).get("disposition") == "unavailable"
+    )
+    return {
+        "eligible_exhibits": len(eligible),
+        "covered_manifests": len(covered_manifest_ids),
+        "observations": len(observations),
+        "issuers_covered": len(issuers_covered),
+        "unavailable_terms": unavailable_terms,
+        "state": "covered" if len(observations) > 0 else "uncovered",
+    }

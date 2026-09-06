@@ -1,0 +1,32 @@
+{
+  "manifest_id": "sm-covenant-crsr-ex101-20221202",
+  "source_system": "sec_edgar",
+  "issuer_id": "issuer-crsr-corsair-gaming",
+  "filing": {
+    "accession": "0001564590-22-038930",
+    "form": "8-K",
+    "filing_date": "2022-12-02",
+    "accepted_at": "2022-12-02T16:30:00Z"
+  },
+  "document": {
+    "source_manifest_id": "sm-covenant-crsr-ex101-20221202",
+    "source_id": "src-crsr-ex101-20221202",
+    "document_role": "exhibit",
+    "document_type": "EX-10.1",
+    "canonical_url": "https://www.sec.gov/Archives/edgar/data/1743759/000156459022038930/crsr-ex101_7.htm",
+    "content_sha256": "0d262af5c1a88e543817ae23b7f44fc24110b88ae3bdb86a5c39bfe11562dc74",
+    "child_document_type": "EX-10.1",
+    "child_sequence": 1,
+    "child_filename": "crsr-ex101_7.htm",
+    "child_text_start": 0,
+    "child_text_end": 1250
+  },
+  "storage": {
+    "backend": "r2",
+    "store_id": "r2_research",
+    "object_key": "capital_structure/sec/sha256/0d/0d262af5c1a88e543817ae23b7f44fc24110b88ae3bdb86a5c39bfe11562dc74"
+  },
+  "rights_class": "public_filing",
+  "privacy_classification": "public",
+  "publication": "sec_edgar_public"
+}
