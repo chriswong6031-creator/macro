@@ -26,7 +26,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from engine.theme_graph import identity, materialize, store
+from engine.theme_graph import identity, local_sources, materialize, store
 from lib import config
 
 CONTRACTS = Path(__file__).resolve().parents[1] / "contracts" / "theme_graph"
@@ -136,6 +136,14 @@ def tree(tmp_path, monkeypatch):
     _write(root / "baskets" / "membership.json", _us_doc())
     _write(root / "baskets_china" / "membership.json", _cn_doc())
     _write(root / "baskets_china_ths" / "membership.json", _ths_doc())
+    pd.DataFrame([
+        {"snapshot_date": THS_DOC_DATE, "suite": "baskets_china_ths",
+         "basket_id": f"thsc{KNOWN_CODE}", "ticker": "600001.SS",
+         "source_shape": "membership"},
+        {"snapshot_date": THS_DOC_DATE, "suite": "baskets_china_ths",
+         "basket_id": f"thsc{KNOWN_CODE}", "ticker": "600002.SS",
+         "source_shape": "membership"},
+    ]).to_parquet(root / "baskets_china_ths" / "membership_history.parquet", index=False)
     _write(root / "baskets_china_ths" / "concept_map.json", {
         "asof": CMAP_ASOF,
         "map": {"测试概念": KNOWN_CODE, "另一概念": "900002", "第三概念": "900003"},
@@ -156,10 +164,13 @@ RAW_SNAPSHOT = (SNAP_DATE, {"测试概念": [{"ticker": "600001.SS", "name": "�
 def _build(tree, *, era="reconstruction", belief_time="2026-08-11",
            raw_snapshot=RAW_SNAPSHOT, **kw):
     root, xwalk = tree
+    ths_history = kw.pop("ths_history", None)
+    if ths_history is None:
+        ths_history = pd.read_parquet(root / "baskets_china_ths" / "membership_history.parquet")
     return materialize.build(era=era, belief_time=belief_time,
                              computed_at="2026-08-11T00:00:00Z",
                              data_dir=root, crosswalk_path=xwalk,
-                             raw_snapshot=raw_snapshot, **kw)
+                             raw_snapshot=raw_snapshot, ths_history=ths_history, **kw)
 
 
 def _by_type(view, edge_type):
@@ -170,6 +181,135 @@ def _edge(view, edge_type, src, dst):
     hits = [e for e in _by_type(view, edge_type) if e["src"] == src and e["dst"] == dst]
     assert len(hits) == 1, f"expected exactly one {edge_type} {src}->{dst}, got {hits}"
     return hits[0]
+
+
+def test_ths_owner_history_keeps_first_observed_boundary_and_reappearance():
+    """D2C: owner snapshots, never today's membership, define THS PIT intervals.
+
+    Dump-shaped rows are REFUSED by default — their concept→basket resolution used
+    the current map, so admitting them would backdate a mapping we do not historically
+    possess. The filter lives inside ``ths_membership_intervals`` so every caller
+    inherits it.
+    """
+    history = pd.DataFrame([
+        {"snapshot_date": "2026-06-30", "basket_id": "thsc900001",
+         "ticker": "600001.SS", "source_shape": "ths_concept_dump"},
+        {"snapshot_date": "2026-07-08", "basket_id": "thsc900001",
+         "ticker": "600002.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-15", "basket_id": "thsc900001",
+         "ticker": "600001.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-15", "basket_id": "thsc900001",
+         "ticker": "600002.SS", "source_shape": "membership"},
+    ])
+
+    intervals = local_sources.ths_membership_intervals(history)
+
+    assert [(iv.basket_id, iv.ticker, iv.valid_from, iv.valid_to,
+             iv.source_shape) for iv in intervals] == [
+        ("thsc900001", "600002.SS", "2026-07-08", None, "membership"),
+        ("thsc900001", "600001.SS", "2026-07-15", None, "membership"),
+    ], "ths_concept_dump rows must be refused by the default shape filter"
+
+    # Explicit opt-in still admits dump rows for intentional exercises.
+    with_dumps = local_sources.ths_membership_intervals(
+        history, shapes=frozenset({"membership", "ths_concept_dump"}))
+    assert any(iv.source_shape == "ths_concept_dump" for iv in with_dumps)
+
+
+def test_ths_owner_history_staggered_multi_basket_collection_never_fabricates_exits():
+    """A date collected for basket A but not basket B must be a GAP for B, never
+    an absence that closes/reopens B's interval (the presence axis is PER-BASKET,
+    not the global set of snapshot dates)."""
+    history = pd.DataFrame([
+        {"snapshot_date": "2026-06-30", "basket_id": "B",
+         "ticker": "X", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-01", "basket_id": "A",
+         "ticker": "Y", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-08", "basket_id": "B",
+         "ticker": "X", "source_shape": "membership"},
+    ])
+
+    intervals = local_sources.ths_membership_intervals(history)
+
+    assert [(iv.basket_id, iv.ticker, iv.valid_from, iv.valid_to)
+            for iv in intervals] == [
+        ("B", "X", "2026-06-30", None),
+        ("A", "Y", "2026-07-01", None),
+    ], ("neither basket was ever observed absent — a staggered collection date "
+        "for the OTHER basket must never fabricate an exit")
+
+
+def test_ths_graph_never_leaks_a_later_member_back_into_an_earlier_snapshot(tree):
+    """D2C mutation guard: current membership must not fill an older PIT vintage."""
+    root, _xwalk = tree
+    history = pd.DataFrame([
+        {"snapshot_date": "2026-06-30", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600001.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-08", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600001.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-08", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600002.SS", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-15", "basket_id": f"thsc{KNOWN_CODE}",
+         "ticker": "600003.SS", "source_shape": "ths_concept_dump"},
+    ])
+    history.to_parquet(root / "baskets_china_ths" / "membership_history.parquet", index=False)
+
+    view = _build(tree)
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+    early = _edge(view, "MEMBER_OF", "co:cn:600001.SS", basket)
+    later = _edge(view, "MEMBER_OF", "co:cn:600002.SS", basket)
+    assert early["valid_from"] == "2026-06-30"
+    assert later["valid_from"] == "2026-07-08"
+    assert later["valid_from"] > early["valid_from"]
+    assert not [edge for edge in view.edges if edge["src"] == "co:cn:600003.SS"], (
+        "a raw concept dump has a current-basis concept-to-basket mapping and cannot "
+        "become a historical graph membership")
+    assert view.per_suite["baskets_china_ths"]["excluded_source_shapes"] == [
+        "ths_concept_dump"]
+
+
+def test_ths_graph_declines_current_membership_when_owner_history_is_absent(tree):
+    view = _build(tree, ths_history=pd.DataFrame())
+    assert not [edge for edge in _by_type(view, "MEMBER_OF")
+                if edge["dst"].startswith("basket:baskets_china_ths:")]
+    report = view.per_suite["baskets_china_ths"]
+    assert report["member_edges"] == 0
+    # m1: degraded path still emits the full key set consumers inspect.
+    for key in ("closed_member_edges", "skipped_unidentifiable", "tracks_edges",
+                "membership_published_at", "seed_constant", "unlabelled_nodes", "note"):
+        assert key in report
+    assert report["closed_member_edges"] == 0
+    assert report["tracks_edges"] == 0
+    assert report["membership_published_at"] == THS_DOC_DATE
+    assert report["seed_constant"] == CN_SEED
+    assert report["note"]
+
+
+def test_ths_per_suite_keeps_coverage_disclosure_fields(tree):
+    """M1: membership_published_at / seed_constant / tracks_edges stay cited."""
+    view = _build(tree)
+    report = view.per_suite["baskets_china_ths"]
+    assert report["membership_published_at"] == THS_DOC_DATE
+    assert report["seed_constant"] == CN_SEED
+    assert report["tracks_edges"] == 0
+    assert "closed_member_edges" in report
+    assert "skipped_unidentifiable" in report
+    assert "unlabelled_nodes" in report
+    assert report["note"] is None
+    ths_member = _edge(view, "MEMBER_OF", "co:cn:600001.SS",
+                       f"basket:baskets_china_ths:thsc{KNOWN_CODE}")
+    assert ths_member["date_provenance"] == "membership_pit"
+
+
+def test_ths_canonical_join_declines_a_mapping_receipted_after_the_crosswalk(tree):
+    root, _xwalk = tree
+    doc = _ths_doc()
+    doc["version"] = "2026-07-10"  # after the crosswalk's 2026-07-09 receipt
+    _write(root / "baskets_china_ths" / "membership.json", doc)
+    view = _build(tree)
+    assert not [edge for edge in _by_type(view, "EXPRESSES")
+                if edge["src"] == f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+                and edge["dst"] == "theme:solar"]
 
 
 # ---------------------------------------------------------------------------
@@ -250,20 +390,16 @@ def test_crosswalk_derived_edges_declare_their_own_provenance(tree):
 # 3. Evidence: corroboration adds, never replaces
 # ---------------------------------------------------------------------------
 
-def test_a_ths_member_the_raw_dump_also_shows_carries_a_second_receipt(tree):
+def test_a_raw_ths_concept_dump_never_backdates_a_basket_membership(tree):
     view = _build(tree)
     ths_basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
     covered = _edge(view, "MEMBER_OF", "co:cn:600001.SS", ths_basket)
     uncovered = _edge(view, "MEMBER_OF", "co:cn:600002.SS", ths_basket)
-    assert len(covered["evidence_refs"]) == 2
-    assert len(uncovered["evidence_refs"]) == 1
-    assert set(uncovered["evidence_refs"]) < set(covered["evidence_refs"]), (
-        "corroboration must ADD a receipt beside the membership document's, not swap it")
-    ev = {e["evidence_id"]: e for e in view.evidence}
-    extra = ev[(set(covered["evidence_refs"]) - set(uncovered["evidence_refs"])).pop()]
-    assert extra["kind"] == "scrape" and extra["published_at"] == SNAP_DATE
-    # ...and the edge's own provenance still describes where valid_from came from.
-    assert covered["date_provenance"] == "seed_constant"
+    assert len(covered["evidence_refs"]) == len(uncovered["evidence_refs"]) == 1
+    assert covered["confidence_basis"] == "membership_pit.ths.v1"
+    refs = {e["evidence_id"]: e for e in view.evidence}
+    assert all(refs[eid]["source_ref"].endswith(f"@{THS_DOC_DATE}")
+               for eid in covered["evidence_refs"])
 
 
 def test_without_a_raw_snapshot_the_membership_receipt_stands_alone(tree):
@@ -536,3 +672,161 @@ def test_the_reserved_exposure_axes_are_declared_null(tree):
     for e in view.edges:
         for f in store.RESERVED_EDGE_FIELDS:
             assert e[f] is None
+
+
+def test_ths_membership_doc_generation_closes_when_pit_edges_arrive(tree):
+    """B1: a stored membership_doc.v1 THS MEMBER_OF generation must close on cutover.
+
+    The PIT re-key mints disjoint edge_ids; without an explicit close of the prior
+    generation, ``changed_edges`` leaves both open. Assert no company/basket pair ends
+    with two open MEMBER_OF edges, and that orphans absent from the PIT also close.
+    """
+    root, _xwalk = tree
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+
+    def _doc_edge(src: str) -> dict:
+        row = {
+            "edge_id": f"member_of:{src}->{basket}@{CN_SEED}",
+            "type": "MEMBER_OF", "src": src, "dst": basket,
+            "valid_from": CN_SEED, "valid_to": None,
+            "evidence_time": THS_DOC_DATE, "belief_time": "2026-06-01",
+            "era": "reconstruction", "source_class": "scrape",
+            "date_provenance": "seed_constant",
+            "evidence_refs": ["ev:deadbeefdeadbeef"],
+            "confidence_basis": "membership_doc.v1",
+            "computed_at": "2026-06-01T00:00:00Z",
+            "engine_version": store.ENGINE_VERSION,
+        }
+        for field in store.RESERVED_EDGE_FIELDS:
+            row[field] = None
+        return row
+
+    prior = [_doc_edge("co:cn:600001.SS"), _doc_edge("co:cn:600099.SS")]
+    store.write_edges(prior, lane="nightly")
+
+    view = _build(tree, era="observed", belief_time="2026-08-12")
+    history = pd.read_parquet(root / "baskets_china_ths" / "membership_history.parquet")
+    pit_birth = materialize.ths_membership_pit_birth(history)
+    assert pit_birth == THS_DOC_DATE
+
+    closings = materialize.supersede_ths_membership_doc_edges(
+        store.read_edges(), valid_to=pit_birth, belief_time="2026-08-12",
+        era="observed", computed_at="2026-08-12T00:00:00Z")
+    assert {c["edge_id"] for c in closings} == {e["edge_id"] for e in prior}
+    assert all(c["valid_to"] == pit_birth for c in closings)
+
+    computed = list(view.edges) + closings
+    delta = materialize.changed_edges(computed, store.read_edges())
+    store.write_edges(delta, lane="nightly")
+
+    latest = store.read_edges()
+    ths = latest[
+        (latest["type"] == "MEMBER_OF")
+        & latest["dst"].astype(str).str.startswith("basket:baskets_china_ths:")
+    ]
+    open_ths = ths[ths["valid_to"].isna()]
+    assert not open_ths.duplicated(subset=["src", "dst"]).any(), (
+        "no company/basket pair may carry two open MEMBER_OF edges after cutover")
+    for eid in (e["edge_id"] for e in prior):
+        row = latest[latest["edge_id"] == eid].iloc[0]
+        assert row["valid_to"] == pit_birth
+    pit_open = open_ths[open_ths["confidence_basis"] == "membership_pit.ths.v1"]
+    assert set(pit_open["src"]) == {"co:cn:600001.SS", "co:cn:600002.SS"}
+    # Generation cutover is a named full-family close — shrink wall must waive it.
+    assert materialize.source_shrink_refusals(
+        delta, pd.DataFrame(prior), allow={materialize.THS_FAMILY}) == []
+    # Without the waiver the wall refuses (sanity that we are not greening vacuously).
+    refusals = materialize.source_shrink_refusals(closings, pd.DataFrame(prior), allow=())
+    assert refusals and materialize.THS_FAMILY in refusals[0]
+
+
+def test_ths_membership_doc_generation_retracts_rather_than_backdates(tree):
+    """Review BLOCKER 1 (residual): the cutover must RETRACT the legacy interval, not
+    end-date it — a latest-belief reader must never see the 2021 seed date asserted as
+    a true membership up to the PIT birth date."""
+    root, _xwalk = tree
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+    row = {
+        "edge_id": f"member_of:co:cn:600001.SS->{basket}@{CN_SEED}",
+        "type": "MEMBER_OF", "src": "co:cn:600001.SS", "dst": basket,
+        "valid_from": CN_SEED, "valid_to": None,
+        "evidence_time": THS_DOC_DATE, "belief_time": "2026-06-01",
+        "era": "reconstruction", "source_class": "scrape",
+        "date_provenance": "seed_constant",
+        "evidence_refs": ["ev:deadbeefdeadbeef"],
+        "confidence_basis": "membership_doc.v1",
+        "computed_at": "2026-06-01T00:00:00Z",
+        "engine_version": store.ENGINE_VERSION,
+    }
+    for field in store.RESERVED_EDGE_FIELDS:
+        row[field] = None
+    stored = pd.DataFrame([row])
+
+    closings = materialize.supersede_ths_membership_doc_edges(
+        stored, valid_to=THS_DOC_DATE, belief_time="2026-08-12",
+        era="observed", computed_at="2026-08-12T00:00:00Z",
+        pit_pairs={("co:cn:600001.SS", basket)})
+    assert len(closings) == 1
+    closed = closings[0]
+    # Degenerate interval: no valid-time span is asserted for the un-observed era.
+    assert closed["valid_from"] == closed["valid_to"] == THS_DOC_DATE
+    # An as-of query anywhere in [2021-seed, PIT-birth) must find nothing active:
+    # a half-open [valid_from, valid_to) interval with valid_from == valid_to is
+    # empty by construction, so no pre-PIT effective date can ever match it.
+    for asof in (CN_SEED, "2023-01-01", "2026-06-29"):
+        assert not (closed["valid_from"] <= asof < closed["valid_to"]), (
+            f"retracted edge must not read as active at pre-PIT asof={asof}")
+
+
+def test_ths_membership_doc_generation_never_closes_a_pit_uncovered_pair(tree):
+    """Review MAJOR 1: a stored pair the PIT plane never re-observed must be left
+    open as a disclosed coverage gap, never fabricated into a closed exit."""
+    root, _xwalk = tree
+    basket = f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+
+    def _doc_edge(src: str) -> dict:
+        row = {
+            "edge_id": f"member_of:{src}->{basket}@{CN_SEED}",
+            "type": "MEMBER_OF", "src": src, "dst": basket,
+            "valid_from": CN_SEED, "valid_to": None,
+            "evidence_time": THS_DOC_DATE, "belief_time": "2026-06-01",
+            "era": "reconstruction", "source_class": "scrape",
+            "date_provenance": "seed_constant",
+            "evidence_refs": ["ev:deadbeefdeadbeef"],
+            "confidence_basis": "membership_doc.v1",
+            "computed_at": "2026-06-01T00:00:00Z",
+            "engine_version": store.ENGINE_VERSION,
+        }
+        for field in store.RESERVED_EDGE_FIELDS:
+            row[field] = None
+        return row
+
+    covered, uncovered = "co:cn:600001.SS", "co:cn:600099.SS"
+    stored = pd.DataFrame([_doc_edge(covered), _doc_edge(uncovered)])
+
+    closings = materialize.supersede_ths_membership_doc_edges(
+        stored, valid_to=THS_DOC_DATE, belief_time="2026-08-12",
+        era="observed", computed_at="2026-08-12T00:00:00Z",
+        pit_pairs={(covered, basket)})
+    closed_srcs = {c["src"] for c in closings}
+    assert closed_srcs == {covered}, (
+        "only the PIT-covered pair may be retracted; the uncovered pair is a "
+        "disclosed coverage gap, not a fabricated exit")
+
+
+def test_ths_canonical_join_declines_when_concept_map_asof_is_later_than_crosswalk(tree):
+    """Review BLOCKER 2: the concept-map clock must gate the canonical join too — a
+    membership doc dated BEFORE the crosswalk must still decline if the concept map
+    that resolved it was reloaded AFTER the crosswalk."""
+    root, _xwalk = tree
+    late_cmap_asof = "2026-08-29"  # after XWALK_DATE (2026-07-09)
+    _write(root / "baskets_china_ths" / "concept_map.json", {
+        "asof": late_cmap_asof,
+        "map": {"测试概念": KNOWN_CODE, "另一概念": "900002", "第三概念": "900003"},
+    })
+    view = _build(tree)  # membership doc stays at THS_DOC_DATE (2026-06-30, before xwalk)
+    assert not [edge for edge in _by_type(view, "EXPRESSES")
+                if edge["src"] == f"basket:baskets_china_ths:thsc{KNOWN_CODE}"
+                and edge["dst"] == "theme:solar"], (
+        "a concept map reloaded after the crosswalk must decline the canonical join "
+        "even though the membership doc itself predates the crosswalk")

@@ -41,6 +41,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import basket_membership_pit  # noqa: E402
 from engine.theme_graph import materialize, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -113,15 +114,60 @@ def run(*, backfill: bool, force_backfill: bool,
                   "--force-backfill only if that is genuinely what you want.", len(stored))
         return 1
 
+    ths_history = basket_membership_pit.read_history(basket_membership_pit.SUITE_THS)
     view = materialize.build(era=era, raw_snapshot=_newest_raw_snapshot(),
+                             ths_history=ths_history,
                              retired_node_ids=_retired_node_ids())
-    edges = view.edges if backfill else materialize.changed_edges(view.edges, stored)
+    # BLOCKER 3: build_ths_membership_history is now the SOLE producer of THS
+    # MEMBER_OF edges (build_family(THS_SUITE) is deliberately skipped). A build
+    # that failed to produce that plane must not silently look identical to one
+    # that legitimately produced zero PIT rows — fail the build outright rather
+    # than let materialize.build()'s own additive-plane try/except swallow it.
+    ths_per_suite = view.per_suite.get(materialize.THS_SUITE)
+    if ths_per_suite is None:
+        log.error("theme graph: THS membership plane did not run — refusing to "
+                  "build (a swallowed exception here must not look like a "
+                  "legitimate zero-membership night)")
+        return 1
+    pit_member_edges = int(ths_per_suite.get("member_edges") or 0)
+
+    # B1: retract the superseded membership_doc.v1 THS MEMBER_OF generation so the
+    # PIT re-key cannot leave both generations live. Retraction reuses the stored
+    # edge_id and lands through changed_edges. MAJOR 1: only the (src, dst) pairs
+    # the PIT plane actually re-observed are retracted — an uncovered pair is a
+    # disclosed coverage gap, never a fabricated exit.
+    belief_time = materialize.utc_today()
+    pit_birth = materialize.ths_membership_pit_birth(ths_history)
+    pit_pairs = {
+        (str(e["src"]), str(e["dst"])) for e in view.edges
+        if str(e.get("type")) == "MEMBER_OF"
+        and str(e.get("confidence_basis")) == "membership_pit.ths.v1"
+    }
+    closings: list[dict] = []
+    if pit_birth and not stored.empty:
+        closings = materialize.supersede_ths_membership_doc_edges(
+            stored, valid_to=pit_birth, belief_time=belief_time, era=era,
+            computed_at=view.edges[0]["computed_at"] if view.edges else materialize.utc_now_stamp(),
+            pit_pairs=pit_pairs)
+        if closings:
+            log.info("THS membership_doc→pit cutover: retracting %d open membership_doc.v1 "
+                     "MEMBER_OF edges covered by PIT history (valid_from=valid_to=%s)",
+                     len(closings), pit_birth)
+    computed = list(view.edges) + closings
+    edges = computed if backfill else materialize.changed_edges(computed, stored)
 
     # SECOND WALL (§2). The refresh contract's interlocks guard the path a refresh takes;
     # this one guards the path every WRITE takes, so a hand-edited or truncated input
     # that never went through a refresh still cannot mass-close a source family. Refusing
     # here is cheap; un-closing 2,000 permanent rows in an append-only store is not.
-    refusals = materialize.source_shrink_refusals(edges, stored, allow=allow_source_shrink)
+    # The membership_doc→pit generation cutover IS a deliberate full-family close of the
+    # superseded edge_ids — auto-waive ths_concepts ONLY when the PIT plane actually
+    # produced replacement edges THIS run (BLOCKER 3): a swallowed-exception night with
+    # zero PIT edges must hit the wall like any other mass-closure, not sail through it.
+    allow = set(allow_source_shrink)
+    if closings and pit_member_edges > 0:
+        allow.add(materialize.THS_FAMILY)
+    refusals = materialize.source_shrink_refusals(edges, stored, allow=allow)
     if refusals:
         for r in refusals:
             log.error("theme graph shrink wall: %s", r)

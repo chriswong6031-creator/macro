@@ -45,8 +45,8 @@
       "description": "llm_proposed_ratified edges must carry >=1 dated evidence ref — the semantic-leakage law (§4.4): membership recalled from a model's general knowledge is undatable and forbidden."
     },
     "date_provenance": {
-      "enum": ["curated_changelog", "seed_constant", "raw_snapshot", "crosswalk"],
-      "description": "How valid_from was obtained. seed_constant is the honesty flag that matters: CN membership docs seed every first-run member at the fixed cache-start constant, so that date is a CONVENTION, not an observation."
+      "enum": ["curated_changelog", "seed_constant", "raw_snapshot", "crosswalk", "membership_pit"],
+      "description": "How valid_from was obtained. seed_constant is the honesty flag that matters: CN membership docs seed every first-run member at the fixed cache-start constant, so that date is a CONVENTION, not an observation. membership_pit is a dated row from the owner membership-history parquet (not the raw THS concept dump — that remains raw_snapshot)."
     },
     "evidence_refs": {
       "type": "array",

@@ -297,6 +297,18 @@ class Interval:
     closed_by: str | None   # source_ref of the vintage that first showed it GONE
 
 
+@dataclass(frozen=True)
+class THSInterval:
+    """One owner-history THS membership interval, bounded by observed snapshots."""
+
+    basket_id: str
+    ticker: str
+    valid_from: str
+    valid_to: str | None
+    source_shape: str
+    closed_by: str | None = None
+
+
 def membership_intervals(ladder: Ladder) -> list[Interval]:
     """Every observed interval across the ladder, oldest first.
 
@@ -326,6 +338,68 @@ def membership_intervals(ladder: Ladder) -> list[Interval]:
                 run_start = None
     out.sort(key=lambda iv: (iv.valid_from, iv.subtheme_key, iv.symbol))
     return out
+
+
+def ths_membership_intervals(
+    history,
+    *,
+    shapes: frozenset[str] = frozenset({"membership"}),
+) -> list[THSInterval]:
+    """Turn the canonical THS owner history into observed membership intervals.
+
+    ``history`` is intentionally duck-typed: the graph remains a pure consumer of
+    the owner parquet and never inherits its writer or append semantics.  A member
+    opens only at the first snapshot that contains it; the first later snapshot
+    where it is absent closes the interval; a reappearance opens a new interval.
+
+    ``shapes`` defaults to ``{"membership"}`` only: ``ths_concept_dump`` rows used
+    the current concept map for basket resolution, so admitting them would backdate
+    a mapping we do not historically possess. Pass an explicit broader set only in
+    tests that intentionally exercise dump-row behaviour.
+    """
+    rows = history.to_dict("records") if hasattr(history, "to_dict") else list(history)
+    allowed = frozenset(shapes)
+    snapshots: dict[str, dict[tuple[str, str], str]] = {}
+    for row in rows:
+        shape = str(row.get("source_shape") or "").strip() or "unknown"
+        if shape not in allowed:
+            continue
+        date = str(row.get("snapshot_date") or "").strip()
+        basket = str(row.get("basket_id") or "").strip()
+        ticker = str(row.get("ticker") or "").strip()
+        if not date or not basket or not ticker:
+            continue
+        snapshots.setdefault(date, {}).setdefault((basket, ticker), shape)
+    pairs = sorted({pair for entries in snapshots.values() for pair in entries})
+    # The presence axis MUST be the dates on which THAT basket was actually
+    # collected, never the global set of snapshot dates. A multi-basket THS
+    # store is collected per-basket and staggered: a date on which basket A
+    # was observed but basket B was not must read as a GAP for B, never as
+    # an absence that closes/reopens B's interval (see local_sources tests
+    # for a staggered-collection regression).
+    basket_date_sets: dict[str, set[str]] = {}
+    for date, entries in snapshots.items():
+        for basket, _ticker in entries:
+            basket_date_sets.setdefault(basket, set()).add(date)
+    basket_dates = {basket: sorted(dates) for basket, dates in basket_date_sets.items()}
+    out: list[THSInterval] = []
+    for basket, ticker in pairs:
+        dates = basket_dates.get(basket, [])
+        opened: int | None = None
+        shape = "unknown"
+        for index, present in enumerate(
+                [(basket, ticker) in snapshots[date] for date in dates] + [False]):
+            if present and opened is None:
+                opened = index
+                shape = snapshots[dates[index]][(basket, ticker)]
+            elif not present and opened is not None:
+                out.append(THSInterval(
+                    basket_id=basket, ticker=ticker, valid_from=dates[opened],
+                    valid_to=dates[index] if index < len(dates) else None,
+                    source_shape=shape,
+                    closed_by=dates[index] if index < len(dates) else None))
+                opened = None
+    return sorted(out, key=lambda iv: (iv.valid_from, iv.basket_id, iv.ticker))
 
 
 def subtheme_registry(ladder: Ladder,
