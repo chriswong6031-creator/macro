@@ -8594,6 +8594,7 @@ jobs:
       - "tests/test_options_gap_discipline.py"
       - "tests/test_options_intel_brief.py"
       - "tests/test_options_intel_brief_ui.py"
+      - "tests/test_options_command_aib.py"
       - "tests/test_support_map.py"
       - "tools/index.html"
     timeout-minutes: 15
@@ -8632,7 +8633,7 @@ jobs:
         # workspace they render into. tests/test_options_intel_brief.py includes the
         # data-feasibility law test, which reads the committed data/polygon_gex store
         # present on a full CI checkout.
-        run: python -m pytest tests/test_build_options_command.py tests/test_options_intel_brief.py tests/test_options_intel_brief_ui.py -q
+        run: python -m pytest tests/test_build_options_command.py tests/test_options_intel_brief.py tests/test_options_intel_brief_ui.py tests/test_options_command_aib.py -q
       - name: neural-web support-map suite (real-synapse census bands)
         run: python -m pytest tests/test_support_map.py -q
 

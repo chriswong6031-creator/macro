@@ -268,9 +268,12 @@ def test_38_board_is_the_first_child_of_mode_brief():
     marker = '<section class="oew-mode active" id="mode-brief" role="tabpanel" aria-labelledby="tab-brief">'
     idx = page.index(marker) + len(marker)
     tail = page[idx:idx + 1200]
-    # the very next non-whitespace, non-comment content is the AD-1 panel
+    # the very next non-whitespace, non-comment content is the AD-1 panel.
+    # A-F03-W2-2 added data-aib-* readback attributes to this opening tag
+    # (spec §4.3), so the match stops before the id="aib" attribute's closing
+    # quote rather than requiring the tag to close immediately after it.
     stripped = re.sub(r"<!--.*?-->", "", tail, flags=re.S).strip()
-    assert stripped.startswith('<div class="oew-panel oew-aib" id="aib">')
+    assert stripped.startswith('<div class="oew-panel oew-aib" id="aib"')
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -44,7 +44,7 @@ import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -244,6 +244,169 @@ _AIB_DEGRADED_ZH = {
 # not name (e.g. INSUFFICIENT_COVERAGE) — never blank, never a machine slug.
 _AIB_DEGRADED_FALLBACK_EN = "This board is unavailable for this close."
 _AIB_DEGRADED_FALLBACK_ZH = "本次收盘该板块暂不可用。"
+
+# Truthful "why" sentence per degraded cause — MUST stay keyed off the same
+# board_state/board_reason the headline (_AIB_DEGRADED_EN/ZH) uses. This used
+# to be one hardcoded "not counted yet" sentence rendered under EVERY
+# degraded state, contradicting ELIGIBILITY_COLLAPSE / MIXED_VINTAGE /
+# NO_SETTLED_OI_PAIR headlines directly above it, and asserting a counting
+# delay even when no artifact could be read at all (Major finding, review of
+# PR #6932). The honest-null law requires the why to be TRUE for the state
+# actually shown, not merely present.
+_AIB_DEGRADED_WHY_EN = {
+    "STALE_SOURCE": "This is a data gap, not a quiet market — we are holding the last good session while the source catches up.",
+    "ELIGIBILITY_COLLAPSE": "This is a data gap, not a quiet market — too few names cleared today's coverage bar to show cards.",
+    "MIXED_VINTAGE": "This is a data gap, not a quiet market — the evidence dates on file disagree, so cards are withheld until they settle.",
+    "NO_SETTLED_OI_PAIR": "This is a data gap, not a quiet market — the next position count has not settled yet.",
+}
+_AIB_DEGRADED_WHY_ZH = {
+    "STALE_SOURCE": "这是数据缺口，并非市场平静——数据源补齐前，暂时保留最近一个有效交易日。",
+    "ELIGIBILITY_COLLAPSE": "这是数据缺口，并非市场平静——今日达到完整数据标准的名称过少，暂不展示卡片。",
+    "MIXED_VINTAGE": "这是数据缺口，并非市场平静——现有证据日期不一致，待结算后再展示。",
+    "NO_SETTLED_OI_PAIR": "这是数据缺口，并非市场平静——下一次持仓统计尚未结算。",
+}
+# Fallback why for a cause the table above does not name, AND for the
+# missing-artifact path (no intel_brief at all) — a counting delay is not
+# true when nothing could be read in the first place.
+_AIB_DEGRADED_WHY_FALLBACK_EN = "This is a data gap, not a quiet market — this board is unavailable for this close."
+_AIB_DEGRADED_WHY_FALLBACK_ZH = "这是数据缺口，并非市场平静——本次收盘该板块暂不可用。"
+_AIB_DEGRADED_WHY_NO_ARTIFACT_EN = "This is a data gap, not a quiet market — today's file hasn't arrived yet. This fills in after the next close."
+_AIB_DEGRADED_WHY_NO_ARTIFACT_ZH = "这是数据缺口，并非市场平静——今日文件尚未送达，将在下一次收盘后补齐。"
+
+# A-F03-W2-2 · Glance-tier lede.  Closed vocabulary keyed on the payload's own
+# board_state and card count — the same pass-through discipline as
+# _AIB_BAND_EN above.  Nothing here originates a signal: the count is
+# len(cards), the state is the producer's own board_state.
+_AIB_LEDE = {
+    # key -> (head_en, head_zh, stance_slug, stance_en, stance_zh)
+    "many": (
+        "{n} names are worth a look after today's close.",
+        "今日收盘后有 {n} 个名称值得关注。",
+        "watch", "Read these first — none is a trade on its own.",
+        "建议优先阅读——均非独立交易信号。",
+    ),
+    "one": (
+        "One name is worth a look after today's close.",
+        "今日收盘后有 1 个名称值得关注。",
+        "watch", "Read it first — it is not a trade on its own.",
+        "建议优先阅读——它并非独立交易信号。",
+    ),
+    "quiet": (
+        "The options tape is quiet — nothing meets the bar today.",
+        "今日期权盘面平静——没有名称达到标准。",
+        "watch", "Watch — don't chase.", "观察—勿追高。",
+    ),
+    "degraded": (
+        "Today's brief isn't ready yet.",
+        "今日简报尚未就绪。",
+        "aside", "Nothing to act on here — this fills in after the next close.",
+        "此处暂无可执行内容——将在下次收盘后填充。",
+    ),
+}
+
+# The lede's `.oew-stance` chip reuses the page's OWN closed doctrine
+# vocabulary (tests/test_build_options_command.py::test_stance_vocabulary_is_closed
+# — "only the doctrine six may appear as stance chips, as classes AND as
+# words") rather than the "What to do" label: the chip word is the doctrine
+# word verbatim (transcribed from this same template's existing
+# `st-watch`/`st-aside` usage, e.g. templates/options.html.j2:1354), the
+# label sits beside it, and the lede's own sentence is a third, separate span.
+_AIB_LEDE_STANCE_WORD = {
+    "watch": ("Watch — don't chase", "观察—勿追高"),
+    "aside": ("Stand aside", "暂时观望"),
+}
+
+# Static EN month/weekday abbreviations for the freshness "as of" phrase —
+# NEVER strftime("%a")/strftime("%b"), whose output is locale-dependent.
+_AIB_MONTH_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_AIB_WEEKDAY_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+# Age vocabulary — exact strings, no others (packet A-F03-W2-2 §3.3 table).
+_AIB_AGE_EN = {
+    "current": "Current", "one": "1 day behind", "n": "{d} days behind",
+    "unknown": "As-of date not recorded",
+}
+_AIB_AGE_ZH = {
+    "current": "最新", "one": "落后 1 天", "n": "落后 {d} 天",
+    "unknown": "未记录数据日期",
+}
+
+
+def _aib_freshness(as_of_session: str | None, built_at_utc: str | None,
+                    now: datetime | None) -> dict:
+    """Plain-word freshness for the glance tier.
+
+    days_behind is None when it is genuinely UNKNOWN (no as-of date, or an
+    unparseable one) — NEVER 0.  0 means 'measured, and current'.  The
+    template branches on the integer / level, never on a formatted string.
+    """
+    out = {
+        "asof_date": None, "asof_en": None, "asof_zh": None,
+        "days_behind": None, "age_en": _AIB_AGE_EN["unknown"], "age_zh": _AIB_AGE_ZH["unknown"],
+        "level": "unknown",
+        "built_en": None, "built_zh": None, "built_raw": None,
+    }
+
+    clock = now or datetime.now(timezone.utc)
+    if clock.tzinfo is None:
+        clock = clock.replace(tzinfo=timezone.utc)
+    today_et = clock.astimezone(ZoneInfo("America/New_York")).date()
+
+    asof_date = None
+    if as_of_session:
+        try:
+            asof_date = date.fromisoformat(as_of_session)
+        except (ValueError, TypeError):
+            asof_date = None
+
+    if asof_date is not None:
+        out["asof_date"] = asof_date.isoformat()
+        wd = _AIB_WEEKDAY_EN[asof_date.weekday()]
+        mon = _AIB_MONTH_EN[asof_date.month - 1]
+        out["asof_en"] = f"{wd} {asof_date.day} {mon} close"
+        out["asof_zh"] = f"{asof_date.month}月{asof_date.day}日收盘"
+
+        # Measure staleness in COMPLETED TRADING SESSIONS, not calendar days —
+        # calendar-day math mislabels the freshest possible board (Friday's
+        # close read on Sunday/Monday, or the newest close after a holiday)
+        # as "behind" or even "stale". sessions_behind() counts sessions
+        # strictly after asof_date up to nyse_calendar.expected_last_session,
+        # so 0 means "this IS the latest completed close".
+        days_behind = nyse_calendar.sessions_behind(asof_date, clock)
+        if days_behind < 0:
+            days_behind = 0  # clock skew (as-of in the future) is not an error state
+        out["days_behind"] = days_behind
+        if days_behind == 0:
+            out["level"], out["age_en"], out["age_zh"] = "current", _AIB_AGE_EN["current"], _AIB_AGE_ZH["current"]
+        elif days_behind == 1:
+            out["level"] = "lagging"
+            out["age_en"], out["age_zh"] = _AIB_AGE_EN["one"], _AIB_AGE_ZH["one"]
+        elif days_behind <= 3:
+            out["level"] = "lagging"
+            out["age_en"] = _AIB_AGE_EN["n"].format(d=days_behind)
+            out["age_zh"] = _AIB_AGE_ZH["n"].format(d=days_behind)
+        else:
+            out["level"] = "stale"
+            out["age_en"] = _AIB_AGE_EN["n"].format(d=days_behind)
+            out["age_zh"] = _AIB_AGE_ZH["n"].format(d=days_behind)
+
+    built_dt = None
+    if built_at_utc:
+        try:
+            raw = built_at_utc[:-1] + "+00:00" if built_at_utc.endswith("Z") else built_at_utc
+            built_dt = datetime.fromisoformat(raw)
+        except (ValueError, TypeError):
+            built_dt = None
+
+    if built_dt is not None:
+        out["built_raw"] = built_at_utc
+        mon = _AIB_MONTH_EN[built_dt.month - 1]
+        out["built_en"] = f"Updated {built_dt.day} {mon}, {built_dt.strftime('%H:%M')} UTC"
+        out["built_zh"] = f"更新于 {built_dt.month}月{built_dt.day}日 {built_dt.strftime('%H:%M')} UTC"
+
+    return out
+
 
 # gex_confirm's OWN verdict vocabulary (engine/gex_confirm.py:49-53), reused
 # verbatim per the design spec's "mechanics: verdict words only ... reuse
@@ -493,13 +656,20 @@ def _aib_risk_row(card: dict) -> dict:
     }
 
 
-def build_aib(intel_brief: dict | None) -> dict:
+def build_aib(intel_brief: dict | None, *, now: datetime | None = None) -> dict:
     """The AD-1 board's whole template context.
 
     `intel_brief` is the parsed site/options_intel_brief.json artifact, or
     None when load_intel_brief() could not read it (its fail-soft contract).
+
+    `now` (A-F03-W2-2): the render clock, threaded through to the glance-tier
+    freshness computation.  Optional and additive — every pre-existing caller
+    that never passes it gets `datetime.now(timezone.utc)`, unchanged from
+    before this parameter existed.
     """
     if not isinstance(intel_brief, dict):
+        lede_head_en, lede_head_zh, lede_stance_slug, lede_stance_en, lede_stance_zh = _AIB_LEDE["degraded"]
+        lede_stance_word_en, lede_stance_word_zh = _AIB_LEDE_STANCE_WORD[lede_stance_slug]
         return {
             "available": False, "healthy": False,
             "as_of_session": None, "oi_counted_date": None, "pending_session": None,
@@ -509,11 +679,19 @@ def build_aib(intel_brief: dict | None) -> dict:
             "empty_kind": "degraded",
             "degraded_en": "No options intelligence brief is available for this close.",
             "degraded_zh": "本次收盘暂无期权情报简报。",
+            "degraded_why_en": _AIB_DEGRADED_WHY_NO_ARTIFACT_EN,
+            "degraded_why_zh": _AIB_DEGRADED_WHY_NO_ARTIFACT_ZH,
             "watch": [], "watch_overflow": 0, "no_directional": False,
             "events": [], "events_overflow": 0,
             "events_empty_en": _AIB_EVENT_EMPTY_EN["NONE"], "events_empty_zh": _AIB_EVENT_EMPTY_ZH["NONE"],
             "risks": [], "risks_overflow": 0,
             "control": None,
+            "lede_head_en": lede_head_en, "lede_head_zh": lede_head_zh,
+            "lede_stance_slug": lede_stance_slug,
+            "lede_stance_en": lede_stance_en, "lede_stance_zh": lede_stance_zh,
+            "lede_stance_word_en": lede_stance_word_en, "lede_stance_word_zh": lede_stance_word_zh,
+            "freshness": _aib_freshness(None, None, now),
+            "built_at": None,
         }
 
     board_state = intel_brief.get("board_state")
@@ -528,7 +706,7 @@ def build_aib(intel_brief: dict | None) -> dict:
     # state is the healthy-quiet scene, never the degraded one.  Everything
     # else (STALE_SOURCE / DEGRADED / INSUFFICIENT_COVERAGE) is degraded.
     healthy = board_state in ("OK", "NO_SIGNAL")
-    empty_kind = degraded_en = degraded_zh = None
+    empty_kind = degraded_en = degraded_zh = degraded_why_en = degraded_why_zh = None
     if not cards:
         if healthy:
             empty_kind = "quiet"
@@ -536,10 +714,31 @@ def build_aib(intel_brief: dict | None) -> dict:
             empty_kind = "degraded"
             if board_state == "STALE_SOURCE":
                 degraded_en, degraded_zh = _AIB_DEGRADED_EN["STALE_SOURCE"], _AIB_DEGRADED_ZH["STALE_SOURCE"]
+                degraded_why_en, degraded_why_zh = _AIB_DEGRADED_WHY_EN["STALE_SOURCE"], _AIB_DEGRADED_WHY_ZH["STALE_SOURCE"]
             elif board_reason in _AIB_DEGRADED_EN:
                 degraded_en, degraded_zh = _AIB_DEGRADED_EN[board_reason], _AIB_DEGRADED_ZH[board_reason]
+                degraded_why_en, degraded_why_zh = _AIB_DEGRADED_WHY_EN[board_reason], _AIB_DEGRADED_WHY_ZH[board_reason]
             else:
                 degraded_en, degraded_zh = _AIB_DEGRADED_FALLBACK_EN, _AIB_DEGRADED_FALLBACK_ZH
+                degraded_why_en, degraded_why_zh = _AIB_DEGRADED_WHY_FALLBACK_EN, _AIB_DEGRADED_WHY_FALLBACK_ZH
+
+    # A-F03-W2-2 · glance-tier lede key.  Closed vocabulary keyed on the
+    # payload's own board_state (via `healthy`) and card count — no scoring.
+    if not healthy:
+        lede_key = "degraded"
+    elif len(cards) > 1:
+        lede_key = "many"
+    elif len(cards) == 1:
+        lede_key = "one"
+    else:
+        lede_key = "quiet"
+    lede_head_en, lede_head_zh, lede_stance_slug, lede_stance_en, lede_stance_zh = _AIB_LEDE[lede_key]
+    if lede_key == "many":
+        lede_head_en = lede_head_en.format(n=len(cards))
+        lede_head_zh = lede_head_zh.format(n=len(cards))
+    lede_stance_word_en, lede_stance_word_zh = _AIB_LEDE_STANCE_WORD[lede_stance_slug]
+    built_at_utc = intel_brief.get("built_at_utc")
+    freshness = _aib_freshness(intel_brief.get("as_of_session"), built_at_utc, now)
 
     # ── AD-1 B5 · Band 2 — directional watch (verbatim array order; contract §5a) ──
     watch_raw = intel_brief.get("directional_watch") if isinstance(intel_brief.get("directional_watch"), list) else []
@@ -589,12 +788,19 @@ def build_aib(intel_brief: dict | None) -> dict:
         "cards": cards,
         "empty_kind": empty_kind,
         "degraded_en": degraded_en, "degraded_zh": degraded_zh,
+        "degraded_why_en": degraded_why_en, "degraded_why_zh": degraded_why_zh,
         "watch": watch, "watch_overflow": intel_brief.get("directional_watch_overflow") or 0,
         "no_directional": no_directional,
         "events": events, "events_overflow": intel_brief.get("event_board_overflow") or 0,
         "events_empty_en": _AIB_EVENT_EMPTY_EN[events_empty_key], "events_empty_zh": _AIB_EVENT_EMPTY_ZH[events_empty_key],
         "risks": risks, "risks_overflow": intel_brief.get("risk_board_overflow") or 0,
         "control": control,
+        "lede_head_en": lede_head_en, "lede_head_zh": lede_head_zh,
+        "lede_stance_slug": lede_stance_slug,
+        "lede_stance_en": lede_stance_en, "lede_stance_zh": lede_stance_zh,
+        "lede_stance_word_en": lede_stance_word_en, "lede_stance_word_zh": lede_stance_word_zh,
+        "freshness": freshness,
+        "built_at": built_at_utc if isinstance(intel_brief, dict) else None,
     }
 
 
@@ -1380,7 +1586,7 @@ def build_context(root: Path, stores: dict | None = None, intel_brief: dict | No
         "sectors": sectors,
         "bets": bets,
         "rail": rail,
-        "aib": build_aib(intel_brief),
+        "aib": build_aib(intel_brief, now=clock),
         "counts": {
             "scanner": session.get("universe"),
             "ticker": "SPY" if "SPY" in (stores.get("gex") or {}) else (INDEX_KEYS[0]),

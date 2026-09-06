@@ -298,6 +298,68 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-aib-empty-sub{margin:0;color:var(--muted);font-size:11px}
 .oew-aib-more{margin-left:auto;font-size:10.5px;color:var(--muted)}
 
+/* ── A-F03-W2-2 · BRIEF glance-tier lede ──────────────────────────────────
+   Dark (default, this page's bare selectors) = raised instrument slab —
+   luminance depth via an inner top highlight, no shadow. Light
+   (html[data-theme="light"], the page's own light-mode mechanism — see
+   html[data-theme="light"] .oew above) = white material on the cool canvas —
+   the highlight is deleted (a white-on-white bevel is a smudge) and a
+   hairline + one shallow shadow carry the depth instead. Same structure,
+   same semantics (lede -> evidence -> detail, stance vocabulary, EN/ZH
+   parity); only the material differs. Packet A-F03-W2-2 §6. */
+.oew-aib-lede{padding:var(--s3) var(--s4);border-bottom:1px solid var(--hair);
+  background:var(--tile);border-left:3px solid var(--hair);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 6%,transparent)}
+.oew-aib-lede.is-current{border-left-color:var(--oew-accent)}
+.oew-aib-lede.is-lagging{border-left-color:var(--ink-info, var(--info))}
+.oew-aib-lede.is-stale,
+.oew-aib-lede.is-unknown{border-left-color:var(--ink-warn, var(--warn))}
+
+.oew-aib-lede-head{margin:0 0 6px;font-size:15.5px;line-height:1.35;font-weight:680;
+  letter-spacing:-.005em;color:var(--text)}
+.oew-aib-lede-stance{margin:0 0 7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.oew-aib-lede-todo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.oew-aib-lede-said{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+
+.oew-aib-fresh{margin:0;display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;
+  font-size:11px;color:var(--muted)}
+.oew-aib-fresh-age{padding:2px 8px;border-radius:var(--r-pill);
+  background:var(--tile);border:1px solid var(--hair);font-weight:600}
+.oew-aib-fresh-age.lvl-stale,
+.oew-aib-fresh-age.lvl-unknown{color:var(--ink-warn, var(--warn));
+  background:color-mix(in srgb,var(--warn) 12%,var(--tile));border-color:transparent}
+
+.oew-aib-degraded-lead{margin:0 0 4px;font-weight:620;color:var(--text)}
+.oew-aib-degraded-why{margin:0 0 8px;font-size:12px;color:var(--ink-2);line-height:1.5}
+.oew-aib-degraded-rcp{font-size:11.5px}
+.oew-aib-degraded-rcp>summary{cursor:pointer;color:var(--muted)}
+
+/* LIGHT — white material: delete the inner highlight, add a hairline (top +
+   right; bottom + left are already set above) and one shallow shadow — the
+   page's OWN shallow-shadow token (--card-shadow, already themed light/dark
+   at :theme.css), reused here rather than a new literal so this stays within
+   existing token discipline. The stale/unknown chip re-weights its fill down
+   (12% -> 8%) and gains a defined border, which the dark tile-fill version
+   does not need. */
+html[data-theme="light"] .oew-aib-lede{box-shadow:var(--card-shadow);
+  border-top:1px solid var(--hair);border-right:1px solid var(--hair)}
+html[data-theme="light"] .oew-aib-lede.is-current{border-left-color:var(--oew-accent)}
+html[data-theme="light"] .oew-aib-lede.is-lagging{border-left-color:var(--ink-info, var(--info))}
+html[data-theme="light"] .oew-aib-lede.is-stale,
+html[data-theme="light"] .oew-aib-lede.is-unknown{border-left-color:var(--ink-warn, var(--warn))}
+html[data-theme="light"] .oew-aib-fresh-age{background:transparent}
+html[data-theme="light"] .oew-aib-fresh-age.lvl-stale,
+html[data-theme="light"] .oew-aib-fresh-age.lvl-unknown{
+  background:color-mix(in srgb,var(--warn) 8%,transparent);
+  border-color:color-mix(in srgb,var(--warn) 35%,var(--hair))}
+
+@media (max-width:520px){
+  .oew-aib-lede{padding:var(--s3)}
+  .oew-aib-lede-head{font-size:14.5px}
+  .oew-aib-lede-stance{align-items:flex-start}
+  .oew-aib-fresh{gap:6px 10px}
+}
+
 /* ── AD-1 B5 band 2 · directional watch: a CONTINUATION of the ranked grid, so it
       reuses .oew-tkchip verbatim (incl. its data-goto jump) and adds only the
       machine-supplied rank + direction word.  The keyline, not a box, is what
@@ -1005,7 +1067,11 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
        site/options_intel_brief.json via scripts/build_options_command.py's `aib`
        context (build_aib()/`_aib_card()`).  No ranking, ordering or scoring happens
        in this template. -->
-  <div class="oew-panel oew-aib" id="aib">
+  <div class="oew-panel oew-aib" id="aib"
+       data-aib-state="{{ aib.board_state or 'unavailable' }}"
+       data-aib-asof="{{ aib.freshness.asof_date or '' }}"
+       data-aib-receipt="{{ (aib.receipt_id or '')[:12] }}"
+       data-aib-fresh="{{ aib.freshness.level }}">
     {%- if sess.quality_en == 'Stale' %}
     <div class="oew-nofuse" role="status">
       <span>{{ t('The latest completed session is ' ~ sess.target_session ~ '. The panels below are retained prior-session context; each footer keeps its actual source date and none describes the target close.',
@@ -1029,9 +1095,35 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
       {% if aib.pending_session %}
       <span class="oew-aib-pending mono">{{ t('Newer session', '更新交易日') }} {{ aib.pending_session }} {{ t('awaiting position counts', '等待持仓统计') }}</span>
       {% endif %}
+      {%- if aib.healthy %}
       <span class="oew-aib-elig mono">{{ aib.eligible }}/{{ aib.present }} {{ t('names eligible', '名称符合条件') }}</span>
+      {%- endif %}
     </div>
     {% endif %}
+    {#- ── GLANCE TIER · lede ────────────────────────────────────────────────
+        The answer before the evidence: what today's brief says, what to do
+        about it, and how fresh it is.  Every string is a closed-vocabulary
+        lookup from build_aib() keyed on the payload's own board_state and
+        card count — no scoring, no ranking and no generated prose here. -#}
+    <div class="oew-aib-lede is-{{ aib.freshness.level }}">
+      <h3 class="oew-aib-lede-head">{{ t(aib.lede_head_en, aib.lede_head_zh) }}</h3>
+      <p class="oew-aib-lede-stance">
+        <span class="oew-aib-lede-todo">{{ t('What to do', '该怎么做') }}</span>
+        <span class="oew-stance st-{{ aib.lede_stance_slug }}">{{ t(aib.lede_stance_word_en, aib.lede_stance_word_zh) }}</span>
+        <span class="oew-aib-lede-said">{{ t(aib.lede_stance_en, aib.lede_stance_zh) }}</span>
+      </p>
+      <p class="oew-aib-fresh">
+        {%- if aib.freshness.asof_en %}
+        <span class="oew-aib-fresh-asof">{{ t('As of', '数据截至') }} {{ t(aib.freshness.asof_en, aib.freshness.asof_zh) }}</span>
+        {%- endif %}
+        <span class="oew-aib-fresh-age lvl-{{ aib.freshness.level }}">{{ t(aib.freshness.age_en, aib.freshness.age_zh) }}</span>
+        {%- if aib.freshness.built_en %}
+        <span class="oew-aib-fresh-built">{{ t(aib.freshness.built_en, aib.freshness.built_zh) }}</span>
+        {%- else %}
+        <span class="oew-aib-fresh-built">{{ t('Update time not recorded', '未记录更新时间') }}</span>
+        {%- endif %}
+      </p>
+    </div>
     <div class="oew-pbody">
       {% if aib.available and aib.healthy %}
 
@@ -1215,12 +1307,22 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
 
       {% else %}
       <div class="oew-aib-degraded">
-        <p>{{ t(aib.degraded_en, aib.degraded_zh) }}</p>
+        <p class="oew-aib-degraded-lead">{{ t(aib.degraded_en, aib.degraded_zh) }}</p>
+        <p class="oew-aib-degraded-why">{{ t(aib.degraded_why_en or 'This is a data gap, not a quiet market.',
+                                              aib.degraded_why_zh or '这是数据缺口，并非市场平静。') }}</p>
+        <details class="oew-aib-degraded-rcp">
+          <summary>{{ t('What we checked', '我们检查了什么') }}</summary>
+          <div class="oew-aib-detailbody">
+            <div class="oew-aib-dline"><span class="k">{{ t('Last settled close', '最近结算收盘') }}</span><span class="v mono">{{ aib.as_of_session or t('not recorded', '未记录') }}</span></div>
+            <div class="oew-aib-dline"><span class="k">{{ t('Positions counted', '持仓统计于') }}</span><span class="v mono">{{ aib.oi_counted_date or t('not recorded', '未记录') }}</span></div>
+            <div class="oew-aib-dline"><span class="k">{{ t('Built', '生成于') }}</span><span class="v mono">{{ aib.freshness.built_raw or t('not recorded', '未记录') }}</span></div>
+            <div class="oew-aib-dline"><span class="k">{{ t('Receipt', '回执') }}</span><span class="v mono">{{ aib.receipt_id or t('not recorded', '未记录') }}</span></div>
+          </div>
+        </details>
       </div>
       {% endif %}
     </div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-watch">{{ t("Watch — don't chase", '观察—勿追高') }}</span>
       <span>{{ t('Hypotheses to research, ranked by evidence — none is a trade on its own.', '按证据排序的研究假设——均非独立交易信号。') }}</span>
       {% if aib.overflow > 0 %}<span class="oew-aib-more"
         data-tip-en="Counts every direction above the threshold, including volatility names. The strip above names only the upside and downside ones."
