@@ -638,9 +638,17 @@ process.stdout.write(JSON.stringify({before:before,afterSave:afterSave,afterClea
 
 def test_a1b_badge_refresh_follows_authoritative_rows_and_keeps_shipping_pairs():
     portfolio = (ROOT / "templates" / "portfolio.js").read_text(encoding="utf-8")
-    assign = portfolio.index("rows = newRows;")
-    refresh = portfolio.index("window.WS.refreshModeCounts", assign)
-    later_render = portfolio.index("ensureIndex().then(render);", assign)
+    # Anchor inside the enclosing function body, not an unanchored whole-file
+    # `.index()` — `rows = newRows;` / `ensureIndex().then(render);` each occur
+    # twice (reload() and onAuth() share the exact same two lines), so searching
+    # the whole file would silently bind to whichever occurrence sorts first by
+    # accident of source order rather than to the reload() reread this test names.
+    reload_start = portfolio.index("function reload(afterWrite)")
+    next_fn = portfolio.index("function onAuth(", reload_start)
+    reload_body = portfolio[reload_start:next_fn]
+    assign = reload_body.index("rows = newRows;")
+    refresh = reload_body.index("window.WS.refreshModeCounts", assign)
+    later_render = reload_body.index("ensureIndex().then(render);", assign)
     assert assign < refresh < later_render
     watchlist = (ROOT / "templates" / "watchlist.js").read_text(encoding="utf-8")
     assert "function refreshModeCounts(" in watchlist
