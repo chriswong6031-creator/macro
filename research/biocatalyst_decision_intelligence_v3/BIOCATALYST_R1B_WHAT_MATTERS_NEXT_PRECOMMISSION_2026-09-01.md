@@ -1,9 +1,9 @@
 # BioCatalyst V3 R1B — What Matters Next Production Vertical Precommission
 
-**Status:** PRE-SHAPED ONLY — not commissioned  
+**Status:** PRE-SHAPED ONLY — not commissioned\
 **May become executable only after:** R0 independent exact-head review and acceptance by the delegated COO or Sol, R1A entrance/output gates or an explicit architecture-approved substitute, fresh current-owner reconciliation, one new operation/carrier, and current runtime/permission gates
 
-**Primary product objective:** the first independently useful BioCatalyst Decision Intelligence workflow  
+**Primary product objective:** the first independently useful BioCatalyst Decision Intelligence workflow\
 **Authority at R1B:** source facts + deterministic/explainable research priority; calibrated probability/materiality only where an already-accepted owner/method is production-ready, otherwise `NOT_ESTIMABLE`; no trade/Availability/Prophet authority
 
 ---

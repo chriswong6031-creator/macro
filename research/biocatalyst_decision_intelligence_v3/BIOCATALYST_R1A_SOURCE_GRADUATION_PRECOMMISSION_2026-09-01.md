@@ -1,10 +1,10 @@
 # BioCatalyst V3 R1A — Source Graduation and Broad Event-Universe Precommission
 
-**Status:** PRE-SHAPED ONLY — not commissioned  
+**Status:** PRE-SHAPED ONLY — not commissioned\
 **May become executable only after:** R0 independent exact-head review and acceptance by the delegated COO or Sol, current owner/source reconciliation, a fresh operation key/carrier, and current runtime/permission gates
 
-**Intended program:** existing `biocatalyst` / `WS:BIOCATALYST-CORE-PRODUCT` with source-governance coordination through the existing owner  
-**Primary dependency:** honest adjudication of the ended 2026-08-12→2026-08-26 ClinicalTrials.gov source-soak window  
+**Intended program:** existing `biocatalyst` / `WS:BIOCATALYST-CORE-PRODUCT` with source-governance coordination through the existing owner\
+**Primary dependency:** honest adjudication of the ended 2026-08-12→2026-08-26 ClinicalTrials.gov source-soak window\
 **Authority:** source truth and product availability only; no probability, materiality, research rank, Prophet or trade authority
 
 ---

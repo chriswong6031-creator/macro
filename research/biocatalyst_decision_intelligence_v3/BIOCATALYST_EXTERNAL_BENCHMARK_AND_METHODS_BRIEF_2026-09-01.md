@@ -1,8 +1,8 @@
 # BioCatalyst Decision Intelligence V3 — External Benchmark and Methods Brief
 
-**Status:** R0 research seed; Fable must refresh and deepen before architecture acceptance  
-**As of:** 2026-09-01  
-**Authority:** external evidence and design implications only. Competitor claims are not source truth, rights grants, predictive validation or implementation authority.  
+**Status:** R0 research seed; Fable must refresh and deepen before architecture acceptance\
+**As of:** 2026-09-01\
+**Authority:** external evidence and design implications only. Competitor claims are not source truth, rights grants, predictive validation or implementation authority.\
 **Research rule:** learn concrete jobs and interaction patterns, then implement original Mastermind code/design using lawful first-party, official or licensed sources. Do not copy proprietary text, data, assets, brand identity or hidden methods.
 
 ---

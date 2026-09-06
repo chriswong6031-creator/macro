@@ -1,19 +1,19 @@
 # BioCatalyst Decision Intelligence V3 — Fable COO End-to-End Commission
 
-**Operation:** `BIOCATALYST-DECISION-INTELLIGENCE-V3-FABLE-PRINCIPAL-20260901`  
-**Role:** delegated Fable COO / principal integrator  
-**Chairman:** Chris  
-**Recorded by:** Sol  
-**Authority decision:** `DEC:BIOCATALYST-FABLE-COO-END-TO-END-DELEGATED-AUTHORITY`  
-**Canonical program:** existing `biocatalyst`  
-**Organizational home:** existing `WS:BIOCATALYST-CORE-PRODUCT`  
-**R0 carrier:** Macro PR `#6712`, branch `sol/biocatalyst-v3-r0-fable-principal-20260901`  
-**Linear projection:** `MAS-256`  
-**Protected procedure at commission creation:** `mastermindx-market-intelligence/Mastermind@187490f3d5676adf7a249d69afacedd00b3efcec`, `mastermind.sol_skillpack.v1` 1.0.1 / bootstrap major 1  
-**Macro main at commission creation:** `de146c115b54af071bcd1b2c5109f3b5e366db05`  
-**Receiver mode:** `DIRECT_TARGETED` when delivered to the concrete Fable runtime  
-**Receiver binding:** `CAPACITY_SELECTABLE` before START; sticky exact runtime after START until a lawful principal-succession boundary  
-**Cognition route:** `CHAT_PRO_DEFAULT` / already-paid Fable-capable Claude surface  
+**Operation:** `BIOCATALYST-DECISION-INTELLIGENCE-V3-FABLE-PRINCIPAL-20260901`\
+**Role:** delegated Fable COO / principal integrator\
+**Chairman:** Chris\
+**Recorded by:** Sol\
+**Authority decision:** `DEC:BIOCATALYST-FABLE-COO-END-TO-END-DELEGATED-AUTHORITY`\
+**Canonical program:** existing `biocatalyst`\
+**Organizational home:** existing `WS:BIOCATALYST-CORE-PRODUCT`\
+**R0 carrier:** Macro PR `#6712`, branch `sol/biocatalyst-v3-r0-fable-principal-20260901`\
+**Linear projection:** `MAS-256`\
+**Protected procedure at commission creation:** `mastermindx-market-intelligence/Mastermind@187490f3d5676adf7a249d69afacedd00b3efcec`, `mastermind.sol_skillpack.v1` 1.0.1 / bootstrap major 1\
+**Macro main at commission creation:** `de146c115b54af071bcd1b2c5109f3b5e366db05`\
+**Receiver mode:** `DIRECT_TARGETED` when delivered to the concrete Fable runtime\
+**Receiver binding:** `CAPACITY_SELECTABLE` before START; sticky exact runtime after START until a lawful principal-succession boundary\
+**Cognition route:** `CHAT_PRO_DEFAULT` / already-paid Fable-capable Claude surface\
 **Program state before receiver ACK:** `WAITING_CAPACITY / needs_placement / effect=NONE`
 
 ---

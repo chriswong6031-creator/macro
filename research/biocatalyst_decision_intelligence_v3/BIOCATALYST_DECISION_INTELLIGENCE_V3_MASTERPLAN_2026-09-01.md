@@ -1,13 +1,13 @@
 # BioCatalyst Decision Intelligence V3 — CEO Masterplan and Fable Principal Charter
 
-**Status:** SOL-RATIFIED PRODUCT RECHARTER / R0 ARCHITECTURE-COMPLETION CARRIER  
-**Date:** 2026-09-01  
-**Current protected procedure at carrier creation:** `mastermindx-market-intelligence/Mastermind@fc407e1638a26932c8615c98c7732d7f3202b3b1` — `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1  
-**Macro base at carrier creation:** `a0e95ded3a673a8274fd0af9b78557d32366ffc7`  
-**Semantic parent:** existing `biocatalyst` program — no new program, event store, queue, identity plane or truth database  
-**Product home:** existing `WS:BIOCATALYST-CORE-PRODUCT`, to be reconciled in R0 rather than duplicated  
-**Principal orchestrator:** Fable / COO  
-**Final authority:** Chairman Chris → Sol product/architecture/acceptance → Fable sustained orchestration → bounded workers  
+**Status:** SOL-RATIFIED PRODUCT RECHARTER / R0 ARCHITECTURE-COMPLETION CARRIER\
+**Date:** 2026-09-01\
+**Current protected procedure at carrier creation:** `mastermindx-market-intelligence/Mastermind@fc407e1638a26932c8615c98c7732d7f3202b3b1` — `mastermind.sol_skillpack.v1` 1.0.1, bootstrap major 1\
+**Macro base at carrier creation:** `a0e95ded3a673a8274fd0af9b78557d32366ffc7`\
+**Semantic parent:** existing `biocatalyst` program — no new program, event store, queue, identity plane or truth database\
+**Product home:** existing `WS:BIOCATALYST-CORE-PRODUCT`, to be reconciled in R0 rather than duplicated\
+**Principal orchestrator:** Fable / COO\
+**Final authority:** Chairman Chris → Sol product/architecture/acceptance → Fable sustained orchestration → bounded workers\
 **Runtime effect of this document:** none. This is architecture, program law and commissioning context. It grants no merge, deployment, source activation, model promotion or trade authority.
 
 ---

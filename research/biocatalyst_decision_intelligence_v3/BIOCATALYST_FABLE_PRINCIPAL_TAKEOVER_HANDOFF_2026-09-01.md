@@ -1,16 +1,16 @@
 # BioCatalyst Decision Intelligence V3 — Fable Principal Takeover Handoff
 
-**Operation key:** `BIOCATALYST-DECISION-INTELLIGENCE-V3-FABLE-PRINCIPAL-20260901`  
-**Parent decision:** `DEC:BIOCATALYST-DECISION-INTELLIGENCE-V3-RECHARTER`  
-**Program/workstream:** existing `biocatalyst` / `WS:BIOCATALYST-CORE-PRODUCT`  
-**Repository:** `mastermindx-market-intelligence/macro`  
-**R0 carrier branch:** `sol/biocatalyst-v3-r0-fable-principal-20260901`  
-**R0 base at seed creation:** `a0e95ded3a673a8274fd0af9b78557d32366ffc7`  
-**Protected procedure at seed creation:** `mastermindx-market-intelligence/Mastermind@fc407e1638a26932c8615c98c7732d7f3202b3b1`, Skillpack 1.0.1 / bootstrap major 1  
-**COGNITION_ROUTE:** `CHAT_PRO_DEFAULT`  
-**PREFERRED_AVENUE:** `Fable`  
-**RECEIVER_BINDING_MODE:** `CAPACITY_SELECTABLE`  
-**PLACEMENT_STATE at handoff publication:** `WAITING_CAPACITY / needs_placement`  
+**Operation key:** `BIOCATALYST-DECISION-INTELLIGENCE-V3-FABLE-PRINCIPAL-20260901`\
+**Parent decision:** `DEC:BIOCATALYST-DECISION-INTELLIGENCE-V3-RECHARTER`\
+**Program/workstream:** existing `biocatalyst` / `WS:BIOCATALYST-CORE-PRODUCT`\
+**Repository:** `mastermindx-market-intelligence/macro`\
+**R0 carrier branch:** `sol/biocatalyst-v3-r0-fable-principal-20260901`\
+**R0 base at seed creation:** `a0e95ded3a673a8274fd0af9b78557d32366ffc7`\
+**Protected procedure at seed creation:** `mastermindx-market-intelligence/Mastermind@fc407e1638a26932c8615c98c7732d7f3202b3b1`, Skillpack 1.0.1 / bootstrap major 1\
+**COGNITION_ROUTE:** `CHAT_PRO_DEFAULT`\
+**PREFERRED_AVENUE:** `Fable`\
+**RECEIVER_BINDING_MODE:** `CAPACITY_SELECTABLE`\
+**PLACEMENT_STATE at handoff publication:** `WAITING_CAPACITY / needs_placement`\
 **Live receiver rule:** this file is scope/evidence, not self-assignment. The canonical placement owner or a current authorized Sol direct delivery must give this exact operation to one concrete eligible Fable principal session. That live delivery becomes `RECEIVER_MODE: DIRECT_TARGETED` and is the receiver-assignment edge. No second Chairman assignment is required.
 
 ---
