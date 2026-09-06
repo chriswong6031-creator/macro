@@ -13,10 +13,18 @@
     "first_date": "2026-06-02",
     "last_date": "2026-06-05",
     "n_amendments": 0,
-    "n_filings": 1,
+    "n_filings": 2,
     "terminal": null
   },
-  "closes": {"2026-06-03": 30.00, "2026-06-04": 30.50},
-  "ledger": {"SMTI": 714256},
-  "expected": {"status": "refused", "refusal": "unaffected_price_unavailable"}
+  "closes": {
+    "2026-06-03": 30.0,
+    "2026-06-04": 30.5
+  },
+  "ledger": {
+    "SMTI": 714256
+  },
+  "expected": {
+    "status": "refused",
+    "refusal": "unaffected_price_unavailable"
+  }
 }

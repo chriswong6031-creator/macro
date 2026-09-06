@@ -54,6 +54,8 @@ REFUSALS: tuple[str, ...] = (
     "unaffected_price_unavailable",
     "currency_mismatch",
     "category_out_of_scope",
+    "announcement_not_prior_to_filing",
+    "computation_unavailable",
 )
 
 _NULL_COPY: dict[str, tuple[str, str]] = {
@@ -82,6 +84,13 @@ _NULL_COPY: dict[str, tuple[str, str]] = {
     "category_out_of_scope": (
         "This filing is not a takeover offer.",
         "该文件不属于收购要约。"),
+    "announcement_not_prior_to_filing": (
+        "We do not have a filing history showing this deal was announced before the "
+        "one we are reading, so there is no earlier price to compare.",
+        "我们没有显示该交易在本次文件之前已公布的历史记录，因此没有更早的股价可比较。"),
+    "computation_unavailable": (
+        "We could not compute a premium for this deal right now — check back later.",
+        "我们暂时无法计算该交易的溢价，请稍后再试。"),
 }
 
 
@@ -201,7 +210,7 @@ def premium_for_event(event: Mapping[str, object], *, closes: "pd.Series | None"
         offer_price = terms.get("price_per_share")
         if not offer_price:
             return _refused("offer_terms_absent")
-        currency = (terms.get("currency") or "USD").upper()
+        currency = str(terms.get("currency")).upper() if terms.get("currency") else None
 
         cik = event.get("cik")
         ticker, issuer_key = resolve_issuer(cik, ledger=ledger)  # may raise
@@ -213,8 +222,30 @@ def premium_for_event(event: Mapping[str, object], *, closes: "pd.Series | None"
                 isinstance(announcement_filing_date, float) and pd.isna(announcement_filing_date)):
             return _refused("announcement_date_unknown")
 
-        market_currency = arb.market_currency(ticker) if hasattr(arb, "market_currency") else "USD"
-        if currency and market_currency and currency != market_currency.upper():
+        # Blocker-1 fix: lifecycle()'s first_date is the earliest STORED filing for this
+        # (cik, category) — for a deal we have only just started tracking, that IS the
+        # filing we are reading, which is never a valid unaffected-price clock. Require at
+        # least 2 stored filings AND a strictly-earlier announcement date before trusting
+        # first_date as the announcement clock; otherwise this is a typed refusal, never a
+        # silently-wrong premium.
+        n_filings_val = _as_int(lifecycle_row.get("n_filings"))
+        offer_filing_raw = event.get("date_filed")
+        try:
+            ann_ts = pd.Timestamp(announcement_filing_date)
+        except (TypeError, ValueError):
+            return _refused("announcement_date_unknown")
+        try:
+            offer_ts = pd.Timestamp(offer_filing_raw)
+        except (TypeError, ValueError):
+            offer_ts = None
+        if n_filings_val is None or n_filings_val < 2 or (
+                offer_ts is not None and ann_ts >= offer_ts):
+            return _refused("announcement_not_prior_to_filing")
+
+        if not currency:
+            return _refused("currency_mismatch")
+        market_currency = arb.market_currency(ticker)
+        if not market_currency or currency != str(market_currency).upper():
             return _refused("currency_mismatch")
 
         unaffected_price, unaffected_price_date = unaffected_reference(
@@ -287,7 +318,7 @@ def premium_for_event(event: Mapping[str, object], *, closes: "pd.Series | None"
         return _refused(r.reason)
     except Exception as e:  # noqa: BLE001 — never raise out of a display-only leaf
         log.warning("special_situations_premium premium_for_event failed: %s", e)
-        return _refused("offer_terms_absent")
+        return _refused("computation_unavailable")
 
 
 def _load_ledger() -> dict[str, int]:
@@ -303,16 +334,20 @@ def _load_ledger() -> dict[str, int]:
         return {}
 
 
-def premium_rows(limit: int | None = None) -> list[dict]:
+def premium_rows(limit: int | None = None, df: "pd.DataFrame | None" = None) -> list[dict]:
     """IO wrapper: build_situations() + lifecycle() + _closes_panel() + the CIK ledger,
-    one premium_for_event() per in-scope row. Best-effort; never raises."""
+    one premium_for_event() per in-scope row. Best-effort; never raises.
+
+    `df` lets a caller that already built the situations frame (e.g. snapshot()) pass it
+    in instead of paying for a second classification pass (Major-1 fix)."""
     from engine import special_situations as ss
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    try:
-        df = ss.build_situations()
-    except Exception as e:  # noqa: BLE001
-        log.warning("special_situations_premium build_situations failed: %s", e)
-        return []
+    if df is None:
+        try:
+            df = ss.build_situations()
+        except Exception as e:  # noqa: BLE001
+            log.warning("special_situations_premium build_situations failed: %s", e)
+            return []
     if df is None or df.empty:
         return []
     try:
@@ -337,9 +372,10 @@ def premium_rows(limit: int | None = None) -> list[dict]:
         closes = None
         try:
             ticker, _ik = resolve_issuer(cik, ledger=ledger)
-            col = next((c for c in (ticker, ticker.split(".")[0]) if c in panel.columns), None)
-            if col:
-                closes = panel[col]
+            # Major-3 fix: exact ticker match only — a truncated fallback (dropping the
+            # exchange/class suffix) can resolve to a DIFFERENT security's price column.
+            if ticker in panel.columns:
+                closes = panel[ticker]
         except PremiumRefusal:
             pass
         rows.append(premium_for_event(event, closes=closes, lifecycle_row=lifecycle_row,
@@ -349,18 +385,20 @@ def premium_rows(limit: int | None = None) -> list[dict]:
     return rows
 
 
-def featured_premium() -> dict:
+def featured_premium(df: "pd.DataFrame | None" = None) -> dict:
     """Exactly ONE deal for the desk shell: the computed row with the most recent
     announcement_filing_date; tie-break lexicographically smallest offer_accession.
     Returns the newest REFUSED row if none computed, so the page still prints a true
-    state instead of nothing."""
+    state instead of nothing. `df` — see premium_rows()."""
     try:
-        rows = premium_rows()
+        rows = premium_rows(df=df)
     except Exception as e:  # noqa: BLE001
         log.warning("special_situations_premium featured_premium failed: %s", e)
-        return _refused("offer_terms_absent")
+        return _refused("computation_unavailable")
     if not rows:
-        return _refused("offer_terms_absent")
+        # Blocker-3 fix: no in-scope deals is a coverage fact, never a claim that a
+        # specific filing omitted its terms — do not reuse offer_terms_absent here.
+        return _refused("computation_unavailable")
     computed = [r for r in rows if r.get("status") == "computed"]
     if computed:
         computed.sort(key=lambda r: (r.get("announcement_filing_date") or "",

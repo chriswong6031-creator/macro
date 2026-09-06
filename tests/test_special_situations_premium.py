@@ -37,17 +37,51 @@ def _run_fixture(name: str) -> dict:
 
 
 def test_premium_is_anchored_to_the_announcement_not_the_filing_being_read():
+    fx = _load("premium_computed_deal.json")
     row = _run_fixture("premium_computed_deal.json")
     assert row["status"] == "computed"
-    # first_date is 2026-06-02; the trading day strictly before it in the fixture is
-    # 2026-06-01 ... but 2026-06-01 is not itself in the series -> nearest is 2026-05-30
-    # via a 1-row lag from the searchsorted position. Assert the anchor is NOT the
-    # filing-being-read's own 30-rows-back value (2026-05-20, which is what a
-    # filing-anchored proxy on date_filed=2026-09-04 would return).
+    # first_date is 2026-06-02; the trading day strictly before it in the fixture IS
+    # 2026-06-01 (present in the series at 24.10), reached via a 1-row lag from the
+    # searchsorted position. Assert the anchor is NOT the filing-being-read's own
+    # 30-rows-back value (2026-05-20, which is what a filing-anchored proxy on
+    # date_filed=2026-09-04 would return), and pin every computed value against the
+    # fixture's own `expected` block so a wrong-clock regression cannot ship silently.
     assert row["unaffected_price_date"] != "2026-05-20"
     assert row["announcement_filing_date"] == "2026-06-02"
     filing_anchored_price = 21.50  # the 30-rows-back-from-date_filed value in this fixture
     assert row["unaffected_price"] != filing_anchored_price
+    expected = fx["expected"]
+    assert row["status"] == expected["status"]
+    assert row["ticker"] == expected["ticker"]
+    assert row["unaffected_price"] == expected["unaffected_price"]
+    assert row["unaffected_price_date"] == expected["unaffected_price_date"]
+    assert row["premium_pct"] == expected["premium_pct"]
+
+
+def test_thin_history_announcement_refuses_rather_than_using_the_filing_itself():
+    # Blocker-1 regression: a deal with only ONE stored filing has lifecycle()
+    # first_date == that filing's own date_filed — never a valid unaffected clock.
+    fx = _load("premium_computed_deal.json")
+    event = dict(fx["event"])
+    lifecycle_row = dict(fx["lifecycle_row"])
+    lifecycle_row["n_filings"] = 1
+    lifecycle_row["first_date"] = event["date_filed"]
+    row = prem.premium_for_event(
+        event, closes=_closes_series(fx["closes"]), lifecycle_row=lifecycle_row,
+        ledger=fx["ledger"], asof="2026-09-06 00:00 UTC")
+    assert row["status"] == "refused"
+    assert row["refusal"] == "announcement_not_prior_to_filing"
+
+
+def test_missing_currency_refuses_rather_than_defaulting_to_usd():
+    fx = _load("premium_computed_deal.json")
+    event = dict(fx["event"])
+    event["llm_terms"] = json.dumps({"price_per_share": 35.0, "consideration": "cash"})
+    row = prem.premium_for_event(
+        event, closes=_closes_series(fx["closes"]), lifecycle_row=fx["lifecycle_row"],
+        ledger=fx["ledger"], asof="2026-09-06 00:00 UTC")
+    assert row["status"] == "refused"
+    assert row["refusal"] == "currency_mismatch"
 
 
 def test_computed_premium_names_and_dates_every_input():

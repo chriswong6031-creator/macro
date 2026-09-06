@@ -481,10 +481,10 @@ def snapshot() -> dict:
     if df.empty:
         try:
             from engine import special_situations_premium
-            premium = special_situations_premium.featured_premium()
+            premium = special_situations_premium.featured_premium(df=df)
         except Exception as e:  # noqa: BLE001 — premium is best-effort, never blocks the desk
             log.warning("special_situations premium (empty snapshot) failed: %s", e)
-            premium = {"status": "refused", "refusal": "offer_terms_absent"}
+            premium = {"status": "refused", "refusal": "computation_unavailable"}
         return {"scored": SCORED, "is_context_only": True, "disclaimer": DISCLAIMER,
                 "built": now, "situations": [], "counts": {}, "coverage": {},
                 "premium": premium}
@@ -511,10 +511,12 @@ def snapshot() -> dict:
             .to_dict("records"))
     try:
         from engine import special_situations_premium
-        premium = special_situations_premium.featured_premium()
+        # Major-1 fix: reuse the frame already built above instead of re-running
+        # build_situations() + lifecycle() + _closes_panel() a second time.
+        premium = special_situations_premium.featured_premium(df=df)
     except Exception as e:  # noqa: BLE001 — premium is best-effort, never blocks the desk
         log.warning("special_situations premium failed: %s", e)
-        premium = {"status": "refused", "refusal": "offer_terms_absent"}
+        premium = {"status": "refused", "refusal": "computation_unavailable"}
     return {
         "scored": SCORED, "is_context_only": True, "disclaimer": DISCLAIMER,
         "built": now, "counts": by_cat, "coverage": coverage, "situations": sits,
