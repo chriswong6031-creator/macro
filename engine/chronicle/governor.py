@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from . import manifest as manifest_mod
-from . import earnings_calls, rollups, spine, state_log
+from . import earnings_calls, impact, rollups, spine, state_log
 
 log = logging.getLogger(__name__)
 
@@ -172,6 +172,12 @@ def build_and_write(
 
         spine.write_events_jsonl(events_path, events_sorted)
         result["events_path"] = str(events_path)
+
+        # F05/MO-PAID-017: the real (non-test) consumer of the consequence
+        # projection -- reads spine's own committed event list, never a
+        # second store, and persists it for downstream surfaces to read.
+        impact_families = impact.project_family_impact(events_sorted)
+        result["impact_path"] = str(impact.write_family_impact(repo, impact_families))
 
         dates = sorted({e.get("date") for e in events_sorted if e.get("date")})
         coverage = {
