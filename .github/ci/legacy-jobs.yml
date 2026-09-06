@@ -9552,7 +9552,7 @@ jobs:
       # suites on arrival so their artifact-identity, zero-authority, bilingual,
       # generated-page and hostile-null pins never sit outside CI.
       - name: factor registry + measurement evidence and research implications
-        run: python -m pytest tests/test_register_factor_hypotheses.py tests/test_factor_intelligence_state.py tests/test_build_measurement_evidence_gap.py tests/test_research_implication_card.py tests/test_measurement_research_implications.py -q
+        run: python -m pytest tests/test_register_factor_hypotheses.py tests/test_factor_intelligence_state.py tests/test_build_measurement_evidence_gap.py tests/test_build_measurement_hubv2.py tests/test_research_implication_card.py tests/test_measurement_research_implications.py tests/test_intelligence_hub_research_entry.py -q
       - name: look-ahead tripwire over engine/ + collectors/ (feature-leak guard)
         run: python -m pytest tests/test_no_lookahead.py -q
       - name: study + trial lanes (OOS, divergence, drift, fingerprints, gauntlets)

@@ -168,6 +168,9 @@ def _expected_metric_value(metric: dict) -> str:
         return f"{value[0] * 100:.2f}% … {value[2] * 100:.2f}%"
     if unit in {"return_fraction", "fraction"}:
         return f"{value * 100:.3f}%"
+    if unit == "probability" and isinstance(value, (int, float)) and not isinstance(value, bool) and value == 0:
+        # Exact zero is a float display artifact; template prints an upper bound.
+        return "&lt; 0.001"
     if unit in {"months", "events", "episodes", "draws", "tickers"}:
         return str(value)
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -767,3 +770,95 @@ def _isolate_card(section: str, family: str) -> str:
     end = section.find("</article>", start)
     assert end != -1, f"card {family} is not closed"
     return section[open_tag : end + len("</article>")]
+
+
+# ---------------------------------------------------------------------------
+# A-F10-1: preregistration status chip + nulls-printed (CIs)
+# ---------------------------------------------------------------------------
+
+
+def _cards_html(section: str) -> list[str]:
+    return re.findall(r"<article\b.*?</article>", section, flags=re.DOTALL)
+
+
+def test_every_card_prints_a_preregistration_status(contract, real_section):
+    cards_html = _cards_html(real_section)
+    assert cards_html, "expected at least one rendered card"
+    n_chips = real_section.count("data-ric-prereg=")
+    assert n_chips == len(cards_html) == len(contract["cards"])
+    values = re.findall(r'data-ric-prereg="([^"]+)"', real_section)
+    assert values and all(v in ("on-file", "absent") for v in values)
+
+
+def test_preregistration_status_is_derived_from_source_artifacts(contract, real_section):
+    for card in contract["cards"]:
+        has_prereg = any(
+            a.get("role") == "preregistration" for a in card.get("source_artifacts", [])
+        )
+        card_html = _isolate_card(real_section, card["method_family"])
+        expected = "on-file" if has_prereg else "absent"
+        assert f'data-ric-prereg="{expected}"' in card_html
+
+
+def test_absent_preregistration_is_disclosed_in_plain_words_both_languages(contract, real_section):
+    sc_cards = [c for c in contract["cards"] if c["method_family"] == "synthetic_control"]
+    assert sc_cards, "expected a synthetic_control card in the frozen contract"
+    card_html = _isolate_card(real_section, "synthetic_control")
+    m = re.search(r'<p class="ric-prereg-why">(.*?)</p>', card_html, flags=re.DOTALL)
+    assert m, "ric-prereg-why paragraph not found for the synthetic_control card"
+    para = m.group(0)
+    en = re.search(r'<span class="l-en">(.*?)</span>', para, flags=re.DOTALL)
+    zh = re.search(r'<span class="l-zh">(.*?)</span>', para, flags=re.DOTALL)
+    assert en and en.group(1).strip()
+    assert zh and zh.group(1).strip()
+    banned = ["falsified", "refuted", "\u8bc1\u4f2a", "prereg", "synthetic_control"]
+    copy_text = (en.group(1) + " " + zh.group(1)).lower()
+    for token in banned:
+        assert token.lower() not in copy_text, f"banned token {token!r} found in {copy_text!r}"
+
+
+def test_preregistration_chip_is_not_painted_as_pass_or_fail(real_section):
+    chip_markers = re.findall(r'<span class="ric-prereg[^"]*"[^>]*>', real_section)
+    assert chip_markers
+    for chip in chip_markers:
+        for banned_class in ("ok", "act", "warn", "fail"):
+            assert f'"{banned_class}"' not in chip and f" {banned_class} " not in chip
+
+    css = Path(__file__).resolve().parent.parent.joinpath(
+        "templates", "measurement.html.j2"
+    ).read_text(encoding="utf-8")
+    m = re.search(r"\.ric-prereg\b[^{]*\{[^}]*\}", css, flags=re.DOTALL)
+    assert m
+    assert "var(--ok)" not in m.group(0)
+    assert "var(--act)" not in m.group(0)
+
+
+def test_missing_confidence_interval_is_printed_for_synthetic_control(contract, real_section):
+    """BLOCKER 5: empty uncertainty[] must still print the typed CI null."""
+    sc = next(c for c in contract["cards"] if c["method_family"] == "synthetic_control")
+    assert sc.get("uncertainty") == []
+    ci_nulls = [nr for nr in sc.get("null_reasons", []) if nr.get("code") == "uncertainty_interval"]
+    assert ci_nulls, "fixture must carry uncertainty_interval null reason"
+
+    card_html = _isolate_card(real_section, "synthetic_control")
+    assert 'data-ric-code="uncertainty_interval"' in card_html
+    assert "Not available yet" in card_html
+    assert "置信区间" in card_html or "暂不可用" in card_html
+    # The extreme t/p glance figures must not be the only story — nulls block present.
+    assert 'data-ric-nulls' in card_html
+    assert 'data-ric-null-code="uncertainty_interval"' in card_html
+    assert 'data-ric-null-code="ticker_cluster_t"' in card_html
+
+
+def test_zero_probability_is_not_rendered_as_exact_zero(real_section):
+    """MINOR: p=0.0 is a display artifact; prefer an upper-bound form."""
+    card_html = _isolate_card(real_section, "synthetic_control")
+    # Glance output for monthly_newey_west_p must not show a bare 0.0000.
+    fig = re.search(
+        r'data-ric-code="monthly_newey_west_p".*?</div>',
+        card_html,
+        flags=re.DOTALL,
+    )
+    assert fig, "monthly_newey_west_p fig missing"
+    assert "0.0000" not in fig.group(0)
+    assert "&lt; 0.001" in fig.group(0) or "< 0.001" in fig.group(0)
