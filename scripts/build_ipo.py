@@ -25,6 +25,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
+from engine import credit_window as cwn  # noqa: E402
 from engine import ipo_hk  # noqa: E402
 from engine import ipo_lockup as il  # noqa: E402
 from engine import ipo_radar as ir  # noqa: E402
@@ -58,6 +59,120 @@ PACE_ZH = {"busy": "繁忙", "normal": "正常", "quiet": "清淡"}
 VERDICT_ZH = {"trails": "跑输", "tracks": "持平", "beats": "跑赢"}
 # plain-word EN for the "what changed" chips (avoid the raw slug in user text)
 VERDICT_ZH_EN = {"trails": "trailing", "tracks": "tracking", "beats": "beating"}
+
+# ---- credit issuance window (packet B-F09-2): bilingual lexicons; engine stays
+# language-neutral (engine.credit_window), the build localises. ----
+CW_SEG = {"hy": ("High-yield borrowers", "高收益发行人"), "ig": ("Investment-grade borrowers", "投资级发行人")}
+CW_STATE = {"open": ("Open", "开着"), "neutral": ("Half open", "半开"),
+            "shut": ("Shut", "关着"), "not_evaluable": ("Not evaluable", "无法评估")}
+CW_CLAUSE = {
+    "open": ("Borrowers can place new bonds; spreads sit at the tight end of the past year.",
+              "发行人能顺利卖出新债；利差处于近一年偏窄的位置。"),
+    "neutral": ("Deals are getting done, but not on easy terms.", "交易仍能完成，但条件并不宽松。"),
+    "shut": ("New deals are hard to place; spreads are near the past year's wide end.",
+             "新债难以发行；利差接近近一年最宽的位置。"),
+    "not_evaluable": ("We can't read this now — the inputs behind it aren't available.",
+                       "目前无法读取 —— 背后的输入数据不可用。"),
+}
+CW_INPUT = {
+    "spread_range": ("Spreads vs their past year", "利差与近一年区间对比"),
+    "spread_drift": ("Recent move in spreads", "利差近期变动"),
+    "rates_vol": ("Rates volatility (both lanes)", "利率波动（两条线共用）"),
+}
+CW_READ = {
+    ("spread_range", "open"): ("tighter than four in five days of the past year", "比近一年五分之四的交易日更窄"),
+    ("spread_range", "neutral"): ("in the middle of the past year's range", "处于近一年区间的中段"),
+    ("spread_range", "shut"): ("wider than four in five days of the past year", "比近一年五分之四的交易日更宽"),
+    ("spread_range", "unknown"): ("not available", "暂无数据"),
+    ("spread_drift", "open"): ("tightening over the past month", "过去一个月持续收窄"),
+    ("spread_drift", "neutral"): ("roughly flat over the past month", "过去一个月基本持平"),
+    ("spread_drift", "shut"): ("widening sharply over the past month", "过去一个月明显走阔"),
+    ("spread_drift", "unknown"): ("not available", "暂无数据"),
+    ("rates_vol", "open"): ("lower than three in five days of the past year", "低于近一年五分之三的交易日"),
+    ("rates_vol", "neutral"): ("in the middle of the past year's range", "处于近一年区间的中段"),
+    ("rates_vol", "shut"): ("higher than three in four days of the past year", "高于近一年四分之三的交易日"),
+    ("rates_vol", "unknown"): ("not available", "暂无数据"),
+}
+CW_STANCE = {
+    "open": ("Watch — don't chase", "观望，别追", "warn"),
+    "neutral": ("Watch — don't chase", "观望，别追", "warn"),
+    "shut": ("Protect gains", "保护盈利", "red"),
+    "not_evaluable": ("Ignore", "忽略", ""),
+}
+CW_CHANGE = {
+    ("spread_range", "shut"): ("Spreads moving into the wider two-thirds of the past year would flip this to shut.",
+                               "利差升入近一年较宽的三分之二区间，读数会翻为关着。"),
+    ("spread_range", "neutral"): ("Spreads moving back toward the middle of the past year's range would flip this to half open.",
+                                  "利差回到近一年区间的中段，读数会翻为半开。"),
+    ("spread_drift", "shut"): ("Spreads widening further over the next month would flip this to shut.",
+                               "未来一个月利差进一步走阔，读数会翻为关着。"),
+    ("spread_drift", "neutral"): ("Spreads flattening out over the next month would flip this to half open.",
+                                  "未来一个月利差走势趋平，读数会翻为半开。"),
+    ("rates_vol", "shut"): ("Rates volatility rising further would flip this to shut.",
+                            "利率波动进一步上升，读数会翻为关着。"),
+    ("rates_vol", "neutral"): ("Rates volatility easing would flip this to half open.",
+                               "利率波动回落，读数会翻为半开。"),
+}
+CW_CHANGE_NONE = ("Any one of the three inputs coming back would let us read this again.",
+                  "三项输入中任何一项恢复，即可重新读取。")
+
+
+def _credit_window_vm(raw: dict) -> dict:
+    """Localise engine.credit_window.window_state() into the page vm. Maps
+    only — never re-decides any state."""
+    segs_out = []
+    for seg in raw.get("segments", []):
+        key = seg["key"]
+        state = seg["state"]
+        label_en, label_zh = CW_SEG.get(key, (key, key))
+        state_en, state_zh = CW_STATE.get(state, (state, state))
+        clause_en, clause_zh = CW_CLAUSE.get(state, ("", ""))
+        stance_en, stance_zh, stance_class = CW_STANCE.get(state, ("", "", ""))
+
+        inputs_out = []
+        for inp in seg.get("inputs", []):
+            ik = inp["key"]
+            ist = inp["state"]
+            ilabel_en, ilabel_zh = CW_INPUT.get(ik, (ik, ik))
+            iread_en, iread_zh = CW_READ.get((ik, ist), ("not available", "暂无数据"))
+            inputs_out.append({
+                "key": ik, "label_en": ilabel_en, "label_zh": ilabel_zh,
+                "read_en": iread_en, "read_zh": iread_zh,
+                "state": ist, "as_of": inp.get("as_of"),
+            })
+
+        change = seg.get("change")
+        if change:
+            change_en, change_zh = CW_CHANGE.get(
+                (change["input"], change["to_state"]), CW_CHANGE_NONE)
+        else:
+            change_en, change_zh = CW_CHANGE_NONE
+
+        # Tier-2 receipt: technicals banned from Tier 1 live only here.
+        tip_en = (
+            f"FRED series behind this segment's spread; percentile over the trailing "
+            f"{cwn.RANGE_WINDOW} observations, drift over the trailing {cwn.DRIFT_WINDOW}. "
+            f"Coincident read; never scored."
+        )
+        tip_zh = (
+            f"该分段利差对应的FRED序列；百分位基于近{cwn.RANGE_WINDOW}个观测值，"
+            f"变动基于近{cwn.DRIFT_WINDOW}个观测值。同期读数；从不计分。"
+        )
+
+        segs_out.append({
+            "key": key, "label_en": label_en, "label_zh": label_zh,
+            "state": state, "state_en": state_en, "state_zh": state_zh,
+            "clause_en": clause_en, "clause_zh": clause_zh,
+            "tip_en": tip_en, "tip_zh": tip_zh,
+            "rail": seg.get("rail"),
+            "inputs": inputs_out,
+            "change_en": change_en, "change_zh": change_zh,
+            "stance_en": stance_en, "stance_zh": stance_zh, "stance_class": stance_class,
+            "n_inputs": seg.get("n_inputs"), "n_expected": seg.get("n_expected"),
+            "low_confidence": seg.get("low_confidence"),
+        })
+
+    return {"segments": segs_out, "as_of": raw.get("as_of"), "calendar": raw.get("calendar")}
 AFTER_COLOR = {"trails": C["red"], "tracks": C["amber"], "beats": "#1FA971"}
 # lock-up status → (EN label, ZH label, colour)
 LOCK_STATUS = {
@@ -750,6 +865,7 @@ def build() -> str:
         "avoid": avoid, "changed": changed,
         "hk": _hk_vm(),
         "chart_aftermarket": _chart_aftermarket(),
+        "credit_window": _credit_window_vm(cwn.window_state()),
     }
 
     from jinja2 import Environment, FileSystemLoader
