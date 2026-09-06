@@ -215,6 +215,53 @@ def test_row_accounting_repair_is_written():
         assert "not a canonical issuer join" in notes
 
 
+def test_valuation_source_ruling_is_cited():
+    """Round-2 GAP-2 fix: MO-PAID-035/037 must cite the F07 valuation-source DEC
+    (not yet merged to main, so the citation names its landing PR) next to a
+    checkable code fact, so the citation can be checked today."""
+    text = _docket_text()
+    for row_id in ("MO-PAID-035", "MO-PAID-037"):
+        section = _row_section(text, row_id)
+        assert "**Valuation-source ruling:**" in section, f"{row_id} missing Valuation-source ruling line"
+        assert "DEC:F07-VALUATION-SOURCE-IS-SEC-COMPANYFACTS-V1" in section
+        assert "macro#6903" in section
+        assert "engine/stock_fundamentals.py:1815" in section
+
+
+def test_plain_language_repair_statement_is_authored_and_truthful():
+    """Round-2 GAP-3 fix, corrected for round-2-review MAJOR 2: the docket and
+    ledger must state what the record now REQUIRES, not assert a present-tense
+    product guarantee this records-only packet does not implement or enforce."""
+    text = _docket_text()
+    assert "Plain-language repair statement, MO-DELTA-025 / MO-PAID-066" in text
+    assert "Plain-language repair statement, MO-PAID-019 / MO-PAID-029" in text
+    assert "records-only and changes no page" in text
+    # Banned: present-tense "the fix already does X" framing for a packet that
+    # ships no surface and cannot enforce anything on a live page.
+    banned = ("the fix makes sure", "the fix keeps that number", "the fix describes that grouping")
+    lowered = text.lower()
+    for phrase in banned:
+        assert phrase not in lowered, f"unenforceable present-tense guarantee reintroduced: {phrase!r}"
+
+    _, _, by_id = _csv_rows()
+    for row_id in ("MO-DELTA-025", "MO-PAID-066", "MO-PAID-019", "MO-PAID-029"):
+        notes = by_id[row_id][14]
+        assert "Plain-language:" in notes, f"{row_id} missing plain-language narrative"
+        assert "no page is changed by this packet" in notes, f"{row_id} plain-language text is not truthful about scope"
+        assert "the fix" not in notes.lower(), f"{row_id} still claims an implemented fix"
+
+
+def test_adjudication_notes_verbatim_claim_is_scoped_to_the_quoted_repair():
+    """Round-2-review MINOR 2 fix: the adjudication_notes column carries the
+    charter 10.3 repair text verbatim AND a separately-appended, paraphrased
+    plain-language statement -- the docket must not claim the whole column is
+    'written verbatim', which a byte-for-byte comparison would then fail."""
+    text = _docket_text()
+    assert "carry a row-accounting repair, written verbatim into their" not in text
+    assert "written verbatim" in text  # the charter 10.3 quote itself is still verbatim
+    assert "paraphrased, not verbatim" in text
+
+
 def test_dec_record_shape():
     text = F2.read_text(encoding="utf-8")
     assert text.startswith("---\n")
