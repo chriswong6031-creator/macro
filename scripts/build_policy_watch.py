@@ -217,6 +217,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("scorecard skipped: %s", e)
 
+    # deterministic policy lifecycle (no LLM) — owner: engine.policy_intent_desk
+    lifecycle = None
+    try:
+        from engine import policy_intent_desk as _pid
+        _pid.ingest_lifecycle(config.ROOT)      # nightly-gated, idempotent
+        lifecycle = _pid.lifecycle_view(config.ROOT)
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy lifecycle skipped: %s", e)
+
     verified_en, verified_zh = _verified_labels(intel.get("as_of"))
     source_links = [{"url": url, "label": source_label(url)} for url in intel.get("sources", [])]
     featured_predictions = _featured_predictions(preds, dates)
@@ -228,6 +237,7 @@ def main() -> int:
         generated_utc=built, verified_en=verified_en, verified_zh=verified_zh,
         source_links=source_links, featured_predictions=featured_predictions, brief=brief,
         active_section="research", active_page="policy_watch",
+        lifecycle=lifecycle,
     )
     # Jinja's language branches leave indentation on otherwise-empty lines.
     # Normalize it here so the committed artifact stays diff-clean after every build.

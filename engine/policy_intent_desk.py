@@ -504,6 +504,303 @@ def score(root=None, today=None) -> dict:
                 "overall": {"n": 0}, "calibration_note": "scorer error"}
 
 
+
+# --------------------------------------------------------------------------- #
+# deterministic policy lifecycle state machine (NO LLM) — MO-DELTA-032          #
+# Per-item state projection ledger over the operator-signed substrate. Never    #
+# imports synthesize/_SYSTEM/call/master_brain. Nightly-gated ingest; pure fold.#
+# --------------------------------------------------------------------------- #
+import hashlib
+import logging
+import json as _json
+from pathlib import Path
+
+log = logging.getLogger(__name__)
+
+LIFECYCLE_SCHEMA = "policy_lifecycle.v1"
+LIFECYCLE_STAGES = ("proposed", "passed", "in_force", "enforced")
+LIFECYCLE_TERMINAL = ("withdrawn", "struck_down", "superseded")
+LIFECYCLE_NULLS = ("unknown", "no_coverage", "rights_suppressed")
+LIFECYCLE_EVENT_TYPES = LIFECYCLE_STAGES + LIFECYCLE_TERMINAL + ("correction", "reinstated")
+
+_STAGE_RANK = {s: i for i, s in enumerate(LIFECYCLE_STAGES)}
+
+
+def _lifecycle_source_label(url):
+    from urllib.parse import urlparse
+    host = urlparse(str(url or "")).netloc.lower().split(":", 1)[0]
+    host = host.removeprefix("www.")
+    known = {
+        "federalreserve.gov": "Federal Reserve",
+        "home.treasury.gov": "U.S. Treasury",
+        "treasury.gov": "U.S. Treasury",
+        "whitehouse.gov": "White House",
+        "energy.gov": "Energy Department",
+        "sec.gov": "SEC",
+        "nato.int": "NATO",
+        "congress.gov": "Congress",
+        "supremecourt.gov": "Supreme Court",
+        "cmegroup.com": "CME Group",
+        "federalregister.gov": "Federal Register",
+    }
+    return known.get(host, host or "source")
+
+
+def lifecycle_events(root=None) -> list[dict]:
+    """Read the append-only lifecycle event store. Missing file -> []. Never raises."""
+    try:
+        p = Path(root) / "data" / "policy_lifecycle" / "events.jsonl" if root else Path("data/policy_lifecycle/events.jsonl")
+        if not p.exists():
+            return []
+        rows = []
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(_json.loads(line))
+            except Exception as e:  # noqa: BLE001
+                log.warning("policy_lifecycle: skipping malformed event line: %s", e)
+        return rows
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy_lifecycle: read failed: %s", e)
+        return []
+
+
+def ingest_lifecycle(root=None) -> int:
+    """Deterministic, idempotent ingest from the operator-signed substrate into the
+    append-only event store. Nightly-gated. NEVER raises. Never LLM-derived."""
+    if not _ledger_advance_enabled():
+        return 0
+    try:
+        root_path = Path(root) if root else Path(".")
+        intel_path = root_path / "data" / "policy" / "intel.json"
+        if not intel_path.exists():
+            return 0
+        intel = _json.loads(intel_path.read_text())
+        raw_events = intel.get("policy_lifecycle")
+        if not raw_events:
+            return 0
+        rejects = 0
+        candidates = []
+        for ev in raw_events:
+            if not isinstance(ev, dict):
+                rejects += 1
+                continue
+            typ = ev.get("type")
+            item_id = ev.get("item_id")
+            event_date = ev.get("event_date")
+            source = ev.get("source") or {}
+            if typ not in LIFECYCLE_EVENT_TYPES or not item_id or not event_date or not source.get("url"):
+                rejects += 1
+                continue
+            candidates.append(ev)
+        if rejects:
+            log.warning("policy_lifecycle: rejected %d malformed substrate rows", rejects)
+        if not candidates:
+            return 0
+        store_dir = root_path / "data" / "policy_lifecycle"
+        store_dir.mkdir(parents=True, exist_ok=True)
+        store_path = store_dir / "events.jsonl"
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        rows = []
+        for ev in candidates:
+            key = "|".join([
+                str(ev.get("item_id")), str(ev.get("type")),
+                str(ev.get("event_date")), str((ev.get("source") or {}).get("url")),
+            ])
+            event_id = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+            row = dict(ev)
+            row["event_id"] = event_id
+            row["id"] = event_id  # desk_ledger.reject_existing_ids keys on "id"
+            row["logged_at"] = now
+            row["schema"] = LIFECYCLE_SCHEMA
+            row.setdefault("corrects", None)
+            row.setdefault("reason", None)
+            rows.append(row)
+        rows = _ledger_law.reject_existing_ids(store_path, rows, "policy_lifecycle")
+        with open(store_path, "a") as fh:
+            for row in rows:
+                fh.write(_json.dumps(row, default=str) + "\n")
+        return len(rows)
+    except Exception as e:  # noqa: BLE001
+        log.warning("policy_lifecycle: ingest failed: %s", e)
+        return 0
+
+
+def fold_lifecycle(events: list[dict], registry: list[dict]) -> list[dict]:
+    """Pure, no IO, no clock. Folds a per-item event list against a registry of
+    tracked items into the frozen per-item state projection."""
+    by_item: dict[str, list[dict]] = {}
+    for ev in events or []:
+        by_item.setdefault(ev.get("item_id"), []).append(ev)
+
+    out = []
+    for reg in registry or []:
+        item_id = reg.get("id")
+        item_events = sorted(
+            by_item.get(item_id, []),
+            key=lambda e: (
+                e.get("known_at") or "",
+                _STAGE_RANK.get(e.get("type"), -1),
+                e.get("event_id") or "",
+            ),
+        )
+        if not item_events:
+            out.append({
+                "id": item_id,
+                "title_en": reg.get("title_en"), "title_zh": reg.get("title_zh"),
+                "jurisdiction": reg.get("jurisdiction"),
+                "jurisdiction_en": reg.get("jurisdiction_en"), "jurisdiction_zh": reg.get("jurisdiction_zh"),
+                "state": "unknown", "stage_rank": None, "reached": [], "gaps": [],
+                "state_asof": None, "known_at": None, "source": None,
+                "next_step": None, "stalled": False, "corrected": False,
+                "conflict": False, "why": "no_document",
+            })
+            continue
+
+        state = "unknown"
+        stage_rank = None
+        reached: list[str] = []
+        gaps: list[str] = []
+        state_asof = None
+        known_at = None
+        source = None
+        corrected = False
+        conflict = False
+        terminal_frozen = False
+        pre_terminal = None  # snapshot to restore on reinstated
+
+        for ev in item_events:
+            typ = ev.get("type")
+            if typ == "correction":
+                corrected = True
+                # re-derive nothing special here beyond marking corrected; the
+                # corrected event's own effect (if any ladder/terminal payload
+                # is embedded) is handled by its own type below when present.
+                continue
+            if typ == "reinstated":
+                if terminal_frozen and pre_terminal is not None:
+                    state = pre_terminal["state"]
+                    stage_rank = pre_terminal["stage_rank"]
+                    reached = list(pre_terminal["reached"])
+                    state_asof = pre_terminal["state_asof"]
+                    known_at = pre_terminal["known_at"]
+                    source = pre_terminal["source"]
+                terminal_frozen = False
+                continue
+            if terminal_frozen:
+                # later ordinary events do not resurrect a terminal state
+                continue
+            if typ in LIFECYCLE_TERMINAL:
+                pre_terminal = {
+                    "state": state, "stage_rank": stage_rank, "reached": list(reached),
+                    "state_asof": state_asof, "known_at": known_at, "source": source,
+                }
+                state = typ
+                terminal_frozen = True
+                state_asof = ev.get("event_date")
+                known_at = ev.get("known_at")
+                src = ev.get("source") or {}
+                source = {
+                    "url": src.get("url"), "label": _lifecycle_source_label(src.get("url")),
+                    "title": src.get("title"), "doc_id": src.get("doc_id"),
+                }
+                continue
+            # ladder event
+            rank = _STAGE_RANK.get(typ)
+            if rank is None:
+                continue
+            if stage_rank is None or rank > stage_rank:
+                stage_rank = rank
+                state = typ
+                reached = list(LIFECYCLE_STAGES[: rank + 1])
+                gaps = [s for s in LIFECYCLE_STAGES[: rank + 1] if s not in reached] or gaps
+                # compute gaps from actually-observed ladder events, not just rank
+                observed_types = {e.get("type") for e in item_events if e.get("type") in LIFECYCLE_STAGES}
+                gaps = [s for s in LIFECYCLE_STAGES[: rank + 1] if s not in observed_types]
+                state_asof = ev.get("event_date")
+                known_at = ev.get("known_at")
+                src = ev.get("source") or {}
+                source = {
+                    "url": src.get("url"), "label": _lifecycle_source_label(src.get("url")),
+                    "title": src.get("title"), "doc_id": src.get("doc_id"),
+                }
+            else:
+                conflict = True
+
+        next_step = None
+        if stage_rank is not None and not terminal_frozen and stage_rank + 1 < len(LIFECYCLE_STAGES):
+            next_step = {"stage": LIFECYCLE_STAGES[stage_rank + 1], "date": None}
+
+        why = None
+        if state == "unknown":
+            why = "no_document"
+
+        out.append({
+            "id": item_id,
+            "title_en": reg.get("title_en"), "title_zh": reg.get("title_zh"),
+            "jurisdiction": reg.get("jurisdiction"),
+            "jurisdiction_en": reg.get("jurisdiction_en"), "jurisdiction_zh": reg.get("jurisdiction_zh"),
+            "state": state, "stage_rank": stage_rank, "reached": reached, "gaps": gaps,
+            "state_asof": state_asof, "known_at": known_at, "source": source,
+            "next_step": next_step, "stalled": False, "corrected": corrected,
+            "conflict": conflict, "why": why,
+        })
+    return out
+
+
+def lifecycle_view(root=None) -> dict:
+    """Reads the substrate + store, folds, returns the frozen view model. Never raises."""
+    try:
+        root_path = Path(root) if root else Path(".")
+        intel_path = root_path / "data" / "policy" / "intel.json"
+        intel = {}
+        if intel_path.exists():
+            try:
+                intel = _json.loads(intel_path.read_text())
+            except Exception as e:  # noqa: BLE001
+                log.warning("policy_lifecycle: intel parse failed: %s", e)
+        registry = []
+        for lever in ((intel.get("administration") or {}).get("verified_levers") or []):
+            registry.append({
+                "id": lever.get("id"), "title_en": lever.get("title_en"), "title_zh": lever.get("title_zh"),
+                "jurisdiction": lever.get("jurisdiction"),
+                "jurisdiction_en": lever.get("jurisdiction_en"), "jurisdiction_zh": lever.get("jurisdiction_zh"),
+            })
+        events = lifecycle_events(root_path)
+        items = fold_lifecycle(events, registry)
+
+        counts = {"proposed": 0, "passed": 0, "in_force": 0, "enforced": 0, "other": 0, "unknown": 0}
+        for it in items:
+            st = it.get("state")
+            if st in counts:
+                counts[st] += 1
+            elif st == "unknown":
+                counts["unknown"] += 1
+            else:
+                counts["other"] += 1
+
+        known_ats = [it["known_at"] for it in items if it.get("known_at")]
+        as_of = max(known_ats).split("T")[0] if known_ats else intel.get("as_of")
+
+        null_reason = None
+        if registry and not events:
+            null_reason = "no_coverage"
+        elif intel.get("policy_lifecycle_suppressed"):
+            null_reason = "rights_suppressed"
+
+        return {
+            "schema": LIFECYCLE_SCHEMA, "as_of": as_of, "null_reason": null_reason,
+            "counts": counts, "items": items,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.error("policy_lifecycle: view failed: %s", e)
+        return {"schema": LIFECYCLE_SCHEMA, "as_of": None, "null_reason": "no_coverage",
+                "counts": {"proposed": 0, "passed": 0, "in_force": 0, "enforced": 0, "other": 0, "unknown": 0},
+                "items": []}
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     run(force="--force" in __import__("sys").argv)

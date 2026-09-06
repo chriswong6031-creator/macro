@@ -62,7 +62,7 @@ def test_policy_watch_template_uses_macro_ui_roles_and_plain_labels():
     for new_copy in (
         "What matters now",
         "Fed changes to watch",
-        "White House & Treasury",
+        "Stages, dated and sourced",
         "Where policy may help or hurt",
         "Calls and results",
         "See all calls",
@@ -85,3 +85,90 @@ def test_generated_policy_watch_links_resolvable_page_css():
     assert "What policymakers do, not what they say" not in page
     assert "Miran role: authored before CEA/Fed tenure" not in page
     assert "[1]" not in page
+
+
+def _render_policy_watch_with_lifecycle(lifecycle_fixture, monkeypatch, tmp_path):
+    """Renders the REAL page via scripts.build_policy_watch.main(), monkeypatching only
+    the lifecycle view so every other context var (intel, dates, fed_stance, ...) is the
+    real production shape — avoids re-guessing the whole context surface."""
+    import scripts.build_policy_watch as bpw
+    from engine import policy_intent_desk as _pid
+
+    monkeypatch.setattr(_pid, "lifecycle_view", lambda root=None: lifecycle_fixture)
+    monkeypatch.setattr(_pid, "ingest_lifecycle", lambda root=None: 0)
+
+    captured = {}
+
+    def _fake_write_page(path, html):
+        captured["html"] = html
+
+    monkeypatch.setattr(bpw, "write_page", _fake_write_page)
+    bpw.main()
+    assert "html" in captured, "build_policy_watch.main() did not render policy_watch"
+    return captured["html"]
+
+
+LIFECYCLE_FIXTURE = {
+    "schema": "policy_lifecycle.v1", "as_of": "2026-09-01", "null_reason": None,
+    "counts": {"proposed": 1, "passed": 0, "in_force": 1, "enforced": 0, "other": 0, "unknown": 1},
+    "items": [
+        {"id": "L1", "title_en": "Lever One", "title_zh": "杠杆一",
+         "jurisdiction": "US-FED", "jurisdiction_en": "United States — federal", "jurisdiction_zh": "美国联邦",
+         "state": "in_force", "stage_rank": 2, "reached": ["proposed", "passed", "in_force"], "gaps": [],
+         "state_asof": "2026-03-01", "known_at": "2026-03-02T00:00:00Z",
+         "source": {"url": "https://www.federalregister.gov/x", "label": "Federal Register", "title": "doc", "doc_id": "1"},
+         "next_step": {"stage": "enforced", "date": None},
+         "stalled": False, "corrected": False, "conflict": False, "why": None},
+        {"id": "L2", "title_en": "Lever Two", "title_zh": "杠杆二",
+         "jurisdiction": "US-FED", "jurisdiction_en": "United States — federal", "jurisdiction_zh": "美国联邦",
+         "state": "proposed", "stage_rank": 0, "reached": ["proposed"], "gaps": [],
+         "state_asof": "2026-01-01", "known_at": "2026-01-02T00:00:00Z",
+         "source": {"url": "https://www.federalregister.gov/y", "label": "Federal Register", "title": "doc", "doc_id": "2"},
+         "next_step": {"stage": "passed", "date": None},
+         "stalled": False, "corrected": False, "conflict": False, "why": None},
+        {"id": "L3", "title_en": "Lever Three", "title_zh": "杠杆三",
+         "jurisdiction": None, "jurisdiction_en": None, "jurisdiction_zh": None,
+         "state": "unknown", "stage_rank": None, "reached": [], "gaps": [],
+         "state_asof": None, "known_at": None, "source": None,
+         "next_step": None, "stalled": False, "corrected": False, "conflict": False, "why": "no_document"},
+    ],
+}
+
+
+def test_every_lifecycle_row_carries_state_asof_and_source(monkeypatch, tmp_path):
+    html = _render_policy_watch_with_lifecycle(LIFECYCLE_FIXTURE, monkeypatch, tmp_path)
+    assert html.count("pw-stage-asof") >= 2  # both dated items
+    assert 'href="https://www.federalregister.gov/x"' in html
+    assert 'href="https://www.federalregister.gov/y"' in html
+    assert "Not tracked yet" in html  # unknown item's typed badge
+
+
+def test_lifecycle_markup_carries_no_machine_state_names(monkeypatch, tmp_path):
+    html = _render_policy_watch_with_lifecycle(LIFECYCLE_FIXTURE, monkeypatch, tmp_path)
+    text_only = re.sub(r"<[^>]+>", " ", html)
+    for token in ("in_force", "no_document", "struck_down"):
+        assert token not in text_only, f"machine token {token!r} leaked into visible text"
+
+
+def test_lifecycle_strings_are_bilingual_and_never_in_title_attr(monkeypatch, tmp_path):
+    html = _render_policy_watch_with_lifecycle(LIFECYCLE_FIXTURE, monkeypatch, tmp_path)
+    assert "Not tracked yet" in html and "尚未跟踪" in html
+    assert "In force" in html and "已生效" in html
+    for m in re.finditer(r'title="([^"]*)"', html):
+        assert not any("\u4e00" <= ch <= "\u9fff" for ch in m.group(1)), "CJK found in a title= attribute"
+
+
+def test_light_mode_changes_the_mechanism_not_only_the_token():
+    template = (ROOT / "templates" / "policy_watch.html.j2").read_text(encoding="utf-8")
+    m = re.search(r'html\[data-theme="light"\]\s*\.pw-stage-seg\.is-current\{([^}]*)\}', template)
+    assert m, "light current-segment rule missing"
+    assert "box-shadow:none" in m.group(1)
+    assert "outline:" in m.group(1)
+    m2 = re.search(r'html\[data-theme="light"\]\s*\.pw-stage\.is-stalled\{([^}]*)\}', template)
+    assert m2, "light stalled rule missing"
+    assert "border-left" in m2.group(1)
+
+
+def test_policy_watch_l1_section_count_is_unchanged():
+    template = (ROOT / "templates" / "policy_watch.html.j2").read_text(encoding="utf-8")
+    assert template.count('<section class="pw-section"') == 7
