@@ -892,6 +892,7 @@ jobs:
           # every PR until #3358. Heal BEFORE staging so the first commit is never diverged;
           # the post-rebase --fix below STAYS (it re-copies from fresh post-rebase templates/,
           # guarding the -X theirs mid-render-merge reword case, 2026-07-07 incident).
+          python -m scripts.bake_landing_preview --fix || true
           python -m scripts.check_template_site_sync --fix || true
           python3 scripts/check_conflict_markers.py --file site/start.html
           # start runtimes single-instance (ui.start_runtime_single_instance): a stale-
@@ -990,6 +991,7 @@ jobs:
               # site/us_track_record.html with a bare `theme.css` this way). Idempotent, ~11s over
               # 3.2k pages, and BEFORE the --fix so the pairs heal from a re-stamped templates/.
               python -m scripts.optimize_assets || echo "::warning::post-rebase asset optimize FAILED — ?v= stamps may be stale"
+              python -m scripts.bake_landing_preview --fix || true
               python -m scripts.check_template_site_sync --fix || true
               # ms-board coherence guard (ui.ms_board_coherence): -X theirs resolves whole
               # conflict REGIONS toward this run's replayed render, so racing another

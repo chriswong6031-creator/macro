@@ -5034,6 +5034,17 @@ jobs:
       # steps below, so a regression here is not masked behind them.
       - name: template-site-sync token-segmentation unit tests (N-token fallback)
         run: python -m pytest tests/test_template_site_sync_tokens.py -q
+      # Acquisition-truth bake (market-os-acquisition-truth-bridge-20260903): the
+      # landing pair's #ph-data island + dossier-count claim are DERIVED regions
+      # (canonical sources: site/prophet/showcase.json + site/stocks/index.html).
+      # Drift reds CI here, right beside the pair-sync law the bake preserves —
+      # scripts/bake_landing_preview.py --fix rewrites BOTH copies byte-identically
+      # in the render lanes, so a green sync gate + a green bake check together
+      # mean the landing page's derived claims are true at this commit.
+      - name: bake_landing_preview selftest (gate fires on synthetic drift)
+        run: python3 scripts/bake_landing_preview.py --selftest
+      - name: landing #ph-data island + dossier count must match canonical artifacts
+        run: python3 scripts/bake_landing_preview.py --check
       # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5976): theme.js's lazy
       # assistant launcher (#mmb-boot stub) — the RESOLUTION guard (every
       # dynamically injected same-origin child asset must resolve from
@@ -9761,7 +9772,7 @@ jobs:
       - name: one product header + nav prefix + hover/anchor geometry
         run: python -m pytest tests/test_product_chrome.py tests/test_subdir_nav_prefix.py tests/test_nav_hover_bridge.py tests/test_nav_menu_mockup_hover.py tests/test_nav_wide_menu_anchor.py -q
       - name: landing IA + nav front-door regroup + start-page voice and publish integrity
-        run: python -m pytest tests/test_landing_navigation.py tests/test_oip_w1_nav_regroup.py tests/test_hub_welcome_persona.py tests/test_start_publish_integrity.py -q
+        run: python -m pytest tests/test_landing_navigation.py tests/test_oip_w1_nav_regroup.py tests/test_hub_welcome_persona.py tests/test_start_publish_integrity.py tests/test_landing_acquisition_truth.py -q
       - name: terminal entitlement copy + chat-allowance truth + full-screen portal contract
         run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_plans_chat_quota_truth.py tests/test_terminal_overlay_contract.py tests/test_terminal_overlay_closed_state.py -q
 

@@ -829,6 +829,7 @@ jobs:
           # red on every PR until #3358; this lane's own instance was 2026-07-23 commit
           # 4b356dd6b1a, pre-#3285). Heal BEFORE staging so the first commit is never
           # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
+          python -m scripts.bake_landing_preview --fix || true
           python -m scripts.check_template_site_sync --fix || true
           # templates/ too, and ONLY for the plain-copy HTML pairs (index.html, chat.html):
           # optimize_assets re-stamps their templates/ side because the --fix above rewrites
@@ -899,6 +900,7 @@ jobs:
               # site/us_track_record.html with a bare `theme.css` this way). Idempotent, ~11s over
               # 3.2k pages, and BEFORE the --fix so the pairs heal from a re-stamped templates/.
               python -m scripts.optimize_assets || echo "::warning::post-rebase asset optimize FAILED — ?v= stamps may be stale"
+              python -m scripts.bake_landing_preview --fix || true
               python -m scripts.check_template_site_sync --fix || true
               # ms-board coherence guard (ui.ms_board_coherence): this lane re-renders the
               # CN/HK dashboards, so -X theirs racing another render can stitch a hybrid

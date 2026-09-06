@@ -2411,6 +2411,15 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: bake_landing_preview_fix
+        module: scripts.bake_landing_preview
+        args: [--fix]
+        note: >
+          non-fatal (|| true); acquisition-truth heal immediately BEFORE the
+          ui.template_site_sync heal — re-derives the landing #ph-data island and
+          dossier-coverage count from site/prophet/showcase.json +
+          site/stocks/index.html in BOTH copies, so a mid-render rebase can never
+          ship stale baked preview values (Market OS acquisition truth bridge).
       - id: check_template_site_sync_fix
         module: scripts.check_template_site_sync
         args: [--fix]
@@ -2681,6 +2690,15 @@ lanes:
           content-derived workspace identity, compact-shell semantic equality,
           required UI markers, and the raw first-paint byte budget. Repeated
           immediately before every render commit or push after any rebase/heal.
+      - id: bake_landing_preview_fix
+        module: scripts.bake_landing_preview
+        args: [--fix]
+        note: >
+          non-fatal (|| true); acquisition-truth heal immediately BEFORE the
+          ui.template_site_sync heal — re-derives the landing #ph-data island and
+          dossier-coverage count from site/prophet/showcase.json +
+          site/stocks/index.html in BOTH copies, so a mid-render rebase can never
+          ship stale baked preview values (Market OS acquisition truth bridge).
       - id: check_template_site_sync_fix
         module: scripts.check_template_site_sync
         args: [--fix]
@@ -2975,6 +2993,15 @@ lanes:
           content-derived workspace identity, compact-shell semantic equality,
           required UI markers, and the raw first-paint byte budget. Repeated
           immediately before every render commit or push after any rebase/heal.
+      - id: bake_landing_preview_fix
+        module: scripts.bake_landing_preview
+        args: [--fix]
+        note: >
+          non-fatal (|| true); acquisition-truth heal immediately BEFORE the
+          ui.template_site_sync heal — re-derives the landing #ph-data island and
+          dossier-coverage count from site/prophet/showcase.json +
+          site/stocks/index.html in BOTH copies, so a mid-render rebase can never
+          ship stale baked preview values (Market OS acquisition truth bridge).
       - id: check_template_site_sync_fix
         module: scripts.check_template_site_sync
         args: [--fix]
@@ -3182,6 +3209,15 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: bake_landing_preview_fix
+        module: scripts.bake_landing_preview
+        args: [--fix]
+        note: >
+          non-fatal (|| true); acquisition-truth heal immediately BEFORE the
+          ui.template_site_sync heal — re-derives the landing #ph-data island and
+          dossier-coverage count from site/prophet/showcase.json +
+          site/stocks/index.html in BOTH copies, so a mid-render rebase can never
+          ship stale baked preview values (Market OS acquisition truth bridge).
       - id: check_template_site_sync_fix
         module: scripts.check_template_site_sync
         args: [--fix]

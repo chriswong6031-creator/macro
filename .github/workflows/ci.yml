@@ -159,6 +159,11 @@ on:
       - "tests/test_no_absolute_path_part_prunes.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
+      # landing acquisition-truth bake: the pair's #ph-data island + dossier-count
+      # claim must equal their canonical artifacts. Named so an edit to the bake
+      # (or its law) still runs the job that selftests and --checks it.
+      - "scripts/bake_landing_preview.py"
+      - "tests/test_landing_acquisition_truth.py"
       # chat.html header guard: the one product page that cannot {% include %} the
       # shared nav (it is a plain-copy pair) has its header RENDERED from
       # _site_nav.html.j2 instead. Named here, not just reached via templates/**,
