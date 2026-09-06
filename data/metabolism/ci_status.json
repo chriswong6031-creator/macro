@@ -1,13 +1,7 @@
 {
-  "ts": "2026-09-06T00:15:04+00:00",
-  "main_sha": "f14e05e1de03f018c196aa216d5297bd3d56820c",
+  "ts": "2026-09-06T04:54:24+00:00",
+  "main_sha": "e0d97381c40a7f148d5336cbc3c93dc07dacacfe",
   "red_required": [
-    {
-      "name": "health",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/34000140841/job/101397407617"
-    },
     {
       "name": "publish",
       "conclusion": "failure",
@@ -46,9 +40,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 103,
+  "consecutive_failures": 104,
   "sensed_shas": [
-    "f14e05e1de03f018c196aa216d5297bd3d56820c",
+    "e0d97381c40a7f148d5336cbc3c93dc07dacacfe",
     "1397014ef7815a61197c29d2b0715ca11e2f6443"
   ],
   "heartbeat_degraded": false
