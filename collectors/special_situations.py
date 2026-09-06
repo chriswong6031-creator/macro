@@ -25,14 +25,19 @@ moment a situation hit EDGAR is never overwritten on later amendments.
 """
 from __future__ import annotations
 
+import gzip
+import hashlib
 import json
 import logging
+import os
 import re
+import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -97,10 +102,16 @@ def _rate_gate() -> None:
         time.sleep(wait)
 
 
-def _get(url: str, *, as_json: bool, retries: int | None = None):
-    """GET with SEC fair-access pacing + retry/backoff. Returns text|json|None.
+def _get(url: str, *, as_json: bool, retries: int | None = None, as_bytes: bool = False):
+    """GET with SEC fair-access pacing + retry/backoff. Returns bytes|text|json|None.
     404 (e.g. weekend/holiday daily index) short-circuits to None. The pacing gate
-    is thread-safe, so concurrent callers stay collectively under the SEC ceiling."""
+    is thread-safe, so concurrent callers stay collectively under the SEC ceiling.
+
+    `as_bytes` returns `Response.content` — the EXACT acquired bytes. `Response.text` is a
+    decoded str, and re-encoding it (`errors="replace"`) is a lossy round trip, so a digest over
+    it is a digest of our own decoding rather than of the document SEC served. Any receipt that
+    claims to bind acquired bytes has to be built from `content`.
+    """
     import requests
     retries = retries if retries is not None else _cfg().get("retries", 3)
     for attempt in range(retries):
@@ -110,6 +121,8 @@ def _get(url: str, *, as_json: bool, retries: int | None = None):
             if r.status_code == 404:
                 return None
             r.raise_for_status()
+            if as_bytes:
+                return r.content
             return r.json() if as_json else r.text
         except Exception as e:  # noqa: BLE001 — tolerate per-request failure
             if attempt == retries - 1:
@@ -389,25 +402,189 @@ def _filing_text_url(cik: str, accession: str) -> str:
 
 
 def _strip_markup(html: str) -> str:
-    html = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", html)
-    html = re.sub(r"(?s)<[^>]+>", " ", html)
-    html = re.sub(r"&#?\w+;", " ", html)
-    return re.sub(r"\s+", " ", html).strip()
+    """The ONE normalized projection, owned by `engine.special_arb`.
+
+    Delegated rather than duplicated: a locator is only meaningful against an exact projection,
+    so two implementations of "strip the markup" are two documents, and the ledger reader
+    re-derives this same function from the retained bytes to re-read every span.
+    """
+    from engine import special_arb as arb
+    return arb.normalized_projection(html)
 
 
-def _fetch_filing_text(cik: str, accession: str, max_chars: int = 40000) -> str | None:
-    """Fetch + cache the stripped text of a filing's full submission (8-K body +
-    Exhibit 99.1 sit near the top). Cached so daily rebuilds never re-fetch."""
+def _fetch_filing_text(cik: str, accession: str, max_chars: int = 40000, *,
+                       reacquire: bool = False) -> str | None:
+    """Fetch + cache the stripped CANDIDATE text of a filing's full submission.
+
+    NOTE: the `.txt` this returns is a LOSSY, TRUNCATED projection and is candidate/prose cache
+    only — never a verified source object (see `_retain_source`).
+
+    `reacquire=True` is what the deal-term lane passes. Without it this function returned the
+    legacy `.txt` BEFORE `_retain_source()` ever ran, so every accession that had been cached by
+    an earlier build could never obtain a complete-source receipt: `enrich_deal_terms()` skipped
+    it, the natural build passes `fetch_missing=False`, and coverage over the whole pre-existing
+    corpus was therefore structurally ZERO — permanently, with no backfill path. On a real
+    refresh a legacy cache with no verified receipt now goes back through this same fetch owner
+    to reacquire the exact complete bytes.
+    """
     cache = config.data_dir() / GROUP / "doc_cache" / f"{accession}.txt"
-    if cache.exists():
+    if cache.exists() and not (reacquire and _source_receipt(accession) is None):
         return cache.read_text(errors="replace")
-    raw = _get(_filing_text_url(cik, accession), as_json=False)
+    url = _filing_text_url(cik, accession)
+    raw = _get(url, as_json=False, as_bytes=True)
     if not raw:
-        return None
-    txt = _strip_markup(raw)[:max_chars]
+        return cache.read_text(errors="replace") if cache.exists() else None
+    _retain_source(accession, raw, source_url=url)
+    txt = _strip_markup(raw.decode("utf-8", "replace"))[:max_chars]
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(txt)
     return txt
+
+
+# SEC full-submission headers carry the exact acceptance moment. `_strip_markup` destroys it,
+# which is precisely why the stripped cache cannot fix a reference session on its own.
+# Byte pattern and conversion are the already-proven `collectors/sec_capital_structure.py`
+# raw-submission semantics (`parse_submission`), reused rather than re-invented.
+_ACCEPTANCE_RE = re.compile(br"<ACCEPTANCE-DATETIME>\s*(\d{14})", re.I)
+_SEC_EASTERN = ZoneInfo("America/New_York")
+
+
+def parse_acceptance_datetime(raw: bytes) -> str | None:
+    """The filing's SEC acceptance moment as canonical UTC, or None.
+
+    The legacy SGML `<ACCEPTANCE-DATETIME>` clock is SEC EASTERN, and Eastern is not permanently
+    EDT: the previous implementation hard-coded `-04:00` for every filing, so every winter
+    acceptance was stamped an hour early and could select the wrong reference session around the
+    close. This is byte-equivalent to `sec_capital_structure.parse_submission().accepted_at`
+    (pinned by a test that runs both over the same bytes), which converts the Eastern wall clock
+    with the correct date-specific offset.
+    """
+    if not isinstance(raw, (bytes, bytearray)):
+        return None
+    m = _ACCEPTANCE_RE.search(bytes(raw))
+    if not m:
+        return None
+    try:
+        stamp = m.group(1).decode("ascii")
+        return (datetime.strptime(stamp, "%Y%m%d%H%M%S")
+                .replace(tzinfo=_SEC_EASTERN).astimezone(timezone.utc).isoformat())
+    except ValueError:
+        return None
+
+
+def _atomic_write(path: Path, payload: bytes) -> None:
+    """Write-then-rename with an fsync, so a crash leaves the old file, never a half file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def source_object_path(raw_sha256: str) -> Path:
+    """Where the retained object for these exact bytes lives. CONTENT-ADDRESSED.
+
+    The object used to be named by accession and written only when absent, while its receipt was
+    rewritten on every call — so an existing raw object and a freshly written digest/length
+    receipt could disagree, silently, forever. A content-addressed name cannot: the file's name
+    IS the digest of its contents, so a changed object is a different object.
+    """
+    return config.data_dir() / GROUP / "source_objects" / f"sha256-{raw_sha256}.raw.gz"
+
+
+def _retain_source(accession: str, raw: bytes, *, source_url: str | None = None) -> dict:
+    """Retain the EXACT acquired bytes, content-addressed and atomically, with a bound receipt.
+
+    Four separate defects closed here, each of which let an observation cite bytes it did not
+    descend from:
+
+    * the retained object was built from `Response.text` re-encoded with `errors="replace"` —
+      a lossy round trip, so the digest described our decoding, not SEC's document;
+    * the object was written only if absent while the receipt was rewritten every call, so the
+      two could disagree;
+    * neither was written atomically nor ever read back, so a crash mid-write produced a
+      "retained" object nobody had verified;
+    * the projection receipt described `_strip_markup(raw)[:40000]` — derived AND truncated —
+      while the observation called it `full_submission_text`, which is how "no conflicting
+      second price" became a claim the evidence never supported.
+
+    The object is published first and READ BACK (digest + byte length recomputed from disk); the
+    normalized projection is then derived from that verified readback, never from the in-memory
+    string. `raise`s rather than returning a half receipt: a receipt is a promise.
+    """
+    from engine import special_arb as arb
+
+    if not isinstance(raw, (bytes, bytearray)) or not raw:
+        raise ValueError("_retain_source requires the exact acquired bytes")
+    body = bytes(raw)
+    raw_sha = hashlib.sha256(body).hexdigest()
+    obj = source_object_path(raw_sha)
+    if not obj.exists():
+        _atomic_write(obj, gzip.compress(body))
+    # readback: prove what is ON DISK is what we meant to retain, before anything cites it
+    with gzip.open(obj, "rb") as fh:
+        stored = fh.read()
+    if hashlib.sha256(stored).hexdigest() != raw_sha or len(stored) != len(body):
+        obj.unlink(missing_ok=True)
+        raise OSError(f"retained source object failed readback: {obj.name}")
+
+    projection = arb.normalized_projection(stored.decode("utf-8", "replace"))
+    receipt = {
+        "schema": "special_situations.source_acquisition_receipt.v1",
+        "accession": accession,
+        "doc_id": "normalized_projection",
+        "object": obj.name,
+        "raw_sha256": raw_sha,
+        "raw_bytes": len(stored),
+        "projection_revision": arb.PROJECTION_REVISION,
+        "projection_sha256": hashlib.sha256(projection.encode("utf-8")).hexdigest(),
+        "projection_chars": len(projection),
+        "truncated": False,                 # the COMPLETE object is retained, so nothing is cut
+        "completeness": arb.COMPLETENESS_COMPLETE,
+        "acceptance_datetime": parse_acceptance_datetime(stored),
+        "acquired_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "readback_verified": True,
+        "source_url": source_url,
+    }
+    _atomic_write(_receipt_path(accession),
+                  json.dumps(receipt, sort_keys=True).encode("utf-8"))
+    return receipt
+
+
+def _receipt_path(accession: str) -> Path:
+    return config.data_dir() / GROUP / "source_objects" / f"{accession}.receipt.json"
+
+
+def _source_receipt(accession: str) -> dict | None:
+    """The retained acquisition receipt for an accession, or None if bytes were never kept."""
+    p = _receipt_path(accession)
+    if not p.exists():
+        return None
+    try:
+        receipt = json.loads(p.read_text())
+    except ValueError:
+        return None
+    return receipt if isinstance(receipt, dict) else None
+
+
+def retained_source_bytes(receipt: dict | None) -> bytes | None:
+    """The exact retained object the receipt names, or None. Verified by the CALLER."""
+    if not receipt or not receipt.get("raw_sha256"):
+        return None
+    obj = source_object_path(str(receipt["raw_sha256"]))
+    if not obj.exists():
+        return None
+    try:
+        with gzip.open(obj, "rb") as fh:
+            return fh.read()
+    except OSError:
+        return None
 
 
 def enrich_text(limit: int | None = None,
@@ -727,6 +904,318 @@ def _extraction_importance_slice(df: pd.DataFrame, percentile: int) -> pd.DataFr
     eligible = df[df["_prio"] >= threshold].copy()
     eligible = eligible.drop(columns=["_prio"], errors="ignore")
     return eligible
+
+
+# ------------------------------------------------- F09-1 evidence-bound deal terms
+
+def _observations_path() -> Path:
+    return config.data_dir() / GROUP / "observations" / "observations.jsonl"
+
+
+def _cached_body(accession: str) -> tuple[str | None, Path | None]:
+    """The legacy CANDIDATE text cache for an accession, or (None, None).
+
+    Candidate/prose only — a stripped, 40k-truncated derivation that may seed a keyword lane and
+    may never present as a verified source object. The deal-term lane reads
+    `verified_projection()` instead.
+    """
+    cache = config.data_dir() / GROUP / "doc_cache" / f"{accession}.txt"
+    if not cache.exists():
+        return None, None
+    try:
+        return cache.read_text(errors="replace"), cache
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def verified_projection(accession: str, *, _cache: dict | None = None) -> tuple[str, dict] | None:
+    """The normalized projection re-derived from the VERIFIED retained object, or None.
+
+    The extractor used to read `doc_cache/<accession>.txt` while the observation cited the
+    retained object's digest — the two were never the same bytes, and nobody checked. Here the
+    object is re-opened, its digest and byte length are recomputed against the receipt, and the
+    projection is derived from that verified readback and checked against the receipt too. Only
+    bytes that survive all three may be extracted from.
+
+    `_cache`, when passed, is an ordinary caller-owned dict (never module-global state, so it can
+    never leak between unrelated callers or tests) keyed by accession -> (projection, receipt);
+    a hit is trusted only while `raw_sha256` still matches the caller's own receipt lookup, which
+    is naturally true within one call because the caller supplies the same cache across repeated
+    reads of the SAME on-disk ledger (reviewer finding, macro#6793: read_ledger_strict() used to
+    re-gunzip + re-derive every row's projection on every call, and enrich_deal_terms() calls it
+    twice per build).
+    """
+    from engine import special_arb as arb
+    if _cache is not None and accession in _cache:
+        return _cache[accession]
+    receipt = _source_receipt(accession)
+    if not receipt or not receipt.get("readback_verified"):
+        return None
+    stored = retained_source_bytes(receipt)
+    if stored is None:
+        return None
+    if hashlib.sha256(stored).hexdigest() != receipt.get("raw_sha256") or \
+            len(stored) != receipt.get("raw_bytes"):
+        log.warning("special_situations: retained object disagrees with its receipt (%s)",
+                    accession)
+        return None
+    projection = arb.normalized_projection(stored.decode("utf-8", "replace"))
+    if hashlib.sha256(projection.encode("utf-8")).hexdigest() != receipt.get("projection_sha256") \
+            or len(projection) != receipt.get("projection_chars") \
+            or receipt.get("projection_revision") != arb.PROJECTION_REVISION:
+        log.warning("special_situations: normalized projection disagrees with its receipt (%s)",
+                    accession)
+        return None
+    result = (projection, receipt)
+    if _cache is not None:
+        _cache[accession] = result
+    return result
+
+
+# Reviewer finding (macro#6793, MAJOR 5): this ran the full per-event `iterrows()` loop —
+# including one `_resolved_listing_currency()` (parquet schema open) per row — up to THREE times
+# per build (twice inside `read_ledger_strict()`, once from `_load_observations()`). Module-level
+# cache keyed by the events file's own (path, mtime, size): a changed events table naturally
+# misses instead of serving a stale hit, and an unchanged one is scanned once, not three times.
+_AUTHORITY_CACHE: dict[tuple[str, int, int], dict[str, dict]] = {}
+
+
+def canonical_event_authority() -> dict[str, dict]:
+    """accession -> the owner-native facts an observation may NOT author for itself.
+
+    One authority, consumed by BOTH ledger readers (this module's `read_ledger_strict()` and
+    `engine.special_situations._load_observations()`), so neither path is the lenient one. The
+    values come from the canonical Special Situations event table and the per-ticker Yahoo
+    `close_price` owner — never from the observation row, which is untrusted input.
+
+    Reusable within a build: the result is memoized per (events file path, mtime, size), so a
+    build calling this several times over the same unchanged events table scans it once.
+    """
+    from engine import special_arb as arb
+    p = _events_path()
+    try:
+        st = p.stat()
+        key: tuple[str, int, int] | None = (str(p), st.st_mtime_ns, st.st_size)
+    except OSError:
+        key = None
+    if key is not None and key in _AUTHORITY_CACHE:
+        return _AUTHORITY_CACHE[key]
+    out: dict[str, dict] = {}
+    df = _read_events()
+    if df is None or getattr(df, "empty", True):
+        if key is not None:
+            _AUTHORITY_CACHE[key] = out
+        return out
+    for _, r in df.iterrows():
+        accession = str(r.get("accession") or "")
+        if not accession:
+            continue
+        ticker = r.get("ticker")
+        currency = _resolved_listing_currency(ticker)
+        out[accession] = {
+            "filing_date": str(r.get("date_filed") or "") or None,
+            # a listing is only "resolved" when the price owner actually proves it
+            "resolved_listing": arb.resolve_us_listing(ticker) if currency else None,
+            "currency": currency,
+        }
+    if key is not None:
+        _AUTHORITY_CACHE[key] = out
+    return out
+
+
+_LEDGER_CACHE: dict[tuple[str, int, int], tuple[list[dict], dict]] = {}
+
+
+def read_ledger_strict(*, _proj_cache: dict | None = None) -> tuple[list[dict], dict]:
+    """The whole observation ledger, validated row by row. Returns (rows, census).
+
+    FAIL CLOSED, and fail closed BEFORE writing. The producer used to scan the ledger with a
+    bare `except ValueError: continue` while collecting known ids and then append with
+    `open(..., "a")` — so a ledger that was already corrupt quietly received more rows, and a
+    crash mid-append created exactly the malformed tail the reader later reported. A ledger that
+    does not fully validate is not a ledger you may extend.
+
+    Reviewer finding (macro#6793, MAJOR 5): `enrich_deal_terms()` calls this twice per build
+    (before and after its own append), and `engine.special_situations._load_observations()` reads
+    the same ledger a third way. The RESULT is memoized per (ledger file path, mtime, size) — an
+    append changes the file's size, so the post-append call always misses and re-validates for
+    real, while two calls over the SAME unchanged bytes (a positive-control idempotency check,
+    or a caller that reads before doing anything else) reuse the first validation.
+    """
+    from engine import special_arb as arb
+    path = _observations_path()
+    census = {"lines": 0, "malformed": 0, "invalid": 0, "unbound": 0, "kept": 0, "ok": True}
+    if not path.exists():
+        return [], census
+    try:
+        st = path.stat()
+        cache_key: tuple[str, int, int] | None = (str(path), st.st_mtime_ns, st.st_size)
+    except OSError:
+        cache_key = None
+    if cache_key is not None and cache_key in _LEDGER_CACHE:
+        return _LEDGER_CACHE[cache_key]
+    rows: list[dict] = []
+    authority = canonical_event_authority()
+    for line in path.read_text(errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        census["lines"] += 1
+        try:
+            o = json.loads(line)
+        except ValueError:
+            census["malformed"] += 1
+            continue
+        if not arb.validate_observation(o):
+            census["invalid"] += 1
+            continue
+        accession = str((o.get("source") or {}).get("accession") or "")
+        verified = verified_projection(accession, _cache=_proj_cache) if accession else None
+        if verified is None:
+            census["unbound"] += 1
+            continue
+        projection, receipt = verified
+        if arb.rebind_observation(o, raw_bytes=projection_source_bytes(receipt) or b"",
+                                  receipt=receipt, accession=accession,
+                                  event=authority.get(accession)):
+            census["unbound"] += 1
+            continue
+        rows.append(o)
+        census["kept"] += 1
+    lineage = arb.validate_lineage(rows)
+    census["ok"] = not (census["malformed"] or census["invalid"] or census["unbound"] or lineage)
+    if lineage:
+        census["lineage"] = lineage
+    result = (rows, census)
+    if cache_key is not None:
+        _LEDGER_CACHE[cache_key] = result
+    return result
+
+
+def projection_source_bytes(receipt: dict) -> bytes | None:
+    """The retained object bytes for a receipt — the input `rebind_observation` re-digests."""
+    return retained_source_bytes(receipt)
+
+
+def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) -> int:
+    """Append immutable, source-bound deal-term observations for fixed-cash-eligible events.
+
+    Deterministic only: the extractor returns exact character spans of the cached filing bytes
+    and declines when the document does not clearly say something. The model lane keeps writing
+    `llm_terms`, but those are candidate/context and can no longer reach a published number.
+
+    Idempotent by construction — `observation_id` is a digest of (bytes, field, span, value,
+    revision), so a rebuild over unchanged inputs appends nothing.
+    """
+    from engine import special_arb as arb
+    from engine import special_situations as sse
+    df = _read_events()
+    if df is None or df.empty:
+        return 0
+    cats = [sse.classify(str(r.get("form_type") or ""), r.get("items"))[0] for _, r in df.iterrows()]
+    df = df.assign(_cat=cats)
+    eligible = df[df._cat.isin(list(arb.ARB_CATEGORIES))].copy()
+    if eligible.empty:
+        log.info("special_situations deal-term lane: no fixed-cash-eligible events")
+        return 0
+    if "date_filed" in eligible.columns:
+        eligible = eligible.sort_values("date_filed", ascending=False)
+    if limit is not None:
+        eligible = eligible.head(int(limit))
+
+    path = _observations_path()
+    # One cache for this call only (never module state — see verified_projection docstring):
+    # the ledger is read twice (before and after the append) and the same accessions recur.
+    _proj_cache: dict = {}
+    existing, census = read_ledger_strict(_proj_cache=_proj_cache)
+    if not census["ok"]:
+        # never extend a ledger that does not fully validate — appending to a corrupt ledger is
+        # how a crash-truncated tail becomes a permanent, growing integrity failure
+        print(f"::warning title=special-situations deal-term ledger integrity::refusing to "
+              f"append: {census['malformed']} malformed, {census['invalid']} invalid, "
+              f"{census['unbound']} unbound of {census['lines']} rows", flush=True)
+        log.warning("special_situations deal-term lane: ledger INTEGRITY_FAILED, no append (%s)",
+                    census)
+        return 0
+    known: set[str] = {str(o.get("observation_id")) for o in existing}
+
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    fresh: list[dict] = []
+    read = 0
+    skipped_no_receipt = 0
+    for _, r in eligible.iterrows():
+        accession = str(r.get("accession") or "")
+        cik = str(r.get("cik") or "")
+        if not accession or not cik:
+            continue
+        verified = verified_projection(accession, _cache=_proj_cache)
+        if verified is None and fetch_missing:
+            # a legacy candidate cache with no verified receipt is REACQUIRED through the
+            # existing fetch owner; `--no-refresh` never reaches this branch and stays inert
+            _fetch_filing_text(cik, accession, reacquire=True)
+            verified = verified_projection(accession, _cache=_proj_cache)
+        if verified is None:
+            skipped_no_receipt += 1
+            continue
+        body, receipt = verified
+        read += 1
+        src = arb.source_descriptor(
+            cik=cik, form_type=r.get("form_type"), accession=accession,
+            filing_date=r.get("date_filed") or r.get("date"),
+            source_url=receipt.get("source_url") or _filing_text_url(cik, accession), body=body,
+            acquired_at=receipt.get("acquired_at"),
+            body_truncated=bool(receipt.get("truncated")),
+            raw_sha256=receipt.get("raw_sha256"), raw_bytes=receipt.get("raw_bytes"),
+            acceptance_datetime=receipt.get("acceptance_datetime"),
+            doc_id=receipt.get("doc_id") or "normalized_projection",
+            resolved_listing=(arb.resolve_us_listing(r.get("ticker"))
+                              if _resolved_listing_currency(r.get("ticker")) else None),
+            projection_revision=receipt.get("projection_revision"))
+        for o in arb.extract_term_observations(
+                body, source=src, listing_currency=_resolved_listing_currency(r.get("ticker")),
+                recorded_at=now):
+            if o["observation_id"] in known:
+                continue
+            known.add(o["observation_id"])
+            fresh.append(o)
+
+    if skipped_no_receipt:
+        log.info("special_situations deal-term lane: %d accession(s) skipped — no verified "
+                 "complete-source receipt (legacy stripped cache is not a source object)",
+                 skipped_no_receipt)
+    if not fresh:
+        log.info("special_situations deal-term lane: %d bodies read, 0 new observations", read)
+        return 0
+
+    # one atomic publication of old+new, then a readback through the SAME validator
+    payload = "".join(json.dumps(o, ensure_ascii=False, sort_keys=True) + "\n"
+                      for o in existing + fresh)
+    _atomic_write(path, payload.encode("utf-8"))
+    _, after = read_ledger_strict(_proj_cache=_proj_cache)
+    if not after["ok"] or after["kept"] != len(existing) + len(fresh):
+        print("::warning title=special-situations deal-term ledger readback::published ledger "
+              f"failed its own validator: {after}", flush=True)
+        log.warning("special_situations deal-term lane: readback failed (%s)", after)
+        return 0
+    log.info("special_situations deal-term lane: %d bodies read, +%d observations",
+             read, len(fresh))
+    return len(fresh)
+
+
+def _resolved_listing_currency(ticker: object) -> str | None:
+    """"USD" only for an EXACT resolved U.S. cash-equity listing, else None.
+
+    Never `market_currency()`, which answered from ticker syntax and returned USD for any
+    dotless symbol. A bare "$" may only become an observed USD price when the resolved listing
+    receipt is in the same evidence chain, and the resolution here is a real artifact: the
+    canonical per-ticker Yahoo store exists and carries `close_price`.
+    """
+    from engine import special_arb as arb
+    from engine import special_situations as sse
+    listing = arb.resolve_us_listing(ticker)
+    if not listing:
+        return None
+    return "USD" if sse.us_listing_price_store(listing) is not None else None
 
 
 def enrich_extraction(limit: int | None = None) -> pd.DataFrame:

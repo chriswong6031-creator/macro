@@ -778,3 +778,110 @@ def test_diff_by_key_terminal_to_terminal_emits_stage(tmp_store):
     # terminated→closed: both terminal, so emits kind='stage' (not 'terminal')
     assert len(terminal_items) == 0, f"terminal→terminal must not re-emit 'terminal': {items}"
     assert len(stage_items) == 1,    f"Expected kind='stage' for terminal→terminal: {items}"
+
+
+# ---- F09-1: the context feed is a consumer of the reducer, never a reinterpreter ----------
+
+def _f09_econ(**over):
+    """A typed economics block as `_enrich_arb` now produces it."""
+    from engine import special_arb as arb
+    base = dict(schema="special_situations.cash_deal_economics.v1",
+                quality_state=arb.QUALITY_VERIFIED, reasons=[],
+                formula_revision=arb.FORMULA_REVISION,
+                extraction_revision=arb.EXTRACTION_REVISION,
+                is_context_only=True, is_signal=False, orderable=True,
+                offer_price=25.0, currency="USD", price_unit="share",
+                stated_premium_pct=45.0, stated_premium_basis="premium of approximately 45%",
+                filing_reference_premium_pct=64.58, reference_session="2026-07-16",
+                reference_price=15.19, reference_source="yahoo/ABC.parquet",
+                live_gross_spread_pct=64.58, live_session="2026-07-17", live_price=15.19,
+                # the ONE admitted provenance and its reviewed basis. This fixture used to name
+                # `breadth/_closes_cache.parquet` with `basis="close_raw"` — breadth is written
+                # `auto_adjust=True`, so the suite was pinning a false receipt as VERIFIED.
+                live_source="yahoo/ABC.parquet", sessions_behind=0,
+                price_basis=arb.PRICE_BASIS_SPLIT_ADJ, warnings=[],
+                expected_close="2026-12-15",
+                expected_close_precision="exact_date", days_to_close=151, annualized_pct=138.9,
+                calc_asof="2026-07-18", accession="0000000001-26-000001",
+                evidence={"price_per_share": {"source_url": "https://sec.gov/x"}})
+    base.update(over)
+    return base
+
+
+def _f09_sit(ticker, econ):
+    return {"ticker": ticker, "company": f"{ticker} Inc", "category": "Acquisitions",
+            "stage": "announced", "mc_musd": 500.0, "confidence": "high",
+            "source_lane": "edgar", "live": True, "terminal": None, "arb": econ}
+
+
+def test_risk_arb_top_admits_only_verified_exact_date_current_rows(tmp_store):
+    from engine import special_arb as arb
+    from engine import special_sits_intel as ssi
+
+    sits = [
+        _f09_sit("GOOD", _f09_econ()),
+        _f09_sit("WINDOW", _f09_econ(annualized_pct=None, days_to_close=None, orderable=False,
+                                     expected_close="2026-12", expected_close_precision="month",
+                                     reasons=["DATE_PRECISION_INSUFFICIENT"])),
+        _f09_sit("STALE", _f09_econ(quality_state=arb.QUALITY_STALE_PRICE, orderable=False,
+                                    sessions_behind=1, reasons=["PRICE_STALE"])),
+        _f09_sit("MIXED", _f09_econ(quality_state=arb.QUALITY_NOT_FIXED_CASH, orderable=False,
+                                    annualized_pct=None, reasons=["NOT_FIXED_CASH"])),
+    ]
+    result = ssi.build_context_feed(sits, asof="2026-07-18", root=tmp_store)
+
+    assert [r["ticker"] for r in result["risk_arb_top"]] == ["GOOD"]
+    # `with_arb` counts VERIFIED economics — GOOD and WINDOW both have grounded terms and a
+    # real spread; WINDOW simply has no observed close DAY, so it cannot be annualized.
+    # "has a typed block" is not the same as "verified", and neither is "orderable".
+    assert result["counts"]["with_arb"] == 2
+    census = result["risk_arb_census"]
+    assert census["considered"] == 4 and census["excluded"] == 3 and census["ordered"] == 1
+    assert census["by_state"][arb.QUALITY_STALE_PRICE] == 1
+    assert census["by_state"][arb.QUALITY_NOT_FIXED_CASH] == 1
+
+
+def test_every_ordered_row_carries_its_receipts(tmp_store):
+    from engine import special_sits_intel as ssi
+    result = ssi.build_context_feed([_f09_sit("GOOD", _f09_econ())], asof="2026-07-18",
+                                    root=tmp_store)
+    row = result["risk_arb_top"][0]
+    for key in ("offer_price", "currency", "stated_premium_pct",
+                "filing_reference_premium_pct", "reference_session", "live_gross_spread_pct",
+                "live_session", "sessions_behind", "price_basis", "days_to_close",
+                "annualized_pct", "expected_close_precision", "quality_state", "accession",
+                "source_url", "formula_revision", "calc_asof"):
+        assert key in row, f"ordered row missing receipt: {key}"
+    assert row["is_signal"] is False and row["is_context_only"] is True
+    assert row["display_order_basis"] == "annualized_pct"
+    # the three premium/spread numbers stay separately named — never collapsed into one
+    assert row["stated_premium_pct"] != row["filing_reference_premium_pct"] or \
+        row["stated_premium_pct"] is None
+
+
+def test_a_null_annualized_row_is_never_coerced_to_zero_and_ranked(tmp_store):
+    from engine import special_sits_intel as ssi
+    sits = [_f09_sit("NULL", _f09_econ(annualized_pct=None, orderable=False)),
+            _f09_sit("SMALL", _f09_econ(annualized_pct=2.9))]
+    result = ssi.build_context_feed(sits, asof="2026-07-18", root=tmp_store)
+    assert [r["ticker"] for r in result["risk_arb_top"]] == ["SMALL"]
+    assert all(r["annualized_pct"] is not None for r in result["risk_arb_top"])
+
+
+def test_the_lgmk_regression_shape_cannot_lead_the_context(tmp_store):
+    """The live artifact led with LGMK at 42,790.2% on an unobserved 30-day close.
+
+    Reproduced as a row whose close date was never observed: it is excluded from the ordered
+    list with a typed reason and counted in the degraded census — not clamped, not deleted.
+    """
+    from engine import special_arb as arb
+    from engine import special_sits_intel as ssi
+    lgmk = _f09_sit("LGMK", _f09_econ(
+        live_gross_spread_pct=64.57, annualized_pct=None, days_to_close=None, orderable=False,
+        expected_close="2026-12", expected_close_precision="month",
+        reasons=["DATE_PRECISION_INSUFFICIENT"]))
+    result = ssi.build_context_feed([lgmk, _f09_sit("TECH", _f09_econ(annualized_pct=2.9))],
+                                    asof="2026-07-18", root=tmp_store)
+    assert [r["ticker"] for r in result["risk_arb_top"]] == ["TECH"]
+    assert result["risk_arb_census"]["excluded"] == 1
+    assert result["risk_arb_census"]["by_state"][arb.QUALITY_VERIFIED] == 2   # still visible

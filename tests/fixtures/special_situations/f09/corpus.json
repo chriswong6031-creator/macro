@@ -1,0 +1,320 @@
+{
+ "schema": "special_situations.f09_precision_corpus.v1",
+ "note": "Rights-safe canonical-phrasing excerpts. These are AUTHORED in the standard SEC merger/tender wording, not verbatim copies of any filing body: committing production filing bodies is forbidden by the operation. Each case is bound to a synthetic accession and to the sha256 of its own bytes, so the corpus is immutable and diffable.",
+ "cases": [
+  {
+   "id": "cash_acquisition_exact_date",
+   "label": "fixed-cash third-party acquisition, exact observed close date",
+   "form_type": "8-K",
+   "accession": "0000000001-26-000001",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "On September 2, 2026, the Company entered into an Agreement and Plan of Merger with Parent and Merger Sub. At the effective time, each outstanding share of common stock will be converted into the right to receive $25.00 in cash per share, without interest. The all-cash transaction is expected to close on December 15, 2026, subject to customary closing conditions and regulatory approvals. The consideration represents a premium of approximately 45% to the closing price on September 1, 2026.",
+   "expect": {
+    "price_per_share": 25.0,
+    "currency": "USD",
+    "consideration": "cash",
+    "expected_close": "2026-12-15",
+    "close_precision": "exact_date",
+    "stated_premium_pct": 45.0,
+    "quality_state": "VERIFIED"
+   }
+  },
+  {
+   "id": "issuer_tender_offer",
+   "label": "issuer self-tender, cash, exact expiration-linked close",
+   "form_type": "SC TO-I",
+   "accession": "0000000002-26-000002",
+   "filing_date": "2026-08-20",
+   "listing_currency": "USD",
+   "text": "The Company is offering to purchase for cash up to 5,000,000 shares of its common stock at a price of $18.50 per share, net to the seller in cash, less any applicable withholding taxes. The tender offer is expected to be completed on October 1, 2026 unless extended.",
+   "expect": {
+    "price_per_share": 18.5,
+    "currency": "USD",
+    "consideration": "cash",
+    "expected_close": "2026-10-01",
+    "close_precision": "exact_date",
+    "quality_state": "VERIFIED"
+   }
+  },
+  {
+   "id": "going_private_13e3",
+   "label": "going-private / Schedule 13E-3, cash, quarter-only close",
+   "form_type": "SC 13E3",
+   "accession": "0000000003-26-000003",
+   "filing_date": "2026-07-15",
+   "listing_currency": "USD",
+   "text": "Pursuant to the Merger Agreement, each share of common stock held by unaffiliated stockholders will be cancelled and converted into the right to receive $7.25 in cash per share. The going-private transaction is expected to close in the fourth quarter of 2026.",
+   "expect": {
+    "price_per_share": 7.25,
+    "currency": "USD",
+    "consideration": "cash",
+    "expected_close": "2026-Q4",
+    "close_precision": "quarter",
+    "quality_state": "VERIFIED",
+    "days_to_close": null,
+    "annualized_pct": null
+   }
+  },
+  {
+   "id": "stock_only_merger",
+   "label": "all-stock merger — must never enter fixed-price math",
+   "form_type": "8-K",
+   "accession": "0000000004-26-000004",
+   "filing_date": "2026-06-10",
+   "listing_currency": "USD",
+   "text": "The parties have entered into a stock-for-stock merger under which each share will be exchanged at a fixed exchange ratio of 0.750 shares of Parent common stock. The transaction is expected to close on November 30, 2026.",
+   "expect": {
+    "price_per_share": null,
+    "consideration": "stock",
+    "quality_state": "NOT_FIXED_CASH"
+   }
+  },
+  {
+   "id": "cash_and_stock_merger",
+   "label": "cash+stock — floating leg, not a fixed price",
+   "form_type": "8-K",
+   "accession": "0000000005-26-000005",
+   "filing_date": "2026-06-11",
+   "listing_currency": "USD",
+   "text": "Each share will be converted into the right to receive $12.00 in cash per share and 0.250 shares of Parent common stock. The cash and stock consideration is expected to close on December 1, 2026.",
+   "expect": {
+    "consideration": "cash+stock",
+    "quality_state": "NOT_FIXED_CASH"
+   }
+  },
+  {
+   "id": "contingent_value_right",
+   "label": "cash plus a CVR — contingent consideration is not fixed cash",
+   "form_type": "8-K",
+   "accession": "0000000006-26-000006",
+   "filing_date": "2026-06-12",
+   "listing_currency": "USD",
+   "text": "Holders will receive $9.00 in cash per share plus one non-tradeable contingent value right per share entitling the holder to additional payments upon achievement of specified milestones. The transaction is expected to close on October 15, 2026.",
+   "expect": {
+    "consideration": "contingent",
+    "quality_state": "NOT_FIXED_CASH"
+   }
+  },
+  {
+   "id": "per_ads_versus_per_share",
+   "label": "per-ADS and per-share wording for different amounts — security identity unresolved",
+   "form_type": "8-K",
+   "accession": "0000000007-26-000007",
+   "filing_date": "2026-05-01",
+   "listing_currency": "USD",
+   "text": "Each American Depositary Share will be converted into the right to receive $30.00 in cash per American Depositary Share, representing $7.50 in cash per ordinary share. The transaction is expected to close on September 30, 2026.",
+   "expect": {
+    "price_per_share": null,
+    "quality_state": "AMBIGUOUS"
+   }
+  },
+  {
+   "id": "conflicting_candidate_prices",
+   "label": "two disagreeing cash prices in one filing — refuse, do not pick",
+   "form_type": "8-K",
+   "accession": "0000000008-26-000008",
+   "filing_date": "2026-05-02",
+   "listing_currency": "USD",
+   "text": "The merger agreement provides for $14.00 in cash per share. A prior draft term sheet referenced $16.00 in cash per share. The transaction is expected to close on October 30, 2026.",
+   "expect": {
+    "price_per_share": null,
+    "quality_state": "AMBIGUOUS"
+   }
+  },
+  {
+   "id": "dividend_negative",
+   "label": "special dividend per share must never be read as an offer price",
+   "form_type": "8-K",
+   "accession": "0000000009-26-000009",
+   "filing_date": "2026-04-01",
+   "listing_currency": "USD",
+   "text": "The Board declared a special cash dividend of $2.50 per share payable on May 1, 2026 to holders of record on April 15, 2026.",
+   "expect": {
+    "price_per_share": null
+   }
+  },
+  {
+   "id": "redemption_negative",
+   "label": "redemption price per share must never be read as an offer price",
+   "form_type": "8-K",
+   "accession": "0000000010-26-000010",
+   "filing_date": "2026-04-02",
+   "listing_currency": "USD",
+   "text": "The Company will redeem all outstanding Series A preferred stock at a redemption price of $25.00 per share plus accrued and unpaid dividends.",
+   "expect": {
+    "price_per_share": null
+   }
+  },
+  {
+   "id": "exercise_price_negative",
+   "label": "option exercise price must never be read as an offer price",
+   "form_type": "8-K",
+   "accession": "0000000011-26-000011",
+   "filing_date": "2026-04-03",
+   "listing_currency": "USD",
+   "text": "The Company granted stock options with an exercise price of $11.75 per share, vesting over four years.",
+   "expect": {
+    "price_per_share": null
+   }
+  },
+  {
+   "id": "aggregate_value_negative",
+   "label": "an aggregate transaction value must never become a per-share price",
+   "form_type": "8-K",
+   "accession": "0000000012-26-000012",
+   "filing_date": "2026-04-04",
+   "listing_currency": "USD",
+   "text": "The acquisition values the Company at an aggregate enterprise value of $1.20 billion, or approximately $34.00 per share on a fully diluted basis.",
+   "expect": {
+    "price_per_share": null
+   }
+  },
+  {
+   "id": "cross_currency_bare_dollar",
+   "label": "bare $ on a non-USD listing — currency is not observed, math must not proceed",
+   "form_type": "8-K",
+   "accession": "0000000013-26-000013",
+   "filing_date": "2026-03-01",
+   "listing_currency": "CAD",
+   "text": "Each common share will be acquired for $32.00 in cash per share. The arrangement is expected to close on August 31, 2026.",
+   "expect": {
+    "currency": null,
+    "quality_state": "AMBIGUOUS"
+   }
+  },
+  {
+   "id": "explicit_foreign_currency",
+   "label": "explicit C$ token on a CAD listing — observed, not inferred",
+   "form_type": "8-K",
+   "accession": "0000000014-26-000014",
+   "filing_date": "2026-03-02",
+   "listing_currency": "CAD",
+   "text": "Each common share will be acquired for C$32.00 in cash per share. The arrangement is expected to close on August 31, 2026.",
+   "expect": {
+    "price_per_share": 32.0,
+    "currency": "CAD",
+    "consideration": "cash"
+   }
+  },
+  {
+   "id": "month_only_close",
+   "label": "month-only close stays a window — no month-end substitution, no annualization",
+   "form_type": "8-K",
+   "accession": "0000000015-26-000015",
+   "filing_date": "2026-02-01",
+   "listing_currency": "USD",
+   "text": "Each share will be converted into the right to receive $40.00 in cash per share. The merger is expected to be completed in November 2026.",
+   "expect": {
+    "price_per_share": 40.0,
+    "expected_close": "2026-11",
+    "close_precision": "month",
+    "days_to_close": null,
+    "annualized_pct": null,
+    "quality_state": "VERIFIED"
+   }
+  },
+  {
+   "id": "vague_close",
+   "label": "'by year-end' is text, never a date",
+   "form_type": "8-K",
+   "accession": "0000000016-26-000016",
+   "filing_date": "2026-02-02",
+   "listing_currency": "USD",
+   "text": "Each share will be converted into the right to receive $6.00 in cash per share. The transaction is expected to close by year-end, subject to approvals.",
+   "expect": {
+    "price_per_share": 6.0,
+    "close_precision": "text_only",
+    "days_to_close": null,
+    "annualized_pct": null
+   }
+  },
+  {
+   "id": "amendment_price_increase",
+   "label": "amendment raising the price supersedes without editing history",
+   "form_type": "8-K/A",
+   "accession": "0000000001-26-000017",
+   "filing_date": "2026-09-20",
+   "listing_currency": "USD",
+   "text": "Amendment No. 1. The merger agreement has been amended to increase the consideration to $27.50 in cash per share. The transaction is expected to close on December 15, 2026.",
+   "expect": {
+    "price_per_share": 27.5,
+    "consideration": "cash"
+   }
+  },
+  {
+   "id": "terminated_offer",
+   "label": "a terminated deal leaves current context but keeps its history",
+   "form_type": "8-K",
+   "accession": "0000000018-26-000018",
+   "filing_date": "2026-09-01",
+   "listing_currency": "USD",
+   "text": "The previously announced merger providing for $21.00 in cash per share has been terminated by mutual agreement of the parties.",
+   "expect": {
+    "price_per_share": 21.0,
+    "quality_state": "TERMINAL",
+    "stage": "terminated"
+   }
+  },
+  {
+   "id": "empty_body",
+   "label": "unavailable / corrupt source body yields no observation at all",
+   "form_type": "8-K",
+   "accession": "0000000019-26-000019",
+   "filing_date": "2026-09-01",
+   "listing_currency": "USD",
+   "text": "",
+   "expect": {
+    "price_per_share": null,
+    "quality_state": "SOURCE_UNAVAILABLE"
+   }
+  },
+  {
+   "id": "historical_cash_proposal_current_stock_deal",
+   "label": "REQUIRED (Sol 5102199556 §6 / 5102373399 HIGH E): a rejected historical CASH proposal in Background of the Merger beside a CURRENT all-stock transaction. Reproduced at head a88c12f2 as VERIFIED, offer 48.00, spread +20%, consideration=cash.",
+   "form_type": "DEFM14A",
+   "accession": "0000000020-26-000020",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "On September 2, 2026, the Company entered into an Agreement and Plan of Merger under which each outstanding share of common stock will be converted into the right to receive 0.850 shares of Parent common stock. The stock-for-stock transaction is expected to close on December 15, 2026, subject to customary closing conditions. Background of the Merger: in March 2025 the board received and, after consultation with its advisors, rejected an unsolicited proposal from a financial sponsor to acquire the Company for $48.00 in cash per share.",
+   "expect": {
+    "price_per_share": null,
+    "consideration": "stock",
+    "quality_state": "NOT_FIXED_CASH",
+    "why": "a background/prior-proposal span may never originate current price, currency, consideration, premium or close; the current transaction has no cash per-share price, so the correct outcome is a decline, not the first price in the filing"
+   }
+  },
+  {
+   "id": "prior_proposal_only_price",
+   "label": "Prior Proposals section is the ONLY per-share price in the document — the live deal is all-stock and must still publish nothing",
+   "form_type": "DEFM14A",
+   "accession": "0000000021-26-000021",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "The parties agreed to an all-stock combination in which each share will be exchanged for 1.200 shares of Parent common stock. The transaction is expected to close on December 15, 2026. Prior Proposals: the Company previously rejected an offer of $61.00 in cash per share.",
+   "expect": {
+    "price_per_share": null,
+    "consideration": "stock",
+    "quality_state": "NOT_FIXED_CASH"
+   }
+  },
+  {
+   "id": "fairness_opinion_reference_price",
+   "label": "a fairness-opinion span quoting a per-share value cannot become the offer (Opinion of ... is a disqualified section role)",
+   "form_type": "DEFM14A",
+   "accession": "0000000022-26-000022",
+   "filing_date": "2026-09-02",
+   "listing_currency": "USD",
+   "text": "At the effective time each share of common stock will be converted into the right to receive $32.00 in cash per share. The all-cash transaction is expected to close on December 15, 2026. Opinion of the Financial Advisor: the advisor observed a discounted cash flow range implying $57.00 per share.",
+   "expect": {
+    "price_per_share": 32.0,
+    "currency": "USD",
+    "consideration": "cash",
+    "expected_close": "2026-12-15",
+    "close_precision": "exact_date",
+    "quality_state": "VERIFIED",
+    "why": "the current-transaction scope is the admissible opening section; the fairness opinion's $57.00 is outside it and must not create a conflict that suppresses the real, correctly-scoped $32.00"
+   }
+  }
+ ]
+}

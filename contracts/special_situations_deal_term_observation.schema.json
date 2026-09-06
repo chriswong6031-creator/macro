@@ -1,0 +1,497 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/special_situations_deal_term_observation.schema.json",
+  "title": "Special Situations deal-term observation",
+  "description": "An immutable, source-byte-bound observation of ONE directly stated deal term of a public EDGAR filing. It is not an event, a lifecycle record, a price, a score, a rank, or a trade claim. A correction never edits this record: it appends a new one that supersedes it. Sibling of contracts/capital_structure_document_term_observation.schema.json, which is scoped to registration-fee-table rows of a different owner and is therefore not reusable here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "observation_id",
+    "status",
+    "field",
+    "normalized",
+    "raw",
+    "precision",
+    "source",
+    "locator",
+    "extraction_method",
+    "extraction_revision"
+  ],
+  "properties": {
+    "schema": {
+      "const": "special_situations.deal_term_observation.v1"
+    },
+    "observation_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "CLOSED digest shape: 32 lower-case hex characters over the accession, the raw and projection digests, the projection revision, the exact locator, the field, the normalized value, the extraction revision AND the correction relation. `minLength: 8` accepted any string of 8+ characters, so a hand-authored id satisfied the published contract."
+    },
+    "prior_observation_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Correction relation, INSIDE the observation digest. While it sat outside, `link_supersession()` recomputed the id and got the same string back, so a forged link kept a valid id and pulled an unrelated accession's price into a VERIFIED deal."
+    },
+    "supersedes_observation_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Correction relation, INSIDE the observation digest. While it sat outside, `link_supersession()` recomputed the id and got the same string back, so a forged link kept a valid id and pulled an unrelated accession's price into a VERIFIED deal."
+    },
+    "status": {
+      "enum": [
+        "observed",
+        "ambiguous",
+        "deferred",
+        "retracted"
+      ]
+    },
+    "field": {
+      "enum": [
+        "price_per_share",
+        "currency",
+        "consideration",
+        "stated_premium_pct",
+        "expected_close"
+      ]
+    },
+    "normalized": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ]
+    },
+    "raw": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ]
+    },
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "currency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "currency_basis": {
+      "description": "HOW the currency was established. A bare dollar sign names no currency on its own, so an inference is never recorded as an observation.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "explicit_token",
+        "bare_dollar_unambiguous_usd_listing",
+        "bare_dollar_document_ambiguous",
+        "bare_dollar_unresolved_listing",
+        null
+      ]
+    },
+    "precision": {
+      "enum": [
+        "exact_date",
+        "month",
+        "quarter",
+        "half_year",
+        "text_only",
+        "exact_numeric"
+      ]
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accession",
+        "body_sha256",
+        "doc_id",
+        "projection_revision",
+        "completeness"
+      ],
+      "properties": {
+        "cik": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "form_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accession": {
+          "type": "string",
+          "minLength": 1
+        },
+        "filing_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "body_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 of the normalized projection the offsets index."
+        },
+        "body_chars": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "body_truncated": {
+          "type": "boolean"
+        },
+        "acquired_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "doc_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "raw_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "sha256 of the COMPLETE retained source object."
+        },
+        "raw_bytes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Byte length of that same object."
+        },
+        "projection_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "completeness": {
+          "enum": [
+            "complete",
+            "truncated",
+            "unknown"
+          ]
+        },
+        "acceptance_datetime": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 20
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "SEC acceptance / system-availability instant in canonical UTC, parsed from the source bytes. Absent is lawful and yields REFERENCE_SESSION_UNRESOLVED; a date-only value is not, because it cannot separate a premarket filing from an after-close one."
+        },
+        "resolved_listing": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9]{0,4}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The exact resolved U.S. cash-equity listing whose canonical Yahoo close_price store established the quote currency, or null. Present so a bare-dollar USD basis carries its listing receipt in the same evidence chain instead of being re-inferred from ticker syntax later."
+        }
+      }
+    },
+    "locator": {
+      "description": "Exact evidence span inside the bound bytes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "doc_id",
+        "start",
+        "end",
+        "excerpt",
+        "excerpt_sha256"
+      ],
+      "properties": {
+        "doc_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The exact excerpt bytes. Required, not optional: the reader re-reads `projection[start:end]` and compares BOTH the digest and these bytes, which is what refuses a moved span whose id was recomputed."
+        },
+        "excerpt_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "extraction_method": {
+      "const": "deterministic_regex_span"
+    },
+    "extraction_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correction_reason": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Required whenever a correction relation is present."
+    },
+    "recorded_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stated_basis": {
+      "description": "The captured comparator for a stated premium — the phrase the filing itself used (closing price on a date, VWAP, unaffected price). A percentage without one has no semantics and is not published.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "title": "an observed PRECISE term carries the complete source receipt",
+      "description": "Sol review 5102199556 §5 / addendum: raw object digest and byte length, normalized projection digest and revision, acquisition time, completeness state, document identity and the locator excerpt are required for any observed precise term — the schema previously required none of them, so a row could be VERIFIED while citing bytes nobody retained.",
+      "if": {
+        "required": [
+          "status",
+          "precision"
+        ],
+        "properties": {
+          "status": {
+            "const": "observed"
+          },
+          "precision": {
+            "enum": [
+              "exact_numeric",
+              "exact_date"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source": {
+            "required": [
+              "accession",
+              "body_sha256",
+              "doc_id",
+              "projection_revision",
+              "completeness",
+              "raw_sha256",
+              "raw_bytes",
+              "acquired_at"
+            ],
+            "properties": {
+              "completeness": {
+                "const": "complete"
+              },
+              "raw_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "raw_bytes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "acquired_at": {
+                "type": "string",
+                "minLength": 1
+              },
+              "body_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "projection_revision": {
+                "type": "string",
+                "minLength": 1
+              },
+              "doc_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "accession": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "locator": {
+            "required": [
+              "doc_id",
+              "start",
+              "end",
+              "excerpt",
+              "excerpt_sha256"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "a correction relation is complete and explained, or wholly absent",
+      "if": {
+        "properties": {
+          "supersedes_observation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "prior_observation_id",
+          "supersedes_observation_id",
+          "correction_reason"
+        ],
+        "properties": {
+          "prior_observation_id": {
+            "type": "string"
+          },
+          "correction_reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    {
+      "title": "a correction reason without a relation is meaningless",
+      "if": {
+        "properties": {
+          "correction_reason": {
+            "type": "string"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "supersedes_observation_id": {
+            "type": "string"
+          },
+          "prior_observation_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "supersedes_observation_id",
+          "prior_observation_id"
+        ]
+      }
+    },
+    {
+      "title": "an observed bare-dollar USD price carries its resolved listing receipt",
+      "description": "No observed bare-dollar USD basis without the exact resolved listing in the same evidence chain (Sol addendum). `market_currency()` returned USD for any dotless ticker, so BABA and ADS1 both minted a USD listing from syntax.",
+      "if": {
+        "required": [
+          "status",
+          "currency_basis"
+        ],
+        "properties": {
+          "status": {
+            "const": "observed"
+          },
+          "currency_basis": {
+            "const": "bare_dollar_unambiguous_usd_listing"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "currency": {
+            "const": "USD"
+          },
+          "source": {
+            "required": [
+              "resolved_listing"
+            ],
+            "properties": {
+              "resolved_listing": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9]{0,4}$"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

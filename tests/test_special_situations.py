@@ -14,6 +14,9 @@ These are the load-bearing invariants: the collector must capture Schedule 13D/A
 """
 from __future__ import annotations
 
+import inspect
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -22,7 +25,7 @@ from collectors import special_situations as ss
 from engine import special_situations as sse
 from scripts import ingest_digest_db as idb
 from scripts import backtest_special_situations as bt
-from datetime import date
+from datetime import date, datetime, timezone
 
 
 # ---- fixtures ---------------------------------------------------------------
@@ -683,3 +686,909 @@ def test_snapshot_is_context_only(tmp_path, monkeypatch):
     assert "disclaimer" in snap
     assert snap["counts"].get("Activist Campaigns") == 1
     assert snap["coverage"]["floor_musd"] == 100.0
+
+
+# ---- F09-1: evidence-bound cash-deal economics, end to end -------------------
+#
+# The published 42,790.2% annualized spread had essentially no test coverage: one
+# `"risk_arb_top" in result` assertion stood between an ungrounded number and the machine
+# context every Neural Web consumer reads. These pin the wiring, not just the pure math.
+
+NOW_UTC = datetime(2026, 6, 18, 22, 0, tzinfo=timezone.utc)   # 18:00 ET, after the 06-18 close
+
+_CASH_EXACT = ("Each share of common stock will be converted into the right to receive $25.00 "
+               "in cash per share. The transaction is expected to close on December 15, 2026.")
+_CASH_MONTH = ("Each share of common stock will be converted into the right to receive $25.00 "
+               "in cash per share. The transaction is expected to close in November 2026.")
+_ACC = "0000000001-26-000001"
+
+
+def _submission(text: str, *, accepted: str = "20260617173100") -> bytes:
+    """A minimal SEC full-submission body: SGML acceptance header + document text, as BYTES.
+
+    The acceptance stamp is SEC EASTERN wall-clock, exactly as EDGAR writes it, because the
+    reference session is derived from that instant and nothing else may stand in for it.
+    """
+    return (f"<SEC-DOCUMENT>x.txt<ACCEPTANCE-DATETIME>{accepted}\n<DOCUMENT>"
+            f"{text}</DOCUMENT>").encode("utf-8")
+
+
+def _yahoo_store(tmp_path, ticker, sessions, closes, *, column="close_price"):
+    """The ONE price provenance V1 admits: `data/yahoo/<T>.parquet::close_price`."""
+    d = tmp_path / "yahoo"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({column: list(closes)}, index=pd.to_datetime(sessions)).to_parquet(
+        d / f"{ticker}.parquet")
+    return d / f"{ticker}.parquet"
+
+
+def _f09_env(tmp_path, monkeypatch, *, text, sessions, ticker="ABC", last_close=15.19,
+             filed="2026-06-17", category="Acquisitions", accepted="20260617173100",
+             accession=_ACC, price_column="close_price", run_producer=True):
+    """A tmp data dir carrying one arb-category event, its RETAINED source object, the
+    per-ticker Yahoo store, and a ledger written by the REAL producer.
+
+    The ledger is no longer hand-built. It used to be assembled in the test from a source
+    descriptor the test invented, so the test could not have caught either of the two defects
+    that mattered: that the extractor read a legacy `doc_cache/*.txt` while the observation cited
+    the retained object's digest, and that nothing ever re-opened those bytes at load time.
+    Retaining a real submission and running `enrich_deal_terms()` exercises the actual seam.
+    """
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({1: ticker}, {}))
+    root = tmp_path / "special_situations"
+    root.mkdir(exist_ok=True)
+    pd.DataFrame([{"id": 9, "ticker": ticker, "company": f"{ticker} Inc", "country": "US",
+                   "category": category, "issue": 19, "issue_date": "2026-06-14",
+                   "market_cap_musd": 500.0, "summary": "deal", "source_url": "u",
+                   "headline": "h"}]).to_parquet(root / "digest_db.parquet")
+    pd.DataFrame([{"id": accession, "form_type": "DEFM14A", "company": f"{ticker} Inc",
+                   "cik": "1", "accession": accession, "ticker": ticker, "items": None,
+                   "date_filed": filed, "source_url": "edgarurl"}]
+                 ).to_parquet(root / "events.parquet")
+    _yahoo_store(tmp_path, ticker, sessions, [last_close] * len(sessions), column=price_column)
+    ss._retain_source(accession, _submission(text, accepted=accepted),
+                      source_url=f"https://sec.gov/{accession}.txt")
+    if run_producer:
+        ss.enrich_deal_terms()
+    return accession
+
+
+def _sit(ticker="ABC", *, accession=_ACC, **kw):
+    row = {"ticker": ticker, "company": f"{ticker} Inc", "category": "Acquisitions",
+           "accession": accession, "cik": "1", "stage": "pending", "date_filed": "2026-06-17"}
+    row.update(kw)
+    return row
+
+
+def test_enrich_arb_publishes_receipts_not_bare_numbers(tmp_path, monkeypatch):
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] == arb.QUALITY_VERIFIED
+    assert e["offer_price"] == 25.0 and e["currency"] == "USD"
+    # a real exchange session, the ONE admitted artifact and its reviewed basis — not "the last
+    # non-null row of whichever concatenated panel happened to carry this column"
+    assert e["live_session"] == "2026-06-18" and e["sessions_behind"] == 0
+    assert e["live_source"] == "yahoo/ABC.parquet"
+    assert e["price_basis"] == arb.PRICE_BASIS_SPLIT_ADJ
+    assert len(e["live_artifact_sha256"]) == 64
+    # the reference session is strictly BEFORE SEC availability, not a 30-row lookback
+    assert e["reference_session"] == "2026-06-16"
+    assert e["accession"] == _ACC
+    assert e["evidence"]["price_per_share"]["locator"]["end"] > 0
+    # a VERIFIED row carries no failure reasons; informational gaps are warnings
+    assert e["reasons"] == []
+
+
+def test_enrich_arb_marks_a_stale_close_instead_of_pricing_off_it(tmp_path, monkeypatch):
+    """The market has moved on two sessions; this listing's store has not."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-15", "2026-06-16"])
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    # 2, recomputed from the calendar: 06-17 and 06-18 both completed after this store's tip.
+    # A count derived from the price store itself can only ever see rows the store contains,
+    # which is exactly what let a frozen store report every listing as current.
+    assert e["quality_state"] == arb.QUALITY_STALE_PRICE and e["sessions_behind"] == 2
+    assert e["calendar_owner"] == "lib/nyse_calendar.py"
+    assert e["orderable"] is False
+    assert e["live_gross_spread_pct"] is not None      # visible …
+    assert e["quality_state"] != arb.QUALITY_VERIFIED  # … never verified
+
+
+def test_enrich_arb_never_invents_a_close_day(tmp_path, monkeypatch):
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_MONTH, sessions=["2026-06-16", "2026-06-18"])
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["expected_close"] == "2026-11" and e["expected_close_precision"] == "month"
+    assert e["days_to_close"] is None and e["annualized_pct"] is None
+    assert e["quality_state"] == arb.QUALITY_VERIFIED and e["orderable"] is False
+    assert "DATE_PRECISION_INSUFFICIENT" in e["warnings"] and e["reasons"] == []
+
+
+def test_enrich_arb_without_observations_is_degraded_not_absent(tmp_path, monkeypatch):
+    """The LLM lane may still hold `llm_terms`; with no observation ledger there is no number."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    (tmp_path / "special_situations" / "observations" / "observations.jsonl").write_text("")
+    sits = [_sit(deal_terms={"price_per_share": 25.0, "consideration": "cash"})]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] == arb.QUALITY_SOURCE_UNAVAILABLE
+    assert e["offer_price"] is None and e["live_gross_spread_pct"] is None
+
+
+def test_mastermind_emit_and_context_feed_cannot_diverge(tmp_path, monkeypatch):
+    """The mutant that shipped: one consumer excluded a row the other ranked first."""
+    from engine import special_arb as arb
+    from engine import special_sits_intel as si
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    sits = [_sit(), _sit("MIX")]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    emit_rows, emit_counts = arb.select_ordered_context(sits, limit=25)
+    feed_rows, feed_counts = arb.select_ordered_context(sits, limit=5)
+    assert {r["ticker"] for r in feed_rows} <= {r["ticker"] for r in emit_rows}
+    assert emit_counts["by_state"] == feed_counts["by_state"]
+    # and the emitted payload carries the census, so an excluded row is countable
+    e = sse.mastermind_emit()
+    assert "risk_arb_census" in e
+    for row in e["risk_arb"]:
+        # `context_row()` no longer surfaces the raw ALL_CAPS quality_state at this key (MAJOR
+        # 4, macro#6793) — only the plain-word projection. The raw code lives under `codes`.
+        assert row["is_signal"] is False and row["codes"]["quality_state"] == arb.QUALITY_VERIFIED
+        assert row["quality_state"] != arb.QUALITY_VERIFIED  # plain sentence, not the raw slug
+        assert row["quality_state"].isupper() is False
+    assert si  # the feed consumer imports the same owner
+
+
+def test_desk_page_renderer_consumes_the_economics_contract(tmp_path, monkeypatch):
+    """The desk page reads the F09-1 contract, not the retired keys.
+
+    This was found by tracing the wire rather than by any check: `_arb_str` subscripted
+    `a['gross_spread_pct']` directly, so the page build raised KeyError on the new block — and
+    nothing in CI covers `_arb_str`, so the PR would have gone fully green carrying a page-build
+    crash. Authorized as a one-path boundary expansion; this guard replaces the temporary xfail.
+    """
+    from engine import special_arb as arb
+    from scripts.build_special_situations import _arb_str
+
+    # a degraded row renders as nothing — it must never format a null or raise
+    degraded = arb.reduce_cash_deal(arb.compile_current_terms([]), category="Acquisitions",
+                                    now_utc=NOW_UTC)
+    assert degraded["quality_state"] == arb.QUALITY_SOURCE_UNAVAILABLE
+    assert _arb_str(degraded) == ""
+
+    # a verified row renders the LIVE spread, named unambiguously
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, last_close=20.0,
+             sessions=["2026-06-16", "2026-06-18"])
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    econ = sits[0]["arb"]
+    assert econ["quality_state"] == arb.QUALITY_VERIFIED
+    rendered = _arb_str(econ)
+    assert rendered.startswith("spread +25.0%")
+    assert "%/yr" in rendered and "d" in rendered
+    # the retired ambiguous key must not come back as an alias
+    assert "gross_spread_pct" not in econ
+
+
+def test_desk_payload_carries_the_ledger_join_key_end_to_end(tmp_path, monkeypatch):
+    """Regression: hand-built `sits` masked a real defect.
+
+    The join key is the EVENT ACCESSION. Neither situation constructor carried one — the branch
+    plumbed a `cik` instead, which is an ISSUER and compiled one bucket for every situation — so
+    this goes through `desk_payload()` rather than a hand-built row, and asserts the accession
+    reaches both consumers.
+    """
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    d = sse.desk_payload()
+    sits = {s["ticker"]: s for s in d["situations"]}
+    assert "ABC" in sits
+    assert sits["ABC"].get("accession") == _ACC, "situation row lost the ledger join key"
+    e = sse.mastermind_emit()
+    assert e["by_ticker"]["ABC"].get("accession") == _ACC, "emit row lost the ledger join key"
+
+
+# ---- F09-1 CRITICAL: the accession is the transaction, the CIK is not ----------------------
+
+def test_two_accessions_under_one_cik_cannot_share_terms_end_to_end(tmp_path, monkeypatch):
+    """The real `_enrich_arb` join. `_load_observations()` grouped by `source.cik` and
+    `_enrich_arb` read `obs_by_cik[cik]`, so one issuer's unrelated second deal supplied terms
+    to the first. Two accessions, same filer, no link: neither may borrow the other's price."""
+    from engine import special_arb as arb
+    other = "0000000001-26-000777"
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-16", "2026-06-18"])
+    # a second, unrelated deal by the same filer
+    root = tmp_path / "special_situations"
+    ss._retain_source(other, _submission(
+        "Each share will be converted into the right to receive $250.00 in cash per share. "
+        "The transaction is expected to close on December 20, 2026."),
+        source_url="https://sec.gov/other.txt")
+    pd.DataFrame([{"id": _ACC, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": _ACC, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"},
+                  {"id": other, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": other, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-18", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+    ss.enrich_deal_terms()
+    first, second = _sit(accession=_ACC), _sit(accession=other)
+    sse._enrich_arb([first, second], now_utc=NOW_UTC)
+    assert first["arb"]["offer_price"] == 25.0
+    assert second["arb"]["offer_price"] == 250.0
+    for row in (first, second):
+        assert row["arb"]["quality_state"] == arb.QUALITY_VERIFIED
+        cited = {ev.get("accession") for ev in row["arb"]["evidence"].values()}
+        assert cited == {row["accession"]}, "a situation cited another accession's evidence"
+
+
+def test_a_forged_supersession_cannot_reach_the_projection(tmp_path, monkeypatch):
+    """One unauthenticated field used to merge two unrelated deals into a VERIFIED price."""
+    import json
+    from engine import special_arb as arb
+    other = "0000000001-26-000777"
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    root = tmp_path / "special_situations"
+    ss._retain_source(other, _submission(
+        "Each share will be converted into the right to receive $250.00 in cash per share. "
+        "The transaction is expected to close on December 20, 2026."), source_url="u")
+    pd.DataFrame([{"id": _ACC, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": _ACC, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"},
+                  {"id": other, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": other, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-18", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+    ss.enrich_deal_terms()
+    led = root / "observations" / "observations.jsonl"
+    rows = [json.loads(x) for x in led.read_text().splitlines() if x.strip()]
+    target = next(r for r in rows if r["field"] == "price_per_share"
+                  and r["source"]["accession"] == _ACC)
+    out = []
+    for r in rows:
+        if r["field"] == "price_per_share" and r["source"]["accession"] == other:
+            r = dict(r, prior_observation_id=target["observation_id"],
+                     supersedes_observation_id=target["observation_id"],
+                     correction_reason="forged")           # id deliberately NOT recomputed
+        out.append(r)
+    led.write_text("\n".join(json.dumps(r, sort_keys=True) for r in out) + "\n")
+    sits = [_sit(accession=_ACC)]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] != arb.QUALITY_VERIFIED
+    assert e["offer_price"] != 250.0
+    assert "INTEGRITY_FAILED" in e["reasons"]
+
+
+# ---- F09-1 CRITICAL: the narrow U.S.-listing boundary in the PRODUCER ----------------------
+
+@pytest.mark.parametrize("ticker", ["ARX.TO", "0700.HK", "BRK.B"])
+def test_a_foreign_or_class_listing_is_never_priced_by_the_producer(tmp_path, monkeypatch,
+                                                                    ticker):
+    """XNYS cannot grade a foreign listing, and the suffix-root fallback priced one off a
+    same-root U.S. column. On 2026-07-03 NYSE was closed while HKEX traded, so an HK row one
+    local session stale reported `sessions_behind=0` and reached VERIFIED."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, ticker=ticker,
+             sessions=["2026-06-16", "2026-06-18"])
+    # a same-root U.S. store exists too — the old selector fell back to it
+    _yahoo_store(tmp_path, ticker.split(".")[0], ["2026-06-18"], [15.19])
+    sits = [_sit(ticker)]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] != arb.QUALITY_VERIFIED
+    assert e["live_price"] is None and e["live_gross_spread_pct"] is None
+
+
+def test_a_store_without_close_price_is_declined_not_substituted(tmp_path, monkeypatch):
+    """`close` is total-return (split+dividend) adjusted; `close_price` is split-only. A writer
+    that serves one for the other leaves every number on the wrong basis with no error."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"],
+             price_column="close")
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    assert sits[0]["arb"]["quality_state"] != arb.QUALITY_VERIFIED
+    assert sits[0]["arb"]["live_price"] is None
+
+
+def test_the_broad_adjusted_panels_are_never_read_by_the_arb_lane(tmp_path, monkeypatch):
+    """breadth / bt_prices / arb_prices / Canada-intl-HK search are all `auto_adjust=True`.
+
+    A number existing in one of them may not make a row VERIFIED, and the lane must not read
+    them at all: the producer's own source no longer mentions the close panels.
+    """
+    import inspect
+    from engine import special_arb as arb
+    src = inspect.getsource(sse._enrich_arb) + inspect.getsource(sse._price_inputs)
+    for forbidden in ("_closes_panel", "_closes_frames", "_panel_sources", "close_raw"):
+        assert forbidden not in src, f"the arb lane still reaches for {forbidden}"
+    # and with ONLY a breadth panel present there is no price at all
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    (tmp_path / "yahoo" / "ABC.parquet").unlink()
+    (tmp_path / "breadth").mkdir(exist_ok=True)
+    pd.DataFrame({"ABC": [15.19]}, index=pd.to_datetime(["2026-06-18"])).to_parquet(
+        tmp_path / "breadth" / "_closes_cache.parquet")
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    econ = sits[0]["arb"]
+    assert econ["quality_state"] != arb.QUALITY_VERIFIED
+    # The subject is that the breadth number never becomes a price — assert THAT, not the
+    # particular reason. Since the clock/listing rebind, deleting the per-ticker Yahoo store
+    # also removes the canonical listing proof, so the lane now fails closed one step earlier
+    # (INTEGRITY_FAILED: the retained rows claim a USD listing no owner can still vouch for)
+    # rather than reaching PRICE_MISSING. Pinning the old reason would pin the shallower gate.
+    assert econ["live_price"] is None
+    assert econ["live_gross_spread_pct"] is None and econ["annualized_pct"] is None
+    assert 15.19 not in [econ.get("live_price"), econ.get("reference_price")]
+    assert econ["orderable"] is False
+
+
+def test_the_price_receipt_digest_is_the_artifact_bytes(tmp_path, monkeypatch):
+    """A path is a location; a digest over the exact bytes is an identity."""
+    import hashlib
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    path = tmp_path / "yahoo" / "ABC.parquet"
+    assert sits[0]["arb"]["live_artifact_sha256"] == \
+        hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+# ---- F09-1: the collector lane that writes the ledger --------------------------------------
+
+def test_deal_term_lane_writes_a_byte_bound_ledger_and_is_idempotent(tmp_path, monkeypatch):
+    import json
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-18"],
+             run_producer=False)
+    n = ss.enrich_deal_terms()
+    assert n > 0
+    root = tmp_path / "special_situations"
+    path = root / "observations" / "observations.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+    assert rows and all(r["schema"] == arb.OBSERVATION_SCHEMA for r in rows)
+    price = next(r for r in rows if r["field"] == "price_per_share")
+    assert price["normalized"] == 25.0
+    # bound to the RETAINED bytes: the excerpt is re-read out of the projection derived from the
+    # verified object, not out of a legacy stripped cache the observation never cited
+    projection, receipt = ss.verified_projection(_ACC)
+    assert projection[price["locator"]["start"]:price["locator"]["end"]] == \
+        price["locator"]["excerpt"]
+    assert price["source"]["raw_sha256"] == receipt["raw_sha256"]
+    assert price["source"]["raw_bytes"] == receipt["raw_bytes"]
+    assert price["source"]["completeness"] == arb.COMPLETENESS_COMPLETE
+    assert len(price["source"]["body_sha256"]) == 64
+
+    # a rebuild over unchanged bytes appends NOTHING — observation_id is a digest of the inputs
+    assert ss.enrich_deal_terms() == 0
+    assert len(path.read_text().splitlines()) == len(rows)
+
+
+def test_deal_term_lane_reads_only_already_retained_bodies(tmp_path, monkeypatch):
+    """The rights boundary: with no verified receipt and no refresh, the lane opens nothing."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    root = tmp_path / "special_situations"
+    root.mkdir(parents=True)
+    pd.DataFrame([{"id": _ACC, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": _ACC, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+
+    def _boom(*a, **k):                      # any network fetch is a contract violation here
+        raise AssertionError("the deal-term lane must not fetch without refresh")
+    monkeypatch.setattr(ss, "_get", _boom)
+    assert ss.enrich_deal_terms() == 0       # no retained object -> nothing, and no fetch
+    assert not (root / "observations").exists()
+
+
+def test_deal_term_lane_ignores_events_outside_the_fixed_cash_categories(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    root = tmp_path / "special_situations"
+    root.mkdir(parents=True)
+    ss._retain_source("0000000002-26-000002", _submission(
+        "The Board declared a special cash dividend of $2.50 per share."), source_url="u")
+    pd.DataFrame([{"id": "0000000002-26-000002", "form_type": "SC 13D", "company": "XYZ Inc",
+                   "cik": "2", "accession": "0000000002-26-000002", "ticker": "XYZ",
+                   "items": None, "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+    assert ss.enrich_deal_terms() == 0
+
+
+# ---- F09-1 CRITICAL: exact acquired bytes, atomically retained and read back ---------------
+
+def test_retention_keeps_the_exact_acquired_bytes_content_addressed(tmp_path, monkeypatch):
+    """`Response.text` re-encoded with `errors="replace"` is a lossy round trip, so a digest
+    over it describes our decoding, not SEC's document. The object is also content-addressed:
+    it used to be named by accession and written only if absent while its receipt was rewritten
+    every call, so object and receipt could disagree silently and forever."""
+    import gzip
+    import hashlib
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    raw = b"<ACCEPTANCE-DATETIME>20260617173100\n<DOCUMENT>caf\xc3\xa9 \xe2\x82\xac25.00</DOCUMENT>"
+    receipt = ss._retain_source(_ACC, raw, source_url="u")
+    obj = ss.source_object_path(receipt["raw_sha256"])
+    assert obj.name == f"sha256-{hashlib.sha256(raw).hexdigest()}.raw.gz"
+    with gzip.open(obj, "rb") as fh:
+        assert fh.read() == raw, "the retained object is not the exact acquired bytes"
+    assert receipt["raw_bytes"] == len(raw) and receipt["readback_verified"] is True
+    assert receipt["truncated"] is False
+    assert ss.retained_source_bytes(receipt) == raw
+
+
+def test_retention_is_atomic_and_leaves_no_partial_object(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    ss._retain_source(_ACC, _submission(_CASH_EXACT), source_url="u")
+    root = tmp_path / "special_situations" / "source_objects"
+    assert not list(root.glob("*.tmp")), "a temp file survived publication"
+    assert not list(root.glob(".*tmp*")), "a temp file survived publication"
+
+
+@pytest.mark.parametrize("mutate", ["changed_object", "receipt_length", "projection_digest"])
+def test_a_retained_object_that_disagrees_with_its_receipt_is_refused(tmp_path, monkeypatch,
+                                                                      mutate):
+    import gzip
+    import json
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    receipt = ss._retain_source(_ACC, _submission(_CASH_EXACT), source_url="u")
+    assert ss.verified_projection(_ACC) is not None          # control
+    obj = ss.source_object_path(receipt["raw_sha256"])
+    rpath = tmp_path / "special_situations" / "source_objects" / f"{_ACC}.receipt.json"
+    if mutate == "changed_object":
+        obj.write_bytes(gzip.compress(b"different bytes entirely"))
+    elif mutate == "receipt_length":
+        rpath.write_text(json.dumps(dict(receipt, raw_bytes=receipt["raw_bytes"] + 7)))
+    else:
+        rpath.write_text(json.dumps(dict(receipt, projection_sha256="f" * 64)))
+    assert ss.verified_projection(_ACC) is None, f"{mutate} was accepted"
+
+
+@pytest.mark.parametrize("mutate", ["locator_out_of_range", "excerpt_mismatch",
+                                    "forged_value_resealed"])
+def test_a_row_that_does_not_descend_from_the_retained_bytes_is_unbound(tmp_path, monkeypatch,
+                                                                        mutate):
+    """`validate_observation()` re-derives a row's id from the row's OWN fields, so a forger who
+    edits a value, moves a span and RECOMPUTES the id passes it. Only re-opening the retained
+    object and re-reading the span can refuse these."""
+    import json
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-16", "2026-06-18"])
+    led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+    rows = [json.loads(x) for x in led.read_text().splitlines() if x.strip()]
+    out = []
+    for r in rows:
+        if r["field"] == "price_per_share":
+            if mutate == "locator_out_of_range":
+                r = dict(r, locator=dict(r["locator"], start=10 ** 6, end=10 ** 6 + 5))
+                r = arb.reseal(r)
+            elif mutate == "excerpt_mismatch":
+                r = dict(r, locator=dict(r["locator"], excerpt="$999.00 in cash per share"))
+            else:
+                r = arb.reseal(dict(r, normalized=999.0))
+            assert arb.validate_observation(r), "the mutant must be internally self-consistent"
+        out.append(r)
+    led.write_text("\n".join(json.dumps(r, sort_keys=True) for r in out) + "\n")
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] != arb.QUALITY_VERIFIED
+    assert e["offer_price"] not in (999.0,)
+    assert e["ledger_census"]["unbound"] >= 1
+
+
+# ---- F09-1 CRITICAL: the SEC acceptance clock is DST-correct -------------------------------
+
+@pytest.mark.parametrize("stamp,expected", [
+    ("20260115120000", "2026-01-15T17:00:00+00:00"),   # winter: EST, -05:00
+    ("20260715120000", "2026-07-15T16:00:00+00:00"),   # summer: EDT, -04:00
+    ("20260308013000", "2026-03-08T06:30:00+00:00"),   # the DST spring-forward morning
+    ("20261101013000", "2026-11-01T05:30:00+00:00"),   # the fall-back morning (first pass)
+])
+def test_sec_acceptance_is_converted_with_the_correct_offset(stamp, expected):
+    """`-04:00` was hard-coded for EVERY acceptance timestamp. SEC Eastern is not permanently
+    EDT: every winter filing was stamped an hour early, which can select the wrong reference
+    session around the close."""
+    assert ss.parse_acceptance_datetime(_submission("x", accepted=stamp)) == expected
+
+
+_STAMPS = ("20260115120000", "20260715120000", "20260308013000", "20261101013000")
+
+
+def test_the_acceptance_parser_is_byte_equivalent_to_the_proven_owner():
+    """Reuse, not re-invention: the same bytes must yield the same instant as the already-proven
+    `sec_capital_structure.parse_submission()` raw-submission semantics.
+
+    Run against the real owner where it imports. On this host it does not: importing
+    `collectors.sec_capital_structure` pulls `engine/capital_structure/document_terms.py`, whose
+    sealed-closure self-check raises "document-term parser code contains unsupported constant
+    slice" under Python 3.14 — a PRE-EXISTING failure on blobs identical to `origin/main`
+    (both verified unchanged by this branch), unrelated to F09 and not ours to repair here.
+
+    Equivalence is therefore asserted twice, so neither path is a bare skip: the owner's exact
+    conversion expression is re-executed here over the same bytes, AND that expression is pinned
+    against the owner's source, so a change to its clock semantics fails this test.
+    """
+    from zoneinfo import ZoneInfo
+    owner = Path(__file__).resolve().parents[1] / "collectors/sec_capital_structure.py"
+    src = owner.read_text()
+    for fragment in (r'br"<ACCEPTANCE-DATETIME>\s*(\d{14})"',
+                     'datetime.strptime(stamp, "%Y%m%d%H%M%S").replace(',
+                     'tzinfo=ZoneInfo("America/New_York")',
+                     ".astimezone(timezone.utc).isoformat()"):
+        assert fragment in src, f"the proven owner no longer contains {fragment!r}"
+
+    for stamp in _STAMPS:
+        # the owner's expression, re-executed verbatim over the same bytes
+        reference = (datetime.strptime(stamp, "%Y%m%d%H%M%S")
+                     .replace(tzinfo=ZoneInfo("America/New_York"))
+                     .astimezone(timezone.utc).isoformat())
+        assert ss.parse_acceptance_datetime(_submission("x", accepted=stamp)) == reference
+
+    try:
+        from collectors.sec_capital_structure import parse_submission
+    except Exception as exc:  # noqa: BLE001 — pre-existing, unrelated import-time failure
+        assert "document-term" in str(exc) or "closure" in str(exc), \
+            f"unexpected import failure — investigate rather than tolerate: {exc!r}"
+        return
+    for stamp in _STAMPS:
+        raw = _submission("x", accepted=stamp)
+        assert ss.parse_acceptance_datetime(raw) == parse_submission(raw).accepted_at
+
+
+@pytest.mark.parametrize("raw", [b"no header at all",
+                                 b"<ACCEPTANCE-DATETIME>20261301120000",   # month 13
+                                 b"<ACCEPTANCE-DATETIME>notanumber"])
+def test_an_invalid_acceptance_timestamp_yields_no_clock(raw):
+    assert ss.parse_acceptance_datetime(raw) is None
+
+
+def test_after_close_and_premarket_acceptance_pick_different_reference_sessions(
+        tmp_path, monkeypatch):
+    """Date-only `date_filed` cannot tell these apart, which is why it may not fix a reference
+    session at all. With an exact acceptance moment the reference is deterministic — and the
+    acceptance comes from the SOURCE BYTES, so each case retains its own submission."""
+    sessions = ["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18"]
+
+    def _ref_for(stamp):
+        env = tmp_path / stamp
+        env.mkdir(exist_ok=True)
+        _f09_env(env, monkeypatch, text=_CASH_EXACT, sessions=sessions, accepted=stamp)
+        sits = [_sit()]
+        sse._enrich_arb(sits, now_utc=NOW_UTC)
+        return sits[0]["arb"]
+
+    premarket = _ref_for("20260617074500")    # 07:45 ET, before the 06-17 close
+    after_close = _ref_for("20260617173100")  # 17:31 ET, after it
+    assert premarket["reference_session"] == "2026-06-16"
+    assert after_close["reference_session"] == "2026-06-17"
+    assert premarket["reference_session"] != after_close["reference_session"]
+
+
+# ---- F09-1 CRITICAL: ledger integrity fails closed BEFORE the write -----------------------
+
+def test_a_malformed_last_ledger_line_is_partial_generation_not_a_healthy_subset(
+        tmp_path, monkeypatch):
+    """A truncated final write is a REAL failure. The old loader skipped it silently and
+    published the surviving rows as a complete, healthy projection."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-16", "2026-06-18"])
+    led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+    led.write_text(led.read_text() + '{"schema":"special_situations.deal_term_obs')  # cut mid-write
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    e = sits[0]["arb"]
+    assert e["quality_state"] != arb.QUALITY_VERIFIED
+    assert "PARTIAL_GENERATION" in e["reasons"] and "INTEGRITY_FAILED" in e["reasons"]
+    assert e["ledger_census"]["malformed"] == 1
+
+
+def test_the_producer_refuses_to_append_to_a_ledger_that_does_not_validate(tmp_path,
+                                                                           monkeypatch, capsys):
+    """The producer scanned the ledger with a bare `except ValueError: continue` while building
+    `known` and then appended with `open(..., "a")` — so an already-corrupt ledger quietly
+    received more rows, and a crash mid-append created exactly the malformed tail the reader
+    later reported. A ledger that does not fully validate may not be extended."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-18"])
+    led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+    before = led.read_text() + '{"schema":"truncated'
+    led.write_text(before)
+    # a fresh accession that WOULD otherwise produce new rows
+    other = "0000000001-26-000777"
+    ss._retain_source(other, _submission(
+        "Each share will be converted into the right to receive $30.00 in cash per share. "
+        "The transaction is expected to close on December 20, 2026."), source_url="u")
+    root = tmp_path / "special_situations"
+    pd.DataFrame([{"id": other, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": other, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-18", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+    assert ss.enrich_deal_terms() == 0
+    assert led.read_text() == before, "the producer appended to a corrupt ledger"
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning") and "ledger integrity" in line
+               for line in out.splitlines()), out
+
+
+def test_the_ledger_is_published_atomically_and_read_back(tmp_path, monkeypatch):
+    """One atomic replacement of old+new, then a readback through the SAME validator."""
+    import inspect
+    import json
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT, sessions=["2026-06-18"],
+             run_producer=False)
+    src = inspect.getsource(ss.enrich_deal_terms)
+    assert 'open(' not in src or '"a"' not in src, "the producer still appends in place"
+    assert "_atomic_write" in src and "read_ledger_strict" in src
+    assert ss.enrich_deal_terms() > 0
+    led = tmp_path / "special_situations" / "observations" / "observations.jsonl"
+    rows = [json.loads(x) for x in led.read_text().splitlines() if x.strip()]
+    _, census = ss.read_ledger_strict()
+    assert census["ok"] and census["kept"] == len(rows)
+    assert not list((tmp_path / "special_situations" / "observations").glob("*.tmp"))
+
+
+# ---- F09-1 HIGH: existing cached filings can acquire a receipt on a real refresh -----------
+
+def test_a_legacy_cache_without_a_receipt_is_reacquired_on_refresh(tmp_path, monkeypatch):
+    """`_fetch_filing_text()` returned the legacy `.txt` BEFORE `_retain_source()` ran, so any
+    accession with a `doc_cache` entry could never obtain a receipt, `enrich_deal_terms()`
+    skipped it, and the natural build passes `fetch_missing=False`. Coverage over the whole
+    pre-existing corpus was therefore structurally ZERO, permanently, with no backfill path."""
+    from engine import special_arb as arb
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    root = tmp_path / "special_situations"
+    (root / "doc_cache").mkdir(parents=True)
+    (root / "doc_cache" / f"{_ACC}.txt").write_text("legacy stripped 40k candidate text")
+    pd.DataFrame([{"id": _ACC, "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "accession": _ACC, "ticker": "ABC", "items": None,
+                   "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(root / "events.parquet")
+    _yahoo_store(tmp_path, "ABC", ["2026-06-18"], [15.19])
+
+    # no-refresh: source-inert, zero fetch, and the legacy text is NEVER promoted
+    calls = []
+    monkeypatch.setattr(ss, "_get", lambda *a, **k: calls.append(a) or None)
+    assert ss.enrich_deal_terms() == 0
+    assert calls == [], "the no-refresh path fetched"
+    assert ss._source_receipt(_ACC) is None
+
+    # a real refresh reacquires the exact complete bytes through the existing fetch owner
+    served = _submission(_CASH_EXACT)
+    monkeypatch.setattr(ss, "_get", lambda *a, **k: served if k.get("as_bytes") else "x")
+    assert ss.enrich_deal_terms(fetch_missing=True) > 0
+    receipt = ss._source_receipt(_ACC)
+    assert receipt and receipt["raw_bytes"] == len(served)
+    projection, _ = ss.verified_projection(_ACC)
+    assert "legacy stripped" not in projection, "the 40k candidate text was promoted"
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    assert sits[0]["arb"]["quality_state"] == arb.QUALITY_VERIFIED
+
+
+# ---- F09-1: the natural build path ---------------------------------------------------------
+
+def test_the_real_build_path_calls_the_producer_and_no_refresh_stays_source_inert():
+    """`enrich_deal_terms()` was never called by build(refresh=True), so a natural run would
+    leave the ledger empty and every cash deal would report SOURCE_UNAVAILABLE."""
+    import inspect
+    from scripts import build_special_situations as bss
+    src = inspect.getsource(bss.build)
+    assert "enrich_deal_terms" in src, "the producer is not wired into the refresh sequence"
+    refresh_block = src.split("if refresh:", 1)[1]
+    assert "enrich_deal_terms" in refresh_block, "producer must run only under refresh"
+    # it must run BEFORE the desk is compiled, or the first build reads an empty ledger
+    assert refresh_block.index("enrich_deal_terms") < refresh_block.index("desk_payload")
+    # it may be allowed to REACQUIRE a legacy cache, but never unconditionally on the render
+    # path (macro#6793 review): a live SEC full-submission GET + unbounded, unpruned disk
+    # retention belongs behind a config gate that defaults OFF, not a hardcoded fetch_missing=True.
+    assert "fetch_missing=True" not in refresh_block, \
+        "reacquire-on-every-render-build must not be hardcoded True — gate it via config"
+    assert "deal_terms_fetch_missing" in refresh_block, \
+        "the reacquire path must be config-gated so it can stay off until #6783 lands"
+    from lib import config as _config
+    default_ss = _config.load().get("special_situations", {}) or {}
+    assert not default_ss.get("deal_terms_fetch_missing", False), \
+        "deal_terms_fetch_missing must default to False in the shipped config"
+
+
+# ===========================================================================
+# Sol CRITICAL SOURCE-AUTHORITY ADDENDUM (carrier 1788495129.504909) —
+# the ledger clock and listing must be RE-BOUND to owners outside the row.
+# Sealing a field into observation_id stops a silent edit; it does not stop a
+# forger who edits and reseals. Every mutant below reseals.
+# ===========================================================================
+
+def _ledger_rows(tmp_path):
+    import json
+    p = ss._observations_path()
+    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()], p
+
+
+def _reseal(o):
+    """Recompute the row's own id from its own (mutated) fields — a forger's move."""
+    from engine import special_arb as arb
+    o["observation_id"] = arb.observation_id(
+        source=o.get("source") or {}, field=o.get("field"),
+        locator=o.get("locator") or {}, normalized=o.get("normalized"),
+        extraction_revision=o.get("extraction_revision") or arb.EXTRACTION_REVISION,
+        prior_observation_id=o.get("prior_observation_id"),
+        supersedes_observation_id=o.get("supersedes_observation_id"),
+        correction_reason=o.get("correction_reason"))
+    return o
+
+
+def _rewrite(p, rows):
+    import json
+    p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+
+
+def _both_readers_reject(tmp_path):
+    """The collector readback AND the engine runtime must BOTH refuse. Neither may be lenient."""
+    from engine import special_arb as arb  # noqa: F401
+    _, col_census = ss.read_ledger_strict()
+    _, eng_census = sse._load_observations()
+    return col_census, eng_census
+
+
+def test_a_resealed_acceptance_clock_is_rejected_by_both_readers(tmp_path, monkeypatch):
+    """Premarket -> after-close moves the filing-reference SESSION, so a row that can rewrite
+    its own acceptance clock can move a published premium."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"], accepted="20260617073000")
+    rows, p = _ledger_rows(tmp_path)
+    assert rows, "producer wrote no observations"
+    for r in rows:
+        r["source"]["acceptance_datetime"] = "2026-06-17T21:31:00+00:00"   # after-close
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0 and col_census["unbound"] >= 1 and col_census["ok"] is False
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+
+
+def test_a_resealed_filing_date_cannot_reorder_current_terms(tmp_path, monkeypatch):
+    """`compile_current_terms()` orders candidates by source.filing_date."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    rows, p = _ledger_rows(tmp_path)
+    for r in rows:
+        r["source"]["filing_date"] = "2099-01-01"        # sort it to the front of any lineage
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    assert "INTEGRITY_FAILED" in sits[0]["arb"]["reasons"]
+    assert sits[0]["arb"]["offer_price"] is None
+
+
+def test_a_row_cannot_self_authorize_its_listing_currency(tmp_path, monkeypatch):
+    """Strip the listing receipt, assert USD anyway, reseal: a bare `$` must not self-authorize."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    rows, p = _ledger_rows(tmp_path)
+    for r in rows:
+        r["source"]["resolved_listing"] = None
+        r["currency"] = "USD"
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+
+
+def test_a_row_cannot_promote_a_foreign_target_to_a_us_listing(tmp_path, monkeypatch):
+    """The canonical event owner is unchanged; only the row claims the U.S. listing."""
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    rows, p = _ledger_rows(tmp_path)
+    for r in rows:
+        r["source"]["resolved_listing"] = "XYZ"          # a listing this event never had
+        _reseal(r)
+    _rewrite(p, rows)
+    col_census, eng_census = _both_readers_reject(tmp_path)
+    assert col_census["kept"] == 0
+    assert eng_census["kept"] == 0 and eng_census["integrity_failed"] is True
+
+
+def test_the_untampered_ledger_rebinds_idempotently_and_still_reaches_the_reducer(
+        tmp_path, monkeypatch):
+    """Positive control — the law must not be satisfied by refusing everything."""
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    col_rows, col_census = ss.read_ledger_strict()
+    eng_rows, eng_census = sse._load_observations()
+    assert col_census["kept"] >= 1 and col_census["ok"] is True
+    assert eng_census["kept"] >= 1 and eng_census["integrity_failed"] is False
+    # idempotent: a second read of untouched bytes binds identically
+    again_rows, again_census = ss.read_ledger_strict()
+    assert again_census["kept"] == col_census["kept"]
+    sits = [_sit()]
+    sse._enrich_arb(sits, now_utc=NOW_UTC)
+    econ = sits[0]["arb"]
+    assert "INTEGRITY_FAILED" not in econ["reasons"]
+    assert econ["offer_price"] == 25.0
+
+
+def test_a_malformed_ledger_line_is_counted_as_malformed_not_merely_unhealthy(
+        tmp_path, monkeypatch):
+    """Found by mutation: deleting `census["malformed"] += 1` changed nothing.
+
+    Once the clock/listing rebind existed, a corrupt ledger reached `ok is False` through the
+    *unbound* path as well, so every assertion phrased as "the census is unhealthy" was
+    satisfied either way and the malformed counter itself was pinned by nothing. A truncated
+    final write is a distinct, nameable failure and the census has to say so.
+    """
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    p = ss._observations_path()
+    p.write_text(p.read_text() + '{"schema": "truncated last write, no closing brace"\n')
+    _, census = ss.read_ledger_strict()
+    assert census["malformed"] >= 1, "a truncated JSONL line was not counted as malformed"
+    assert census["ok"] is False
+
+
+def test_a_meaning_bearing_field_edited_without_resealing_fails_on_identity_alone(
+        tmp_path, monkeypatch):
+    """The three meaning-bearing source fields are INSIDE the closed digest.
+
+    The independent rebind catches a resealed forgery, which is why this needs its own test:
+    with the rebind in place, dropping these fields from `observation_id()` changed no test at
+    all. Identity is the cheap first gate and must hold on its own — an edit with no reseal is
+    `invalid` (the id no longer matches its row), not merely `unbound`.
+    """
+    import json
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    p = ss._observations_path()
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    for r in rows:
+        r["source"]["filing_date"] = "2099-01-01"        # NO reseal: id must stop this
+    p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+    _, census = ss.read_ledger_strict()
+    assert census["invalid"] >= 1, "an unresealed edit survived the closed observation identity"
+    assert census["kept"] == 0
+
+
+def test_authored_terms_receives_the_canonical_listing_currency_not_the_rows(
+        tmp_path, monkeypatch):
+    """The untrusted row must not nominate the authority that then blesses its own bare `$`.
+
+    Also found by mutation: reverting to `o.get("currency")` broke nothing, because a row whose
+    currency contradicts the canonical listing is now rejected by the rebind first. The case
+    that still discriminates is a row that simply OMITS currency — the old code would then
+    re-extract with `listing_currency=None` and authorize a different term set.
+    """
+    import json
+    from engine import special_arb as arb
+    _f09_env(tmp_path, monkeypatch, text=_CASH_EXACT,
+             sessions=["2026-06-15", "2026-06-16", "2026-06-18"])
+    p = ss._observations_path()
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    for r in rows:
+        r.pop("currency", None)
+    p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+
+    seen = []
+    real = arb.authored_terms
+    monkeypatch.setattr(arb, "authored_terms",
+                        lambda proj, **kw: (seen.append(kw.get("listing_currency")),
+                                            real(proj, **kw))[1])
+    sse._load_observations()
+    assert seen, "the runtime never re-derived the authored term set"
+    assert set(seen) == {"USD"}, (
+        f"authored_terms was keyed on {seen} — the canonical event listing proves USD, and the "
+        "row (which omits currency) must not be the authority")

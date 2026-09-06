@@ -76,16 +76,22 @@ def _txt(v, dash: str = "—") -> str:
 
 
 def _arb_str(a: dict | None) -> str:
-    """Compact merger-arb line: 'spread +8.3% · +24%/yr · ~120d · break -31%'."""
-    if not a:
+    """Compact cash-deal line: 'spread +8.3% · +24%/yr · ~120d'.
+
+    Reads the F09-1 economics contract: `live_gross_spread_pct` is the offer against the latest
+    usable close, named so it can never be confused with the stated or filing-reference premium.
+    Every arb-category situation now carries a typed block INCLUDING the degraded ones, where the
+    spread is None — so a missing spread renders as nothing rather than formatting a null.
+    Downside-on-break is gone with the contract: an unaffected-price proxy is a downside target,
+    which #6785 keeps outside F09-1, and it will not be reinvented here.
+    """
+    if not a or a.get("live_gross_spread_pct") is None:
         return ""
-    parts = [f"spread {a['gross_spread_pct']:+.1f}%"]
+    parts = [f"spread {a['live_gross_spread_pct']:+.1f}%"]
     if a.get("annualized_pct") is not None:
         parts.append(f"{a['annualized_pct']:+.0f}%/yr")
     if a.get("days_to_close"):
         parts.append(f"~{a['days_to_close']}d")
-    if a.get("downside_on_break_pct") is not None:
-        parts.append(f"break {a['downside_on_break_pct']:+.0f}%")
     return " · ".join(parts)
 
 
@@ -367,6 +373,16 @@ def build(refresh: bool = True) -> str:
                 _config.load().get("qual_extraction", {}).get("extract_per_build", 100)))
             colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated)
             colintl.fetch_intl_situations()                      # Phase 4 UK/Canada intl lanes (gated per market)
+            # F09-1: deterministic, evidence-bound deal terms BEFORE the desk is compiled.
+            # Without this call the observation ledger stays empty on a natural run and every
+            # cash deal reports SOURCE_UNAVAILABLE — the capability would be inert in production
+            # while every unit test passed. Reads only already-retained source objects: the
+            # render path never reacquires (a live SEC full-submission GET + unbounded,
+            # unpruned disk retention belongs behind #6783, not inside the nightly render
+            # budget). Reviewer finding (macro#6793): a hardcoded reacquire flag here falsified
+            # PR's own "reads only bytes the existing source owner already cached" claim.
+            col.enrich_deal_terms(limit=int(ss.get("deal_terms_per_build", 200)),
+                                  fetch_missing=bool(ss.get("deal_terms_fetch_missing", False)))
             from collectors import special_prices as colpx
             colpx.fetch_arb_prices()                             # P1.2 price ADR/OTC deal targets (best-effort)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage

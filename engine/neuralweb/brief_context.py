@@ -927,13 +927,14 @@ def _block_special_situations(ws: dict | None) -> dict | None:
         if isinstance(s, dict)
     ]
 
-    # Best arb spread
+    # Best arb spread. F09-1 (special_arb.context_row) retired the ambiguous `gross_spread_pct`
+    # key for the unambiguous `live_gross_spread_pct` — read that here, not the retired name.
     deal_arb_best = None
     if risk_arb_raw and isinstance(risk_arb_raw[0], dict):
         arb = risk_arb_raw[0]
         deal_arb_best = {
             "ticker": arb.get("ticker"),
-            "gross_spread_pct": arb.get("gross_spread_pct"),
+            "live_gross_spread_pct": arb.get("live_gross_spread_pct"),
             "annualized_pct": arb.get("annualized_pct"),
         }
 
