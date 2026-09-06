@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/estimator_implication.v1.schema.json",
+  "title": "Estimator implication payload v1 (measurement-tier profile of mastermind.research_implication_card/v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "payload_id", "composer_version", "estimator_id", "registered_family",
+    "selection", "point_estimate", "uncertainty", "honest_n", "diagnostics", "quality",
+    "null_reasons", "limitations", "provenance", "authority"],
+  "not": {"anyOf": [
+    {"required": ["rank"]}, {"required": ["score"]}, {"required": ["ranking"]},
+    {"required": ["gate"]}, {"required": ["gated"]}, {"required": ["gating"]},
+    {"required": ["size"]}, {"required": ["sizing"]}, {"required": ["position_size"]},
+    {"required": ["confidence"]}, {"required": ["direction_confidence"]},
+    {"required": ["expected_impact"]}, {"required": ["recommendation"]},
+    {"required": ["action"]}, {"required": ["trade"]}, {"required": ["signal"]},
+    {"required": ["alpha"]}, {"required": ["target"]}, {"required": ["weight"]}
+  ]},
+  "properties": {
+    "schema": {"const": "mastermind.estimator_implication/v1"},
+    "payload_id": {"type": "string", "pattern": "^eimp_[0-9a-f]{64}$"},
+    "composer_version": {"const": "estimator_implication/v1"},
+    "estimator_id": {"enum": ["engine.synthetic_control", "engine.seasonality.event_study"]},
+    "registered_family": {
+      "type": "object", "additionalProperties": false,
+      "required": ["family_id", "registry", "registered", "effective_n"],
+      "properties": {
+        "family_id": {"type": "string", "minLength": 1},
+        "registry": {"const": "engine.trial_ledger"},
+        "registered": {"const": true},
+        "effective_n": {"type": "integer", "minimum": 1}
+      }
+    },
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["selection_id", "window", "anchor"],
+      "properties": {
+        "selection_id": {"type": "string", "minLength": 1},
+        "window": {"type": "string", "minLength": 1},
+        "anchor": {"type": ["string", "null"]}
+      }
+    },
+    "point_estimate": {"$ref": "#/$defs/metric"},
+    "uncertainty": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/uncertainty"}},
+    "honest_n": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sample_n", "episode_n", "basis"],
+      "properties": {
+        "sample_n": {"type": ["integer", "null"]},
+        "episode_n": {"type": ["integer", "null"]},
+        "basis": {"$ref": "#/$defs/localized"}
+      }
+    },
+    "diagnostics": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}},
+    "quality": {"enum": ["COMPLETE", "DIAGNOSTIC_ONLY", "ARTIFACT_INCOMPLETE",
+      "ARTIFACT_MISSING", "DIAGNOSTIC_FAILED", "STALE"]},
+    "null_reasons": {"type": "array", "items": {"$ref": "#/$defs/null_reason"}},
+    "limitations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/localized"}},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "localized": {
+      "type": "object", "additionalProperties": false, "required": ["en", "zh"],
+      "properties": {
+        "en": {"type": "string", "minLength": 1},
+        "zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "metric": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "label", "value", "unit", "source"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "label": {"$ref": "#/$defs/localized"},
+        "value": {"type": ["number", "null"]},
+        "unit": {"enum": ["return_fraction", "t_stat", "probability", "count", "sessions", "ratio"]},
+        "source": {"type": "string", "minLength": 1}
+      }
+    },
+    "uncertainty": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "kind", "label", "value", "unit", "source"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["hac_se", "student_t_p", "bootstrap_quantiles", "placebo_empirical_p", "interval"]},
+        "label": {"$ref": "#/$defs/localized"},
+        "value": {"type": ["number", "array", "null"]},
+        "unit": {"enum": ["return_fraction", "t_stat", "probability", "count", "sessions", "ratio"]},
+        "source": {"type": "string", "minLength": 1}
+      }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "label", "passed", "detail", "source"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "label": {"$ref": "#/$defs/localized"},
+        "passed": {"type": ["boolean", "null"]},
+        "detail": {"$ref": "#/$defs/localized"},
+        "source": {"type": "string", "minLength": 1}
+      }
+    },
+    "null_reason": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "reason", "detail"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "reason": {"$ref": "#/$defs/localized"},
+        "detail": {"$ref": "#/$defs/localized"}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["producing_module", "producing_module_sha256", "result_artifact_path",
+        "result_artifact_sha256", "generator_path", "generator_sha256", "report_path", "report_sha256"],
+      "properties": {
+        "producing_module": {"enum": ["engine/synthetic_control.py", "engine/seasonality/event_study.py"]},
+        "producing_module_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "result_artifact_path": {"type": "string", "minLength": 1},
+        "result_artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "generator_path": {"type": ["string", "null"]},
+        "generator_sha256": {"type": ["string", "null"]},
+        "report_path": {"type": ["string", "null"]},
+        "report_sha256": {"type": ["string", "null"]}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["forecast_authority", "ranking_authority", "gating_authority", "sizing_authority", "trading_authority"],
+      "properties": {
+        "forecast_authority": {"const": false},
+        "ranking_authority": {"const": false},
+        "gating_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "trading_authority": {"const": false}
+      }
+    }
+  }
+}
