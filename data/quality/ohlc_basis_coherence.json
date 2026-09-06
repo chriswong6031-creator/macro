@@ -3,16 +3,16 @@
     "breadth": {
       "status": "split",
       "split_tickers": 1,
-      "noise_tickers": 24,
+      "noise_tickers": 26,
       "findings": [
         {
-          "ticker": "MNST",
+          "ticker": "APH",
           "verdict": "split",
-          "bad_bars": 343,
+          "bad_bars": 347,
           "bars": 370,
-          "bad_share": 0.927,
-          "worst_excess": 0.999072,
-          "worst_date": "2025-09-18",
+          "bad_share": 0.9378,
+          "worst_excess": 1.004945,
+          "worst_date": "2025-06-26",
           "inverted_bars": 0
         },
         {
@@ -288,10 +288,20 @@
       ]
     },
     "midcap_breadth": {
-      "status": "coherent",
-      "split_tickers": 0,
-      "noise_tickers": 11,
+      "status": "split",
+      "split_tickers": 1,
+      "noise_tickers": 12,
       "findings": [
+        {
+          "ticker": "IESC",
+          "verdict": "split",
+          "bad_bars": 755,
+          "bars": 778,
+          "bad_share": 0.9704,
+          "worst_excess": 1.0,
+          "worst_date": "2023-09-13",
+          "inverted_bars": 0
+        },
         {
           "ticker": "SBRA",
           "verdict": "noise",
@@ -426,17 +436,37 @@
     },
     "russell_breadth": {
       "status": "split",
-      "split_tickers": 1,
-      "noise_tickers": 56,
+      "split_tickers": 3,
+      "noise_tickers": 60,
       "findings": [
         {
-          "ticker": "ETD",
+          "ticker": "BRCC",
           "verdict": "split",
           "bad_bars": 501,
           "bars": 524,
           "bad_share": 0.9561,
-          "worst_excess": 0.169815,
-          "worst_date": "2025-11-12",
+          "worst_excess": 9.000001,
+          "worst_date": "2025-04-02",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "REAX",
+          "verdict": "split",
+          "bad_bars": 501,
+          "bars": 524,
+          "bad_share": 0.9561,
+          "worst_excess": 9.0,
+          "worst_date": "2024-12-24",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "WLFC",
+          "verdict": "split",
+          "bad_bars": 489,
+          "bars": 524,
+          "bad_share": 0.9332,
+          "worst_excess": 2.021718,
+          "worst_date": "2024-09-20",
           "inverted_bars": 0
         },
         {
@@ -958,36 +988,6 @@
           "worst_excess": 0.001398,
           "worst_date": "2026-07-21",
           "inverted_bars": 0
-        },
-        {
-          "ticker": "AROC",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.001312,
-          "worst_date": "2026-07-07",
-          "inverted_bars": 0
-        },
-        {
-          "ticker": "WABC",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.001124,
-          "worst_date": "2026-07-06",
-          "inverted_bars": 0
-        },
-        {
-          "ticker": "GTX",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.000948,
-          "worst_date": "2026-07-27",
-          "inverted_bars": 0
         }
       ]
     },
@@ -1189,7 +1189,7 @@
       ]
     }
   },
-  "splits": 2,
+  "splits": 5,
   "status": "split",
-  "noise_tickers": 108
+  "noise_tickers": 118
 }

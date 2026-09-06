@@ -776,7 +776,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59691
+  "ledger_rows": 59872
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
