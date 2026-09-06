@@ -2174,3 +2174,136 @@ def test_no_bare_session_date_literal_reintroduces_the_time_bomb():
         f"bare session-date literal(s) {sorted(literals - {'2020-01-01'})} will age out of "
         "SETTLE_WINDOW_DAYS and red this pack on a date rollover -- use ASOF"
     )
+
+# ---------------------------------------------------------------------------
+# Canada builder health projection — off-lane no-op is not a write failure
+# ---------------------------------------------------------------------------
+def _canada_health_setups() -> dict:
+    return {
+        "buy": [
+            {
+                "ticker": "TEST.TO",
+                "group": "setting_up",
+                "alpha": 0.75,
+                "price": 100.0,
+                "signal": {},
+                "conviction": {},
+                "entry_signal": {},
+            }
+        ],
+        "watch": [],
+    }
+
+
+def _stub_canada_health_read_side(monkeypatch, tmp_path):
+    """Keep every existing read projection live without repository writes."""
+    import engine
+    from engine import board_shadow as active_shadow
+    from engine import track_ledger
+
+    seen = {"scorecard": 0, "grade": 0, "track": 0, "shadow": 0}
+
+    def scorecard(_market: str) -> dict:
+        seen["scorecard"] += 1
+        return {"status": "accruing"}
+
+    def grade(_market: str) -> dict:
+        seen["grade"] += 1
+        return {"available": False}
+
+    def track_document(*_args, **_kwargs) -> dict:
+        seen["track"] += 1
+        return {"meta": {"n_total": 0}, "rows": []}
+
+    def shadow_write(*_args, **_kwargs) -> None:
+        seen["shadow"] += 1
+
+    monkeypatch.setattr(board_ledger, "scorecard", scorecard)
+    monkeypatch.setattr(board_ledger, "grade", grade)
+    monkeypatch.setattr(track_ledger, "from_board_ledger_grade", track_document)
+    monkeypatch.setattr(track_ledger, "atomic_write", lambda *_a, **_k: None)
+    monkeypatch.setattr(active_shadow, "write_shadow", shadow_write)
+    monkeypatch.setattr(engine, "board_shadow", active_shadow, raising=False)
+    if active_shadow is not bs:
+        monkeypatch.setattr(bs, "write_shadow", shadow_write)
+    monkeypatch.setattr(
+        config,
+        "load",
+        lambda: {"storage": {"site_dir": str(tmp_path)}},
+    )
+    return seen
+
+
+def test_canada_off_nightly_caller_skips_append_without_false_error(
+    monkeypatch, tmp_path
+):
+    """Expected off-lane refusal cannot become a customer-visible error."""
+    from scripts import build_canada
+
+    setups = _canada_health_setups()
+    seen = _stub_canada_health_read_side(monkeypatch, tmp_path)
+    append_calls = []
+
+    def append_board(*args, **kwargs):
+        append_calls.append((args, kwargs))
+        return 0
+
+    monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: False)
+    monkeypatch.setattr(board_ledger, "append_board", append_board)
+
+    health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+    assert append_calls == [], "off-nightly caller must not enter append_board"
+    assert not [row for row in health if row.get("status") == "ERROR"], health
+    assert setups["board_track"] == {"status": "accruing"}
+    assert seen == {"scorecard": 1, "grade": 1, "track": 1, "shadow": 1}
+
+
+def test_canada_armed_nightly_zero_append_remains_loud(monkeypatch, tmp_path):
+    """A zero result after authorized admission remains a real failure."""
+    from scripts import build_canada
+
+    setups = _canada_health_setups()
+    _stub_canada_health_read_side(monkeypatch, tmp_path)
+    monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: True)
+    monkeypatch.setattr(board_ledger, "append_board", lambda *_a, **_k: 0)
+
+    health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+    errors = [row for row in health if row.get("status") == "ERROR"]
+    assert len(errors) == 1
+    assert errors[0]["rows"] == 0
+    assert "append wrote 0 rows" in errors[0]["en"]
+
+
+def test_canada_armed_nightly_success_is_healthy(monkeypatch, tmp_path):
+    """A successful authorized append produces no ledger health finding."""
+    from scripts import build_canada
+
+    setups = _canada_health_setups()
+    _stub_canada_health_read_side(monkeypatch, tmp_path)
+    monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: True)
+    monkeypatch.setattr(board_ledger, "append_board", lambda *_a, **_k: 1)
+
+    health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+    assert not [row for row in health if row.get("status") == "ERROR"], health
+
+
+def test_canada_armed_nightly_exception_remains_loud(monkeypatch, tmp_path):
+    """A real authorized append exception remains customer-visible."""
+    from scripts import build_canada
+
+    setups = _canada_health_setups()
+    _stub_canada_health_read_side(monkeypatch, tmp_path)
+    monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: True)
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("synthetic append failure")
+
+    monkeypatch.setattr(board_ledger, "append_board", explode)
+    health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+    errors = [row for row in health if row.get("status") == "ERROR"]
+    assert len(errors) == 1
+    assert "FAILED" in errors[0]["en"]
