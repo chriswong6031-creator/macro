@@ -1,29 +1,11 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-09-05T22:41:05+00:00",
-  "summary": "Context-only committee memo, as of 2026-09-05: the measured tape remains Risk-on (75), with normalizing volatility, healthy credit, no recession signal, and SPY still in Stage 2. The principal tension is regime transition: the confirmed US label is Q2 Reflation, but the current growth/inflation axes read Q3 and have accumulated 5 of the required 7 confirmation sessions. Separately, the growth-scare radar is at watch (64.2, rising) while its own measured 21-session pullback rate is 13.0% versus a 17.8% base rate; therefore it is an early contextual tension, not a forecast or measured adverse edge. Liquidity is neutral-hollow, with the RRP buffer exhausted, but credit and funding stress are not confirming. Factor evidence is not decision-grade: only 10 panel dates are available, the >=60-date Pair G gate is unmet, no factor contradictions exist, no factor attention items have been graded, and the survivorship-biased scorecard has no surviving legs. The broad spine query was capped and dominated by repeated Canadian-board horizon rows using unsigned MFE proxies; these are not comparable with signed-excess claims and cannot support a family-level reliability conclusion. Kernel evidence likewise shows no armed engines in the returned set. No hypothesis was staked because the available observations did not justify spending the limited weekly budget on a sufficiently isolated causal claim.",
-  "what_fired": [
-    "US risk radar moved from calm to watch on 2026-09-04, led by a rising growth-scare sub-score of 64.2.",
-    "Raw US regime axes imply Q3 while the confirmed label remains Q2; transition counter is 5/7 sessions.",
-    "Confluence graph reports ticker-level demand-versus-supply briefing divergence tension and three buy-lane/options-skew contradictions (ELV, HOOD, TSLA), all display-only.",
-    "Attention flags recorded for the regime transition, the risk-on/growth-scare tension, and stale master-brain thesis-ledger governance."
-  ],
-  "contradictions_review": "Two current contradiction edges were returned. First, the briefing-divergences pair reports 43 ticker-level demand-versus-supply oppositions, but the truncated note does not provide sufficient complete entity evidence for an entity attention flag. Second, ELV, HOOD, and TSLA buy-lane states conflict with rising five-day OTM-put skew; this is de-escalation context only, and the governing prior says bullish skew deceleration is unsupported on sector history. No Pair G factor contradictions are available because the factor panel has only 10 dates versus the 60-date activation requirement. The master-brain open theses do not directly name the current contradiction tickers, so no thesis-specific market attention flag was asserted. However, all displayed thesis deadlines have passed while statuses remain open, which deserves governance attention. The US-equities underweight thesis is also contextually opposed by the current Risk-on tape and tight credit, but its own stated HY-OAS falsifier is not fully met because OAS is 2.65% while EBP status was not supplied; it should not be declared falsified from this read.",
-  "decaying_families": [
-    "Factor composite and its investment, low-volatility, and low-beta legs: negative IC in the survivorship-biased scorecard; composite remains non-tradeable.",
-    "Radar signed-excess family: negative shrunken IC at 5-, 21-, and 63-day horizons in both pooled and displayed Q1/Q2 kernel rows; no returned row is armed.",
-    "Policy family: negative signed-excess means across returned 5-, 21-, and 63-day rows; no returned row is armed.",
-    "Desk thematic, stock, and AI families at 63 days: negative signed-excess estimates; all returned rows unarmed or vacuous.",
-    "Altdata: pooled out-of-sample result is negative and every returned row is explicitly held.",
-    "Master-brain open-thesis ledger: evaluation dates have decayed past check_by without status resolution."
-  ],
-  "deserves_operator": [
-    "Verify whether the Q3 raw-axis state completes the remaining two confirmation sessions; falsify attention if Q3 persistence breaks or growth_score returns to non-negative before confirmation.",
-    "Track the rising growth-scare sub-score without converting it into an adverse forecast: close attention if it falls below 50 for three sessions or remains below the unconditional pullback base rate through grading.",
-    "Resolve or renew all 15 overdue open master-brain theses and correct duplicate thesis IDs before using the ledger as current deliberative context.",
-    "Inspect the full 43-name briefing divergence artifact separately; the contradiction summary was truncated and is insufficient for entity-level adjudication.",
-    "Treat factor context as coverage-limited until at least 60 distinct panel dates activate Pair G and at least 25 factor-attention outcomes exist."
-  ],
+  "as_of": "2026-09-06T10:36:05+00:00",
+  "summary": "Budget exhausted after 3 tool-call batches (7 individual calls). Partial deliberation only.",
+  "what_fired": [],
+  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
+  "decaying_families": [],
+  "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
     "as_of": "2026-09-05",
@@ -50,9 +32,7 @@
     "read_contradictions": 1,
     "list_factor_contradictions": 1,
     "read_kernel": 1,
-    "read_master_brain_theses": 1,
-    "flag_attention": 1,
-    "write_memo": 1
+    "read_master_brain_theses": 1
   },
   "is_context_only": true,
   "run_status": {
@@ -61,38 +41,6 @@
     "degradation_reason": null,
     "model_used": "claude-opus-4-8",
     "provider_attempts": [
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cem6eaHfJkBBmq18q4e2U'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cem6fso9ik7oExq4yVMRg'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cem6kUu8qEBwsgZdTjx38'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Cem6ywLyHFYV18Qj2XR33'}"
-      },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
@@ -127,9 +75,9 @@
       }
     ],
     "tool_call_batches": 3,
-    "individual_tool_calls": 9,
+    "individual_tool_calls": 7,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-09-05T14:41:44Z"
+    "context_as_of": "2026-09-06T07:58:49Z"
   }
 }
