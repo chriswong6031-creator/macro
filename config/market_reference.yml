@@ -17,8 +17,8 @@ entries:
     family: regime
     label_en: Market Regime
     label_zh: 市场状态
-    aliases_en: [regime call, market posture read]
-    aliases_zh: [市场态势, 市场状态判断]
+    aliases_en: [regime call, market posture read, regime badge]
+    aliases_zh: [市场态势, 市场状态判断, 市场状态徽标]
     short_definition_en: >
       A plain-word read of the market's current posture — risk-on, mixed, or risk-off — drawn
       from the dashboard's composite indicators, shown alongside the day's briefing.
@@ -1350,3 +1350,489 @@ entries:
     related_ids: [risk-on-risk-off, correlation-regime]
     authority_ceiling: reference_only
     status: active
+
+  # ---------------------------------------------------------------------
+  # MOR-1 W2 breadth additions (A-MO-W2-1) — 12 new indicator entries
+  # covering every remaining dashboard element documented in
+  # docs/site_semantics/macro.md and docs/site_semantics/us_stocks.md.
+  # ---------------------------------------------------------------------
+
+  - id: fired-alerts
+    kind: indicator
+    family: regime
+    label_en: Fired Alerts
+    label_zh: 已触发提醒
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A short list of the specific conditions that have crossed a pre-set
+      threshold recently, shown as a small pill on the dashboard.
+    short_definition_zh: '一个简短列表，列出近期越过预设阈值的具体条件，以看板上的小标签形式展示。'
+    why_it_matters_en: >
+      It tells you which specific watch conditions are active right now,
+      without you needing to check every panel yourself.
+    why_it_matters_zh: '它让你无需逐一查看每个面板，即可了解当前哪些具体的关注条件正处于激活状态。'
+    unit_or_basis: Count and list of active named conditions
+    unit_or_basis_zh: '当前激活的具名条件的数量与列表'
+    interpretation_up: >
+      More fired conditions means more of the pre-set watch list is currently active.
+    interpretation_up_zh: '触发数量越多，说明当前处于激活状态的预设关注项越多。'
+    interpretation_down: >
+      Fewer or no fired conditions means the watch list is currently quiet.
+    interpretation_down_zh: '触发数量减少或为零，说明关注列表当前处于平静状态。'
+    interpretation_neutral: >
+      The list can be empty for long stretches — that is a normal, quiet state, not a data gap.
+    interpretation_neutral_zh: '该列表可能长时间为空——这是正常的平静状态，而非数据缺失。'
+    caveats_en:
+      - This is a rules-based watch list, not a forecast or a trade signal.
+    caveats_zh:
+      - 这是一份基于规则的关注列表，并非预测或交易信号。
+    owner_ref: macro.html#regime-radar
+    public_source_refs: []
+    related_ids: [market-regime, regime-quadrant]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: evidence-matrix
+    kind: indicator
+    family: regime
+    label_en: Evidence Matrix
+    label_zh: 证据矩阵
+    aliases_en: [six-factor matrix]
+    aliases_zh: [六因子矩阵]
+    short_definition_en: >
+      A compact table laying out several factors side by side so their
+      readings can be compared at a glance, rather than read one at a time.
+    short_definition_zh: '一张紧凑的表格，将多项因子并排列出，便于一眼比较，而无需逐一查看。'
+    why_it_matters_en: >
+      Seeing the factors together makes it easier to notice when most of
+      them agree versus when the picture is mixed.
+    why_it_matters_zh: '将各因子并列展示，更容易察觉它们是否一致，还是呈现出分歧的局面。'
+    unit_or_basis: Grid of per-factor state labels
+    unit_or_basis_zh: '按因子分列的状态标签网格'
+    interpretation_up: >
+      Most factors pointing the same direction is a more confluent read.
+    interpretation_up_zh: '大多数因子指向同一方向，代表信号更趋一致。'
+    interpretation_down: >
+      Factors pointing in different directions is a more mixed, lower-confidence read.
+    interpretation_down_zh: '各因子方向不一致，代表信号更为混合，置信度较低。'
+    interpretation_neutral: >
+      A mixed matrix is common between regime turns and is not itself a signal to act on.
+    interpretation_neutral_zh: '在周期转换阶段，矩阵出现分歧较为常见，本身并不构成行动信号。'
+    caveats_en:
+      - The matrix is a coincident read-out, not an independent forecast, and each
+        underlying factor already has its own reference entry.
+    caveats_zh:
+      - 该矩阵是同期读数展示，并非独立预测；每个底层因子均已有各自的说明条目。
+    owner_ref: macro.html#sx-evidence
+    public_source_refs: []
+    related_ids: [evidence-trend, evidence-risk-appetite, evidence-volatility, evidence-breadth, evidence-liquidity, evidence-stress]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: multi-timeframe-tape
+    kind: indicator
+    family: cross-asset-basics
+    label_en: Multi-Timeframe Tape
+    label_zh: 多周期行情表
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A table showing the same set of assets across several time windows
+      (for example a day, a week, and a month) side by side.
+    short_definition_zh: '一张表格，将同一批资产在多个时间窗口（例如一日、一周、一月）的表现并排展示。'
+    why_it_matters_en: >
+      It helps separate a short-lived wiggle from a move that is showing
+      up across multiple timeframes at once.
+    why_it_matters_zh: '有助于区分短暂波动与在多个周期上同时出现的持续走势。'
+    unit_or_basis: Percent change per asset per timeframe
+    unit_or_basis_zh: '按资产与周期划分的涨跌幅百分比'
+    interpretation_up: >
+      Consistent direction across timeframes suggests a more established move.
+    interpretation_up_zh: '各周期方向一致，通常代表趋势更为确立。'
+    interpretation_down: >
+      A short-term move that disagrees with longer timeframes may be noise.
+    interpretation_down_zh: '短周期表现与更长周期相悖时，可能只是短期噪音。'
+    interpretation_neutral: >
+      Mixed signs across timeframes are common in choppy, range-bound markets.
+    interpretation_neutral_zh: '在震荡整理的市场中，各周期方向不一致的情况较为常见。'
+    caveats_en:
+      - This is a descriptive price table, not a ranking or a buy/sell signal.
+    caveats_zh:
+      - 这是一张描述性的价格表格，并非排名或买卖信号。
+    owner_ref: macro.html#sx-markets-v2
+    public_source_refs: []
+    related_ids: [risk-on-risk-off]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: posture-dial
+    kind: indicator
+    family: regime
+    label_en: Posture Dial
+    label_zh: 态势仪表
+    aliases_en: [posture chip]
+    aliases_zh: [态势标签]
+    short_definition_en: >
+      A single dial-shaped readout summarising whether the overall backdrop
+      currently leans risk-on, risk-off, or neutral.
+    short_definition_zh: '一个仪表状的综合读数，概括当前整体环境偏向风险偏好、风险规避，还是中性。'
+    why_it_matters_en: >
+      It gives a one-glance summary of overall tone before you look at
+      any individual factor.
+    why_it_matters_zh: '在查看任何单项因子之前，先给出整体基调的一目了然的总结。'
+    unit_or_basis: Categorical dial position (risk-on / neutral / risk-off)
+    unit_or_basis_zh: '仪表位置分类（风险偏好／中性／风险规避）'
+    interpretation_up: >
+      A risk-on reading suggests the backdrop is currently leaning supportive.
+    interpretation_up_zh: '风险偏好读数表示当前环境偏向支持性。'
+    interpretation_down: >
+      A risk-off reading suggests the backdrop is currently leaning defensive.
+    interpretation_down_zh: '风险规避读数表示当前环境偏向防御性。'
+    interpretation_neutral: >
+      A neutral reading means the summary factors are not leaning clearly either way.
+    interpretation_neutral_zh: '中性读数表示各项综合因子暂未明显偏向任一方向。'
+    caveats_en:
+      - This is a summary readout of other factors already on the page, not an
+        independent forecast, and it is not a recommendation to buy, sell, or size anything.
+    caveats_zh:
+      - 这是对页面上其他因子的综合总结，并非独立预测，也不构成任何买入、卖出或仓位建议。
+    owner_ref: macro.html#sx-v5-sentiment
+    public_source_refs: []
+    related_ids: [market-regime, risk-on-risk-off]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: sector-heat
+    kind: indicator
+    family: breadth-participation
+    label_en: Sector Heat
+    label_zh: 板块热力
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A strip of sector tiles colored by recent relative performance, so
+      the strongest and weakest sectors stand out visually.
+    short_definition_zh: '一排按近期相对表现着色的板块方块，使表现最强与最弱的板块直观突出。'
+    why_it_matters_en: >
+      It shows which parts of the market are currently leading or lagging,
+      which is useful context for where strength is concentrated.
+    why_it_matters_zh: '展示当前市场中哪些板块领先或落后，有助于了解强势资金的集中方向。'
+    unit_or_basis: Relative performance rank per sector, colour-coded
+    unit_or_basis_zh: '各板块相对表现排名，以颜色区分'
+    interpretation_up: >
+      A hot sector has been outperforming the broader market recently.
+    interpretation_up_zh: '热力较高的板块近期跑赢大盘。'
+    interpretation_down: >
+      A cold sector has been underperforming the broader market recently.
+    interpretation_down_zh: '热力较低的板块近期跑输大盘。'
+    interpretation_neutral: >
+      A broadly even strip means leadership is not currently concentrated in a few sectors.
+    interpretation_neutral_zh: '若各板块热力较为均匀，说明当前领涨力量并未集中在少数板块。'
+    caveats_en:
+      - This shows recent relative performance, not a forecast of which sector will
+        lead next, and it is not a recommendation to buy or sell any sector.
+    caveats_zh:
+      - 这展示的是近期相对表现，并非对下一阶段领涨板块的预测，也不构成任何买卖建议。
+    owner_ref: us_stocks.html#advanced-breadth
+    public_source_refs: []
+    related_ids: [leadership-rotation]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: leadership-rotation
+    kind: indicator
+    family: breadth-participation
+    label_en: Leadership & Rotation
+    label_zh: 领涨与轮动
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A view of which sectors or factors have been taking over the lead
+      from others recently, showing rotation over time.
+    short_definition_zh: '展示近期哪些板块或风格因子正在接替领涨地位，反映资金轮动的变化。'
+    why_it_matters_en: >
+      Rotation between leaders can be an early sign that the market's
+      preferences are shifting.
+    why_it_matters_zh: '领涨板块之间的轮动，可能是市场偏好正在转变的早期迹象。'
+    unit_or_basis: Ranked change in relative leadership over recent windows
+    unit_or_basis_zh: '近期窗口内相对领涨地位排名的变化'
+    interpretation_up: >
+      A new leader emerging suggests a possible shift in market preference.
+    interpretation_up_zh: '出现新的领涨板块，可能意味着市场偏好正在转变。'
+    interpretation_down: >
+      A former leader fading suggests that theme may be losing momentum.
+    interpretation_down_zh: '此前的领涨板块走弱，可能意味着该主题的动能正在减弱。'
+    interpretation_neutral: >
+      Stable leadership with little rotation is common in steady, trending markets.
+    interpretation_neutral_zh: '在稳定的趋势性市场中，领涨地位保持稳定、轮动较少的情况较为常见。'
+    caveats_en:
+      - This describes recent rotation, not a forecast of future leadership, and it
+        is not a recommendation to buy or sell any sector or factor.
+    caveats_zh:
+      - 这描述的是近期的轮动情况，并非对未来领涨格局的预测，也不构成任何买卖建议。
+    owner_ref: us_stocks.html#advanced-breadth
+    public_source_refs: []
+    related_ids: [sector-heat]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: alpha-chip
+    kind: indicator
+    family: cross-asset-basics
+    label_en: Alpha (α) Chip
+    label_zh: Alpha (α) 标签
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A small chip showing a stock's recent return in excess of what the
+      broader market's move alone would explain.
+    short_definition_zh: '一个小标签，显示个股近期回报中超出大盘整体走势可解释部分的部分。'
+    why_it_matters_en: >
+      It separates a stock's own performance from moves that simply
+      tracked the overall market.
+    why_it_matters_zh: '有助于区分个股自身的表现与单纯跟随大盘走势带来的收益。'
+    unit_or_basis: Excess return versus a market benchmark, percent
+    unit_or_basis_zh: '相对于市场基准的超额回报，百分比表示'
+    interpretation_up: >
+      A positive value means the stock has outperformed the broader market recently.
+    interpretation_up_zh: '正值表示该股票近期跑赢大盘。'
+    interpretation_down: >
+      A negative value means the stock has underperformed the broader market recently.
+    interpretation_down_zh: '负值表示该股票近期跑输大盘。'
+    interpretation_neutral: >
+      A value near zero means the stock has moved roughly in line with the market.
+    interpretation_neutral_zh: '接近零的数值表示该股票走势与大盘大致同步。'
+    caveats_en:
+      - This is a backward-looking measure of past excess return, not a forecast,
+        and it is not a recommendation to buy, sell, or size anything.
+    caveats_zh:
+      - 这是对过去超额回报的回顾性度量，并非预测，也不构成任何买入、卖出或仓位建议。
+    owner_ref: us_stocks.html#equity-scoreboard
+    public_source_refs: []
+    related_ids: []
+    authority_ceiling: reference_only
+    status: active
+
+  - id: buy-readiness
+    kind: indicator
+    family: doctrine
+    label_en: Buy-Readiness / Setup Score
+    label_zh: 买入准备度／形态分
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A score summarising how many of a checklist of technical conditions
+      a stock currently satisfies.
+    short_definition_zh: '一项分数，概括个股当前满足了多少项技术条件清单。'
+    why_it_matters_en: >
+      It condenses a checklist into a single readout so you do not have
+      to check every condition by hand.
+    why_it_matters_zh: '将一份检查清单浓缩为单一读数，省去逐项人工核对的步骤。'
+    unit_or_basis: Count of checklist conditions satisfied, out of a fixed total
+    unit_or_basis_zh: '满足的检查清单条件数量（占固定总数的比例）'
+    interpretation_up: >
+      A higher score means more of the checklist conditions are currently satisfied.
+    interpretation_up_zh: '分数越高，表示满足的检查清单条件越多。'
+    interpretation_down: >
+      A lower score means fewer of the checklist conditions are currently satisfied.
+    interpretation_down_zh: '分数越低，表示满足的检查清单条件越少。'
+    interpretation_neutral: >
+      A mid-range score means the setup is partial rather than clearly present or absent.
+    interpretation_neutral_zh: '中等分数表示形态条件部分满足，既非明确具备，也非完全不具备。'
+    caveats_en:
+      - This explains what the marker means. It is not a recommendation to buy,
+        sell, or size anything.
+      - The checklist is a technical read of price and volume history, not a
+        forecast of future returns.
+    caveats_zh:
+      - 此处只说明该标记的含义，不构成任何买入、卖出或仓位建议。
+      - 该清单是对价格与成交量历史的技术性解读，并非对未来回报的预测。
+    owner_ref: us_stocks.html#action-board
+    public_source_refs: []
+    related_ids: [entry-timing]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: insider-buy
+    kind: indicator
+    family: flows-positioning
+    label_en: Insider Buy Chip
+    label_zh: 内部人买入标签
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A chip flagging that a company insider has recently reported buying
+      shares in the open market.
+    short_definition_zh: '一个标签，标记公司内部人近期在公开市场申报买入股票的行为。'
+    why_it_matters_en: >
+      Insider buying can be a data point worth noting alongside everything
+      else you already look at, since insiders sometimes have informed views on their own company.
+    why_it_matters_zh: '内部人买入行为可以作为一项值得留意的数据点，因为内部人有时对自家公司持有更为了解的判断。'
+    unit_or_basis: Presence/absence flag from recent public insider filings
+    unit_or_basis_zh: '来自近期公开内部人申报记录的有无标记'
+    interpretation_up: >
+      A recent insider buy has been reported for this name.
+    interpretation_up_zh: '该股票近期出现内部人买入申报。'
+    interpretation_down: >
+      No recent insider buy has been reported for this name.
+    interpretation_down_zh: '该股票近期未出现内部人买入申报。'
+    interpretation_neutral: >
+      Absence of a reported buy does not itself mean anything negative — most names
+      have no insider activity most of the time.
+    interpretation_neutral_zh: '未出现买入申报本身并不代表负面信号——大多数股票在大多数时间都没有内部人交易活动。'
+    caveats_en:
+      - This reflects public regulatory filings only and is not a recommendation
+        to buy, sell, or size anything.
+    caveats_zh:
+      - 该数据仅反映公开监管申报信息，不构成任何买入、卖出或仓位建议。
+    owner_ref: us_stocks.html#action-board
+    public_source_refs: []
+    related_ids: []
+    authority_ceiling: reference_only
+    status: active
+
+  - id: entry-timing
+    kind: indicator
+    family: doctrine
+    label_en: Entry Timing Dot
+    label_zh: 入场时机点
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A small dot indicating whether current price action looks like a
+      typical early-stage setup, based on a fixed technical checklist.
+    short_definition_zh: '一个小圆点，基于固定的技术检查清单，指示当前价格走势是否呈现出典型的早期形态特征。'
+    why_it_matters_en: >
+      It flags a specific technical pattern in the price history for you
+      to look at more closely if you choose to.
+    why_it_matters_zh: '它标记出价格历史中的一种特定技术形态，供你在需要时进一步查看。'
+    unit_or_basis: Categorical dot state from a fixed technical checklist
+    unit_or_basis_zh: '基于固定技术检查清单得出的分类圆点状态'
+    interpretation_up: >
+      A lit dot means the current pattern matches the checklist's early-stage criteria.
+    interpretation_up_zh: '圆点点亮表示当前形态符合清单中的早期阶段标准。'
+    interpretation_down: >
+      An unlit dot means the current pattern does not currently match those criteria.
+    interpretation_down_zh: '圆点未点亮表示当前形态尚不符合上述标准。'
+    interpretation_neutral: >
+      The dot describes pattern shape only and carries no view on direction by itself.
+    interpretation_neutral_zh: '该圆点仅描述形态特征，本身不包含方向性判断。'
+    caveats_en:
+      - This explains what the marker means. It is not a recommendation to buy,
+        sell, or size anything.
+      - This is a technical pattern read, not a forecast of future price direction.
+    caveats_zh:
+      - 此处只说明该标记的含义，不构成任何买入、卖出或仓位建议。
+      - 这是一种技术形态解读，并非对未来价格方向的预测。
+    owner_ref: us_stocks.html#action-board
+    public_source_refs: []
+    related_ids: [buy-readiness]
+    authority_ceiling: reference_only
+    status: active
+
+  - id: sue-earnings-surprise
+    kind: indicator
+    family: calendar-events
+    label_en: SUE Earnings Surprise
+    label_zh: SUE 盈余惊喜
+    aliases_en: [standardized unexpected earnings]
+    aliases_zh: [标准化未预期盈余]
+    short_definition_en: >
+      A chip showing how far a company's reported earnings deviated from
+      analyst expectations, scaled to be comparable across companies.
+    short_definition_zh: '一个标签，显示公司公布的盈余与分析师预期的偏离程度，并按可比口径进行了标准化处理。'
+    why_it_matters_en: >
+      A large surprise in either direction can be a meaningful event for
+      a stock in the days around its earnings report.
+    why_it_matters_zh: '无论方向如何，较大的盈余意外通常是该股票财报前后值得关注的重要事件。'
+    unit_or_basis: Standardized surprise score relative to analyst estimates
+    unit_or_basis_zh: '相对于分析师预期的标准化意外分数'
+    interpretation_up: >
+      A positive surprise means reported earnings came in above analyst expectations.
+    interpretation_up_zh: '正向意外表示公布的盈余高于分析师预期。'
+    interpretation_down: >
+      A negative surprise means reported earnings came in below analyst expectations.
+    interpretation_down_zh: '负向意外表示公布的盈余低于分析师预期。'
+    interpretation_neutral: >
+      A surprise near zero means results were broadly in line with expectations.
+    interpretation_neutral_zh: '接近零的意外值表示业绩基本符合预期。'
+    caveats_en:
+      - This describes a past reported result, not a forecast of the next report,
+        and it is not a recommendation to buy, sell, or size anything.
+    caveats_zh:
+      - 这描述的是已公布的历史结果，并非对下一次财报的预测，也不构成任何买卖建议。
+    owner_ref: us_stocks.html#dash-mtf-section
+    public_source_refs: []
+    related_ids: []
+    authority_ceiling: reference_only
+    status: active
+
+  - id: factor-seasonality
+    kind: indicator
+    family: calendar-events
+    label_en: Factor Seasonality Chip
+    label_zh: 因子季节性标签
+    aliases_en: []
+    aliases_zh: []
+    short_definition_en: >
+      A chip summarising how a factor or sector has historically tended to
+      perform during the current calendar window, based on past years.
+    short_definition_zh: '一个标签，基于历史年份数据，概括某一风格因子或板块在当前日历窗口通常的表现倾向。'
+    why_it_matters_en: >
+      It adds calendar-based historical context, which is one input among
+      many rather than a standalone reason to act.
+    why_it_matters_zh: '它提供了基于日历的历史背景信息，属于众多参考因素之一，而非单独的行动依据。'
+    unit_or_basis: Historical average seasonal tendency over past calendar windows
+    unit_or_basis_zh: '过去日历窗口内的历史平均季节性倾向'
+    interpretation_up: >
+      A historically favourable seasonal window for this factor or sector.
+    interpretation_up_zh: '该风格因子或板块历史上在此日历窗口表现相对有利。'
+    interpretation_down: >
+      A historically unfavourable seasonal window for this factor or sector.
+    interpretation_down_zh: '该风格因子或板块历史上在此日历窗口表现相对不利。'
+    interpretation_neutral: >
+      A neutral seasonal read means history shows no strong tendency either way.
+    interpretation_neutral_zh: '中性的季节性读数表示历史数据未显示出明显的偏向。'
+    caveats_en:
+      - This is a historical seasonal tendency, not a forecast, and it is not a
+        recommendation to buy, sell, or size anything.
+    caveats_zh:
+      - 这是一种历史季节性倾向，并非预测，也不构成任何买入、卖出或仓位建议。
+    owner_ref: us_stocks.html#dash-mtf-section
+    public_source_refs: []
+    related_ids: []
+    authority_ceiling: reference_only
+    status: active
+
+coverage_exceptions:
+  - element_en: Prophet Stock Signals Board
+    element_zh: 个股信号看板
+    surface: us_stocks.html
+    state: not_an_indicator
+    reason_en: >
+      A board of names, not a measure. The fields on each card are explained
+      individually — see Alpha, Buy-Readiness, Entry Timing and Insider Buy.
+    reason_zh: >
+      这是一个名单看板，不是一项指标。卡片上的各个字段单独解释——见 Alpha、买入准备度、入场时机与内部人买入。
+    see_ids: [alpha-chip, buy-readiness, entry-timing, insider-buy]
+  - element_en: Sector Act-Now Board
+    element_zh: 行业行动看板
+    surface: us_stocks.html
+    state: not_an_indicator
+    reason_en: >
+      A ranked table, not a measure. The inputs it displays are explained
+      under Sector Heat and Leadership & Rotation.
+    reason_zh: >
+      这是一张排序表格，不是一项指标。其展示的输入在“板块热力”和“领涨与轮动”条目中解释。
+    see_ids: [sector-heat, leadership-rotation]
+  - element_en: Regime Badge
+    element_zh: 市场状态徽标
+    surface: us_stocks.html
+    state: covered_by
+    see_ids: [market-regime]
+  - element_en: Posture Chip
+    element_zh: 态势标签
+    surface: us_stocks.html
+    state: covered_by
+    see_ids: [posture-dial]

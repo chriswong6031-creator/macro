@@ -93,11 +93,19 @@ FAMILY_LABELS: dict[str, tuple[str, str]] = {
 # see `check_anchor_liveness()` below and its red fixture in
 # tests/test_market_reference.py.
 KNOWN_OWNER_PAGES: dict[str, set[str]] = {
-    "macro.html": {"regime-radar", "sx-events-v2", "sx-markets-v2", "sx-v5-sentiment"},
+    "macro.html": {
+        "regime-radar", "sx-events-v2", "sx-markets-v2", "sx-v5-sentiment",
+        # A-MO-W2-1: verified live via check_anchor_liveness() against the
+        # committed site/macro.html under its default rendered body class.
+        "sx-evidence",
+    },
     "aibrief.html": set(),
     "whitehouse.html": {"treasury-watch"},
     "bonds.html": {"curve", "real", "credit"},
     "committee.html": {"cm_rebalance_pulse_section"},
+    # A-MO-W2-1: new owner surface, verified live via check_anchor_liveness()
+    # against the committed site/us_stocks.html.
+    "us_stocks.html": {"action-board", "equity-scoreboard", "advanced-breadth", "dash-mtf-section"},
 }
 
 # Display label for an owner_ref link. The registry stores only the raw
@@ -110,7 +118,11 @@ PAGE_LABELS: dict[str, tuple[str, str]] = {
     "whitehouse.html": ("Treasury Watch", "财政部观察"),
     "bonds.html": ("Bonds", "债券"),
     "committee.html": ("Committee", "委员会"),
+    "us_stocks.html": ("US Stocks", "美股"),
 }
+
+# A-MO-W2-1: the three legal `coverage_exceptions[].state` values.
+COVERAGE_STATES = {"not_an_indicator", "not_covered", "covered_by"}
 
 # Public primary-source allowlist (MOR1_CONTRACT.md "Registry taxonomy").
 SOURCE_HOST_LABELS: dict[str, str] = {
@@ -488,6 +500,7 @@ def build_view_model(entries: list[dict]) -> tuple[list[dict], list[dict], list[
         row["initial"] = initial_of(e.get("label_en", ""))
         row["search_key"] = search_key(e)
         row["owner_refs"] = _owner_refs_for(e["owner_ref"])
+        row["owner_unlinked"] = "#" not in e["owner_ref"]
         row["public_source_refs"] = _source_refs_for(e.get("public_source_refs"))
         row["related"] = related
         row["unit_or_basis_en"] = e.get("unit_or_basis")
@@ -512,11 +525,81 @@ def build_view_model(entries: list[dict]) -> tuple[list[dict], list[dict], list[
     return vm, families, letters
 
 
+def validate_coverage_exceptions(raw: dict, entries: list[dict]) -> list[dict]:
+    """A-MO-W2-1: validate `coverage_exceptions` (optional). Fail-closed, same idiom
+    as `validate()`. Returns the raw exception dicts on success; raises
+    RegistryError with every violation found."""
+    seen_ids = {e["id"] for e in entries}
+    raw_list = raw.get("coverage_exceptions")
+    if raw_list is None:
+        return []
+    errors: list[str] = []
+    if not isinstance(raw_list, list):
+        raise RegistryError(["coverage_exceptions must be a list when present"])
+    for i, c in enumerate(raw_list):
+        where = f"coverage_exceptions[{i}]"
+        if not isinstance(c, dict):
+            errors.append(f"{where}: must be a mapping")
+            continue
+        state = c.get("state")
+        if state not in COVERAGE_STATES:
+            errors.append(f"{where}: state must be one of {sorted(COVERAGE_STATES)}, got {state!r}")
+        if not (c.get("element_en") or "").strip():
+            errors.append(f"{where}: element_en must be non-empty")
+        if not (c.get("element_zh") or "").strip():
+            errors.append(f"{where}: element_zh must be non-empty")
+        see_ids = c.get("see_ids") or []
+        if state == "covered_by":
+            if not see_ids:
+                errors.append(f"{where}: state:covered_by requires non-empty see_ids")
+        elif state in ("not_an_indicator", "not_covered"):
+            if not (c.get("reason_en") or "").strip():
+                errors.append(f"{where}: state:{state} requires non-empty reason_en")
+            if not (c.get("reason_zh") or "").strip():
+                errors.append(f"{where}: state:{state} requires non-empty reason_zh")
+        for sid in see_ids:
+            if sid not in seen_ids:
+                errors.append(f"{where}: see_ids references unknown id {sid!r}")
+        surface = c.get("surface")
+        if surface not in KNOWN_OWNER_PAGES:
+            errors.append(f"{where}: surface {surface!r} is not in KNOWN_OWNER_PAGES")
+    if errors:
+        raise RegistryError(errors)
+    return raw_list
+
+
+def build_coverage_view_model(coverage_raw: list[dict], entries: list[dict]) -> list[dict]:
+    """A-MO-W2-1: turn validated coverage_exceptions into the view-model
+    `templates/reference.html.j2`'s Coverage ledger consumes."""
+    by_id = {e["id"]: e for e in entries}
+    out: list[dict] = []
+    for c in coverage_raw:
+        surface = c.get("surface")
+        label_en, label_zh = PAGE_LABELS.get(surface, (surface, surface))
+        see = []
+        for sid in c.get("see_ids") or []:
+            tgt = by_id.get(sid)
+            if tgt:
+                see.append({"id": sid, "label_en": tgt.get("label_en"), "label_zh": tgt.get("label_zh")})
+        out.append({
+            "state": c.get("state"),
+            "element_en": c.get("element_en"),
+            "element_zh": c.get("element_zh"),
+            "reason_en": c.get("reason_en"),
+            "reason_zh": c.get("reason_zh"),
+            "surface_label_en": label_en,
+            "surface_label_zh": label_zh,
+            "see": see,
+        })
+    return out
+
+
 def main() -> int:
     site = config.ROOT / "site"
     try:
         raw = load_registry()
         entries = validate(raw)
+        coverage_raw = validate_coverage_exceptions(raw, entries)
     except RegistryError as exc:
         for msg in exc.errors:
             log.error("market_reference registry: %s", msg)
@@ -526,11 +609,13 @@ def main() -> int:
         return 1
 
     entries_vm, families_vm, letters = build_view_model(entries)
+    coverage = build_coverage_view_model(coverage_raw, entries)
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template(TEMPLATE_NAME).render(
         entries=entries_vm, families=families_vm, letters=letters, generated_at=generated_at,
+        coverage=coverage,
     )
     out = site / OUT_NAME
     write_page(out, html)

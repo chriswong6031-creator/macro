@@ -11,7 +11,7 @@ Verifies:
    superseded_by, and the B1 anchor-liveness rule) — each fixture violates
    exactly one rule so the failure message is attributable.
 2. Happy-path build of the real committed registry: validates clean, the ZH
-   supplement's coverage counts (34/26/26/34), and the rendered page carries
+   supplement's coverage counts (46/38/38/46), and the rendered page carries
    the expected entry/family counts.
 3. Anchor stability: every registry entry id appears as a real `id="..."`
    anchor in the rendered HTML (deep-link contract).
@@ -431,23 +431,23 @@ def real_entries():
 
 
 def test_real_registry_validates_clean(real_entries):
-    assert len(real_entries) == 34
+    assert len(real_entries) == 46
 
 
 def test_real_registry_zh_supplement_coverage(real_entries):
-    """MOR-1 ZH supplement (2026-09-02): unit_or_basis_zh on all 34 entries;
-    interpretation_up_zh/down_zh on the 26 entries that carry a directional
-    up/down reading; interpretation_neutral_zh on all 34. Counts pinned so a
+    """MOR-1 ZH supplement (2026-09-02): unit_or_basis_zh on all 46 entries;
+    interpretation_up_zh/down_zh on the 38 entries that carry a directional
+    up/down reading; interpretation_neutral_zh on all 46. Counts pinned so a
     future edit that silently drops a translation is caught here, not just by
     the (already fail-closed) validator."""
     has_basis_zh = sum(1 for e in real_entries if e.get("unit_or_basis_zh"))
     has_up_zh = sum(1 for e in real_entries if e.get("interpretation_up_zh"))
     has_down_zh = sum(1 for e in real_entries if e.get("interpretation_down_zh"))
     has_neutral_zh = sum(1 for e in real_entries if e.get("interpretation_neutral_zh"))
-    assert has_basis_zh == 34
-    assert has_up_zh == 26
-    assert has_down_zh == 26
-    assert has_neutral_zh == 34
+    assert has_basis_zh == 46
+    assert has_up_zh == 38
+    assert has_down_zh == 38
+    assert has_neutral_zh == 46
     # and every _zh sibling implies a present _en value (no orphan translations)
     for e in real_entries:
         for base in ("unit_or_basis", "interpretation_up", "interpretation_down", "interpretation_neutral"):
@@ -457,8 +457,8 @@ def test_real_registry_zh_supplement_coverage(real_entries):
 
 def test_real_registry_builds_expected_families(real_entries):
     vm, families, letters = build_view_model(real_entries)
-    assert len(vm) == 34
-    assert sum(f["count"] for f in families) == 34
+    assert len(vm) == 46
+    assert sum(f["count"] for f in families) == 46
     assert [f["id"] for f in families] == [
         "regime", "liquidity", "volatility-stress", "rates-curve", "credit",
         "breadth-participation", "flows-positioning", "calendar-events",
@@ -541,7 +541,7 @@ def test_zh_supplement_fields_render_real_translation(real_entries, rendered_htm
                 f"{e['id']!r}: {base}_zh value {zh_val!r} not found (escaped: {expected!r}) in "
                 "rendered block (falling back to English would mean this assertion fails)"
             )
-    assert checked == 34 + 26 + 26 + 34  # matches test_real_registry_zh_supplement_coverage
+    assert checked == 46 + 38 + 38 + 46  # matches test_real_registry_zh_supplement_coverage
 
 
 def test_no_unrendered_jinja_braces(rendered_html):
