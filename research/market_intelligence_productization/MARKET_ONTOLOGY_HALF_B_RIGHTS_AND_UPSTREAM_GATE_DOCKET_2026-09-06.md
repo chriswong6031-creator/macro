@@ -101,12 +101,14 @@ All twenty rows listed in this docket are recorded `DOCKETED_TERMINAL_HALF_B` in
 - **Who can open it:** Chairman / commercial contract authority (consensus licensing)
 - **Authority ceiling if it opens (verbatim):** `research_display_only; FIF do_not_redo bars second financial-truth store`
 - **First bounded slice on the day it opens:** ON GATE OPEN ONLY: DCF/comps over ONE non-fixture issuer with rights-cleared consensus input.
+- **Valuation-source ruling:** DEC:F07-VALUATION-SOURCE-IS-SEC-COMPANYFACTS-V1 (lands with macro#6903) rules that V1 valuation may use only SEC companyfacts reported fundamentals as input; no consensus estimate, price target or analyst rating is used or displayed until a licensed consensus source is contracted, which is exactly the gate this row records. Code fact, checkable today: `engine/stock_fundamentals.py:1815` — the module's own comment states consensus ratings and price targets remain unwired.
 
 ### MO-PAID-037
 - **Blocked on (verbatim from the ledger):** `triple dependency 022+026+035`
 - **Who can open it:** Chairman / commercial contract authority, via its own dependency chain -- closes only after MO-PAID-022, MO-PAID-026 and MO-PAID-035 open (all F07-VALUATION-SCENARIO; not the F09 rows of the same numeric suffix, which this docket files separately under gate families C and A)
 - **Authority ceiling if it opens (verbatim):** `research_display_only`
 - **First bounded slice on the day it opens:** NONE. No independent slice exists; this row cannot be sliced before its three dependencies.
+- **Valuation-source ruling:** same DEC:F07-VALUATION-SOURCE-IS-SEC-COMPANYFACTS-V1 (lands with macro#6903) governs this row's own dependency MO-PAID-035; the same code fact, `engine/stock_fundamentals.py:1815`, is why a rights-cleared consensus source is still absent today.
 
 
 ## 3. Gate family B — upstream internal owner review (party: K1 Evidence Foundation owner, physical-store review)
@@ -233,6 +235,10 @@ Four F09 rows in the ledger (MO-DELTA-025, MO-PAID-066, MO-PAID-019, MO-PAID-029
 - **MO-PAID-019 / MO-PAID-029:** "ROW-ACCOUNTING REPAIR (charter 10.3): capital-structure identity is cusip6/isin/name prefix-then-name first-registry-match; it is not a canonical issuer join." Evidence: `agentos/handoffs/MARKET-ONTOLOGY-F00-META-CEO-CONTINUITY-PRODUCT-RESET-2026-09-05.md:333-334` — the charter 10.3 sentence itself.
 
 Plainly: held par is labelled held par and is never summed with issuer debt outstanding; theme/name matching is never described as a canonical issuer join.
+
+**Plain-language repair statement, MO-DELTA-025 / MO-PAID-066 (what a reader would see, what was wrong, what is now true):** A bond-fund page shows one number next to each bond, labelled as an amount a fund holds. That label could be misread as the company's own total debt, which it is not — it is only what one fund holds. The fix makes sure that number is always labelled as fund holdings and is never added together with, or shown as, the company's total debt.
+
+**Plain-language repair statement, MO-PAID-019 / MO-PAID-029 (what a reader would see, what was wrong, what is now true):** A capital-structure page groups filings under one company name. That grouping could be read as a guaranteed, one-to-one match to a single legal company, which it is not — it is a name-and-code match that can occasionally catch a different, similarly named company. The fix makes sure that grouping is described as a name-and-code match, never as a guaranteed single-company identification.
 
 ## 7. What this docket does NOT cover
 
