@@ -151,6 +151,30 @@ def test_the_builder_exposes_an_entry_point_the_site_build_can_call(tmp_path):
             ROOT / "templates" / name).read_bytes()
 
 
+def test_the_committed_page_matches_the_current_template_render():
+    """site/ontology.html is a hand-committed render: scripts/build_ontology_
+    explorer.py is a standalone builder (deliberately not wired into
+    scripts/build_site.py's Stage B yet), and check_template_site_sync.py only
+    guards the non-.j2 paired assets (ontology.css/js) -- the .j2 -> site/
+    render itself can drift silently while the VPS keeps serving the stale
+    copy. This is the drift guard until Stage B lands: it fails the moment
+    templates/ontology.html.j2 changes without a matching
+    `python -m scripts.build_ontology_explorer` re-run and commit."""
+    import tempfile
+    from jinja2 import Environment, FileSystemLoader
+    from scripts.build_ontology_explorer import build_shell
+
+    env = Environment(
+        loader=FileSystemLoader(str(ROOT / "templates")), autoescape=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        site = Path(tmp)
+        build_shell(env, site)
+        rendered = (site / "ontology.html").read_bytes()
+    assert rendered == PAGE.read_bytes(), (
+        "site/ontology.html is stale -- re-run "
+        "`python -m scripts.build_ontology_explorer` and commit the result")
+
+
 def test_a_missing_paired_asset_raises_instead_of_reporting_success(tmp_path,
                                                                     monkeypatch):
     """The site build wraps every page in an additive try/except, so a raise is

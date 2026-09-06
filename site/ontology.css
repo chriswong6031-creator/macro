@@ -183,6 +183,38 @@ html[data-lang="zh"] .blk>.l-zh{display:block!important}
   background:var(--panel2);border-radius:var(--r-ctl,8px)}
 [hidden]{display:none!important}
 
+/* ---- light treatment (TP-0: light is a research workspace, not a token
+   swap of dark). Dark's blocking marker is a glow ring -- luminance bloom
+   reads as "alert" on a dim command-center canvas. On white the same glow
+   degrades to a soft-edged smudge with no crisp boundary, so light substitutes
+   a hard hairline ring plus a small drop shadow (the paper cue for "raised,
+   attend here") instead of ambient bloom. The severed-rail wedge gets a
+   matching hard-edge shadow instead of the dark glow, and .ox-card trades the
+   dark theme's flat panel fill for real elevation -- "important" reads as
+   depth, not brightness. */
+html[data-theme="light"] .station[data-blocking="1"] .st-dot{
+  box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--act),
+    0 2px 4px color-mix(in srgb,var(--act) 35%,transparent)}
+html[data-theme="light"] .station[data-link="false"] .st-break::after{
+  box-shadow:0 1px 2px color-mix(in srgb,var(--act) 25%,transparent)}
+html[data-theme="light"] .ox-card{
+  box-shadow:0 1px 2px color-mix(in srgb,#0a0e18 6%,transparent),
+    0 6px 16px color-mix(in srgb,#0a0e18 8%,transparent)}
+html[data-theme="light"] .ox-card[data-tone="blocked"],
+html[data-theme="light"] .ox-card[data-tone="watch"]{
+  box-shadow:0 1px 2px color-mix(in srgb,#0a0e18 6%,transparent),
+    0 8px 20px color-mix(in srgb,#0a0e18 10%,transparent)}
+
+/* The house ambient wash (theme.css `html body::before`) is a margin
+   decoration meant to read as faint colour where a page has no opaque
+   content over it. This page's hero sits on bare canvas -- before ox-root's
+   cards mount, and even after, the eyebrow/state/stance column has no card
+   behind it -- so the wash bleeds directly through readable copy instead of
+   staying in the margins the way it does on card-dense pages. Give the hero
+   its own opaque layer so the wash never shows behind the intro text, in the
+   skeleton state or once the real trace has loaded. */
+.ox-hero{background:var(--bg);position:relative;z-index:0}
+
 /* ---- responsive: the rail turns ninety degrees -------------------------- */
 @media (max-width:860px){
   .ox-answers{grid-template-columns:minmax(0,1fr)}
