@@ -14,6 +14,22 @@ the COMMAND draft's superior sections are grafted here by name). Every judge def
 `templates/_site_nav.html.j2` (global header — UNTOUCHED), `templates/theme.css` (token root),
 `docs/DESIGN_DOCTRINE.md`, `research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md`, `mockups/design_system/specimen.html`.
 
+## §0.0 BASE — this spec is pinned to an unmerged branch (red-team F1/F3/F6, applied)
+
+**BASE:** this spec is written and cited against PR #6873
+(`origin/claude/marketontology-f01-product-experience-hub-r1-20260905`), head **`bcddcca07186`**. It is buildable
+**only** on that branch, or on `origin/main` after PR #6873 is squash-merged. Measured on `origin/main` @
+`77e882864e4` (2026-09-06): `templates/macro_monetary.html.j2` and `site/macro_monetary.html` do not exist (only
+the unrelated `macro_monetary_policy` workspace does), and `lib/macro_suite_view.py` exposes `build_view` /
+`degraded_view`, never `build_hub_view` — `grep -rn "build_hub_view" lib/ scripts/ templates/` on main returns zero
+hits. **No packet may build against a branch citation.** P1 does not open until #6873 is squash-merged onto
+`origin/main`; if a builder is ready to start P1 and #6873 has not merged, the builder STOPS and escalates.
+
+Every `file:line` citation in this spec (§3, §4, §5, §6.3) is **binding by string, advisory by line**: the string
+and the file are the contract; the line number is a pointer that may have moved. P1's first act is to re-resolve
+every citation against the merged `origin/main` and edit the corrected line numbers into this file before P2
+opens — see gates **G15** and **G16** below.
+
 ---
 
 ## §0 Acceptance gates — "not done unless"
@@ -72,7 +88,7 @@ G10. **Tokens extend, never parallel.** Every `--mc-*` token is defined in one `
 `templates/macro_suite.css` or a geometry/duration literal. Zero raw hex in component rules. Tone **ink** is
 inherited from `macro_suite.css` (`.mq-tone-*`, lines 88-91) and is never re-minted (§2.6, D5).
 
-G11. **Evidence posted.** The §10 matrix — 19 frames — is in the PR body of the final packet, and the
+G11. **Evidence posted.** The §10 matrix — 20 frames (red-team F16 adds frame 17b) — is in the PR body of the final packet, and the
 theme-relevant subset in each earlier packet. A packet whose light art direction has no crop is `PARTIAL`, never
 `PASS`.
 
@@ -90,6 +106,16 @@ currently publishes that the hub "never tells you what to do". §4's stance line
 alternatives rejected, evidence, reversibility — and must keep the no-score / no-rank / no-fusion half of that
 published sentence intact (§5 row 62). Shipping the stance line without that record is a blocker.
 
+G15. **Citations are binding by string, advisory by line, until P1 re-resolves them.** *(Red-team F1.)* P1 MUST
+re-resolve every §5 row against the merged `origin/main` shell and re-write the `file:line` column in this spec
+before P2 opens; rows are cited by (string, file) and the line column is advisory. If PR #6873 has not merged when
+P1 opens, P1 STOPS and escalates — no packet may build against a branch citation.
+
+G16. **The data contract is gated on #6873's merge.** *(Red-team F3.)* This spec's data contract assumes PR #6873
+is MERGED to `origin/main`. P1's first acceptance item is `git log origin/main --oneline -1 -- lib/macro_suite_view.py`
+showing the #6873 squash, and a `grep -n 'def build_hub_view' lib/macro_suite_view.py` receipt. If absent, every
+packet HOLDS.
+
 ---
 
 ## §1 Information architecture
@@ -106,22 +132,23 @@ stored in the value.
 | # | Section id (bare token) | EN label | ZH label | workspace_id(s) → page | Sub-tabs |
 |---|---|---|---|---|---|
 | 0 | `overview` | Overview | 总览 | *(hub view itself)* | — |
-| 1 | `money` | Money & liquidity | 资金与流动性 | `liquidity_regime` → `macro_liquidity_regime.html`; `liquidity_central_banks` → `macro_liquidity_central_banks.html` | "How much money is around" 市场资金 / "What central banks are holding" 央行资产负债表 |
+| 1 | `money` | Money & liquidity | 资金与流动性 | **`liquidity_regime`** → `macro_liquidity_regime.html` (PRIMARY); `liquidity_central_banks` → `macro_liquidity_central_banks.html` | "How much money is around" 市场资金 / "What central banks are holding" 央行资产负债表 |
 | 2 | `policy` | Policy rates | 政策利率 | `monetary_policy` → `macro_monetary_policy.html` | — |
 | 3 | `rates` | Rates & the curve | 利率与收益率曲线 | `rates_curves` → `macro_rates_curves.html` | — |
 | 4 | `inflation` | Inflation | 通胀 | `inflation_system` → `macro_inflation_system.html` | — |
-| 5 | `growth` | Growth | 经济增长 | `growth_real_economy` → `macro_growth_real_economy.html`; `business_activity` → `macro_business_activity.html` | "The whole economy" 整体经济 / "What companies are doing" 企业活动 |
+| 5 | `growth` | Growth | 经济增长 | **`growth_real_economy`** → `macro_growth_real_economy.html` (PRIMARY); `business_activity` → `macro_business_activity.html` | "The whole economy" 整体经济 / "What companies are doing" 企业活动 |
 | 6 | `jobs` | Jobs | 就业 | `labor_markets` → `macro_labor_markets.html` | — |
 | 7 | `housing` | Housing | 房地产 | `housing_real_estate` → `macro_housing_real_estate.html` | — |
 | 8 | `consumer` | Consumers | 消费者 | `consumer_payments` → `macro_consumer_payments.html` | — |
-| 9 | `credit` | Borrowing costs | 融资环境 | `financial_conditions` → `macro_financial_conditions.html`; `capital_structure` → `macro_capital_structure.html` | "How hard it is to borrow" 融资难易 / "How companies fund themselves" 企业融资结构 |
+| 9 | `credit` | Borrowing costs | 融资环境 | **`financial_conditions`** → `macro_financial_conditions.html` (PRIMARY); `capital_structure` → `macro_capital_structure.html` | "How hard it is to borrow" 融资难易 / "How companies fund themselves" 企业融资结构 |
 | 10 | `debt` | Government debt | 政府债务 | `national_debt_liabilities` → `macro_national_debt_liabilities.html` | — |
 | 11 | `trade` | Trade | 贸易往来 | `trade_flows` → `macro_trade_flows.html` | — |
 
-Slug list and page outputs verified in `scripts/build_macro_suite_pages.py` lines 76-226 (`workspace_id=` registry
-order: liquidity_regime, growth_real_economy, business_activity, labor_markets, inflation_system, monetary_policy,
-financial_conditions, liquidity_central_banks, capital_structure, housing_real_estate, consumer_payments,
-national_debt_liabilities, rates_curves, trade_flows).
+Slug list and page outputs verified in the fourteen `SuitePage` entries in `SUITE_PAGES`
+(`scripts/build_macro_suite_pages.py:73-237`; same fix as red-team F7 — a "lines 76-226" range silently drops
+`trade_flows`) (`workspace_id=` registry order: liquidity_regime, growth_real_economy, business_activity,
+labor_markets, inflation_system, monetary_policy, financial_conditions, liquidity_central_banks, capital_structure,
+housing_real_estate, consumer_payments, national_debt_liabilities, rates_curves, trade_flows).
 
 **Why the reading order differs from the registry order.** The registry order is a producer law governing the hub's
 *change list* and the suite bar (`templates/_macro_suite_nav.html.j2` header comment;
@@ -736,10 +763,13 @@ Notes the builder must not "clean up":
 
 ### §3.0 Chip law (binding on every chip)
 
-1. **The value is a WORD.** *(Grafted from COMMAND §3 chip law bullet 1.)* A chip value is never a number, never a
-   state id, never a slug, never a percentage. Numbers live inside the panel. A producer-authored `state_label`
-   that contains a digit is a build failure, not a rendering problem — P2's test asserts
-   `re.search(r"\d", value)` is None for every chip.
+1. **The value is a WORD, for chips 1-7.** *(Grafted from COMMAND §3 chip law bullet 1; red-team F11 applied.)* A
+   chip value for chips 1-7 is never a number, never a state id, never a slug, never a percentage. Numbers live
+   inside the panel. A producer-authored `state_label` that contains a digit is a build failure, not a rendering
+   problem — P2's test asserts `re.search(r"\d", value)` is None for chips 1-7. **Chip 8 is the declared
+   exception**: it is the instrument chip (§3.2), its value is a counted phrase, and P2's test asserts chip 8's
+   value matches exactly `^\d+ of \d+ sections have today's data$` / `^\d+ 个板块中有 \d+ 个已更新今日数据$` and
+   nothing else.
 2. **Every as-of is prefixed** with a plain word in the visible text ("Data to" / "数据截至"); the machine value
    lives only in `datetime=` (G2b).
 3. **One chip = one workspace.** No chip is computed from two workspaces (G3).
@@ -758,14 +788,14 @@ label says in plain words which workspace it came from, so the reader is never s
 
 | # | Chip label EN / ZH | Source workspace | Value + date (`lib/macro_suite_view.py`) | **Tone source** | Freshness marker | Jumps to |
 |---|---|---|---|---|---|---|
-| 1 | Money / 资金 | `liquidity_regime` | `view.headline.state_label` (:290) + `view.headline.effective_date` (:295) | `STATE_TONE[view.headline.state_id]` (:289) | `L.label("freshness", state)` as a plain word | `money` |
+| 1 | Money on the market / 市场资金 | `liquidity_regime` | `view.headline.state_label` (:290) + `view.headline.effective_date` (:295) | `STATE_TONE[view.headline.state_id]` (:289) | `L.label("freshness", state)` as a plain word | `money` |
 | 2 | Central banks / 央行 | `monetary_policy` | same | same | same | `policy` |
 | 3 | Rates / 利率 | `rates_curves` | same | same | same | `rates` |
 | 4 | Inflation / 通胀 | `inflation_system` | same | same | same | `inflation` |
-| 5 | Growth / 增长 | `growth_real_economy` | same | same | same | `growth` |
+| 5 | The whole economy / 整体经济 | `growth_real_economy` | same | same | same | `growth` |
 | 6 | Jobs / 就业 | `labor_markets` | same | same | same | `jobs` |
-| 7 | Borrowing costs / 融资环境 | `financial_conditions` | same | same | same | `credit` |
-| 8 | Data coverage / 数据覆盖 | hub | `view.coverage.available` / `view.coverage.total` rendered as a plain phrase ("11 of 12 sections have today's data"), plus the hub as-of (`templates/macro_monetary.html.j2` context block) | `ok` when coverage is complete, else `warn` — this chip **is** an instrument chip and says so in its label | n/a | `overview` |
+| 7 | How hard it is to borrow / 融资难易 | `financial_conditions` | same | same | same | `credit` |
+| 8 | Data coverage / 数据覆盖 | hub | `view.coverage.sections_available` / `view.coverage.sections_total` — **NEW** integer fields emitted by `build_hub_view`, counted over the TWELVE rail sections defined in §1.1 (never over the fourteen workspaces; the denominator is the rail, not the `SUITE_PAGES` registry) — rendered as the counted phrase "11 of 12 sections have today's data" (§3.0 rule 1's chip-8 exception), plus the hub as-of (`templates/macro_monetary.html.j2` context block). `fmt_ratio_pct` output is display-only and is never parsed to derive this count (red-team F9). | `ok` when coverage is complete, else `warn` — this chip **is** an instrument chip and says so in its label | n/a | `overview` |
 
 **Tone is a market tone, never a freshness tone (D1 — blocker fix).** The obvious wiring —
 `view.context.state_tone` at `lib/macro_suite_view.py:136`, which is `L.tone("freshness", state)` — maps
@@ -797,10 +827,15 @@ noun phrase does not guarantee. Contract:
 2. `build_hub_view` emits `read.clauses` — one clause per chip that has BOTH a `state_id` and a `PREDICATE_FORM`
    entry, in chip order, carrying `topic` (our plain noun), `predicate`, `tone` (from `STATE_TONE`), `section`, and
    `punct` (`", "`, `", and "` before the last, `"."` on the last).
-3. **An UNKNOWN `state_id` fails the build.** A `state_id` the vocabulary does not cover raises in the builder and
-   the page is not written. Silently omitting the clause would make a missing translation indistinguishable from a
-   missing reading (D7). A state that is genuinely null — no `state_id` at all — is different: it is omitted, sets
-   `read.omitted`, and renders the honest line already in §2.7's skeleton.
+3. **An UNKNOWN `state_id` is treated as null for The Read** *(red-team F4 — supersedes the earlier "fails the
+   build" language, which put a producer-controlled hard-fail on the nightly render path)*: the clause is omitted,
+   `read.omitted` is set, the chip renders its own producer `state_label` with tone `neutral`, and the unknown
+   token is appended to `unknown_tokens()`. **The BUILD does not raise; the page is still written.** Instead,
+   `tests/test_macro_command_read.py` asserts `unknown_tokens()` is empty for the shipped artifact and CI fails on
+   a non-empty result, and the nightly emits `::warning title=macro-command-unknown-state::<token>` (bare print,
+   line-start, `flush=True`) per the standing GitHub-annotation law. A state that is genuinely null — no `state_id`
+   at all — is handled identically: it is omitted, sets `read.omitted`, and renders the honest line already in
+   §2.7's skeleton.
 4. If fewer than three clauses survive, The Read is not rendered; the header falls back to `.mc-read-fallback`
    plus the strip: *"Today's reading is incomplete. Here is what we do have."* / "今日读数不完整。以下是我们已有的部分。"
 5. `unknown_tokens()` (already in `lib/macro_suite_labels.py`) is asserted empty for the shipped hub artifact, so a
@@ -822,7 +857,7 @@ noun phrase does not guarantee. Contract:
 
 | Slot | Source | Rule |
 |---|---|---|
-| `s.label`, `s.question` | constant `SECTIONS` in `scripts/build_macro_suite_pages.py` | Plain nouns; the question is the customer's question — "Is money getting easier or harder to come by?" |
+| `s.label`, `s.question` | **NEW** reviewed copy `SECTION_COPY[section_id] = {"label": {en,zh}, "question": {en,zh}}` in `lib/macro_suite_labels.py`; `scripts/build_macro_suite_pages.py` gains only a NEW `SECTIONS` tuple of section ids + their workspace ids (ordering and wiring, zero prose). No customer-visible string is authored in a build script (red-team F8). | Plain nouns; the question is the customer's question — "Is money getting easier or harder to come by?" |
 | `s.stance.text` | `view.implications.entries[0].text` (`lib/macro_suite_view.py:196`), rewritten under §5 to ≤ 20 EN words | Deterministic snapshot text, never a model. If `view.implications.absent` (:198) → the stance reads the reviewed `absence_text` (:199) recast in plain words, tone `neutral`. Never falsifier vocabulary. "Watch — don't chase" is a valid stance. Ships only with the G14 decision record. |
 | `s.stance.tone` | `STATE_TONE[view.headline.state_id]` | Colour only, and market-tone only (§3.2). |
 | `s.primer` | NEW reviewed copy `PRIMERS[section_id]` in `lib/macro_suite_labels.py` | Two sentences. No numbers, no stat names, no acronyms. Written for a reader who has never seen a yield curve. |
@@ -830,7 +865,8 @@ noun phrase does not guarantee. Contract:
 | `s.caption` | NEW reviewed copy `CAPTIONS[section_id]` | One line naming direction: "Higher on this line means money is easier to get." Mandatory — a visual with no caption fails G1. |
 | `s.watching` | `view.diagnostics` constraints + `view.headline.nearest_boundary` | 2-3 bullets, each a CONDITION ("if the gap between the two lines closes, the read changes"), never a verdict, never falsifier vocabulary, never 证伪. |
 | `s.details_html` | everything else the shell renders: the context clocks, method receipts, lineage, evidence drawer, plus the deep link | Lives only inside `<details class="mc-details">`. |
-| `s.deep_href` | `macro_<slug>.html` per `scripts/build_macro_suite_pages.py` lines 76-226 | Rendered inside Details AND as the default no-JS figure offer (§2.7). |
+| `s.deep_href` | `macro_<slug>.html` per the fourteen `SuitePage` entries in `SUITE_PAGES` (`scripts/build_macro_suite_pages.py:73-237`); the builder enumerates `SUITE_PAGES`, never a line range (red-team F7 — a "lines 76-226" range silently dropped `trade_flows`) | Rendered inside Details AND as the default no-JS figure offer (§2.7). |
+| **Section with two workspaces** *(red-team F13 — closes a G3 exposure)* | The PRIMARY workspace is named in the §1.1 table (bolded) | `s.stance` and `s.stance.tone` come from the PRIMARY only, and the stance line's subject names it in plain words ("Money on the market:"). The SECOND workspace's stance renders inside its own sub-tab, never merged. A section never composes a stance from two workspaces (G3). |
 
 Word budgets (hard, per `docs/DESIGN_DOCTRINE.md`): stance ≤ 20 EN words / 34 ZH chars; caption ≤ 18 EN words;
 each watching bullet ≤ 16 EN words; primer ≤ 45 EN words total. Enforced in `tests/test_macro_command_panels.py`.
@@ -839,11 +875,13 @@ each watching bullet ≤ 16 EN words; primer ≤ 45 EN words total. Enforced in 
 
 ## §5 Copy law — machine text in the current suite → plain replacements
 
-All citations are `file:line` on `origin/claude/marketontology-f01-product-experience-hub-r1-20260905` (PR #6873).
-Rows 1-55 and 60-61 cite `templates/_macro_suite_shell.html.j2` (the 948-line PR-branch shell — **not** the
-726-line `origin/main` shell); rows 56-59 and 62 cite `templates/macro_monetary.html.j2`. "→ Details" means the
-string is **moved** inside `<details class="mc-details">` where a professional reader still gets it verbatim.
-Nothing is deleted.
+**The binding identity of every row is (string, file) — never the line number** (red-team F1; see §0.0 BASE, G15).
+Citations were taken on `origin/claude/marketontology-f01-product-experience-hub-r1-20260905` (PR #6873), head
+`bcddcca07186`; the `file:line` shown is advisory only. Rows 1-55 and 60-61 cite `templates/_macro_suite_shell.html.j2`
+(the 948-line PR-branch shell — **not** the 726-line `origin/main` shell); rows 56-59 and 62 cite
+`templates/macro_monetary.html.j2`. "→ Details" means the string is **moved** inside `<details class="mc-details">`
+where a professional reader still gets it verbatim. Nothing is deleted. P1 re-resolves every row's line number
+against the merged `origin/main` shell and edits the corrected numbers into this table before P2 opens (G15).
 
 | # | Current string (cited) | Plain EN | Plain ZH | Placement |
 |---|---|---|---|---|
@@ -967,12 +1005,20 @@ cache-busting beyond the render lane's normal `?v=` stamping.
    never eleven panels that read "Loading…" forever.
 7. `macro_command.js` contains zero colour literals, zero `style.textContent`, zero created `<style>` elements
    (G9). The only style-adjacent DOM it touches is class names and the `hidden` property.
+8. **No twelve-panel flash on JS load** *(red-team F15 — the no-JS-first document of item 6 otherwise guarantees a
+   full twelve-panel paint-then-hide on every JS load).* A blocking inline `<script>` in `<head>` — the ONLY inline
+   script on the page — sets `document.documentElement.classList.add('mc-js')` before first paint.
+   `templates/macro_command.css` carries `.mc-js .mc-panel[data-mc-secondary]{display:none}` so the JS reading
+   never paints eleven panels. This is a class toggle, not style injection (G9 untouched: no `style.textContent`,
+   no created `<style>`, no colour literal). P1's acceptance adds: first paint under a throttled profile shows
+   exactly one panel.
 
 ### §6.3 The 14 deep-link pages
 
 **Keep + link** (the brief's preference; it also preserves fourteen indexed URLs whose `seo_title`s are already set
-in `scripts/build_macro_suite_pages.py` lines 76-226). Each `macro_<slug>.html` keeps its current shell and suite
-bar and gains ONE line directly under `_macro_suite_nav.html.j2`'s bar:
+on the fourteen `SuitePage` entries in `SUITE_PAGES` (`scripts/build_macro_suite_pages.py:73-237`); the builder
+enumerates `SUITE_PAGES`, never a line range (red-team F7)). Each `macro_<slug>.html` keeps its current shell and
+suite bar and gains ONE line directly under `_macro_suite_nav.html.j2`'s bar:
 
 > EN: "This workspace also appears inside Macro Command → *Money & liquidity*."
 > ZH: "本工作区也出现在宏观指挥台的《资金与流动性》板块中。"
@@ -1079,8 +1125,10 @@ art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`.
 ### P1 — Shell, rail, routing, tokens, and the copy guard *(no content change)*
 - **Owned files:** `templates/macro_command.css` (new), `templates/macro_command.js` (new),
   `templates/_macro_command_macros.html.j2` (new — `nulled()`), `templates/macro_monetary.html.j2` (rail,
-  `.mc-shell` grid, panel stubs, analyst control), `scripts/build_macro_suite_pages.py` (`SECTIONS` constant,
-  `SHARED_ASSETS`), `scripts/check_macro_command_copy.py` (new guard, seeded with §5's banned list + the G2b
+  `.mc-shell` grid, panel stubs, analyst control), `scripts/build_macro_suite_pages.py` (NEW `SECTIONS` tuple —
+  ids/wiring only, zero prose — `SHARED_ASSETS`), `lib/macro_suite_labels.py` (NEW `SECTION_COPY[section_id]`
+  reviewed bilingual `label`/`question` pairs — red-team F8; added here because §4's `s.label`/`s.question` are
+  built by P1's rail), `scripts/check_macro_command_copy.py` (new guard, seeded with §5's banned list + the G2b
   timestamp regex), `.github/ci/legacy-jobs.yml` (guard wiring), `site/macro_command.css`, `site/macro_command.js`
   (plain-copy pairs), `tests/test_macro_command_shell.py`, `tests/test_macro_command_copy_law.py` (new).
 - **Builds:** the twelve-section rail; two-segment hash routing; focus management; the sub-tab keyboard model; all
@@ -1095,23 +1143,30 @@ art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`.
   all twelve sections render in order and no panel reads "Loading this section" / "正在载入本板块"; no horizontal
   body scroll at 1440, 768 or 390 in either language (G12); `wc -c` printed for the fourteen built
   `site/macro_<slug>.html` pages and the current `site/macro_monetary.html`, and **§6.1's three byte numbers
-  re-ratified in this spec file** (G8/D12). Acceptance is judged against the FRONT-END CLARITY LAW:
+  re-ratified in this spec file** (G8/D12); **first paint under a throttled profile shows exactly one panel**
+  (§6.2 item 8, red-team F15). Acceptance is judged against the FRONT-END CLARITY LAW:
   > "Plain words; one-line stance per module; technicals demoted to hover/details; no machine text (raw slugs,
   > internal state names, untranslated stat names, bare timestamps); no walls of text; honest nulls in plain
   > words; EN/ZH. A non-quant customer must be able to read any surface in ten seconds."
 
 ### P2 — Command header: The Read + the state strip
-- **Owned files:** `lib/macro_suite_labels.py` (`PREDICATE_FORM`, `STATE_TONE`, chip `meaning` copy),
-  `lib/macro_suite_view.py` (`build_hub_view` → `read`, `strip`), `templates/macro_monetary.html.j2` (header
+- **Owned files:** `lib/macro_suite_labels.py` (`PREDICATE_FORM`, `STATE_TONE`, chip `meaning` copy, `SECTION_COPY`
+  — red-team F8), `lib/macro_suite_view.py` (`build_hub_view` → `read`, `strip`, `coverage.sections_available`,
+  `coverage.sections_total` — subject to **G16**'s merge receipt), `templates/macro_monetary.html.j2` (header
   block), `templates/macro_command.css` (`.mc-read*`, `.mc-strip`, `.mc-chip*`),
   `tests/test_macro_command_read.py`.
 - **Tests:** no chip or clause is computed from more than one workspace (G3); chip tone comes from `STATE_TONE`
   keyed on `state_id` and **never** from `L.tone("freshness", …)` — asserted by fixture: a `SOURCE_FAILED`
-  workspace yields a `neutral` chip, never `bad` (judge D1); no chip value matches `\d` (§3.0); an unknown
-  `state_id` raises and no page is written (§3.3 step 3); a null `state_id` omits the clause and sets
-  `read.omitted`; fewer than three clauses suppresses The Read entirely; every null chip reads "Not available yet",
-  never `—` alone; every visible date is preceded by a plain word (G2b); `unknown_tokens()` empty; zero ZH in any
-  `title=`.
+  workspace yields a `neutral` chip, never `bad` (judge D1); no chip value for chips 1-7 matches `\d`, and chip 8's
+  value matches exactly `^\d+ of \d+ sections have today's data$` / `^\d+ 个板块中有 \d+ 个已更新今日数据$` and
+  nothing else (§3.0, red-team F11); **an unknown `state_id` is treated as null** — the clause is omitted,
+  `read.omitted` is set, the chip renders its own producer `state_label` with tone `neutral`, the token is appended
+  to `unknown_tokens()`, and the page is still written; `unknown_tokens()` is asserted empty for the shipped
+  artifact and CI fails via a line-start `::warning title=macro-command-unknown-state::<token>` (bare print, flush)
+  (§3.3 step 3, red-team F4 — supersedes the earlier "raises and no page is written" language); a null `state_id`
+  omits the clause and sets `read.omitted`; fewer than three clauses suppresses The Read entirely; every null chip
+  reads "Not available yet", never `—` alone; every visible date is preceded by a plain word (G2b);
+  `unknown_tokens()` empty; zero ZH in any `title=`.
 - **Acceptance:** The Read reads as one grammatical sentence in EN and in ZH against a live artifact **and** a
   deliberately half-null fixture; topic words jump to their section; the copy guard is green on the built page.
   Judged against the clarity law: *"no machine text … bare timestamps … A non-quant customer must be able to read
@@ -1119,7 +1174,12 @@ art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`.
 
 ### P3 — Panel contract + Overview + the first five sections
 - **Owned files:** `templates/_macro_suite_shell.html.j2` (extract the figure blocks into reusable macros — no
-  behaviour change to the 14 pages), `templates/macro_monetary.html.j2`, `scripts/build_macro_suite_pages.py`
+  behaviour change to the 14 pages; **additionally owns the §5 rows whose strings sit inside a FIGURE block —
+  rows 24, 27, 28, 29, 32, 35, 36, 40, 42, 43, 44, 45, 46 — red-team F12: figure headings are renamed to their §5
+  plain forms and their method sentences moved into `<details class="mc-details">` in this SAME packet, the same
+  packet that first ships a fragment; this is a packet-ordering fix, not a redesign — moved out of P5 because the
+  copy guard (standing note, every packet) cannot be green in P3/P4 while a shipped fragment still carries a
+  banned figure-block string**), `templates/macro_monetary.html.j2`, `scripts/build_macro_suite_pages.py`
   (fragment writer → `site/macro/fragments/<id>.html`), `lib/macro_suite_labels.py` (`PRIMERS`, `CAPTIONS`,
   `STANCES` for overview, money, policy, rates, inflation), `templates/macro_command.css`,
   `agentos/decisions/DEC-MACRO-COMMAND-STANCE-IS-GUIDANCE.md` (**required by G14**),
@@ -1127,8 +1187,10 @@ art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`.
 - **Tests:** every panel has stance, primer, figure, caption, watching, details in that DOM order; word budgets
   enforced (stance ≤ 20 EN words / 34 ZH chars, caption ≤ 18, bullets ≤ 16, primer ≤ 45); every non-Overview panel
   ships the honest offer line as its **default** figure content and the pending line is `hidden` in the document;
-  **with JS disabled no built page contains "Loading this section" / "正在载入本板块"** (judge D8); fragment and
-  page sizes within the re-ratified §6.1 ceilings; the DEC record exists and names the reversal.
+  **with JS disabled no built page contains "Loading this section" / "正在载入本板块"** (judge D8); the copy guard
+  (`scripts/check_macro_command_copy.py`) is green against the built page **and** every emitted fragment, with
+  zero allowlist — the §5 figure-block rows moved above are why this is achievable in P3 (red-team F12); fragment
+  and page sizes within the re-ratified §6.1 ceilings; the DEC record exists and names the reversal.
 - **Acceptance:** Overview reads top-to-bottom with zero fragment requests; the four content sections load on first
   activation and fall back to E5 when the fetch is blocked; a non-quant reader can state what each of the five
   sections is saying after ten seconds on it. Judged against the clarity law: *"one-line stance per module;
@@ -1148,7 +1210,9 @@ art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`.
 
 ### P5 — Copy-law sweep of the shell, analyst polish, evidence
 - **Owned files:** `templates/_macro_suite_shell.html.j2` (the §5 relocations — moving strings into `<details>`,
-  never deleting them), `lib/macro_suite_labels.py`, `templates/macro_monetary.html.j2` (row 62's footer rewrite),
+  never deleting them — **only the non-figure rows**; the figure-block rows (24, 27, 28, 29, 32, 35, 36, 40, 42,
+  43, 44, 45, 46) already moved in P3, red-team F12; P5 does not re-touch them and ships no expiring allowlist),
+  `lib/macro_suite_labels.py`, `templates/macro_monetary.html.j2` (row 62's footer rewrite),
   `templates/macro_command.js` (analyst open-entry-point wiring), `tests/test_macro_command_copy_law.py`
   (extend to the fourteen deep-link pages).
 - **Tests:** the banned list has zero hits on **all fifteen** built pages outside `.mc-details` / `.mc-primer`;
@@ -1161,7 +1225,9 @@ art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`.
 
 ## §10 Evidence matrix the builder must post
 
-Nineteen frames minimum in the PR body of P5, and the theme-relevant subset in each earlier packet. **A packet
+Twenty frames minimum in the PR body of P5, and the theme-relevant subset in each earlier packet (red-team F16 —
+frame 17b added because no prior frame proved the light-only "ink word + 2px semantic underline" mechanism at
+readable magnification, the mechanism most likely to be silently skipped in light). **A packet
 whose LIGHT art direction has no crop is `PARTIAL/BLOCKED`, never `PASS`** — both themes are judged as designs
 (hierarchy, material depth, semantic colour, responsive composition, EN/ZH parity), and functional browser success
 is necessary but never sufficient.
@@ -1185,6 +1251,7 @@ is necessary but never sufficient.
 | 15 | dark | EN | 1440 | **`<details class="mc-details">` OPEN** on `#rates` — the only frame that proves the §5 technical boundary holds: every relocated string is present and readable inside the disclosure *(grafted from COMMAND §10 crop 12)* |
 | 16 | light | EN | 1440 | same, Details open |
 | 17 | dark | EN | 1440 | Zoomed crop of ONE Read topic word, proving the radial halo renders on the word itself *(judge D4)* |
+| 17b | light | EN | 1440 | Zoomed crop of the SAME Read topic word, proving the 2px semantic underline renders as a rule under the word and that no halo is present (§2.6 row 2) *(red-team F16)* |
 | 18 | dark | EN | 1440 | Half-null fixture: The Read with `read.omitted`, two null chips, one E2 panel, one E6 entitlement panel |
 | 19 | light | EN | 1440 | same half-null fixture |
 
@@ -1257,8 +1324,9 @@ two blockers, six majors and four minors fixed. Nothing from the loser's four bl
 ## §12 Open items the builder must close (not blockers to freezing)
 
 1. **`PREDICATE_FORM` volume.** The reviewed EN/ZH predicate for every `state_id` the fourteen workspaces can emit
-   needs a human writing pass. P2 must enumerate the state ids before it is sized. An unknown id fails the build by
-   design (§3.3), so the vocabulary cannot be shipped half-written and silently degrade.
+   needs a human writing pass. P2 must enumerate the state ids before it is sized. An unknown id is a printed null,
+   never a build failure (§3.3 step 3, red-team F4) — `unknown_tokens()` surfaces every gap in CI, so the
+   vocabulary cannot be shipped half-written and silently degrade without CI going red.
 2. **The archetype name** in `research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md` §10 must be copied verbatim into the
    page's DS header comment by P1.
 3. **`.mq-card` vs `.mc-panel`.** `templates/macro_suite.css` already carries a card system. P1 must decide
@@ -1267,3 +1335,30 @@ two blockers, six majors and four minors fixed. Nothing from the loser's four bl
 4. **Chart restyle depth.** This spec restyles the figure *frame* (`.mc-figure` plot ground, gridlines, caption).
    Whether the workspace SVGs need per-theme stroke tokens is a P3 finding; if they do, it is its own packet, never
    a silent widening of P3.
+
+---
+
+## Changelog v2 (red-team 2026-09-06)
+
+An Opus red-team of this frozen spec on PR #6914 returned `FIX_SPEC_FIRST` (6 blocker-graded findings — F1/F3/F6
+adjudicated as one root cause with three repairs, plus F4, F11, F12 — 6 major, 1 minor). Every finding is applied
+below; nothing the red-team marked "not wrong" (the two art directions, D1's tone fix, the forbidden regime chip,
+the §5 copy law instrument, `SHARED_ASSETS:52`, the 726-line shell, `macro_suite.css:88-91`/`:16-18`,
+`unknown_tokens()` at `:368`, the 14-workspace registry order) was re-litigated or changed.
+
+| Finding | Severity | Defect | Edit applied |
+|---|---|---|---|
+| F1 | BLOCKER | The whole spec is pinned to an unmerged branch (PR #6873) by `file:line` citations, with no statement that the lines are advisory. | New **§0.0 BASE** section; new **G15** (§0); §5 preamble rewritten to state the binding identity is (string, file), line numbers advisory, re-resolved by P1 before P2 opens. |
+| F3 | BLOCKER | `build_hub_view` does not exist on `origin/main` — the spec names a producer no builder produces. | New **G16** (§0) requiring a merge + `grep -n 'def build_hub_view'` receipt before any packet opens; §9 P2 owned-files line cites the receipt gate. |
+| F4 | BLOCKER | "An UNKNOWN `state_id` fails the build" puts a producer-controlled hard-fail on the nightly render path, deleting the flagship page over a missing translation. | §3.3 step 3 rewritten: unknown `state_id` is a printed null — clause omitted, `read.omitted` set, chip renders neutral, token appended to `unknown_tokens()`, page still written; CI fails via a line-start `::warning` on a non-empty `unknown_tokens()`. §9 P2 tests and §12 item 1 updated to match (removed the contradictory "raises" language). |
+| F6 | BLOCKER | The page the spec converts (`templates/macro_monetary.html.j2`, `site/macro_monetary.html`) does not exist on `origin/main` — only a different workspace (`macro_monetary_policy`) does. | Folded into the new **§0.0 BASE** section: states the spec is buildable only on PR #6873's branch or on main after #6873 merges, names the exact missing files/symbols measured on main, and gates P1's start on the merge. |
+| F7 | MAJOR | `s.deep_href` and §6.3 cite `scripts/build_macro_suite_pages.py` "lines 76-226", which silently excludes `trade_flows` (the 14th workspace, entry at :225-236). | Both citations replaced with "the fourteen `SuitePage` entries in `SUITE_PAGES` (`scripts/build_macro_suite_pages.py:73-237`); the builder enumerates `SUITE_PAGES`, never a line range." |
+| F8 | MAJOR | §4 sources bilingual copy from a `SECTIONS` constant that does not exist, and would put customer-visible strings in a build script outside the reviewed-vocabulary module. | §4's `s.label`/`s.question` row rewritten to source `SECTION_COPY[section_id]` from `lib/macro_suite_labels.py`; `SECTIONS` in the builder is ids/wiring only. `lib/macro_suite_labels.py` added to P1's owned files. |
+| F9 | MAJOR | Chip 8's `view.coverage.available`/`.total` has no producer; the real field is a formatted percentage string with no `available`/`total` integers. | §3.2 chip 8 row rewritten to `view.coverage.sections_available`/`.sections_total`, new integer fields counted over the twelve rail sections (never the fourteen-workspace registry); states `fmt_ratio_pct` output is display-only and never parsed. |
+| F11 | BLOCKER | Chip 8's value contains digits, but P2's own required test forbids any digit in every chip value. | §3.0 rule 1 rewritten: digit ban scoped to chips 1-7; chip 8 is the declared exception, pinned by the exact counted-phrase regex `^\d+ of \d+ sections have today's data$` / `^\d+ 个板块中有 \d+ 个已更新今日数据$`. §9 P2 tests updated to match. |
+| F12 | BLOCKER | The copy guard is required green in every packet, but P3/P4 ship fragments carrying figure-block strings the guard bans — the relocation that would fix it was scheduled for P5, after the guard must already be green. | §9 P3 owned files/tests: figure-block §5 rows (24, 27, 28, 29, 32, 35, 36, 40, 42, 43, 44, 45, 46) moved from P5 into P3, renamed/relocated in the same packet that first ships a fragment, zero expiring allowlist. §9 P5 owned files narrowed to the non-figure rows plus the fourteen deep-link pages. |
+| F13 | MAJOR | Three sections (`money`, `growth`, `credit`) each own two workspaces, but §4's panel contract has only one `view` — the stance owner is undefined, risking a fused composite (G3 exposure). | §1.1 bolds the PRIMARY workspace in rows 1, 5, 9; new §4 row states the stance and its tone come from the PRIMARY only, named in plain words, and the second workspace's stance renders only in its own sub-tab. |
+| F14 | MAJOR | §3.1's guarantee ("the chip's label says which workspace it came from") is violated by chips 1, 5, 7, whose labels are the two-workspace SECTION names, not the sourcing workspace's own name. | Chip labels renamed to the sourcing workspace's own plain name: chip 1 "Money on the market / 市场资金", chip 5 "The whole economy / 整体经济", chip 7 "How hard it is to borrow / 融资难易" (§3.2). |
+| F15 | MAJOR | The no-JS-first document ships all twelve panels visible and unhidden, guaranteeing a full twelve-panel flash on every JS page load with no packet testing the transition. | New §6.2 item 8: a head-inline blocking `<script>` adds `mc-js` to `<html>` before first paint; `templates/macro_command.css` hides secondary panels under `.mc-js`; P1 acceptance gains "first paint under a throttled profile shows exactly one panel." |
+| F16 | MINOR | The evidence matrix proves the dark-only radial-halo mechanism at zoom but never the light-only 2px-underline mechanism, leaving light art direction unjudgeable at that mechanism. | New frame **17b** (light, EN, 1440, zoomed) in §10; matrix renumbered from nineteen to twenty frames; G11 updated to twenty frames. |
+
