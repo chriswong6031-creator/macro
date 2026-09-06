@@ -41,6 +41,16 @@ READ_UNAVAILABLE = "READ_UNAVAILABLE"
 LANE = "macro_delivery_drain"
 CADENCE_BUDGET_S = 300
 
+# Mirrors app.mailer.ALERT_TEMPLATE / app.mailer.alert_idem_key -- duplicated locally
+# for the same layering reason ``_pg`` is (module docstring): this module may not
+# import ``app/``. Needed only to resolve what a mailer 'duplicate' result actually
+# meant (review round 2 blocker, acceptance 1(d) -- see ``_resolve_duplicate`` below).
+_ALERT_TEMPLATE = "alert_fire"
+
+
+def _alert_idem_key(fire_event_id: str) -> str:
+    return f"{_ALERT_TEMPLATE}:{fire_event_id}"
+
 
 @dataclass(frozen=True)
 class TypedRead:
@@ -320,13 +330,14 @@ def open_receipt(now_utc: datetime) -> tuple:
 
 
 def close_receipt(run_uuid: str, *, outcome: str, evaluated_n: int, fired_n: int,
-                  unevaluable_n: int, source_asof: str | None, error_class: str | None) -> bool:
+                  unevaluable_n: int, source_asof: str | None, error_class: str | None,
+                  duplicate_n: int = 0) -> bool:
     try:
         _pg("PATCH", f"alert_runs?id=eq.{urllib.parse.quote(run_uuid, safe='')}", body={
             "concluded_at": datetime.now(timezone.utc).isoformat(),
             "outcome": outcome, "evaluated_n": evaluated_n, "fired_n": fired_n,
             "unevaluable_n": unevaluable_n, "source_asof": source_asof,
-            "error_class": error_class,
+            "error_class": error_class, "duplicate_n": duplicate_n,
         }, prefer="return=minimal")
         return True
     except Exception:  # noqa: BLE001
@@ -355,6 +366,7 @@ class DrainResult:
     suppressed_n: int
     failed_n: int
     category_unfiltered_n: int
+    duplicate_n: int
     read_state: str
     error_class: str | None
     run_id: str | None
@@ -390,6 +402,7 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                 source_asof=None, error_class=outbox_read.error_class) and wrote
         return DrainResult(outcome="failure", evaluated_n=0, fired_n=0, unevaluable_n=0,
                            deferred_n=0, suppressed_n=0, failed_n=0, category_unfiltered_n=0,
+                           duplicate_n=0,
                            read_state=READ_UNAVAILABLE, error_class=outbox_read.error_class,
                            run_id=run_id, receipt_written=receipt_written)
 
@@ -397,6 +410,7 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
 
     evaluated_n = fired_n = unevaluable_n = deferred_n = suppressed_n = failed_n = 0
     category_unfiltered_n = 0
+    duplicate_n = 0
     degraded_n = 0
     fired_ats = []
 
@@ -463,13 +477,53 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             error_cls = None
 
         if status == "duplicate":
-            fired_n += 1
-            try:
-                _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                    body={"status": "sent", "delivered_at": datetime.now(timezone.utc).isoformat(),
-                          "last_error": "duplicate_idem_key"}, prefer="return=minimal")
-            except Exception:  # noqa: BLE001
-                pass
+            # A mailer 'duplicate' means email_log's UNIQUE idem_key was already claimed
+            # -- it does NOT mean the earlier attempt actually sent (review round 2
+            # blocker, acceptance 1(d)): the prior claim could equally be a failed,
+            # suppressed, or still-queued send. Read that row rather than assume.
+            log_read = typed_get(
+                f"email_log?idem_key=eq.{urllib.parse.quote(_alert_idem_key(str(fire_event_id)), safe='')}"
+                "&select=status,created_at,detail")
+            log_row = (log_read.rows or [None])[0] if log_read.state == READ_OK else None
+            log_status = log_row.get("status") if log_row else None
+            if log_status == "sent":
+                # The earlier attempt genuinely sent -- mirror THAT fact, counted as a
+                # duplicate resolution, never as a fresh fire.
+                duplicate_n += 1
+                delivered_at = log_row.get("created_at") or datetime.now(timezone.utc).isoformat()
+                try:
+                    _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
+                        body={"status": "sent", "delivered_at": delivered_at, "last_error": None},
+                        prefer="return=minimal")
+                except Exception:  # noqa: BLE001
+                    pass
+            elif log_status is not None:
+                # failed / suppressed / queued (or any other readable, non-sent status):
+                # mirror it verbatim. Never counted as sent.
+                duplicate_n += 1
+                if log_status == "failed":
+                    failed_n += 1
+                elif log_status == "suppressed":
+                    suppressed_n += 1
+                else:
+                    degraded_n += 1
+                try:
+                    _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
+                        body={"status": log_status, "last_error": f"prior send {log_status}"},
+                        prefer="return=minimal")
+                except Exception:  # noqa: BLE001
+                    pass
+            else:
+                # Unreadable (READ_UNAVAILABLE) or a zero-row read that contradicts the
+                # 'duplicate' claim -- either way we do not know what the prior send did,
+                # so the row is left exactly as it was: pending, attempts unchanged, never
+                # sent. Typed, printed, never silent.
+                degraded_n += 1
+                print("::warning title=alert-drain-duplicate-unreadable::"
+                      "email_log row for idem_key %s unreadable (%s) -- outbox row %s left "
+                      "pending, never marked sent"
+                      % (_alert_idem_key(str(fire_event_id)),
+                         log_read.error_class or "no_matching_row", row["id"]), flush=True)
         elif status == "sent":
             fired_n += 1
             fired_at = payload.get("fired_at")
@@ -501,7 +555,8 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
         source_asof = max(fired_ats) if fired_ats else None
         receipt_written = close_receipt(run_uuid, outcome=outcome, evaluated_n=evaluated_n,
                                         fired_n=fired_n, unevaluable_n=unevaluable_n,
-                                        source_asof=source_asof, error_class=None) and wrote
+                                        source_asof=source_asof, error_class=None,
+                                        duplicate_n=duplicate_n) and wrote
         if not receipt_written and outcome == "success":
             # The run's own provenance failed to persist -- freeze section 4's
             # fallback => partial applies to the receipt path itself, not only to
@@ -512,5 +567,6 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                        unevaluable_n=unevaluable_n, deferred_n=deferred_n,
                        suppressed_n=suppressed_n, failed_n=failed_n,
                        category_unfiltered_n=category_unfiltered_n,
+                       duplicate_n=duplicate_n,
                        read_state=outbox_read.state, error_class=None,
                        run_id=run_id, receipt_written=receipt_written)

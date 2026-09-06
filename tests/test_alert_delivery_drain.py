@@ -33,11 +33,14 @@ def _outbox_row_selected(row: dict, path: str) -> bool:
 
 
 class FakeTables:
-    def __init__(self, *, outbox=None, users=None, suppression=None, entitlements=None):
+    def __init__(self, *, outbox=None, users=None, suppression=None, entitlements=None,
+                 email_log=None):
         self.outbox = outbox if outbox is not None else []
         self.users = users if users is not None else {}
         self.suppression = suppression if suppression is not None else []
         self.entitlements = entitlements if entitlements is not None else {}
+        # idem_key -> email_log row (or a sentinel: "UNREADABLE" raises on GET).
+        self.email_log = email_log if email_log is not None else {}
         self.runs = {}
         self.patches = []
 
@@ -59,6 +62,14 @@ class FakeTables:
             run_id = re.search(r"id=eq\.([^&]+)", path).group(1)
             self.runs[run_id].update(body)
             return None
+        if path.startswith("email_log") and method == "GET":
+            import urllib.parse as _up
+            m = re.search(r"idem_key=eq\.([^&]+)", path)
+            key = _up.unquote(m.group(1)) if m else None
+            row = self.email_log.get(key)
+            if row == "UNREADABLE":
+                raise RuntimeError("boom")
+            return [row] if row else []
         if path.startswith("email_suppression"):
             return list(self.suppression)
         if path.startswith("user_entitlements"):
@@ -108,9 +119,81 @@ def test_same_fire_event_id_drained_twice_sends_once_and_reports_duplicate(monke
     def send_fn_dup(**kw):
         return "duplicate"
 
+    # A genuine 'duplicate' means email_log already holds this idem_key -- simulate the
+    # real world by recording the email_log row the first send would have written
+    # (review round 2 blocker, acceptance 1(d)): 'duplicate' is never assumed to mean
+    # 'fired'; the email_log row is READ to find out what actually happened.
+    fake.email_log["alert_fire:fe1"] = {"status": "sent", "created_at": "2026-09-05T15:00:01+00:00"}
     fake.outbox[0]["status"] = "pending"  # simulate a replay before terminal write races in
     r2 = drain.drain(send_fn=send_fn_dup, now_utc=_now(), limit=10)
-    assert r2.fired_n == 1
+    assert r2.fired_n == 0
+    assert r2.duplicate_n == 1
+    assert fake.outbox[0]["status"] == "sent"
+    assert fake.outbox[0]["delivered_at"] == "2026-09-05T15:00:01+00:00"
+
+
+def test_duplicate_whose_email_log_row_is_failed_mirrors_status_never_counted_sent(monkeypatch):
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    fake.email_log["alert_fire:fe1"] = {"status": "failed", "created_at": "2026-09-05T14:59:00+00:00"}
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "duplicate", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.duplicate_n == 1
+    assert fake.outbox[0]["status"] == "failed"
+    assert fake.outbox[0]["last_error"] == "prior send failed"
+
+
+def test_duplicate_whose_email_log_row_is_suppressed_mirrors_status_never_counted_sent(monkeypatch):
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    fake.email_log["alert_fire:fe1"] = {"status": "suppressed", "created_at": "2026-09-05T14:59:00+00:00"}
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "duplicate", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.duplicate_n == 1
+    assert fake.outbox[0]["status"] == "suppressed"
+    assert fake.outbox[0]["last_error"] == "prior send suppressed"
+
+
+def test_duplicate_whose_email_log_row_is_queued_mirrors_status_never_counted_sent(monkeypatch):
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    fake.email_log["alert_fire:fe1"] = {"status": "queued", "created_at": "2026-09-05T14:59:00+00:00"}
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "duplicate", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.duplicate_n == 1
+    assert fake.outbox[0]["status"] == "queued"
+    assert fake.outbox[0]["last_error"] == "prior send queued"
+
+
+def test_duplicate_whose_email_log_row_is_unreadable_leaves_outbox_row_pending(monkeypatch, capsys):
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    fake.email_log["alert_fire:fe1"] = "UNREADABLE"
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "duplicate", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.duplicate_n == 0
+    assert fake.outbox[0]["status"] == "pending"
+    assert fake.outbox[0]["attempts"] == 0
+    out = capsys.readouterr().out
+    warning_lines = [ln for ln in out.splitlines() if "alert-drain-duplicate-unreadable" in ln]
+    assert warning_lines, "expected a ::warning line for an unreadable email_log row"
+    assert warning_lines[0].startswith("::warning")
+
+
+def test_duplicate_whose_email_log_row_is_missing_leaves_outbox_row_pending(monkeypatch):
+    """A 'duplicate' claim with NO matching email_log row contradicts itself -- fail
+    closed exactly like the unreadable case rather than fabricating an outcome."""
+    row = _row()
+    fake = FakeTables(outbox=[row])  # no email_log entry at all
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "duplicate", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.duplicate_n == 0
+    assert fake.outbox[0]["status"] == "pending"
 
 
 def test_idem_key_is_derived_deterministically_from_fire_event_id():
