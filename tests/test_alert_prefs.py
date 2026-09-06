@@ -165,6 +165,41 @@ def test_alert_group_builder_exists_and_is_called(account_js):
     assert "function bodySignedIn" in account_js
 
 
+def test_mount_standalone_and_macro_do_not_reference_undefined_el(account_js):
+    """Real browser evidence capture (mockups/evidence/account_alert_prefs/) caught a
+    runtime ReferenceError no source-only test here could see: mountStandalone() and
+    mountMacro() each carried a stray `el.addEventListener('change', onChange, true);`
+    line copy-pasted from mountEmbed(el) -- but neither function takes an `el`
+    parameter. Every call to window.MMAccount.open() on a macro (embed-host) page or
+    a standalone app page threw `el is not defined` inside mountMacro()/
+    mountStandalone() before the panel ever rendered, so the entire alert-prefs
+    surface this PR ships was unreachable at runtime in both its real deployment
+    contexts. `node --check` and every existing JS-source-string test passed clean,
+    because a reference to an undeclared identifier is a RUNTIME ReferenceError, not
+    a parse-time error -- this is exactly the class of defect the frozen spec's
+    required browser evidence matrix exists to catch that a no-browser-harness test
+    suite cannot."""
+    import re
+    # word-boundary-anchored: a naive substring check for "el.addEventListener" also
+    # matches "...pan[el.addEventListener]" inside `panel.addEventListener(...)`,
+    # which is legitimate in every one of these functions -- only a BARE `el.`
+    # reference (not preceded by an identifier character) is the defect.
+    bare_el_re = re.compile(r"(?<![A-Za-z0-9_$.])el\.addEventListener")
+    for fn_name in ("mountStandalone", "mountMacro"):
+        start = account_js.index("function %s(" % fn_name)
+        end = account_js.index("\n  }\n", start)
+        body = account_js[start:end]
+        assert not bare_el_re.search(body), (
+            f"{fn_name} must not reference an undefined `el` -- it takes no `el` "
+            f"parameter (only mountEmbed(el) legitimately does)"
+        )
+    # mountEmbed's own el.addEventListener calls are untouched and still legal.
+    embed_start = account_js.index("function mountEmbed(el)")
+    embed_end = account_js.index("\n  }\n", embed_start)
+    embed_body = account_js[embed_start:embed_end]
+    assert len(bare_el_re.findall(embed_body)) == 2
+
+
 def test_coming_soon_string_removed_from_alert_group(account_js):
     # 'Coming soon' remains legal elsewhere (e.g. the plan card's Pro upsell), but the old
     # dead notifications group ('notifGroupHTML'/'notifRow') must be gone entirely.
@@ -188,14 +223,41 @@ def test_new_str_keys_have_non_empty_en_and_zh(account_js, key):
     assert en.strip() and zh.strip()
 
 
-def test_added_css_block_has_no_hex_literal_and_one_more_create_style_stays_two(account_js):
-    start = account_js.index(".mmacc-alerts{position:relative")
-    end = account_js.index("if (document.readyState === 'loading')")
-    added_css = account_js[start:end]
-    assert "#" not in added_css.split("\n")[0]  # no hex literal seeded into the new rules
+_MOVED_CSS_RULE_SIGNATURES = (
+    ".mmacc-alerts{position:relative;padding-left:14px}",
+    ".mmacc-alerts::before{",
+    "button.mmacc-switch{",
+    "button.mmacc-switch::after{",
+    ".mmacc-switch-sm{",
+    ".mmacc-alert-detail{",
+    ':root[data-theme="light"] .mmacc-alerts{',
+)
+
+
+def test_alert_css_lives_in_theme_css_not_account_js(account_js):
+    """B-F08-1a originally appended its ~25 alert-prefs CSS rules to the runtime
+    `CSS` string in account.js -- a design-system bypass (governed CSS must own
+    material styling, not a page composer's JS string). Meta-CEO B ruling moved
+    them into templates/theme.css under a delimited block. This pins that they
+    live there and ONLY there: account.js may still reference the class names as
+    markup (e.g. `class="mmacc-alerts"`), but must carry no CSS rule BODY for
+    them, and its createElement('style') count must stay at the pinned cap of 2
+    (no third runtime style injection was added to compensate for the move)."""
+    theme_css = (ROOT / "templates" / "theme.css").read_text()
+    start_marker = "/* account sheet: alert delivery preferences (B-F08-1a) */"
+    end_marker = "/* end account sheet: alert delivery preferences (B-F08-1a) */"
+    assert start_marker in theme_css
+    assert end_marker in theme_css
+    moved_block = theme_css[theme_css.index(start_marker):theme_css.index(end_marker)]
+
     import re
-    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", added_css)
-    assert account_js.count("createElement('style')") <= 2
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", moved_block), "no hex literal in the moved rules"
+
+    for sig in _MOVED_CSS_RULE_SIGNATURES:
+        assert sig in moved_block, f"{sig!r} missing from templates/theme.css"
+        assert sig not in account_js, f"{sig!r} must not be styled from account.js anymore"
+
+    assert account_js.count("createElement('style')") == 2
 
 
 def test_every_switch_control_is_a_button(account_js):
@@ -258,6 +320,43 @@ def test_quiet_hours_off_sentinel_reaches_the_put_as_none(auth, store):
     meta = payload["user_metadata"]
     assert meta["quiet_hours"] is None
     assert meta["quiet_hours"] != "off"
+
+
+def test_alerts_on_with_no_tz_defaults_and_round_trips_on_get(auth, store):
+    """B-F08-1a freeze §8 + Meta-CEO B ruling (macro#6907, round 2): turning alerts on
+    with no tz supplied must not leave the account's alert delivery window undefined.
+    The server applies default_tz_for_lang(lang) server-side (never a client-side
+    guess) and the same value round-trips on the next GET -- named by the prior
+    review round as a required test that was missing."""
+    base_user = dict(USER, user_metadata=dict(USER["user_metadata"]))
+    assert "tz" not in base_user["user_metadata"]  # fresh account, tz never touched
+
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(alert_email_optin=True), user=base_user)
+    assert out["prefs"]["tz"] == user_prefs.default_tz_for_lang("en") == "UTC"
+
+    _, _, payload = auth.calls[0]
+    meta = payload["user_metadata"]
+    assert meta["tz"] == "UTC"
+    assert meta["alert_email_optin"] is True
+
+    # GET reads directly off the account record (no network, per read_prefs'
+    # docstring) -- build the post-write record the way the real auth layer would
+    # return it after the PUT above actually merged, then round-trip through it.
+    after_user = dict(base_user, user_metadata=dict(base_user["user_metadata"], **meta))
+    got = account_prefs.read_prefs(user=after_user)
+    assert got["prefs"]["tz"] == "UTC"
+    assert "tz" not in got["unset"]
+
+
+def test_alerts_on_never_overwrites_an_existing_tz(auth, store):
+    """The default only fills a genuinely unset tz -- it must never clobber a zone the
+    account already has, including when the same call turns alerts on."""
+    base_user = dict(USER, user_metadata=dict(USER["user_metadata"], tz="Asia/Hong_Kong"))
+    account_prefs.save_prefs(
+        account_prefs.PrefsRequest(alert_email_optin=True), user=base_user)
+    _, _, payload = auth.calls[0]
+    assert payload["user_metadata"]["tz"] == "Asia/Hong_Kong"
 
 
 def test_get_prefs_unauthenticated_is_401(monkeypatch):

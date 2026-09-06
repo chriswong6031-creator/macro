@@ -174,8 +174,20 @@ def save_prefs(body: PrefsRequest, user: dict = Depends(_current_user)) -> dict:
     if not patch:
         raise HTTPException(400, "nothing to save (send lang, theme and/or brain_depth)")
 
-    stored = _write_user_metadata(str(user_id), patch,
-                                  dict(user.get("user_metadata") or {}))
+    existing_meta = dict(user.get("user_metadata") or {})
+
+    # B-F08-1a freeze §8: alerts turned on with no IANA zone known -- neither sent on
+    # this call nor already stored -- get an explicit default rather than shipping with
+    # an unset zone (quiet hours and any future delivery-window math need a real tz to
+    # mean anything). Never overwrites a tz the caller/account already has.
+    if patch.get("alert_email_optin") is True and "tz" not in patch \
+            and not existing_meta.get("tz"):
+        lang = patch.get("lang") or existing_meta.get("lang")
+        default_tz = user_prefs.default_tz_for_lang(lang)
+        patch["tz"] = default_tz
+        response_prefs["tz"] = default_tz
+
+    stored = _write_user_metadata(str(user_id), patch, existing_meta)
 
     mirrored = False
     if "lang" in patch:

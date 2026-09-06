@@ -170,7 +170,15 @@ def test_empty_body_is_400(auth, store):
 ])
 def test_alert_email_optin_accepts_bool_and_strings(auth, store, value, expected):
     out = account_prefs.save_prefs(account_prefs.PrefsRequest(alert_email_optin=value), user=USER)
-    assert out["prefs"] == {"alert_email_optin": expected}
+    # Turning alerts ON with no tz already known (USER carries none) also applies the
+    # server-side default_tz_for_lang default (Meta-CEO B ruling, macro#6907 round 2;
+    # see tests/test_alert_prefs.py::
+    # test_alerts_on_with_no_tz_defaults_and_round_trips_on_get for the dedicated
+    # coverage) -- turning them off never touches tz at all.
+    want = {"alert_email_optin": expected}
+    if expected:
+        want["tz"] = "UTC"
+    assert out["prefs"] == want
 
 
 def test_alert_email_optin_bad_value_is_400(auth, store):
