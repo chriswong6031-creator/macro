@@ -3,7 +3,7 @@
   "is_context_only": true,
   "scored": false,
   "as_of": "2026-08-13",
-  "generated_utc": "2026-09-01T06:10:47.471174+00:00",
+  "generated_utc": "2026-09-05T13:49:51.428531+00:00",
   "n": 372,
   "names": {
     "AAL": {
@@ -17119,7 +17119,7 @@
       }
     }
   },
-  "gate_status": "insufficient_history (have 41/120 dates, 392/15 names)",
+  "gate_status": "insufficient_history (have 48/120 dates, 408/15 names)",
   "measured_nulls": {
     "buyer_initiated_call_volume": {
       "state": "unavailable_entitlement",

@@ -100,6 +100,7 @@ PUBLIC_PATHS = {
     "/index.html",
     "/about.html",
     "/plans.html",
+    "/help.html",
     "/confluence_screener.html",
     "/macro.html",
     "/start.html",

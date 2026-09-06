@@ -6,8 +6,8 @@ set -o pipefail
 # Fast, data-free public-surface render. This intentionally does not invoke any
 # market builder, restore a parquet cache, publish R2 data, or use a self-hosted
 # runner. The PR already carries direct template/site pairs; this pass renders
-# the three Jinja public pages and refreshes immutable asset stamps site-wide.
-PUBLIC_OUTPUTS=(site/plans.html site/support.html site/unsubscribe.html)
+# the four Jinja public pages and refreshes immutable asset stamps site-wide.
+PUBLIC_OUTPUTS=(site/help.html site/plans.html site/support.html site/unsubscribe.html)
 
 render_public() {
   python -m scripts.build_public_pages
@@ -18,7 +18,7 @@ render_public() {
 }
 
 guard_public_outputs() {
-  # Only these three pages are rendered from Jinja in this lane. The other
+  # Only these four pages are rendered from Jinja in this lane. The other
   # site-wide transforms add an external data-base tag, lift CSS, and update
   # src/href attributes; none edits executable inline JS. PR CI already proved
   # the rest of the committed site. Re-scanning all ~3,263 pages took ~2m30s
@@ -58,7 +58,7 @@ while push_attempt; do
     # multi-minute ref-race window after it had already synchronized.
     if [ "$(git rev-parse HEAD)" != "$PRE_SYNC_HEAD" ]; then
       # Main really advanced. Re-apply the deterministic transforms to that
-      # exact tree, then validate only the three pages this lane renders.
+      # exact tree, then validate only the four pages this lane renders.
       # Existing pages were proven before the rebase and the transforms do not
       # alter inline JS; a full-tree replay here caused the observed starvation.
       render_public

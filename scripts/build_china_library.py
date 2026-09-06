@@ -14,6 +14,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import numbers
 import os
 import sys
 import time
@@ -188,6 +189,31 @@ def _data_through() -> str | None:
     """Board-level data_through: the CSI300 benchmark's last bar (the settled-session anchor every
     excess/relative read is measured against). Additive; never renames as_of."""
     return _name_data_through(CSI300_ETF)
+
+
+def _more_actionable_append_is_safe(wide: dict | None) -> bool:
+    """R3 REPAIR (2026-09-01): whether `wide["more_actionable"]` rows may be
+    appended to the china_standout_track board store this build.
+
+    `_more_actionable`'s board_definition (`f"{wide['board_definition']}_
+    more_actionable"`) is a DISTINCT, non-watch definition — unlike the
+    reversal_watch / v2-shadow / v3-shadow / continuation_watch cohorts, it is
+    NOT in `engine.china_standout_track.WATCH_DEFINITIONS`, so it IS counted
+    by `china_standout_track._latest_definition_frame` when resolving the
+    headline (graded) board definition: that resolver picks
+    `newest_rows.iloc[-1]["board_definition"]` among every non-watch row
+    appended for the newest date. On a night where `wide["buy"]` (the
+    featured shelf) is EMPTY, the featured append below writes zero rows for
+    today's date — so if more_actionable still appended, its rows would be
+    the ONLY non-watch rows for that date, and `_latest_definition_frame`
+    would silently pick the more_actionable (near-miss/shadow) shelf as the
+    graded headline definition. Gating on a non-empty `wide["buy"]` for the
+    SAME build keeps a genuine featured row always present (and, by append
+    order — buy is appended immediately after — always positioned to keep
+    owning the headline definition), so more_actionable can never hijack
+    headline selection on a zero-featured night.
+    """
+    return bool((wide or {}).get("more_actionable")) and bool((wide or {}).get("buy"))
 
 
 def compute_board_staleness(data_through: str | None = None,
@@ -729,24 +755,56 @@ def _add_cache(out: list[tuple], seen: set[str], closes_path, meta_path, label: 
     return added
 
 
+def _last_session(close) -> "object | None":
+    """Latest valid session DATE of a close series — tz/time-of-day stripped so a
+    UTC-stamped cache and an exchange-local deep store compare on the CN session,
+    never on raw timezone timestamps. None when missing/empty/unparseable."""
+    try:
+        s = close.dropna()
+        if s.empty:
+            return None
+        raw_last = s.index.max()
+        if raw_last is None or isinstance(raw_last, numbers.Number) or pd.isna(raw_last):
+            return None
+        ts = pd.Timestamp(raw_last)
+        if pd.isna(ts):
+            return None
+        if ts.tzinfo is not None:
+            ts = ts.tz_localize(None)
+        return ts.date()
+    except Exception:  # noqa: BLE001 — an unparseable index earns no authority either way
+        return None
+
+
 def _overlay_deep_ohlc(out: list[tuple], group: str, min_rows: int = 300) -> int:
     """Upgrade names to the deep per-name OHLC store (data/<group>/<ticker>.parquet —
     real high/low + decades of history from collectors/china_stock_prices.py) wherever
     the nightly collector has backfilled them, replacing the ~5y close-only search/
     breadth cache series (which carry high=None). Mirrors how build_stock_library
     sources US names from data/stocks. Names not yet in the store keep their cache
-    series, so this is a pure, NON-REGRESSING upgrade that fills in as the store grows
-    (the seed ships ~12 names; nightly backfills the rest). See
+    series, and a deep series whose latest valid session TRAILS the cache's keeps the
+    fresher cache tuple (a lagging store must never move the Prophet board clock
+    backward — 2026-08-27), so this is a NON-REGRESSING upgrade that fills in as the
+    store grows (the seed ships ~12 names; nightly backfills the rest). See
     research/signal_engine/MULTICOUNTRY_DATA.md."""
     n = 0
-    for i, (t, _close, _high, name, sector) in enumerate(out):
+    stale = 0
+    for i, (t, close, _high, name, sector) in enumerate(out):
         df = store.read(group, t)
         if df is None or "close" not in df.columns or len(df["close"].dropna()) < min_rows:
+            continue
+        cache_last = _last_session(close)
+        deep_last = _last_session(df["close"])
+        if deep_last is None or (cache_last is not None and deep_last < cache_last):
+            stale += 1
             continue
         out[i] = (t, df["close"], df.get("high"), name, sector)
         n += 1
     if n:
         log.info("china library: upgraded %d names to the deep OHLC store (%s)", n, group)
+    if stale:
+        log.info("china library: kept %d fresher cache series over a stale deep store (%s)",
+                 stale, group)
     return n
 
 
@@ -4277,6 +4335,47 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.info("[timing] cn_regime_store.append (%s)", "OK" if _rstore_ok else "skip/fail")
             except Exception as _rs_e:  # noqa: BLE001 — SA-R16: never suppress grade()
                 log.warning("china_regime_store.append failed (%s) — board track continues", _rs_e)
+            # MEMBERSHIP repair (M1/M2, 2026-09-01): china.html.j2 pv_cards
+            # `_entry_rows UNION setups.more_actionable` (engine/prophet_board_since.py's
+            # CN adapter docstring trace) — more_actionable names are genuinely
+            # NAME-VISIBLE on the shipped page but, until now, were never persisted
+            # to board.parquet at all, so a demote-then-return through that lane
+            # incorrectly reset a candidate's tenure. Persisted here under a
+            # DISTINCT board_definition (`<live>_more_actionable`, never a value
+            # china_standout_track.WATCH_DEFINITIONS or the live headline
+            # `wide["board_definition"]` ever equal) and a distinct row-level
+            # `lane="more_actionable"` (append_board's own `lane` column, keep-first
+            # semantics preserved by construction — different board_definition
+            # means no (date, ticker, board_definition) key can collide with a buy
+            # row). MUST run BEFORE the featured `wide["buy"]` append immediately
+            # below: china_standout_track._latest_definition_frame picks the
+            # headline definition as `newest_rows.iloc[-1]["board_definition"]` —
+            # the LAST-appended non-watch row for the newest date — so appending
+            # more_actionable first keeps the featured board_definition as that
+            # last (and therefore headline-selected) row for today, exactly the
+            # same append-order discipline this module already documents for the
+            # continuation_watch cohort below ("appended LAST so no other
+            # definition's append order is disturbed"). engine/prophet_board_since.py's
+            # observations_from_cn_frame excludes only WATCH_DEFINITIONS + 'legacy',
+            # so this distinct, non-watch definition IS counted for membership —
+            # that inclusion is the entire point of this block.
+            # R3 REPAIR (2026-09-01): guarded via _more_actionable_append_is_safe
+            # (see its docstring) — never let more_actionable become the ONLY
+            # non-watch rows for a date, which would hijack
+            # china_standout_track._latest_definition_frame's headline pick.
+            if _more_actionable_append_is_safe(wide):
+                _more_board_definition = f"{wide['board_definition']}_more_actionable"
+                _more_rows_for_board = [
+                    {**r, "board_definition": _more_board_definition, "lane": "more_actionable"}
+                    for r in wide["more_actionable"] if isinstance(r, dict)
+                ]
+                _bn_ma = china_standout_track.append_board(
+                    _more_rows_for_board, asof=as_of, lane=_lane)
+                log.info("china more_actionable board-track: logged %d rows", _bn_ma)
+            elif wide.get("more_actionable"):
+                log.info(
+                    "china more_actionable board-track: skipped (zero featured "
+                    "names this build — would hijack the headline definition)")
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             # reversal_watch cohort: same store, own board_definition (never the
             # headline grade — see WATCH_DEFINITIONS in china_standout_track).

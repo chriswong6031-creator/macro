@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -535,7 +537,150 @@ def test_canary_compare_control_bundle_is_runtime_complete() -> None:
     assert "--hosted-fragment" in completed.stdout
 
 
-def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
+# ── C3R-A: four-slot diagnostic interface ────────────────────────────────────
+# slots=4 is a DIAGNOSTIC identity only. Its primary pack follows the existing
+# ci-linux-canary label while the other three retain ci-linux; render remains
+# independently reserved and a red pack must still surface after its receipt.
+
+
+def _evaluate_selfhosted_route(
+    expression: str,
+    *,
+    slots: str,
+    pack: int,
+    primary_pack: str,
+    selected_packs: str,
+) -> list[str]:
+    """Evaluate the small GitHub-expression subset used by ``runs-on``.
+
+    This exercises the shipped expression rather than a second routing helper.
+    Python ``and``/``or`` has the same value-returning short-circuit behavior as
+    GitHub's ``&&``/``||`` pseudo-ternary for this expression.
+    """
+    prefix = "${{ fromJSON("
+    suffix = ") }}"
+    assert expression.startswith(prefix) and expression.endswith(suffix)
+    inner = expression[len(prefix) : -len(suffix)].strip()
+
+    selected = json.loads(selected_packs)
+    first_index = selected[0]["index"]
+    inner = inner.replace(
+        "fromJSON(needs.plan.outputs.selected_packs)[0].index",
+        repr(first_index),
+    )
+    inner = inner.replace("needs.plan.outputs.primary_pack", repr(primary_pack))
+    inner = inner.replace("inputs.slots", repr(slots))
+    inner = inner.replace("matrix.pack", repr(pack))
+    inner = inner.replace("&&", " and ").replace("||", " or ")
+    inner = " ".join(inner.split())
+
+    encoded = eval(  # noqa: S307 - closed expression and empty builtins
+        inner,
+        {"__builtins__": {}},
+        {
+            "fromJSON": json.loads,
+            "toJSON": lambda value: json.dumps(value, separators=(",", ":")),
+        },
+    )
+    return json.loads(encoded)
+
+
+def test_canary_admits_exactly_the_one_three_and_four_slot_identities() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    raw = document.get("on", document.get(True, {}))
+    options = raw["workflow_dispatch"]["inputs"]["slots"]["options"]
+    assert options == ["1", "3", "4"]
+    assert "5" not in options and "6" not in options, "no hidden fifth CI slot"
+    assert raw["workflow_dispatch"]["inputs"]["slots"]["default"] == "1"
+
+
+def test_slot_routes_preserve_one_and_three_then_split_four_exactly_one_three() -> None:
+    job = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"]
+    runs_on = job["runs-on"]
+    selected = json.dumps(
+        [{"index": 7}, {"index": 4}, {"index": 2}, {"index": 0}],
+        separators=(",", ":"),
+    )
+
+    assert _evaluate_selfhosted_route(
+        runs_on,
+        slots="1",
+        pack=7,
+        primary_pack="7",
+        selected_packs=selected,
+    ) == ["self-hosted", "ci-linux-canary"]
+    for pack in (7, 4, 2):
+        assert _evaluate_selfhosted_route(
+            runs_on,
+            slots="3",
+            pack=pack,
+            primary_pack="7",
+            selected_packs=selected,
+        ) == ["self-hosted", "ci-linux"]
+
+    four_routes = {
+        pack: _evaluate_selfhosted_route(
+            runs_on,
+            slots="4",
+            pack=pack,
+            primary_pack="7",
+            selected_packs=selected,
+        )
+        for pack in (7, 4, 2, 0)
+    }
+    assert four_routes == {
+        7: ["self-hosted", "ci-linux-canary"],
+        4: ["self-hosted", "ci-linux"],
+        2: ["self-hosted", "ci-linux"],
+        0: ["self-hosted", "ci-linux"],
+    }
+    assert job["strategy"]["max-parallel"] == "${{ fromJSON(inputs.slots) }}"
+    assert job["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+
+
+@pytest.mark.parametrize(
+    "primary_pack",
+    ("", "not-json", '"7"', "7.0", "true", "null", "2"),
+)
+def test_four_slot_primary_identity_is_numeric_bound_and_fail_closed(
+    primary_pack: str,
+) -> None:
+    """A missing, non-integer, or selector-inconsistent identity must error."""
+    runs_on = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"][
+        "runs-on"
+    ]
+    selected = '[{"index":7},{"index":4},{"index":2},{"index":0}]'
+    with pytest.raises(json.JSONDecodeError):
+        _evaluate_selfhosted_route(
+            runs_on,
+            slots="4",
+            pack=7,
+            primary_pack=primary_pack,
+            selected_packs=selected,
+        )
+
+
+def test_hosted_control_fans_out_over_every_selected_pack() -> None:
+    """Four self-hosted packs need four hosted controls, or `compare` cannot
+    require strict parity for every pack a slots=4 run actually selected.
+    """
+    hosted = workflow("selfhosted-ci-canary.yml")["jobs"]["hosted-control"]
+    assert hosted["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    assert hosted["runs-on"] == "ubuntu-latest"
+
+
+def test_render_reservation_probe_is_preserved_at_three_and_four_slots() -> None:
+    probe = workflow("selfhosted-ci-canary.yml")["jobs"]["render-reservation-probe"]
+    assert probe["if"] == "inputs.slots != '1'"
+    assert probe["runs-on"] == ["self-hosted", "Linux", "X64", "render-linux"]
+    assert "ci-linux" not in probe["runs-on"]
+
+
+def test_multi_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
+    """Regression: the gate previously read `inputs.slots == '3'`, so a slots=4
+    run preserved its receipt and then reported success no matter what pack.rc
+    held. Every multi-slot identity must surface the red.
+    """
     steps = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"]["steps"]
     upload = next(
         index
@@ -546,9 +691,66 @@ def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
     gate = next(
         index
         for index, step in enumerate(steps)
-        if step.get("name") == "surface a red pack after preserving its three-slot receipt"
+        if str(step.get("name", "")).startswith("surface a red pack after preserving")
     )
-    assert upload < gate
-    assert steps[gate]["if"] == "inputs.slots == '3'"
+    assert upload < gate, "the receipt is preserved before the red is surfaced"
+    assert steps[gate]["if"] == "inputs.slots != '1'"
     assert 'cat "$RUNNER_TEMP/pack.rc"' in steps[gate]["run"]
     assert "-eq 0" in steps[gate]["run"]
+
+
+def test_four_slot_preflight_is_a_blocking_no_checkout_parent_envelope_gate() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    preflight = document["jobs"]["four-slot-preflight"]
+    assert preflight["if"] == "inputs.slots == '4'"
+    assert preflight["needs"] == "plan"
+    assert preflight["runs-on"] == ["self-hosted", "ci-linux-canary"]
+    steps = preflight["steps"]
+    assert all("checkout" not in str(step).lower() for step in steps)
+    command = "\n".join(str(step.get("run", "")) for step in steps)
+    assert "--require-slice" in command
+    assert "--preflight-profile four-slot-canary" in command
+    pack = document["jobs"]["selfhosted-pack"]
+    assert "four-slot-preflight" in pack["needs"]
+    assert "needs.four-slot-preflight.result == 'success'" in pack["if"]
+
+
+def test_no_other_canary_job_can_race_the_four_slot_candidate() -> None:
+    jobs = workflow("selfhosted-ci-canary.yml")["jobs"]
+    canary_jobs = {
+        job_id
+        for job_id, job in jobs.items()
+        if "ci-linux-canary" in str(job.get("runs-on", ""))
+    }
+    assert canary_jobs == {
+        "four-slot-preflight",
+        "selfhosted-pack",
+        "cache-negative-control",
+        "contamination-probe",
+    }
+    assert jobs["four-slot-preflight"]["if"] == "inputs.slots == '4'"
+    for job_id in ("cache-negative-control", "contamination-probe"):
+        assert jobs[job_id]["if"] == "inputs.slots == '1'"
+
+
+def test_four_slot_keeps_all_evidence_legs_and_production_parallelism_frozen() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    matrix = "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    for job_id in ("hosted-control", "selfhosted-pack", "compare"):
+        assert document["jobs"][job_id]["strategy"]["matrix"] == matrix
+
+    selfhosted = document["jobs"]["selfhosted-pack"]
+    failure_step = next(
+        step
+        for step in selfhosted["steps"]
+        if str(step.get("name", "")).startswith("surface a red pack")
+    )
+    assert failure_step["if"] == "inputs.slots != '1'"
+    assert "render-linux" not in str(selfhosted["runs-on"])
+    assert all(
+        "pc-ci-4" not in str(job.get("runs-on", ""))
+        for job in document["jobs"].values()
+    )
+
+    trusted = workflow("trusted-ci-executor.yml")["jobs"]["trusted-pack"]
+    assert trusted["strategy"]["max-parallel"] == 3

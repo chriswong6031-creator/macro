@@ -1,7 +1,7 @@
 /* cn_prophet_live.js — CN Breathing Platform runtime board (CN-PR-3).
-   Polls live/cn_prophet_live.json and paints:
-     1. the reserved .pv-live chip on each .pvcard[data-ticker]
-     2. the #cn-prophet-live strip (phase / coverage / close banner)
+   Polls live/cn_prophet_live.json and paints only the reserved .pv-live chip on
+   each .pvcard[data-ticker]. The SSR session floor is carried by the existing
+   stocks header; there is no standalone page-level CN live/telemetry module.
 
    Fail-closed. A 401, a bad schema, a feed older than the page session, or an
    artifact older than 45 minutes tears the live layer down and leaves the SSR
@@ -39,17 +39,6 @@
     unavailable:          ["No quote", "暂无行情"],
     suspended_suspected:  ["Halted", "停牌"]
   };
-  var PHASE = {
-    pre_open:        ["Pre-open", "盘前"],
-    morning:         ["Morning", "早盘"],
-    session_break:   ["Lunch break", "盘中暂歇"],
-    afternoon:       ["Afternoon", "午盘"],
-    closing_auction: ["Closing auction", "收盘集合竞价"],
-    post_close:      ["Just closed", "刚收盘"],
-    closed:          ["Closed", "已收盘"],
-    holiday:         ["Holiday", "休市"],
-    weekend:         ["Weekend", "周末"]
-  };
 
   var _bakedSession;
   var _painted = false;
@@ -60,7 +49,7 @@
   function pageSession() {
     if (_bakedSession !== undefined) return _bakedSession;
     _bakedSession = "";
-    var el = document.getElementById("cn-prophet-live");
+    var el = document.getElementById("stocks-header");
     var s = el ? (el.getAttribute("data-cn-session") || "") : "";
     if (DATE_RE.test(s)) _bakedSession = s;
     return _bakedSession;
@@ -110,11 +99,6 @@
       el.innerHTML = "";
       el.removeAttribute("data-tip-en");
       el.removeAttribute("data-tip-zh");
-    }
-    var strip = document.getElementById("cn-prophet-live");
-    if (strip) {
-      strip.hidden = true;
-      strip.classList.remove("is-close");
     }
     _painted = false;
   }
@@ -167,36 +151,8 @@
     }
   }
 
-  function paintStrip(d) {
-    var strip = document.getElementById("cn-prophet-live");
-    if (!strip) return;
-    var phaseEl = document.getElementById("cnpl-phase");
-    var covEl = document.getElementById("cnpl-cov");
-    var asofEl = document.getElementById("cnpl-asof");
-    var banner = document.getElementById("cnpl-close");
-    var ph = pair(PHASE, d.market_phase || "closed");
-    if (phaseEl) setBL(phaseEl, ph[0], ph[1]);
-    var cov = d.coverage || {};
-    if (covEl) {
-      var pct = (cov.coverage_pct != null) ? cov.coverage_pct : "—";
-      setBL(covEl, pct + "% readable", pct + "% 可读");
-    }
-    if (asofEl) {
-      var delay = d.delay_floor_min != null ? d.delay_floor_min : 15;
-      setBL(asofEl,
-            "session " + (d.session || "—") + " · " + delay + "-min delayed",
-            "交易日 " + (d.session || "—") + " · 延迟 " + delay + " 分钟");
-    }
-    var close = !!(d.revision === "close_provisional" && d.close_board && !d.close_pending);
-    strip.classList.toggle("is-close", close);
-    if (banner) banner.hidden = !close;
-    strip.hidden = false;
-    _painted = true;
-  }
-
   function apply(d) {
     paintCards(d.names || {});
-    paintStrip(d);
   }
 
   function tick(force) {
@@ -221,7 +177,8 @@
   }
 
   function arm() {
-    if (!document.getElementById("cn-prophet-live")) return;
+    if (!document.getElementById("stocks-header")) return;
+    pageSession();
     tick(true);
     if (_timer) clearInterval(_timer);
     _timer = setInterval(function () { tick(false); }, POLL);

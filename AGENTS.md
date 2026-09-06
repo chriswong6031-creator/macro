@@ -381,11 +381,20 @@ itself on demand.
   re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
   whole files, cap command output (`head`, `--limit`, `--jq`), and keep browser
   screenshots and full page dumps inside a subagent.
-- **One session = one task boundary.** A long program needs durable state on
-  disk, not a long session. Run it as a chain of short sessions over a
-  `research/*_CONTINUATION_HANDOFF_<date>.md`, one wave per session. Keep an
-  orchestrator under ~200k; past ~250k, checkpoint to a handoff and let the
-  operator clear rather than grinding to the ceiling.
+- **Durable state on disk — and a session may run as long as it stays useful.**
+  Operator 2026-09-01 REPEALED the former "one session = one task boundary" rule:
+  it forced every long workflow into a relay of amnesiac sessions, and
+  re-establishing context in each successor cost more than the stop ever saved.
+  There is no task-boundary stop — a merged, live-verified wave is a checkpoint,
+  not a session end, and one session may carry a program end-to-end across many
+  waves and many merges. The durable-state half survives as a WRITE rule, not a
+  STOP rule: keep program state in a
+  `research/*_CONTINUATION_HANDOFF_<date>.md` and `agentos/handoffs/` as you go,
+  so the work survives a clear, a crash, or an operator handoff. Cost control is
+  the two bullets above and is unaffected — a long session held near 150k is
+  cheap, a short one riding 800k is not, so when context grows, delegate the next
+  wave's execution rather than shortening the session. Context figures are
+  advisory targets, never a stop trigger.
 
 Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, so
 cutting thinking degrades quality for at most a sixth of the cost. The savings
@@ -417,11 +426,23 @@ one is abandoned work, not delivered work.
 `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` is fully satisfied: exact PR head pushed and local
 worktree clean; binding checks concluded green; PR DRAFT; no `merge-on-green` label;
 native auto-merge null; title/body/comment holds merge and names Sol as authority plus
-a Sol-controlled release condition. PARKED is terminal for the current session but is
-NOT SHIPPED, not deployed/live evidence, and not a retryable `SHIP LOOP BLOCKED` state.
-Report it once and stop. Do not poll, arm, mark ready, merge, or re-enter the ship loop
-until Sol changes or releases the hold. Ambiguous/incomplete hold state remains ordinary
-unfinished work and fails closed.
+a Sol-controlled release condition. PARKED is terminal for the current ship/merge attempt
+but is NOT SHIPPED, not deployed/live evidence, and not a retryable `SHIP LOOP BLOCKED`
+state. Report it once and stop shipping. Do not poll, arm, mark ready, merge, or re-enter
+the ship loop until Sol changes or releases the hold. Ambiguous/incomplete hold state
+remains ordinary unfinished work and fails closed.
+
+**That terminality is scoped to the ship attempt, never to the worker**
+(`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`). The reciprocal worker/Sol child dialogue remains
+nonterminal: the same child, carrier, branch and PR resume on a same-carrier Sol
+`CONTINUE` / `RULING` / `REQUEST_REPAIR`, and only an explicit same-carrier Sol STOP (or
+`ACCEPTED / STOP`, `CLOSED / STOP`) closes the child. Before yielding at PARKED you must
+already have posted one exact-carrier `RESULT / HOLD-FOR-SOL` and established a truthful
+continuation path — `WATCH_ARMED` only for a real, verified registration, otherwise
+`WATCH_UNAVAILABLE` naming the surface checked and the exact failure. "Waiting for Sol"
+is not a continuation path, and going silent on the holding authority is not a lawful
+stop: the task/wave boundary, the PR merge hold, the reasoning-session yield, the child
+STOP and program completion are five distinct facts, and none may be inferred from another.
 
 `merge-on-green` remains available and is still the recommended way to get the
 merge PERFORMED for ordinary work — arming it means you do not have to run the merge yourself. It
@@ -524,9 +545,11 @@ state (no arming label, `autoMergeRequest` null, DRAFT, hold comment naming auth
 release condition), and never arm a PR you did not open without grepping its
 title+body+comments for a hold. Once that protocol is complete, the exact head is pushed
 and clean, and binding checks are green, the delivery state is `PARKED / HOLD-FOR-SOL`:
-terminal for the current session, not SHIPPED, and not a retryable blocker. Report once;
-do not poll, re-arm, mark ready, merge, or re-enter the ship loop until the holding authority
-changes or releases the hold. Conditional merge authority granted for one PR NEVER
+terminal for the current ship/merge attempt, not SHIPPED, and not a retryable blocker.
+Report once; do not poll, re-arm, mark ready, merge, or re-enter the ship loop until the
+holding authority changes or releases the hold — but that is the SHIP attempt ending, not
+the child: the worker/Sol dialogue remains nonterminal and only an explicit same-carrier
+Sol STOP closes it (`DEC:HOLD-PARKS-SHIP-NOT-DIALOGUE`). Conditional merge authority granted for one PR NEVER
 transfers to any other PR (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).
 
 **DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
