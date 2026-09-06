@@ -337,6 +337,10 @@ def parse_delta(payload: bytes, *, max_changes: int = DEFAULT_MAX_ENTRIES) -> di
     published_at = _child_text(publication, "datePublished", _DELTA)
     if not published_at:
         raise SourceShapeError("delta datePublished missing")
+    try:
+        published_date = date.fromisoformat(published_at[:10])
+    except ValueError as exc:
+        raise SourceShapeError(f"unexpected delta datePublished: {published_at!r}") from exc
     changes: list[dict[str, Any]] = []
     for index, entity in enumerate(root.findall(f"{_DELTA}entities/{_DELTA}entity")):
         if index >= max_changes:
@@ -377,6 +381,7 @@ def parse_delta(payload: bytes, *, max_changes: int = DEFAULT_MAX_ENTRIES) -> di
         changes.append(change)
     return {
         "published_at": published_at,
+        "published_date": published_date,
         "publication_type": _child_text(publication, "publicationType", _DELTA),
         "changes": changes,
     }
@@ -538,7 +543,7 @@ def build_projection(
     parsed_deltas: list[tuple[dict[str, Any], Mapping[str, Any]]] = []
     for payload, receipt in delta_documents:
         parsed_deltas.append((parse_delta(payload), receipt))
-    parsed_deltas.sort(key=lambda item: (item[0]["published_at"], str(item[1].get("source_key"))))
+    parsed_deltas.sort(key=lambda item: (item[0]["published_date"], str(item[1].get("source_key"))))
 
     latest_action: dict[str, str] = {}
     changes: list[dict[str, Any]] = []

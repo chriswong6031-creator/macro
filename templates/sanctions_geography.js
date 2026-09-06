@@ -1274,16 +1274,33 @@
     return;
   }
 
+  function mapDegraded(reason) {
+    if (ui.mapSkel) {
+      clear(ui.mapSkel);
+      ui.mapSkel.removeAttribute("hidden");
+      ui.mapSkel.setAttribute("data-sg-map-degraded", "true");
+      var note = document.createElement("p");
+      note.className = "sg-map-degraded-note";
+      note.setAttribute("data-i18n-en", "The boundary map could not be drawn — the register below is complete.");
+      note.setAttribute("data-i18n-zh", "边界地图无法绘制 — 下方登记册完整。");
+      note.textContent = "The boundary map could not be drawn — the register below is complete.";
+      ui.mapSkel.appendChild(note);
+      applyLang();
+    }
+    if (ui.map) { ui.map.setAttribute("hidden", "hidden"); }
+    if (window.console && window.console.warn) {
+      window.console.warn("sanctions-geography: boundary map degraded", reason);
+    }
+  }
+
   function boot() {
-    Promise.all([getJSON(DATA_URL), getJSON(TOPO_URL)]).then(function (out) {
-      var p = out[0];
+    var dataReady = getJSON(DATA_URL).then(function (p) {
       model.projection = p;
       root.setAttribute("data-source-state", String(p.source_state || ""));
       index(p);
       renderFigures(p);
       renderAsOf(p);
       renderProvenance(p);
-      renderMap(p, out[1]);
       populateFilters(p);
       applyLang();
       renderTable();
@@ -1293,8 +1310,20 @@
       renderSource(p);
       renderHealth(p);
       wire();
+      return p;
     }).catch(function (err) {
       fail(err && err.message ? err.message : err);
+      throw err;
+    });
+
+    dataReady.then(function (p) {
+      getJSON(TOPO_URL).then(function (topo) {
+        renderMap(p, topo);
+      }).catch(function (err) {
+        mapDegraded(err && err.message ? err.message : err);
+      });
+    }, function () {
+      /* dataReady already failed and reported via fail(); the map never mounts. */
     });
   }
 
