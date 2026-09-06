@@ -33,7 +33,7 @@ import calendar
 import hashlib
 import json
 import re
-from datetime import date, datetime
+from datetime import date, datetime, time as _dtime
 
 OBSERVATION_SCHEMA = "special_situations.deal_term_observation.v1"
 EXTRACTION_METHOD = "deterministic_regex_span"
@@ -179,6 +179,21 @@ def _iso_date(v: object) -> date | None:
         return datetime.strptime(s, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def _acceptance_instant(acceptance: object) -> datetime | None:
+    """Parse an EDGAR acceptance timestamp into an aware instant, or None.
+
+    Used to tell a premarket filing from an after-close one on a same-day reference session —
+    the presence of a 'T' only proves a time was captured, not which side of the close it fell.
+    """
+    try:
+        dt = datetime.fromisoformat(str(acceptance))
+    except (ValueError, TypeError):
+        return None
+    if dt.tzinfo is None:
+        return None
+    return dt
 
 
 # ------------------------------------------------------------------ source + evidence
@@ -1013,8 +1028,13 @@ def extract_term_observations(text: str | None, *, source: dict,
 
     # ---- price per share, read ONLY inside the current-transaction scope
     all_cands = _price_candidates(text)
-    cands = [c for c in all_cands if lo <= c["start"] and c["end"] <= hi]
-    outside = [c for c in all_cands if c not in cands]
+    # One partition pass by the SAME predicate (reviewer finding, macro#6793, MINOR 8): the prior
+    # `c not in cands` did an O(len(cands)) deep-dict comparison per candidate, quadratic in the
+    # number of price mentions in the document.
+    cands: list = []
+    outside: list = []
+    for c in all_cands:
+        (cands if (lo <= c["start"] and c["end"] <= hi) else outside).append(c)
     share_vals = {c["value"] for c in cands if c["unit"] == "share"}
     ads_vals = {c["value"] for c in cands if c["unit"] == "ADS"}
     conflicted = len(share_vals) > 1 or (share_vals and ads_vals and share_vals != ads_vals)
@@ -1129,8 +1149,13 @@ def compile_current_terms(observations: list[dict] | None, *, accession: object 
         return {"status": "unavailable", "reasons": ["TERM_NOT_FOUND"], "terms": {},
                 "evidence": {}, "accession": None, "amendment_chain": []}
 
-    invalid = [o for o in raw_rows if not validate_observation(o)]
-    rows = [o for o in raw_rows if o not in invalid]
+    # One partition pass by the SAME predicate (reviewer finding, macro#6793, MINOR 8): the prior
+    # `o not in invalid` did an O(len(invalid)) deep-dict comparison per row, quadratic in ledger
+    # size — and the ledger is an append-only jsonl scanned on the render path.
+    invalid: list = []
+    rows: list = []
+    for o in raw_rows:
+        (rows if validate_observation(o) else invalid).append(o)
     rows = [o for o in rows
             if (o.get("source") or {}).get("body_sha256") and (o.get("source") or {}).get("accession")]
     unbound = len(raw_rows) - len(invalid) - len(rows)
@@ -1575,8 +1600,24 @@ def reduce_cash_deal(compiled: dict | None, *, now_utc=_REQUIRED, category: obje
     # session is valid for an after-close filing and invalid for a premarket one, and only the
     # timestamp can tell those apart — which is why a date-only value resolves nothing at all.
     acceptance_has_time = bool(acceptance) and "T" in str(acceptance)
+    # The presence of a time is not enough: a same-day reference session is defensible ONLY when
+    # the acceptance instant fell at or after that session's own exchange close (16:00 ET). A
+    # premarket acceptance on the same day is being compared against a close that already
+    # contains the announcement pop — reusing the exact-close boundary `_reference_price()`
+    # (engine/special_situations.py) already applies to its own producer output, so a second
+    # producer or a hand-built fixture cannot walk this contract's one gate.
+    same_day_after_close = True
+    if acceptance_has_time and ref_session is not None and avail_session is not None and \
+            ref_session == avail_session:
+        instant = _acceptance_instant(acceptance)
+        if instant is None:
+            same_day_after_close = False
+        else:
+            from lib import nyse_calendar as _cal
+            close_et = datetime.combine(ref_session, _dtime(16, 0), tzinfo=_cal.ET)
+            same_day_after_close = instant.astimezone(_cal.ET) >= close_et
     if acceptance_has_time and reference_price and _usable(reference_price) and ref_session and \
-            avail_session and ref_session <= avail_session:
+            avail_session and ref_session <= avail_session and same_day_after_close:
         rp = _num(reference_price.get("value"))
         base.update({
             "filing_reference_premium_pct": round((offer / rp - 1.0) * 100, 2),
@@ -1654,9 +1695,124 @@ def select_ordered_context(rows: list[dict] | None, *, block: str = "arb",
     return ordered, counts
 
 
+# Plain-word EN/ZH text for the closed quality-state vocabulary. `context_row()` is what feeds
+# `risk_arb_top`, which several Neural Web brain-context builders (ask_brain.py,
+# mastermind_context.py, world_state.py) pass straight into customer-facing chat grounding — so
+# the raw ALL_CAPS state/reason/warning slugs must never reach it directly (glance-tier banned
+# vocab: docs/DESIGN_DOCTRINE.md "internal state/study names, untranslated stats, raw slugs").
+# The raw codes stay available under `codes` for desk/internal tooling that wants them.
+_QUALITY_STATE_TEXT_EN: dict[str, str] = {
+    QUALITY_VERIFIED: "Verified against source filing and live price.",
+    QUALITY_STALE_PRICE: "Price data is stale, not current.",
+    QUALITY_AMBIGUOUS: "Deal terms are ambiguous, not yet clear.",
+    QUALITY_NOT_FIXED_CASH: "Not a fixed-cash deal.",
+    QUALITY_TERMINAL: "Deal has already closed or ended.",
+    QUALITY_SOURCE_UNAVAILABLE: "Source filing data is unavailable.",
+    QUALITY_INELIGIBLE: "Deal type is not eligible for this math.",
+    QUALITY_CALCULATION_UNAVAILABLE: "Not enough verified data to calculate.",
+}
+_QUALITY_STATE_TEXT_ZH: dict[str, str] = {
+    QUALITY_VERIFIED: "已通过文件与实时价格核实。",
+    QUALITY_STALE_PRICE: "价格数据滞后，非最新。",
+    QUALITY_AMBIGUOUS: "交易条款尚不明确。",
+    QUALITY_NOT_FIXED_CASH: "非固定现金交易。",
+    QUALITY_TERMINAL: "交易已完成或终止。",
+    QUALITY_SOURCE_UNAVAILABLE: "来源文件数据不可用。",
+    QUALITY_INELIGIBLE: "此交易类型不适用该计算。",
+    QUALITY_CALCULATION_UNAVAILABLE: "已核实数据不足，无法计算。",
+}
+
+# Plain-word EN/ZH text for every REASONS/WARNINGS code (WARNINGS is a subset of REASONS, so one
+# table covers both lists this projection carries).
+_CODE_TEXT_EN: dict[str, str] = {
+    "SOURCE_BYTES_UNAVAILABLE": "Source filing bytes are unavailable.",
+    "SOURCE_HASH_MISMATCH": "Source filing failed an integrity check.",
+    "TERM_NOT_FOUND": "Deal price was not found in the filing.",
+    "TERM_AMBIGUOUS": "Deal price could not be pinned down.",
+    "CONFLICTING_AMENDMENT": "Filing amendments conflict on the deal price.",
+    "RETRACTED": "The filing was retracted.",
+    "TERMINAL_DEAL": "Deal has already closed or ended.",
+    "NOT_FIXED_CASH": "Not a fixed-cash deal.",
+    "CURRENCY_MISMATCH": "Currency does not match across sources.",
+    "PRICE_MISSING": "No live price is available.",
+    "PRICE_STALE": "Live price is stale, not current.",
+    "PRICE_BASIS_UNRESOLVED": "Price basis could not be confirmed.",
+    "REFERENCE_SESSION_UNRESOLVED": "No defensible reference date before the filing.",
+    "DATE_PRECISION_INSUFFICIENT": "Close date is not known precisely enough.",
+    "CALCULATION_UNAVAILABLE": "Not enough verified data to calculate.",
+    "PARTIAL_GENERATION": "Underlying data was only partially generated.",
+    "CONSUMER_DIVERGENCE": "Internal consumers disagreed on this row.",
+    "PATH_COLLISION": "Two data paths collided for this row.",
+    "DAILY_PRODUCTION_GATE_BLOCKED": "Blocked by the daily production gate.",
+    "EFFECT_UNKNOWN": "Effect on this deal is not yet known.",
+    "INELIGIBLE_CATEGORY": "Deal type is not eligible for this math.",
+    "INTEGRITY_FAILED": "A data integrity check failed.",
+    "IDENTITY_UNRESOLVED": "Company or listing identity is unresolved.",
+    "SOURCE_TRUNCATED": "Source filing text was cut short.",
+    "STATED_PREMIUM_BASIS_UNRESOLVED": "No stated basis for the deal premium.",
+    "CALENDAR_RECEIPT_MISSING": "Trading-calendar confirmation is missing.",
+    "PRICE_RECEIPT_INVALID": "Live price receipt failed to verify.",
+    "LISTING_UNSUPPORTED": "This listing is not yet supported.",
+    "TRANSACTION_SCOPE_UNRESOLVED": "Which transaction this applies to is unresolved.",
+}
+_CODE_TEXT_ZH: dict[str, str] = {
+    "SOURCE_BYTES_UNAVAILABLE": "来源文件字节不可用。",
+    "SOURCE_HASH_MISMATCH": "来源文件未通过完整性校验。",
+    "TERM_NOT_FOUND": "文件中未找到交易价格。",
+    "TERM_AMBIGUOUS": "交易价格无法确定。",
+    "CONFLICTING_AMENDMENT": "修订文件对交易价格存在冲突。",
+    "RETRACTED": "该文件已被撤回。",
+    "TERMINAL_DEAL": "交易已完成或终止。",
+    "NOT_FIXED_CASH": "非固定现金交易。",
+    "CURRENCY_MISMATCH": "各来源货币不一致。",
+    "PRICE_MISSING": "无实时价格可用。",
+    "PRICE_STALE": "实时价格滞后，非最新。",
+    "PRICE_BASIS_UNRESOLVED": "价格基准无法确认。",
+    "REFERENCE_SESSION_UNRESOLVED": "找不到披露前可靠的参考交易日。",
+    "DATE_PRECISION_INSUFFICIENT": "成交日期精确度不足。",
+    "CALCULATION_UNAVAILABLE": "已核实数据不足，无法计算。",
+    "PARTIAL_GENERATION": "底层数据仅部分生成。",
+    "CONSUMER_DIVERGENCE": "内部消费方对该行数据存在分歧。",
+    "PATH_COLLISION": "该行数据出现路径冲突。",
+    "DAILY_PRODUCTION_GATE_BLOCKED": "被每日生产闸门阻断。",
+    "EFFECT_UNKNOWN": "对该交易的影响尚未可知。",
+    "INELIGIBLE_CATEGORY": "此交易类型不适用该计算。",
+    "INTEGRITY_FAILED": "数据完整性校验失败。",
+    "IDENTITY_UNRESOLVED": "公司或上市主体身份未确认。",
+    "SOURCE_TRUNCATED": "来源文件文本被截断。",
+    "STATED_PREMIUM_BASIS_UNRESOLVED": "交易溢价缺少披露基准。",
+    "CALENDAR_RECEIPT_MISSING": "缺少交易日历确认凭证。",
+    "PRICE_RECEIPT_INVALID": "实时价格凭证未通过验证。",
+    "LISTING_UNSUPPORTED": "该上市主体暂不支持。",
+    "TRANSACTION_SCOPE_UNRESOLVED": "无法确定适用的具体交易。",
+}
+
+
+def _state_text(state: object, table: dict[str, str]) -> str | None:
+    if not state:
+        return None
+    return table.get(str(state), str(state))
+
+
+def _code_texts(codes: object, table: dict[str, str]) -> list[str]:
+    if not isinstance(codes, list):
+        return []
+    return [table.get(str(c), str(c)) for c in codes]
+
+
 def context_row(row: dict, *, block: str = "arb") -> dict:
-    """Projection of one ordered row — every number carries its receipts."""
+    """Projection of one ordered row — every number carries its receipts.
+
+    `quality_state`/`reasons`/`warnings` are plain-word EN sentences (with a `_zh` sibling key
+    each) — this row is what several Neural Web brain-context builders pass straight into
+    customer-facing chat grounding, and a raw ALL_CAPS slug is banned front-facing vocabulary.
+    The raw codes are preserved under `codes` for desk/internal tooling only; brain consumers
+    read the top-level keys and never surface `codes`.
+    """
     e = row.get(block) or {}
+    raw_state = e.get("quality_state")
+    raw_reasons = e.get("reasons") or []
+    raw_warnings = e.get("warnings") or []
     return {
         "ticker": row.get("ticker"), "company": row.get("company"),
         "category": row.get("category"),
@@ -1670,8 +1826,14 @@ def context_row(row: dict, *, block: str = "arb") -> dict:
         "days_to_close": e.get("days_to_close"), "annualized_pct": e.get("annualized_pct"),
         "expected_close": e.get("expected_close"),
         "expected_close_precision": e.get("expected_close_precision"),
-        "quality_state": e.get("quality_state"), "reasons": e.get("reasons") or [],
-        "warnings": e.get("warnings") or [],
+        "quality_state": _state_text(raw_state, _QUALITY_STATE_TEXT_EN),
+        "quality_state_zh": _state_text(raw_state, _QUALITY_STATE_TEXT_ZH),
+        "reasons": _code_texts(raw_reasons, _CODE_TEXT_EN),
+        "reasons_zh": _code_texts(raw_reasons, _CODE_TEXT_ZH),
+        "warnings": _code_texts(raw_warnings, _CODE_TEXT_EN),
+        "warnings_zh": _code_texts(raw_warnings, _CODE_TEXT_ZH),
+        "codes": {"quality_state": raw_state, "reasons": list(raw_reasons),
+                  "warnings": list(raw_warnings)},
         "accession": e.get("accession"), "source_url": (e.get("evidence") or {})
             .get("price_per_share", {}).get("source_url"),
         "formula_revision": e.get("formula_revision"),

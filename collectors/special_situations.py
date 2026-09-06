@@ -972,6 +972,14 @@ def verified_projection(accession: str, *, _cache: dict | None = None) -> tuple[
     return result
 
 
+# Reviewer finding (macro#6793, MAJOR 5): this ran the full per-event `iterrows()` loop —
+# including one `_resolved_listing_currency()` (parquet schema open) per row — up to THREE times
+# per build (twice inside `read_ledger_strict()`, once from `_load_observations()`). Module-level
+# cache keyed by the events file's own (path, mtime, size): a changed events table naturally
+# misses instead of serving a stale hit, and an unchanged one is scanned once, not three times.
+_AUTHORITY_CACHE: dict[tuple[str, int, int], dict[str, dict]] = {}
+
+
 def canonical_event_authority() -> dict[str, dict]:
     """accession -> the owner-native facts an observation may NOT author for itself.
 
@@ -979,11 +987,24 @@ def canonical_event_authority() -> dict[str, dict]:
     `engine.special_situations._load_observations()`), so neither path is the lenient one. The
     values come from the canonical Special Situations event table and the per-ticker Yahoo
     `close_price` owner — never from the observation row, which is untrusted input.
+
+    Reusable within a build: the result is memoized per (events file path, mtime, size), so a
+    build calling this several times over the same unchanged events table scans it once.
     """
     from engine import special_arb as arb
+    p = _events_path()
+    try:
+        st = p.stat()
+        key: tuple[str, int, int] | None = (str(p), st.st_mtime_ns, st.st_size)
+    except OSError:
+        key = None
+    if key is not None and key in _AUTHORITY_CACHE:
+        return _AUTHORITY_CACHE[key]
     out: dict[str, dict] = {}
     df = _read_events()
     if df is None or getattr(df, "empty", True):
+        if key is not None:
+            _AUTHORITY_CACHE[key] = out
         return out
     for _, r in df.iterrows():
         accession = str(r.get("accession") or "")
@@ -997,7 +1018,12 @@ def canonical_event_authority() -> dict[str, dict]:
             "resolved_listing": arb.resolve_us_listing(ticker) if currency else None,
             "currency": currency,
         }
+    if key is not None:
+        _AUTHORITY_CACHE[key] = out
     return out
+
+
+_LEDGER_CACHE: dict[tuple[str, int, int], tuple[list[dict], dict]] = {}
 
 
 def read_ledger_strict(*, _proj_cache: dict | None = None) -> tuple[list[dict], dict]:
@@ -1008,12 +1034,26 @@ def read_ledger_strict(*, _proj_cache: dict | None = None) -> tuple[list[dict], 
     `open(..., "a")` — so a ledger that was already corrupt quietly received more rows, and a
     crash mid-append created exactly the malformed tail the reader later reported. A ledger that
     does not fully validate is not a ledger you may extend.
+
+    Reviewer finding (macro#6793, MAJOR 5): `enrich_deal_terms()` calls this twice per build
+    (before and after its own append), and `engine.special_situations._load_observations()` reads
+    the same ledger a third way. The RESULT is memoized per (ledger file path, mtime, size) — an
+    append changes the file's size, so the post-append call always misses and re-validates for
+    real, while two calls over the SAME unchanged bytes (a positive-control idempotency check,
+    or a caller that reads before doing anything else) reuse the first validation.
     """
     from engine import special_arb as arb
     path = _observations_path()
     census = {"lines": 0, "malformed": 0, "invalid": 0, "unbound": 0, "kept": 0, "ok": True}
     if not path.exists():
         return [], census
+    try:
+        st = path.stat()
+        cache_key: tuple[str, int, int] | None = (str(path), st.st_mtime_ns, st.st_size)
+    except OSError:
+        cache_key = None
+    if cache_key is not None and cache_key in _LEDGER_CACHE:
+        return _LEDGER_CACHE[cache_key]
     rows: list[dict] = []
     authority = canonical_event_authority()
     for line in path.read_text(errors="replace").splitlines():
@@ -1046,7 +1086,10 @@ def read_ledger_strict(*, _proj_cache: dict | None = None) -> tuple[list[dict], 
     census["ok"] = not (census["malformed"] or census["invalid"] or census["unbound"] or lineage)
     if lineage:
         census["lineage"] = lineage
-    return rows, census
+    result = (rows, census)
+    if cache_key is not None:
+        _LEDGER_CACHE[cache_key] = result
+    return result
 
 
 def projection_source_bytes(receipt: dict) -> bytes | None:

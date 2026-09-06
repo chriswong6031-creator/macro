@@ -772,3 +772,36 @@ def test_unimportable_config_yields_absent_packet_not_a_guessed_path(tmp_path, m
         assert "config" in result.get("reason", "").lower() or "import" in result.get("reason", "").lower(), (
             f"{fn.__name__} absent-reason does not name the import failure: {result.get('reason')!r}"
         )
+
+
+def test_special_situations_block_deal_arb_best_reads_the_live_spread_key():
+    """B1 (macro#6793 Wave-0 review): F09-1 retired the ambiguous `gross_spread_pct` key on
+    `special_arb.context_row()` for the unambiguous `live_gross_spread_pct` — every consumer
+    was updated except this one. `_block_special_situations()` read `arb.get("gross_spread_pct")`
+    directly off a real risk_arb_top row, so `deal_arb_best` went permanently null in this
+    customer-facing brain brief: silent, no exception, no test. Built through the real
+    `special_arb.context_row()` projection (not a hand-built dict pretending to be one), so a
+    future field rename here fails this test the same way it broke production.
+    """
+    from engine.neuralweb.brief_context import _block_special_situations
+    from engine import special_arb as arb
+
+    econ = {
+        "quality_state": arb.QUALITY_VERIFIED, "reasons": [], "warnings": [],
+        "orderable": True, "offer_price": 25.0, "currency": "USD",
+        "live_gross_spread_pct": 64.58, "annualized_pct": 138.9, "days_to_close": 151,
+        "accession": "0000000001-26-000001", "formula_revision": arb.FORMULA_REVISION,
+        "calc_asof": "2026-07-18", "evidence": {},
+    }
+    row = {"ticker": "ABC", "company": "ABC Inc", "category": "Acquisitions", "arb": econ}
+    risk_arb_top = [arb.context_row(row)]
+
+    ws = {"special_situations": {"risk_arb_top": risk_arb_top, "asof": "2026-07-18T00:00:00Z"}}
+    block = _block_special_situations(ws)
+
+    assert block is not None
+    assert block["deal_arb_best"] is not None, "a VERIFIED ordered row must yield a non-null best"
+    assert block["deal_arb_best"]["live_gross_spread_pct"] == pytest.approx(64.58)
+    assert block["deal_arb_best"]["annualized_pct"] == pytest.approx(138.9)
+    # the retired ambiguous key must not come back as an alias
+    assert "gross_spread_pct" not in block["deal_arb_best"]

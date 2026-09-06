@@ -616,6 +616,15 @@ def _artifact_digest(path: Path) -> str | None:
         return None
 
 
+# Reviewer finding (macro#6793, MAJOR 5): `canonical_event_authority()` called this once per
+# EVENT ROW with no cache, so a per-event parquet schema open (`pq.read_schema`) ran once per
+# row per build — and the whole authority computation itself ran up to three times per build
+# (twice inside `read_ledger_strict()`, once from `_load_observations()`). Keyed by the store's
+# own (path, mtime, size) so a changed store — the only thing that can change the answer —
+# naturally misses instead of serving a stale hit; never keyed on listing alone.
+_LISTING_STORE_CACHE: dict[tuple[str, int, int], "Path | None"] = {}
+
+
 def us_listing_price_store(listing: str) -> Path | None:
     """`data/yahoo/<LISTING>.parquet` iff it exists AND carries `close_price`, else None.
 
@@ -623,6 +632,9 @@ def us_listing_price_store(listing: str) -> Path | None:
     `auto_adjust=False` and documents `close_price` as split-adjusted / dividend-UNadjusted — the
     structure-math basis — so the store's existence with that exact column is what establishes
     both the listing and its USD quote currency. Nothing here reads ticker syntax.
+
+    The parquet schema open is memoized per process, keyed by (path, mtime, size) — one real
+    read per distinct store per build, not one per row that references it.
     """
     if not listing:
         return None
@@ -630,12 +642,22 @@ def us_listing_price_store(listing: str) -> Path | None:
     if not p.exists():
         return None
     try:
+        st = p.stat()
+    except OSError:
+        return None
+    key = (str(p), st.st_mtime_ns, st.st_size)
+    if key in _LISTING_STORE_CACHE:
+        return _LISTING_STORE_CACHE[key]
+    try:
         import pyarrow.parquet as pq
         names = set(pq.read_schema(p).names)
     except Exception:  # noqa: BLE001
+        _LISTING_STORE_CACHE[key] = None
         return None
     from engine import special_arb as arb
-    return p if arb.PRICE_COLUMN in names else None
+    result = p if arb.PRICE_COLUMN in names else None
+    _LISTING_STORE_CACHE[key] = result
+    return result
 
 
 def _yahoo_close_series(listing: str) -> tuple[object, str, int] | None:
@@ -786,8 +808,10 @@ def _load_observations() -> tuple[dict[str, list[dict]], dict]:
     return out, census
 
 
-def _price_inputs(listing: str, now_utc: datetime) -> tuple[dict | None, object]:
-    """The narrow-V1 live price for one EXACT resolved U.S. listing, plus its close series.
+def _price_inputs(listing: str, now_utc: datetime) -> tuple[dict | None, object, str | None, int | None]:
+    """The narrow-V1 live price for one EXACT resolved U.S. listing, plus its close series
+    and the artifact's own (digest, byte length) — so a caller needing the same artifact for a
+    second purpose (the reference-price lookup) never re-reads and re-sha256s the whole file.
 
     Reads only `data/yahoo/<LISTING>.parquet::close_price`. The previous version searched a
     concatenated panel of breadth + backtest + Canada/intl/HK search stores, fell back from a
@@ -800,27 +824,29 @@ def _price_inputs(listing: str, now_utc: datetime) -> tuple[dict | None, object]
     """
     read = _yahoo_close_series(listing)
     if read is None:
-        return None, None
+        return None, None, None, None
     series, digest, nbytes = read
     session = series.index[-1].date()
     live = _yahoo_price_input(listing, series, digest, nbytes, session,
                               float(series.iloc[-1]), now_utc)
-    return live, series
+    return live, series, digest, nbytes
 
 
-def _reference_price(listing: str, series, acceptance: object, now_utc: datetime) -> dict | None:
+def _reference_price(listing: str, series, digest: str | None, nbytes: int | None,
+                     acceptance: object, now_utc: datetime) -> dict | None:
     """Last completed session strictly BEFORE the exact SEC availability moment, or None.
 
     A date-only filing date cannot say whether the market had already closed when the filing
     became available, so without an exact acceptance timestamp there is no defensible reference
     session and the reducer reports REFERENCE_SESSION_UNRESOLVED.
+
+    `series`/`digest`/`nbytes` are the SAME artifact `_price_inputs()` already opened and
+    digested for the live price — reviewer finding (macro#6793, MAJOR 5): this used to call
+    `_yahoo_close_series()` a second time, re-reading and re-sha256-ing the whole parquet file
+    purely to recover the digest/byte-length its caller already held.
     """
-    if series is None or acceptance is None:
+    if series is None or acceptance is None or digest is None or nbytes is None:
         return None
-    read = _yahoo_close_series(listing)
-    if read is None:
-        return None
-    _, digest, nbytes = read
     try:
         cut = pd.Timestamp(acceptance)
     except Exception:  # noqa: BLE001
@@ -880,11 +906,11 @@ def _enrich_arb(sits: list[dict], *, now_utc: datetime | None = None) -> int:
         listing = arb.resolve_us_listing(s.get("ticker"))
         live = ref = None
         if listing:
-            live, series = _price_inputs(listing, now_utc)
+            live, series, digest, nbytes = _price_inputs(listing, now_utc)
             acceptance = next((ev.get("acceptance_datetime")
                                for ev in (compiled.get("evidence") or {}).values()
                                if ev.get("acceptance_datetime")), None)
-            ref = _reference_price(listing, series, acceptance, now_utc)
+            ref = _reference_price(listing, series, digest, nbytes, acceptance, now_utc)
         econ = arb.reduce_cash_deal(compiled, category=s.get("category"), stage=s.get("stage"),
                                     live_price=live, reference_price=ref, now_utc=now_utc,
                                     ticker=listing or s.get("ticker"))

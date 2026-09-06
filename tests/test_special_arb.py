@@ -255,6 +255,41 @@ def test_a_reference_session_must_have_closed_before_sec_availability():
     assert "REFERENCE_SESSION_UNRESOLVED" in later["warnings"]
 
 
+def test_a_premarket_same_day_acceptance_must_not_publish_the_filing_reference_premium():
+    """The presence of a time is not enough — only the SIDE of the close it falls on is.
+
+    A same-day reference session is defensible only for an AFTER-CLOSE filing: the corpus
+    accepts at 17:31 ET, after the 16:00 ET close, so that day's own close never saw the
+    announcement. The reducer used to check only `acceptance_has_time` (a bare 'T' in the
+    timestamp) plus `ref_session <= avail_session` — so a PREMARKET acceptance on the identical
+    same-day session passed the same check and would have published a premium against a close
+    that already contains the announcement pop (reviewer finding, macro#6793, MAJOR 3).
+    """
+    case = _case("cash_acquisition_exact_date")
+    src = arb.source_descriptor(
+        cik="0000320193", form_type=case["form_type"], accession=case["accession"],
+        filing_date=case["filing_date"], source_url=f"https://sec.gov/{case['accession']}.txt",
+        body=case["text"], acquired_at="2026-09-02T00:00:00Z",
+        raw_sha256="a" * 64, raw_bytes=len(case["text"]) * 3,
+        resolved_listing="ABC" if case.get("listing_currency") == "USD" else None,
+        acceptance_datetime=f"{case['filing_date']}T08:00:00-04:00")   # premarket, same day
+    obs = arb.extract_term_observations(case["text"], source=src,
+                                        listing_currency=case.get("listing_currency"),
+                                        recorded_at="2026-09-02T00:00:00Z")
+    compiled = arb.compile_current_terms(obs)
+    premarket_same_day = arb.reduce_cash_deal(
+        compiled, category="Acquisitions", live_price=_price(),
+        reference_price=_price(session=case["filing_date"]), market_session=ASOF, now_utc=NOW)
+    assert premarket_same_day["filing_reference_premium_pct"] is None
+    assert "REFERENCE_SESSION_UNRESOLVED" in premarket_same_day["warnings"]
+    # sanity: the identical same-day session with the corpus's real AFTER-CLOSE acceptance still
+    # publishes — only the time of day changed between the two rows
+    after_close = arb.reduce_cash_deal(
+        arb.compile_current_terms(_obs(case)), category="Acquisitions", live_price=_price(),
+        reference_price=_price(session=case["filing_date"]), market_session=ASOF, now_utc=NOW)
+    assert after_close["filing_reference_premium_pct"] is not None
+
+
 def test_stated_premium_is_never_the_computed_premium():
     compiled = arb.compile_current_terms(_obs(_case("cash_acquisition_exact_date")))
     r = arb.reduce_cash_deal(compiled, category="Acquisitions", live_price=_price(),
@@ -342,6 +377,46 @@ def test_ordered_rows_carry_quality_provenance_and_freshness():
         assert k in row
     assert row["is_signal"] is False and row["is_context_only"] is True
     assert row["display_order_basis"] == "annualized_pct"
+
+
+def test_context_row_never_puts_a_raw_all_caps_slug_in_a_user_facing_key():
+    """`context_row()` feeds `risk_arb_top`, which several Neural Web brain-context builders
+    (ask_brain.py, mastermind_context.py, world_state.py) pass straight into customer-facing
+    chat grounding with no re-projection. A raw ALL_CAPS quality_state/reasons/warnings slug
+    (e.g. DATE_PRECISION_INSUFFICIENT) reaching that surface is banned glance-tier vocabulary
+    (reviewer finding, macro#6793, MAJOR 4) — every consumer-visible key must be a plain-word
+    EN sentence (with a `_zh` sibling), and the raw codes live ONLY under `codes`.
+    """
+    import re
+    # ALL_CAPS with an underscore or 2+ words is the state/reason/warning slug shape
+    # (DATE_PRECISION_INSUFFICIENT, VERIFIED, STALE_PRICE, …). Ticker/currency/basis fields are
+    # legitimately short uppercase codes (e.g. "OK", "USD") and are intentionally NOT scanned —
+    # this test targets exactly the vocabulary MAJOR 4 named, not every uppercase string.
+    ALL_CAPS_SLUG = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$|^[A-Z]{4,}$")
+
+    # a VERIFIED row that also carries a WARNING (month-only close -> DATE_PRECISION_INSUFFICIENT)
+    econ = arb.reduce_cash_deal(
+        arb.compile_current_terms(_obs(_case("month_only_close"))), category="Acquisitions",
+        live_price=_price(), market_session=ASOF, now_utc=NOW)
+    assert econ["quality_state"] == arb.QUALITY_VERIFIED
+    assert "DATE_PRECISION_INSUFFICIENT" in econ["warnings"]
+    row = arb.context_row(_row("OK", econ))
+
+    for key in ("quality_state", "quality_state_zh", "reasons", "reasons_zh",
+                "warnings", "warnings_zh"):
+        value = row[key]
+        items = value if isinstance(value, list) else [value]
+        for item in items:
+            if isinstance(item, str):
+                assert not ALL_CAPS_SLUG.match(item), f"raw slug leaked at {key!r}: {item!r}"
+
+    # the raw codes are still available, just not at the top level
+    assert row["codes"]["quality_state"] == arb.QUALITY_VERIFIED
+    assert "DATE_PRECISION_INSUFFICIENT" in row["codes"]["warnings"]
+    # and the plain-word projection actually says something, in both languages
+    assert row["quality_state"] and row["quality_state_zh"]
+    assert row["warnings"] and row["warnings_zh"]
+    assert len(row["warnings"]) == len(row["codes"]["warnings"])
 
 
 def test_removing_source_identity_does_not_leave_machine_context_green():
@@ -943,7 +1018,14 @@ def test_the_reviewed_owner_blobs_are_pinned_to_the_real_repository_blobs():
                                 text=True, cwd=Path(__file__).resolve().parents[1]).stdout.strip()
         assert actual == pinned, (
             f"{path} moved: reviewed blob {pinned} != current {actual}. Re-review the owner's "
-            f"basis/calendar semantics, then re-pin — do not widen the vocabulary.")
+            f"basis/calendar semantics, then re-pin — do not widen the vocabulary. "
+            f"Re-pin procedure: (1) read the diff of {path} at the new blob and confirm the "
+            f"basis (split-adjusted / dividend-unadjusted for the price writer; session/close "
+            f"semantics for the calendar) is unchanged; (2) run "
+            f"`git rev-parse HEAD:{path}` yourself to get the new hash "
+            f"(here: {actual}); (3) paste it into the matching constant in engine/special_arb.py "
+            f"(PRICE_WRITER_BLOB for collectors/yahoo.py, CALENDAR_BLOB for lib/nyse_calendar.py) "
+            f"— never delete the pin or widen PRICE_BASES/the calendar check to paper over it.")
 
 
 # --- CRITICAL B: the narrow U.S.-listing boundary ---------------------------

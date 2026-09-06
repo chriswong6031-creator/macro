@@ -841,7 +841,11 @@ def test_mastermind_emit_and_context_feed_cannot_diverge(tmp_path, monkeypatch):
     e = sse.mastermind_emit()
     assert "risk_arb_census" in e
     for row in e["risk_arb"]:
-        assert row["is_signal"] is False and row["quality_state"] == arb.QUALITY_VERIFIED
+        # `context_row()` no longer surfaces the raw ALL_CAPS quality_state at this key (MAJOR
+        # 4, macro#6793) — only the plain-word projection. The raw code lives under `codes`.
+        assert row["is_signal"] is False and row["codes"]["quality_state"] == arb.QUALITY_VERIFIED
+        assert row["quality_state"] != arb.QUALITY_VERIFIED  # plain sentence, not the raw slug
+        assert row["quality_state"].isupper() is False
     assert si  # the feed consumer imports the same owner
 
 
