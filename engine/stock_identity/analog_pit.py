@@ -65,6 +65,7 @@ OUTCOME_COLUMNS: tuple[str, ...] = (
     "tier", "anchor_date", "end_date", "resolution", "depth_pct", "depth_atr",
     "duration_sessions", "a0_anchor", "terminated_reason", "anchor_price",
     "post_trough_63d_atr", "sessions_to_50pct_retrace", "breakdown_low",
+    "resolution_known_date",
 )
 
 OUTCOME_STATES: tuple[str, ...] = (
@@ -78,7 +79,7 @@ DEDUP_SCOPES: tuple[str, ...] = ("symbol_plane", "symbol_plane_type")
 
 _FLOAT_OUTCOME = ("depth_pct", "depth_atr", "anchor_price",
                    "post_trough_63d_atr", "sessions_to_50pct_retrace", "breakdown_low")
-_DATETIME_OUTCOME = ("anchor_date", "end_date")
+_DATETIME_OUTCOME = ("anchor_date", "end_date", "resolution_known_date")
 _OBJECT_OUTCOME = ("resolution", "terminated_reason")
 _INT_OUTCOME = ("tier", "duration_sessions")
 
@@ -158,7 +159,7 @@ def _mask_outcomes(frame: pd.DataFrame, mask_rows: pd.Series) -> pd.DataFrame:
     return frame
 
 
-def admit_as_of(catalog: pd.DataFrame, *, asof, mask_outcomes: bool = True
+def admit_as_of(catalog: pd.DataFrame, *, asof
                  ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Admit rows whose start_date <= asof; mask non-knowable outcomes."""
     asof_ts = _to_asof(asof)
@@ -205,8 +206,10 @@ def admit_as_of(catalog: pd.DataFrame, *, asof, mask_outcomes: bool = True
 
     contract_violations = int((admitted["outcome_state"] == "unknowable").sum())
 
-    if mask_outcomes:
-        admitted = _mask_outcomes(admitted, ~known_mask)
+    # Outcome masking is unconditional: there is no unmasked public path,
+    # so the receipt's outcome_masked_rows/masked_columns fields can never
+    # self-certify a leak (see MAJOR finding on PR #6911).
+    admitted = _mask_outcomes(admitted, ~known_mask)
 
     outcome_states_counts = {
         s: int((admitted["outcome_state"] == s).sum()) for s in OUTCOME_STATES
@@ -424,7 +427,7 @@ def pit_universe(catalog: pd.DataFrame, *, asof, dedup: bool = True,
     input_rows = int(len(catalog))
     input_hash = frame_hash(normalize_catalog(catalog))
 
-    admitted, admit_info = admit_as_of(catalog, asof=asof_ts, mask_outcomes=True)
+    admitted, admit_info = admit_as_of(catalog, asof=asof_ts)
 
     if dedup:
         deduped, dedup_info = dedup_episodes(admitted, asof=asof_ts, scope=scope, precedence=precedence)

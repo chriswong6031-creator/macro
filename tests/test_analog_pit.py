@@ -69,9 +69,15 @@ def test_lookahead_outcome_does_not_leak_when_resolution_known_date_is_after_aso
     assert row["anchor_date"] is pd.NaT
     assert row["censored"] == True  # noqa: E712
     assert row["outcome_state"] == "pending_resolution"
+    # LOOKAHEAD LEAK regression (PR #6911 blocker): resolution_known_date is
+    # itself outcome-shaped information -- it reveals both THAT a pending
+    # episode resolves and WHEN, ahead of the as-of date. It must be masked
+    # exactly like every other outcome column.
+    assert row["resolution_known_date"] is pd.NaT
     scanned = out.astype(str).to_string()
     assert "0.4237" not in scanned
     assert "61.5" not in scanned
+    assert "2020-06-01" not in scanned
 
 
 def test_every_outcome_column_is_masked_for_every_pending_row():
@@ -90,6 +96,29 @@ def test_every_outcome_column_is_masked_for_every_pending_row():
             continue
         val = row[col]
         assert val is pd.NA or val is pd.NaT or (isinstance(val, float) and np.isnan(val))
+
+
+def test_admit_as_of_has_no_unmasked_public_path():
+    """MAJOR regression (PR #6911): admit_as_of used to accept
+    mask_outcomes=False while its receipt unconditionally reported
+    outcome_masked_rows/masked_columns as if masking had happened -- a
+    self-certifying lie. The kwarg must not exist any more: masking is
+    unconditional, so the receipt can never claim it happened when it did
+    not."""
+    import inspect
+    sig = inspect.signature(pit.admit_as_of)
+    assert "mask_outcomes" not in sig.parameters
+
+    rows = [_row(
+        start_date=pd.Timestamp("2020-01-02"),
+        resolution_known_date=pd.Timestamp("2020-06-01"),
+        resolution="durable_low", depth_pct=0.4237, tier=1, anchor_price=61.5,
+    )]
+    admitted, info = pit.admit_as_of(_frame(rows), asof="2020-03-01")
+    row = admitted.iloc[0]
+    assert row["resolution"] is pd.NA
+    assert info["outcome_masked_rows"] == 1
+    assert "resolution_known_date" in info["masked_columns"]
 
 
 def test_admission_excludes_episode_starting_after_asof():
