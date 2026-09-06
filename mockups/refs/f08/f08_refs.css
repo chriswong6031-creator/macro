@@ -1,0 +1,744 @@
+/* ===========================================================================
+   F08 Portfolio / Alerts / Monitoring — reference-composition vocabulary
+   ---------------------------------------------------------------------------
+   MOCKUP TIER. Nothing in production imports this file. It exists so the ten
+   reference sheets in this directory speak ONE design language, and so a later
+   build wave inherits composition + state vocabulary rather than re-deriving it.
+
+   Governed by:
+     docs/DESIGN_DOCTRINE.md                      (content law — wins on conflict)
+     research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md  (visual / composition law)
+     research/MARKET_ONTOLOGY_F08_ARCHITECTURE_FREEZE_2026-09-05.md  (product law)
+
+   TOKEN LAW (design system §2): this file mints NO new :root family. Every
+   --f8-* name below is a page-local DERIVATION bound to a templates/theme.css
+   token at the top of a scope — the sanctioned --pv-* / --ms-* pattern. A hex
+   literal here would be a defect.
+
+   ART DIRECTION (doctrine §5.8, design system §12): dark and light are two art
+   directions of one semantic system. They share information architecture,
+   component semantics, spacing, type, state meanings and copy. They do NOT
+   share material mechanism. Each block below that differs by theme says WHY.
+   Summary of the deliberate divergences is in INDEX.md.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   0 · Bilingual guard
+   theme.css:450-451 hides the off-language twin at specificity 0-2-1. Any
+   descendant layout rule in this file at 0-2-1 or above would tie-and-win on
+   source order and print BOTH languages at once (a measured trap in this
+   estate). The guard is stated once, loudly, so no later rule can silently
+   defeat it. Never set `display` on .l-en / .l-zh themselves — the visible twin
+   must keep its natural display so inline spans stay inline.
+   --------------------------------------------------------------------------- */
+html:not([data-lang="zh"]) .l-zh,
+html[data-lang="zh"] .l-en { display: none !important; }
+
+/* zh drops Latin tracking and never uppercases mixed CJK/Latin (design §4). */
+html[data-lang="zh"] .f8-verdict { letter-spacing: 0; }
+html[data-lang="zh"] .eyebrow,
+html[data-lang="zh"] .f8-lane-name,
+html[data-lang="zh"] .f8-th { text-transform: none; letter-spacing: .02em; }
+
+/* ---------------------------------------------------------------------------
+   1 · Page frame
+   --------------------------------------------------------------------------- */
+html, body { margin: 0; padding: 0; }
+body {
+  /* A page owns its own canvas — an unpainted body is the white-flash defect. */
+  background: var(--bg);
+  color: var(--text);
+  font: 400 var(--fs-body)/1.55 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+
+  /* Local derivations, declared at BODY scope on purpose: the harness bars sit
+     outside .f8, and a token that resolves nowhere makes the whole declaration
+     that uses it invalid — which is how a padded bar silently loses its
+     padding. Layout skeleton uses the promoted spacing scale; the named legacy
+     constants (18px grid gap, 16px 18px panel padding) are law. */
+  --f8-sp-1: 4px;  --f8-sp-2: 8px;  --f8-sp-3: 12px; --f8-sp-4: 16px;
+  --f8-sp-5: 20px; --f8-sp-6: 24px; --f8-sp-7: 32px; --f8-sp-8: 44px;
+  --f8-gap: 18px;
+  --f8-r-ctl: 8px; --f8-r-card: 12px; --f8-r-panel: 14px; --f8-r-pill: 999px;
+  --f8-t-fast: .16s; --f8-t-med: .2s;
+  --f8-ease-lift: cubic-bezier(.2,.7,.3,1);
+
+  /* Default state scope: no state = calm. Every stateful component re-binds
+     these two from a THEME token via the .is-* modifiers in §2. */
+  --f8-state: var(--muted);
+  --f8-state-ink: var(--muted);
+}
+
+.f8 {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 var(--f8-sp-6) var(--f8-sp-8);
+}
+
+/* ---------------------------------------------------------------------------
+   2 · State scopes — the four-state read vocabulary + severity
+   READ_OK        → no chip at all. Calm carries no badge; absence is the signal.
+   READ_OK_ZERO   → hollow neutral. "Nothing here yet" is not a fault.
+   READ_NO_COVERAGE → dashed outline, provisional ink. Never calm, never outage.
+   READ_UNAVAILABLE → solid, --act. The source did not answer.
+   stale          → solid, --warn. We answered, with old material.
+   Hue never travels alone (design §5): each state also carries a distinct FORM
+   (solid / hollow / dashed) and a plain word, so the zh flip and colour-blind
+   readers lose nothing.
+   --------------------------------------------------------------------------- */
+.is-ok    { --f8-state: var(--ok);   --f8-state-ink: var(--ink-ok,   var(--ok));   }
+.is-warn  { --f8-state: var(--warn); --f8-state-ink: var(--ink-warn, var(--warn)); }
+.is-act   { --f8-state: var(--act);  --f8-state-ink: var(--ink-act,  var(--act));  }
+.is-prov  { --f8-state: var(--prov); --f8-state-ink: var(--prov-ink, var(--prov)); }
+.is-quiet { --f8-state: var(--muted);--f8-state-ink: var(--muted); }
+/* Wayfinding is the fifth sanctioned meaning: the ONE accent, used here only to
+   mark what you have not read yet. A market event is not health, not a single
+   direction and not provisional — so it stays achromatic and earns attention
+   from weight and placement instead. */
+.is-link  { --f8-state: var(--link); --f8-state-ink: var(--ink-link, var(--link)); }
+
+/* ---------------------------------------------------------------------------
+   3 · Mockup quarantine + harness
+   Design meta-copy must never read as customer copy (design system §18.8).
+   Everything in .f8-meta is scaffolding and is styled to look like scaffolding.
+   --------------------------------------------------------------------------- */
+.f8-meta {
+  font: 500 var(--fs-micro)/1.5 var(--font-mono);
+  letter-spacing: .04em;
+  color: var(--muted);
+  border-bottom: 1px dashed color-mix(in srgb, var(--muted) 42%, transparent);
+  background: color-mix(in srgb, var(--muted) 7%, transparent);
+  padding: 7px var(--f8-sp-6);
+  display: flex; flex-wrap: wrap; gap: var(--f8-sp-4);
+  align-items: center; justify-content: space-between;
+}
+.f8-meta b { font-weight: 700; color: var(--text); }
+.f8-meta--foot { border-bottom: 0; border-top: 1px dashed color-mix(in srgb, var(--muted) 42%, transparent); margin-top: var(--f8-sp-8); }
+.f8-toggles { display: flex; gap: var(--f8-sp-2); }
+.f8-toggles button {
+  font: 600 var(--fs-micro)/1 var(--font-mono);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text);
+  background: var(--gbtn-bg); border: 1px solid var(--gbtn-brd);
+  border-radius: var(--f8-r-pill); padding: 6px 12px; cursor: pointer;
+  transition: background var(--f8-t-fast) ease, border-color var(--f8-t-fast) ease;
+}
+.f8-toggles button:hover { background: var(--gbtn-bg-hover); border-color: var(--gbtn-brd-hover); }
+.f8-toggles button:focus-visible { outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
+
+/* The Terminal shell owns the page header (freeze §9). These sheets fix the
+   COMPOSITION, not the chrome, so the shell is a labelled empty slot. */
+.f8-slot {
+  margin: var(--f8-sp-5) 0 var(--f8-sp-6);
+  border: 1px dashed color-mix(in srgb, var(--muted) 38%, transparent);
+  border-radius: var(--f8-r-ctl);
+  padding: 10px var(--f8-sp-4);
+  font: 500 var(--fs-micro)/1.4 var(--font-mono);
+  letter-spacing: .05em; color: var(--muted);
+}
+
+/* ---------------------------------------------------------------------------
+   4 · Hero — the G7 answer block. Sits on the CANVAS, not on a panel
+   (design system §3: the VerdictHero is page-header tier).
+
+   DARK  : a low radial luminance field lifts the hero off #0f1115 without a
+           border. Depth by light.
+   LIGHT : no field — a stain on white is the documented failure. Depth by
+           structure: a ruled band, hairline top and bottom, air above and below.
+   --------------------------------------------------------------------------- */
+.f8-hero { position: relative; padding: var(--f8-sp-5) 0 var(--f8-sp-5); }
+.f8-hero::before {
+  /* The plate bleeds to the container's own gutter and NOT one pixel further:
+     an inset wider than .f8's padding pushes the page's scrollWidth past the
+     viewport, which is a horizontal page scroll — forbidden at every width.
+     Measured: -28px against a 16px gutter produced exactly 12px of overflow on
+     nine of ten sheets. The horizontal inset therefore tracks .f8's padding at
+     every breakpoint (24 / 16 / 12), and only the vertical inset is free. */
+  content: ""; position: absolute; inset: -14px -24px -10px;
+  z-index: -1; border-radius: 0 0 20px 20px;
+  /* DARK: a low radial field. The page is lit from where the answer is. */
+  background:
+    radial-gradient(140% 160% at 10% -10%,
+      color-mix(in srgb, var(--f8-state) 10%, transparent) 0%, transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--text) 3%, transparent), transparent 70%);
+}
+html[data-theme="light"] .f8-hero::before {
+  /* LIGHT: a white MASTHEAD PLATE on the cool canvas — the printed note's
+     letterhead. No field, no stain: the plate itself is the depth, and the
+     canvas below stays perceptibly deeper than it. */
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(20,32,64,.05), 0 14px 28px -22px rgba(20,32,64,.30);
+}
+
+.f8-hero-top { display: flex; flex-wrap: wrap; gap: var(--f8-sp-6); align-items: flex-start; justify-content: space-between; }
+.f8-hero-say { flex: 1 1 420px; min-width: 0; }
+
+.f8-verdict {
+  margin: var(--f8-sp-2) 0 var(--f8-sp-3);
+  font: 800 var(--fs-display)/1.02 var(--font-ui);
+  letter-spacing: -.03em;                 /* EN only — zh reset is in §0 */
+  color: var(--f8-state-ink);
+}
+.f8-hero.is-quiet .f8-verdict { color: var(--text); }
+.f8-clause {
+  margin: 0 0 var(--f8-sp-4);
+  font: 500 var(--fs-md)/1.5 var(--font-ui);
+  color: var(--text); max-width: 46ch;
+}
+.f8-do { display: flex; flex-wrap: wrap; gap: var(--f8-sp-3); align-items: center; }
+.f8-stance {
+  font: 700 var(--fs-sm)/1 var(--font-ui);
+  color: var(--f8-state-ink);
+  border: 1px solid color-mix(in srgb, var(--f8-state) 44%, transparent);
+  background: color-mix(in srgb, var(--f8-state) 12%, transparent);
+  border-radius: var(--f8-r-pill); padding: 8px 14px;
+}
+.f8-cta {
+  font: 700 var(--fs-sm)/1 var(--font-ui);
+  color: var(--text);
+  background: var(--gbtn-bg); border: 1px solid var(--gbtn-brd);
+  border-radius: var(--f8-r-pill); padding: 9px 16px; cursor: pointer;
+  transition: transform var(--f8-t-med) var(--f8-ease-lift),
+              background var(--f8-t-fast) ease, border-color var(--f8-t-fast) ease;
+}
+.f8-cta--go {
+  color: var(--ink-link, var(--link));
+  border-color: color-mix(in srgb, var(--link) 46%, transparent);
+  background: color-mix(in srgb, var(--link) 13%, transparent);
+}
+.f8-cta:hover { transform: translateY(-1px); background: var(--gbtn-bg-hover); }
+/* DARK: hover blooms. LIGHT: hover RINGS — a bloom on white is a pastel stain. */
+.f8-cta--go:hover { box-shadow: 0 14px 30px -16px color-mix(in srgb, var(--link) 46%, transparent); }
+html[data-theme="light"] .f8-cta--go:hover {
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--link) 76%, transparent);
+  background: color-mix(in srgb, var(--link) 9%, var(--panel));
+}
+.f8-cta:focus-visible { outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
+
+/* money block */
+.f8-money { flex: 0 1 auto; text-align: right; min-width: 210px; }
+.f8-money-v {
+  font: 700 var(--fs-num-xl)/1.05 var(--font-ui);
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em; color: var(--text);
+}
+.f8-money-v small { font-size: var(--fs-h2); font-weight: 600; color: var(--muted); }
+.f8-money-r { margin-top: var(--f8-sp-2); font: 500 var(--fs-sm)/1.6 var(--font-ui); color: var(--muted); }
+.f8-money-r b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pos { color: var(--ink-up, var(--up)); }
+.neg { color: var(--ink-down, var(--down)); }
+.f8-money-void { font: 600 var(--fs-md)/1.4 var(--font-ui); color: var(--muted); max-width: 24ch; }
+/* A number we are no longer maintaining must not be printed with the authority
+   of one we are. The figure demotes to muted and wears its own label. */
+.f8-money--dim .f8-money-v { color: var(--muted); }
+.f8-money-tag { display: inline-block; margin-bottom: var(--f8-sp-2); }
+
+/* ---------------------------------------------------------------------------
+   5 · THE WATCH RAIL — the signature instrument
+   ---------------------------------------------------------------------------
+   Freeze §4 makes last_attempt and last_success two separate displayed facts,
+   and §3 makes source_asof a third. Most dashboards bury all three in a 10px
+   grey corner stamp. Here the proof-of-watching is the second-largest object on
+   the page, because "we are actually looking" IS this product's value.
+
+   One shared time axis (now at the right edge). Up to three lanes:
+     Checks  — did the evaluator run, and did the run succeed
+     Data    — how old is the material we are answering from
+     Alerts  — did the notification actually leave the building
+   A lane whose two marks coincide is calm and shows one tick and the word
+   "no gap". A lane whose marks separate draws the SPAN between them, and the
+   span is the alarm. Stale and outage therefore look different at a glance:
+   outage stretches the Checks lane, stale stretches the Data lane.
+
+   DARK  : the span is a soft luminous field with an outer bloom; ticks are
+           discs that sit in the light. Depth by luminance.
+   LIGHT : the span is a HATCH — a printed measurement, ruled and bordered —
+           and ticks are hard squares with a hairline. No bloom anywhere; a
+           bloom on white reads as a smudge. Depth by structure.
+   --------------------------------------------------------------------------- */
+.f8-watch {
+  margin-top: var(--f8-sp-6);
+  border-top: 1px solid var(--line);
+  padding-top: var(--f8-sp-4);
+}
+.f8-watch-head {
+  display: flex; flex-wrap: wrap; gap: var(--f8-sp-3);
+  align-items: baseline; justify-content: space-between;
+  margin-bottom: var(--f8-sp-3);
+}
+.f8-watch-say { font: 600 var(--fs-sm)/1.4 var(--font-ui); color: var(--f8-state-ink); }
+.f8-watch.is-quiet .f8-watch-say { color: var(--muted); }
+
+.f8-lane { display: grid; grid-template-columns: 92px 1fr; gap: var(--f8-sp-4); align-items: center; padding: 6px 0; }
+.f8-lane + .f8-lane { border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); }
+.f8-lane-name {
+  font: 600 var(--fs-label)/1 var(--font-ui);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+.f8-lane-body { min-width: 0; }
+
+.f8-track {
+  position: relative; height: 16px;
+  border-radius: 2px;
+}
+.f8-track::before {                              /* the axis */
+  content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 2px;
+  background: color-mix(in srgb, var(--text) 13%, transparent);
+  border-radius: 2px;
+}
+html[data-theme="light"] .f8-track::before {
+  /* engraved rule: a hairline with a white highlight under it */
+  background: var(--line);
+  height: 1px; top: 7px;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.f8-span {
+  position: absolute; top: 5px; height: 6px;
+  left: var(--a); right: calc(100% - var(--b));
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--f8-state) 52%, transparent);
+  box-shadow: 0 0 16px -3px color-mix(in srgb, var(--f8-state) 62%, transparent);
+}
+html[data-theme="light"] .f8-span {
+  /* a printed measurement, not a glow */
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--f8-state) 34%, transparent) 0 3px,
+    transparent 3px 6px);
+  border: 1px solid color-mix(in srgb, var(--f8-state) 58%, transparent);
+  box-shadow: none;
+  top: 4px; height: 8px;
+}
+
+.f8-tick {
+  position: absolute; top: 3px; left: var(--x);
+  width: 10px; height: 10px; margin-left: -5px;
+  border-radius: var(--f8-r-pill);
+  background: var(--f8-state);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--f8-state) 22%, transparent);
+}
+html[data-theme="light"] .f8-tick {
+  border-radius: 2px;                            /* square marks read as ink */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--f8-state) 70%, transparent),
+              0 1px 2px rgba(20,32,64,.18);
+}
+.f8-tick--hollow { background: var(--panel); box-shadow: 0 0 0 2px var(--f8-state); }
+.f8-tick--fail { background: var(--act); }
+.f8-tick--fail::after {
+  content: ""; position: absolute; inset: 2px;
+  background:
+    linear-gradient(45deg, transparent 42%, var(--panel) 42% 58%, transparent 58%),
+    linear-gradient(-45deg, transparent 42%, var(--panel) 42% 58%, transparent 58%);
+}
+.f8-off {                                        /* mark older than the window */
+  position: absolute; left: -13px; top: 1px;
+  font: 700 var(--fs-sm)/1 var(--font-ui); color: var(--f8-state);
+}
+.f8-feet {
+  display: flex; flex-wrap: wrap; gap: var(--f8-sp-2) var(--f8-sp-5);
+  margin-top: 6px;
+  font: 500 var(--fs-micro)/1.5 var(--font-mono); color: var(--muted);
+}
+.f8-feet b { font-weight: 700; color: var(--text); }
+.f8-feet .f8-foot--bad b { color: var(--f8-state-ink); }
+.f8-axis {
+  display: flex; justify-content: space-between;
+  margin-top: var(--f8-sp-3); padding-left: 110px;
+  font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--muted); opacity: .7;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   6 · Coverage ledger — total / included / excluded + basis split + fold
+   Freeze §5 / G2. The bar is the denominator made visible; the sentence under
+   it is the same fact in plain words, because a bar alone is not disclosure.
+
+   DARK  : butted saturated segments on a dark track — the step in luminance
+           between neighbours is enough separation.
+   LIGHT : 1px gaps + a track border. Neutral segments vanish on white (a named
+           doctrine §5.8 failure); the gaps and the border are what keep the
+           excluded slice from reading as empty track.
+   --------------------------------------------------------------------------- */
+.f8-cov {
+  display: grid; grid-template-columns: 92px 1fr; gap: var(--f8-sp-4);
+  align-items: start;
+  margin-top: var(--f8-sp-4); padding-top: var(--f8-sp-4);
+  border-top: 1px solid var(--line);
+}
+.f8-cov-body { min-width: 0; }
+.f8-cov-bar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; }
+html[data-theme="light"] .f8-cov-bar {
+  gap: 1px; padding: 1px; border: 1px solid var(--line); height: 12px; background: var(--panel2);
+}
+/* A book with nothing in it still shows the instrument. An absent bar reads as
+   a broken widget; an empty TRACK reads as "measured, and there is nothing". */
+.f8-cov-bar:empty { background: none; border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); }
+html[data-theme="light"] .f8-cov-bar:empty { background: var(--panel); border-style: dashed; }
+.f8-seg { flex: 0 0 auto; width: var(--w); }
+.f8-seg--live { background: color-mix(in srgb, var(--ok) 78%, transparent); }
+.f8-seg--fallback { background: color-mix(in srgb, var(--warn) 74%, transparent); }
+.f8-seg--nocov {
+  background: repeating-linear-gradient(-45deg,
+    color-mix(in srgb, var(--prov) 62%, transparent) 0 3px, transparent 3px 6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--prov) 62%, transparent);
+}
+.f8-seg--unres {
+  background: repeating-linear-gradient(-45deg,
+    color-mix(in srgb, var(--muted) 60%, transparent) 0 3px, transparent 3px 6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 55%, transparent);
+}
+/* An unreadable book is UNKNOWN, not "100% bad" — so the dead segment hatches
+   like the other absence states rather than painting a solid alarm bar. */
+.f8-seg--dead {
+  background: repeating-linear-gradient(-45deg,
+    color-mix(in srgb, var(--act) 68%, transparent) 0 3px,
+    color-mix(in srgb, var(--act) 16%, transparent) 3px 7px);
+}
+/* On white, a low-alpha hatch reads as EMPTY TRACK — and an excluded slice that
+   looks like nothing is exactly the disclosure failure this bar exists to
+   prevent. Light gets a tint bed under a denser hatch; dark does not need it. */
+html[data-theme="light"] .f8-seg--nocov {
+  background:
+    repeating-linear-gradient(-45deg,
+      color-mix(in srgb, var(--prov) 85%, transparent) 0 2px, transparent 2px 5px),
+    color-mix(in srgb, var(--prov) 14%, var(--panel));
+}
+html[data-theme="light"] .f8-seg--unres {
+  background:
+    repeating-linear-gradient(-45deg,
+      color-mix(in srgb, var(--muted) 88%, transparent) 0 2px, transparent 2px 5px),
+    color-mix(in srgb, var(--muted) 15%, var(--panel));
+}
+.f8-cov-say {
+  margin-top: var(--f8-sp-3);
+  font: 500 var(--fs-sm)/1.7 var(--font-ui); color: var(--muted);
+}
+.f8-cov-say b { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.f8-cov-say .f8-k { color: var(--f8-state-ink); font-weight: 700; }
+
+/* ---------------------------------------------------------------------------
+   7 · Panels + section headers
+   DARK  : grouping by LUMINANCE. A panel is --panel on --bg, hairline only.
+   LIGHT : grouping by STRUCTURE. White on a deeper canvas, hairline, soft
+           shadow. The canvas stays perceptibly deeper than the panel — panel≈bg
+           is the flatness bug.
+   --------------------------------------------------------------------------- */
+.f8-grid { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(0,1fr); gap: var(--f8-gap); margin-top: var(--f8-sp-7); align-items: start; }
+.f8-col { display: grid; gap: var(--f8-gap); }
+
+.f8-panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--f8-r-panel);
+  padding: var(--f8-sp-4) var(--f8-sp-5) var(--f8-sp-5);
+  box-shadow: var(--card-shadow);
+}
+/* LIGHT rests on shadow; DARK rests on luminance and takes none. The two
+   never carry the same resting elevation mechanism. */
+html[data-theme="light"] .f8-panel {
+  box-shadow: 0 1px 2px rgba(20,32,64,.05), 0 12px 26px -20px rgba(20,32,64,.34);
+}
+/* Degraded emphasis — the mechanisms deliberately diverge.
+   DARK : the panel LIFTS a luminance step and takes a restrained inner rim +
+          a very low outer bloom. Trouble comes toward you out of the dark.
+   LIGHT: the panel does NOT lift (a tint step on white is a highlighter smear).
+          It takes the callout idiom — a thin state wash, a 3px rail, deepened
+          ink — and a tighter, cooler shadow that raises it off the paper. */
+.f8-panel.is-warn, .f8-panel.is-act, .f8-panel.is-prov {
+  background: var(--panel2);
+  border-color: color-mix(in srgb, var(--f8-state) 34%, var(--line));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--f8-state) 15%, transparent),
+              0 0 30px -22px color-mix(in srgb, var(--f8-state) 80%, transparent);
+}
+html[data-theme="light"] .f8-panel.is-warn,
+html[data-theme="light"] .f8-panel.is-act,
+html[data-theme="light"] .f8-panel.is-prov {
+  background: color-mix(in srgb, var(--f8-state) 6%, var(--panel));
+  border-color: color-mix(in srgb, var(--f8-state) 38%, var(--line));
+  box-shadow: 0 1px 3px rgba(20,32,64,.09), 0 10px 22px -16px rgba(20,32,64,.28);
+}
+.f8-panel.is-warn::before, .f8-panel.is-act::before, .f8-panel.is-prov::before {
+  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--f8-state);
+}
+
+.f8-sec { display: flex; flex-wrap: wrap; gap: var(--f8-sp-2) var(--f8-sp-4); align-items: baseline; justify-content: space-between; margin-bottom: var(--f8-sp-4); }
+.f8-sec h2 { margin: 2px 0 0; font: 700 var(--fs-h2)/1.3 var(--font-ui); letter-spacing: -.01em; color: var(--text); }
+.f8-sec-r { font: 500 var(--fs-micro)/1.4 var(--font-mono); color: var(--muted); }
+.f8-asof { font: 500 var(--fs-micro)/1.4 var(--font-mono); color: var(--muted); }
+
+/* ---------------------------------------------------------------------------
+   8 · Since-you-were-here timeline — archetype G's identity device
+   DARK  : luminous spine, filled dots.
+   LIGHT : engraved spine, hollow ring dots (ink on paper); only the entry you
+           have not read yet is filled.
+   --------------------------------------------------------------------------- */
+.f8-day {
+  font: 600 var(--fs-label)/1 var(--font-ui); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+  margin: var(--f8-sp-5) 0 var(--f8-sp-3);
+}
+.f8-day:first-child { margin-top: 0; }
+.f8-tl { list-style: none; margin: 0; padding: 0 0 0 var(--f8-sp-6); position: relative; }
+.f8-tl::before {
+  content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px;
+  background: color-mix(in srgb, var(--text) 15%, transparent);
+}
+html[data-theme="light"] .f8-tl::before {
+  background: var(--line);
+  box-shadow: 1px 0 0 color-mix(in srgb, var(--panel) 90%, transparent);
+}
+.f8-ev { position: relative; padding: 0 0 var(--f8-sp-5); }
+.f8-ev:last-child { padding-bottom: 0; }
+.f8-ev::before {
+  content: ""; position: absolute; left: calc(-1 * var(--f8-sp-6) + 1px);
+  top: 5px; width: 9px; height: 9px; border-radius: var(--f8-r-pill);
+  background: var(--f8-state);
+}
+html[data-theme="light"] .f8-ev::before {
+  background: var(--panel); box-shadow: 0 0 0 2px var(--f8-state);
+}
+.f8-ev.is-new::before { box-shadow: 0 0 0 4px color-mix(in srgb, var(--f8-state) 24%, transparent); }
+html[data-theme="light"] .f8-ev.is-new::before { background: var(--f8-state); box-shadow: 0 0 0 2px var(--f8-state); }
+
+.f8-ev-t { display: flex; flex-wrap: wrap; gap: var(--f8-sp-2) var(--f8-sp-3); align-items: baseline; }
+.f8-ev-time { font: 500 var(--fs-micro)/1.4 var(--font-mono); color: var(--muted); }
+.f8-ev-h { margin: 0; font: 700 var(--fs-h3)/1.35 var(--font-ui); color: var(--text); }
+.f8-ev-h.f8-ev-h--lead { font-size: var(--fs-md); }
+.f8-ev-say { margin: var(--f8-sp-2) 0 0; font: 400 var(--fs-sm)/1.65 var(--font-ui); color: var(--muted); max-width: 62ch; }
+
+/* Correction law: a wrong entry is never deleted. It stays on the timeline,
+   visibly superseded, with the correction linked to it. Dark demotes it by
+   dropping luminance; light demotes it by lifting the ink off the paper —
+   the same demotion, two mechanisms. */
+.f8-ev.is-superseded { opacity: .68; }
+.f8-ev.is-superseded::before { background: none; box-shadow: 0 0 0 1.5px var(--muted); }
+html[data-theme="light"] .f8-ev.is-superseded { opacity: 1; }
+html[data-theme="light"] .f8-ev.is-superseded .f8-ev-h,
+html[data-theme="light"] .f8-ev.is-superseded .f8-ev-say { color: color-mix(in srgb, var(--muted) 74%, var(--panel)); }
+.f8-supersede {
+  display: inline-block; margin-top: var(--f8-sp-2);
+  font: 600 var(--fs-micro)/1.5 var(--font-ui); color: var(--muted);
+  border-left: 2px solid color-mix(in srgb, var(--muted) 60%, transparent);
+  padding-left: var(--f8-sp-2);
+}
+.f8-corrects {
+  display: inline-block; margin-top: var(--f8-sp-2);
+  font: 600 var(--fs-micro)/1.5 var(--font-ui);
+  color: var(--prov-ink, var(--prov));
+  border: 1px dashed color-mix(in srgb, var(--prov) 52%, transparent);
+  border-radius: var(--f8-r-ctl); padding: 4px 9px; text-decoration: none;
+}
+.f8-ev-say b { color: var(--text); font-weight: 600; }
+
+/* the mechanism block — direction / how it travels / when / what would close it */
+.f8-path { margin: var(--f8-sp-3) 0 0; display: grid; gap: 6px; }
+.f8-path div { display: grid; grid-template-columns: 108px 1fr; gap: var(--f8-sp-3); align-items: baseline; }
+.f8-path dt, .f8-path .f8-k2 {
+  font: 600 var(--fs-micro)/1.6 var(--font-ui); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.f8-path dd, .f8-path .f8-v2 { margin: 0; font: 500 var(--fs-sm)/1.6 var(--font-ui); color: var(--text); }
+
+/* affected-holding chips: name + weight. Weight is the "how much of me" answer. */
+.f8-hits { display: flex; flex-wrap: wrap; gap: var(--f8-sp-2); margin-top: var(--f8-sp-3); }
+.f8-hit {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--f8-state) 40%, var(--line));
+  background: color-mix(in srgb, var(--f8-state) 11%, transparent);
+  border-radius: var(--f8-r-ctl); padding: 5px 10px;
+  font: 600 var(--fs-sm)/1.2 var(--font-ui); color: var(--text);
+}
+.f8-hit small { font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--muted); }
+.f8-hit--second { border-style: dashed; background: none; }
+
+/* ---------------------------------------------------------------------------
+   9 · Read-state chips (the four-state vocabulary) + delivery states
+   --------------------------------------------------------------------------- */
+.f8-read {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 600 var(--fs-micro)/1 var(--font-ui); letter-spacing: .03em;
+  border-radius: var(--f8-r-pill); padding: 5px 9px; white-space: nowrap;
+  color: var(--f8-state-ink);
+  border: 1px solid color-mix(in srgb, var(--f8-state) 46%, transparent);
+  background: color-mix(in srgb, var(--f8-state) 13%, transparent);
+}
+.f8-read::before { content: ""; width: 6px; height: 6px; border-radius: var(--f8-r-pill); background: var(--f8-state); }
+.f8-read--zero { background: none; border-style: solid; }
+.f8-read--zero::before { background: none; box-shadow: inset 0 0 0 1.5px var(--f8-state); }
+.f8-read--nocov { background: none; border-style: dashed; }
+.f8-read--nocov::before { background: none; box-shadow: inset 0 0 0 1.5px var(--f8-state); }
+
+/* ---------------------------------------------------------------------------
+   10 · Holdings table
+   DARK  : hairline rows, hover lifts by luminance.
+   LIGHT : same hairlines + a --panel2 hover tint; the header rule is doubled
+           (1px line + 1px white) so the head reads as printed, not as a border.
+   --------------------------------------------------------------------------- */
+.f8-tblwrap { overflow-x: auto; }
+.f8-tbl { width: 100%; border-collapse: collapse; min-width: 300px; }
+.f8-th {
+  text-align: left; font: 600 var(--fs-micro)/1.4 var(--font-ui);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  padding: 0 0 7px; border-bottom: 1px solid var(--line);
+}
+html[data-theme="light"] .f8-th { box-shadow: 0 1px 0 color-mix(in srgb, var(--panel) 90%, transparent); }
+.f8-tbl td { padding: 9px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); font: 500 var(--fs-sm)/1.45 var(--font-ui); color: var(--text); }
+.f8-tbl tr:last-child td { border-bottom: 0; }
+.f8-tbl .f8-num { text-align: right; font-variant-numeric: tabular-nums; padding-left: var(--f8-sp-3); }
+.f8-tbl .f8-name { font-weight: 700; }
+.f8-tbl .f8-sub { display: block; font: 500 var(--fs-micro)/1.4 var(--font-mono); color: var(--muted); }
+.f8-tbl tr.is-out td { color: var(--muted); }
+.f8-tbl tr.is-out .f8-name { color: var(--f8-state-ink); }
+
+/* ---------------------------------------------------------------------------
+   11 · Conditions ("what you're watching")
+   --------------------------------------------------------------------------- */
+.f8-cond { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--f8-sp-3); }
+.f8-cond > li {
+  border: 1px solid var(--line); border-radius: var(--f8-r-card);
+  padding: var(--f8-sp-3) var(--f8-sp-4);
+  background: color-mix(in srgb, var(--panel2) 60%, transparent);
+}
+html[data-theme="light"] .f8-cond > li { background: var(--panel2); }
+.f8-cond-h { display: flex; flex-wrap: wrap; gap: var(--f8-sp-2) var(--f8-sp-3); align-items: baseline; justify-content: space-between; }
+.f8-cond-n { font: 600 var(--fs-sm)/1.45 var(--font-ui); color: var(--text); }
+.f8-cond-f { margin-top: 6px; font: 500 var(--fs-micro)/1.6 var(--font-mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: var(--f8-sp-2) var(--f8-sp-4); }
+.f8-cond-f b { font-weight: 700; color: var(--text); }
+
+/* lifecycle rail — weight and fill only, never hue (design system §11.1) */
+.f8-life { display: flex; align-items: center; gap: 0; margin-top: var(--f8-sp-3); }
+.f8-life span { font: 600 var(--fs-micro)/1 var(--font-ui); color: var(--muted); white-space: nowrap; }
+.f8-life i {
+  display: block; width: 7px; height: 7px; border-radius: var(--f8-r-pill);
+  border: 1px solid var(--muted); margin: 0 7px;
+}
+.f8-life .f8-life-done i { background: var(--muted); }
+.f8-life .f8-life-now { color: var(--text); font-weight: 700; }
+.f8-life .f8-life-now i { width: 10px; height: 10px; background: var(--text); border-color: var(--text); }
+.f8-life em { display: block; flex: 1 1 14px; height: 1px; background: color-mix(in srgb, var(--muted) 50%, transparent); }
+.f8-life .f8-life-seg--done { height: 2px; background: var(--muted); }
+.f8-lifeitem { display: flex; align-items: center; }
+
+/* ---------------------------------------------------------------------------
+   12 · Evidence / diagnostic disclosure
+   Internal alert ids, clocks, evaluator fields and dedup machinery live HERE
+   and nowhere else (G7). A <details> is keyboard-reachable by construction —
+   hover is never the only path to content.
+   --------------------------------------------------------------------------- */
+.f8-disc { margin-top: var(--f8-sp-3); border-top: 1px dashed color-mix(in srgb, var(--line) 90%, transparent); padding-top: var(--f8-sp-2); }
+.f8-disc > summary {
+  cursor: pointer; list-style: none;
+  font: 600 var(--fs-micro)/1.5 var(--font-ui); letter-spacing: .04em;
+  color: var(--ink-link, var(--link));
+  padding: 3px 0;
+}
+.f8-disc > summary::-webkit-details-marker { display: none; }
+.f8-disc > summary::before { content: "+ "; font-weight: 700; }
+.f8-disc[open] > summary::before { content: "– "; }
+.f8-disc > summary:focus-visible { outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; border-radius: 3px; }
+.f8-kv { margin: var(--f8-sp-2) 0 0; display: grid; gap: 3px; }
+.f8-kv div { display: grid; grid-template-columns: 168px 1fr; gap: var(--f8-sp-3); }
+.f8-kv dt { font: 500 var(--fs-micro)/1.6 var(--font-mono); color: var(--muted); }
+.f8-kv dd { margin: 0; font: 500 var(--fs-micro)/1.6 var(--font-mono); color: var(--text); word-break: break-all; }
+
+/* ---------------------------------------------------------------------------
+   13 · Empty / degraded copy blocks
+   Empty is a full-weight sentence with a mandatory WHY. Error names what failed
+   AND what still works, with a retry. Never a bare em dash, never pipeline
+   telemetry in customer copy.
+   --------------------------------------------------------------------------- */
+.f8-empty { padding: var(--f8-sp-6) 0; max-width: 52ch; }
+.f8-empty h3 { margin: 0 0 var(--f8-sp-2); font: 700 var(--fs-md)/1.4 var(--font-ui); color: var(--text); }
+.f8-empty p { margin: 0 0 var(--f8-sp-3); font: 400 var(--fs-sm)/1.65 var(--font-ui); color: var(--muted); }
+.f8-still {
+  margin-top: var(--f8-sp-3); border-left: 3px solid color-mix(in srgb, var(--ok) 60%, transparent);
+  padding: 2px 0 2px var(--f8-sp-3);
+  font: 500 var(--fs-sm)/1.6 var(--font-ui); color: var(--muted);
+}
+.f8-still b { color: var(--text); font-weight: 600; }
+
+/* one merged footnote per panel — never a stack of micro-disclaimers */
+.f8-note { margin: var(--f8-sp-4) 0 0; font: 400 var(--fs-micro)/1.65 var(--font-ui); color: var(--muted); }
+.f8-note b { color: var(--text); font-weight: 600; }
+
+/* mobile link-outs: the archetype-G reduction is demotion WITH a landing */
+.f8-outs { display: none; gap: var(--f8-sp-3); margin-top: var(--f8-sp-6); }
+.f8-out {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--f8-sp-3);
+  border: 1px solid var(--line); border-radius: var(--f8-r-card);
+  padding: var(--f8-sp-3) var(--f8-sp-4); background: var(--panel);
+  font: 600 var(--fs-sm)/1.4 var(--font-ui); color: var(--text); text-decoration: none;
+}
+.f8-out small { font: 500 var(--fs-micro)/1.4 var(--font-mono); color: var(--muted); }
+
+/* ---------------------------------------------------------------------------
+   14 · Responsive law — 1440 → 1024 → 390
+   Every reduction is a deliberate re-composition, never the desktop squeezed.
+   The page never scrolls horizontally at any viewport; wide content scrolls
+   inside its own container.
+   --------------------------------------------------------------------------- */
+@media (max-width: 1180px) {
+  .f8-grid { grid-template-columns: minmax(0,1.32fr) minmax(0,1fr); }
+  .f8-lane, .f8-cov { grid-template-columns: 78px 1fr; }
+  .f8-axis { padding-left: 96px; }
+}
+@media (max-width: 900px) {
+  /* Archetype G mobile reduction: the timeline survives; holdings and
+     conditions demote to counted link-outs. */
+  .f8 { padding: 0 var(--f8-sp-4) var(--f8-sp-7); }
+  .f8-grid { grid-template-columns: 1fr; margin-top: var(--f8-sp-6); }
+  .f8-col--rail { display: none; }
+  .f8-outs { display: grid; }
+  .f8-hero::before { inset: -14px -16px -10px; }   /* matches .f8's 16px gutter */
+  .f8-hero-top { gap: var(--f8-sp-4); }
+  .f8-money { text-align: left; min-width: 0; }
+  .f8-verdict { font-size: 34px; }
+  .f8-money-v { font-size: 28px; }
+  .f8-path div { grid-template-columns: 92px 1fr; }
+  .f8-kv div { grid-template-columns: 1fr; gap: 0; }
+  .f8-axis { padding-left: 78px; }
+}
+@media (max-width: 430px) {
+  .f8 { padding: 0 var(--f8-sp-3) var(--f8-sp-7); }
+  .f8-hero::before { inset: -12px -12px -6px; }    /* matches .f8's 12px gutter */
+  .f8-verdict { font-size: 30px; }
+  .f8-clause { font-size: var(--fs-body); }
+  .f8-lane, .f8-cov { grid-template-columns: 1fr; gap: 4px; padding: 9px 0; }
+  .f8-cov { padding-top: var(--f8-sp-3); }
+  .f8-axis { padding-left: 0; }
+  .f8-panel { padding: var(--f8-sp-3) var(--f8-sp-4) var(--f8-sp-4); }
+  .f8-tl { padding-left: var(--f8-sp-5); }
+  .f8-ev::before { left: calc(-1 * var(--f8-sp-5) + 1px); }
+  .f8-path div { grid-template-columns: 1fr; gap: 0; }
+  .f8-meta { padding: 7px var(--f8-sp-3); font-size: 9px; }
+  .f8-slot { display: none; }
+  .f8-hide-sm { display: none; }
+  .f8-cond-h { gap: 6px; }
+}
+
+/* Signed-out is the one composition that is NOT the monitor: archetype-I focus,
+   a single card on the canvas, zero ambient in both themes. */
+.f8-solo { max-width: 520px; margin: var(--f8-sp-8) auto 0; }
+.f8-solo .f8-hero::before { display: none; }
+.f8-solo .f8-panel { padding: var(--f8-sp-6); }
+
+/* ---------------------------------------------------------------------------
+   15 · Motion + accessibility floor
+   Motion is a status channel: nothing animates that is not live. Reduced motion
+   kills every transition AND every pseudo-element sweep by name.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .f8-cta, .f8-toggles button { transition: none; }
+  .f8-cta:hover { transform: none; }
+  .f8-hero::before, .f8-tl::before, .f8-ev::before,
+  .f8-panel.is-warn::before, .f8-panel.is-act::before, .f8-panel.is-prov::before,
+  .f8-tick--fail::after { animation: none; transition: none; }
+}
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent);
+  outline-offset: 2px;
+}
