@@ -50,10 +50,326 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=f41f9a21">
-<link rel="stylesheet" href="assets/css/dc892861.css?v=dc892861">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ═══ Market Reference — page-local composition over theme.css tokens ═══════════
+   Dark = command centre: rows on the open canvas, depth by luminance.
+   Light = research workspace: the same rows printed on one white sheet, depth by
+   structure and shadow. The two are different MATERIAL, not different values. */
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font:var(--fs-body)/1.6 var(--font-ui);
+       margin:0; padding:var(--sp-4,16px); }
+@media (min-width:1100px){ body { padding:var(--sp-6,24px) max(var(--sp-8,44px), calc((100vw - 1180px)/2)); } }
+a { color:var(--ink-link, var(--link)); text-decoration:none; }
+a:hover { text-decoration:underline; text-underline-offset:2px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+           clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* ── page header (canvas plane) ─────────────────────────────────────────────── */
+.rf-head { max-width:74ch; margin:0 0 var(--sp-6,24px); }
+.rf-eb { display:block; margin-bottom:var(--sp-1,4px); }
+.rf-head h1 { font-size:var(--fs-h1); font-weight:800; letter-spacing:-.02em; margin:0 0 var(--sp-2,8px); }
+.rf-lead { font-size:var(--fs-md); color:var(--muted); margin:0; }
+.rf-return { margin:var(--sp-4,16px) 0 0; }
+.rf-back-arrow { margin-right:var(--sp-1,4px); }
+
+/* ── layout: rail + column. Methodology's proportions, one number each. ─────── */
+.rf-layout { display:grid; grid-template-columns:240px minmax(0,78ch);
+             gap:var(--sp-7,32px); align-items:start; }
+@media (max-width:999px){ .rf-layout { grid-template-columns:1fr; } .rf-rail { display:none; } }
+
+/* ── index rail ─────────────────────────────────────────────────────────────── */
+.rf-rail-inner { position:sticky; top:var(--sp-5,20px); display:flex; flex-direction:column;
+                 gap:var(--sp-5,20px); max-height:calc(100vh - var(--sp-8,44px)); overflow:auto;
+                 overscroll-behavior:contain; padding-right:var(--sp-3,12px); }
+/* DARK: the rail floats on the canvas — darkness is the separation. */
+.rf-rail { border-right:0; }
+/* LIGHT: the canvas is pale, so the rail needs a printed edge against the sheet. */
+html[data-theme="light"] .rf-rail { border-right:1px solid var(--line); }
+
+.segbtn-row { display:flex; }
+.rf-seg .segbtn { flex:1; appearance:none; background:var(--panel); color:var(--muted);
+  border:1px solid var(--line); border-right-width:0; padding:var(--sp-2,8px) var(--sp-1,4px);
+  font:600 var(--fs-sm)/1.2 var(--font-ui); cursor:pointer; border-radius:0; min-height:40px; }
+.rf-seg .segbtn:first-child { border-radius:var(--r-ctl,8px) 0 0 var(--r-ctl,8px); }
+.rf-seg .segbtn:last-child  { border-radius:0 var(--r-ctl,8px) var(--r-ctl,8px) 0; border-right-width:1px; }
+.rf-seg .segbtn[aria-pressed="true"] { color:var(--text); background:var(--panel2);
+  border-color:color-mix(in srgb, var(--link) 46%, var(--line)); }
+/* LIGHT: the estate's shared segmented hover is an accent BLOOM (theme.css:562).
+   On white a bloom is a pastel stain — swap it for a ring. Specificity beats the
+   shipped `html body :is(.segbtn…):hover`. */
+html[data-theme="light"] body .rf-seg .segbtn:hover {
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 16%, transparent); }
+
+.rf-q { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line);
+  border-radius:var(--r-ctl,8px); padding:var(--sp-2,8px) var(--sp-3,12px); min-height:40px;
+  font:400 var(--fs-sm)/1.4 var(--font-ui); }
+.rf-q::placeholder { color:var(--muted); }
+.rf-q:focus { outline:none; border-color:var(--link); }
+/* DARK: focus is a soft accent bloom — luminance depth. */
+.rf-q:focus { box-shadow:0 0 14px -4px color-mix(in srgb, var(--link) 50%, transparent); }
+/* LIGHT: white panel + a crisp ring; and the field is WHITE, not a tint — on paper
+   an input is a ruled box, not a recessed well. */
+html[data-theme="light"] .rf-q { background:var(--panel); }
+html[data-theme="light"] .rf-q:focus { box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 18%, transparent); }
+
+.rf-fams { list-style:none; margin:var(--sp-2,8px) 0 0; padding:0; }
+.rf-fam { display:flex; width:100%; align-items:center; gap:var(--sp-2,8px); background:none;
+  border:0; border-left:2px solid transparent; color:var(--muted); cursor:pointer;
+  padding:var(--sp-2,8px) var(--sp-2,8px); font:500 var(--fs-sm)/1.3 var(--font-ui);
+  text-align:left; min-height:40px; border-radius:0; }
+.rf-fam:hover { color:var(--text); }
+.rf-fam[aria-pressed="true"] { color:var(--text); border-left-color:var(--link); font-weight:700; }
+.rf-fam-n { flex:1; min-width:0; }
+.rf-fam-c { color:var(--muted); font-size:var(--fs-label); flex:none; }
+.rf-fam.is-zero { opacity:.4; }
+
+.rf-az { display:flex; flex-wrap:wrap; gap:var(--sp-1,4px); margin-top:var(--sp-2,8px); }
+.rf-azb { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:1px solid transparent; color:var(--muted); cursor:pointer;
+  border-radius:var(--r-ctl,8px); font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.06em; }
+.rf-azb:hover { color:var(--text); border-color:var(--line); }
+.rf-azb[aria-pressed="true"] { color:var(--text); border-color:var(--link); background:var(--panel2); }
+.rf-azb.is-zero { opacity:.3; pointer-events:none; }
+
+/* ── mobile filter bar (<1000w). JS moves the live rail controls into these slots. */
+.rf-bar { position:sticky; top:0; z-index:5; background:var(--bg);
+  border-bottom:1px solid var(--line); padding:var(--sp-3,12px) 0;
+  display:flex; flex-direction:column; gap:var(--sp-2,8px); margin-bottom:var(--sp-3,12px); }
+@media (min-width:1000px){ .rf-bar { display:none !important; } }
+.rf-more > summary { cursor:pointer; color:var(--muted); font-size:var(--fs-sm);
+  padding:var(--sp-2,8px) 0; list-style:none; min-height:40px; display:flex; align-items:center; }
+.rf-more > summary::-webkit-details-marker { display:none; }
+.rf-more > summary::after { content:'▾'; margin-left:var(--sp-2,8px); }
+.rf-more[open] > summary::after { content:'▴'; }
+.rf-more-body { padding-bottom:var(--sp-3,12px); }
+
+/* ── result count ───────────────────────────────────────────────────────────── */
+.rf-count { color:var(--muted); font-size:var(--fs-sm); margin:0 0 var(--sp-3,12px); }
+
+/* ── empty / not-found states (shared .mx-empty machinery) ──────────────────── */
+.rf-miss, .rf-none { border:1px dashed var(--line); border-radius:var(--r-card,12px);
+  margin-bottom:var(--sp-5,20px); }
+
+/* ══ THE LIST — the biggest deliberate divergence between the two themes ══════
+   DARK: no container. Rows sit directly on the graphite canvas, ruled by
+   hairlines; depth arrives when a row lifts to --panel on hover / --panel2 on
+   target. A large panel slab behind 200 rows flattens a dark page.
+   LIGHT: one white sheet. Unbounded hairlines on a pale canvas read as a grid
+   with nothing holding it; on paper an index is printed on a page. The sheet also
+   gives the group bands a surface to sit on. */
+.rf-list { background:transparent; border:0; border-radius:0; padding:0; }
+html[data-theme="light"] .rf-list { background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel,14px); box-shadow:var(--card-shadow);
+  padding:var(--sp-2,8px) var(--sp-4,16px) var(--sp-4,16px); }
+
+/* ── family group header ────────────────────────────────────────────────────── */
+.rf-grp-h { display:flex; align-items:baseline; gap:var(--sp-2,8px);
+  font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin:var(--sp-6,24px) 0 var(--sp-2,8px);
+  padding-bottom:var(--sp-2,8px); border-bottom:1px solid var(--line); }
+.rf-group:first-child .rf-grp-h { margin-top:0; }
+.rf-grp-c { font-size:var(--fs-label); opacity:.7; }
+/* LIGHT: a band, not a rule — the way a printed index separates its sections.
+   (A fill band in dark would read as a selected row.) */
+html[data-theme="light"] .rf-grp-h { background:var(--panel2); border-bottom:0;
+  border-radius:var(--r-ctl,8px); padding:var(--sp-2,8px) var(--sp-3,12px);
+  margin-left:calc(var(--sp-3,12px) * -1); margin-right:calc(var(--sp-3,12px) * -1); }
+html[data-lang="zh"] .rf-grp-h { letter-spacing:0; text-transform:none; }
+
+/* ── the index line ─────────────────────────────────────────────────────────── */
+.rf-e { position:relative; scroll-margin-top:84px; border-radius:var(--r-card,12px); }
+.rf-e + .rf-e > .rf-sum { border-top:1px solid var(--line); }
+.rf-sum { display:grid; grid-template-columns:auto minmax(0,max-content) auto minmax(0,1fr);
+  align-items:baseline; gap:var(--sp-2,8px); min-height:40px;
+  padding:var(--sp-2,8px) var(--sp-3,12px); color:var(--text); }
+.rf-sum:hover { text-decoration:none; }
+/* DARK: hover = a luminance lift to --panel. LIGHT: the sheet is already white,
+   so hover tints DOWN to --panel2 instead — the same gesture, inverted material. */
+.rf-sum:hover { background:var(--panel); }
+html[data-theme="light"] .rf-sum:hover { background:var(--panel2); }
+.rf-hash { color:var(--muted); font-size:var(--fs-label); opacity:0; flex:none;
+  transition:opacity var(--t-fast,.16s) ease; }
+.rf-sum:hover .rf-hash, .rf-sum:focus-visible .rf-hash, .rf-e:target .rf-hash { opacity:1; }
+.rf-label { font-size:var(--fs-h2); font-weight:800; letter-spacing:-.01em; }
+html[data-lang="zh"] .rf-label { font-weight:700; letter-spacing:0; }
+.rf-gloss { color:var(--muted); font-size:var(--fs-sm); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* kind: fill vs outline, never hue (§1 reserved-hue law — family/kind are categories). */
+.rf-kind { flex:none; font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); padding:3px var(--sp-2,8px);
+  border-radius:var(--r-pill,999px); border:1px solid transparent; white-space:nowrap; }
+.rf-kind--indicator { background:var(--panel2); }
+.rf-kind--glossary  { background:transparent; border-color:var(--line); }
+html[data-lang="zh"] .rf-kind { letter-spacing:0; text-transform:none; }
+
+/* ══ :target — deep-link open + focus state. ONE mechanism, two materials. ════ */
+.rf-body { display:none; }
+.rf-e:target .rf-body { display:block; padding:0 var(--sp-4,16px) var(--sp-5,20px) var(--sp-4,16px); }
+/* DARK: lift by LUMINANCE (--panel2) + a 3px accent rail. */
+.rf-e:target { background:var(--panel2); border-left:3px solid var(--link);
+  padding-left:var(--sp-2,8px); }
+/* LIGHT: a --panel2 step on a white sheet is the "dirty smudge" §12 names. Lift by
+   STRUCTURE instead — the card stays white, gains an accent hairline and a real
+   shadow, and keeps the same 3px rail so the semantic marker is identical. */
+html[data-theme="light"] .rf-e:target { background:var(--panel);
+  border:1px solid color-mix(in srgb, var(--link) 34%, var(--line));
+  border-left:3px solid var(--link); box-shadow:var(--card-shadow); }
+.rf-e:target .rf-label { font-weight:800; }
+.rf-e:target + .rf-e > .rf-sum, .rf-e:target > .rf-sum { border-top-color:transparent; }
+/* Close-affordance fallback (verified empirically in headless Chromium,
+   2026-09-02): history.replaceState() clearing location.hash does NOT make
+   :target stop matching in Chromium — it is "sticky" until a real navigation
+   (a hash-changing link click, location.hash assignment, or back/forward).
+   clearHashToBrowse() therefore also stamps .rf-closed on the entry it is
+   collapsing; this override wins regardless of :target's continued match,
+   and handleHash() removes the class the moment a real hash navigation
+   re-opens that (or any) entry. */
+.rf-e.rf-closed .rf-body { display:none !important; }
+.rf-e.rf-closed { background:none; border-left-color:transparent; padding-left:0; }
+html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow:none; }
+
+/* ── record blocks ──────────────────────────────────────────────────────────── */
+.rf-blk { margin:var(--sp-4,16px) 0 0; }
+.rf-blk p, .rf-blk li { margin:var(--sp-1,4px) 0 0; }
+.rf-def { font-size:var(--fs-md); }
+.rf-dep { margin:0 0 var(--sp-3,12px); padding:var(--sp-2,8px) var(--sp-3,12px);
+  border-left:2px solid var(--line); color:var(--muted); font-size:var(--fs-sm); }
+.rf-alias { margin:0; color:var(--muted); font-size:var(--fs-sm); }
+.rf-basis { margin:var(--sp-3,12px) 0 0; font-size:var(--fs-sm); }
+.rf-basis-v { margin-left:var(--sp-2,8px); color:var(--text); }
+
+/* ── THE SIGNATURE: direction ledger ────────────────────────────────────────── */
+.rf-ledger { margin:var(--sp-2,8px) 0 0; display:grid;
+  grid-template-columns:minmax(64px,max-content) minmax(0,1fr); gap:var(--sp-1,4px) var(--sp-3,12px); }
+.rf-lg-row { display:contents; }
+.rf-ledger dt { font:700 var(--fs-sm)/1.5 var(--font-ui); white-space:nowrap;
+  display:flex; align-items:baseline; gap:var(--sp-1,4px); }
+.rf-ledger dd { margin:0; font-size:var(--fs-sm); color:var(--text); }
+.rf-lg-mark { font-size:var(--fs-micro); }
+/* Direction ink flips under 红涨绿跌 for free; the MARK and the WORD carry the
+   direction so hue is never alone (§5). The meaning text keeps the --text token
+   (color:var(--text) above) — reading a move is not a goodness judgment. */
+.rf-lg--up   dt { color:var(--ink-up,   var(--up)); }
+.rf-lg--down dt { color:var(--ink-down, var(--down)); }
+.rf-lg--flat dt { color:var(--muted); }
+
+/* ── caveats: achromatic. A caveat is context, not a health state. ──────────── */
+.rf-caveats ul { margin:var(--sp-1,4px) 0 0; padding-left:var(--sp-4,16px); color:var(--muted); }
+.rf-caveats li { font-size:var(--fs-sm); }
+
+/* ── outbound links ─────────────────────────────────────────────────────────── */
+.rf-links { display:flex; flex-wrap:wrap; gap:var(--sp-2,8px); }
+.rf-owner { display:inline-flex; align-items:center; min-height:32px;
+  padding:var(--sp-1,4px) var(--sp-3,12px); border:1px solid var(--line);
+  border-radius:var(--r-pill,999px); font-size:var(--fs-sm); }
+.rf-owner:hover { border-color:color-mix(in srgb, var(--link) 50%, var(--line)); text-decoration:none; }
+.rf-src, .rf-rel { margin:var(--sp-3,12px) 0 0; font-size:var(--fs-sm); color:var(--muted);
+  overflow-wrap:anywhere; }
+.rf-src a, .rf-rel a { margin-right:var(--sp-3,12px); }
+.rf-ext { margin-left:3px; font-size:var(--fs-label); }
+.rf-closewrap { margin:var(--sp-4,16px) 0 0; }
+.rf-close { font-size:var(--fs-sm); color:var(--muted); }
+
+/* ── filter hiding ──────────────────────────────────────────────────────────── */
+.rf-e.is-off, .rf-group.is-off { display:none; }
+
+/* ── footer ─────────────────────────────────────────────────────────────────── */
+.rf-foot { color:var(--muted); font-size:var(--fs-sm); margin-top:var(--sp-8,44px);
+  border-top:1px solid var(--line); padding-top:var(--sp-4,16px); max-width:78ch; }
+
+/* ── 390w composition (the design floor) ────────────────────────────────────── */
+@media (max-width:640px){
+  body { padding:var(--sp-3,12px); }
+  .rf-head h1 { font-size:var(--fs-num-lg); }
+  /* the index line stacks: label row, then gloss row. Never truncate a label. */
+  .rf-sum { grid-template-columns:auto minmax(0,1fr) auto; row-gap:2px; min-height:52px;
+            align-items:center; }
+  .rf-gloss { grid-column:1 / -1; white-space:normal; overflow:visible;
+              display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .rf-label { font-size:var(--fs-md); }
+  .rf-e:target .rf-body { padding:0 var(--sp-3,12px) var(--sp-4,16px); }
+  .rf-ledger { grid-template-columns:minmax(56px,max-content) minmax(0,1fr); }
+  .rf-links { gap:var(--sp-1,4px); }
+  html[data-theme="light"] .rf-list { padding:var(--sp-2,8px) var(--sp-3,12px) var(--sp-3,12px); }
+}
+
+/* ── a11y floor ─────────────────────────────────────────────────────────────── */
+:where(.rf-sum, .rf-fam, .rf-azb, .rf-owner, .rf-close, .rf-q, .rf-more > summary):focus-visible {
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .rf-hash { transition:none; }
+  .rf-sum, .rf-e, .rf-e::before, .rf-e::after, .rf-sum::before, .rf-sum::after { transition:none; animation:none; }
+}
+/* ── unlinked owner state — a printed null, not silence ─────────────────────── */
+/* DARK: a muted line behind a hairline rail. On graphite a fill would read as a
+   selected row, so the state is carried by the rail alone.
+   LIGHT: a bare muted line on white reads as unstyled body text, so light adds a
+   --panel2 recess to make it legibly a STATE. Same rail, different material. */
+.rf-unlinked { color:var(--muted); font-size:var(--fs-sm); margin:var(--sp-1,4px) 0 0;
+  border-left:2px solid var(--line); padding-left:var(--sp-2,8px); }
+html[data-theme="light"] .rf-unlinked { background:var(--panel2);
+  border-radius:0 var(--r-ctl,8px) var(--r-ctl,8px) 0;
+  padding:var(--sp-2,8px) var(--sp-3,12px); }
+
+/* ══ COVERAGE LEDGER ═════════════════════════════════════════════════════════
+   The second deliberate divergence on this page, and it inverts the list's.
+   DARK: nothing. A top hairline on the graphite canvas and hairline-ruled rows.
+   A command center does not box its footnotes; a container here would compete
+   with the entries above it for the same luminance step.
+   LIGHT: the list above is a raised white sheet, so an unbounded ledger below it
+   floats. Light RECESSES instead — a --panel2 well with NO shadow. Shadow says
+   "this is material"; a ledger of absences must never be raised above the
+   catalogue it annotates. Dark lifts nothing, light sinks. */
+.rf-cov { margin:var(--sp-7,32px) 0 0; padding-top:var(--sp-4,16px);
+  border-top:1px solid var(--line); }
+html[data-theme="light"] .rf-cov { background:var(--panel2); border-top:0;
+  border-radius:var(--r-panel,14px); box-shadow:none;
+  padding:var(--sp-4,16px) var(--sp-4,16px) var(--sp-2,8px); }
+
+.rf-cov-h { font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 var(--sp-2,8px); }
+html[data-lang="zh"] .rf-cov-h { letter-spacing:0; text-transform:none; }
+.rf-cov-lead { color:var(--muted); font-size:var(--fs-sm); margin:0 0 var(--sp-3,12px); }
+
+.rf-cov-list { list-style:none; margin:0; padding:0; }
+.rf-cov-row { display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,max-content);
+  gap:2px var(--sp-3,12px); align-items:baseline;
+  padding:var(--sp-3,12px) 0; border-top:1px solid var(--line); }
+.rf-cov-row:first-child { border-top:0; }
+.rf-cov-el { font-size:var(--fs-md); font-weight:700; color:var(--text); }
+html[data-lang="zh"] .rf-cov-el { font-weight:700; letter-spacing:0; }
+.rf-cov-where { display:block; font-size:var(--fs-label); font-weight:400;
+  color:var(--muted); }
+
+/* The state word. Achromatic in BOTH themes — a gap is not danger, and the
+   §1 reserved-hue law keeps --up/--down for direction only. */
+.rf-cov-state { justify-self:end; font:600 var(--fs-label)/1 var(--font-ui);
+  letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  padding:3px var(--sp-2,8px); border-radius:var(--r-pill,999px);
+  border:1px solid var(--line); white-space:nowrap; }
+html[data-lang="zh"] .rf-cov-state { letter-spacing:0; text-transform:none; }
+/* DARK: the "still missing" state is the only one that fills, by luminance.
+   LIGHT: the well is already tinted, so a --panel2 fill would vanish; light
+   fills with the sheet colour (--panel) instead — the figure/ground inverts. */
+.rf-cov-row--not_covered .rf-cov-state { background:var(--panel2); border-color:transparent; }
+html[data-theme="light"] .rf-cov-row--not_covered .rf-cov-state { background:var(--panel);
+  border-color:var(--line); }
+
+.rf-cov-why { grid-column:1 / -1; color:var(--muted); font-size:var(--fs-sm);
+  margin-top:var(--sp-1,4px); }
+.rf-cov-see { display:block; margin-top:var(--sp-1,4px); }
+.rf-cov-see a { color:var(--link); }
+.rf-cov-see a + a::before { content:"·"; color:var(--muted); margin:0 var(--sp-2,8px); }
+
+@media (max-width:640px) {
+  .rf-cov-row { grid-template-columns:minmax(0,1fr); }
+  .rf-cov-state { justify-self:start; margin-top:var(--sp-1,4px); }
+  html[data-theme="light"] .rf-cov { padding:var(--sp-3,12px); }
+}
+</style>
 </head>
 <body class="page-reference">
 
@@ -62,7 +378,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -275,10 +591,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=f7bdf7cc" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -340,7 +656,7 @@
           
           <li><button type="button" class="rf-fam" data-family="regime" aria-pressed="false">
             <span class="rf-fam-n"><span class="l-en">Regime</span><span class="l-zh">宏观周期</span></span>
-            <span class="rf-fam-c tnum" data-count-family="regime">7</span>
+            <span class="rf-fam-c tnum" data-count-family="regime">10</span>
           </button></li>
           
           <li><button type="button" class="rf-fam" data-family="liquidity" aria-pressed="false">
@@ -365,27 +681,27 @@
           
           <li><button type="button" class="rf-fam" data-family="breadth-participation" aria-pressed="false">
             <span class="rf-fam-n"><span class="l-en">Breadth &amp; Participation</span><span class="l-zh">广度与参与度</span></span>
-            <span class="rf-fam-c tnum" data-count-family="breadth-participation">2</span>
+            <span class="rf-fam-c tnum" data-count-family="breadth-participation">4</span>
           </button></li>
           
           <li><button type="button" class="rf-fam" data-family="flows-positioning" aria-pressed="false">
             <span class="rf-fam-n"><span class="l-en">Flows &amp; Positioning</span><span class="l-zh">资金流与持仓</span></span>
-            <span class="rf-fam-c tnum" data-count-family="flows-positioning">1</span>
+            <span class="rf-fam-c tnum" data-count-family="flows-positioning">2</span>
           </button></li>
           
           <li><button type="button" class="rf-fam" data-family="calendar-events" aria-pressed="false">
             <span class="rf-fam-n"><span class="l-en">Calendar &amp; Events</span><span class="l-zh">日历与事件</span></span>
-            <span class="rf-fam-c tnum" data-count-family="calendar-events">3</span>
+            <span class="rf-fam-c tnum" data-count-family="calendar-events">5</span>
           </button></li>
           
           <li><button type="button" class="rf-fam" data-family="doctrine" aria-pressed="false">
             <span class="rf-fam-n"><span class="l-en">Doctrine</span><span class="l-zh">方法论词汇</span></span>
-            <span class="rf-fam-c tnum" data-count-family="doctrine">3</span>
+            <span class="rf-fam-c tnum" data-count-family="doctrine">5</span>
           </button></li>
           
           <li><button type="button" class="rf-fam" data-family="cross-asset-basics" aria-pressed="false">
             <span class="rf-fam-n"><span class="l-en">Cross-Asset Basics</span><span class="l-zh">跨资产基础</span></span>
-            <span class="rf-fam-c tnum" data-count-family="cross-asset-basics">4</span>
+            <span class="rf-fam-c tnum" data-count-family="cross-asset-basics">6</span>
           </button></li>
           
         </ul>
@@ -419,8 +735,8 @@
 
     
     <p class="rf-count" aria-live="polite" role="status">
-      <span class="l-en"><span class="tnum" data-count-visible>34</span> of <span class="tnum">34</span> entries</span>
-      <span class="l-zh">共 <span class="tnum">34</span> 条，显示 <span class="tnum" data-count-visible>34</span> 条</span>
+      <span class="l-en"><span class="tnum" data-count-visible>46</span> of <span class="tnum">46</span> entries</span>
+      <span class="l-zh">共 <span class="tnum">46</span> 条，显示 <span class="tnum" data-count-visible>46</span> 条</span>
     </p>
 
     
@@ -447,14 +763,221 @@
       <section class="rf-group" data-group="regime">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Regime</span><span class="l-zh">宏观周期</span></span>
-          <span class="rf-grp-c tnum" data-count-group="regime">7</span>
+          <span class="rf-grp-c tnum" data-count-group="regime">10</span>
         </h2>
 
         
         <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="evidence-matrix"
+                 data-kind="indicator" data-family="regime"
+                 data-initial="E" data-search="evidencematrix证据矩阵evidencematrixsixfactormatrix六因子矩阵">
+
+          
+          <a class="rf-sum" href="#evidence-matrix">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Evidence Matrix</span><span class="l-zh">证据矩阵</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A compact table laying out several factors side by side so their readings can be compared at a glance, rather than read one at a time.
+</span><span class="l-zh">一张紧凑的表格，将多项因子并排列出，便于一眼比较，而无需逐一查看。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+            <p class="rf-alias"><span class="eyebrow rf-eb"><span class="l-en">Also called</span><span class="l-zh">也称</span></span>
+              <span class="l-en">six-factor matrix</span><span class="l-zh">六因子矩阵</span></p>
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A compact table laying out several factors side by side so their readings can be compared at a glance, rather than read one at a time.
+</span><span class="l-zh">一张紧凑的表格，将多项因子并排列出，便于一眼比较，而无需逐一查看。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">Seeing the factors together makes it easier to notice when most of them agree versus when the picture is mixed.
+</span><span class="l-zh">将各因子并列展示，更容易察觉它们是否一致，还是呈现出分歧的局面。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Grid of per-factor state labels</span><span class="l-zh">按因子分列的状态标签网格</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">Most factors pointing the same direction is a more confluent read.
+</span><span class="l-zh">大多数因子指向同一方向，代表信号更趋一致。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">Factors pointing in different directions is a more mixed, lower-confidence read.
+</span><span class="l-zh">各因子方向不一致，代表信号更为混合，置信度较低。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A mixed matrix is common between regime turns and is not itself a signal to act on.
+</span><span class="l-zh">在周期转换阶段，矩阵出现分歧较为常见，本身并不构成行动信号。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">The matrix is a coincident read-out, not an independent forecast, and each underlying factor already has its own reference entry.</span><span class="l-zh">该矩阵是同期读数展示，并非独立预测；每个底层因子均已有各自的说明条目。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-evidence"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#evidence-trend"><span class="l-en">Trend Factor</span><span class="l-zh">趋势因子</span></a><a href="#evidence-risk-appetite"><span class="l-en">Risk Appetite Factor</span><span class="l-zh">风险偏好因子</span></a><a href="#evidence-volatility"><span class="l-en">Volatility Factor</span><span class="l-zh">波动率因子</span></a><a href="#evidence-breadth"><span class="l-en">Breadth Factor</span><span class="l-zh">广度因子</span></a><a href="#evidence-liquidity"><span class="l-en">Liquidity Factor</span><span class="l-zh">流动性因子</span></a><a href="#evidence-stress"><span class="l-en">Stress Factor</span><span class="l-zh">压力因子</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="fired-alerts"
+                 data-kind="indicator" data-family="regime"
+                 data-initial="F" data-search="firedalerts已触发提醒firedalerts">
+
+          
+          <a class="rf-sum" href="#fired-alerts">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Fired Alerts</span><span class="l-zh">已触发提醒</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A short list of the specific conditions that have crossed a pre-set threshold recently, shown as a small pill on the dashboard.
+</span><span class="l-zh">一个简短列表，列出近期越过预设阈值的具体条件，以看板上的小标签形式展示。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A short list of the specific conditions that have crossed a pre-set threshold recently, shown as a small pill on the dashboard.
+</span><span class="l-zh">一个简短列表，列出近期越过预设阈值的具体条件，以看板上的小标签形式展示。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It tells you which specific watch conditions are active right now, without you needing to check every panel yourself.
+</span><span class="l-zh">它让你无需逐一查看每个面板，即可了解当前哪些具体的关注条件正处于激活状态。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Count and list of active named conditions</span><span class="l-zh">当前激活的具名条件的数量与列表</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">More fired conditions means more of the pre-set watch list is currently active.
+</span><span class="l-zh">触发数量越多，说明当前处于激活状态的预设关注项越多。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">Fewer or no fired conditions means the watch list is currently quiet.
+</span><span class="l-zh">触发数量减少或为零，说明关注列表当前处于平静状态。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">The list can be empty for long stretches — that is a normal, quiet state, not a data gap.
+</span><span class="l-zh">该列表可能长时间为空——这是正常的平静状态，而非数据缺失。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This is a rules-based watch list, not a forecast or a trade signal.</span><span class="l-zh">这是一份基于规则的关注列表，并非预测或交易信号。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#market-regime"><span class="l-en">Market Regime</span><span class="l-zh">市场状态</span></a><a href="#regime-quadrant"><span class="l-en">Regime Quadrant</span><span class="l-zh">宏观象限</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
         <article class="rf-e" id="market-regime"
                  data-kind="indicator" data-family="regime"
-                 data-initial="M" data-search="marketregime市场状态marketregimeregimecallmarketpostureread市场态势市场状态判断">
+                 data-initial="M" data-search="marketregime市场状态marketregimeregimecallmarketposturereadregimebadge市场态势市场状态判断市场状态徽标">
 
           
           <a class="rf-sum" href="#market-regime">
@@ -479,7 +1002,7 @@
             
             
             <p class="rf-alias"><span class="eyebrow rf-eb"><span class="l-en">Also called</span><span class="l-zh">也称</span></span>
-              <span class="l-en">regime call · market posture read</span><span class="l-zh">市场态势 · 市场状态判断</span></p>
+              <span class="l-en">regime call · market posture read · regime badge</span><span class="l-zh">市场态势 · 市场状态判断 · 市场状态徽标</span></p>
             
 
             
@@ -541,10 +1064,12 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="aibrief.html"><span class="l-en">AI Briefing</span><span class="l-zh">AI 简报</span></a></p>
+              <p class="rf-unlinked"><span class="l-en">We can’t link straight to it on that page yet — open the page and look for this name.</span><span class="l-zh">暂时无法直接跳转到该页面上的位置——打开页面后按名称查找。</span></p>
+              
             </div>
 
             
@@ -648,10 +1173,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -661,6 +1187,111 @@
             
             <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
               <a href="#market-regime"><span class="l-en">Market Regime</span><span class="l-zh">市场状态</span></a><a href="#market-breadth"><span class="l-en">Market Breadth</span><span class="l-zh">市场广度</span></a><a href="#evidence-liquidity"><span class="l-en">Liquidity Factor</span><span class="l-zh">流动性因子</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="posture-dial"
+                 data-kind="indicator" data-family="regime"
+                 data-initial="P" data-search="posturedial态势仪表posturedialposturechip态势标签">
+
+          
+          <a class="rf-sum" href="#posture-dial">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Posture Dial</span><span class="l-zh">态势仪表</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A single dial-shaped readout summarising whether the overall backdrop currently leans risk-on, risk-off, or neutral.
+</span><span class="l-zh">一个仪表状的综合读数，概括当前整体环境偏向风险偏好、风险规避，还是中性。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+            <p class="rf-alias"><span class="eyebrow rf-eb"><span class="l-en">Also called</span><span class="l-zh">也称</span></span>
+              <span class="l-en">posture chip</span><span class="l-zh">态势标签</span></p>
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A single dial-shaped readout summarising whether the overall backdrop currently leans risk-on, risk-off, or neutral.
+</span><span class="l-zh">一个仪表状的综合读数，概括当前整体环境偏向风险偏好、风险规避，还是中性。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It gives a one-glance summary of overall tone before you look at any individual factor.
+</span><span class="l-zh">在查看任何单项因子之前，先给出整体基调的一目了然的总结。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical dial position (risk-on / neutral / risk-off)</span><span class="l-zh">仪表位置分类（风险偏好／中性／风险规避）</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A risk-on reading suggests the backdrop is currently leaning supportive.
+</span><span class="l-zh">风险偏好读数表示当前环境偏向支持性。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A risk-off reading suggests the backdrop is currently leaning defensive.
+</span><span class="l-zh">风险规避读数表示当前环境偏向防御性。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A neutral reading means the summary factors are not leaning clearly either way.
+</span><span class="l-zh">中性读数表示各项综合因子暂未明显偏向任一方向。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This is a summary readout of other factors already on the page, not an independent forecast, and it is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">这是对页面上其他因子的综合总结，并非独立预测，也不构成任何买入、卖出或仓位建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-v5-sentiment"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#market-regime"><span class="l-en">Market Regime</span><span class="l-zh">市场状态</span></a><a href="#risk-on-risk-off"><span class="l-en">Risk-On / Risk-Off</span><span class="l-zh">风险偏好／避险</span></a></p>
             
 
             <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
@@ -755,10 +1386,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -861,10 +1493,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -968,10 +1601,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1067,10 +1701,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1173,10 +1808,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1285,10 +1921,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1397,10 +2034,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="whitehouse.html#treasury-watch"><span class="l-en">Treasury Watch</span><span class="l-zh">财政部观察</span></a></p>
+              
             </div>
 
             
@@ -1508,10 +2146,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1614,10 +2253,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1719,10 +2359,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1828,10 +2469,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -1938,10 +2580,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -2054,10 +2697,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#real"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2160,10 +2804,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#curve"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2270,10 +2915,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#real"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2378,10 +3024,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#curve"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2488,10 +3135,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#curve"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2606,10 +3254,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#credit"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2714,10 +3363,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="bonds.html#credit"><span class="l-en">Bonds</span><span class="l-zh">债券</span></a></p>
+              
             </div>
 
             
@@ -2741,7 +3391,7 @@
       <section class="rf-group" data-group="breadth-participation">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Breadth &amp; Participation</span><span class="l-zh">广度与参与度</span></span>
-          <span class="rf-grp-c tnum" data-count-group="breadth-participation">2</span>
+          <span class="rf-grp-c tnum" data-count-group="breadth-participation">4</span>
         </h2>
 
         
@@ -2832,10 +3482,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -2845,6 +3496,108 @@
             
             <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
               <a href="#market-breadth"><span class="l-en">Market Breadth</span><span class="l-zh">市场广度</span></a><a href="#evidence-trend"><span class="l-en">Trend Factor</span><span class="l-zh">趋势因子</span></a><a href="#market-state-score"><span class="l-en">Market State Score</span><span class="l-zh">市场状态分</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="leadership-rotation"
+                 data-kind="indicator" data-family="breadth-participation"
+                 data-initial="L" data-search="leadershiprotation领涨与轮动leadershiprotation">
+
+          
+          <a class="rf-sum" href="#leadership-rotation">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Leadership &amp; Rotation</span><span class="l-zh">领涨与轮动</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A view of which sectors or factors have been taking over the lead from others recently, showing rotation over time.
+</span><span class="l-zh">展示近期哪些板块或风格因子正在接替领涨地位，反映资金轮动的变化。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A view of which sectors or factors have been taking over the lead from others recently, showing rotation over time.
+</span><span class="l-zh">展示近期哪些板块或风格因子正在接替领涨地位，反映资金轮动的变化。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">Rotation between leaders can be an early sign that the market&#39;s preferences are shifting.
+</span><span class="l-zh">领涨板块之间的轮动，可能是市场偏好正在转变的早期迹象。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Ranked change in relative leadership over recent windows</span><span class="l-zh">近期窗口内相对领涨地位排名的变化</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A new leader emerging suggests a possible shift in market preference.
+</span><span class="l-zh">出现新的领涨板块，可能意味着市场偏好正在转变。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A former leader fading suggests that theme may be losing momentum.
+</span><span class="l-zh">此前的领涨板块走弱，可能意味着该主题的动能正在减弱。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">Stable leadership with little rotation is common in steady, trending markets.
+</span><span class="l-zh">在稳定的趋势性市场中，领涨地位保持稳定、轮动较少的情况较为常见。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This describes recent rotation, not a forecast of future leadership, and it is not a recommendation to buy or sell any sector or factor.</span><span class="l-zh">这描述的是近期的轮动情况，并非对未来领涨格局的预测，也不构成任何买卖建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#advanced-breadth"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#sector-heat"><span class="l-en">Sector Heat</span><span class="l-zh">板块热力</span></a></p>
             
 
             <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
@@ -2940,10 +3693,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -2959,14 +3713,215 @@
           </div>
         </article>
         
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="sector-heat"
+                 data-kind="indicator" data-family="breadth-participation"
+                 data-initial="S" data-search="sectorheat板块热力sectorheat">
+
+          
+          <a class="rf-sum" href="#sector-heat">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Sector Heat</span><span class="l-zh">板块热力</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A strip of sector tiles colored by recent relative performance, so the strongest and weakest sectors stand out visually.
+</span><span class="l-zh">一排按近期相对表现着色的板块方块，使表现最强与最弱的板块直观突出。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A strip of sector tiles colored by recent relative performance, so the strongest and weakest sectors stand out visually.
+</span><span class="l-zh">一排按近期相对表现着色的板块方块，使表现最强与最弱的板块直观突出。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It shows which parts of the market are currently leading or lagging, which is useful context for where strength is concentrated.
+</span><span class="l-zh">展示当前市场中哪些板块领先或落后，有助于了解强势资金的集中方向。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Relative performance rank per sector, colour-coded</span><span class="l-zh">各板块相对表现排名，以颜色区分</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A hot sector has been outperforming the broader market recently.
+</span><span class="l-zh">热力较高的板块近期跑赢大盘。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A cold sector has been underperforming the broader market recently.
+</span><span class="l-zh">热力较低的板块近期跑输大盘。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A broadly even strip means leadership is not currently concentrated in a few sectors.
+</span><span class="l-zh">若各板块热力较为均匀，说明当前领涨力量并未集中在少数板块。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This shows recent relative performance, not a forecast of which sector will lead next, and it is not a recommendation to buy or sell any sector.</span><span class="l-zh">这展示的是近期相对表现，并非对下一阶段领涨板块的预测，也不构成任何买卖建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#advanced-breadth"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#leadership-rotation"><span class="l-en">Leadership &amp; Rotation</span><span class="l-zh">领涨与轮动</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
       </section>
     
       <section class="rf-group" data-group="flows-positioning">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Flows &amp; Positioning</span><span class="l-zh">资金流与持仓</span></span>
-          <span class="rf-grp-c tnum" data-count-group="flows-positioning">1</span>
+          <span class="rf-grp-c tnum" data-count-group="flows-positioning">2</span>
         </h2>
 
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="insider-buy"
+                 data-kind="indicator" data-family="flows-positioning"
+                 data-initial="I" data-search="insiderbuychip内部人买入标签insiderbuy">
+
+          
+          <a class="rf-sum" href="#insider-buy">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Insider Buy Chip</span><span class="l-zh">内部人买入标签</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A chip flagging that a company insider has recently reported buying shares in the open market.
+</span><span class="l-zh">一个标签，标记公司内部人近期在公开市场申报买入股票的行为。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A chip flagging that a company insider has recently reported buying shares in the open market.
+</span><span class="l-zh">一个标签，标记公司内部人近期在公开市场申报买入股票的行为。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">Insider buying can be a data point worth noting alongside everything else you already look at, since insiders sometimes have informed views on their own company.
+</span><span class="l-zh">内部人买入行为可以作为一项值得留意的数据点，因为内部人有时对自家公司持有更为了解的判断。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Presence/absence flag from recent public insider filings</span><span class="l-zh">来自近期公开内部人申报记录的有无标记</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A recent insider buy has been reported for this name.
+</span><span class="l-zh">该股票近期出现内部人买入申报。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">No recent insider buy has been reported for this name.
+</span><span class="l-zh">该股票近期未出现内部人买入申报。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">Absence of a reported buy does not itself mean anything negative — most names have no insider activity most of the time.
+</span><span class="l-zh">未出现买入申报本身并不代表负面信号——大多数股票在大多数时间都没有内部人交易活动。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This reflects public regulatory filings only and is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">该数据仅反映公开监管申报信息，不构成任何买入、卖出或仓位建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#action-board"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
         
         <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
         <article class="rf-e" id="positioning"
@@ -3055,10 +4010,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -3079,9 +4035,108 @@
       <section class="rf-group" data-group="calendar-events">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Calendar &amp; Events</span><span class="l-zh">日历与事件</span></span>
-          <span class="rf-grp-c tnum" data-count-group="calendar-events">3</span>
+          <span class="rf-grp-c tnum" data-count-group="calendar-events">5</span>
         </h2>
 
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="factor-seasonality"
+                 data-kind="indicator" data-family="calendar-events"
+                 data-initial="F" data-search="factorseasonalitychip因子季节性标签factorseasonality">
+
+          
+          <a class="rf-sum" href="#factor-seasonality">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Factor Seasonality Chip</span><span class="l-zh">因子季节性标签</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A chip summarising how a factor or sector has historically tended to perform during the current calendar window, based on past years.
+</span><span class="l-zh">一个标签，基于历史年份数据，概括某一风格因子或板块在当前日历窗口通常的表现倾向。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A chip summarising how a factor or sector has historically tended to perform during the current calendar window, based on past years.
+</span><span class="l-zh">一个标签，基于历史年份数据，概括某一风格因子或板块在当前日历窗口通常的表现倾向。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It adds calendar-based historical context, which is one input among many rather than a standalone reason to act.
+</span><span class="l-zh">它提供了基于日历的历史背景信息，属于众多参考因素之一，而非单独的行动依据。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Historical average seasonal tendency over past calendar windows</span><span class="l-zh">过去日历窗口内的历史平均季节性倾向</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A historically favourable seasonal window for this factor or sector.
+</span><span class="l-zh">该风格因子或板块历史上在此日历窗口表现相对有利。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A historically unfavourable seasonal window for this factor or sector.
+</span><span class="l-zh">该风格因子或板块历史上在此日历窗口表现相对不利。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A neutral seasonal read means history shows no strong tendency either way.
+</span><span class="l-zh">中性的季节性读数表示历史数据未显示出明显的偏向。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This is a historical seasonal tendency, not a forecast, and it is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">这是一种历史季节性倾向，并非预测，也不构成任何买入、卖出或仓位建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#dash-mtf-section"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
         
         <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
         <article class="rf-e" id="high-impact-event"
@@ -3161,10 +4216,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#sx-events-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -3261,10 +4317,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="committee.html#cm_rebalance_pulse_section"><span class="l-en">Committee</span><span class="l-zh">委员会</span></a></p>
+              
             </div>
 
             
@@ -3274,6 +4331,108 @@
             
             <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
               <a href="#surprise-skew"><span class="l-en">Surprise Skew</span><span class="l-zh">数据意外偏向</span></a><a href="#high-impact-event"><span class="l-en">High-Impact Event</span><span class="l-zh">高影响力事件</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="sue-earnings-surprise"
+                 data-kind="indicator" data-family="calendar-events"
+                 data-initial="S" data-search="sueearningssurprisesue盈余惊喜sueearningssurprisestandardizedunexpectedearnings标准化未预期盈余">
+
+          
+          <a class="rf-sum" href="#sue-earnings-surprise">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">SUE Earnings Surprise</span><span class="l-zh">SUE 盈余惊喜</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A chip showing how far a company&#39;s reported earnings deviated from analyst expectations, scaled to be comparable across companies.
+</span><span class="l-zh">一个标签，显示公司公布的盈余与分析师预期的偏离程度，并按可比口径进行了标准化处理。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+            <p class="rf-alias"><span class="eyebrow rf-eb"><span class="l-en">Also called</span><span class="l-zh">也称</span></span>
+              <span class="l-en">standardized unexpected earnings</span><span class="l-zh">标准化未预期盈余</span></p>
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A chip showing how far a company&#39;s reported earnings deviated from analyst expectations, scaled to be comparable across companies.
+</span><span class="l-zh">一个标签，显示公司公布的盈余与分析师预期的偏离程度，并按可比口径进行了标准化处理。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">A large surprise in either direction can be a meaningful event for a stock in the days around its earnings report.
+</span><span class="l-zh">无论方向如何，较大的盈余意外通常是该股票财报前后值得关注的重要事件。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Standardized surprise score relative to analyst estimates</span><span class="l-zh">相对于分析师预期的标准化意外分数</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A positive surprise means reported earnings came in above analyst expectations.
+</span><span class="l-zh">正向意外表示公布的盈余高于分析师预期。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A negative surprise means reported earnings came in below analyst expectations.
+</span><span class="l-zh">负向意外表示公布的盈余低于分析师预期。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A surprise near zero means results were broadly in line with expectations.
+</span><span class="l-zh">接近零的意外值表示业绩基本符合预期。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This describes a past reported result, not a forecast of the next report, and it is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">这描述的是已公布的历史结果，并非对下一次财报的预测，也不构成任何买卖建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#dash-mtf-section"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
             
 
             <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
@@ -3368,10 +4527,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#sx-events-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -3395,9 +4555,113 @@
       <section class="rf-group" data-group="doctrine">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Doctrine</span><span class="l-zh">方法论词汇</span></span>
-          <span class="rf-grp-c tnum" data-count-group="doctrine">3</span>
+          <span class="rf-grp-c tnum" data-count-group="doctrine">5</span>
         </h2>
 
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="buy-readiness"
+                 data-kind="indicator" data-family="doctrine"
+                 data-initial="B" data-search="buyreadinesssetupscore买入准备度形态分buyreadiness">
+
+          
+          <a class="rf-sum" href="#buy-readiness">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Buy-Readiness / Setup Score</span><span class="l-zh">买入准备度／形态分</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A score summarising how many of a checklist of technical conditions a stock currently satisfies.
+</span><span class="l-zh">一项分数，概括个股当前满足了多少项技术条件清单。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A score summarising how many of a checklist of technical conditions a stock currently satisfies.
+</span><span class="l-zh">一项分数，概括个股当前满足了多少项技术条件清单。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It condenses a checklist into a single readout so you do not have to check every condition by hand.
+</span><span class="l-zh">将一份检查清单浓缩为单一读数，省去逐项人工核对的步骤。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Count of checklist conditions satisfied, out of a fixed total</span><span class="l-zh">满足的检查清单条件数量（占固定总数的比例）</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A higher score means more of the checklist conditions are currently satisfied.
+</span><span class="l-zh">分数越高，表示满足的检查清单条件越多。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A lower score means fewer of the checklist conditions are currently satisfied.
+</span><span class="l-zh">分数越低，表示满足的检查清单条件越少。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A mid-range score means the setup is partial rather than clearly present or absent.
+</span><span class="l-zh">中等分数表示形态条件部分满足，既非明确具备，也非完全不具备。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This explains what the marker means. It is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">此处只说明该标记的含义，不构成任何买入、卖出或仓位建议。</span></li>
+              
+                <li><span class="l-en">The checklist is a technical read of price and volume history, not a forecast of future returns.</span><span class="l-zh">该清单是对价格与成交量历史的技术性解读，并非对未来回报的预测。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#action-board"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#entry-timing"><span class="l-en">Entry Timing Dot</span><span class="l-zh">入场时机点</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
         
         <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
         <article class="rf-e" id="confidence-tier"
@@ -3479,10 +4743,12 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="aibrief.html"><span class="l-en">AI Briefing</span><span class="l-zh">AI 简报</span></a></p>
+              <p class="rf-unlinked"><span class="l-en">We can’t link straight to it on that page yet — open the page and look for this name.</span><span class="l-zh">暂时无法直接跳转到该页面上的位置——打开页面后按名称查找。</span></p>
+              
             </div>
 
             
@@ -3492,6 +4758,110 @@
             
             <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
               <a href="#signal-divergence"><span class="l-en">Signal Divergence</span><span class="l-zh">信号分歧</span></a><a href="#market-regime"><span class="l-en">Market Regime</span><span class="l-zh">市场状态</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="entry-timing"
+                 data-kind="indicator" data-family="doctrine"
+                 data-initial="E" data-search="entrytimingdot入场时机点entrytiming">
+
+          
+          <a class="rf-sum" href="#entry-timing">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Entry Timing Dot</span><span class="l-zh">入场时机点</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A small dot indicating whether current price action looks like a typical early-stage setup, based on a fixed technical checklist.
+</span><span class="l-zh">一个小圆点，基于固定的技术检查清单，指示当前价格走势是否呈现出典型的早期形态特征。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A small dot indicating whether current price action looks like a typical early-stage setup, based on a fixed technical checklist.
+</span><span class="l-zh">一个小圆点，基于固定的技术检查清单，指示当前价格走势是否呈现出典型的早期形态特征。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It flags a specific technical pattern in the price history for you to look at more closely if you choose to.
+</span><span class="l-zh">它标记出价格历史中的一种特定技术形态，供你在需要时进一步查看。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical dot state from a fixed technical checklist</span><span class="l-zh">基于固定技术检查清单得出的分类圆点状态</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A lit dot means the current pattern matches the checklist&#39;s early-stage criteria.
+</span><span class="l-zh">圆点点亮表示当前形态符合清单中的早期阶段标准。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">An unlit dot means the current pattern does not currently match those criteria.
+</span><span class="l-zh">圆点未点亮表示当前形态尚不符合上述标准。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">The dot describes pattern shape only and carries no view on direction by itself.
+</span><span class="l-zh">该圆点仅描述形态特征，本身不包含方向性判断。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This explains what the marker means. It is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">此处只说明该标记的含义，不构成任何买入、卖出或仓位建议。</span></li>
+              
+                <li><span class="l-en">This is a technical pattern read, not a forecast of future price direction.</span><span class="l-zh">这是一种技术形态解读，并非对未来价格方向的预测。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#action-board"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#buy-readiness"><span class="l-en">Buy-Readiness / Setup Score</span><span class="l-zh">买入准备度／形态分</span></a></p>
             
 
             <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
@@ -3576,10 +4946,12 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="aibrief.html"><span class="l-en">AI Briefing</span><span class="l-zh">AI 简报</span></a></p>
+              <p class="rf-unlinked"><span class="l-en">We can’t link straight to it on that page yet — open the page and look for this name.</span><span class="l-zh">暂时无法直接跳转到该页面上的位置——打开页面后按名称查找。</span></p>
+              
             </div>
 
             
@@ -3672,10 +5044,12 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="aibrief.html"><span class="l-en">AI Briefing</span><span class="l-zh">AI 简报</span></a></p>
+              <p class="rf-unlinked"><span class="l-en">We can’t link straight to it on that page yet — open the page and look for this name.</span><span class="l-zh">暂时无法直接跳转到该页面上的位置——打开页面后按名称查找。</span></p>
+              
             </div>
 
             
@@ -3696,9 +5070,108 @@
       <section class="rf-group" data-group="cross-asset-basics">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Cross-Asset Basics</span><span class="l-zh">跨资产基础</span></span>
-          <span class="rf-grp-c tnum" data-count-group="cross-asset-basics">4</span>
+          <span class="rf-grp-c tnum" data-count-group="cross-asset-basics">6</span>
         </h2>
 
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="alpha-chip"
+                 data-kind="indicator" data-family="cross-asset-basics"
+                 data-initial="A" data-search="alphaαchipalphaα标签alphachip">
+
+          
+          <a class="rf-sum" href="#alpha-chip">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Alpha (α) Chip</span><span class="l-zh">Alpha (α) 标签</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A small chip showing a stock&#39;s recent return in excess of what the broader market&#39;s move alone would explain.
+</span><span class="l-zh">一个小标签，显示个股近期回报中超出大盘整体走势可解释部分的部分。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A small chip showing a stock&#39;s recent return in excess of what the broader market&#39;s move alone would explain.
+</span><span class="l-zh">一个小标签，显示个股近期回报中超出大盘整体走势可解释部分的部分。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It separates a stock&#39;s own performance from moves that simply tracked the overall market.
+</span><span class="l-zh">有助于区分个股自身的表现与单纯跟随大盘走势带来的收益。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Excess return versus a market benchmark, percent</span><span class="l-zh">相对于市场基准的超额回报，百分比表示</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">A positive value means the stock has outperformed the broader market recently.
+</span><span class="l-zh">正值表示该股票近期跑赢大盘。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A negative value means the stock has underperformed the broader market recently.
+</span><span class="l-zh">负值表示该股票近期跑输大盘。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">A value near zero means the stock has moved roughly in line with the market.
+</span><span class="l-zh">接近零的数值表示该股票走势与大盘大致同步。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This is a backward-looking measure of past excess return, not a forecast, and it is not a recommendation to buy, sell, or size anything.</span><span class="l-zh">这是对过去超额回报的回顾性度量，并非预测，也不构成任何买入、卖出或仓位建议。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#equity-scoreboard"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
         
         <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
         <article class="rf-e" id="correlation-regime"
@@ -3789,10 +5262,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -3896,10 +5370,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#sx-markets-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -3996,10 +5471,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#sx-v5-sentiment"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -4009,6 +5485,108 @@
             
             <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
               <a href="#risk-on-risk-off"><span class="l-en">Risk-On / Risk-Off</span><span class="l-zh">风险偏好／避险</span></a><a href="#dollar-index"><span class="l-en">Dollar Index</span><span class="l-zh">美元指数</span></a><a href="#drawdown"><span class="l-en">Drawdown</span><span class="l-zh">回撤</span></a></p>
+            
+
+            <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
+          </div>
+        </article>
+        
+        <!-- ══ one entry. The ONLY id on the page that matters. ══ -->
+        <article class="rf-e" id="multi-timeframe-tape"
+                 data-kind="indicator" data-family="cross-asset-basics"
+                 data-initial="M" data-search="multitimeframetape多周期行情表multitimeframetape">
+
+          
+          <a class="rf-sum" href="#multi-timeframe-tape">
+            <span class="rf-hash" aria-hidden="true">#</span>
+            <span class="rf-label">
+              <span class="l-en">Multi-Timeframe Tape</span><span class="l-zh">多周期行情表</span>
+            </span>
+            <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
+            <span class="rf-gloss">
+              <span class="l-en">A table showing the same set of assets across several time windows (for example a day, a week, and a month) side by side.
+</span><span class="l-zh">一张表格，将同一批资产在多个时间窗口（例如一日、一周、一月）的表现并排展示。</span>
+            </span>
+          </a>
+
+          
+          <div class="rf-body">
+
+            
+            
+
+            
+            
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
+              <p class="rf-def"><span class="l-en">A table showing the same set of assets across several time windows (for example a day, a week, and a month) side by side.
+</span><span class="l-zh">一张表格，将同一批资产在多个时间窗口（例如一日、一周、一月）的表现并排展示。</span></p>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
+              <p><span class="l-en">It helps separate a short-lived wiggle from a move that is showing up across multiple timeframes at once.
+</span><span class="l-zh">有助于区分短暂波动与在多个周期上同时出现的持续走势。</span></p>
+            </div>
+
+            
+            
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent change per asset per timeframe</span><span class="l-zh">按资产与周期划分的涨跌幅百分比</span></span></p>
+            
+
+            
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">How to read it</span><span class="l-zh">怎么读</span></h3>
+              <dl class="rf-ledger">
+                
+                <div class="rf-lg-row rf-lg--up">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
+                  <dd><span class="l-en">Consistent direction across timeframes suggests a more established move.
+</span><span class="l-zh">各周期方向一致，通常代表趋势更为确立。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--down">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
+                  <dd><span class="l-en">A short-term move that disagrees with longer timeframes may be noise.
+</span><span class="l-zh">短周期表现与更长周期相悖时，可能只是短期噪音。</span></dd>
+                </div>
+                
+                <div class="rf-lg-row rf-lg--flat">
+                  <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
+                  <dd><span class="l-en">Mixed signs across timeframes are common in choppy, range-bound markets.
+</span><span class="l-zh">在震荡整理的市场中，各周期方向不一致的情况较为常见。</span></dd>
+                </div>
+              </dl>
+            </div>
+
+            
+            
+            <div class="rf-blk rf-caveats">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
+              <ul>
+                <li><span class="l-en">This is a descriptive price table, not a ranking or a buy/sell signal.</span><span class="l-zh">这是一张描述性的价格表格，并非排名或买卖信号。</span></li>
+              </ul>
+            </div>
+
+            
+            <div class="rf-blk">
+              <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-markets-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
+            </div>
+
+            
+            
+
+            
+            
+            <p class="rf-rel"><span class="eyebrow rf-eb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+              <a href="#risk-on-risk-off"><span class="l-en">Risk-On / Risk-Off</span><span class="l-zh">风险偏好／避险</span></a></p>
             
 
             <p class="rf-closewrap"><a class="rf-close" href="#rf-top"><span class="l-en">Close</span><span class="l-zh">收起</span></a></p>
@@ -4102,10 +5680,11 @@
             </div>
 
             
-            
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
+              
               <p class="rf-links"><a class="rf-owner" href="macro.html#sx-v5-sentiment"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              
             </div>
 
             
@@ -4124,13 +5703,91 @@
       </section>
     
     </div>
+
+    
+    
+    <section class="rf-cov" id="coverage" aria-labelledby="rf-cov-h">
+      <h2 class="rf-cov-h" id="rf-cov-h"><span class="l-en">Not defined under their own name</span><span class="l-zh">未单独列条的元素</span></h2>
+      <p class="rf-cov-lead">
+        <span class="l-en"><span class="tnum">4</span> dashboard elements are listed here instead of above, and why.</span>
+        <span class="l-zh">有 <span class="tnum">4</span> 项看板元素列在此处而非上方，并说明原因。</span>
+      </p>
+      <ul class="rf-cov-list">
+      
+        <li class="rf-cov-row rf-cov-row--not_an_indicator">
+          <span class="rf-cov-el">
+            <span class="l-en">Prophet Stock Signals Board</span><span class="l-zh">个股信号看板</span>
+            <span class="rf-cov-where"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></span>
+          </span>
+          <span class="rf-cov-state">
+            <span class="l-en">Not a measure</span><span class="l-zh">不是一项指标</span>
+            
+          </span>
+          <span class="rf-cov-why">
+            <span class="l-en">A board of names, not a measure. The fields on each card are explained individually — see Alpha, Buy-Readiness, Entry Timing and Insider Buy.
+</span><span class="l-zh">这是一个名单看板，不是一项指标。卡片上的各个字段单独解释——见 Alpha、买入准备度、入场时机与内部人买入。
+</span>
+            <span class="rf-cov-see"><span class="eyebrow rf-eb"><span class="l-en">See</span><span class="l-zh">见</span></span><a href="#alpha-chip"><span class="l-en">Alpha (α) Chip</span><span class="l-zh">Alpha (α) 标签</span></a><a href="#buy-readiness"><span class="l-en">Buy-Readiness / Setup Score</span><span class="l-zh">买入准备度／形态分</span></a><a href="#entry-timing"><span class="l-en">Entry Timing Dot</span><span class="l-zh">入场时机点</span></a><a href="#insider-buy"><span class="l-en">Insider Buy Chip</span><span class="l-zh">内部人买入标签</span></a></span>
+          </span>
+        </li>
+      
+        <li class="rf-cov-row rf-cov-row--not_an_indicator">
+          <span class="rf-cov-el">
+            <span class="l-en">Sector Act-Now Board</span><span class="l-zh">行业行动看板</span>
+            <span class="rf-cov-where"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></span>
+          </span>
+          <span class="rf-cov-state">
+            <span class="l-en">Not a measure</span><span class="l-zh">不是一项指标</span>
+            
+          </span>
+          <span class="rf-cov-why">
+            <span class="l-en">A ranked table, not a measure. The inputs it displays are explained under Sector Heat and Leadership &amp; Rotation.
+</span><span class="l-zh">这是一张排序表格，不是一项指标。其展示的输入在“板块热力”和“领涨与轮动”条目中解释。
+</span>
+            <span class="rf-cov-see"><span class="eyebrow rf-eb"><span class="l-en">See</span><span class="l-zh">见</span></span><a href="#sector-heat"><span class="l-en">Sector Heat</span><span class="l-zh">板块热力</span></a><a href="#leadership-rotation"><span class="l-en">Leadership &amp; Rotation</span><span class="l-zh">领涨与轮动</span></a></span>
+          </span>
+        </li>
+      
+        <li class="rf-cov-row rf-cov-row--covered_by">
+          <span class="rf-cov-el">
+            <span class="l-en">Regime Badge</span><span class="l-zh">市场状态徽标</span>
+            <span class="rf-cov-where"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></span>
+          </span>
+          <span class="rf-cov-state">
+            <span class="l-en">Explained under another name</span><span class="l-zh">已在其他条目中说明</span>
+            
+          </span>
+          <span class="rf-cov-why">
+            
+            <span class="rf-cov-see"><span class="eyebrow rf-eb"><span class="l-en">See</span><span class="l-zh">见</span></span><a href="#market-regime"><span class="l-en">Market Regime</span><span class="l-zh">市场状态</span></a></span>
+          </span>
+        </li>
+      
+        <li class="rf-cov-row rf-cov-row--covered_by">
+          <span class="rf-cov-el">
+            <span class="l-en">Posture Chip</span><span class="l-zh">态势标签</span>
+            <span class="rf-cov-where"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></span>
+          </span>
+          <span class="rf-cov-state">
+            <span class="l-en">Explained under another name</span><span class="l-zh">已在其他条目中说明</span>
+            
+          </span>
+          <span class="rf-cov-why">
+            
+            <span class="rf-cov-see"><span class="eyebrow rf-eb"><span class="l-en">See</span><span class="l-zh">见</span></span><a href="#posture-dial"><span class="l-en">Posture Dial</span><span class="l-zh">态势仪表</span></a></span>
+          </span>
+        </li>
+      
+      </ul>
+    </section>
+    
   </main>
 </div>
 
 <!-- ══ L1 §3 · footer — the authority ceiling, in plain words, once ═══════════ -->
 <footer class="rf-foot">
   <span class="l-en">Reference only — definitions, not calls. No live market values appear on this page.</span><span class="l-zh">仅供参考 — 只有释义，不含判断。本页不显示任何实时行情数值。</span>
-  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-05 00:00 UTC</span>.
+  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-06 06:30 UTC</span>.
 </footer>
 
 <script>
@@ -4440,7 +6097,6 @@
   applyFilters();
 })();
 </script>
-<script src="theme.js?v=53939d13" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
+<script src="theme.js"></script>
 </body>
 </html>

@@ -7163,6 +7163,20 @@ body.page-macro.mx4-grid .mx5-deep-chip:hover{
 }
 [data-theme="light"] body.page-macro.mx4-grid .mx5-deep-chip:hover{
   border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.04);}
+/* Look-up row. Same chip component as .mx5-deep-chips; only the mark differs.
+   The # is the library's own mark (it is the reveal glyph on reference.html's
+   index lines) — it appears on the dashboard wherever a definition is one click
+   away, and nowhere else. One idea, two surfaces. */
+body.page-macro.mx4-grid .mx5-deep-chips--ref{padding-top:8px;border-top:0;}
+body.page-macro.mx4-grid .mx5-ref-hash{font-weight:600;margin-right:1px;}
+/* DARK: hold the mark back with opacity — on graphite, depth is the quiet axis
+   and a full-strength glyph would read as a bullet.
+   LIGHT: opacity on white is contrast LOSS, so light restores full colour and
+   adds weight instead. Same emphasis, opposite mechanism. */
+body.page-macro.mx4-grid .mx5-ref-hash{opacity:.55;}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-ref-hash{opacity:1;font-weight:700;
+  color:var(--ink-3,rgba(0,0,0,.42));}
+body.page-macro.mx4-grid .mx5-ref-chip:hover .mx5-ref-hash{opacity:1;}
 @media(max-width:760px){
   body.page-macro.mx4-grid .wnx-cards{grid-template-columns:1fr;}
 }
@@ -11896,6 +11910,17 @@ html[data-theme="light"] :is(
         <a class="mx5-deep-chip" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
         <a class="mx5-deep-chip" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
         <a class="mx5-deep-chip" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
+      </div>
+      {# Look up row — definitions for exactly the faces this rack renders.
+         Same chip component as the More row; the leading # is the library's mark. #}
+      <div class="mx5-deep-chips mx5-deep-chips--ref">
+        <span class="mx5-deep-chips-lbl"><span class="l-en">Look up</span><span class="l-zh">查询</span></span>
+        <a class="mx5-deep-chip mx5-ref-chip" href="reference.html#market-state-score"><span class="mx5-ref-hash" aria-hidden="true">#</span><span class="l-en">Market State Score</span><span class="l-zh">市场状态分</span></a>
+        <a class="mx5-deep-chip mx5-ref-chip" href="reference.html#regime-quadrant"><span class="mx5-ref-hash" aria-hidden="true">#</span><span class="l-en">Regime Quadrant</span><span class="l-zh">状态象限</span></a>
+        <a class="mx5-deep-chip mx5-ref-chip" href="reference.html#transition-state"><span class="mx5-ref-hash" aria-hidden="true">#</span><span class="l-en">Transition State</span><span class="l-zh">转换状态</span></a>
+        <a class="mx5-deep-chip mx5-ref-chip" href="reference.html#risk-radar"><span class="mx5-ref-hash" aria-hidden="true">#</span><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></a>
+        <a class="mx5-deep-chip mx5-ref-chip" href="reference.html#evidence-matrix"><span class="mx5-ref-hash" aria-hidden="true">#</span><span class="l-en">Evidence Matrix</span><span class="l-zh">证据矩阵</span></a>
+        <a class="mx5-deep-chip mx5-ref-chip" href="reference.html#sector-heat"><span class="mx5-ref-hash" aria-hidden="true">#</span><span class="l-en">Sector Heat</span><span class="l-zh">板块热力</span></a>
       </div>
     </div>
   </div>{# /sx-deep-context #}
