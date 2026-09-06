@@ -1,0 +1,70 @@
+# Country political/policy-stance dossier — Japan. Hand-curated, source-cited.
+# Context tier only (authority_ceiling: context_only): never feeds a score, regime or rank.
+# No feed exists or is licensed for this layer; every row cites a primary document. Curator: research packet A-F02-W2-2, reviewed 2026-09-06.
+dossier: jp
+schema: country_dossier.v1
+rev: 1
+region: JP
+tier: context_only
+reviewed_at: 2026-09-06
+review_interval_days: 180
+rights: public
+
+stance:
+  key: tightening_bias
+  claim: INFERENCE
+  known_at: 2026-07-31
+  evidence:
+    source_url: https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k260731a.pdf
+    publisher: {en: "Bank of Japan", zh: "日本银行"}
+    document: {en: "Statement on Monetary Policy", zh: "货币政策声明"}
+    version: "2026-07-31"
+
+seats:
+  - key: head_of_government
+    role: {en: "Prime Minister", zh: "首相"}
+    institution: {en: "Cabinet of Japan", zh: "日本内阁"}
+    holder: {en: "TAKAICHI Sanae", zh: "高市早苗"}
+    since: 2026-02-18
+    note: {en: "Leads the Cabinet and sets the government's overall policy direction.", zh: "领导内阁，决定政府总体政策方向。"}
+    claim: FACT
+    known_at: 2026-09-06
+    jurisdiction: settled
+    rights: public
+    evidence:
+      source_url: https://japan.kantei.go.jp/105/actions/202602/index.html
+      publisher: {en: "Prime Minister's Office of Japan", zh: "日本首相官邸"}
+      document: {en: "Prime Minister in Action — February 2026", zh: "内阁总理大臣活动记录（2026年2月）"}
+      version: "2026-02-18"
+
+  - key: central_bank
+    role: {en: "Governor", zh: "行长"}
+    institution: {en: "Bank of Japan", zh: "日本银行"}
+    holder: {en: "UEDA Kazuo", zh: "植田和男"}
+    since: 2023-04-10
+    note: {en: "Sets the policy rate and the pace of bond purchases.", zh: "决定政策利率与购债节奏。"}
+    claim: FACT
+    known_at: 2026-09-06
+    jurisdiction: settled
+    rights: public
+    evidence:
+      source_url: https://www.boj.or.jp/en/about/organization/policyboard/index.htm
+      publisher: {en: "Bank of Japan", zh: "日本银行"}
+      document: {en: "Policy Board members", zh: "政策委员会成员名单"}
+      version: "2026-09-06"
+
+  - key: finance
+    role: {en: "Minister of Finance", zh: "财务大臣"}
+    institution: {en: "Ministry of Finance", zh: "财务省"}
+    holder: {en: "KATAYAMA Satsuki", zh: "片山さつき"}
+    since: 2026-02-18
+    note: {en: "Oversees the national budget, taxation and financial regulation policy.", zh: "负责国家预算、税收与金融监管政策。"}
+    claim: FACT
+    known_at: 2026-09-06
+    jurisdiction: settled
+    rights: public
+    evidence:
+      source_url: https://japan.kantei.go.jp/105/meibo/daijin/katayama_satsuki.html
+      publisher: {en: "Prime Minister's Office of Japan", zh: "日本首相官邸"}
+      document: {en: "Cabinet member profile — Katayama Satsuki", zh: "内阁成员简介－片山さつき"}
+      version: "2026-02"

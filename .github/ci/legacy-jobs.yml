@@ -289,6 +289,22 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  country-dossier:
+    if: ${{ false }}
+    gate: code
+    # Country political/policy-stance dossier (A-F02-W2-2): leaf producer schema,
+    # typed nulls, fail-closed validate_view gate, and the international macro
+    # dashboard suite that must still pass at the same head.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest pyyaml pandas jinja2
+      - name: country policy dossier — schema, typed nulls and fail-closed contract
+        run: python -m pytest tests/test_country_dossier.py tests/test_international_macro_dashboards.py -q
+
   all-exports-resolve:
     if: ${{ false }}
     gate: code

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from pathlib import Path
 
@@ -116,7 +117,7 @@ def test_decision_score_is_bounded_deterministic_and_not_the_calibrated_probabil
     assert first == second
     assert 0 <= first <= 100
     assert round(sum(parts.values())) == first
-    view = build_country_view(record, _history(), today=date(2026, 7, 30))
+    view = build_country_view(record, _history(), today=date(2026, 9, 6))
     assert view["decision"]["score"] == first
     assert view["risk"]["h21"] == pytest.approx(0.21)
     assert "not a forecast" in view["decision"]["method_en"]
@@ -124,7 +125,7 @@ def test_decision_score_is_bounded_deterministic_and_not_the_calibrated_probabil
 
 
 def test_missing_release_stays_missing_and_stale_release_is_named() -> None:
-    missing = build_country_view(_record("IN", missing=True), today=date(2026, 7, 30))
+    missing = build_country_view(_record("IN", missing=True), today=date(2026, 9, 6))
     assert missing["regime"]["data_limited"] is True
     assert {item["state"] for item in missing["health"]} >= {"missing"}
     cpi = next(metric for metric in missing["metrics"] if metric["key"] == "cpi_yoy")
@@ -133,7 +134,7 @@ def test_missing_release_stays_missing_and_stale_release_is_named() -> None:
 
     stale_record = _record("JP")
     stale_record["macro_asof"]["cpi_yoy"] = "2021-06"
-    stale = build_country_view(stale_record, today=date(2026, 7, 30))
+    stale = build_country_view(stale_record, today=date(2026, 9, 6))
     cpi_health = next(item for item in stale["health"] if item["metric"] == "cpi_yoy")
     assert cpi_health["state"] == "stale"
     assert cpi_health["age_days"] > 1000
@@ -141,7 +142,7 @@ def test_missing_release_stays_missing_and_stale_release_is_named() -> None:
 
 def test_view_contract_and_event_outcome_states() -> None:
     for cc in REGIONS:
-        view = build_country_view(_record(cc), _history(), today=date(2026, 7, 30))
+        view = build_country_view(_record(cc), _history(), today=date(2026, 9, 6))
         validate_view(view)
         assert view["schema"] == SCHEMA
         assert view["route"] == ROUTES[cc]
@@ -152,7 +153,7 @@ def test_view_contract_and_event_outcome_states() -> None:
             for event in view["events"]
         )
         assert all("source" in event for event in view["events"])
-    euro = build_country_view(_record("EZ"), today=date(2026, 7, 30))
+    euro = build_country_view(_record("EZ"), today=date(2026, 9, 6))
     assert "EA21" in euro["scope_en"]
     assert "European Union" in euro["scope_en"]
 
@@ -398,3 +399,49 @@ def test_the_risk_face_counts_only_the_scare_families_above_calm(
     # dlg-risk receipt still lists every family under its own heading, with each band
     # printed beside it — that listing is honest because it shows the bands.)
     assert "Active scare families" not in face
+
+
+def test_view_carries_a_dossier_block() -> None:
+    view = build_country_view(_record("JP"), today=date(2026, 9, 6))
+    assert view["dossier"]["schema"] == "country_dossier.v1"
+    validate_view(view)
+
+
+def test_validate_view_rejects_an_invalid_dossier() -> None:
+    import copy
+
+    view = build_country_view(_record("JP"), today=date(2026, 9, 6))
+    broken = copy.deepcopy(view)
+    broken["dossier"]["state"] = "invalid"
+    broken["dossier"]["reason"] = "test"
+    with pytest.raises(ValueError, match="country dossier failed its contract"):
+        validate_view(broken)
+
+
+def test_a_country_without_a_dossier_still_renders() -> None:
+    view = build_country_view(_record("KR"), today=date(2026, 9, 6))
+    assert view["dossier"]["state"] == "no_coverage"
+    validate_view(view)
+
+
+def test_dossier_copy_has_no_banned_vocabulary(tmp_path, monkeypatch) -> None:
+    from scripts import build_international_macro as builder
+
+    monkeypatch.setattr(
+        builder.config,
+        "load",
+        lambda: {
+            "storage": {"site_dir": str(tmp_path), "data_dir": str(tmp_path / "data")}
+        },
+    )
+    monkeypatch.setattr(builder, "load_history", lambda _cc: _history())
+    html = _render_jp(builder, tmp_path, [_record(cc) for cc in REGIONS])
+    assert "imd-section imd-dossier" in html
+    for banned in ("falsif", "refut", "证伪", "thesis refuted"):
+        assert banned not in html
+    section = html.split('class="imd-section imd-dossier"', 1)[1].split(
+        'class="imd-section"', 1
+    )[0]
+    for m in re.finditer(r'title="([^"]*)"', section):
+        assert all(ord(ch) < 128 for ch in m.group(1)), m.group(0)
+
