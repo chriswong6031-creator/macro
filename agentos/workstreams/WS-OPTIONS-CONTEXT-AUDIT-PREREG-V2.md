@@ -30,9 +30,12 @@ waves:
       48 MiB owner capacity with a future NYSE boundary. Do not implement that
       redesign inside a W2C recovery PR.
 next_action: >
-  Charter and implement Options Context Audit preregistration v2 as its own
-  PR. Do not widen `_MAX_REFERENCES`, do not edit the v1 preregistration in
-  place, and do not recouple this owner into trusted-context publication.
+  Execute the charter-only V2-PREREG-CHARTER child first. Freeze honest full-corpus
+  capacity, algorithmic/resource/refusal bounds, clocks/nulls/corrections and an
+  anti-vacuity implementation acceptance packet. Do not implement v2 in the charter
+  child. Implementation requires a separately keyed later child after Sol accepts the
+  preregistration. Do not widen `_MAX_REFERENCES`, edit v1 in place, or recouple this
+  owner into trusted-context publication.
 decisions:
   - "DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT"
 discoveries:

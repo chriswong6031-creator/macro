@@ -150,11 +150,13 @@ artifacts:
   - data/flow_signals/gate.json
   - data/options_signal_campaign/checkpoint.json
 next_action: >
-  Review/land the OA-1T-Macro implementation-plan carrier, then choose one execution mode for
-  that bounded wave. Recommended: subagent-driven/operator execution with one worker carrier,
-  explicit pickup ACK before work, and a separate START receipt if a gate delays execution.
-  OA-1T-Macro remains NOT STARTED until that commission is actually acknowledged; later OA waves
-  remain closed.
+  OA-1T-MACRO is BUILT_NOT_PROVEN and the exact next OA dependency is its separate
+  natural untouched-RTH production proof. Use a fresh child operation; never reuse the
+  terminal C3 carrier or fabricate proof with historical `--once --date`, replay,
+  synthetic events, lowered floors, hand-edited clocks or later-data reconstruction.
+  The two disclosed finite-value defects remain a separate bounded hardening child unless
+  one is the direct causal blocker on the real proof path. OA-1T-TERMINAL, OA-1C and OA-2+
+  remain closed until their declared prerequisites are actually satisfied.
 ---
 
 ## Context
