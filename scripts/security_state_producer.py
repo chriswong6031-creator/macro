@@ -137,6 +137,28 @@ def _select_security_state_targets(to_write: list[tuple[str, dict]]) -> list[tup
     ]
 
 
+def _mismatched_security_state_targets(to_write: list[tuple[str, dict]]) -> list[tuple[str, dict]]:
+    """Allow-listed tickers whose record's own ``ticker`` disagrees with the
+    write-loop key (MINOR 3 review finding).
+
+    ``_select_security_state_targets`` silently drops these from its
+    returned list, which — per this stage's own M1 rationale — leaves the
+    record's ``security_state`` key fully absent: that reads downstream as
+    "nothing built" rather than "build failed", exactly the hazard M1 was
+    written to close for the owner-identity-read-failure path. This is a
+    companion selector, never called in the ordinary case (a producer-side
+    bug, not an expected condition): the caller emits a typed failure shell
+    for every ticker this returns instead of dropping it silently.
+    """
+    from engine.security_state import SECURITY_STATE_TICKERS
+
+    return [
+        (ticker, rec)
+        for ticker, rec in to_write
+        if ticker in SECURITY_STATE_TICKERS and ticker != rec.get("ticker")
+    ]
+
+
 def _fallback_subject_for_ticker(ticker: str):
     """The frozen pinned subject to use as a failure shell's subject when
     the owner-identity batch itself could not be read (M1). Only the two

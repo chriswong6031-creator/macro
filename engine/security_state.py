@@ -54,6 +54,7 @@ from lib.evidence_foundation import (
 )
 from lib.dataos.identity import IdentityError, parse_listing_key
 from lib.dataos.identity import security_id as _render_security_id
+from engine.company_intelligence.contracts import ContractError
 from engine.company_intelligence.events import parse_canonical_event_id
 
 SCHEMA = "security_state.v1"
@@ -98,18 +99,46 @@ class SecurityStateSubject:
     owner_evidence: tuple[tuple[str, str], ...]
 
 
+# Explicit "no owner reader ran this cycle" evidence for the two frozen
+# fallback subjects below (B2 / META-CEO ruling 2026-09-06). These subjects
+# are selected ONLY when the owner-identity batch itself could not be read
+# (``scripts/build_stock_library.py`` -- ``_ss_identity is None``), so their
+# ``owner_evidence`` must never claim a reader executed or a decision date
+# was used: no reader class/method name, no ISO date, no the-literal-word
+# "fixture" presented as if it had been read. ``_require_subject`` still
+# requires the four canonical keys to be present and non-empty strings, so
+# the keys stay the same and only the VALUES become an explicit UNREAD
+# marker. :func:`_owner_identity_unread` detects this marker so
+# :func:`compile_security_state_failure` never lets a fallback subject's R8
+# leg present a fabricated owner-backed PASS.
+_OWNER_IDENTITY_UNREAD = "UNREAD: owner identity batch failed this cycle"
+
+_UNREAD_OWNER_EVIDENCE: tuple[tuple[str, str], ...] = (
+    ("decision_date", "unavailable"),
+    ("alias_reader", _OWNER_IDENTITY_UNREAD),
+    ("issuer_reader", _OWNER_IDENTITY_UNREAD),
+    ("cik_reader", _OWNER_IDENTITY_UNREAD),
+)
+
+
+def _owner_identity_unread(owner_evidence: tuple[tuple[str, str], ...]) -> bool:
+    """True when ``owner_evidence`` is the explicit UNREAD marker above.
+
+    A real owner-composed subject
+    (``scripts/security_state_producer.py::_read_security_state_identity_rows``)
+    always stamps a real ISO ``decision_date`` and the real reader names, so
+    it can never collide with this marker.
+    """
+    return dict(owner_evidence).get("alias_reader") == _OWNER_IDENTITY_UNREAD
+
+
 AAPL_SUBJECT = SecurityStateSubject(
     security_id=PINNED_SECURITY_ID,
     issuer_id=PINNED_ISSUER_ID,
     listing_key=PINNED_LISTING_KEY,
     ticker_display=PINNED_TICKER,
     issuer_cik=PINNED_CIK,
-    owner_evidence=(
-        ("decision_date", "fixture"),
-        ("alias_reader", "VendorAliasTable.resolve(store)"),
-        ("issuer_reader", "IssuerMaster.issuer_of_security"),
-        ("cik_reader", "IssuerMaster.cik_of_issuer"),
-    ),
+    owner_evidence=_UNREAD_OWNER_EVIDENCE,
 )
 
 # MSFT mirror of the pinned AAPL fixture above, used ONLY as the subject for
@@ -126,12 +155,7 @@ MSFT_SUBJECT = SecurityStateSubject(
     listing_key=MSFT_LISTING_KEY,
     ticker_display="MSFT",
     issuer_cik=MSFT_CIK,
-    owner_evidence=(
-        ("decision_date", "fixture"),
-        ("alias_reader", "VendorAliasTable.resolve(store)"),
-        ("issuer_reader", "IssuerMaster.issuer_of_security"),
-        ("cik_reader", "IssuerMaster.cik_of_issuer"),
-    ),
+    owner_evidence=_UNREAD_OWNER_EVIDENCE,
 )
 
 _WORKSPACE_SCHEMA = "event_workspace.v1"
@@ -581,7 +605,7 @@ def _run_identity_chain(
     if event_id:
         try:
             parsed_event_company_id, _period, _event_type = parse_canonical_event_id(event_id)
-        except Exception:  # canonical owner parser defines the refusal boundary
+        except ContractError:  # canonical owner parser's declared refusal type (MINOR 4)
             parsed_event_company_id = None
     expected_company_id = f"cik:{subject.issuer_cik}"
     event_id_ok = parsed_event_company_id == expected_company_id
@@ -983,9 +1007,17 @@ def _consume_k1_bundle(
     """Verify and consume a producer-prepared Evidence Foundation receipt.
 
     Evidence Foundation's public compiler validates its schemas from disk. The
-    producer owns that I/O boundary and injects the resulting receipt here;
-    this pure compiler independently re-derives every subject-bearing K1 ID so
-    the receipt cannot switch security, CIK, reference, or block.
+    producer owns that I/O boundary and injects the resulting receipt here.
+    This is a self-consistency check, not an independent derivation (MINOR 1
+    review finding): the producer's own ``_prepare_security_state_k1_bundle``
+    (``scripts/security_state_producer.py``) builds the injected bundle by
+    calling this module's OWN private ``_build_k1_recipe`` /
+    ``_build_k1_reference`` / ``_build_k1_block`` — the same functions this
+    method re-derives its expected IDs from. What this check actually proves
+    is that the bundle the producer handed back still agrees with what those
+    builders produce for THIS subject, so a swapped or foreign bundle (one
+    built for a different security, CIK, reference, or block) is refused here
+    rather than silently consumed.
     """
     if not isinstance(bundle, Mapping):
         raise SecurityStateCompilationError("producer-prepared K1 bundle must be a mapping")
@@ -1451,7 +1483,16 @@ def compile_security_state(
         workspace=effective_workspace, workspace_disposition=effective_disposition,
         event_id=event_id, generation_id=generation_id, now_date=now_dt.date(),
     )
-    if identity_blocked and workspace_disposition == "found":
+    if identity_blocked:
+        # MINOR 2 (review finding): an identity-blocked subject must show the
+        # IDENTITY refusal as the null cause on every disposition, not only
+        # "found". Before this fix, a "not_published"/"fetch_failed"
+        # disposition fell straight through to `_build_change_leg`'s own
+        # workspace-level summary ("No current earnings-change event is
+        # published" / "an owner fetch failure, not an absence") even though
+        # the actual refusal was the identity chain, never the workspace read
+        # — a glance-tier cause mislabel (the real refusal stays visible in
+        # identity_proof either way, so this never hid the null itself).
         change_leg = {
             **change_leg,
             "summary": _bilingual(
@@ -1543,6 +1584,19 @@ def _prior_matches_subject(
     treating every pre-existing state as a subject mismatch, which would
     silently drop every ticker's ``last_good`` on the first post-deploy
     failure (Sol blocker 4).
+
+    A prior written by the PRE-PR code carries no R8 leg at all
+    (``identity_proof.legs == []`` — the CIK receipt is new in this PR), so
+    neither CIK set above is ever populated for it. The four top-level
+    subject fields already matched above at that point — the strongest
+    identity signal an old-format shell can offer — so a legacy
+    ``COMPILER_FAILURE`` shell with no R-checks is accepted as a match for
+    this one migration cycle (M2) rather than silently dropping
+    ``last_good`` the first time this deploy sees a pre-existing failure
+    shell. This is bounded to that exact legacy shape: any shell that DOES
+    carry R-checks but simply lacks an R8 CIK value (a new-format shape this
+    module would never itself produce) still falls through to the final
+    ``return False``.
     """
     if not isinstance(prior, Mapping):
         return False
@@ -1554,9 +1608,10 @@ def _prior_matches_subject(
     identity_proof = prior.get("identity_proof")
     if not isinstance(identity_proof, Mapping):
         return False
+    legs = identity_proof.get("legs") or ()
     subject_ciks: set[Any] = set()
     master_ciks: set[Any] = set()
-    for leg in identity_proof.get("legs") or ():
+    for leg in legs:
         if not (isinstance(leg, Mapping) and leg.get("check") == "R8"):
             continue
         for value in leg.get("values_read") or ():
@@ -1570,6 +1625,8 @@ def _prior_matches_subject(
         return subject_ciks == {subject.issuer_cik}
     if master_ciks:
         return master_ciks == {subject.issuer_cik}
+    if not legs and prior.get("dominant_degradation") == "COMPILER_FAILURE":
+        return True
     return False
 
 
@@ -1663,9 +1720,30 @@ def compile_security_state_failure(
         "This security's state could not be compiled this cycle (a compiler failure, not an absence).",
         "本次未能编译该证券的状态（属于编译失败，并非事件不存在）。",
     )
-    identity_proof = {
-        "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
-        "legs": [_leg_receipt(
+    # B2 (META-CEO ruling 2026-09-06): a fallback subject (AAPL_SUBJECT /
+    # MSFT_SUBJECT, selected when the owner-identity batch itself failed)
+    # never had an owner reader run this cycle. The R8 leg must say so —
+    # result 'fail' with an OWNER_IDENTITY_UNREAD refusal code and no
+    # fabricated reader names — rather than presenting a PASS that implies
+    # VendorAliasTable/IssuerMaster were consulted and agreed. A genuine
+    # owner-composed subject (compile_security_state raised for some OTHER
+    # reason after identity was proven) still gets the honest PASS leg.
+    owner_unread = _owner_identity_unread(subject.owner_evidence)
+    if owner_unread:
+        r8_leg = _leg_receipt(
+            "R8",
+            "owner identity batch failed this cycle; no owner reader ran for "
+            "this subject, so this failure shell retains only its frozen "
+            "ticker/CIK and refuses to present an owner-backed identity pass",
+            "SecurityStateSubject (frozen pinned fallback, not owner-composed)",
+            "scripts/security_state_producer.py::_fallback_subject_for_ticker",
+            [("subject_issuer_cik", subject.issuer_cik), ("owner_identity", "UNREAD")],
+            "fail", "OWNER_IDENTITY_UNREAD",
+        )
+        equality_right_label = "fallback_subject.issuer_cik"
+        refusals = ["COMPILER_FAILURE", "OWNER_IDENTITY_UNREAD"]
+    else:
+        r8_leg = _leg_receipt(
             "R8", "failure shell retains the owner-composed current CIK without claiming a full identity-chain pass",
             "SecurityStateSubject (producer-composed owner receipt)",
             "scripts/build_stock_library.py::_read_security_state_identity_rows",
@@ -1674,12 +1752,17 @@ def compile_security_state_failure(
                 *[(f"owner_{key}", value) for key, value in sorted(subject.owner_evidence)],
             ],
             "pass", None,
-        )],
+        )
+        equality_right_label = "owner_subject.issuer_cik"
+        refusals = ["COMPILER_FAILURE"]
+    identity_proof = {
+        "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+        "legs": [r8_leg],
         "equalities": [_equality(
             "R8", "failure_shell.subject.issuer_cik", subject.issuer_cik,
-            "owner_subject.issuer_cik", subject.issuer_cik,
+            equality_right_label, subject.issuer_cik,
         )],
-        "refusals": ["COMPILER_FAILURE"],
+        "refusals": refusals,
         "disclosures": list(DISCLOSURES),
     }
     state_leg = {

@@ -4444,12 +4444,48 @@ def main() -> int:
         from engine import security_state as _security_state
         import engine.neuralweb.company_intelligence_reader as _security_state_reader
         _ss_targets = _security_state_producer._select_security_state_targets(to_write)
+        _ss_mismatched = _security_state_producer._mismatched_security_state_targets(to_write)
         _ss_validator = _security_state_producer._load_security_state_validator(
             _security_state.SCHEMA_PATH
         )
     except Exception as e:  # noqa: BLE001 — the whole stage is additive
         log.warning("security_state.v1 stage disabled this cycle (%s)", e)
         _ss_targets = []
+        _ss_mismatched = []
+    if _ss_mismatched:
+        # MINOR 3 (review finding): a ticker/record mismatch inside the
+        # frozen allowlist is a producer-side bug, never an expected
+        # condition (``_mismatched_security_state_targets`` docstring). The
+        # pre-fix behavior silently filtered these out of ``_ss_targets``,
+        # leaving the record's ``security_state`` key fully absent — the
+        # same "reads as nothing built, not build failed" hazard M1 already
+        # closed for the owner-identity-unavailable path below. Emit the
+        # same typed failure shell here instead of dropping it.
+        _ss_mismatch_now = pd.Timestamp.now(tz="UTC").isoformat()
+        for _ss_ticker, _ss_rec in _ss_mismatched:
+            log.warning(
+                "security_state.v1 ticker/record mismatch for %s (record ticker=%r)",
+                _ss_ticker, _ss_rec.get("ticker"),
+            )
+            _ss_pinned_subject = _security_state_producer._fallback_subject_for_ticker(_ss_ticker)
+            _ss_prior = _security_state_producer._read_prior_security_state(outdir, _ss_ticker)
+            _ss_state = (
+                _security_state_producer._compile_security_state_failure_for_exception(
+                    subject=_ss_pinned_subject, now=_ss_mismatch_now,
+                    diagnostic=RuntimeError("ticker/record mismatch"),
+                    prior_state=_ss_prior,
+                    validator=_ss_validator,
+                )
+            )
+            _ss_rec["security_state"] = _ss_state
+            for _ss_idx_row in index:
+                if _ss_idx_row.get("t") == _ss_ticker:
+                    _ss_idx_row["security_state"] = {
+                        "overall_state": _ss_state["coverage"]["overall_state"],
+                        "dominant_degradation": _ss_state["dominant_degradation"],
+                        "generated_at": _ss_state["generated_at"],
+                    }
+                    break
     if _ss_targets:
         _ss_now_timestamp = pd.Timestamp.now(tz="UTC")
         _ss_now = _ss_now_timestamp.isoformat()
