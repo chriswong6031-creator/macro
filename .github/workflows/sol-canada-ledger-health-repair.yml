@@ -1,0 +1,256 @@
+name: sol-canada-ledger-health-repair
+
+on:
+  push:
+    branches:
+      - sol/canada-ledger-health-offlane-20260906
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: sol/canada-ledger-health-offlane-20260906
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install existing board-shadow test dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
+
+      - name: append the owned caller-health regression
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/test_board_shadow.py")
+          text = path.read_text(encoding="utf-8")
+          marker = "# Canada builder health projection — off-lane no-op is not a write failure"
+          if marker in text:
+              raise SystemExit("caller-health regression already present")
+          addition = r'''
+
+          # ---------------------------------------------------------------------------
+          # Canada builder health projection — off-lane no-op is not a write failure
+          # ---------------------------------------------------------------------------
+          def _canada_health_setups() -> dict:
+              return {
+                  "buy": [
+                      {
+                          "ticker": "TEST.TO",
+                          "group": "setting_up",
+                          "alpha": 0.75,
+                          "price": 100.0,
+                          "signal": {},
+                          "conviction": {},
+                          "entry_signal": {},
+                      }
+                  ],
+                  "watch": [],
+              }
+
+
+          def _stub_canada_health_read_side(monkeypatch, tmp_path):
+              """Keep every existing read projection live without repository writes."""
+              from engine import track_ledger
+
+              seen = {"scorecard": 0, "grade": 0, "track": 0, "shadow": 0}
+
+              def scorecard(_market: str) -> dict:
+                  seen["scorecard"] += 1
+                  return {"status": "accruing"}
+
+              def grade(_market: str) -> dict:
+                  seen["grade"] += 1
+                  return {"available": False}
+
+              def track_document(*_args, **_kwargs) -> dict:
+                  seen["track"] += 1
+                  return {"meta": {"n_total": 0}, "rows": []}
+
+              def shadow_write(*_args, **_kwargs) -> None:
+                  seen["shadow"] += 1
+
+              monkeypatch.setattr(board_ledger, "scorecard", scorecard)
+              monkeypatch.setattr(board_ledger, "grade", grade)
+              monkeypatch.setattr(track_ledger, "from_board_ledger_grade", track_document)
+              monkeypatch.setattr(track_ledger, "atomic_write", lambda *_a, **_k: None)
+              monkeypatch.setattr(bs, "write_shadow", shadow_write)
+              monkeypatch.setattr(
+                  config,
+                  "load",
+                  lambda: {"storage": {"site_dir": str(tmp_path)}},
+              )
+              return seen
+
+
+          def test_canada_off_nightly_caller_skips_append_without_false_error(
+              monkeypatch, tmp_path
+          ):
+              """Expected off-lane refusal cannot become a customer-visible error."""
+              from scripts import build_canada
+
+              setups = _canada_health_setups()
+              seen = _stub_canada_health_read_side(monkeypatch, tmp_path)
+              append_calls = []
+
+              def append_board(*args, **kwargs):
+                  append_calls.append((args, kwargs))
+                  return 0
+
+              monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: False)
+              monkeypatch.setattr(board_ledger, "append_board", append_board)
+
+              health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+              assert append_calls == [], "off-nightly caller must not enter append_board"
+              assert not [row for row in health if row.get("status") == "ERROR"], health
+              assert setups["board_track"] == {"status": "accruing"}
+              assert seen == {"scorecard": 1, "grade": 1, "track": 1, "shadow": 1}
+
+
+          def test_canada_armed_nightly_zero_append_remains_loud(monkeypatch, tmp_path):
+              """A zero result after authorized admission remains a real failure."""
+              from scripts import build_canada
+
+              setups = _canada_health_setups()
+              _stub_canada_health_read_side(monkeypatch, tmp_path)
+              monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: True)
+              monkeypatch.setattr(board_ledger, "append_board", lambda *_a, **_k: 0)
+
+              health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+              errors = [row for row in health if row.get("status") == "ERROR"]
+              assert len(errors) == 1
+              assert errors[0]["rows"] == 0
+              assert "append wrote 0 rows" in errors[0]["en"]
+
+
+          def test_canada_armed_nightly_success_is_healthy(monkeypatch, tmp_path):
+              """A successful authorized append produces no ledger health finding."""
+              from scripts import build_canada
+
+              setups = _canada_health_setups()
+              _stub_canada_health_read_side(monkeypatch, tmp_path)
+              monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: True)
+              monkeypatch.setattr(board_ledger, "append_board", lambda *_a, **_k: 1)
+
+              health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+              assert not [row for row in health if row.get("status") == "ERROR"], health
+
+
+          def test_canada_armed_nightly_exception_remains_loud(monkeypatch, tmp_path):
+              """A real authorized append exception remains customer-visible."""
+              from scripts import build_canada
+
+              setups = _canada_health_setups()
+              _stub_canada_health_read_side(monkeypatch, tmp_path)
+              monkeypatch.setattr(build_canada, "_ledger_advance_enabled", lambda: True)
+
+              def explode(*_args, **_kwargs):
+                  raise RuntimeError("synthetic append failure")
+
+              monkeypatch.setattr(board_ledger, "append_board", explode)
+              health = build_canada._canada_board_ledger(setups, {"date": ASOF})
+
+              errors = [row for row in health if row.get("status") == "ERROR"]
+              assert len(errors) == 1
+              assert "FAILED" in errors[0]["en"]
+          '''
+          path.write_text(text.rstrip() + addition + "\n", encoding="utf-8")
+          PY
+
+      - name: prove the current caller is RED for the exact off-lane defect
+        run: |
+          set +e
+          python -m pytest tests/test_board_shadow.py -q \
+            -k 'canada_off_nightly_caller_skips_append_without_false_error or canada_armed_nightly_zero_append_remains_loud or canada_armed_nightly_success_is_healthy or canada_armed_nightly_exception_remains_loud' \
+            > /tmp/canada-ledger-red.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/canada-ledger-red.log
+          test "$rc" -eq 1
+          grep -q '1 failed, 3 passed' /tmp/canada-ledger-red.log
+          grep -q 'off-nightly caller must not enter append_board' /tmp/canada-ledger-red.log
+
+      - name: apply the minimal existing-lane caller guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/build_canada.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''        n = board_ledger.append_board(calls, market="CA", asof=asof)
+                  if n <= 0:
+                      health.append({"en": "Board ledger (append wrote 0 rows — see build log)",
+                                     "zh": "榜单账本（写入 0 行 — 查看构建日志）",
+                                     "status": "ERROR", "rows": 0, "last": asof})
+                      log.error("CA board ledger: append_board wrote 0 rows for %s (%d calls)",
+                                asof, len(calls))
+                  else:
+                      log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
+                               len(calls), asof, n)
+          '''
+          new = '''        if _ledger_advance_enabled():
+                      n = board_ledger.append_board(calls, market="CA", asof=asof)
+                      if n <= 0:
+                          health.append({"en": "Board ledger (append wrote 0 rows — see build log)",
+                                         "zh": "榜单账本（写入 0 行 — 查看构建日志）",
+                                         "status": "ERROR", "rows": 0, "last": asof})
+                          log.error("CA board ledger: append_board wrote 0 rows for %s (%d calls)",
+                                    asof, len(calls))
+                      else:
+                          log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
+                                   len(calls), asof, n)
+                  else:
+                      log.info("CA board ledger: off-nightly render — append skipped for %s "
+                               "(%d calls); read projections remain available", asof, len(calls))
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f"expected one exact caller block, found {text.count(old)}")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+
+      - name: prove GREEN and run the full owned substrate suite
+        run: |
+          python -m py_compile scripts/build_canada.py
+          python -m pytest tests/test_board_shadow.py -q \
+            -k 'canada_off_nightly_caller_skips_append_without_false_error or canada_armed_nightly_zero_append_remains_loud or canada_armed_nightly_success_is_healthy or canada_armed_nightly_exception_remains_loud' \
+            | tee /tmp/canada-ledger-green.log
+          python -m pytest tests/test_board_shadow.py -q | tee /tmp/board-shadow-full.log
+          git diff --check
+          git diff -- scripts/build_canada.py tests/test_board_shadow.py > /tmp/canada-ledger-health.diff
+
+      - name: commit the bounded final tree and remove this helper
+        run: |
+          rm .github/workflows/sol-canada-ledger-health-repair.yml
+          git config user.name "mastermindx-2"
+          git config user.email "318946022+mastermindx-2@users.noreply.github.com"
+          git add scripts/build_canada.py tests/test_board_shadow.py .github/workflows/sol-canada-ledger-health-repair.yml
+          git commit -m "fix(canada): distinguish off-lane ledger no-op from failure"
+          final_sha=$(git rev-parse HEAD)
+          final_tree=$(git rev-parse HEAD^{tree})
+          printf '{"workflow_input_head":"%s","final_head":"%s","final_tree":"%s"}\n' \
+            "${GITHUB_SHA}" "$final_sha" "$final_tree" > /tmp/canada-ledger-repair-receipt.json
+          git push origin HEAD:refs/heads/sol/canada-ledger-health-offlane-20260906
+
+      - name: publish RED to GREEN receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: canada-ledger-health-red-green
+          path: |
+            /tmp/canada-ledger-red.log
+            /tmp/canada-ledger-green.log
+            /tmp/board-shadow-full.log
+            /tmp/canada-ledger-health.diff
+            /tmp/canada-ledger-repair-receipt.json
+          if-no-files-found: error
