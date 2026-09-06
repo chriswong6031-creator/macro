@@ -46,11 +46,13 @@ def main(argv: list[str] | None = None) -> int:
     if result.read_state == monitor.READ_UNAVAILABLE:
         # result.enqueued_n reflects rows ACTUALLY written before the failure
         # (a write-phase error can follow real POSTs); never assert "0 writes"
-        # when enqueued_n is nonzero.
+        # when enqueued_n is nonzero. The literal READ_UNAVAILABLE token is
+        # printed (not just its error_class) so a log grep for the read-state
+        # vocabulary finds this line (META-CEO RULING MINOR-3).
         print(
             "::warning title=thesis-monitor-read-unavailable::"
-            "thesis/alert tables not readable (%s) — %d enqueued so far, run incomplete"
-            % (result.error_class, result.enqueued_n),
+            "%s (%s) — %d enqueued so far, run incomplete"
+            % (monitor.READ_UNAVAILABLE, result.error_class, result.enqueued_n),
             flush=True,
         )
 
@@ -60,10 +62,11 @@ def main(argv: list[str] | None = None) -> int:
     written_n = result.planned_n if dry_run else result.enqueued_n
 
     print(
-        "thesis-monitor: outcome=%s evaluated=%d matched=%d %s=%d "
+        "thesis-monitor: outcome=%s read_state=%s evaluated=%d matched=%d %s=%d "
         "duplicate=%d no_coverage=%d unmappable=%d dry_run=%s run_id=%s"
         % (
             result.outcome,
+            result.read_state,
             result.evaluated_n,
             result.matched_n,
             written_label,

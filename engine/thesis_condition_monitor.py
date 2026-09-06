@@ -20,10 +20,47 @@ mastermind-terminal's merged `supabase/migrations/` (`gh api .../contents/supaba
 lists only 0001-0010; a code search for `thesis_conditions` in that repo returns zero
 hits). A subscription's "condition version" IS `theses.current_version` /
 `thesis_versions.version` -- there is no second, more-granular version to key off. This
-module therefore keys `fire_event_id` off the thesis's `current_version`, which is the
-only versioned entity this schema defines. If a later migration adds a genuine
-`thesis_conditions` table this module must be revisited; until then treating one as
-existing would be inventing schema, not implementing spec.
+module therefore keys `fire_event_id` off the tripwire's own identity ONLY
+(META-CEO RULING B-F11-1 round-3 blocker 3) -- `thesis_version`/`current_version` is
+carried on the payload for DISPLAY only and is never hashed. If a later migration adds
+a genuine `thesis_conditions` table this module must be revisited; until then treating
+one as existing would be inventing schema, not implementing spec.
+
+condition_plain vs engine_window_plain (META-CEO RULING B-F11-1 round-3 blocker 1):
+condition_plain is the USER's OWN falsifier text(s), read verbatim from
+`thesis_versions.content.falsifiers` -- never the engine's tripwire `claim`. The
+engine's own claim about the cycle is carried SEPARATELY as `engine_window_plain`
+(Tier-2 detail only; may contain stats/abbreviations the glance-tier text may not).
+Presenting the engine's claim as though it were the user's own condition puts words
+in the user's mouth and was BLOCKER 1 of the round-2 review.
+
+alert_outbox row shape (META-CEO RULING M1): the enqueued row's columns match
+`public.alert_outbox` byte-for-byte per terminal PR #513's migration
+`supabase/migrations/0013_alert_runs_outbox.sql` (id, user_id, alert_id,
+fire_event_id, channel, status, payload, attempts, last_error, deliver_after,
+delivered_at, created_at -- this module supplies user_id/alert_id/fire_event_id/
+channel/status/payload/attempts and leaves the rest to column defaults). `alert_id`
+is typed `uuid` in that migration and there is no real per-position Alerts-table row
+backing a thesis-condition fire, so the conceptual synthetic identity
+"thesis:<thesis_id>" (one alert_id per thesis, stable across every fire it produces)
+is rendered through `uuid5` rather than stored as the literal string, which the
+`uuid` column would reject -- see `synthetic_alert_id()`.
+
+Disclosure (META-CEO RULING M1): terminal's alerts_engine.py guards its own
+per-position fires with a "guarded one-shot disarm" PATCH against the fired alert
+row (Freeze `research/MARKET_ONTOLOGY_F08_ARCHITECTURE_FREEZE_2026-09-05.md:60`).
+That mechanism does NOT apply here. This module's fires are re-derived from the
+committed tripwire latch state on every nightly run, and the ONLY dedup guard is
+(a) the deterministic `fire_event_id`, (b) a pre-insert SELECT against
+`alert_outbox` for ids already present, and (c) `alert_outbox`'s own unique index
+on `fire_event_id` as the backstop enforcement point. There is no local disarm
+state and none is added here (F11's `do_not_redo` forbids a second local
+canonical-fact/idempotency store). Consequently, IF an operator or a future
+migration ever purges/archives old `alert_outbox` rows, a tripwire whose latch
+is still FIRED could be re-notified on the next run that no longer finds its old
+row -- this is an F08-owned retention-policy question, not something this module
+can close from its own owned files, and is deliberately disclosed here rather
+than silently assumed away.
 """
 from __future__ import annotations
 
@@ -33,7 +70,9 @@ import os
 import re
 import urllib.request
 import urllib.error
+import uuid as _uuid_mod
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 from engine import falsifier_tripwires as ft
@@ -55,9 +94,23 @@ READ_OK, READ_OK_ZERO, READ_NO_COVERAGE, READ_UNAVAILABLE = (
     "READ_UNAVAILABLE",
 )
 
-# Words banned from every user-facing string this module emits (house law, CLAUDE.md
-# ruling #3821): falsifier/refutation language is never front-facing.
+# Words banned from every GLANCE-TIER user-facing string this module emits (house
+# law, CLAUDE.md ruling #3821): falsifier/refutation language is never front-facing.
+# Tier-2 fields (engine_window_plain*) are explicit raw-detail passthrough and are
+# NOT subject to this ban -- see the module docstring.
 _BANNED_TERMS = ("falsif", "refut", "证伪")
+
+# A fixed, arbitrary namespace UUID for synthesizing alert_outbox.alert_id values
+# (uuid5) from the conceptual "thesis:<thesis_id>" identity documented above. Never
+# change this constant -- doing so would re-mint every thesis's synthetic alert_id.
+_ALERT_ID_NAMESPACE = _uuid_mod.UUID("6f1e6cf4-6e9b-5f2a-9d0a-6d0f6a5b6c00")
+
+# A ZH sentence must never leave the user-authored parts of a message untranslated
+# without saying so (META-CEO RULING MINOR-2: "fallback to EN with a 'translation
+# pending' marker rather than a ZH subject with an EN body"). The user's own
+# falsifier text has no ZH counterpart in the thesis schema, so any ZH sentence
+# that quotes it verbatim carries this marker.
+TRANSLATION_PENDING_ZH_MARKER = "（翻译待补）"
 
 
 @dataclass(frozen=True)
@@ -217,36 +270,45 @@ def _not_stale(window: dict, thesis_created_at: str | None) -> bool:
 def fire_event_id(
     *,
     thesis_id: str,
-    thesis_version: int,
     tripwire_id: str,
     tripwire_version: int,
     fired_on: str,
+    thesis_version: int | None = None,
 ) -> str:
-    parts = "|".join(
-        [thesis_id, str(thesis_version), tripwire_id, str(tripwire_version), fired_on]
-    )
+    """Deterministic id for one (thesis, tripwire-transition) fire.
+
+    META-CEO RULING (B-F11-1 round-3 blocker 3): `thesis_version` is DISPLAY
+    ONLY and is accepted here purely so callers can log/carry it alongside the
+    id -- it is NEVER part of the digest. A thesis amendment (which bumps
+    `current_version`) must not mint a new id for an already-notified
+    (tripwire_id, tripwire_version, fired_on) transition, or a sticky/already-
+    FIRED window would re-notify on every edit to the thesis.
+    """
+    parts = "|".join([thesis_id, tripwire_id, str(tripwire_version), fired_on])
     digest = hashlib.sha256(parts.encode("utf-8")).hexdigest()[:32]
     return f"thesis:{digest}"
 
 
-def plain_condition(window: dict) -> str:
-    """The condition in the user's own plain words, verbatim as stored on the
-    Thesis Condition row (falsifier `claim`). Never glues on a sentence
-    inferring support/opposition from the tripwire's engine-side `direction`
-    -- that stance is the ENGINE's read on the cycle, not the user's thesis
-    stance, and stating it here would put words in the user's mouth
-    (META-CEO RULING, B-F11-1 round-2 blocker). `direction` is retained
-    elsewhere on the window record for internal routing only; it must never
-    again be read inside this function.
-    """
-    return (window.get("claim", "") or "").rstrip(".")
+def synthetic_alert_id(thesis_id: str) -> str:
+    """Deterministic per-thesis synthetic `alert_outbox.alert_id` (uuid5 of the
+    conceptual "thesis:<thesis_id>" identity -- META-CEO RULING M1). Stable
+    across every fire produced for the same thesis; NOT a foreign key into any
+    real Alerts-table row (none exists for a thesis-condition fire)."""
+    return str(_uuid_mod.uuid5(_ALERT_ID_NAMESPACE, f"thesis:{thesis_id}"))
 
 
-def plain_condition_zh(window: dict) -> str:
-    claim_zh = window.get("claim_zh") or ""
-    if not claim_zh:
+def user_condition_text(falsifiers: Any) -> str:
+    """The user's OWN condition text(s), byte-verbatim from
+    `thesis_versions.content.falsifiers` -- no rstrip/lstrip/normalization of
+    any kind (META-CEO RULING MINOR-1). Multiple falsifiers are joined with
+    '; ' BETWEEN the verbatim strings; a single falsifier is returned exactly
+    as authored, with no separator applied. Never derived from the engine's
+    tripwire `claim` -- see `engine_window_plain` and the module docstring."""
+    if not falsifiers:
         return ""
-    return claim_zh.rstrip("。")
+    if isinstance(falsifiers, str):
+        falsifiers = [falsifiers]
+    return "; ".join(str(f) for f in falsifiers if f)
 
 
 def _display_for(window: dict, subject: tuple[str, str]) -> str:
@@ -263,28 +325,58 @@ def _display_for(window: dict, subject: tuple[str, str]) -> str:
 def compose_payload(
     *, thesis: dict, window: dict, subject: tuple[str, str], evidence_base: str
 ) -> dict:
+    """Compose the alert_outbox payload.
+
+    condition_plain / condition_plain_zh are the USER's own falsifier text
+    (verbatim, byte-for-byte). engine_window_plain / engine_window_plain_zh are
+    the ENGINE's tripwire claim, carried as a SEPARATE Tier-2 detail field --
+    never glued into the glance-tier summary/condition (META-CEO RULING
+    B-F11-1 round-3 blocker 1).
+    """
     title = (thesis.get("title") or "").strip() or "your thesis"
-    condition = plain_condition(window)
-    condition_zh = plain_condition_zh(window)
+    condition = user_condition_text(thesis.get("falsifiers"))
+    has_condition = bool(condition)
     display = _display_for(window, subject)
     kind, _norm = subject
     evidence_url = f"{evidence_base.rstrip('/')}/cycle.html"
-    # Per META-CEO RULING (B-F11-1 round-2 blocker): the subject line names the
-    # user's thesis by its own title, not the engine's internal display slug.
-    subject_line = f"The window you were watching has closed: {title}"
-    subject_line_zh = f"你关注的窗口已关闭：{title}"
-    summary_plain = (
-        f"The window you were watching for “{title}” has closed: "
-        f"{condition}. What to look at: {evidence_url}"
-    )
-    payload = {
+    engine_window_plain = window.get("claim", "") or ""
+    engine_window_plain_zh = window.get("claim_zh", "") or ""
+
+    subject_line = f"A window we watch for {display} has closed"
+    subject_line_zh = f"你关注的“{display}”窗口已关闭"
+
+    if has_condition:
+        summary_plain = (
+            f'A window we watch for {display} has closed. Your thesis "{title}" '
+            f"lists: {condition}."
+        )
+        summary_plain_zh = (
+            f"你关注的“{display}”窗口已关闭。你的论点《{title}》列出的条件："
+            f"{condition}{TRANSLATION_PENDING_ZH_MARKER}"
+        )
+        condition_plain_zh = f"{condition}{TRANSLATION_PENDING_ZH_MARKER}"
+    else:
+        summary_plain = (
+            f"A window we watch for {display} has closed. Your thesis lists no "
+            f"conditions yet."
+        )
+        summary_plain_zh = f"你关注的“{display}”窗口已关闭。你的论点尚未列出任何条件。"
+        condition_plain_zh = ""
+
+    return {
         "subject": subject_line,
         "subject_zh": subject_line_zh,
         "summary_plain": summary_plain,
+        "summary_plain_zh": summary_plain_zh,
         # Only a ticker subject is a real ticker; a cycle subject's display
         # label is descriptive text, not a tradable symbol.
         "ticker": display if kind == "ticker" else None,
         "condition_plain": condition,
+        "condition_plain_zh": condition_plain_zh,
+        # Tier-2 detail only -- may contain the engine's own stats/abbreviations
+        # (e.g. "SOX ~14,655"); never surfaced in the glance-tier fields above.
+        "engine_window_plain": engine_window_plain,
+        "engine_window_plain_zh": engine_window_plain_zh,
         "evidence_url": evidence_url,
         "fired_at": window.get("fired_on"),
         "category": CATEGORY,
@@ -296,12 +388,6 @@ def compose_payload(
         "tripwire_version": window.get("version"),
         "coverage": window.get("coverage", "full"),
     }
-    if condition_zh:
-        payload["summary_plain_zh"] = (
-            f"你关注的“{title}”的窗口已关闭：{condition_zh}。可查看：{evidence_url}"
-        )
-        payload["condition_plain_zh"] = condition_zh
-    return payload
 
 
 def plan_enqueue(
@@ -350,14 +436,15 @@ def plan_enqueue(
             continue
         content = version_row.get("content") or {}
         title = content.get("title", "")
+        falsifiers = content.get("falsifiers") or []
         for window in matches:
             matched_n += 1
             fid = fire_event_id(
                 thesis_id=thesis_id,
-                thesis_version=current_version,
                 tripwire_id=window.get("id"),
                 tripwire_version=window.get("version"),
                 fired_on=window.get("fired_on"),
+                thesis_version=current_version,
             )
             if fid in existing_fire_ids:
                 duplicate_n += 1
@@ -366,6 +453,7 @@ def plan_enqueue(
                 "id": thesis_id,
                 "version": current_version,
                 "title": title,
+                "falsifiers": falsifiers,
             }
             payload = compose_payload(
                 thesis=thesis_for_payload,
@@ -376,6 +464,7 @@ def plan_enqueue(
             rows.append(
                 {
                     "user_id": thesis.get("user_id"),
+                    "alert_id": synthetic_alert_id(thesis_id),
                     "fire_event_id": fid,
                     "channel": CHANNEL,
                     "status": "pending",
@@ -395,6 +484,16 @@ def plan_enqueue(
         stale_n=stale_n,
         notes=notes,
     )
+
+
+def _classify_outcome(plan: MonitorPlan) -> tuple[str, str]:
+    """(outcome, read_state) for a plan whose reads all succeeded. READ_NO_COVERAGE
+    (META-CEO RULING MINOR-4) is used, not left dead, exactly when EVERY evaluated
+    thesis had zero tripwire coverage at all -- a real, disclosed state distinct
+    from a normal empty-but-covered run."""
+    if plan.evaluated_n > 0 and plan.no_coverage_n == plan.evaluated_n:
+        return "no_coverage", READ_NO_COVERAGE
+    return "ok", READ_OK
 
 
 # ---------------------------------------------------------------------------
@@ -506,9 +605,18 @@ def enqueue(rows: list[dict], *, dry_run: bool) -> tuple[int, int, str | None]:
     return (enqueued, duplicates, None)
 
 
+def _now_utc_iso() -> str:
+    """Real wall-clock UTC timestamp. A thin, monkeypatchable seam so run_id can
+    be tested deterministically without ever defaulting to a constant across
+    nightly runs (META-CEO RULING MINOR-5)."""
+    return datetime.now(timezone.utc).isoformat()
+
+
 def run(
     *, now_utc=None, limit: int = 500, dry_run: bool = True, evidence_base: str = EVIDENCE_BASE
 ) -> MonitorResult:
+    if now_utc is None:
+        now_utc = _now_utc_iso()
     run_id = hashlib.sha256(f"{now_utc}|{limit}".encode("utf-8")).hexdigest()[:12]
 
     entries, latch_state, tripwire_error = load_tripwire_view()
@@ -593,9 +701,10 @@ def run(
         # Dormant/preview path: no write is attempted. enqueued_n reports what
         # ACTUALLY got written (always 0 here); planned_n reports what a live
         # run would attempt, so callers can log the two without conflating them.
+        outcome, read_state = _classify_outcome(plan)
         return MonitorResult(
-            outcome="ok",
-            read_state=READ_OK,
+            outcome=outcome,
+            read_state=read_state,
             error_class=None,
             evaluated_n=plan.evaluated_n,
             matched_n=plan.matched_n,
@@ -624,10 +733,10 @@ def run(
             run_id=run_id,
         )
 
-    outcome = "ok" if (to_send or plan.rows) else ("no_coverage" if plan.no_coverage_n else "ok")
+    outcome, read_state = _classify_outcome(plan)
     return MonitorResult(
         outcome=outcome,
-        read_state=READ_OK,
+        read_state=read_state,
         error_class=None,
         evaluated_n=plan.evaluated_n,
         matched_n=plan.matched_n,
