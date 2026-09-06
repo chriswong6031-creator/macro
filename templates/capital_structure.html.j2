@@ -58,6 +58,35 @@
     </div>
   </section>
 
+  {# ── policy-watch:start — B-F09-6 (MO-PAID-067). Keep contiguous.
+     policy_watch is an OPTIONAL kwarg: guarded so any caller that renders this
+     template under StrictUndefined without it (tests/test_capital_structure_page.py)
+     still renders. The `present` state is a normal, live, dated public-record
+     step — not an outage — so it never borrows the `.cs-unavailable` component;
+     only `unavailable`/`empty` (both genuinely "nothing to show yet") do. ── #}
+  {% if policy_watch is defined and policy_watch %}
+  {% if policy_watch.state == 'present' %}
+  <section class="cs-policy cs-policy-active" id="cs-policy" aria-label="Policy watch">
+    <span class="cs-policy-mark" aria-hidden="true">◷</span>
+    <div>
+      <p class="cs-kicker">{{ t('Policy watch', '政策关注') }}</p>
+      <strong>{{ t(policy_watch.headline_en, policy_watch.headline_zh) }}</strong>
+      <span>{{ t(policy_watch.detail_en, policy_watch.detail_zh) }}</span>
+    </div>
+  </section>
+  {% else %}
+  <section class="cs-unavailable cs-policy" id="cs-policy" aria-label="Policy watch">
+    <span class="cs-unavailable-mark" aria-hidden="true">◷</span>
+    <div>
+      <p class="cs-kicker">{{ t('Policy watch', '政策关注') }}</p>
+      <strong>{{ t(policy_watch.headline_en, policy_watch.headline_zh) }}</strong>
+      <span>{{ t(policy_watch.detail_en, policy_watch.detail_zh) }}</span>
+    </div>
+  </section>
+  {% endif %}
+  {% endif %}
+  {# ── policy-watch:end ── #}
+
   <div class="cs-workspace">
     <aside class="cs-rail" aria-labelledby="cs-rail-title">
       <div class="cs-rail-head">

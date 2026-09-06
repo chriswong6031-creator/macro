@@ -129,6 +129,41 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 [data-theme='light'] .panel {
   box-shadow: 0 4px 18px rgba(0,0,0,.10), 0 1px 0 rgba(255,255,255,.9) inset;
 }
+/* ── coverage matrix (B-F09-6): dark = luminance step; light = rule + type weight ── */
+.cov { margin: 22px 0 0; }
+.cov-deck { margin: 2px 0 12px; color: var(--mut); font-size: 13px; }
+.cov-panel { padding: 6px 0; }
+.cov-rows { list-style: none; margin: 0; padding: 0; }
+.cov-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px 22px; align-items: start;
+  padding: 14px 18px 13px 16px; border-top: 1px solid var(--line); border-left: 2px solid var(--line2); }
+.cov-row:first-child { border-top: 0; }
+.cov-covered { border-left-color: var(--blue); background: color-mix(in srgb, var(--blue) 7%, transparent); }
+.cov-partial { border-left-style: dashed; }
+.cov-none    { border-left-style: dotted; }
+.cov-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.cov-fam { font-weight: 600; font-size: 14px; color: var(--tx); }
+.cov-state { font-size: 11.5px; letter-spacing: .04em; padding: 2px 8px; border-radius: var(--r-pill,999px);
+  border: 1px solid var(--line2); color: var(--mut); white-space: nowrap; }
+.cov-covered .cov-state { border-color: color-mix(in srgb, var(--blue) 45%, transparent); color: var(--tx); }
+.cov-reads { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+.cov-k { display: block; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+.cov-v { display: block; font-size: 13px; color: var(--tx); }
+.cov-none .cov-v { color: var(--mut); }
+.cov-detail { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; color: var(--mut); }
+.cov-detail summary { cursor: pointer; }
+.cov-detail summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: var(--r-ctl,4px); }
+.cov-detail ul { margin: 6px 0 0; padding-left: 16px; }
+.cov-detail code { font-size: 11.5px; color: var(--faint); }
+.cov-foot { margin: 0; padding: 12px 18px 14px; color: var(--faint); font-size: 12px; border-top: 1px solid var(--line); }
+@media (max-width: 780px) {
+  .cov-row { grid-template-columns: 1fr; padding: 13px 14px 12px 13px; }
+  .cov-reads { grid-template-columns: 1fr; gap: 8px; }
+}
+/* light = research workspace: the wash is removed; emphasis moves to rule + weight */
+[data-theme='light'] .cov-covered { background: transparent; border-left-width: 3px; }
+[data-theme='light'] .cov-covered .cov-fam { font-weight: 650; }
+[data-theme='light'] .cov-state { background: var(--panel2); }
+[data-theme='light'] .cov-covered .cov-state { background: color-mix(in srgb, var(--blue) 7%, transparent); border-color: color-mix(in srgb, var(--blue) 28%, transparent); }
 .panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; }
 .grid { display: grid; gap: 14px; }
 .g2 { grid-template-columns: 1.35fr 1fr; }
@@ -1100,6 +1135,48 @@ html[data-theme="light"] :is(
        '大宗商品板块数据重建中，请稍后刷新。') }}
 </div>
 {% endif %}
+
+{# ── coverage-matrix:start — B-F09-6 (MO-DELTA-029). Keep contiguous. ── #}
+<section class="cov" id="coverage" aria-labelledby="cov-h">
+  <h2 id="cov-h">{{ t('What we actually watch', '我们实际覆盖的范围') }}</h2>
+  <p class="cov-deck">{{ t('Five commodity families. Where we read physical supply, and where we do not yet.',
+                           '五大商品族：哪些能读到实物供需，哪些还没有。') }}</p>
+  <div class="panel cov-panel">
+  {% if coverage and coverage.rows %}
+    <ol class="cov-rows">
+    {% for r in coverage.rows %}
+      <li class="cov-row cov-{{ r.state }}">
+        <div class="cov-head">
+          <span class="cov-fam"><span class="l-en">{{ r.family_en }}</span><span class="l-zh">{{ r.family_zh }}</span></span>
+          <span class="cov-state"><span class="l-en">{{ r.state_en }}</span><span class="l-zh">{{ r.state_zh }}</span></span>
+        </div>
+        <div class="cov-reads">
+          <div class="cov-cell"><span class="cov-k">{{ t('Prices & trend', '价格与趋势') }}</span>
+            <span class="cov-v"><span class="l-en">{{ r.price_en }}</span><span class="l-zh">{{ r.price_zh }}</span></span></div>
+          <div class="cov-cell"><span class="cov-k">{{ t('Physical supply', '实物供需') }}</span>
+            <span class="cov-v"><span class="l-en">{{ r.supply_en }}</span><span class="l-zh">{{ r.supply_zh }}</span></span></div>
+        </div>
+        <details class="cov-detail">
+          <summary>{{ t('Where this comes from', '数据来源') }}</summary>
+          <ul>
+          {% for s in r.sources %}
+            <li><code>{{ s.producer }}</code> · <span class="l-en">{{ s.source_en }}</span><span class="l-zh">{{ s.source_zh }}</span></li>
+          {% else %}
+            <li>{{ t('No producer in this build.', '本次构建没有对应的生产程序。') }}</li>
+          {% endfor %}
+          </ul>
+        </details>
+      </li>
+    {% endfor %}
+    </ol>
+  {% else %}
+    <p class="cov-foot">{{ t('The coverage list could not be read for this build.', '本次构建未能读取覆盖清单。') }}</p>
+  {% endif %}
+    <p class="cov-foot">{{ t('Coverage is read from this build, not hand-listed. A balance read, never a price call.',
+                             '覆盖状态由本次构建实时读取，非人工登记。仅为供需背景，不构成价格判断。') }}</p>
+  </div>
+</section>
+{# ── coverage-matrix:end ── #}
 
 <!-- ========================= UPCOMING CATALYSTS ========================= -->
 <div class="section-title">{{ t('Upcoming events', '即将到来的市场事件') }}</div>
