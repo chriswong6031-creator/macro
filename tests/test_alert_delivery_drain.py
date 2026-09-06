@@ -17,10 +17,15 @@ def _now(iso="2026-09-05T15:00:00+00:00"):
 def _outbox_row_selected(row: dict, path: str) -> bool:
     """Mirrors drain.drain's own or=(...) selection predicate against the fake
     table, so a test that never varies path can no longer pass by construction --
-    this is what the review found missing (Acceptance 1(d))."""
+    this is what the review found missing (Acceptance 1(d)). Round 3: a 'failed' row
+    is selected only below the retry cap (mirrors the ``attempts.lt.N`` clause)."""
     status = row.get("status")
-    if status in ("pending", "failed"):
+    if status == "pending":
         return True
+    if status == "failed":
+        m = re.search(r"attempts\.lt\.(\d+)", path)
+        cap = int(m.group(1)) if m else drain.ALERT_RETRY_ATTEMPTS_CAP
+        return int(row.get("attempts") or 0) < cap
     if status == "deferred":
         m = re.search(r"deliver_after\.lte\.([^&)]+)", path)
         if not m:
@@ -125,6 +130,10 @@ def test_same_fire_event_id_drained_twice_sends_once_and_reports_duplicate(monke
     # 'fired'; the email_log row is READ to find out what actually happened.
     fake.email_log["alert_fire:fe1"] = {"status": "sent", "created_at": "2026-09-05T15:00:01+00:00"}
     fake.outbox[0]["status"] = "pending"  # simulate a replay before terminal write races in
+    # The replay is of the SAME original attempt (the send that already landed in
+    # email_log under attempt=0) -- reset attempts too, or the drain would compute a
+    # different attempt number and look up a idem_key that was never claimed.
+    fake.outbox[0]["attempts"] = 0
     r2 = drain.drain(send_fn=send_fn_dup, now_utc=_now(), limit=10)
     assert r2.fired_n == 0
     assert r2.duplicate_n == 1
@@ -142,6 +151,11 @@ def test_duplicate_whose_email_log_row_is_failed_mirrors_status_never_counted_se
     assert result.duplicate_n == 1
     assert fake.outbox[0]["status"] == "failed"
     assert fake.outbox[0]["last_error"] == "prior send failed"
+    # Review round 3 BLOCKER: attempts MUST increment here -- this is the exact path
+    # that used to leave attempts unchanged, so a 'failed' email_log row selected
+    # every tick (status.eq.failed, no cap) never advanced and never retried under a
+    # fresh idem_key. Without this bump the row would loop forever.
+    assert fake.outbox[0]["attempts"] == 1
 
 
 def test_duplicate_whose_email_log_row_is_suppressed_mirrors_status_never_counted_sent(monkeypatch):
@@ -156,7 +170,11 @@ def test_duplicate_whose_email_log_row_is_suppressed_mirrors_status_never_counte
     assert fake.outbox[0]["last_error"] == "prior send suppressed"
 
 
-def test_duplicate_whose_email_log_row_is_queued_mirrors_status_never_counted_sent(monkeypatch):
+def test_duplicate_whose_email_log_row_is_queued_stays_pending_never_mirrors_a_non_outbox_status(monkeypatch):
+    """Review round 3 MAJOR-2: 'queued' is a mailer/email_log-only status, never a
+    legal alert_outbox one -- mirroring it verbatim either violates alert_outbox's own
+    CHECK constraint (silently swallowed) or, if ever accepted, orphans the row
+    outside the drain's selection predicate forever. The row must stay 'pending'."""
     row = _row()
     fake = FakeTables(outbox=[row])
     fake.email_log["alert_fire:fe1"] = {"status": "queued", "created_at": "2026-09-05T14:59:00+00:00"}
@@ -164,8 +182,9 @@ def test_duplicate_whose_email_log_row_is_queued_mirrors_status_never_counted_se
     result = drain.drain(send_fn=lambda **kw: "duplicate", now_utc=_now(), limit=10)
     assert result.fired_n == 0
     assert result.duplicate_n == 1
-    assert fake.outbox[0]["status"] == "queued"
+    assert fake.outbox[0]["status"] == "pending"
     assert fake.outbox[0]["last_error"] == "prior send queued"
+    assert fake.outbox[0]["attempts"] == 0
 
 
 def test_duplicate_whose_email_log_row_is_unreadable_leaves_outbox_row_pending(monkeypatch, capsys):
@@ -182,6 +201,8 @@ def test_duplicate_whose_email_log_row_is_unreadable_leaves_outbox_row_pending(m
     warning_lines = [ln for ln in out.splitlines() if "alert-drain-duplicate-unreadable" in ln]
     assert warning_lines, "expected a ::warning line for an unreadable email_log row"
     assert warning_lines[0].startswith("::warning")
+    # Ruling: the unreadable branch must carry the literal token READ_UNAVAILABLE.
+    assert "READ_UNAVAILABLE" in warning_lines[0]
 
 
 def test_duplicate_whose_email_log_row_is_missing_leaves_outbox_row_pending(monkeypatch):
@@ -200,6 +221,25 @@ def test_idem_key_is_derived_deterministically_from_fire_event_id():
     from app import mailer
     assert mailer.alert_idem_key("fe1") == "alert_fire:fe1"
     assert mailer.alert_idem_key("fe1") == mailer.alert_idem_key("fe1")
+
+
+def test_drain_idem_key_is_pinned_identical_to_the_mailer_for_every_attempt():
+    """Review round 3 MAJOR-4: engine/alert_delivery_drain.py's ``_alert_idem_key``
+    duplicates app/mailer.py's ``alert_idem_key`` (required by the layering law --
+    engine/ may not import app/), so this cross-module test is the ONLY thing that
+    can ever catch the two drifting apart. Exercises both sides, not just the
+    mailer's own tautology."""
+    from app import mailer
+    assert drain._alert_idem_key("fe1") == mailer.alert_idem_key("fe1") == "alert_fire:fe1"
+    for attempt in (0, 1, 2, 3, 7):
+        assert drain._alert_idem_key("fe1", attempt=attempt) == mailer.alert_idem_key("fe1", attempt=attempt)
+    # attempt=0 (default on both sides) is byte-identical to the no-attempt call --
+    # every alert already resolved under the old single-arg signature keeps
+    # resolving to the same email_log row.
+    assert drain._alert_idem_key("fe1", attempt=0) == drain._alert_idem_key("fe1")
+    assert mailer.alert_idem_key("fe1", attempt=0) == mailer.alert_idem_key("fe1")
+    # distinct attempts mint distinct keys -- this is what breaks the livelock.
+    assert drain._alert_idem_key("fe1", attempt=1) != drain._alert_idem_key("fe1", attempt=0)
 
 
 def test_quiet_hours_defers_in_user_timezone_not_ny():
@@ -271,6 +311,20 @@ def test_smtp_failure_records_failed_with_last_error_and_attempts_plus_one(monke
     assert fake.outbox[0]["last_error"] == "failed"
 
 
+def test_skipped_no_smtp_leaves_outbox_row_pending_not_failed(monkeypatch):
+    """Review round 3 MINOR-2: 'skipped_no_smtp' is a config gap (mail-off), not a
+    send failure -- it must not burn a retry attempt or land the row on 'failed'."""
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "skipped_no_smtp", now_utc=_now(), limit=10)
+    assert result.fired_n == 0
+    assert result.failed_n == 0
+    assert fake.outbox[0]["status"] == "pending"
+    assert fake.outbox[0]["attempts"] == 0
+    assert fake.outbox[0]["last_error"] == "skipped_no_smtp"
+
+
 def test_failed_row_is_retried_by_a_later_drain_and_never_reads_as_sent(monkeypatch):
     row = _row()
     fake = FakeTables(outbox=[row])
@@ -283,6 +337,108 @@ def test_failed_row_is_retried_by_a_later_drain_and_never_reads_as_sent(monkeypa
     drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
     assert fake.outbox[0]["status"] == "sent"
     assert fake.outbox[0]["attempts"] == 2
+
+
+class _ReplayFaithfulFakeMailer:
+    """Models the REAL mailer's per-idem_key ledger (app/mailer.py:367-371,
+    196-204): once an idem_key is claimed, EVERY later call under that exact same
+    key returns 'duplicate' -- regardless of what status the first call settled at.
+    A fake that instead returns 'sent' for an already-claimed key (the old test at
+    this line, review round 3 MAJOR-1) proves a retry path that cannot exist against
+    the real mailer."""
+
+    def __init__(self, first_attempt_status="failed"):
+        self.claimed: dict[str, str] = {}
+        self.first_attempt_status = first_attempt_status
+        self.calls: list[tuple[str, int]] = []
+
+    def send_fn(self, *, fire_event_id, to_email, payload, lang, user_id, attempt=0):
+        key = drain._alert_idem_key(fire_event_id, attempt=attempt)
+        self.calls.append((key, attempt))
+        if key in self.claimed:
+            return "duplicate"
+        status = self.first_attempt_status if attempt == 0 else "sent"
+        self.claimed[key] = status
+        return status
+
+
+def test_retry_livelock_regression_a_terminally_failed_row_retries_under_a_fresh_key(monkeypatch):
+    """Review round 3 BLOCKER (engine/alert_delivery_drain.py:500-517 + :390, with
+    app/mailer.py:367-371/196-204): the prior head reused the SAME idem_key on every
+    retry of a 'failed' row. Against the real mailer that key is permanently claimed
+    once its email_log row settles, so every retry came back 'duplicate', read
+    'failed' from email_log, and PATCHed the outbox row back to 'failed' with
+    attempts UNCHANGED -- forever. This test fails on the prior head (its
+    ``_alert_idem_key`` takes no ``attempt`` kwarg at all, so the fake below raises
+    TypeError) and passes once each retry mints a fresh key via
+    ``attempt=row['attempts']``, letting a genuinely-transient failure eventually
+    succeed instead of looping."""
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    mailer_fake = _ReplayFaithfulFakeMailer(first_attempt_status="failed")
+
+    r1 = drain.drain(send_fn=mailer_fake.send_fn, now_utc=_now(), limit=10)
+    assert r1.failed_n == 1
+    assert fake.outbox[0]["status"] == "failed"
+    assert fake.outbox[0]["attempts"] == 1
+
+    r2 = drain.drain(send_fn=mailer_fake.send_fn, now_utc=_now(), limit=10)
+    assert r2.fired_n == 1
+    assert fake.outbox[0]["status"] == "sent"
+    assert fake.outbox[0]["attempts"] == 2
+    # The critical assertion: the two send attempts used DIFFERENT idem_keys. If they
+    # had reused the same key, the second call would have come back 'duplicate' and
+    # (pre-fix) the row would still be 'failed' with attempts==1 forever.
+    assert mailer_fake.calls == [("alert_fire:fe1", 0), ("alert_fire:fe1:1", 1)]
+    assert len(mailer_fake.claimed) == 2
+
+
+def test_retry_livelock_row_retired_after_the_attempts_cap_never_loops_forever(monkeypatch):
+    """The other half of the BLOCKER fix: a row that never succeeds must eventually
+    stop being retried (ruling: attempts capped at 3) rather than looping every tick
+    indefinitely, even once each retry has a fresh key."""
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    mailer_fake = _ReplayFaithfulFakeMailer(first_attempt_status="failed")
+    # Every attempt fails outright (never "sent").
+    def always_failing(*, fire_event_id, to_email, payload, lang, user_id, attempt=0):
+        key = drain._alert_idem_key(fire_event_id, attempt=attempt)
+        assert key not in mailer_fake.claimed, "must never reuse a claimed idem_key"
+        mailer_fake.claimed[key] = "failed"
+        return "failed"
+
+    for _ in range(drain.ALERT_RETRY_ATTEMPTS_CAP):
+        drain.drain(send_fn=always_failing, now_utc=_now(), limit=10)
+    assert fake.outbox[0]["status"] == "failed"
+    assert fake.outbox[0]["attempts"] == drain.ALERT_RETRY_ATTEMPTS_CAP
+
+    # One more tick: the row is now at the cap and must NOT be selected/retried again.
+    result = drain.drain(send_fn=always_failing, now_utc=_now(), limit=10)
+    assert result.evaluated_n == 0
+    assert fake.outbox[0]["attempts"] == drain.ALERT_RETRY_ATTEMPTS_CAP
+    assert len(mailer_fake.claimed) == drain.ALERT_RETRY_ATTEMPTS_CAP
+
+
+def test_counters_never_increment_when_the_persisting_patch_fails(monkeypatch):
+    """Review round 3 MINOR-3: a swallowed PATCH must not inflate the run receipt --
+    the old code incremented fired_n/failed_n/etc. before attempting the write, so a
+    repeat tick over a row whose PATCH keeps failing would count a 'sent'/'failed'
+    that never actually persisted."""
+    row = _row()
+    fake = FakeTables(outbox=[row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+
+    def failing_pg(method, path, body=None, prefer=None, timeout=6):
+        if path.startswith("alert_outbox") and method == "PATCH":
+            raise RuntimeError("boom")
+        return fake.pg(method, path, body, prefer, timeout)
+
+    monkeypatch.setattr(drain, "_pg", failing_pg)
+    result = drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
+    assert fake.outbox[0]["status"] == "pending"  # never actually written
+    assert result.fired_n == 0
 
 
 def test_selection_predicate_never_selects_a_sent_or_suppressed_row(monkeypatch):

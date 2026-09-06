@@ -41,6 +41,11 @@ READ_UNAVAILABLE = "READ_UNAVAILABLE"
 LANE = "macro_delivery_drain"
 CADENCE_BUDGET_S = 300
 
+# A 'failed' row is retried this many times (attempt 0 = the original send) before it
+# leaves the drain's own selection predicate for good (review round 3 ruling). No new
+# alert_outbox enum value is introduced -- the row stays 'failed', simply unselected.
+ALERT_RETRY_ATTEMPTS_CAP = 3
+
 # Mirrors app.mailer.ALERT_TEMPLATE / app.mailer.alert_idem_key -- duplicated locally
 # for the same layering reason ``_pg`` is (module docstring): this module may not
 # import ``app/``. Needed only to resolve what a mailer 'duplicate' result actually
@@ -48,8 +53,14 @@ CADENCE_BUDGET_S = 300
 _ALERT_TEMPLATE = "alert_fire"
 
 
-def _alert_idem_key(fire_event_id: str) -> str:
-    return f"{_ALERT_TEMPLATE}:{fire_event_id}"
+def _alert_idem_key(fire_event_id: str, attempt: int = 0) -> str:
+    """Pinned identical to ``app.mailer.alert_idem_key`` (cross-module test in
+    ``tests/test_alert_delivery_drain.py``) -- ``attempt=0`` is byte-identical to the
+    original single-arg key; ``attempt>0`` mints a fresh key for a retry so a
+    terminally-'failed' email_log row never blocks a later send under the same key
+    (review round 3 BLOCKER)."""
+    base = f"{_ALERT_TEMPLATE}:{fire_event_id}"
+    return base if not attempt else f"{base}:{attempt}"
 
 
 @dataclass(frozen=True)
@@ -332,13 +343,34 @@ def open_receipt(now_utc: datetime) -> tuple:
 def close_receipt(run_uuid: str, *, outcome: str, evaluated_n: int, fired_n: int,
                   unevaluable_n: int, source_asof: str | None, error_class: str | None,
                   duplicate_n: int = 0) -> bool:
+    """``duplicate_n`` is accepted (kept in the caller's ``DrainResult``/stdout summary)
+    but deliberately NOT written here (review round 3 MAJOR-3): no schema file in this
+    tree evidences an ``alert_runs.duplicate_n`` column, nor a jsonb ``detail``-style
+    column on that table to fold it into, and the frozen table is external to this
+    repo -- adding an unproven column made every ``close_receipt`` PATCH 400 (schema
+    mismatch), swallowed by the except below, forcing ``outcome='partial'`` on every
+    run regardless of whether a duplicate ever occurred. Ruling: no schema change;
+    state the disposition in the PR body's nulls section (done)."""
     try:
         _pg("PATCH", f"alert_runs?id=eq.{urllib.parse.quote(run_uuid, safe='')}", body={
             "concluded_at": datetime.now(timezone.utc).isoformat(),
             "outcome": outcome, "evaluated_n": evaluated_n, "fired_n": fired_n,
             "unevaluable_n": unevaluable_n, "source_asof": source_asof,
-            "error_class": error_class, "duplicate_n": duplicate_n,
+            "error_class": error_class,
         }, prefer="return=minimal")
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _patch_outbox(row_id, body: dict) -> bool:
+    """PATCH one ``alert_outbox`` row; returns whether the write actually persisted.
+    Review round 3 MINOR-3: a run receipt's counters must reflect writes that
+    happened, not writes attempted -- every counter increment in the loop below is
+    gated on this return value so a swallowed PATCH (network blip, CHECK rejection)
+    can never inflate a receipt with a change that never landed."""
+    try:
+        _pg("PATCH", f"alert_outbox?id=eq.{row_id}", body=body, prefer="return=minimal")
         return True
     except Exception:  # noqa: BLE001
         return False
@@ -377,17 +409,23 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
          limit: int = 200, dry_run: bool = False) -> DrainResult:
     """Drain one batch. NEVER raises for a delivery reason.
 
-    ``send_fn(fire_event_id=..., to_email=..., payload=..., lang=..., user_id=...) -> str``
-    returning a value in ``app.mailer.STATUSES`` + ``'duplicate'``. Injected so this
-    module never imports ``app/`` (see the module docstring's Layering note).
-    ``send_fn=None`` or ``dry_run=True`` => decisions computed, ZERO sends, ZERO writes.
+    ``send_fn(fire_event_id=..., to_email=..., payload=..., lang=..., user_id=...,
+    attempt=...) -> str`` returning a value in ``app.mailer.STATUSES`` +
+    ``'duplicate'``. Injected so this module never imports ``app/`` (see the module
+    docstring's Layering note). ``send_fn=None`` or ``dry_run=True`` => decisions
+    computed, ZERO sends, ZERO writes.
+
+    A 'failed' row is re-selected only while ``attempts < ALERT_RETRY_ATTEMPTS_CAP`` --
+    once capped it stays 'failed' but drops out of the ``or=(...)`` predicate below, so
+    it is never retried again and never silently reappears as unaccounted-for.
     """
     now_utc = now_utc or datetime.now(timezone.utc)
     now_iso = now_utc.isoformat()
 
     outbox_read = typed_get(
         "alert_outbox?channel=eq.email"
-        "&or=(status.eq.pending,status.eq.failed,"
+        "&or=(status.eq.pending,"
+        f"and(status.eq.failed,attempts.lt.{int(ALERT_RETRY_ATTEMPTS_CAP)}),"
         f"and(status.eq.deferred,deliver_after.lte.{urllib.parse.quote(now_iso)}))"
         "&select=id,user_id,alert_id,fire_event_id,status,payload,attempts,deliver_after"
         f"&order=created_at.asc&limit={int(limit)}")
@@ -446,30 +484,25 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             continue
 
         if decision.action == "defer":
-            deferred_n += 1
-            try:
-                _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                    body={"status": "deferred", "deliver_after": decision.deliver_after.isoformat()},
-                    prefer="return=minimal")
-            except Exception:  # noqa: BLE001
-                pass
+            ok = _patch_outbox(row["id"], {"status": "deferred",
+                                            "deliver_after": decision.deliver_after.isoformat()})
+            if ok:
+                deferred_n += 1
             continue
 
         if decision.action == "suppress":
-            suppressed_n += 1
-            try:
-                _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                    body={"status": "suppressed", "last_error": decision.reason},
-                    prefer="return=minimal")
-            except Exception:  # noqa: BLE001
-                pass
+            ok = _patch_outbox(row["id"], {"status": "suppressed", "last_error": decision.reason})
+            if ok:
+                suppressed_n += 1
             continue
 
         # action == send
         fire_event_id = row.get("fire_event_id")
+        attempt_n = int(row.get("attempts") or 0)
         try:
             status = send_fn(fire_event_id=fire_event_id, to_email=decision.to_email,
-                             payload=payload, lang=decision.lang, user_id=user_id)
+                             payload=payload, lang=decision.lang, user_id=user_id,
+                             attempt=attempt_n)
         except Exception as exc:  # noqa: BLE001
             status = "failed"
             error_cls = type(exc).__name__
@@ -480,39 +513,59 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             # A mailer 'duplicate' means email_log's UNIQUE idem_key was already claimed
             # -- it does NOT mean the earlier attempt actually sent (review round 2
             # blocker, acceptance 1(d)): the prior claim could equally be a failed,
-            # suppressed, or still-queued send. Read that row rather than assume.
+            # suppressed, or still-queued send. Read that row rather than assume. The
+            # key read back is the SAME one just attempted (same fire_event_id+attempt)
+            # -- never the bare attempt=0 key -- so a retry's own claim is what gets
+            # resolved, not the original attempt's.
+            idem_key = _alert_idem_key(str(fire_event_id), attempt=attempt_n)
             log_read = typed_get(
-                f"email_log?idem_key=eq.{urllib.parse.quote(_alert_idem_key(str(fire_event_id)), safe='')}"
+                f"email_log?idem_key=eq.{urllib.parse.quote(idem_key, safe='')}"
                 "&select=status,created_at,detail")
             log_row = (log_read.rows or [None])[0] if log_read.state == READ_OK else None
             log_status = log_row.get("status") if log_row else None
             if log_status == "sent":
                 # The earlier attempt genuinely sent -- mirror THAT fact, counted as a
                 # duplicate resolution, never as a fresh fire.
-                duplicate_n += 1
                 delivered_at = log_row.get("created_at") or datetime.now(timezone.utc).isoformat()
-                try:
-                    _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                        body={"status": "sent", "delivered_at": delivered_at, "last_error": None},
-                        prefer="return=minimal")
-                except Exception:  # noqa: BLE001
-                    pass
-            elif log_status is not None:
-                # failed / suppressed / queued (or any other readable, non-sent status):
-                # mirror it verbatim. Never counted as sent.
-                duplicate_n += 1
-                if log_status == "failed":
+                ok = _patch_outbox(row["id"], {"status": "sent", "delivered_at": delivered_at,
+                                                "last_error": None})
+                if ok:
+                    duplicate_n += 1
+            elif log_status == "failed":
+                # Review round 3 BLOCKER: this idem_key is now TERMINAL -- the real
+                # mailer never revisits a claimed key's terminal status, so retrying
+                # under the SAME key would read 'failed' forever (livelock). Bump
+                # attempts here (this WAS the bug: the old code left attempts
+                # unchanged on this exact path) so the next tick's send_fn call mints
+                # a fresh key via ``attempt_n`` above, and the selection predicate's
+                # cap eventually retires the row instead of looping forever.
+                new_attempts = int(row.get("attempts") or 0) + 1
+                ok = _patch_outbox(row["id"], {"status": "failed", "attempts": new_attempts,
+                                                "last_error": "prior send failed"})
+                if ok:
+                    duplicate_n += 1
                     failed_n += 1
-                elif log_status == "suppressed":
+            elif log_status == "suppressed":
+                ok = _patch_outbox(row["id"], {"status": "suppressed",
+                                                "last_error": "prior send suppressed"})
+                if ok:
+                    duplicate_n += 1
                     suppressed_n += 1
-                else:
+            elif log_status is not None:
+                # 'queued' / 'skipped_no_smtp' (or any other readable, non-terminal
+                # mailer status): NOT a failure and NOT a success, so it must not be
+                # mirrored into alert_outbox's own CHECK-constrained status column --
+                # neither value is a legal alert_outbox status (review round 3
+                # MAJOR-2; the old code wrote it verbatim, which either violated the
+                # CHECK constraint -- silently swallowed -- or, had it been accepted,
+                # permanently orphaned the row outside this drain's own selection
+                # predicate). The row stays 'pending' so the next tick re-selects it;
+                # attempts is left unchanged since no send failure occurred.
+                ok = _patch_outbox(row["id"], {"status": "pending",
+                                                "last_error": f"prior send {log_status}"})
+                if ok:
+                    duplicate_n += 1
                     degraded_n += 1
-                try:
-                    _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                        body={"status": log_status, "last_error": f"prior send {log_status}"},
-                        prefer="return=minimal")
-                except Exception:  # noqa: BLE001
-                    pass
             else:
                 # Unreadable (READ_UNAVAILABLE) or a zero-row read that contradicts the
                 # 'duplicate' claim -- either way we do not know what the prior send did,
@@ -520,32 +573,41 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                 # sent. Typed, printed, never silent.
                 degraded_n += 1
                 print("::warning title=alert-drain-duplicate-unreadable::"
-                      "email_log row for idem_key %s unreadable (%s) -- outbox row %s left "
-                      "pending, never marked sent"
-                      % (_alert_idem_key(str(fire_event_id)),
-                         log_read.error_class or "no_matching_row", row["id"]), flush=True)
+                      "email_log row for idem_key %s state=READ_UNAVAILABLE (%s) -- outbox "
+                      "row %s left pending, never marked sent"
+                      % (idem_key, log_read.error_class or "no_matching_row", row["id"]),
+                      flush=True)
         elif status == "sent":
-            fired_n += 1
             fired_at = payload.get("fired_at")
-            if fired_at:
-                fired_ats.append(str(fired_at))
-            try:
-                _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                    body={"status": "sent", "delivered_at": datetime.now(timezone.utc).isoformat(),
-                          "attempts": int(row.get("attempts") or 0) + 1, "last_error": None},
-                    prefer="return=minimal")
-            except Exception:  # noqa: BLE001
-                pass
-        else:
-            failed_n += 1
-            if status in ("skipped_no_smtp", "queued", "suppressed"):
+            ok = _patch_outbox(row["id"], {"status": "sent",
+                                            "delivered_at": datetime.now(timezone.utc).isoformat(),
+                                            "attempts": int(row.get("attempts") or 0) + 1,
+                                            "last_error": None})
+            if ok:
+                fired_n += 1
+                if fired_at:
+                    fired_ats.append(str(fired_at))
+        elif status in ("skipped_no_smtp", "queued"):
+            # Not a failure -- a config/transient gap (mail-off, or a marketing-only
+            # ledger race that should never reach this transactional class in
+            # practice). Leave the row 'pending' so the next tick tries again, rather
+            # than burning a retry attempt or mirroring a non-alert_outbox status
+            # (review round 3 MINOR-2; mirrors the duplicate-branch treatment above).
+            ok = _patch_outbox(row["id"], {"status": "pending", "last_error": status})
+            if ok:
                 degraded_n += 1
-            try:
-                _pg("PATCH", f"alert_outbox?id=eq.{row['id']}",
-                    body={"status": "failed", "attempts": int(row.get("attempts") or 0) + 1,
-                          "last_error": error_cls or status}, prefer="return=minimal")
-            except Exception:  # noqa: BLE001
-                pass
+        elif status == "suppressed":
+            ok = _patch_outbox(row["id"], {"status": "suppressed", "last_error": status})
+            if ok:
+                suppressed_n += 1
+        else:
+            # "failed", or any status outside app.mailer.STATUSES -- fail-closed as a
+            # real send failure: attempts increments (bounded by the retry cap above).
+            new_attempts = int(row.get("attempts") or 0) + 1
+            ok = _patch_outbox(row["id"], {"status": "failed", "attempts": new_attempts,
+                                            "last_error": error_cls or status})
+            if ok:
+                failed_n += 1
 
     outcome = derive_outcome(read_state=outbox_read.state, evaluated_n=evaluated_n,
                              unevaluable_n=unevaluable_n, failed_n=failed_n, degraded_n=degraded_n)

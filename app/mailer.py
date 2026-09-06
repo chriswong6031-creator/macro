@@ -1010,9 +1010,20 @@ _ALERT_BANNED_TOKENS = (
 )
 
 
-def alert_idem_key(fire_event_id: str) -> str:
-    """``alert_fire:<fire_event_id>`` -- THE idempotency key (F08 freeze section 6)."""
-    return f"{ALERT_TEMPLATE}:{fire_event_id}"
+def alert_idem_key(fire_event_id: str, attempt: int = 0) -> str:
+    """``alert_fire:<fire_event_id>`` -- THE idempotency key (F08 freeze section 6).
+
+    ``attempt=0`` (the default) is BYTE-IDENTICAL to the original single-arg key, so
+    every alert already resolved under the old signature keeps resolving to the same
+    ``email_log`` row. ``attempt>0`` mints a DISTINCT key per retry -- a mailer
+    ``'duplicate'`` is terminal for one idem_key forever (the ``email_log`` row it
+    names never leaves whatever status it settled at), so a retry that reused the
+    same key could never send again. This was review round 3's BLOCKER; see
+    ``engine/alert_delivery_drain.py``'s ``_alert_idem_key`` (pinned identical below
+    the module docstring there) and its ``drain()`` retry path.
+    """
+    base = f"{ALERT_TEMPLATE}:{fire_event_id}"
+    return base if not attempt else f"{base}:{attempt}"
 
 
 def _alert_plain(value, fallback_en: str, fallback_zh: str, *, zh: bool = False) -> str:
@@ -1105,11 +1116,14 @@ def compose_alert(payload: dict, *, lang: str = "en") -> dict:
 
 
 def send_alert(*, fire_event_id: str, to_email: str, payload: dict,
-              lang: str = "en", user_id=None) -> str:
+              lang: str = "en", user_id=None, attempt: int = 0) -> str:
     """Compose + send ONE fired-alert email. Returns a mailer status string.
 
     Returns one of ``app.mailer.STATUSES`` plus ``'duplicate'``. No parallel enum
-    (F08 freeze section 8).
+    (F08 freeze section 8). ``attempt`` (default 0, byte-identical key) is the
+    drain's retry counter -- passed straight to ``alert_idem_key`` so a later retry
+    of a terminally-failed row claims a FRESH ``email_log`` row instead of colliding
+    with the first attempt's (review round 3 BLOCKER).
     """
     c = compose_alert(payload, lang=lang)
     html, text = render_email(
@@ -1122,6 +1136,6 @@ def send_alert(*, fire_event_id: str, to_email: str, payload: dict,
     try:
         return send(template=ALERT_TEMPLATE, cls=ALERT_CLS, to_email=to_email,
                     subject=c["subject"], html=html, text=text,
-                    idem_key=alert_idem_key(fire_event_id), user_id=user_id)
+                    idem_key=alert_idem_key(fire_event_id, attempt=attempt), user_id=user_id)
     except DuplicateKey:
         return "duplicate"
