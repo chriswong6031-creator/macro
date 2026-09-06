@@ -633,7 +633,9 @@ verified:
       6a976a00-3e70-83ea-a4ba-375d18d67a78 response a497dee3 readback;
       Secretary verification receipt 1788680898.789289; parent Python stdlib
       ZIP read with no extraction or execution; full read of the current edited
-      original return.
+      original return; full read of Integration acceptance 1788681161.485309,
+      issuer ruling 1788681744.155099 and package-owner declaration
+      1788681845.169829 on the same original root.
     result: >
       Secretary reports that
       /Users/chriswong/Downloads/Mastermind_U1_Completion_Candidate_20260905.zip
@@ -660,6 +662,15 @@ verified:
       none was rerun here. Its reserved branch
       sol/business-sol-plugin-app-integration-u1-20260901 remained without a PR
       at that return. The earlier CUA file-transport refusal was not bypassed.
+      Declaration 1788681845.169829 reports ADOPTION_EXECUTOR=NONE_RETAINED
+      and CURRENT_SOURCE_PUBLICATION_ATTEMPT=NONE_RETAINED only at the
+      package-owner conversation's retained-record boundary. It retains no
+      evidence mapping historical logical source ACK 1788508382.277759 to
+      that conversation or a native/worktree executor. The original logical
+      source owner remains unresolved and not released. Current persistent
+      publication is NOT_OBSERVED; historical local/object/write attempts
+      behind execution-return 1788641301.094939 are NOT_RECORDED, not all-time
+      NONE. No source adoption or preparation authority follows.
   - claim: U1R ended its single allowed acquisition attempt in a nonterminal identity-qualification hold without visiting Drafts.
     command: >
       Full reads of U1R root C0BSBM78V1N/1788642265.551319, issuer rulings
@@ -667,7 +678,8 @@ verified:
       Secretary CONTINUATION
       1788680252.998309, ACQUISITION 1788680312.067399, RESULT
       1788680334.172139, Web adjudication 1788680630.275479, and Secretary
-      retained-evidence reduction 1788681063.012999.
+      retained-evidence reduction 1788681063.012999 and issuer disposition
+      1788681616.180729.
     result: >
       The sole allowed getTab attempt returned literal `Debugger unattached` in
       1.4500 seconds with no usable page state or numeric error code. Outcome is
@@ -685,8 +697,13 @@ verified:
       NOT_RECORDED, getTab attachment/reset error contract
       NOT_DOCUMENTED_IN_RETAINED_REFERENCE, and no separate attach/detach receipt.
       It made no new diagnostic, status, browser or transcript-search call and
-      left all evidence counts unchanged. Existing-issuer disposition of that
-      bounded result remains pending.
+      left all evidence counts unchanged. Issuer disposition 1788681616.180729
+      accepted and finished that evidence obligation; U1R remains
+      NONTERMINAL_HOLD / CONTROL_ATTACHMENT_PREREQUISITE_UNRESOLVED.
+      No further investigation or access is assigned. The issuer/continuity
+      owner retains the unresolved platform-contract prerequisite; any later
+      action requires concrete same-carrier disposition after effect and
+      ownership reconciliation. Unused evidence budget remains inactive.
 unverified:
   - claim: One real Business cockpit can safely be selected for MAS-242 Stage 0 of the B2 workspace canary.
     what_would_verify: >
@@ -716,7 +733,8 @@ unresolved:
   - "The desktop header source/status cluster still overlaps and crowds Theme. Today still lacks its heading ID/aria-labelledby relationship. The nine accepted framings are representative dark-mode section proof, not light-mode, every-row, full keyboard/screen-reader or exhaustive accessibility acceptance."
   - "Steward PR 463 is now OPEN/DRAFT at exact 11163465 with F1/F3 accepted but current-base integration UNESTABLISHED and only PREPARATION_ONLY r4 permitted to its same owner. F2 remains reserved/unverified. Header 1bf, HC0 #247 and Executive metadata #469 remain separately held or unproven lanes."
   - "U1 byte transport is CLOSED and parent independently verified immutable package integrity without extraction or execution: 52 safe unique entries, all 51 ledger digests and all eight manifest file identities pass. The original author corrected the old report: embedded SHA256SUMS is 5653-byte/2cec6108 while 5652-byte/80c28bd is the README; the discrepancy is resolved with no artifact change. Ruling 1788677218.803659 remains reconciliation-only pending exact effect state. Source adoption, publication, current CI, app, runtime and production remain unproven."
-  - "U1R is an accepted nonterminal ACQUISITION_FAILED / IDENTITY_QUALIFICATION_INCOMPLETE hold. Drafts was not visited and current account/workspace/role were not observed; no retry or alternate lane is authorized. Retained-only result 1788681063.012999 found API/build generation NOT_RECORDED, getTab attachment/reset error contract NOT_DOCUMENTED_IN_RETAINED_REFERENCE and no separate attach/detach receipt, with no new calls and unchanged counts. Existing-issuer disposition remains pending."
+  - "U1 source-executor binding remains unresolved and not released. Package-owner declaration 1788681845.169829 retains no mapping of historical logical source ACK 1788508382.277759 to its conversation or a native/worktree executor. Its NONE_RETAINED executor/publication fields are limited to that retained-record boundary; historical local/object/write attempts behind 1788641301.094939 are NOT_RECORDED, not all-time NONE."
+  - "U1R is an accepted nonterminal ACQUISITION_FAILED / IDENTITY_QUALIFICATION_INCOMPLETE hold. Drafts was not visited and current account/workspace/role were not observed; no retry or alternate lane is authorized. Retained-only result 1788681063.012999 found API/build generation NOT_RECORDED, getTab attachment/reset error contract NOT_DOCUMENTED_IN_RETAINED_REFERENCE and no separate attach/detach receipt, with no new calls and unchanged counts. Issuer 1788681616.180729 accepted and finished that evidence step, preserving CONTROL_ATTACHMENT_PREREQUISITE_UNRESOLVED and assigning no further investigation or access."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Preserve Integration's accepted/STOPped service operation autonomy-integrator-ccr486-existing-service-20260905-001 at comment 5553186139 and its cleanup return 5553203800. Keep the exact installed 767 service and sole intended PID 49435 running; do not replay the closed preview/browser/service child or infer broader product graduation."
@@ -727,8 +745,8 @@ next_actions:
   - "If and only if Stage 0 selects one clean cockpit, perform only the authorized reversible MAS-242 workspace join and Personal to Business to Personal proof; retain both controls and do not import, authenticate, install or admit anything in that stage."
   - "Keep P1 import, authenticated Steward reads, Executive admission, H1 receipt validation and rollback as separately evidenced gates after the workspace proof."
   - "For PR 463, preserve the same owner and PREPARATION_ONLY r4 ceiling. Current-base integration remains UNESTABLISHED; no join, test, Ready or merge follows without a fresh governing edge."
-  - "For U1, preserve the independently verified package identities and corrected ledger-versus-README hash distinction. Do not treat transported bytes as source-adoption or execution authority; preserve ruling 1788677218.803659 reconciliation and current-owner gates. Keep original U1 source owner 6a976a00 distinct from U1R issuer 6a9ce68d."
-  - "For U1R, preserve Web's accepted nonterminal acquisition hold, the spent single-attempt allowance and retained-only result 1788681063.012999. Await the existing issuer's disposition; do not repeat the reduction, make a new diagnostic, status, browser or transcript-search call, retry acquisition, use an alternate API, select another target or infer a login/permission cause."
+  - "For U1, preserve the independently verified package identities and corrected ledger-versus-README hash distinction. Do not treat transported bytes as source-adoption or execution authority; preserve rulings 1788677218.803659 and 1788681744.155099 reconciliation and current-owner gates. Original package-owner conversation 6a976a00 is distinct from U1R issuer 6a9ce68d; declaration 1788681845.169829 leaves the logical source-writer/executor binding unresolved. Consume that completed declaration through Integration before any separately scoped forward preflight; do not reissue it or infer a writer transfer."
+  - "For U1R, preserve issuer disposition 1788681616.180729: retained-only result 1788681063.012999 is accepted and finished, no further investigation or access is assigned, and the spent single-attempt allowance remains spent. The issuer/continuity owner retains the platform-contract prerequisite. Do not repeat the reduction, make a new diagnostic, status, browser or transcript-search call, retry acquisition, use an alternate API, select another target or infer a login/permission cause."
 do_not_redo:
   - "Do not create another workstream, portfolio matrix, lifecycle store, cockpit registry, Business workspace, canary account, HC0 writer, Steward lane or Executive admission lane."
   - "Do not call a source merge, fixture connector, UI clear count, workspace-agent catalog entry, chat title, Slack sender, recency or app connector a live Business cockpit, authenticated app or Executive proof."
@@ -1165,9 +1183,22 @@ records reported local evidence, not a rerun. Source adoption, publication,
 current CI, app, runtime and production remain unproven. Reserved branch
 `sol/business-sol-plugin-app-integration-u1-20260901` had no PR at that return.
 Ruling `1788677218.803659` remains reconciliation-only pending exact effect state;
-verified transport does not admit source adoption. Original U1 source owner
+verified transport does not admit source adoption. Original U1 package-owner conversation
 `6a976a00-3e70-83ea-a4ba-375d18d67a78` and U1R issuer
 `6a9ce68d-b4a4-83ea-bc48-208e93ca7e5f` remain distinct.
+
+Subsequent issuer ruling `1788681744.155099` requested one finite owner/effect
+return. Actual package-owner declaration `1788681845.169829` reports
+`ADOPTION_EXECUTOR=NONE_RETAINED` and
+`CURRENT_SOURCE_PUBLICATION_ATTEMPT=NONE_RETAINED` only at that conversation's
+retained-record boundary. It retains no evidence mapping historical logical
+source ACK `1788508382.277759` to itself or a native/worktree executor. The
+original logical source owner remains unresolved and not released; possession
+of the verified Mac-local package does not transfer that role. Current
+persistent source publication is `NOT_OBSERVED`. Historical local/object/write
+attempts behind unsupported execution-return `1788641301.094939` are
+`NOT_RECORDED`, not all-time `NONE`. This declaration grants no source adoption
+or preparation authority and does not establish a blanket writer clearance.
 
 ### U1R acquisition is an accepted nonterminal hold
 
@@ -1192,8 +1223,14 @@ Secretary only to reduce already-retained documents and tool responses. Result
 `1788681063.012999` returned API/build generation `NOT_RECORDED`, getTab
 attachment/reset error contract `NOT_DOCUMENTED_IN_RETAINED_REFERENCE`, and no
 separate attach/detach receipt. It made no new diagnostic, status, browser or
-transcript-search call; evidence counts stayed unchanged. Await the existing
-issuer's disposition of that bounded result. Do not repeat the reduction.
+transcript-search call; evidence counts stayed unchanged. Issuer disposition
+`1788681616.180729` accepted and finished that evidence obligation. U1R remains
+`NONTERMINAL_HOLD / CONTROL_ATTACHMENT_PREREQUISITE_UNRESOLVED`; no further
+investigation or access is assigned. The issuer/continuity owner retains the
+platform-contract prerequisite. A later concrete same-carrier ruling must
+reconcile effects and ownership before further access. Unused budget is
+inactive, and a future document or apparent spontaneous recovery does not
+resume access. Do not repeat the reduction or review the same failure again.
 
 ### Remaining gates
 
