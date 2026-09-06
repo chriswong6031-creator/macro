@@ -540,7 +540,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 
 /* ── Research Implications (F10-X1) ────────────────────────────────────────
    Two frozen estimator runs whose honest headline is that NEITHER is usable:
-   one failed its own positive control, one is missing an input receipt. The
+   one failed its own estimator-unbiasedness check, one is missing an input receipt. The
    templated answer — big number, small label, coloured badge — is exactly
    wrong here, because it makes the number the hero when the number is the one
    thing the reader must not act on. So the state leads, and a full-height
@@ -2130,11 +2130,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       <span class="l-en"><strong>Research context — do not use as a trading signal.</strong>
       Each card is a read-only projection of one already-committed result artifact: the owner's own
       figures, its own missing pieces, and the state it earned. Neither card below is usable —
-      one failed its positive control, the other is missing an input receipt — and the cards say so
+      one failed its estimator-unbiasedness check, the other is missing an input receipt — and the cards say so
       rather than rounding the gap away.</span>
       <span class="l-zh"><strong>研究背景 — 请勿作为交易信号使用。</strong>
       每张卡片都是对一份已提交结果文物的只读投影：所有者自己的数值、自己的缺口，以及它实际达到的状态。
-      下方两张卡片均不可用——其一未通过正向对照，其二缺少输入凭证——卡片如实呈现，不做抹平。</span>
+      下方两张卡片均不可用——其一未通过估计器无偏性检验，其二缺少输入凭证——卡片如实呈现，不做抹平。</span>
     </p>
     <p class="ric-lede">
       <span class="l-en">Values are printed in the unit the owner recorded. A quantity the owner did not
@@ -2156,6 +2156,10 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       <button type="button" class="ric-fbtn" data-ric-f="q:{{ q }}" aria-pressed="false">
         <span class="l-en">{{ 'Diagnostic failed' if q == 'DIAGNOSTIC_FAILED' else ('Receipts incomplete' if q == 'ARTIFACT_INCOMPLETE' else q) }}</span><span class="l-zh">{{ '诊断未通过' if q == 'DIAGNOSTIC_FAILED' else ('凭证不完整' if q == 'ARTIFACT_INCOMPLETE' else q) }}</span></button>
       {% endfor %}
+      {% for tier in ric_cards|map(attribute='evidence_tier')|unique|list %}
+      <button type="button" class="ric-fbtn" data-ric-f="tier:{{ tier }}" aria-pressed="false">
+        <span class="l-en">Tier: {{ tier }}</span><span class="l-zh">证据层级：{{ tier }}</span></button>
+      {% endfor %}
     </fieldset>
 
     <div class="ric-cards" id="ric-cards">
@@ -2166,7 +2170,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       {%- set metrics = card.diagnostics|rejectattr('passed', 'defined')|list -%}
       {%- set card_anchor = ('ric-' ~ card.method_family ~ '-' ~ card.study_run_id ~ '-' ~ card.selected_result_id)|replace('_', '-')|replace('/', '-')|replace('@', '-') -%}
       <article class="ric-card {{ scls }}" id="{{ card_anchor }}"
-               data-ric-family="{{ card.method_family }}" data-ric-quality="{{ q }}">
+               data-ric-family="{{ card.method_family }}" data-ric-quality="{{ q }}"
+               data-ric-tier="{{ card.evidence_tier }}">
         <div class="ric-rail" aria-hidden="true"></div>
         <div class="ric-body">
 
@@ -2483,7 +2488,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
     cards.forEach(function(card){
       var show = sel === 'all'
         || (sel.indexOf('fam:') === 0 && card.getAttribute('data-ric-family') === sel.slice(4))
-        || (sel.indexOf('q:') === 0 && card.getAttribute('data-ric-quality') === sel.slice(2));
+        || (sel.indexOf('q:') === 0 && card.getAttribute('data-ric-quality') === sel.slice(2))
+        || (sel.indexOf('tier:') === 0 && card.getAttribute('data-ric-tier') === sel.slice(5));
       card.hidden = !show;
     });
     btns.forEach(function(b){

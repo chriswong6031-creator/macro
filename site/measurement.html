@@ -49,672 +49,10 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css">
-<style>
-/* ── Calibration Lab — page-specific styles ──────────────────────────────── */
-body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
-
-/* ── Token bridge ────────────────────────────────────────────────────────────
-   This page loads ONLY theme.css, which does not define --border / --card /
-   --surface / --blue / --fail. Every `var(--border,rgba(255,255,255,.08))` on
-   this page was therefore resolving to its hard-coded DARK fallback in light
-   mode: invisible hairlines, invisible card fills, and — worst — the tinted
-   banners mixing over --surface:#0f1629, i.e. a near-black box with dark text
-   on the light canvas. Defining the five names on .mh-wrap (which contains the
-   whole page, but NOT the shared nav chrome) maps them onto real theme tokens,
-   so both themes resolve at paint with no per-rule edits.
-
-   --ok/--act, NOT --up/--down: theme.css swaps --up/--down under
-   html[data-lang="zh"] for the Asia 红涨绿跌 convention, and states in its own
-   comment that status colours "encode health/danger, NOT price direction".
-   Every green/red on this page is a PASS/FAIL/health reading, so painting them
-   from --up/--down rendered PASS red and FAIL green for Chinese readers. */
-.mh-wrap{
-  --border:  color-mix(in srgb, var(--text) 13%, transparent);
-  --card:    color-mix(in srgb, var(--panel) 88%, transparent);
-  --surface: var(--panel);
-  --blue:    var(--info);
-  --fail:    var(--act);
-  /* ── Chip ink ──────────────────────────────────────────────────────────────
-     Status chips paint hue-coloured text on a 12–18% tint of the same hue.
-     On the light theme's white card that lands at ~2.6–3.5:1 — under AA for
-     11–13px type, and these chips (FAIL / FALSIFIED / PASS / ACCRUING) ARE the
-     page's content. Mixing the hue toward --text deepens it on light and
-     lightens it on dark with one declaration per hue; the chip FILLS keep the
-     pure hue, so the colour language is unchanged. */
-  --ok-ink:     color-mix(in srgb, var(--ok)   66%, var(--text));
-  --act-ink:    color-mix(in srgb, var(--act)  66%, var(--text));
-  --warn-ink:   color-mix(in srgb, var(--warn) 66%, var(--text));
-  --blue-ink:   color-mix(in srgb, var(--blue) 66%, var(--text));
-  --accent-deep:color-mix(in srgb, var(--blue) 68%, #0a1930);
-}
-.mh-wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
-
-/* ── Hero — the calibration loop ─────────────────────────────────────────── */
-.mh-hero{padding:44px 0 32px;border-bottom:1px solid var(--border);margin-bottom:34px}
-.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--muted);margin-bottom:12px}
-.mh-kicker .hb{display:inline-block;width:7px;height:7px;border-radius:50%;
-  background:var(--blue);margin-right:7px;vertical-align:1px}
-.mh-title{font-size:clamp(1.6rem,4.4vw,2.35rem);font-weight:800;line-height:1.12;
-  letter-spacing:-.02em;margin:0 0 10px;color:var(--text)}
-.mh-deck{font-size:1.02rem;line-height:1.5;color:var(--muted);
-  max-width:52ch;margin:0 0 28px}
-
-/* The signature: three beats of the nightly loop, joined into one instrument,
-   with a return rail that closes it. Ordinals are earned here — this really is
-   a sequence, and the rail is what makes it a loop rather than a funnel. */
-.mh-loop{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr)}
-.mh-loop-step{min-width:0;padding:15px 18px 17px;border:1px solid var(--border);
-  background:color-mix(in srgb,var(--text) 3%,transparent)}
-.mh-loop-step + .mh-loop-step{border-left:none}
-.mh-loop-step:first-child{border-radius:10px 0 0 0}
-.mh-loop-step:last-child{border-radius:0 10px 0 0}
-.mh-loop-hd{display:flex;align-items:baseline;gap:9px}
-.mh-loop-n{font-family:var(--font-mono);font-size:.72rem;font-weight:700;
-  color:var(--blue-ink);letter-spacing:.06em}
-.mh-loop-name{font-size:.72rem;font-weight:800;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--text)}
-.mh-loop-line{display:block;margin-top:9px;font-size:.82rem;line-height:1.5;color:var(--muted)}
-.mh-loop-stat{display:block;margin-top:11px;font-size:.72rem;line-height:1.4;color:var(--muted)}
-.mh-loop-num{font-family:var(--font-mono);font-size:.94rem;font-weight:700;
-  color:var(--text);letter-spacing:-.01em;margin-right:4px}
-.mh-loop-rail{position:relative;height:15px;border:1px solid var(--border);border-top:none;
-  border-radius:0 0 10px 10px;margin:0 0 26px}
-.mh-loop-return{position:absolute;left:50%;bottom:-1px;transform:translate(-50%,50%);
-  background:var(--bg);padding:0 12px;white-space:nowrap;
-  font-size:.65rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted)}
-.mh-loop-return .rr{color:var(--blue-ink);margin-right:5px;font-size:.8rem;line-height:1}
-
-/* Forward record — one honest count, same register as the loop stats above.
-   Mono is on the FIGURES only; the words stay in the body face. */
-.mh-fwd{margin:0 0 22px;font-size:.72rem;line-height:1.5;color:var(--muted)}
-.mh-fwd-num{font-family:var(--font-mono);font-size:.94rem;font-weight:700;
-  color:var(--text);letter-spacing:-.01em;margin-right:4px}
-.mh-fwd-sep{margin:0 7px;opacity:.45}
-
-/* Where it stands — the one stance line. Calm left rule, not an alarm box. */
-.mh-stand{font-size:.9rem;line-height:1.65;color:var(--muted);max-width:78ch;
-  margin:0;padding-left:15px;border-left:2px solid var(--blue)}
-.mh-stand strong{color:var(--text);font-weight:700}
-.mh-stand a{color:var(--ink-link, var(--link,var(--blue)))}
-
-/* Tier-3 standing note (section-level, below the fold) */
-.mh-note{border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:0 0 20px;
-  background:color-mix(in srgb,var(--text) 3%,transparent);
-  font-size:.83rem;line-height:1.6;color:var(--muted)}
-.mh-note strong{color:var(--text)}
-
-/* ── Section headings ────────────────────────────────────────────────────── */
-.mh-section{margin-bottom:48px}
-.mh-sh{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
-.mh-sh h2{font-size:1.15rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
-.mh-sh .mh-sh-sub{font-size:.78rem;color:var(--muted,#8899aa)}
-
-/* ── Engine tabs ─────────────────────────────────────────────────────────── */
-.mh-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
-.mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
-  background:transparent;color:var(--muted,#8899aa);font-size:.82rem;cursor:pointer;
-  transition:all .15s}
-/* Selected tab: the raw accent takes white text to only 2.8:1 in dark mode, so
-   the fill is deepened toward ink. ~5:1 dark, ~7.7:1 light. */
-.mh-tab.on{background:var(--accent-deep);border-color:var(--accent-deep);
-  color:#fff;font-weight:600}
-
-/* ── Engine panel ────────────────────────────────────────────────────────── */
-.mh-engine{display:none}
-.mh-engine.on{display:block}
-.mh-eng-hd{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-.mh-eng-name{font-size:1rem;font-weight:700;color:var(--text,#e2e8f0)}
-.mh-eng-epoch{font-size:.72rem;color:var(--muted,#8899aa);
-  background:color-mix(in srgb,var(--text) 8%,transparent);
-  padding:3px 8px;border-radius:4px;font-family:var(--font-mono)}
-
-/* ── Cohort badges ───────────────────────────────────────────────────────── */
-.mh-cohorts{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}
-.mh-cohort{border:1px solid var(--border,rgba(255,255,255,.08));border-radius:10px;
-  padding:20px;background:var(--card,rgba(255,255,255,.03))}
-.mh-cohort-hd{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.mh-cohort-badge{font-size:.7rem;font-weight:700;letter-spacing:.1em;
-  padding:3px 8px;border-radius:4px}
-.badge-backtest{background:color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
-  color:var(--blue-ink);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
-.badge-live{background:color-mix(in srgb,var(--ok,#3da564) 20%,transparent);
-  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
-.mh-cohort-meta{font-size:.75rem;color:var(--muted,#8899aa)}
-
-/* ── Primitive blocks ────────────────────────────────────────────────────── */
-.mh-primitive{margin-bottom:18px;padding:14px;border-radius:8px;
-  background:color-mix(in srgb,var(--text) 4%,transparent)}
-.mh-prim-title{font-size:.78rem;font-weight:700;color:var(--text,#e2e8f0);
-  margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.mh-prim-gate{font-size:.68rem;font-family:var(--font-mono);padding:2px 6px;border-radius:3px;
-  background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted,#8899aa)}
-
-/* ── Verdict badges ──────────────────────────────────────────────────────── */
-.verdict{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;
-  padding:3px 8px;border-radius:4px;letter-spacing:.05em}
-.verdict::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
-.verdict-fail{background:color-mix(in srgb,var(--act,#e05555) 18%,transparent);
-  color:var(--act-ink);border:1px solid color-mix(in srgb,var(--act) 35%,transparent)}
-.verdict-fail::before{background:var(--act,#e05555)}
-.verdict-miscal{background:color-mix(in srgb,var(--warn,#f59e0b) 18%,transparent);
-  color:var(--warn-ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
-.verdict-miscal::before{background:var(--warn,#f59e0b)}
-.verdict-pass{background:color-mix(in srgb,var(--ok,#3da564) 18%,transparent);
-  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
-.verdict-pass::before{background:var(--ok,#3da564)}
-.verdict-accruing{background:color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
-  color:var(--blue-ink);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
-.verdict-accruing::before{background:var(--blue,#3b82f6)}
-.verdict-none{background:color-mix(in srgb,var(--muted) 18%,transparent);
-  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
-.verdict-none::before{background:var(--muted,#8899aa)}
-
-/* ── Metric rows ─────────────────────────────────────────────────────────── */
-.mh-metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.mh-metric{padding:10px 12px;border-radius:6px;
-  background:color-mix(in srgb,var(--text) 3%,transparent);
-  border:1px solid var(--border,rgba(255,255,255,.06))}
-.mh-metric-label{font-size:.68rem;color:var(--muted,#8899aa);margin-bottom:4px}
-.mh-metric-val{font-size:.95rem;font-weight:700;color:var(--text,#e2e8f0)}
-.mh-metric-ci{font-size:.68rem;color:var(--muted,#8899aa)}
-.mh-metric-note{font-size:.68rem;color:var(--muted,#8899aa);margin-top:4px;line-height:1.4}
-
-/* ── Gate ledger table ───────────────────────────────────────────────────── */
-.mh-gate-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.mh-gate-table{width:100%;min-width:560px;border-collapse:collapse;font-size:.8rem}
-.mh-gate-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
-  text-transform:uppercase;letter-spacing:.08em}
-.mh-gate-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
-  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
-.mh-gate-table tr:last-child td{border-bottom:none}
-.mh-gate-table .gate-id{font-family:var(--font-mono);font-size:.75rem;font-weight:700;
-  white-space:nowrap;color:var(--text,#e2e8f0)}
-.mh-gate-table .gate-result{font-size:.75rem;color:var(--muted,#8899aa);
-  max-width:340px;line-height:1.4}
-.mh-gate-fam{font-size:.68rem;font-family:var(--font-mono);
-  padding:2px 6px;border-radius:3px;
-  background:color-mix(in srgb,var(--text) 8%,transparent);
-  color:var(--muted,#8899aa)}
-.mh-gate-sec{padding:12px 0 6px;font-size:.72rem;font-weight:700;letter-spacing:.1em;
-  color:var(--muted,#8899aa);text-transform:uppercase;border-top:1px solid var(--border,rgba(255,255,255,.06));
-  margin-top:8px;grid-column:1/-1}
-
-/* ── Collinearity panel ──────────────────────────────────────────────────── */
-.mh-collin{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
-@media(max-width:640px){.mh-collin{grid-template-columns:1fr}}
-.mh-collin-block{padding:14px;border-radius:8px;
-  background:color-mix(in srgb,var(--text) 4%,transparent);
-  border:1px solid var(--border,rgba(255,255,255,.06))}
-.mh-collin-block h4{font-size:.8rem;font-weight:700;margin:0 0 8px;
-  color:var(--text,#e2e8f0)}
-.mh-collin-block ul{margin:0;padding-left:18px;font-size:.8rem;
-  color:var(--muted,#8899aa);line-height:1.7}
-.mh-collin-block li{margin-bottom:2px}
-.mh-collin-block li strong{color:var(--text,#e2e8f0)}
-
-/* ── Accruing experiments table ──────────────────────────────────────────── */
-.mh-exp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.mh-exp-table{width:100%;min-width:480px;border-collapse:collapse;font-size:.8rem}
-.mh-exp-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
-  text-transform:uppercase;letter-spacing:.08em}
-.mh-exp-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
-  color:var(--text,#e2e8f0);vertical-align:top}
-.mh-exp-table tr:last-child td{border-bottom:none}
-.mh-exp-name{font-weight:600;font-size:.82rem;color:var(--text,#e2e8f0)}
-.mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
-.mh-exp-cb{font-family:var(--font-mono);font-size:.75rem}
-
-/* ── Sync gauge (W5.1 STOP-fallback) ─────────────────────────────────────── */
-.sg-wrap{margin-bottom:48px}
-.sg-stop-banner{background:color-mix(in srgb,var(--act,#e05555) 7%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--act,#e05555) 22%,transparent);
-  border-radius:10px;padding:14px 18px;margin-bottom:20px;
-  font-size:.85rem;line-height:1.6;color:var(--text,#e2e8f0)}
-.sg-stop-banner strong{color:var(--act-ink)}
-.sg-honest-note{background:color-mix(in srgb,var(--blue,#3b82f6) 6%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
-  border-radius:8px;padding:12px 16px;margin-bottom:20px;
-  font-size:.8rem;line-height:1.55;color:var(--muted,#8899aa)}
-.sg-honest-note strong{color:var(--blue-ink)}
-.sg-families{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
-.sg-family{padding:16px;border-radius:10px;
-  border:1px solid var(--border,rgba(255,255,255,.08));
-  background:var(--card,rgba(255,255,255,.03))}
-.sg-fam-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
-.sg-fam-name{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
-.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:var(--font-mono)}
-.sg-sync-val{font-size:1.5rem;font-weight:800;margin:0 0 4px}
-.sg-sync-bar{height:6px;border-radius:3px;
-  background:color-mix(in srgb,var(--text) 10%,transparent);margin-bottom:10px;overflow:hidden}
-.sg-sync-fill{height:100%;border-radius:3px;
-  background:var(--blue,#3b82f6);transition:width .3s}
-.sg-frac-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.sg-frac-chip{font-size:.7rem;padding:2px 7px;border-radius:4px;
-  background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted,#8899aa)}
-.sg-frac-chip strong{color:var(--text,#e2e8f0)}
-.sg-hist-stats{margin-top:10px;font-size:.75rem;color:var(--muted,#8899aa);
-  display:flex;gap:16px;flex-wrap:wrap}
-.sg-sparkline{margin-top:12px;width:100%;height:52px}
-.sg-gate-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:16px}
-.sg-gate-cell{padding:10px 12px;border-radius:6px;
-  background:color-mix(in srgb,var(--text) 3%,transparent);
-  border:1px solid var(--border,rgba(255,255,255,.06))}
-.sg-gate-lbl{font-size:.68rem;color:var(--muted,#8899aa);margin-bottom:3px}
-.sg-gate-val{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
-@media(max-width:600px){
-  .sg-families{grid-template-columns:1fr}
-}
-
-/* ── Evidence-Gap panel (PR-A1) ─────────────────────────────────────────── */
-.eg-subpanel{margin-bottom:36px;padding:20px;border-radius:10px;
-  border:1px solid var(--border,rgba(255,255,255,.08));
-  background:var(--card,rgba(255,255,255,.03))}
-.eg-subhd{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
-.eg-subhd h3{font-size:.98rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
-.eg-subhd-meta{font-size:.75rem;color:var(--muted,#8899aa)}
-.eg-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:820px;margin:0 0 14px;line-height:1.6}
-.eg-note strong{color:var(--text,#e2e8f0)}
-.eg-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.eg-table{width:100%;min-width:600px;border-collapse:collapse;font-size:.8rem}
-.eg-table th{text-align:left;padding:8px 10px;font-size:.7rem;font-weight:700;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
-  text-transform:uppercase;letter-spacing:.07em}
-.eg-table td{padding:8px 10px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
-  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
-.eg-table tr:last-child td{border-bottom:none}
-.eg-mono{font-family:var(--font-mono);font-size:.78rem;color:var(--text,#e2e8f0)}
-.eg-num{font-family:var(--font-mono);font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);white-space:nowrap}
-.eg-ts{font-size:.72rem;color:var(--muted,#8899aa)}
-.eg-question{font-size:.75rem;color:var(--muted,#8899aa);max-width:380px;line-height:1.4}
-.eg-starvation{font-size:.78rem;line-height:1.45}
-.eg-stv-closed{color:var(--ok-ink)}
-.eg-stv-time{color:var(--blue-ink)}
-.eg-stv-build{color:var(--warn-ink)}
-.eg-footnote{font-size:.7rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.5}
-.eg-footnote code{font-family:var(--font-mono);font-size:.7rem}
-.eg-accrual-banner{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
-  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
-  border-radius:8px;padding:12px 16px;margin-bottom:12px;
-  font-size:.82rem;line-height:1.55;color:var(--text,#e2e8f0)}
-.eg-accrual-banner strong{color:var(--warn-ink)}
-.eg-ci-caveat{font-size:.78rem;color:var(--muted,#8899aa);
-  background:color-mix(in srgb,var(--blue,#3b82f6) 6%,transparent);
-  border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
-  border-radius:6px;padding:10px 14px;margin-bottom:12px;max-width:820px;line-height:1.55}
-.eg-dates-note{font-size:.68rem;color:var(--muted,#8899aa);margin-left:4px}
-@media(max-width:600px){
-  .eg-table{font-size:.72rem}
-  .eg-table td{padding:6px 8px}
-  .eg-question{max-width:200px}
-}
-
-/* ── Provenance footer ───────────────────────────────────────────────────── */
-.mh-provenance{margin-top:48px;padding:20px;border-radius:10px;
-  border:1px solid var(--border,rgba(255,255,255,.07));
-  background:color-mix(in srgb,var(--text) 3%,transparent)}
-.mh-prov-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted,#8899aa);margin-bottom:14px}
-.mh-prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.mh-prov-cell{font-size:.75rem}
-.mh-prov-cell dt{color:var(--muted,#8899aa);margin-bottom:2px}
-.mh-prov-cell dd{font-family:var(--font-mono);color:var(--text,#e2e8f0);margin-left:0}
-
-/* ── Cone recal info ─────────────────────────────────────────────────────── */
-.mh-recal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
-.mh-recal-card{padding:16px;border-radius:8px;
-  background:color-mix(in srgb,var(--warn,#f59e0b) 6%,transparent);
-  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 20%,transparent)}
-.mh-recal-card h4{font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);margin:0 0 10px}
-.mh-recal-stat{display:flex;justify-content:space-between;align-items:baseline;
-  font-size:.8rem;margin-bottom:5px}
-.mh-recal-stat .lbl{color:var(--muted,#8899aa)}
-.mh-recal-stat .val{font-weight:700;color:var(--warn-ink)}
-.mh-recal-note{font-size:.72rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.4}
-
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
-@media(max-width:600px){
-  .mh-cohorts{grid-template-columns:1fr}
-  .mh-metric-grid{grid-template-columns:1fr 1fr}
-  .mh-gate-table,.mh-exp-table{font-size:.73rem}
-  .mh-gate-table td,.mh-exp-table td{padding:7px 8px}
-}
-
-/* ── Hub v2: Pattern Memory / Truth Ledger ──────────────────────────────── */
-.pm-unavail{padding:14px;border-radius:8px;
-  background:color-mix(in srgb,var(--muted) 10%,transparent);
-  border:1px solid var(--border,rgba(255,255,255,.06));
-  font-size:.85rem;color:var(--muted,#8899aa)}
-.pm-status-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.pm-status-chip{padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:700;
-  border:1px solid var(--border,rgba(255,255,255,.1))}
-.pm-chip-promoted_null{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
-  color:var(--muted,#8899aa);border-color:color-mix(in srgb,var(--muted) 30%,transparent)}
-.pm-chip-display{background:color-mix(in srgb,var(--blue,#3b82f6) 12%,transparent);
-  color:var(--blue-ink);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
-.pm-chip-candidate{background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
-  color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
-.pm-chip-structural{background:color-mix(in srgb,var(--text,#e2e8f0) 8%,transparent);
-  color:var(--text,#e2e8f0);border-color:color-mix(in srgb,var(--text) 20%,transparent)}
-.pm-truth-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-/* table-layout:fixed + the %-widths below: the ID column used to size itself to
-   a 48-char nowrap slug (`cycle_truth_cn_downturn_broken_trend_tail_null_v1`),
-   which ate ~40% of the table and shoved STATEMENT into STATUS. */
-.pm-truth-table{width:100%;min-width:640px;table-layout:fixed;border-collapse:collapse;font-size:.8rem}
-.pm-truth-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
-  text-transform:uppercase;letter-spacing:.08em}
-.pm-truth-table td{padding:8px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
-  vertical-align:top;line-height:1.4}
-.pm-truth-table tr:last-child td{border-bottom:none}
-.pm-truth-table th:nth-child(1),.pm-truth-table td:nth-child(1){width:18%}
-.pm-truth-table th:nth-child(2),.pm-truth-table td:nth-child(2){width:44%}
-.pm-truth-table th:nth-child(3),.pm-truth-table td:nth-child(3){width:8%}
-.pm-truth-table th:nth-child(4),.pm-truth-table td:nth-child(4){width:10%}
-.pm-truth-table th:nth-child(5),.pm-truth-table td:nth-child(5){width:11%}
-.pm-truth-table th:nth-child(6),.pm-truth-table td:nth-child(6){width:9%}
-.pm-truth-id{font-family:var(--font-mono);font-size:.75rem;font-weight:700;
-  color:var(--text,#e2e8f0);line-height:1.35}
-.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.45}
-.pm-status-null{color:var(--muted,#8899aa);font-size:.72rem;font-weight:700}
-.pm-status-display{color:var(--blue-ink);font-size:.72rem;font-weight:700}
-.pm-status-candidate{color:var(--warn-ink);font-size:.72rem;font-weight:700}
-.pm-status-other{color:var(--text,#e2e8f0);font-size:.72rem;font-weight:700}
-.pm-meta{font-size:.7rem;color:var(--muted,#8899aa)}
-
-/* ── Hub v2: Null Library ───────────────────────────────────────────────── */
-/* Multi-column, not grid: these cards run from 6 lines to 40, so a row-based
-   grid either stretched the short ones into 200px of framed dead space or left
-   the same hole unframed. Column flow packs them; `columns` also has no
-   min-track, which is what was pushing the page into horizontal scroll at
-   390px. Reading order becomes column-major — fine for an id-sorted reference
-   library. */
-.nl-wrap{columns:340px 3;column-gap:16px;margin-top:8px}
-.nl-card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;
-  margin:0 0 16px;
-  border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
-  border-radius:10px;padding:16px;min-width:0;
-  background:color-mix(in srgb,var(--muted,#8899aa) 5%,transparent)}
-/* Header is a two-slot row, not a nowrap line: the id wraps in its own column
-   and the badge keeps reserved space. Before this it overflowed the card and
-   the neighbouring card's id rendered straight through the badge. */
-.nl-card-hd{display:flex;align-items:flex-start;justify-content:space-between;
-  gap:6px 10px;margin-bottom:10px;flex-wrap:wrap}
-.nl-card-id{flex:1 1 14ch;min-width:0;font-family:var(--font-mono);font-size:.75rem;
-  font-weight:700;color:var(--muted,#8899aa);line-height:1.35}
-.nl-ruled-badge{flex:0 0 auto;white-space:nowrap;
-  font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
-  border-radius:4px;
-  background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
-  color:var(--muted,#8899aa);
-  border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
-.nl-stmt{font-size:.8rem;color:var(--text,#e2e8f0);line-height:1.5;margin-bottom:10px}
-.nl-ci{font-size:.75rem;color:var(--muted,#8899aa);margin-bottom:10px;line-height:1.4}
-.nl-refs-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--muted,#8899aa);margin-bottom:4px}
-.nl-refs-list{list-style:none;padding:0;margin:0}
-.nl-refs-list li{font-family:var(--font-mono);font-size:.7rem;color:var(--muted,#8899aa);
-  padding:2px 0;line-height:1.4}
-.nl-due{font-size:.68rem;color:var(--muted,#8899aa);margin-top:8px}
-@media(max-width:600px){
-  .nl-wrap{columns:1}
-}
-
-/* ── Hub v2: Accrual Clocks ─────────────────────────────────────────────── */
-.ac-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
-.ac-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.ac-table{width:100%;min-width:640px;border-collapse:collapse;font-size:.8rem}
-.ac-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
-  text-transform:uppercase;letter-spacing:.08em}
-.ac-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
-  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.4}
-.ac-table tr:last-child td{border-bottom:none}
-.ac-ledger-name{font-size:.82rem;font-weight:600;color:var(--text,#e2e8f0)}
-.ac-ledger-sub{font-size:.7rem;color:var(--muted,#8899aa);margin-top:2px}
-.ac-num{font-family:var(--font-mono);font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
-.ac-na{color:var(--muted,#8899aa);font-size:.82rem}
-.ac-proj{font-family:var(--font-mono);font-size:.82rem;font-weight:700}
-.ac-proj-future{color:var(--blue-ink)}
-.ac-proj-done{color:var(--ok-ink)}
-.ac-proj-none{color:var(--muted,#8899aa)}
-
-/* ── Hub v2: Prediction Layer ───────────────────────────────────────────── */
-.pl-unavail{padding:14px;border-radius:8px;
-  background:color-mix(in srgb,var(--muted) 10%,transparent);
-  border:1px solid var(--border,rgba(255,255,255,.06));
-  font-size:.85rem;color:var(--muted,#8899aa)}
-.pl-meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;align-items:center}
-.pl-meta-chip{font-size:.75rem;padding:4px 10px;border-radius:5px;
-  border:1px solid var(--border,rgba(255,255,255,.1));color:var(--muted,#8899aa)}
-.pl-meta-chip strong{color:var(--text,#e2e8f0)}
-.pl-stale-note{font-size:.78rem;color:var(--muted,#8899aa);font-style:italic}
-.pl-revopt-warn{font-size:.78rem;color:var(--warn-ink);margin-left:4px}
-.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
-.pl-cell{border-radius:8px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));
-  background:color-mix(in srgb,var(--surface,#0f1629) 60%,transparent)}
-.pl-cell-pass{border-color:color-mix(in srgb,var(--ok,#3da564) 30%,transparent);
-  background:color-mix(in srgb,var(--ok,#3da564) 5%,transparent)}
-.pl-cell-prior{border-color:color-mix(in srgb,var(--muted,#8899aa) 20%,transparent)}
-.pl-cell-dir{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--muted,#8899aa);margin-bottom:4px}
-.pl-cell-horizon{font-size:.95rem;font-weight:800;color:var(--text,#e2e8f0);margin-bottom:8px}
-.pl-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 8px;
-  border-radius:4px;margin-bottom:8px}
-.pl-badge-pass{background:color-mix(in srgb,var(--ok,#3da564) 18%,transparent);
-  color:var(--ok-ink);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
-.pl-badge-prior{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
-  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
-.pl-cell-stat{font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5}
-.pl-cell-stat strong{color:var(--text,#e2e8f0)}
-/* Adoption gaps */
-.pl-gaps-section{margin-top:8px}
-.pl-gaps-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--muted,#8899aa);margin-bottom:12px}
-.pl-gap-list{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:10px}
-.pl-gap-item{padding:12px 16px;border-radius:8px;border:1px solid var(--border,rgba(255,255,255,.07));
-  background:color-mix(in srgb,var(--warn,#f59e0b) 4%,transparent);font-size:.8rem}
-.pl-gap-item.pl-gap-allnull{background:color-mix(in srgb,var(--fail,#ef4444) 5%,transparent);
-  border-color:color-mix(in srgb,var(--fail,#ef4444) 20%,transparent)}
-.pl-gap-hd{font-weight:700;color:var(--text,#e2e8f0);margin-bottom:5px}
-.pl-gap-note{color:var(--muted,#8899aa);line-height:1.5}
-.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:var(--font-mono)}
-.pl-gap-tag{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:3px;margin-left:6px;
-  background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted,#8899aa)}
-
-/* ── Hub v2: Coverage Matrix ────────────────────────────────────────────── */
-.cm-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
-.cm-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
-.cm-table{width:100%;min-width:700px;border-collapse:collapse;font-size:.8rem}
-.cm-table th{text-align:left;padding:8px 12px;font-size:.7rem;font-weight:700;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
-  text-transform:uppercase;letter-spacing:.06em}
-.cm-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
-  color:var(--text,#e2e8f0);vertical-align:middle;line-height:1.4}
-.cm-table tr:last-child td{border-bottom:none}
-.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:var(--font-mono)}
-.cm-yes{font-weight:700;color:var(--ok-ink)}
-.cm-partial{font-weight:700;color:var(--warn-ink)}
-.cm-no{color:var(--muted,#8899aa);font-size:.75rem}
-.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:var(--font-mono)}
-.cm-audit{font-size:.72rem;color:var(--muted,#8899aa);font-style:italic;margin-top:8px}
-
-/* ── Machine strings must break, not escape ──────────────────────────────────
-   Truth ids, feature slugs, file paths and the statements that quote them are
-   long unbroken tokens. `anywhere` rather than `break-word` on purpose: only
-   `anywhere` also shrinks min-content, and min-content is what was forcing the
-   null-library grid (and with it the whole page) to scroll sideways at 390px. */
-.pm-truth-table td,.pm-truth-table th,
-.mh-gate-table td,.mh-exp-table td,.ac-table td,.eg-table td,.cm-table td,
-.nl-card,.mh-collin-block li,.pl-gap-meta,.pl-gap-note,.mh-prov-cell dd,
-.mh-eng-epoch,.pm-status-chip,.mh-note,.mh-loop-step{overflow-wrap:anywhere}
-
-/* ── Quality floor ───────────────────────────────────────────────────────── */
-.mh-tab:focus-visible,.mh-stand a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-@media(prefers-reduced-motion:reduce){
-  .mh-tab,.sg-sync-fill{transition:none}
-}
-@media(max-width:720px){
-  .mh-loop{grid-template-columns:1fr}
-  .mh-loop-step + .mh-loop-step{border-left:1px solid var(--border);border-top:none}
-  .mh-loop-step:first-child{border-radius:10px 10px 0 0}
-  .mh-loop-step:last-child{border-radius:0}
-  .mh-deck{font-size:.95rem}
-  .mh-stand{font-size:.86rem}
-}
-
-/* ── Research Implications (F10-X1) ────────────────────────────────────────
-   Two frozen estimator runs whose honest headline is that NEITHER is usable:
-   one failed its own positive control, one is missing an input receipt. The
-   templated answer — big number, small label, coloured badge — is exactly
-   wrong here, because it makes the number the hero when the number is the one
-   thing the reader must not act on. So the state leads, and a full-height
-   verdict rail binds that state to every figure in the card: you cannot read a
-   value without the verdict sitting in peripheral vision.
-
-   Red vs amber is this section's real content, and the page had no vocabulary
-   for the difference before: --act = tested and FAILED; --warn = NOT JUDGED,
-   an input receipt is absent. Collapsing those two into one "bad" colour would
-   destroy the distinction the cards exist to make.
-
-   The two themes are two art directions, not one skin:
-   dark  = instrument panel — card lifted off the canvas by luminance, hairline
-           borders, the rail carries a soft bloom.
-   light = research sheet — white paper on the cool canvas, zero glow; depth
-           comes from a shadow and a crisper rule. Same structure, same
-           semantics, different material. */
-.ric-lede{font-size:.83rem;line-height:1.65;color:var(--muted);max-width:74ch;
-  margin:12px 0 18px;padding-left:15px}
-
-/* Filters hide, never reorder — a sort control would imply a ranking. */
-.ric-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 22px;padding:0;border:0}
-.ric-filter legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.ric-fbtn{padding:5px 12px;border-radius:var(--r-pill,999px);border:1px solid var(--border);
-  background:transparent;color:var(--muted);font-size:.76rem;cursor:pointer;
-  font-family:var(--font-ui);transition:color .15s,border-color .15s,background .15s}
-.ric-fbtn:hover{color:var(--text);border-color:color-mix(in srgb,var(--text) 28%,transparent)}
-.ric-fbtn[aria-pressed="true"]{background:var(--accent-deep);border-color:var(--accent-deep);
-  color:var(--text);font-weight:600}
-html[data-theme="light"] .ric-fbtn[aria-pressed="true"]{color:var(--panel)}
-.ric-fbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-
-.ric-cards{display:flex;flex-direction:column;gap:20px}
-.ric-card{display:grid;grid-template-columns:3px minmax(0,1fr);
-  border:1px solid var(--border);border-radius:var(--r-card,12px);overflow:hidden;
-  background:var(--card)}
-.ric-card[hidden]{display:none}
-.ric-rail{background:var(--muted)}
-.ric-card.ric-s-failed  .ric-rail{background:var(--act)}
-.ric-card.ric-s-incomplete .ric-rail{background:var(--warn)}
-html[data-theme="dark"] .ric-card.ric-s-failed  .ric-rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--act) 55%,transparent)}
-html[data-theme="dark"] .ric-card.ric-s-incomplete .ric-rail{box-shadow:0 0 12px 0 color-mix(in srgb,var(--warn) 55%,transparent)}
-/* Light: paper, not panel — the glow is removed outright and depth is a shadow. */
-html[data-theme="light"] .ric-card{background:var(--panel);box-shadow:var(--card-shadow)}
-html[data-theme="light"] .ric-rail{box-shadow:none}
-
-.ric-body{padding:20px 22px;min-width:0}
-.ric-hd{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.ric-state{font-size:.78rem;font-weight:700;letter-spacing:.02em;color:var(--muted)}
-.ric-card.ric-s-failed  .ric-state{color:var(--act-ink)}
-.ric-card.ric-s-incomplete .ric-state{color:var(--warn-ink)}
-.ric-state-code,.ric-tier,.ric-fam{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
-  font-size:.66rem;letter-spacing:.06em;padding:3px 7px;border-radius:var(--r-ctl,8px);
-  background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted)}
-.ric-q{font-size:1rem;font-weight:700;line-height:1.45;margin:0 0 8px;color:var(--text)}
-.ric-estimand{font-size:.82rem;line-height:1.6;color:var(--muted);margin:0 0 16px;max-width:70ch}
-
-/* Figures: tabular, quiet, never competing with the state above them. */
-.ric-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
-  gap:12px;margin:0 0 16px}
-.ric-fig{padding:10px 12px;border-radius:var(--r-ctl,8px);
-  background:color-mix(in srgb,var(--text) 4%,transparent)}
-html[data-theme="light"] .ric-fig{background:color-mix(in srgb,var(--text) 5%,transparent)}
-.ric-fig-l{display:block;font-size:.7rem;color:var(--muted);margin-bottom:4px;line-height:1.35}
-.ric-fig-v{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
-  font-size:.95rem;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
-.ric-fig-u{font-size:.68rem;color:var(--muted);margin-left:5px;font-weight:400}
-.ric-fig-sub{display:block;margin-top:3px;font-family:var(--font-sans,system-ui,sans-serif);
-  font-size:.65rem;line-height:1.4;color:var(--muted);font-weight:400}
-/* A null is typed, never zero: the em dash is the value, the reason is beside it. */
-.ric-null{color:var(--muted);font-weight:400}
-.ric-why{display:block;font-size:.68rem;color:var(--muted);margin-top:5px;line-height:1.45}
-
-/* Ordered effect path — drawn ONLY where the owner marked the horizons ordered. */
-.ric-path{margin:4px 0 18px;padding:14px 14px 10px;border-radius:var(--r-btn,10px);
-  border:1px solid var(--border);background:color-mix(in srgb,var(--text) 3%,transparent)}
-html[data-theme="light"] .ric-path{background:var(--panel)}
-.ric-path-t{font-size:.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45}
-.ric-path svg{display:block;width:100%;height:auto;overflow:visible}
-.ric-path-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
-.ric-path-anchor{stroke:color-mix(in srgb,var(--text) 30%,transparent);stroke-width:1}
-.ric-path-selected{stroke:var(--warn);stroke-width:1;stroke-dasharray:2 3}
-.ric-path-line{fill:none;stroke:var(--blue);stroke-width:2;
-  stroke-linejoin:round;stroke-linecap:round}
-.ric-path-dot{fill:var(--blue)}
-.ric-path-dot-selected{fill:var(--warn);stroke:var(--panel);stroke-width:1.5}
-.ric-path-ax{font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
-  font-size:9px;fill:var(--muted)}
-.ric-path-callout{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;
-  margin-top:6px;font-size:.7rem;line-height:1.45;color:var(--muted)}
-.ric-path-callout code{font-size:.62rem;color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 12%,transparent);
-  padding:2px 6px;border-radius:var(--r-ctl,8px)}
-
-/* Gate outcomes: the PC-1/PC-2 story, in the contract's own pass/fail terms. */
-.ric-gates-l{font-size:.72rem;font-weight:600;letter-spacing:.04em;color:var(--muted);
-  text-transform:uppercase;margin:0 0 8px}
-.ric-gates{display:flex;flex-direction:column;gap:8px;margin:0 0 4px}
-.ric-gate{display:flex;gap:9px;align-items:flex-start;font-size:.78rem;line-height:1.55}
-.ric-gate-m{flex:0 0 auto;font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);
-  font-size:.64rem;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:var(--r-ctl,8px);margin-top:2px}
-.ric-gate-pass{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok-ink)}
-.ric-gate-fail{background:color-mix(in srgb,var(--act) 16%,transparent);color:var(--act-ink)}
-.ric-gate-b{min-width:0}
-.ric-gate-n{color:var(--muted);display:block;margin-top:2px;font-size:.74rem}
-
-/* Progressive disclosure: the lab page may go deep, but not all at once. */
-.ric-more{border-top:1px solid var(--border);margin-top:4px}
-.ric-more>summary{list-style:none;cursor:pointer;padding:11px 2px 11px 0;
-  font-size:.78rem;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px}
-.ric-more>summary::-webkit-details-marker{display:none}
-.ric-more>summary:hover{color:var(--text)}
-.ric-more>summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:var(--r-ctl,8px)}
-.ric-more>summary::before{content:"+";font-family:var(--font-mono,ui-monospace,monospace);
-  font-size:.9rem;line-height:1;width:11px;color:var(--muted);transition:transform .18s}
-.ric-more[open]>summary::before{content:"−"}
-.ric-more-b{padding:2px 0 16px;font-size:.79rem;line-height:1.65;color:var(--muted)}
-.ric-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
-.ric-list li{padding-left:13px;position:relative}
-.ric-list li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:1px;background:var(--muted)}
-.ric-count{font-family:var(--font-mono,ui-monospace,monospace);color:var(--text);font-weight:600}
-
-/* Receipts: a citation without a digest is not a receipt. */
-.ric-rc{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;
-  font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:.68rem;line-height:1.6}
-.ric-rc dt{color:var(--muted)}
-.ric-rc dd{margin:0;color:var(--text);word-break:break-all}
-
-/* Zero authority is a claim the reader must be able to check, not an omission. */
-.ric-auth{margin-top:14px;padding-top:13px;border-top:1px solid var(--border);
-  font-size:.72rem;color:var(--muted);line-height:1.6}
-.ric-auth-f{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.ric-auth-f code{font-size:.64rem;padding:2px 6px;border-radius:var(--r-ctl,8px);
-  background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--muted)}
-
-@media (max-width:640px){
-  .ric-body{padding:16px 15px}
-  .ric-figs{grid-template-columns:1fr;gap:9px}
-  .ric-q{font-size:.94rem}
-  .ric-rc{grid-template-columns:1fr;gap:2px 0}
-  .ric-rc dt{margin-top:6px}
-}
-@media (prefers-reduced-motion:reduce){
-  .ric-fbtn,.ric-more>summary::before{transition:none}
-}
-</style>
+<link rel="stylesheet" href="theme.css?v=f41f9a21">
+<link rel="stylesheet" href="assets/css/03667a4c.css?v=03667a4c">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
 <body>
 
@@ -723,7 +61,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -936,10 +274,10 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
     </div>
   </div>
   
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=f7bdf7cc" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -3755,11 +3093,11 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
             </div>
           </td>
           
-          <td class="ac-num">2794</td>
+          <td class="ac-num">2734</td>
           <td class="ac-num">60</td>
-          <td class="ac-num">48</td>
+          <td class="ac-num">47</td>
           <td style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-28<br>2026-09-03
+            2026-06-28<br>2026-09-01
           </td>
           <td class="ac-num">
             
@@ -3769,7 +3107,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <td>
             
             <span class="ac-proj ac-proj-done">
-              <span class="l-en">Reached (48)</span><span class="l-zh">已达到（48）</span>
+              <span class="l-en">Reached (47)</span><span class="l-zh">已达到（47）</span>
             </span>
             
           </td>
@@ -4602,8 +3940,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       <div class="eg-subhd">
         <h3><span class="l-en">Grading Closure</span><span class="l-zh">评分闭环</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">34 ledgers — 25 closed · 9 grader-starved · 0 log-only</span>
-          <span class="l-zh">34 个账本 — 25 已关闭 · 9 评分器缺失 · 0 仅记录</span>
+          <span class="l-en">34 ledgers — 26 closed · 8 grader-starved · 0 log-only</span>
+          <span class="l-zh">34 个账本 — 26 已关闭 · 8 评分器缺失 · 0 仅记录</span>
         </span>
       </div>
       <p class="eg-note">
@@ -4625,8 +3963,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">qledger_claims</td>
-            <td class="eg-num">79242</td>
-            <td class="eg-num">102159</td>
+            <td class="eg-num">76557</td>
+            <td class="eg-num">99265</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4641,8 +3979,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">qledger_grades</td>
-            <td class="eg-num">102159</td>
-            <td class="eg-num">102159</td>
+            <td class="eg-num">99265</td>
+            <td class="eg-num">99265</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4657,8 +3995,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">board_ledger_hk</td>
-            <td class="eg-num">668</td>
-            <td class="eg-num">383</td>
+            <td class="eg-num">648</td>
+            <td class="eg-num">346</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4721,8 +4059,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">china_standout_track</td>
-            <td class="eg-num">2912</td>
-            <td class="eg-num">1165</td>
+            <td class="eg-num">2746</td>
+            <td class="eg-num">1095</td>
             <td>
               
               <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
@@ -4753,7 +4091,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">china_sector_cycles_forward_log</td>
-            <td class="eg-num">2332</td>
+            <td class="eg-num">2173</td>
             <td class="eg-num">5081</td>
             <td>
               
@@ -4785,16 +4123,16 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">breadth_divergence_forward_log</td>
-            <td class="eg-num">455</td>
-            <td class="eg-num">0</td>
+            <td class="eg-num">454</td>
+            <td class="eg-num">103</td>
             <td>
               
-              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
               
             </td>
             <td class="eg-starvation">
               
-              <span class="eg-stv-time">accruing (time-starved)</span>
+              <span class="eg-stv-closed">closed / partial</span>
               
             </td>
           </tr>
@@ -4817,7 +4155,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">risk_radar_intl_cn</td>
-            <td class="eg-num">22</td>
+            <td class="eg-num">20</td>
             <td class="eg-num">12</td>
             <td>
               
@@ -4833,7 +4171,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           
           <tr>
             <td class="eg-mono">risk_radar_intl_hk</td>
-            <td class="eg-num">22</td>
+            <td class="eg-num">20</td>
             <td class="eg-num">11</td>
             <td>
               
@@ -5171,8 +4509,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Generated: 2026-09-04T16:15:49.310812+00:00. Source: <code>data/governance/grading_closure.json</code>.</span>
-        <span class="l-zh">生成时间：2026-09-04T16:15:49.310812+00:00。来源：<code>data/governance/grading_closure.json</code>。</span>
+        <span class="l-en">Generated: 2026-09-04T05:19:11.051780+00:00. Source: <code>data/governance/grading_closure.json</code>.</span>
+        <span class="l-zh">生成时间：2026-09-04T05:19:11.051780+00:00。来源：<code>data/governance/grading_closure.json</code>。</span>
       </div>
     </div>
     
@@ -6265,12 +5603,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">altdata</td>
             <td class="eg-num">63d</td>
-            <td class="eg-num">109</td>
+            <td class="eg-num">97</td>
             <td class="eg-num">
               8
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">40.4%</td>
+            <td class="eg-num">43.3%</td>
             <td class="eg-num">
               0.1368
               <span class="eg-dates-note">(n_dates=8)</span>
@@ -6283,12 +5621,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">altdata_event</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">92</td>
+            <td class="eg-num">90</td>
             <td class="eg-num">
               17
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">47.8%</td>
+            <td class="eg-num">46.7%</td>
             <td class="eg-num">
               0.2616
               <span class="eg-dates-note">(n_dates=17)</span>
@@ -6301,14 +5639,14 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">altdata_event</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">104</td>
+            <td class="eg-num">101</td>
             <td class="eg-num">
               19
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">51.0%</td>
+            <td class="eg-num">49.5%</td>
             <td class="eg-num">
-              0.3171
+              0.2733
               <span class="eg-dates-note">(n_dates=19)</span>
             </td>
             <td>
@@ -6319,12 +5657,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">altdata_flow</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">46</td>
+            <td class="eg-num">44</td>
             <td class="eg-num">
               14
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">45.7%</td>
+            <td class="eg-num">45.5%</td>
             <td class="eg-num">
               0.2138
               <span class="eg-dates-note">(n_dates=14)</span>
@@ -6355,12 +5693,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">altdata_mid</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">40</td>
+            <td class="eg-num">39</td>
             <td class="eg-num">
               10
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">47.5%</td>
+            <td class="eg-num">46.2%</td>
             <td class="eg-num">
               0.2366
               <span class="eg-dates-note">(n_dates=10)</span>
@@ -6391,7 +5729,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">altdata_slow</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">108</td>
+            <td class="eg-num">100</td>
             <td class="eg-num">
               18
               <span class="eg-dates-note">/ 25</span>
@@ -6463,7 +5801,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">cn_importance_v0</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">1249</td>
+            <td class="eg-num">1207</td>
             <td class="eg-num">
               49
               <span class="eg-dates-note">/ 25</span>
@@ -6499,7 +5837,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">cn_importance_v0_pit</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">1249</td>
+            <td class="eg-num">1207</td>
             <td class="eg-num">
               49
               <span class="eg-dates-note">/ 25</span>
@@ -6589,12 +5927,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">intel_hub</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">1155</td>
+            <td class="eg-num">1102</td>
             <td class="eg-num">
               34
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">57.9%</td>
+            <td class="eg-num">58.1%</td>
             <td class="eg-num">
               0.4222
               <span class="eg-dates-note">(n_dates=34)</span>
@@ -6661,12 +5999,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">policy</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">37</td>
+            <td class="eg-num">34</td>
             <td class="eg-num">
               8
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">50.0%</td>
+            <td class="eg-num">48.0%</td>
             <td class="eg-num">
               0.2152
               <span class="eg-dates-note">(n_dates=8)</span>
@@ -6715,7 +6053,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">radar</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">9000</td>
+            <td class="eg-num">8997</td>
             <td class="eg-num">
               39
               <span class="eg-dates-note">/ 25</span>
@@ -6751,12 +6089,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">radar</td>
             <td class="eg-num">63d</td>
-            <td class="eg-num">2062</td>
+            <td class="eg-num">1650</td>
             <td class="eg-num">
               11
               <span class="eg-dates-note">/ 25</span>
             </td>
-            <td class="eg-num">39.7%</td>
+            <td class="eg-num">38.7%</td>
             <td class="eg-num">
               0.1517
               <span class="eg-dates-note">(n_dates=11)</span>
@@ -6769,7 +6107,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">us_importance_v0</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">6678</td>
+            <td class="eg-num">6670</td>
             <td class="eg-num">
               44
               <span class="eg-dates-note">/ 25</span>
@@ -6787,7 +6125,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">us_importance_v0</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">8430</td>
+            <td class="eg-num">7982</td>
             <td class="eg-num">
               59
               <span class="eg-dates-note">/ 25</span>
@@ -6805,7 +6143,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">us_importance_v0_pit</td>
             <td class="eg-num">21d</td>
-            <td class="eg-num">6678</td>
+            <td class="eg-num">6670</td>
             <td class="eg-num">
               44
               <span class="eg-dates-note">/ 25</span>
@@ -6823,7 +6161,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <tr>
             <td class="eg-mono">us_importance_v0_pit</td>
             <td class="eg-num">5d</td>
-            <td class="eg-num">8430</td>
+            <td class="eg-num">7982</td>
             <td class="eg-num">
               59
               <span class="eg-dates-note">/ 25</span>
@@ -6860,8 +6198,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Source: <code>site/qledger/track_record.json</code> (generated 2026-09-04T16:13:23.920009+00:00). RUL-6: only trust/accrual fields exposed; no composite, no escalation-eligible score. The 21d and 63d horizons have zero grades today.</span>
-        <span class="l-zh">来源：<code>site/qledger/track_record.json</code>（生成时间：2026-09-04T16:13:23.920009+00:00）。RUL-6：仅展示信任/积累字段；无复合分数，无可升级评分。当前21d和63d周期零评分。</span>
+        <span class="l-en">Source: <code>site/qledger/track_record.json</code> (generated 2026-09-04T05:16:49.008013+00:00). RUL-6: only trust/accrual fields exposed; no composite, no escalation-eligible score. The 21d and 63d horizons have zero grades today.</span>
+        <span class="l-zh">来源：<code>site/qledger/track_record.json</code>（生成时间：2026-09-04T05:16:49.008013+00:00）。RUL-6：仅展示信任/积累字段；无复合分数，无可升级评分。当前21d和63d周期零评分。</span>
       </div>
     </div>
     
@@ -6955,12 +6293,12 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       <span class="l-en">Forward windows, re-drawn nightly. Every night the Fund Flows page publishes a
       consensus board; the nightly ledger writes down exactly what it published, then fills in what those
       names did once each window closes — outright and against SPY. Windows close 5, 21 and
-      63 trading sessions after a board is logged. <strong>12</strong> board dates
-      logged through 2026-09-03. Context only — the board's ranking does not
+      63 trading sessions after a board is logged. <strong>11</strong> board dates
+      logged through 2026-09-01. Context only — the board's ranking does not
       read this record, and nothing here sizes or gates anything.</span>
       <span class="l-zh">前瞻窗口，每夜重绘。资金流向页每晚发布一份共识榜；夜间台账原样记录当晚所发布的内容，
       待每个窗口收官后再补入这些个股的表现——绝对涨跌，以及相对 SPY 的差额。窗口分别在登记后的
-      5、21、63 个交易日收官。已登记 <strong>12</strong> 个榜单日期，截至 2026-09-03。
+      5、21、63 个交易日收官。已登记 <strong>11</strong> 个榜单日期，截至 2026-09-01。
       仅作背景参考——榜单排序不读取本记录，此处也不参与任何仓位或门槛。</span>
     </p>
 
@@ -6973,14 +6311,14 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           <span class="l-en">1 week (5 sessions)</span><span class="l-zh">1周（5个交易日）</span>
         </div>
         
-        <div class="mh-metric-val">-1.0%</div>
+        <div class="mh-metric-val">-0.8%</div>
         <div class="mh-metric-ci">
-          <span class="l-en">median vs SPY · 103 graded rows from 7 board dates</span>
-          <span class="l-zh">相对 SPY 中位数 · 来自 7 个榜单日期的 103 行已打分记录</span>
+          <span class="l-en">median vs SPY · 83 graded rows from 5 board dates</span>
+          <span class="l-zh">相对 SPY 中位数 · 来自 5 个榜单日期的 83 行已打分记录</span>
         </div>
         <div class="mh-metric-note">
-          <span class="l-en">48 of 103 ahead of SPY · outright median -0.8% · 138 windows still open</span>
-          <span class="l-zh">48 of 103 跑赢 SPY · 绝对中位数 -0.8% · 仍有 138 个窗口未收官</span>
+          <span class="l-en">40 of 83 ahead of SPY · outright median -0.5% · 138 windows still open</span>
+          <span class="l-zh">40 of 83 跑赢 SPY · 绝对中位数 -0.5% · 仍有 138 个窗口未收官</span>
         </div>
         
       </div>
@@ -6992,8 +6330,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
         
         <div class="mh-metric-val">—</div>
         <div class="mh-metric-ci">
-          <span class="l-en">collecting — 241 windows still open</span>
-          <span class="l-zh">积累中——仍有 241 个窗口未收官</span>
+          <span class="l-en">collecting — 221 windows still open</span>
+          <span class="l-zh">积累中——仍有 221 个窗口未收官</span>
         </div>
         <div class="mh-metric-note">
           <span class="l-en">A window closes 21 trading sessions after its board is logged. Nothing to report until one does.</span>
@@ -7009,8 +6347,8 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
         
         <div class="mh-metric-val">—</div>
         <div class="mh-metric-ci">
-          <span class="l-en">collecting — 241 windows still open</span>
-          <span class="l-zh">积累中——仍有 241 个窗口未收官</span>
+          <span class="l-en">collecting — 221 windows still open</span>
+          <span class="l-zh">积累中——仍有 221 个窗口未收官</span>
         </div>
         <div class="mh-metric-note">
           <span class="l-en">A window closes 63 trading sessions after its board is logged. Nothing to report until one does.</span>
@@ -7043,206 +6381,6 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
           </tr>
         </thead>
         <tbody>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-26</td>
-            <td class="eg-mono">BABA</td>
-            <td class="eg-num">18</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-3.9%</td>
-            <td class="eg-num">-4.1%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-26</td>
-            <td class="eg-mono">TSM</td>
-            <td class="eg-num">20</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-2.4%</td>
-            <td class="eg-num">-2.7%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">NVDA</td>
-            <td class="eg-num">1</td>
-            <td class="eg-num">8</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+2.1%</td>
-            <td class="eg-num">+2.6%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">SPCX</td>
-            <td class="eg-num">2</td>
-            <td class="eg-num">6</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+3.1%</td>
-            <td class="eg-num">+3.6%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">TSLA</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">6</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+1.7%</td>
-            <td class="eg-num">+2.2%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">CRCL</td>
-            <td class="eg-num">4</td>
-            <td class="eg-num">5</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-2.8%</td>
-            <td class="eg-num">-2.2%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">CRWV</td>
-            <td class="eg-num">5</td>
-            <td class="eg-num">4</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-7.0%</td>
-            <td class="eg-num">-6.5%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">CBRS</td>
-            <td class="eg-num">6</td>
-            <td class="eg-num">4</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-6.1%</td>
-            <td class="eg-num">-5.6%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">AVGO</td>
-            <td class="eg-num">8</td>
-            <td class="eg-num">4</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+3.6%</td>
-            <td class="eg-num">+4.2%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">CRWD</td>
-            <td class="eg-num">9</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+16.0%</td>
-            <td class="eg-num">+16.6%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">NET</td>
-            <td class="eg-num">10</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+2.9%</td>
-            <td class="eg-num">+3.4%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">COIN</td>
-            <td class="eg-num">11</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-5.5%</td>
-            <td class="eg-num">-5.0%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">META</td>
-            <td class="eg-num">13</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+1.5%</td>
-            <td class="eg-num">+2.0%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">XYZ</td>
-            <td class="eg-num">14</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-5.9%</td>
-            <td class="eg-num">-5.3%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">LUNR</td>
-            <td class="eg-num">16</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-11.3%</td>
-            <td class="eg-num">-10.8%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">KTOS</td>
-            <td class="eg-num">17</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-6.3%</td>
-            <td class="eg-num">-5.7%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">BABA</td>
-            <td class="eg-num">18</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-5.5%</td>
-            <td class="eg-num">-5.0%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">AMZN</td>
-            <td class="eg-num">19</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-2.4%</td>
-            <td class="eg-num">-1.8%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">BWXT</td>
-            <td class="eg-num">19</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">+7.9%</td>
-            <td class="eg-num">+8.4%</td>
-          </tr>
-          
-          <tr>
-            <td class="eg-mono eg-ts">2026-08-24</td>
-            <td class="eg-mono">TSM</td>
-            <td class="eg-num">20</td>
-            <td class="eg-num">3</td>
-            <td class="eg-num">5d</td>
-            <td class="eg-num">-0.8%</td>
-            <td class="eg-num">-0.3%</td>
-          </tr>
           
           <tr>
             <td class="eg-mono eg-ts">2026-08-21</td>
@@ -7284,6 +6422,206 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
             <td class="eg-num">+8.5%</td>
           </tr>
           
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">CBRS</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-0.6%</td>
+            <td class="eg-num">-1.1%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">AVGO</td>
+            <td class="eg-num">7</td>
+            <td class="eg-num">4</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+3.2%</td>
+            <td class="eg-num">+2.8%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">CRWD</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+21.1%</td>
+            <td class="eg-num">+20.7%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">ORCL</td>
+            <td class="eg-num">9</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+4.7%</td>
+            <td class="eg-num">+4.2%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">COIN</td>
+            <td class="eg-num">10</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+4.8%</td>
+            <td class="eg-num">+4.3%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">XYZ</td>
+            <td class="eg-num">12</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+0.8%</td>
+            <td class="eg-num">+0.3%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">META</td>
+            <td class="eg-num">14</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+2.4%</td>
+            <td class="eg-num">+1.9%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">LUNR</td>
+            <td class="eg-num">15</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-7.8%</td>
+            <td class="eg-num">-8.3%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">KTOS</td>
+            <td class="eg-num">16</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-3.9%</td>
+            <td class="eg-num">-4.4%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">CRWV</td>
+            <td class="eg-num">17</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-1.6%</td>
+            <td class="eg-num">-2.0%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">TSM</td>
+            <td class="eg-num">18</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+1.3%</td>
+            <td class="eg-num">+0.8%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">RIOT</td>
+            <td class="eg-num">19</td>
+            <td class="eg-num">2</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-5.0%</td>
+            <td class="eg-num">-5.5%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-21</td>
+            <td class="eg-mono">OKLO</td>
+            <td class="eg-num">20</td>
+            <td class="eg-num">2</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+2.2%</td>
+            <td class="eg-num">+1.7%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">NVDA</td>
+            <td class="eg-num">1</td>
+            <td class="eg-num">7</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+1.3%</td>
+            <td class="eg-num">+0.8%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">SPCX</td>
+            <td class="eg-num">2</td>
+            <td class="eg-num">6</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+3.3%</td>
+            <td class="eg-num">+2.8%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">TSLA</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">6</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-3.9%</td>
+            <td class="eg-num">-4.4%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">CRCL</td>
+            <td class="eg-num">4</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-1.0%</td>
+            <td class="eg-num">-1.4%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">CBRS</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-8.7%</td>
+            <td class="eg-num">-9.2%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">COIN</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">-4.2%</td>
+            <td class="eg-num">-4.7%</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono eg-ts">2026-08-20</td>
+            <td class="eg-mono">XYZ</td>
+            <td class="eg-num">9</td>
+            <td class="eg-num">3</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">+1.7%</td>
+            <td class="eg-num">+1.2%</td>
+          </tr>
+          
         </tbody>
       </table>
     </div>
@@ -7302,518 +6640,6 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
   </section>
 
   
-  
-  
-
-  <section class="mh-section" id="ric-section">
-    <div class="mh-sh">
-      <h2><span class="l-en">Research Implications</span><span class="l-zh">研究含义</span></h2>
-      <span class="mh-sh-sub"><span class="l-en">What two frozen estimator runs actually produced</span><span class="l-zh">两次冻结的估计运行实际产出了什么</span></span>
-    </div>
-
-    <p class="mh-stand">
-      <span class="l-en"><strong>Research context — do not use as a trading signal.</strong>
-      Each card is a read-only projection of one already-committed result artifact: the owner's own
-      figures, its own missing pieces, and the state it earned. Neither card below is usable —
-      one failed its positive control, the other is missing an input receipt — and the cards say so
-      rather than rounding the gap away.</span>
-      <span class="l-zh"><strong>研究背景 — 请勿作为交易信号使用。</strong>
-      每张卡片都是对一份已提交结果文物的只读投影：所有者自己的数值、自己的缺口，以及它实际达到的状态。
-      下方两张卡片均不可用——其一未通过正向对照，其二缺少输入凭证——卡片如实呈现，不做抹平。</span>
-    </p>
-    <p class="ric-lede">
-      <span class="l-en">Values are printed in the unit the owner recorded. A quantity the owner did not
-      define is shown as “—” with the stated reason, never as zero. Filters hide cards; they never
-      reorder them.</span>
-      <span class="l-zh">数值按所有者记录的单位呈现。所有者未定义的量以“—”显示并附上说明原因，绝不记为零。
-      筛选器仅隐藏卡片，绝不重新排序。</span>
-    </p>
-
-    <fieldset class="ric-filter" id="ric-filter">
-      <legend><span class="l-en">Filter research implication cards</span><span class="l-zh">筛选研究含义卡片</span></legend>
-      <button type="button" class="ric-fbtn" data-ric-f="all" aria-pressed="true">
-        <span class="l-en">All</span><span class="l-zh">全部</span></button>
-      
-      <button type="button" class="ric-fbtn" data-ric-f="fam:synthetic_control" aria-pressed="false">
-        <span class="l-en">Synthetic Control</span><span class="l-zh">合成控制</span></button>
-      
-      <button type="button" class="ric-fbtn" data-ric-f="fam:event_study" aria-pressed="false">
-        <span class="l-en">Event Study</span><span class="l-zh">事件研究</span></button>
-      
-      
-      <button type="button" class="ric-fbtn" data-ric-f="q:DIAGNOSTIC_FAILED" aria-pressed="false">
-        <span class="l-en">Diagnostic failed</span><span class="l-zh">诊断未通过</span></button>
-      
-      <button type="button" class="ric-fbtn" data-ric-f="q:ARTIFACT_INCOMPLETE" aria-pressed="false">
-        <span class="l-en">Receipts incomplete</span><span class="l-zh">凭证不完整</span></button>
-      
-    </fieldset>
-
-    <div class="ric-cards" id="ric-cards">
-      <article class="ric-card ric-s-failed" id="ric-synthetic-control-synthetic-control-phase0-2026-08-06-sp-pure-adds-sc-nnls-0-5"
-               data-ric-family="synthetic_control" data-ric-quality="DIAGNOSTIC_FAILED">
-        <div class="ric-rail" aria-hidden="true"></div>
-        <div class="ric-body">
-
-          <div class="ric-hd">
-            <span class="ric-state">
-              <span class="l-en">Diagnostic failed</span>
-              <span class="l-zh">诊断未通过</span>
-            </span>
-            <code class="ric-state-code">DIAGNOSTIC_FAILED</code>
-            <span class="ric-tier">tier: DIAGNOSTIC</span>
-            <span class="ric-fam">synthetic_control</span>
-          </div>
-
-          <h3 class="ric-q">
-            <span class="l-en">For pure S&amp;P 500 additions, what did the frozen synthetic-control diagnostic estimate over days 0–5?</span>
-            <span class="l-zh">对于纯标普500新增样本，冻结的合成控制诊断在第0至5日估计了什么？</span>
-          </h3>
-          <p class="ric-estimand">
-            <span class="l-en">Event-weighted five-day cumulative abnormal return relative to the non-negative synthetic donor fit.</span>
-            <span class="l-zh">相对于非负合成捐助组合拟合的事件加权五日累计异常收益。</span>
-          </p>
-
-          <div class="ric-figs">
-            
-            <div class="ric-fig" data-ric-code="cumulative_abnormal_return">
-              <span class="ric-fig-l"><span class="l-en">Five-day cumulative abnormal return</span><span class="l-zh">五日累计异常收益</span></span>
-              <span class="ric-fig-v">3.015%</span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="monthly_newey_west_t">
-              <span class="ric-fig-l"><span class="l-en">Monthly Newey-West t statistic</span><span class="l-zh">月度 Newey-West t 统计量</span></span>
-              <span class="ric-fig-v">8.2910<span class="ric-fig-u"><span class="l-en">t</span><span class="l-zh">t 值</span></span></span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="monthly_newey_west_p">
-              <span class="ric-fig-l"><span class="l-en">Monthly Newey-West p value</span><span class="l-zh">月度 Newey-West p 值</span></span>
-              <span class="ric-fig-v">0.0000<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="monthly_observation_count">
-              <span class="ric-fig-l"><span class="l-en">Monthly observation count</span><span class="l-zh">月度观测数</span></span>
-              <span class="ric-fig-v">52<span class="ric-fig-u"><span class="l-en">months</span><span class="l-zh">个月</span></span></span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="hit_rate">
-              <span class="ric-fig-l"><span class="l-en">Positive abnormal-return share</span><span class="l-zh">异常收益为正的占比</span></span>
-              <span class="ric-fig-v">69.637%</span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="sample_n">
-              <span class="ric-fig-l"><span class="l-en">Sample size</span><span class="l-zh">样本量</span></span>
-              <span class="ric-fig-v">303</span>
-            </div>
-            <div class="ric-fig" data-ric-code="effective_n">
-              <span class="ric-fig-l"><span class="l-en">Effective sample size</span><span class="l-zh">有效样本量</span></span>
-              <span class="ric-fig-v"><span class="ric-null">—</span></span>
-              
-              
-              <span class="ric-why"><span class="l-en">The owner artifact reports fitted events and months but does not define an independent effective N.</span><span class="l-zh">所有者工件报告了拟合事件数和月份数，但未定义独立有效样本量。</span></span>
-              
-              
-            </div>
-            <div class="ric-fig" data-ric-code="cutoff">
-              <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
-              <span class="ric-fig-v">2026-07-02</span>
-            </div>
-          </div>
-
-          
-          
-
-          
-          <div class="ric-gates-l"><span class="l-en">Gate outcomes</span><span class="l-zh">门槛结果</span></div>
-          <div class="ric-gates">
-            
-            <div class="ric-gate">
-              <span class="ric-gate-m ric-gate-pass">PASS</span>
-              <span class="ric-gate-b">
-                <span class="l-en">PC1 positive control survives</span><span class="l-zh">PC1 正向对照通过</span>
-                <span class="ric-gate-n"><span class="l-en">sc_nnls S&amp;P pure-add CAAR[0,5]=3.015% event-weighted / 4.907% month-weighted, monthly-NW t=8.291 (need both &gt;0 and t&gt;2)</span><span class="l-zh">sc_nnls 标普纯新增 CAAR[0,5]=3.015%（事件加权）/4.907%（月度加权），月度 Newey-West t=8.291（两者须大于0且 t&gt;2）。</span></span>
-              </span>
-            </div>
-            
-            <div class="ric-gate">
-              <span class="ric-gate-m ric-gate-fail">FAIL</span>
-              <span class="ric-gate-b">
-                <span class="l-en">PC2 estimators are unbiased</span><span class="l-zh">PC2 估计器无偏</span>
-                <span class="ric-gate-n"><span class="l-en">sp_pure_adds/matched_k mean=0.190% t=4.316 FAIL; sp_pure_adds/sc_nnls mean=0.197% t=4.535 FAIL; phase3_start/matched_k mean=0.143% t=15.429 FAIL; phase3_start/sc_nnls mean=0.137% t=15.431 FAIL (need |mean|&lt;0.3% and |t|&lt;2 on BOTH families)</span><span class="l-zh">sp_pure_adds/matched_k 均值=0.190%、t=4.316，失败；sp_pure_adds/sc_nnls 均值=0.197%、t=4.535，失败；phase3_start/matched_k 均值=0.143%、t=15.429，失败；phase3_start/sc_nnls 均值=0.137%、t=15.431，失败（两个家族都要求 |均值|&lt;0.3% 且 |t|&lt;2）。</span></span>
-              </span>
-            </div>
-            
-            <div class="ric-gate">
-              <span class="ric-gate-m ric-gate-pass">PASS</span>
-              <span class="ric-gate-b">
-                <span class="l-en">PC3 synthetic control is not noisier</span><span class="l-zh">PC3 合成控制噪声未增加</span>
-                <span class="ric-gate-n"><span class="l-en">sc_nnls placebo SD=0.614% vs SPY-CAR placebo SD=0.650% (need SC &lt;= incumbent)</span><span class="l-zh">sc_nnls 安慰剂标准差=0.614%，SPY-CAR 安慰剂标准差=0.650%（合成控制须不高于现有方法）。</span></span>
-              </span>
-            </div>
-            
-            <div class="ric-gate">
-              <span class="ric-gate-m ric-gate-pass">PASS</span>
-              <span class="ric-gate-b">
-                <span class="l-en">F1 falsifier holds</span><span class="l-zh">F1 证伪条件成立</span>
-                <span class="ric-gate-n"><span class="l-en">phase3 sc_nnls CAAR[0,20]=0.496% monthly-NW t=1.662 empirical p=0.731 (need |t|&lt;2 and p&gt;0.05)</span><span class="l-zh">phase3 sc_nnls CAAR[0,20]=0.496%，月度 Newey-West t=1.662，经验 p=0.731（要求 |t|&lt;2 且 p&gt;0.05）。</span></span>
-              </span>
-            </div>
-            
-          </div>
-          
-
-          
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Placebos and counterexamples</span><span class="l-zh">安慰剂与反例</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-              <li data-ric-code="placebo_mean"><span class="l-en">Placebo mean</span><span class="l-zh">安慰剂均值</span> — <span class="ric-count">0.197%</span></li>
-              <li data-ric-code="placebo_standard_deviation"><span class="l-en">Placebo standard deviation</span><span class="l-zh">安慰剂标准差</span> — <span class="ric-count">0.614%</span></li>
-              <li data-ric-code="placebo_empirical_p"><span class="l-en">Placebo empirical p value</span><span class="l-zh">安慰剂经验 p 值</span> — <span class="ric-count">0.0100<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
-              <li data-ric-code="empirical_p_floor"><span class="l-en">Empirical p-value resolution floor</span><span class="l-zh">经验 p 值分辨率下限</span> — <span class="ric-count">0.0050<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
-              <li data-ric-code="placebo_draw_count"><span class="l-en">Placebo draw count</span><span class="l-zh">安慰剂抽样次数</span> — <span class="ric-count">200<span class="ric-fig-u"><span class="l-en">draws</span><span class="l-zh">次抽样</span></span></span></li>
-            </ul></div>
-          </details>
-          
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Who is missing from this result</span><span class="l-zh">该结果遗漏了谁</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-
-              <li><span class="ric-count">58</span> — <span class="l-en">Events dropped because the treated series lacked the required pre-window.</span><span class="l-zh">因处理序列缺少所需前窗而剔除的事件。</span></li>
-
-
-            </ul></div>
-          </details>
-
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Limitations</span><span class="l-zh">局限性</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-
-              <li><span class="l-en">PC-2 failed: the placebo mean was materially biased, so this estimator is not cleared for causal or trading use.</span><span class="l-zh">PC-2 未通过：安慰剂均值存在显著偏差，因此该估计器未获准用于因果判断或交易。</span></li>
-
-              <li><span class="l-en">No confidence interval or independent effective sample size is reported for this selected result.</span><span class="l-zh">该选定结果未报告置信区间或独立有效样本量。</span></li>
-
-            </ul></div>
-          </details>
-
-
-          <details class="ric-more">
-            <summary><span class="l-en">Receipts</span><span class="l-zh">凭证</span></summary>
-            <div class="ric-more-b">
-              <dl class="ric-rc">
-                <dt><span class="l-en">Card</span><span class="l-zh">卡片</span></dt><dd>ric_139ba7c20b3cb047ee0360e3947420f87f11e7cdd41a57d1826970c4afd6c3f8</dd>
-                <dt><span class="l-en">Run</span><span class="l-zh">运行</span></dt><dd>synthetic_control_phase0@2026-08-06</dd>
-                <dt><span class="l-en">Result</span><span class="l-zh">选定结果</span></dt><dd>sp_pure_adds/sc_nnls/0_5</dd>
-                <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>synthetic_control/v1</dd>
-                <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>sha256:31583485f88ebd6c779787a2c0ea5cec68037669460dbb896ea3b83fd7a49a65</dd>
-                
-                <dt>
-                  <span class="l-en">Result artifact</span>
-                  <span class="l-zh">结果文物</span>
-                </dt>
-                <dd>data/experiments/synthetic_control_phase0_results.json<br>sha256:f759bdd72de5370e597459dc0630bb1f880e8a38be9b8882a1c75f54872af1e2 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-07-02
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Research report</span>
-                  <span class="l-zh">研究报告</span>
-                </dt>
-                <dd>research/SYNTHETIC_CONTROL_PHASE0.md<br>sha256:a8d2e0023279ca241788b589af55bcedbe07117485cb3918a50d0e395a9ac587 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-08-06
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Generator</span>
-                  <span class="l-zh">生成器</span>
-                </dt>
-                <dd>scripts/synthetic_control_phase0.py<br>sha256:bc6479968fd71bc541fdec6b1a1337a1ded9b51c0eb5cdcd1664961bc6f3ab11 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-08-06
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Estimator</span>
-                  <span class="l-zh">估计器</span>
-                </dt>
-                <dd>engine/synthetic_control.py<br>sha256:31583485f88ebd6c779787a2c0ea5cec68037669460dbb896ea3b83fd7a49a65 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-08-06
-                  · REPOSITORY_INTERNAL</dd>
-                
-              </dl>
-            </div>
-          </details>
-
-          <div class="ric-auth">
-            <span class="l-en">This card carries no authority. It cannot forecast, rank, gate, size or trade, and nothing downstream reads it as permission.</span>
-            <span class="l-zh">本卡片不具备任何授权：不可用于预测、排序、门控、仓位或交易，下游系统亦不会将其视为许可。</span>
-            <span class="ric-auth-f">
-              <code>forecast_authority=false</code><code>gating_authority=false</code><code>ranking_authority=false</code><code>sizing_authority=false</code><code>trading_authority=false</code>
-            </span>
-          </div>
-
-        </div>
-      </article>
-      <article class="ric-card ric-s-incomplete" id="ric-event-study-hincl2-event-study-2026-07-03-announce-h20"
-               data-ric-family="event_study" data-ric-quality="ARTIFACT_INCOMPLETE">
-        <div class="ric-rail" aria-hidden="true"></div>
-        <div class="ric-body">
-
-          <div class="ric-hd">
-            <span class="ric-state">
-              <span class="l-en">Receipts incomplete</span>
-              <span class="l-zh">凭证不完整</span>
-            </span>
-            <code class="ric-state-code">ARTIFACT_INCOMPLETE</code>
-            <span class="ric-tier">tier: DIAGNOSTIC</span>
-            <span class="ric-fam">event_study</span>
-          </div>
-
-          <h3 class="ric-q">
-            <span class="l-en">What return pattern was recorded around Stock Connect inclusion announcements in the frozen HINCL2 event-study run?</span>
-            <span class="l-zh">冻结的 HINCL2 事件研究记录了互联互通纳入公告前后怎样的收益路径？</span>
-          </h3>
-          <p class="ric-estimand">
-            <span class="l-en">Descriptive mean cumulative abnormal return through 20 trading days after the announcement anchor.</span>
-            <span class="l-zh">公告锚点后20个交易日内的描述性平均累计异常收益。</span>
-          </p>
-
-          <div class="ric-figs">
-            
-            <div class="ric-fig" data-ric-code="mean_cumulative_abnormal_return">
-              <span class="ric-fig-l"><span class="l-en">Mean cumulative abnormal return</span><span class="l-zh">平均累计异常收益</span></span>
-              <span class="ric-fig-v">-8.812%</span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="event_count">
-              <span class="ric-fig-l"><span class="l-en">Event observations</span><span class="l-zh">事件观测数</span></span>
-              <span class="ric-fig-v">282<span class="ric-fig-u"><span class="l-en">events</span><span class="l-zh">个事件</span></span></span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="episode_count">
-              <span class="ric-fig-l"><span class="l-en">Distinct episodes</span><span class="l-zh">独立事件期数</span></span>
-              <span class="ric-fig-v">74<span class="ric-fig-u"><span class="l-en">episodes</span><span class="l-zh">个区间</span></span></span>
-            </div>
-            
-            <div class="ric-fig" data-ric-code="sample_n">
-              <span class="ric-fig-l"><span class="l-en">Sample size</span><span class="l-zh">样本量</span></span>
-              <span class="ric-fig-v">282</span>
-            </div>
-            <div class="ric-fig" data-ric-code="effective_n">
-              <span class="ric-fig-l"><span class="l-en">Effective sample size</span><span class="l-zh">有效样本量</span></span>
-              <span class="ric-fig-v">74</span>
-              
-            </div>
-            <div class="ric-fig" data-ric-code="cutoff">
-              <span class="ric-fig-l"><span class="l-en">Data cutoff</span><span class="l-zh">数据截止</span></span>
-              <span class="ric-fig-v">2026-07-03</span>
-            </div>
-          </div>
-
-          
-          <div class="ric-path">
-            <div class="ric-path-t">
-              <span class="l-en"><strong>EXPLORATORY_NON_GATED</strong> · Recorded path, cumulative abnormal return by trading day relative to announcement. Equal-weighted across events that have the complete −10 to +60 trading-day window. This path is not the headline estimator: the headline first averages events within 74 announcement-date episodes at +20 days, while this curve averages eligible events directly. Descriptive — the owner did not identify a cause.</span>
-              <span class="l-zh"><strong>EXPLORATORY_NON_GATED</strong> · 记录路径：纵轴为累计异常收益，横轴为公告后交易日。对具备完整公告前10日至公告后60个交易日窗口的事件进行等权平均。 该路径并非标题估计量：标题数值先在公告日期内汇总事件，再对74个事件期取平均；本曲线则直接对符合条件的事件取平均。 属描述性结果，所有者未识别成因。</span>
-            </div>
-            <svg viewBox="0 0 560 150" role="img" aria-labelledby="ric-event-study-hincl2-event-study-2026-07-03-announce-h20-path-title" preserveAspectRatio="xMidYMid meet">
-              <title id="ric-event-study-hincl2-event-study-2026-07-03-announce-h20-path-title">Exploratory, non-gated event-time cumulative abnormal return path / 探索性、非门控的事件时间累计异常收益路径</title><line class="ric-path-zero" x1="34" y1="25.2" x2="552" y2="25.2"/><line class="ric-path-anchor" x1="108.0" y1="10" x2="108.0" y2="130"/><line class="ric-path-selected" x1="256.0" y1="10" x2="256.0" y2="130"/>
-              <path class="ric-path-line" d="M34.0,56.2L71.0,52.7L85.8,53.4L100.6,46.1L108.0,25.2L115.4,23.6L130.2,10.0L145.0,13.9L182.0,28.4L256.0,52.3L404.0,100.4L552.0,130.0"/>
-              
-              <circle class="ric-path-dot" cx="34.0" cy="56.2" r="2"/>
-              
-              <circle class="ric-path-dot" cx="71.0" cy="52.7" r="2"/>
-              
-              <circle class="ric-path-dot" cx="85.8" cy="53.4" r="2"/>
-              
-              <circle class="ric-path-dot" cx="100.6" cy="46.1" r="2"/>
-              
-              <circle class="ric-path-dot" cx="108.0" cy="25.2" r="2"/>
-              
-              <circle class="ric-path-dot" cx="115.4" cy="23.6" r="2"/>
-              
-              <circle class="ric-path-dot" cx="130.2" cy="10.0" r="2"/>
-              
-              <circle class="ric-path-dot" cx="145.0" cy="13.9" r="2"/>
-              
-              <circle class="ric-path-dot" cx="182.0" cy="28.4" r="2"/>
-              
-              <circle class="ric-path-dot ric-path-dot-selected" cx="256.0" cy="52.3" r="4"/>
-              
-              <circle class="ric-path-dot" cx="404.0" cy="100.4" r="2"/>
-              
-              <circle class="ric-path-dot" cx="552.0" cy="130.0" r="2"/>
-              
-              <text class="ric-path-ax" x="0" y="14">1.2%</text>
-              <text class="ric-path-ax" x="0" y="130">-8.4%</text>
-              <text class="ric-path-ax" x="34" y="144">-10</text>
-              <text class="ric-path-ax" x="108.0" y="144" text-anchor="middle">0</text>
-              <text class="ric-path-ax" x="552" y="144" text-anchor="end">60</text>
-            </svg>
-            <div class="ric-path-callout">
-              <code>EXPLORATORY_NON_GATED</code>
-              <span class="l-en">Curve at selected +20-day horizon: -2.17% · n=276 events. This is not the -8.812% episode-clustered headline.</span>
-              <span class="l-zh">曲线在所选 +20 日期限：-2.17% · n=276 个事件；该数值并非按事件期聚类的 -8.812% 标题数值。</span>
-            </div>
-          </div>
-          
-
-          
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Uncertainty and diagnostics</span><span class="l-zh">不确定性与诊断</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-              
-              <li data-ric-code="hac_mean"><span class="l-en">HAC mean</span><span class="l-zh">HAC 均值</span> — <span class="ric-count">-8.812%</span></li>
-              
-              <li data-ric-code="hac_standard_error"><span class="l-en">HAC standard error</span><span class="l-zh">HAC 标准误</span> — <span class="ric-count">5.317%</span></li>
-              
-              <li data-ric-code="hac_t_statistic"><span class="l-en">HAC t statistic</span><span class="l-zh">HAC t 统计量</span> — <span class="ric-count">-1.6570<span class="ric-fig-u"><span class="l-en">t</span><span class="l-zh">t 值</span></span></span></li>
-              
-              <li data-ric-code="hac_p_value"><span class="l-en">HAC p value</span><span class="l-zh">HAC p 值</span> — <span class="ric-count">0.0975<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
-              
-              <li data-ric-code="mean_ci90"><span class="l-en">90% owner interval</span><span class="l-zh">90% 所有者区间</span> — <span class="ric-count">-18.05% … -1.39%
-      <span class="ric-fig-sub"><span class="l-en">bootstrap median</span><span class="l-zh">自助法中位数</span> -8.44%</span></span></li>
-              
-              
-              <li data-ric-code="deflated_sharpe_ratio"><span class="l-en">Deflated Sharpe ratio</span><span class="l-zh">折减夏普比率</span> — <span class="ric-count">0.0000<span class="ric-fig-u"><span class="l-en">ratio</span><span class="l-zh">比值</span></span></span></li>
-              
-              <li data-ric-code="bh_fdr_announce_reject"><span class="l-en">BH-FDR rejection</span><span class="l-zh">BH-FDR 拒绝结果</span> — <span class="ric-count"><span class="l-en">No</span><span class="l-zh">否</span></span></li>
-              
-              <li data-ric-code="bh_fdr_announce_q"><span class="l-en">BH-FDR q value</span><span class="l-zh">BH-FDR q 值</span> — <span class="ric-count">0.9620<span class="ric-fig-u"><span class="l-en">p</span><span class="l-zh">p 值</span></span></span></li>
-              
-              <li data-ric-code="panel_coverage_fraction"><span class="l-en">Panel coverage</span><span class="l-zh">面板覆盖率</span> — <span class="ric-count">61.940%</span></li>
-              
-              <li data-ric-code="imputed_zero_count"><span class="l-en">Zero-imputed non-studiable tickers</span><span class="l-zh">零值填补的不可研究股票数</span> — <span class="ric-count">179<span class="ric-fig-u"><span class="l-en">tickers</span><span class="l-zh">只标的</span></span></span></li>
-              
-            </ul></div>
-          </details>
-          
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Placebos and counterexamples</span><span class="l-zh">安慰剂与反例</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-              <li data-ric-code="pre_event_run_mean"><span class="l-en">Pre-event run mean</span><span class="l-zh">事件前走势均值</span> — <span class="ric-count">2.856%</span></li>
-              <li data-ric-code="survivorship_lower_bound_mean"><span class="l-en">Survivorship lower-bound mean</span><span class="l-zh">幸存者偏差下界均值</span> — <span class="ric-count">-2.577%</span></li>
-              <li data-ric-code="split_half_same_sign"><span class="l-en">Split-half sign agreement</span><span class="l-zh">分半符号一致</span> — <span class="ric-count"><span class="l-en">Yes</span><span class="l-zh">是</span></span></li>
-              <li data-ric-code="split_half_first_mean"><span class="l-en">First-half mean</span><span class="l-zh">前半段均值</span> — <span class="ric-count">-0.785%</span></li>
-              <li data-ric-code="split_half_second_mean"><span class="l-en">Second-half mean</span><span class="l-zh">后半段均值</span> — <span class="ric-count">-16.839%</span></li>
-            </ul></div>
-          </details>
-          
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Who is missing from this result</span><span class="l-zh">该结果遗漏了谁</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-
-              <li><span class="ric-count">179</span> — <span class="l-en">The owner artifact reports these inclusion tickers as zero-imputed in the survivorship lower-bound diagnostic.</span><span class="l-zh">所有者工件报告这些纳入股票在幸存者偏差下界诊断中以零值填补。</span></li>
-
-
-              <li><span class="l-en">The absolute gitignored hk_stocks_ext input has no immutable digest receipt in the committed run artifacts.</span><span class="l-zh">已提交的运行工件未包含绝对路径且被 Git 忽略的 hk_stocks_ext 输入的不可变摘要凭据。</span></li>
-
-              <li><span class="l-en">The committed run artifacts do not contain a rights receipt for hk_stocks_ext.</span><span class="l-zh">已提交的运行工件未包含 hk_stocks_ext 的权利凭据。</span></li>
-
-              <li><span class="l-en">The committed HINCL2 run artifact records the HSI cutoff but no immutable benchmark digest or locator; mutable working-tree snapshots are not historical receipts.</span><span class="l-zh">已提交的 HINCL2 运行工件记录了恒生指数截止日期，但未记录不可变基准摘要或定位信息；工作树中的可变快照不是历史运行凭据。</span></li>
-
-            </ul></div>
-          </details>
-
-
-          
-          <details class="ric-more">
-            <summary><span class="l-en">Limitations</span><span class="l-zh">局限性</span></summary>
-            <div class="ric-more-b"><ul class="ric-list">
-
-              <li><span class="l-en">The result is descriptive and does not identify a causal treatment effect.</span><span class="l-zh">该结果属于描述性结果，并未识别因果处理效应。</span></li>
-
-              <li><span class="l-en">The historical HSI benchmark input cannot be independently verified because the committed run artifact records its cutoff but no immutable digest or locator.</span><span class="l-zh">历史恒生指数基准输入无法独立复核，因为已提交的运行工件仅记录截止日期，未记录不可变摘要或定位信息。</span></li>
-
-              <li><span class="l-en">A gitignored absolute hk_stocks_ext input was used without an immutable digest or rights receipt.</span><span class="l-zh">运行使用了被 Git 忽略的绝对路径 hk_stocks_ext 输入，但没有不可变摘要或权利凭据。</span></li>
-
-              <li><span class="l-en">The pre-registered run concluded NO-GO and is not wired to a signal or trading route.</span><span class="l-zh">预注册运行结论为 NO-GO，且未连接到信号或交易路径。</span></li>
-
-            </ul></div>
-          </details>
-
-
-          <details class="ric-more">
-            <summary><span class="l-en">Receipts</span><span class="l-zh">凭证</span></summary>
-            <div class="ric-more-b">
-              <dl class="ric-rc">
-                <dt><span class="l-en">Card</span><span class="l-zh">卡片</span></dt><dd>ric_9b430b2acf0b68ed64572e04640667b29f0409c4a5d95c096762567a10860d9a</dd>
-                <dt><span class="l-en">Run</span><span class="l-zh">运行</span></dt><dd>hincl2_event_study@2026-07-03</dd>
-                <dt><span class="l-en">Result</span><span class="l-zh">选定结果</span></dt><dd>announce/h20</dd>
-                <dt><span class="l-en">Adapter</span><span class="l-zh">适配器</span></dt><dd>hincl2_event_study/v2</dd>
-                <dt><span class="l-en">Method</span><span class="l-zh">方法版本</span></dt><dd>sha256:f3c6b5db4aef6c11c4e8105a163bd20ca750de98b56a16052eacd49fa0f9151d</dd>
-                
-                <dt>
-                  <span class="l-en">Result artifact</span>
-                  <span class="l-zh">结果文物</span>
-                </dt>
-                <dd>data/experiments/hincl2_event_study_results.json<br>sha256:f415b2c4cf9b12fbc8e4dd9e3a30a51c736c93f4ffbc3f818392b4796ea81139 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-07-03
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Event roster</span>
-                  <span class="l-zh">事件名册</span>
-                </dt>
-                <dd>data/hk_connect_roster/roster.parquet<br>sha256:b0816afacd9537fac58c193f511ec919bccda4fc58a5921bd1096221fa35b148 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  <span class="ric-null">—</span>
-                  <span class="ric-why"><span class="l-en">No single as-of date applies; the owner roster records dated inclusion events.</span><span class="l-zh">此名册不适用单一截止日期；所有者名册记录的是带日期的纳入事件。</span></span>
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Preregistration</span>
-                  <span class="l-zh">预注册</span>
-                </dt>
-                <dd>research/HINCL2_PREREG.md<br>sha256:cd2dbe01981e7f256f79aadac23a2952517bc71810121c05c9517ca324a5ce06 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-07-03
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Research report</span>
-                  <span class="l-zh">研究报告</span>
-                </dt>
-                <dd>reports/hincl2-phase0.md<br>sha256:e7391bcabb1a81856ccf3309f611c37c8a7ecc8292cda7a602051bfabfcdfa99 · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-07-03
-                  · REPOSITORY_INTERNAL</dd>
-                
-                <dt>
-                  <span class="l-en">Generator</span>
-                  <span class="l-zh">生成器</span>
-                </dt>
-                <dd>scripts/hincl2_event_study.py<br>sha256:f3c6b5db4aef6c11c4e8105a163bd20ca750de98b56a16052eacd49fa0f9151d · <span class="l-en">as of</span><span class="l-zh">截至</span>
-                  2026-07-03
-                  · REPOSITORY_INTERNAL</dd>
-                
-              </dl>
-            </div>
-          </details>
-
-          <div class="ric-auth">
-            <span class="l-en">This card carries no authority. It cannot forecast, rank, gate, size or trade, and nothing downstream reads it as permission.</span>
-            <span class="l-zh">本卡片不具备任何授权：不可用于预测、排序、门控、仓位或交易，下游系统亦不会将其视为许可。</span>
-            <span class="ric-auth-f">
-              <code>forecast_authority=false</code><code>gating_authority=false</code><code>ranking_authority=false</code><code>sizing_authority=false</code><code>trading_authority=false</code>
-            </span>
-          </div>
-
-        </div>
-      </article>
-      
-    </div>
-  </section>
-  
-
-  
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
     <div class="mh-prov-grid">
@@ -7823,7 +6649,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-09-04T17:17:06.531733Z</dd>
+        <dd>2026-09-04T11:52:52.159666Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
@@ -7854,7 +6680,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
 
 </div>
 
-<script src="measurementdata/measurement_data.js"></script>
+<script src="measurementdata/measurement_data.js?v=3fadd2be" defer></script>
 <script>
 (function(){
   "use strict";
@@ -7927,32 +6753,7 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
   })();
 })();
 </script>
-<script>
-(function(){
-  "use strict";
-  // Research Implications filter. Hides cards; never reorders them — the
-  // contract's order is fixed and non-ranking, so a sort would be a claim.
-  var bar = document.getElementById('ric-filter');
-  var wrap = document.getElementById('ric-cards');
-  if(!bar || !wrap) return;
-  var btns = bar.querySelectorAll('.ric-fbtn');
-  var cards = wrap.querySelectorAll('.ric-card');
-  function apply(sel){
-    cards.forEach(function(card){
-      var show = sel === 'all'
-        || (sel.indexOf('fam:') === 0 && card.getAttribute('data-ric-family') === sel.slice(4))
-        || (sel.indexOf('q:') === 0 && card.getAttribute('data-ric-quality') === sel.slice(2));
-      card.hidden = !show;
-    });
-    btns.forEach(function(b){
-      b.setAttribute('aria-pressed', String(b.getAttribute('data-ric-f') === sel));
-    });
-  }
-  btns.forEach(function(b){
-    b.addEventListener('click', function(){ apply(b.getAttribute('data-ric-f')); });
-  });
-})();
-</script>
-<script src="theme.js"></script>
+<script src="theme.js?v=f0609099" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

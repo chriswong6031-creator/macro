@@ -588,6 +588,41 @@ def test_filter_controls_exist_for_family_and_state(real_section):
     assert "ric-filter" in real_section, "no method/state filter controls"
 
 
+def test_filter_controls_exist_for_evidence_tier(contract, real_section):
+    """The frozen spec commits to an evidence-tier filter alongside family/state."""
+    for tier in {card["evidence_tier"] for card in contract["cards"]}:
+        assert f'data-ric-f="tier:{tier}"' in real_section, (
+            f"no filter control for evidence_tier={tier!r}"
+        )
+        assert f'data-ric-tier="{tier}"' in real_section, (
+            f"card article carries no data-ric-tier={tier!r} for JS filtering"
+        )
+
+
+def test_lede_prose_matches_the_card_diagnostic_truth(contract, real_section):
+    """The section's honest-disclosure lede must name the diagnostic that actually
+    failed, not one that passed — pinned against the cards' own ``passed`` booleans
+    so a future edit cannot silently reintroduce the wrong claim.
+    """
+    sc_card = next(
+        card for card in contract["cards"] if card["method_family"] == "synthetic_control"
+    )
+    diagnostics = {d["code"]: d for d in sc_card["diagnostics"] if "passed" in d}
+    assert diagnostics["PC1_positive_control_survives"]["passed"] is True
+    assert diagnostics["PC2_estimators_unbiased"]["passed"] is False
+
+    lede_start = real_section.find('class="mh-stand"')
+    assert lede_start != -1
+    lede = real_section[lede_start : lede_start + 1200]
+
+    # The lede must not claim the positive control failed — it passed.
+    assert "failed its positive control" not in lede
+    assert "未通过正向对照" not in lede
+    # It must name the diagnostic that actually failed.
+    assert "estimator" in lede.lower() and "unbiased" in lede.lower()
+    assert "无偏" in lede
+
+
 def test_dom_order_equals_contract_order(contract, real_section):
     """Filters may hide, never reorder — reordering would imply a ranking."""
     positions = []
