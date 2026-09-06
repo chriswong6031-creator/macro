@@ -684,10 +684,6 @@
      "name": "Simmons First National Corp"
     },
     {
-     "ticker": "SFNC",
-     "name": "Simmons First National Corp"
-    },
-    {
      "ticker": "CBU",
      "name": "Community Financial System Inc"
     },
@@ -2234,8 +2230,8 @@
      "name": "Inhibikase Therapeutics Inc"
     },
     {
-     "ticker": "UPB",
-     "name": "Upstream Bio Inc"
+     "ticker": "ABEO",
+     "name": "Abeona Therapeutics Inc"
     },
     {
      "ticker": "SABS",
@@ -2268,14 +2264,6 @@
     {
      "ticker": "FULC",
      "name": "Fulcrum Therapeutics Inc"
-    },
-    {
-     "ticker": "FHTX",
-     "name": "Foghorn Therapeutics Inc"
-    },
-    {
-     "ticker": "RNAC",
-     "name": "Cartesian Therapeutics Inc"
     },
     {
      "ticker": "FHTX",
@@ -7516,11 +7504,11 @@
      "name": "Liberty Latin America Ltd"
     },
     {
-     "ticker": "GLIBK",
+     "ticker": "GLIBA",
      "name": "Liberty Capital Corp"
     },
     {
-     "ticker": "GLIBA",
+     "ticker": "GLIBK",
      "name": "Liberty Capital Corp"
     },
     {
@@ -7816,10 +7804,6 @@
      "name": "Century Aluminum Co"
     },
     {
-     "ticker": "CENX",
-     "name": "Century Aluminum Co"
-    },
-    {
      "ticker": "USAR",
      "name": "USA Rare Earth Inc"
     },
@@ -7868,8 +7852,12 @@
      "name": "Titan America SA"
     },
     {
-     "ticker": "AMR",
-     "name": "Alpha Metallurgical Resources Inc"
+     "ticker": "WDFC",
+     "name": "WD-40 Co"
+    },
+    {
+     "ticker": "KWR",
+     "name": "Quaker Houghton"
     },
     {
      "ticker": "KWR",
@@ -8258,11 +8246,11 @@
      "name": "QuinStreet Inc"
     },
     {
-     "ticker": "GLIBK",
+     "ticker": "GLIBA",
      "name": "Liberty Capital Corp"
     },
     {
-     "ticker": "GLIBA",
+     "ticker": "GLIBK",
      "name": "Liberty Capital Corp"
     },
     {
@@ -8434,10 +8422,6 @@
     {
      "ticker": "EAT",
      "name": "Brinker International Inc"
-    },
-    {
-     "ticker": "ZGN",
-     "name": "Ermenegildo Zegna NV"
     },
     {
      "ticker": "ZGN",
@@ -8636,8 +8620,12 @@
      "name": "PHINIA Inc"
     },
     {
-     "ticker": "SAH",
-     "name": "Sonic Automotive Inc"
+     "ticker": "LCII",
+     "name": "LCI Industries"
+    },
+    {
+     "ticker": "FIGS",
+     "name": "Figs Inc"
     },
     {
      "ticker": "PTON",
@@ -8748,14 +8736,6 @@
      "name": "Revolve Group Inc"
     },
     {
-     "ticker": "WEN",
-     "name": "Wendy's Co"
-    },
-    {
-     "ticker": "RVLV",
-     "name": "Revolve Group Inc"
-    },
-    {
      "ticker": "TRS",
      "name": "Trimas Corp"
     },
@@ -8800,12 +8780,12 @@
      "name": "Arhaus Inc"
     },
     {
-     "ticker": "BH",
-     "name": "Biglari Holdings Inc"
-    },
-    {
      "ticker": "CRI",
      "name": "Carters Inc"
+    },
+    {
+     "ticker": "BH",
+     "name": "Biglari Holdings Inc"
     },
     {
      "ticker": "CBRL",
@@ -11062,10 +11042,6 @@
      "name": "Marketwise Inc"
     },
     {
-     "ticker": "SLNH",
-     "name": "Soluna Holdings Inc"
-    },
-    {
      "ticker": "OVLY",
      "name": "Oak Valley Bancorp"
     },
@@ -11524,12 +11500,8 @@
      "name": "Arcus Biosciences Inc"
     },
     {
-     "ticker": "DNLI",
-     "name": "Denali Therapeutics Inc"
-    },
-    {
-     "ticker": "VCYT",
-     "name": "Veracyte Inc"
+     "ticker": "OPCH",
+     "name": "Option Care Health Inc"
     },
     {
      "ticker": "GRAL",
@@ -11596,8 +11568,8 @@
      "name": "SELLAS Life Sciences Group Inc"
     },
     {
-     "ticker": "SLS",
-     "name": "SELLAS Life Sciences Group Inc"
+     "ticker": "ATAI",
+     "name": "AtaiBeckley Inc"
     },
     {
      "ticker": "NRIX",
@@ -11726,14 +11698,6 @@
     {
      "ticker": "MD",
      "name": "Pediatrix Medical Group Inc"
-    },
-    {
-     "ticker": "RAPP",
-     "name": "Rapport Therapeutics Inc"
-    },
-    {
-     "ticker": "URGN",
-     "name": "UroGen Pharma Ltd"
     },
     {
      "ticker": "RAPP",
@@ -12076,8 +12040,8 @@
      "name": "Teladoc Health Inc"
     },
     {
-     "ticker": "IRMD",
-     "name": "Iradimed Corp"
+     "ticker": "SLDB",
+     "name": "Solid Biosciences Inc"
     },
     {
      "ticker": "SVRA",
@@ -12396,14 +12360,6 @@
      "name": "Senseonics Holdings Inc"
     },
     {
-     "ticker": "KYTX",
-     "name": "Kyverna Therapeutics Inc"
-    },
-    {
-     "ticker": "SENS",
-     "name": "Senseonics Holdings Inc"
-    },
-    {
      "ticker": "PRTA",
      "name": "Prothena Corp Plc"
     },
@@ -12646,14 +12602,6 @@
     {
      "ticker": "FULC",
      "name": "Fulcrum Therapeutics Inc"
-    },
-    {
-     "ticker": "FHTX",
-     "name": "Foghorn Therapeutics Inc"
-    },
-    {
-     "ticker": "RNAC",
-     "name": "Cartesian Therapeutics Inc"
     },
     {
      "ticker": "FHTX",
@@ -13302,14 +13250,6 @@
      "name": "Costamare Inc"
     },
     {
-     "ticker": "EPAC",
-     "name": "Enerpac Tool Group Corp"
-    },
-    {
-     "ticker": "CMRE",
-     "name": "Costamare Inc"
-    },
-    {
      "ticker": "SFL",
      "name": "SFL Corp Ltd"
     },
@@ -13364,10 +13304,6 @@
     {
      "ticker": "ROCK",
      "name": "Gibraltar Industries Inc"
-    },
-    {
-     "ticker": "RYZ",
-     "name": "Ryerson Holding Corp"
     },
     {
      "ticker": "RYZ",
@@ -13578,16 +13514,16 @@
      "name": "Enovix Corp"
     },
     {
-     "ticker": "JBI",
-     "name": "Janus International Group Inc"
+     "ticker": "CASS",
+     "name": "Cass Information Systems Inc"
     },
     {
      "ticker": "SATL",
      "name": "Satellogic Inc"
     },
     {
-     "ticker": "PKOH",
-     "name": "Park-Ohio Holdings Corp"
+     "ticker": "JBI",
+     "name": "Janus International Group Inc"
     },
     {
      "ticker": "PKE",

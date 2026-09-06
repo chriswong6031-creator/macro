@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-09-06T12:06:07.285919+00:00",
+  "generated_at": "2026-09-06T16:33:00.009725+00:00",
   "n_ledgers": 34,
   "n_closed": 25,
   "n_grader_starved": 9,
@@ -14,9 +14,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 86348,
-      "n_graded": 108944,
-      "last_graded_at": "2026-09-06T12:03:11.421740+00:00",
+      "n_logged": 85815,
+      "n_graded": 106085,
+      "last_graded_at": "2026-09-05T20:22:44.929930+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -28,9 +28,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 108944,
-      "n_graded": 108944,
-      "last_graded_at": "2026-09-06T12:03:11.421740+00:00",
+      "n_logged": 106085,
+      "n_graded": 106085,
+      "last_graded_at": "2026-09-05T20:22:44.929930+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -112,7 +112,7 @@
       "graders": [
         "scripts/grade_promises.py"
       ],
-      "n_logged": 2806,
+      "n_logged": 2746,
       "n_graded": 1937,
       "last_graded_at": "2026-07-02T18:59:30.481487+00:00",
       "tune_step": "N",
@@ -141,7 +141,7 @@
       "graders": [
         "scripts/grade_promises.py"
       ],
-      "n_logged": 1488,
+      "n_logged": 1457,
       "n_graded": 5769,
       "last_graded_at": "2026-07-02T18:59:31.570004+00:00",
       "tune_step": "N",
@@ -156,7 +156,7 @@
         "scripts/grade_breadth_divergence.py"
       ],
       "n_logged": 473,
-      "n_graded": 0,
+      "n_graded": 103,
       "last_graded_at": null,
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
@@ -379,9 +379,9 @@
       "graders": [
         "engine/btc_override_ledger.py"
       ],
-      "n_logged": 48,
+      "n_logged": 47,
       "n_graded": 0,
-      "last_graded_at": "2026-09-06",
+      "last_graded_at": "2026-09-05",
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
     },
@@ -409,7 +409,7 @@
       ],
       "n_logged": 709,
       "n_graded": 574,
-      "last_graded_at": "2026-09-05",
+      "last_graded_at": "2026-09-06",
       "tune_step": "N",
       "verdict": "CLOSED"
     },

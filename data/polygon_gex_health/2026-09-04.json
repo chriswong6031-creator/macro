@@ -4,6 +4,26 @@
     {
       "capture_instant": "2026-09-06T00:45:29.211605+00:00",
       "requested_underlyings": 375,
+      "attempted_underlyings": 5,
+      "successful_underlyings": 0,
+      "coverage_pct": 0.0,
+      "failure_reasons": {
+        "auth_or_entitlement_failure": 5
+      },
+      "failure_examples": {
+        "auth_or_entitlement_failure": [
+          "SPY",
+          "QQQ",
+          "IWM"
+        ]
+      },
+      "aborted_early": true,
+      "decision": "nothing_captured",
+      "health": "failed"
+    },
+    {
+      "capture_instant": "2026-09-06T16:24:58.785418+00:00",
+      "requested_underlyings": 375,
       "attempted_underlyings": null,
       "successful_underlyings": null,
       "coverage_pct": null,
