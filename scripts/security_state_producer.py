@@ -137,6 +137,23 @@ def _select_security_state_targets(to_write: list[tuple[str, dict]]) -> list[tup
     ]
 
 
+def _fallback_subject_for_ticker(ticker: str):
+    """The frozen pinned subject to use as a failure shell's subject when
+    the owner-identity batch itself could not be read (M1). Only the two
+    allow-listed tickers ever reach this path (``_select_security_state_targets``
+    filters upstream); an unexpected ticker is a programmer error.
+    """
+    from engine import security_state as ss
+
+    if ticker == ss.PINNED_TICKER:
+        return ss.AAPL_SUBJECT
+    if ticker == "MSFT":
+        return ss.MSFT_SUBJECT
+    raise ss.SecurityStateCompilationError(
+        f"no pinned fallback subject for ticker {ticker!r}"
+    )
+
+
 def _load_security_state_validator(schema_path: Path):
     """Read and validate the canonical contract exactly once per producer run."""
     from engine import security_state as ss

@@ -112,6 +112,28 @@ AAPL_SUBJECT = SecurityStateSubject(
     ),
 )
 
+# MSFT mirror of the pinned AAPL fixture above, used ONLY as the subject for
+# a typed failure shell when the owner-identity batch itself could not be
+# read (M1 fix) — never as a substitute for a real owner-composed identity.
+MSFT_SECURITY_ID = "SEC:US-XNAS-MSFT"
+MSFT_ISSUER_ID = "ISS:US-XNAS-MSFT"
+MSFT_LISTING_KEY = "US-XNAS-MSFT"
+MSFT_CIK = "0000789019"
+
+MSFT_SUBJECT = SecurityStateSubject(
+    security_id=MSFT_SECURITY_ID,
+    issuer_id=MSFT_ISSUER_ID,
+    listing_key=MSFT_LISTING_KEY,
+    ticker_display="MSFT",
+    issuer_cik=MSFT_CIK,
+    owner_evidence=(
+        ("decision_date", "fixture"),
+        ("alias_reader", "VendorAliasTable.resolve(store)"),
+        ("issuer_reader", "IssuerMaster.issuer_of_security"),
+        ("cik_reader", "IssuerMaster.cik_of_issuer"),
+    ),
+)
+
 _WORKSPACE_SCHEMA = "event_workspace.v1"
 _STALE_DAYS = 120
 # The estimated next-earnings WINDOW (never a single precise date -- Sol
@@ -1512,6 +1534,16 @@ _LAST_GOOD_REASON = "prior cycle's committed security_state.v1"
 def _prior_matches_subject(
     prior: Mapping[str, Any] | None, *, subject: SecurityStateSubject,
 ) -> bool:
+    """True when ``prior``'s owner-composed CIK agrees with ``subject``.
+
+    Reads the R8 leg's ``subject_issuer_cik`` value_read field when present
+    (the shape this module now writes). A prior written before that field
+    existed carries only ``master_issuer_cik`` on the same leg — one
+    migration cycle accepts that as an equivalent identity match rather than
+    treating every pre-existing state as a subject mismatch, which would
+    silently drop every ticker's ``last_good`` on the first post-deploy
+    failure (Sol blocker 4).
+    """
     if not isinstance(prior, Mapping):
         return False
     if not all(
@@ -1522,14 +1554,23 @@ def _prior_matches_subject(
     identity_proof = prior.get("identity_proof")
     if not isinstance(identity_proof, Mapping):
         return False
-    ciks = {
-        value.get("value")
-        for leg in identity_proof.get("legs") or ()
-        if isinstance(leg, Mapping) and leg.get("check") == "R8"
-        for value in leg.get("values_read") or ()
-        if isinstance(value, Mapping) and value.get("field") == "subject_issuer_cik"
-    }
-    return ciks == {subject.issuer_cik}
+    subject_ciks: set[Any] = set()
+    master_ciks: set[Any] = set()
+    for leg in identity_proof.get("legs") or ():
+        if not (isinstance(leg, Mapping) and leg.get("check") == "R8"):
+            continue
+        for value in leg.get("values_read") or ():
+            if not isinstance(value, Mapping):
+                continue
+            if value.get("field") == "subject_issuer_cik":
+                subject_ciks.add(value.get("value"))
+            elif value.get("field") == "master_issuer_cik":
+                master_ciks.add(value.get("value"))
+    if subject_ciks:
+        return subject_ciks == {subject.issuer_cik}
+    if master_ciks:
+        return master_ciks == {subject.issuer_cik}
+    return False
 
 
 def _is_last_good_eligible(

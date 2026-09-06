@@ -4468,10 +4468,43 @@ def main() -> int:
         for _ss_ticker, _ss_rec in _ss_targets:
             _ss_identity = _ss_identities.get(_ss_ticker)
             if _ss_identity is None:
+                # An owner-identity read failure must never drop the
+                # ``security_state`` key outright (M1): the templates gate
+                # display on the key's mere presence, so an absent key reads
+                # as "nothing built" rather than "build failed" — and next
+                # cycle's ``_read_prior_security_state`` would see no prior
+                # at all, permanently losing ``last_good``. Emit a typed
+                # failure shell against the frozen pinned subject instead.
+                _ss_reason = _ss_identity_failures.get(_ss_ticker, "batch unavailable")
                 log.warning(
-                    "security_state.v1 omitted for %s: no owner-composed identity (%s)",
-                    _ss_ticker, _ss_identity_failures.get(_ss_ticker, "batch unavailable"),
+                    "security_state.v1 identity unavailable for %s: %s",
+                    _ss_ticker, _ss_reason,
                 )
+                _ss_pinned_subject = (
+                    _security_state.AAPL_SUBJECT
+                    if _ss_ticker == _security_state.PINNED_TICKER
+                    else _security_state_producer._fallback_subject_for_ticker(_ss_ticker)
+                )
+                _ss_prior = _security_state_producer._read_prior_security_state(
+                    outdir, _ss_ticker
+                )
+                _ss_state = (
+                    _security_state_producer._compile_security_state_failure_for_exception(
+                        subject=_ss_pinned_subject, now=_ss_now,
+                        diagnostic=RuntimeError(_ss_reason),
+                        prior_state=_ss_prior,
+                        validator=_ss_validator,
+                    )
+                )
+                _ss_rec["security_state"] = _ss_state
+                for _ss_idx_row in index:
+                    if _ss_idx_row.get("t") == _ss_ticker:
+                        _ss_idx_row["security_state"] = {
+                            "overall_state": _ss_state["coverage"]["overall_state"],
+                            "dominant_degradation": _ss_state["dominant_degradation"],
+                            "generated_at": _ss_state["generated_at"],
+                        }
+                        break
                 continue
             try:
                 _ss_state = _security_state_producer._compile_security_state_for_ticker(
