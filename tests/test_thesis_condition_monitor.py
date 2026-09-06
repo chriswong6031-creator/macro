@@ -223,7 +223,8 @@ def test_payload_is_plain_language():
 
 def test_payload_never_contains_banned_vocabulary():
     banned = ("falsif", "refut", "证伪", "tripwire", "read_", "fire_event_id",
-              "idem_key", "alert_outbox", "::", "outcome=")
+              "idem_key", "alert_outbox", "::", "outcome=",
+              "cuts against", "supports the read")
     for direction in ("refutes", "confirms"):
         window = _tripwire_entry()
         window["direction"] = direction
@@ -232,11 +233,58 @@ def test_payload_never_contains_banned_vocabulary():
             window=window, subject=("ticker", "AAPL"), evidence_base=monitor.EVIDENCE_BASE,
         )
         haystack = " ".join([
-            payload["subject"], payload["summary_plain"], payload["condition_plain"],
-            payload["ticker"],
+            payload["subject"], payload["subject_zh"], payload["summary_plain"],
+            payload["condition_plain"], payload["ticker"],
         ]).lower()
         for term in banned:
             assert term not in haystack, f"banned term {term!r} in {haystack!r}"
+
+
+def test_payload_never_infers_engine_direction_stance(monkeypatch):
+    """META-CEO RULING (B-F11-1 round-2 blocker): the payload must never glue a
+    register sentence derived from the tripwire's engine-side `direction` onto
+    the user's window-closed message -- that stance is the engine's read on
+    the cycle, not the user's thesis stance. A grep for the exact phrasing the
+    prior code emitted, plus the other banned register/falsifier vocabulary,
+    must find nothing in any field of the payload -- for both `direction`
+    values, since the register clause varied by direction."""
+    banned_exact = (
+        "cuts against the read",
+        "supports the read",
+        "falsifier",
+        "refuted",
+        "证伪",
+    )
+    for direction in ("refutes", "confirms"):
+        window = _tripwire_entry()
+        window["direction"] = direction
+        payload = monitor.compose_payload(
+            thesis={"id": THESIS_ID, "version": 1, "title": "AAPL breadth thesis"},
+            window=window, subject=("ticker", "AAPL"), evidence_base=monitor.EVIDENCE_BASE,
+        )
+        haystack = json.dumps(payload, ensure_ascii=False).lower()
+        for term in banned_exact:
+            assert term not in haystack, f"banned term {term!r} in payload {haystack!r}"
+
+
+def test_subject_names_the_thesis_title_not_the_engine_slug():
+    """META-CEO RULING: subject is 'The window you were watching has closed:
+    <thesis title>' -- never the engine's internal cycle-display label."""
+    window = _tripwire_entry(scope="cycle", cycle="long_bonds", tickers=())
+    payload = monitor.compose_payload(
+        thesis={"id": THESIS_ID, "version": 1, "title": "My rates thesis"},
+        window=window, subject=("cycle", "long_bonds"), evidence_base=monitor.EVIDENCE_BASE,
+    )
+    assert payload["subject"] == "The window you were watching has closed: My rates thesis"
+    assert "subject_zh" in payload
+    assert "My rates thesis" in payload["subject_zh"]
+
+
+def test_condition_plain_is_the_claim_verbatim_no_register_clause():
+    window = _tripwire_entry()
+    assert monitor.plain_condition(window) == window["claim"]
+    window["direction"] = "confirms"
+    assert monitor.plain_condition(window) == window["claim"]
 
 
 def test_tables_absent_yields_read_unavailable_and_zero_enqueue(monkeypatch):
@@ -399,9 +447,10 @@ def test_real_committed_falsifiers_join_and_stay_plain_language():
         )
         haystack = " ".join(
             str(payload.get(k, "")) for k in
-            ("subject", "summary_plain", "condition_plain", "summary_plain_zh", "condition_plain_zh")
+            ("subject", "subject_zh", "summary_plain", "condition_plain",
+             "summary_plain_zh", "condition_plain_zh")
         ).lower()
-        for term in monitor._BANNED_TERMS:
+        for term in monitor._BANNED_TERMS + ("cuts against", "supports the read"):
             assert term not in haystack, f"banned term {term!r} in real-data payload {haystack!r}"
         assert str(cycle) not in payload["subject"]  # no raw slug
         if e.get("claim_zh"):

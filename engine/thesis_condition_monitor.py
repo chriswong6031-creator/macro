@@ -229,25 +229,24 @@ def fire_event_id(
     return f"thesis:{digest}"
 
 
-def _plain(claim: str, direction: str) -> str:
-    register = (
-        "this cuts against the read" if direction == "refutes" else "this supports the read"
-    )
-    claim = (claim or "").rstrip(".")
-    return f"{claim} — {register}"
-
-
 def plain_condition(window: dict) -> str:
-    return _plain(window.get("claim", ""), window.get("direction", "refutes"))
+    """The condition in the user's own plain words, verbatim as stored on the
+    Thesis Condition row (falsifier `claim`). Never glues on a sentence
+    inferring support/opposition from the tripwire's engine-side `direction`
+    -- that stance is the ENGINE's read on the cycle, not the user's thesis
+    stance, and stating it here would put words in the user's mouth
+    (META-CEO RULING, B-F11-1 round-2 blocker). `direction` is retained
+    elsewhere on the window record for internal routing only; it must never
+    again be read inside this function.
+    """
+    return (window.get("claim", "") or "").rstrip(".")
 
 
 def plain_condition_zh(window: dict) -> str:
     claim_zh = window.get("claim_zh") or ""
     if not claim_zh:
         return ""
-    direction = window.get("direction", "refutes")
-    register = "这与原判断相悖" if direction == "refutes" else "这支持原判断"
-    return f"{claim_zh.rstrip('。')} — {register}"
+    return claim_zh.rstrip("。")
 
 
 def _display_for(window: dict, subject: tuple[str, str]) -> str:
@@ -270,13 +269,17 @@ def compose_payload(
     display = _display_for(window, subject)
     kind, _norm = subject
     evidence_url = f"{evidence_base.rstrip('/')}/cycle.html"
-    subject_line = f"A window you were watching has closed — {display}"
+    # Per META-CEO RULING (B-F11-1 round-2 blocker): the subject line names the
+    # user's thesis by its own title, not the engine's internal display slug.
+    subject_line = f"The window you were watching has closed: {title}"
+    subject_line_zh = f"你关注的窗口已关闭：{title}"
     summary_plain = (
         f"The window you were watching for “{title}” has closed: "
         f"{condition}. What to look at: {evidence_url}"
     )
     payload = {
         "subject": subject_line,
+        "subject_zh": subject_line_zh,
         "summary_plain": summary_plain,
         # Only a ticker subject is a real ticker; a cycle subject's display
         # label is descriptive text, not a tradable symbol.
