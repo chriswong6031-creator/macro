@@ -1,8 +1,9 @@
 # Market Ontology Product Admission and Complexity-Containment Law
 
-**Status:** `ARCHITECTURE_FREEZE / SOURCE_LAW_CANDIDATE / NO PRODUCT EFFECT`  
+**Status:** `SOURCE_LAW / ACCEPTED 2026-09-06 under DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06`  
 **Ruling date:** 2026-09-04 (America/Chicago)  
-**Review repair:** 2026-09-05; source candidate remains unaccepted pending independent review  
+**Review repair:** 2026-09-05; accepted 2026-09-06 by Meta-CEO A review under `DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06` (see §13)  
+**Authority:** `DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06` — the Market Ontology program is directed and gated by the two Claude Meta-CEO seats (Meta-CEO A / Meta-CEO B), not by the relieved Sol/ChatGPT-CEO chain; `HOLD-FOR-SOL` is not a lawful terminal state for this program  
 **Program:** `marketontology-complete-parity-fanout-20260826-sol-001`  
 **F00 control:** `marketontology-f00-full-site-restart-integrator-20260904-sol-001`  
 **Slack carrier:** `C0BSBM78V1N/1788584939.879949`  
@@ -200,9 +201,14 @@ A census is authoritative as the designated inventory, not infallible as a snaps
 Before an affected-route admission decision, the implementing owner must reconcile
 actual rendered routes, source templates/builders and the current registry. A missing
 row is **not** proof that the page does not exist. A stale generation is not proof
-of current coverage. The independent review of this candidate found that the
-fourteen Macro & Monetary pages were omitted from the then-current census; §9
-therefore requires their inclusion before suite admission.
+of current coverage. Measurement on 2026-09-06 shows all fourteen `/macro_<workspace_id>.html`
+routes are already present and correctly derived in `data/product_experience/page_registry.json`
+(lifecycle=`live`, generated=`True`, archetype=`regime_dashboard`, populated `source_evidence`)
+at both the PR base and the doc's cited source SHA `31e0dd0e5f7ec19d1ce081b32bc0583a6dc72f79`.
+The independent review's real finding is that the JUDGMENT fields on those fourteen rows —
+`nav_family` (`none`), `owner` (`unowned`) and `primary_user_question` (empty) — were never
+assigned; §9 therefore requires those assignments, not row/provenance regeneration, before
+suite admission.
 
 Use the existing generator `scripts/build_product_page_registry.py` with an explicit
 `--as-of <ISO8601>` and the required source checkouts/refs for a reproducible rebuild.
@@ -216,8 +222,9 @@ it does not regenerate the registry in this records-only PR.
 Judgment fields, including `owner`, `primary_user_question`, priority and archetype,
 are written only through `config/product_experience/page_registry_overrides.yml`,
 with evidence identifying the real responsibility. The canonical domain owner
-supplies the ownership fact; the current action-authoritative F00/Sol integration
-owner resolves cross-lane ambiguity through the existing carrier and §10. A builder
+supplies the ownership fact; the current action-authoritative Meta-CEO A/Meta-CEO B
+seat (`DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06`) resolves cross-lane
+ambiguity through the existing carrier and §10. A builder
 may record that explicit assignment, not assign itself by inference. Unknown ownership
 stays `unowned` and holds the affected new admission, not the entire legacy estate.
 No assignment here transfers runtime, data, release or another owner's authority.
@@ -498,7 +505,8 @@ For a new or materially recomposed named public surface, the handoff contains:
 - stop condition and continuation handoff.
 
 Backend specialists do not invent product architecture. Frontend specialists do not
-invent analytical semantics. The Fable/Sol principal freezes the product and owner
+invent analytical semantics. The owning Meta-CEO seat
+(`DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06`) freezes the product and owner
 boundaries, then routes bounded implementation to the least-scarce capable worker.
 
 ---
@@ -594,11 +602,12 @@ The first product vertical is:
 - progressive evidence/diagnostic disclosure;
 - real responsive, bilingual, dual-theme and failure-state proof.
 
-Before suite admission, reconcile and regenerate the existing page census under §3.1
-so every actual `macro_<workspace_id>.html` route in the owner-defined suite has the
-correct row and derived provenance, with assigned judgment fields for the admitted
-workflow. A stale census cannot certify this suite. Registry refresh is part of the
-bounded product integration, not permission for a site-wide redesign or another registry.
+Before suite admission, use `config/product_experience/page_registry_overrides.yml` under
+§3.1 to assign, for every actual `macro_<workspace_id>.html` route in the owner-defined
+suite, the missing judgment fields — `owner`, `nav_family` and `primary_user_question` —
+and confirm `archetype`. The derived row and provenance fields already exist and are not
+regenerated by this step. An override assignment is part of the bounded product
+integration, not permission for a site-wide redesign or another registry.
 
 Use the existing product header family. In-suite chapter selection sits below it and
 may use grouped local navigation; fourteen chapter choices are not fourteen primary
@@ -633,7 +642,8 @@ Before a child writes a shared path, it must:
 Feature workers should own new feature files and frozen contracts first. Shared
 navigation/admission wiring occurs through one explicit current integration owner:
 the F00 principal named by the current accepted assignment on the existing F00 carrier,
-within the scope Sol has delegated, or the specific hunk owner explicitly named there.
+within the scope the owning Meta-CEO seat has delegated, or the specific hunk owner
+explicitly named there.
 A historical title, GitHub permission or presence in this document is not that
 assignment. If the assignment is unclear, return the specific ownership question on
 that carrier; do not create an integration registry or self-claim the vacancy.
@@ -685,8 +695,8 @@ no real consumer, no accepted product journey, no production proof or no truthfu
 rejection/rights ruling.
 
 No worker, PR, page count, CI run or deployment may close this program by declaration.
-F00/Sol final acceptance requires the full capability ledger, integrated experience,
-real production proof and durable Agent OS closeout.
+Final acceptance by the owning Meta-CEO seat requires the full capability ledger,
+integrated experience, real production proof and durable Agent OS closeout.
 
 ---
 
@@ -706,5 +716,8 @@ and the cited Doctrine, IA, Design System and workspace registry at Macro
 pending its own decisions; this repair preserves that boundary. The review's census
 observations are recorded as review evidence, not silently relabelled as a new full
 estate audit. No registry, product, telemetry, tenant or runtime implementation is
-performed by this record. Current-head checks, current-base composition and an
-independent review of the repaired semantics remain required before source acceptance.
+performed by this record. Current-head checks and current-base composition were verified 2026-09-06 by Meta-CEO A
+review of `macro#6865` at head `476dd0151474`, which closed BLOCKER-1 (stale-census
+premise) and MAJOR-2/3 (relieved-authority citations, ship-state coherence) under
+`DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06`; that review is this record's
+source-acceptance evidence.
