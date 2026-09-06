@@ -21,6 +21,8 @@ def test_title_marker_is_stripped_and_sweeper_agrees():
         "HOLD-FOR-SOL: F04-X1 WTI Live Trace",
         "[DRAFT / HOLD-FOR-SOL] F02-X1 official sanctions geography",
         "[F10-X1] HOLD-FOR-SOL: Research implication cards",
+        "[MARKET OS][REVIEW APPROVED][HOLD-FOR-SOL] MSFT security_state owner composition",
+        "HOLD-FOR-SOL: feat(special-situations): evidence-bound cash-deal premium (F09-1)",
     ):
         clean = rht.neutralize_title(title)
         assert "HOLD-FOR" not in clean.upper()

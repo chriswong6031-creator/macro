@@ -59,12 +59,13 @@ def fetch(repo: str, pr: int) -> tuple[dict, list[dict]]:
 
 
 def neutralize_title(title: str) -> str:
-    t = title
-    # leading "[HOLD]" / "HOLD-FOR-SOL — " / "HOLD-FOR-SOL:" / "[DRAFT / HOLD-FOR-SOL]" prefixes
-    t = re.sub(r"^\s*(\[[^\]]*HOLD[^\]]*\]\s*)+", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"^\s*(HOLD-FOR-[A-Z0-9_-]+|HELD[- ]FOR[- ][A-Z0-9_-]+)\s*[—:\-]*\s*", "", t, flags=re.IGNORECASE)
-    t = t.strip() or title
-    return t
+    """Remove hold markers anywhere in the title ("[HOLD]", "[DRAFT / HOLD-FOR-SOL]",
+    "HOLD-FOR-SOL —", "[F10-X1] HOLD-FOR-SOL:", "HELD FOR SOL"), keep everything else."""
+    t = re.sub(r"\[[^\]]*\bH[EO]LD\b[^\]]*\]", " ", title, flags=re.IGNORECASE)
+    t = re.sub(r"(HOLD-FOR-[A-Z0-9_-]+|HELD[- ]FOR[- ][A-Z0-9_-]+)\s*[—:\-]*", " ", t, flags=re.IGNORECASE)
+    t = re.sub(r"\bDO\s+NOT\s+MERGE\b", " ", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s{2,}", " ", t).strip(" —:-")
+    return t or title
 
 
 def neutralize_body(body: str, today: str, ceo: str) -> str:
